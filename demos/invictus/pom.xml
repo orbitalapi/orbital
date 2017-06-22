@@ -23,6 +23,7 @@
         <module>credit-markup-service</module>
        <module>rate-conversion-service</module>
        <module>isic-lookup-service</module>
+       <module>invoice-app</module>
     </modules>
 
 </project>

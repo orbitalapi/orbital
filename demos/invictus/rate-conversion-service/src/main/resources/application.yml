@@ -1,0 +1,5 @@
+server:
+  port: 71020
+spring:
+  application:
+    name: rate-converter

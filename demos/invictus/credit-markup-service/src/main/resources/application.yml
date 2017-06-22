@@ -1,0 +1,5 @@
+server:
+  port: 71010
+spring:
+  application:
+    name: credit-pricing
