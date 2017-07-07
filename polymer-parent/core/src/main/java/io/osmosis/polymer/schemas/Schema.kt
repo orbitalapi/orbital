@@ -1,17 +1,21 @@
 package io.osmosis.polymer.schemas
 
+import java.io.Serializable
+
 fun String.fqn(): QualifiedName {
    return QualifiedName(this)
 }
 
-data class QualifiedName(val value: String) {
+data class QualifiedName(val fullyQualifiedName: String) : Serializable {
    val name: String
-      get() = value.split(".").last()
+      get() = fullyQualifiedName.split(".").last()
 
-   override fun toString(): String = value
+   override fun toString(): String = fullyQualifiedName
 }
 
-data class Type(val name: QualifiedName, val attributes: List<QualifiedName>)
+typealias AttributeName = String
+typealias AttributeType = QualifiedName
+data class Type(val name: QualifiedName, val attributes: Map<AttributeName, AttributeType>)
 
 interface Schema {
    val attributes: Set<QualifiedName>

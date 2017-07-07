@@ -37,7 +37,7 @@ type Client {
       }
 
 
-      it("should find a property value by walking a direct relationship") {
+      it("should find a property fullyQualifiedName by walking a direct relationship") {
          val polymer = Polymer()
          polymer.addSchema(TaxiSchema.from(taxiDef))
 

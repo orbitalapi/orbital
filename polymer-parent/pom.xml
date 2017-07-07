@@ -20,4 +20,6 @@
       <module>core</module>
    </modules>
 
+   <dependencies>
+   </dependencies>
 </project>

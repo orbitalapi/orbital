@@ -2,12 +2,13 @@ package io.osmosis.polymer.schemas
 
 enum class Relationship(val description: String) {
    IS_ATTRIBUTE_OF("Is an attribute of"),
-   HAS_ATTRIBUTE("Has attribute")
+   HAS_ATTRIBUTE("Has attribute"),
+   IS_TYPE_OF("Is type of")
 }
 
 data class Link(val start: QualifiedName, val relationship: Relationship, val end: QualifiedName, val cost: Int = 1) {
    override fun toString(): String {
-      return "$start -${relationship.description}-> $end"
+      return "$start -[${relationship.description}]-> $end"
    }
 }
 

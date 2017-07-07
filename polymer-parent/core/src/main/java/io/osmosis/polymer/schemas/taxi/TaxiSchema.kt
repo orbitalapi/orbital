@@ -1,6 +1,9 @@
 package io.osmosis.polymer.schemas.taxi
 
-import io.osmosis.polymer.schemas.*
+import io.osmosis.polymer.schemas.Link
+import io.osmosis.polymer.schemas.QualifiedName
+import io.osmosis.polymer.schemas.Schema
+import io.osmosis.polymer.schemas.Type
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.types.ObjectType
@@ -14,18 +17,19 @@ class TaxiSchema(document: TaxiDocument) : Schema {
       val types = mutableSetOf<Type>()
       val links = mutableSetOf<Link>()
       val attributes = mutableSetOf<QualifiedName>()
-      document.types.forEach { type: lang.taxi.Type ->
+      document.types.forEach { taxiType: lang.taxi.Type ->
 
-         when (type) {
+         when (taxiType) {
             is ObjectType -> {
-               val typeName = QualifiedName(type.qualifiedName)
-               attributes.add(typeName)
-               type.fields.forEach { field ->
-                  val fieldName = QualifiedName(field.name)
-                  attributes.add(fieldName)
-                  links.add(Link(typeName, Relationship.HAS_ATTRIBUTE, fieldName, cost = 1))
-                  links.add(Link(fieldName, Relationship.IS_ATTRIBUTE_OF, typeName, cost = 1))
-               }
+               val typeName = QualifiedName(taxiType.qualifiedName)
+//               attributes.add(typeName)
+               val fields = taxiType.fields.map { field ->
+                  field.name to QualifiedName(field.type.qualifiedName)
+//                  attributes.add(fieldName)
+//                  links.add(Link(typeName, Relationship.HAS_ATTRIBUTE, fieldName, cost = 1))
+//                  links.add(Link(fieldName, Relationship.IS_ATTRIBUTE_OF, typeName, cost = 1))
+               }.toMap()
+               types.add(Type(typeName, fields))
             }
          }
       }
