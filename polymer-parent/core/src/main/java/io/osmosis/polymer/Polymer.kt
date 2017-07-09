@@ -9,7 +9,9 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory
 import com.tinkerpop.blueprints.impls.orient.OrientVertex
 import io.osmosis.polymer.GraphAttributes.NODE_TYPE
 import io.osmosis.polymer.GraphAttributes.QUALIFIED_NAME
-import io.osmosis.polymer.models.json.JsonModel
+import io.osmosis.polymer.models.TypedInstance
+import io.osmosis.polymer.query.QueryContext
+import io.osmosis.polymer.query.QueryEngine
 import io.osmosis.polymer.schemas.*
 import io.osmosis.polymer.utils.log
 
@@ -24,25 +26,28 @@ enum class NodeTypes {
    OBJECT
 }
 
-data class QueryResult(val result: Any)
-
-class QueryContext(private val polymer: Polymer) {
-   fun find(query: String): QueryResult {
-      TODO("Not implemented")
-   }
-}
-
 class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
    private val schemas = mutableListOf<Schema>()
+   private val models = mutableSetOf<TypedInstance>()
+   var schema: Schema = CompositeSchema(schemas)
+      private set
+
+   fun query(): QueryEngine {
+      return QueryEngine(queryContext())
+   }
+
+   fun queryContext():QueryContext = QueryContext(schema, models)
 
    constructor() : this(emptyList(), OrientGraphFactory("memory:polymer").setupPool(1, 100).tx)
 
-   fun addData(model: Model): Polymer {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+   fun addData(model: TypedInstance): Polymer {
+      models.add(model)
+      return this
    }
 
    fun addSchema(schema: Schema): Polymer {
       schemas.add(schema)
+      this.schema = CompositeSchema(schemas)
       appendToGraph(schema)
       return this
    }
@@ -68,7 +73,7 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
             val attributeQualifiedName = "$typeFullyQualifiedName/$attributeName"
             val (attributeVertex, _) = addVertex(attributeQualifiedName, NodeTypes.ATTRIBUTE).linkTo(typeNode, Relationship.IS_ATTRIBUTE_OF)
             typeNode.linkTo(attributeVertex, Relationship.HAS_ATTRIBUTE)
-            addVertex(attributeType, NodeTypes.TYPE).linkFrom(attributeVertex, Relationship.IS_TYPE_OF)
+            addVertex(attributeType.name, NodeTypes.TYPE).linkFrom(attributeVertex, Relationship.IS_TYPE_OF)
          }
          log().debug("Added attribute ${type.name} to graph")
       }
@@ -126,11 +131,7 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
       }.toMap()
    }
 
-   fun resolve(query: String): QueryResult {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-   }
-
-   fun from(s: JsonModel): QueryContext {
+   fun from(s: TypedInstance): QueryContext {
       TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
    }
 
@@ -169,4 +170,6 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
       }.filterNotNull()
       return links
    }
+
+   fun getType(typeName: String): Type = schema.type(typeName)
 }

@@ -1,11 +1,9 @@
 package io.osmosis.polymer.schemas.taxi
 
-import io.osmosis.polymer.schemas.Link
-import io.osmosis.polymer.schemas.QualifiedName
-import io.osmosis.polymer.schemas.Schema
-import io.osmosis.polymer.schemas.Type
+import io.osmosis.polymer.schemas.*
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
+import lang.taxi.types.ArrayType
 import lang.taxi.types.ObjectType
 
 class TaxiSchema(document: TaxiDocument) : Schema {
@@ -24,13 +22,19 @@ class TaxiSchema(document: TaxiDocument) : Schema {
                val typeName = QualifiedName(taxiType.qualifiedName)
 //               attributes.add(typeName)
                val fields = taxiType.fields.map { field ->
-                  field.name to QualifiedName(field.type.qualifiedName)
+                  when (field.type) {
+                     is ArrayType -> field.name to TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true)
+                     else -> field.name to TypeReference(field.type.qualifiedName.fqn())
+                  }
+
 //                  attributes.add(fieldName)
 //                  links.add(Link(typeName, Relationship.HAS_ATTRIBUTE, fieldName, cost = 1))
 //                  links.add(Link(fieldName, Relationship.IS_ATTRIBUTE_OF, typeName, cost = 1))
                }.toMap()
                types.add(Type(typeName, fields))
             }
+            is ArrayType -> TODO()
+            else -> types.add(Type(QualifiedName(taxiType.qualifiedName)))
          }
       }
       this.links = links
