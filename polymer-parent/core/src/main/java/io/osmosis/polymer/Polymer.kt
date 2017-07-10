@@ -36,7 +36,7 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
       return QueryEngine(queryContext())
    }
 
-   fun queryContext():QueryContext = QueryContext(schema, models)
+   fun queryContext(): QueryContext = QueryContext(schema, models)
 
    constructor() : this(emptyList(), OrientGraphFactory("memory:polymer").setupPool(1, 100).tx)
 
@@ -172,4 +172,5 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
    }
 
    fun getType(typeName: String): Type = schema.type(typeName)
+   fun getService(serviceName: String): Service = schema.service(serviceName)
 }

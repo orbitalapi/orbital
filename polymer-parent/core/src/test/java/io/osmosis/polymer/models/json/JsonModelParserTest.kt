@@ -40,7 +40,7 @@ type Client {
       val parser = JsonModelParser(schema)
       // Note : Some weirdness with debugging when passing the Json.
       // Looks like a bug in the IntelliJ kotlin plugin, and handling
-      // inline methods.  Possibly fixed by the time anyone WTF's this.
+      // inline operations.  Possibly fixed by the time anyone WTF's this.
       // Ideally, pass the json, not the map.
       val result = parser.doParse(schema.type("Client"), map)
 

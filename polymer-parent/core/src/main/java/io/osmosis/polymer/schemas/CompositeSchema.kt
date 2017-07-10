@@ -7,5 +7,6 @@ class CompositeSchema(val schemas:List<Schema>) : Schema {
       get() = schemas.flatMap { it.types }.toSet()
    override val links: Set<Link>
       get() = schemas.flatMap { it.links }.toSet()
-
+   override val services: Set<Service>
+      get() = schemas.flatMap { it.services }.toSet()
 }

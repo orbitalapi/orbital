@@ -6,6 +6,7 @@ fun String.fqn(): QualifiedName {
    return QualifiedName(this)
 }
 
+data class Metadata(val name: QualifiedName, val params: Map<String, Any?> = emptyMap())
 data class TypeReference(val name: QualifiedName, val isCollection: Boolean = false)
 data class QualifiedName(val fullyQualifiedName: String) : Serializable {
    val name: String
@@ -17,14 +18,17 @@ data class QualifiedName(val fullyQualifiedName: String) : Serializable {
 typealias AttributeName = String
 typealias AttributeType = QualifiedName
 data class Type(val name: QualifiedName, val attributes: Map<AttributeName, TypeReference> = emptyMap()) {
-   constructor(name:String, attributes: Map<AttributeName, TypeReference> = emptyMap()) : this(name.fqn(),attributes)
+   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap()) : this(name.fqn(), attributes)
+
    val isScalar = attributes.isEmpty()
 }
 
 
 interface Schema {
-   val attributes: Set<QualifiedName>
    val types: Set<Type>
+   val services: Set<Service>
+   // TODO : Are these still required / meaningful?
+   val attributes: Set<QualifiedName>
    val links: Set<Link>
    fun type(name: String): Type {
       return this.types.firstOrNull { it.name.fullyQualifiedName == name } ?:
@@ -37,5 +41,10 @@ interface Schema {
 
    fun hasType(name: String): Boolean {
       return this.types.any { it.name.fullyQualifiedName == name }
+   }
+
+   fun service(serviceName: String): Service {
+      return this.services.firstOrNull { it.qualifiedName == serviceName } ?:
+         throw IllegalArgumentException("Service $serviceName was not found within this schema")
    }
 }
