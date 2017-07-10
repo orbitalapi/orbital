@@ -23,7 +23,10 @@ class PolymerSchemaTest {
          // Entirely unrelated type
          type Website {}
 
+         type alias TaxFileNumber as String
+
          service ClientService {
+            operation findClient(TaxFileNumber):Client
             operation getClient(ClientId):Client
             operation convertMoney(Money,CurrencySymbol):Money
          }
@@ -53,10 +56,21 @@ class PolymerSchemaTest {
    fun shouldParseServiceIntoSchema() {
       val service = polymer.getService("polymer.example.ClientService")
       expect(service).not.`null`
-      expect(service.operations).size(2)
+      expect(service.operations).size(3)
       expect(service.operation("getClient").parameters).size(1)
       expect(service.operation("getClient").returnType.name.fullyQualifiedName).to.equal("polymer.example.Client")
       expect(service.operation("convertMoney").parameters).size(2)
+   }
+
+   @Test
+   fun WHEN_pathExistsUsingOperation_that_itIsFound() {
+      val path = polymer.findPath(start = "polymer.example.TaxFileNumber", target = "polymer.example.ClientName")
+      expect(path.exists).to.equal(true)
+      expect(path.description).to.equal(
+         "polymer.example.TaxFileNumber -[Is parameter on]-> polymer.example.ClientService@@findClient, " +
+            "polymer.example.ClientService@@findClient -[provides]-> polymer.example.Client, " +
+            "polymer.example.Client -[Has attribute]-> polymer.example.Client/name, " +
+            "polymer.example.Client/name -[Is type of]-> polymer.example.ClientName")
    }
 }
 

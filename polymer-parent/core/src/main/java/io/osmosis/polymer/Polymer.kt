@@ -23,9 +23,11 @@ object GraphAttributes {
 enum class NodeTypes {
    ATTRIBUTE,
    TYPE,
-   OBJECT
+   OBJECT,
+   SERVICE
 }
 
+typealias OperationReference = String
 class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
    private val schemas = mutableListOf<Schema>()
    private val models = mutableSetOf<TypedInstance>()
@@ -55,6 +57,7 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
    private fun appendToGraph(schema: Schema) {
 //      val attributes = appendAttributes(schema)
       val types = appendTypes(schema)
+      val services = appendServices(schema)
 
 //      val nodes: Map<QualifiedName, Vertex> = types + attributes
 //      schema.links.forEach { link ->
@@ -63,6 +66,26 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
       //         graph.addEdge(null, )
 //      }
 
+   }
+
+   private fun appendServices(schema: Schema): Map<OperationReference, Pair<Service, Operation>> {
+      return schema.services.flatMap { service: Service ->
+         service.operations.map { operation: Operation ->
+            val operationReference = "${service.qualifiedName}@@${operation.name}"
+            val operationNode = addVertex(operationReference, NodeTypes.SERVICE)
+            operation.parameters.forEach { parameter ->
+               val typeFqn = parameter.type.name.fullyQualifiedName
+               val parameterTypeNode = findVertex(typeFqn) ?: throw IllegalArgumentException("Type $typeFqn is specified as a param for $operationReference, but is not defined in the existing schema")
+               operationNode.linkTo(parameterTypeNode, Relationship.REQUIRES_PARAMETER)
+               parameterTypeNode.linkTo(operationNode, Relationship.IS_PARAMETER_ON)
+            }
+            val resultTypeFqn = operation.returnType.name.fullyQualifiedName
+            val resultTypeNode = findVertex(resultTypeFqn) ?: throw IllegalArgumentException("Type $resultTypeFqn is specified as the return type for $operationReference, but is not defined in the existing schema")
+            operationNode.linkTo(resultTypeNode, Relationship.PROVIDES)
+
+            operationReference to (service to operation)
+         }
+      }.toMap()
    }
 
    private fun appendTypes(schema: Schema): Map<QualifiedName, Vertex> {
@@ -99,6 +122,17 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
          return vertex
       } else {
          return existing.first()
+      }
+   }
+
+   private fun findVertex(name: String): Vertex? {
+      val existing = graph.getVertices(QUALIFIED_NAME, name).toList()
+      if (existing.isEmpty()) {
+         return null
+      } else if (existing.size == 1) {
+         return existing.first()
+      } else {
+         throw IllegalArgumentException("$name matched multiple nodes, should be unique")
       }
 
    }
