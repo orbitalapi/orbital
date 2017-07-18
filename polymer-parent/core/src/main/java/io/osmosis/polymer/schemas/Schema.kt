@@ -1,5 +1,6 @@
 package io.osmosis.polymer.schemas
 
+import io.osmosis.polymer.utils.assertingThat
 import java.io.Serializable
 
 fun String.fqn(): QualifiedName {
@@ -46,5 +47,13 @@ interface Schema {
    fun service(serviceName: String): Service {
       return this.services.firstOrNull { it.qualifiedName == serviceName } ?:
          throw IllegalArgumentException("Service $serviceName was not found within this schema")
+   }
+
+   fun operation(operationName: QualifiedName): Pair<Service, Operation> {
+      val parts = operationName.fullyQualifiedName.split("@@").assertingThat({ it.size == 2 })
+      val serviceName = parts[0]
+      val operationName = parts[1]
+      val service = service(serviceName)
+      return service to service.operation(operationName)
    }
 }

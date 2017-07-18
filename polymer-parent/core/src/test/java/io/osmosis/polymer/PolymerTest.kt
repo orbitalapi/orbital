@@ -2,9 +2,9 @@ package io.osmosis.polymer
 
 import com.winterbe.expekt.expect
 import io.osmosis.polymer.models.json.addJsonModel
-import io.osmosis.polymer.query.QueryContext
-import io.osmosis.polymer.query.QueryParser
-import io.osmosis.polymer.query.QuerySpecTypeNode
+import io.osmosis.polymer.models.json.addKeyValuePair
+import io.osmosis.polymer.models.json.parseJsonModel
+import io.osmosis.polymer.query.*
 import io.osmosis.polymer.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -19,17 +19,24 @@ type Client {
    name : ClientName as String
    isicCode : IsicCode as String
 }
+type alias TaxFileNumber as String
+
+service ClientService {
+   @StubResponse("mockClient")
+   operation getClient(TaxFileNumber):Client
+}
 """
    val schema = TaxiSchema.from(taxiDef)
 
-   val polymer = Polymer().addSchema(schema)
+
+   fun polymer(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) = Polymer(queryEngineFactory).addSchema(schema)
    val queryParser = QueryParser(schema)
 
    fun typeNode(name: String): Set<QuerySpecTypeNode> {
       return queryParser.parse(name)
    }
 
-   fun queryContext(): QueryContext = polymer.queryContext()
+   fun queryContext(): QueryContext = polymer().queryContext()
 }
 
 class PolymerTest {
@@ -38,7 +45,7 @@ class PolymerTest {
    @Test
    fun shouldFindAPropertyOnAnObject() {
 
-      val polymer = TestSchema.polymer
+      val polymer = TestSchema.polymer()
       val json = """
 {
    "clientId" : "123",
@@ -47,15 +54,34 @@ class PolymerTest {
 }"""
       polymer.addJsonModel("polymer.example.Client", json)
       val result = polymer.query().find("polymer.example.ClientName")
-      expect(result.values.size).to.equal(1)
-      expect(result["polymer.example.ClientName"]!!).to.equal("Jimmy's Choos")
+      expect(result.results.size).to.equal(1)
+      expect(result["polymer.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
    }
 
+   @Test
+   fun shouldRetrievePropertyFromService() {
+      val stubService = StubService()
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val polymer = TestSchema.polymer(queryEngineFactory)
+
+      val json = """
+{
+   "clientId" : "123",
+   "name" : "Jimmy's Choos",
+   "isicCode" : "retailer"
+}"""
+      val client = polymer.parseJsonModel("polymer.example.Client", json)
+      stubService.addResponse("mockClient", client)
+      polymer.addKeyValuePair("polymer.example.TaxFileNumber", "123")
+      val result: QueryResult = polymer.query().find("polymer.example.ClientName")
+      expect(result.results.size).to.equal(1)
+      expect(result["polymer.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
+   }
 
    @Test
    fun shouldFindAPropertyValueByWalkingADirectRelationship() {
 
-      val polymer = TestSchema.polymer
+      val polymer = TestSchema.polymer()
       val client = """
          {
             "clientId" : "123",

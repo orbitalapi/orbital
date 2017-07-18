@@ -6,7 +6,7 @@ import io.osmosis.polymer.models.json.addJsonModel
 import org.junit.Test
 
 class ModelsScanStrategyTest {
-   val polymer = TestSchema.polymer
+   val polymer = TestSchema.polymer()
    @Test
    fun given_targetIsPresentInContext_then_itIsFound() {
       val json = """
@@ -19,7 +19,7 @@ class ModelsScanStrategyTest {
       val result = ModelsScanStrategy().invoke(TestSchema.typeNode("polymer.example.ClientId"), TestSchema.queryContext())
       expect(result.matchedNodes).size.to.equal(1)
       expect(result.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal("polymer.example.ClientId")
-      expect(result.matchedNodes.entries.first().value.value).to.equal("123")
+      expect(result.matchedNodes.entries.first().value!!.value).to.equal("123")
    }
 
    @Test

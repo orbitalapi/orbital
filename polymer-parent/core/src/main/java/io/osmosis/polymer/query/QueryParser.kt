@@ -8,8 +8,9 @@ class QueryParser(val schema: Schema) {
          return parseQueryObject(query)
       } else if (schema.hasType(query)) {
          return parseSingleType(query)
+      } else {
+         throw IllegalArgumentException("The query passed was neither a Json object, nor a recognized type.  Unable to proceed:  $query")
       }
-      TODO()
    }
 
    private fun parseSingleType(typeName: String): Set<QuerySpecTypeNode> {

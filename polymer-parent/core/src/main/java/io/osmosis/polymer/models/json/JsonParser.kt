@@ -12,9 +12,16 @@ import io.osmosis.polymer.schemas.Schema
 import io.osmosis.polymer.schemas.Type
 import io.osmosis.polymer.schemas.TypeReference
 
-fun Polymer.addJsonModel(typeName: String, json: String) {
-   this.addData(this.jsonParser().parse(this.getType(typeName), json))
+fun Polymer.addJsonModel(typeName: String, json: String): TypedInstance {
+   val model = parseJsonModel(typeName, json)
+   this.addData(model)
+   return model
 }
+
+fun Polymer.parseJsonModel(typeName: String, json: String): TypedInstance {
+   return this.jsonParser().parse(this.getType(typeName), json)
+}
+
 
 fun Polymer.jsonParser(mapper: ObjectMapper = jacksonObjectMapper()): JsonModelParser {
    return JsonModelParser(this.schema, mapper)

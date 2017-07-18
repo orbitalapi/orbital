@@ -19,4 +19,6 @@ data class Path(val start: QualifiedName, val target: QualifiedName, val links: 
    val exists: Boolean = links.isNotEmpty()
    val description: String
       get() = this.links.joinToString(", ")
+
+   override fun toString(): String = description
 }

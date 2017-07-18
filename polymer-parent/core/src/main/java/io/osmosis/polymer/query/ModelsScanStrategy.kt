@@ -2,6 +2,7 @@ package io.osmosis.polymer.query
 
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.schemas.Type
+import org.springframework.stereotype.Component
 import kotlin.streams.toList
 
 /**
@@ -15,6 +16,7 @@ import kotlin.streams.toList
  * This is a first-pass query strategy, and will likely be removed in
  * favour of something more graph-based.
  */
+@Component
 class ModelsScanStrategy : QueryStrategy {
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
       val targetTypes: Map<Type, QuerySpecTypeNode> = target.associateBy { it.type }

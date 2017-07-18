@@ -6,6 +6,7 @@ import com.winterbe.expekt.expect
 import io.osmosis.polymer.Polymer
 import io.osmosis.polymer.models.TypedCollection
 import io.osmosis.polymer.models.TypedObject
+import io.osmosis.polymer.query.QueryEngineFactory
 import io.osmosis.polymer.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -26,7 +27,7 @@ type Client {
 """
    @Test
    fun parsesJsonObjectToTypedObject() {
-      val polymer = Polymer().addSchema(TaxiSchema.from(taxiDef))
+      val polymer = Polymer(QueryEngineFactory.noQueryEngine()).addSchema(TaxiSchema.from(taxiDef))
       val json = """
 {
    "clientId" : "marty",

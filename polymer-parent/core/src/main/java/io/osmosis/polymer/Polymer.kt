@@ -12,6 +12,7 @@ import io.osmosis.polymer.GraphAttributes.QUALIFIED_NAME
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.query.QueryContext
 import io.osmosis.polymer.query.QueryEngine
+import io.osmosis.polymer.query.QueryEngineFactory
 import io.osmosis.polymer.schemas.*
 import io.osmosis.polymer.utils.log
 
@@ -28,19 +29,20 @@ enum class NodeTypes {
 }
 
 typealias OperationReference = String
-class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
+class Polymer(schemas: List<Schema>, private val graph: OrientGraph, private val queryEngineFactory: QueryEngineFactory) : SchemaPathResolver {
    private val schemas = mutableListOf<Schema>()
    private val models = mutableSetOf<TypedInstance>()
+
    var schema: Schema = CompositeSchema(schemas)
       private set
 
    fun query(): QueryEngine {
-      return QueryEngine(queryContext())
+      return queryEngineFactory.queryEngine(queryContext())
    }
 
-   fun queryContext(): QueryContext = QueryContext(schema, models)
+   fun queryContext(): QueryContext = QueryContext(schema, models, this)
 
-   constructor() : this(emptyList(), OrientGraphFactory("memory:polymer").setupPool(1, 100).tx)
+   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) : this(emptyList(), OrientGraphFactory("memory:polymer").setupPool(1, 100).tx, queryEngineFactory)
 
    fun addData(model: TypedInstance): Polymer {
       models.add(model)
@@ -169,12 +171,15 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
       TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
    }
 
-   fun findPath(start: String, target: String): Path {
+   override fun findPath(start: String, target: String): Path {
       return findPath(start.fqn(), target.fqn())
    }
 
-   fun findPath(start: QualifiedName, target: QualifiedName): Path {
+   override fun findPath(start: Type, target: Type): Path = findPath(start.name, target.name)
 
+   override fun findPath(start: QualifiedName, target: QualifiedName): Path {
+
+      log().debug("Searching for path from $start -> $target")
       // TODO : This is very hacky
       val startNode = graph.getVertices(QUALIFIED_NAME, start.fullyQualifiedName).toList().firstOrNull() ?: throw IllegalArgumentException("${start.fullyQualifiedName} is not present within the graph")
       val endNode = graph.getVertices(QUALIFIED_NAME, target.fullyQualifiedName).toList().firstOrNull() ?: throw IllegalArgumentException("${target.fullyQualifiedName} is not present within the graph")
@@ -186,7 +191,13 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
          """
       val path = graph.command(OCommandSQL(sql)).execute<Iterable<OrientVertex>>().toList()
       val links = convertToLinks(path)
-      return Path(start, target, links)
+      val resolvedPath = Path(start, target, links)
+      if (resolvedPath.exists) {
+         log().debug("Path from $start -> $target found with ${resolvedPath.links.size} links")
+      } else {
+         log().debug("Path from $start -> $target not found")
+      }
+      return resolvedPath
    }
 
    private fun convertToLinks(path: List<OrientVertex>): List<Link> {
@@ -206,5 +217,6 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph) {
    }
 
    fun getType(typeName: String): Type = schema.type(typeName)
+   fun type(typeName: String): Type = getType(typeName)
    fun getService(serviceName: String): Service = schema.service(serviceName)
 }

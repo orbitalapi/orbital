@@ -2,6 +2,8 @@ package io.osmosis.polymer.query
 
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
+import io.osmosis.polymer.Polymer
+import io.osmosis.polymer.SchemaPathResolver
 import io.osmosis.polymer.models.TypedCollection
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
@@ -25,21 +27,16 @@ import java.util.stream.Stream
  */
 data class QuerySpecTypeNode(val type: Type, val children: Set<QuerySpecTypeNode> = emptySet())
 
-data class QueryResult(val values: Set<TypedInstance>, val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet()) {
+data class QueryResult(val results: Map<QuerySpecTypeNode, TypedInstance?>, val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet()) {
    val isFullyResolved = unmatchedNodes.isEmpty()
-   operator fun get(typeName: String): Any? {
-      return this.values.filter { it.type.name.fullyQualifiedName == typeName }
-         .firstOrNull()?.value
+   operator fun get(typeName: String): TypedInstance? {
+      return this.results.filterKeys { it.type.name.fullyQualifiedName == typeName }
+         .values
+         .first()
    }
 }
 
-object QueryStrategies {
-   fun strategies(): List<QueryStrategy> = listOf(
-      ModelsScanStrategy()
-   )
-}
-
-data class QueryContext(val schema: Schema, val models: Set<TypedInstance>) {
+data class QueryContext(val schema: Schema, val models: Set<TypedInstance>, private val polymer: Polymer) : SchemaPathResolver by polymer {
    /**
     * Function which defines how to convert a TypedInstance into a tree, for traversal
     */
@@ -63,13 +60,13 @@ data class QueryContext(val schema: Schema, val models: Set<TypedInstance>) {
    }
 }
 
-class QueryEngine(private val context: QueryContext, private val strategies: List<QueryStrategy> = QueryStrategies.strategies()) {
+class QueryEngine(private val context: QueryContext, private val strategies: List<QueryStrategy>) {
    fun find(target: QuerySpecTypeNode): QueryResult {
       return find(setOf(target))
    }
 
    fun find(target: Set<QuerySpecTypeNode>): QueryResult {
-      val matchedNodes = mutableMapOf<QuerySpecTypeNode, TypedInstance>()
+      val matchedNodes = mutableMapOf<QuerySpecTypeNode, TypedInstance?>()
       // This is cheating, probably.
       // We only resolve top-level nodes, rather than traverse deeply.
       fun unresolvedNodes(): List<QuerySpecTypeNode> {
@@ -87,7 +84,7 @@ class QueryEngine(private val context: QueryContext, private val strategies: Lis
       if (unresolvedNodes().isNotEmpty()) {
          log().error("The following nodes weren't matched: ${unresolvedNodes().joinToString { ", " }}")
       }
-      return QueryResult(matchedNodes.values.toSet())
+      return QueryResult(matchedNodes, unresolvedNodes().toSet())
    }
 
    fun find(queryString: String): QueryResult {
