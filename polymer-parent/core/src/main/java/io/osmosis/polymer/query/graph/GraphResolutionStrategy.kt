@@ -16,7 +16,7 @@ class GraphResolutionStrategy(private val pathEvaluator: PathEvaluator) : QueryS
       // nodes within the target set, so should re-evaluate if a node is
       // still unresolved more frequently
       val matchedNodes: Map<QuerySpecTypeNode, TypedInstance?> = target.map { targetNode: QuerySpecTypeNode ->
-         val solutionsToTry: List<Pair<TypedInstance, Path>> = context.models.map { knownValue -> knownValue to context.findPath(knownValue.type, targetNode.type) }
+         val solutionsToTry: List<Pair<TypedInstance, Path>> = context.facts.map { knownValue -> knownValue to context.queryEngine.findPath(knownValue.type, targetNode.type) }
             .filter { (_, path) -> path.exists }
          val result = findFirstSuccessfulSolution(solutionsToTry, targetNode, context)
          targetNode to result

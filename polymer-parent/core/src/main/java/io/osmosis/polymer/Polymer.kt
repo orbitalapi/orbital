@@ -11,8 +11,8 @@ import io.osmosis.polymer.GraphAttributes.NODE_TYPE
 import io.osmosis.polymer.GraphAttributes.QUALIFIED_NAME
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.query.QueryContext
-import io.osmosis.polymer.query.QueryEngine
 import io.osmosis.polymer.query.QueryEngineFactory
+import io.osmosis.polymer.query.StatefulQueryEngine
 import io.osmosis.polymer.schemas.*
 import io.osmosis.polymer.utils.log
 
@@ -33,14 +33,19 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph, private val
    private val schemas = mutableListOf<Schema>()
    private val models = mutableSetOf<TypedInstance>()
 
+
    var schema: Schema = CompositeSchema(schemas)
       private set
 
-   fun query(): QueryEngine {
-      return queryEngineFactory.queryEngine(queryContext())
+   fun query(): StatefulQueryEngine {
+      return queryEngineFactory.queryEngine(schema, models, this)
    }
 
-   fun queryContext(): QueryContext = QueryContext(schema, models, this)
+   fun models(): Set<TypedInstance> {
+      return models.toSet()
+   }
+
+//   fun queryContext(): QueryContext = QueryContext(schema, facts, this)
 
    constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) : this(emptyList(), OrientGraphFactory("memory:polymer").setupPool(1, 100).tx, queryEngineFactory)
 

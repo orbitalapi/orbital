@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component
 import kotlin.streams.toList
 
 /**
- * Scans the models in the QueryContext to see if the desired attributes are present.
+ * Scans the facts in the QueryContext to see if the desired attributes are present.
  *
  * Currently, only the top-level target nodes within @param target are scanned.
  * This is okay-ish as a first pass, as it's likely that finding a match

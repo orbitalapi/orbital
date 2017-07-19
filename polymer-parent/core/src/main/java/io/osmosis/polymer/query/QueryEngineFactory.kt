@@ -1,8 +1,11 @@
 package io.osmosis.polymer.query
 
+import io.osmosis.polymer.SchemaPathResolver
+import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.query.graph.*
 import io.osmosis.polymer.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.osmosis.polymer.query.graph.operationInvocation.OperationInvoker
+import io.osmosis.polymer.schemas.Schema
 import org.springframework.stereotype.Component
 
 @Component
@@ -44,7 +47,11 @@ class QueryEngineFactory(private val strategies: List<QueryStrategy>) {
       }
    }
 
-   fun queryEngine(context: QueryContext): QueryEngine {
-      return QueryEngine(context, strategies)
+   fun queryEngine(schema: Schema, pathResolver: SchemaPathResolver): QueryEngine {
+      return DefaultQueryEngine(schema, strategies, pathResolver)
+   }
+
+   fun queryEngine(schema: Schema, models: Set<TypedInstance>, pathResolver: SchemaPathResolver): StatefulQueryEngine {
+      return StatefulQueryEngine(models, queryEngine(schema, pathResolver))
    }
 }

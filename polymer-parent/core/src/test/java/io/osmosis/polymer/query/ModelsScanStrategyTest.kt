@@ -26,6 +26,7 @@ class ModelsScanStrategyTest {
    fun given_targetIsNotPresentInContext_then_emptyListIsReturned() {
       val json = """{ "name" : "Jimmy's Choos" }"""
       polymer.addJsonModel("polymer.example.Client", json)
+      polymer.query()
       val result = ModelsScanStrategy().invoke(TestSchema.typeNode("polymer.example.ClientId"), TestSchema.queryContext())
       expect(result.matchedNodes).to.be.empty
    }

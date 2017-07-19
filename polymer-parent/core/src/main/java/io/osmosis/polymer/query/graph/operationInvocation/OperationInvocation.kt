@@ -3,12 +3,12 @@ package io.osmosis.polymer.query.graph.operationInvocation
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedValue
 import io.osmosis.polymer.query.QueryContext
+import io.osmosis.polymer.query.QueryResult
+import io.osmosis.polymer.query.QuerySpecTypeNode
 import io.osmosis.polymer.query.graph.EvaluatedLink
 import io.osmosis.polymer.query.graph.LinkEvaluator
-import io.osmosis.polymer.schemas.Link
-import io.osmosis.polymer.schemas.Operation
-import io.osmosis.polymer.schemas.Relationship
-import io.osmosis.polymer.schemas.Service
+import io.osmosis.polymer.schemas.*
+import io.osmosis.polymer.utils.log
 import org.springframework.stereotype.Component
 
 interface OperationInvoker {
@@ -40,8 +40,53 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>) : LinkE
       val (service, operation) = context.schema.operation(operationName)
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) } ?: throw IllegalArgumentException("No invokers found for operation ${operationName.fullyQualifiedName}")
 
-      // TODO : Need to gather the other args.  This is pretty lazy...
-      val result: TypedInstance = invoker.invoke(operation, listOf(startingPoint))
+      val parameters = gatherParameters(operation.parameters, startingPoint, context)
+      val result: TypedInstance = invoker.invoke(operation, parameters)
       return EvaluatedLink(link, startingPoint, result)
    }
+
+   private fun gatherParameters(parameters: List<Parameter>, startingPoint: TypedInstance, context: QueryContext): List<TypedInstance> {
+      val unresolvedParams = mutableListOf<QuerySpecTypeNode>()
+      // Holds EITHER the param value, or a QuerySpecTypeNode which can be used
+      // to query the engine for a value.
+      val parameterValuesOrQuerySpecs: List<Any> = parameters.map { requiredParam ->
+         when {
+            requiredParam.type == startingPoint.type -> startingPoint
+            context.hasFactOfType(requiredParam.type) -> context.getFact(requiredParam.type)
+            else -> {
+               val queryNode = QuerySpecTypeNode(requiredParam.type)
+               unresolvedParams.add(queryNode)
+               queryNode
+            }
+         }
+      }
+
+      // Try to resolve any unresolved params
+      var resolvedParams = emptyMap<QuerySpecTypeNode,TypedInstance?>()
+      if (unresolvedParams.isNotEmpty()) {
+         log().debug("Querying to find params for operation : $unresolvedParams")
+         val paramsToSearchFor = unresolvedParams.map { QuerySpecTypeNode(it.type) }.toSet()
+         val queryResult: QueryResult = context.queryEngine.find(paramsToSearchFor, context)
+         if (!queryResult.isFullyResolved) {
+            throw UnresolvedOperationParametersException("The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}")
+         }
+         resolvedParams = queryResult.results
+      }
+
+      // Now, either all the params were available in the first pass,
+      // or they've been subsequently resolved against the context / graph.
+      // So, create a final list of values.
+      val parametersWithValues = parameterValuesOrQuerySpecs.map {
+         when (it) {
+            is TypedInstance -> it
+            is QuerySpecTypeNode -> resolvedParams[it]!!
+            else -> error("Unexpected type in parameterValuesOrQuerySpecs -> ${it.javaClass.name}")
+         }
+      }
+
+      return parametersWithValues
+   }
 }
+
+
+class UnresolvedOperationParametersException(message: String) : RuntimeException(message)
