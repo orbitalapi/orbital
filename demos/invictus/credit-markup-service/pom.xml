@@ -16,10 +16,5 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-       <dependency>
-          <groupId>io.osmosis.polymer</groupId>
-          <artifactId>annotations</artifactId>
-          <version>${project.version}</version>
-       </dependency>
     </dependencies>
 </project>

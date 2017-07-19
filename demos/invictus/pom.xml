@@ -2,28 +2,35 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>platform</artifactId>
-        <groupId>io.osmosis</groupId>
-        <version>0.1.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <artifactId>platform</artifactId>
+      <groupId>io.osmosis</groupId>
+      <version>0.1.0-SNAPSHOT</version>
+      <relativePath>../../pom.xml</relativePath>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>invictus-parent</artifactId>
-    <packaging>pom</packaging>
-    <version>0.1.0-SNAPSHOT</version>
+   <artifactId>invictus-parent</artifactId>
+   <packaging>pom</packaging>
+   <version>0.1.0-SNAPSHOT</version>
 
-    <description>Invictus is an imaginary invoice financing company. They purchase invoices, and
-        sell them onto banks, charging a fee for doing so.
-        This demo illustrates how Osmosis can be used in non-trivial scnearios.
-    </description>
-    <modules>
-        <module>taxonomy</module>
-        <module>credit-markup-service</module>
-       <module>rate-conversion-service</module>
-       <module>isic-lookup-service</module>
-       <module>invoice-app</module>
-    </modules>
+   <description>Invictus is an imaginary invoice financing company. They purchase invoices, and
+      sell them onto banks, charging a fee for doing so.
+      This demo illustrates how Osmosis can be used in non-trivial scnearios.
+   </description>
+   <modules>
+      <module>taxonomy</module>
+      <module>credit-markup-service</module>
+      <module>rate-conversion-service</module>
+      <module>isic-lookup-service</module>
+      <module>invoice-app</module>
+   </modules>
 
+   <dependencies>
+      <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>annotations</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
+   </dependencies>
 </project>

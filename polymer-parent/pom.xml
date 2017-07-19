@@ -16,7 +16,6 @@
    <packaging>pom</packaging>
 
    <modules>
-      <module>annotations</module>
       <module>core</module>
    </modules>
 
