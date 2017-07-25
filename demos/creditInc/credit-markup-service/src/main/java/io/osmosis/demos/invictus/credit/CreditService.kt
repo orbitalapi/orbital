@@ -1,9 +1,9 @@
 package io.osmosis.demos.invictus.credit
 
-import lang.taxi.DataFormat
-import lang.taxi.DataType
-import lang.taxi.Operation
-import lang.taxi.Service
+import lang.taxi.annotations.DataFormat
+import lang.taxi.annotations.DataType
+import lang.taxi.annotations.Operation
+import lang.taxi.annotations.Service
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping

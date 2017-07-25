@@ -1,4 +1,4 @@
-package io.osmosis.demos.invictus.invoice;
+package io.osmosis.demos.creditinc.invoice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -9,3 +9,4 @@ public class InvoiceApp {
       SpringApplication.run(InvoiceApp.class, args);
    }
 }
+
