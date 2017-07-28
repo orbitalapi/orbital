@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>polymer-parent</artifactId>
+      <groupId>io.osmosis.polymer</groupId>
+      <version>0.1.0-SNAPSHOT</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>polymer-spring</artifactId>
+   <version>0.1.0-SNAPSHOT</version>
+
+   <dependencies>
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-context</artifactId>
+         <version>4.3.8.RELEASE</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.osmosis.polymer</groupId>
+         <artifactId>polymer</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>taxi-annotations</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>java2taxi</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+         <groupId>io.osmosis.polymer</groupId>
+         <artifactId>schema-store-client</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-feign</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-core</artifactId>
+         <version>3.0.7.RELEASE</version>
+      </dependency>
+   </dependencies>
+</project>

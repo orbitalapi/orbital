@@ -1,14 +1,11 @@
-package io.osmosis.demos.creditinc.invoice;
+package io.polymer.schemaStore;
 
-import io.polymer.spring.EnablePolymer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@EnablePolymer
-public class InvoiceApp {
+public class SchemaStoreApp {
    public static void main(String[] args) {
-      SpringApplication.run(InvoiceApp.class, args);
+      SpringApplication.run(SchemaStoreApp.class, args);
    }
 }
-
