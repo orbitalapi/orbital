@@ -29,5 +29,9 @@
          <artifactId>reactor-core</artifactId>
          <version>3.0.7.RELEASE</version>
       </dependency>
+      <dependency>
+         <groupId>org.springframework.retry</groupId>
+         <artifactId>spring-retry</artifactId>
+      </dependency>
    </dependencies>
 </project>

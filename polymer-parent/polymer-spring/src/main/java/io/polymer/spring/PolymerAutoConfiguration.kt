@@ -8,15 +8,17 @@ import io.polymer.schemaStore.SchemaStoreClient
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
 import org.springframework.beans.factory.FactoryBean
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.AutoConfigureAfter
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass
 import org.springframework.cloud.netflix.feign.EnableFeignClients
+import org.springframework.context.EnvironmentAware
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
+import org.springframework.core.env.Environment
 import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
 import java.util.*
@@ -47,29 +49,16 @@ class PolymerFactory(private val schemaProvider: SchemaProvider) : FactoryBean<P
 
 
 @Configuration
+@AutoConfigureAfter(PolymerConfigRegistrar::class)
 @EnableFeignClients(basePackageClasses = arrayOf(SchemaService::class))
+// Don't enable Polymer if we're configuring to be a Schema Discovery service
+@ConditionalOnMissingClass("io.polymer.schemaStore.TaxiSchemaService")
 open class PolymerAutoConfiguration {
 
    @Bean
    open fun schemaStoreClient(schemaService: SchemaService): SchemaStoreClient {
       return SchemaStoreClient(schemaService)
    }
-
-   @Bean
-   @ConditionalOnBean(RemoteSchemaStoreRequiredBean::class)
-   open fun schemaPublisher(@Value("\${polymer.schema.name}") schemaName: String,
-                            @Value("\${polymer.schema.version}") schemaVersion: String,
-                            schemaStoreClient: SchemaStoreClient,
-                            schemaProvider: LocalTaxiSchemaProvider
-   ): LocalSchemaPublisher {
-      return LocalSchemaPublisher(schemaProvider, schemaStoreClient, schemaName, schemaVersion)
-   }
-
-//   @Bean
-//   @ConditionalOnBean(RemoteSchemaStoreRequiredBean::class)
-//   open fun remoteSchemaProvider(schemaStoreClient: SchemaStoreClient): RemoteTaxiSchemaProvider {
-//      return RemoteTaxiSchemaProvider(schemaStoreClient)
-//   }
 
    @Bean
    open fun polymerFactory(localTaxiSchemaProvider: LocalTaxiSchemaProvider,
@@ -79,12 +68,13 @@ open class PolymerAutoConfiguration {
    }
 }
 
-// A marker bean, that we place in the context to indicate we want auto-config to
-// wire up remote store
-data class RemoteSchemaStoreRequiredBean(val required: Boolean = true)
+class PolymerConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
+   private var environment: Environment? = null
+   override fun setEnvironment(environment: Environment?) {
+      this.environment = environment
+   }
 
-//data class PolymerSchemaCandidates(val models: List<Class<*>>, val services: List<Class<*>>)
-class PolymerConfigRegistrar : ImportBeanDefinitionRegistrar {
+
    override fun registerBeanDefinitions(importingClassMetadata: AnnotationMetadata, registry: BeanDefinitionRegistry) {
       val attributes = importingClassMetadata.getAnnotationAttributes(EnablePolymer::class.java.name)
       importingClassMetadata.className
@@ -100,8 +90,16 @@ class PolymerConfigRegistrar : ImportBeanDefinitionRegistrar {
          log().debug("Enabling remote schema store")
          registry.registerBeanDefinition("RemoteTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(RemoteTaxiSchemaProvider::class.java)
             .beanDefinition)
+
+//         schemaStoreClient: SchemaStoreClient,
+//         schemaProvider: LocalTaxiSchemaProvider
+
          registry.registerBeanDefinition("LocalSchemaPublisher", BeanDefinitionBuilder.genericBeanDefinition(LocalSchemaPublisher::class.java)
-            .beanDefinition)
+            .addConstructorArgValue(environment!!.getProperty("polymer.schema.name"))
+            .addConstructorArgValue(environment!!.getProperty("polymer.schema.version"))
+            .beanDefinition
+         )
+
       }
    }
 

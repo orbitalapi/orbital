@@ -21,6 +21,7 @@
       <module>schema-store</module>
       <module>schema-store-client</module>
       <module>schema-store-api</module>
+      <module>polymer-spring-schemaStore</module>
    </modules>
 
    <dependencies>

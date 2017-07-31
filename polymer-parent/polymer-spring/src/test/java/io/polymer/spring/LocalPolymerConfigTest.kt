@@ -1,6 +1,8 @@
 package io.polymer.spring
 
-import com.github.zafarkhaja.semver.Version
+import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.eq
+import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.expect
 import io.polymer.schemaStore.SchemaService
@@ -17,6 +19,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
@@ -49,6 +52,7 @@ class LocalPolymerConfigTest {
 @RunWith(SpringJUnit4ClassRunner::class)
 @ContextConfiguration(classes = arrayOf(PropertyConfig::class, RemotePolymerConfigTest.PolymerConfigWithRemoteSchemaStore::class))
 @TestPropertySource(properties = arrayOf("polymer.schema.name=testSchema", "polymer.schema.version=0.1.0"))
+@DirtiesContext
 class RemotePolymerConfigTest {
 
    @Autowired
@@ -71,13 +75,19 @@ class RemotePolymerConfigTest {
 
    @Test
    fun given_schemaServiceReturnsSchemas_then_theyArePresentInPolymer() {
-      val schemaSet = SchemaSet(listOf(VersionedSchema("RemoteSchema", Version.valueOf("0.1.0"), "type MyClient {}")))
+      val schemaSet = SchemaSet(listOf(VersionedSchema("RemoteSchema", "0.1.0", "type MyClient {}")))
       whenever(schemaService.listSchemas()).thenReturn(schemaSet)
       schemaStoreClient.pollForSchemaUpdates()
 
       val polymer = polymerFactory.createPolymer()
       expect(polymer).not.`null`
       expect(polymer.schema.types).to.have.size(1)
+      expect(polymer.schema.type("MyClient")).not.to.be.`null`
+   }
+
+   @Test
+   fun shouldPublishLocalSchemaOnStartup() {
+      verify(schemaService).submitSchema(any(), eq("testSchema"), eq("0.1.0"))
    }
 
 

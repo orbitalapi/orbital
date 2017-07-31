@@ -1,0 +1,12 @@
+spring:
+   application:
+      name: discovery
+server:
+   port: 8761
+eureka:
+   instance:
+      leaseRenewalIntervalInSeconds: 2
+   client:
+      registryFetchIntervalSeconds: 1
+      initialInstanceInfoReplicationIntervalSeconds: 5
+

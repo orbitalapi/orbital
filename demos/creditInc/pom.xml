@@ -16,8 +16,8 @@
    <version>0.1.0-SNAPSHOT</version>
 
    <properties>
-      <spring.bom.version>1.1.4.RELEASE</spring.bom.version>
-      <spring.cloud.netflix.version>1.3.0.RELEASE</spring.cloud.netflix.version>
+      <spring.bom.version>Brussels-SR3</spring.bom.version>
+      <spring.cloud.netflix.version>1.3.1.RELEASE</spring.cloud.netflix.version>
    </properties>
 
    <description>Invictus is an imaginary invoice financing company. They purchase invoices, and
