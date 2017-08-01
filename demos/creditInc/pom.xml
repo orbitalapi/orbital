@@ -30,6 +30,7 @@
       <module>isic-lookup-service</module>
       <module>invoice-app</module>
       <module>discovery-server</module>
+      <module>client-lookup-service</module>
    </modules>
 
    <dependencies>

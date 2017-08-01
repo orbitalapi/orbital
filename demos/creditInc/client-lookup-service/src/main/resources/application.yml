@@ -1,6 +1,6 @@
 spring:
   application:
-    name: invoices
+    name: clients
 eureka:
    client:
       registryFetchIntervalSeconds: 1
@@ -14,7 +14,7 @@ polymer:
    schemaStore:
       name: discovery
    schema:
-      name: invoices
+      name: clients
       version: 0.1.0
 logging:
   level:
@@ -25,4 +25,4 @@ logging:
 ribbon:
    ServerListRefreshInterval: 1000
 server:
-  port: 9021
+  port: 9022
