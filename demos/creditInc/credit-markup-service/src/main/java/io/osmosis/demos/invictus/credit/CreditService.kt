@@ -4,12 +4,11 @@ import lang.taxi.annotations.DataFormat
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Operation
 import lang.taxi.annotations.Service
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
 
+// Constraints and DataTypes on request objects not yet supported.
+// https://gitlab.com/osmosis-platform/osmosis/issues/4
 data class CreditCostRequest(
    @DataType("invictus.invoiceValue")
    @DataFormat("invictus.currency.GBP")
@@ -38,4 +37,5 @@ class CreditCostService {
    fun calculateCreditCosts(@RequestBody request: CreditCostRequest): CreditCostResponse {
       return CreditCostResponse(BigDecimal("0.05"))
    }
+
 }

@@ -11,6 +11,13 @@ import io.osmosis.polymer.schemas.*
 import io.osmosis.polymer.utils.log
 import org.springframework.stereotype.Component
 
+/**
+ * The parent to OperationInvokers
+ */
+interface OperationInvocationService {
+   fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext): TypedInstance
+}
+
 interface OperationInvoker {
    fun canSupport(service: Service, operation: Operation): Boolean
    // TODO : This should return some form of reactive type.
@@ -32,26 +39,33 @@ class ToDoInvoker : OperationInvoker {
 }
 
 @Component
-class OperationInvocationEvaluator(val invokers: List<OperationInvoker>) : LinkEvaluator {
+class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : LinkEvaluator, OperationInvocationService {
    override val relationship: Relationship = Relationship.PROVIDES
 
    override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
       val operationName = link.start
       val (service, operation) = context.schema.operation(operationName)
-      val invoker = invokers.firstOrNull { it.canSupport(service, operation) } ?: throw IllegalArgumentException("No invokers found for operation ${operationName.fullyQualifiedName}")
-
-      val parameters = gatherParameters(operation.parameters, startingPoint, context)
-      val result: TypedInstance = invoker.invoke(operation, parameters)
+      val result: TypedInstance = invokeOperation(service, operation, setOf(startingPoint), context)
       return EvaluatedLink(link, startingPoint, result)
    }
 
-   private fun gatherParameters(parameters: List<Parameter>, startingPoint: TypedInstance, context: QueryContext): List<TypedInstance> {
+   override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext): TypedInstance {
+      val invoker = invokers.firstOrNull { it.canSupport(service, operation) } ?: throw IllegalArgumentException("No invokers found for operation ${operation.name}")
+
+      val parameters = gatherParameters(operation.parameters, preferredParams, context)
+      val resolvedParams = ensureParametersSatisfyContracts(operation.parameters, parameters, context)
+      val result: TypedInstance = invoker.invoke(operation, resolvedParams)
+      return result
+   }
+
+   private fun gatherParameters(parameters: List<Parameter>, preferredParams: Set<TypedInstance>, context: QueryContext): List<TypedInstance> {
+      val preferredParamsByType = preferredParams.associateBy { it.type }
       val unresolvedParams = mutableListOf<QuerySpecTypeNode>()
       // Holds EITHER the param value, or a QuerySpecTypeNode which can be used
       // to query the engine for a value.
       val parameterValuesOrQuerySpecs: List<Any> = parameters.map { requiredParam ->
          when {
-            requiredParam.type == startingPoint.type -> startingPoint
+            preferredParamsByType.containsKey(requiredParam.type) -> preferredParamsByType[requiredParam.type]!!
             context.hasFactOfType(requiredParam.type) -> context.getFact(requiredParam.type)
             else -> {
                val queryNode = QuerySpecTypeNode(requiredParam.type)
@@ -62,7 +76,7 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>) : LinkE
       }
 
       // Try to resolve any unresolved params
-      var resolvedParams = emptyMap<QuerySpecTypeNode,TypedInstance?>()
+      var resolvedParams = emptyMap<QuerySpecTypeNode, TypedInstance?>()
       if (unresolvedParams.isNotEmpty()) {
          log().debug("Querying to find params for operation : $unresolvedParams")
          val paramsToSearchFor = unresolvedParams.map { QuerySpecTypeNode(it.type) }.toSet()
@@ -86,6 +100,23 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>) : LinkE
 
       return parametersWithValues
    }
+
+   /**
+    * Checks each of th parameter values against any contracts
+    * specified on the inbound parameter spec.
+    * If the contract is not satisfied, we attempt to satisfy the contract leveraging
+    * the graph, and fail if the resolution was unsuccessful
+    */
+   private fun ensureParametersSatisfyContracts(parametersSpecs: List<Parameter>, parameterValues: List<TypedInstance>, context: QueryContext): List<TypedInstance> {
+      val paramsWithSpec = parametersSpecs.zip(parameterValues)
+      val paramsToConstraintEvaluations = paramsWithSpec.map { (paramSpec, paramValue) ->
+         paramSpec to ConstraintEvaluations(paramValue, paramSpec.constraints.map { constraint -> constraint.evaluate(paramSpec, paramValue) })
+      }.toMap()
+
+      val resolvedParameterValues = constraintViolationResolver.resolveViolations(paramsToConstraintEvaluations, context, this)
+      return resolvedParameterValues.values.toList()
+   }
+
 }
 
 

@@ -9,6 +9,10 @@ fun ModelContainer.addKeyValuePair(typeName: String, value: Any): ModelContainer
    return this
 }
 
+fun ModelContainer.parseKeyValuePair(typeName: String, value: Any): TypedInstance {
+   return TypedInstance.from(this.getType(typeName), value, this.schema)
+}
+
 fun ModelContainer.addAnnotatedInstance(value: Any): ModelContainer {
    val typeName = TypeNames.deriveTypeName(value.javaClass)
    return addKeyValuePair(typeName, value)

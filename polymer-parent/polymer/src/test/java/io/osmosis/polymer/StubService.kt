@@ -9,6 +9,7 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
    constructor(vararg responses: Pair<String, TypedInstance>) : this(responses.toMap().toMutableMap())
 
    val invocations = mutableMapOf<String, List<TypedInstance>>()
+
    override fun invoke(operation: Operation, parameters: List<TypedInstance>): TypedInstance {
       val metadata = operation.metadata("StubResponse")
       val stubResponseKey = metadata.params["value"] as String

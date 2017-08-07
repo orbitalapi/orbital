@@ -13,7 +13,6 @@ class TaxiSchema(document: TaxiDocument) : Schema {
    // TODO : Are these still required / meaningful?
    override val links: Set<Link> = emptySet()
    override val attributes: Set<QualifiedName> = emptySet()
-
    init {
       this.types = parseTypes(document)
       this.services = parseServices(document)
@@ -26,18 +25,24 @@ class TaxiSchema(document: TaxiDocument) : Schema {
    }
 
    private fun parseServices(document: TaxiDocument): Set<Service> {
+      val constraintConverter = TaxiConstraintConverter(this)
       return document.services.map { taxiService ->
          // hahahaha
          Service(taxiService.qualifiedName,
             operations = taxiService.operations.map { taxiOperation ->
+               val returnType = this.type(taxiOperation.returnType.qualifiedName)
                Operation(taxiOperation.name,
                   taxiOperation.parameters.map { taxiParam ->
+                     val type = this.type(taxiParam.type.qualifiedName)
                      Parameter(
-                        type = this.type(taxiParam.type.qualifiedName),
-                        metadata = parseAnnotationsToMetadata(taxiParam.annotations)
+                        type = type,
+                        name = taxiParam.name,
+                        metadata = parseAnnotationsToMetadata(taxiParam.annotations),
+                        constraints = constraintConverter.buildConstraints(type, taxiParam.constraints)
                      )
-                  }, returnType = this.type(taxiOperation.returnType.qualifiedName),
-                  metadata = parseAnnotationsToMetadata(taxiOperation.annotations)
+                  }, returnType = returnType,
+                  metadata = parseAnnotationsToMetadata(taxiOperation.annotations),
+                  contract = constraintConverter.buildContract(returnType,taxiOperation.contract?.returnTypeConstraints ?: emptyList())
                )
             },
             metadata = parseAnnotationsToMetadata(taxiService.annotations)
