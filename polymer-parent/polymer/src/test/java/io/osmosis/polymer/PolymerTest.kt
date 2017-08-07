@@ -138,6 +138,7 @@ class PolymerTest {
       expect(paramsPassedToService[1].value).to.equal(1000)
    }
 
+
    @Test
    fun given_notAllParamsOfOperationAreDiscoverable_then_methodNotInvoked() {
       TODO("Not sure what we should do here.")

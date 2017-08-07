@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 
+// Constraints and DataTypes on request objects not yet supported.
+// https://gitlab.com/osmosis-platform/osmosis/issues/4
 data class CreditCostRequest(
    @DataType("invictus.invoiceValue")
    @DataFormat("invictus.currency.GBP")
@@ -38,4 +40,5 @@ class CreditCostService {
    fun calculateCreditCosts(@RequestBody request: CreditCostRequest): CreditCostResponse {
       return CreditCostResponse(BigDecimal("0.05"))
    }
+
 }
