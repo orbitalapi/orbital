@@ -53,7 +53,8 @@ object TypedInstanceTree {
 }
 
 data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine) {
-   private val factsByType = facts.associateBy { it.type }
+   private val factsByType
+      get() = facts.associateBy { it.type }
 
    companion object {
       fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine) = QueryContext(schema, facts.toMutableSet(), queryEngine)

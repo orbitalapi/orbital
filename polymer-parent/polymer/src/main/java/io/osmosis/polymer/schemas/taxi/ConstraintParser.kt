@@ -17,6 +17,17 @@ interface ConstraintProvider<out T : Constraint> {
 interface InputConstraintProvider : ConstraintProvider<InputConstraint>
 interface ContractConstraintProvider : ConstraintProvider<OutputConstraint>
 
+interface DeferredConstraintProvider {
+   fun buildConstraints(): List<InputConstraint>
+}
+
+class EmptyDeferredConstraintProvider : DeferredConstraintProvider {
+   override fun buildConstraints(): List<InputConstraint> = emptyList()
+}
+
+class FunctionConstraintProvider(val function: () -> List<InputConstraint>) : DeferredConstraintProvider {
+   override fun buildConstraints(): List<InputConstraint> = function.invoke()
+}
 
 class TaxiConstraintConverter(val schema: Schema) {
    private val constraintProviders = listOf(
@@ -30,9 +41,30 @@ class TaxiConstraintConverter(val schema: Schema) {
    }
 
    fun buildConstraints(type: Type, source: List<TaxiConstraint>): List<InputConstraint> {
-      return source
+      // TODO: Right now, only considering nested constraints on parameter types.
+      // This may be invalid.
+      // The reason is two-fold:
+      // A) Do we always want to recurse into every parameter type and check for constraints?
+      // is this too heavy?  (Is it a premature optimisation not to?)
+      // B) If we DO find a violated constraint somewhere on a non-parameter type, what
+      // are we going to do about it?  We can't resolve it, as we shouldn't mutate non-parameter types.
+      // Having written all that, I'm almost certain this is wrong.  But, it's what I'm doing now.
+      // FIXME later.
+      val nestedConstraints = if (type.isParameterType) {
+         type.attributes.flatMap { (attributeName, typeRef) ->
+            typeRef.constraints
+               .filterIsInstance(InputConstraint::class.java)
+               .map { NestedAttributeConstraint(attributeName, it, schema) }
+         }
+      } else emptyList()
+
+      val constraints = source
          .map { buildConstraint(type, it) }
+         .plus(nestedConstraints)
+      return constraints
          .filterIsInstance(InputConstraint::class.java)
+
+
    }
 
    fun buildContract(returnType: Type, source: List<TaxiConstraint>): OperationContract {

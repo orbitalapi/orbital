@@ -25,21 +25,33 @@ import io.osmosis.polymer.models.TypedValue
  * could express that Money.currency must have a value of 'GBP'
  */
 data class AttributeConstantValueConstraint(val fieldName: String, val expectedValue: TypedInstance) : InputConstraint {
-   override fun evaluate(param: Parameter, value: TypedInstance): ConstraintEvaluation {
+   override fun evaluate(argumentType: Type, value: TypedInstance): ConstraintEvaluation {
       fun evaluationResult(actualValue: TypedInstance): ConstraintEvaluation {
          if (expectedValue == actualValue) return ConstraintEvaluation.valid(value)
 
          // TODO : This feels wrong.  Why pass type+field, when the field itself is supposed to be self-describing.
          // But, how do we navigate from an attribute to it's parent.
          // Eg: from Money.currency -> Money
-         return ConstraintEvaluation(value, ExpectedConstantValueMismatch(value, param.type, fieldName, expectedValue, actualValue))
+         return ConstraintEvaluation(value, ExpectedConstantValueMismatch(value, argumentType, fieldName, expectedValue, actualValue))
       }
       when (value) {
-         is TypedObject -> return evaluationResult(value[fieldName]!!)
+         is TypedObject -> return evaluationResult(value[fieldName])
          is TypedValue -> return evaluationResult(value)
          else -> error("not supported on type ${value::class.java} ")
       }
    }
+}
+
+data class NestedAttributeConstraint(val fieldName: String, val constraint: InputConstraint, val schema:Schema) : InputConstraint {
+   override fun evaluate(argumentType: Type, value: TypedInstance): ConstraintEvaluation {
+      if (value !is TypedObject) throw IllegalArgumentException("NestedAttributeConstraint must be evaluated against a TypedObject")
+      val nestedAttribute = value.get(fieldName)
+      val nestedTypeRef = argumentType.attributes[fieldName]!!
+      val nestedType = schema.type(nestedTypeRef)
+      // This is probably wrong - find the argument type of the nested field
+      return constraint.evaluate(nestedType, nestedAttribute)
+   }
+
 }
 
 /**
@@ -57,13 +69,22 @@ data class ConstraintEvaluation(val evaluatedValue: TypedInstance, val violation
    val isValid = violation == null
 }
 
-data class ConstraintEvaluations(val evaluatedValue: TypedInstance,val evaluations: List<ConstraintEvaluation>) : List<ConstraintEvaluation> by evaluations {
+data class ConstraintEvaluations(val evaluatedValue: TypedInstance, val evaluations: List<ConstraintEvaluation>) : List<ConstraintEvaluation> by evaluations {
    val violationCount = evaluations.count { !it.isValid }
    val isValid = violationCount == 0
 }
 
 interface InputConstraint : Constraint {
-   fun evaluate(param: Parameter, value: TypedInstance): ConstraintEvaluation
+   // note:
+   // This USED to take param: Parameter as the first argument.
+   // I've swapped it to type.
+   // When evaluating constraints on nested fields (eg., parameter types)
+   // using Param becomes awkward.
+   // The Param is actually the parent, but the constraint is on the nested attribute
+   // Therefore, swapping it out to type.
+   // It's possible this may need to be richer to pass additional attributes
+   // from the param wrapper, but at present, type is all we're using.
+   fun evaluate(argumentType: Type, value: TypedInstance): ConstraintEvaluation
 }
 
 data class OperationContract(val returnType: Type, val constraints: List<OutputConstraint> = emptyList()) {

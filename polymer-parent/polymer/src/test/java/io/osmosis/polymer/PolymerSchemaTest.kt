@@ -34,6 +34,10 @@ class PolymerSchemaTest {
 
             operation convertMoney(Money(currency = 'GBP'),target : CurrencySymbol):Money( currency = target )
          }
+
+         parameter type SomeRequestType {
+            clientId : ClientId as String
+         }
          """
    val polymer = Polymer(QueryEngineFactory.noQueryEngine()).addSchema(TaxiSchema.from(taxiDef))
 
@@ -77,6 +81,12 @@ class PolymerSchemaTest {
       expect(operation.contract).not.`null`
       expect(operation.contract.constraints).size(1)
       expect(operation.contract.constraints.first()).to.equal(AttributeValueFromParameterConstraint("currency", "target"))
+   }
+
+   @Test
+   fun shouldDetectParamObjects() {
+      val type = polymer.getType("polymer.example.SomeRequestType")
+      expect(type.isParameterType).to.be.`true`
    }
 
    @Test

@@ -1,9 +1,11 @@
 package io.osmosis.polymer
 
+import com.orientechnologies.orient.core.record.impl.ODocument
 import com.orientechnologies.orient.core.sql.OCommandSQL
 import com.tinkerpop.blueprints.Direction
 import com.tinkerpop.blueprints.Edge
 import com.tinkerpop.blueprints.Vertex
+import com.tinkerpop.blueprints.impls.orient.OrientEdge
 import com.tinkerpop.blueprints.impls.orient.OrientGraph
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory
 import com.tinkerpop.blueprints.impls.orient.OrientVertex
@@ -55,10 +57,17 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph, private val
       return models.toSet()
    }
 
+   fun export():String {
+      return DbExporter(graph).export()
+   }
+   fun export(path:String):String {
+      return DbExporter(graph).export(path)
+   }
+
 
 //   fun queryContext(): QueryContext = QueryContext(schema, facts, this)
 
-   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) : this(emptyList(), OrientGraphFactory("memory:polymer").setupPool(1, 100).tx, queryEngineFactory)
+   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(), graphConnectionString:String = "memory:polymer") : this(emptyList(), OrientGraphFactory(graphConnectionString).setupPool(1, 100).tx, queryEngineFactory)
 
    override fun addModel(model: TypedInstance): Polymer {
       models.add(model)
@@ -210,6 +219,7 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph, private val
       val resolvedPath = Path(start, target, links)
       if (resolvedPath.exists) {
          log().debug("Path from $start -> $target found with ${resolvedPath.links.size} links")
+         log().debug(resolvedPath.description)
       } else {
          log().debug("Path from $start -> $target not found")
       }
@@ -223,9 +233,12 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph, private val
          } else {
             val fromNode = vertex
             val toNode = path[index + 1]
-            val edge = fromNode.getEdges(toNode, Direction.OUT).toList().firstOrNull() ?: throw IllegalStateException("No edge found from ${fromNode[QUALIFIED_NAME]} -> ${toNode[QUALIFIED_NAME]}, but they were adjoining nodes in the shortestPath query")
+            val edge = fromNode.getEdges(toNode, Direction.BOTH).toList().firstOrNull() as OrientEdge ?: throw IllegalStateException("No edge found from ${fromNode[QUALIFIED_NAME]} -> ${toNode[QUALIFIED_NAME]}, but they were adjoining nodes in the shortestPath query")
+
+            val inboundNode = edge.inVertex as ODocument
+            val outboundNode = edge.outVertex as ODocument
             val relationship = Relationship.valueOf(edge.label)
-            Link(fromNode[QUALIFIED_NAME].fqn(), relationship, toNode[QUALIFIED_NAME].fqn())
+            Link(outboundNode.field<String>(QUALIFIED_NAME).fqn(), relationship, inboundNode.field<String>(QUALIFIED_NAME).fqn())
          }
 
       }.filterNotNull()

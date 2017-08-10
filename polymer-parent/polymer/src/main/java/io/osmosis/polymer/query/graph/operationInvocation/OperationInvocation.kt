@@ -46,6 +46,7 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
       val operationName = link.start
       val (service, operation) = context.schema.operation(operationName)
       val result: TypedInstance = invokeOperation(service, operation, setOf(startingPoint), context)
+      context.addFact(result)
       return EvaluatedLink(link, startingPoint, result)
    }
 
@@ -110,7 +111,12 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
    private fun ensureParametersSatisfyContracts(parametersSpecs: List<Parameter>, parameterValues: List<TypedInstance>, context: QueryContext): List<TypedInstance> {
       val paramsWithSpec = parametersSpecs.zip(parameterValues)
       val paramsToConstraintEvaluations = paramsWithSpec.map { (paramSpec, paramValue) ->
-         paramSpec to ConstraintEvaluations(paramValue, paramSpec.constraints.map { constraint -> constraint.evaluate(paramSpec, paramValue) })
+         paramSpec to ConstraintEvaluations(paramValue,
+            paramSpec.constraints.map {
+               constraint ->
+               constraint.evaluate(paramSpec.type, paramValue)
+            }
+         )
       }.toMap()
 
       val resolvedParameterValues = constraintViolationResolver.resolveViolations(paramsToConstraintEvaluations, context, this)

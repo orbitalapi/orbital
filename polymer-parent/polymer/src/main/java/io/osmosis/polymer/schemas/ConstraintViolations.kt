@@ -25,20 +25,20 @@ data class ResolutionAdvice(val operation: Operation, val suggestedParams: Map<P
    }
 }
 
-data class ExpectedConstantValueMismatch(val evaluatedInstance: TypedInstance, val type: Type, val fieldName: String, val expectedValue: TypedInstance, val actualValue: TypedInstance) : ConstraintViolation {
-   override fun provideResolutionAdvice(operation:Operation, contract: OperationContract): ResolutionAdvice? {
+data class ExpectedConstantValueMismatch(val evaluatedInstance: TypedInstance, val requiredType: Type, val fieldName: String, val expectedValue: TypedInstance, val actualValue: TypedInstance) : ConstraintViolation {
+   override fun provideResolutionAdvice(operation: Operation, contract: OperationContract): ResolutionAdvice? {
       // TODO : This coupling is dangerous.  But, need to consider an abstraction
       // that allow deducing the same answer without the constraint being aware of contracts
       var resolutionAdvice: ResolutionAdvice? = null
 
-      if (contract.returnType == this.type
+      if (contract.returnType == this.requiredType
          && contract.containsConstraint(ReturnValueDerivedFromParameterConstraint::class.java)
          && contract.containsConstraint(AttributeValueFromParameterConstraint::class.java, { it.fieldName == this.fieldName })
          ) {
 
          val constraintViolatingParam = contract.constraint(ReturnValueDerivedFromParameterConstraint::class.java).paramName to evaluatedInstance
-         val paramToAdjustViolatingField = contract.constraint(AttributeValueFromParameterConstraint::class.java, {it.fieldName == this.fieldName}).parameterName to expectedValue
-         resolutionAdvice = ResolutionAdvice(operation, mapOf(constraintViolatingParam,paramToAdjustViolatingField))
+         val paramToAdjustViolatingField = contract.constraint(AttributeValueFromParameterConstraint::class.java, { it.fieldName == this.fieldName }).parameterName to expectedValue
+         resolutionAdvice = ResolutionAdvice(operation, mapOf(constraintViolatingParam, paramToAdjustViolatingField))
       }
       return resolutionAdvice
    }

@@ -4,7 +4,10 @@ import lang.taxi.annotations.DataFormat
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Operation
 import lang.taxi.annotations.Service
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 
 // Constraints and DataTypes on request objects not yet supported.

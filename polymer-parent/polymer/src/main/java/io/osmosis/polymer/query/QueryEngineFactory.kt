@@ -39,6 +39,7 @@ class QueryEngineFactory(private val strategies: List<QueryStrategy>) {
                      HasAttributeEvaluator(),
                      IsTypeOfEvaluator(),
                      OperationParameterEvaluator(),
+                     RequiresParameterEvaluator(),
                      OperationInvocationEvaluator(invokers))
                   )
                )

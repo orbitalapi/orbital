@@ -3,6 +3,7 @@ package io.osmosis.polymer.schemas.taxi
 import io.osmosis.polymer.schemas.*
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
+import lang.taxi.services.Constraint
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
 import lang.taxi.types.ObjectType
@@ -13,6 +14,9 @@ class TaxiSchema(document: TaxiDocument) : Schema {
    // TODO : Are these still required / meaningful?
    override val links: Set<Link> = emptySet()
    override val attributes: Set<QualifiedName> = emptySet()
+
+   private val constraintConverter = TaxiConstraintConverter(this)
+
    init {
       this.types = parseTypes(document)
       this.services = parseServices(document)
@@ -25,7 +29,6 @@ class TaxiSchema(document: TaxiDocument) : Schema {
    }
 
    private fun parseServices(document: TaxiDocument): Set<Service> {
-      val constraintConverter = TaxiConstraintConverter(this)
       return document.services.map { taxiService ->
          // hahahaha
          Service(taxiService.qualifiedName,
@@ -42,7 +45,7 @@ class TaxiSchema(document: TaxiDocument) : Schema {
                      )
                   }, returnType = returnType,
                   metadata = parseAnnotationsToMetadata(taxiOperation.annotations),
-                  contract = constraintConverter.buildContract(returnType,taxiOperation.contract?.returnTypeConstraints ?: emptyList())
+                  contract = constraintConverter.buildContract(returnType, taxiOperation.contract?.returnTypeConstraints ?: emptyList())
                )
             },
             metadata = parseAnnotationsToMetadata(taxiService.annotations)
@@ -64,16 +67,34 @@ class TaxiSchema(document: TaxiDocument) : Schema {
                val fields = taxiType.fields.map { field ->
                   when (field.type) {
                      is ArrayType -> field.name to TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true)
-                     else -> field.name to TypeReference(field.type.qualifiedName.fqn())
+                     else -> field.name to TypeReference(field.type.qualifiedName.fqn(),
+                        constraintProvider = buildDeferredConstraintProvider(field.type.qualifiedName.fqn(), field.constraints)
+                     )
                   }
                }.toMap()
-               result.add(Type(typeName, fields))
+               val modifiers = parseModifiers(taxiType.modifiers)
+               result.add(Type(typeName, fields, modifiers))
             }
             is ArrayType -> TODO()
             else -> result.add(Type(QualifiedName(taxiType.qualifiedName)))
          }
       }
       return result
+   }
+
+   private fun buildDeferredConstraintProvider(fqn: QualifiedName, constraints: List<Constraint>): DeferredConstraintProvider {
+      return FunctionConstraintProvider({
+         val type = this.type(fqn)
+         constraintConverter.buildConstraints(type, constraints)
+      })
+   }
+
+   private fun parseModifiers(modifiers: List<lang.taxi.types.Modifier>): List<Modifier> {
+      return modifiers.map {
+         when (it) {
+            lang.taxi.types.Modifier.PARAMETER_TYPE -> Modifier.PARAMETER_TYPE
+         }
+      }
    }
 
    companion object {

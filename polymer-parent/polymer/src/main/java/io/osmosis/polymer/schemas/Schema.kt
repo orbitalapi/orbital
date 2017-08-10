@@ -1,5 +1,7 @@
 package io.osmosis.polymer.schemas
 
+import io.osmosis.polymer.schemas.taxi.DeferredConstraintProvider
+import io.osmosis.polymer.schemas.taxi.EmptyDeferredConstraintProvider
 import io.osmosis.polymer.utils.assertingThat
 import java.io.Serializable
 
@@ -8,7 +10,14 @@ fun String.fqn(): QualifiedName {
 }
 
 data class Metadata(val name: QualifiedName, val params: Map<String, Any?> = emptyMap())
-data class TypeReference(val name: QualifiedName, val isCollection: Boolean = false)
+
+// A pointer to a type.
+// Useful when parsing, and the type that we're referring to may not have been parsed yet.
+data class TypeReference(val name: QualifiedName, val isCollection: Boolean = false, private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider()) {
+   val constraints: List<Constraint>
+      get() = constraintProvider.buildConstraints()
+}
+
 data class QualifiedName(val fullyQualifiedName: String) : Serializable {
    val name: String
       get() = fullyQualifiedName.split(".").last()
@@ -18,10 +27,15 @@ data class QualifiedName(val fullyQualifiedName: String) : Serializable {
 
 typealias AttributeName = String
 typealias AttributeType = QualifiedName
-data class Type(val name: QualifiedName, val attributes: Map<AttributeName, TypeReference> = emptyMap()) {
-   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap()) : this(name.fqn(), attributes)
+data class Type(val name: QualifiedName, val attributes: Map<AttributeName, TypeReference> = emptyMap(), val modifiers: List<Modifier> = emptyList()) {
+   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList()) : this(name.fqn(), attributes, modifiers)
 
    val isScalar = attributes.isEmpty()
+   val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
+}
+
+enum class Modifier {
+   PARAMETER_TYPE
 }
 
 
@@ -55,5 +69,9 @@ interface Schema {
       val operationName = parts[1]
       val service = service(serviceName)
       return service to service.operation(operationName)
+   }
+
+   fun type(nestedTypeRef: TypeReference): Type {
+      return type(nestedTypeRef.name)
    }
 }

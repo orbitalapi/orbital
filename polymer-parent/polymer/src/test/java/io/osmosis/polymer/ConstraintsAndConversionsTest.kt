@@ -18,6 +18,15 @@ type Money {
 }
 
 type alias Risk as Decimal
+// For demonstrating constraints on request objects
+type alias ClientRisk as Decimal
+type alias ClientId as String
+
+// For demonstrating constraints on request objects
+parameter type ClientRiskRequest {
+   amount : Money(currency = 'GBP')
+   clientId : ClientId
+}
 
 service MyService {
    @StubResponse("calculateRisk")
@@ -26,14 +35,36 @@ service MyService {
    @StubResponse("convertCurrency")
    operation convertCurrency(source : Money , target : Currency) : Money( from source, currency = target )
 
+   @StubResponse("calculateRiskForClient")
+   operation calculateRiskForClient(ClientRiskRequest):ClientRisk
 }"""
 
    val schema = TaxiSchema.from(taxiDef)
    // Setup
 
    @Test
-   fun given_serviceDeclaresConstraint_that_conversionsArePerformedToSatisfyConstraint() {
+   fun given_serviceDeclaresConstraint_then_conversionsArePerformedToSatisfyConstraint() {
       // Setup
+      val stubService = StubService()
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val polymer = Polymer(queryEngineFactory /*,"remote:localhost/test" */).addSchema(schema)
+      stubService.addResponse("convertCurrency", money(2, "GBP", polymer))
+      stubService.addResponse("calculateRiskForClient", polymer.parseKeyValuePair("Risk", 0.5))
+
+      val queryContext = polymer.query()
+      queryContext.addModel(money(5, "USD", polymer))
+      queryContext.addModel(polymer.parseKeyValuePair("ClientId","1234"))
+      val result = queryContext.find("ClientRisk")
+
+      expect(stubService.invocations).to.contain.keys("convertCurrency")
+      expect(stubService.invocations).to.contain.keys("calculateRiskForClient")
+      val calculateRiskCallParam: TypedObject = stubService.invocations["calculateRiskForClient"]!!.first() as TypedObject
+      expect(calculateRiskCallParam["amount"].value).to.equal(2)
+      expect(calculateRiskCallParam["currency"].value).to.equal("GBP")
+   }
+
+   @Test
+   fun given_serviceDeclaresRequestObjectWithConstraints_then_conversionsArePerformedToSatisfyConstraint() {
       val stubService = StubService()
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
       val polymer = Polymer(queryEngineFactory).addSchema(schema)
@@ -49,6 +80,7 @@ service MyService {
       val calculateRiskCallParam: TypedObject = stubService.invocations["calculateRisk"]!!.first() as TypedObject
       expect(calculateRiskCallParam["amount"]!!.value).to.equal(2)
       expect(calculateRiskCallParam["currency"]!!.value).to.equal("GBP")
+
    }
 
    private fun money(amount: Int, currency: String, polymer: Polymer): TypedInstance {
