@@ -27,7 +27,14 @@ class LocalSchemaPublisher(val schemaName: String,
    fun publish() {
       // TODO : Add retry logic
       log().info("Publishing schemas")
-      schemaStoreClient.submitSchema(schemaName, schemaVersion, localTaxiSchemaProvider.schemaString())
+      val schema = localTaxiSchemaProvider.schemaString()
+      if (schema.isEmpty()) {
+         log().error("No schemas found to publish")
+      } else {
+         log().debug("Attempting to register schema: $schema")
+         schemaStoreClient.submitSchema(schemaName, schemaVersion, schema)
+      }
+
       log().info("Schemas published")
    }
 }

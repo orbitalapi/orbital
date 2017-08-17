@@ -6,9 +6,12 @@ import io.osmosis.polymer.models.TypedCollection
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
 import io.osmosis.polymer.models.TypedValue
+import io.osmosis.polymer.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.osmosis.polymer.schemas.Schema
 import io.osmosis.polymer.schemas.Type
+import io.osmosis.polymer.utils.log
 import java.util.stream.Stream
+import kotlin.streams.toList
 
 /**
  * Defines a node within a QuerySpec that
@@ -31,7 +34,8 @@ data class QueryResult(val results: Map<QuerySpecTypeNode, TypedInstance?>, val 
          .values
          .first()
    }
-   operator fun get(type:Type):TypedInstance? {
+
+   operator fun get(type: Type): TypedInstance? {
       return this.results.filterKeys { it.type == type }
          .values
          .first()
@@ -52,7 +56,7 @@ object TypedInstanceTree {
    }
 }
 
-data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine) {
+data class QueryContext(override val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine) : QueryEngine by queryEngine {
    private val factsByType
       get() = facts.associateBy { it.type }
 
@@ -61,15 +65,16 @@ data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>
    }
 
    fun addFact(fact: TypedInstance) {
+      log().debug("Added fact to queryContext: $fact")
       this.facts.add(fact)
    }
 
    fun addFacts(facts: Collection<TypedInstance>) {
-      this.facts.addAll(facts)
+      facts.forEach { this.addFact(it) }
    }
 
    // Wraps all the known facts under a root node, turning it into a tree
-   private val dataTreeRoot: TypedCollection = TypedCollection(Type("osmosis.internal.RootNode"), facts.toList())
+   private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode"), facts.toList())
 
    /**
     * A breadth-first stream of data facts currently held in the collection.
@@ -77,16 +82,48 @@ data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>
     * Deeply nested children are less likely to be relevant matches.
     */
    fun modelTree(): Stream<TypedInstance> {
-      return TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot)
+      return TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot())
    }
 
-   fun hasFactOfType(type: Type): Boolean {
-      return factsByType.containsKey(type)
+   fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
+      // This could be optimized, as we're searching twice for everything, and not caching anything
+      return strategy.getFact(this, type) != null
    }
 
-   fun getFact(type: Type): TypedInstance {
-      return factsByType[type]!!
+   fun getFact(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): TypedInstance {
+      // This could be optimized, as we're searching twice for everything, and not caching anything
+      return strategy.getFact(this, type)!!
    }
-
 }
 
+
+enum class FactDiscoveryStrategy {
+   TOP_LEVEL_ONLY {
+      override fun getFact(context: QueryContext, type: Type): TypedInstance? = context.facts.firstOrNull { it.type == type }
+   },
+
+   /**
+    * Will return a match from any depth, providing there is
+    * exactly one match in the context
+    */
+   ANY_DEPTH_EXPECT_ONE {
+      override fun getFact(context: QueryContext, type: Type): TypedInstance? {
+         val matches = context.modelTree()
+            .filter { it.type == type }
+            .toList()
+         return when {
+            matches.isEmpty() -> null
+            matches.size == 1 -> matches.first()
+            else -> {
+               log().debug("ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of type ${type.name}, so returning null")
+               null
+            }
+
+         }
+      }
+   };
+
+
+   abstract fun getFact(context: QueryContext, type: Type): TypedInstance?
+
+}

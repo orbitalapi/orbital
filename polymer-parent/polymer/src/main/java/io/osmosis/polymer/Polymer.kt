@@ -70,6 +70,7 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph, private val
    constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(), graphConnectionString:String = "memory:polymer") : this(emptyList(), OrientGraphFactory(graphConnectionString).setupPool(1, 100).tx, queryEngineFactory)
 
    override fun addModel(model: TypedInstance): Polymer {
+      log().debug("Added model instance to context: $model")
       models.add(model)
       return this
    }

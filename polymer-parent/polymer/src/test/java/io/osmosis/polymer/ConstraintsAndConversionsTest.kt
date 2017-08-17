@@ -7,6 +7,7 @@ import io.osmosis.polymer.models.json.parseJsonModel
 import io.osmosis.polymer.models.json.parseKeyValuePair
 import io.osmosis.polymer.query.QueryEngineFactory
 import io.osmosis.polymer.query.QueryResult
+import io.osmosis.polymer.query.StatefulQueryEngine
 import io.osmosis.polymer.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -116,6 +117,40 @@ service TestService {
       // Assert correct params were passed
       expect(stubService.invocations["convertUkSic"]!!.first().value).to.equal("SickOf2003")
       expect(stubService.invocations["calculateFoo"]!!.first().value).to.equal("2007-Fully-Sick")
+   }
+   @Test
+   fun given_requestObjectContainsParamOfWrongType_and_typeConversionServiceExists_that_itIsConverted() {
+      val taxiDef = """
+type alias UkSic2003 as String
+type alias UkSic2007 as String
+type alias Foo as String
+parameter type RequestObject {
+   input : UkSic2007
+}
+service TestService {
+   @StubResponse("calculateFoo")
+   operation calculateFoo(RequestObject):Foo
+   @StubResponse("convertUkSic")
+   operation convertUkSic(UkSic2003):UkSic2007
+}
+"""
+      // Setup
+      val stubService = StubService()
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val polymer = Polymer(queryEngineFactory).addSchema(TaxiSchema.from(taxiDef))
+      stubService.addResponse("calculateFoo", polymer.parseKeyValuePair("Foo", "Hello"))
+      stubService.addResponse("convertUkSic", polymer.parseKeyValuePair("UkSic2007", "2007-Fully-Sick"))
+
+      val queryContext: StatefulQueryEngine = polymer.query()
+      queryContext.addModel(polymer.parseKeyValuePair("UkSic2003","SickOf2003"))
+      val result: QueryResult = queryContext.find("Foo")
+
+      expect(result["Foo"]!!.value).to.equal("Hello")
+      // Assert correct params were passed
+      expect(stubService.invocations["convertUkSic"]!!.first().value).to.equal("SickOf2003")
+      val requestObject = stubService.invocations["calculateFoo"]!!.first() as TypedObject
+      expect(requestObject.type.name.fullyQualifiedName).to.equal("RequestObject")
+      expect(requestObject["input"].value).to.equal("2007-Fully-Sick")
    }
 
 

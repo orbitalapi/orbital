@@ -25,7 +25,9 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
    companion object {
       fun fromValue(type: Type, value: Any, schema: Schema): TypedObject {
          val attributes: Map<AttributeName, TypedInstance> = type.attributes.map { (attributeName, attributeType) ->
-            val field = value.javaClass.getField(attributeName)
+            // TODO : DeclaredFields / Fields doesn't work - swap this with a reflection library that will handle both
+            val field = value.javaClass.getDeclaredField(attributeName)
+            field.isAccessible = true
             val attributeValue = field.get(value)
             attributeName to TypedInstance.from(schema.type(attributeType.name), attributeValue, schema)
          }.toMap()

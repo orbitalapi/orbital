@@ -9,6 +9,7 @@ import io.osmosis.polymer.utils.log
 interface QueryEngine : SchemaPathResolver {
 
    val schema: Schema
+   fun find(queryString: String, factSet: Set<TypedInstance> = emptySet()): QueryResult
    fun find(target: QuerySpecTypeNode, factSet: Set<TypedInstance> = emptySet()): QueryResult
    fun find(target: Set<QuerySpecTypeNode>, factSet: Set<TypedInstance> = emptySet()): QueryResult
    fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult
@@ -20,9 +21,9 @@ interface QueryEngine : SchemaPathResolver {
  */
 class StatefulQueryEngine(initialState: Set<TypedInstance>, private val queryEngine: QueryEngine) : QueryEngine by queryEngine, ModelContainer {
    private val models: MutableSet<TypedInstance> = initialState.toMutableSet()
-   fun find(queryString: String, factSet: Set<TypedInstance> = emptySet()): QueryResult {
-      val target = QueryParser(queryEngine.schema).parse(queryString)
-      return find(target, models + factSet)
+
+   override fun find(queryString: String, factSet: Set<TypedInstance>): QueryResult {
+      return queryEngine.find(queryString, factSet + models)
    }
 
    override fun addModel(model: TypedInstance): StatefulQueryEngine {
@@ -38,6 +39,11 @@ class StatefulQueryEngine(initialState: Set<TypedInstance>, private val queryEng
 class DefaultQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val schemaPathResolver: SchemaPathResolver) : QueryEngine, SchemaPathResolver by schemaPathResolver {
    override fun queryContext(factSet: Set<TypedInstance>): QueryContext {
       return QueryContext.from(schema, factSet, this)
+   }
+
+   override fun find(queryString: String, factSet: Set<TypedInstance>): QueryResult {
+      val target = QueryParser(schema).parse(queryString)
+      return find(target, factSet)
    }
 
    override fun find(target: QuerySpecTypeNode, factSet: Set<TypedInstance>): QueryResult {
@@ -56,9 +62,10 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
          return target.filterNot { matchedNodes.containsKey(it) }
       }
 
-      val iterator = strategies.iterator()
-      while (iterator.hasNext() && unresolvedNodes().isNotEmpty()) {
-         val strategyResult: QueryStrategyResult = iterator.next().invoke(target, context)
+      val strategyIterator = strategies.iterator()
+      while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
+         val queryStrategy = strategyIterator.next()
+         val strategyResult: QueryStrategyResult = queryStrategy.invoke(target, context)
          // Note : We should add this additional data to the context too,
          // so that it's available for future query strategies to use.
          context.addFacts(strategyResult.matchedNodes.values.filterNotNull())

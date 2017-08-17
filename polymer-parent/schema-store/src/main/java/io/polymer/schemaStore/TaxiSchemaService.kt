@@ -5,6 +5,7 @@ import com.github.zafarkhaja.semver.Version
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
 import lang.taxi.Compiler
+import lang.taxi.utils.log
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 
@@ -37,6 +38,7 @@ class TaxiSchemaService : SchemaService {
       assertSchemaCompiles(schema)
       val versionedSchema = VersionedSchema(schemaId, version, schema)
       addSchema(versionedSchema)
+      log().info("Registered schema $schemaId:$version.  This schema server is now updated to schema set id ${listSchemas().id}")
       return versionedSchema
    }
 

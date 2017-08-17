@@ -2,11 +2,14 @@ package io.osmosis.polymer.query.graph
 
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
+import io.osmosis.polymer.query.FactDiscoveryStrategy
 import io.osmosis.polymer.query.QueryContext
+import io.osmosis.polymer.query.QuerySpecTypeNode
 import io.osmosis.polymer.query.graph.operationInvocation.UnresolvedOperationParametersException
 import io.osmosis.polymer.schemas.Link
 import io.osmosis.polymer.schemas.Relationship
 import io.osmosis.polymer.schemas.Type
+import io.osmosis.polymer.utils.log
 
 
 class AttributeOfEvaluator : PassThroughEvaluator(Relationship.IS_ATTRIBUTE_OF) {
@@ -45,7 +48,7 @@ class RequiresParameterEvaluator : LinkEvaluator {
          return EvaluatedLink.success(link, startingPoint, context.getFact(paramType))
       }
       if (startingPoint.type == paramType) {
-         return EvaluatedLink.success(link,startingPoint,startingPoint)
+         return EvaluatedLink.success(link, startingPoint, startingPoint)
       }
       if (!paramType.isParameterType) {
          throw UnresolvedOperationParametersException("No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ")
@@ -56,13 +59,27 @@ class RequiresParameterEvaluator : LinkEvaluator {
       return EvaluatedLink.success(link, startingPoint, requestObject)
    }
 
-   private fun attemptToConstruct(paramType: Type, context: QueryContext): TypedInstance {
+   private fun attemptToConstruct(paramType: Type, context: QueryContext, typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
       val fields = paramType.attributes.map { (attributeName, attributeTypeRef) ->
          val attributeType = context.schema.type(attributeTypeRef.name)
-         if (context.hasFactOfType(attributeType)) {
-            attributeName to context.getFact(attributeType)
+         if (context.hasFactOfType(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)) {
+            attributeName to context.getFact(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
+         } else if (!attributeType.isScalar && !typesCurrentlyUnderConstruction.contains(attributeType)) {
+            // TODO : This could be a bad idea.
+            // This is ignoring the concept of Parameter types -- so maybe they're not a good idea?
+            log().debug("Parameter of type $attributeType not present within the context.  Attempting to construct one.")
+            val constructedType = attemptToConstruct(attributeType, context, typesCurrentlyUnderConstruction = typesCurrentlyUnderConstruction + attributeType)
+            attributeName to constructedType
          } else {
-            throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context ")
+            // TODO : This could cause a stack overflow / infinite loop.
+            // Consider making the context aware of what searches are currently taking place,
+            // and returning a failed result in the case of a duplicate search
+            val queryResult = context.find(QuerySpecTypeNode(attributeType))
+            if (!queryResult.isFullyResolved) {
+               throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ")
+            } else {
+               attributeName to queryResult[attributeType]!!
+            }
          }
       }.toMap()
       return TypedObject(paramType, fields)
