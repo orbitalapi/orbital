@@ -1,5 +1,17 @@
 server:
-  port: 71010
+  port: 9024
 spring:
   application:
     name: credit-pricing
+polymer:
+   schemaStore:
+      name: discovery
+   schema:
+      name: credit-markup
+      version: 0.1.0
+logging:
+  level:
+      io.polymer: DEBUG
+      io.osmosis: DEBUG
+ribbon:
+   ServerListRefreshInterval: 1000

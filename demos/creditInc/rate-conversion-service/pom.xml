@@ -18,5 +18,19 @@
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-web</artifactId>
       </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-eureka</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.osmosis.polymer</groupId>
+         <artifactId>polymer</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+         <groupId>io.osmosis.polymer</groupId>
+         <artifactId>polymer-spring</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
    </dependencies>
 </project>

@@ -6,8 +6,8 @@ import com.tinkerpop.blueprints.Direction
 import com.tinkerpop.blueprints.Edge
 import com.tinkerpop.blueprints.Vertex
 import com.tinkerpop.blueprints.impls.orient.OrientEdge
-import com.tinkerpop.blueprints.impls.orient.OrientGraph
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory
+import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx
 import com.tinkerpop.blueprints.impls.orient.OrientVertex
 import io.osmosis.polymer.GraphAttributes.NODE_TYPE
 import io.osmosis.polymer.GraphAttributes.QUALIFIED_NAME
@@ -41,7 +41,7 @@ interface ModelContainer : SchemaContainer {
    fun addModel(model: TypedInstance): ModelContainer
 }
 
-class Polymer(schemas: List<Schema>, private val graph: OrientGraph, private val queryEngineFactory: QueryEngineFactory) : SchemaPathResolver, ModelContainer {
+class Polymer(schemas: List<Schema>, private val graph: OrientGraphNoTx, private val queryEngineFactory: QueryEngineFactory) : SchemaPathResolver, ModelContainer {
    private val schemas = mutableListOf<Schema>()
    private val models = mutableSetOf<TypedInstance>()
 
@@ -67,7 +67,7 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph, private val
 
 //   fun queryContext(): QueryContext = QueryContext(schema, facts, this)
 
-   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(), graphConnectionString:String = "memory:polymer") : this(emptyList(), OrientGraphFactory(graphConnectionString).setupPool(1, 100).tx, queryEngineFactory)
+   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(), graphConnectionString:String = "remote:localhost/test") : this(emptyList(), OrientGraphFactory(graphConnectionString).setupPool(1, 100).noTx, queryEngineFactory)
 
    override fun addModel(model: TypedInstance): Polymer {
       log().debug("Added model instance to context: $model")
@@ -211,7 +211,7 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraph, private val
       val endNode = graph.getVertices(QUALIFIED_NAME, target.fullyQualifiedName).toList().firstOrNull() ?: throw IllegalArgumentException("${target.fullyQualifiedName} is not present within the graph")
       val sql = """
          SELECT expand(path) FROM (
-           SELECT shortestPath(${startNode.id}, ${endNode.id}) AS path
+           SELECT shortestPath(${startNode.id}, ${endNode.id}, 'OUT') AS path
            UNWIND path
          )
          """

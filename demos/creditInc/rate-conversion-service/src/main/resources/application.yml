@@ -1,5 +1,17 @@
 server:
-  port: 71020
+  port: 9025
 spring:
   application:
     name: rate-converter
+polymer:
+   schemaStore:
+      name: discovery
+   schema:
+      name: rate-conversion
+      version: 0.1.0
+logging:
+  level:
+      io.polymer: DEBUG
+      io.osmosis: DEBUG
+ribbon:
+   ServerListRefreshInterval: 1000

@@ -20,8 +20,6 @@ logging:
   level:
       io.polymer: DEBUG
       io.osmosis: DEBUG
-      feign.Logger: DEBUG
-
 ribbon:
    ServerListRefreshInterval: 1000
 server:

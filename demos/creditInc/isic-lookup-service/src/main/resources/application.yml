@@ -1,5 +1,17 @@
 server:
-  port: 71000
+  port: 9023
 spring:
   application:
     name: isic-lookup
+polymer:
+   schemaStore:
+      name: discovery
+   schema:
+      name: isic-lookup
+      version: 0.1.0
+logging:
+  level:
+      io.polymer: DEBUG
+      io.osmosis: DEBUG
+ribbon:
+   ServerListRefreshInterval: 1000

@@ -1,7 +1,7 @@
 package io.osmosis.demos.creditinc.invoice
 
-import io.osmosis.polymer.Polymer
 import io.osmosis.polymer.models.json.addAnnotatedInstance
+import io.polymer.spring.PolymerFactory
 import lang.taxi.annotations.DataType
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -12,32 +12,34 @@ import java.time.LocalDate
 
 
 @DataType("polymer.creditInc.Client")
-data class Client(@DataType("polymer.creditInc.ClientId") val clientId: String)
+data class Client(@field:DataType("polymer.creditInc.ClientId") val clientId: String)
 
-@DataType("polymer.creditInc.Money")
+@DataType("polymer.creditInc.invoicing.Money")
 data class Money(
-   @DataType("polymer.creditInc.Currency") val currency: String,
-   @DataType("polymer.creditInc.MoneyAmount") val amount: BigDecimal)
+   @field:DataType("polymer.creditInc.Currency") val currency: String,
+   // Note: This field intentionally has a different name to polymer.creditInc.Money.
+   // This is to demonstrate field names aren't as relevant as types when mapping
+   @field:DataType("polymer.creditInc.MoneyAmount") val amount: BigDecimal)
 
 @DataType("polymer.creditInc.Invoice")
 data class Invoice(
-   @DataType("polymer.creditInc.clientId")
+   @field:DataType("polymer.creditInc.ClientId")
    val clientId: String,
-   @DataType("polymer.creditInc.settlementDate")
+   @field:DataType("polymer.creditInc.settlementDate")
    val settlementDate: LocalDate,
-   @DataType("polymer.creditInc.Money")
+   //   @field:DataType("polymer.creditInc.Money")
    val amount: Money
 )
 
 
 @RestController
-class InvoiceController(val polymer: Polymer) {
+class InvoiceController(val polymerFactory: PolymerFactory) {
 
    @RequestMapping(method = arrayOf(RequestMethod.POST), value = "/creditMarkup")
    fun calculateCreditMarkup(@RequestBody invoice: Invoice): Money {
-      val queryEngine = polymer.query()
+      val queryEngine = polymerFactory.createPolymer().query()
       queryEngine.addAnnotatedInstance(invoice)
-      val queryResult = queryEngine.find("polymer.creditInc.CreditMarkup")
+      val queryResult = queryEngine.find("polymer.creditInc.CreditRiskCost")
       TODO()
    }
 }

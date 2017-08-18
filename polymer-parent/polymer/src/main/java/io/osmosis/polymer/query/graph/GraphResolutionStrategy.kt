@@ -6,6 +6,7 @@ import io.osmosis.polymer.query.QuerySpecTypeNode
 import io.osmosis.polymer.query.QueryStrategy
 import io.osmosis.polymer.query.QueryStrategyResult
 import io.osmosis.polymer.schemas.Path
+import io.osmosis.polymer.utils.log
 import org.springframework.stereotype.Component
 
 @Component
@@ -19,8 +20,14 @@ class GraphResolutionStrategy(private val pathEvaluator: PathEvaluator) : QueryS
          val solutionsToTry: List<Pair<TypedInstance, Path>> = context.facts.map { knownValue -> knownValue to context.queryEngine.findPath(knownValue.type, targetNode.type) }
             .filter { (_, path) -> path.exists }
          val result = findFirstSuccessfulSolution(solutionsToTry, targetNode, context)
-         targetNode to result
-      }.toMap()
+         if (result != null) {
+            targetNode to result
+         } else {
+            log().debug("No successful path was found to resolve ${targetNode.type} from within the context")
+            null
+         }
+
+      }.filterNotNull().toMap()
       return QueryStrategyResult(matchedNodes)
    }
 

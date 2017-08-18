@@ -31,6 +31,16 @@
          <artifactId>polymer-spring</artifactId>
          <version>0.1.0-SNAPSHOT</version>
       </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.module</groupId>
+         <artifactId>jackson-modules-java8</artifactId>
+         <version>2.8.8</version>
+      </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.datatype</groupId>
+         <artifactId>jackson-datatype-jsr310</artifactId>
+         <version>2.8.8</version>
+      </dependency>
    </dependencies>
 
 </project>

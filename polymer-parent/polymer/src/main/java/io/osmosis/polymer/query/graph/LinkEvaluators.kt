@@ -67,14 +67,16 @@ class RequiresParameterEvaluator : LinkEvaluator {
          } else if (!attributeType.isScalar && !typesCurrentlyUnderConstruction.contains(attributeType)) {
             // TODO : This could be a bad idea.
             // This is ignoring the concept of Parameter types -- so maybe they're not a good idea?
-            log().debug("Parameter of type $attributeType not present within the context.  Attempting to construct one.")
+            log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} not present within the context.  Attempting to construct one.")
             val constructedType = attemptToConstruct(attributeType, context, typesCurrentlyUnderConstruction = typesCurrentlyUnderConstruction + attributeType)
+            log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} constructed: $constructedType")
             attributeName to constructedType
-         } else {
+         } else  {
             // TODO : This could cause a stack overflow / infinite loop.
             // Consider making the context aware of what searches are currently taking place,
             // and returning a failed result in the case of a duplicate search
-            val queryResult = context.find(QuerySpecTypeNode(attributeType))
+            log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} not present within the context, and not constructable - initiating a query to attempt to resolve it")
+            val queryResult = context.find(QuerySpecTypeNode(attributeType), context.facts)
             if (!queryResult.isFullyResolved) {
                throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ")
             } else {

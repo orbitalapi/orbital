@@ -1,38 +1,53 @@
 package io.osmosis.demos.invictus.credit
 
-import lang.taxi.annotations.DataFormat
-import lang.taxi.annotations.DataType
-import lang.taxi.annotations.Operation
-import lang.taxi.annotations.Service
+import lang.taxi.annotations.*
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 
-// Constraints and DataTypes on request objects not yet supported.
-// https://gitlab.com/osmosis-platform/osmosis/issues/4
+@DataType("polymer.creditInc.Money")
+@ParameterType
+data class Money(
+   @field:DataType("polymer.creditInc.Currency") val currency: String,
+   @field:DataType("polymer.creditInc.MoneyAmount") val value: BigDecimal)
+
+@DataType("polymer.creditInc.CreditCostRequest")
+@ParameterType
 data class CreditCostRequest(
-   @DataType("invictus.invoiceValue")
-   @DataFormat("invictus.currency.GBP")
-   val invoiceValue: BigDecimal,
+   @field:DataType
+   val invoiceValue: Money,
 
-   @DataType("invictus.industryCode.sic2003")
-   val industryCode: Int)
+   @field:DataType("isic.uk.SIC2008")
+   val industryCode: Int
+)
+//data class CreditCostRequest(
+// TODO : We should support this type of request object,
+// but we don't -- yet -- as we can't express a constraint on one field
+// as a dependency on another (in this case, the invoiceValue must've come
+// from something with GBP
+// There is a gitlab issue for this, but I can't find it, because I'm on a train.
+//   @DataType("invictus.invoiceValue")
+//   @DataFormat("invictus.currency.GBP")
+//   val invoiceValue: BigDecimal,
+//
+//   @DataType("invictus.industryCode.sic2003")
+//   val industryCode: Int)
 
+@DataType("polymer.creditInc.CreditCostResponse")
 data class CreditCostResponse(
    // Scenarios to consider:
    // What is this was a joda Money type?
    // What if there were two fields, value & ccy?  How do we indicate the two are related?
-   @DataType("invictus.invoiceValue")
-   // I'm not sure if this is a good use of DataFormat.
-   @DataFormat("invictus.currency.GBP")
+   @field:DataType("polymer.creditInc.CreditRiskCost")
    val cost: BigDecimal
 )
 
 @RestController
 @RequestMapping("/costs")
-@Service
+@Service("CreditCostService")
+@Namespace("polymer.creditInc.creditMarkup")
 class CreditCostService {
 
    @PostMapping
