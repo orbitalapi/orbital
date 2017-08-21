@@ -9,6 +9,7 @@ import com.tinkerpop.blueprints.impls.orient.OrientEdge
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory
 import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx
 import com.tinkerpop.blueprints.impls.orient.OrientVertex
+import io.osmosis.polymer.GraphAttributes.EDGE_KEY
 import io.osmosis.polymer.GraphAttributes.NODE_TYPE
 import io.osmosis.polymer.GraphAttributes.QUALIFIED_NAME
 import io.osmosis.polymer.models.TypedInstance
@@ -21,6 +22,7 @@ import io.osmosis.polymer.utils.log
 object GraphAttributes {
    val NODE_TYPE = "nodeType"
    val QUALIFIED_NAME = "qualifiedName"
+   val EDGE_KEY = "edgeKey"
 }
 
 enum class NodeTypes {
@@ -57,17 +59,18 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraphNoTx, private
       return models.toSet()
    }
 
-   fun export():String {
+   fun export(): String {
       return DbExporter(graph).export()
    }
-   fun export(path:String):String {
+
+   fun export(path: String): String {
       return DbExporter(graph).export(path)
    }
 
 
 //   fun queryContext(): QueryContext = QueryContext(schema, facts, this)
 
-   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(), graphConnectionString:String = "remote:localhost/test") : this(emptyList(), OrientGraphFactory(graphConnectionString).setupPool(1, 100).noTx, queryEngineFactory)
+   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(), graphConnectionString: String = "remote:localhost/test") : this(emptyList(), OrientGraphFactory(graphConnectionString).setupPool(1, 100).noTx, queryEngineFactory)
 
    override fun addModel(model: TypedInstance): Polymer {
       log().debug("Added model instance to context: $model")
@@ -124,7 +127,10 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraphNoTx, private
             val attributeQualifiedName = "$typeFullyQualifiedName/$attributeName"
             val (attributeVertex, _) = addVertex(attributeQualifiedName, NodeTypes.ATTRIBUTE).linkTo(typeNode, Relationship.IS_ATTRIBUTE_OF)
             typeNode.linkTo(attributeVertex, Relationship.HAS_ATTRIBUTE)
-            addVertex(attributeType.name, NodeTypes.TYPE).linkFrom(attributeVertex, Relationship.IS_TYPE_OF)
+            val attributeTypeVertex = addVertex(attributeType.name, NodeTypes.TYPE)
+            attributeTypeVertex.linkFrom(attributeVertex, Relationship.IS_TYPE_OF)
+            attributeTypeVertex.linkTo(attributeVertex, Relationship.HAS_PARAMETER_OF_TYPE)
+
          }
          log().debug("Added attribute ${type.name} to graph")
       }
@@ -165,16 +171,41 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraphNoTx, private
 
    }
 
+   // TODO : DRY this up.
    private fun Vertex.linkTo(inVertex: Vertex, relationship: Relationship): Pair<Vertex, Edge> {
-      val edge = graph.addEdge(null, this, inVertex, relationship.name)
-      log().debug("Added edge from ${this[QUALIFIED_NAME]} -[${relationship.name}]-> ${inVertex[QUALIFIED_NAME]}  (${this.id} -> ${inVertex.id})")
-      return this to edge
+      val existingEdge = getExistingEdgeIfPresent(inVertex,this,relationship)
+      return if (existingEdge != null) {
+         this to existingEdge
+      } else {
+         val edge = graph.addEdge(null, this, inVertex, relationship.name)
+         edge.setProperty(EDGE_KEY, getEdgeKey(this,inVertex, relationship))
+         log().debug("Added edge from ${this[QUALIFIED_NAME]} -[${relationship.name}]-> ${inVertex[QUALIFIED_NAME]}  (${this.id} -> ${inVertex.id})")
+         this to edge
+      }
    }
 
+   // TODO : DRY this up.
    private fun Vertex.linkFrom(outVertex: Vertex, relationship: Relationship): Pair<Vertex, Edge> {
-      val edge = graph.addEdge(null, outVertex, this, relationship.name)
-      log().debug("Added edge from ${outVertex[QUALIFIED_NAME]} -[${relationship.name}]-> ${this[QUALIFIED_NAME]} (${outVertex.id} -> ${this.id})")
-      return this to edge
+      val existingEdge = getExistingEdgeIfPresent(this,outVertex,relationship)
+      return if (existingEdge != null) {
+         this to existingEdge
+      } else {
+         val edge = graph.addEdge(null, outVertex, this, relationship.name)
+         edge.setProperty(EDGE_KEY, getEdgeKey(outVertex,this, relationship))
+         log().debug("Added edge from ${outVertex[QUALIFIED_NAME]} -[${relationship.name}]-> ${this[QUALIFIED_NAME]} (${outVertex.id} -> ${this.id})")
+         return this to edge
+      }
+
+   }
+
+   private fun getExistingEdgeIfPresent(inVertex: Vertex, outVertex: Vertex, relationship: Relationship):Edge? {
+      val edgeKey = getEdgeKey(outVertex, inVertex, relationship)
+      val existingEdges = graph.getEdges(EDGE_KEY, edgeKey).toList()
+      return existingEdges.firstOrNull()
+   }
+
+   private fun getEdgeKey(outVertex: Vertex, inVertex: Vertex, relationship: Relationship): String {
+      return "${outVertex.id}-[${relationship.name}]->${inVertex.id}"
    }
 
    private operator fun Vertex.get(propertyName: String): String {
@@ -210,13 +241,14 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraphNoTx, private
       val startNode = graph.getVertices(QUALIFIED_NAME, start.fullyQualifiedName).toList().firstOrNull() ?: throw IllegalArgumentException("${start.fullyQualifiedName} is not present within the graph")
       val endNode = graph.getVertices(QUALIFIED_NAME, target.fullyQualifiedName).toList().firstOrNull() ?: throw IllegalArgumentException("${target.fullyQualifiedName} is not present within the graph")
       val sql = """
-         SELECT expand(path) FROM (
-           SELECT shortestPath(${startNode.id}, ${endNode.id}, 'OUT') AS path
-           UNWIND path
-         )
-         """
+SELECT expand(path) FROM (
+  SELECT shortestPath(${startNode.id}, ${endNode.id}) AS path
+  UNWIND path
+)
+         """.trim()
       val path = graph.command(OCommandSQL(sql)).execute<Iterable<OrientVertex>>().toList()
       val links = convertToLinks(path)
+      log().debug(sql)
       val resolvedPath = Path(start, target, links)
       if (resolvedPath.exists) {
          log().debug("Path from $start -> $target found with ${resolvedPath.links.size} links")
@@ -246,7 +278,8 @@ class Polymer(schemas: List<Schema>, private val graph: OrientGraphNoTx, private
       return links
    }
 
-//   fun getType(typeName: String): Type = schema.type(typeName)
+   //   fun getType(typeName: String): Type = schema.type(typeName)
    fun type(typeName: String): Type = getType(typeName)
+
    fun getService(serviceName: String): Service = schema.service(serviceName)
 }

@@ -4,6 +4,7 @@ enum class Relationship(val description: String) {
    IS_ATTRIBUTE_OF("Is an attribute of"),
    HAS_ATTRIBUTE("Has attribute"),
    IS_TYPE_OF("Is type of"),
+   HAS_PARAMETER_OF_TYPE("Has parameter of type"),
    REQUIRES_PARAMETER("Requires parameter"),
    IS_PARAMETER_ON("Is parameter on"),
    PROVIDES("provides")

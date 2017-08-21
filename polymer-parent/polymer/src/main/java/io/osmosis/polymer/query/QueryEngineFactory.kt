@@ -38,6 +38,7 @@ class QueryEngineFactory(private val strategies: List<QueryStrategy>) {
                   PathEvaluator(linkEvaluators = listOf(AttributeOfEvaluator(),
                      HasAttributeEvaluator(),
                      IsTypeOfEvaluator(),
+                     HasParamOfTypeEvaluator(),
                      OperationParameterEvaluator(),
                      RequiresParameterEvaluator(),
                      OperationInvocationEvaluator(invokers))
