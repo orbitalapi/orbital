@@ -1,6 +1,6 @@
 package io.osmosis.polymer.utils
 
-fun <T> T.assertingThat(condition: (T) -> Boolean, message:String? = null): T {
+inline fun <T> T.assertingThat(condition: (T) -> Boolean, message:String? = null): T {
    if (!condition.invoke(this)) {
       throw IllegalStateException(message.orElse("Illegal param passed"))
    }

@@ -1,12 +1,18 @@
 package io.osmosis.polymer.query.graph.operationInvocation
 
+import es.usc.citius.hipster.graph.GraphEdge
+import io.osmosis.polymer.Element
+import io.osmosis.polymer.instance
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedValue
 import io.osmosis.polymer.query.QueryContext
 import io.osmosis.polymer.query.QueryResult
 import io.osmosis.polymer.query.QuerySpecTypeNode
-import io.osmosis.polymer.query.graph.EvaluatedLink
-import io.osmosis.polymer.query.graph.LinkEvaluator
+import io.osmosis.polymer.query.SearchFailedException
+import io.osmosis.polymer.query.graph.EdgeEvaluator
+import io.osmosis.polymer.query.graph.EvaluatedEdge
+import io.osmosis.polymer.query.graph.orientDb.EvaluatedLink
+import io.osmosis.polymer.query.graph.orientDb.LinkEvaluator
 import io.osmosis.polymer.schemas.*
 import io.osmosis.polymer.utils.log
 import org.springframework.stereotype.Component
@@ -39,7 +45,17 @@ class ToDoInvoker : OperationInvoker {
 }
 
 @Component
-class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : LinkEvaluator, OperationInvocationService {
+class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : LinkEvaluator, EdgeEvaluator, OperationInvocationService {
+   override fun evaluate(edge: GraphEdge<Element, Relationship>, context: QueryContext): EvaluatedEdge {
+      val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
+      val (service, operation) = context.schema.operation(operationName)
+      // VisitedNodes are better candidates for params, as they are more contextually relevant
+      val visitedInstanceNodes = context.collectVisitedInstanceNodes()
+      val result: TypedInstance = invokeOperation(service, operation, visitedInstanceNodes, context)
+      context.addFact(result)
+      return EvaluatedEdge.success(edge,instance(result))
+   }
+
    override val relationship: Relationship = Relationship.PROVIDES
 
    override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
@@ -83,7 +99,7 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
          val paramsToSearchFor = unresolvedParams.map { QuerySpecTypeNode(it.type) }.toSet()
          val queryResult: QueryResult = context.queryEngine.find(paramsToSearchFor, context)
          if (!queryResult.isFullyResolved) {
-            throw UnresolvedOperationParametersException("The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}")
+            throw UnresolvedOperationParametersException("The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}", context.evaluatedPath())
          }
          resolvedParams = queryResult.results
       }
@@ -126,4 +142,4 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
 }
 
 
-class UnresolvedOperationParametersException(message: String) : RuntimeException(message)
+class UnresolvedOperationParametersException(message: String, evaluatedPath:List<EvaluatedEdge>) : SearchFailedException(message, evaluatedPath)

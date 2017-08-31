@@ -1,4 +1,4 @@
-package io.osmosis.polymer.query.graph
+package io.osmosis.polymer.query.graph.orientDb
 
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.query.QueryContext

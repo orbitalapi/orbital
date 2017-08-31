@@ -23,6 +23,21 @@ interface TypedInstance {
 
 data class TypedObject(override val type: Type, override val value: Map<String, TypedInstance>) : TypedInstance, Map<String, TypedInstance> by value {
    companion object {
+      fun fromValue(typeName: String, value: Any, schema: Schema): TypedObject {
+         return fromValue(schema.type(typeName), value, schema)
+      }
+
+      fun fromAttributes(typeName: String, attributes: Map<String, Any>, schema: Schema): TypedObject {
+         return fromAttributes(schema.type(typeName), attributes, schema)
+      }
+      fun fromAttributes(type: Type, attributes: Map<String, Any>, schema: Schema): TypedObject {
+         val typedAttributes: Map<String, TypedInstance> = attributes.map { (attributeName, value) ->
+            val attributeType = schema.type(type.attributes[attributeName]!!)
+            attributeName to TypedInstance.from(attributeType,value,schema)
+         }.toMap()
+         return TypedObject(type,typedAttributes)
+      }
+
       fun fromValue(type: Type, value: Any, schema: Schema): TypedObject {
          val attributes: Map<AttributeName, TypedInstance> = type.attributes.map { (attributeName, attributeType) ->
             // TODO : DeclaredFields / Fields doesn't work - swap this with a reflection library that will handle both

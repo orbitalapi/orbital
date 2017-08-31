@@ -1,9 +1,7 @@
 package io.osmosis.polymer.query
 
-import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.schemas.Type
 import org.springframework.stereotype.Component
-import kotlin.streams.toList
 
 /**
  * Scans the facts in the QueryContext to see if the desired attributes are present.
@@ -21,10 +19,14 @@ class ModelsScanStrategy : QueryStrategy {
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
       val targetTypes: Map<Type, QuerySpecTypeNode> = target.associateBy { it.type }
 
-      val matches = context.modelTree()
-         .filter { typedInstance: TypedInstance -> targetTypes.containsKey(typedInstance.type) }
-         .map { typedInstance -> targetTypes[typedInstance.type]!! to typedInstance }
-         .toList().toMap()
+      // This is wrong, and won't work long-term
+      // We need more context in order to be able to search
+      // Eg., given an instance of Money, it's concievable that there would be multiple instances
+      // within the graph
+      val matches = targetTypes.filter { (type, _) -> context.hasFactOfType(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) }
+         .map { (type, querySpec) -> querySpec to context.getFact(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) }
+         .toMap()
+
       return QueryStrategyResult(matches)
    }
 }

@@ -1,12 +1,15 @@
 package io.osmosis.polymer.query
 
 import io.osmosis.polymer.ModelContainer
-import io.osmosis.polymer.SchemaPathResolver
 import io.osmosis.polymer.models.TypedInstance
+import io.osmosis.polymer.query.graph.EvaluatedEdge
 import io.osmosis.polymer.schemas.Schema
 import io.osmosis.polymer.utils.log
 
-interface QueryEngine : SchemaPathResolver {
+
+open class SearchFailedException(message:String, val evaluatedPath:List<EvaluatedEdge>) : RuntimeException(message)
+
+interface QueryEngine {
 
    val schema: Schema
    fun find(queryString: String, factSet: Set<TypedInstance> = emptySet()): QueryResult
@@ -36,7 +39,7 @@ class StatefulQueryEngine(initialState: Set<TypedInstance>, private val queryEng
    }
 }
 
-class DefaultQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val schemaPathResolver: SchemaPathResolver) : QueryEngine, SchemaPathResolver by schemaPathResolver {
+class DefaultQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine  {
    override fun queryContext(factSet: Set<TypedInstance>): QueryContext {
       return QueryContext.from(schema, factSet, this)
    }
@@ -62,7 +65,7 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
          return target.filterNot { matchedNodes.containsKey(it) }
       }
 
-      val strategyIterator = strategies.iterator()
+      val strategyIterator: Iterator<QueryStrategy> = strategies.iterator()
       while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
          val queryStrategy = strategyIterator.next()
          val strategyResult: QueryStrategyResult = queryStrategy.invoke(target, context)
@@ -81,7 +84,8 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
       if (unresolvedNodes().isNotEmpty()) {
          log().error("The following nodes weren't matched: ${unresolvedNodes().joinToString { ", " }}")
       }
-      return QueryResult(matchedNodes, unresolvedNodes().toSet())
+      TODO("Rebuild Path")
+//      return QueryResult(matchedNodes, unresolvedNodes().toSet())
    }
 }
 

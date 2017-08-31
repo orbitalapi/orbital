@@ -71,6 +71,10 @@ class TaxiSchemaService : SchemaService {
    override fun listSchemas():SchemaSet {
       return SchemaSet(schemas.values.toList())
    }
+   @RequestMapping(path = arrayOf("/raw"), method = arrayOf(RequestMethod.GET))
+   fun listRawSchema():String {
+      return schemas.values.joinToString("\n") { it.content }
+   }
 
    private fun assertSchemaCompiles(schema: String) {
       try {

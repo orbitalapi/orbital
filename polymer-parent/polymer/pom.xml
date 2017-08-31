@@ -63,5 +63,17 @@
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter</artifactId>
       </dependency>
+      <dependency>
+         <!-- Hipster provides implementations of graph search algorithims -->
+         <groupId>es.usc.citius.hipster</groupId>
+         <artifactId>hipster-core</artifactId>
+         <version>1.0.1</version>
+         <exclusions>
+            <exclusion>
+               <groupId>com.google.guava</groupId>
+               <artifactId>guava</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
    </dependencies>
 </project>

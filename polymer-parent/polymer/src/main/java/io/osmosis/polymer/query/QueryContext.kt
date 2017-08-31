@@ -2,11 +2,14 @@ package io.osmosis.polymer.query
 
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
+import io.osmosis.polymer.ElementType
 import io.osmosis.polymer.models.TypedCollection
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
 import io.osmosis.polymer.models.TypedValue
 import io.osmosis.polymer.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
+import io.osmosis.polymer.query.graph.EvaluatedEdge
+import io.osmosis.polymer.schemas.Path
 import io.osmosis.polymer.schemas.Schema
 import io.osmosis.polymer.schemas.Type
 import io.osmosis.polymer.utils.log
@@ -25,9 +28,10 @@ import kotlin.streams.toList
  * }
  *
  */
+// TODO : Why isn't the type enough, given that has children?  Why do I need to explicitly list the children I want?
 data class QuerySpecTypeNode(val type: Type, val children: Set<QuerySpecTypeNode> = emptySet())
 
-data class QueryResult(val results: Map<QuerySpecTypeNode, TypedInstance?>, val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet()) {
+data class QueryResult(val results: Map<QuerySpecTypeNode, TypedInstance?>, val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(), val path: Path) {
    val isFullyResolved = unmatchedNodes.isEmpty()
    operator fun get(typeName: String): TypedInstance? {
       return this.results.filterKeys { it.type.name.fullyQualifiedName == typeName }
@@ -57,6 +61,7 @@ object TypedInstanceTree {
 }
 
 data class QueryContext(override val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine) : QueryEngine by queryEngine {
+   private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val factsByType
       get() = facts.associateBy { it.type }
 
@@ -73,6 +78,8 @@ data class QueryContext(override val schema: Schema, val facts: MutableSet<Typed
       facts.forEach { this.addFact(it) }
    }
 
+   fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
+
    // Wraps all the known facts under a root node, turning it into a tree
    private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode"), facts.toList())
 
@@ -85,6 +92,10 @@ data class QueryContext(override val schema: Schema, val facts: MutableSet<Typed
       return TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot())
    }
 
+   fun hasFactOfType(name: String, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
+      return hasFactOfType(schema.type(name), strategy)
+   }
+
    fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
       // This could be optimized, as we're searching twice for everything, and not caching anything
       return strategy.getFact(this, type) != null
@@ -93,6 +104,17 @@ data class QueryContext(override val schema: Schema, val facts: MutableSet<Typed
    fun getFact(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): TypedInstance {
       // This could be optimized, as we're searching twice for everything, and not caching anything
       return strategy.getFact(this, type)!!
+   }
+
+   fun evaluatedPath(): List<EvaluatedEdge> {
+      return evaluatedEdges.toList()
+   }
+
+   fun collectVisitedInstanceNodes(): Set<TypedInstance> {
+      return this.evaluatedEdges.flatMap {
+         it.elements.filter { it.elementType == ElementType.INSTANCE }
+            .map { it.value as TypedInstance }
+      }.toSet()
    }
 }
 
@@ -119,6 +141,27 @@ enum class FactDiscoveryStrategy {
                null
             }
 
+         }
+      }
+   },
+
+   /**
+    * Will return matches from any depth, providing there is exactly
+    * one DISITNCT match within the context
+    */
+   ANY_DEPTH_EXPECT_ONE_DISTINCT {
+      override fun getFact(context: QueryContext, type: Type): TypedInstance? {
+         val matches = context.modelTree()
+            .filter { it.type == type }
+            .distinct()
+            .toList()
+         return when {
+            matches.isEmpty() -> null
+            matches.size == 1 -> matches.first()
+            else -> {
+               log().debug("ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of type ${type.name}, so returning null")
+               null
+            }
          }
       }
    };

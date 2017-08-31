@@ -16,6 +16,8 @@ data class Metadata(val name: QualifiedName, val params: Map<String, Any?> = emp
 data class TypeReference(val name: QualifiedName, val isCollection: Boolean = false, private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider()) {
    val constraints: List<Constraint>
       get() = constraintProvider.buildConstraints()
+   val fullyQualifiedName:String
+      get() = name.fullyQualifiedName
 }
 
 data class QualifiedName(val fullyQualifiedName: String) : Serializable {
@@ -27,11 +29,15 @@ data class QualifiedName(val fullyQualifiedName: String) : Serializable {
 
 typealias AttributeName = String
 typealias AttributeType = QualifiedName
+typealias DeclaringType = QualifiedName
 data class Type(val name: QualifiedName, val attributes: Map<AttributeName, TypeReference> = emptyMap(), val modifiers: List<Modifier> = emptyList()) {
    constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList()) : this(name.fqn(), attributes, modifiers)
 
    val isScalar = attributes.isEmpty()
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
+
+   val fullyQualifiedName: String
+      get() = name.fullyQualifiedName
 }
 
 enum class Modifier {
@@ -69,6 +75,15 @@ interface Schema {
       val operationName = parts[1]
       val service = service(serviceName)
       return service to service.operation(operationName)
+   }
+
+   fun attribute(attributeName:String):Pair<Type,Type> {
+      val parts = attributeName.split("/").assertingThat({it.size == 2})
+      val declaringType = type(parts[0])
+      val attributeType = type(declaringType.attributes[parts[1]]!!)
+
+      return declaringType to attributeType
+
    }
 
    fun type(nestedTypeRef: TypeReference): Type {

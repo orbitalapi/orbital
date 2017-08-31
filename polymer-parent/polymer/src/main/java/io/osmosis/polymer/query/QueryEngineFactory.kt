@@ -1,20 +1,23 @@
 package io.osmosis.polymer.query
 
-import io.osmosis.polymer.SchemaPathResolver
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.query.graph.*
 import io.osmosis.polymer.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.osmosis.polymer.query.graph.operationInvocation.OperationInvoker
+import io.osmosis.polymer.query.graph.orientDb.LinkEvaluator
 import io.osmosis.polymer.schemas.Schema
-import org.springframework.stereotype.Component
 
-@Component
-class QueryEngineFactory(private val strategies: List<QueryStrategy>) {
+
+interface QueryEngineFactory {
+   fun queryEngine(schema: Schema, models: Set<TypedInstance>): StatefulQueryEngine
+   fun queryEngine(schema: Schema): QueryEngine
+
+//   val pathResolver: SchemaPathResolver
 
    companion object {
       // Useful for testing
       fun noQueryEngine(): QueryEngineFactory {
-         return QueryEngineFactory(emptyList())
+         return withOperationInvokers(emptyList())
       }
 
       // Useful for testing.
@@ -24,6 +27,10 @@ class QueryEngineFactory(private val strategies: List<QueryStrategy>) {
          return withOperationInvokers(emptyList())
       }
 
+//      fun jhipster(operationInvokers: List<OperationInvoker> = DefaultInvokers.invokers): JHipsterQueryEngineFactory {
+//         return JHipsterQueryEngineFactory(edgeEvaluators(operationInvokers))
+//      }
+
       // Useful for testing.
       // For prod, use a spring-wired context,
       // which is sure to collect all strategies
@@ -32,28 +39,46 @@ class QueryEngineFactory(private val strategies: List<QueryStrategy>) {
       }
 
       fun withOperationInvokers(invokers: List<OperationInvoker>): QueryEngineFactory {
-         return QueryEngineFactory(
+         return DefaultQueryEngineFactory(
             strategies = listOf(ModelsScanStrategy(),
-               GraphResolutionStrategy(
-                  PathEvaluator(linkEvaluators = listOf(AttributeOfEvaluator(),
-                     HasAttributeEvaluator(),
-                     IsTypeOfEvaluator(),
-                     HasParamOfTypeEvaluator(),
-                     OperationParameterEvaluator(),
-                     RequiresParameterEvaluator(),
-                     OperationInvocationEvaluator(invokers))
-                  )
+               HipsterGraphQueryStrategy(
+                  EdgeNavigator(edgeEvaluators(invokers))
                )
             )
          )
       }
+
+      private fun linkEvaluators(invokers: List<OperationInvoker>): List<LinkEvaluator> {
+         return listOf(AttributeOfEvaluator(),
+            HasAttributeEvaluator(),
+            IsTypeOfEvaluator(),
+            HasParamOfTypeEvaluator(),
+            OperationParameterEvaluator(),
+            RequiresParameterEvaluator(),
+            OperationInvocationEvaluator(invokers))
+      }
+
+      private fun edgeEvaluators(invokers: List<OperationInvoker>): List<EdgeEvaluator> {
+         return listOf(RequiresParameterEdgeEvaluator(),
+            AttributeOfEdgeEvaluator(),
+            IsTypeOfEdgeEvaluator(),
+            HasParamOfTypeEdgeEvaluator(),
+            OperationParameterEdgeEvaluator(),
+            HasAttributeEdgeEvaluator(),
+            OperationInvocationEvaluator(invokers)
+         )
+      }
    }
 
-   fun queryEngine(schema: Schema, pathResolver: SchemaPathResolver): QueryEngine {
-      return DefaultQueryEngine(schema, strategies, pathResolver)
+}
+
+class DefaultQueryEngineFactory(private val strategies: List<QueryStrategy>) : QueryEngineFactory {
+
+   override fun queryEngine(schema: Schema): QueryEngine {
+      return DefaultQueryEngine(schema, strategies)
    }
 
-   fun queryEngine(schema: Schema, models: Set<TypedInstance>, pathResolver: SchemaPathResolver): StatefulQueryEngine {
-      return StatefulQueryEngine(models, queryEngine(schema, pathResolver))
+   override fun queryEngine(schema: Schema, models: Set<TypedInstance>): StatefulQueryEngine {
+      return StatefulQueryEngine(models, queryEngine(schema))
    }
 }

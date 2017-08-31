@@ -6,24 +6,13 @@ import io.osmosis.polymer.query.FactDiscoveryStrategy
 import io.osmosis.polymer.query.QueryContext
 import io.osmosis.polymer.query.QuerySpecTypeNode
 import io.osmosis.polymer.query.graph.operationInvocation.UnresolvedOperationParametersException
+import io.osmosis.polymer.query.graph.orientDb.EvaluatedLink
+import io.osmosis.polymer.query.graph.orientDb.LinkEvaluator
 import io.osmosis.polymer.schemas.Link
 import io.osmosis.polymer.schemas.Relationship
 import io.osmosis.polymer.schemas.Type
 import io.osmosis.polymer.utils.log
 
-
-class AttributeOfEvaluator : PassThroughEvaluator(Relationship.IS_ATTRIBUTE_OF) {
-//   override val relationship: Relationship = Relationship.IS_ATTRIBUTE_OF
-//
-//   override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
-//      assert(startingPoint is TypedObject, { "Cannot evaluate attribute ${link.end} on $startingPoint as it doesn't have any attributes" })
-//      // TODO Handle getters, and use some form of reflection helper
-//      val startingPointObj = startingPoint as TypedObject
-//      val value = startingPointObj[link.end.name]
-//      TODO("I think this is wrong, and is evaluating HAS_ATTRIBUTE, not IS_ATTRIBUTE_OF")
-//      return EvaluatedLink(link, startingPoint, value)
-//   }
-}
 
 class HasAttributeEvaluator : LinkEvaluator {
    override val relationship: Relationship = Relationship.HAS_ATTRIBUTE
@@ -51,7 +40,7 @@ class RequiresParameterEvaluator : LinkEvaluator {
          return EvaluatedLink.success(link, startingPoint, startingPoint)
       }
       if (!paramType.isParameterType) {
-         throw UnresolvedOperationParametersException("No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ")
+         throw UnresolvedOperationParametersException("No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ", context.evaluatedPath())
       }
 
       // This is a parameter type.  Try to construct an instance
@@ -78,7 +67,7 @@ class RequiresParameterEvaluator : LinkEvaluator {
             log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} not present within the context, and not constructable - initiating a query to attempt to resolve it")
             val queryResult = context.find(QuerySpecTypeNode(attributeType), context.facts)
             if (!queryResult.isFullyResolved) {
-               throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ")
+               throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ", context.evaluatedPath())
             } else {
                attributeName to queryResult[attributeType]!!
             }
@@ -96,6 +85,7 @@ abstract class PassThroughEvaluator(override val relationship: Relationship) : L
    }
 }
 
+class AttributeOfEvaluator : PassThroughEvaluator(Relationship.IS_ATTRIBUTE_OF)
 class IsTypeOfEvaluator : PassThroughEvaluator(Relationship.IS_TYPE_OF)
-class HasParamOfTypeEvaluator : PassThroughEvaluator(Relationship.HAS_PARAMETER_OF_TYPE)
+class HasParamOfTypeEvaluator : PassThroughEvaluator(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
 class OperationParameterEvaluator : PassThroughEvaluator(Relationship.IS_PARAMETER_ON)
