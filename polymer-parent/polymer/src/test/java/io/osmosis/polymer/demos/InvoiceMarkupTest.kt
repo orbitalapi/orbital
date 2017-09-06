@@ -1,5 +1,6 @@
 package io.osmosis.polymer.demos
 
+import com.winterbe.expekt.expect
 import io.osmosis.polymer.Polymer
 import io.osmosis.polymer.StubService
 import io.osmosis.polymer.models.json.parseJsonModel
@@ -131,11 +132,17 @@ namespace io.osmosis.demos.creditInc.isic {
 	}
 }
 """
+
+      val creditCostResponse = """
+{
+"cost" : 250.00
+}"""
       // Set up stub service responses
       stubService.addResponse("findClientById", polymer.parseJsonModel("polymer.creditInc.Client", clientJson))
+      stubService.addResponse("calculateCreditCosts", polymer.parseJsonModel("polymer.creditInc.CreditCostResponse", creditCostResponse))
 
       val invoice = polymer.parseJsonModel("polymer.creditInc.Invoice", invoiceJson)
       val result = polymer.query().find("polymer.creditInc.CreditRiskCost", setOf(invoice))
-      result
+      expect(result["polymer.creditInc.CreditRiskCost"]!!.value).to.equal(250.0)
    }
 }

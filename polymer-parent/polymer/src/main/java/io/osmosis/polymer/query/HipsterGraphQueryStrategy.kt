@@ -107,6 +107,7 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
 //   }
 
    data class EvaluateRelationshipAction(val relationship: Relationship, val target: Element)
+
    private fun search(start: Element, target: Element, queryContext: QueryContext): Pair<TypedInstance, Path>? {
       val graph = PolymerGraphBuilder(queryContext.schema).build(queryContext.facts)
       val searchDescription = "$start -> $target"
@@ -146,15 +147,10 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
       // TODO : validate this is a valid path
 
       val evaluatedPath = evaluatePath(searchResult, queryContext)
+      val resultValue = selectResultValue(evaluatedPath, queryContext, target)
       val path = searchResult.goalNode.path().convertToPolymerPath(start, target)
-      val targetType = queryContext.schema.type(target.value.toString())
-      return if (queryContext.hasFactOfType(targetType)) {
-         val resultInstance = queryContext.getFact(targetType)
-         return if (searchResult.goalNode.state() == target) {
-            resultInstance to path
-         } else { // failed
-            TODO("This shouldn't be possible")
-         }
+      return if (resultValue != null) {
+         resultValue to path
       } else { // Search failed
          null
       }
@@ -216,6 +212,22 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
 //      }
    }
 
+   private fun selectResultValue(evaluatedPath: List<EvaluatedEdge>, queryContext: QueryContext, target: Element): TypedInstance? {
+      // If the last node in the evaluated path is the type we're after, use that.
+      val lastEdgeResult = evaluatedPath.last().result
+      if (lastEdgeResult?.value is TypedInstance && (lastEdgeResult.value as TypedInstance).type == target.value) {
+         return lastEdgeResult.value
+      }
+
+      val targetType = queryContext.schema.type(target.value.toString())
+      if (queryContext.hasFactOfType(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
+         return queryContext.getFact(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+      }
+
+      // The search probably failed
+      return null
+   }
+
    private fun evaluatePath(searchResult: Algorithm<EvaluateRelationshipAction, Element, WeightedNode<EvaluateRelationshipAction, Element, Double>>.SearchResult, queryContext: QueryContext): List<EvaluatedEdge> {
       // The actual result of this isn't directly used.  But the queryContext is updated with
       // nodes as they're discovered (eg., through service invocation)
@@ -230,6 +242,10 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
    }
 
    private fun canBeEvaluated(edge: GraphEdge<Element, Relationship>, queryContext: QueryContext): Boolean {
+      if (edge.edgeValue !is Relationship) {
+         val message = "An invalid link has been created between ${edge.vertex1} -> ${edge.vertex2}, as the relationship type is Object.  Hipster4J does this when duplicate links are formed.  Re-check the graph builder to eliminate duplicate links"
+         throw IllegalStateException(message)
+      }
       return when (edge.edgeValue) {
          Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE -> {
             val (declaringType, _) = queryContext.schema.attribute(edge.vertex2.value as String)
