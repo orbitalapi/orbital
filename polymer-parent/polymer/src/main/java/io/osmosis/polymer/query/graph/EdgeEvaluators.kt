@@ -22,9 +22,8 @@ interface EdgeEvaluator {
    fun evaluate(edge: GraphEdge<Element, Relationship>, context: QueryContext): EvaluatedEdge
 }
 
-class RequiresParameterEdgeEvaluator : EdgeEvaluator {
+class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = ParameterFactory()) : EdgeEvaluator {
    override val relationship: Relationship = Relationship.REQUIRES_PARAMETER
-
 
    override fun evaluate(edge: GraphEdge<Element, Relationship>, context: QueryContext): EvaluatedEdge {
       if (edge.vertex2.elementType == ElementType.PARAMETER) {
@@ -37,18 +36,25 @@ class RequiresParameterEdgeEvaluator : EdgeEvaluator {
       // But, because Hispter4J doesn't support identical Vertex Pairs, we can't.
       // (See usages of the parameter() function for more details)
       // So, look up the service directly, and get the parameter type from the schema
-      val parts = (edge.vertex1.value as String).split("/").assertingThat({ it.size == 3})
+      val parts = (edge.vertex1.value as String).split("/").assertingThat({ it.size == 3 })
       val operationReference = parts[0]
       val paramIndex = Integer.parseInt(parts[2])
-      val (_,operation) = context.schema.operation(operationReference.fqn())
+      val (_, operation) = context.schema.operation(operationReference.fqn())
       val paramType = operation.parameters[paramIndex].type
 
+      val discoveredParam = parameterFactory.discover(paramType, context)
+      return EvaluatedEdge.success(edge, instance(discoveredParam))
 //      val paramType = context.schema.type(edge.vertex2.value as String)
+   }
+}
+
+class ParameterFactory {
+   fun discover(paramType: Type, context: QueryContext): TypedInstance {
       // First, search only the top level for facts
       if (context.hasFactOfType(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
          // TODO (2) : Fail if there are multiple instances
-         return EvaluatedEdge.success(edge, instance(context.getFact(paramType)))
+         return context.getFact(paramType)
       }
 
       // Check to see if there's exactly one instance somewhere within the context
@@ -57,7 +63,7 @@ class RequiresParameterEdgeEvaluator : EdgeEvaluator {
       // the algorithims are evaluated
       if (context.hasFactOfType(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
-         return EvaluatedEdge.success(edge, instance(context.getFact(paramType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)))
+         return context.getFact(paramType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
       }
 
 //      if (startingPoint.type == paramType) {
@@ -69,7 +75,7 @@ class RequiresParameterEdgeEvaluator : EdgeEvaluator {
 
       // This is a parameter type.  Try to construct an instance
       val requestObject = attemptToConstruct(paramType, context)
-      return EvaluatedEdge.success(edge, instance(requestObject))
+      return requestObject
    }
 
    private fun attemptToConstruct(paramType: Type, context: QueryContext, typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
@@ -100,8 +106,8 @@ class RequiresParameterEdgeEvaluator : EdgeEvaluator {
       return TypedObject(paramType, fields)
    }
 
-
 }
+
 
 data class EvaluatedEdge(val edge: GraphEdge<Element, Relationship>, val result: Element?, val error: String? = null) {
    companion object {
@@ -142,5 +148,7 @@ abstract class PassThroughEdgeEvaluator(override val relationship: Relationship)
 class AttributeOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_ATTRIBUTE_OF)
 class IsTypeOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_TYPE_OF)
 class HasParamOfTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
+class InstanceHasAttributeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.INSTANCE_HAS_ATTRIBUTE)
 class OperationParameterEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_PARAMETER_ON)
 class HasAttributeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.HAS_ATTRIBUTE)
+class IsInstanceOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_INSTANCE_OF)

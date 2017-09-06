@@ -31,7 +31,7 @@ import kotlin.streams.toList
 // TODO : Why isn't the type enough, given that has children?  Why do I need to explicitly list the children I want?
 data class QuerySpecTypeNode(val type: Type, val children: Set<QuerySpecTypeNode> = emptySet())
 
-data class QueryResult(val results: Map<QuerySpecTypeNode, TypedInstance?>, val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(), val path: Path) {
+data class QueryResult(val results: Map<QuerySpecTypeNode, TypedInstance?>, val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(), val path: Path?) {
    val isFullyResolved = unmatchedNodes.isEmpty()
    operator fun get(typeName: String): TypedInstance? {
       return this.results.filterKeys { it.type.name.fullyQualifiedName == typeName }

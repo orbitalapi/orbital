@@ -11,6 +11,7 @@ import io.osmosis.polymer.query.QuerySpecTypeNode
 import io.osmosis.polymer.query.SearchFailedException
 import io.osmosis.polymer.query.graph.EdgeEvaluator
 import io.osmosis.polymer.query.graph.EvaluatedEdge
+import io.osmosis.polymer.query.graph.ParameterFactory
 import io.osmosis.polymer.query.graph.orientDb.EvaluatedLink
 import io.osmosis.polymer.query.graph.orientDb.LinkEvaluator
 import io.osmosis.polymer.schemas.*
@@ -45,12 +46,25 @@ class ToDoInvoker : OperationInvoker {
 }
 
 @Component
-class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : LinkEvaluator, EdgeEvaluator, OperationInvocationService {
+class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver(), val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator, OperationInvocationService {
    override fun evaluate(edge: GraphEdge<Element, Relationship>, context: QueryContext): EvaluatedEdge {
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
       val (service, operation) = context.schema.operation(operationName)
+
+      // Discover parameters.
+      // Note: We can't always assume that the REQUIRES_PARAM relationship has taken care of this
+      // for us, as we don't know what path was travelled to arrive here.
+      // Therefore, just find all the params, and add them to the context.
+      // This will fail if a param is not discoverable
+      operation.parameters.forEach { requiredParam ->
+         val paramInstance = parameterFactory.discover(requiredParam.type, context)
+         context.addFact(paramInstance)
+      }
+
       // VisitedNodes are better candidates for params, as they are more contextually relevant
       val visitedInstanceNodes = context.collectVisitedInstanceNodes()
+
+
       val result: TypedInstance = invokeOperation(service, operation, visitedInstanceNodes, context)
       context.addFact(result)
       return EvaluatedEdge.success(edge,instance(result))

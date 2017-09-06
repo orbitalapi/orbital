@@ -39,7 +39,7 @@ service ClientLookupService {
    val graph = GraphBuilder.create<Element, Relationship>()
       .connect(type("Invoice")).to(member("Invoice/clientId")).withEdge(Relationship.HAS_ATTRIBUTE)
       .connect(member("Invoice/clientId")).to(type("ClientId")).withEdge(Relationship.IS_TYPE_OF)
-      .connect(type("ClientId")).to(member("Client/clientId")).withEdge(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
+//      .connect(type("ClientId")).to(member("Client/clientId")).withEdge(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
       .connect(member("Client/clientId")).to(type("Client")).withEdge(Relationship.IS_ATTRIBUTE_OF)
       .connect(type("ClientId")).to(operation("ClientLookupService")).withEdge(Relationship.IS_PARAMETER_ON)
       .connect(type("Client")).to(member("Client/clientName")).withEdge(Relationship.HAS_ATTRIBUTE)
@@ -108,13 +108,13 @@ service ClientLookupService {
    }
 
    private fun Relationship.canBeEvaluated(from: Element, to: Element, context: Map<TypeName, TypedInstance>): Boolean {
-      if (this == Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE) {
-         // TODO : This should check more thoroughly -- ie., is the actual instance?
-         return context.containsKey(to.value)
-      } else {
-         // TODO
+//      if (this == Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE) {
+//         // TODO : This should check more thoroughly -- ie., is the actual instance?
+//         return context.containsKey(to.value)
+//      } else {
+//         // TODO
          return true
-      }
+//      }
    }
 
 }

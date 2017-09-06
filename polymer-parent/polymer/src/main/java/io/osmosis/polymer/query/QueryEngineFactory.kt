@@ -52,7 +52,7 @@ interface QueryEngineFactory {
          return listOf(AttributeOfEvaluator(),
             HasAttributeEvaluator(),
             IsTypeOfEvaluator(),
-            HasParamOfTypeEvaluator(),
+//            HasParamOfTypeEvaluator(),
             OperationParameterEvaluator(),
             RequiresParameterEvaluator(),
             OperationInvocationEvaluator(invokers))
@@ -63,6 +63,8 @@ interface QueryEngineFactory {
             AttributeOfEdgeEvaluator(),
             IsTypeOfEdgeEvaluator(),
             HasParamOfTypeEdgeEvaluator(),
+            IsInstanceOfEdgeEvaluator(),
+            InstanceHasAttributeEdgeEvaluator(),
             OperationParameterEdgeEvaluator(),
             HasAttributeEdgeEvaluator(),
             OperationInvocationEvaluator(invokers)

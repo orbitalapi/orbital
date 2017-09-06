@@ -10,7 +10,11 @@ enum class ElementType {
    TYPE,
    MEMBER,
    SERVICE,
+   // An instance is something we have a real actual instance of
    INSTANCE,
+   // A provided instance is something we expect to discover via the search,
+//    but is not known at the start of the search.
+   PROVIDED_INSTANCE,
    PARAMETER;
 
    override fun toString(): String {
@@ -45,7 +49,11 @@ fun type(type: Type) = type(type.fullyQualifiedName)
 fun member(name: String) = Element(name, ElementType.MEMBER)
 fun parameter(operationName: String, index: Int) = Element("$operationName/param/$index", ElementType.PARAMETER)
 fun operation(name: String) = Element(name, ElementType.SERVICE)
+fun providedInstance(name: String) = Element(name, ElementType.PROVIDED_INSTANCE)
 fun instance(value: TypedInstance) = Element(value, ElementType.INSTANCE)
+
+typealias TypeElement = Element
+typealias MemberElement = Element
 
 class PolymerGraphBuilder(val schema: Schema) {
    fun build(facts: Set<TypedInstance> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
@@ -62,13 +70,13 @@ class PolymerGraphBuilder(val schema: Schema) {
       }
    }
 
-   private fun appendTypes(builder: GraphBuilder<Element, Relationship>, schema: Schema) {
+   private fun appendTypes(builder: GraphBuilder<Element, Relationship>, schema: Schema):Map<TypeElement,List<MemberElement>> {
       schema.types.forEach { type: Type ->
 
          val typeFullyQualifiedName = type.fullyQualifiedName
          val typeNode = type(typeFullyQualifiedName)
          type.attributes.map { (attributeName, attributeType) ->
-            val attributeQualifiedName = "$typeFullyQualifiedName/$attributeName"
+            val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)
             val attributeNode = member(attributeQualifiedName)
             builder.connect(typeNode).to(attributeNode).withEdge(Relationship.HAS_ATTRIBUTE)
 
@@ -77,10 +85,16 @@ class PolymerGraphBuilder(val schema: Schema) {
 
             val attributeTypeNode = type(attributeType.fullyQualifiedName)
             builder.connect(attributeNode).to(attributeTypeNode).withEdge(Relationship.IS_TYPE_OF)
-            builder.connect(attributeTypeNode).to(attributeNode).withEdge(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
+            // See the relationship for why commented out ....
+            // migrating this relationship to an INSTNACE_OF node.
+//            builder.connect(attributeTypeNode).to(attributeNode).withEdge(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
          }
          log().debug("Added attribute ${type.name} to graph")
       }
+   }
+
+   private fun attributeFqn(typeFullyQualifiedName: String, attributeName: AttributeName): String {
+      return "$typeFullyQualifiedName/$attributeName"
    }
 
    private fun appendServices(builder: GraphBuilder<Element, Relationship>, schema: Schema) {
@@ -100,8 +114,20 @@ class PolymerGraphBuilder(val schema: Schema) {
                builder.connect(type(typeFqn)).to(parameter(operationReference, index)).withEdge(Relationship.IS_PARAMETER_ON)
                builder.connect(parameter(operationReference, index)).to(operationNode).withEdge(Relationship.IS_PARAMETER_ON)
             }
-            val resultTypeFqn = operation.returnType.fullyQualifiedName
-            builder.connect(operationNode).to(type(resultTypeFqn)).withEdge(Relationship.PROVIDES)
+
+            // Build the instance.
+            // It connects to it's type, but also to the attributes that are
+            // now traversable, as we have an actual instance of the thing
+            val resultInstanceFqn = operation.returnType.fullyQualifiedName
+            builder.connect(operationNode).to(providedInstance(resultInstanceFqn)).withEdge(Relationship.PROVIDES)
+//            builder.connect(providedInstance(resultInstanceFqn)).to(type(resultInstanceFqn)).withEdge(Relationship.IS_INSTANCE_OF)
+
+            schema.type(resultInstanceFqn).attributes.forEach { attributeName, typeReference ->
+
+               builder.connect(providedInstance(resultInstanceFqn)).to(member(attributeFqn(resultInstanceFqn,attributeName))).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
+            }
+
+
             log().debug("Added operation $operationReference to graph")
          }
       }

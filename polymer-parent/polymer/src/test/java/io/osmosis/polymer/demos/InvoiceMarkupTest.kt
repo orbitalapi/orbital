@@ -136,5 +136,6 @@ namespace io.osmosis.demos.creditInc.isic {
 
       val invoice = polymer.parseJsonModel("polymer.creditInc.Invoice", invoiceJson)
       val result = polymer.query().find("polymer.creditInc.CreditRiskCost", setOf(invoice))
+      result
    }
 }

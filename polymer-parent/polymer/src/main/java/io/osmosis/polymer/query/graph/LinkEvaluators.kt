@@ -87,5 +87,5 @@ abstract class PassThroughEvaluator(override val relationship: Relationship) : L
 
 class AttributeOfEvaluator : PassThroughEvaluator(Relationship.IS_ATTRIBUTE_OF)
 class IsTypeOfEvaluator : PassThroughEvaluator(Relationship.IS_TYPE_OF)
-class HasParamOfTypeEvaluator : PassThroughEvaluator(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
+//class HasParamOfTypeEvaluator : PassThroughEvaluator(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
 class OperationParameterEvaluator : PassThroughEvaluator(Relationship.IS_PARAMETER_ON)
