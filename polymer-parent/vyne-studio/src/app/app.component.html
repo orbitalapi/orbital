@@ -1,20 +1,78 @@
-<!--The content below is only a placeholder and can be replaced.-->
-<div style="text-align:center">
-  <h1>
-    Welcome to {{title}}!
-  </h1>
-  <img width="300" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAxOS4xLjAsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjxzdmcgdmVyc2lvbj0iMS4xIiBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiDQoJIHZpZXdCb3g9IjAgMCAyNTAgMjUwIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAyNTAgMjUwOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+DQo8c3R5bGUgdHlwZT0idGV4dC9jc3MiPg0KCS5zdDB7ZmlsbDojREQwMDMxO30NCgkuc3Qxe2ZpbGw6I0MzMDAyRjt9DQoJLnN0MntmaWxsOiNGRkZGRkY7fQ0KPC9zdHlsZT4NCjxnPg0KCTxwb2x5Z29uIGNsYXNzPSJzdDAiIHBvaW50cz0iMTI1LDMwIDEyNSwzMCAxMjUsMzAgMzEuOSw2My4yIDQ2LjEsMTg2LjMgMTI1LDIzMCAxMjUsMjMwIDEyNSwyMzAgMjAzLjksMTg2LjMgMjE4LjEsNjMuMiAJIi8+DQoJPHBvbHlnb24gY2xhc3M9InN0MSIgcG9pbnRzPSIxMjUsMzAgMTI1LDUyLjIgMTI1LDUyLjEgMTI1LDE1My40IDEyNSwxNTMuNCAxMjUsMjMwIDEyNSwyMzAgMjAzLjksMTg2LjMgMjE4LjEsNjMuMiAxMjUsMzAgCSIvPg0KCTxwYXRoIGNsYXNzPSJzdDIiIGQ9Ik0xMjUsNTIuMUw2Ni44LDE4Mi42aDBoMjEuN2gwbDExLjctMjkuMmg0OS40bDExLjcsMjkuMmgwaDIxLjdoMEwxMjUsNTIuMUwxMjUsNTIuMUwxMjUsNTIuMUwxMjUsNTIuMQ0KCQlMMTI1LDUyLjF6IE0xNDIsMTM1LjRIMTA4bDE3LTQwLjlMMTQyLDEzNS40eiIvPg0KPC9nPg0KPC9zdmc+DQo=">
-</div>
-<h2>Here are some links to help you start: </h2>
-<ul>
-  <li>
-    <h2><a target="_blank" href="https://angular.io/tutorial">Tour of Heroes</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" href="https://github.com/angular/angular-cli/wiki">CLI Documentation</a></h2>
-  </li>
-  <li>
-    <h2><a target="_blank" href="https://blog.angular.io//">Angular blog</a></h2>
-  </li>
-</ul>
-
+<td-layout>
+  <td-navigation-drawer flex sidenavTitle="Covalent" logo="assets:teradata" name="Firstname Lastname" email="firstname.lastname@company.com">
+    <md-nav-list>
+      <a *ngFor="let item of routes" md-list-item><md-icon>{{item.icon}}</md-icon>{{item.title}}</a>
+    </md-nav-list>
+    <div td-navigation-drawer-menu>
+      <md-nav-list>
+        <a *ngFor="let item of usermenu" md-list-item><md-icon>{{item.icon}}</md-icon>{{item.title}}</a>
+      </md-nav-list>
+    </div>
+  </td-navigation-drawer>
+  <td-layout-nav color="accent">
+    <div td-toolbar-content layout="row" layout-align="start center" flex>
+      <button md-icon-button td-menu-button tdLayoutToggle>
+        <md-icon>menu</md-icon>
+      </button>
+      <md-icon [routerLink]="['/']" class="md-icon-logo cursor-pointer" svgIcon="assets:teradata"></md-icon>
+      <span [routerLink]="['/']" class="cursor-pointer">Covalent</span>
+      <span flex></span>
+      <a md-icon-button mdTooltip="Docs" href="https://teradata.github.io/covalent/" target="_blank"><md-icon>chrome_reader_mode</md-icon></a>
+      <a md-icon-button mdTooltip="Github" href="https://github.com/teradata/covalent" target="_blank"><md-icon svgIcon="assets:github"></md-icon></a>
+    </div>
+    <div layout-gt-sm="row" tdMediaToggle="gt-xs" [mediaClasses]="['push-sm']">
+      <div flex-gt-sm="60">
+        <md-card>
+          <md-card-title>Products Sales</md-card-title>
+          <md-card-subtitle>usage stats for our products</md-card-subtitle>
+          <md-divider></md-divider>
+          <md-card-content>
+            card content
+          </md-card-content>
+        </md-card>
+        <md-card>
+          <md-card-title>Customer Activity</md-card-title>
+          <md-card-subtitle>Recent activity from select members</md-card-subtitle>
+          <md-divider></md-divider>
+          <md-card-content>
+            card content
+          </md-card-content>
+        </md-card>
+      </div>
+      <div flex-gt-sm="40">
+        <md-card>
+          <md-card-title>Alerts</md-card-title>
+          <md-card-subtitle>Items requiring attention</md-card-subtitle>
+          <md-divider></md-divider>
+          <md-card-content>
+            card content
+          </md-card-content>
+          <md-divider></md-divider>
+          <md-card-actions>
+            <a md-button color="accent" class="text-upper" [routerLink]="['/logs']">
+              <span>View More</span>
+            </a>
+          </md-card-actions>
+        </md-card>
+        <md-card>
+          <md-card-title>Favorites</md-card-title>
+          <md-card-subtitle>Your favorite products</md-card-subtitle>
+          <md-divider></md-divider>
+          <md-card-content>
+            card content
+          </md-card-content>
+          <md-card-actions>
+            <a md-button color="accent" class="text-upper" [routerLink]="['/product']">
+              <span>View More</span>
+            </a>
+          </md-card-actions>
+        </md-card>
+      </div>
+    </div>
+    <td-layout-footer>
+      <div layout="row" layout-align="start center">
+        <span class="md-caption">Copyright &copy; 2017 Teradata. All rights reserved</span>
+      </div>
+    </td-layout-footer>
+  </td-layout-nav>
+</td-layout>

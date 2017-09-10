@@ -35,10 +35,6 @@ namespace polymer.creditInc {
     type alias ClientName as String
 }
 
-namespace isic.uk {
-    type alias SIC2008 as String
-}
-
 namespace io.osmosis.demos.creditInc.clientLookup {
     service ClientLookupService {
         @StubResponse
@@ -65,8 +61,8 @@ namespace io.osmosis.demos.invictus.rates {
 
 namespace polymer.creditInc {
     parameter type CreditCostRequest {
-        invoiceValue : Money
-        industryCode : isic.uk.SIC2008
+        invoiceValue : Money(currency = 'GBP')
+        industryCode : isic.uk.SIC2003
     }
      type Money {
         currency : Currency
@@ -78,10 +74,6 @@ namespace polymer.creditInc {
         cost : CreditRiskCost
     }
     type alias CreditRiskCost as Decimal
-}
-
-namespace isic.uk {
-    type alias SIC2008 as Int
 }
 
 namespace polymer.creditInc.creditMarkup {

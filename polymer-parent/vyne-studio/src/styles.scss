@@ -1,0 +1,22 @@
+@import '~@angular/material/theming';
+@import '~@covalent/core/theming/all-theme';
+
+// (optional) Additional themes
+//@import '~@covalent/markdown/markdown-theme';
+//@import '~@covalent/highlight/highlight-theme';
+
+@include mat-core();
+
+$primary: mat-palette($mat-orange, 800);
+$accent:  mat-palette($mat-light-blue, 600, A100, A400);
+
+$warn:    mat-palette($mat-red, 600);
+
+$theme: mat-light-theme($primary, $accent, $warn);
+
+@include angular-material-theme($theme);
+@include covalent-theme($theme);
+
+// (optional) Additional themes
+//@include covalent-markdown-theme($theme);
+//@include covalent-highlight-theme();
