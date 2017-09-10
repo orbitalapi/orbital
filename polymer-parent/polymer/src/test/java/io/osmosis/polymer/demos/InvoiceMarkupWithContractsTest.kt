@@ -8,7 +8,7 @@ import io.osmosis.polymer.query.QueryEngineFactory
 import io.osmosis.polymer.schemas.taxi.TaxiSchema
 import org.junit.Test
 
-class InvoiceMarkupTest {
+class InvoiceMarkupWithContractsTest {
    val taxiDef = """
 namespace polymer.creditInc {
     type Client {
@@ -55,12 +55,13 @@ namespace polymer.creditInc {
 namespace io.osmosis.demos.invictus.rates {
     service RateConversionService {
         @StubResponse
-        operation convertRates( polymer.creditInc.Money, polymer.creditInc.Currency ) : polymer.creditInc.Money
+        operation convertRates( polymer.creditInc.Money, polymer.creditInc.Currency ) : polymer.creditInc.Money( from source, currency = targetCurrency )
     }
 }
 
 namespace polymer.creditInc {
     parameter type CreditCostRequest {
+        invoiceValue : Money(currency = 'GBP')
         industryCode : isic.uk.SIC2003
     }
      type Money {

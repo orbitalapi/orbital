@@ -12,11 +12,12 @@ enum class ElementType {
    TYPE,
    MEMBER,
    SERVICE,
-   // An instance is something we have a real actual instance of
+   // An instance is something we have a real actual instance of.
+   // These are available before a search is commenced.
    INSTANCE,
-   // A provided instance is something we expect to discover via the search,
+   // An instance of a type, expected to be discovered via the search,
 //    but is not known at the start of the search.
-   PROVIDED_INSTANCE,
+   TYPE_INSTANCE,
 
    // Keep MEMBER and PROVIDED_INSTANCE_MEMBER seperate, as
    // in many cases we ONLY want to traverse from a member where actually have
@@ -32,7 +33,7 @@ enum class ElementType {
 }
 
 
-data class Element(val value: Any, val elementType: ElementType) {
+data class Element(val value: Any, val elementType: ElementType, val instanceValue:Any? = null) {
 
    fun graphNode(): Element {
       return if (this.elementType == ElementType.INSTANCE) {
@@ -58,9 +59,9 @@ fun type(type: Type) = type(type.fullyQualifiedName)
 fun member(name: String) = Element(name, ElementType.MEMBER)
 fun parameter(operationName: String, index: Int) = Element("$operationName/param/$index", ElementType.PARAMETER)
 fun operation(name: String) = Element(name, ElementType.SERVICE)
-fun providedInstance(name: String) = Element(name, ElementType.PROVIDED_INSTANCE)
-fun providedInstanceMember(name:String) = Element(name, ElementType.PROVIDED_INSTANCE_MEMBER)
-fun instance(value: TypedInstance) = Element(value, ElementType.INSTANCE)
+fun providedInstance(name: String) = Element(name, ElementType.TYPE_INSTANCE)
+fun providedInstanceMember(name: String) = Element(name, ElementType.PROVIDED_INSTANCE_MEMBER)
+fun instance(value: TypedInstance) = Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
 
 typealias TypeElement = Element
 typealias MemberElement = Element
@@ -76,7 +77,9 @@ class PolymerGraphBuilder(val schema: Schema) {
 
    private fun appendInstances(builder: GraphBuilder<Element, Relationship>, facts: Set<TypedInstance>, schema: Schema) {
       facts.forEach { typedInstance ->
-         builder.connect(instance(typedInstance)).to(type(typedInstance.type)).withEdge(Relationship.IS_INSTANCE_OF)
+         val instance = instance(typedInstance)
+         builder.connect(instance).to(type(typedInstance.type)).withEdge(Relationship.IS_INSTANCE_OF)
+         appendInstanceAttributes(schema,typedInstance.type.fullyQualifiedName,builder,instance)
       }
    }
 
@@ -122,9 +125,9 @@ class PolymerGraphBuilder(val schema: Schema) {
                // isn't supported, and results in the Edge for the 2nd pair to remain undefined
                val typeFqn = parameter.type.fullyQualifiedName
                builder.connect(operationNode).to(parameter(operationReference, index)).withEdge(Relationship.REQUIRES_PARAMETER)
-               builder.connect(parameter(operationReference, index)).to(type(typeFqn)).withEdge(Relationship.REQUIRES_PARAMETER)
+               builder.connect(parameter(operationReference, index)).to(providedInstance(typeFqn)).withEdge(Relationship.REQUIRES_PARAMETER)
 
-               builder.connect(type(typeFqn)).to(parameter(operationReference, index)).withEdge(Relationship.IS_PARAMETER_ON)
+               builder.connect(providedInstance(typeFqn)).to(parameter(operationReference, index)).withEdge(Relationship.IS_PARAMETER_ON)
                builder.connect(parameter(operationReference, index)).to(operationNode).withEdge(Relationship.IS_PARAMETER_ON)
             }
 
@@ -132,26 +135,40 @@ class PolymerGraphBuilder(val schema: Schema) {
             // It connects to it's type, but also to the attributes that are
             // now traversable, as we have an actual instance of the thing
             val resultInstanceFqn = operation.returnType.fullyQualifiedName
-            builder.connect(operationNode).to(providedInstance(resultInstanceFqn)).withEdge(Relationship.PROVIDES)
-//            builder.connect(providedInstance(resultInstanceFqn)).to(type(resultInstanceFqn)).withEdge(Relationship.IS_INSTANCE_OF)
-
-            schema.type(resultInstanceFqn).attributes.forEach { attributeName, typeReference ->
-               val typeElement = type(typeReference.fullyQualifiedName)
-               val typeUsageSites = typesAndWhereTheyreUsed.get(typeElement)
-               val providedInstanceMember = providedInstanceMember(attributeFqn(resultInstanceFqn, attributeName))
-               builder.connect(providedInstanceMember).to(type(typeReference.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
-               builder.connect(providedInstance(resultInstanceFqn)).to(providedInstanceMember).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
-               typeUsageSites.forEach { member ->
-                  if (member.valueAsQualifiedName() != providedInstanceMember.valueAsQualifiedName()) {
-                     builder.connect(providedInstanceMember).to(member).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
-                  }
-               }
-
-            }
+            appendProvidedInstances(builder, operationNode, resultInstanceFqn, schema, typesAndWhereTheyreUsed)
 
 
             log().debug("Added operation $operationReference to graph")
          }
+      }
+   }
+
+   /**
+    * Builds all the providedInstance() nodes required for modelling a returned instance from a service.
+    * It's return type is created as an instance:type, and all the parameters of the return type
+    * are also mapped as providedInstanceMembers() and instance:types.
+    */
+   private fun appendProvidedInstances(builder: GraphBuilder<Element, Relationship>, operationNode: Element, instanceFqn: String, schema: Schema, typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement>) {
+      val providedInstance = providedInstance(instanceFqn)
+      builder.connect(operationNode).to(providedInstance).withEdge(Relationship.PROVIDES)
+      //            builder.connect(providedInstance(resultInstanceFqn)).to(type(resultInstanceFqn)).withEdge(Relationship.IS_INSTANCE_OF)
+
+      appendInstanceAttributes(schema, instanceFqn, builder, providedInstance)
+   }
+
+   private fun appendInstanceAttributes(schema: Schema, instanceFqn: String,  builder: GraphBuilder<Element, Relationship>, providedInstance: Element) {
+      schema.type(instanceFqn).attributes.forEach { attributeName, typeReference ->
+         val typeElement = type(typeReference.fullyQualifiedName)
+         val providedInstanceMember = providedInstanceMember(attributeFqn(instanceFqn, attributeName))
+         builder.connect(providedInstance).to(providedInstanceMember).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
+         builder.connect(providedInstanceMember).to(providedInstance(typeReference.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
+
+   //         typeUsageSites.forEach { member ->
+   //            if (member.valueAsQualifiedName() != providedInstanceMember.valueAsQualifiedName()) {
+   //               builder.connect(providedInstanceMember).to(member).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
+   //            }
+   //         }
+
       }
    }
 
