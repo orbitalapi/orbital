@@ -4,6 +4,7 @@ import com.winterbe.expekt.expect
 import io.osmosis.polymer.Polymer
 import io.osmosis.polymer.StubService
 import io.osmosis.polymer.models.json.parseJsonModel
+import io.osmosis.polymer.models.json.parseKeyValuePair
 import io.osmosis.polymer.query.QueryEngineFactory
 import io.osmosis.polymer.schemas.taxi.TaxiSchema
 import org.junit.Test
@@ -91,9 +92,9 @@ namespace isic.uk {
 namespace io.osmosis.demos.creditInc.isic {
     service IsicConversionService {
         @StubResponse
-        operation toSic2003( isic.uk.SIC2003 ) : isic.uk.SIC2003
+        operation toSic2003( isic.uk.SIC2008 ) : isic.uk.SIC2003
         @StubResponse
-        operation toSic2007( isic.uk.SIC2003 ) : isic.uk.SIC2008
+        operation toSic2008( isic.uk.SIC2003 ) : isic.uk.SIC2008
     }
 }
        """
@@ -129,9 +130,18 @@ namespace io.osmosis.demos.creditInc.isic {
 {
 "cost" : 250.00
 }"""
+
+      val rateConversionResponse = """
+{
+   "currency" : "GBP",
+   "value" : "10.00"
+}
+"""
       // Set up stub service responses
       stubService.addResponse("findClientById", polymer.parseJsonModel("polymer.creditInc.Client", clientJson))
       stubService.addResponse("calculateCreditCosts", polymer.parseJsonModel("polymer.creditInc.CreditCostResponse", creditCostResponse))
+      stubService.addResponse("toSic2003", polymer.parseKeyValuePair("isic.uk.SIC2003", "2003"))
+      stubService.addResponse("convertRates", polymer.parseJsonModel("polymer.creditInc.Money", rateConversionResponse))
 
       val invoice = polymer.parseJsonModel("polymer.creditInc.Invoice", invoiceJson)
       val result = polymer.query().find("polymer.creditInc.CreditRiskCost", setOf(invoice))

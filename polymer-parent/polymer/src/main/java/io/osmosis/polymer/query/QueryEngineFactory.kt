@@ -67,6 +67,7 @@ interface QueryEngineFactory {
             InstanceHasAttributeEdgeEvaluator(),
             OperationParameterEdgeEvaluator(),
             HasAttributeEdgeEvaluator(),
+            CanPopulateEdgeEvaluator(),
             OperationInvocationEvaluator(invokers)
          )
       }

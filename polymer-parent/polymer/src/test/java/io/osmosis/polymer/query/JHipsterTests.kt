@@ -80,7 +80,7 @@ service ClientLookupService {
       val searchCompletedFn = { node: WeightedNode<Relationship, Element, Double> ->
 
          val state = node.state()
-         val matched = state.elementType == ElementType.INSTANCE && (state.value as TypedInstance).type.name.fullyQualifiedName == targetType
+         val matched = state.elementType == ElementType.TYPE_INSTANCE && (state.value as TypedInstance).type.name.fullyQualifiedName == targetType
          if (matched) {
             TODO()
          }

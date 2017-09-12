@@ -2,7 +2,6 @@ package io.osmosis.polymer.query
 
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
-import io.osmosis.polymer.ElementType
 import io.osmosis.polymer.models.TypedCollection
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
@@ -111,10 +110,12 @@ data class QueryContext(override val schema: Schema, val facts: MutableSet<Typed
    }
 
    fun collectVisitedInstanceNodes(): Set<TypedInstance> {
-      return this.evaluatedEdges.flatMap {
-         it.elements.filter { it.elementType == ElementType.INSTANCE }
-            .map { it.value as TypedInstance }
-      }.toSet()
+      return emptySet()
+//      TODO()
+//      return this.evaluatedEdges.flatMap {
+//         it.elements.filter { it.elementType == ElementType.INSTANCE }
+//            .map { it.value as TypedInstance }
+//      }.toSet()
    }
 }
 

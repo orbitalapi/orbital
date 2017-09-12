@@ -2,7 +2,6 @@ package io.osmosis.polymer
 
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.Multimap
-import es.usc.citius.hipster.graph.GraphBuilder
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.schemas.*
@@ -14,7 +13,7 @@ enum class ElementType {
    SERVICE,
    // An instance is something we have a real actual instance of.
    // These are available before a search is commenced.
-   INSTANCE,
+//   INSTANCE,
    // An instance of a type, expected to be discovered via the search,
 //    but is not known at the start of the search.
    TYPE_INSTANCE,
@@ -36,12 +35,13 @@ enum class ElementType {
 data class Element(val value: Any, val elementType: ElementType, val instanceValue:Any? = null) {
 
    fun graphNode(): Element {
-      return if (this.elementType == ElementType.INSTANCE) {
-         val typeName = (value as TypedInstance).type.name.fullyQualifiedName
-         Element(typeName, ElementType.TYPE)
-      } else {
-         this
-      }
+//      return if (this.elementType == ElementType.INSTANCE) {
+//         val typeName = (value as TypedInstance).type.name.fullyQualifiedName
+//         Element(typeName, ElementType.TYPE)
+//      } else {
+//         this
+//      }
+      return this
    }
 
    fun valueAsQualifiedName(): QualifiedName {
@@ -57,33 +57,38 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
 fun type(name: String) = Element(name, ElementType.TYPE)
 fun type(type: Type) = type(type.fullyQualifiedName)
 fun member(name: String) = Element(name, ElementType.MEMBER)
-fun parameter(operationName: String, index: Int) = Element("$operationName/param/$index", ElementType.PARAMETER)
+fun parameter(paramTypeFqn:String) = Element("param/$paramTypeFqn", ElementType.PARAMETER)
 fun operation(name: String) = Element(name, ElementType.SERVICE)
-fun providedInstance(name: String) = Element(name, ElementType.TYPE_INSTANCE)
+fun providedInstance(name: String, value:Any? = null) = Element(name, ElementType.TYPE_INSTANCE, value)
 fun providedInstanceMember(name: String) = Element(name, ElementType.PROVIDED_INSTANCE_MEMBER)
-fun instance(value: TypedInstance) = Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
+fun instance(value: TypedInstance) = providedInstance(value.type.fullyQualifiedName) // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
 
 typealias TypeElement = Element
 typealias MemberElement = Element
 
 class PolymerGraphBuilder(val schema: Schema) {
    fun build(facts: Set<TypedInstance> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
-      val builder = GraphBuilder.create<Element, Relationship>()
+      val builder = HipsterGraphBuilder.create<Element, Relationship>()
       val typesAndWhereTheyreUsed = appendTypes(builder, schema)
       appendServices(builder, schema, typesAndWhereTheyreUsed)
-      appendInstances(builder, facts, schema)
+      appendInstances(builder, facts, schema, typesAndWhereTheyreUsed)
       return builder.createDirectedGraph()
    }
 
-   private fun appendInstances(builder: GraphBuilder<Element, Relationship>, facts: Set<TypedInstance>, schema: Schema) {
+   private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, facts: Set<TypedInstance>, schema: Schema, typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement>) {
       facts.forEach { typedInstance ->
-         val instance = instance(typedInstance)
-         builder.connect(instance).to(type(typedInstance.type)).withEdge(Relationship.IS_INSTANCE_OF)
-         appendInstanceAttributes(schema,typedInstance.type.fullyQualifiedName,builder,instance)
+         val typeFqn = typedInstance.type.fullyQualifiedName
+         appendProvidedInstances(builder,typeFqn,schema)
+//         val providedInstance = providedInstance(typeFqn)
+////         val instance = instance(typedInstance)
+//         builder.connect(providedInstance).to(type(typedInstance.type)).withEdge(Relationship.IS_INSTANCE_OF)
+//         builder.connect(providedInstance).to(parameter(typeFqn)).withEdge(Relationship.CAN_POPULATE)
+//
+//         appendInstanceAttributes(schema, typeFqn,builder,providedInstance)
       }
    }
 
-   private fun appendTypes(builder: GraphBuilder<Element, Relationship>, schema: Schema): Multimap<TypeElement, MemberElement> {
+   private fun appendTypes(builder: HipsterGraphBuilder<Element, Relationship>, schema: Schema): Multimap<TypeElement, MemberElement> {
       val typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement> = ArrayListMultimap.create()
       schema.types.forEach { type: Type ->
 
@@ -113,7 +118,7 @@ class PolymerGraphBuilder(val schema: Schema) {
       return "$typeFullyQualifiedName/$attributeName"
    }
 
-   private fun appendServices(builder: GraphBuilder<Element, Relationship>, schema: Schema, typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement>) {
+   private fun appendServices(builder: HipsterGraphBuilder<Element, Relationship>, schema: Schema, typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement>) {
       return schema.services.forEach { service: Service ->
          service.operations.forEach { operation: Operation ->
             val operationReference = "${service.qualifiedName}@@${operation.name}"
@@ -124,18 +129,27 @@ class PolymerGraphBuilder(val schema: Schema) {
                // eg: Service -[requiresParameter]-> Money && Service -[Provides]-> Money
                // isn't supported, and results in the Edge for the 2nd pair to remain undefined
                val typeFqn = parameter.type.fullyQualifiedName
-               builder.connect(operationNode).to(parameter(operationReference, index)).withEdge(Relationship.REQUIRES_PARAMETER)
-               builder.connect(parameter(operationReference, index)).to(providedInstance(typeFqn)).withEdge(Relationship.REQUIRES_PARAMETER)
+               val paramNode = parameter(typeFqn)
+               builder.connect(operationNode).to(paramNode).withEdge(Relationship.REQUIRES_PARAMETER)
+               builder.connect(paramNode).to(operationNode).withEdge(Relationship.IS_PARAMETER_ON)
 
-               builder.connect(providedInstance(typeFqn)).to(parameter(operationReference, index)).withEdge(Relationship.IS_PARAMETER_ON)
-               builder.connect(parameter(operationReference, index)).to(operationNode).withEdge(Relationship.IS_PARAMETER_ON)
+               if (parameter.type.isParameterType) {
+                  // Traverse into the attributes of param types, and add extra nodes.
+                  // As we're allowed to instantiate param types, discovered values within the graph
+                  // can be used to populate new instances, so form links.
+                  parameter.type.attributes.forEach { attriubteName, typeRef ->
+                     // Point back to the "parent" param node (the parameterObject)
+                     // might revisit this in the future, and point back to the operation itself.
+                     builder.connect(parameter(typeRef.fullyQualifiedName)).to(paramNode).withEdge(Relationship.IS_PARAMETER_ON)
+                  }
+               }
             }
 
             // Build the instance.
             // It connects to it's type, but also to the attributes that are
             // now traversable, as we have an actual instance of the thing
             val resultInstanceFqn = operation.returnType.fullyQualifiedName
-            appendProvidedInstances(builder, operationNode, resultInstanceFqn, schema, typesAndWhereTheyreUsed)
+            appendProvidedInstances(builder, resultInstanceFqn, schema, operationNode)
 
 
             log().debug("Added operation $operationReference to graph")
@@ -148,27 +162,27 @@ class PolymerGraphBuilder(val schema: Schema) {
     * It's return type is created as an instance:type, and all the parameters of the return type
     * are also mapped as providedInstanceMembers() and instance:types.
     */
-   private fun appendProvidedInstances(builder: GraphBuilder<Element, Relationship>, operationNode: Element, instanceFqn: String, schema: Schema, typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement>) {
+   private fun appendProvidedInstances(builder: HipsterGraphBuilder<Element, Relationship>, instanceFqn: String, schema: Schema, provider:Element? = null) {
       val providedInstance = providedInstance(instanceFqn)
-      builder.connect(operationNode).to(providedInstance).withEdge(Relationship.PROVIDES)
-      //            builder.connect(providedInstance(resultInstanceFqn)).to(type(resultInstanceFqn)).withEdge(Relationship.IS_INSTANCE_OF)
+      if (provider != null) {
+         builder.connect(provider).to(providedInstance).withEdge(Relationship.PROVIDES)
+      }
+      builder.connect(providedInstance).to(type(instanceFqn)).withEdge(Relationship.IS_INSTANCE_OF)
+      builder.connect(providedInstance).to(parameter(instanceFqn)).withEdge(Relationship.CAN_POPULATE)
 
       appendInstanceAttributes(schema, instanceFqn, builder, providedInstance)
    }
 
-   private fun appendInstanceAttributes(schema: Schema, instanceFqn: String,  builder: GraphBuilder<Element, Relationship>, providedInstance: Element) {
+   private fun appendInstanceAttributes(schema: Schema, instanceFqn: String,  builder: HipsterGraphBuilder<Element, Relationship>, providedInstance: Element) {
       schema.type(instanceFqn).attributes.forEach { attributeName, typeReference ->
-         val typeElement = type(typeReference.fullyQualifiedName)
          val providedInstanceMember = providedInstanceMember(attributeFqn(instanceFqn, attributeName))
          builder.connect(providedInstance).to(providedInstanceMember).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
-         builder.connect(providedInstanceMember).to(providedInstance(typeReference.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
-
-   //         typeUsageSites.forEach { member ->
-   //            if (member.valueAsQualifiedName() != providedInstanceMember.valueAsQualifiedName()) {
-   //               builder.connect(providedInstanceMember).to(member).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
-   //            }
-   //         }
-
+         // The "providedInstance" node of the member itself
+         val memberInstance = providedInstance(typeReference.fullyQualifiedName)
+         builder.connect(providedInstanceMember).to(memberInstance).withEdge(Relationship.IS_ATTRIBUTE_OF)
+         // The member instance we have can populate required params
+         builder.connect(memberInstance).to(parameter(typeReference.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
+         builder.connect(memberInstance).to(type(typeReference.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
       }
    }
 

@@ -52,16 +52,18 @@ class ConstraintViolationResolver {
    }
 
    private fun findServiceToResolveConstraint(param: Parameter, evaluation: ConstraintEvaluation, services: Set<Service>): OperationInvocationContext? {
-      val operationContext = services.flatMap { service ->
+      val operationContexts = services.flatMap { service ->
          service.operations.map { operation -> service to operation }
       }
          .map { (service, operation) -> Triple(service, operation, evaluation.violation!!.provideResolutionAdvice(operation, operation.contract)) }
          .filter { (_, _, resolutionAdvice) -> resolutionAdvice != null }
-         .map { (service, operation, resolutionAdvice) -> OperationInvocationContext.from(service, operation, resolutionAdvice!!) }
+         .map { (service, operation, resolutionAdvice: ResolutionAdvice?) ->
+            OperationInvocationContext.from(service, operation, resolutionAdvice!!)
+         }
          // TODO : Consider returning multiple matching operations, and invoking them
          // until one succeeds
-         .firstOrNull()
-      return operationContext
+//         .firstOrNull()
+      return operationContexts.firstOrNull()
    }
 
    data class OperationInvocationContext(val service: Service, val operation: Operation,

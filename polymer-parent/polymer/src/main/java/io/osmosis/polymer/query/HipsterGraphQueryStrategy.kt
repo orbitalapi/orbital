@@ -3,9 +3,9 @@ package io.osmosis.polymer.query
 import es.usc.citius.hipster.algorithm.Algorithm
 import es.usc.citius.hipster.algorithm.Hipster
 import es.usc.citius.hipster.graph.GraphEdge
+import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
-import es.usc.citius.hipster.model.problem.ProblemBuilder
 import io.osmosis.polymer.Element
 import io.osmosis.polymer.PolymerGraphBuilder
 import io.osmosis.polymer.instance
@@ -115,40 +115,36 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
       log().debug("Current graph state: \n ${graph.description()}")
 
 
-      val searchProblem = ProblemBuilder.create()
-         .initialState(start)
-         .defineProblemWithExplicitActions()
-         .useActionFunction({ element ->
-            // Find all the relationships that we consider traversable right now
-            val edges = graph.outgoingEdgesOf(element.graphNode())
-            edges.filter { canBeEvaluated(it, queryContext) }
-               .map { EvaluateRelationshipAction(it.edgeValue, it.vertex2) }
-         })
-         .useTransitionFunction { action, fromElement ->
-            // Because we're not doing path evaluation within the search, just return
-            // the target node for now.
-            action.target
-         }
-         .useCostFunction { transition ->
-            1.0 // Use a constant cost for now
-         }
-         .build()
-
-//      val graphSearchProblem = GraphSearchProblem.startingFrom(start)
-//         .`in`(graph)
-//         .takeCostsFromEdges()
+//      val searchProblem = ProblemBuilder.create()
+//         .initialState(start)
+//         .defineProblemWithExplicitActions()
+//         .useActionFunction({ element ->
+//            // Find all the relationships that we consider traversable right now
+//            val edges = graph.outgoingEdgesOf(element.graphNode())
+//            edges.filter { canBeEvaluated(it, queryContext) }
+//               .map { EvaluateRelationshipAction(it.edgeValue, it.vertex2) }
+//         })
+//         .useTransitionFunction { action, fromElement ->
+//            // Because we're not doing path evaluation within the search, just return
+//            // the target node for now.
+//            action.target
+//         }
+//         .useCostFunction { transition ->
+//            1.0 // Use a constant cost for now
+//         }
 //         .build()
-
-      val searchResult = Hipster.createAStar(searchProblem).search(target)
-      if (searchResult.goalNode.state() != target) {
+      val searchResult = graphSearch(start, target, graph)
+//      val searchResult = Hipster.createAStar(searchProblem).search(target)
+      if (searchResult.state() != target) {
          // Search failed, and couldn't match the node
          return null
       }
+
       // TODO : validate this is a valid path
 
       val evaluatedPath = evaluatePath(searchResult, queryContext)
       val resultValue = selectResultValue(evaluatedPath, queryContext, target)
-      val path = searchResult.goalNode.path().convertToPolymerPath(start, target)
+      val path = searchResult.path().convertToPolymerPath(start, target)
       return if (resultValue != null) {
          resultValue to path
       } else { // Search failed
@@ -212,6 +208,11 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
 //      }
    }
 
+   private fun graphSearch(from: Element, to: Element, graph: HipsterDirectedGraph<Element, Relationship>): WeightedNode<Relationship, Element, Double> {
+      val problem = GraphSearchProblem.startingFrom(from).`in`(graph).takeCostsFromEdges().build()
+      return Hipster.createAStar(problem).search(to).goalNode
+   }
+
    private fun selectResultValue(evaluatedPath: List<EvaluatedEdge>, queryContext: QueryContext, target: Element): TypedInstance? {
       // If the last node in the evaluated path is the type we're after, use that.
       val lastEdgeResult = evaluatedPath.last().result
@@ -228,18 +229,30 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
       return null
    }
 
-   private fun evaluatePath(searchResult: Algorithm<EvaluateRelationshipAction, Element, WeightedNode<EvaluateRelationshipAction, Element, Double>>.SearchResult, queryContext: QueryContext): List<EvaluatedEdge> {
+   private fun evaluatePath(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): List<EvaluatedEdge> {
       // The actual result of this isn't directly used.  But the queryContext is updated with
       // nodes as they're discovered (eg., through service invocation)
-      return searchResult.goalNode.path()
+      return searchResult.path()
          .drop(1) // The first node has no action
          .map { weightedNode ->
             val startNode = weightedNode.previousNode().state()
             val endNode = weightedNode.state()
-            val evaluationResult = edgeEvaluator.evaluate(startNode, weightedNode.action().relationship, endNode, queryContext)
+            val evaluationResult = edgeEvaluator.evaluate(startNode, weightedNode.action(), endNode, queryContext)
             evaluationResult
          }.toList()
    }
+//   private fun evaluatePath(searchResult: Algorithm<EvaluateRelationshipAction, Element, WeightedNode<EvaluateRelationshipAction, Element, Double>>.SearchResult, queryContext: QueryContext): List<EvaluatedEdge> {
+//      // The actual result of this isn't directly used.  But the queryContext is updated with
+//      // nodes as they're discovered (eg., through service invocation)
+//      return searchResult.goalNode.path()
+//         .drop(1) // The first node has no action
+//         .map { weightedNode ->
+//            val startNode = weightedNode.previousNode().state()
+//            val endNode = weightedNode.state()
+//            val evaluationResult = edgeEvaluator.evaluate(startNode, weightedNode.action().relationship, endNode, queryContext)
+//            evaluationResult
+//         }.toList()
+//   }
 
    private fun canBeEvaluated(edge: GraphEdge<Element, Relationship>, queryContext: QueryContext): Boolean {
       if (edge.edgeValue !is Relationship) {
@@ -247,16 +260,16 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
          throw IllegalStateException(message)
       }
       return when (edge.edgeValue) {
-         Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE -> {
-            val (declaringType, _) = queryContext.schema.attribute(edge.vertex2.value as String)
-            queryContext.hasFactOfType(declaringType)
-         }
+//         Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE -> {
+//            val (declaringType, _) = queryContext.schema.attribute(edge.vertex2.value as String)
+//            queryContext.hasFactOfType(declaringType)
+//         }
          else -> true
       }
    }
 }
 
-private fun List<WeightedNode<HipsterGraphQueryStrategy.EvaluateRelationshipAction, Element, Double>>.convertToPolymerPath(start: Element, target: Element): Path {
+private fun List<WeightedNode<Relationship, Element, Double>>.convertToPolymerPath(start: Element, target: Element): Path {
    val links = this.mapIndexed { index, weightedNode ->
       if (index == 0) {
          null
@@ -264,11 +277,24 @@ private fun List<WeightedNode<HipsterGraphQueryStrategy.EvaluateRelationshipActi
          val fromElement = this[index - 1].state()
          val toElement = this[index].state()
          val action = this[index].action()
-         Link(fromElement.valueAsQualifiedName(), action.relationship, toElement.valueAsQualifiedName(), this[index].cost.toInt())
+         Link(fromElement.valueAsQualifiedName(), action, toElement.valueAsQualifiedName(), this[index].cost.toInt())
       }
    }.toList().filterNotNull()
    return Path(start.valueAsQualifiedName(), target.valueAsQualifiedName(), links)
 }
+//private fun List<WeightedNode<HipsterGraphQueryStrategy.EvaluateRelationshipAction, Element, Double>>.convertToPolymerPath(start: Element, target: Element): Path {
+//   val links = this.mapIndexed { index, weightedNode ->
+//      if (index == 0) {
+//         null
+//      } else {
+//         val fromElement = this[index - 1].state()
+//         val toElement = this[index].state()
+//         val action = this[index].action()
+//         Link(fromElement.valueAsQualifiedName(), action.relationship, toElement.valueAsQualifiedName(), this[index].cost.toInt())
+//      }
+//   }.toList().filterNotNull()
+//   return Path(start.valueAsQualifiedName(), target.valueAsQualifiedName(), links)
+//}
 
 
 private fun Algorithm<*, Element, *>.SearchResult.recreatePath(start: Element, target: Element, graph: HipsterDirectedGraph<Element, Relationship>): Path {

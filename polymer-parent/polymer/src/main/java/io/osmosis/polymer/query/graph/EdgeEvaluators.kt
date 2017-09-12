@@ -152,3 +152,4 @@ class InstanceHasAttributeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.
 class OperationParameterEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_PARAMETER_ON)
 class HasAttributeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.HAS_ATTRIBUTE)
 class IsInstanceOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_INSTANCE_OF)
+class CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPULATE)

@@ -31,7 +31,8 @@ enum class Relationship(val description: String) {
    REQUIRES_PARAMETER("Requires parameter"),
    IS_PARAMETER_ON("Is parameter on"),
    IS_INSTANCE_OF("Is instance of"),
-   PROVIDES("provides");
+   PROVIDES("provides"),
+   CAN_POPULATE("can populate");
 
    override fun toString(): String {
       return this.description
