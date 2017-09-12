@@ -1,13 +1,37 @@
 package io.osmosis.polymer.schemas
 
 import io.osmosis.polymer.models.TypedInstance
+import io.osmosis.polymer.models.TypedObject
 
-interface ConstraintViolation {
+interface ConstraintViolationValueUpdater {
+   fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance
+}
+
+object ReplaceValueUpdater : ConstraintViolationValueUpdater {
+   override fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance = updatedValue
+}
+
+class ReplaceFieldValueUpdater(val originalValue: TypedInstance, val fieldName: String) : ConstraintViolationValueUpdater {
+   override fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance {
+      assert(originalValue is TypedObject, { "Can't replace field within a scalar value: $originalValue" })
+      return (originalValue as TypedObject).copy(replacingArgs = mapOf(fieldName to updatedValue))
+   }
+
+}
+
+interface ConstraintViolation : ConstraintViolationValueUpdater {
    // TODO : This is cheating a bit.
    // While it _may_ be reasonable for a violation to have an opinion about
    // how it can be resolved (maybe), it shouldn't really know about service
    // contracts.  But, this will work for now.
    fun provideResolutionAdvice(operation: Operation, contract: OperationContract): ResolutionAdvice? = null
+
+   override fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance {
+      val updated =  updater.resolveWithUpdatedValue(updatedValue)
+      return updated
+   }
+
+   val updater: ConstraintViolationValueUpdater
 }
 
 typealias ParamName = String
@@ -39,7 +63,7 @@ data class ResolutionAdvice(val operation: Operation, val suggestedParams: Map<P
    }
 }
 
-data class ExpectedConstantValueMismatch(val evaluatedInstance: TypedInstance, val requiredType: Type, val fieldName: String, val expectedValue: TypedInstance, val actualValue: TypedInstance) : ConstraintViolation {
+data class ExpectedConstantValueMismatch(val evaluatedInstance: TypedInstance, val requiredType: Type, val fieldName: String, val expectedValue: TypedInstance, val actualValue: TypedInstance, override val updater: ConstraintViolationValueUpdater) : ConstraintViolation {
    override fun provideResolutionAdvice(operation: Operation, contract: OperationContract): ResolutionAdvice? {
       // TODO : This coupling is dangerous.  But, need to consider an abstraction
       // that allow deducing the same answer without the constraint being aware of contracts

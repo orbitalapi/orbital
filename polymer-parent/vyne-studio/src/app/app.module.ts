@@ -5,6 +5,7 @@ import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MdIconModule} from '@angular/material';
 
 import { AppComponent } from './app.component';
+import {SharedModule} from "./shared/shared.module";
 
 @NgModule({
   declarations: [
@@ -15,7 +16,8 @@ import { AppComponent } from './app.component';
     BrowserAnimationsModule,
     CovalentLayoutModule,
     CovalentStepsModule,
-    MdIconModule
+    MdIconModule,
+    SharedModule
   ],
   providers: [],
   bootstrap: [AppComponent]

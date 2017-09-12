@@ -30,12 +30,13 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
       fun fromAttributes(typeName: String, attributes: Map<String, Any>, schema: Schema): TypedObject {
          return fromAttributes(schema.type(typeName), attributes, schema)
       }
+
       fun fromAttributes(type: Type, attributes: Map<String, Any>, schema: Schema): TypedObject {
          val typedAttributes: Map<String, TypedInstance> = attributes.map { (attributeName, value) ->
             val attributeType = schema.type(type.attributes[attributeName]!!)
-            attributeName to TypedInstance.from(attributeType,value,schema)
+            attributeName to TypedInstance.from(attributeType, value, schema)
          }.toMap()
-         return TypedObject(type,typedAttributes)
+         return TypedObject(type, typedAttributes)
       }
 
       fun fromValue(type: Type, value: Any, schema: Schema): TypedObject {
@@ -54,6 +55,10 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
       return this.value.containsKey(name)
    }
 
+   fun getObject(key: String): TypedObject {
+      return get(key) as TypedObject
+   }
+
    // TODO : Needs a test
    override operator fun get(key: String): TypedInstance {
       val parts = key.split(".").toMutableList()
@@ -70,6 +75,10 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
             throw IllegalArgumentException("Cannot evaluate an accessor ($remainingAccessor) as value is not an object with fields (${attributeValue.type.name})")
          }
       }
+   }
+
+   fun copy(replacingArgs: Map<AttributeName, TypedInstance>): TypedObject {
+      return TypedObject(this.type, this.value + replacingArgs)
    }
 }
 

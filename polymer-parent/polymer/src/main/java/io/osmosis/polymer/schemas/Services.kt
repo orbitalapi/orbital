@@ -26,32 +26,47 @@ import io.osmosis.polymer.models.TypedValue
  */
 data class AttributeConstantValueConstraint(val fieldName: String, val expectedValue: TypedInstance) : InputConstraint {
    override fun evaluate(argumentType: Type, value: TypedInstance): ConstraintEvaluation {
-      fun evaluationResult(actualValue: TypedInstance): ConstraintEvaluation {
+      fun evaluationResult(actualValue: TypedInstance, updater: ConstraintViolationValueUpdater): ConstraintEvaluation {
          if (expectedValue == actualValue) return ConstraintEvaluation.valid(value)
 
          // TODO : This feels wrong.  Why pass type+field, when the field itself is supposed to be self-describing.
          // But, how do we navigate from an attribute to it's parent.
          // Eg: from Money.currency -> Money
-         return ConstraintEvaluation(value, ExpectedConstantValueMismatch(value, argumentType, fieldName, expectedValue, actualValue))
+         return DefaultConstraintEvaluation(value, ExpectedConstantValueMismatch(value, argumentType, fieldName, expectedValue, actualValue, updater))
       }
       when (value) {
-         is TypedObject -> return evaluationResult(value[fieldName])
-         is TypedValue -> return evaluationResult(value)
+         is TypedObject -> return evaluationResult(value[fieldName], ReplaceFieldValueUpdater(value, fieldName))
+         is TypedValue -> return evaluationResult(value, ReplaceValueUpdater)
          else -> error("not supported on type ${value::class.java} ")
       }
    }
 }
 
-data class NestedAttributeConstraint(val fieldName: String, val constraint: InputConstraint, val schema:Schema) : InputConstraint {
+data class NestedAttributeConstraint(val fieldName: String, val constraint: InputConstraint, val schema: Schema) : InputConstraint {
    override fun evaluate(argumentType: Type, value: TypedInstance): ConstraintEvaluation {
       if (value !is TypedObject) throw IllegalArgumentException("NestedAttributeConstraint must be evaluated against a TypedObject")
       val nestedAttribute = value.get(fieldName)
       val nestedTypeRef = argumentType.attributes[fieldName]!!
       val nestedType = schema.type(nestedTypeRef)
       // This is probably wrong - find the argument type of the nested field
-      return constraint.evaluate(nestedType, nestedAttribute)
+      return NestedConstraintEvaluation(value, fieldName, constraint.evaluate(nestedType, nestedAttribute))
    }
+}
 
+data class NestedConstraintEvaluation(val parent: TypedObject, val fieldName: String, private val evaluation: ConstraintEvaluation) : ConstraintEvaluation {
+   override val evaluatedValue: TypedInstance = evaluation.evaluatedValue
+   override val violation: ConstraintViolation?
+      get() {
+         if (evaluation.violation == null) return null
+         return NestedConstraintViolation(evaluation.violation!!, this)
+      }
+}
+
+class NestedConstraintViolation(violation: ConstraintViolation, private val evaluation: NestedConstraintEvaluation) : ConstraintViolation by violation {
+   override fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance {
+      val resolvedParent = evaluation.parent.copy(mapOf(evaluation.fieldName to updatedValue))
+      return resolvedParent
+   }
 }
 
 /**
@@ -61,12 +76,19 @@ data class NestedAttributeConstraint(val fieldName: String, val constraint: Inpu
 data class AttributeValueFromParameterConstraint(val fieldName: String, val parameterName: String) : OutputConstraint
 
 data class ReturnValueDerivedFromParameterConstraint(val paramName: String) : OutputConstraint
-data class ConstraintEvaluation(val evaluatedValue: TypedInstance, val violation: ConstraintViolation? = null) {
+
+data class DefaultConstraintEvaluation(override val evaluatedValue: TypedInstance, override val violation: ConstraintViolation? = null) : ConstraintEvaluation
+
+interface ConstraintEvaluation {
+   val evaluatedValue: TypedInstance
+   val violation: ConstraintViolation?
+
    companion object {
-      fun valid(evaluatedValue: TypedInstance) = ConstraintEvaluation(evaluatedValue)
+      fun valid(evaluatedValue: TypedInstance) = DefaultConstraintEvaluation(evaluatedValue)
    }
 
-   val isValid = violation == null
+   val isValid
+      get() = this.violation == null
 }
 
 data class ConstraintEvaluations(val evaluatedValue: TypedInstance, val evaluations: List<ConstraintEvaluation>) : List<ConstraintEvaluation> by evaluations {

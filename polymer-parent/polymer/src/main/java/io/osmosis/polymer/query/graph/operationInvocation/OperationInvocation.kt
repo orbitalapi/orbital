@@ -4,7 +4,6 @@ import es.usc.citius.hipster.graph.GraphEdge
 import io.osmosis.polymer.Element
 import io.osmosis.polymer.instance
 import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.models.TypedValue
 import io.osmosis.polymer.query.QueryContext
 import io.osmosis.polymer.query.QueryResult
 import io.osmosis.polymer.query.QuerySpecTypeNode
@@ -29,20 +28,6 @@ interface OperationInvoker {
    fun canSupport(service: Service, operation: Operation): Boolean
    // TODO : This should return some form of reactive type.
    fun invoke(operation: Operation, parameters: List<TypedInstance>): TypedInstance
-}
-
-object DefaultInvokers {
-   val invokers = listOf(ToDoInvoker())
-}
-
-@Component
-@Deprecated("For spiking purposes, will be removed")
-class ToDoInvoker : OperationInvoker {
-   override fun canSupport(service: Service, operation: Operation): Boolean = true
-
-   override fun invoke(operation: Operation, parameters: List<TypedInstance>): TypedValue {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-   }
 }
 
 @Component

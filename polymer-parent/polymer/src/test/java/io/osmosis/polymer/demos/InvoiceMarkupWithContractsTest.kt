@@ -3,9 +3,12 @@ package io.osmosis.polymer.demos
 import com.winterbe.expekt.expect
 import io.osmosis.polymer.Polymer
 import io.osmosis.polymer.StubService
+import io.osmosis.polymer.models.TypedInstance
+import io.osmosis.polymer.models.TypedObject
 import io.osmosis.polymer.models.json.parseJsonModel
 import io.osmosis.polymer.models.json.parseKeyValuePair
 import io.osmosis.polymer.query.QueryEngineFactory
+import io.osmosis.polymer.query.TypeName
 import io.osmosis.polymer.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -146,5 +149,37 @@ namespace io.osmosis.demos.creditInc.isic {
       val invoice = polymer.parseJsonModel("polymer.creditInc.Invoice", invoiceJson)
       val result = polymer.query().find("polymer.creditInc.CreditRiskCost", setOf(invoice))
       expect(result["polymer.creditInc.CreditRiskCost"]!!.value).to.equal(250.0)
+
+      // Validate the services were called correctly
+      expect(stubService.invocations["findClientById"]!!).to.satisfy { containsArg(it, "polymer.creditInc.ClientId", "jim01") }
+      expect(stubService.invocations["toSic2003"]!!).to.satisfy { containsArg(it, "isic.uk.SIC2008", "2008-123456") }
+      expect(stubService.invocations["convertRates"]!!).to.satisfy {
+         containsArgWithParams(it, "polymer.creditInc.Money",
+            Triple("currency", "polymer.creditInc.Currency", "AUD"),
+            Triple("value", "polymer.creditInc.MoneyAmount","20.55")
+         )
+      }
+      expect(stubService.invocations["convertRates"]!!).to.satisfy { containsArg(it, "polymer.creditInc.Currency", "GBP" ) }
+      val creditRiskRequest = stubService.invocations["calculateCreditCosts"]!!.first() as TypedObject
+      // Assert we called with the converted currency
+      expect(creditRiskRequest["invoiceValue.currency"].value).to.equal("GBP")
+      expect(creditRiskRequest["invoiceValue.value"].value).to.equal("10.00")
+      // Assert we called with the converted SIC code.
+      expect(creditRiskRequest["industryCode"].value).to.equal("2003")
+//      expect(stubService.invocations["calculateCreditCosts"]).to.satisfy { containsArgWithParams(it, "polymer.creditInc.CreditCostRequest",
+//         Triple("invoiceValue", )
+//         ) }
    }
+}
+
+typealias ParamName = String
+fun containsArgWithParams(args: Collection<TypedInstance>, type: String, vararg params: Triple<ParamName, TypeName, Any>): Boolean {
+   return args.any {
+      it.type.fullyQualifiedName == type &&
+         params.all { (paramName, typeName, expectedValue) -> (it as TypedObject)[paramName].value == expectedValue && it[paramName].type.fullyQualifiedName == typeName }
+   }
+}
+
+fun containsArg(args: Collection<TypedInstance>, type: String, value: Any): Boolean {
+   return args.any { it.type.fullyQualifiedName == type && it.value == value }
 }

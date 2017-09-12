@@ -47,7 +47,8 @@ class ConstraintViolationResolver {
             val invocationContext = findServiceToResolveConstraint(param, failedEvaluation, services)
                ?: throw UnresolvedOperationParametersException("Param ${param.type} failed an evaluation $failedEvaluation, but no resolution strategy was found", queryContext.evaluatedPath())
             val operationResult: TypedInstance = operationEvaluator.invokeOperation(invocationContext.service, invocationContext.operation, invocationContext.discoveredParams.toSet(), queryContext)
-            operationResult
+
+            failedEvaluation.violation!!.resolveWithUpdatedValue(operationResult)
          }.first()
    }
 
