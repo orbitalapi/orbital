@@ -1,0 +1,35 @@
+<md-card tdMediaToggle="gt-xs" [mediaClasses]="['push']">
+    <ng-template tdLoading="features.load">
+        <td-search-box class="push-left push-right" placeholder="search" [alwaysVisible]="true" (searchDebounce)="filterFeatures($event)"></td-search-box>
+        <md-divider></md-divider>
+        <md-list class="will-load">
+            <div class="md-padding" *ngIf="!filteredFeatures || filteredFeatures.length === 0" layout="row" layout-align="center center">
+                <h3>No feature to display.</h3>
+            </div>
+            <ng-template let-item let-last="last" ngFor [ngForOf]="filteredFeatures">
+                <md-list-item>
+                    <md-slide-toggle md-list-icon [(ngModel)]="item.enabled"></md-slide-toggle>
+                    <h3 md-line> {{item.title}} </h3>
+                    <span flex></span>
+                    <span flex-gt-xs="60" flex-xs="40" layout-gt-xs="row">
+                        <div class="md-caption tc-grey-500" flex-gt-xs="50"> {{ item.user }} </div>
+                        <div class="md-caption tc-grey-500" flex-gt-xs="50"> {{ item.modified | timeAgo }} </div>
+                    </span>
+                    <span>
+                        <button md-icon-button [md-menu-trigger-for]="menu">
+                        <md-icon>more_vert</md-icon>
+                        </button>
+                        <md-menu x-position="before" #menu="mdMenu">
+                            <a [routerLink]="[item.id + '/edit']" md-menu-item>Edit</a>
+                            <button (click)="openConfirm(item.id)" md-menu-item>Delete</button>
+                        </md-menu>
+                    </span>
+                </md-list-item>
+                <md-divider *ngIf="!last"></md-divider>
+            </ng-template>
+        </md-list>
+    </ng-template>
+</md-card>
+<a md-fab color="accent" class="mat-fab-bottom-right fixed" [routerLink]="['add']"> 
+    <md-icon>add</md-icon>
+</a>

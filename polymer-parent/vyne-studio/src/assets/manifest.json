@@ -1,0 +1,20 @@
+{
+    "name": "Covalent Quickstart",
+    "short_name": "Covalent QS",
+    "start_url": "/",
+    "icons": [
+        {
+            "src": "/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#1976d2",
+    "background_color": "#1976d2",
+    "display": "standalone"
+}

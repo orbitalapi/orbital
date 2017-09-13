@@ -1,0 +1,33 @@
+[
+  {
+    "item_id": "1",
+    "name": "Sim Card",
+    "description": "sim card expiring",
+    "icon": "sim_card",
+    "created" : "07/13/2016 11:05 AM"
+  },{
+    "item_id": "2",
+    "name": "Motherboard",
+    "description": "board heat nearing critical",
+    "icon": "developer_board",
+    "created" : "07/01/2016 03:41 PM"
+  },{
+    "item_id": "3",
+    "name": "RAM Usage",
+    "description": "exceeded ram capacity",
+    "icon": "memory",
+    "created" : "06/15/2016 09:02 AM"
+  },{
+    "item_id": "4",
+    "name": "Wireless Signal",
+    "description": "interrupted signal strength",
+    "icon": "router",
+    "created" : "03/23/2016 11:01 PM"
+  },{
+    "item_id": "5",
+    "name": "Battery",
+    "description": "battery level unknown",
+    "icon": "battery_unknown",
+    "created" : "12/23/2015 11:05 AM"
+  }
+]

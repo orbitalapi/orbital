@@ -1,0 +1,30 @@
+/* :host /deep/ lets shadowdom style child elements */
+:host /deep/ {
+    /**
+    * CSS Overrides for bug fixes
+    */
+
+    /**
+    * END CSS Overrides for bug fixes
+    */
+
+    /* Manage list custom styles */
+    .md-sort-item {
+        /deep/ {
+            .md-list-item-content {
+                padding: 0;
+            }
+        }
+    }
+    .md-sort-icon {
+        font-size: 15px;
+        margin-right: 10px;
+    }
+    .md-sort-header {
+        padding: 10px;
+        &:hover {
+            background-color: #EEEEEE;
+            cursor: pointer;
+        }
+    }
+}

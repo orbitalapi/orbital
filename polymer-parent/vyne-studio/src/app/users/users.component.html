@@ -1,0 +1,87 @@
+<td-layout-nav logo="assets:covalent">
+  <div td-toolbar-content layout="row" layout-align="center center" flex>
+    <span>Product Name</span>
+    <span flex></span>
+    <a md-icon-button mdTooltip="Docs" href="https://teradata.github.io/covalent/" target="_blank"><md-icon>chrome_reader_mode</md-icon></a>
+    <a md-icon-button mdTooltip="Github" href="https://github.com/teradata/covalent" target="_blank"><md-icon svgIcon="assets:github"></md-icon></a>
+  </div>
+  <td-layout-manage-list #manageList
+                        [opened]="media.registerQuery('gt-sm') | async"
+                        [mode]="(media.registerQuery('gt-sm') | async) ? 'side' : 'push'"
+                        [sidenavWidth]="(media.registerQuery('gt-xs') | async) ? '257px' : '100%'">
+    <md-toolbar td-sidenav-content>
+      <span>Users</span>
+    </md-toolbar>
+    <md-nav-list td-sidenav-content (click)="!media.query('gt-sm') && manageList.close()">
+      <a md-list-item>
+        <md-icon md-list-icon>account_circle</md-icon>
+        All Users
+      </a>
+      <a md-list-item>
+        <md-icon md-list-icon>star</md-icon>
+        Favorites
+      </a>
+      <a md-list-item>
+        <md-icon md-list-icon>verified_user</md-icon>
+        Administrators
+      </a>
+      <a md-list-item>
+        <md-icon md-list-icon>supervisor_account</md-icon>
+        Non-Admins
+      </a>
+      <a md-list-item>
+        <md-icon md-list-icon>inbox</md-icon>
+        Archived
+      </a>
+    </md-nav-list>
+    <div td-toolbar-content layout="row" layout-align="start center" flex>
+      <span>All Users</span>
+      <span flex></span>
+      <button md-icon-button><md-icon class="md-24">view_module</md-icon></button>
+      <button md-icon-button><md-icon class="md-24">sort</md-icon></button>
+      <button md-icon-button><md-icon class="md-24">settings</md-icon></button>
+      <button md-icon-button><md-icon class="md-24">more_vert</md-icon></button>
+    </div>
+    <md-card class="push-bottom-xxl" tdMediaToggle="gt-xs" [mediaClasses]="['push']">
+      <td-search-box class="push-left push-right" placeholder="search" [alwaysVisible]="true" (searchDebounce)="filterUsers($event)"></td-search-box>
+      <md-divider></md-divider>
+      <ng-template tdLoading="users.list">
+        <md-list class="will-load">
+          <div class="md-padding" *ngIf="filteredUsers?.length === 0" layout="row" layout-align="center center">
+            <h3>No users to display.</h3>
+          </div>
+          <ng-template let-user let-last="last" ngFor [ngForOf]="filteredUsers">
+            <md-list-item>
+              <md-icon md-list-avatar>person</md-icon>
+              <h3 md-line> {{user.displayName}} </h3>
+              <p md-line> {{user.email}} </p>
+              <p md-line hide-gt-md class="md-caption"> last login: {{ user.lastAccess | timeAgo }} </p>
+              <span flex></span>
+              <span hide-xs hide-sm hide-md flex-gt-xs="60" flex-xs="40" layout-gt-xs="row">
+                  <div class="md-caption tc-grey-500" flex-gt-xs="50"> {{ user.created | date }} </div>
+                  <div class="md-caption tc-grey-500" flex-gt-xs="50"> {{ user.lastAccess | timeAgo }} </div>
+              </span>
+              <span>
+                  <button md-icon-button [md-menu-trigger-for]="menu">
+                  <md-icon>more_vert</md-icon>
+                  </button>
+                  <md-menu x-position="before" #menu="mdMenu">
+                      <a [routerLink]="[user.id, 'edit']" md-menu-item>
+                        <md-icon>edit</md-icon> Edit
+                      </a>
+                      <button md-menu-item (click)="delete(user.id)">
+                        <md-icon>delete</md-icon> Delete
+                      </button>
+                  </md-menu>
+              </span>
+            </md-list-item>
+            <md-divider *ngIf="!last" md-inset></md-divider>
+          </ng-template>
+        </md-list>
+      </ng-template>
+    </md-card>
+  </td-layout-manage-list>   
+</td-layout-nav>
+<a md-fab color="accent" class="mat-fab-bottom-right" [routerLink]="['add']">
+  <md-icon>add</md-icon>
+</a>

@@ -1,22 +1,18 @@
-@import '~@angular/material/theming';
-@import '~@covalent/core/theming/all-theme';
+// Custom style for loading elements without height
+.will-load {
+    min-height: 80px;
+}
+// Href line height wasn't right for md-icon-button
+a[md-icon-button] {
+    line-height: 36px;
+}
 
-// (optional) Additional themes
-//@import '~@covalent/markdown/markdown-theme';
-//@import '~@covalent/highlight/highlight-theme';
+// Capitalize
+.text-capital {
+  text-transform: capitalize;
+}
 
-@include mat-core();
-
-$primary: mat-palette($mat-orange, 800);
-$accent:  mat-palette($mat-light-blue, 600, A100, A400);
-
-$warn:    mat-palette($mat-red, 600);
-
-$theme: mat-light-theme($primary, $accent, $warn);
-
-@include angular-material-theme($theme);
-@include covalent-theme($theme);
-
-// (optional) Additional themes
-//@include covalent-markdown-theme($theme);
-//@include covalent-highlight-theme();
+// Lighter font weight in sub-toolbars
+td-layout-manage-list .mat-toolbar {
+    font-weight: 400;
+}

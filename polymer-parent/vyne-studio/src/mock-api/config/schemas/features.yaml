@@ -1,0 +1,13 @@
+# this is a sample schema file for a feature object.
+
+---
+initial_entries: 12
+randomize: true
+id: _uuid_
+user: _firstname_ _lastname_
+title: _features_ _modifiers_
+icon: _icon_
+created:  _itemtimestamp_
+modified:  _itemtimestamp_
+enabled:  _boolean_
+...

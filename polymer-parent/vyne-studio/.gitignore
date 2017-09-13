@@ -2,8 +2,9 @@
 
 # compiled output
 /dist
+/deploy
 /tmp
-/out-tsc
+/mock-api/.tmp
 
 # dependencies
 /node_modules
@@ -15,29 +16,29 @@
 .c9/
 *.launch
 .settings/
-*.sublime-workspace
 
 # IDE - VSCode
 .vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
 
 # misc
 /.sass-cache
 /connect.lock
-/coverage
+/coverage/*
 /libpeerconnection.log
 npm-debug.log
 testem.log
 /typings
+/.vagrant
 yarn-error.log
 
 # e2e
 /e2e/*.js
 /e2e/*.map
 
-# System Files
+#System Files
 .DS_Store
 Thumbs.db

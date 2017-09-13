@@ -9,13 +9,13 @@ import {
   CovalentCommonModule, CovalentDialogsModule,
 } from '@covalent/core';
 import {
-  MdButtonModule, MdCardModule, MdIconModule,
+  MdButtonModule, MdCardModule, MdIconModule, MdExpansionModule,
   MdListModule, MdMenuModule, MdTooltipModule,
   MdSlideToggleModule, MdInputModule, MdCheckboxModule,
   MdToolbarModule, MdSnackBarModule, MdSidenavModule,
   MdTabsModule, MdSelectModule,
 } from '@angular/material';
-// import { NgxChartsModule, } from '@swimlane/ngx-charts';
+import { NgxChartsModule, } from '@swimlane/ngx-charts';
 
 const FLEX_LAYOUT_MODULES: any[] = [
   FlexLayoutModule,
@@ -26,7 +26,7 @@ const ANGULAR_MODULES: any[] = [
 ];
 
 const MATERIAL_MODULES: any[] = [
-  MdButtonModule, MdCardModule, MdIconModule,
+  MdButtonModule, MdCardModule, MdIconModule, MdExpansionModule,
   MdListModule, MdMenuModule, MdTooltipModule,
   MdSlideToggleModule, MdInputModule, MdCheckboxModule,
   MdToolbarModule, MdSnackBarModule, MdSidenavModule,
@@ -41,7 +41,7 @@ const COVALENT_MODULES: any[] = [
 ];
 
 const CHART_MODULES: any[] = [
-  // NgxChartsModule,
+  NgxChartsModule,
 ];
 
 @NgModule({

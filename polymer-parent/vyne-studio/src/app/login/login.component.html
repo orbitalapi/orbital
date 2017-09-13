@@ -1,0 +1,44 @@
+<div layout="column" layout-fill>
+  <md-toolbar color="primary" class="md-whiteframe-z1">
+    <span>Login</span>
+  </md-toolbar>
+  <div class="md-content" layout-padding flex>
+    <div layout-gt-xs="row" layout-align-gt-xs="center start" class="margin">
+      <div flex-gt-xs="50">
+        <md-card tdMediaToggle="gt-xs" [mediaClasses]="['push-top-lg']">
+          <md-card-title><md-icon class="md-icon-logo" svgIcon="assets:covalent"></md-icon> Login</md-card-title>
+          <md-card-subtitle>sign in via your current corporate account</md-card-subtitle>
+          <md-divider></md-divider>
+          <md-card-content>
+            <form #loginForm="ngForm">
+              <div layout="row">
+                <md-input-container flex> 
+                  <input mdInput #userElement #userControl="ngModel" placeholder="Username" type="text" maxlength="30" name="username" [(ngModel)]="username" required>
+                  <span md-prefix><md-icon>person</md-icon></span>
+                  <md-hint align="start">
+                    <span [hidden]="!userControl.errors?.required || userControl.pristine" class="tc-red-600">Required</span>
+                  </md-hint>
+                  <md-hint align="end">{{userElement.value.length}} / 30</md-hint>
+                </md-input-container>
+              </div>
+              <div layout="row">
+                <md-input-container flex> 
+                  <input mdInput #passElement #passControl="ngModel" placeholder="Password" type="password" name="password" [(ngModel)]="password" required>
+                  <span md-prefix><md-icon>lock</md-icon></span>
+                  <md-hint align="start">
+                    <span [hidden]="!passControl.errors?.required || passControl.pristine" class="tc-red-600">Required</span>
+                  </md-hint>
+                  <md-hint align="end">Something hard to guess</md-hint>
+                </md-input-container>
+              </div>
+            </form>
+          </md-card-content>
+          <md-divider></md-divider>
+          <md-card-actions layout="row">
+            <button flex md-raised-button color="accent" [disabled]="!loginForm.form.valid" (click)="login()">Sign In</button>
+          </md-card-actions>
+        </md-card>
+      </div>
+    </div>    
+  </div>
+</div>

@@ -1,0 +1,13 @@
+---
+
+interval_seconds: 2
+name: "Elapsed Time"
+key: "elapsed-time"
+length: 60
+x_axis_name: "name"
+x_axis_format: "2006-01-02T15:04:05Z07:00"
+y_axes:
+ -
+   name: "value"
+   function_type: "slow_rise"
+...

@@ -1,3 +1,3 @@
-export const environment = {
-  production: true
+export const environment: {production: boolean} = {
+  production: true,
 };

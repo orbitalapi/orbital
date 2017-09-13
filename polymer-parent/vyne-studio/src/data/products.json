@@ -1,0 +1,45 @@
+[
+  {
+    "item_id": "1",
+    "name": "Analyze This",
+    "description": "product description",
+    "icon": "account_balance",
+    "color": "pink-A200",
+    "category" : "analytics"
+  },{
+    "item_id": "2",
+    "name": "Android Usage",
+    "description": "product description",
+    "icon": "android",
+    "color": "green-700",
+    "category" : "analytics"
+  },{
+    "item_id": "3",
+    "name": "Watch Usage",
+    "description": "product description",
+    "icon": "watch",
+    "color": "purple-600",
+    "category" : "analytics"
+  },{
+    "item_id": "4",
+    "name": "Customer Sentiment",
+    "description": "product description",
+    "icon": "face",
+    "color": "light-blue-600",
+    "category" : "customers"
+  },{
+    "item_id": "5",
+    "name": "Member Retention",
+    "description": "product description",
+    "icon": "card_membership",
+    "color": "orange-700",
+    "category" : "customers"
+  },{
+    "item_id": "6",
+    "name": "Rewards Usage",
+    "description": "product description",
+    "icon": "card_giftcard",
+    "color": "indigo-600",
+    "category" : "customers"
+  }
+]

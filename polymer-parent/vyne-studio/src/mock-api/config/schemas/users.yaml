@@ -1,0 +1,12 @@
+# this is a sample schema file for a user object.
+
+---
+initial_entries: 5
+randomize: false
+displayName: _firstname_ _lastname_
+id: _firstname_._lastname_
+email: _firstname_._lastname_@_company_.com
+created: _createdtimestamp_
+lastAccess: _itemtimestamp_
+siteAdmin: _admin_
+...

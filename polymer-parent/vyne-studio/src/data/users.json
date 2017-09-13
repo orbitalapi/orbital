@@ -1,0 +1,42 @@
+[
+  {
+    "displayName" : "Suzy Cuningham",
+    "id" : "suzy.cuningham",
+    "email" : "suzy.cuningham@gmail.com",
+    "created" : "10/01/2015 11:05 AM",
+    "lastAccess" : "12/23/2015 11:05 AM",
+    "siteAdmin": true
+  },
+  {
+    "displayName" : "Bobby Daniels",
+    "id" : "bobbyD",
+    "email" : "bobbyD@outlook.com",
+    "created" : "10/01/2015 11:05 AM",
+    "lastAccess" : "12/23/2015 11:05 AM",
+    "siteAdmin": false
+  },
+  {
+    "displayName" : "John Walker",
+    "id" : "johnnyWalker",
+    "email" : "johnnyWalker@blue.com",
+    "created" : "10/01/2015 11:05 AM",
+    "lastAccess" : "12/23/2015 11:05 AM",
+    "siteAdmin": false
+  },
+  {
+     "displayName" : "Eddy Stevens",
+     "id" : "eStevens",
+     "email" : "eStevens@yahoo.com",
+     "created" : "10/01/2015 11:05 AM",
+     "lastAccess" : "12/23/2015 11:05 AM",
+     "siteAdmin": false
+  },
+  {
+     "displayName" : "Jan Williams",
+     "id" : "jDubz",
+     "email" : "jDubz@msn.com",
+     "created" : "10/01/2015 11:05 AM",
+     "lastAccess" : "12/23/2015 11:05 AM",
+     "siteAdmin": false
+  }
+]

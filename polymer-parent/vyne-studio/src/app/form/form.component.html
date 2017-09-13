@@ -1,0 +1,91 @@
+<td-layout-nav class="white" logo="assets:covalent">
+  <div td-toolbar-content layout="row" layout-align="center center" flex>
+    <span>Product Name</span>
+    <span flex></span>
+    <a md-icon-button mdTooltip="Docs" href="https://teradata.github.io/covalent/" target="_blank"><md-icon>chrome_reader_mode</md-icon></a>
+    <a md-icon-button mdTooltip="Github" href="https://github.com/teradata/covalent" target="_blank"><md-icon svgIcon="assets:github"></md-icon></a>
+  </div>
+  <td-layout-manage-list #manageList
+                        [opened]="media.registerQuery('gt-sm') | async"
+                        [mode]="(media.registerQuery('gt-sm') | async) ? 'side' : 'push'"
+                        [sidenavWidth]="(media.registerQuery('gt-xs') | async) ? '257px' : '100%'">
+    <md-nav-list td-sidenav-content (click)="!media.query('gt-sm') && manageList.close()">
+      <a md-list-item>
+        <md-icon>dashboard</md-icon>
+        Dashboard
+      </a>
+      <a md-list-item>
+        <md-icon>people</md-icon>
+        Customers
+      </a>
+      <a md-list-item>
+        <md-icon>receipt</md-icon>
+        Log
+      </a>
+      <a md-list-item>
+        <md-icon>settings</md-icon>
+        Settings
+      </a>
+    </md-nav-list>
+    <div td-toolbar-content layout="row" layout-align="start center" flex>
+      <a md-icon-button [routerLink]="['/product']"><md-icon>arrow_back</md-icon></a>
+      <span>New Item</span>
+      <span flex></span>
+    </div>
+    <div class="md-content" class="inset">
+      <form>
+        <md-card>
+          <td-steps>
+            <td-step #step1 label="Step 1" sublabel="simple metadata" [disabled]="disabled" (activated)="activeStep1Event()" (deactivated)="deactiveStep1Event()">
+              <div layout-gt-xs="row">
+                <div class="pad">
+                  <md-input-container>
+                    <input mdInput placeholder="Entry name (10 max)" maxlength="10" #inputHint>
+                    <md-hint align="end">{{inputHint.value.length}} / 10</md-hint>
+                  </md-input-container>
+                </div>
+                <div class="pad">
+                  <md-input-container>
+                    <input mdInput type="number" placeholder="Budget" align="end">
+                    <span md-prefix>$&nbsp;</span>
+                    <span md-suffix>.00</span>
+                  </md-input-container>
+                </div>
+              </div>
+            </td-step>
+            <td-step #step2 label="Step 2" sublabel="this step must be validated" [state]="stateStep2" [disabled]="disabled">
+              <md-radio-group>
+                <md-radio-button value="option_1">A New Hope</md-radio-button>
+                <md-radio-button value="option_2">Empire Strikes Back</md-radio-button>
+              </md-radio-group>
+              <md-slide-toggle [checked]="true">
+                Include Awesome
+              </md-slide-toggle>
+              <ng-template td-step-actions>
+                <button md-raised-button color="primary" (click)="toggleRequiredStep2()">Validate &amp; Proceed</button>
+                <button md-button (click)="step2.active = false">Cancel</button>
+              </ng-template>
+            </td-step>
+            <td-step #step3 label="Step 3" sublabel="this step will toggle complete" [state]="stateStep3" [disabled]="disabled">
+              <md-checkbox [checked]="true">
+                I agree to spread the word about Covalent
+              </md-checkbox>
+              <ng-template td-step-actions>
+                <button md-raised-button color="primary" (click)="toggleCompleteStep3()">Complete Step</button>
+                <button md-button (click)="step3.active = false">Cancel</button>
+              </ng-template>
+              <ng-template td-step-summary>
+                You can add a summary that shows after a step is saved.
+              </ng-template>
+            </td-step>
+          </td-steps>
+          <md-divider></md-divider>
+          <md-card-actions>
+            <button md-raised-button color="accent" [routerLink]="['/product']">Save &amp; Create</button>
+            <button md-button class="tc-grey-600"  [routerLink]="['/product']">Cancel</button>
+          </md-card-actions>
+        </md-card>
+      </form>
+    </div>
+  </td-layout-manage-list>
+</td-layout-nav>
