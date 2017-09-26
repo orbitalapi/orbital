@@ -38,6 +38,10 @@ class PolymerSchemaTest {
          parameter type SomeRequestType {
             clientId : ClientId as String
          }
+
+         type TypeWithStringField {
+            name : String
+         }
          """
    val polymer = Polymer(QueryEngineFactory.default()).addSchema(TaxiSchema.from(taxiDef))
 
@@ -68,6 +72,22 @@ class PolymerSchemaTest {
       expect(service.operation("getClient").parameters).size(1)
       expect(service.operation("getClient").returnType.name.fullyQualifiedName).to.equal("polymer.example.Client")
       expect(service.operation("convertMoney").parameters).size(2)
+   }
+
+   @Test
+   fun primitiveTypesShouldBeAdded() {
+      expect(polymer.type("lang.taxi.String")).to.be.not.`null`
+   }
+
+   @Test // TODO : Added this test as a reminder to come back. This doesn't work at the moment, and it should ... FIXME.
+   fun given_primitiveTypeIsDeclaredAsAnAlias_then_thePrimitiveTypeIsPresentWithinTheParsedSchema() {
+      val taxiDef = """
+          parameter type SomeRequestType {
+            clientId : ClientId as String
+         }
+"""
+      val schema = TaxiSchema.from(taxiDef)
+      expect(schema.hasType("lang.taxi.String")).to.be.`true`
    }
 
    @Test

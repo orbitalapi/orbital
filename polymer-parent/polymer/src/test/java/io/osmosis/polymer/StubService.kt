@@ -11,7 +11,7 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
 
    val invocations = mutableMapOf<String, List<TypedInstance>>()
 
-   override fun invoke(operation: Operation, parameters: List<TypedInstance>): TypedInstance {
+   override fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>): TypedInstance {
       val metadata = operation.metadata("StubResponse")
       val stubResponseKey = (metadata.params["value"] as String?).orElse(operation.name)
       invocations.put(stubResponseKey, parameters)

@@ -8,6 +8,19 @@ interface TypedInstance {
    val type: Type
    val value: Any
 
+   fun asMap():Map<String,*> {
+      if (value is Map<*,*>) {
+         val valueMap = value as Map<String,Any>
+         return valueMap.map { (entryKey, entryValue) ->
+            when (entryValue) {
+               is TypedInstance -> entryKey to entryValue.value
+               else -> entryKey to entryValue
+            }
+         }.toMap()
+      }
+      TODO("build a map from whatever this is")
+   }
+
    companion object {
       fun from(type: Type, value: Any, schema: Schema): TypedInstance {
          if (value is Collection<*>) {

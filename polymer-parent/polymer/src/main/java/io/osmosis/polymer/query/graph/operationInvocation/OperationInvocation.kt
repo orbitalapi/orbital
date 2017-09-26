@@ -27,7 +27,7 @@ interface OperationInvocationService {
 interface OperationInvoker {
    fun canSupport(service: Service, operation: Operation): Boolean
    // TODO : This should return some form of reactive type.
-   fun invoke(operation: Operation, parameters: List<TypedInstance>): TypedInstance
+   fun invoke(service:Service, operation: Operation, parameters: List<TypedInstance>): TypedInstance
 }
 
 @Component
@@ -70,7 +70,7 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
 
       val parameters = gatherParameters(operation.parameters, preferredParams, context)
       val resolvedParams = ensureParametersSatisfyContracts(operation.parameters, parameters, context)
-      val result: TypedInstance = invoker.invoke(operation, resolvedParams)
+      val result: TypedInstance = invoker.invoke(service,operation, resolvedParams)
       return result
    }
 

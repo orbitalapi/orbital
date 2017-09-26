@@ -7,6 +7,7 @@ import lang.taxi.services.Constraint
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
 import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
 
 class TaxiSchema(document: TaxiDocument) : Schema {
    override val types: Set<Type>
@@ -65,6 +66,11 @@ class TaxiSchema(document: TaxiDocument) : Schema {
             is ObjectType -> {
                val typeName = QualifiedName(taxiType.qualifiedName)
                val fields = taxiType.fields.map { field ->
+                  if (field.type is PrimitiveType) {
+                     // Register Taxi primitive types here, as they don't appear with a definition in the schema
+                     // (as they're implicitly defined), which results in them never getting defined in the resulting Polymer schema
+                     result.add(Type(field.type.qualifiedName))
+                  }
                   when (field.type) {
                      is ArrayType -> field.name to TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true)
                      else -> field.name to TypeReference(field.type.qualifiedName.fqn(),

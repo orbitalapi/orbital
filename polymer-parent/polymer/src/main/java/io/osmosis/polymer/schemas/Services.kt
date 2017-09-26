@@ -136,24 +136,32 @@ interface OutputConstraint : Constraint
 
 interface Constraint
 
+interface MetadataTarget {
+   val metadata : List<Metadata>
+   fun metadata(name: String): Metadata {
+      return metadata.firstOrNull { it.name.fullyQualifiedName == name } ?: throw IllegalArgumentException("$name not present within this metataa")
+   }
+   fun hasMetadata(name : String) : Boolean {
+      return this.metadata.any { it.name.fullyQualifiedName == name }
+   }
+}
+
 data class Parameter(val type: Type,
                      val name: String? = null,
-                     val metadata: List<Metadata> = emptyList(),
-                     val constraints: List<InputConstraint> = emptyList()) {
+                     override val metadata: List<Metadata> = emptyList(),
+                     val constraints: List<InputConstraint> = emptyList()) : MetadataTarget {
    fun isNamed(name: String): Boolean {
       return this.name != null && this.name == name
    }
 }
 
 data class Operation(val name: String, val parameters: List<Parameter>,
-                     val returnType: Type, val metadata: List<Metadata> = emptyList(),
-                     val contract: OperationContract = OperationContract(returnType)) {
-   fun metadata(name: String): Metadata {
-      return metadata.firstOrNull { it.name.fullyQualifiedName == name } ?: throw IllegalArgumentException("$name not present within this metataa")
-   }
+                     val returnType: Type, override val metadata: List<Metadata> = emptyList(),
+                     val contract: OperationContract = OperationContract(returnType)) : MetadataTarget{
+
 }
 
-data class Service(val qualifiedName: String, val operations: List<Operation>, val metadata: List<Metadata> = emptyList()) {
+data class Service(val qualifiedName: String, val operations: List<Operation>, override val metadata: List<Metadata> = emptyList()) : MetadataTarget {
    fun operation(name: String): Operation {
       return this.operations.first { it.name == name }
    }

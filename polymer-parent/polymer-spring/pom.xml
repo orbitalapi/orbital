@@ -48,5 +48,11 @@
          <artifactId>reactor-core</artifactId>
          <version>3.0.7.RELEASE</version>
       </dependency>
+      <dependency>
+         <groupId>com.jayway.jsonpath</groupId>
+         <artifactId>json-path</artifactId>
+         <scope>test</scope>
+      </dependency>
+
    </dependencies>
 </project>
