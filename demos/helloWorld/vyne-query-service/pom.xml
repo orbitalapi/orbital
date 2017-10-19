@@ -3,25 +3,27 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
-      <artifactId>polymer-parent</artifactId>
-      <groupId>io.osmosis.polymer</groupId>
+      <artifactId>helloWorld-parent</artifactId>
+      <groupId>io.osmosis.demos</groupId>
       <version>0.1.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
-   <artifactId>polymer-spring-schemaStore</artifactId>
-   <version>0.1.0-SNAPSHOT</version>
+   <artifactId>vyne-query-service</artifactId>
 
    <dependencies>
       <dependency>
          <groupId>io.osmosis.polymer</groupId>
-         <artifactId>schema-store</artifactId>
+         <artifactId>polymer-spring</artifactId>
          <version>0.1.0-SNAPSHOT</version>
       </dependency>
       <dependency>
-         <groupId>io.osmosis.polymer</groupId>
-         <artifactId>polymer-spring</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-web</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-eureka</artifactId>
       </dependency>
    </dependencies>
 </project>

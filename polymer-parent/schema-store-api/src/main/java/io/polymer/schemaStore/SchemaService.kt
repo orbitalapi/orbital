@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
+import java.io.Serializable
 
 data class SchemaSet(val schemas: List<VersionedSchema>) {
    val id: Int = schemas.hashCode()
@@ -16,7 +17,9 @@ data class SchemaSet(val schemas: List<VersionedSchema>) {
    fun size() = schemas.size
 }
 
-data class VersionedSchema(val name: String, val version: String, val content: String)
+data class VersionedSchema(val name: String, val version: String, val content: String) : Serializable {
+   val id = "$name:$version"
+}
 
 @RequestMapping("/schemas/taxi")
 @FeignClient(name = "\${polymer.schemaStore.name}")

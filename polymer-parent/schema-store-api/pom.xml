@@ -22,7 +22,11 @@
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-netflix-core</artifactId>
       </dependency>
-
+      <dependency>
+         <groupId>io.osmosis.polymer</groupId>
+         <artifactId>polymer</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
    </dependencies>
 
 </project>

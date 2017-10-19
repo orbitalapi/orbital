@@ -142,3 +142,5 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
 
 
 class UnresolvedOperationParametersException(message: String, evaluatedPath:List<EvaluatedEdge>) : SearchFailedException(message, evaluatedPath)
+
+class OperationInvocationException(message: String) : RuntimeException(message)

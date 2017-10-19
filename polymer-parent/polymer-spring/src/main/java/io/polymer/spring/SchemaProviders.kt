@@ -3,18 +3,15 @@ package io.polymer.spring
 import io.osmosis.polymer.schemas.Schema
 import io.osmosis.polymer.schemas.taxi.TaxiSchema
 import io.osmosis.polymer.utils.log
+import io.polymer.schemaStore.SchemaSet
+import io.polymer.schemaStore.SchemaSourceProvider
 import io.polymer.schemaStore.SchemaStoreClient
 import lang.taxi.generators.java.TaxiGenerator
 
-interface SchemaProvider {
-   fun schemaStrings(): List<String>
-   fun schemaString(): String = schemaStrings().joinToString("\n")
-   fun schemas(): List<Schema>
-}
 
-class LocalTaxiSchemaProvider(val models: List<Class<*>>, val services: List<Class<*>>) : SchemaProvider {
+class LocalTaxiSchemaProvider(val models: List<Class<*>>, val services: List<Class<*>>, val taxiGenerator: TaxiGenerator = TaxiGenerator()) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
-      return TaxiGenerator().forClasses(models + services).generateAsStrings()
+      return taxiGenerator.forClasses(models + services).generateAsStrings()
    }
 
    override fun schemas(): List<Schema> {
@@ -22,14 +19,18 @@ class LocalTaxiSchemaProvider(val models: List<Class<*>>, val services: List<Cla
    }
 }
 
-class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaProvider {
+class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourceProvider {
 
-   private var currentSchemaSet = storeClient.schemaSet
+   init {
+      log().info("Initialized RemoteTaxiSchemaProvider, using a store client of type ${storeClient.javaClass.simpleName}")
+   }
+
+   private var currentSchemaSet =SchemaSet.EMPTY
    private var schemas: List<Schema> = emptyList()
    override fun schemas(): List<Schema> {
       // Cache the schemas until the upstream schema set changes
-      if (storeClient.schemaSet != currentSchemaSet) {
-         this.currentSchemaSet = storeClient.schemaSet
+      if (storeClient.schemaSet() != currentSchemaSet) {
+         this.currentSchemaSet = storeClient.schemaSet()
          log().debug("Rebuilding schemas based on SchemaSet ${this.currentSchemaSet.id}")
          this.schemas = schemaStrings().map { TaxiSchema.from(it) }
       }
@@ -37,7 +38,7 @@ class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaProvi
    }
 
    override fun schemaStrings(): List<String> {
-      return storeClient.schemaSet.schemas.map { it.content }
+      return storeClient.schemaSet().schemas.map { it.content }
    }
 
 }

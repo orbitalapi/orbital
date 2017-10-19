@@ -5,9 +5,9 @@ import com.nhaarman.mockito_kotlin.eq
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.expect
+import io.polymer.schemaStore.HttpSchemaStoreClient
 import io.polymer.schemaStore.SchemaService
 import io.polymer.schemaStore.SchemaSet
-import io.polymer.schemaStore.SchemaStoreClient
 import io.polymer.schemaStore.VersionedSchema
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
@@ -44,7 +44,7 @@ class LocalPolymerConfigTest {
    }
 
 
-   @EnablePolymer(useRemoteSchemaStore = false)
+   @EnablePolymer(remoteSchemaStore = RemoteSchemaStoreType.NONE)
    @Import(PolymerAutoConfiguration::class)
    class PolymerConfigWithLocalSchemaStore {}
 }
@@ -62,7 +62,7 @@ class RemotePolymerConfigTest {
    lateinit var schemaService: SchemaService
 
    @Autowired
-   lateinit var schemaStoreClient: SchemaStoreClient
+   lateinit var schemaStoreClient: HttpSchemaStoreClient
 
 
    @Test
@@ -91,7 +91,7 @@ class RemotePolymerConfigTest {
    }
 
 
-   @EnablePolymer(useRemoteSchemaStore = true)
+   @EnablePolymer(remoteSchemaStore = RemoteSchemaStoreType.HTTP)
    @Import(PolymerAutoConfiguration::class)
    class PolymerConfigWithRemoteSchemaStore {}
 }

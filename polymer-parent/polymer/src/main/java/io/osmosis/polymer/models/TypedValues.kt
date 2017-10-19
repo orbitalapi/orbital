@@ -8,17 +8,21 @@ interface TypedInstance {
    val type: Type
    val value: Any
 
-   fun asMap():Map<String,*> {
-      if (value is Map<*,*>) {
-         val valueMap = value as Map<String,Any>
-         return valueMap.map { (entryKey, entryValue) ->
+   fun toRawObject():Any {
+
+      val unwrapMap = { valueMap:Map<String,Any> -> valueMap.map { (entryKey, entryValue) ->
             when (entryValue) {
                is TypedInstance -> entryKey to entryValue.value
                else -> entryKey to entryValue
             }
          }.toMap()
       }
-      TODO("build a map from whatever this is")
+
+      when (value) {
+         is Map<*,*> -> return unwrapMap(value as Map<String,Any>)
+         // TODO : There's likely other types that need unwrapping
+         else -> return value
+      }
    }
 
    companion object {

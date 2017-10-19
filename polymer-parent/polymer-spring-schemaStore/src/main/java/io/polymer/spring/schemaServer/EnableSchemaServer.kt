@@ -1,6 +1,7 @@
 package io.polymer.spring.schemaServer
 
 import io.polymer.schemaStore.TaxiSchemaService
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.Import
 @Target(AnnotationTarget.CLASS)
 annotation class EnableSchemaServer
 
-@Configuration()
+@EnableDiscoveryClient
+@Configuration
 @ComponentScan(basePackageClasses = arrayOf(TaxiSchemaService::class))
 class SchemaServerConfig

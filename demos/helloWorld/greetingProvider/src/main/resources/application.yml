@@ -1,0 +1,19 @@
+server:
+  port: 8824
+spring:
+  application:
+    name: hello-world
+polymer:
+   schemaStore:
+      name: discovery
+   schema:
+      name: hello-world
+      version: 0.1.0
+logging:
+  level:
+      io.polymer: DEBUG
+      io.osmosis: DEBUG
+ribbon:
+   restclient:
+      enabled: true
+   ServerListRefreshInterval: 1000

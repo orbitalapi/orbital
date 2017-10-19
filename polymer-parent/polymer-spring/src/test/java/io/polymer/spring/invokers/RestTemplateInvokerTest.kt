@@ -5,6 +5,7 @@ import com.winterbe.expekt.expect
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
 import io.osmosis.polymer.schemas.taxi.TaxiSchema
+import io.polymer.schemaStore.SchemaProvider
 import org.hamcrest.BaseMatcher
 import org.hamcrest.Description
 import org.hamcrest.Matcher
@@ -13,12 +14,11 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.ExpectedCount
 import org.springframework.test.web.client.MockRestServiceServer
-import org.springframework.test.web.client.RequestMatcher
 import org.springframework.test.web.client.match.MockRestRequestMatchers.*
 import org.springframework.test.web.client.response.MockRestResponseCreators
 import org.springframework.web.client.RestTemplate
 
-class SpringMvcInvokerTest {
+class RestTemplateInvokerTest {
    val taxiDef = """
 namespace polymer {
 
@@ -69,7 +69,7 @@ namespace polymer {
       val service = schema.service("polymer.CreditCostService")
       val operation = service.operation("calculateCreditCosts")
 
-      val response = SpringMvcInvoker(restTemplate = restTemplate, schema = schema).invoke(service,operation, listOf(
+      val response = RestTemplateInvoker(restTemplate = restTemplate, schemaProvider = SchemaProvider.from(schema)).invoke(service,operation, listOf(
          TypedInstance.from(schema.type("polymer.ClientId"), "myClientId", schema),
          TypedObject.fromAttributes("polymer.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
       )) as TypedObject

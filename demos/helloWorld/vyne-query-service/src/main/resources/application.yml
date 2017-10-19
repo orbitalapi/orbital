@@ -1,0 +1,16 @@
+server:
+  port: 9022
+spring:
+  application:
+    name: query-service
+polymer:
+   schemaStore:
+      name: discovery
+logging:
+  level:
+      io.polymer: DEBUG
+      io.osmosis: DEBUG
+ribbon:
+   ServerListRefreshInterval: 1000
+   restclient:
+      enabled: true

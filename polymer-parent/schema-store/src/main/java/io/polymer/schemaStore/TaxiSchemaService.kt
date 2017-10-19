@@ -2,6 +2,8 @@ package io.polymer.schemaStore
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.github.zafarkhaja.semver.Version
+import io.osmosis.polymer.schemas.Schema
+import io.osmosis.polymer.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
 import lang.taxi.Compiler
@@ -28,7 +30,7 @@ data class VersionedSchema(val name: String, val version: String, val content: S
 }
 @RestController
 @RequestMapping("/schemas/taxi")
-class TaxiSchemaService : SchemaService {
+class TaxiSchemaService : SchemaService, SchemaProvider {
 
    // TODO : Persist these somewhere
    private val schemas = mutableMapOf<String, VersionedSchema>()
@@ -75,6 +77,12 @@ class TaxiSchemaService : SchemaService {
    fun listRawSchema():String {
       return schemas.values.joinToString("\n") { it.content }
    }
+
+   override fun schemas(): List<Schema> {
+      return schemas.values
+         .map { TaxiSchema.from(it.content) }
+   }
+
 
    private fun assertSchemaCompiles(schema: String) {
       try {
