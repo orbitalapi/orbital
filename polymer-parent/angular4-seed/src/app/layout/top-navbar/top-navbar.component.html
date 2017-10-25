@@ -1,0 +1,167 @@
+<nav role="navigation" class="navbar">
+	<ul class="navbar-nav nav-logo">
+		<li class="nav-item logo-wrapper">
+			<a href="javascript:void(0)" [routerLink]="['/dashboards']">
+				<div class="logo">
+					<img src="assets/img/logo/logo-icon.png" alt="Logo">
+				</div>
+				<h1 class="brand-text">Vyne</h1>
+			</a>
+		</li>
+	</ul>
+	<ul class="navbar-nav nav-left">
+		<li class="nav-item menu-icon">
+			<a md-ripple href="javascript:void(0)" role="button" (click)="toggleMenuSideabar()" class="nav-link menu-trigger">
+				<i class="mdi mdi-backburger"></i>
+			</a>
+		</li>
+		<li class="nav-item hidden-sm">
+			<a md-ripple href="javascript:void(0)" (click)="toggleAppMobileLeftMenuSidebar()" class="nav-link mobile-menu-trigger">
+				<i class="mdi mdi-backburger"></i>
+			</a>
+		</li>
+		<!--<li class="nav-item dropdown dropdown-lg app_menu_launcher hidden-sm-down" ngbDropdown>-->
+			<!--<a md-ripple href="javascript:void(0)" class="nav-link" ngbDropdownToggle>-->
+				<!--<i class="zmdi zmdi-apps"></i>-->
+			<!--</a>-->
+			<!--<ul class="dropdown-menu dropdown-lg-menu  p-15 min-h-200">-->
+				<!--<li>-->
+
+				<!--</li>-->
+			<!--</ul>-->
+		<!--</li>-->
+	</ul>
+	<ul class="navbar-nav nav-right">
+		<li class="nav-item">
+			<a md-ripple href="javascript:void(0)" (click)="search.searchStatus = true" class="nav-link">
+				<i class="zmdi zmdi-search"></i>
+			</a>
+		</li>
+      <li class="nav-item hidden-sm-down">
+         <a md-ripple href="javascript:void(0)" (click)="toggleProfile()" class="nav-link">
+            <i class="zmdi zmdi-account"></i>
+         </a>
+      </li>
+		<!--<li class="nav-item dropdown dropdown-lg hidden-sm-down" ngbDropdown>-->
+			<!--<a md-ripple href="javascript:void(0)" class="nav-link" ngbDropdownToggle>-->
+				<!--<i class="zmdi zmdi-invert-colors"></i>-->
+			<!--</a>-->
+			<!--<ul class="dropdown-menu dropdown-lg-menu dropdown-menu-right p-15 color-container">-->
+				<!--<li class="title">-->
+					<!--<h3>Preset Color Options</h3>-->
+				<!--</li>-->
+				<!--<li>-->
+					<!--<div class="color-option-check">-->
+						<!--<label for="theme-a">-->
+							<!--<input id="theme-a" type="radio" name="setting-theme" [(ngModel)]="currentTheme" (ngModelChange)="setTheme()" value="A" />-->
+							<!--<span class="icon-check"></span>-->
+							<!--<span class="split">-->
+								<!--<span class="color bg-primary-theme-a"></span>-->
+								<!--<span class="color bg-shade-theme-a"></span>-->
+							<!--</span>-->
+							<!--<span class="color bg-menu-white"></span>-->
+						<!--</label>-->
+					<!--</div>-->
+				<!--</li>-->
+				<!--<li>-->
+					<!--<div class="color-option-check">-->
+						<!--<label for="theme-b">-->
+							<!--<input id="theme-b" type="radio" name="setting-theme" [(ngModel)]="currentTheme" (ngModelChange)="setTheme()" value="B" />-->
+							<!--<span class="icon-check"></span>-->
+							<!--<span class="split">-->
+								<!--<span class="color bg-primary-theme-b"></span>-->
+								<!--<span class="color bg-shade-theme-b"></span>-->
+							<!--</span>-->
+							<!--<span class="color bg-menu-white"></span>-->
+						<!--</label>-->
+					<!--</div>-->
+				<!--</li>-->
+				<!--<li>-->
+					<!--<div class="color-option-check">-->
+						<!--<label for="theme-c">-->
+							<!--<input id="theme-c" type="radio" name="setting-theme" [(ngModel)]="currentTheme" (ngModelChange)="setTheme()" value="C" />-->
+							<!--<span class="icon-check"></span>-->
+							<!--<span class="split">-->
+								<!--<span class="color bg-primary-theme-c"></span>-->
+								<!--<span class="color bg-shade-theme-c"></span>-->
+							<!--</span>-->
+							<!--<span class="color bg-menu-white"></span>-->
+						<!--</label>-->
+					<!--</div>-->
+				<!--</li>-->
+				<!--<li>-->
+					<!--<div class="color-option-check">-->
+						<!--<label for="theme-d">-->
+							<!--<input id="theme-d" type="radio" name="setting-theme" [(ngModel)]="currentTheme" (ngModelChange)="setTheme()" value="D" />-->
+							<!--<span class="icon-check"></span>-->
+							<!--<span class="split">-->
+								<!--<span class="color bg-primary-theme-d"></span>-->
+								<!--<span class="color bg-shade-theme-d"></span>-->
+							<!--</span>-->
+							<!--<span class="color bg-menu-white"></span>-->
+						<!--</label>-->
+					<!--</div>-->
+				<!--</li>-->
+				<!--<li>-->
+					<!--<div class="color-option-check">-->
+						<!--<label for="theme-e">-->
+							<!--<input id="theme-e" type="radio" name="setting-theme" [(ngModel)]="currentTheme" (ngModelChange)="setTheme()" value="E" />-->
+							<!--<span class="icon-check"></span>-->
+							<!--<span class="split">-->
+								<!--<span class="color bg-primary-theme-e"></span>-->
+								<!--<span class="color bg-shade-theme-e"></span>-->
+							<!--</span>-->
+						<!--<span class="color bg-menu-darkBlue"></span>-->
+
+						<!--</label>-->
+					<!--</div>-->
+				<!--</li>-->
+				<!--<li>-->
+					<!--<div class="color-option-check">-->
+						<!--<label for="theme-f">-->
+							<!--<input id="theme-f" type="radio" name="setting-theme" [(ngModel)]="currentTheme" (ngModelChange)="setTheme()" value="F" />-->
+							<!--<span class="icon-check"></span>-->
+							<!--<span class="split">-->
+								<!--<span class="color bg-primary-theme-f"></span>-->
+								<!--<span class="color bg-shade-theme-f"></span>-->
+							<!--</span>-->
+							<!--<span class="color bg-menu-darkBlue"></span>-->
+						<!--</label>-->
+					<!--</div>-->
+				<!--</li>-->
+				<!--<li>-->
+					<!--<div class="color-option-check">-->
+						<!--<label for="theme-g">-->
+							<!--<input id="theme-g" type="radio" name="setting-theme" [(ngModel)]="currentTheme" (ngModelChange)="setTheme()" value="G" />-->
+							<!--<span class="icon-gheck"></span>-->
+							<!--<span class="split">-->
+								<!--<span class="color bg-primary-theme-g"></span>-->
+								<!--<span class="color bg-shade-theme-g"></span>-->
+							<!--</span>-->
+							<!--<span class="color bg-menu-darkBlue"></span>-->
+						<!--</label>-->
+					<!--</div>-->
+				<!--</li>-->
+				<!--<li>-->
+					<!--<div class="color-option-check">-->
+						<!--<label for="theme-h">-->
+							<!--<input id="theme-h" type="radio" name="setting-theme" [(ngModel)]="currentTheme" (ngModelChange)="setTheme()" value="H" />-->
+							<!--<span class="icon-check"></span>-->
+							<!--<span class="split">-->
+								<!--<span class="color bg-primary-theme-h"></span>-->
+								<!--<span class="color bg-shade-theme-h"></span>-->
+							<!--</span>-->
+							<!--<span class="color bg-menu-darkBlue"></span>-->
+						<!--</label>-->
+					<!--</div>-->
+				<!--</li>-->
+			<!--</ul>-->
+
+		<!--<li class="nav-item">-->
+			<!--<a md-ripple href="javascript:void(0)" (click)="toggleAppRightSidebar()" class="nav-link">-->
+				<!--<i [ngClass]="{'mdi-playlist-minus': false, 'mdi-playlist-plus': true}" class="mdi"></i>-->
+			<!--</a>-->
+		<!--</li>-->
+	</ul>
+</nav>
+<topbar-search #search></topbar-search>

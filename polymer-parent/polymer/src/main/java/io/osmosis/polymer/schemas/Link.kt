@@ -56,3 +56,7 @@ data class Path(val start: QualifiedName, val target: QualifiedName, val links: 
 fun List<EvaluatedEdge>.description():String {
    return this.joinToString("\n") { it.description() }
 }
+
+fun List<Link>.describe():String {
+   return this.joinToString("\n") { it.toString() }
+}

@@ -1,7 +1,9 @@
 package io.osmosis.demos.invictus.rates
 
 import lang.taxi.annotations.*
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 
@@ -23,12 +25,12 @@ class RateConversionService {
 //      return Money(toCcy, amount.multiply(exchangeRate))
 //   }
 
-   @PostMapping("/rates")
+   @PostMapping("/rates/{targetCcy}")
    @Operation
    @ResponseContract(basedOn = "source",
       constraints = ResponseConstraint("currency = targetCurrency")
    )
-   fun convertRates(source: Money, @DataType("polymer.creditInc.Currency") targetCurrency: String): Money {
+   fun convertRates(@RequestBody source: Money, @DataType("polymer.creditInc.Currency") @PathVariable("targetCcy") targetCurrency: String): Money {
       val exchangeRate = BigDecimal("1.0345")
       return Money(targetCurrency, source.value.multiply(exchangeRate))
    }

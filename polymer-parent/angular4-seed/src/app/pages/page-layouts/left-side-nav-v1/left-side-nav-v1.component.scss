@@ -1,0 +1,25 @@
+@import "../../../shared/styles/main/util/index";
+:host /deep/ {
+	.nav-tabs {
+		li a {
+			font-size: rem(14px) !important;
+		}
+	}
+	//vertical tabs
+	.vertical-tabs.align-left {
+		display: flex;
+		.nav-stacked {
+			display: inline-block;
+			flex-direction: column;
+			flex: 1;
+			order: 1;
+		}
+		.tab-content {
+			flex-direction: column;
+			flex: 2;
+			order: 2;
+		}
+	}
+
+
+}

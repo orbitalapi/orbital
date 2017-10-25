@@ -1,6 +1,7 @@
 package io.osmosis.demos.invictus.credit;
 
 import io.polymer.spring.EnablePolymer;
+import io.polymer.spring.RemoteSchemaStoreType;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
@@ -10,7 +11,7 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
  * add to an invoice as a cost of purchasing from a retailer.
  */
 @SpringBootApplication
-@EnablePolymer(useRemoteSchemaStore = true)
+@EnablePolymer(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
 @EnableEurekaClient
 public class CreditMarkupServiceApp {
 

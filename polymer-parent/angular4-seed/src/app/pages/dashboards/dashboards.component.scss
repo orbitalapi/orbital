@@ -1,0 +1,10 @@
+@import "../../shared/styles/main/util/index";
+
+:host /deep/ {
+	.doughnut-chart {
+		height: 350px;
+		width: 350px;
+		max-height: 350px;
+		max-width: 350px;
+	}
+}

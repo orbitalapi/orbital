@@ -39,9 +39,9 @@ class StatefulQueryEngine(initialState: Set<TypedInstance>, private val queryEng
    }
 }
 
-class DefaultQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine  {
+class DefaultQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val profiler: QueryProfiler = QueryProfiler()) : QueryEngine  {
    override fun queryContext(factSet: Set<TypedInstance>): QueryContext {
-      return QueryContext.from(schema, factSet, this)
+      return QueryContext.from(schema, factSet, this, profiler)
    }
 
    override fun find(queryString: String, factSet: Set<TypedInstance>): QueryResult {

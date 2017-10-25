@@ -59,13 +59,14 @@ object TypedInstanceTree {
    }
 }
 
-data class QueryContext(override val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine) : QueryEngine by queryEngine {
+data class QueryContext(override val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine, val profiler:QueryProfiler) : QueryEngine by queryEngine {
+   private val operationRecorder = profiler.startOperation("Query")
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val factsByType
       get() = facts.associateBy { it.type }
 
    companion object {
-      fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine) = QueryContext(schema, facts.toMutableSet(), queryEngine)
+      fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler) = QueryContext(schema, facts.toMutableSet(), queryEngine, profiler)
    }
 
    fun addFact(fact: TypedInstance) {
@@ -118,6 +119,7 @@ data class QueryContext(override val schema: Schema, val facts: MutableSet<Typed
 //      }.toSet()
    }
 }
+
 
 
 enum class FactDiscoveryStrategy {

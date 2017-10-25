@@ -14,4 +14,6 @@ logging:
       io.polymer: DEBUG
       io.osmosis: DEBUG
 ribbon:
+   restclient:
+      enabled: true
    ServerListRefreshInterval: 1000

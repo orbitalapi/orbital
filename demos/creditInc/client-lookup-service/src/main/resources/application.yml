@@ -23,6 +23,8 @@ logging:
       feign.Logger: DEBUG
 
 ribbon:
+   restclient:
+      enabled: true
    ServerListRefreshInterval: 1000
 server:
-  port: 9022
+  port: 9029

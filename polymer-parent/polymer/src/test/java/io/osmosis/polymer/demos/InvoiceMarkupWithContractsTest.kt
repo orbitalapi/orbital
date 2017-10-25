@@ -148,6 +148,18 @@ namespace io.osmosis.demos.creditInc.isic {
 
       val invoice = polymer.parseJsonModel("polymer.creditInc.Invoice", invoiceJson)
       val result = polymer.query().find("polymer.creditInc.CreditRiskCost", setOf(invoice))
+// This is the expected (raw) solution -- other searches exist within this path:
+//      Search Type_instance(polymer.creditInc.Invoice) -> Type(polymer.creditInc.CreditRiskCost) found path:
+//      polymer.creditInc.Invoice -[Instance has attribute]-> polymer.creditInc.Invoice/amount
+//      polymer.creditInc.Invoice/amount -[Is an attribute of]-> polymer.creditInc.Money
+//      polymer.creditInc.Money -[can populate]-> param/polymer.creditInc.Money
+//      param/polymer.creditInc.Money -[Is parameter on]-> param/polymer.creditInc.CreditCostRequest
+//      param/polymer.creditInc.CreditCostRequest -[Is parameter on]-> polymer.creditInc.creditMarkup.CreditCostService@@calculateCreditCosts
+//      polymer.creditInc.creditMarkup.CreditCostService@@calculateCreditCosts -[provides]-> polymer.creditInc.CreditCostResponse
+//      polymer.creditInc.CreditCostResponse -[Is instance of]-> polymer.creditInc.CreditCostResponse
+//      polymer.creditInc.CreditCostResponse -[Has attribute]-> polymer.creditInc.CreditCostResponse/cost
+//      polymer.creditInc.CreditCostResponse/cost -[Is type of]-> polymer.creditInc.CreditRiskCost
+
       expect(result["polymer.creditInc.CreditRiskCost"]!!.value).to.equal(250.0)
 
       // Validate the services were called correctly

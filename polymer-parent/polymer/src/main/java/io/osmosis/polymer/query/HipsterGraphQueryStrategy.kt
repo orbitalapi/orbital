@@ -15,6 +15,7 @@ import io.osmosis.polymer.query.graph.EvaluatedEdge
 import io.osmosis.polymer.schemas.Link
 import io.osmosis.polymer.schemas.Path
 import io.osmosis.polymer.schemas.Relationship
+import io.osmosis.polymer.schemas.describe
 import io.osmosis.polymer.type
 import io.osmosis.polymer.utils.log
 
@@ -137,11 +138,13 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
 //      val searchResult = Hipster.createAStar(searchProblem).search(target)
       if (searchResult.state() != target) {
          // Search failed, and couldn't match the node
+         log().debug("Search failed: $searchDescription. Nearest match was ${searchResult.state()}")
+         log().debug("Search failed path: \n${searchResult.path().convertToPolymerPath(start, target).description.split(",").joinToString("\n") }")
          return null
       }
 
       // TODO : validate this is a valid path
-
+      log().debug("Search $searchDescription found path: \n ${searchResult.path().describe()}")
       val evaluatedPath = evaluatePath(searchResult, queryContext)
       val resultValue = selectResultValue(evaluatedPath, queryContext, target)
       val path = searchResult.path().convertToPolymerPath(start, target)
@@ -269,6 +272,21 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
    }
 }
 
+private fun List<WeightedNode<Relationship,Element,Double>>.toLinks():List<Link> {
+   return this.mapIndexed { index, weightedNode ->
+      if (index == 0) {
+         null
+      } else {
+         val fromElement = this[index - 1].state()
+         val toElement = this[index].state()
+         val action = this[index].action()
+         Link(fromElement.valueAsQualifiedName(), action, toElement.valueAsQualifiedName(), this[index].cost.toInt())
+      }
+   }.toList().filterNotNull()
+}
+private fun List<WeightedNode<Relationship,Element,Double>>.describe():String {
+   return this.toLinks().describe()
+}
 private fun List<WeightedNode<Relationship, Element, Double>>.convertToPolymerPath(start: Element, target: Element): Path {
    val links = this.mapIndexed { index, weightedNode ->
       if (index == 0) {

@@ -2,31 +2,10 @@ package io.vyne.queryService
 
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.schemas.Schema
-import io.polymer.spring.EnablePolymer
 import io.polymer.spring.PolymerFactory
-import io.polymer.spring.RemoteSchemaStoreType
-import org.springframework.boot.SpringApplication
-import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
-
-fun main(args: Array<String>) {
-   SpringApplication.run(QueryServiceApplication::class.java, *args)
-}
-
-
-@SpringBootApplication
-@EnableEurekaClient
-@EnablePolymer(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
-class QueryServiceApplication {
-//   @Bean
-//   fun ribbonClientRestTemplateCustomizer(
-//      ribbonClientHttpRequestFactory: RibbonClientHttpRequestFactory): RestTemplateCustomizer {
-//      return RestTemplateCustomizer { restTemplate -> restTemplate.setRequestFactory(ribbonClientHttpRequestFactory) }
-//   }
-}
 
 // TODO : facts should be QualifiedName -> TypedInstance, but need to get
 // json deserialization working for that.
