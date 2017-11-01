@@ -19,7 +19,6 @@ import { MaterialLabDbService } from "./shared/data/MaterialLabDb.service";
 
 
 import { HammerGestureConfig, HAMMER_GESTURE_CONFIG } from '@angular/platform-browser';
-import { QueryEditorComponent } from './query-editor/query-editor.component';
 
 export class HammerConfig extends HammerGestureConfig {
   overrides = <any>{
@@ -43,7 +42,7 @@ export type StoreType = {
 };
 
 @NgModule({
-  declarations: [AppComponent, QueryEditorComponent],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     FormsModule,

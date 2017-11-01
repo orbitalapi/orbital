@@ -1,6 +1,3 @@
-<p>
-   query-editor works!
-</p>
 <div id="content_wrapper" class="leftSidenav2-wrapper">
    <md-sidenav-container class="sidenav-container">
       <div class="content">
@@ -20,6 +17,71 @@
             </ul>
          </div>
          <div class="content-body">
+            <div class="card">
+               <header class="card-header border-bottom">
+                  <h2 class="card-title">Query facts</h2>
+               </header>
+
+               <td-expansion-panel-group *ngFor="let fact of facts">
+                  <td-expansion-panel [expand]="true">
+                     <ng-template td-expansion-panel-label>
+                        <mat-icon>star</mat-icon>
+                        <span>Google</span>
+                     </ng-template>
+                     <ng-template td-expansion-panel-sublabel>
+                        <span>1600 Amphitheatre Pkwy, Mountain View, CA 94043, USA</span>
+                     </ng-template>
+                     <td-expansion-summary>
+                        <mat-list>
+                           <mat-list-item>
+                              <mat-icon matListAvatar>pin_drop</mat-icon>
+                              <h3 matLine>Google</h3>
+                              <h4 matLine>Headquarters</h4>
+                              <p matLine>
+                                 1600 Amphitheatre Pkwy
+                                 <br/>Mountain View, CA 94043, USA
+                              </p>
+                           </mat-list-item>
+                        </mat-list>
+                     </td-expansion-summary>
+                     <form class="md-padding">
+                        <div layout="row">
+                           <mat-form-field flex>
+                              <input matInput placeholder="Company (disabled)" disabled value="Google" />
+                           </mat-form-field>
+                        </div>
+                        <div layout="row">
+                           <mat-form-field flex>
+                              <textarea matInput placeholder="Description" rows="4"></textarea>
+                           </mat-form-field>
+                        </div>
+                     </form>
+                     <mat-divider></mat-divider>
+                     <div layout="row" class="pad-sm">
+                        <button mat-button color="accent" class="text-upper">Save</button>
+                        <button mat-button class="text-upper">Cancel</button>
+                     </div>
+                  </td-expansion-panel>
+               </td-expansion-panel-group>
+
+
+               <div class="card-footer border-top">
+                  <!-- <ul class="more">
+                     <li>
+                        <a href="javascript:void(0)" class="btn btn-default btn-flat" md-ripple>
+                           View More??
+                        </a>
+                     </li>
+                  </ul> -->
+                  <ul class="actions icons right">
+                     <li>
+                        <button class="btn btn-primary btn-fab" md-ripple (click)="addNewFact()">
+                           <md-icon>add</md-icon>
+                        </button>
+                     </li>
+                  </ul>
+               </div>
+            </div>
          </div>
       </div>
    </md-sidenav-container>

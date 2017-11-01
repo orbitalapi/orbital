@@ -11,8 +11,8 @@ import { GlobalState } from "../app.state";
 import { ConfigService } from "../shared/services/config/config.service";
 import { MdSidenav } from "@angular/material";
 import { DataService } from "../shared/services/data/data.service";
-import { TypeExplorerService } from "app/type-explorer/type-explorer.service";
 import * as _ from "lodash";
+import { TypesService } from "app/common-api/types.service";
 
 @Component({
    moduleId: module.id,
@@ -42,7 +42,7 @@ export class TypeExplorerComponent implements OnInit {
       public config: ConfigService,
       private _elementRef: ElementRef,
       private _state: GlobalState,
-      private service: TypeExplorerService
+      private service: TypesService
    ) {
 
    }

@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { TypeExplorerComponent } from "./type-explorer.component";
 import { SharedModule } from "../shared/shared.module";
 import { Ng2SearchPipeModule } from "ng2-search-filter";
-import { TypeExplorerService } from './type-explorer.service';
+import { CommonApiModule } from 'app/common-api/common-api.module';
 
 const TYPE_EXPLORER_ROUTE = [{ path: '', component: TypeExplorerComponent }];
 
@@ -12,10 +12,11 @@ const TYPE_EXPLORER_ROUTE = [{ path: '', component: TypeExplorerComponent }];
    declarations: [TypeExplorerComponent],
    imports: [
       CommonModule,
+      CommonApiModule,
       SharedModule,
       Ng2SearchPipeModule,
       RouterModule.forChild(TYPE_EXPLORER_ROUTE)
    ],
-   providers: [TypeExplorerService]
+   providers: []
 })
 export class TypeExplorerModule { }

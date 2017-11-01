@@ -20,7 +20,7 @@ data class TypeReference(val name: QualifiedName, val isCollection: Boolean = fa
       get() = name.fullyQualifiedName
 }
 
-data class QualifiedName(val fullyQualifiedName: String) : Serializable {
+data class  QualifiedName(val fullyQualifiedName: String) : Serializable {
    val name: String
       get() = fullyQualifiedName.split(".").last()
 

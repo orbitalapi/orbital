@@ -11,6 +11,8 @@ import { CovalentCodeEditorModule } from '@covalent/code-editor';
 import { NgxChartsDagModule } from '@swimlane/ngx-charts-dag';
 import { NgxDatatableModule } from "@swimlane/ngx-datatable";
 import { QueryEditorComponent } from 'app/query-editor/query-editor.component';
+import { CovalentExpansionPanelModule } from '@covalent/core';
+import { CommonApiModule } from 'app/common-api/common-api.module';
 
 const QUERY_EDITOR_ROUTE = [{ path: '', component: QueryEditorComponent }];
 
@@ -18,9 +20,10 @@ const QUERY_EDITOR_ROUTE = [{ path: '', component: QueryEditorComponent }];
    declarations: [QueryEditorComponent],
    imports: [
       CommonModule,
+      CommonApiModule,
       SharedModule,
       RouterModule.forChild(QUERY_EDITOR_ROUTE),
-
+      CovalentExpansionPanelModule
 
    ]
    // providers: [SchemaEditorService]
