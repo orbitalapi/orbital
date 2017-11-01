@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import io.osmosis.polymer.schemas.Schema
 import io.polymer.schemaStore.SchemaSourceProvider
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
@@ -12,4 +13,8 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider) {
       return schemaProvider.schemaStrings().joinToString("\n")
    }
 
+   @RequestMapping(path = arrayOf("/types"), method = arrayOf(RequestMethod.GET))
+   fun getTypes(): Schema {
+      return schemaProvider.schema()
+   }
 }

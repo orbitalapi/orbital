@@ -5,7 +5,7 @@ const LAYOUT_ROUTES: Routes = [
 		path: "",
 		component: LayoutComponent,
 		children: [
-			{ path: "", redirectTo: "dashboards", pathMatch: "full" },
+			{ path: "", redirectTo: "type-explorer", pathMatch: "full" },
 			//---------------------------------------------------------->
 			//Dashboards
 			//---------------------------------------------------------->
@@ -14,8 +14,16 @@ const LAYOUT_ROUTES: Routes = [
 				loadChildren: "../pages/dashboards/dashboards.module#DashboardsModule"
 			},
          {
-            path: "schema-explorer",
-            loadChildren: "../schema-explorer/schema-explorer.module#SchemaExplorerModule"
+            path: "type-explorer",
+            loadChildren: "../type-explorer/type-explorer.module#TypeExplorerModule"
+         },
+         {
+            path: "schema-editor",
+            loadChildren: "../schema-editor/schema-editor.module#SchemaEditorModule"
+         },
+         {
+            path: "query-editor",
+            loadChildren: "../query-editor/query-editor.module#QueryEditorModule"
          },
 
 

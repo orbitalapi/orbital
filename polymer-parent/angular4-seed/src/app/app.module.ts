@@ -10,9 +10,16 @@ import { GlobalState } from "./app.state";
 import { ServicesModule } from "./shared/services/services.module";
 import { SharedModule } from "./shared/shared.module";
 import { AppRoutingModule } from "./app.routing";
+import { HttpClientModule } from '@angular/common/http';
+
+
+// For spiking, remove these:
+import { InMemoryWebApiModule } from "angular-in-memory-web-api";
+import { MaterialLabDbService } from "./shared/data/MaterialLabDb.service";
+
 
 import { HammerGestureConfig, HAMMER_GESTURE_CONFIG } from '@angular/platform-browser';
-// import { SchemaExplorerComponent } from './schema-explorer/schema-explorer.component';
+import { QueryEditorComponent } from './query-editor/query-editor.component';
 
 export class HammerConfig extends HammerGestureConfig {
   overrides = <any>{
@@ -36,16 +43,18 @@ export type StoreType = {
 };
 
 @NgModule({
-  declarations: [AppComponent],
+  declarations: [AppComponent, QueryEditorComponent],
   imports: [
     BrowserModule,
     FormsModule,
     HttpModule,
+    HttpClientModule,
     ReactiveFormsModule,
     BrowserAnimationsModule,
     ServicesModule,
     SharedModule.forRoot(),
-    AppRoutingModule
+    AppRoutingModule,
+    InMemoryWebApiModule.forRoot(MaterialLabDbService)
   ],
   providers: [APP_PROVIDERS],
   bootstrap: [AppComponent]

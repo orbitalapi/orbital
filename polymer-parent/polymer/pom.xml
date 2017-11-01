@@ -20,7 +20,7 @@
    <dependencies>
       <dependency>
          <groupId>lang.taxi</groupId>
-         <artifactId>grammar</artifactId>
+         <artifactId>compiler</artifactId>
          <version>0.1.0-SNAPSHOT</version>
       </dependency>
       <dependency>
