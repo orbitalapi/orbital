@@ -205,12 +205,9 @@ ul.note-labels {
       color: #536b78;
    }
 
-   .avatar {
-      margin: 0 10px;
-   }
-
    .sender-wrapper {
       width: 155px;
+      margin-left: 12px;
    }
 
    .sender {
@@ -226,6 +223,7 @@ ul.note-labels {
       box-sizing: border-box;
       overflow: hidden;
       display: inline-block;
+      margin-right: 25px;
    }
 
    .info {
@@ -236,6 +234,10 @@ ul.note-labels {
       width: 100%;
       min-height: 25px;
       font-weight: 400;
+   }
+
+   code {
+      background-color: transparent;
    }
 
    .mat-action-row {

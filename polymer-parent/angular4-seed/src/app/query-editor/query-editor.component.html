@@ -1,5 +1,5 @@
 <div id="content_wrapper" class="leftSidenav2-wrapper">
-   <md-sidenav-container class="sidenav-container">
+   <mat-sidenav-container class="sidenav-container">
       <div class="content">
          <div class="header-wrapper header-sm app_secondary_bg">
             <header class="container-fluid">
@@ -22,8 +22,12 @@
                   <h2 class="card-title">Query facts</h2>
                </header>
 
-               <td-expansion-panel-group *ngFor="let fact of facts">
-                  <td-expansion-panel [expand]="true">
+               <td-expansion-panel-group>
+                     <fact-editor *ngFor="let fact of facts" [types]="types" [fact]="fact">
+
+                     </fact-editor>
+
+                  <!-- <td-expansion-panel>
                      <ng-template td-expansion-panel-label>
                         <mat-icon>star</mat-icon>
                         <span>Google</span>
@@ -61,22 +65,22 @@
                         <button mat-button color="accent" class="text-upper">Save</button>
                         <button mat-button class="text-upper">Cancel</button>
                      </div>
-                  </td-expansion-panel>
+                  </td-expansion-panel> -->
                </td-expansion-panel-group>
 
 
                <div class="card-footer border-top">
                   <!-- <ul class="more">
                      <li>
-                        <a href="javascript:void(0)" class="btn btn-default btn-flat" md-ripple>
+                        <a href="javascript:void(0)" class="btn btn-default btn-flat" matRipple>
                            View More??
                         </a>
                      </li>
                   </ul> -->
                   <ul class="actions icons right">
                      <li>
-                        <button class="btn btn-primary btn-fab" md-ripple (click)="addNewFact()">
-                           <md-icon>add</md-icon>
+                        <button class="btn btn-primary btn-fab" matRipple (click)="addNewFact()">
+                           <mat-icon>add</mat-icon>
                         </button>
                      </li>
                   </ul>
@@ -84,6 +88,6 @@
             </div>
          </div>
       </div>
-   </md-sidenav-container>
+   </mat-sidenav-container>
 
 </div>

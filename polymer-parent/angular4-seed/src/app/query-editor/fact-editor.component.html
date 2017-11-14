@@ -1,0 +1,47 @@
+<td-expansion-panel>
+   <ng-template td-expansion-panel-header>
+      <form>
+         <mat-form-field>
+            <input matInput placeholder="Type" aria-label="Type" [matAutocomplete]="typeSelector" [formControl]="typeSelectorCtrl" [(ngModel)]="fact.typeName">
+            <mat-autocomplete #typeSelector="matAutocomplete" (optionSelected)="onOptionSelected($event)">
+               <mat-option *ngFor="let type of filteredTypes | async" [value]="type.name.fullyQualifiedName">
+                  <span>{{ type.name.name }}</span>
+                  <code>{{type.fullyQualifiedName}}</code>
+               </mat-option>
+            </mat-autocomplete>
+         </mat-form-field>
+      </form>
+   </ng-template>
+   <td-expansion-summary>
+      <div class="md-padding">
+         <div flex layout-gt-xs="row" layout-align="start center" *ngFor="let attributeName of factAttributes()">
+            <span flex="30" class="md-subhead">{{ attributeName }}</span>
+            <span flex="5" hide-xs>
+               <mat-icon class="tc-grey-500">chevron_right</mat-icon>
+            </span>
+            <span flex>{{fact[attributeName]}}</span>
+         </div>
+      </div>
+   </td-expansion-summary>
+   <tree-root [nodes]="nodes">
+      <ng-template #treeNodeTemplate let-node let-index="index">
+         <span>{{ node.data.name }}</span>
+         <td-dynamic-forms [elements]="node.dataControls">
+            <ng-template let-element ngFor [ngForOf]="node.dataControls">
+               <ng-template let-control="control" [tdDynamicFormsError]="element.name">
+                  <span *ngIf="control.touched || !control.pristine">
+                     <span *ngIf="control.hasError('required')">Required</span>
+                     <span *ngIf="control.hasError('min')">Min value: {{element.min}}</span>
+                     <span *ngIf="control.hasError('max')">Max value: {{element.max}}</span>
+                     <span *ngIf="control.hasError('minlength')">Min length value: {{element.minLength}}</span>
+                     <span *ngIf="control.hasError('maxlength')">Max length value: {{element.minLength}}</span>
+                  </span>
+               </ng-template>
+            </ng-template>
+         </td-dynamic-forms>
+         <button (click)="go($event)">Custom Action</button>
+      </ng-template>
+   </tree-root>
+
+
+</td-expansion-panel>

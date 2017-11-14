@@ -1,5 +1,5 @@
 <div id="content_wrapper" class="leftSidenav2-wrapper">
-   <md-sidenav-container class="sidenav-container">
+   <mat-sidenav-container class="sidenav-container">
       <div class="content">
          <div class="header-wrapper header-sm app_secondary_bg">
             <header class="container-fluid">
@@ -21,19 +21,19 @@
                <td-code-editor style="height: 200px" theme="vs" flex language="sql" [editorOptions]="{fontFamily:'Roboto Mono', formatOnType: true, folding: true, autoIndent: true}"
                   [(ngModel)]="taxiDef" (change)="onTaxiDefChanged()"></td-code-editor>
             </div>
-            <md-expansion-panel>
-               <md-expansion-panel-header>
-                  <md-panel-title>
+            <mat-expansion-panel>
+               <mat-expansion-panel-header>
+                  <mat-panel-title>
                      Errors ({{errors.length}})
-                  </md-panel-title>
-               </md-expansion-panel-header>
+                  </mat-panel-title>
+               </mat-expansion-panel-header>
                <!-- TODO : Offline currently.  npm i @swimlane/ngx-datatable   ,then try again -->
                <ngx-datatable class="material" [rows]="errors" [columns]="errorTableColumns" [columnMode]="'force'" [headerHeight]="50" [footerHeight]="50"
                   [rowHeight]="50"></ngx-datatable>
 
-            </md-expansion-panel>
+            </mat-expansion-panel>
          </div>
       </div>
-   </md-sidenav-container>
+   </mat-sidenav-container>
 
 </div>

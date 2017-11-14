@@ -1,13 +1,12 @@
 package io.osmosis.polymer.schemas.taxi
 
 import io.osmosis.polymer.schemas.*
+import io.osmosis.polymer.schemas.Modifier
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.services.Constraint
+import lang.taxi.types.*
 import lang.taxi.types.Annotation
-import lang.taxi.types.ArrayType
-import lang.taxi.types.ObjectType
-import lang.taxi.types.PrimitiveType
 
 class TaxiSchema(document: TaxiDocument) : Schema {
    override val types: Set<Type>
@@ -81,6 +80,7 @@ class TaxiSchema(document: TaxiDocument) : Schema {
                val modifiers = parseModifiers(taxiType.modifiers)
                result.add(Type(typeName, fields, modifiers))
             }
+            is TypeAlias -> result.add(Type(QualifiedName(taxiType.qualifiedName), aliasForType = QualifiedName(taxiType.aliasType!!.qualifiedName)))
             is ArrayType -> TODO()
             else -> result.add(Type(QualifiedName(taxiType.qualifiedName)))
          }

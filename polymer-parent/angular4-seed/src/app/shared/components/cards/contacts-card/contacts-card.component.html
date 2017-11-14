@@ -1,7 +1,7 @@
-<md-sidenav-container>
-	<md-sidenav #focusSidenav>
+<mat-sidenav-container>
+	<mat-sidenav #focusSidenav>
 <profile></profile>
-	</md-sidenav>
+	</mat-sidenav>
 	<div class="card card-contacts m-0">
 		<header class="card-header app_primary_bg mail-heading">
 			<ul class="actions icons  top-left">
@@ -13,7 +13,7 @@
 		</header>
 		<div class="card-block p-0 max-h-400 scrollbar overflow-auto">
 			<ul class="list-group p-0">
-				<li class="list-group-item" *ngFor="let item of listItems" md-ripple>
+				<li class="list-group-item" *ngFor="let item of listItems" matRipple>
 					<span class="float-left"><img src="{{item.img}}" alt="" class="rounded-circle max-w-40 m-r-10 "></span>
 					<div class="list-group-item-body">
 						<div class="list-group-item-heading">{{item.name}}</div>
@@ -25,14 +25,14 @@
 		<div class="card-footer">
 			<ul class="more">
 				<li>
-					<a href="javascript:void(0)" class="btn btn-default btn-flat" md-ripple>View More</a>
+					<a href="javascript:void(0)" class="btn btn-default btn-flat" matRipple>View More</a>
 				</li>
 			</ul>
 			<ul class="actions icons right">
 				<li>
-					<button class="btn btn-accent btn-fab" md-ripple><i class="zmdi zmdi-account-add"></i></button>
+					<button class="btn btn-accent btn-fab" matRipple><i class="zmdi zmdi-account-add"></i></button>
 				</li>
 			</ul>
 		</div>
 	</div>
-</md-sidenav-container>
+</mat-sidenav-container>

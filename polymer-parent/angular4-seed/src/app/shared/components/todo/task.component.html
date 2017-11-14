@@ -2,7 +2,7 @@
 	<ul class="list-group task-list">
 		<li class="list-group-item">
 			<span class="check" *ngIf="!editable">
-			<md-checkbox (click)="toggleTask($event)" [(ngModel)]="task.isDone" *ngIf="!toggleTaskProcessing"></md-checkbox>
+			<mat-checkbox (click)="toggleTask($event)" [(ngModel)]="task.isDone" *ngIf="!toggleTaskProcessing"></mat-checkbox>
 			<i class="zmdi-hc-li zmdi zmdi-refresh zmdi-hc-spin" *ngIf="toggleTaskProcessing"></i>
 		</span>
 			<span class="task">
@@ -11,9 +11,9 @@
 			</span>
 			<form novalidate *ngIf="editable" [formGroup]="form" (submit)="editName(form)">
 				<div class="form-group" [ngClass]="form.get('updatedTask').hasError('required') && isSubmitted ? 'has-danger' : ''">
-					<md-input-container floatPlaceholder="never" class="float-never">
-						<input mdInput type="text" class="form-control input-sm" id="task" placeholder="Add a task" formControlName="updatedTask" (blur)="disableEditing()" focus/>
-					</md-input-container>
+					<mat-form-field floatPlaceholder="never" class="float-never">
+						<input matInput type="text" class="form-control input-sm" id="task" placeholder="Add a task" formControlName="updatedTask" (blur)="disableEditing()" focus/>
+					</mat-form-field>
 					<div class="form-control-feedback" *ngIf="form.get('updatedTask').hasError('required') && isSubmitted">Task name is required</div>
 				</div>
 			</form>

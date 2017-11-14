@@ -1,7 +1,7 @@
 import { NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { LayoutRoutes } from "./layout.routes";
-import { FormsModule } from "@angular/forms";
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { LayoutComponent } from "./layout.component";
 import { LeftSidebarComponent } from "./left-sidebar/left-sidebar.component";
 import { TopNavbarComponent } from "./top-navbar/top-navbar.component";
@@ -18,12 +18,13 @@ import { NavDropDownDirectives } from "../shared/directives/nav-dropdown.directi
 		TopNavbarComponent,
 		SearchComponent,
       ScrollbarDirective,
-		NavDropDownDirectives
+		// NavDropDownDirectives
 	],
 	imports: [
 		LayoutRoutes,
 		CommonModule,
-		FormsModule,
+      FormsModule,
+      ReactiveFormsModule,
 		SharedModule.forRoot()
 	]
 })

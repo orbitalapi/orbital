@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation, ViewChild, OnInit, HostListener, ElementRef} from '@angular/core';
 import {GlobalState} from '../../../app.state';
 import { ConfigService } from '../../../shared/services/config/config.service';
-import { MdSidenav } from "@angular/material";
+import { MatSidenav } from "@angular/material";
 
 @Component({
   selector: '.content_inner_wrapper',
@@ -11,7 +11,7 @@ import { MdSidenav } from "@angular/material";
 })
 export class LeftSideNavV2Component implements OnInit {
 
-	@ViewChild('leftSidenav2') leftSidenav2: MdSidenav;
+	@ViewChild('leftSidenav2') leftSidenav2: MatSidenav;
   navMode = 'side';
 
   constructor(public config: ConfigService, private _elementRef: ElementRef, private _state: GlobalState) {

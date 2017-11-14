@@ -74,6 +74,7 @@ export class typeData {
                       "modifiers": [],
                       "fullyQualifiedName": "polymer.creditInc.Currency",
                       "scalar": true,
+                      "aliasForType" : "String",
                       "parameterType": false
                   },
                   {
@@ -85,6 +86,7 @@ export class typeData {
                       "modifiers": [],
                       "fullyQualifiedName": "polymer.creditInc.MoneyAmount",
                       "scalar": true,
+                      "aliasForType" : "Decimal",
                       "parameterType": false
                   },
                   {
@@ -117,6 +119,7 @@ export class typeData {
                       "modifiers": [],
                       "fullyQualifiedName": "polymer.creditInc.CreditRiskCost",
                       "scalar": true,
+                      "aliasForType" : "Decimal",
                       "parameterType": false
                   },
                   {
@@ -127,6 +130,7 @@ export class typeData {
                       "attributes": {},
                       "modifiers": [],
                       "fullyQualifiedName": "isic.uk.SIC2008",
+                      "aliasForType" : "String",
                       "scalar": true,
                       "parameterType": false
                   }
@@ -332,6 +336,7 @@ export class typeData {
               "modifiers": [],
               "fullyQualifiedName": "polymer.creditInc.Currency",
               "scalar": true,
+              "aliasForType" : "String",
               "parameterType": false
           },
           {
@@ -343,6 +348,7 @@ export class typeData {
               "modifiers": [],
               "fullyQualifiedName": "polymer.creditInc.MoneyAmount",
               "scalar": true,
+              "aliasForType" : "Decimal",
               "parameterType": false
           },
           {
@@ -375,6 +381,7 @@ export class typeData {
               "modifiers": [],
               "fullyQualifiedName": "polymer.creditInc.CreditRiskCost",
               "scalar": true,
+              "aliasForType" : "Decimal",
               "parameterType": false
           },
           {
@@ -386,6 +393,7 @@ export class typeData {
               "modifiers": [],
               "fullyQualifiedName": "isic.uk.SIC2008",
               "scalar": true,
+              "aliasForType" : "String",
               "parameterType": false
           }
       ],

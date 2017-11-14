@@ -1,7 +1,7 @@
 <!-- Content Wrapper - Left Sidenav 2-->
 <div id="content_wrapper" class="leftSidenav2-wrapper">
    <!--// Sidenav component container-->
-   <md-sidenav-container class="sidenav-container">
+   <mat-sidenav-container class="sidenav-container">
       <!-- Page Content -->
       <div class="content">
          <div class="header-wrapper header-sm app_secondary_bg">
@@ -30,7 +30,7 @@
          </div>
          <div class="content-body">
             <div class="block-header">
-               <md-checkbox [(ngModel)]="selectedAll" (change)="selectAll();"></md-checkbox>
+               <mat-checkbox [(ngModel)]="selectedAll" (change)="selectAll();"></mat-checkbox>
                <ul class="actions icons top-left">
                   <li class="dropdown" ngbDropdown>
                      <a href="javascript:void(0)" ngbDropdownToggle>
@@ -145,24 +145,23 @@
                   </li>
                </ul>
             </div>
-            <md-accordion [displayMode]="displayMode" [multi]="multi">
-               <md-expansion-panel *ngFor="let type of schema?.types | filter:term " class="md-expansion" #{{type.mailId}}>
-                  <md-expansion-panel-header>
+            <mat-accordion [displayMode]="displayMode" [multi]="multi">
+               <mat-expansion-panel *ngFor="let type of schema?.types | filter:term " class="md-expansion" #{{type.mailId}}>
+                  <mat-expansion-panel-header>
                      <mat-panel-title>
-                        <md-checkbox [(ngModel)]="type.selected" (change)="checkIfAllSelected();" (click)="onMailChecked($event)"></md-checkbox>
-                        <span class="avatar">
-                           <img src="/assets/img/profiles/{{type.fromImg}}" alt="" class="rounded-circle img-xs m-r-10">
-                        </span>
                         <div class="sender-wrapper">
                            <span class="sender">{{type.name.name}}</span>
                         </div>
                         <div class="info-wrapper">
                            <span class="info">{{type.name.fullyQualifiedName}}</span>
                         </div>
+                        <div class="tags-wrapper">
+                           <span *ngIf="type.aliasForType"><code><i>{{type.aliasForType}}</i></code></span>
+                        </div>
                      </mat-panel-title>
-                  </md-expansion-panel-header>
-                  <md-tab-group mat-stretch-tabs>
-                     <md-tab label="Properties">
+                  </mat-expansion-panel-header>
+                  <mat-tab-group mat-stretch-tabs>
+                     <mat-tab label="Properties">
                         <table class="property-list">
                            <thead>
                               <th>Name</th>
@@ -180,19 +179,19 @@
                            </tbody>
                         </table>
 
-                     </md-tab>
-                     <md-tab label="Source">
+                     </mat-tab>
+                     <mat-tab label="Source">
                         <p>
                            <code>// TODO : The source of the type should appear here.</code>
                         </p>
-                     </md-tab>
-                     <md-tab label="Links">
-                           <p>
-                              <code>// TODO : This should show a graph of links to / from this type.</code>
-                           </p>
-                        </md-tab>
-                  </md-tab-group>
-                  <md-action-row>
+                     </mat-tab>
+                     <mat-tab label="Links">
+                        <p>
+                           <code>// TODO : This should show a graph of links to / from this type.</code>
+                        </p>
+                     </mat-tab>
+                  </mat-tab-group>
+                  <mat-action-row>
                      <ul class="actions bottom-left">
                         <li>
                            <span class="avatar">
@@ -200,39 +199,39 @@
                            </span>
                         </li>
                      </ul>
-                     <a href="javascript:void(0)" md-ripple class="btn btn-default btn-flat">
+                     <a href="javascript:void(0)" matRipple class="btn btn-default btn-flat">
                         <i class="zmdi zmdi-mail-reply"></i> REPLY</a>
-                     <a href="javascript:void(0)" md-ripple class="btn btn-default  btn-flat">FORWARD
+                     <a href="javascript:void(0)" matRipple class="btn btn-default  btn-flat">FORWARD
                         <i class="zmdi zmdi-forward"></i>
                      </a>
-                     <a href="javascript:void(0)" md-ripple class="btn btn-default btn-flat">CANCEL</a>
-                  </md-action-row>
-               </md-expansion-panel>
-            </md-accordion>
+                     <a href="javascript:void(0)" matRipple class="btn btn-default btn-flat">CANCEL</a>
+                  </mat-action-row>
+               </mat-expansion-panel>
+            </mat-accordion>
          </div>
       </div>
       <!--  Footer Wrapper -->
       <footer id="footer_wrapper" class="footer_wrapper"></footer>
-   </md-sidenav-container>
+   </mat-sidenav-container>
    <!-- /END Sidenav component container -->
    <!-- Compose Mail Component -->
    <smd-fab-speed-dial [(open)]="open" [direction]="direction" [animationMode]="animationMode" [fixed]="fixed">
       <smd-fab-trigger [spin]="spin">
-         <button md-fab (click)="_click('trigger')">
-            <md-icon>add</md-icon>
+         <button smd-fab (click)="_click('trigger')">
+            <mat-icon>add</mat-icon>
          </button>
       </smd-fab-trigger>
       <smd-fab-actions>
-         <button md-mini-fab (click)="isComposeActive = !isComposeActive;">
-            <md-icon>edit</md-icon>
+         <button mat-mini-fab (click)="isComposeActive = !isComposeActive;">
+            <mat-icon>edit</mat-icon>
          </button>
-         <button md-mini-fab (click)="isComposeActive = !isComposeActive;">
+         <button mat-mini-fab (click)="isComposeActive = !isComposeActive;">
             <img src="assets/img/profiles/07.jpg" alt="" class="rounded-circle shadow-3dp">
          </button>
-         <button md-mini-fab (click)="isComposeActive = !isComposeActive;">
+         <button mat-mini-fab (click)="isComposeActive = !isComposeActive;">
             <img src="assets/img/profiles/05.jpg" alt="" class="rounded-circle shadow-3dp">
          </button>
-         <button md-mini-fab (click)="isComposeActive = !isComposeActive;">
+         <button mat-mini-fab (click)="isComposeActive = !isComposeActive;">
             <img src="assets/img/profiles/12.jpg" alt="" class="rounded-circle shadow-3dp">
          </button>
       </smd-fab-actions>
@@ -268,16 +267,16 @@
          <form class="form-horizontal compose-form">
             <div class="form-group row p-0 m-0 max-h-50">
                <div class="col  p-0 m-0">
-                  <md-input-container floatPlaceholder="never" class="float-never">
-                     <input mdInput placeholder="To" class="form-control" type="text">
-                  </md-input-container>
+                  <mat-form-field floatPlaceholder="never" class="float-never">
+                     <input matInput placeholder="To" class="form-control" type="text">
+                  </mat-form-field>
                </div>
             </div>
             <div class="form-group row p-0 m-0 max-h-50">
                <div class="col  p-0 m-0">
-                  <md-input-container floatPlaceholder="never" class="float-never">
-                     <input mdInput placeholder="Subject" class="form-control" type="text">
-                  </md-input-container>
+                  <mat-form-field floatPlaceholder="never" class="float-never">
+                     <input matInput placeholder="Subject" class="form-control" type="text">
+                  </mat-form-field>
                </div>
             </div>
             <div class="form-group p-0 p-t-20 m-0">

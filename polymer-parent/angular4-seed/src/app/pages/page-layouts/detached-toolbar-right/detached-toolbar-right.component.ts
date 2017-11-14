@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation, ViewChild, OnInit, HostListener, ElementRef} from '@angular/core';
 import {GlobalState} from '../../../app.state';
 import { ConfigService } from '../../../shared/services/config/config.service';
-import { MdSidenav } from "@angular/material";
+import { MatSidenav } from "@angular/material";
 //import { TabsetComponent } from 'ngx-bootstrap';
 @Component({
   selector: '.content_inner_wrapper',

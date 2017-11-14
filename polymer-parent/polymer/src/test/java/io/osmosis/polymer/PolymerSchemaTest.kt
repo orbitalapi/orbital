@@ -109,6 +109,12 @@ class PolymerSchemaTest {
       expect(type.isParameterType).to.be.`true`
    }
 
+   @Test
+   fun shouldParseTypeAliases() {
+      val type = polymer.getType("polymer.example.TaxFileNumber")
+      expect(type.aliasForType!!.name).to.equal("String")
+   }
+
 //   @Test
 //   fun WHEN_pathExistsUsingOperation_that_itIsFound() {
 //      val path = polymer.query().findPath(start = "polymer.example.TaxFileNumber", target = "polymer.example.ClientName")

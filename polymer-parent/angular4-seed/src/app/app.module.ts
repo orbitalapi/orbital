@@ -12,52 +12,53 @@ import { SharedModule } from "./shared/shared.module";
 import { AppRoutingModule } from "./app.routing";
 import { HttpClientModule } from '@angular/common/http';
 
-
 // For spiking, remove these:
 import { InMemoryWebApiModule } from "angular-in-memory-web-api";
 import { MaterialLabDbService } from "./shared/data/MaterialLabDb.service";
 
+import { QueryEditorModule } from './query-editor/query-editor.module'
 
 import { HammerGestureConfig, HAMMER_GESTURE_CONFIG } from '@angular/platform-browser';
+import { NavDropDownDirectives } from "app/shared/directives/nav-dropdown.directive";
 
 export class HammerConfig extends HammerGestureConfig {
-  overrides = <any>{
-    'swipe': { velocity: 0.4, threshold: 20 }
-  }
+   overrides = <any>{
+      'swipe': { velocity: 0.4, threshold: 20 }
+   }
 }
 // Application wide providers
 const APP_PROVIDERS = [
-  AppState,
-  GlobalState,
-  Title,
+   AppState,
+   GlobalState,
+   Title,
 
-  { provide: LocationStrategy, useClass: HashLocationStrategy },
-  { provide: HAMMER_GESTURE_CONFIG, useClass: HammerConfig }
+   { provide: LocationStrategy, useClass: HashLocationStrategy },
+   { provide: HAMMER_GESTURE_CONFIG, useClass: HammerConfig }
 ];
 
 export type StoreType = {
-  state: InternalStateType;
-  restoreInputValues: () => void;
-  disposeOldHosts: () => void;
+   state: InternalStateType;
+   restoreInputValues: () => void;
+   disposeOldHosts: () => void;
 };
 
 @NgModule({
-  declarations: [AppComponent],
-  imports: [
-    BrowserModule,
-    FormsModule,
-    HttpModule,
-    HttpClientModule,
-    ReactiveFormsModule,
-    BrowserAnimationsModule,
-    ServicesModule,
-    SharedModule.forRoot(),
-    AppRoutingModule,
-    InMemoryWebApiModule.forRoot(MaterialLabDbService)
-  ],
-  providers: [APP_PROVIDERS],
-  bootstrap: [AppComponent]
+   declarations: [AppComponent, NavDropDownDirectives],
+   imports: [
+      BrowserModule,
+      FormsModule,
+      HttpModule,
+      HttpClientModule,
+      ReactiveFormsModule,
+      BrowserAnimationsModule,
+      ServicesModule,
+      SharedModule.forRoot(),
+      AppRoutingModule,
+      InMemoryWebApiModule.forRoot(MaterialLabDbService)
+   ],
+   providers: [APP_PROVIDERS],
+   bootstrap: [AppComponent]
 })
 export class AppModule {
-  constructor(public appState: AppState) { }
+   constructor(public appState: AppState) { }
 }

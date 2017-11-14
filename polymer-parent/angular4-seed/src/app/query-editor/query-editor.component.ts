@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import * as _ from "lodash";
 import { TypesService, Type } from 'app/common-api/types.service';
+import { FormControl } from '@angular/forms';
 
 @Component({
    selector: 'app-query-editor',
@@ -9,6 +10,7 @@ import { TypesService, Type } from 'app/common-api/types.service';
 })
 export class QueryEditorComponent implements OnInit {
 
+   typeSelectorCtrl : FormControl
    types: Array<Type> = []
    facts: Array<Fact> = []
    constructor(
@@ -17,11 +19,8 @@ export class QueryEditorComponent implements OnInit {
 
    ngOnInit() {
       this.typeService.getTypes()
-         .subscribe(
-         res => {
-            this.types = res.types
-         },
-         error => console.log("error : " + error))
+         .subscribe(res => this.types = res.types);
+      this.typeSelectorCtrl = new FormControl()
    }
 
    addNewFact() {
@@ -30,7 +29,7 @@ export class QueryEditorComponent implements OnInit {
 
 }
 
-class Fact {
+export class Fact {
    constructor(public typeName: string = null, public value: any = null) {
 
    }

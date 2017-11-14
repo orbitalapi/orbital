@@ -9,7 +9,7 @@ import {
 } from "@angular/core";
 import { GlobalState } from "../app.state";
 import { ConfigService } from "../shared/services/config/config.service";
-import { MdSidenav } from "@angular/material";
+import { MatSidenav } from "@angular/material";
 import { DataService } from "../shared/services/data/data.service";
 import * as _ from "lodash";
 import { TypesService } from "app/common-api/types.service";

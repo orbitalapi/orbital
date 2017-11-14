@@ -18,8 +18,8 @@ data class TypeReference(val name: QualifiedName, val isCollection: Boolean = fa
       get() = constraintProvider.buildConstraints()
    val fullyQualifiedName:String
       get() = name.fullyQualifiedName
-}
 
+}
 data class  QualifiedName(val fullyQualifiedName: String) : Serializable {
    val name: String
       get() = fullyQualifiedName.split(".").last()
@@ -30,8 +30,9 @@ data class  QualifiedName(val fullyQualifiedName: String) : Serializable {
 typealias AttributeName = String
 typealias AttributeType = QualifiedName
 typealias DeclaringType = QualifiedName
-data class Type(val name: QualifiedName, val attributes: Map<AttributeName, TypeReference> = emptyMap(), val modifiers: List<Modifier> = emptyList()) {
-   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList()) : this(name.fqn(), attributes, modifiers)
+data class Type(val name: QualifiedName, val attributes: Map<AttributeName, TypeReference> = emptyMap(), val modifiers: List<Modifier> = emptyList(),
+                val aliasForType:QualifiedName? = null) {
+   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType:QualifiedName? = null) : this(name.fqn(), attributes, modifiers, aliasForType)
 
    val isScalar = attributes.isEmpty()
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)

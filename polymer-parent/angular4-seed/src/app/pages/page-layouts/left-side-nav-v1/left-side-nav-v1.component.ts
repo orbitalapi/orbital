@@ -10,7 +10,7 @@ import {
 } from "@angular/core";
 import { GlobalState } from "../../../app.state";
 import { ConfigService } from "../../../shared/services/config/config.service";
-import { MdSidenav } from "@angular/material";
+import { MatSidenav } from "@angular/material";
 
 @Component({
 	selector: ".content_inner_wrapper",
@@ -20,7 +20,7 @@ import { MdSidenav } from "@angular/material";
 })
 export class LeftSideNavV1Component implements OnInit {
 	@ViewChild("t") t;
-	@ViewChild("leftSidenav1") leftSidenav1: MdSidenav;
+	@ViewChild("leftSidenav1") leftSidenav1: MatSidenav;
 	@ViewChild("menuTabs") private allMElementRef;
 	navMode = "side";
 	isActiveTab = false;
