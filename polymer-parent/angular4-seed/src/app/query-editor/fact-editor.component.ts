@@ -65,41 +65,52 @@ export class FactEditorComponent implements OnInit {
       })
       this.fact.value = factValue
 
-      this.nodes = this.buildDynamicFormElements(this.selectedType, "$")
+      this.nodes = this.buildDynamicFormElements(this.selectedType, "$", "Value")
       // this.inputElements = this.buildDynamicFormElements(this.selectedType)
    }
 
-
-   buildDynamicFormElements(type:Type, path:string):Array<TreeNodeData> {
-      function scalarTypeToTreeNode(path:string, attributeName:string, scalarType:Type):TreeNodeData {
+   scalarTypeToTreeNode(path:string, attributeName:string, scalarType:Type):TreeNodeData {
          let rootType = this.getRootType(scalarType)
-         return {
-            id: path + "." + attributeName,
-            name: attributeName,
-            children: [],
-            dataControl: this.formControlForType(attributeName,scalarType)
+      return new TreeNodeData(
+         path + "." + attributeName,
+         attributeName,
+         [],
+         this.buildFormControlForType(attributeName,scalarType)
+      )
          }
+
+   fooFun(node) {
+      console.log("foo fun")
+   }
+
+
+   buildDynamicFormElements(type:Type, path:string, typeAttributeName:string):Array<TreeNodeData> {
+
+
+      if (type.scalar) {
+         return [ this.scalarTypeToTreeNode(path, typeAttributeName, type) ]
       }
 
 
       let nodes = Object.keys(type.attributes).map( attributeName => {
          let attribute = type.attributes[attributeName] as TypeReference
          let attributeType = this.typeByName[attribute.fullyQualifiedName] as Type
+         if (attributeType == null) throw new Error("Type `${attribute.fullyQualifiedName}` - as defined by param `${attributeName}` on type `${type.name.fullyQualifiedName}` is not found")
 
          if (attributeType.scalar) {
-            return scalarTypeToTreeNode(path, attributeName, attributeType)
+            return this.scalarTypeToTreeNode(path, attributeName, attributeType)
          } else {
             // We need a nested component editor
-            return {
-               id: path + "." + attribute,
-               name: attributeName,
-               children: this.buildDynamicFormElements(attributeType, path + "." + attributeName),
-               dataControl: null
-            }
+            return new TreeNodeData(
+               path + "." + attribute,
+               attributeName,
+               this.buildDynamicFormElements(attributeType, path + "." + attributeName, attributeName),
+               null
+            )
          }
       })
 
-      return [];
+      return nodes;
    }
 
    private buildFormControlForType(attributeName:string,type:Type):ITdDynamicElementConfig {
@@ -122,7 +133,7 @@ export class FactEditorComponent implements OnInit {
       if (type.aliasForType != null) {
          let aliasedType = this.typeByName[type.aliasForType.fullyQualifiedName]
          if (aliasedType == null) {
-            throw Error("Type " + type.name + " is an alias for type " + type.aliasForType.fullyQualifiedName + " which is unknown")
+            throw Error("Type " + type.name + " is an alias for type " + type.aliasForType + " which is unknown")
          }
          return this.getRootType(this.typeByName[type.aliasForType.fullyQualifiedName])
       } else {
@@ -132,9 +143,15 @@ export class FactEditorComponent implements OnInit {
 }
 
 
-interface TreeNodeData {
-   id:any
-   name:string
-   children:Array<TreeNodeData>
-   dataControl:ITdDynamicElementConfig
+class TreeNodeData {
+
+   constructor(
+      public id:any,
+      public name:string,
+      public children:Array<TreeNodeData>,
+      public dataControl:ITdDynamicElementConfig) {}
+
+   dataControlArray():ITdDynamicElementConfig[] {
+      return this.dataControl ? [this.dataControl] : [];
+   }
 }

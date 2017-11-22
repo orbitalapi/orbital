@@ -13,6 +13,7 @@
       </form>
    </ng-template>
    <td-expansion-summary>
+      <span>Summary view, not editable</span>
       <div class="md-padding">
          <div flex layout-gt-xs="row" layout-align="start center" *ngFor="let attributeName of factAttributes()">
             <span flex="30" class="md-subhead">{{ attributeName }}</span>
@@ -23,11 +24,14 @@
          </div>
       </div>
    </td-expansion-summary>
+   <div>
+      <span>Detail view, editable</span>
+
    <tree-root [nodes]="nodes">
       <ng-template #treeNodeTemplate let-node let-index="index">
          <span>{{ node.data.name }}</span>
-         <td-dynamic-forms [elements]="node.dataControls">
-            <ng-template let-element ngFor [ngForOf]="node.dataControls">
+         <td-dynamic-forms [elements]="node.data.dataControlArray()">
+            <ng-template let-element ngFor [ngForOf]="node.data.dataControlArray()">
                <ng-template let-control="control" [tdDynamicFormsError]="element.name">
                   <span *ngIf="control.touched || !control.pristine">
                      <span *ngIf="control.hasError('required')">Required</span>
@@ -42,6 +46,7 @@
          <button (click)="go($event)">Custom Action</button>
       </ng-template>
    </tree-root>
+   </div>
 
 
 </td-expansion-panel>

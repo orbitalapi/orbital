@@ -32,9 +32,13 @@ class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourc
       if (storeClient.schemaSet() != currentSchemaSet) {
          this.currentSchemaSet = storeClient.schemaSet()
          log().debug("Rebuilding schemas based on SchemaSet ${this.currentSchemaSet.id}")
-         this.schemas = schemaStrings().map { TaxiSchema.from(it) }
+         this.schemas = schemasByName().map { (name,content) -> TaxiSchema.from(content,name) }
       }
       return this.schemas
+   }
+
+   private fun schemasByName():Map<String,String> {
+      return storeClient.schemaSet().schemas.map { it.name to it.content }.toMap()
    }
 
    override fun schemaStrings(): List<String> {

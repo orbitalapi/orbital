@@ -13,8 +13,8 @@ import { AppRoutingModule } from "./app.routing";
 import { HttpClientModule } from '@angular/common/http';
 
 // For spiking, remove these:
-import { InMemoryWebApiModule } from "angular-in-memory-web-api";
-import { MaterialLabDbService } from "./shared/data/MaterialLabDb.service";
+// import { InMemoryWebApiModule } from "angular-in-memory-web-api";
+// import { MaterialLabDbService } from "./shared/data/MaterialLabDb.service";
 
 import { QueryEditorModule } from './query-editor/query-editor.module'
 
@@ -54,7 +54,7 @@ export type StoreType = {
       ServicesModule,
       SharedModule.forRoot(),
       AppRoutingModule,
-      InMemoryWebApiModule.forRoot(MaterialLabDbService)
+      // InMemoryWebApiModule.forRoot(MaterialLabDbService)
    ],
    providers: [APP_PROVIDERS],
    bootstrap: [AppComponent]

@@ -22,7 +22,8 @@ export class TypesService  {
          return Observable.of(this.schema)
       }
       return this.http
-         .get("api/types")
+         // .get("api/types")
+         .get("http://localhost:9022/types")
          .map(res => {
             let schema  = res.json() as Schema
             schema.types = _.sortBy(schema.types, [(t) => { return t.name.fullyQualifiedName }])
@@ -50,7 +51,14 @@ export interface Type {
    attributes: Map<string, TypeReference>
    modifiers: Array<Modifier>
    scalar: boolean
-   aliasForType: QualifiedName
+   aliasForType: QualifiedName,
+   sources:Array<SourceCode>
+}
+
+export interface SourceCode {
+   origin:string
+   language:string
+   content:string
 }
 
 export interface Schema {
@@ -84,12 +92,14 @@ export interface Operation {
 }
 
 export interface Service {
-   qualifiedName: String
+   name: QualifiedName
    operations: Array<Operation>
-   metadata: Array<Metadata>
+   metadata: Array<Metadata>,
+   sourceCode:SourceCode
 }
 
 export interface OperationContract {
    returnType: Type
    constraints: Array<any>
 }
+

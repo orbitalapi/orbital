@@ -31,7 +31,7 @@ class TaxiSchema(document: TaxiDocument) : Schema {
    private fun parseServices(document: TaxiDocument): Set<Service> {
       return document.services.map { taxiService ->
          // hahahaha
-         Service(taxiService.qualifiedName,
+         Service(QualifiedName(taxiService.qualifiedName),
             operations = taxiService.operations.map { taxiOperation ->
                val returnType = this.type(taxiOperation.returnType.qualifiedName)
                Operation(taxiOperation.name,
@@ -48,7 +48,8 @@ class TaxiSchema(document: TaxiDocument) : Schema {
                   contract = constraintConverter.buildContract(returnType, taxiOperation.contract?.returnTypeConstraints ?: emptyList())
                )
             },
-            metadata = parseAnnotationsToMetadata(taxiService.annotations)
+            metadata = parseAnnotationsToMetadata(taxiService.annotations),
+            sourceCode = taxiService.sourceCode.toVyneSource()
          )
       }.toSet()
    }
@@ -68,7 +69,7 @@ class TaxiSchema(document: TaxiDocument) : Schema {
                   if (field.type is PrimitiveType) {
                      // Register Taxi primitive types here, as they don't appear with a definition in the schema
                      // (as they're implicitly defined), which results in them never getting defined in the resulting Polymer schema
-                     result.add(Type(field.type.qualifiedName))
+                     result.add(Type(field.type.qualifiedName, sources = listOf(SourceCode.undefined(TaxiSchema.LANGUAGE))))
                   }
                   when (field.type) {
                      is ArrayType -> field.name to TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true)
@@ -78,11 +79,13 @@ class TaxiSchema(document: TaxiDocument) : Schema {
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType.modifiers)
-               result.add(Type(typeName, fields, modifiers))
+               result.add(Type(typeName, fields, modifiers, sources = taxiType.sources.toVyneSources()))
             }
-            is TypeAlias -> result.add(Type(QualifiedName(taxiType.qualifiedName), aliasForType = QualifiedName(taxiType.aliasType!!.qualifiedName)))
+            is TypeAlias -> {
+               result.add(Type(QualifiedName(taxiType.qualifiedName), aliasForType = QualifiedName(taxiType.aliasType!!.qualifiedName), sources = taxiType.sources.toVyneSources()))
+            }
             is ArrayType -> TODO()
-            else -> result.add(Type(QualifiedName(taxiType.qualifiedName)))
+            else -> result.add(Type(QualifiedName(taxiType.qualifiedName), sources = taxiType.sources.toVyneSources()))
          }
       }
       return result
@@ -104,8 +107,16 @@ class TaxiSchema(document: TaxiDocument) : Schema {
    }
 
    companion object {
-      fun from(taxi: String): TaxiSchema {
-         return TaxiSchema(Compiler(taxi).compile())
+   val LANGUAGE = "Taxi"
+   fun from(taxi: String, sourceName:String = "<unknown>"): TaxiSchema {
+         return TaxiSchema(Compiler(taxi,sourceName).compile())
       }
    }
+}
+
+private fun lang.taxi.SourceCode.toVyneSource():SourceCode {
+   return io.osmosis.polymer.schemas.SourceCode(this.origin,TaxiSchema.LANGUAGE, this.content)
+}
+private fun List<lang.taxi.SourceCode>.toVyneSources(): List<SourceCode> {
+   return this.map { it.toVyneSource() }
 }

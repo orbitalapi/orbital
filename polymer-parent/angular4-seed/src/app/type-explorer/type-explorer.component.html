@@ -29,7 +29,7 @@
             </form>
          </div>
          <div class="content-body">
-            <div class="block-header">
+            <!-- <div class="block-header">
                <mat-checkbox [(ngModel)]="selectedAll" (change)="selectAll();"></mat-checkbox>
                <ul class="actions icons top-left">
                   <li class="dropdown" ngbDropdown>
@@ -144,31 +144,37 @@
                      </a>
                   </li>
                </ul>
-            </div>
+            </div> -->
             <mat-accordion [displayMode]="displayMode" [multi]="multi">
-               <mat-expansion-panel *ngFor="let type of schema?.types | filter:term " class="md-expansion" #{{type.mailId}}>
+               <mat-expansion-panel *ngFor="let member of members | filter:term " class="md-expansion" #{{type.mailId}}
+                                  (opened)="loadTypeLinks(member)"
+               >
                   <mat-expansion-panel-header>
                      <mat-panel-title>
+                        <div class="element-kind-wrapper">
+                           <span class="sender" *ngIf="member.type == serviceType">Service</span>
+                           <span class="sender" *ngIf="member.type == typeType">Type</span>
+                        </div>
                         <div class="sender-wrapper">
-                           <span class="sender">{{type.name.name}}</span>
+                           <span class="sender">{{member.name.name}}</span>
                         </div>
                         <div class="info-wrapper">
-                           <span class="info">{{type.name.fullyQualifiedName}}</span>
+                           <span class="info">{{member.name.fullyQualifiedName}}</span>
                         </div>
                         <div class="tags-wrapper">
-                           <span *ngIf="type.aliasForType"><code><i>{{type.aliasForType}}</i></code></span>
+                           <span *ngIf="member.aliasForType"><code><i>{{member.aliasForType}}</i></code></span>
                         </div>
                      </mat-panel-title>
                   </mat-expansion-panel-header>
                   <mat-tab-group mat-stretch-tabs>
-                     <mat-tab label="Properties">
+                     <mat-tab label="Properties" *ngIf="member.type == typeType">
                         <table class="property-list">
                            <thead>
                               <th>Name</th>
                               <th>Type</th>
                            </thead>
                            <tbody>
-                              <tr *ngFor="let attrName of objectKeys(type.attributes)">
+                              <tr *ngFor="let attrName of objectKeys(member.member.attributes)">
                                  <td class="property-name">{{attrName}}</td>
                                  <td>
                                     <a>
@@ -181,24 +187,57 @@
 
                      </mat-tab>
                      <mat-tab label="Source">
+                        <div class="source-section" *ngFor="let source of member.sources">
+                           <h3>{{ source.origin }}</h3>
+                           <div class="language">{{ source.language }}</div>
                         <p>
-                           <code>// TODO : The source of the type should appear here.</code>
+                             <code [innerHTML]="source.content | nl2br"></code>
                         </p>
+                        </div>
                      </mat-tab>
-                     <mat-tab label="Links">
-                        <p>
-                           <code>// TODO : This should show a graph of links to / from this type.</code>
-                        </p>
-                     </mat-tab>
+                     <!-- <mat-tab label="Links">
+                        <ngx-charts-directed-graph
+                        class="chart-container"
+                        [view]="view"
+                        [legend]="showLegend"
+                        [links]="typeLinks.links"
+                        (legendLabelClick)="onLegendLabelClick($event)"
+                        [nodes]="typeLinks.nodes"
+                        [scheme]="colorScheme"
+                        [orientation]="orientation"
+                        [curve]="curve"
+                        (select)="select($event)">
+
+                        <template #defsTemplate>
+                          <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4" orient="auto">
+                            <svg:path d="M0,-5L10,0L0,5" class="arrow-head" />
+                          </svg:marker>
+                        </template>
+
+                        <template #nodeTemplate let-node>
+                          <svg:g class="node"
+                            ngx-tooltip
+                            [tooltipPlacement]="'top'"
+                            [tooltipType]="'tooltip'"
+                            [tooltipTitle]="node.label">
+                            <svg:rect [attr.width]="node.width" [attr.height]="node.height" [attr.fill]="node.options.color" />
+                            <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.height / 2">{{node.label}}</svg:text>
+                          </svg:g>
+                        </template>
+
+                        <template #linkTemplate let-link>
+                          <svg:g class="edge">
+                            <svg:path
+                              stroke-width="2"
+                              marker-end="url(#arrow)" >
+                            </svg:path>
+                          </svg:g>
+                        </template>
+
+                      </ngx-charts-directed-graph>
+                     </mat-tab> -->
                   </mat-tab-group>
                   <mat-action-row>
-                     <ul class="actions bottom-left">
-                        <li>
-                           <span class="avatar">
-                              <img src="/assets/img/profiles/{{type.profileImg}}" alt="" class="rounded-circle img-xs">
-                           </span>
-                        </li>
-                     </ul>
                      <a href="javascript:void(0)" matRipple class="btn btn-default btn-flat">
                         <i class="zmdi zmdi-mail-reply"></i> REPLY</a>
                      <a href="javascript:void(0)" matRipple class="btn btn-default  btn-flat">FORWARD
@@ -214,119 +253,5 @@
       <footer id="footer_wrapper" class="footer_wrapper"></footer>
    </mat-sidenav-container>
    <!-- /END Sidenav component container -->
-   <!-- Compose Mail Component -->
-   <smd-fab-speed-dial [(open)]="open" [direction]="direction" [animationMode]="animationMode" [fixed]="fixed">
-      <smd-fab-trigger [spin]="spin">
-         <button smd-fab (click)="_click('trigger')">
-            <mat-icon>add</mat-icon>
-         </button>
-      </smd-fab-trigger>
-      <smd-fab-actions>
-         <button mat-mini-fab (click)="isComposeActive = !isComposeActive;">
-            <mat-icon>edit</mat-icon>
-         </button>
-         <button mat-mini-fab (click)="isComposeActive = !isComposeActive;">
-            <img src="assets/img/profiles/07.jpg" alt="" class="rounded-circle shadow-3dp">
-         </button>
-         <button mat-mini-fab (click)="isComposeActive = !isComposeActive;">
-            <img src="assets/img/profiles/05.jpg" alt="" class="rounded-circle shadow-3dp">
-         </button>
-         <button mat-mini-fab (click)="isComposeActive = !isComposeActive;">
-            <img src="assets/img/profiles/12.jpg" alt="" class="rounded-circle shadow-3dp">
-         </button>
-      </smd-fab-actions>
-   </smd-fab-speed-dial>
-   <section id="mail_compose_wrapper" [ngClass]="{'open' : isComposeActive}">
-      <div class="tippy-top">
-         <ul class="actions icons top-left">
-            <li>
-               <a href="javascript:void(0)">
-                  <i class="zmdi zmdi-email-open"></i>
-               </a>
-            </li>
-         </ul>
-         <ul class="actions icons top-right">
-            <li>
-               <a href="javascript:void(0)" data-compose="min">
-                  <i class="zmdi zmdi-window-minimize"></i>
-               </a>
-            </li>
-            <li>
-               <a href="javascript:void(0)" data-compose="expand">
-                  <i class="mdi mdi-arrow-expand"></i>
-               </a>
-            </li>
-            <li>
-               <a href="javascript:void(0)" (click)="isComposeActive = !isComposeActive;">
-                  <i class="zmdi zmdi-close"></i>
-               </a>
-            </li>
-         </ul>
-      </div>
-      <div class="row p-0 m-0">
-         <form class="form-horizontal compose-form">
-            <div class="form-group row p-0 m-0 max-h-50">
-               <div class="col  p-0 m-0">
-                  <mat-form-field floatPlaceholder="never" class="float-never">
-                     <input matInput placeholder="To" class="form-control" type="text">
-                  </mat-form-field>
-               </div>
-            </div>
-            <div class="form-group row p-0 m-0 max-h-50">
-               <div class="col  p-0 m-0">
-                  <mat-form-field floatPlaceholder="never" class="float-never">
-                     <input matInput placeholder="Subject" class="form-control" type="text">
-                  </mat-form-field>
-               </div>
-            </div>
-            <div class="form-group p-0 p-t-20 m-0">
-               <textarea class="form-control message" placeholder="Compose email" rows="20" id="email-message"></textarea> </div>
-            <footer id="compose-footer">
-               <ul class="actions icons bottom-left m-b-15">
-                  <li>
-                     <a href="javascript:void(0)">
-                        <i class="zmdi zmdi-delete"></i>
-                     </a>
-                  </li>
-                  <li>
-                     <a href="javascript:void(0)">
-                        <i class="zmdi zmdi-format-bold"></i>
-                     </a>
-                  </li>
-                  <li>
-                     <a href="javascript:void(0)">
-                        <i class="zmdi zmdi-format-italic"></i>
-                     </a>
-                  </li>
-                  <li>
-                     <a href="javascript:void(0)">
-                        <i class="zmdi zmdi-format-underlined"></i>
-                     </a>
-                  </li>
-                  <li>
-                     <a href="javascript:void(0)">
-                        <i class="zmdi zmdi-format-color-text"></i>
-                     </a>
-                  </li>
-                  <li>
-                     <a href="javascript:void(0)">
-                        <i class="zmdi zmdi-format-size"></i>
-                     </a>
-                  </li>
-                  <li>
-                     <a href="javascript:void(0)">
-                        <i class="zmdi zmdi-attachment-alt"></i>
-                     </a>
-                  </li>
-               </ul>
-               <ul class="actions bottom-right m-b-15 m-r-10">
-                  <li>
-                     <a href="javascript:void(0)" class="btn btn-royalBlue"> Send </a>
-                  </li>
-               </ul>
-            </footer>
-         </form>
-      </div>
-   </section>
 </div>
 <!-- /END Content Wrapper - Left Sidenav 2-->

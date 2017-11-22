@@ -161,9 +161,11 @@ data class Operation(val name: String, val parameters: List<Parameter>,
 
 }
 
-data class Service(val qualifiedName: String, val operations: List<Operation>, override val metadata: List<Metadata> = emptyList()) : MetadataTarget {
+data class Service(val name: QualifiedName, val operations: List<Operation>, override val metadata: List<Metadata> = emptyList(), val sourceCode: SourceCode) : MetadataTarget {
    fun operation(name: String): Operation {
       return this.operations.first { it.name == name }
    }
+
+   val qualifiedName = name.fullyQualifiedName
 }
 

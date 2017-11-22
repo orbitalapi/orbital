@@ -31,8 +31,8 @@ typealias AttributeName = String
 typealias AttributeType = QualifiedName
 typealias DeclaringType = QualifiedName
 data class Type(val name: QualifiedName, val attributes: Map<AttributeName, TypeReference> = emptyMap(), val modifiers: List<Modifier> = emptyList(),
-                val aliasForType:QualifiedName? = null) {
-   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType:QualifiedName? = null) : this(name.fqn(), attributes, modifiers, aliasForType)
+                val aliasForType:QualifiedName? = null, val sources:List<SourceCode> ) {
+   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType:QualifiedName? = null, sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, sources)
 
    val isScalar = attributes.isEmpty()
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
@@ -45,6 +45,17 @@ enum class Modifier {
    PARAMETER_TYPE
 }
 
+data class SourceCode(
+   val origin:String,
+   val language: String,
+   val content:String
+) {
+   companion object {
+       fun undefined(language: String):SourceCode {
+          return SourceCode("Unknown", language,"")
+       }
+   }
+}
 
 interface Schema {
    val types: Set<Type>

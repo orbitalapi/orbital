@@ -9,8 +9,6 @@ import { CovalentHighlightModule } from '@covalent/highlight';
 import { CovalentMarkdownModule } from '@covalent/markdown';
 import { CovalentCodeEditorModule } from '@covalent/code-editor';
 
-import { NgxChartsDagModule } from '@swimlane/ngx-charts-dag';
-import { NgxDatatableModule } from "@swimlane/ngx-datatable";
 import { QueryEditorComponent } from './query-editor.component';
 import { CovalentExpansionPanelModule } from '@covalent/core';
 import { CommonApiModule } from 'app/common-api/common-api.module';
@@ -39,7 +37,7 @@ const QUERY_EDITOR_ROUTE = [{ path: '', component: QueryEditorComponent }];
       // Note:  SHouldn't be neccessary (and should remove when real
       // backend exists.  But CovalentDynamicFormsModule seems to
       // cause this to break when declared in the app module
-      InMemoryWebApiModule.forRoot(MaterialLabDbService),
+      // InMemoryWebApiModule.forRoot(MaterialLabDbService),
 
    ],
    declarations: [

@@ -1,6 +1,6 @@
 package io.osmosis.polymer.schemas
 
-class CompositeSchema(val schemas:List<Schema>) : Schema {
+class CompositeSchema(private val schemas:List<Schema>) : Schema {
    override val attributes: Set<QualifiedName>
       get() = schemas.flatMap { it.attributes }.toSet()
    override val types: Set<Type>

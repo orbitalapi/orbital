@@ -5,11 +5,13 @@ import { TypeExplorerComponent } from "./type-explorer.component";
 import { SharedModule } from "../shared/shared.module";
 import { Ng2SearchPipeModule } from "ng2-search-filter";
 import { CommonApiModule } from 'app/common-api/common-api.module';
+import {Nl2BrPipe} from "nl2br-pipe";
+// import { NgxChartsDagModule } from '@swimlane/ngx-charts-dag';
 
 const TYPE_EXPLORER_ROUTE = [{ path: '', component: TypeExplorerComponent }];
 
 @NgModule({
-   declarations: [TypeExplorerComponent],
+   declarations: [TypeExplorerComponent, Nl2BrPipe],
    imports: [
       CommonModule,
       CommonApiModule,

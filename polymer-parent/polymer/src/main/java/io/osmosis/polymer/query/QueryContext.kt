@@ -10,6 +10,7 @@ import io.osmosis.polymer.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.osmosis.polymer.query.graph.EvaluatedEdge
 import io.osmosis.polymer.schemas.Path
 import io.osmosis.polymer.schemas.Schema
+import io.osmosis.polymer.schemas.SourceCode
 import io.osmosis.polymer.schemas.Type
 import io.osmosis.polymer.utils.log
 import java.util.stream.Stream
@@ -81,7 +82,7 @@ data class QueryContext(override val schema: Schema, val facts: MutableSet<Typed
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 
    // Wraps all the known facts under a root node, turning it into a tree
-   private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode"), facts.toList())
+   private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode", sources = listOf(SourceCode.undefined("NoLang"))), facts.toList())
 
    /**
     * A breadth-first stream of data facts currently held in the collection.

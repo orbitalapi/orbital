@@ -54,6 +54,8 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
    }
 }
 
+fun Type.asElement():Element = type(this)
+
 fun type(name: String) = Element(name, ElementType.TYPE)
 fun type(type: Type) = type(type.fullyQualifiedName)
 fun member(name: String) = Element(name, ElementType.MEMBER)
