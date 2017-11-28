@@ -8,14 +8,25 @@ import "rxjs/add/operator/toPromise";
 import "rxjs/add/operator/catch";
 import * as _ from "lodash";
 @Injectable()
-export class TypesService  {
+export class TypesService {
 
-   schema:Schema
+   schema: Schema
    constructor(private http: Http) {
-         this.getTypes().subscribe( schema => {
-               this.schema = schema;
-         })
-    }
+      this.getTypes().subscribe(schema => {
+         this.schema = schema;
+      })
+   }
+
+   getLinksForNode = (node: SchemaGraphNode):Observable<SchemaGraph> => {
+      return this.http
+         .get(`http://localhost:9022/nodes/${node.type}/${node.nodeId}/links`)
+         .map( result => result.json() as SchemaGraph)
+   }
+   getLinks = (typeName: string): Observable<SchemaGraph> => {
+      return this.http
+         .get(`http://localhost:9022/types/${typeName}/links`)
+         .map( result => result.json() as SchemaGraph )
+   }
 
    getTypes = (): Observable<Schema> => {
       if (this.schema) {
@@ -25,7 +36,7 @@ export class TypesService  {
          // .get("api/types")
          .get("http://localhost:9022/types")
          .map(res => {
-            let schema  = res.json() as Schema
+            let schema = res.json() as Schema
             schema.types = _.sortBy(schema.types, [(t) => { return t.name.fullyQualifiedName }])
             return schema
          }
@@ -52,13 +63,13 @@ export interface Type {
    modifiers: Array<Modifier>
    scalar: boolean
    aliasForType: QualifiedName,
-   sources:Array<SourceCode>
+   sources: Array<SourceCode>
 }
 
 export interface SourceCode {
-   origin:string
-   language:string
-   content:string
+   origin: string
+   language: string
+   content: string
 }
 
 export interface Schema {
@@ -83,7 +94,7 @@ export interface Metadata {
 
 
 export interface Operation {
-   name: String
+   name: string
    parameters: Array<Parameter>
    returnType: Type
    metadata: Array<Metadata>
@@ -95,7 +106,7 @@ export interface Service {
    name: QualifiedName
    operations: Array<Operation>
    metadata: Array<Metadata>,
-   sourceCode:SourceCode
+   sourceCode: SourceCode
 }
 
 export interface OperationContract {
@@ -103,3 +114,55 @@ export interface OperationContract {
    constraints: Array<any>
 }
 
+
+
+export interface SchemaGraphNode {
+   id: string
+   label: string
+   type:string // Consider adding the enum ElementType here
+   nodeId: string
+}
+
+export interface SchemaGraphLink {
+   source: string
+   target: string
+   label: string
+}
+
+export class SchemaGraph {
+
+   constructor(
+      public readonly nodes:Map<string,SchemaGraphNode>,
+      public readonly links:Map<number,SchemaGraphLink>
+   ) {}
+
+   add(other:SchemaGraph) {
+      this.mergeToMap(other.nodes, this.nodes)
+      this.mergeToMap(other.links, this.links)
+   }
+
+   toNodeSet():SchemaNodeSet {
+      return {
+         nodes: Array.from(this.nodes.values()),
+         links: Array.from(this.links.values())
+      }
+   }
+
+
+   mergeToMap(source:Map<any,any>, target) {
+      Object.keys(source).forEach (key => {
+         if (!target[key]) {
+            target.set(key, source[key])
+         }
+      })
+   }
+   static empty():SchemaGraph {
+      return new SchemaGraph(new Map(), new Map())
+   }
+}
+
+
+export interface SchemaNodeSet {
+   nodes:SchemaGraphNode[]
+   links:SchemaGraphLink[]
+}

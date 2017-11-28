@@ -29,131 +29,14 @@
             </form>
          </div>
          <div class="content-body">
-            <!-- <div class="block-header">
-               <mat-checkbox [(ngModel)]="selectedAll" (change)="selectAll();"></mat-checkbox>
-               <ul class="actions icons top-left">
-                  <li class="dropdown" ngbDropdown>
-                     <a href="javascript:void(0)" ngbDropdownToggle>
-                        <i class="zmdi zmdi-folder"></i>
-                     </a>
-                     <ul class="dropdown-menu btn-primary dropdown-menu-left">
-                        <li>
-                           <a href="javascript:void(0)">
-                              <i class="zmdi zmdi-inbox text-blue m-r-15"></i> Inbox</a>
-                        </li>
-                        <li role="separator" class="divider"></li>
-                        <li>
-                           <a href="javascript:void(0)">
-                              <i class="zmdi zmdi-time text-orange m-r-15"></i> Snoozed</a>
-                        </li>
-                        <li>
-                           <a href="javascript:void(0)">
-                              <i class="zmdi zmdi-check text-green m-r-15"></i> Done</a>
-                        </li>
-                        <li>
-                           <a href="javascript:void(0)">
-                              <i class="zmdi zmdi-archive m-r-15"></i> Archive</a>
-                        </li>
-                        <li>
-                           <a href="javascript:void(0)">
-                              <i class="zmdi  zmdi-delete m-r-15"></i> Trash</a>
-                        </li>
-                     </ul>
-                  </li>
-                  <li class="dropdown" ngbDropdown>
-                     <a href="javascript:void(0)" ngbDropdownToggle>
-                        <i class="zmdi zmdi-label-alt"></i>
-                     </a>
-                     <ul class="dropdown-menu btn-primary dropdown-menu-left">
-                        <li>
-                           <a href="javascript:void(0)" class="text-gray">
-                              <i class="zmdi zmdi-comment-alert m-r-15"></i> Spam</a>
-                        </li>
-                        <li role="separator" class="divider"></li>
-                        <li>
-                           <a href="javascript:void(0)" class="text-salmon">
-                              <i class="zmdi zmdi-shopping-cart m-r-15"></i> Purchases</a>
-                        </li>
-                        <li>
-                           <a href="javascript:void(0)" class="text-turquoise">
-                              <i class="zmdi zmdi-trending-up m-r-15"></i> Finance</a>
-                        </li>
-                        <li>
-                           <a href="javascript:void(0)" class="text-purple">
-                              <i class="zmdi zmdi-comments m-r-15"></i> Social</a>
-                        </li>
-                        <li>
-                           <a href="javascript:void(0)" class="text-blue">
-                              <i class="zmdi zmdi-flag m-r-15"></i> Updates</a>
-                        </li>
-                     </ul>
-                  </li>
-               </ul>
-               <ul class="actions icons top-right">
-                  <li *ngIf="checked">
-                     <a href="javascript:void(0)">
-                        <i class="mdi mdi-pin"></i>
-                     </a>
-                  </li>
-                  <li *ngIf="checked">
-                     <a href="javascript:void(0)">
-                        <i class="zmdi zmdi-time"></i>
-                     </a>
-                  </li>
-                  <li *ngIf="checked">
-                     <a href="javascript:void(0)">
-                        <i class="zmdi zmdi-delete"></i>
-                     </a>
-                  </li>
-                  <li *ngIf="checked">
-                     <a href="javascript:void(0)">
-                        <i class="zmdi zmdi-check"></i>
-                     </a>
-                  </li>
-                  <li class="dropdown" ngbDropdown>
-                     <a href="javascript:void(0)" ngbDropdownToggle>
-                        <i class="zmdi zmdi-more-vert"></i>
-                     </a>
-                     <ul class="dropdown-menu btn-primary dropdown-menu-right">
-                        <li>
-                           <a href="javascript:void(0)" class="text-gray">
-                              <i class="zmdi zmdi-comment-alert m-r-15"></i> Spam</a>
-                        </li>
-                        <li role="separator" class="divider"></li>
-                        <li>
-                           <a href="javascript:void(0)" class="text-salmon">
-                              <i class="zmdi zmdi-shopping-cart m-r-15"></i> Purchases</a>
-                        </li>
-                        <li>
-                           <a href="javascript:void(0)" class="text-turquoise">
-                              <i class="zmdi zmdi-trending-up m-r-15"></i> Finance</a>
-                        </li>
-                        <li>
-                           <a href="javascript:void(0)" class="text-purple">
-                              <i class="zmdi zmdi-comments m-r-15"></i> Social</a>
-                        </li>
-                        <li>
-                           <a href="javascript:void(0)" class="text-blue">
-                              <i class="zmdi zmdi-flag m-r-15"></i> Updates</a>
-                        </li>
-                     </ul>
-                  </li>
-                  <li>
-                     <a href="javascript:void(0)">
-                        <i class="zmdi zmdi-check-all"></i>
-                     </a>
-                  </li>
-               </ul>
-            </div> -->
             <mat-accordion [displayMode]="displayMode" [multi]="multi">
-               <mat-expansion-panel *ngFor="let member of members | filter:term " class="md-expansion" #{{type.mailId}}
-                                  (opened)="loadTypeLinks(member)"
-               >
+               <mat-expansion-panel *ngFor="let member of members | filter:term " class="md-expansion" #{{type.mailId}} (opened)="loadTypeLinks(member)">
                   <mat-expansion-panel-header>
                      <mat-panel-title>
                         <div class="element-kind-wrapper">
-                           <span class="sender" *ngIf="member.type == serviceType">Service</span>
-                           <span class="sender" *ngIf="member.type == typeType">Type</span>
+                           <span class="sender" *ngIf="member.kind == serviceType">Service</span>
+                           <span class="sender" *ngIf="member.kind == typeType">Type</span>
+                           <span class="sender" *ngIf="member.kind == operationType">Operation</span>
                         </div>
                         <div class="sender-wrapper">
                            <span class="sender">{{member.name.name}}</span>
@@ -162,23 +45,26 @@
                            <span class="info">{{member.name.fullyQualifiedName}}</span>
                         </div>
                         <div class="tags-wrapper">
-                           <span *ngIf="member.aliasForType"><code><i>{{member.aliasForType}}</i></code></span>
+                           <span *ngIf="member.aliasForType">
+                              <code><i>{{member.aliasForType}}</i></code>
+                           </span>
                         </div>
                      </mat-panel-title>
                   </mat-expansion-panel-header>
                   <mat-tab-group mat-stretch-tabs>
-                     <mat-tab label="Properties" *ngIf="member.type == typeType">
+                     <mat-tab label="Properties" *ngIf="member.attributeNames.length > 0">
+
                         <table class="property-list">
                            <thead>
                               <th>Name</th>
                               <th>Type</th>
                            </thead>
                            <tbody>
-                              <tr *ngFor="let attrName of objectKeys(member.member.attributes)">
+                              <tr *ngFor="let attrName of member.attributeNames">
                                  <td class="property-name">{{attrName}}</td>
                                  <td>
                                     <a>
-                                       <code class="code-link">{{type.attributes[attrName].fullyQualifiedName}}</code>
+                                       <code class="code-link">{{member.member.attributes[attrName].fullyQualifiedName}}</code>
                                     </a>
                                  </td>
                               </tr>
@@ -190,52 +76,14 @@
                         <div class="source-section" *ngFor="let source of member.sources">
                            <h3>{{ source.origin }}</h3>
                            <div class="language">{{ source.language }}</div>
-                        <p>
-                             <code [innerHTML]="source.content | nl2br"></code>
-                        </p>
+                           <p>
+                              <code [innerHTML]="source.content | nl2br"></code>
+                           </p>
                         </div>
                      </mat-tab>
-                     <!-- <mat-tab label="Links">
-                        <ngx-charts-directed-graph
-                        class="chart-container"
-                        [view]="view"
-                        [legend]="showLegend"
-                        [links]="typeLinks.links"
-                        (legendLabelClick)="onLegendLabelClick($event)"
-                        [nodes]="typeLinks.nodes"
-                        [scheme]="colorScheme"
-                        [orientation]="orientation"
-                        [curve]="curve"
-                        (select)="select($event)">
-
-                        <template #defsTemplate>
-                          <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4" orient="auto">
-                            <svg:path d="M0,-5L10,0L0,5" class="arrow-head" />
-                          </svg:marker>
-                        </template>
-
-                        <template #nodeTemplate let-node>
-                          <svg:g class="node"
-                            ngx-tooltip
-                            [tooltipPlacement]="'top'"
-                            [tooltipType]="'tooltip'"
-                            [tooltipTitle]="node.label">
-                            <svg:rect [attr.width]="node.width" [attr.height]="node.height" [attr.fill]="node.options.color" />
-                            <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.height / 2">{{node.label}}</svg:text>
-                          </svg:g>
-                        </template>
-
-                        <template #linkTemplate let-link>
-                          <svg:g class="edge">
-                            <svg:path
-                              stroke-width="2"
-                              marker-end="url(#arrow)" >
-                            </svg:path>
-                          </svg:g>
-                        </template>
-
-                      </ngx-charts-directed-graph>
-                     </mat-tab> -->
+                     <mat-tab label="Links">
+                        <type-links-graph [member]="member"></type-links-graph>
+                     </mat-tab>
                   </mat-tab-group>
                   <mat-action-row>
                      <a href="javascript:void(0)" matRipple class="btn btn-default btn-flat">

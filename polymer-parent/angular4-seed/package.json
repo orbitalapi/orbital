@@ -1,5 +1,5 @@
 {
-	"name": "MaterialLabAngular",
+	"name": "vyne-studio",
 	"version": "0.0.0",
 	"license": "MIT",
 	"scripts": {
@@ -34,7 +34,7 @@
 		"@covalent/markdown": "1.0.0-beta.8-1",
 		"@ng-bootstrap/ng-bootstrap": "^1.0.0-beta.3",
 		"@swimlane/ngx-charts": "^5.3.0",
-		"@swimlane/ngx-charts-dag": "git://github.com/swimlane/ngx-charts-dag#3672159e830ca468dbf548eb10a442ea3c31a505",
+		"@swimlane/ngx-charts-dag": "3.0.0",
 		"@swimlane/ngx-datatable": "^10.4.0",
 		"@types/lodash": "^4.14.80",
 		"angular-in-memory-web-api": "^0.5.1",
@@ -55,6 +55,7 @@
 		"ng2-search-filter": "^0.3.1",
 		"ngu-utility": "^1.0.3",
 		"ngx-malihu-scrollbar": "^1.2.1",
+		"ngx-tooltip": "0.0.9",
 		"nl2br-pipe": "^0.1.0",
 		"rxjs": "^5.4.3",
 		"ts-helper": "0.0.1",

@@ -12,7 +12,7 @@ import { ConfigService } from "../shared/services/config/config.service";
 import { MatSidenav } from "@angular/material";
 import { DataService } from "../shared/services/data/data.service";
 import * as _ from "lodash";
-import { TypesService, QualifiedName, Service, Type, SourceCode } from "app/common-api/types.service";
+import { TypesService, QualifiedName, Service, Type, SourceCode, Operation } from "app/common-api/types.service";
 import {colorSets} from '@swimlane/ngx-charts-dag/src/utils'
 
 @Component({
@@ -42,20 +42,10 @@ export class TypeExplorerComponent implements OnInit {
 
    members:SchemaMember[] = [];
 
-   // For the Links Graph (TODO : Make this it's own component)
-   typeLinks = { nodes: [], links:[] }
-   showLegend = true;
-   // curve = shape.curveBundle.beta(1);
-   view: any[];
-   fitContainer: boolean = true;
-   autoZoom: boolean = true;
-   colorScheme: any = null;
-
-   onLegendLabelClick = console.log
-
    // Can't seem to use enums in an ng-if.  Grrr.
    serviceType = SchemaMemberType.SERVICE
    typeType = SchemaMemberType.TYPE
+   operationType = SchemaMemberType.OPERATION
 
    constructor(
       public config: ConfigService,
@@ -63,23 +53,29 @@ export class TypeExplorerComponent implements OnInit {
       private _state: GlobalState,
       private service: TypesService
    ) {
-      this.colorScheme = colorSets.find(s => {
-         return s.name === 'picnic'
-       });
+
 
    }
 
    // Utility function for iterating keys in an object in an *ngFor
    objectKeys = Object.keys
 
+   attributes(member:SchemaMember):string[] {
+      if (member.kind == SchemaMemberType.TYPE) {
+         return Object.keys((member.member as Type).attributes)
+      } else {
+         return []
+      }
+   }
 
    ngOnInit() {
       this.service.getTypes().subscribe(
          res => {
             let schema = res as any
             let typeMembers:SchemaMember[] = schema.types.map((t) => SchemaMember.fromType(t as Type))
-            let serviceMembers:SchemaMember[] = schema.services.map((s) => SchemaMember.fromService(s as Service))
-            let members:SchemaMember[] = typeMembers.concat(serviceMembers)
+            let operationMembers:SchemaMember[] = [];
+            schema.services.forEach((service) => operationMembers = operationMembers.concat(SchemaMember.fromService(service as Service)))
+            let members:SchemaMember[] = typeMembers.concat(operationMembers)
             members = _.sortBy(members, [(m:SchemaMember) => { return m.name.fullyQualifiedName}])
             this.schema = schema
             this.members = members
@@ -116,18 +112,26 @@ export class SchemaMember {
       public readonly name: QualifiedName,
       public readonly kind: SchemaMemberType,
       public readonly aliasForType: string,
-      public readonly member:Type | Service,
+      public readonly member:Type | Service | Operation,
       public readonly sources:SourceCode[]
-   ) { }
+   ) {
+      this.attributeNames = kind == SchemaMemberType.TYPE
+         ? Object.keys((member as Type).attributes)
+         : []
+   }
 
-   static fromService(service: Service): SchemaMember {
-      return new SchemaMember(
-         service.name,
-         SchemaMemberType.SERVICE,
-         null,
-         service,
-         [service.sourceCode]
-      )
+   attributeNames:string[]
+   static fromService(service: Service): SchemaMember[] {
+      return service.operations.map( operation => {
+         return new SchemaMember(
+            {name: operation.name, fullyQualifiedName: service.name.fullyQualifiedName + " #" + operation.name},
+            SchemaMemberType.OPERATION,
+            null,
+            operation,
+            [] // TODO
+         )
+      })
+
    }
 
    static fromType(type:Type):SchemaMember {
@@ -143,5 +147,6 @@ export class SchemaMember {
 
 export enum SchemaMemberType {
    SERVICE,
-   TYPE
+   TYPE,
+   OPERATION
 }
