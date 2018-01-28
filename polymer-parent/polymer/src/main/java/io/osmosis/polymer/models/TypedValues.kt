@@ -8,9 +8,10 @@ interface TypedInstance {
    val type: Type
    val value: Any
 
-   fun toRawObject():Any {
+   fun toRawObject(): Any {
 
-      val unwrapMap = { valueMap:Map<String,Any> -> valueMap.map { (entryKey, entryValue) ->
+      val unwrapMap = { valueMap: Map<String, Any> ->
+         valueMap.map { (entryKey, entryValue) ->
             when (entryValue) {
                is TypedInstance -> entryKey to entryValue.value
                else -> entryKey to entryValue
@@ -19,8 +20,8 @@ interface TypedInstance {
       }
 
       when (value) {
-         is Map<*,*> -> return unwrapMap(value as Map<String,Any>)
-         // TODO : There's likely other types that need unwrapping
+         is Map<*, *> -> return unwrapMap(value as Map<String, Any>)
+      // TODO : There's likely other types that need unwrapping
          else -> return value
       }
    }
@@ -40,6 +41,7 @@ interface TypedInstance {
 
 data class TypedObject(override val type: Type, override val value: Map<String, TypedInstance>) : TypedInstance, Map<String, TypedInstance> by value {
    companion object {
+      private val valueReader = ValueReader()
       fun fromValue(typeName: String, value: Any, schema: Schema): TypedObject {
          return fromValue(schema.type(typeName), value, schema)
       }
@@ -58,10 +60,7 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
 
       fun fromValue(type: Type, value: Any, schema: Schema): TypedObject {
          val attributes: Map<AttributeName, TypedInstance> = type.attributes.map { (attributeName, attributeType) ->
-            // TODO : DeclaredFields / Fields doesn't work - swap this with a reflection library that will handle both
-            val field = value.javaClass.getDeclaredField(attributeName)
-            field.isAccessible = true
-            val attributeValue = field.get(value)
+            val attributeValue = valueReader.read(value, attributeName) ?: TODO("Null values not yet supported")
             attributeName to TypedInstance.from(schema.type(attributeType.name), attributeValue, schema)
          }.toMap()
          return TypedObject(type, attributes)

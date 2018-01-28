@@ -1,0 +1,19 @@
+server:
+  port: 9030
+spring:
+  application:
+    name: trade-thresholds
+polymer:
+   schemaStore:
+      name: discovery
+   schema:
+      name: trade-thresholds
+      version: 0.1.0
+logging:
+  level:
+      io.polymer: DEBUG
+      io.osmosis: DEBUG
+ribbon:
+   restclient:
+      enabled: true
+   ServerListRefreshInterval: 1000

@@ -6,6 +6,7 @@ import io.osmosis.polymer.query.QueryContext
 import io.osmosis.polymer.query.QueryEngineFactory
 import io.osmosis.polymer.query.StatefulQueryEngine
 import io.osmosis.polymer.schemas.*
+import io.osmosis.polymer.schemas.taxi.TaxiSchemaAggregator
 import io.osmosis.polymer.utils.log
 
 object GraphAttributes {
@@ -32,12 +33,12 @@ interface ModelContainer : SchemaContainer {
    fun addModel(model: TypedInstance): ModelContainer
 }
 
-class Polymer(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFactory) : ModelContainer  {
+class Polymer(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFactory, private val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) : ModelContainer {
    private val schemas = mutableListOf<Schema>()
    private val models = mutableSetOf<TypedInstance>()
    private var graph = GraphBuilder.create<Element, Relationship>().createDirectedGraph()
 
-   override var schema: Schema = CompositeSchema(schemas)
+   override var schema: Schema = compositeSchemaBuilder.aggregate(schemas)
       private set
 
    fun query(): StatefulQueryEngine {
@@ -47,15 +48,6 @@ class Polymer(schemas: List<Schema>, private val queryEngineFactory: QueryEngine
    fun models(): Set<TypedInstance> {
       return models.toSet()
    }
-
-//   fun export(): String {
-//      return DbExporter(orientGraph).export()
-//   }
-//
-//   fun export(path: String): String {
-//      return DbExporter(orientGraph).export(path)
-//   }
-
 
    //   fun queryContext(): QueryContext = QueryContext(schema, facts, this)
    constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) : this(emptyList(), queryEngineFactory)
@@ -86,4 +78,29 @@ class Polymer(schemas: List<Schema>, private val queryEngineFactory: QueryEngine
    fun type(typeName: String): Type = getType(typeName)
 
    fun getService(serviceName: String): Service = schema.service(serviceName)
+}
+
+
+interface SchemaAggregator {
+   companion object {
+      val DEFAULT_AGGREGATORS = listOf<SchemaAggregator>(TaxiSchemaAggregator())
+   }
+
+   /**
+    * Returns an aggregated schema, and the
+    * remaining, unaffected schemas
+    */
+   fun aggregate(schemas: List<Schema>): Pair<Schema?, List<Schema>>
+}
+
+class CompositeSchemaBuilder(val aggregators: List<SchemaAggregator> = SchemaAggregator.DEFAULT_AGGREGATORS) {
+   fun aggregate(schemas: List<Schema>): Schema {
+      var unaggregated = schemas
+      val aggregatedSchemas = aggregators.map { aggregator ->
+         val (aggregated, remaining) = aggregator.aggregate(unaggregated)
+         unaggregated = remaining
+         /*return*/ aggregated
+      }.filterNotNull()
+      return CompositeSchema(unaggregated + aggregatedSchemas)
+   }
 }

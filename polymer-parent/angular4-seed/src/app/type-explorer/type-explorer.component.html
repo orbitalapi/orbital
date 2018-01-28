@@ -74,7 +74,7 @@
                      </mat-tab>
                      <mat-tab label="Source">
                         <div class="source-section" *ngFor="let source of member.sources">
-                           <h3>{{ source.origin }}</h3>
+                           <h4>As defined by <code>{{ source.origin }}</code></h4>
                            <div class="language">{{ source.language }}</div>
                            <p>
                               <code [innerHTML]="source.content | nl2br"></code>

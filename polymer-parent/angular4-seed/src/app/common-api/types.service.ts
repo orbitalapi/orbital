@@ -17,6 +17,12 @@ export class TypesService {
       })
    }
 
+   getRawSchema = ():Observable<string> => {
+      return this.http
+         .get(`http://localhost:9022/schemas/raw`)
+         .map ( result => result.text() )
+   }
+
    getLinksForNode = (node: SchemaGraphNode):Observable<SchemaGraph> => {
       return this.http
          .get(`http://localhost:9022/nodes/${node.type}/${node.nodeId}/links`)

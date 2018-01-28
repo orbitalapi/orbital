@@ -1,6 +1,6 @@
 package io.polymer.schemaStore
 
-import io.osmosis.polymer.schemas.CompositeSchema
+import io.osmosis.polymer.CompositeSchemaBuilder
 import io.osmosis.polymer.schemas.Schema
 
 interface SchemaSource {
@@ -10,7 +10,7 @@ interface SchemaSource {
 }
 interface SchemaProvider {
    fun schemas(): List<Schema>
-   fun schema(): Schema = CompositeSchema(schemas())
+   fun schema(): Schema = CompositeSchemaBuilder().aggregate(schemas())
 
    companion object {
        fun from(schema:Schema):SchemaProvider {

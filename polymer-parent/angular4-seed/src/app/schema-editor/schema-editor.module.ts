@@ -12,6 +12,7 @@ import { CovalentCodeEditorModule } from '@covalent/code-editor';
 
 import { NgxChartsDagModule } from '@swimlane/ngx-charts-dag';
 import { NgxDatatableModule } from "@swimlane/ngx-datatable";
+import { CommonApiModule } from 'app/common-api/common-api.module';
 
 const SCHEMA_EDITOR_ROUTE = [{ path: '', component: SchemaEditorComponent }];
 
@@ -19,6 +20,7 @@ const SCHEMA_EDITOR_ROUTE = [{ path: '', component: SchemaEditorComponent }];
    declarations: [SchemaEditorComponent],
    imports: [
       CommonModule,
+      CommonApiModule,
       SharedModule,
       Ng2SearchPipeModule,
       RouterModule.forChild(SCHEMA_EDITOR_ROUTE),

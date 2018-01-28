@@ -99,7 +99,9 @@ class ParameterFactory {
             if (!queryResult.isFullyResolved) {
                throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ", context.evaluatedPath())
             } else {
-               attributeName to queryResult[attributeType]!!
+               attributeName to (queryResult[attributeType] ?:
+                  // TODO : This might actually be legal, as it could be valid for a value to resolve to null
+                  throw IllegalArgumentException("Expected queryResult to return attribute with type ${attributeType.fullyQualifiedName} but the returned value was null"))
             }
          }
       }.toMap()

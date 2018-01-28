@@ -4,13 +4,14 @@ import io.polymer.spring.EnablePolymer;
 import io.polymer.spring.RemoteSchemaStoreType;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 @SpringBootApplication
-//@EnableEurekaClient
+@EnableEurekaClient
 @EnablePolymer(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
 public class QueryServiceApp {
 

@@ -257,7 +257,9 @@ ul.note-labels {
    }
 }
 
-
+.element-kind-wrapper {
+   min-width: 120px
+}
 
 
 :host /deep/ {

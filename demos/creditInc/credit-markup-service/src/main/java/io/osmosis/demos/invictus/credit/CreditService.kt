@@ -20,7 +20,7 @@ data class CreditCostRequest(
    val invoiceValue: Money,
 
    @field:DataType("isic.uk.SIC2008")
-   val industryCode: Int
+   val industryCode: String
 )
 //data class CreditCostRequest(
 // TODO : We should support this type of request object,

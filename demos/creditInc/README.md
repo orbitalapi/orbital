@@ -7,7 +7,7 @@ CreditInc. is an invoice financing company.
 The InvoiceApp allows clients to submit an invoice, and see
 what markup CreditInc. will charge.
 
-The rule is simple:
+The expectedException is simple:
 
 ```
 Find CreditMarkup based on IndustryCode (UKSIC2003) and InvoiceValue (GBP)

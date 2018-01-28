@@ -9,6 +9,9 @@ import io.osmosis.polymer.schemas.taxi.TaxiSchema
 import io.osmosis.polymer.utils.log
 import io.polymer.schemaStore.*
 import io.polymer.spring.invokers.RestTemplateInvoker
+import io.polymer.spring.invokers.ServiceDiscoveryClientUrlResolver
+import io.polymer.spring.invokers.ServiceUrlResolver
+import io.polymer.spring.invokers.SpringServiceDiscoveryClient
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
 import lang.taxi.generators.java.DefaultServiceMapper
@@ -24,9 +27,9 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.netflix.feign.EnableFeignClients
 import org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration
-import org.springframework.cloud.netflix.ribbon.RibbonClientHttpRequestFactory
 import org.springframework.context.EnvironmentAware
 import org.springframework.context.annotation.*
 import org.springframework.core.env.ConfigurableEnvironment
@@ -91,9 +94,14 @@ class PolymerAutoConfiguration {
    @Bean
    fun restTemplateOperationInvoker(schemaProvider: SchemaProvider,
                                     restTemplateBuilder: RestTemplateBuilder,
-                                    ribbonRequestFactory: RibbonClientHttpRequestFactory):RestTemplateInvoker {
+                                    serviceUrlResolvers: List<ServiceUrlResolver>
+   ): RestTemplateInvoker {
+      return RestTemplateInvoker(schemaProvider, restTemplateBuilder, serviceUrlResolvers)
+   }
 
-      return RestTemplateInvoker(schemaProvider, restTemplateBuilder.requestFactory(ribbonRequestFactory))
+   @Bean
+   fun serviceDiscoveryUrlResolver(discoveryClient: DiscoveryClient): ServiceDiscoveryClientUrlResolver {
+      return ServiceDiscoveryClientUrlResolver(SpringServiceDiscoveryClient(discoveryClient))
    }
 
    @Bean

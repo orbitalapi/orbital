@@ -3,6 +3,8 @@ import { Subject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
 import {environment} from '../../environments/environment';
+import { TypesService } from 'app/common-api/types.service';
+
 
 @Component({
   selector: 'app-schema-editor',
@@ -11,7 +13,7 @@ import {environment} from '../../environments/environment';
 })
 export class SchemaEditorComponent implements OnInit {
 
-   constructor(private http: HttpClient) {
+   constructor(private typeService:TypesService) {
    }
 
   taxiDef: string = '';
@@ -34,22 +36,22 @@ export class SchemaEditorComponent implements OnInit {
  }
 
   ngOnInit() {
-
+      this.typeService.getRawSchema()
+         .subscribe( taxi => this.taxiDef = taxi)
      // TODO :  should be throttle(Observable.interval(500)), but that's not working.
-     this.taxiDefUpdates.throttleTime(500)
-     .subscribe(taxiDef => {
-       this.http.post(`${environment.apiUrl}/schemas/taxi-graph`, taxiDef)
-         .subscribe(data => {
-           this.errors = [];
-         //   this.graphData = data;
-         }, errorResponse => {
-           // compilation exceptions
-           if (errorResponse.status == 406) {
-             this.errors = errorResponse.error.errors
-           }
-         });
-       console.debug(taxiDef)
-     })
+   //   this.taxiDefUpdates.throttleTime(500)
+   //   .subscribe(taxiDef => {
+   //     this.http.post(`${environment.apiUrl}/schemas/taxi-graph`, taxiDef)
+   //       .subscribe(data => {
+   //         this.errors = [];
+   //       //   this.graphData = data;
+   //       }, errorResponse => {
+   //         // compilation exceptions
+   //         if (errorResponse.status == 406) {
+   //           this.errors = errorResponse.error.errors
+   //         }
+   //       });
+   //     console.debug(taxiDef)
   }
 
 }

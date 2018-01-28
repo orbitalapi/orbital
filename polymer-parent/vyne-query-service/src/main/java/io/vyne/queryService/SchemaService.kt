@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 class SchemaService(private val schemaProvider: SchemaSourceProvider) {
-   @RequestMapping(path = arrayOf("/schemas"), method = arrayOf(RequestMethod.GET))
+   @RequestMapping(path = ["/schemas/raw"], method = [RequestMethod.GET])
    fun listRawSchema():String {
       return schemaProvider.schemaStrings().joinToString("\n")
    }
 
-   @RequestMapping(path = arrayOf("/types"), method = arrayOf(RequestMethod.GET))
+   @RequestMapping(path = ["/types"], method = [RequestMethod.GET])
    fun getTypes(): Schema {
       return schemaProvider.schema()
    }

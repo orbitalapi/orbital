@@ -22,9 +22,11 @@ import org.springframework.web.client.RestTemplate
 
 class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                           val restTemplate: RestTemplate,
-                          val serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver())) : OperationInvoker {
+                          private val serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver())) : OperationInvoker {
 
-   @Autowired constructor(schemaProvider: SchemaProvider, restTemplateBuilder: RestTemplateBuilder, serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()))
+   @Autowired constructor(schemaProvider: SchemaProvider,
+                          restTemplateBuilder: RestTemplateBuilder,
+                          serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()))
       : this(schemaProvider,restTemplateBuilder
       .errorHandler(CatchingErrorHandler())
       .additionalInterceptors(LoggingRequestInterceptor())

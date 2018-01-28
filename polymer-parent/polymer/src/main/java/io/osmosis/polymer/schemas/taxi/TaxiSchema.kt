@@ -1,5 +1,6 @@
 package io.osmosis.polymer.schemas.taxi
 
+import io.osmosis.polymer.SchemaAggregator
 import io.osmosis.polymer.schemas.*
 import io.osmosis.polymer.schemas.Modifier
 import lang.taxi.Compiler
@@ -8,7 +9,7 @@ import lang.taxi.services.Constraint
 import lang.taxi.types.*
 import lang.taxi.types.Annotation
 
-class TaxiSchema(document: TaxiDocument) : Schema {
+class TaxiSchema(private val document: TaxiDocument) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
    // TODO : Are these still required / meaningful?
@@ -20,12 +21,6 @@ class TaxiSchema(document: TaxiDocument) : Schema {
    init {
       this.types = parseTypes(document)
       this.services = parseServices(document)
-      val links = mutableSetOf<Link>()
-      val attributes = mutableSetOf<QualifiedName>()
-
-//      this.links = links
-//      this.types = types
-//      this.attributes = attributes
    }
 
    private fun parseServices(document: TaxiDocument): Set<Service> {
@@ -49,7 +44,7 @@ class TaxiSchema(document: TaxiDocument) : Schema {
                )
             },
             metadata = parseAnnotationsToMetadata(taxiService.annotations),
-            sourceCode = taxiService.sourceCode.toVyneSource()
+            sourceCode = taxiService.compilationUnits.toVyneSources()
          )
       }.toSet()
    }
@@ -79,13 +74,13 @@ class TaxiSchema(document: TaxiDocument) : Schema {
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType.modifiers)
-               result.add(Type(typeName, fields, modifiers, sources = taxiType.sources.toVyneSources()))
+               result.add(Type(typeName, fields, modifiers, sources = taxiType.compilationUnits.toVyneSources()))
             }
             is TypeAlias -> {
-               result.add(Type(QualifiedName(taxiType.qualifiedName), aliasForType = QualifiedName(taxiType.aliasType!!.qualifiedName), sources = taxiType.sources.toVyneSources()))
+               result.add(Type(QualifiedName(taxiType.qualifiedName), aliasForType = QualifiedName(taxiType.aliasType!!.qualifiedName), sources = taxiType.compilationUnits.toVyneSources()))
             }
             is ArrayType -> TODO()
-            else -> result.add(Type(QualifiedName(taxiType.qualifiedName), sources = taxiType.sources.toVyneSources()))
+            else -> result.add(Type(QualifiedName(taxiType.qualifiedName), sources = taxiType.compilationUnits.toVyneSources()))
          }
       }
       return result
@@ -106,17 +101,35 @@ class TaxiSchema(document: TaxiDocument) : Schema {
       }
    }
 
+   fun merge(schema: TaxiSchema): TaxiSchema {
+      return TaxiSchema(this.document.merge(schema.document))
+   }
+
    companion object {
-   val LANGUAGE = "Taxi"
-   fun from(taxi: String, sourceName:String = "<unknown>"): TaxiSchema {
-         return TaxiSchema(Compiler(taxi,sourceName).compile())
+      val LANGUAGE = "Taxi"
+      fun from(taxi: String, sourceName: String = "<unknown>"): TaxiSchema {
+         return TaxiSchema(Compiler(taxi, sourceName).compile())
       }
    }
 }
 
-private fun lang.taxi.SourceCode.toVyneSource():SourceCode {
-   return io.osmosis.polymer.schemas.SourceCode(this.origin,TaxiSchema.LANGUAGE, this.content)
+private fun lang.taxi.SourceCode.toVyneSource(): SourceCode {
+   return io.osmosis.polymer.schemas.SourceCode(this.origin, TaxiSchema.LANGUAGE, this.content)
 }
-private fun List<lang.taxi.SourceCode>.toVyneSources(): List<SourceCode> {
-   return this.map { it.toVyneSource() }
+
+private fun List<lang.taxi.CompilationUnit>.toVyneSources(): List<SourceCode> {
+   return this.map { it.source.toVyneSource() }
+}
+
+
+class TaxiSchemaAggregator : SchemaAggregator {
+   override fun aggregate(schemas: List<Schema>): Pair<Schema?, List<Schema>> {
+      val taxiSchemas = schemas.filterIsInstance(TaxiSchema::class.java)
+      val remaining = schemas - taxiSchemas
+      val aggregatedSchema = if (taxiSchemas.isNotEmpty()) {
+         taxiSchemas.reduce { a, b -> a.merge(b) }
+      } else null
+      return aggregatedSchema to remaining
+   }
+
 }

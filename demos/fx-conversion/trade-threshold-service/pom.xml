@@ -3,23 +3,15 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
-      <groupId>io.osmosis.polymer</groupId>
-      <artifactId>polymer-parent</artifactId>
+      <artifactId>fx-rates-parent</artifactId>
+      <groupId>io.osmosis.demos.fxRates</groupId>
       <version>0.1.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
-   <artifactId>vyne-query-service</artifactId>
+   <artifactId>trade-threshold-service</artifactId>
 
-   <properties>
-      <jackson.version>2.9.3</jackson.version>
-   </properties>
    <dependencies>
-      <dependency>
-         <groupId>io.osmosis.polymer</groupId>
-         <artifactId>polymer-spring</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
-      </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-web</artifactId>
@@ -28,16 +20,19 @@
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-eureka</artifactId>
       </dependency>
-
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-devtools</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.jetbrains.kotlin</groupId>
-         <artifactId>kotlin-reflect</artifactId>
-         <version>${kotlin.version}</version>
-         <scope>compile</scope>
+         <groupId>io.osmosis.polymer</groupId>
+         <artifactId>polymer</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+         <groupId>io.osmosis.polymer</groupId>
+         <artifactId>polymer-spring</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
       </dependency>
    </dependencies>
 </project>

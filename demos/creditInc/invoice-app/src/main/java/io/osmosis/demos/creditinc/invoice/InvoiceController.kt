@@ -11,9 +11,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 
-@DataType("polymer.creditInc.Client")
-data class Client(@field:DataType("polymer.creditInc.ClientId") val clientId: String)
-
 @DataType("polymer.creditInc.invoicing.Money")
 data class Money(
    @field:DataType("polymer.creditInc.Currency") val currency: String,
