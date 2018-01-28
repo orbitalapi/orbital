@@ -38,6 +38,7 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
       val evaluator = evaluators[relationship] ?:
          error("No LinkEvaluator provided for relationship ${relationship.name}")
       val evaluationResult = evaluator.evaluate(edge, queryContext)
+      log().debug("Evaluated ${evaluationResult.description()}")
       if (evaluationResult.wasSuccessful) {
          return evaluationResult
       } else {
@@ -139,7 +140,7 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
       if (searchResult.state() != target) {
          // Search failed, and couldn't match the node
          log().debug("Search failed: $searchDescription. Nearest match was ${searchResult.state()}")
-         log().debug("Search failed path: \n${searchResult.path().convertToPolymerPath(start, target).description.split(",").joinToString("\n") }")
+         log().debug("Search failed path: \n${searchResult.path().convertToPolymerPath(start, target).description.split(",").joinToString("\n")}")
          return null
       }
 
@@ -272,7 +273,7 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
    }
 }
 
-private fun List<WeightedNode<Relationship,Element,Double>>.toLinks():List<Link> {
+private fun List<WeightedNode<Relationship, Element, Double>>.toLinks(): List<Link> {
    return this.mapIndexed { index, weightedNode ->
       if (index == 0) {
          null
@@ -284,9 +285,11 @@ private fun List<WeightedNode<Relationship,Element,Double>>.toLinks():List<Link>
       }
    }.toList().filterNotNull()
 }
-private fun List<WeightedNode<Relationship,Element,Double>>.describe():String {
+
+private fun List<WeightedNode<Relationship, Element, Double>>.describe(): String {
    return this.toLinks().describe()
 }
+
 private fun List<WeightedNode<Relationship, Element, Double>>.convertToPolymerPath(start: Element, target: Element): Path {
    val links = this.mapIndexed { index, weightedNode ->
       if (index == 0) {

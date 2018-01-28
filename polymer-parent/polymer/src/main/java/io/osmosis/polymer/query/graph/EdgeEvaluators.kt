@@ -58,7 +58,7 @@ class ParameterFactory {
       }
 
       // Check to see if there's exactly one instance somewhere within the context
-      // Note : I'm cheating here, I really should find the value requried by retracing steps
+      // Note : I'm cheating here, I really should find the value required by retracing steps
       // walked in the path.  But, it's unclear if this is possible, given the scattered way that
       // the algorithims are evaluated
       if (context.hasFactOfType(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {

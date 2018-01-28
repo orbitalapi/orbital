@@ -40,10 +40,13 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    }
 
    override fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>): TypedInstance {
+      log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",")}")
+
       val annotation = operation.metadata("HttpOperation")
       val httpMethod = HttpMethod.resolve(annotation.params["method"] as String)
       val url = annotation.params["url"] as String
       val absoluteUrl = makeUrlAbsolute(service, operation, url)
+      log().debug("Operation ${operation.name} resolves to $absoluteUrl")
 
       val requestBody = buildRequestBody(operation, parameters)
       val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, getUriVariables(parameters))
@@ -56,14 +59,14 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    }
 
    private fun handleFailedHttpResponse(result: ResponseEntity<Any>, operation: Operation, absoluteUrl: Any, httpMethod: HttpMethod, requestBody: Any) {
-      val message = "Failed load invoke $httpMethod to $absoluteUrl - received ${result.toString()}"
+      val message = "Failed load invoke $httpMethod to $absoluteUrl - received $result"
       log().error(message)
       throw OperationInvocationException(message)
    }
 
    private fun handleSuccessfulHttpResponse(result: ResponseEntity<Any>, operation: Operation): TypedInstance {
       // TODO : Handle scenario where we get a 2xx response, but no body
-
+      log().debug("Result of ${operation.name} was $result")
       if (result.body is Map<*, *>) {
          return TypedObject.fromAttributes(operation.returnType, result.body as Map<String, Any>, schemaProvider.schema())
       } else {
