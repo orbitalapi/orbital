@@ -1,5 +1,6 @@
 package io.osmosis.polymer.demos
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import io.osmosis.polymer.Polymer
 import io.osmosis.polymer.StubService
@@ -10,6 +11,7 @@ import io.osmosis.polymer.models.json.parseKeyValuePair
 import io.osmosis.polymer.query.QueryEngineFactory
 import io.osmosis.polymer.query.TypeName
 import io.osmosis.polymer.schemas.taxi.TaxiSchema
+import io.osmosis.polymer.utils.log
 import org.junit.Test
 
 class InvoiceMarkupWithContractsTest {
@@ -159,7 +161,8 @@ namespace io.osmosis.demos.creditInc.isic {
 //      polymer.creditInc.CreditCostResponse -[Is instance of]-> polymer.creditInc.CreditCostResponse
 //      polymer.creditInc.CreditCostResponse -[Has attribute]-> polymer.creditInc.CreditCostResponse/cost
 //      polymer.creditInc.CreditCostResponse/cost -[Is type of]-> polymer.creditInc.CreditRiskCost
-
+      val operation = result.profilerOperation
+      log().debug(jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(operation))
       expect(result["polymer.creditInc.CreditRiskCost"]!!.value).to.equal(250.0)
 
       // Validate the services were called correctly
@@ -168,10 +171,10 @@ namespace io.osmosis.demos.creditInc.isic {
       expect(stubService.invocations["convertRates"]!!).to.satisfy {
          containsArgWithParams(it, "polymer.creditInc.Money",
             Triple("currency", "polymer.creditInc.Currency", "AUD"),
-            Triple("value", "polymer.creditInc.MoneyAmount","20.55")
+            Triple("value", "polymer.creditInc.MoneyAmount", "20.55")
          )
       }
-      expect(stubService.invocations["convertRates"]!!).to.satisfy { containsArg(it, "polymer.creditInc.Currency", "GBP" ) }
+      expect(stubService.invocations["convertRates"]!!).to.satisfy { containsArg(it, "polymer.creditInc.Currency", "GBP") }
       val creditRiskRequest = stubService.invocations["calculateCreditCosts"]!!.first() as TypedObject
       // Assert we called with the converted currency
       expect(creditRiskRequest["invoiceValue.currency"].value).to.equal("GBP")

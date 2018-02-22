@@ -19,7 +19,7 @@ However:
  * Invoices don't have an Industry Code, but do have a ClientId
  * Clients can be looked up, but only have an IndustryCode (UKSIC2008)
  
-Therefore, to invoke this operation, we need to apply a couple of solvers:
+Therefore, to invoke this profilerOperation, we need to apply a couple of solvers:
 
 InvoiceValue -convertTo-> GBP
 InvoiceClient -lookUp-> Client

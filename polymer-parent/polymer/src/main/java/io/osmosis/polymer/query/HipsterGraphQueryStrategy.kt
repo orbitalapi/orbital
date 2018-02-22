@@ -12,6 +12,7 @@ import io.osmosis.polymer.instance
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.query.graph.EdgeEvaluator
 import io.osmosis.polymer.query.graph.EvaluatedEdge
+import io.osmosis.polymer.query.graph.description
 import io.osmosis.polymer.schemas.Link
 import io.osmosis.polymer.schemas.Path
 import io.osmosis.polymer.schemas.Relationship
@@ -37,15 +38,18 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
       val relationship = edge.edgeValue
       val evaluator = evaluators[relationship] ?:
          error("No LinkEvaluator provided for relationship ${relationship.name}")
-      val evaluationResult = evaluator.evaluate(edge, queryContext)
+      val evaluationResult = queryContext.startChild(this, "Evaluating ${edge.description()} with evaluator ${evaluator.javaClass.simpleName}") {
+         evaluator.evaluate(edge, queryContext)
+      }
       log().debug("Evaluated ${evaluationResult.description()}")
       if (evaluationResult.wasSuccessful) {
          return evaluationResult
       } else {
-         throw SearchFailedException("Could not evaluate edge $edge: ${evaluationResult.error!!}", queryContext.evaluatedPath())
+         throw SearchFailedException("Could not evaluate edge $edge: ${evaluationResult.error!!}", queryContext.evaluatedPath(),queryContext.profiler.root)
       }
    }
 }
+
 
 class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : QueryStrategy {
 
@@ -114,29 +118,16 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
       val graph = PolymerGraphBuilder(queryContext.schema).build(queryContext.facts)
       val searchDescription = "$start -> $target"
       log().debug("Searching for path from $searchDescription")
-      log().debug("Current graph state: \n ${graph.description()}")
+//      log().debug("Current graph state: \n ${graph.description()}")
 
+      return queryContext.startChild(this, "Searching for path $searchDescription") { op ->
+         op.addContext("Current graph state", graph.edgeDescriptions())
+         doSearch(start, target, graph, searchDescription, queryContext, op)
+      }
+   }
 
-//      val searchProblem = ProblemBuilder.create()
-//         .initialState(start)
-//         .defineProblemWithExplicitActions()
-//         .useActionFunction({ element ->
-//            // Find all the relationships that we consider traversable right now
-//            val edges = graph.outgoingEdgesOf(element.graphNode())
-//            edges.filter { canBeEvaluated(it, queryContext) }
-//               .map { EvaluateRelationshipAction(it.edgeValue, it.vertex2) }
-//         })
-//         .useTransitionFunction { action, fromElement ->
-//            // Because we're not doing path evaluation within the search, just return
-//            // the target node for now.
-//            action.target
-//         }
-//         .useCostFunction { transition ->
-//            1.0 // Use a constant cost for now
-//         }
-//         .build()
+   private fun doSearch(start: Element, target: Element, graph: HipsterDirectedGraph<Element, Relationship>, searchDescription: String, queryContext: QueryContext, op: ProfilerOperation): Pair<TypedInstance, Path>? {
       val searchResult = graphSearch(start, target, graph)
-//      val searchResult = Hipster.createAStar(searchProblem).search(target)
       if (searchResult.state() != target) {
          // Search failed, and couldn't match the node
          log().debug("Search failed: $searchDescription. Nearest match was ${searchResult.state()}")
@@ -146,6 +137,7 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
 
       // TODO : validate this is a valid path
       log().debug("Search $searchDescription found path: \n ${searchResult.path().describe()}")
+      op.addContext("discoveredPath", searchResult.path().describeLinks())
       val evaluatedPath = evaluatePath(searchResult, queryContext)
       val resultValue = selectResultValue(evaluatedPath, queryContext, target)
       val path = searchResult.path().convertToPolymerPath(start, target)
@@ -154,62 +146,6 @@ class HipsterGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : Quer
       } else { // Search failed
          null
       }
-
-
-//         .useTransitionFunction { action, fromElement ->
-//            val edge: GraphEdge<Element, Relationship> = graph.outgoingEdgesOf(fromElement.graphNode())
-//               .firstOrNull { it.edgeValue == action.relationship && it.vertex2 == action.target }
-//               ?: error("No match found")
-//            val evaluatedEdge = edgeEvaluator.evaluate(edge, queryContext)
-//            queryContext.addEvaluatedEdge(evaluatedEdge)
-//
-//            // Return the .graphNode().  If this result was an instance, the value itself
-//            // isn't present in the graph, but it's type is.  If we return the instance, it's
-//            // absence from the graph causes the search to terminate prematurely
-//            evaluatedEdge.result!!.graphNode()
-//         }
-//         .useCostFunction { transition: Transition<EvaluateRelationshipAction, Element>? ->
-//            // TODO ...  For now, cost is constant, but should come from the relationship
-//            1.0
-//         }
-//         .build()
-//
-//      val searchCompletedFn = { node: WeightedNode<EvaluateRelationshipAction, Element, Double> ->
-//         val state = node.state()
-//         val matched = state.elementType == ElementType.TYPE
-//            && (state.value) == target.value
-//         if (matched) {
-//            log().debug("Search $searchDescription completed successfully")
-//         }
-//         matched
-//      }
-
-//      try {
-//         public static <A, S, C extends Comparable<C>, N extends HeuristicNode<A, S, C, N>> AStar<A, S, C, N> createAStar(
-//         SearchProblem<A, S, N> components) {
-
-//         val searchResult = Hipster.createAStar(searchProblem).search(searchCompletedFn)
-      // This is a naive impl., but it'll work until it doesn't.
-      // Find an instance of desired return type in the context.
-      // It'd be better to walk the state backwards (presumably at most 1 node)
-      // and examine the results of the evaluations\
-      // In the case of a PROVIDES evaluation, the result won't be present in the graph, so
-      // need to allow the previous evaluations to return multiple values - the value in the graph (the type),
-      // and the real return value (the instance)
-      // TODO : Make the path accessible
-//         val path = searchResult.recreatePath(start, target, graph)
-//         val targetType = queryContext.schema.type(target.value.toString())
-//         val resultInstance = queryContext.getFact(targetType)
-//         return if (searchResult.goalNode.state() == target) {
-//            resultInstance to path
-//         } else { // failed
-//            null
-//         }
-//      } catch (e: SearchFailedException) {
-//         log().error("Failed to execute search: ${e.message}")
-//         log().error("Evaluated path: ${e.evaluatedPath.description()}")
-//         throw e
-//      }
    }
 
    private fun graphSearch(from: Element, to: Element, graph: HipsterDirectedGraph<Element, Relationship>): WeightedNode<Relationship, Element, Double> {
@@ -289,7 +225,9 @@ private fun List<WeightedNode<Relationship, Element, Double>>.toLinks(): List<Li
 private fun List<WeightedNode<Relationship, Element, Double>>.describe(): String {
    return this.toLinks().describe()
 }
-
+private fun List<WeightedNode<Relationship, Element, Double>>.describeLinks(): List<String> {
+   return this.toLinks().map { it.toString() }
+}
 private fun List<WeightedNode<Relationship, Element, Double>>.convertToPolymerPath(start: Element, target: Element): Path {
    val links = this.mapIndexed { index, weightedNode ->
       if (index == 0) {
@@ -333,13 +271,15 @@ private fun Algorithm<*, Element, *>.SearchResult.recreatePath(start: Element, t
    return Path(start.valueAsQualifiedName(), target.valueAsQualifiedName(), links)
 }
 
-private fun <V, E> HipsterDirectedGraph<V, E>.description(): String? {
-   val paths: List<String> = this.vertices().flatMap {
+private fun <V, E> HipsterDirectedGraph<V, E>.edgeDescriptions(): List<String> {
+   return this.vertices().flatMap {
       this.outgoingEdgesOf(it).map { edge ->
          "${edge.vertex1} -[${edge.edgeValue}]-> ${edge.vertex2}"
       }
    }
-   return paths.joinToString("\n")
+}
+private fun <V, E> HipsterDirectedGraph<V, E>.description(): String? {
+   return this.edgeDescriptions().joinToString("\n")
 }
 
 

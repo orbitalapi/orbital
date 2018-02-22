@@ -17,16 +17,17 @@ import org.springframework.stereotype.Component
 @Component
 class ModelsScanStrategy : QueryStrategy {
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
-      val targetTypes: Map<Type, QuerySpecTypeNode> = target.associateBy { it.type }
+      return context.startChild(this, "scan for matches") {
+         val targetTypes: Map<Type, QuerySpecTypeNode> = target.associateBy { it.type }
 
-      // This is wrong, and won't work long-term
-      // We need more context in order to be able to search
-      // Eg., given an instance of Money, it's concievable that there would be multiple instances
-      // within the graph
-      val matches = targetTypes.filter { (type, _) -> context.hasFactOfType(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) }
-         .map { (type, querySpec) -> querySpec to context.getFact(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) }
-         .toMap()
-
-      return QueryStrategyResult(matches)
+         // This is wrong, and won't work long-term
+         // We need more context in order to be able to search
+         // Eg., given an instance of Money, it's concievable that there would be multiple instances
+         // within the graph
+         val matches = targetTypes.filter { (type, _) -> context.hasFactOfType(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) }
+            .map { (type, querySpec) -> querySpec to context.getFact(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) }
+            .toMap()
+         QueryStrategyResult(matches)
+      }
    }
 }

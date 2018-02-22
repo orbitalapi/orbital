@@ -1,6 +1,7 @@
 package io.osmosis.polymer
 
 import io.osmosis.polymer.models.TypedInstance
+import io.osmosis.polymer.query.ProfilerOperation
 import io.osmosis.polymer.query.graph.operationInvocation.OperationInvoker
 import io.osmosis.polymer.schemas.Operation
 import io.osmosis.polymer.schemas.Service
@@ -11,7 +12,7 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
 
    val invocations = mutableMapOf<String, List<TypedInstance>>()
 
-   override fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>): TypedInstance {
+   override fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>, profiler:ProfilerOperation): TypedInstance {
       val metadata = operation.metadata("StubResponse")
       val stubResponseKey = (metadata.params["value"] as String?).orElse(operation.name)
       invocations.put(stubResponseKey, parameters)

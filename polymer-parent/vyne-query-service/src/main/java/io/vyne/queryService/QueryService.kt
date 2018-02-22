@@ -1,6 +1,8 @@
 package io.vyne.queryService
 
 import io.osmosis.polymer.models.TypedInstance
+import io.osmosis.polymer.query.ProfilerOperation
+import io.osmosis.polymer.query.SearchFailedException
 import io.osmosis.polymer.schemas.Schema
 import io.polymer.spring.PolymerFactory
 import org.springframework.web.bind.annotation.PostMapping
@@ -9,7 +11,9 @@ import org.springframework.web.bind.annotation.RestController
 
 // TODO : facts should be QualifiedName -> TypedInstance, but need to get
 // json deserialization working for that.
-data class Query(val queryString:String, val facts:Map<String,Any> = emptyMap())
+data class Query(val queryString: String, val facts: Map<String, Any> = emptyMap())
+
+data class FailedSearchResponse(val message: String, val profilerOperation: ProfilerOperation)
 /**
  * QueryService provides a simple way to submit queries to polymer, and
  * explore the results.
@@ -21,14 +25,19 @@ data class Query(val queryString:String, val facts:Map<String,Any> = emptyMap())
 class QueryService(val polymerFactory: PolymerFactory) {
 
    @PostMapping("/query")
-   fun submitQuery(@RequestBody query: Query):Any {
+   fun submitQuery(@RequestBody query: Query): Any {
       val polymer = polymerFactory.createPolymer()
       val facts = parseFacts(query.facts, polymer.schema)
-      return polymer.query().find(query.queryString,facts)
+      try {
+         return polymer.query().find(query.queryString, facts)
+      } catch (e: SearchFailedException) {
+         return FailedSearchResponse(e.message!!, e.profilerOperation)
+      }
+
    }
 
-   private fun parseFacts(facts: Map<String, Any>, schema: Schema):Set<TypedInstance> {
-      return facts.map { (typeName,attributes) ->
+   private fun parseFacts(facts: Map<String, Any>, schema: Schema): Set<TypedInstance> {
+      return facts.map { (typeName, attributes) ->
          TypedInstance.from(schema.type(typeName), attributes, schema)
       }.toSet()
    }

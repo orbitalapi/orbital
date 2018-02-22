@@ -4,10 +4,7 @@ import es.usc.citius.hipster.graph.GraphEdge
 import io.osmosis.polymer.Element
 import io.osmosis.polymer.instance
 import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.query.QueryContext
-import io.osmosis.polymer.query.QueryResult
-import io.osmosis.polymer.query.QuerySpecTypeNode
-import io.osmosis.polymer.query.SearchFailedException
+import io.osmosis.polymer.query.*
 import io.osmosis.polymer.query.graph.EdgeEvaluator
 import io.osmosis.polymer.query.graph.EvaluatedEdge
 import io.osmosis.polymer.query.graph.ParameterFactory
@@ -27,7 +24,7 @@ interface OperationInvocationService {
 interface OperationInvoker {
    fun canSupport(service: Service, operation: Operation): Boolean
    // TODO : This should return some form of reactive type.
-   fun invoke(service:Service, operation: Operation, parameters: List<TypedInstance>): TypedInstance
+   fun invoke(service:Service, operation: Operation, parameters: List<TypedInstance>, profilerOperation:ProfilerOperation): TypedInstance
 }
 
 @Component
@@ -66,11 +63,11 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
    }
 
    override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext): TypedInstance {
-      val invoker = invokers.firstOrNull { it.canSupport(service, operation) } ?: throw IllegalArgumentException("No invokers found for operation ${operation.name}")
+      val invoker = invokers.firstOrNull { it.canSupport(service, operation) } ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
       val parameters = gatherParameters(operation.parameters, preferredParams, context)
       val resolvedParams = ensureParametersSatisfyContracts(operation.parameters, parameters, context)
-      val result: TypedInstance = invoker.invoke(service,operation, resolvedParams)
+      val result: TypedInstance = invoker.invoke(service,operation, resolvedParams,context)
       return result
    }
 
@@ -94,11 +91,11 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
       // Try to resolve any unresolved params
       var resolvedParams = emptyMap<QuerySpecTypeNode, TypedInstance?>()
       if (unresolvedParams.isNotEmpty()) {
-         log().debug("Querying to find params for operation : $unresolvedParams")
+         log().debug("Querying to find params for Operation : $unresolvedParams")
          val paramsToSearchFor = unresolvedParams.map { QuerySpecTypeNode(it.type) }.toSet()
          val queryResult: QueryResult = context.queryEngine.find(paramsToSearchFor, context)
          if (!queryResult.isFullyResolved) {
-            throw UnresolvedOperationParametersException("The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}", context.evaluatedPath())
+            throw UnresolvedOperationParametersException("The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}", context.evaluatedPath(),context.profiler.root)
          }
          resolvedParams = queryResult.results
       }
@@ -140,7 +137,8 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
 
 }
 
+class SearchRuntimeException(exception:Exception, operation: ProfilerOperation):SearchFailedException(exception.message ?: "An exception was thrown during search", listOf(),operation)
 
-class UnresolvedOperationParametersException(message: String, evaluatedPath:List<EvaluatedEdge>) : SearchFailedException(message, evaluatedPath)
+class UnresolvedOperationParametersException(message: String, evaluatedPath:List<EvaluatedEdge>, operation: ProfilerOperation) : SearchFailedException(message, evaluatedPath,operation)
 
 class OperationInvocationException(message: String) : RuntimeException(message)

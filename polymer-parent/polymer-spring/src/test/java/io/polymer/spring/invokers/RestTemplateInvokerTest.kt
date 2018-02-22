@@ -4,6 +4,7 @@ import com.jayway.jsonpath.JsonPath
 import com.winterbe.expekt.expect
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
+import io.osmosis.polymer.query.QueryProfiler
 import io.osmosis.polymer.schemas.taxi.TaxiSchema
 import io.polymer.schemaStore.SchemaProvider
 import org.hamcrest.BaseMatcher
@@ -36,7 +37,7 @@ namespace polymer {
     @ServiceDiscoveryClient(serviceName = "mockService")
     service CreditCostService {
         @HttpOperation(method = "POST",url = "/costs/{polymer.ClientId}/doCalculate")
-        operation calculateCreditCosts(@RequestBody CreditCostRequest, ClientId ) : CreditCostResponse
+        Operation calculateCreditCosts(@RequestBody CreditCostRequest, ClientId ) : CreditCostResponse
     }
 }      """
 
@@ -72,7 +73,7 @@ namespace polymer {
       val response = RestTemplateInvoker(restTemplate = restTemplate, schemaProvider = SchemaProvider.from(schema)).invoke(service,operation, listOf(
          TypedInstance.from(schema.type("polymer.ClientId"), "myClientId", schema),
          TypedObject.fromAttributes("polymer.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-      )) as TypedObject
+      ), QueryProfiler()) as TypedObject
       expect(response.type.fullyQualifiedName).to.equal("polymer.CreditCostResponse")
       expect(response["stuff"].value).to.equal("Right back atcha, kid")
    }

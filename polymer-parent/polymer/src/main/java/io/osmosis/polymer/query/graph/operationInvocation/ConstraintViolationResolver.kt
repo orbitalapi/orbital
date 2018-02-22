@@ -7,7 +7,7 @@ import io.osmosis.polymer.schemas.*
 /**
  * Given a constraint on a parameter that is violated,
  * attempts to leverage providers present in the type system
- * to resolve the conflicts, allowing operation invokation to
+ * to resolve the conflicts, allowing Operation invokation to
  * proceed.
  *
  * eg:.  Consider an input param in the incorrect format -- the
@@ -45,7 +45,7 @@ class ConstraintViolationResolver {
          .filter { !it.isValid }
          .map { failedEvaluation ->
             val invocationContext = findServiceToResolveConstraint(param, failedEvaluation, services)
-               ?: throw UnresolvedOperationParametersException("Param ${param.type} failed an evaluation $failedEvaluation, but no resolution strategy was found", queryContext.evaluatedPath())
+               ?: throw UnresolvedOperationParametersException("Param ${param.type} failed an evaluation $failedEvaluation, but no resolution strategy was found", queryContext.evaluatedPath(), queryContext.profiler.root)
             val operationResult: TypedInstance = operationEvaluator.invokeOperation(invocationContext.service, invocationContext.operation, invocationContext.discoveredParams.toSet(), queryContext)
 
             failedEvaluation.violation!!.resolveWithUpdatedValue(operationResult)

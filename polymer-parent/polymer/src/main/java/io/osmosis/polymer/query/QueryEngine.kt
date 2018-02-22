@@ -3,11 +3,12 @@ package io.osmosis.polymer.query
 import io.osmosis.polymer.ModelContainer
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.query.graph.EvaluatedEdge
+import io.osmosis.polymer.query.graph.operationInvocation.SearchRuntimeException
 import io.osmosis.polymer.schemas.Schema
 import io.osmosis.polymer.utils.log
 
 
-open class SearchFailedException(message:String, val evaluatedPath:List<EvaluatedEdge>) : RuntimeException(message)
+open class SearchFailedException(message: String, val evaluatedPath: List<EvaluatedEdge>, val profilerOperation: ProfilerOperation) : RuntimeException(message)
 
 interface QueryEngine {
 
@@ -39,7 +40,7 @@ class StatefulQueryEngine(initialState: Set<TypedInstance>, private val queryEng
    }
 }
 
-class DefaultQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val profiler: QueryProfiler = QueryProfiler()) : QueryEngine  {
+class DefaultQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val profiler: QueryProfiler = QueryProfiler()) : QueryEngine {
    override fun queryContext(factSet: Set<TypedInstance>): QueryContext {
       return QueryContext.from(schema, factSet, this, profiler)
    }
@@ -58,6 +59,15 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
    }
 
    override fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult {
+      try {
+         return doFind(target, context)
+      } catch (e: Exception) {
+         throw SearchRuntimeException(e,context.profiler.root)
+      }
+
+   }
+
+   private fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult {
       val matchedNodes = mutableMapOf<QuerySpecTypeNode, TypedInstance?>()
       // This is cheating, probably.
       // We only resolve top-level nodes, rather than traverse deeply.
@@ -68,7 +78,10 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
       val strategyIterator: Iterator<QueryStrategy> = strategies.iterator()
       while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
          val queryStrategy = strategyIterator.next()
-         val strategyResult: QueryStrategyResult = queryStrategy.invoke(target, context)
+         val strategyResult = context.startChild(this, "Invoke queryStrategy ${queryStrategy.javaClass}") { op ->
+            op.addContext("searchTarget", target.map { it.type.fullyQualifiedName })
+            queryStrategy.invoke(target, context)
+         }
          // Note : We should add this additional data to the context too,
          // so that it's available for future query strategies to use.
          context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
@@ -84,8 +97,8 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
       if (unresolvedNodes().isNotEmpty()) {
          log().error("The following nodes weren't matched: ${unresolvedNodes().joinToString { ", " }}")
       }
-//      TODO("Rebuild Path")
-      return QueryResult(matchedNodes, unresolvedNodes().toSet(), path = null)
+      //      TODO("Rebuild Path")
+      return QueryResult(matchedNodes, unresolvedNodes().toSet(), path = null, profilerOperation = context.profiler.root)
    }
 }
 

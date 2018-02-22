@@ -2,6 +2,7 @@ package io.polymer.spring.invokers
 
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
+import io.osmosis.polymer.query.ProfilerOperation
 import io.osmosis.polymer.query.graph.operationInvocation.OperationInvocationException
 import io.osmosis.polymer.query.graph.operationInvocation.OperationInvoker
 import io.osmosis.polymer.schemas.Operation
@@ -27,7 +28,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    @Autowired constructor(schemaProvider: SchemaProvider,
                           restTemplateBuilder: RestTemplateBuilder,
                           serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()))
-      : this(schemaProvider,restTemplateBuilder
+      : this(schemaProvider, restTemplateBuilder
       .errorHandler(CatchingErrorHandler())
       .additionalInterceptors(LoggingRequestInterceptor())
       .build(), serviceUrlResolvers)
@@ -35,25 +36,34 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    init {
       log().info("Rest template invoker starter")
    }
+
    override fun canSupport(service: Service, operation: Operation): Boolean {
       return service.hasMetadata("ServiceDiscoveryClient")
    }
 
-   override fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>): TypedInstance {
+
+   override fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>, profilerOperation: ProfilerOperation): TypedInstance {
       log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",")}")
 
       val annotation = operation.metadata("HttpOperation")
       val httpMethod = HttpMethod.resolve(annotation.params["method"] as String)
       val url = annotation.params["url"] as String
+
+
+      val profilerOperation = profilerOperation.profile(this, "Invoke HTTP Operation")
       val absoluteUrl = makeUrlAbsolute(service, operation, url)
       log().debug("Operation ${operation.name} resolves to $absoluteUrl")
+      profilerOperation.addContext("Abosulte Url", absoluteUrl)
 
       val requestBody = buildRequestBody(operation, parameters)
+      profilerOperation.addContext("requestBody", requestBody)
+
       val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, getUriVariables(parameters))
+      profilerOperation.stop(result)
       if (result.statusCode.is2xxSuccessful) {
          return handleSuccessfulHttpResponse(result, operation)
       } else {
-         handleFailedHttpResponse(result,operation, absoluteUrl, httpMethod, requestBody)
+         handleFailedHttpResponse(result, operation, absoluteUrl, httpMethod, requestBody)
          throw RuntimeException("Shouldn't hit this point")
       }
    }
@@ -112,7 +122,7 @@ internal class CatchingErrorHandler : ResponseErrorHandler {
 internal class LoggingRequestInterceptor : ClientHttpRequestInterceptor {
    override fun intercept(request: HttpRequest, body: ByteArray, execution: ClientHttpRequestExecution): ClientHttpResponse {
       log().debug("Invoking ${request.method} on ${request.uri} with payload: ${String(body)}")
-      return execution.execute(request,body)
+      return execution.execute(request, body)
    }
 
 }

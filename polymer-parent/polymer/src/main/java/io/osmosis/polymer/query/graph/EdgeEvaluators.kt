@@ -17,6 +17,10 @@ import io.osmosis.polymer.utils.assertingThat
 import io.osmosis.polymer.utils.log
 
 
+fun GraphEdge<Element,Relationship>.description():String {
+   return "${this.vertex1} -[${this.edgeValue.description}]-> ${this.vertex2}"
+}
+
 interface EdgeEvaluator {
    val relationship: Relationship
    fun evaluate(edge: GraphEdge<Element, Relationship>, context: QueryContext): EvaluatedEdge
@@ -70,7 +74,7 @@ class ParameterFactory {
 //         return EvaluatedLink.success(link, startingPoint, startingPoint)
 //      }
       if (!paramType.isParameterType) {
-         throw UnresolvedOperationParametersException("No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ", context.evaluatedPath())
+         throw UnresolvedOperationParametersException("No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ", context.evaluatedPath(),context.profiler.root)
       }
 
       // This is a parameter type.  Try to construct an instance
@@ -97,7 +101,7 @@ class ParameterFactory {
             log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} not present within the context, and not constructable - initiating a query to attempt to resolve it")
             val queryResult = context.find(QuerySpecTypeNode(attributeType), context.facts)
             if (!queryResult.isFullyResolved) {
-               throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ", context.evaluatedPath())
+               throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ", context.evaluatedPath(), context.profiler.root)
             } else {
                attributeName to (queryResult[attributeType] ?:
                   // TODO : This might actually be legal, as it could be valid for a value to resolve to null
@@ -131,7 +135,7 @@ data class EvaluatedEdge(val edge: GraphEdge<Element, Relationship>, val result:
    val wasSuccessful: Boolean = error == null
 
    fun description(): String {
-      var desc = "${edge.vertex1} -[${edge.edgeValue.description}]-> ${edge.vertex2}"
+      var desc = edge.description()
       if (wasSuccessful) {
          desc += " (${result!!}) ✔"
       } else {

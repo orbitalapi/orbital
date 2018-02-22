@@ -141,7 +141,7 @@ class PolymerGraphBuilder(val schema: Schema) {
                   // can be used to populate new instances, so form links.
                   parameter.type.attributes.forEach { attriubteName, typeRef ->
                      // Point back to the "parent" param node (the parameterObject)
-                     // might revisit this in the future, and point back to the operation itself.
+                     // might revisit this in the future, and point back to the Operation itself.
                      builder.connect(parameter(typeRef.fullyQualifiedName)).to(paramNode).withEdge(Relationship.IS_PARAMETER_ON)
                   }
                }
@@ -154,7 +154,7 @@ class PolymerGraphBuilder(val schema: Schema) {
             appendProvidedInstances(builder, resultInstanceFqn, schema, operationNode)
 
 
-            log().debug("Added operation $operationReference to graph")
+            log().debug("Added Operation $operationReference to graph")
          }
       }
    }
