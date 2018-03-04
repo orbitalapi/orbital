@@ -4,14 +4,13 @@ import java.time.Clock
 import java.util.*
 
 
-class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), val root: ProfilerOperation = DefaultProfilerOperation(QueryProfiler::class.java.name, "Root", clock)) : ProfilerOperation by root {
+class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), val root: ProfilerOperation = DefaultProfilerOperation(QueryProfiler::class.java.name, "Root", clock, path = "/")) : ProfilerOperation by root {
    private val operationStack: Deque<ProfilerOperation> = ArrayDeque(listOf(root))
    override fun startChild(ownerInstance: Any, name: String): ProfilerOperation = startChild(ownerInstance::class.java.simpleName, name)
    override fun startChild(clazz: Class<Any>, name: String): ProfilerOperation = startChild(clazz.simpleName, name)
 
    override fun <R> startChild(ownerInstance: Any, name: String, closure: (ProfilerOperation) -> R): R = startChild(ownerInstance::class.java.simpleName, name, closure)
    override fun <R> startChild(clazz: Class<Any>, name: String, closure: (ProfilerOperation) -> R): R = startChild(clazz.simpleName, name, closure)
-
 
 
    override fun startChild(componentName: String, operationName: String): ProfilerOperation {
@@ -80,7 +79,8 @@ data class Result(
 
 class DefaultProfilerOperation(override val componentName: String,
                                override val operationName: String,
-                               private val clock: Clock) : ProfilerOperation {
+                               private val clock: Clock,
+                               val path: String = "/") : ProfilerOperation {
    override val context: MutableMap<String, Any?> = mutableMapOf()
    override var result: Result? = null
       private set
@@ -89,20 +89,23 @@ class DefaultProfilerOperation(override val componentName: String,
          return result != null
       }
 
+   val name: String = "$componentName:$operationName"
+   val fullPath = "$path/$name"
+
    val id: OperationId = UUID.randomUUID().toString()
 
    private val startTime: Long = clock.millis()
    override val children = mutableListOf<ProfilerOperation>()
 
    override fun startChild(componentName: String, operationName: String): ProfilerOperation {
-      val child = DefaultProfilerOperation(componentName, operationName, clock)
+      val child = DefaultProfilerOperation(componentName, operationName, clock, this.fullPath)
       children.add(child)
       return child
    }
 
    override val duration: Long
       get() {
-         return result?.duration ?: clock.millis() - startTime
+         return result?.duration ?: clock.millis()-startTime
       }
 
    override fun <R> startChild(componentName: String, operationName: String, closure: (ProfilerOperation) -> R): R {
@@ -114,7 +117,7 @@ class DefaultProfilerOperation(override val componentName: String,
 
    override fun stop(result: Any?) {
       // TODO : Assert that all running children have stopped too.
-      if (stopped) error("Already stopped")
+      if (stopped) error("Attempted to stop operation $fullPath which is already stopped")
       this.result = Result(this.startTime, clock.millis(), result)
    }
 

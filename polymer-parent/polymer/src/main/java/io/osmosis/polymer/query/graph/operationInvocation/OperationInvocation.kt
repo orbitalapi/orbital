@@ -24,7 +24,7 @@ interface OperationInvocationService {
 interface OperationInvoker {
    fun canSupport(service: Service, operation: Operation): Boolean
    // TODO : This should return some form of reactive type.
-   fun invoke(service:Service, operation: Operation, parameters: List<TypedInstance>, profilerOperation:ProfilerOperation): TypedInstance
+   fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>, profilerOperation: ProfilerOperation): TypedInstance
 }
 
 @Component
@@ -49,7 +49,7 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
 
       val result: TypedInstance = invokeOperation(service, operation, visitedInstanceNodes, context)
       context.addFact(result)
-      return EvaluatedEdge.success(edge,instance(result))
+      return EvaluatedEdge.success(edge, instance(result))
    }
 
    override val relationship: Relationship = Relationship.PROVIDES
@@ -63,11 +63,12 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
    }
 
    override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext): TypedInstance {
-      val invoker = invokers.firstOrNull { it.canSupport(service, operation) } ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
+      val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
+         ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
       val parameters = gatherParameters(operation.parameters, preferredParams, context)
       val resolvedParams = ensureParametersSatisfyContracts(operation.parameters, parameters, context)
-      val result: TypedInstance = invoker.invoke(service,operation, resolvedParams,context)
+      val result: TypedInstance = invoker.invoke(service, operation, resolvedParams, context)
       return result
    }
 
@@ -95,7 +96,7 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
          val paramsToSearchFor = unresolvedParams.map { QuerySpecTypeNode(it.type) }.toSet()
          val queryResult: QueryResult = context.queryEngine.find(paramsToSearchFor, context)
          if (!queryResult.isFullyResolved) {
-            throw UnresolvedOperationParametersException("The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}", context.evaluatedPath(),context.profiler.root)
+            throw UnresolvedOperationParametersException("The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}", context.evaluatedPath(), context.profiler.root)
          }
          resolvedParams = queryResult.results
       }
@@ -124,8 +125,7 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
       val paramsWithSpec = parametersSpecs.zip(parameterValues)
       val paramsToConstraintEvaluations = paramsWithSpec.map { (paramSpec, paramValue) ->
          paramSpec to ConstraintEvaluations(paramValue,
-            paramSpec.constraints.map {
-               constraint ->
+            paramSpec.constraints.map { constraint ->
                constraint.evaluate(paramSpec.type, paramValue)
             }
          )
@@ -137,8 +137,8 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
 
 }
 
-class SearchRuntimeException(exception:Exception, operation: ProfilerOperation):SearchFailedException(exception.message ?: "An exception was thrown during search", listOf(),operation)
+class SearchRuntimeException(exception: Exception, operation: ProfilerOperation) : SearchFailedException("The search failed with an exception: ${exception.message}", listOf(), operation)
 
-class UnresolvedOperationParametersException(message: String, evaluatedPath:List<EvaluatedEdge>, operation: ProfilerOperation) : SearchFailedException(message, evaluatedPath,operation)
+class UnresolvedOperationParametersException(message: String, evaluatedPath: List<EvaluatedEdge>, operation: ProfilerOperation) : SearchFailedException(message, evaluatedPath, operation)
 
 class OperationInvocationException(message: String) : RuntimeException(message)

@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component
 @Component
 class ModelsScanStrategy : QueryStrategy {
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
-      return context.startChild(this, "scan for matches") {
+      return context.startChild(this, "scan for matches") { operation ->
          val targetTypes: Map<Type, QuerySpecTypeNode> = target.associateBy { it.type }
 
          // This is wrong, and won't work long-term

@@ -50,22 +50,25 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       val url = annotation.params["url"] as String
 
 
-      val profilerOperation = profilerOperation.profile(this, "Invoke HTTP Operation")
-      val absoluteUrl = makeUrlAbsolute(service, operation, url)
-      log().debug("Operation ${operation.name} resolves to $absoluteUrl")
-      profilerOperation.addContext("Abosulte Url", absoluteUrl)
+      val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation") { httpInvokeOperation  ->
+         val absoluteUrl = makeUrlAbsolute(service, operation, url)
+         log().debug("Operation ${operation.name} resolves to $absoluteUrl")
+         httpInvokeOperation.addContext("Abosulte Url", absoluteUrl)
 
-      val requestBody = buildRequestBody(operation, parameters)
-      profilerOperation.addContext("requestBody", requestBody)
+         val requestBody = buildRequestBody(operation, parameters)
+         httpInvokeOperation.addContext("requestBody", requestBody)
 
-      val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, getUriVariables(parameters))
-      profilerOperation.stop(result)
-      if (result.statusCode.is2xxSuccessful) {
-         return handleSuccessfulHttpResponse(result, operation)
-      } else {
-         handleFailedHttpResponse(result, operation, absoluteUrl, httpMethod, requestBody)
-         throw RuntimeException("Shouldn't hit this point")
+         val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, getUriVariables(parameters))
+         httpInvokeOperation.stop(result)
+         if (result.statusCode.is2xxSuccessful) {
+            handleSuccessfulHttpResponse(result, operation)
+         } else {
+            handleFailedHttpResponse(result, operation, absoluteUrl, httpMethod, requestBody)
+            throw RuntimeException("Shouldn't hit this point")
+         }
       }
+      return httpResult
+
    }
 
    private fun handleFailedHttpResponse(result: ResponseEntity<Any>, operation: Operation, absoluteUrl: Any, httpMethod: HttpMethod, requestBody: Any) {

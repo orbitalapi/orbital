@@ -5,14 +5,18 @@ import io.osmosis.polymer.query.ProfilerOperation
 import io.osmosis.polymer.query.SearchFailedException
 import io.osmosis.polymer.schemas.Schema
 import io.polymer.spring.PolymerFactory
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 // TODO : facts should be QualifiedName -> TypedInstance, but need to get
 // json deserialization working for that.
 data class Query(val queryString: String, val facts: Map<String, Any> = emptyMap())
 
+@ResponseStatus(HttpStatus.BAD_REQUEST)
 data class FailedSearchResponse(val message: String, val profilerOperation: ProfilerOperation)
 /**
  * QueryService provides a simple way to submit queries to polymer, and
@@ -31,7 +35,7 @@ class QueryService(val polymerFactory: PolymerFactory) {
       try {
          return polymer.query().find(query.queryString, facts)
       } catch (e: SearchFailedException) {
-         return FailedSearchResponse(e.message!!, e.profilerOperation)
+            return ResponseEntity(FailedSearchResponse(e.message!!, e.profilerOperation), HttpStatus.BAD_REQUEST)
       }
 
    }
