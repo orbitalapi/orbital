@@ -64,7 +64,6 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
       } catch (e: Exception) {
          throw SearchRuntimeException(e,context.profiler.root)
       }
-
    }
 
    private fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult {

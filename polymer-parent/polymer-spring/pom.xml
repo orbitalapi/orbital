@@ -59,7 +59,7 @@
       <dependency>
          <groupId>com.hazelcast</groupId>
          <artifactId>hazelcast</artifactId>
-         <scope>optional</scope>
+         <!--<scope>optional</scope>-->
       </dependency>
       <dependency>
          <groupId>com.jayway.jsonpath</groupId>

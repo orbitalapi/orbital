@@ -32,8 +32,8 @@
          <version>0.1.0-SNAPSHOT</version>
       </dependency>
       <dependency>
-         <groupId>com.fasterxml.jackson.module</groupId>
-         <artifactId>jackson-modules-java8</artifactId>
+         <groupId>com.fasterxml.jackson.datatype</groupId>
+         <artifactId>jackson-datatype-jdk8</artifactId>
          <version>2.8.8</version>
       </dependency>
       <dependency>
