@@ -66,6 +66,5 @@
          <artifactId>json-path</artifactId>
          <scope>test</scope>
       </dependency>
-
    </dependencies>
 </project>

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 import java.io.Serializable
 
+typealias SchemaSetId = Int
 data class SchemaSet(val schemas: List<VersionedSchema>) {
    val id: Int = schemas.hashCode()
 
@@ -15,6 +16,10 @@ data class SchemaSet(val schemas: List<VersionedSchema>) {
    }
 
    fun size() = schemas.size
+
+   fun add(schema:VersionedSchema):SchemaSet {
+      return SchemaSet(this.schemas + schema)
+   }
 }
 
 data class VersionedSchema(val name: String, val version: String, val content: String) : Serializable {
