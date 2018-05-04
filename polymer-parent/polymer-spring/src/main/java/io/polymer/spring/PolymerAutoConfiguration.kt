@@ -111,9 +111,9 @@ class PolymerAutoConfiguration {
       return if (remoteTaxiSchemaProvider.isPresent) remoteTaxiSchemaProvider.get() else localTaxiSchemaProvider
    }
 
-   @Bean
+   @Bean("hazelcast")
    @ConditionalOnProperty("vyne.schemaStore", havingValue = "HAZELCAST")
-   fun hazlecast(): HazelcastInstance {
+   fun hazelcast(): HazelcastInstance {
       return Hazelcast.newHazelcastInstance()
    }
 
@@ -160,23 +160,32 @@ class PolymerConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
       }
    }
 
-   private fun registerRemoteSchemaProvider(registry: BeanDefinitionRegistry) {
+   private fun registerRemoteSchemaProvider(registry: BeanDefinitionRegistry, schemaStoreClientBeanName:String) {
       log().debug("Enabling remote schema store")
       registry.registerBeanDefinition("RemoteTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(RemoteTaxiSchemaProvider::class.java)
+         .addConstructorArgReference(schemaStoreClientBeanName)
          .beanDefinition)
    }
 
    private fun configureHazelcastSchemaStore(registry: BeanDefinitionRegistry) {
       log().info("Using a Hazelcast based schema store")
-      registerRemoteSchemaProvider(registry)
-      registry.registerBeanDefinitionOfType(HazelcastSchemaStoreClient::class.java)
+      val schemaStoreClientBeanName = HazelcastSchemaStoreClient::class.simpleName!!
+      registry.registerBeanDefinition(schemaStoreClientBeanName,
+         BeanDefinitionBuilder.genericBeanDefinition(HazelcastSchemaStoreClient::class.java)
+            .addConstructorArgReference("hazelcast")
+            .addConstructorArgValue(TaxiSchemaValidator())
+            .beanDefinition
+         )
+      registerRemoteSchemaProvider(registry, schemaStoreClientBeanName)
+
+//      registry.registerBeanDefinitionOfType(HazelcastSchemaStoreClient::class.java)
       environment!!.propertySources.addLast(MapPropertySource("VyneHazelcastProperties", mapOf("vyne.schemaStore" to RemoteSchemaStoreType.HAZELCAST.name)))
    }
 
    private fun configureHttpSchemaStore(registry: BeanDefinitionRegistry) {
       log().info("Using an Http based schema store")
-      registerRemoteSchemaProvider(registry)
-      registry.registerBeanDefinitionOfType(HttpSchemaStoreClient::class.java)
+      val schemaStoreClientBeanName = registry.registerBeanDefinitionOfType(HttpSchemaStoreClient::class.java)
+      registerRemoteSchemaProvider(registry, schemaStoreClientBeanName)
    }
 
    fun serviceMapper(env: Environment): ServiceMapper {
@@ -201,7 +210,9 @@ class PolymerConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
    }
 }
 
-fun BeanDefinitionRegistry.registerBeanDefinitionOfType(clazz: Class<*>) {
-   this.registerBeanDefinition(clazz.simpleName,
+fun BeanDefinitionRegistry.registerBeanDefinitionOfType(clazz: Class<*>):String {
+   val beanName = clazz.simpleName
+   this.registerBeanDefinition(beanName,
       BeanDefinitionBuilder.genericBeanDefinition(clazz).beanDefinition)
+   return beanName
 }

@@ -2,6 +2,7 @@ package io.polymer.spring
 
 import io.osmosis.polymer.utils.log
 import io.polymer.schemaStore.SchemaStoreClient
+import org.funktionale.either.Either
 import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener
 import javax.annotation.PostConstruct
@@ -33,8 +34,12 @@ class LocalSchemaPublisher(val schemaName: String,
       } else {
          log().debug("Attempting to register schema: $schema")
          schemaStoreClient.submitSchema(schemaName, schemaVersion, schema)
+            .subscribe { result ->
+               when (result) {
+                  is Either.Left -> log().error("Failed to register schema", result.l)
+                  is Either.Right -> log().info("Schema registered successfully")
+               }
+            }
       }
-
-      log().info("Schemas published")
    }
 }

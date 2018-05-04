@@ -1,13 +1,14 @@
 package io.polymer.schemaStore
 
-import com.diffplug.common.base.Either
-import lang.taxi.CompilationError
+import io.osmosis.polymer.schemas.Schema
+import lang.taxi.CompilationException
+import org.funktionale.either.Either
 import reactor.core.publisher.Mono
 
 interface SchemaStoreClient {
    fun submitSchema(schemaName: String,
                     schemaVersion: String,
-                    schema: String):Mono<Either<CompilationError, SchemaSetId>>
+                    schema: String):Mono<Either<CompilationException, Schema>>
 
    fun schemaSet():SchemaSet
 }

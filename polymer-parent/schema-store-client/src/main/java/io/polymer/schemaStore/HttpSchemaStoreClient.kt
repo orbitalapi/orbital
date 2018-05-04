@@ -1,6 +1,9 @@
 package io.polymer.schemaStore
 
+import io.osmosis.polymer.schemas.Schema
 import io.osmosis.polymer.utils.log
+import lang.taxi.CompilationException
+import org.funktionale.either.Either
 import org.springframework.retry.RetryCallback
 import org.springframework.retry.RetryContext
 import org.springframework.retry.backoff.FixedBackOffPolicy
@@ -9,6 +12,7 @@ import org.springframework.retry.policy.SimpleRetryPolicy
 import org.springframework.retry.support.RetryTemplate
 import reactor.core.Disposable
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.time.Duration
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
@@ -44,13 +48,14 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
 
    override fun submitSchema(schemaName: String,
                              schemaVersion: String,
-                             schema: String) {
+                             schema: String): Mono<Either<CompilationException, Schema>> {
       retryTemplate.execute<Any, Exception> { context: RetryContext ->
          context.setAttribute(RetyConfig.RETRYABLE_PROCESS_NAME, "Publish schemas")
          log().debug("Submitting schema $schemaName v$schemaVersion")
          schemaService.submitSchema(schema, schemaName, schemaVersion)
          log().debug("Schema $schemaName v$schemaVersion submitted successfully")
       }
+      TODO("Migrate this to perform better schema validation, or defer to the schema service")
    }
 
 

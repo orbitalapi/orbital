@@ -1,20 +1,18 @@
 package io.polymer.schemaStore
 
-import com.diffplug.common.base.Either
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.hazelcast.core.*
-import io.osmosis.polymer.CompositeSchemaBuilder
-import lang.taxi.CompilationError
+import io.osmosis.polymer.schemas.Schema
 import lang.taxi.CompilationException
-import lang.taxi.TaxiDocument
 import lang.taxi.utils.log
+import org.funktionale.either.Either
 import reactor.core.publisher.Mono
 
 internal typealias ClusterMemberId = String
 
-class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, private val schemaValidator:SchemaValidator) : SchemaStoreClient, MembershipListener {
+class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, private val schemaValidator: SchemaValidator = TaxiSchemaValidator()) : SchemaStoreClient, MembershipListener {
    private enum class SchemaSetCacheKey { INSTANCE }
 
    private val schemaSet: LoadingCache<SchemaSetCacheKey, SchemaSet> = CacheBuilder
@@ -58,22 +56,28 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       return hazelcast.getMap("vyneSchemas")
    }
 
-   override fun submitSchema(schemaName: String, schemaVersion: String, schema: String): Mono<SchemaSetId> {
+   override fun submitSchema(schemaName: String, schemaVersion: String, schema: String): Mono<Either<CompilationException, Schema>> {
       val versionedSchema = VersionedSchema(schemaName, schemaVersion, schema)
       return Mono.create { sink ->
          // TODO : This creates a race condition where multiple schemas can pass validation at the same time
-         schemaValidator.validate(schemaSet(),versionedSchema)
-         map().put(hazelcast.cluster.localMember.uuid, VersionedSchema(schemaName, schemaVersion, schema))
+         val validationResult = schemaValidator.validate(schemaSet(), versionedSchema)
+         validationResult.right().map { validatedSchema ->
+
+            // TODO : Here, we're still storing ONLY the raw schema we've received, not the merged schema.
+            // That seems wasteful, as we're just gonna re-compute this later.
+            map().put(hazelcast.cluster.localMember.uuid, VersionedSchema(schemaName, schemaVersion, schema))
+//            sink.success(schemaSet().id)
+         }
+         validationResult.left().map { compilationException ->
+            log().error("Schema ${versionedSchema.id} is rejected for compilation exception", compilationException)
+//            sink.error(compilationException)
+         }
+         // TODO : This feels incorrect, calling success with an either which may model failure.
+         sink.success(validationResult)
       }
 
    }
 
-   private fun validate(versionedSchema: VersionedSchema): Mono<CompilationError> {
-      val schemas = schemaSet().add(versionedSchema)
-      CompositeSchemaBuilder().aggregate(schemas.schemas)
-      // TODO
-      return null
-   }
 
    override fun schemaSet(): SchemaSet {
       return schemaSet.get(SchemaSetCacheKey.INSTANCE)
