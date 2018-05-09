@@ -3,6 +3,7 @@ package io.osmosis.polymer.schemas
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
 import io.osmosis.polymer.models.TypedValue
+import lang.taxi.AttributePath
 
 /**
  * DESIGN NOTE:
@@ -73,9 +74,9 @@ class NestedConstraintViolation(violation: ConstraintViolation, private val eval
  * Indicates that an attribute will be returned updated to a value
  * provided by a parameter (ie., an input on a function)
  */
-data class AttributeValueFromParameterConstraint(val fieldName: String, val parameterName: String) : OutputConstraint
+data class AttributeValueFromParameterConstraint(val fieldName: String, val attributePath: AttributePath) : OutputConstraint
 
-data class ReturnValueDerivedFromParameterConstraint(val paramName: String) : OutputConstraint
+data class ReturnValueDerivedFromParameterConstraint(val attributePath: AttributePath) : OutputConstraint
 
 data class DefaultConstraintEvaluation(override val evaluatedValue: TypedInstance, override val violation: ConstraintViolation? = null) : ConstraintEvaluation
 

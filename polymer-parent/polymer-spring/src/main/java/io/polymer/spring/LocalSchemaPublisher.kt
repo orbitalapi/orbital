@@ -36,7 +36,7 @@ class LocalSchemaPublisher(val schemaName: String,
          schemaStoreClient.submitSchema(schemaName, schemaVersion, schema)
             .subscribe { result ->
                when (result) {
-                  is Either.Left -> log().error("Failed to register schema", result.l)
+                  is Either.Left -> log().error("Failed to register schema", result.l.message)
                   is Either.Right -> log().info("Schema registered successfully")
                }
             }

@@ -8,6 +8,7 @@ import lang.taxi.TaxiDocument
 import lang.taxi.services.Constraint
 import lang.taxi.types.*
 import lang.taxi.types.Annotation
+import org.antlr.v4.runtime.CharStreams
 
 class TaxiSchema(private val document: TaxiDocument) : Schema {
    override val types: Set<Type>
@@ -108,7 +109,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
    companion object {
       val LANGUAGE = "Taxi"
       fun from(taxi: String, sourceName: String = "<unknown>"): TaxiSchema {
-         return TaxiSchema(Compiler(taxi, sourceName).compile())
+         return TaxiSchema(Compiler(CharStreams.fromString(taxi, sourceName)).compile())
       }
    }
 }

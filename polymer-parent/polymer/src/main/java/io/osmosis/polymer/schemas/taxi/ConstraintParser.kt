@@ -121,7 +121,7 @@ class AttributeValueFromParameterConstraintProvider : ContractConstraintProvider
    override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): OutputConstraint {
       val taxiConstraint = constraint as AttributeValueFromParameterConstraint
       return io.osmosis.polymer.schemas.AttributeValueFromParameterConstraint(
-         taxiConstraint.fieldName, taxiConstraint.parameterName
+         taxiConstraint.fieldName, taxiConstraint.attributePath
       )
    }
 }
@@ -133,7 +133,7 @@ class ReturnValueDerivedFromParameterConstraintProvider : ContractConstraintProv
 
    override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): OutputConstraint {
       val taxiConstraint = constraint as ReturnValueDerivedFromParameterConstraint
-      return io.osmosis.polymer.schemas.ReturnValueDerivedFromParameterConstraint(taxiConstraint.parameterName)
+      return io.osmosis.polymer.schemas.ReturnValueDerivedFromParameterConstraint(taxiConstraint.attributePath)
    }
 
 }

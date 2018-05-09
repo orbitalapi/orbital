@@ -69,7 +69,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
 //            sink.success(schemaSet().id)
          }
          validationResult.left().map { compilationException ->
-            log().error("Schema ${versionedSchema.id} is rejected for compilation exception", compilationException)
+            log().error("Schema ${versionedSchema.id} is rejected for compilation exception: ${compilationException.message}")
 //            sink.error(compilationException)
          }
          // TODO : This feels incorrect, calling success with an either which may model failure.

@@ -5,6 +5,7 @@ import io.osmosis.polymer.query.QueryEngineFactory
 import io.osmosis.polymer.schemas.AttributeConstantValueConstraint
 import io.osmosis.polymer.schemas.AttributeValueFromParameterConstraint
 import io.osmosis.polymer.schemas.taxi.TaxiSchema
+import lang.taxi.AttributePath
 import org.junit.Test
 
 class PolymerSchemaTest {
@@ -100,7 +101,7 @@ class PolymerSchemaTest {
       expect(constraint.expectedValue.value).to.equal("GBP")
       expect(operation.contract).not.`null`
       expect(operation.contract.constraints).size(1)
-      expect(operation.contract.constraints.first()).to.equal(AttributeValueFromParameterConstraint("currency", "target"))
+      expect(operation.contract.constraints.first()).to.equal(AttributeValueFromParameterConstraint("currency", AttributePath.from("target")))
    }
 
    @Test
