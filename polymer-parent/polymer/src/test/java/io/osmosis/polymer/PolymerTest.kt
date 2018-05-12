@@ -36,7 +36,7 @@ service ClientService {
    val schema = TaxiSchema.from(taxiDef)
 
 
-   fun polymer(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) = Polymer(queryEngineFactory).addSchema(schema)
+   fun polymer(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(), schema:TaxiSchema = this.schema) = Polymer(queryEngineFactory).addSchema(schema)
    val queryParser = QueryParser(schema)
 
    fun typeNode(name: String): Set<QuerySpecTypeNode> {
@@ -142,6 +142,31 @@ class PolymerTest {
    @Test
    fun given_notAllParamsOfOperationAreDiscoverable_then_methodNotInvoked() {
       TODO("Not sure what we should do here.")
+   }
+
+   @Test
+   fun aliasesAreUsedWhenEvaluatingQueries() {
+      val taxiDef = """
+namespace foo {
+   type Money {
+     currency : Currency as String
+     amount : Amount as Decimal
+   }
+}
+namespace bar {
+   type Money {
+      currency : Currency as String
+      amount : Amount as Decimal
+}
+
+type alias foo.Currency as bar.Currency
+type alias foo.Amount as bar.Amount
+          """
+      val polymer = TestSchema.polymer(schema = TaxiSchema.from(taxiDef))
+      val moneyInstance = """{ currency : "GBP" , amount : 20.50 }"""
+      polymer.addJsonModel("foo.Money", moneyInstance)
+      val result = polymer.query().find("bar.Amount")
+      expect(result["bar.Currency"]!!.value).to.equal("GBP")
    }
 
    @Test
