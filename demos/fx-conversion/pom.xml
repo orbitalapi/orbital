@@ -25,12 +25,6 @@
       This demo illustrates how Osmosis can be used in non-trivial scnearios.
    </description>
    <modules>
-      <module>credit-markup-service</module>
-      <module>rate-conversion-service</module>
-      <module>isic-lookup-service</module>
-      <module>invoice-app</module>
-      <module>discovery-server</module>
-      <module>client-lookup-service</module>
       <module>trade-threshold-service</module>
    </modules>
 
