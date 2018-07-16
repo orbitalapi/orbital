@@ -1,5 +1,0 @@
-Streamers
-Manager
-Monitor
-Availability
-Status

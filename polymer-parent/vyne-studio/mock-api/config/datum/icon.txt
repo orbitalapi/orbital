@@ -1,5 +1,0 @@
-account_circle
-account_balance_wallet
-autorenew
-thumb_up
-message
