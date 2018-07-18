@@ -1,0 +1,54 @@
+.fuse-material-color-picker-menu {
+    width: 208px;
+
+    .mat-menu-content {
+        padding: 0;
+
+        .views {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            min-height: 258px;
+            height: 308px;
+            background-color: #F7F7F7;
+
+            .view {
+                position: absolute;
+                width: 208px;
+                height: 100%;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                top: 0;
+
+                .colors {
+                    position: relative;
+                    padding: 4px;
+
+                    .color {
+                        position: relative;
+                        width: 46px;
+                        height: 46px;
+                        margin: 2px;
+                        border-radius: 0;
+                        cursor: pointer;
+
+                        .label {
+                            padding: 2px;
+                            font-size: 10px;
+                        }
+
+                        mat-icon {
+                            position: absolute;
+                            top: 2px;
+                            right: 2px;
+                            font-size: 16px;
+                            opacity: 0.7;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

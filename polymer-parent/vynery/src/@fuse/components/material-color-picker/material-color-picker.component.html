@@ -1,0 +1,70 @@
+<button mat-icon-button
+        type="button"
+        class="mat-elevation-z1"
+        [matMenuTriggerFor]="colorMenu"
+        (menuOpened)="onMenuOpen()"
+        [ngClass]="'mat-'+selectedPalette+'-'+selectedHue+'-bg'">
+    <mat-icon>palette</mat-icon>
+</button>
+
+<mat-menu #colorMenu="matMenu" class="fuse-material-color-picker-menu">
+
+    <header [ngClass]="selectedColor?.class || 'mat-accent-bg'" class="mat-elevation-z4"
+            fxLayout="row" fxLayoutAlign="space-between center">
+
+        <button mat-icon-button
+                [style.visibility]="view==='hues'?'visible':'hidden'"
+                (click)="$event.stopPropagation();backToPaletteSelection()" aria-label="Palette">
+            <mat-icon class="s-20">arrow_back</mat-icon>
+        </button>
+
+        <span *ngIf="selectedColor?.palette">
+            {{selectedColor.palette}} {{selectedColor.hue}}
+        </span>
+
+        <span *ngIf="!selectedColor?.palette">
+            Select Color
+        </span>
+
+        <button mat-icon-button
+                class="remove-color-button"
+                (click)="$event.stopPropagation();removeColor()"
+                aria-label="Remove Color">
+            <mat-icon class="s-20">delete</mat-icon>
+        </button>
+    </header>
+
+
+    <div [ngSwitch]="view" class="views">
+
+        <div class="view" *ngSwitchCase="'palettes'">
+
+            <div fxLayout="row wrap" fxLayoutAlign="start start" class="colors" fusePerfectScrollbar>
+                <div class="color"
+                     [ngClass]="'mat-'+color.key+'-bg'"
+                     *ngFor="let color of (colors | keys)"
+                     (click)="$event.stopPropagation();selectPalette(color.key)"
+                     fxLayout="row" fxLayoutAlign="start end" mat-ink-ripple>
+                    <span class="label">
+                        {{color.key}}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="view" *ngSwitchCase="'hues'" >
+            <div fxLayout="row wrap" fxLayoutAlign="start start" class="colors" fusePerfectScrollbar>
+                <div class="color" *ngFor="let hue of hues"
+                     [fxHide]="selectedPalette === 'white' && hue !== '500'|| selectedPalette === 'black' && hue !== '500'"
+                     [ngClass]="'mat-'+selectedPalette+'-'+hue+'-bg'"
+                     (click)="selectHue(hue)" fxLayout="row" fxLayoutAlign="start end" mat-ink-ripple>
+                    <span class="label">
+                        {{hue}}
+                    </span>
+                    <mat-icon *ngIf="selectedHue === hue" class="s-16">check</mat-icon>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</mat-menu>

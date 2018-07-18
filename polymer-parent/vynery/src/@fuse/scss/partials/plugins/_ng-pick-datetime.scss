@@ -1,0 +1,361 @@
+/*@font-face {
+  font-family: 'fontello';
+  src: url('../font/fontello.eot?81091010');
+  src: url('../font/fontello.eot?81091010#iefix') format('embedded-opentype'),
+  url('../font/fontello.woff2?81091010') format('woff2'),
+  url('../font/fontello.woff?81091010') format('woff'),
+  url('../font/fontello.ttf?81091010') format('truetype'),
+  url('../font/fontello.svg?81091010#fontello') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}*/
+
+owl-date-time {
+
+    [class^="icon-"]:before, [class*=" icon-"]:before {
+        font-family: "Material Icons";
+        font-style: normal;
+        font-weight: normal;
+        speak: none;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        /* For safety - reset parent styles, that can break glyph codes*/
+        font-variant: normal;
+        text-transform: none;
+
+        /* Font smoothing. That was taken from TWBS */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    .icon-cancel:before {
+        content: 'close';
+    }
+
+    .icon-up-open:before {
+        content: 'keyboard_arrow_up';
+    }
+
+    .icon-down-open:before {
+        content: 'keyboard_arrow_down';
+    }
+
+    .icon-left-open:before {
+        content: 'chevron_left';
+    }
+
+    .icon-right-open:before {
+        content: 'chevron_right';
+    }
+
+    $white: #FFFFFF;
+    $black: #000000;
+    $grey: #DDDDDD;
+    $blue: #0070BA;
+
+    .owl-widget,
+    .owl-widget * {
+        box-sizing: border-box;
+    }
+
+    .owl-widget {
+        font-size: 1em;
+    }
+
+    .owl-state-focus {
+
+    }
+
+    .owl-corner-all {
+        border-radius: 2px;
+    }
+
+    .owl-corner-top {
+        border-top-left-radius: 2px;
+        border-top-right-radius: 2px;
+    }
+
+    .owl-state-default {
+        background: #FFFFFF;
+        color: rgba(0, 0, 0, 0.87);
+    }
+
+    .owl-dateTime-inputWrapper {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+
+        .owl-dateTime-input {
+            background: none !important;
+            padding: 0 !important;
+            cursor: pointer;
+
+            .owl-inputtext {
+                margin: 0;
+                padding: 8px;
+                background: none !important;
+                color: rgba(0, 0, 0, 0.87);
+            }
+        }
+
+        .owl-dateTime-cancel {
+            position: relative !important;
+            right: 0 !important;
+            top: 0 !important;
+            transform: none !important;
+            font-size: 16px !important;
+            width: 16px !important;
+            height: 16px !important;
+            min-width: 16px !important;
+            min-height: 16px !important;
+            line-height: 16px !important;
+            color: rgba(0, 0, 0, 0.54) !important;
+        }
+    }
+
+    .owl-dateTime {
+        position: relative;
+        width: 140px;
+
+        &.owl-dateTime-inline {
+            width: auto;
+
+            .owl-dateTime-dialog {
+                position: relative;
+                z-index: auto;
+            }
+        }
+    }
+
+    .owl-dateTime-dialog {
+        width: 256px;
+        user-select: none;
+        z-index: 99999;
+        top: 24px !important;
+        right: 0 !important;
+        left: auto !important;
+        @include mat-elevation(4);
+    }
+
+    .owl-dateTime-dialogHeader {
+        height: 2.5em;
+        padding: .25em;
+        background-color: rgba(0, 0, 0, .1);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .owl-calendar-wrapper {
+        padding: 16px !important;
+    }
+
+    .owl-calendar-control {
+
+        .owl-calendar-controlNav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            .nav-prev,
+            .nav-next {
+                display: flex;
+
+                &:before {
+                    font-family: "Material Icons";
+                    position: relative !important;
+                    right: 0 !important;
+                    top: 0 !important;
+                    transform: none !important;
+                    font-size: 20px !important;
+                    width: 20px !important;
+                    height: 20px !important;
+                    min-width: 20px !important;
+                    min-height: 20px !important;
+                    line-height: 20px !important;
+                    content: "chevron_left";
+                    color: rgba(0, 0, 0, 0.54);
+                }
+            }
+
+            .nav-next:before {
+                content: "chevron_right";
+            }
+        }
+
+        .owl-calendar-controlContent {
+
+            .month-control,
+            .year-control {
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+            }
+
+            .month-control {
+                margin-right: 8px;
+            }
+
+            .year-control {
+            }
+        }
+    }
+
+    .owl-calendar {
+
+        table {
+            border-spacing: 0 !important;
+        }
+
+        tbody td {
+
+            &.owl-calendar-selected {
+                background-color: $blue;
+                color: $white;
+            }
+
+            &.owl-calendar-invalid {
+                color: #ACACAC;
+            }
+
+            &.owl-calendar-outFocus {
+                color: $grey;
+            }
+
+            &.owl-calendar-hidden {
+                visibility: hidden;
+            }
+
+            &:not(.owl-calendar-selected):not(.owl-calendar-invalid):hover {
+                background-color: lighten($blue, 50%);
+                color: $black;
+            }
+        }
+    }
+
+    .owl-years,
+    .owl-months {
+
+        td.owl-year,
+        td.owl-month {
+            padding: 0;
+            font-size: 16px;
+            width: 72px;
+            height: 48px;
+            line-height: 48px;
+            cursor: pointer;
+        }
+    }
+
+    .owl-calendar-yearArrow {
+        width: 24px !important;
+        height: 24px !important;
+
+        &.left {
+            left: -16px !important;
+        }
+
+        &.right {
+            right: -16px !important;
+        }
+    }
+
+    .owl-weekdays {
+
+        th.owl-weekday {
+            height: 32px;
+            line-height: 32px;
+            text-align: center;
+            font-size: 12px;
+            padding: 0;
+            color: rgba(0, 0, 0, 0.37);
+        }
+    }
+
+    .owl-days {
+
+        td.owl-day {
+            height: 32px;
+            width: 32px;
+            line-height: 32px;
+            cursor: pointer;
+            border-radius: 100%;
+            padding: 0;
+
+            &.owl-day-today:before {
+                content: '';
+                display: block;
+                position: absolute;
+                right: 2px;
+                top: 2px;
+                border-top: .5em solid lighten($blue, 20%);
+                border-left: .5em solid transparent;
+            }
+        }
+    }
+
+    .owl-timer-wrapper {
+        height: 88px;
+        padding: 8px !important;
+        background-color: rgba(0, 0, 0, 0.06);
+
+        .owl-timer-input {
+            background: none;
+            width: 100% !important;
+            text-align: center;
+        }
+
+        .owl-timer-text {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 40%;
+            font-size: 20px;
+        }
+
+        .owl-meridian-btn {
+            font-size: .8em;
+            color: $blue;
+            background-image: none;
+            background-color: transparent;
+            border-color: $blue;
+
+            &:hover {
+                color: $white;
+                background-color: $blue;
+                border-color: $blue;
+            }
+        }
+    }
+
+    .owl-timer-divider {
+        display: inline-block;
+        position: absolute;
+        width: 8px;
+        height: 100%;
+        left: -2px;
+
+        .owl-timer-dot {
+            display: block;
+            background: rgba(0, 0, 0, 0.37);
+            width: 3px;
+            height: 3px;
+            position: absolute;
+            left: 50%;
+            border-radius: 100%;
+            transform: translateX(-50%);
+
+            &.dot-top {
+                top: 40%;
+            }
+
+            &.dot-bottom {
+                bottom: 40%;
+            }
+        }
+    }
+}

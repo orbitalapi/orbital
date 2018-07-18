@@ -1,0 +1,36 @@
+@import "src/@fuse/scss/fuse";
+
+.color-picker {
+    height: auto !important;
+    border: none !important;
+
+    @include mat-elevation(4);
+
+    .preset-area {
+        padding: 0 0 16px 16px !important;
+        height: 140px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+
+        > hr {
+            display: none;
+        }
+
+        .preset-label {
+            display: none;
+        }
+
+        .preset-color {
+            display: block !important;
+            float: left !important;
+            margin: 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+
+            &:nth-child(14n+1) {
+                clear: both;
+            }
+        }
+    }
+}

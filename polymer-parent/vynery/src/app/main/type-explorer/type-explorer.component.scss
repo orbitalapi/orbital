@@ -1,0 +1,80 @@
+@import "src/@fuse/scss/fuse";
+
+:host {
+    width: 100%;
+
+    .center {
+
+        .header {
+
+            .search-wrapper {
+                @include mat-elevation(7);
+
+                .sidebar-toggle {
+                    margin: 0;
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 0;
+                    border-right: 1px solid rgba(0, 0, 0, .12);
+                }
+
+                .search {
+                    width: 100%;
+                    height: 56px;
+                    line-height: 56px;
+                    padding: 18px;
+
+                    input {
+                        height: 56px;
+                        padding-left: 16px;
+                        color: rgba(0, 0, 0, 0.54);
+                        border: none;
+                        outline: none;
+                    }
+                }
+            }
+        }
+
+        .content-card {
+
+            @include media-breakpoint-down(lg) {
+
+                todo-list {
+                    border-right: 0;
+                }
+
+                todo-list,
+                todo-details {
+                    flex: 1 0 100%;
+                }
+
+                todo-details {
+                    display: none !important;
+                }
+
+                &.current-todo-selected {
+
+                    .toolbar {
+                        padding-left: 16px !important;
+
+                        .todo-selection {
+                            display: none !important;
+                        }
+                    }
+
+                    .content {
+
+                        todo-list {
+                            display: none !important;
+                        }
+
+                        todo-details {
+                            display: flex !important;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

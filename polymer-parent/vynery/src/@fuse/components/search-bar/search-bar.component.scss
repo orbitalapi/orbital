@@ -1,0 +1,91 @@
+@import "src/@fuse/scss/fuse";
+
+:host {
+
+    .fuse-search-bar {
+        display: flex;
+        flex: 0 1 auto;
+        min-width: 64px;
+        height: 64px;
+        font-size: 13px;
+
+        @include media-breakpoint-down('xs') {
+            height: 56px;
+        }
+
+        .fuse-search-bar-content {
+            display: flex;
+            flex: 1 1 auto;
+            align-items: center;
+            justify-content: flex-start;
+
+            .fuse-search-bar-expander,
+            .fuse-search-bar-collapser {
+                cursor: pointer;
+                padding: 0 20px;
+                margin: 0;
+                width: 64px !important;
+                height: 64px !important;
+                line-height: 64px !important;
+
+                @include media-breakpoint-down('xs') {
+                    height: 56px !important;
+                    line-height: 56px !important;
+                }
+            }
+
+            .fuse-search-bar-loader {
+                width: 64px !important;
+                height: 64px !important;
+                line-height: 64px !important;
+
+                @include media-breakpoint-down('xs') {
+                    height: 56px !important;
+                    line-height: 56px !important;
+                }
+            }
+
+            .fuse-search-bar-collapser {
+                display: none;
+            }
+
+            #fuse-search-bar-input {
+                display: none;
+                flex: 1 0 auto;
+                min-height: 64px;
+                background-color: transparent;
+                font-size: 16px;
+            }
+        }
+
+        &.expanded {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 10;
+
+            .fuse-search-bar-content {
+
+                #fuse-search-bar-input {
+                    display: flex;
+                }
+
+                .fuse-search-bar-collapser {
+                    display: flex;
+                }
+            }
+        }
+    }
+
+    body {
+
+        &.fuse-search-bar-expanded {
+
+            #toolbar {
+                z-index: 999 !important;
+            }
+        }
+    }
+}

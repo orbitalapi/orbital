@@ -1,0 +1,20 @@
+<div class="memberListContainer">
+    <div class="member-list-item" fxLayout="row" fxLayoutAlign="start center" *ngFor="let member of members">
+        <div fxLayout="row" fxLayoutAlign="start center" fxFlex>
+            <div class="info" fxFlex fxLayout="column" (click)="onMemberSelected(member)">
+                <div class="title">
+                    {{member.name.name}}
+                </div>
+            </div>
+            <div class="tags" fxLayout="row wrap" fxLayoutAlign="start center">
+
+                <div class="tag" fxLayout="row" fxLayoutAlign="start center" *ngFor="let tag of member.tags">
+                    <div class="tag-color" [ngStyle]="{'background-color': tag.color }"></div>
+                    <div class="tag-label">{{tag.label}}</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+

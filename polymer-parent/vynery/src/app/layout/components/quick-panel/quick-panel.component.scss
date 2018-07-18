@@ -1,0 +1,12 @@
+quick-panel {
+    display: flex;
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+    z-index: 99;
+    flex-direction: column;
+
+    .mat-slide-toggle-content {
+        flex: 1;
+    }
+}

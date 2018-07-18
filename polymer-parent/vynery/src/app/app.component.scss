@@ -1,0 +1,40 @@
+@import "src/@fuse/scss/fuse";
+
+:host {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+
+    .theme-options-button {
+        position: absolute;
+        top: 160px;
+        right: 0;
+        width: 48px;
+        height: 48px;
+        line-height: 48px;
+        text-align: center;
+        cursor: pointer;
+        border-radius: 0;
+        margin: 0;
+        pointer-events: auto;
+        opacity: .90;
+        z-index: 998;
+
+        mat-icon {
+            animation: rotating 3s linear infinite;
+        }
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    .theme-options-sidebar {
+        width: 360px;
+        min-width: 360px;
+        max-width: 360px;
+    }
+}

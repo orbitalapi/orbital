@@ -1,0 +1,76 @@
+<!-- Content Wrapper - Left Sidenav 2-->
+<div id="todo" class="page-layout carded left-sidebar inner-scroll">
+
+    <!-- TOP BACKGROUND -->
+    <div class="top-bg mat-accent-bg"></div>
+    <!-- / TOP BACKGROUND -->
+
+    <!-- CENTER -->
+    <div class="center">
+
+        <!-- CONTENT HEADER -->
+        <div class="header" fxLayout="row" fxLayoutAlign="start center">
+
+            <div class="search-wrapper mat-white-bg" fxFlex fxLayout="row" fxLayoutAlign="start center">
+
+                <div class="search" flex fxLayout="row" fxLayoutAlign="start center">
+                    <mat-icon>search</mat-icon>
+                    <input [formControl]="searchInput" placeholder="Search for a type" fxFlex>
+                </div>
+            </div>
+
+        </div>
+        <!-- / CONTENT HEADER -->
+
+        <!-- CONTENT CARD -->
+        <div class="content-card mat-white-bg">
+
+            <div class="content" fxFlexAlign="column">
+                <type-list [members]="members" (memberSelected)="onMemberSelected($event)"></type-list>
+                <type-detail [member]="selectedMember"></type-detail>
+            </div>
+            <!-- / CONTENT -->
+
+        </div>
+        <!-- / CONTENT CARD -->
+    </div>
+</div>
+<div id="content_wrapper" class="leftSidenav2-wrapper">
+    <!--// Sidenav component container-->
+    <mat-sidenav-container class="sidenav-container">
+        <!-- Page Content -->
+        <div class="content">
+            <div class="header-wrapper header-sm app_secondary_bg">
+                <header class="container-fluid">
+                    <div class="row">
+                        <h1>Types</h1>
+                    </div>
+                </header>
+                <ul class="actions icons top-left">
+                    <li>
+                        <a href="javascript:void(0)" (click)="leftSidenav2.toggle()">
+                            <i class="zmdi zmdi-menu"></i>
+                        </a>
+                    </li>
+                </ul>
+                <form name="search" role="search" action="" class="header-search-form">
+                    <div class="form-group" [ngClass]="{'is-focused': isFocused }">
+                  <span class="header-search-icon">
+                     <i class="zmdi zmdi-search"></i>
+                  </span>
+                        <input type="text" placeholder="Search types..." class="form-control" id="content_header_search"
+                               [(ngModel)]="term" name="term"
+                               autocomplete="off" (focus)="isFocused = !isFocused" (blur)="isFocused = false;">
+                    </div>
+                    <button type="submit" class="hidden btn btn-default">Submit</button>
+                </form>
+            </div>
+            <div class="content-body">
+                </div>
+        </div>
+        <!--  Footer Wrapper -->
+        <footer id="footer_wrapper" class="footer_wrapper"></footer>
+    </mat-sidenav-container>
+    <!-- /END Sidenav component container -->
+</div>
+<!-- /END Content Wrapper - Left Sidenav 2-->

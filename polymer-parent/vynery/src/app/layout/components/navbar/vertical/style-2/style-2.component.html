@@ -1,0 +1,23 @@
+<div class="navbar-header">
+
+    <div class="logo">
+        <img class="logo-icon" src="assets/images/logos/fuse.svg">
+        <span class="logo-text">Vyne</span>
+    </div>
+
+    <button mat-icon-button class="toggle-sidebar-folded"
+            (click)="toggleSidebarFolded()" fxHide.lt-lg>
+        <mat-icon>menu</mat-icon>
+    </button>
+
+    <button mat-icon-button class="toggle-sidebar-opened"
+            (click)="toggleSidebarOpened()" fxHide.gt-md>
+        <mat-icon>arrow_back</mat-icon>
+    </button>
+
+</div>
+
+<div class="navbar-content" fusePerfectScrollbar
+     [fusePerfectScrollbarOptions]="{suppressScrollX: true}">
+    <fuse-navigation layout="vertical"></fuse-navigation>
+</div>

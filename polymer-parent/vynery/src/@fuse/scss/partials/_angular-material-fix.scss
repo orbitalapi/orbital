@@ -1,0 +1,97 @@
+// Fix: "Icon button ripple radius is not correct on Edge & Safari"
+.mat-icon-button {
+
+    .mat-button-ripple {
+        border-radius: 50%;
+    }
+}
+
+// Fix: "Smooth scrolling for iOS"
+.mat-dialog-container {
+    -webkit-overflow-scrolling: touch;
+}
+
+// Fix: "Inconsistent font sizes across elements"
+.mat-form-field-wrapper {
+    font-size: 16px;
+}
+
+.mat-checkbox {
+    font-size: 16px;
+}
+
+.mat-radio-button {
+    font-size: 16px;
+}
+
+.mat-pseudo-checkbox-checked:after {
+    width: 14px !important;
+    height: 7px !important;
+}
+
+// Fix: "Input underlines has wrong color opacity value"
+.mat-form-field-underline {
+    background-color: rgba(0, 0, 0, 0.12);
+}
+
+// Fix: "Some idiots using table-cell and inline-table in mat-select"
+.mat-form-field {
+
+    &.mat-form-field-type-mat-select {
+
+        .mat-form-field-infix {
+            display: inline-flex;
+            width: auto;
+
+            .mat-select-trigger {
+                display: inline-flex;
+                align-items: center;
+                width: 100%;
+
+                .mat-select-value {
+                    display: flex;
+                    max-width: none;
+                    margin-right: 8px;
+                }
+
+                .mat-select-arrow-wrapper {
+                    display: inline-flex;
+                }
+            }
+        }
+    }
+}
+
+// Fix: Stepper icons are broken due to Fuse's icon helpers
+mat-horizontal-stepper,
+mat-vertical-stepper {
+
+    mat-step-header {
+
+        mat-icon {
+            height: 16px !important;
+            width: 16px !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            color: inherit !important;
+        }
+    }
+}
+
+mat-vertical-stepper {
+    padding: 16px 0;
+}
+
+// Fix: Chip remove icon is broken due to Fuse's icon helpers
+mat-chip {
+
+    mat-icon {
+        min-width: 0 !important;
+        min-height: 0 !important;
+    }
+}
+
+// Fix: Mat-card-image requires a bigger width than 100%
+.mat-card-image {
+    max-width: none !important;
+}

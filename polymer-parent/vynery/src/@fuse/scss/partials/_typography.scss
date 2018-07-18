@@ -1,0 +1,392 @@
+html {
+    font-size: 62.5%;
+    font-family: 'Roboto', 'Helvetica Neue', 'Arial', sans-serif;
+    line-height: 1.4 !important;
+    letter-spacing: -0.1px !important;
+}
+
+body {
+    font-size: 14px;
+}
+
+html, body {
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
+}
+
+// Headings
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    font-weight: normal;
+}
+
+h1, .h1 {
+    font-size: 24px;
+}
+
+h2, .h2 {
+    font-size: 20px;
+}
+
+h3, .h3 {
+    font-size: 16px;
+}
+
+h4, .h4 {
+    font-size: 15px;
+}
+
+h5, .h5 {
+    font-size: 13px;
+}
+
+h6, .h6 {
+    font-size: 12px;
+}
+
+// Links
+a {
+    color: mat-color($accent);
+    text-decoration: none;
+
+    &:not(.mat-button):not(.mat-raised-button):not(.mat-icon-button) {
+
+        &:hover, &:active {
+            text-decoration: underline;
+        }
+    }
+}
+
+// Abbr
+abbr {
+    cursor: help;
+    border-bottom: 1px dotted rgba(0, 0, 0, 0.54);
+}
+
+// Blockquote
+blockquote {
+    border-left: 3px solid rgba(0, 0, 0, 0.12);
+    font-style: italic;
+    margin: 1em 0;
+    padding-left: 16px;
+
+    footer {
+        font-style: normal;
+
+        &:before {
+            content: '\2014 \00A0';
+        }
+    }
+
+    &.reverse {
+        border-left: none;
+        border-right: 3px solid rgba(0, 0, 0, 0.12);
+        text-align: right;
+        padding-left: 0;
+        padding-right: 16px;
+
+        footer {
+
+            &:before {
+                content: '';
+            }
+
+            &:after {
+                content: '\2014 \00A0';
+            }
+        }
+    }
+}
+
+// Code
+code {
+    font-family: 'Monaco', 'Menlo', 'Consolas', 'Ubuntu Mono', monospace;;
+
+    &:not(.highlight) {
+        background: rgba(0, 0, 0, 0.065);
+        color: #106CC8;
+        margin: 0 1px;
+        padding: 2px 3px;
+        border-radius: 2px;
+    }
+}
+
+// Definition lists
+dl {
+
+    dt {
+        font-weight: bold;
+    }
+
+    dd {
+        margin: 4px 0 16px 0;
+    }
+}
+
+// Mark
+mark {
+    background: #F7F49A;
+}
+
+// Pre
+pre {
+    line-height: 1.6;
+    margin: 8px 16px;
+    white-space: pre-wrap;
+}
+
+// Small
+small {
+    font-size: 80%;
+}
+
+// Table
+table {
+
+    thead {
+
+        tr {
+
+            th {
+                text-align: left;
+            }
+        }
+    }
+}
+
+// Text format helpers
+.text-italic {
+    font-style: italic;
+}
+
+.text-semibold {
+    font-weight: 600;
+}
+
+.text-bold,
+strong {
+    font-weight: 700;
+}
+
+.text-strike {
+    text-decoration: line-through;
+}
+
+.text-super {
+    vertical-align: super;
+}
+
+.text-sub {
+    vertical-align: sub;
+}
+
+.text-capitalize {
+    text-transform: capitalize;
+}
+
+.text-lowercase {
+    text-transform: lowercase;
+}
+
+.text-uppercase {
+    text-transform: uppercase;
+}
+
+// Text align helpers
+.text-left {
+    text-align: left;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+// Font weight helpers
+@for $weight from 1 through 9 {
+
+    .font-weight-#{$weight * 100} {
+        font-weight: #{$weight * 100};
+    }
+}
+
+// Font size helpers
+@for $size from 1 through 60 {
+
+    .font-size-#{$size * 2} {
+        font-size: #{$size * 2}px;
+    }
+}
+
+// Line height helpers
+@for $lineHeight from 1 through 60 {
+
+    .line-height-#{$lineHeight * 2} {
+        line-height: #{$lineHeight * 2}px;
+    }
+}
+
+.line-height-1 {
+    line-height: 1;
+}
+
+.line-height-1\.25 {
+    line-height: 1.25;
+}
+
+.line-height-1\.50 {
+    line-height: 1.5;
+}
+
+.line-height-1\.75 {
+    line-height: 1.75;
+}
+
+// Boxed text
+.text-boxed {
+    border-radius: 2px;
+    padding: 4px 8px;
+    margin: 0 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.54);
+    background-color: rgba(0, 0, 0, 0.12);
+    white-space: nowrap;
+}
+
+// Boxed text light
+.text-boxed-light {
+    @extend .text-boxed;
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+// Truncate
+.text-truncate {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// Nowrap
+.text-nowrap {
+    white-space: nowrap;
+}
+
+// Changelog
+.changelog {
+
+    .entry {
+        background: white;
+        margin-bottom: 24px;
+        padding: 24px 32px;
+        @include mat-elevation(2);
+
+        > .title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+
+            .version {
+                font-size: 24px;
+            }
+
+            .date {
+                margin-left: 8px;
+                font-size: 17px;
+                opacity: 0.54;
+            }
+        }
+
+        .groups {
+
+            div {
+                margin-bottom: 32px;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+            }
+
+            .title {
+                display: inline-flex;
+                font-size: 13px;
+                color: white;
+                letter-spacing: 0.015em;
+                line-height: 1;
+                padding: 5px 8px;
+                border-radius: 2px;
+            }
+
+            .breaking-changes {
+
+                .title {
+                    background: #F44336;
+                }
+            }
+
+            .new {
+
+                .title {
+                    background: #43A047;
+                }
+            }
+
+            .improved {
+
+                .title {
+                    background: #673AB7;
+                }
+            }
+
+            .fixed {
+
+                .title {
+                    background: #2196F3;
+                }
+            }
+
+            ul {
+                padding-left: 24px;
+
+                li {
+                    margin-bottom: 6px;
+                    letter-spacing: 0.015em;
+                }
+            }
+        }
+    }
+}
+
+// Message boxes
+.message-box {
+    padding: 16px;
+    background: #607D8B;
+    border-left: 6px solid #37474F;
+    color: rgba(255, 255, 255, 1);
+
+    &.error {
+        background: #EF5350;
+        border-left-color: #B71C1C;
+    }
+
+    &.warning {
+        background: #FFECB3;
+        border-left-color: #FFC107;
+        color: rgba(0, 0, 0, 0.87);
+    }
+
+    &.success {
+        background: #4CAF50;
+        border-left-color: #2E7D32;
+    }
+
+    &.info {
+        background: #B3E5FC;
+        border-left-color: #03A9F4;
+        color: rgba(0, 0, 0, 0.87);
+    }
+}

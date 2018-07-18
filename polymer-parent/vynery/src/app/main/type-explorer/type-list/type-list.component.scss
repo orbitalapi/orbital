@@ -1,0 +1,44 @@
+@import 'src/@fuse/scss/fuse';
+
+.member-list-item {
+    display: block;
+    position: relative;
+    padding: 16px 16px 16px 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    text-transform: none;
+    flex-shrink: 0;
+    background: #FFFFFF;
+
+    .tags {
+
+        .tag {
+            font-size: 11px;
+            border-radius: 2px;
+            margin: 8px 4px 0 0;
+            padding: 3px 8px;
+            background-color: rgba(0, 0, 0, 0.08);
+
+            .tag-color {
+                width: 8px;
+                height: 8px;
+                margin-right: 8px;
+                border-radius: 50%;
+            }
+        }
+    }
+
+    &.selected {
+        background: #FFF8E1;
+    }
+
+    .info {
+        margin: 0 16px 0 8px;
+
+        .title {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+    }
+
+}

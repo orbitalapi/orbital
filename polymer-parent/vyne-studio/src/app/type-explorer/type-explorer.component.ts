@@ -43,9 +43,9 @@ export class TypeExplorerComponent implements OnInit {
    members:SchemaMember[] = [];
 
    // Can't seem to use enums in an ng-if.  Grrr.
-   serviceType = SchemaMemberType.SERVICE
-   typeType = SchemaMemberType.TYPE
-   operationType = SchemaMemberType.OPERATION
+   serviceType = SchemaMemberType.SERVICE;
+   typeType = SchemaMemberType.TYPE;
+   operationType = SchemaMemberType.OPERATION;
 
    constructor(
       public config: ConfigService,
@@ -58,7 +58,7 @@ export class TypeExplorerComponent implements OnInit {
    }
 
    // Utility function for iterating keys in an object in an *ngFor
-   objectKeys = Object.keys
+   objectKeys = Object.keys;
 
    attributes(member:SchemaMember):string[] {
       if (member.kind == SchemaMemberType.TYPE) {
@@ -71,13 +71,13 @@ export class TypeExplorerComponent implements OnInit {
    ngOnInit() {
       this.service.getTypes().subscribe(
          res => {
-            let schema = res as any
-            let typeMembers:SchemaMember[] = schema.types.map((t) => SchemaMember.fromType(t as Type))
+            let schema = res as any;
+            let typeMembers:SchemaMember[] = schema.types.map((t) => SchemaMember.fromType(t as Type));
             let operationMembers:SchemaMember[] = [];
-            schema.services.forEach((service) => operationMembers = operationMembers.concat(SchemaMember.fromService(service as Service)))
-            let members:SchemaMember[] = typeMembers.concat(operationMembers)
-            members = _.sortBy(members, [(m:SchemaMember) => { return m.name.fullyQualifiedName}])
-            this.schema = schema
+            schema.services.forEach((service) => operationMembers = operationMembers.concat(SchemaMember.fromService(service as Service)));
+            let members:SchemaMember[] = typeMembers.concat(operationMembers);
+            members = _.sortBy(members, [(m:SchemaMember) => { return m.name.fullyQualifiedName}]);
+            this.schema = schema;
             this.members = members
          },
          error => console.log("error : " + error)
@@ -120,7 +120,7 @@ export class SchemaMember {
          : []
    }
 
-   attributeNames:string[]
+   attributeNames:string[];
    static fromService(service: Service): SchemaMember[] {
       return service.operations.map( operation => {
          return new SchemaMember(

@@ -1,0 +1,72 @@
+<mat-list class="date" cdkFocusRegionStart>
+
+    <h3 matSubheader cdkFocusInit>
+        <span>Today</span>
+    </h3>
+
+    <div class="secondary-text mat-display-1 mb-0 p-16">
+        <div class="mb-12">
+            {{date | date:'EEEE'}}
+        </div>
+        <div fxLayout="row" fxLayoutAlign="start start">
+            <span> {{date | date:'d'}}</span>
+            <span class="mat-subheading-1">th</span>
+            <span> {{date | date:'MMMM'}}</span>
+        </div>
+    </div>
+</mat-list>
+
+<mat-divider cdkFocusRegionEnd></mat-divider>
+
+<mat-list>
+    <h3 matSubheader>
+        <span>Events</span>
+    </h3>
+
+    <mat-list-item *ngFor="let event of events">
+        <h3 matLine>{{event.title}}</h3>
+        <p matLine class="secondary-text">{{event.detail}}</p>
+    </mat-list-item>
+</mat-list>
+
+<mat-divider></mat-divider>
+
+<mat-list>
+    <h3 matSubheader>
+        <span>Notes</span>
+    </h3>
+
+    <mat-list-item *ngFor="let note of notes">
+        <h3 matLine>{{note.title}}</h3>
+        <p matLine class="secondary-text">{{note.detail}}</p>
+    </mat-list-item>
+</mat-list>
+
+<mat-divider></mat-divider>
+
+<mat-list>
+    <h3 matSubheader>
+        <span>Quick Settings</span>
+    </h3>
+
+    <mat-list-item>
+        <mat-slide-toggle fxFlex class="mat-primary" [(ngModel)]="settings.notify" aria-label="Notifications"
+                          labelPosition="before">
+            <h3>Notifications</h3>
+        </mat-slide-toggle>
+    </mat-list-item>
+
+    <mat-list-item>
+        <mat-slide-toggle fxFlex class="mat-accent" [(ngModel)]="settings.cloud" aria-label="Cloud"
+                          labelPosition="before">
+            <h3>Cloud Sync</h3>
+        </mat-slide-toggle>
+    </mat-list-item>
+
+    <mat-list-item>
+        <mat-slide-toggle fxFlex class="mat-warn" [(ngModel)]="settings.retro" aria-label="Retro Thrusters"
+                          labelPosition="before">
+            <h3>Retro Thrusters</h3>
+        </mat-slide-toggle>
+    </mat-list-item>
+</mat-list>

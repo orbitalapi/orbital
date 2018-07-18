@@ -1,0 +1,61 @@
+.fuse-card {
+    max-width: 320px;
+    min-width: 320px;
+    background: white;
+    border-radius: 2px;
+    @include mat-elevation(2);
+
+    &.variable-width {
+        min-width: 0;
+    }
+
+    &.auto-width {
+        min-width: 0;
+        max-width: none;
+    }
+
+    // Buttons
+    .mat-button {
+        min-width: 0 !important;
+        padding: 0 8px !important;
+    }
+
+    // Button Toggle Group
+    .mat-button-toggle-group,
+    .mat-button-toggle-standalone {
+        box-shadow: none !important;
+    }
+
+    // Tabs
+    .mat-tab-labels {
+        justify-content: center;
+    }
+
+    .mat-tab-label {
+        min-width: 0 !important;
+    }
+
+    // Divider
+    .card-divider {
+        border-top: 1px solid rgba(0, 0, 0, 0.12);
+        margin: 16px;
+
+        &.light {
+            border-top-color: rgba(255, 255, 255, 0.12);
+        }
+
+        &.full-width {
+            margin: 0;
+        }
+    }
+
+    // Expand Area
+    .card-expand-area {
+        overflow: hidden;
+
+        .card-expanded-content {
+            padding: 8px 16px 16px 16px;
+            line-height: 1.75;
+        }
+    }
+}

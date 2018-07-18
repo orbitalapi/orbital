@@ -1,0 +1,17 @@
+@import "src/@fuse/scss/fuse";
+
+fuse-progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 99998;
+
+    mat-progress-bar {
+
+        .mat-progress-bar-buffer {
+            background-color: #C5C6CB !important;
+        }
+    }
+}

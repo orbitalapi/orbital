@@ -1,0 +1,269 @@
+// Edit the sixteen color-value variables, and create your own syntax highlighter colorscheme
+
+$base00: #263238;
+$base01: #2C393F;
+$base02: #62727A;
+$base03: #707880;
+$base04: #C9CCD3;
+$base05: #CDD3DE;
+$base06: #D5DBE5;
+$base07: #FFFFFF;
+$base08: #EC5F67;
+$base09: #EA9560;
+$base0A: #FFCC00;
+$base0B: #8BD649;
+$base0C: #80CBC4;
+$base0D: #89DDFF;
+$base0E: #82AAFF;
+$base0F: #EC5F67;
+
+$red: $base08;
+$orange: $base09;
+$yellow: $base0A;
+$green: $base0B;
+$cyan: $base0C;
+$blue: $base0D;
+$violet: $base0E;
+$magenta: $base0F;
+
+$code-font-family: Consolas, Menlo, Monaco, "Andale Mono WT", "Andale Mono", "Lucida Console", "Lucida Sans Typewriter", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Liberation Mono", "Nimbus Mono L", "Courier New", Courier, monospace;
+$code-font-size: 14px;
+$code-line-height: 1.6;
+$code-background: $base00;
+$code-color: $base05;
+$code-color-fade: $base05;
+// $code-text-shadow: none; 
+$code-color-comment: $base02;
+$code-color-keyword: $base0B;
+$code-color-value: $base0C;
+$code-color-attr-name: $base09;
+$code-color-string: $base0C;
+$code-color-name: $base0A;
+$code-color-number: $base09;
+$code-color-variable: $base0D;
+$code-color-selector: $base0E;
+$code-color-property: $base0A;
+$code-color-important: $base08;
+$code-color-tag: $base0D;
+$code-color-atrule: $base0C;
+
+// @import "../partials/prism"; 
+/**
+ * Prism base code highlighter theme using Sass 
+ *
+ * @author @MoOx
+ * https://github.com/MoOx/sass-prism-theme-base/blob/master/_prism.scss
+ * slightly adapted by me, Bram de Haan
+ */
+
+// prism selector
+$code-selector: "code[class*=\"language-\"], pre[class*=\"language-\"]";
+$code-selector-block: "pre[class*=\"language-\"]";
+$code-selector-inline: ":not(pre) > code[class*=\"language-\"]";
+
+// generic stuff
+$code-font-family: Menlo, Monaco, "Courier New", monospace !default;
+$code-font-size: 14px !default;
+$code-line-height: 1.6 !default;
+
+$code-tab-size: 4 !default;
+$code-hyphens: none !default;
+
+$code-block-padding: 12px !default;
+$code-inline-padding: 2px 6px !default;
+$code-border-radius: 0 !default;
+
+$code-border: none !default;
+$code-background: #2A2A2A !default;
+$code-color: #FFF !default;
+$code-color-fade: #BEBEC5 !default;
+// $code-text-shadow: 0 1px 0 #000 !default;
+$code-box-shadow: none !default;
+$code-color-property: #B58900 !default;
+$code-color-important: #CB4B16 !default;
+$code-color-tag: #268BD2 !default;
+$code-color-atrule: #2AA198 !default;
+$code-color-attr-name: #B65611 !default;
+
+// $code-linenums-padding:		7px !default;
+// $code-linenums-width: 			40px !default;
+// $code-linenums-background:		#444 !default;
+// $code-linenums-border-color:	#555 !default;
+// $code-linenums-border-width:	1px !default;
+
+@if $code-selector != null {
+    #{$code-selector} {
+        -moz-tab-size: $code-tab-size;
+        -o-tab-size: $code-tab-size;
+        tab-size: $code-tab-size;
+
+        -webkit-hyphens: $code-hyphens;
+        -moz-hyphens: $code-hyphens;
+        -ms-hyphens: $code-hyphens;
+        hyphens: $code-hyphens;
+
+        // whitespace management
+        white-space: pre; // fallback
+        //white-space: pre-wrap;
+        //word-break: break-all;
+        //word-wrap: break-word;
+
+        font-family: $code-font-family;
+        font-size: $code-font-size;
+        line-height: $code-line-height;
+
+        color: $code-color;
+        // text-shadow: $code-text-shadow;
+        background: $code-background;
+    }
+}
+
+%code-background {
+    border-radius: $code-border-radius;
+    border: $code-border;
+    box-shadow: $code-box-shadow;
+}
+
+@if $code-selector-block != null {
+    #{$code-selector-block} {
+        @extend %code-background;
+        padding: $code-block-padding;
+    }
+}
+
+@if $code-selector-inline != null {
+    #{$code-selector-inline} {
+        @extend %code-background;
+        padding: $code-inline-padding;
+    }
+}
+
+// pre[class*="language-"],
+// :not(pre) > code[class*="language-"] {
+// 	background: $code-background;
+// }
+
+// prism tokens
+// 
+$code-color-comment: null !default;
+$code-color-keyword: null !default;
+$code-color-value: null !default;
+$code-color-string: null !default;
+$code-color-name: null !default;
+$code-color-number: null !default;
+$code-color-variable: null !default;
+$code-color-selector: null !default;
+$code-color-punctuation: $code-color-fade !default;
+
+#{$code-selector} {
+    .namespace {
+        opacity: .7;
+    }
+
+    .token {
+        &.comment,
+        &.prolog,
+        &.doctype,
+        &.cdata {
+            color: $code-color-comment;
+        }
+
+        &.null,
+        &.operator,
+        &.boolean,
+        &.number {
+            color: $code-color-number;
+        }
+
+        &.string {
+            color: $code-color-string;
+        }
+        &.attr-name {
+            color: $code-color-attr-name;
+        }
+
+        &.entity,
+        &.url,
+        .language-css &.string,
+        .style &.string {
+            color: $code-color-string;
+        }
+
+        &.selector {
+            color: $code-color-selector;
+        }
+
+        &.attr-value,
+        &.keyword,
+        &.control,
+        &.directive,
+        &.unit {
+            color: $code-color-keyword;
+        }
+        &.important {
+            color: $code-color-important;
+        }
+        &.atrule {
+            color: $code-color-atrule;
+        }
+
+        &.regex,
+        &.statement {
+            color: $code-color-value;
+        }
+
+        &.placeholder,
+        &.variable {
+            color: $code-color-variable;
+        }
+
+        &.property,
+        &.tag {
+            // font-style: italic;
+        }
+
+        &.property {
+            color: $code-color-property;
+        }
+        &.tag {
+            color: $code-color-tag;
+        }
+
+        &.important,
+        &.statement {
+            font-weight: bold;
+        }
+
+        // todo ?
+        // &.mixin
+        // &.gradient
+        // &.abslength
+        // &.easing
+        // &.time
+        // &.angle
+        // &.fontfamily
+
+        // ruby/vim https://github.com/LeaVerou/prism/pull/18
+        // &.inst-var
+        // &.builtin
+        // &.const
+        // &.symbol
+        //
+        // php https://github.com/LeaVerou/prism/pull/20
+        // &.deliminator
+        // &.function
+
+        &.punctuation {
+            color: $code-color-punctuation;
+        }
+
+        &.entity {
+            cursor: help;
+        }
+
+        // for dev :)
+        &.debug {
+            color: red
+        }
+    }
+}

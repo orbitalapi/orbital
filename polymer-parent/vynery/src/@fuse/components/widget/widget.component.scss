@@ -1,0 +1,84 @@
+fuse-widget {
+    display: block;
+    position: relative;
+    perspective: 3000px;
+    padding: 12px;
+
+    > div {
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 1s;
+    }
+
+    > .fuse-widget-front {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        position: relative;
+        overflow: hidden;
+        visibility: visible;
+        width: 100%;
+        opacity: 1;
+        z-index: 10;
+        border-radius: 2px;
+        transition: transform 0.5s ease-out 0s, visibility 0s ease-in 0.2s, opacity 0s ease-in 0.2s;
+        transform: rotateY(0deg);
+        backface-visibility: hidden;
+    }
+    > .fuse-widget-back {
+        display: block;
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        overflow: hidden;
+        visibility: hidden;
+        opacity: 0;
+        z-index: 10;
+        transition: transform 0.5s ease-out 0s, visibility 0s ease-in 0.2s, opacity 0s ease-in 0.2s;
+        transform: rotateY(180deg);
+        backface-visibility: hidden;
+
+        [fuseWidgetToggle] {
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+    }
+
+    &.flipped {
+
+        > .fuse-widget-front {
+            visibility: hidden;
+            opacity: 0;
+            transform: rotateY(180deg);
+        }
+
+        > .fuse-widget-back {
+            display: block;
+            visibility: visible;
+            opacity: 1;
+            transform: rotateY(360deg);
+        }
+    }
+
+    .mat-form-field {
+
+        &.mat-form-field-type-mat-select {
+
+            .mat-form-field-wrapper {
+                padding: 16px 0;
+
+                .mat-form-field-infix {
+                    border: none;
+                    padding: 0;
+                }
+            }
+
+            .mat-form-field-underline {
+                display: none;
+            }
+        }
+    }
+}

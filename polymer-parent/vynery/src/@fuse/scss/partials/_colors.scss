@@ -1,0 +1,358 @@
+.secondary-text,
+.icon,
+i {
+    color: rgba(0, 0, 0, 0.54);
+}
+
+.hint-text,
+.disabled-text {
+    color: rgba(0, 0, 0, 0.38);
+}
+
+.divider {
+    color: rgba(0, 0, 0, 0.12);
+}
+
+// Material colors map
+$matPalettes: (
+    primary: $primary,
+    accent: $accent,
+    warn: $warn,
+    red: $mat-red,
+    pink: $mat-pink,
+    purple: $mat-purple,
+    deep-purple: $mat-deep-purple,
+    indigo: $mat-indigo,
+    blue: $mat-blue,
+    light-blue: $mat-light-blue,
+    cyan: $mat-cyan,
+    teal: $mat-teal,
+    green: $mat-green,
+    light-green: $mat-light-green,
+    lime: $mat-lime,
+    yellow: $mat-yellow,
+    amber: $mat-amber,
+    orange: $mat-orange,
+    deep-orange: $mat-deep-orange,
+    brown: $mat-brown,
+    grey: $mat-grey,
+    blue-grey: $mat-blue-grey,
+    white: $mat-white,
+    black: $mat-black,
+    fuse-dark: $mat-fusedark
+);
+
+// Material color hues list
+$matHues: 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, A100, A200, A400, A700;
+
+// Text color levels generator mixin
+@mixin generateTextColorLevels($classes, $contrast) {
+
+    // If the contrast is dark...
+    @if ($contrast == 'dark') {
+
+        // Put down the color classes
+        #{$classes} {
+
+            i,
+            .icon {
+                color: rgba(0, 0, 0, 0.54);
+            }
+
+            &.secondary-text,
+            .secondary-text {
+                color: rgba(0, 0, 0, 0.54) !important;
+            }
+
+            &.hint-text,
+            .hint-text,
+            &.disabled-text,
+            .disabled-text {
+                color: rgba(0, 0, 0, 0.38) !important;
+            }
+
+            &.divider,
+            .divider {
+                color: rgba(0, 0, 0, 0.12) !important;
+            }
+
+            .mat-ripple-element {
+                background: rgba(0, 0, 0, 0.1);
+            }
+
+            .adaptive-border-color {
+                border-color: rgba(0, 0, 0, 0.12);
+            }
+        }
+
+    }
+        // If the base text color is white...
+    @else {
+
+        // Put down the color classes
+        #{$classes} {
+
+            i,
+            .icon {
+                color: rgba(255, 255, 255, 1);
+            }
+
+            &.secondary-text,
+            .secondary-text {
+                color: rgba(255, 255, 255, 0.70) !important;
+            }
+
+            &.hint-text,
+            .hint-text,
+            &.disabled-text,
+            .disabled-text {
+                color: rgba(255, 255, 255, 0.50) !important;
+            }
+
+            &.divider,
+            .divider {
+                color: rgba(255, 255, 255, 0.12) !important;
+            }
+
+            .mat-ripple-element {
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .adaptive-border-color {
+                border-color: rgba(255, 255, 255, 0.12);
+            }
+        }
+    }
+}
+
+@mixin generateMaterialElementColors($classes, $contrast) {
+
+    // If the contrast color is light...
+    $fuseForeground: (
+        base: white,
+        text: white,
+        hint-text: rgba(white, 0.5),
+        divider: rgba(white, 0.12),
+    );
+
+    // If the contrast color is dark...
+    @if ($contrast == 'dark') {
+
+        $fuseForeground: (
+            base: black,
+            hint-text: rgba(black, 0.38),
+            divider: rgba(black, 0.12),
+        );
+    }
+
+    // Put down the color classes
+    #{$classes} {
+
+        // Native Input
+        input[type="text"] {
+            color: map_get($fuseForeground, base);
+        }
+
+        // Input
+        .mat-form-field-label {
+            color: map_get($fuseForeground, hint-text);
+        }
+
+        .mat-form-field-underline {
+            background-color: map_get($fuseForeground, divider);
+        }
+
+        // Select
+        .mat-select-trigger,
+        .mat-select-arrow {
+            color: map_get($fuseForeground, hint-text);
+        }
+
+        .mat-select-underline {
+            background-color: map_get($fuseForeground, divider);
+        }
+
+        .mat-select-disabled .mat-select-value,
+        .mat-select-arrow,
+        .mat-select-trigger {
+            color: map_get($fuseForeground, hint-text);
+        }
+
+        .mat-select-content,
+        .mat-select-panel-done-animating {
+            background: map_get($background, card);
+        }
+
+        .mat-select-value {
+            color: map_get($fuseForeground, text);
+        }
+    }
+}
+
+// Color classes generator mixin
+@mixin generateColorClasses($colorName, $color, $contrastColor, $hue) {
+
+    .#{$colorName}#{$hue}-bg {
+        background-color: $color !important;
+    }
+
+    .mat-#{$colorName}#{$hue}-bg {
+        background-color: $color !important;
+        color: $contrastColor !important;
+
+        &[disabled] {
+            background-color: rgba($color, .12) !important;
+            color: rgba($contrastColor, .26) !important;
+        }
+    }
+
+    .#{$colorName}#{$hue}-fg {
+        color: $color !important;
+    }
+
+    .#{$colorName}#{$hue}-border {
+        border-color: $color !important;
+    }
+
+    .#{$colorName}#{$hue}-border-top {
+        border-top-color: $color !important;
+    }
+
+    .#{$colorName}#{$hue}-border-right {
+        border-right-color: $color !important;
+    }
+
+    .#{$colorName}#{$hue}-border-bottom {
+        border-bottom-color: $color !important;
+    }
+
+    .#{$colorName}#{$hue}-border-left {
+        border-left-color: $color !important;
+    }
+}
+
+@mixin generateFuseColorClasses($primary, $accent, $warn) {
+
+    $palettes: (
+        primary: $primary,
+        accent: $accent,
+        warn: $warn
+    );
+
+    // Define contrast lists
+    $light-contrasting-classes: ();
+    $dark-contrasting-classes: ();
+
+    // Generate the color classes...
+    @each $paletteName, $palette in $palettes {
+
+        // Get the contrasts map
+        $contrasts: map-get($palette, 'contrast');
+
+        @each $hue in $matHues {
+
+            // Get the color and the contrasting color
+            $color: map-get($palette, $hue);
+            $contrast: map-get($contrasts, $hue);
+
+            @if ($color != null and $contrast != null) {
+
+                // Generate color classes
+                @include generateColorClasses($paletteName, $color, $contrast, '-#{$hue}');
+
+                // If the contrast color is dark
+                @if (rgba(black, 1) == rgba($contrast, 1)) {
+                    $dark-contrasting-classes: append($dark-contrasting-classes, unquote('.mat-#{$paletteName}-#{$hue}-bg'), 'comma');
+                }
+                    // if the contrast color is light
+                @else {
+                    $light-contrasting-classes: append($light-contrasting-classes, unquote('.mat-#{$paletteName}-#{$hue}-bg'), 'comma');
+                }
+
+                // Run the generator one more time for default values (500)
+                @if ($hue == 500) {
+
+                    // Generate color classes
+                    @include generateColorClasses($paletteName, $color, $contrast, '');
+
+                    // Add color to the correct list depending on the contrasting color
+
+                    // If the contrast color is dark
+                    @if (rgba(black, 1) == rgba($contrast, 1)) {
+                        $dark-contrasting-classes: append($dark-contrasting-classes, unquote('.mat-#{$paletteName}-bg'), 'comma');
+                    }
+                        // if the contrast color is light
+                    @else {
+                        $light-contrasting-classes: append($light-contrasting-classes, unquote('.mat-#{$paletteName}-bg'), 'comma');
+                    }
+                }
+            }
+        }
+    }
+
+    // Generate contrasting colors
+    @include generateTextColorLevels($dark-contrasting-classes, 'dark');
+    @include generateTextColorLevels($light-contrasting-classes, 'light');
+    @include generateMaterialElementColors($dark-contrasting-classes, 'dark');
+    @include generateMaterialElementColors($light-contrasting-classes, 'light');
+}
+
+// Generate the color classes...
+
+// Define contrast lists
+$light-contrasting-classes: ();
+$dark-contrasting-classes: ();
+
+@each $paletteName, $palette in $matPalettes {
+
+    // Get the contrasts map
+    $contrasts: map-get($palette, 'contrast');
+
+    @each $hue in $matHues {
+
+        // Get the color and the contrasting color
+        $color: map-get($palette, $hue);
+        $contrast: map-get($contrasts, $hue);
+
+        @if ($color != null and $contrast != null) {
+
+            // Generate color classes
+            @include generateColorClasses($paletteName, $color, $contrast, '-#{$hue}');
+
+            // Add color to the correct list depending on the contrasting color
+
+            // If the contrast color is dark
+            @if (rgba(black, 1) == rgba($contrast, 1)) {
+                $dark-contrasting-classes: append($dark-contrasting-classes, unquote('.mat-#{$paletteName}-#{$hue}-bg'), 'comma');
+            }
+                // if the contrast color is light
+            @else {
+                $light-contrasting-classes: append($light-contrasting-classes, unquote('.mat-#{$paletteName}-#{$hue}-bg'), 'comma');
+            }
+
+            // Run the generator one more time for default values (500)
+            @if ($hue == 500) {
+
+                // Generate color classes
+                @include generateColorClasses($paletteName, $color, $contrast, '');
+
+                // Add color to the correct list depending on the contrasting color
+
+                // If the contrast color is dark
+                @if (rgba(black, 1) == rgba($contrast, 1)) {
+                    $dark-contrasting-classes: append($dark-contrasting-classes, unquote('.mat-#{$paletteName}-bg'), 'comma');
+                }
+                    // if the contrast color is light
+                @else {
+                    $light-contrasting-classes: append($light-contrasting-classes, unquote('.mat-#{$paletteName}-bg'), 'comma');
+                }
+            }
+        }
+    }
+}
+
+// Generate contrasting colors
+@include generateTextColorLevels($dark-contrasting-classes, 'dark');
+@include generateTextColorLevels($light-contrasting-classes, 'light');
+@include generateMaterialElementColors($dark-contrasting-classes, 'dark');
+@include generateMaterialElementColors($light-contrasting-classes, 'light');

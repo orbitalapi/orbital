@@ -1,0 +1,79 @@
+@import "src/@fuse/scss/fuse";
+
+@keyframes rotating {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+:host {
+    display: flex;
+    overflow: hidden;
+
+    .theme-options-panel {
+        display: flex;
+        flex-direction: column;
+        flex: 1 0 auto;
+        padding: 40px 24px 24px 24px;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+
+        .header {
+            display: flex;
+            flex: 0 1 auto;
+            margin-bottom: 32px;
+            align-items: center;
+            justify-content: space-between;
+
+            .title {
+                font-size: 20px;
+                font-weight: 500;
+                padding-left: 4px;
+            }
+        }
+
+        form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+
+            .group {
+                display: flex;
+                flex: 1 0 auto;
+                flex-direction: column;
+                position: relative;
+                border: 1px solid rgba(0, 0, 0, 0.12);
+                border-radius: 2px;
+                padding: 28px 16px 8px 16px;
+                margin: 16px 0;
+
+                h2 {
+                    position: absolute;
+                    top: -11px;
+                    left: 8px;
+                    margin: 0;
+                    padding: 0 8px;
+                    font-size: 16px;
+                    font-weight: 500;
+                    background: white;
+                    color: rgba(0, 0, 0, 0.54);
+                }
+
+                h3 {
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: rgba(0, 0, 0, 0.54);
+                    margin: 24px 0 16px 0;
+                    padding: 0;
+
+                    &:first-of-type {
+                        margin-top: 0;
+                    }
+                }
+            }
+        }
+    }
+}

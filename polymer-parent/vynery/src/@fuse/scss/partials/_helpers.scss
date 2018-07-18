@@ -1,0 +1,245 @@
+// ######################
+// POSITION HELPERS
+// ######################
+@each $breakpoint in map-keys($grid-breakpoints) {
+
+    @include media-breakpoint-up($breakpoint) {
+
+        $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
+
+        .position#{$infix}-relative {
+            position: relative;
+        }
+
+        .position#{$infix}-absolute {
+            position: absolute;
+        }
+
+        .position#{$infix}-static {
+            position: static;
+        }
+    }
+}
+
+// ####################################
+// ABSOLUTE POSITION ALIGNMENT HELPERS
+// ####################################
+@each $breakpoint in map-keys($grid-breakpoints) {
+
+    @include media-breakpoint-up($breakpoint) {
+
+        $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
+
+        .align#{$infix}-top {
+            top: 0;
+        }
+
+        .align#{$infix}-right {
+            right: 0;
+        }
+
+        .align#{$infix}-bottom {
+            bottom: 0;
+        }
+
+        .align#{$infix}-left {
+            left: 0;
+        }
+    }
+}
+
+// ######################
+// SIZE HELPERS
+// ######################
+@each $prop, $abbrev in (height: h, width: w) {
+
+    @for $index from 0 through 180 {
+        $size: $index * 4;
+        $length: #{$size}px;
+
+        .#{$abbrev}-#{$size} {
+            #{$prop}: $length !important;
+            min-#{$prop}: $length !important;
+            max-#{$prop}: $length !important;
+        }
+    }
+
+    // Percentage
+    @for $i from 0 through 20 {
+        $i-p: 5 * $i;
+        $size-p: 5% * $i;
+
+        .#{$abbrev}-#{$i-p}-p {
+            #{$prop}: $size-p !important;
+        }
+    }
+}
+
+// ######################
+// SPACING HELPERS
+// ######################
+@each $breakpoint in map-keys($grid-breakpoints) {
+
+    @include media-breakpoint-up($breakpoint) {
+
+        $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
+
+        @each $prop, $abbrev in (margin: m, padding: p) {
+
+            @for $index from 0 through 64 {
+                $size: $index * 4;
+                $length: #{$size}px;
+
+                .#{$abbrev}#{$infix}-#{$size} {
+                    #{$prop}: $length !important;
+                }
+            }
+
+            @for $index from 0 through 64 {
+                $size: $index * 4;
+                $length: #{$size}px;
+
+                .#{$abbrev}x#{$infix}-#{$size} {
+                    #{$prop}-right: $length !important;
+                    #{$prop}-left: $length !important;
+                }
+
+                .#{$abbrev}y#{$infix}-#{$size} {
+                    #{$prop}-top: $length !important;
+                    #{$prop}-bottom: $length !important;
+                }
+            }
+
+            @for $index from 0 through 64 {
+                $size: $index * 4;
+                $length: #{$size}px;
+
+                .#{$abbrev}t#{$infix}-#{$size} {
+                    #{$prop}-top: $length !important;
+                }
+
+                .#{$abbrev}r#{$infix}-#{$size} {
+                    #{$prop}-right: $length !important;
+                }
+
+                .#{$abbrev}b#{$infix}-#{$size} {
+                    #{$prop}-bottom: $length !important;
+                }
+
+                .#{$abbrev}l#{$infix}-#{$size} {
+                    #{$prop}-left: $length !important;
+                }
+            }
+
+            @if ($abbrev == m) {
+
+                // Some special margin utils for flex alignments
+                .m#{$infix}-auto {
+                    margin: auto !important;
+                }
+
+                .mt#{$infix}-auto {
+                    margin-top: auto !important;
+                }
+
+                .mr#{$infix}-auto {
+                    margin-right: auto !important;
+                }
+
+                .mb#{$infix}-auto {
+                    margin-bottom: auto !important;
+                }
+
+                .ml#{$infix}-auto {
+                    margin-left: auto !important;
+                }
+
+                .mx#{$infix}-auto {
+                    margin-right: auto !important;
+                    margin-left: auto !important;
+                }
+
+                .my#{$infix}-auto {
+                    margin-top: auto !important;
+                    margin-bottom: auto !important;
+                }
+            }
+        }
+    }
+}
+
+// ######################
+// BORDER HELPERS
+// ######################
+$border-style: 1px solid rgba(0, 0, 0, 0.12);
+
+.border,
+.b {
+    border: $border-style;
+}
+
+.border-top,
+.bt {
+    border-top: $border-style;
+}
+
+.border-right,
+.br {
+    border-right: $border-style;
+}
+
+.border-bottom,
+.bb {
+    border-bottom: $border-style;
+}
+
+.border-left,
+.bl {
+    border-left: $border-style;
+}
+
+.border-horizontal,
+.b-x {
+    border-left: $border-style;
+    border-right: $border-style;
+}
+
+.border-vertical,
+.by {
+    border-top: $border-style;
+    border-bottom: $border-style;
+}
+
+// ######################
+// BORDER RADIUS HELPERS
+// ######################
+.border-radius-100 {
+    border-radius: 100%;
+}
+
+.border-radius-2 {
+    border-radius: 2px;
+}
+
+.border-radius-4 {
+    border-radius: 4px;
+}
+
+.border-radius-8 {
+    border-radius: 8px;
+}
+
+.border-radius-16 {
+    border-radius: 16px;
+}
+
+// ######################
+// CURSOR HELPERS
+// ######################
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.cursor-default {
+    cursor: default;
+}

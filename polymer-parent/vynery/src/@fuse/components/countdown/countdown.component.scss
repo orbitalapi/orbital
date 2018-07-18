@@ -1,0 +1,30 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+
+    .fuse-countdown {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+
+        .time {
+            display: flex;
+            flex-direction: column;
+            padding: 0 12px;
+
+            .value {
+                font-size: 34px;
+                line-height: 34px;
+                padding-bottom: 8px;
+            }
+
+            .title {
+                color: rgba(0, 0, 0, 0.54);
+            }
+        }
+    }
+}

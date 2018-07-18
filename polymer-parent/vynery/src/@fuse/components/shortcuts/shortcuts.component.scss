@@ -1,0 +1,26 @@
+@import 'src/@fuse/scss/fuse';
+
+:host {
+
+    @include media-breakpoint-down('sm') {
+
+        #fuse-shortcuts {
+
+            &.show-mobile-panel {
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                z-index: 99;
+                padding: 0 8px;
+
+                .shortcuts {
+                    display: flex !important;
+                    flex: 1;
+                    height: 100%;
+                }
+            }
+        }
+    }
+}
