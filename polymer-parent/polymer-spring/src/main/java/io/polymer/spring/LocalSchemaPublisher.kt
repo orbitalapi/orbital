@@ -12,10 +12,6 @@ class LocalSchemaPublisher(val schemaName: String,
                            val localTaxiSchemaProvider: LocalTaxiSchemaProvider,
                            val schemaStoreClient: SchemaStoreClient) {
    private var startupPublishTriggered:Boolean = false
-   @PostConstruct
-   fun onPC() {
-      log().info("PostConstruct")
-   }
 
    @EventListener
    fun handleEvent(event: ContextRefreshedEvent) {

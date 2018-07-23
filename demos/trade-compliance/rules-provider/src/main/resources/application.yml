@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: rules-provider
+eureka:
+   client:
+      registryFetchIntervalSeconds: 1
+      initialInstanceInfoReplicationIntervalSeconds: 5
+      serviceUrl:
+         defaultZone: ${eureka.uri:http://127.0.0.1:8761}/eureka/
+   instance:
+      leaseRenewalIntervalInSeconds: 2
+      leaseExpirationDurationInSeconds: 5
+polymer:
+   schemaStore:
+      name: discovery
+   schema:
+      name: ${spring.application.name}
+      version: 0.1.0
+logging:
+  level:
+      io.polymer: DEBUG
+      io.osmosis: DEBUG
+ribbon:
+   restclient:
+      enabled: true
+   ServerListRefreshInterval: 1000
+server:
+  port: 9101
