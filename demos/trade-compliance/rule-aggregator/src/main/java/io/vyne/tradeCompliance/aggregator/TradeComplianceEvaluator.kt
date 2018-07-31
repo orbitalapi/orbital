@@ -1,9 +1,12 @@
-package io.vyne.tradeCompliance
+package io.vyne.tradeCompliance.aggregator
 
 import io.osmosis.polymer.models.json.addAnnotatedInstance
 import io.polymer.spring.EnablePolymer
 import io.polymer.spring.PolymerFactory
 import io.polymer.spring.RemoteSchemaStoreType
+import io.vyne.tradeCompliance.TradeRequest
+import io.vyne.tradeCompliance.TypeAliases
+import lang.taxi.TypeAliasRegistry
 import lang.taxi.annotations.Operation
 import lang.taxi.annotations.Service
 import org.springframework.boot.SpringApplication
@@ -21,6 +24,7 @@ class TradeComplianceEvaluatorApp {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
+         TypeAliasRegistry.register(TypeAliases::class, io.vyne.tradeCompliance.aggregator.TypeAliases::class)
          SpringApplication.run(TradeComplianceEvaluatorApp::class.java, *args)
       }
    }
@@ -44,19 +48,3 @@ class TradeComplianceEvaluator(
       return TradeComplianceResult(ruleEvaluations)
    }
 }
-
-typealias RuleEvaluationResults = List<RuleEvaluationResult>
-
-
-data class TradeComplianceResult(
-   val results: List<RuleEvaluationResult>
-) {
-   val status: TradeComplianceStatus = when {
-      results.any { it.status == RagStatus.RED } -> RagStatus.RED
-      results.any { it.status == RagStatus.AMBER } -> RagStatus.AMBER
-      else -> RagStatus.GREEN
-   }
-
-}
-
-typealias TradeComplianceStatus = RagStatus

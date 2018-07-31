@@ -17,6 +17,8 @@ enum class RagStatus {
    AMBER,
    GREEN;
 }
+
+@DataType("io.vyne.RuleEvaluationStatus")
 typealias RuleEvaluationStatus = RagStatus
 
 @DataType("io.vyne.Money")
@@ -35,16 +37,40 @@ typealias TraderMaxTradeValue = Money
 @DataType
 typealias CountryCode = String
 
-@DataType("foo.traderJuris")
+@DataType("io.vyne.TraderJurisdiction")
 typealias TraderJurisdiction = CountryCode
 
-@DataType
+@DataType("io.vyne.ClientJurisdiction")
 typealias ClientJurisdiction = CountryCode
 
+@DataType("io.vyne.Username")
+typealias Username = String
+
+data class User(
+   val username: Username,
+   val jurisdiction: CountryCode
+)
+
+@DataType("io.vyne.ClientId")
+typealias ClientId = String
+
+data class Client(
+   val id: ClientId,
+   val name: String,
+   val jurisdiction: ClientJurisdiction
+)
+
+@DataType("io.vyne.TradeNotional")
+typealias TradeNotional = BigDecimal
+
+@DataType("io.vyne.Price")
+typealias Price = Money
 
 @DataType
 data class TradeRequest(
-   @field:DataType("io.vyne.TradeNotional")
-   val notional: BigDecimal
+   val notional: TradeNotional,
+   val clientId: ClientId,
+   val traderId: Username,
+   val price: Price
 )
 

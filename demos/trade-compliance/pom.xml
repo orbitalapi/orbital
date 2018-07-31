@@ -16,6 +16,8 @@
       <module>rule-aggregator</module>
       <module>rules-provider</module>
       <module>common</module>
+      <module>feature-test</module>
+      <module>services</module>
    </modules>
 
 </project>
