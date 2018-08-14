@@ -1,11 +1,11 @@
-namespace io.vyne.tradeCompliance.aggregator {
+namespace io.vyne {
 
     type TradeComplianceResult {
-        status : io.vyne.tradeCompliance.TradeComplianceStatus
+        status : io.vyne.TradeComplianceStatus
         results : RuleEvaluationResults
     }
 
-    type alias RuleEvaluationResults as io.vyne.tradeCompliance.rules.RuleEvaluationResult[]
+    type alias RuleEvaluationResults as io.vyne.RuleEvaluationResult[]
 
      type TradeRequest {
         notional : io.vyne.TradeNotional
@@ -19,9 +19,6 @@ namespace io.vyne.tradeCompliance.aggregator {
         @HttpOperation(method = "POST" , url = "/tradeCompliance")
         operation evaluate( @RequestBody TradeRequest ) : TradeComplianceResult
     }
-}
-
-namespace io.vyne.tradeCompliance {
 
     enum RagStatus {
         RED,
@@ -33,11 +30,7 @@ namespace io.vyne.tradeCompliance {
     type alias TradeComplianceStatus as RagStatus
 
 
-}
-
-namespace io.vyne {
-
-    type alias RuleEvaluationStatus as io.vyne.tradeCompliance.RagStatus
+    type alias RuleEvaluationStatus as io.vyne.RagStatus
 
     type alias TradeNotional as Decimal
 
@@ -57,22 +50,18 @@ namespace io.vyne {
     type alias Price as Money
 
 
-}
-
-namespace io.vyne.tradeCompliance.rules {
-
-    type JuridsictionRuleRequest {
+    parameter type JurisdictionRuleRequest {
         clientJurisdiction : io.vyne.ClientJurisdiction
         traderJurisdiction : io.vyne.TraderJurisdiction
     }
 
-     type NotionalLimitRuleRequest {
+     parameter type NotionalLimitRuleRequest {
         notional : Decimal
     }
 
-     type TradeValueRuleRequest {
-        tradeValue : io.vyne.tradeCompliance.TradeValue
-        traderLimit : io.vyne.tradeCompliance.TraderMaxTradeValue
+     parameter type TradeValueRuleRequest {
+        tradeValue : io.vyne.TradeValue
+        traderLimit : io.vyne.TraderMaxTradeValue
     }
 
      type RuleEvaluationResult {
@@ -83,8 +72,9 @@ namespace io.vyne.tradeCompliance.rules {
 
     @ServiceDiscoveryClient(serviceName = "rules-provider")
     service JurisdictionRuleService {
+        @StubResponse("jurisdictionRuleService")
         @HttpOperation(method = "POST" , url = "/rules/jurisdiction")
-        operation evaluate( @RequestBody JuridsictionRuleRequest ) : RuleEvaluationResult
+        operation evaluate( @RequestBody JurisdictionRuleRequest ) : RuleEvaluationResult
     }
     @ServiceDiscoveryClient(serviceName = "rules-provider")
     service NotionalLimitRuleService {
@@ -96,9 +86,8 @@ namespace io.vyne.tradeCompliance.rules {
         @HttpOperation(method = "POST" , url = "")
         operation evaluate( @RequestBody TradeValueRuleRequest ) : RuleEvaluationResult
     }
-}
 
-namespace io.vyne {
+    // type alias JurisdictionRuleResult as RuleEvaluationResult
 
     type alias ClientJurisdiction as String
 
@@ -113,12 +102,7 @@ namespace io.vyne {
 
     type alias MoneyAmount as Decimal
 
-    type alias RuleEvaluationStatus as io.vyne.tradeCompliance.RagStatus
-
-
-}
-
-namespace io.vyne.tradeCompliance {
+    type alias RuleEvaluationStatus as io.vyne.RagStatus
 
     type alias TradeValue as io.vyne.Money
 
@@ -131,21 +115,11 @@ namespace io.vyne.tradeCompliance {
         GREEN
     }
 
-
-}
-
-namespace io.vyne {
-
     type alias ClientId as String
 
     type alias ClientJurisdiction as String
 
     type alias Username as String
-
-
-}
-
-namespace io.vyne.demos.tradeCompliance.services {
 
     type Client {
         id : io.vyne.ClientId
@@ -161,9 +135,9 @@ namespace io.vyne.demos.tradeCompliance.services {
 
     }
 
-     type User {
+     type Trader {
         username : io.vyne.Username
-        jurisdiction : io.vyne.tradeCompliance.CountryCode
+        jurisdiction : TraderJurisdiction
     }
 
      type TraderService {
@@ -178,11 +152,8 @@ namespace io.vyne.demos.tradeCompliance.services {
     @ServiceDiscoveryClient(serviceName = "services")
     service TraderService {
         @HttpOperation(method = "GET" , url = "/traders/{io.vyne.Username}")
-        operation getTrader(  io.vyne.Username ) : User
+        operation getTrader(  io.vyne.Username ) : Trader
     }
-}
-
-namespace io.vyne.tradeCompliance {
 
     type alias CountryCode as String
 

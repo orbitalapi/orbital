@@ -17,6 +17,9 @@ interface QueryEngine {
    fun find(target: QuerySpecTypeNode, factSet: Set<TypedInstance> = emptySet()): QueryResult
    fun find(target: Set<QuerySpecTypeNode>, factSet: Set<TypedInstance> = emptySet()): QueryResult
    fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult
+
+   fun gather(queryString: String, factSet: Set<TypedInstance> = emptySet()): QueryResult
+
    fun queryContext(factSet: Set<TypedInstance> = emptySet()): QueryContext
 }
 
@@ -41,12 +44,22 @@ class StatefulQueryEngine(initialState: Set<TypedInstance>, private val queryEng
 }
 
 class DefaultQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val profiler: QueryProfiler = QueryProfiler()) : QueryEngine {
+
+   private val queryParser = QueryParser(schema)
+   override fun gather(queryString: String, factSet: Set<TypedInstance>): QueryResult {
+      // First pass impl.
+      // Thinking here is that if I can add a new Hipster strategy that discovers all the
+      // endpoints, then I can compose a result of gather() from multiple finds()
+      val gatherQuery = queryParser.parse(queryString).map { it.copy(mode = QueryMode.GATHER) }.toSet()
+      return find(gatherQuery, factSet)
+   }
+
    override fun queryContext(factSet: Set<TypedInstance>): QueryContext {
       return QueryContext.from(schema, factSet, this, profiler)
    }
 
    override fun find(queryString: String, factSet: Set<TypedInstance>): QueryResult {
-      val target = QueryParser(schema).parse(queryString)
+      val target = queryParser.parse(queryString)
       return find(target, factSet)
    }
 
@@ -62,7 +75,7 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
       try {
          return doFind(target, context)
       } catch (e: Exception) {
-         throw SearchRuntimeException(e,context.profiler.root)
+         throw SearchRuntimeException(e, context.profiler.root)
       }
    }
 
@@ -94,7 +107,7 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
          }
       }
       if (unresolvedNodes().isNotEmpty()) {
-         log().error("The following nodes weren't matched: ${unresolvedNodes().joinToString { ", " }}")
+         log().error("The following nodes weren't matched: ${unresolvedNodes().joinToString(", ")}")
       }
       //      TODO("Rebuild Path")
       return QueryResult(matchedNodes, unresolvedNodes().toSet(), path = null, profilerOperation = context.profiler.root)

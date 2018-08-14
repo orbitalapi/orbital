@@ -12,9 +12,13 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
 
    val invocations = mutableMapOf<String, List<TypedInstance>>()
 
-   override fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>, profiler:ProfilerOperation): TypedInstance {
-      val metadata = operation.metadata("StubResponse")
-      val stubResponseKey = (metadata.params["value"] as String?).orElse(operation.name)
+   override fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>, profiler: ProfilerOperation): TypedInstance {
+      val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
+         val metadata = operation.metadata("StubResponse")
+         (metadata.params["value"] as String?).orElse(operation.name)
+      } else {
+         operation.name
+      }
       invocations.put(stubResponseKey, parameters)
 
       if (!responses.containsKey(stubResponseKey)) {
@@ -29,7 +33,11 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
    }
 
    override fun canSupport(service: Service, operation: Operation): Boolean {
-      return operation.metadata.any { it.name.name == "StubResponse" }
+      // TODO : why did I need to do this?
+      // This was working by using annotations on the method to indicate that there was a stub response
+      // Why do I care about that?  I could just use the method name as a default?!
+      // I've changed this to look for a match with responses against the method name - revert if that turns out to be dumb.
+      return operation.metadata.any { it.name.name == "StubResponse" } || this.responses.containsKey(operation.name)
    }
 
 

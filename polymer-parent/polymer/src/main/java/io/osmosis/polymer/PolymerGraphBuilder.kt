@@ -10,7 +10,7 @@ import io.osmosis.polymer.utils.log
 enum class ElementType {
    TYPE,
    MEMBER,
-   SERVICE,
+   OPERATION,
    // An instance is something we have a real actual instance of.
    // These are available before a search is commenced.
 //   INSTANCE,
@@ -32,7 +32,7 @@ enum class ElementType {
 }
 
 
-data class Element(val value: Any, val elementType: ElementType, val instanceValue:Any? = null) {
+data class Element(val value: Any, val elementType: ElementType, val instanceValue: Any? = null) {
 
    fun graphNode(): Element {
 //      return if (this.elementType == ElementType.INSTANCE) {
@@ -54,14 +54,19 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
    }
 }
 
-fun Type.asElement():Element = type(this)
+fun Type.asElement(): Element = type(this)
 
 fun type(name: String) = Element(name, ElementType.TYPE)
 fun type(type: Type) = type(type.fullyQualifiedName)
 fun member(name: String) = Element(name, ElementType.MEMBER)
-fun parameter(paramTypeFqn:String) = Element("param/$paramTypeFqn", ElementType.PARAMETER)
-fun operation(name: String) = Element(name, ElementType.SERVICE)
-fun providedInstance(name: String, value:Any? = null) = Element(name, ElementType.TYPE_INSTANCE, value)
+fun parameter(paramTypeFqn: String) = Element("param/$paramTypeFqn", ElementType.PARAMETER)
+fun operation(service: Service, operation: Operation): Element {
+   val operationReference = "${service.qualifiedName}@@${operation.name}"
+   return operation(operationReference)
+}
+
+fun operation(name: String) = Element(name, ElementType.OPERATION)
+fun providedInstance(name: String, value: Any? = null) = Element(name, ElementType.TYPE_INSTANCE, value)
 fun providedInstanceMember(name: String) = Element(name, ElementType.PROVIDED_INSTANCE_MEMBER)
 fun instance(value: TypedInstance) = providedInstance(value.type.fullyQualifiedName) // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
 
@@ -80,7 +85,7 @@ class PolymerGraphBuilder(val schema: Schema) {
    private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, facts: Set<TypedInstance>, schema: Schema, typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement>) {
       facts.forEach { typedInstance ->
          val typeFqn = typedInstance.type.fullyQualifiedName
-         appendProvidedInstances(builder,typeFqn,schema)
+         appendProvidedInstances(builder, typeFqn, schema)
 //         val providedInstance = providedInstance(typeFqn)
 ////         val instance = instance(typedInstance)
 //         builder.connect(providedInstance).to(type(typedInstance.type)).withEdge(Relationship.IS_INSTANCE_OF)
@@ -111,7 +116,7 @@ class PolymerGraphBuilder(val schema: Schema) {
             // migrating this relationship to an INSTNACE_OF node.
 //            builder.connect(attributeTypeNode).to(attributeNode).withEdge(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
          }
-         log().debug("Added attribute ${type.name} to graph")
+//         log().debug("Added attribute ${type.name} to graph")
       }
       return typesAndWhereTheyreUsed
    }
@@ -123,8 +128,7 @@ class PolymerGraphBuilder(val schema: Schema) {
    private fun appendServices(builder: HipsterGraphBuilder<Element, Relationship>, schema: Schema, typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement>) {
       return schema.services.forEach { service: Service ->
          service.operations.forEach { operation: Operation ->
-            val operationReference = "${service.qualifiedName}@@${operation.name}"
-            val operationNode = operation(operationReference)
+            val operationNode = operation(service, operation)
             operation.parameters.forEachIndexed { index, parameter ->
                // When building services, we need to use 'connector nodes'
                // as Hipster4J doesn't support identical vertex pairs with seperate edges.
@@ -154,7 +158,7 @@ class PolymerGraphBuilder(val schema: Schema) {
             appendProvidedInstances(builder, resultInstanceFqn, schema, operationNode)
 
 
-            log().debug("Added Operation $operationReference to graph")
+            log().debug("Added Operation ${operationNode.value} to graph")
          }
       }
    }
@@ -164,7 +168,7 @@ class PolymerGraphBuilder(val schema: Schema) {
     * It's return type is created as an instance:type, and all the parameters of the return type
     * are also mapped as providedInstanceMembers() and instance:types.
     */
-   private fun appendProvidedInstances(builder: HipsterGraphBuilder<Element, Relationship>, instanceFqn: String, schema: Schema, provider:Element? = null) {
+   private fun appendProvidedInstances(builder: HipsterGraphBuilder<Element, Relationship>, instanceFqn: String, schema: Schema, provider: Element? = null) {
       val providedInstance = providedInstance(instanceFqn)
       if (provider != null) {
          builder.connect(provider).to(providedInstance).withEdge(Relationship.PROVIDES)
@@ -175,7 +179,7 @@ class PolymerGraphBuilder(val schema: Schema) {
       appendInstanceAttributes(schema, instanceFqn, builder, providedInstance)
    }
 
-   private fun appendInstanceAttributes(schema: Schema, instanceFqn: String,  builder: HipsterGraphBuilder<Element, Relationship>, providedInstance: Element) {
+   private fun appendInstanceAttributes(schema: Schema, instanceFqn: String, builder: HipsterGraphBuilder<Element, Relationship>, providedInstance: Element) {
       schema.type(instanceFqn).attributes.forEach { attributeName, typeReference ->
          val providedInstanceMember = providedInstanceMember(attributeFqn(instanceFqn, attributeName))
          builder.connect(providedInstance).to(providedInstanceMember).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)

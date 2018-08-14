@@ -39,11 +39,15 @@ interface QueryEngineFactory {
       }
 
       fun withOperationInvokers(invokers: List<OperationInvoker>): QueryEngineFactory {
+         val edgeEvaluator = EdgeNavigator(edgeEvaluators(invokers))
+         val graphQueryStrategy = HipsterDiscoverGraphQueryStrategy(
+            edgeEvaluator
+         )
          return DefaultQueryEngineFactory(
-            strategies = listOf(ModelsScanStrategy(),
-               HipsterGraphQueryStrategy(
-                  EdgeNavigator(edgeEvaluators(invokers))
-               )
+            strategies = listOf(
+               ModelsScanStrategy(),
+               graphQueryStrategy,
+               HipsterGatherGraphQueryStrategy(graphQueryStrategy)
             )
          )
       }
@@ -58,7 +62,7 @@ interface QueryEngineFactory {
             OperationInvocationEvaluator(invokers))
       }
 
-      private fun edgeEvaluators(invokers: List<OperationInvoker>): List<EdgeEvaluator> {
+      fun edgeEvaluators(invokers: List<OperationInvoker>): List<EdgeEvaluator> {
          return listOf(RequiresParameterEdgeEvaluator(),
             AttributeOfEdgeEvaluator(),
             IsTypeOfEdgeEvaluator(),

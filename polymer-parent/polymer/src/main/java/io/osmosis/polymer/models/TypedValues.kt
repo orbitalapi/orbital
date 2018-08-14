@@ -8,6 +8,10 @@ interface TypedInstance {
    val type: Type
    val value: Any
 
+   // It's up to instances of this to reconstruct themselves with their type
+   // set to the value of the typeAlias.
+   fun withTypeAlias(typeAlias: Type): TypedInstance
+
    fun toRawObject(): Any {
 
       val unwrapMap = { valueMap: Map<String, Any> ->
@@ -21,7 +25,7 @@ interface TypedInstance {
 
       when (value) {
          is Map<*, *> -> return unwrapMap(value as Map<String, Any>)
-      // TODO : There's likely other types that need unwrapping
+         // TODO : There's likely other types that need unwrapping
          else -> return value
       }
    }
@@ -75,11 +79,16 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
       return get(key) as TypedObject
    }
 
+   override fun withTypeAlias(typeAlias: Type): TypedInstance {
+      return TypedObject(typeAlias, value)
+   }
+
    // TODO : Needs a test
    override operator fun get(key: String): TypedInstance {
       val parts = key.split(".").toMutableList()
       val thisFieldName = parts.removeAt(0)
-      val attributeValue = this.value[thisFieldName] ?: error("No attribute named $thisFieldName found on this type (${type.name})")
+      val attributeValue = this.value[thisFieldName]
+         ?: error("No attribute named $thisFieldName found on this type (${type.name})")
 
       if (parts.isEmpty()) {
          return attributeValue
@@ -98,5 +107,15 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
    }
 }
 
-data class TypedValue(override val type: Type, override val value: Any) : TypedInstance
-data class TypedCollection(override val type: Type, override val value: List<TypedInstance>) : List<TypedInstance> by value, TypedInstance
+data class TypedValue(override val type: Type, override val value: Any) : TypedInstance {
+   override fun withTypeAlias(typeAlias: Type): TypedInstance {
+      return TypedValue(typeAlias, value)
+   }
+
+}
+
+data class TypedCollection(override val type: Type, override val value: List<TypedInstance>) : List<TypedInstance> by value, TypedInstance {
+   override fun withTypeAlias(typeAlias: Type): TypedInstance {
+      return TypedCollection(typeAlias, value)
+   }
+}

@@ -36,7 +36,8 @@ interface ModelContainer : SchemaContainer {
 class Polymer(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFactory, private val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) : ModelContainer {
    private val schemas = mutableListOf<Schema>()
    private val models = mutableSetOf<TypedInstance>()
-   private var graph = GraphBuilder.create<Element, Relationship>().createDirectedGraph()
+   var graph = GraphBuilder.create<Element, Relationship>().createDirectedGraph()
+      private set;
 
    override var schema: Schema = compositeSchemaBuilder.aggregate(schemas)
       private set
@@ -55,18 +56,19 @@ class Polymer(schemas: List<Schema>, private val queryEngineFactory: QueryEngine
    override fun addModel(model: TypedInstance): Polymer {
       log().debug("Added model instance to context: $model")
       models.add(model)
+      resetGraph()
       return this
    }
 
    fun addSchema(schema: Schema): Polymer {
       schemas.add(schema)
       this.schema = CompositeSchema(schemas)
-      resetGraph(schema)
+      resetGraph()
       return this
    }
 
-   private fun resetGraph(schema: Schema) {
-      this.graph = PolymerGraphBuilder(schema).build()
+   private fun resetGraph() {
+      this.graph = PolymerGraphBuilder(schema).build(models)
    }
 
 

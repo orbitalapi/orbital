@@ -10,7 +10,7 @@ import * as _ from "lodash";
 @Injectable()
 export class TypesService {
 
-   schema: Schema
+   schema: Schema;
    constructor(private http: Http) {
       this.getTypes().subscribe(schema => {
          this.schema = schema;
@@ -21,18 +21,18 @@ export class TypesService {
       return this.http
          .get(`http://localhost:9022/schemas/raw`)
          .map ( result => result.text() )
-   }
+   };
 
    getLinksForNode = (node: SchemaGraphNode):Observable<SchemaGraph> => {
       return this.http
          .get(`http://localhost:9022/nodes/${node.type}/${node.nodeId}/links`)
          .map( result => result.json() as SchemaGraph)
-   }
+   };
    getLinks = (typeName: string): Observable<SchemaGraph> => {
       return this.http
          .get(`http://localhost:9022/types/${typeName}/links`)
          .map( result => result.json() as SchemaGraph )
-   }
+   };
 
    getTypes = (): Observable<Schema> => {
       if (this.schema) {
@@ -42,8 +42,8 @@ export class TypesService {
          // .get("api/types")
          .get("http://localhost:9022/types")
          .map(res => {
-            let schema = res.json() as Schema
-            schema.types = _.sortBy(schema.types, [(t) => { return t.name.fullyQualifiedName }])
+            let schema = res.json() as Schema;
+            schema.types = _.sortBy(schema.types, [(t) => { return t.name.fullyQualifiedName }]);
             return schema
          }
          );
@@ -143,7 +143,7 @@ export class SchemaGraph {
    ) {}
 
    add(other:SchemaGraph) {
-      this.mergeToMap(other.nodes, this.nodes)
+      this.mergeToMap(other.nodes, this.nodes);
       this.mergeToMap(other.links, this.links)
    }
 

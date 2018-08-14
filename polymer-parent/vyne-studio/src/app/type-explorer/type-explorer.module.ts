@@ -8,12 +8,13 @@ import { CommonApiModule } from 'app/common-api/common-api.module';
 import { Nl2BrPipe } from "nl2br-pipe";
 import { NgxChartsDagModule } from '@swimlane/ngx-charts-dag';
 import { TooltipModule } from "ngx-tooltip";
-import { TypeLinksGraphComponent } from './type-links-graph.component';
+import { TypeLinksGraphComponent } from '../type-graph/type-links-graph.component';
+import {TypeGraphModule} from "../type-graph/type-graph.module";
 
 const TYPE_EXPLORER_ROUTE = [{ path: '', component: TypeExplorerComponent }];
 
 @NgModule({
-   declarations: [TypeExplorerComponent, Nl2BrPipe, TypeLinksGraphComponent],
+   declarations: [TypeExplorerComponent, Nl2BrPipe],
    imports: [
       CommonModule,
       CommonApiModule,
@@ -21,6 +22,7 @@ const TYPE_EXPLORER_ROUTE = [{ path: '', component: TypeExplorerComponent }];
       Ng2SearchPipeModule,
       NgxChartsDagModule,
       TooltipModule,
+      TypeGraphModule,
       RouterModule.forChild(TYPE_EXPLORER_ROUTE)
    ],
    providers: []

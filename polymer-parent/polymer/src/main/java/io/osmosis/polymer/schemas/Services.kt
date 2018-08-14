@@ -138,11 +138,13 @@ interface OutputConstraint : Constraint
 interface Constraint
 
 interface MetadataTarget {
-   val metadata : List<Metadata>
+   val metadata: List<Metadata>
    fun metadata(name: String): Metadata {
-      return metadata.firstOrNull { it.name.fullyQualifiedName == name } ?: throw IllegalArgumentException("$name not present within this metataa")
+      return metadata.firstOrNull { it.name.fullyQualifiedName == name }
+         ?: throw IllegalArgumentException("$name not present within this metataa")
    }
-   fun hasMetadata(name : String) : Boolean {
+
+   fun hasMetadata(name: String): Boolean {
       return this.metadata.any { it.name.fullyQualifiedName == name }
    }
 }
@@ -158,7 +160,7 @@ data class Parameter(val type: Type,
 
 data class Operation(val name: String, val parameters: List<Parameter>,
                      val returnType: Type, override val metadata: List<Metadata> = emptyList(),
-                     val contract: OperationContract = OperationContract(returnType)) : MetadataTarget{
+                     val contract: OperationContract = OperationContract(returnType)) : MetadataTarget {
 
 }
 

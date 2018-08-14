@@ -16,11 +16,12 @@ data class Metadata(val name: QualifiedName, val params: Map<String, Any?> = emp
 data class TypeReference(val name: QualifiedName, val isCollection: Boolean = false, private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider()) {
    val constraints: List<Constraint>
       get() = constraintProvider.buildConstraints()
-   val fullyQualifiedName:String
+   val fullyQualifiedName: String
       get() = name.fullyQualifiedName
 
 }
-data class  QualifiedName(val fullyQualifiedName: String) : Serializable {
+
+data class QualifiedName(val fullyQualifiedName: String) : Serializable {
    val name: String
       get() = fullyQualifiedName.split(".").last()
 
@@ -30,10 +31,17 @@ data class  QualifiedName(val fullyQualifiedName: String) : Serializable {
 typealias AttributeName = String
 typealias AttributeType = QualifiedName
 typealias DeclaringType = QualifiedName
-data class Type(val name: QualifiedName, val attributes: Map<AttributeName, TypeReference> = emptyMap(), val modifiers: List<Modifier> = emptyList(),
-                val aliasForType:QualifiedName? = null, val sources:List<SourceCode> ) {
-   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType:QualifiedName? = null, sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, sources)
 
+data class Type(
+   val name: QualifiedName,
+   val attributes: Map<AttributeName, TypeReference> = emptyMap(),
+   val modifiers: List<Modifier> = emptyList(),
+   val aliasForType: QualifiedName? = null,
+   val sources: List<SourceCode>
+) {
+   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, sources)
+
+   val isTypeAlias = aliasForType != null;
    val isScalar = attributes.isEmpty()
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
 
@@ -46,14 +54,14 @@ enum class Modifier {
 }
 
 data class SourceCode(
-   val origin:String,
+   val origin: String,
    val language: String,
-   val content:String
+   val content: String
 ) {
    companion object {
-       fun undefined(language: String):SourceCode {
-          return SourceCode("Unknown", language,"")
-       }
+      fun undefined(language: String): SourceCode {
+         return SourceCode("Unknown", language, "")
+      }
    }
 }
 
@@ -63,9 +71,20 @@ interface Schema {
    // TODO : Are these still required / meaningful?
    val attributes: Set<QualifiedName>
    val links: Set<Link>
+
+   val operations: Set<Operation>
+      get() = services.flatMap { it.operations }.toSet()
+
+   fun operationsWithReturnType(returnType: Type): Set<Pair<Service, Operation>> {
+      return services.flatMap { service ->
+         service.operations.filter { it.returnType == returnType }
+            .map { service to it }
+      }.toSet()
+   }
+
    fun type(name: String): Type {
-      return this.types.firstOrNull { it.name.fullyQualifiedName == name } ?:
-         throw IllegalArgumentException("Type $name was not found within this schema")
+      return this.types.firstOrNull { it.name.fullyQualifiedName == name }
+         ?: throw IllegalArgumentException("Type $name was not found within this schema")
    }
 
    fun type(name: QualifiedName): Type {
@@ -77,8 +96,8 @@ interface Schema {
    }
 
    fun service(serviceName: String): Service {
-      return this.services.firstOrNull { it.qualifiedName == serviceName } ?:
-         throw IllegalArgumentException("Service $serviceName was not found within this schema")
+      return this.services.firstOrNull { it.qualifiedName == serviceName }
+         ?: throw IllegalArgumentException("Service $serviceName was not found within this schema")
    }
 
    fun operation(operationName: QualifiedName): Pair<Service, Operation> {
@@ -89,8 +108,8 @@ interface Schema {
       return service to service.operation(operationName)
    }
 
-   fun attribute(attributeName:String):Pair<Type,Type> {
-      val parts = attributeName.split("/").assertingThat({it.size == 2})
+   fun attribute(attributeName: String): Pair<Type, Type> {
+      val parts = attributeName.split("/").assertingThat({ it.size == 2 })
       val declaringType = type(parts[0])
       val attributeType = type(declaringType.attributes[parts[1]]!!)
 

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 
 @DataType
-data class JuridsictionRuleRequest(
+data class JurisdictionRuleRequest(
    val clientJurisdiction: ClientJurisdiction,
    val traderJurisdiction: TraderJurisdiction
 )
@@ -22,7 +22,7 @@ class JurisdictionRuleService {
 
    @PostMapping("/rules/jurisdiction")
    @Operation
-   fun evaluate(request: JuridsictionRuleRequest): RuleEvaluationResult = evaluate(
+   fun evaluate(request: JurisdictionRuleRequest): RuleEvaluationResult = evaluate(
       request.clientJurisdiction, request.traderJurisdiction
    )
 
