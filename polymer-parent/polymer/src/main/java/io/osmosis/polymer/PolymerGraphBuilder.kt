@@ -173,9 +173,15 @@ class PolymerGraphBuilder(val schema: Schema) {
       if (provider != null) {
          builder.connect(provider).to(providedInstance).withEdge(Relationship.PROVIDES)
       }
+
+      val type = schema.type(instanceFqn)
       builder.connect(providedInstance).to(type(instanceFqn)).withEdge(Relationship.IS_INSTANCE_OF)
       builder.connect(providedInstance).to(parameter(instanceFqn)).withEdge(Relationship.CAN_POPULATE)
 
+      // This instance can also populate any types that it inherits from.
+      type.inheritanceGraph.forEach { inheritedType ->
+         builder.connect(providedInstance).to(parameter(inheritedType.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
+      }
       appendInstanceAttributes(schema, instanceFqn, builder, providedInstance)
    }
 

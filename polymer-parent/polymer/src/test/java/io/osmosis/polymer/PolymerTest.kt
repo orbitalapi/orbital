@@ -46,6 +46,15 @@ service ClientService {
    fun queryContext(): QueryContext = polymer().query().queryContext()
 }
 
+fun testPolymer(schema: TaxiSchema): Pair<Polymer, StubService> {
+   val stubService = StubService()
+   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+   val polymer = Polymer(queryEngineFactory).addSchema(schema)
+   return polymer to stubService
+}
+
+fun testPolymer(schema: String) = testPolymer(TaxiSchema.from(schema))
+
 class PolymerTest {
 
 
@@ -165,7 +174,35 @@ class PolymerTest {
 //      expect(result.result).to.equal("Jimmy's Choos")
    }
 
+   @Test
+   fun typeInheritsCanBeUsedInSingleDirectionToAssignValues() {
+      val schema = """
+          type Money {
+            amount:String
+          }
+          type TradeValue inherits Money {}
 
+          type alias HoldReceipt as String
+          service LedgerService {
+            operation holdFunds(Money):HoldReceipt
+          }
+      """.trimIndent()
+
+      // In the above, I should be able to get a HoldReceipt by calling
+      // holdFunds() using the TradeValue, which is a type of Money
+
+      val (polymer, stubService) = testPolymer(schema)
+      val tradeValue = polymer.typedValue("TradeValue", "$2.00")
+      stubService.addResponse("holdFunds", polymer.typedValue("HoldReceipt", "held-123"))
+      val result = polymer.query().find("HoldReceipt", setOf(tradeValue))
+
+      expect(result.isFullyResolved).to.be.`true`
+      expect(result["HoldReceipt"]!!.value).to.equal("held-123")
+   }
+}
+
+fun Polymer.typedValue(typeName: String, value: Any): TypedValue {
+   return TypedValue(this.getType(typeName), value)
 }
 
 

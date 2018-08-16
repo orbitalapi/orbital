@@ -85,29 +85,41 @@ class ParameterFactory {
    private fun attemptToConstruct(paramType: Type, context: QueryContext, typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
       val fields = paramType.attributes.map { (attributeName, attributeTypeRef) ->
          val attributeType = context.schema.type(attributeTypeRef.name)
+
+         // THIS IS WHERE I'M UP TO.
+         // Try restructing this to a strategy approach.
+         // Can we try searching within the context before we try constructing?
+         // what are the impacts?
+         var attributeValue : TypedInstance? = null
+
+         // First, look in the context to see if it's there.
          if (context.hasFactOfType(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
-            attributeName to context.getFact(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
-         } else if (!attributeType.isScalar && !typesCurrentlyUnderConstruction.contains(attributeType)) {
-            // TODO : This could be a bad idea.
-            // This is ignoring the concept of Parameter types -- so maybe they're not a good idea?
-            log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} not present within the context.  Attempting to construct one.")
-            val constructedType = attemptToConstruct(attributeType, context, typesCurrentlyUnderConstruction = typesCurrentlyUnderConstruction + attributeType)
-            log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} constructed: $constructedType")
-            attributeName to constructedType
+            attributeValue = context.getFact(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
          } else {
-            // TODO : This could cause a stack overflow / infinite loop.
-            // Consider making the context aware of what searches are currently taking place,
-            // and returning a failed result in the case of a duplicate search
-            log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} not present within the context, and not constructable - initiating a query to attempt to resolve it")
+
+            // ... if not, try and find the value in the graph
             val queryResult = context.find(QuerySpecTypeNode(attributeType), context.facts)
-            if (!queryResult.isFullyResolved) {
-               throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ", context.evaluatedPath(), context.profiler.root)
+            if (queryResult.isFullyResolved) {
+               attributeValue = queryResult[attributeType] ?:
+               // TODO : This might actually be legal, as it could be valid for a value to resolve to null
+               throw IllegalArgumentException("Expected queryResult to return attribute with type ${attributeType.fullyQualifiedName} but the returned value was null")
             } else {
-               attributeName to (queryResult[attributeType] ?:
-                  // TODO : This might actually be legal, as it could be valid for a value to resolve to null
-                  throw IllegalArgumentException("Expected queryResult to return attribute with type ${attributeType.fullyQualifiedName} but the returned value was null"))
+               // ... finally, try constructing the value...
+               if (!attributeType.isScalar && !typesCurrentlyUnderConstruction.contains(attributeType)) {
+                  log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} not present within the context.  Attempting to construct one.")
+                  val constructedType = attemptToConstruct(attributeType, context, typesCurrentlyUnderConstruction = typesCurrentlyUnderConstruction + attributeType)
+                  log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} constructed: $constructedType")
+                  attributeValue = constructedType
+               }
             }
          }
+
+         if (attributeValue == null) {
+            throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ", context.evaluatedPath(), context.profiler.root)
+         }
+
+         // else ... attributeValue != null -- we found it.  Good work team, move on.
+         attributeName to attributeValue
       }.toMap()
       return TypedObject(paramType, fields)
    }

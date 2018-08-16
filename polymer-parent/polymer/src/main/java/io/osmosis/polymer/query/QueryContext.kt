@@ -8,10 +8,7 @@ import io.osmosis.polymer.models.TypedObject
 import io.osmosis.polymer.models.TypedValue
 import io.osmosis.polymer.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.osmosis.polymer.query.graph.EvaluatedEdge
-import io.osmosis.polymer.schemas.Path
-import io.osmosis.polymer.schemas.Schema
-import io.osmosis.polymer.schemas.SourceCode
-import io.osmosis.polymer.schemas.Type
+import io.osmosis.polymer.schemas.*
 import io.osmosis.polymer.utils.log
 import java.util.stream.Stream
 import kotlin.streams.toList
@@ -41,7 +38,7 @@ enum class QueryMode {
    GATHER
 }
 
-data class QuerySpecTypeNode(val type: Type, val children: Set<QuerySpecTypeNode> = emptySet(), val mode:QueryMode = QueryMode.DISCOVER)
+data class QuerySpecTypeNode(val type: Type, val children: Set<QuerySpecTypeNode> = emptySet(), val mode: QueryMode = QueryMode.DISCOVER)
 
 data class QueryResult(val results: Map<QuerySpecTypeNode, TypedInstance?>, val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(), val path: Path?, val profilerOperation: ProfilerOperation? = null) {
    val isFullyResolved = unmatchedNodes.isEmpty()
@@ -93,7 +90,7 @@ data class QueryContext(override val schema: Schema, val facts: MutableSet<Typed
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 
    // Wraps all the known facts under a root node, turning it into a tree
-   private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode", sources = listOf(SourceCode.undefined("NoLang"))), facts.toList())
+   private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode".fqn(), sources = listOf(SourceCode.undefined("NoLang"))), facts.toList())
 
    /**
     * A breadth-first stream of data facts currently held in the collection.
@@ -135,7 +132,7 @@ data class QueryContext(override val schema: Schema, val facts: MutableSet<Typed
 
 enum class FactDiscoveryStrategy {
    TOP_LEVEL_ONLY {
-      override fun getFact(context: QueryContext, type: Type): TypedInstance? = context.facts.firstOrNull { it.type == type }
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedInstance? = context.facts.firstOrNull { matcher.matches(type, it.type) }
    },
 
    /**
@@ -143,9 +140,9 @@ enum class FactDiscoveryStrategy {
     * exactly one match in the context
     */
    ANY_DEPTH_EXPECT_ONE {
-      override fun getFact(context: QueryContext, type: Type): TypedInstance? {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedInstance? {
          val matches = context.modelTree()
-            .filter { it.type == type }
+            .filter { matcher.matches(type, it.type) }
             .toList()
          return when {
             matches.isEmpty() -> null
@@ -164,9 +161,9 @@ enum class FactDiscoveryStrategy {
     * one DISITNCT match within the context
     */
    ANY_DEPTH_EXPECT_ONE_DISTINCT {
-      override fun getFact(context: QueryContext, type: Type): TypedInstance? {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedInstance? {
          val matches = context.modelTree()
-            .filter { it.type == type }
+            .filter { matcher.matches(type, it.type) }
             .distinct()
             .toList()
          return when {
@@ -181,6 +178,23 @@ enum class FactDiscoveryStrategy {
    };
 
 
-   abstract fun getFact(context: QueryContext, type: Type): TypedInstance?
+   abstract fun getFact(context: QueryContext, type: Type, strictness: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): TypedInstance?
+
+}
+
+enum class TypeMatchingStrategy {
+   ALLOW_INHERITED_TYPES {
+      override fun matches(requestedType: Type, candidate: Type): Boolean {
+         return requestedType == candidate || candidate.inheritanceGraph.contains(requestedType)
+      }
+   },
+   EXACT_MATCH {
+      override fun matches(requestedType: Type, candidate: Type): Boolean {
+         return requestedType == candidate
+      }
+   };
+
+
+   abstract fun matches(requestedType: Type, candidate: Type): Boolean
 
 }

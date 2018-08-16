@@ -1,5 +1,6 @@
 package io.osmosis.polymer.schemas
 
+import io.osmosis.polymer.query.TypeMatchingStrategy
 import io.osmosis.polymer.schemas.taxi.DeferredConstraintProvider
 import io.osmosis.polymer.schemas.taxi.EmptyDeferredConstraintProvider
 import io.osmosis.polymer.utils.assertingThat
@@ -37,9 +38,10 @@ data class Type(
    val attributes: Map<AttributeName, TypeReference> = emptyMap(),
    val modifiers: List<Modifier> = emptyList(),
    val aliasForType: QualifiedName? = null,
+   val inherits: List<Type> = emptyList(),
    val sources: List<SourceCode>
 ) {
-   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, sources)
+   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, sources)
 
    val isTypeAlias = aliasForType != null;
    val isScalar = attributes.isEmpty()
@@ -47,6 +49,17 @@ data class Type(
 
    val fullyQualifiedName: String
       get() = name.fullyQualifiedName
+
+   val inheritanceGraph = calculateInheritanceGraph()
+
+   private fun calculateInheritanceGraph(typesToExclude: List<Type> = emptyList()): List<Type> {
+      val allTypesToExclude = typesToExclude + listOf(this)
+      return this.inherits.flatMap { inheritedType ->
+         if (!allTypesToExclude.contains(inheritedType)) {
+            setOf(inheritedType) + inheritedType.calculateInheritanceGraph(allTypesToExclude)
+         } else emptySet()
+      }
+   }
 }
 
 enum class Modifier {
@@ -75,9 +88,9 @@ interface Schema {
    val operations: Set<Operation>
       get() = services.flatMap { it.operations }.toSet()
 
-   fun operationsWithReturnType(returnType: Type): Set<Pair<Service, Operation>> {
+   fun operationsWithReturnType(requiredType: Type, typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Set<Pair<Service, Operation>> {
       return services.flatMap { service ->
-         service.operations.filter { it.returnType == returnType }
+         service.operations.filter { operation -> typeMatchingStrategy.matches(requiredType, operation.returnType) }
             .map { service to it }
       }.toSet()
    }

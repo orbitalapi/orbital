@@ -1,17 +1,18 @@
 namespace io.vyne {
 
     type TradeComplianceResult {
-        status : io.vyne.TradeComplianceStatus
+        status : TradeComplianceStatus
         results : RuleEvaluationResults
     }
 
-    type alias RuleEvaluationResults as io.vyne.RuleEvaluationResult[]
+    type alias RuleEvaluationResults as RuleEvaluationResult[]
 
      type TradeRequest {
-        notional : io.vyne.TradeNotional
-        clientId : io.vyne.ClientId
-        traderId : io.vyne.Username
-        price : io.vyne.Price
+        notional : TradeNotional
+        clientId : ClientId
+        traderId : Username
+        price : Price
+        tradeValue : TradeValue
     }
 
     @ServiceDiscoveryClient(serviceName = "rule-aggregator")
@@ -30,7 +31,7 @@ namespace io.vyne {
     type alias TradeComplianceStatus as RagStatus
 
 
-    type alias RuleEvaluationStatus as io.vyne.RagStatus
+    type alias RuleEvaluationStatus as RagStatus
 
     type alias TradeNotional as Decimal
 
@@ -51,43 +52,54 @@ namespace io.vyne {
 
 
     parameter type JurisdictionRuleRequest {
-        clientJurisdiction : io.vyne.ClientJurisdiction
-        traderJurisdiction : io.vyne.TraderJurisdiction
+        clientJurisdiction : ClientJurisdiction
+        traderJurisdiction : TraderJurisdiction
     }
 
      parameter type NotionalLimitRuleRequest {
-        notional : Decimal
+        notional : TradeNotional
     }
 
      parameter type TradeValueRuleRequest {
-        tradeValue : io.vyne.TradeValue
-        traderLimit : io.vyne.TraderMaxTradeValue
+        tradeValue : TradeValue(currency = "USD")
+        traderLimit : TraderMaxTradeValue
     }
 
      type RuleEvaluationResult {
         ruleId : String
-        status : io.vyne.RuleEvaluationStatus
+        status : RuleEvaluationStatus
         message : String
+    }
+
+    service RateConversionService {
+        // operation convertRates( Money, Currency ) : Money( from source, currency = targetCurrency )
+         operation convertRates( TradeValue, Currency ) : TradeValue( from source, currency = targetCurrency )
     }
 
     @ServiceDiscoveryClient(serviceName = "rules-provider")
     service JurisdictionRuleService {
         @StubResponse("jurisdictionRuleService")
         @HttpOperation(method = "POST" , url = "/rules/jurisdiction")
-        operation evaluate( @RequestBody JurisdictionRuleRequest ) : RuleEvaluationResult
+        operation evaluate( @RequestBody JurisdictionRuleRequest ) : JurisdictionRuleResult
     }
     @ServiceDiscoveryClient(serviceName = "rules-provider")
     service NotionalLimitRuleService {
+        @StubResponse("notionalLimitRuleService")
         @HttpOperation(method = "POST" , url = "/rules/notionalLimits")
-        operation evaluate( @RequestBody NotionalLimitRuleRequest ) : RuleEvaluationResult
+        operation evaluate( @RequestBody NotionalLimitRuleRequest ) : NotionalLimitRuleResult
     }
     @ServiceDiscoveryClient(serviceName = "rules-provider")
     service TradeValueRuleService {
+        @StubResponse("tradeValueRuleService")
         @HttpOperation(method = "POST" , url = "")
-        operation evaluate( @RequestBody TradeValueRuleRequest ) : RuleEvaluationResult
+        operation evaluate( @RequestBody TradeValueRuleRequest ) : TradeValueRuleResult
     }
 
-    // type alias JurisdictionRuleResult as RuleEvaluationResult
+    type TradeValueRuleResult inherits RuleEvaluationResult {}
+
+    type NotionalLimitRuleResult inherits RuleEvaluationResult {}
+
+    type JurisdictionRuleResult inherits RuleEvaluationResult {}
 
     type alias ClientJurisdiction as String
 
@@ -102,11 +114,11 @@ namespace io.vyne {
 
     type alias MoneyAmount as Decimal
 
-    type alias RuleEvaluationStatus as io.vyne.RagStatus
+    type alias RuleEvaluationStatus as RagStatus
 
-    type alias TradeValue as io.vyne.Money
+    type alias TradeValue as Money
 
-    type alias TraderMaxTradeValue as io.vyne.Money
+    type alias TraderMaxTradeValue as Money
 
 
      enum RagStatus {
@@ -122,37 +134,26 @@ namespace io.vyne {
     type alias Username as String
 
     type Client {
-        id : io.vyne.ClientId
+        id : ClientId
         name : String
-        jurisdiction : io.vyne.ClientJurisdiction
-    }
-
-     type ClientService {
-        clients : Map
-    }
-
-     type Map {
-
+        jurisdiction : ClientJurisdiction
     }
 
      type Trader {
-        username : io.vyne.Username
+        username : Username
         jurisdiction : TraderJurisdiction
-    }
-
-     type TraderService {
-        traders : Map
+        limit : TraderMaxTradeValue
     }
 
     @ServiceDiscoveryClient(serviceName = "services")
     service ClientService {
-        @HttpOperation(method = "GET" , url = "/clients/{io.vyne.ClientId}")
-        operation getClient(  io.vyne.ClientId ) : Client
+        @HttpOperation(method = "GET" , url = "/clients/{ClientId}")
+        operation getClient(  ClientId ) : Client
     }
     @ServiceDiscoveryClient(serviceName = "services")
     service TraderService {
-        @HttpOperation(method = "GET" , url = "/traders/{io.vyne.Username}")
-        operation getTrader(  io.vyne.Username ) : Trader
+        @HttpOperation(method = "GET" , url = "/traders/{Username}")
+        operation getTrader(  Username ) : Trader
     }
 
     type alias CountryCode as String
