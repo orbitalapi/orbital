@@ -1,0 +1,57 @@
+<mat-toolbar color="primary">
+  <span>Query wizard</span>
+</mat-toolbar>
+<div class="page-content">
+  <div class="fact-forms-container">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Facts</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-accordion>
+          <mat-expansion-panel *ngFor="let factForm of forms">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                {{ factForm.type.name.name }}
+              </mat-panel-title>
+              <mat-panel-description>
+                <!-- Should we put something here? -->
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <td-dynamic-forms [elements]="factForm.elements" #dynamicForm></td-dynamic-forms>
+
+            <mat-action-row>
+              <button mat-button color="primary" (click)="updateFact(factForm,dynamicForm)">Update</button>
+              <button mat-button>Remove</button>
+            </mat-action-row>
+          </mat-expansion-panel>
+        </mat-accordion>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  <div class="target-type-container">
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Target to find</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form>
+          <mat-form-field class="target-type-input">
+            <input type="text" placeholder="Pick one" aria-label="Number" matInput [matAutocomplete]="auto"
+                   [formControl]="targetTypeInput">
+            <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption>
+              <mat-option *ngFor="let type of filteredTypes | async" [value]="type.name.fullyQualifiedName">
+                {{type.name.name}} ({{type.name.fullyQualifiedName}})
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </form>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-button color="primary" (click)="submitQuery()">Submit query</button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

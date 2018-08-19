@@ -1,0 +1,22 @@
+$body-bg: #f5f6fa;
+
+.page-content {
+  padding: 46px;
+  background-color: $body-bg;
+  height: 100%;
+}
+
+.mat-toolbar {
+  position: sticky;
+  top: 0;
+  height: 96px;
+  &.mat-logo {
+    background-color: #1d2531;
+    color: #fafafa;
+  }
+  &.mat-primary {
+    //background-color: white;
+    box-shadow: 0 2px 5px #dcdcdc;
+    color: #fafafa;
+  }
+}

@@ -1,0 +1,28 @@
+<mat-toolbar color="primary">
+  <span>Type Explorer</span>
+</mat-toolbar>
+<div class="page-content">
+    <mat-accordion class="example-headers-align">
+      <mat-expansion-panel hideToggle *ngFor="let member of members">
+        <mat-expansion-panel-header>
+          <div class="schema-member-container">
+            <div class="member-type">
+              <div [ngClass]="memberType(member).toLowerCase()">{{ memberType(member) }}</div>
+            </div>
+            <div class="member-qualified-name">
+              <div class="member-name">{{ member.name.name}}</div>
+              <div class="member-package">{{ member.name.fullyQualifiedName}}</div>
+            </div>
+            <div class="member-type-alias">
+              {{ member.aliasForType}}
+            </div>
+          </div>
+        </mat-expansion-panel-header>
+
+
+        <mat-action-row>
+          <button mat-button color="primary" (click)="startNewQuery(member)">Start a query</button>
+        </mat-action-row>
+      </mat-expansion-panel>
+    </mat-accordion>
+</div>

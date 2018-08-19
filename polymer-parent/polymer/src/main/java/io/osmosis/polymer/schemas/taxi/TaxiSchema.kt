@@ -74,7 +74,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
                      )
                   }
                }.toMap()
-               val modifiers = parseModifiers(taxiType.modifiers)
+               val modifiers = parseModifiers(taxiType)
                val type = Type(typeName, fields, modifiers, sources = taxiType.compilationUnits.toVyneSources())
                rawTypes.add(type)
                if (taxiType.inheritsFrom.isNotEmpty()) {
@@ -85,7 +85,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
                rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), aliasForType = QualifiedName(taxiType.aliasType!!.qualifiedName), sources = taxiType.compilationUnits.toVyneSources()))
             }
             is ArrayType -> TODO()
-            else -> rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), sources = taxiType.compilationUnits.toVyneSources()))
+            else -> rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), modifiers = parseModifiers(taxiType), sources = taxiType.compilationUnits.toVyneSources()))
          }
       }
       val originalTypes = rawTypes.associateBy { it.fullyQualifiedName }
@@ -117,7 +117,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
 
    private fun getTaxiPrimitiveTypes(): Collection<Type> {
       return PrimitiveType.values().map { taxiPrimitive ->
-         Type(taxiPrimitive.qualifiedName.fqn(), sources = listOf(SourceCode.undefined(TaxiSchema.LANGUAGE)))
+         Type(taxiPrimitive.qualifiedName.fqn(), modifiers = parseModifiers(taxiPrimitive), sources = listOf(SourceCode.undefined(TaxiSchema.LANGUAGE)))
       }
    }
 
@@ -128,11 +128,16 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
       })
    }
 
-   private fun parseModifiers(modifiers: List<lang.taxi.types.Modifier>): List<Modifier> {
-      return modifiers.map {
-         when (it) {
-            lang.taxi.types.Modifier.PARAMETER_TYPE -> Modifier.PARAMETER_TYPE
+   private fun parseModifiers(type: lang.taxi.Type): List<Modifier> {
+      return when (type) {
+         is EnumType -> listOf(Modifier.ENUM)
+         is PrimitiveType -> listOf(Modifier.PRIMITIVE)
+         is ObjectType -> type.modifiers.map {
+            when (it) {
+               lang.taxi.types.Modifier.PARAMETER_TYPE -> Modifier.PARAMETER_TYPE
+            }
          }
+         else -> emptyList()
       }
    }
 

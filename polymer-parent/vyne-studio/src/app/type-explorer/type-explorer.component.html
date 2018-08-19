@@ -33,7 +33,7 @@
                <mat-expansion-panel *ngFor="let member of members | filter:term " class="md-expansion" #{{type.mailId}} (opened)="loadTypeLinks(member)">
                   <mat-expansion-panel-header>
                      <mat-panel-title>
-                        <div class="element-kind-wrapper">
+                         <div class="element-kind-wrapper">
                            <span class="sender" *ngIf="member.kind == serviceType">Service</span>
                            <span class="sender" *ngIf="member.kind == typeType">Type</span>
                            <span class="sender" *ngIf="member.kind == operationType">Operation</span>

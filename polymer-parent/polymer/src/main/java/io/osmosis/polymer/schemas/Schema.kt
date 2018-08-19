@@ -63,7 +63,11 @@ data class Type(
 }
 
 enum class Modifier {
-   PARAMETER_TYPE
+   PARAMETER_TYPE,
+   // TODO : Is it right to treat these as modifiers?  They're not really,
+   // but I'm trying to avoid a big collection of boolean flags
+   ENUM,
+   PRIMITIVE
 }
 
 data class SourceCode(
