@@ -90,8 +90,8 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
       val strategyIterator: Iterator<QueryStrategy> = strategies.iterator()
       while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
          val queryStrategy = strategyIterator.next()
-         val strategyResult = context.startChild(this, "Invoke queryStrategy ${queryStrategy.javaClass}") { op ->
-            op.addContext("searchTarget", target.map { it.type.fullyQualifiedName })
+         val strategyResult = context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}") { op ->
+            op.addContext("Search target", target.map { it.type.fullyQualifiedName })
             queryStrategy.invoke(target, context)
          }
          // Note : We should add this additional data to the context too,

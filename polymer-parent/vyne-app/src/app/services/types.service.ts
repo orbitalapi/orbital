@@ -239,3 +239,8 @@ export enum SchemaMemberType {
   TYPE,
   OPERATION
 }
+
+export interface TypedInstance {
+  type:Type;
+  value:any;
+}

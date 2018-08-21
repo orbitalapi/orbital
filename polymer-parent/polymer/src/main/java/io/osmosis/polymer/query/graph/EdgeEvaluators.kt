@@ -18,7 +18,7 @@ import io.osmosis.polymer.utils.log
 
 
 fun GraphEdge<Element,Relationship>.description():String {
-   return "${this.vertex1} -[${this.edgeValue.description}]-> ${this.vertex2}"
+   return "${this.vertex1.valueAsQualifiedName().name} -[${this.edgeValue.description}]-> ${this.vertex2.valueAsQualifiedName().name}"
 }
 
 interface EdgeEvaluator {

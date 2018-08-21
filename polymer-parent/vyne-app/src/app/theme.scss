@@ -1,3 +1,6 @@
+@import "../theme-colors";
+@import '~@angular/material/theming';
+
 $body-bg: #f5f6fa;
 
 .page-content {
@@ -20,3 +23,7 @@ $body-bg: #f5f6fa;
     color: #fafafa;
   }
 }
+
+$light-grey-1: mat-color($vyne-grey-blue-palette, 50);
+$light-grey-2: mat-color($vyne-grey-blue-palette, 100);
+$light-grey-3: mat-color($vyne-grey-blue-palette, 200);

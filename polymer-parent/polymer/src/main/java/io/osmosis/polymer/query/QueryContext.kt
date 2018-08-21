@@ -2,6 +2,8 @@ package io.osmosis.polymer.query
 
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.osmosis.polymer.models.TypedCollection
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
@@ -40,7 +42,9 @@ enum class QueryMode {
 
 data class QuerySpecTypeNode(val type: Type, val children: Set<QuerySpecTypeNode> = emptySet(), val mode: QueryMode = QueryMode.DISCOVER)
 
-data class QueryResult(val results: Map<QuerySpecTypeNode, TypedInstance?>, val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(), val path: Path?, val profilerOperation: ProfilerOperation? = null) {
+data class QueryResult(
+   @field:JsonIgnore
+   val results: Map<QuerySpecTypeNode, TypedInstance?>, val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(), val path: Path?, val profilerOperation: ProfilerOperation? = null) {
    val isFullyResolved = unmatchedNodes.isEmpty()
    operator fun get(typeName: String): TypedInstance? {
       return this.results.filterKeys { it.type.name.fullyQualifiedName == typeName }
@@ -53,6 +57,9 @@ data class QueryResult(val results: Map<QuerySpecTypeNode, TypedInstance?>, val 
          .values
          .first()
    }
+
+   @JsonProperty("results")
+   val resultMap:Map<String,TypedInstance?> = this.results.mapKeys { (key,value) -> key.type.fullyQualifiedName }
 }
 
 object TypedInstanceTree {

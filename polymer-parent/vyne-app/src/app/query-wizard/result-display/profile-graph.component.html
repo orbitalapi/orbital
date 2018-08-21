@@ -1,0 +1,52 @@
+<div style="position: absolute; top: 50px; left: 50px; right: 50px; bottom: 50px;">
+  <ngx-graph
+    class="chart-container"
+    [curve]="graphLinkCurve"
+    [scheme]="graphColorScheme"
+    [links]="graphLinks"
+    (legendLabelClick)="onLegendLabelClick($event)"
+    [nodes]="graphNodes"
+    orientation="TB"
+    autoZoom="true"
+    autoCenter="true"
+    (select)="onNodeSelected($event)">
+
+    <ng-template #defsTemplate>
+      <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4" orient="auto">
+        <svg:path d="M0,-5L10,0L0,5" class="arrow-head" stroke="#000"/>
+      </svg:marker>
+    </ng-template>
+
+    <ng-template #nodeTemplate let-node>
+      <!--<svg:g class="node"-->
+      <!--ngx-tooltip-->
+      <!--[tooltipPlacement]="'top'"-->
+      <!--[tooltipType]="'tooltip'"-->
+      <!--[tooltipTitle]="node.label">-->
+      <!--<svg:rect [attr.width]="node.width" [attr.height]="node.height" [attr.fill]="node.options.color" />-->
+      <!--<svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.height / 2">{{node.label}}</svg:text>-->
+      <!--</svg:g>-->
+
+      <svg width="420" height="120" xmlns="http://www.w3.org/25d7f92/svg">
+        <!-- Created with Method Draw - http://github.com/duopixel/Method-Draw/ -->
+        <g>
+          <rect stroke="#5d7f92" rx="5" id="svg_1" height="120" width="420" y="0.25" x="0.25" stroke-width="0.5"
+                fill="#ecf0f2"/>
+          <text xml:space="preserve" text-anchor="start" font-family="'Open Sans', sans-serif" font-size="18" id="svg_3" y="25.25" x="10.25001" fill-opacity="null" stroke-opacity="null" stroke-width="0" stroke="#5d7f92" fill="#5d7f92">{{ node.operation.operationName }}</text>
+          <text stroke="#5d7f92" xml:space="preserve" text-anchor="start" font-family="'Open Sans', sans-serif" font-size="12" id="svg_4" y="105.25" x="383.25001" fill-opacity="null" stroke-opacity="null" stroke-width="0" fill="#5d7f92">{{ node.operation.duration}}ms</text>
+        </g>
+      </svg>
+    </ng-template>
+
+    <ng-template #linkTemplate let-link>
+      <svg:g class="edge">
+        <svg:path
+          class="line"
+          stroke-width="2"
+          marker-end="url(#arrow)">
+        </svg:path>
+      </svg:g>
+    </ng-template>
+
+  </ngx-graph>
+</div>

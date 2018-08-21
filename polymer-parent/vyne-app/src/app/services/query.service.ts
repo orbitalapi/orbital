@@ -3,6 +3,7 @@ import {HttpClient} from "@angular/common/http";
 import {Observable} from "rxjs/internal/Observable";
 
 import {environment} from 'src/environments/environment';
+import {TypedInstance} from "./types.service";
 
 @Injectable()
 export class QueryService {
@@ -17,18 +18,23 @@ export class QueryService {
 
 export class Query {
   constructor(readonly queryString: string,
-              readonly facts: any) {
+              readonly facts: any,
+              readonly queryMode: QueryMode) {
   }
 }
 
 export interface QueryResult {
-  results: any;
+  results: { [key: string]: TypedInstance };
+
   unmatchedNodes: string[];
-  isFullyResolved: boolean;
+  fullyResolved: boolean;
   profilerOperation: ProfilerOperation;
 }
 
 export interface ProfilerOperation {
+  id: string;
+  fullPath: string;
+  path: string;
   componentName: string;
   operationName: string;
   children: ProfilerOperation[];
@@ -48,4 +54,9 @@ export interface ProfilerOperationResult {
 
   duration: number;
 
+}
+
+export enum QueryMode {
+  DISCOVER = "DISCOVER",
+  GATHER = "GATHER"
 }

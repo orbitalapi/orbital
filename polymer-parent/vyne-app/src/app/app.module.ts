@@ -8,13 +8,18 @@ import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {VyneComponent} from './vyne/vyne.component';
 import {LayoutModule} from '@angular/cdk/layout';
 import {
+  MatAutocompleteModule,
   MatButtonModule,
+  MatCardModule,
   MatExpansionModule,
+  MatFormFieldModule,
   MatIconModule,
+  MatInputModule,
   MatListModule,
+  MatSelectModule,
   MatSidenavModule,
   MatToolbarModule,
-  MatCardModule, MatFormFieldModule, MatAutocompleteModule, MatInputModule,
+  MatTreeModule,
 } from '@angular/material';
 import {TypeListComponent} from './type-list/type-list.component';
 import {CommonModule} from "@angular/common";
@@ -24,12 +29,16 @@ import {QueryWizardComponent} from './query-wizard/query-wizard.component';
 import {TypesService} from "./services/types.service";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {QueryService} from "./services/query.service";
-
+import {ResultDisplayComponent} from './query-wizard/result-display/result-display.component';
+import {ProfileGraphComponent} from './query-wizard/result-display/profile-graph.component';
+import {NgxGraphModule} from '@swimlane/ngx-graph';
+import { CovalentJsonFormatterModule } from '@covalent/core/json-formatter';
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
   {path: 'type-explorer', component: TypeListComponent},
   {path: 'query-wizard', component: QueryWizardComponent},
+  {path: 'result-explorer', component: ProfileGraphComponent}
 ];
 
 @NgModule({
@@ -37,7 +46,9 @@ const appRoutes = [
     AppComponent,
     VyneComponent,
     TypeListComponent,
-    QueryWizardComponent
+    QueryWizardComponent,
+    ResultDisplayComponent,
+    ProfileGraphComponent
   ],
   imports: [
     RouterModule.forRoot(
@@ -52,6 +63,7 @@ const appRoutes = [
     ReactiveFormsModule,
 
     HttpClientModule,
+    NgxGraphModule,
 
     MatToolbarModule,
     MatButtonModule,
@@ -63,9 +75,11 @@ const appRoutes = [
     MatFormFieldModule,
     MatAutocompleteModule,
     MatInputModule,
+    MatSelectModule,
+    MatTreeModule,
 
     CovalentDynamicFormsModule,
-
+    CovalentJsonFormatterModule
 
   ],
   providers: [TypesService, QueryService],

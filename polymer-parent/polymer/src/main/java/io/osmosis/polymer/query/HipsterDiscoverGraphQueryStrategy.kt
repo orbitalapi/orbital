@@ -133,8 +133,8 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       log().debug("Searching for path from $searchDescription")
 //      log().debug("Current graph state: \n ${graph.description()}")
 
-      return queryContext.startChild(this, "Searching for path $searchDescription") { op ->
-         op.addContext("Current graph state", graph.edgeDescriptions())
+      return queryContext.startChild(this, "Searching for path ${start.valueAsQualifiedName().name} -> ${target.valueAsQualifiedName().name}") { op ->
+         op.addContext("Current graph", graph.edgeDescriptions())
          doSearch(start, target, graph, searchDescription, queryContext, op)
       }
    }
@@ -150,7 +150,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
 
       // TODO : validate this is a valid path
       log().debug("Search $searchDescription found path: \n ${searchResult.path().describe()}")
-      op.addContext("discoveredPath", searchResult.path().describeLinks())
+      op.addContext("Discovered path", searchResult.path().describeLinks())
       val evaluatedPath = evaluatePath(searchResult, queryContext)
       val resultValue = selectResultValue(evaluatedPath, queryContext, target)
       val path = searchResult.path().convertToPolymerPath(start, target)

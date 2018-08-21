@@ -2,22 +2,29 @@ import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
 import {Modifier, Schema, Type, TypeReference, TypesService} from "../services/types.service";
 import {map, startWith} from "rxjs/operators";
-import {ITdDynamicElementConfig, TdDynamicElement, TdDynamicType} from '@covalent/dynamic-forms';
-import {AbstractControl, FormControl} from "@angular/forms";
+import {
+  ITdDynamicElementConfig,
+  TdDynamicElement,
+  TdDynamicFormsComponent,
+  TdDynamicType
+} from '@covalent/dynamic-forms';
+import {FormControl} from "@angular/forms";
 import {Observable} from "rxjs/internal/Observable";
-import {Query, QueryService} from "../services/query.service";
+import {ProfilerOperation, Query, QueryMode, QueryResult, QueryService} from "../services/query.service";
+import {HttpErrorResponse} from "@angular/common/http";
 
 @Component({
-  selector: 'app-query-wizard',
+  selector: 'query-wizard',
   templateUrl: './query-wizard.component.html',
   styleUrls: ['./query-wizard.component.scss'],
 })
 export class QueryWizardComponent implements OnInit {
   schema: Schema;
   targetTypeInput = new FormControl();
+  queryMode = new FormControl();
   filteredTypes: Observable<Type[]>;
 
-  private facts: any = {}
+  private facts: any = {};
 
   constructor(private route: ActivatedRoute,
               private typesService: TypesService,
@@ -25,6 +32,10 @@ export class QueryWizardComponent implements OnInit {
   }
 
   forms: FactForm[] = [];
+
+  private subscribedDynamicForms: TdDynamicFormsComponent[] = [];
+
+  lastQueryResult: QueryResult | QueryFailure;
 
   ngOnInit() {
     this.typesService.getTypes()
@@ -41,6 +52,26 @@ export class QueryWizardComponent implements OnInit {
       startWith(''),
       map(value => this._filter(value))
     );
+
+    this.queryMode.setValue(QueryMode.DISCOVER)
+  }
+
+  // Dirty hack to capture the forms generated dynamically, so we can listen for
+  // form events
+  getAndRegisterElements(factForm: FactForm, component: TdDynamicFormsComponent) {
+    if (this.subscribedDynamicForms.indexOf(component) == -1) {
+      console.log("Subscribing for updates on component");
+      component.form.valueChanges.subscribe(valueChangedEvent => {
+        this.updateFact(factForm, component.value);
+      });
+      this.subscribedDynamicForms.push(component)
+    }
+
+    return factForm.elements;
+  }
+
+  removeFact(factForm: FactForm) {
+    console.error("TODO!")
   }
 
   private _filter(value: string): Type[] {
@@ -49,19 +80,34 @@ export class QueryWizardComponent implements OnInit {
     return this.schema.types.filter(option => option.name.fullyQualifiedName.toLowerCase().indexOf(filterValue) !== -1);
   }
 
-  updateFact(formSpec: FactForm, formInstance: AbstractControl) {
-    let nestedValue = this.nest(formInstance.value)
+  updateFact(formSpec: FactForm, value) {
+    let nestedValue = this.nest(value);
 
-    this.facts[formSpec.type.name.fullyQualifiedName] = nestedValue;
+    let fullyQualifiedName = formSpec.type.name.fullyQualifiedName;
+    this.facts[fullyQualifiedName] = nestedValue;
+
+    console.log(`Updated fact ${fullyQualifiedName} - now ${nestedValue}`)
   }
 
   submitQuery() {
     let query = new Query(
       this.targetTypeInput.value,
-      this.facts
+      this.facts,
+      this.queryMode.value
     );
     this.queryService.submitQuery(query)
-      .subscribe(result => console.log(result))
+      .subscribe(result => {
+        this.lastQueryResult = result
+      }, error => {
+        let errorResponse = error as HttpErrorResponse;
+        if (errorResponse.error && (errorResponse.error as any).hasOwnProperty('profilerOperation')) {
+          this.lastQueryResult = new QueryFailure(errorResponse.error.message, errorResponse.error.profilerOperation)
+        } else {
+          // There was an unhandled error...
+          console.error("An unhandled error occurred:");
+          console.error(JSON.stringify(error));
+        }
+      })
   }
 
   // Convert a property of "foo.bar = 123" to an object with nested properties
@@ -157,6 +203,13 @@ export class QueryWizardComponent implements OnInit {
         debugger;
     }
     return control;
+  }
+
+
+}
+
+export class QueryFailure {
+  constructor(readonly message: string, readonly profilerOperation: ProfilerOperation) {
   }
 }
 

@@ -1,16 +1,22 @@
 @import "../theme";
 
-.fact-forms-container {
-  width: 35%;
+.container {
+  width: 30%;
   display: inline-grid;
   padding-right: 45px;
 }
+.fact-forms-container {
+
+}
+
+.results-container {
+}
 
 .target-type-container {
-  display: inline-grid;
-  width: 35%;
-
-  .target-type-input {
+  .mat-form-field {
     width: 100%;
+  }
+  .target-type-input {
+
   }
 }
