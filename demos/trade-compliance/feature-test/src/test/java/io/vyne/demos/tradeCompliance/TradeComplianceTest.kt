@@ -90,6 +90,17 @@ class TradeComplianceTest {
    }
 
    @Test
+   fun canFindTraderMaxValue() {
+      // This test is interesting because we're finding a value within a returned value,
+      // rather than the returned value itself.
+      // This differs from other queries, because in other queries the result from the service is
+      // what's used.  Here, we get a result from a query, and then need to inspect a value within it.
+      val result = polymer.query().find("io.vyne.TraderMaxTradeValue", setOf(tradeRequest))
+      expect(result.isFullyResolved).to.be.`true`
+
+   }
+
+   @Test
    fun canEvaluateJurisdictionRule() {
       val result = polymer.query().find("io.vyne.JurisdictionRuleResult", setOf(tradeRequest))
       expect(result.isFullyResolved).to.be.`true`

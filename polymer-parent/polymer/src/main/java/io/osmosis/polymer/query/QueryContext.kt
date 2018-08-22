@@ -192,12 +192,13 @@ enum class FactDiscoveryStrategy {
 enum class TypeMatchingStrategy {
    ALLOW_INHERITED_TYPES {
       override fun matches(requestedType: Type, candidate: Type): Boolean {
-         return requestedType == candidate || candidate.inheritanceGraph.contains(requestedType)
+         return requestedType.fullyQualifiedName == candidate.fullyQualifiedName ||
+            candidate.inheritanceGraph.map { it.fullyQualifiedName }.contains(requestedType.fullyQualifiedName)
       }
    },
    EXACT_MATCH {
       override fun matches(requestedType: Type, candidate: Type): Boolean {
-         return requestedType == candidate
+         return requestedType.fullyQualifiedName == candidate.fullyQualifiedName
       }
    };
 

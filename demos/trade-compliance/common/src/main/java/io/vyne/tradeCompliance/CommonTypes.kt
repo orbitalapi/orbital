@@ -5,11 +5,11 @@ import lang.taxi.annotations.ParameterType
 import java.math.BigDecimal
 
 @DataType
-data class RuleEvaluationResult(
-   val ruleId: String,
-   val status: RuleEvaluationStatus,
-   val message: String? = null
-)
+interface RuleEvaluationResult {
+   val ruleId: String
+   val status: RuleEvaluationStatus
+   val message: String?
+}
 
 
 enum class RagStatus {
@@ -46,9 +46,11 @@ typealias ClientJurisdiction = CountryCode
 @DataType("io.vyne.Username")
 typealias Username = String
 
-data class User(
+data class Trader(
    val username: Username,
-   val jurisdiction: CountryCode
+   val jurisdiction: TraderJurisdiction,
+   val maxValue: TraderMaxTradeValue
+
 )
 
 @DataType("io.vyne.ClientId")

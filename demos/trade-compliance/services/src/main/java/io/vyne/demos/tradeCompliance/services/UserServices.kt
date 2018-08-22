@@ -25,14 +25,14 @@ class ClientService {
 @RestController
 @Service
 class TraderService {
-   val traders: Map<Username, User> = listOf(
-      User(username = "jimmy", jurisdiction = "GBP"),
-      User(username = "marty", jurisdiction = "EUR")
+   val traders: Map<Username, Trader> = listOf(
+      Trader(username = "jimmy", jurisdiction = "GBP", maxValue = Money("USD", 1_000_000.toBigDecimal())),
+      Trader(username = "marty", jurisdiction = "EUR", maxValue = Money("USD", 500_000.toBigDecimal()))
    ).associateBy { it.username }
 
    @GetMapping("/traders/{username}")
    @Operation
-   fun getTrader(@PathVariable("username") username: Username): User {
+   fun getTrader(@PathVariable("username") username: Username): Trader {
       return traders[username] ?: error("No trader mapped for id $username")
    }
 }

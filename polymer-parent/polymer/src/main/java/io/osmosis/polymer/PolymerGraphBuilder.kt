@@ -68,7 +68,13 @@ fun operation(service: Service, operation: Operation): Element {
 fun operation(name: String) = Element(name, ElementType.OPERATION)
 fun providedInstance(name: String, value: Any? = null) = Element(name, ElementType.TYPE_INSTANCE, value)
 fun providedInstanceMember(name: String) = Element(name, ElementType.PROVIDED_INSTANCE_MEMBER)
+
+// Note : We don't actually append the value itself to the graph, otherwise the instance node
+// becomes unattainable (ie., when searching with a startNode: typedInstance(someName), it won't find entries
+// added as typedInstance(someName, value).
+// Might need to rethink this.  Should we add the typedInstance with a link of instanceValue?
 fun instance(value: TypedInstance) = providedInstance(value.type.fullyQualifiedName) // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
+//fun instance(value: TypedInstance) = providedInstance(value.type.fullyQualifiedName, value) // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
 
 typealias TypeElement = Element
 typealias MemberElement = Element
@@ -158,7 +164,7 @@ class PolymerGraphBuilder(val schema: Schema) {
             appendProvidedInstances(builder, resultInstanceFqn, schema, operationNode)
 
 
-            log().debug("Added Operation ${operationNode.value} to graph")
+//            log().debug("Added Operation ${operationNode.value} to graph")
          }
       }
    }

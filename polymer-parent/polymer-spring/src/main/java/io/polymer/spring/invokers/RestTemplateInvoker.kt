@@ -56,7 +56,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          httpInvokeOperation.addContext("Abosulte Url", absoluteUrl)
 
          val requestBody = buildRequestBody(operation, parameters)
-         httpInvokeOperation.addContext("requestBody", requestBody)
+         httpInvokeOperation.addContext("Request body", requestBody)
 
          val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, getUriVariables(parameters))
          httpInvokeOperation.stop(result)

@@ -1,5 +1,6 @@
 package io.osmosis.polymer.schemas
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
 import io.osmosis.polymer.models.TypedValue
@@ -43,7 +44,7 @@ data class AttributeConstantValueConstraint(val fieldName: String, val expectedV
    }
 }
 
-data class NestedAttributeConstraint(val fieldName: String, val constraint: InputConstraint, val schema: Schema) : InputConstraint {
+data class NestedAttributeConstraint(val fieldName: String, val constraint: InputConstraint, @JsonIgnore val schema: Schema) : InputConstraint {
    override fun evaluate(argumentType: Type, value: TypedInstance): ConstraintEvaluation {
       if (value !is TypedObject) throw IllegalArgumentException("NestedAttributeConstraint must be evaluated against a TypedObject")
       val nestedAttribute = value.get(fieldName)

@@ -1,5 +1,7 @@
 package io.osmosis.polymer.query
 
+import io.osmosis.polymer.utils.log
+import jdk.nashorn.internal.runtime.regexp.joni.Config.log
 import java.time.Clock
 import java.util.*
 
@@ -32,7 +34,7 @@ class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), val ro
          if (stack.peekLast() == operation) {
             stack.pollLast()
          } else {
-            error("Stopped an operation ${operation.description}, but the head of the stack is ${stack.peekLast().description}")
+            log().error("Stopped an operation ${operation.description}, but the head of the stack is ${stack.peekLast().description}")
          }
       }
    }
@@ -117,7 +119,9 @@ class DefaultProfilerOperation(override val componentName: String,
 
    override fun stop(result: Any?) {
       // TODO : Assert that all running children have stopped too.
-      if (stopped) error("Attempted to stop operation $fullPath which is already stopped")
+      if (stopped) {
+         log().error("Attempted to stop operation $fullPath which is already stopped")
+      }
       this.result = Result(this.startTime, clock.millis(), result)
    }
 
