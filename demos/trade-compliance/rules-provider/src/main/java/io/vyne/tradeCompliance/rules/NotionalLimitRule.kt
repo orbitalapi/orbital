@@ -26,12 +26,18 @@ class NotionalLimitRuleService {
    @Operation
    fun evaluate(request: NotionalLimitRuleRequest) = evaluate(request.notional)
 
-   fun evaluate(notional: BigDecimal): RuleEvaluationResult {
+   fun evaluate(notional: BigDecimal): NotionalLimitRuleResponse {
       return if (notional < NOTIONAL_LIMIT) {
-         RuleEvaluationResult(RULE_ID, RuleEvaluationStatus.GREEN)
+         NotionalLimitRuleResponse(RULE_ID, RuleEvaluationStatus.GREEN)
       } else {
-         RuleEvaluationResult(RULE_ID, RuleEvaluationStatus.RED, "Notional limit exceeded")
+         NotionalLimitRuleResponse(RULE_ID, RuleEvaluationStatus.RED, "Notional limit exceeded")
       }
    }
 }
 
+@DataType
+data class NotionalLimitRuleResponse(
+   override val ruleId: String,
+   override val status: RuleEvaluationStatus,
+   override val message: String? = null
+) : RuleEvaluationResult

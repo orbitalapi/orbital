@@ -26,11 +26,18 @@ class JurisdictionRuleService {
       request.clientJurisdiction, request.traderJurisdiction
    )
 
-   fun evaluate(clientJurisdiction: ClientJurisdiction, traderJurisdiction: TraderJurisdiction): RuleEvaluationResult {
+   fun evaluate(clientJurisdiction: ClientJurisdiction, traderJurisdiction: TraderJurisdiction): JurisdictionRuleResponse {
       return if (clientJurisdiction == traderJurisdiction) {
-         RuleEvaluationResult("JurisdictionRule", RuleEvaluationStatus.GREEN)
+         JurisdictionRuleResponse("JurisdictionRule", RuleEvaluationStatus.GREEN)
       } else {
-         RuleEvaluationResult("JurisdictionRule", RuleEvaluationStatus.RED, "The trader and client must both be in the same jurisdiction")
+         JurisdictionRuleResponse("JurisdictionRule", RuleEvaluationStatus.RED, "The trader and client must both be in the same jurisdiction")
       }
    }
 }
+
+@DataType
+data class JurisdictionRuleResponse(
+   override val ruleId: String,
+   override val status: RuleEvaluationStatus,
+   override val message: String? = null
+) : RuleEvaluationResult
