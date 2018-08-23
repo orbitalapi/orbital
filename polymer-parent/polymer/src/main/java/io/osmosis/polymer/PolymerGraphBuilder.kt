@@ -73,7 +73,7 @@ fun providedInstanceMember(name: String) = Element(name, ElementType.PROVIDED_IN
 // becomes unattainable (ie., when searching with a startNode: typedInstance(someName), it won't find entries
 // added as typedInstance(someName, value).
 // Might need to rethink this.  Should we add the typedInstance with a link of instanceValue?
-fun instance(value: TypedInstance) = providedInstance(value.type.fullyQualifiedName) // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
+fun instanceOfType(type: Type) = providedInstance(type.fullyQualifiedName) // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
 //fun instance(value: TypedInstance) = providedInstance(value.type.fullyQualifiedName, value) // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
 
 typealias TypeElement = Element

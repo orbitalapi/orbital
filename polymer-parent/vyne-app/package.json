@@ -24,6 +24,7 @@
     "@angular/router": "^6.1.0",
     "@covalent/core": "^2.0.0-beta.2",
     "@covalent/dynamic-forms": "^2.0.0-beta.2",
+    "@covalent/highlight": "^1.0.1",
     "@swimlane/ngx-graph": "^5.1.0",
     "core-js": "^2.5.4",
     "rxjs": "^6.0.0",

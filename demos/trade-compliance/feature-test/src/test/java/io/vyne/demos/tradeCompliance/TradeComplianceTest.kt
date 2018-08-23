@@ -47,17 +47,7 @@ class TradeComplianceTest {
        }
    """.trimIndent()
 
-   @Before
-   fun setup() {
-      val schemaDef = this.javaClass.getResourceAsStream("/schema.taxi")
-      val schema = TaxiSchema.from(IOUtils.toString(schemaDef))
-      stubService = StubService()
-
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
-
-      polymer = Polymer(queryEngineFactory).addSchema(schema)
-
-      val tradeJson = """{
+   val tradeJson = """{
          "notional" :   1000,
           "clientId" : "GBP_Client",
           "traderId" : "EUR_Trader",
@@ -71,6 +61,17 @@ class TradeComplianceTest {
           }
 
       }""".trimIndent()
+
+   @Before
+   fun setup() {
+      val schemaDef = this.javaClass.getResourceAsStream("/schema.taxi")
+      val schema = TaxiSchema.from(IOUtils.toString(schemaDef))
+      stubService = StubService()
+
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+
+      polymer = Polymer(queryEngineFactory).addSchema(schema)
+
 
       val tradeValueInUsd = """{
                 "currency" : "USD",
@@ -129,17 +130,6 @@ class TradeComplianceTest {
 
    @Test
    fun canDiscoverTradeComplianceStatus() {
-      val tradeJson = """{
-         "notional" :   1000,
-          "clientId" : "GBP_Client",
-          "traderId" : "EUR_Trader",
-          "price" : {
-               "currency" : "GBP",
-               "value" : 0.55
-          }
-
-      }""".trimIndent()
-
       val tradeRequest = polymer.parseJsonModel("io.vyne.TradeRequest", tradeJson)
 //      val result = polymer.query().find("io.vyne.tradeCompliance.aggregator.TradeComplianceResult", setOf(tradeRequest))
       val ruleEvaluationResult = "io.vyne.RuleEvaluationResult"
@@ -150,8 +140,8 @@ class TradeComplianceTest {
       val result = queryResult["io.vyne.RuleEvaluationResult"] as TypedCollection
       expect(result.size).to.equal(3)
 
-      require(result.any { collectionMember -> collectionMember.type.fullyQualifiedName == "io.vyne.NotionalLimitRuleResult" } )
-      require(result.any { collectionMember -> collectionMember.type.fullyQualifiedName == "io.vyne.JurisdictionRuleResult" } )
-      require(result.any { collectionMember -> collectionMember.type.fullyQualifiedName == "io.vyne.TradeValueRuleResult" } )
+      require(result.any { collectionMember -> collectionMember.type.fullyQualifiedName == "io.vyne.NotionalLimitRuleResult" })
+      require(result.any { collectionMember -> collectionMember.type.fullyQualifiedName == "io.vyne.JurisdictionRuleResult" })
+      require(result.any { collectionMember -> collectionMember.type.fullyQualifiedName == "io.vyne.TradeValueRuleResult" })
    }
 }

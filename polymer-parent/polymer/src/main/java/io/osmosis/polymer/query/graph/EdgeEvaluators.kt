@@ -3,7 +3,7 @@ package io.osmosis.polymer.query.graph
 import es.usc.citius.hipster.graph.GraphEdge
 import io.osmosis.polymer.Element
 import io.osmosis.polymer.ElementType
-import io.osmosis.polymer.instance
+import io.osmosis.polymer.instanceOfType
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
 import io.osmosis.polymer.query.FactDiscoveryStrategy
@@ -17,24 +17,56 @@ import io.osmosis.polymer.utils.assertingThat
 import io.osmosis.polymer.utils.log
 
 
-fun GraphEdge<Element,Relationship>.description():String {
+fun GraphEdge<Element, Relationship>.description(): String {
    return "${this.vertex1.valueAsQualifiedName().name} -[${this.edgeValue.description}]-> ${this.vertex2.valueAsQualifiedName().name}"
+}
+
+// TODO : Come up with a better name for this...
+// I need an interface because I want to be able to recurse backwards,
+// but need to have a start point.  Struggling a bit with this right now.
+interface PathEvaluation {
+   val resultValue: TypedInstance?
+   val element: Element
+}
+
+data class StartingEdge(
+   override val resultValue: TypedInstance,
+   override val element: Element
+) : PathEvaluation
+
+data class EvaluatableEdge(
+   val previous: PathEvaluation,
+   val relationship: Relationship,
+   val target: Element
+) {
+   val vertex1: Element = previous.element
+   val vertex2 = target;
+
+   val previousValue: TypedInstance? = previous.resultValue
+
+   val description = "${vertex1} -[${relationship}]-> ${vertex2}"
+
+   fun success(value: TypedInstance?): EvaluatedEdge {
+      // TODO : Are we adding any value by having "target" here? -- isn't it always vertex2?
+      // If so, just remove it - as it's inferrable from 'previous'
+      return EvaluatedEdge.success(this, target, value)
+   }
 }
 
 interface EdgeEvaluator {
    val relationship: Relationship
-   fun evaluate(edge: GraphEdge<Element, Relationship>, context: QueryContext): EvaluatedEdge
+   fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge
 }
 
 class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = ParameterFactory()) : EdgeEvaluator {
    override val relationship: Relationship = Relationship.REQUIRES_PARAMETER
 
-   override fun evaluate(edge: GraphEdge<Element, Relationship>, context: QueryContext): EvaluatedEdge {
-      if (edge.vertex2.elementType == ElementType.PARAMETER) {
+   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+      if (edge.target.elementType == ElementType.PARAMETER) {
          // Pass through, the next vertex should be the param type
-         return EvaluatedEdge.success(edge, edge.vertex2)
+         return EvaluatedEdge.success(edge, edge.vertex2, edge.previousValue)
       }
-      assert(edge.vertex2.elementType == ElementType.TYPE, { "RequiresParameter must be evaluated on an element type of Type, received ${edge.vertex1} -[${edge.edgeValue}]-> ${edge.vertex2}" })
+      assert(edge.vertex2.elementType == ElementType.TYPE, { "RequiresParameter must be evaluated on an element type of Type, received ${edge.description}" })
 
       // Normally, we'd just use vertex2 to tell us the type.
       // But, because Hispter4J doesn't support identical Vertex Pairs, we can't.
@@ -47,7 +79,7 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
       val paramType = operation.parameters[paramIndex].type
 
       val discoveredParam = parameterFactory.discover(paramType, context)
-      return EvaluatedEdge.success(edge, instance(discoveredParam))
+      return EvaluatedEdge.success(edge, instanceOfType(discoveredParam.type), discoveredParam)
 //      val paramType = context.schema.type(edge.vertex2.value as String)
    }
 }
@@ -74,7 +106,7 @@ class ParameterFactory {
 //         return EvaluatedLink.success(link, startingPoint, startingPoint)
 //      }
       if (!paramType.isParameterType) {
-         throw UnresolvedOperationParametersException("No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ", context.evaluatedPath(),context.profiler.root)
+         throw UnresolvedOperationParametersException("No instance of type ${paramType.name} is present in the graph, and the type is not a parameter type, so cannot be constructed. ", context.evaluatedPath(), context.profiler.root)
       }
 
       // This is a parameter type.  Try to construct an instance
@@ -90,7 +122,7 @@ class ParameterFactory {
          // Try restructing this to a strategy approach.
          // Can we try searching within the context before we try constructing?
          // what are the impacts?
-         var attributeValue : TypedInstance? = null
+         var attributeValue: TypedInstance? = null
 
          // First, look in the context to see if it's there.
          if (context.hasFactOfType(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
@@ -101,8 +133,8 @@ class ParameterFactory {
             val queryResult = context.find(QuerySpecTypeNode(attributeType), context.facts)
             if (queryResult.isFullyResolved) {
                attributeValue = queryResult[attributeType] ?:
-               // TODO : This might actually be legal, as it could be valid for a value to resolve to null
-               throw IllegalArgumentException("Expected queryResult to return attribute with type ${attributeType.fullyQualifiedName} but the returned value was null")
+                  // TODO : This might actually be legal, as it could be valid for a value to resolve to null
+                  throw IllegalArgumentException("Expected queryResult to return attribute with type ${attributeType.fullyQualifiedName} but the returned value was null")
             } else {
                // ... finally, try constructing the value...
                if (!attributeType.isScalar && !typesCurrentlyUnderConstruction.contains(attributeType)) {
@@ -127,47 +159,68 @@ class ParameterFactory {
 }
 
 
-data class EvaluatedEdge(val edge: GraphEdge<Element, Relationship>, val result: Element?, val error: String? = null) {
+data class EvaluatedEdge(val edge: EvaluatableEdge, val resultGraphElement: Element?, override val resultValue: TypedInstance?, val error: String? = null) : PathEvaluation {
+   // TODO : Re-think this.  EvaluatedEdge.element can be null in case of a failure.
+   // Therefore, is it correct that "element" is non-null?
+   override val element: Element = resultGraphElement!!
+
    companion object {
-      fun success(edge: GraphEdge<Element, Relationship>, result: Element): EvaluatedEdge {
-         return EvaluatedEdge(edge, result, null)
+      fun success(evaluatedEdge: EvaluatableEdge, result: Element, resultValue: TypedInstance?): EvaluatedEdge {
+         return EvaluatedEdge(evaluatedEdge, result, resultValue, error = null)
       }
 
-      fun failed(edge: GraphEdge<Element, Relationship>, error: String): EvaluatedEdge {
-         return EvaluatedEdge(edge, null, error)
+      fun failed(edge: EvaluatableEdge, error: String): EvaluatedEdge {
+         return EvaluatedEdge(edge, null, null, error)
       }
    }
-
-   val elements: Set<Element>
-      get() {
-         val elements = setOf(edge.vertex1, edge.vertex2)
-         return if (result == null) elements else elements + result
-      }
 
    val wasSuccessful: Boolean = error == null
 
    fun description(): String {
-      var desc = edge.description()
+      var desc = edge.description
       if (wasSuccessful) {
-         desc += " (${result!!}) ✔"
+         desc += " (${resultGraphElement!!}) ✔"
       } else {
          desc += " ✘ -> $error"
       }
       return desc
    }
+
+   override fun toString(): String = description()
 }
 
 abstract class PassThroughEdgeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
-   override fun evaluate(edge: GraphEdge<Element, Relationship>, context: QueryContext): EvaluatedEdge {
-      return EvaluatedEdge.success(edge, edge.vertex2)
+   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+      return edge.success(edge.previousValue)
    }
 }
 
 class AttributeOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_ATTRIBUTE_OF)
 class IsTypeOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_TYPE_OF)
 class HasParamOfTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
-class InstanceHasAttributeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.INSTANCE_HAS_ATTRIBUTE)
 class OperationParameterEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_PARAMETER_ON)
-class HasAttributeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.HAS_ATTRIBUTE)
 class IsInstanceOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_INSTANCE_OF)
 class CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPULATE)
+
+abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
+   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+      val previousValue = requireNotNull(edge.previousValue) {"Cannot evaluate $relationship when previous value was null.  Work with me here!"}
+      require(previousValue is TypedObject) {"Cannot evaluate $relationship when the previous value isn't a TypedObject - got ${previousValue::class.simpleName}"}
+      val previousObject = previousValue as TypedObject
+      val pathToAttribute = edge.target.value as String// io.vyne.SomeType/someAttribute
+      val attributeName = pathToAttribute.split("/").last()
+      require(previousObject.hasAttribute(attributeName)) {
+         "Cannot evaluation $relationship as the previous object (of type ${previousObject.type.fullyQualifiedName}) does not have an attribute called $attributeName - received path of $pathToAttribute"
+      }
+      val attribute = previousObject[attributeName]
+      return edge.success(attribute)
+   }
+}
+class InstanceHasAttributeEdgeEvaluator : AttributeEvaluator(Relationship.INSTANCE_HAS_ATTRIBUTE)
+
+// Note: I suspect this might cause problems.
+// I'm using this because in a solution path, I receive a value from the server, but still end up
+// evaluating a HasAttribute, rather than InstanceHasAttribute. (see TradeComplianceTest.canFindTraderMaxValue).
+// I have a feeling that I'm going to hit issues here when I'm evluating some paths PRIOR to fetching values.
+// TODO.
+class HasAttributeEdgeEvaluator : AttributeEvaluator(Relationship.HAS_ATTRIBUTE)

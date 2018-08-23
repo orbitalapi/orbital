@@ -2,6 +2,9 @@ import {Component, OnInit} from '@angular/core';
 import {Schema, SchemaMember, SchemaMemberType, Service, Type, TypesService} from "../services/types.service";
 import * as _ from "lodash";
 import {Router} from "@angular/router";
+import {FormControl} from "@angular/forms";
+import {Observable} from "rxjs/internal/Observable";
+import {map, startWith} from "rxjs/operators";
 
 @Component({
   selector: 'app-type-list',
@@ -15,9 +18,16 @@ export class TypeListComponent implements OnInit {
 
   schema: Schema;
   members: SchemaMember[] = [];
+  searchInput = new FormControl();
+
+  filteredMembers: Observable<SchemaMember[]>;
 
   ngOnInit() {
-    this.loadTypes()
+    this.loadTypes();
+    this.filteredMembers = this.searchInput.valueChanges.pipe(
+      startWith(''),
+      map(value => this._filter(value))
+    );
   }
 
   private loadTypes() {
@@ -31,7 +41,10 @@ export class TypeListComponent implements OnInit {
           return m.name.fullyQualifiedName
         }]);
         this.schema = schema;
-        this.members = members
+        this.members = members;
+
+        // Reset the search input - ensures that initial state is populated
+        this.searchInput.setValue("")
       },
       error => console.log("error : " + error)
     );
@@ -49,4 +62,33 @@ export class TypeListComponent implements OnInit {
       queryParams: {"types": [member.name.fullyQualifiedName]}
     })
   }
+
+  private _filter(value: string): SchemaMember[] {
+    if (!this.schema) return [];
+    if (value === "") return this.members;
+
+    // Split by CamelCase:
+    let searchWords = value.match(/([A-Z]?[^A-Z]*)/g);
+
+    const filterValue = value.toLowerCase();
+    return this.members.filter(member => {
+      // Accept exact matches
+      if (member.name.fullyQualifiedName.indexOf(filterValue) !== -1) return true;
+
+      // Search for CamelHumps
+      // We only look at words in the name - ie., exclude the package
+      // TODO : Precompute this
+      let memberNameWords = member.name.name.match(/[A-Z]*[^A-Z]+/g);
+
+
+      let matched = true;
+      searchWords.forEach((searchWord, index) => {
+        if (matched == true && searchWord.length > 0) {
+          matched = (memberNameWords.length > index && memberNameWords[index].indexOf(searchWord) != -1)
+        }
+      });
+      return matched
+    });
+  }
+
 }

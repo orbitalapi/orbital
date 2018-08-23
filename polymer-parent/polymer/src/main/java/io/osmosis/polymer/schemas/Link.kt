@@ -30,7 +30,7 @@ enum class Relationship(val description: String) {
    INSTANCE_HAS_ATTRIBUTE("Instance has attribute"),
    REQUIRES_PARAMETER("Requires parameter"),
    IS_PARAMETER_ON("Is parameter on"),
-   IS_INSTANCE_OF("Is instance of"),
+   IS_INSTANCE_OF("Is instanceOfType of"),
    PROVIDES("provides"),
    CAN_POPULATE("can populate");
 

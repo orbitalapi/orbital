@@ -8,37 +8,42 @@ import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.osmosis.polymer.Element
 import io.osmosis.polymer.PolymerGraphBuilder
-import io.osmosis.polymer.instance
+import io.osmosis.polymer.instanceOfType
 import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.query.graph.EdgeEvaluator
-import io.osmosis.polymer.query.graph.EvaluatedEdge
-import io.osmosis.polymer.query.graph.description
+import io.osmosis.polymer.query.graph.*
 import io.osmosis.polymer.schemas.Link
 import io.osmosis.polymer.schemas.Path
 import io.osmosis.polymer.schemas.Relationship
 import io.osmosis.polymer.schemas.describe
 import io.osmosis.polymer.type
 import io.osmosis.polymer.utils.log
+import jdk.nashorn.internal.objects.NativeArray.forEach
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
 
-   data class StubEdge(val start: Element, val relationship: Relationship, val endNode: Element) : GraphEdge<Element, Relationship> {
-      override fun getEdgeValue(): Relationship = relationship
-      override fun getVertex2() = endNode
-      override fun getVertex1() = start
-      override fun getType(): GraphEdge.Type = GraphEdge.Type.DIRECTED
-   }
+//   fun evaluate(startNode: Element, relationship: Relationship, endNode: Element, queryContext: QueryContext): EvaluatedEdge {
+////      val relationship = edge.edgeValue
+//      val evaluator = evaluators[relationship] ?:
+//      error("No LinkEvaluator provided for relationship ${relationship.name}")
+//      val evaluationResult = queryContext.startChild(this, "Evaluating ${edge.description()} with evaluator ${evaluator.javaClass.simpleName}") {
+//         evaluator.evaluate(edge, queryContext)
+//      }
+//      log().debug("Evaluated ${evaluationResult.description()}")
+//      if (evaluationResult.wasSuccessful) {
+//         return evaluationResult
+//      } else {
+//         throw SearchFailedException("Could not evaluate edge $edge: ${evaluationResult.error!!}", queryContext.evaluatedPath(),queryContext.profiler.root)
+//      }
+//
+//      return evaluate(StubEdge(startNode, relationship, endNode), queryContext)
+//   }
 
-   fun evaluate(startNode: Element, relationship: Relationship, endNode: Element, queryContext: QueryContext): EvaluatedEdge {
-      return evaluate(StubEdge(startNode, relationship, endNode), queryContext)
-   }
-
-   fun evaluate(edge: GraphEdge<Element, Relationship>, queryContext: QueryContext): EvaluatedEdge {
-      val relationship = edge.edgeValue
+   fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): EvaluatedEdge {
+      val relationship = edge.relationship
       val evaluator = evaluators[relationship] ?:
          error("No LinkEvaluator provided for relationship ${relationship.name}")
-      val evaluationResult = queryContext.startChild(this, "Evaluating ${edge.description()} with evaluator ${evaluator.javaClass.simpleName}") {
+      val evaluationResult = queryContext.startChild(this, "Evaluating ${edge.description} with evaluator ${evaluator.javaClass.simpleName}") {
          evaluator.evaluate(edge, queryContext)
       }
       log().debug("Evaluated ${evaluationResult.description()}")
@@ -98,7 +103,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       val factItr = context.facts.iterator()
       var lastResult: Pair<TypedInstance, Path>?
       do {
-         val start = instance(factItr.next())
+         val start = instanceOfType(factItr.next().type)
          lastResult = search(start, targetElement, context)
       } while (factItr.hasNext() && lastResult == null)
       return lastResult
@@ -166,14 +171,16 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       return Hipster.createAStar(problem).search(to).goalNode
    }
 
-   private fun selectResultValue(evaluatedPath: List<EvaluatedEdge>, queryContext: QueryContext, target: Element): TypedInstance? {
+   private fun selectResultValue(evaluatedPath: List<PathEvaluation>, queryContext: QueryContext, target: Element): TypedInstance? {
+      val targetType = queryContext.schema.type(target.value.toString())
+
       // If the last node in the evaluated path is the type we're after, use that.
-      val lastEdgeResult = evaluatedPath.last().result
-      if (lastEdgeResult?.value is TypedInstance && (lastEdgeResult.value as TypedInstance).type == target.value) {
-         return lastEdgeResult.value
+      val lastEdgeResult = evaluatedPath.last().resultValue
+      if (lastEdgeResult != null  && lastEdgeResult.type.matches(targetType)) {
+         return lastEdgeResult
       }
 
-      val targetType = queryContext.schema.type(target.value.toString())
+
       if (queryContext.hasFactOfType(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
          return queryContext.getFact(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
       }
@@ -182,17 +189,33 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       return null
    }
 
-   private fun evaluatePath(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): List<EvaluatedEdge> {
+   private fun evaluatePath(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): List<PathEvaluation> {
       // The actual result of this isn't directly used.  But the queryContext is updated with
       // nodes as they're discovered (eg., through service invocation)
-      return searchResult.path()
-         .drop(1) // The first node has no action
-         .map { weightedNode ->
-            val startNode = weightedNode.previousNode().state()
+      val evaluatedEdges = mutableListOf<PathEvaluation>(
+         getStartingEdge(searchResult, queryContext)
+      )
+      searchResult.path()
+         .drop(1)
+         .mapIndexedTo(evaluatedEdges) { index, weightedNode ->
+            // Note re index:  We dropped 1, so indexes are out-by-one.
+            // Normally the lastValue would be index-1, but here, it's just index.
+            val lastResult = evaluatedEdges[index]
             val endNode = weightedNode.state()
-            val evaluationResult = edgeEvaluator.evaluate(startNode, weightedNode.action(), endNode, queryContext)
+            val evaluationResult = edgeEvaluator.evaluate(EvaluatableEdge(lastResult,weightedNode.action(),endNode), queryContext)
             evaluationResult
-         }.toList()
+         }
+
+      return evaluatedEdges
+   }
+
+   fun getStartingEdge(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): StartingEdge {
+      val firstNode = searchResult.path().first()
+      val firstType = queryContext.schema.type(firstNode.state().valueAsQualifiedName())
+      require(queryContext.hasFactOfType(firstType)) { "The queryContext doesn't have a fact present of type ${firstType.fullyQualifiedName}, but this is the starting point of the discovered solution." }
+      val firstFact = queryContext.getFact(firstType)
+      val startingEdge = StartingEdge(firstFact, firstNode.state())
+      return startingEdge
    }
 //   private fun evaluatePath(searchResult: Algorithm<EvaluateRelationshipAction, Element, WeightedNode<EvaluateRelationshipAction, Element, Double>>.SearchResult, queryContext: QueryContext): List<EvaluatedEdge> {
 //      // The actual result of this isn't directly used.  But the queryContext is updated with

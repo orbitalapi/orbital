@@ -2,6 +2,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {NgModule} from '@angular/core';
 
 import {CovalentDynamicFormsModule} from '@covalent/dynamic-forms';
+import {CovalentHighlightModule} from '@covalent/highlight';
 
 import {AppComponent} from './app.component';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
@@ -18,6 +19,8 @@ import {
   MatListModule,
   MatSelectModule,
   MatSidenavModule,
+  MatTableModule,
+  MatTabsModule,
   MatToolbarModule,
   MatTreeModule,
 } from '@angular/material';
@@ -32,7 +35,11 @@ import {QueryService} from "./services/query.service";
 import {ResultDisplayComponent} from './query-wizard/result-display/result-display.component';
 import {ProfileGraphComponent} from './query-wizard/result-display/profile-graph.component';
 import {NgxGraphModule} from '@swimlane/ngx-graph';
-import { CovalentJsonFormatterModule } from '@covalent/core/json-formatter';
+import {CovalentJsonFormatterModule} from '@covalent/core/json-formatter';
+import {PropertyViewComponent} from './type-list/property-view.component';
+import {CdkTableModule} from "@angular/cdk/table";
+import {SourceViewComponent} from './type-list/source-view.component';
+import { TypeLinksComponent } from './type-list/type-links.component';
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
@@ -48,7 +55,10 @@ const appRoutes = [
     TypeListComponent,
     QueryWizardComponent,
     ResultDisplayComponent,
-    ProfileGraphComponent
+    ProfileGraphComponent,
+    PropertyViewComponent,
+    SourceViewComponent,
+    TypeLinksComponent
   ],
   imports: [
     RouterModule.forRoot(
@@ -77,9 +87,13 @@ const appRoutes = [
     MatInputModule,
     MatSelectModule,
     MatTreeModule,
+    MatTabsModule,
+    MatTableModule,
+    CdkTableModule,
 
     CovalentDynamicFormsModule,
-    CovalentJsonFormatterModule
+    CovalentJsonFormatterModule,
+    CovalentHighlightModule
 
   ],
   providers: [TypesService, QueryService],

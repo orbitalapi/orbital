@@ -47,6 +47,10 @@ data class Type(
    val isScalar = attributes.isEmpty()
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
 
+   fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {
+      return strategy.matches(this, other)
+   }
+
    val fullyQualifiedName: String
       get() = name.fullyQualifiedName
 

@@ -1,11 +1,9 @@
 package io.osmosis.polymer.query.graph.operationInvocation
 
-import es.usc.citius.hipster.graph.GraphEdge
-import io.osmosis.polymer.Element
-import io.osmosis.polymer.instance
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.query.*
 import io.osmosis.polymer.query.graph.EdgeEvaluator
+import io.osmosis.polymer.query.graph.EvaluatableEdge
 import io.osmosis.polymer.query.graph.EvaluatedEdge
 import io.osmosis.polymer.query.graph.ParameterFactory
 import io.osmosis.polymer.query.graph.orientDb.EvaluatedLink
@@ -29,7 +27,7 @@ interface OperationInvoker {
 
 @Component
 class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver(), val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator, OperationInvocationService {
-   override fun evaluate(edge: GraphEdge<Element, Relationship>, context: QueryContext): EvaluatedEdge {
+   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
       val (service, operation) = context.schema.operation(operationName)
 
@@ -49,7 +47,7 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
 
       val result: TypedInstance = invokeOperation(service, operation, visitedInstanceNodes, context)
       context.addFact(result)
-      return EvaluatedEdge.success(edge, instance(result))
+      return edge.success(result)
    }
 
    override val relationship: Relationship = Relationship.PROVIDES

@@ -1,28 +1,50 @@
 <mat-toolbar color="primary">
   <span>Type Explorer</span>
+  <mat-form-field class="search-bar" floatLabel="never">
+    <!--<mat-icon matPrefix>search</mat-icon>-->
+    <!--<mat-label>Search</mat-label>-->
+    <input matInput placeholder="Search" [formControl]="searchInput">
+  </mat-form-field>
 </mat-toolbar>
 <div class="page-content">
-    <mat-accordion class="example-headers-align">
-      <mat-expansion-panel hideToggle *ngFor="let member of members">
-        <mat-expansion-panel-header>
-          <div class="schema-member-container">
-            <div class="member-type">
-              <div [ngClass]="memberType(member).toLowerCase()">{{ memberType(member) }}</div>
-            </div>
-            <div class="member-qualified-name">
-              <div class="member-name">{{ member.name.name}}</div>
-              <div class="member-package">{{ member.name.fullyQualifiedName}}</div>
-            </div>
-            <div class="member-type-alias">
-              {{ member.aliasForType}}
-            </div>
+  <mat-accordion class="example-headers-align">
+    <mat-expansion-panel hideToggle *ngFor="let member of filteredMembers | async">
+      <mat-expansion-panel-header>
+        <div class="schema-member-container">
+          <div class="member-type">
+            <div [ngClass]="memberType(member).toLowerCase()">{{ memberType(member) }}</div>
           </div>
-        </mat-expansion-panel-header>
-
-
-        <mat-action-row>
-          <button mat-button color="primary" (click)="startNewQuery(member)">Start a query</button>
-        </mat-action-row>
-      </mat-expansion-panel>
-    </mat-accordion>
+          <div class="member-qualified-name">
+            <div class="member-name">{{ member.name.name}}</div>
+            <div class="member-package">{{ member.name.fullyQualifiedName}}</div>
+          </div>
+          <div class="member-type-alias">
+            {{ member.aliasForType}}
+          </div>
+        </div>
+      </mat-expansion-panel-header>
+      <div>
+        <mat-tab-group dynamicHeight="true">
+          <mat-tab label="Properties">
+            <ng-template matTabContent>
+              <type-property-view [schemaMember]="member"></type-property-view>
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="Source">
+            <ng-template matTabContent>
+              <type-source-view [schemaMember]="member"></type-source-view>
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="Links">
+            <ng-template matTabContent>
+              <type-links [member]="member"></type-links>
+            </ng-template>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
+      <mat-action-row>
+        <button mat-button color="primary" (click)="startNewQuery(member)">Start a query</button>
+      </mat-action-row>
+    </mat-expansion-panel>
+  </mat-accordion>
 </div>

@@ -2,8 +2,14 @@
 @import "theme-colors";
 /* You can add global styles to this file, and also import other style files */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: 'Work Sans', sans-serif; }
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Work Sans', sans-serif;
+}
 
 $custom-typography: mat-typography-config(
   $font-family: 'Open Sans, sans-serif',
@@ -20,14 +26,13 @@ $custom-typography: mat-typography-config(
 // (imported above). For each palette, you can optionally specify a default, lighter, and darker
 // hue. Available color palettes: https://material.io/design/color/
 $vyne-app-primary: mat-palette($vyne-grey-blue-palette, 700, 800, 600);
-$vyne-app-accent:  mat-palette($vyne-green-palette, 500, 700, 900);
+$vyne-app-accent: mat-palette($vyne-green-palette, 500, 700, 900);
 
 // The warn palette is optional (defaults to red).
-$vyne-app-warn:    mat-palette($mat-red);
+$vyne-app-warn: mat-palette($mat-red);
 
 // Create the theme object (a Sass map containing all of the palettes).
 $vyne-app-theme: mat-light-theme($vyne-app-primary, $vyne-app-accent, $vyne-app-warn);
-
 
 // Include theme styles for core and each component used in your app.
 // Alternatively, you can import and @include the theme mixins for each component

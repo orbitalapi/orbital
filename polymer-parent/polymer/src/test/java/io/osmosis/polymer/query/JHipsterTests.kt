@@ -58,7 +58,7 @@ service ClientLookupService {
       // when the node is built.
       val context = emptyMap<TypeName, TypedInstance>()
       val searchProblem = ProblemBuilder.create()
-         .initialState(instance(invoice))
+         .initialState(instanceOfType(invoice.type))
          .defineProblemWithExplicitActions()
          .useActionFunction({ element ->
             // Find all the relationships that we consider traversable right now
@@ -104,7 +104,7 @@ service ClientLookupService {
    private fun invokeService(from: Element, to: Element): Element {
       // This is a test, so we only handle one kind of function...
       assert(to.value == "Client")
-      return instance(client)
+      return instanceOfType(client.type)
    }
 
    private fun Relationship.canBeEvaluated(from: Element, to: Element, context: Map<TypeName, TypedInstance>): Boolean {

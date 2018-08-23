@@ -1,5 +1,11 @@
 @import "../theme";
 
+
+.search-bar {
+  margin-left: 100px;
+  width: 40rem;
+}
+
 .schema-member-container {
   display: inline-table;
 
@@ -28,14 +34,16 @@
     width: 40rem;
   }
   .member-package {
-    font-family: 'Roboto Mono';
+    font-family: $mono;
     font-size: 0.7rem;
+    color: $grey-1
   }
   .member-type-alias {
     vertical-align: middle;
     display: table-cell;
 
-    font-family: 'Roboto Mono';
+    font-family: $mono;
     font-size: 0.8rem;
+    color: $grey-3
   }
 }
