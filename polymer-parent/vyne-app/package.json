@@ -27,6 +27,7 @@
     "@covalent/highlight": "^1.0.1",
     "@swimlane/ngx-graph": "^5.1.0",
     "core-js": "^2.5.4",
+    "mermaid": "^8.0.0-rc.8",
     "rxjs": "^6.0.0",
     "zone.js": "~0.8.26"
   },

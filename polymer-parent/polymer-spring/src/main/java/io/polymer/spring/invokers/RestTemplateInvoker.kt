@@ -2,7 +2,9 @@ package io.polymer.spring.invokers
 
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.models.TypedObject
+import io.osmosis.polymer.query.OperationType
 import io.osmosis.polymer.query.ProfilerOperation
+import io.osmosis.polymer.query.RemoteCall
 import io.osmosis.polymer.query.graph.operationInvocation.OperationInvocationException
 import io.osmosis.polymer.query.graph.operationInvocation.OperationInvoker
 import io.osmosis.polymer.schemas.Operation
@@ -50,16 +52,21 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       val url = annotation.params["url"] as String
 
 
-      val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation") { httpInvokeOperation  ->
+      val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
          val absoluteUrl = makeUrlAbsolute(service, operation, url)
          log().debug("Operation ${operation.name} resolves to $absoluteUrl")
-         httpInvokeOperation.addContext("Abosulte Url", absoluteUrl)
+         httpInvokeOperation.addContext("Absolute Url", absoluteUrl)
 
          val requestBody = buildRequestBody(operation, parameters)
-         httpInvokeOperation.addContext("Request body", requestBody)
+         httpInvokeOperation.addContext("Service", service)
+         httpInvokeOperation.addContext("Operation", operation)
 
          val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, getUriVariables(parameters))
          httpInvokeOperation.stop(result)
+
+         httpInvokeOperation.addRemoteCall(RemoteCall(
+            service.name, operation.name, httpMethod.name, requestBody.body, result.statusCodeValue, httpInvokeOperation.duration, result.body
+         ))
          if (result.statusCode.is2xxSuccessful) {
             handleSuccessfulHttpResponse(result, operation)
          } else {

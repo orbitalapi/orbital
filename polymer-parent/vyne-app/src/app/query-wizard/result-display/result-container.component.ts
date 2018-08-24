@@ -3,7 +3,7 @@ import {ProfilerOperation, QueryResult} from "../../services/query.service";
 import {QueryFailure} from "../query-wizard.component";
 import {MatTreeNestedDataSource} from "@angular/material";
 import {NestedTreeControl} from "@angular/cdk/tree";
-import {QualifiedName, TypedInstance} from "../../services/types.service";
+import {QualifiedName} from "../../services/types.service";
 
 @ Component({
   selector: 'query-result-container',
@@ -20,6 +20,12 @@ export class ResultContainerComponent implements OnInit {
 
   typeValueResponse = Object.values(simpleResponse.results)[0];
   objectValueResponse = Object.values(objectResponse.results)[0];
+
+  remoteCallMermaid: string = "";
+
+  get showMermaid(): boolean {
+    return this.remoteCallMermaid.length > 0;
+  }
 
   hasChildren(node: ProfilerOperation) {
     return node.children && node.children.length > 0;
@@ -67,6 +73,28 @@ export class ResultContainerComponent implements OnInit {
 
       this.nestedDataSource.data = [(<QueryFailure>this.result).profilerOperation]
     }
+
+    this.generateRemoteCallMermaid()
+  }
+
+  private generateRemoteCallMermaid() {
+    if (!this.result || this.result.remoteCalls.length == 0) {
+      this.remoteCallMermaid = "";
+    }
+
+    let remoteCallLines = this._result.remoteCalls.map(remoteCall => {
+      let wasSuccessful = remoteCall.resultCode >= 200 && remoteCall.resultCode <= 299;
+      let resultMessage = wasSuccessful ? "Success " : "Error ";
+      resultMessage += remoteCall.resultCode;
+      let indent = "    ";
+      let lines = [indent + `Vyne ->> ${remoteCall.service.name}: ${remoteCall.operation} (${remoteCall.method})`,
+        indent + `${remoteCall.service.name} ->> Vyne: ${resultMessage} (${remoteCall.durationMs}ms)`
+      ].join("\n");
+      return lines;
+
+    }).join("\n");
+
+    this.remoteCallMermaid = "sequenceDiagram\n" + remoteCallLines
   }
 
   hasNestedChild = (_: number, nodeData: ProfilerOperation) => nodeData.children.length > 0;

@@ -91,7 +91,7 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
       val strategyIterator: Iterator<QueryStrategy> = strategies.iterator()
       while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
          val queryStrategy = strategyIterator.next()
-         val strategyResult = context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}") { op ->
+         val strategyResult = context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) { op ->
             op.addContext("Search target", target.map { it.type.fullyQualifiedName })
             queryStrategy.invoke(target, context)
          }

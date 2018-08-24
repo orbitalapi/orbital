@@ -70,9 +70,17 @@ data class QueryResult(
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
-   val isFullyResolved:Boolean
+   val isFullyResolved: Boolean
    val profilerOperation: ProfilerOperation?
+   val remoteCalls: List<RemoteCall>
+      get() = collateRemoteCalls(this.profilerOperation)
 }
+
+fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
+   if (profilerOperation == null) return emptyList()
+   return profilerOperation.remoteCalls + profilerOperation.children.flatMap { collateRemoteCalls(it) }
+}
+
 data class TypeNameAndValue(
    val typeName: String,
    val value: Any?

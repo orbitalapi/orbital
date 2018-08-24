@@ -10,7 +10,7 @@ import {
 } from '@covalent/dynamic-forms';
 import {FormControl} from "@angular/forms";
 import {Observable} from "rxjs/internal/Observable";
-import {ProfilerOperation, Query, QueryMode, QueryResult, QueryService} from "../services/query.service";
+import {ProfilerOperation, Query, QueryMode, QueryResult, QueryService, RemoteCall} from "../services/query.service";
 import {HttpErrorResponse} from "@angular/common/http";
 
 @Component({
@@ -42,7 +42,6 @@ export class QueryWizardComponent implements OnInit {
       .subscribe(next => this.schema = next);
     this.route.queryParamMap
       .subscribe(params => {
-          console.log("params: " + params.keys);
           params.getAll("types")
             .forEach(type => this.appendEmptyType(type))
         }
@@ -60,7 +59,6 @@ export class QueryWizardComponent implements OnInit {
   // form events
   getAndRegisterElements(factForm: FactForm, component: TdDynamicFormsComponent) {
     if (this.subscribedDynamicForms.indexOf(component) == -1) {
-      console.log("Subscribing for updates on component");
       component.form.valueChanges.subscribe(valueChangedEvent => {
         this.updateFact(factForm, component.value);
       });
@@ -85,8 +83,6 @@ export class QueryWizardComponent implements OnInit {
 
     let fullyQualifiedName = formSpec.type.name.fullyQualifiedName;
     this.facts[fullyQualifiedName] = nestedValue;
-
-    console.log(`Updated fact ${fullyQualifiedName} - now ${nestedValue}`)
   }
 
   submitQuery() {
@@ -101,7 +97,7 @@ export class QueryWizardComponent implements OnInit {
       }, error => {
         let errorResponse = error as HttpErrorResponse;
         if (errorResponse.error && (errorResponse.error as any).hasOwnProperty('profilerOperation')) {
-          this.lastQueryResult = new QueryFailure(errorResponse.error.message, errorResponse.error.profilerOperation)
+          this.lastQueryResult = new QueryFailure(errorResponse.error.message, errorResponse.error.profilerOperation, errorResponse.error.remoteCalls)
         } else {
           // There was an unhandled error...
           console.error("An unhandled error occurred:");
@@ -209,7 +205,7 @@ export class QueryWizardComponent implements OnInit {
 }
 
 export class QueryFailure {
-  constructor(readonly message: string, readonly profilerOperation: ProfilerOperation) {
+  constructor(readonly message: string, readonly profilerOperation: ProfilerOperation, readonly remoteCalls: RemoteCall[]) {
   }
 }
 

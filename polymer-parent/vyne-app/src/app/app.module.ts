@@ -41,6 +41,7 @@ import {SourceViewComponent} from './type-list/source-view.component';
 import { TypeLinksComponent } from './type-list/type-links.component';
 import { ResultViewerComponent } from './query-wizard/result-display/result-viewer.component';
 import {ResultContainerComponent} from "./query-wizard/result-display/result-container.component";
+import { MermaidComponent } from './mermaid/mermaid.component';
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
@@ -60,7 +61,8 @@ const appRoutes = [
     PropertyViewComponent,
     SourceViewComponent,
     TypeLinksComponent,
-    ResultViewerComponent
+    ResultViewerComponent,
+    MermaidComponent
   ],
   imports: [
     RouterModule.forRoot(

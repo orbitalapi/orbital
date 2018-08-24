@@ -3,7 +3,7 @@ import {HttpClient} from "@angular/common/http";
 import {Observable} from "rxjs/internal/Observable";
 
 import {environment} from 'src/environments/environment';
-import {TypedInstance} from "./types.service";
+import {QualifiedName, TypedInstance} from "./types.service";
 
 @Injectable()
 export class QueryService {
@@ -29,6 +29,17 @@ export interface QueryResult {
   unmatchedNodes: string[];
   fullyResolved: boolean;
   profilerOperation: ProfilerOperation;
+  remoteCalls: RemoteCall[]
+}
+
+export interface RemoteCall {
+   service: QualifiedName;
+   operation: string;
+   method: string;
+   requestBody: any;
+   resultCode: number;
+   durationMs: number;
+   response: any;
 }
 
 export interface ProfilerOperation {

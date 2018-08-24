@@ -43,7 +43,7 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
       val relationship = edge.relationship
       val evaluator = evaluators[relationship] ?:
          error("No LinkEvaluator provided for relationship ${relationship.name}")
-      val evaluationResult = queryContext.startChild(this, "Evaluating ${edge.description} with evaluator ${evaluator.javaClass.simpleName}") {
+      val evaluationResult = queryContext.startChild(this, "Evaluating ${edge.description} with evaluator ${evaluator.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) {
          evaluator.evaluate(edge, queryContext)
       }
       log().debug("Evaluated ${evaluationResult.description()}")
@@ -138,7 +138,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       log().debug("Searching for path from $searchDescription")
 //      log().debug("Current graph state: \n ${graph.description()}")
 
-      return queryContext.startChild(this, "Searching for path ${start.valueAsQualifiedName().name} -> ${target.valueAsQualifiedName().name}") { op ->
+      return queryContext.startChild(this, "Searching for path ${start.valueAsQualifiedName().name} -> ${target.valueAsQualifiedName().name}", OperationType.GRAPH_TRAVERSAL) { op ->
          op.addContext("Current graph", graph.edgeDescriptions())
          doSearch(start, target, graph, searchDescription, queryContext, op)
       }

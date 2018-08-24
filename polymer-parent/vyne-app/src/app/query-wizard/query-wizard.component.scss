@@ -1,15 +1,18 @@
 @import "../theme";
 
 .container {
-  width: 30%;
-  display: inline-grid;
-  padding-right: 45px;
+  flex: 1;
+  &:not(:last-child) {
+    padding-right: 45px;
+  }
+
 }
 .fact-forms-container {
 
 }
 
 .results-container {
+  width: 100%
 }
 
 .target-type-container {
@@ -19,4 +22,10 @@
   .target-type-input {
 
   }
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  margin-bottom: 35px;
 }

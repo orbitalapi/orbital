@@ -19,9 +19,9 @@ class QueryProfilerTest {
 
    @Test
    fun when_recordingOperatesAsClosure_that_itisCaptured() {
-      val result = profiler.startChild("Test", "First") { rec ->
+      val result = profiler.startChild("Test", "First", OperationType.GRAPH_TRAVERSAL) { rec ->
          clock.advanceMillis(10)
-         rec.startChild("Test", "Child") {
+         rec.startChild("Test", "Child", OperationType.GRAPH_TRAVERSAL) {
             clock.advanceMillis(20)
             "Child Completed"
          }
@@ -42,7 +42,7 @@ class QueryProfilerTest {
 
    @Test
    fun when_recordingOperation_then_aNewOperationIsCreated() {
-      val operation = profiler.startChild("Test", "Foo")
+      val operation = profiler.startChild("Test", "Foo", OperationType.GRAPH_TRAVERSAL)
       clock.advanceMillis(10)
       operation.stop()
 
@@ -53,10 +53,10 @@ class QueryProfilerTest {
 
    @Test
    fun given_recordingAnOperation_when_newOperationIsRecorded_then_itIsCapturedAsAChild() {
-      val operation = profiler.startChild("Test", "Parent")
+      val operation = profiler.startChild("Test", "Parent", OperationType.GRAPH_TRAVERSAL)
       clock.advanceMillis(10)
 
-      val child = operation.startChild("Test", "Child")
+      val child = operation.startChild("Test", "Child", OperationType.GRAPH_TRAVERSAL)
       clock.advanceMillis(10)
       child.stop()
 
@@ -74,11 +74,11 @@ class QueryProfilerTest {
 
    @Test
    fun canStackOperations() {
-      val root = profiler.startChild("test", "parent")
-      val child1 = profiler.startChild("test", "child1")
+      val root = profiler.startChild("test", "parent", OperationType.GRAPH_TRAVERSAL)
+      val child1 = profiler.startChild("test", "child1", OperationType.GRAPH_TRAVERSAL)
       child1.stop()
-      val child2 = profiler.startChild("test", "child2")
-      val grandChild1 = profiler.startChild("test", "grandChild1")
+      val child2 = profiler.startChild("test", "child2", OperationType.GRAPH_TRAVERSAL)
+      val grandChild1 = profiler.startChild("test", "grandChild1", OperationType.GRAPH_TRAVERSAL)
       expect(root.children).to.have.size(2)
       expect(root.children[1].children).to.have.size(1)
    }
