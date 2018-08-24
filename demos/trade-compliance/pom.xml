@@ -20,4 +20,11 @@
       <module>services</module>
    </modules>
 
+   <dependencies>
+      <dependency>
+         <groupId>com.fasterxml.jackson.module</groupId>
+         <artifactId>jackson-module-kotlin</artifactId>
+      </dependency>
+   </dependencies>
+
 </project>

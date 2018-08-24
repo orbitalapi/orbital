@@ -75,6 +75,7 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
       try {
          return doFind(target, context)
       } catch (e: Exception) {
+         log().error("Search failed with exception:",e);
          throw SearchRuntimeException(e, context.profiler.root)
       }
    }

@@ -8,7 +8,7 @@ import java.math.BigDecimal
 interface RuleEvaluationResult {
    val ruleId: String
    val status: RuleEvaluationStatus
-   val message: String?
+   val message: String
 }
 
 
@@ -74,5 +74,7 @@ data class TradeRequest(
    val clientId: ClientId,
    val traderId: Username,
    val price: Price
-)
+) {
+
+}
 

@@ -6,6 +6,7 @@ import io.vyne.tradeCompliance.TradeValue
 import io.vyne.tradeCompliance.TraderMaxTradeValue
 import lang.taxi.annotations.*
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 @DataType
@@ -20,15 +21,15 @@ data class TradeValueRuleRequest(
 @RestController
 class TradeValueRuleService {
 
-   @Operation
-   @PostMapping
-   fun evaluate(request: TradeValueRuleRequest) = evaluate(request.tradeValue, request.traderLimit)
+//   @Operation
+//   @PostMapping
+   fun evaluate(@RequestBody request: TradeValueRuleRequest) = evaluate(request.tradeValue, request.traderLimit)
 
    // Specify a rule that the tradeValue must be in the same currency as the traderLimit
    fun evaluate(tradeValue: TradeValue, traderLimit: TraderMaxTradeValue): TradeValueRuleResponse {
       require(tradeValue.currency == traderLimit.currency) { "The trade value and trade limit must be in the same currency" }
       return if (tradeValue.value < traderLimit.value) {
-         TradeValueRuleResponse("TradeValueRule", RuleEvaluationStatus.GREEN)
+         TradeValueRuleResponse("TradeValueRule", RuleEvaluationStatus.GREEN, "OK")
       } else {
          TradeValueRuleResponse("TradeValueRule", RuleEvaluationStatus.RED, "Trade value exceeds trader limit")
       }
@@ -40,5 +41,5 @@ class TradeValueRuleService {
 data class TradeValueRuleResponse(
    override val ruleId: String,
    override val status: RuleEvaluationStatus,
-   override val message: String? = null
+   override val message: String
 ) : RuleEvaluationResult
