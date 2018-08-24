@@ -13,14 +13,13 @@
   </div>
 
   <div class="results-container">
-    <div *ngFor="let result of queryResultValues" class="result-card">
+    <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-card">
       <mat-card>
         <mat-card-header>
-          <mat-card-title>{{ result.type.name.name}}</mat-card-title>
+          <mat-card-title>{{ resultTypeName.name }}</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <td-json-formatter [data]="result.value" key="root">
-          </td-json-formatter>
+          <result-viewer [result]="getResultForTypeName(resultTypeName)"></result-viewer>
         </mat-card-content>
       </mat-card>
     </div>

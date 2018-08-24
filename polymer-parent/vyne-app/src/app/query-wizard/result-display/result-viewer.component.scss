@@ -1,0 +1,46 @@
+@import "../../theme";
+@import '~@angular/material/theming';
+
+.typed-value-container {
+  .type-name {
+    //@include mat-elevation(1);
+
+    font-family: $mono;
+    color: $whiteish;
+    background-color: $grey-3;
+    font-size: 0.8rem;
+
+    border: 1px solid $dark-grey-1;
+    border-radius: 0 0 6px 0;
+
+    width: fit-content;
+    padding: 3px 6px;
+    margin-bottom: 6px;
+  }
+}
+
+.typed-object-container {
+  display: inline-table;
+  border-collapse: collapse;
+  width: 100%;
+
+  .attriubte-row {
+    display: table-row;
+    &:not(:last-child) {
+      border-bottom: 1px solid $light-grey-2;
+    }
+
+    .attribute-name {
+      padding-right: 3rem;
+      display: table-cell !important;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .attribute-value {
+      display: table-cell !important;
+      display: inline-block;
+      padding-bottom: 1rem;
+    }
+
+  }
+}

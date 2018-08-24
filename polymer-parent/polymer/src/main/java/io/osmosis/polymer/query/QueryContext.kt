@@ -43,9 +43,13 @@ enum class QueryMode {
 data class QuerySpecTypeNode(val type: Type, val children: Set<QuerySpecTypeNode> = emptySet(), val mode: QueryMode = QueryMode.DISCOVER)
 
 data class QueryResult(
-   @field:JsonIgnore
-   val results: Map<QuerySpecTypeNode, TypedInstance?>, val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(), val path: Path?, val profilerOperation: ProfilerOperation? = null) {
-   val isFullyResolved = unmatchedNodes.isEmpty()
+   @field:JsonIgnore // we send a lightweight version below
+   val results: Map<QuerySpecTypeNode, TypedInstance?>,
+   val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
+   val path: Path?,
+   override val profilerOperation: ProfilerOperation? = null
+) : QueryResponse {
+   override val isFullyResolved = unmatchedNodes.isEmpty()
    operator fun get(typeName: String): TypedInstance? {
       return this.results.filterKeys { it.type.name.fullyQualifiedName == typeName }
          .values
@@ -58,9 +62,21 @@ data class QueryResult(
          .first()
    }
 
+   // TODO : Replace the TypedInstance's here with a TypeNameAndValue, which removes all the type heriachy stuff --
+   // seems overkill here.
    @JsonProperty("results")
-   val resultMap:Map<String,TypedInstance?> = this.results.mapKeys { (key,value) -> key.type.fullyQualifiedName }
+   val resultMap: Map<String, TypedInstance?> = this.results.mapKeys { (key, value) -> key.type.fullyQualifiedName }
 }
+
+// Note : Also models failures, so is fairly generic
+interface QueryResponse {
+   val isFullyResolved:Boolean
+   val profilerOperation: ProfilerOperation?
+}
+data class TypeNameAndValue(
+   val typeName: String,
+   val value: Any?
+)
 
 object TypedInstanceTree {
    /**

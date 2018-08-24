@@ -1,0 +1,13 @@
+<div class="typed-value-container" *ngIf="isTypedValue">
+  <div class="type-name">{{ typedValue.type.name.name }}</div>
+  <div class="type-value">{{ typedValue.value }}</div>
+</div>
+<div class="typed-object-container" *ngIf="!isTypedValue">
+  <div *ngFor="let attributeName of typedObjectAttributeNames" class="attriubte-row">
+    <div class="attribute-name">{{ attributeName }}</div>
+    <div class="attribute-value">
+      <result-viewer [result]="getTypedObjectAttribute(attributeName)"></result-viewer>
+    </div>
+
+  </div>
+</div>

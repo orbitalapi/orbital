@@ -1,5 +1,6 @@
 package io.osmosis.polymer.query.graph
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import es.usc.citius.hipster.graph.GraphEdge
 import io.osmosis.polymer.Element
 import io.osmosis.polymer.ElementType
@@ -35,6 +36,7 @@ data class StartingEdge(
 ) : PathEvaluation
 
 data class EvaluatableEdge(
+   @JsonIgnore
    val previous: PathEvaluation,
    val relationship: Relationship,
    val target: Element
