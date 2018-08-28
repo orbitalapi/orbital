@@ -1,5 +1,6 @@
 package io.osmosis.polymer.schemas
 
+import com.fasterxml.jackson.annotation.JsonView
 import io.osmosis.polymer.query.TypeMatchingStrategy
 import io.osmosis.polymer.schemas.taxi.DeferredConstraintProvider
 import io.osmosis.polymer.schemas.taxi.EmptyDeferredConstraintProvider
@@ -33,18 +34,33 @@ typealias AttributeName = String
 typealias AttributeType = QualifiedName
 typealias DeclaringType = QualifiedName
 
+interface TypeFullView : TypeLightView
+interface TypeLightView
 data class Type(
+   @JsonView(TypeLightView::class)
    val name: QualifiedName,
+   @JsonView(TypeFullView::class)
    val attributes: Map<AttributeName, TypeReference> = emptyMap(),
+
+   @JsonView(TypeFullView::class)
    val modifiers: List<Modifier> = emptyList(),
+
+   @JsonView(TypeFullView::class)
    val aliasForType: QualifiedName? = null,
+
+   @JsonView(TypeFullView::class)
    val inherits: List<Type> = emptyList(),
+
+   @JsonView(TypeFullView::class)
    val sources: List<SourceCode>
 ) {
    constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, sources)
 
+   @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForType != null;
+   @JsonView(TypeFullView::class)
    val isScalar = attributes.isEmpty()
+   @JsonView(TypeFullView::class)
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
 
    fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {
@@ -54,6 +70,7 @@ data class Type(
    val fullyQualifiedName: String
       get() = name.fullyQualifiedName
 
+   @JsonView(TypeFullView::class)
    val inheritanceGraph = calculateInheritanceGraph()
 
    private fun calculateInheritanceGraph(typesToExclude: List<Type> = emptyList()): List<Type> {

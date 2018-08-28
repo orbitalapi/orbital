@@ -17,6 +17,7 @@ import io.osmosis.polymer.schemas.Relationship
 import io.osmosis.polymer.schemas.describe
 import io.osmosis.polymer.type
 import io.osmosis.polymer.utils.log
+import io.vyne.query.QueryMode
 import jdk.nashorn.internal.objects.NativeArray.forEach
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {

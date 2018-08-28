@@ -13,6 +13,21 @@
 
    <dependencies>
       <dependency>
+         <groupId>io.osmosis.polymer</groupId>
+         <artifactId>vyne-client-spring</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+         <groupId>io.osmosis.demos.trade-compliance</groupId>
+         <artifactId>rules-provider</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+         <groupId>io.osmosis.demos.trade-compliance</groupId>
+         <artifactId>services</artifactId>
+         <version>0.1.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-web</artifactId>
       </dependency>

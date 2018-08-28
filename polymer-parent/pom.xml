@@ -26,6 +26,9 @@
       <module>schema-store-api</module>
       <module>polymer-spring-schemaStore</module>
       <module>vyne-query-service</module>
+      <module>vyne-client</module>
+      <module>vyne-query-api</module>
+      <module>vyne-client-spring</module>
    </modules>
 
    <dependencies>

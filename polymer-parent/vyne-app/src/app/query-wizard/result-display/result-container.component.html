@@ -19,7 +19,7 @@
           <mat-card-title>{{ resultTypeName.name }}</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <result-viewer [result]="getResultForTypeName(resultTypeName)"></result-viewer>
+          <result-viewer [result]="getResultForTypeName(resultTypeName)" [schema]="schema" [type]="getTypeByName(resultTypeName)"></result-viewer>
         </mat-card-content>
       </mat-card>
     </div>

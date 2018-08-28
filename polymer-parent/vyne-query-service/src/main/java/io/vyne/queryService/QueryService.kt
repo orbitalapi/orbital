@@ -1,26 +1,28 @@
 package io.vyne.queryService
 
+import com.fasterxml.jackson.annotation.JsonView
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.query.ProfilerOperation
-import io.osmosis.polymer.query.QueryMode
 import io.osmosis.polymer.query.QueryResponse
 import io.osmosis.polymer.query.SearchFailedException
 import io.osmosis.polymer.schemas.Schema
+import io.osmosis.polymer.schemas.TypeLightView
 import io.polymer.spring.PolymerFactory
+import io.vyne.query.Query
+import io.vyne.query.QueryMode
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
-// TODO : facts should be QualifiedName -> TypedInstance, but need to get
-// json deserialization working for that.
-data class Query(val queryString: String, val facts: Map<String, Any> = emptyMap(), val queryMode: QueryMode = QueryMode.DISCOVER)
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 data class FailedSearchResponse(val message: String, override val profilerOperation: ProfilerOperation) : QueryResponse {
    override val isFullyResolved: Boolean = false
 }
+
+interface SchemaLightView : TypeLightView
 
 /**
  * QueryService provides a simple way to submit queries to polymer, and

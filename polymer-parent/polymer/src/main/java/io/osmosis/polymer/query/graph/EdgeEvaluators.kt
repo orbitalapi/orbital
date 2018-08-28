@@ -38,12 +38,17 @@ data class StartingEdge(
 data class EvaluatableEdge(
    @JsonIgnore
    val previous: PathEvaluation,
+   @JsonIgnore
    val relationship: Relationship,
+   @JsonIgnore
    val target: Element
 ) {
+   @JsonIgnore
    val vertex1: Element = previous.element
+   @JsonIgnore
    val vertex2 = target;
 
+   @JsonIgnore
    val previousValue: TypedInstance? = previous.resultValue
 
    val description = "${vertex1} -[${relationship}]-> ${vertex2}"

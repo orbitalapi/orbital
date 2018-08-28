@@ -5,12 +5,10 @@ import io.vyne.tradeCompliance.RuleEvaluationResult
 import lang.taxi.annotations.DataType
 
 
-@DataType("io.vyne.tradeCompliance.aggregator.RuleEvaluationResults")
-typealias RuleEvaluationResults = List<RuleEvaluationResult>
 
 @DataType
 data class TradeComplianceResult(
-   val results: RuleEvaluationResults
+   val results: List<RuleEvaluationResult>
 ) {
    val status: TradeComplianceStatus = when {
       results.any { it.status == RagStatus.RED } -> RagStatus.RED

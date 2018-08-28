@@ -12,6 +12,7 @@ import io.osmosis.polymer.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.osmosis.polymer.query.graph.EvaluatedEdge
 import io.osmosis.polymer.schemas.*
 import io.osmosis.polymer.utils.log
+import io.vyne.query.QueryMode
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -28,17 +29,6 @@ import kotlin.streams.toList
  *
  */
 // TODO : Why isn't the type enough, given that has children?  Why do I need to explicitly list the children I want?
-enum class QueryMode {
-   /**
-    * Find a single value
-    */
-   DISCOVER,
-
-   /**
-    * Find all the values
-    */
-   GATHER
-}
 
 data class QuerySpecTypeNode(val type: Type, val children: Set<QuerySpecTypeNode> = emptySet(), val mode: QueryMode = QueryMode.DISCOVER)
 
@@ -62,10 +52,8 @@ data class QueryResult(
          .first()
    }
 
-   // TODO : Replace the TypedInstance's here with a TypeNameAndValue, which removes all the type heriachy stuff --
-   // seems overkill here.
    @JsonProperty("results")
-   val resultMap: Map<String, TypedInstance?> = this.results.mapKeys { (key, value) -> key.type.fullyQualifiedName }
+   val resultMap: Map<String, Any?> = this.results.map { (key, value) -> key.type.fullyQualifiedName to value?.toRawObject() }.toMap()
 }
 
 // Note : Also models failures, so is fairly generic

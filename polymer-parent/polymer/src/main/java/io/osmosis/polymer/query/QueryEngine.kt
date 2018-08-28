@@ -6,6 +6,7 @@ import io.osmosis.polymer.query.graph.EvaluatedEdge
 import io.osmosis.polymer.query.graph.operationInvocation.SearchRuntimeException
 import io.osmosis.polymer.schemas.Schema
 import io.osmosis.polymer.utils.log
+import io.vyne.query.QueryMode
 
 
 open class SearchFailedException(message: String, val evaluatedPath: List<EvaluatedEdge>, val profilerOperation: ProfilerOperation) : RuntimeException(message)

@@ -26,3 +26,6 @@ ribbon:
    ServerListRefreshInterval: 1000
 server:
   port: 9100
+
+vyne:
+   queryServiceUrl: http://query-service

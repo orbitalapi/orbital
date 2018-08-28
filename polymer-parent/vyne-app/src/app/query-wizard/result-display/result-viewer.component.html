@@ -1,13 +1,29 @@
-<div class="typed-value-container" *ngIf="isTypedValue">
-  <div class="type-name">{{ typedValue.type.name.name }}</div>
-  <div class="type-value">{{ typedValue.value }}</div>
+<div class="typed-value-container" *ngIf="isPrimitive">
+  <div class="type-name">{{ type.name.name }}</div>
+  <div class="type-value">{{ result }}</div>
 </div>
-<div class="typed-object-container" *ngIf="!isTypedValue">
+<div class="typed-object-container" *ngIf="isTypedObject">
   <div *ngFor="let attributeName of typedObjectAttributeNames" class="attriubte-row">
     <div class="attribute-name">{{ attributeName }}</div>
     <div class="attribute-value">
-      <result-viewer [result]="getTypedObjectAttribute(attributeName)"></result-viewer>
+      <result-viewer [result]="getTypedObjectAttribute(attributeName)"
+                     [schema]="schema"
+                     [type]="getTypeForAttribute(attributeName)"
+      ></result-viewer>
     </div>
 
   </div>
+</div>
+<div class="typed-object-container" *ngIf="isArray">
+  <div *ngFor="let collectionMember of result; let i = index" class="result-collection-member">
+    <div class="collection-index">Item {{i + 1}}</div>
+    <div class="collection-member">
+      <result-viewer [result]="collectionMember"
+                     [schema]="schema"
+                     [type]="type"
+      ></result-viewer>
+
+    </div>
+  </div>
+
 </div>

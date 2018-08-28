@@ -4,6 +4,7 @@ import io.osmosis.polymer.models.TypedCollection
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.operation
 import io.osmosis.polymer.utils.log
+import io.vyne.query.QueryMode
 
 class HipsterGatherGraphQueryStrategy(private val graphQueryStrategy: HipsterDiscoverGraphQueryStrategy) : QueryStrategy {
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {

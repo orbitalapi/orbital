@@ -22,7 +22,7 @@ data class TradeValueRuleRequest(
 class TradeValueRuleService {
 
    @Operation
-   @PostMapping
+   @PostMapping("/rules/traderLimits")
    fun evaluate(@RequestBody request: TradeValueRuleRequest) = evaluate(request.tradeValue, request.traderLimit)
 
    // Specify a rule that the tradeValue must be in the same currency as the traderLimit

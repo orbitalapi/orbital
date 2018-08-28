@@ -19,6 +19,23 @@
   }
 }
 
+.result-collection-member {
+  display: inline-table;
+  width: 100%;
+  .collection-index {
+    display: table-cell;
+    width: 100px;
+    vertical-align: middle;
+    background-color: $dark-grey-1;
+    color: $light-grey-1;
+    text-align: center;
+    border-bottom: 1px solid $light-grey-1;
+  }
+  .collection-member {
+    padding-left: 30px;
+  }
+}
+
 .typed-object-container {
   display: inline-table;
   border-collapse: collapse;
@@ -35,6 +52,9 @@
       display: table-cell !important;
       display: inline-block;
       vertical-align: middle;
+      width: 150px;
+      color: $dark-grey-1;
+      font-family: $mono;
     }
     .attribute-value {
       display: table-cell !important;

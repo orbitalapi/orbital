@@ -23,8 +23,18 @@ interface TypedInstance {
          }.toMap()
       }
 
+      val unwrapCollection = { valueCollection: Collection<*> ->
+         valueCollection.map { collectionMember ->
+            when (collectionMember) {
+               is TypedInstance -> collectionMember.toRawObject()
+               else -> collectionMember
+            }
+         }
+      }
+
       when (value) {
          is Map<*, *> -> return unwrapMap(value as Map<String, Any>)
+         is Collection<*> -> return unwrapCollection(value as Collection<*>)
          // TODO : There's likely other types that need unwrapping
          else -> return value
       }
