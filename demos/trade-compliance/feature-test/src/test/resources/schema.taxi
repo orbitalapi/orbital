@@ -71,9 +71,11 @@ namespace io.vyne {
         message : String
     }
 
+    @ServiceDiscoveryClient(serviceName = "rates-provider")
     service RateConversionService {
-        // operation convertRates( Money, Currency ) : Money( from source, currency = targetCurrency )
-         operation convertRates( TradeValue, Currency ) : TradeValue( from source, currency = targetCurrency )
+         @StubResponse
+         @HttpOperation(method = "POST", url = "/rates/{targetCurrency}")
+         operation convertRates( @RequestBody source : TradeValue, targetCurrency : Currency ) : TradeValue( from source, currency = targetCurrency )
     }
 
     @ServiceDiscoveryClient(serviceName = "rules-provider")

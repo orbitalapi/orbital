@@ -73,7 +73,7 @@ data class ExpectedConstantValueMismatch(private val evaluatedInstance: TypedIns
       // that allow deducing the same answer without the constraint being aware of contracts
       var resolutionAdvice: ResolutionAdvice? = null
 
-      if (contract.returnType == this.requiredType
+      if (contract.returnType.fullyQualifiedName == this.requiredType.fullyQualifiedName
          && contract.containsConstraint(ReturnValueDerivedFromParameterConstraint::class.java)
          && contract.containsConstraint(AttributeValueFromParameterConstraint::class.java, { it.fieldName == this.fieldName })
          ) {

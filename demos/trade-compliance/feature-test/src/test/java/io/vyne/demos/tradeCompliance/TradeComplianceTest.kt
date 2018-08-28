@@ -99,6 +99,7 @@ class TradeComplianceTest {
       val result = polymer.query().find("io.vyne.TraderMaxTradeValue", setOf(tradeRequest))
       expect(result.isFullyResolved).to.be.`true`
 
+
    }
 
    @Test
@@ -120,6 +121,8 @@ class TradeComplianceTest {
    fun canEvaluationTradeValueRule() {
       val result = polymer.query().find("io.vyne.TradeValueRuleResult", setOf(tradeRequest))
       expect(result.isFullyResolved).to.be.`true`
+      // 2, because there are two params, not two invocations. A little un-intuitive, will fix this.
+      expect(stubService.invocations["convertRates"]!!.size).to.equal(2)
    }
 
    @Test

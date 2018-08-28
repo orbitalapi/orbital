@@ -24,11 +24,17 @@ typealias RuleEvaluationStatus = RagStatus
 @DataType("io.vyne.Money")
 @ParameterType
 data class Money(
-   @field:DataType("io.vyne.Currency") val currency: String,
-   @field:DataType("io.vyne.MoneyAmount") val value: BigDecimal)
+   val currency: Currency,
+   val value: MoneyAmount)
 
 @DataType
 typealias TradeValue = Money
+
+@DataType
+typealias Currency = String
+
+@DataType
+typealias MoneyAmount = BigDecimal
 
 @DataType
 typealias TraderMaxTradeValue = Money

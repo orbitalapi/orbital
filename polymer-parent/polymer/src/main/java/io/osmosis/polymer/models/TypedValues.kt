@@ -17,7 +17,7 @@ interface TypedInstance {
       val unwrapMap = { valueMap: Map<String, Any> ->
          valueMap.map { (entryKey, entryValue) ->
             when (entryValue) {
-               is TypedInstance -> entryKey to entryValue.value
+               is TypedInstance -> entryKey to entryValue.toRawObject()
                else -> entryKey to entryValue
             }
          }.toMap()

@@ -56,7 +56,9 @@ class ConstraintViolationResolver {
       val operationContexts = services.flatMap { service ->
          service.operations.map { operation -> service to operation }
       }
-         .map { (service, operation) -> Triple(service, operation, evaluation.violation!!.provideResolutionAdvice(operation, operation.contract)) }
+         .map { (service, operation) ->
+            Triple(service, operation, evaluation.violation!!.provideResolutionAdvice(operation, operation.contract))
+         }
          .filter { (_, _, resolutionAdvice) -> resolutionAdvice != null }
          .map { (service, operation, resolutionAdvice: ResolutionAdvice?) ->
             OperationInvocationContext.from(service, operation, resolutionAdvice!!)
