@@ -37,7 +37,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
    fun getLinksFromNode(@PathVariable("elementType") elementType: ElementType, @PathVariable("nodeName") nodeName: String): SchemaGraph {
       val escapedNodeName = nodeName.replace(":", "/")
       val schema: TaxiSchema = TaxiSchema.from(schemaProvider.schemaString())
-      val graph = PolymerGraphBuilder(schema).build()
+      val graph = PolymerGraphBuilder(schema).buildDisplayGraph()
       val element = Element(escapedNodeName, elementType)
       val edges = graph.edgesOf(element)
       return schemaGraph(edges, schema)
@@ -46,7 +46,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
    @RequestMapping(value = "/types/{typeName}/links")
    fun getLinksFromType(@PathVariable("typeName") typeName: String): SchemaGraph {
       val schema: TaxiSchema = TaxiSchema.from(schemaProvider.schemaString())
-      val graph = PolymerGraphBuilder(schema).build()
+      val graph = PolymerGraphBuilder(schema).buildDisplayGraph()
       val typeElement = schema.type(typeName).asElement()
       val edges = graph.edgesOf(typeElement)
       return schemaGraph(edges, schema)
@@ -55,6 +55,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
    private fun schemaGraph(edges: MutableIterable<GraphEdge<Element, Relationship>>, schema: TaxiSchema): SchemaGraph {
       val schemaGraphNodes = edges.collateElements().map { toSchemaGraphNode(it) }.toSet()
       val schemaGraphLinks = edges.map { toSchemaGraphLink(it) }.toSet()
+
 
       return SchemaGraph(schemaGraphNodes, schemaGraphLinks)
    }

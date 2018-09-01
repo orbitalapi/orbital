@@ -9,6 +9,16 @@ import io.polymer.schemaStore.SchemaStoreClient
 import lang.taxi.generators.java.TaxiGenerator
 
 
+class SimpleTaxiSchemaProvider(val source:String):SchemaSourceProvider {
+   override fun schemaStrings(): List<String> {
+      return listOf(source)
+   }
+
+   override fun schemas(): List<Schema> {
+      return listOf( TaxiSchema.from(source))
+   }
+
+}
 class LocalTaxiSchemaProvider(val models: List<Class<*>>, val services: List<Class<*>>, val taxiGenerator: TaxiGenerator = TaxiGenerator()) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
       return taxiGenerator.forClasses(models + services).generateAsStrings()

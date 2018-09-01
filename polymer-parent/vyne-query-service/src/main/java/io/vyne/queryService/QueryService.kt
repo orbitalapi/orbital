@@ -38,13 +38,14 @@ class QueryService(val polymerFactory: PolymerFactory) {
    fun submitQuery(@RequestBody query: Query): QueryResponse {
       val polymer = polymerFactory.createPolymer()
       val facts = parseFacts(query.facts, polymer.schema)
-      try {
-         return when (query.queryMode) {
+
+      return try {
+         when (query.queryMode) {
             QueryMode.DISCOVER -> polymer.query().find(query.queryString, facts)
             QueryMode.GATHER -> polymer.query().gather(query.queryString, facts)
          }
       } catch (e: SearchFailedException) {
-         return FailedSearchResponse(e.message!!, e.profilerOperation)
+         FailedSearchResponse(e.message!!, e.profilerOperation)
       }
 
    }

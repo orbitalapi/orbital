@@ -2,6 +2,7 @@ package io.osmosis.polymer
 
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.Multimap
+import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.osmosis.polymer.models.TypedInstance
 import io.osmosis.polymer.schemas.*
@@ -88,6 +89,10 @@ class PolymerGraphBuilder(val schema: Schema) {
       return builder.createDirectedGraph()
    }
 
+   fun buildDisplayGraph():HipsterDirectedGraph<Element,Relationship> {
+      val graph = build()
+      return DisplayGraphBuilder().convertToDisplayGraph(graph)
+   }
    private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, facts: Set<TypedInstance>, schema: Schema, typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement>) {
       facts.forEach { typedInstance ->
          val typeFqn = typedInstance.type.fullyQualifiedName
