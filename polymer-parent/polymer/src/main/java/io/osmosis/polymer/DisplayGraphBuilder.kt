@@ -3,7 +3,9 @@ package io.osmosis.polymer
 import es.usc.citius.hipster.graph.DirectedEdge
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
+import io.osmosis.polymer.schemas.QualifiedName
 import io.osmosis.polymer.schemas.Relationship
+import io.osmosis.polymer.schemas.fqn
 import io.osmosis.polymer.utils.log
 
 /**
@@ -20,14 +22,34 @@ class DisplayGraphBuilder {
 
       graph.vertices()
          .filter { visibleInDisplayGraph(it) }
+//         .map { fixOperationNames(it) }
          .forEach { element ->
             graph.outgoingEdgesOf(element)
                .mapNotNull { convertToDisplayGraphRelationship(it,graph) }
                .distinct()
-               .forEach { edge -> viewGraphBuilder.connect(edge.vertex1).to(edge.vertex2).withEdge(edge.edgeValue) }
+               .forEach { edge -> viewGraphBuilder.connect(toDisplayElement(edge.vertex1)).to(toDisplayElement(edge.vertex2)).withEdge(edge.edgeValue) }
          }
 
       return viewGraphBuilder.createDirectedGraph()
+   }
+
+   private fun toDisplayElement(element: Element): Element {
+      return when (element.elementType) {
+         ElementType.OPERATION -> fixOperationNames(element)
+         // TODO : Improve display of others
+         else -> element
+      }
+   }
+
+   private fun fixOperationNames(element: Element): Element {
+      return if (element.elementType == ElementType.OPERATION) {
+         val serviceNameParts = element.valueAsQualifiedName().fullyQualifiedName.split("@@")
+         val serviceName = serviceNameParts[0].fqn().name
+         val operationName = serviceNameParts[1] + "()"
+         Element("$serviceName.$operationName",ElementType.OPERATION)
+
+
+      } else element
    }
 
    private fun convertToDisplayGraphRelationship(edge: GraphEdge<Element, Relationship>, graph: HipsterDirectedGraph<Element, Relationship>): GraphEdge<Element, Relationship>? {
@@ -54,4 +76,9 @@ class DisplayGraphBuilder {
    }
 
 
+}
+
+private fun Element.mapName( nameMapper: (QualifiedName) -> String ):Element {
+   val updatedName = nameMapper(this.valueAsQualifiedName())
+   return Element(updatedName,this.elementType,this.instanceValue)
 }

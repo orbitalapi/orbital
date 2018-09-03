@@ -1,6 +1,14 @@
 @import '~highlight.js/styles/vs.css';
-
+@import "../theme";
 .source-viewer {
   padding: 12px 0;
   font-size: 0.9rem;
+}
+
+.service-name {
+  font-family: $mono;
+  background-color: $dark-grey-2;
+  color: $light-grey-1;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
