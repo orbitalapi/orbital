@@ -44,7 +44,8 @@ export class MermaidComponent implements OnInit, AfterViewInit {
 
   private renderMermaid() {
     mermaid.initialize({
-      theme: "dark"
+      themeCSS: themeCSS
+      // theme: "dark"
     });
     if (!this.mermaidContainer) {
       console.log("Not rendering mermaid - container not present yet");
@@ -69,6 +70,43 @@ export class MermaidComponent implements OnInit, AfterViewInit {
 
 }
 
+
+const themeCSS = `
+text.actor {
+  font-size: 12px
+}
+
+.messageLine0 {
+    stroke-width:1.5;
+    stroke-dasharray: "2 2";
+    marker-end:"url(#arrowhead)";
+        stroke:black;
+}
+
+.messageLine1 {
+    stroke-width:1.5;
+    stroke-dasharray: "2 2";
+    stroke:black;
+}
+
+#arrowhead {
+        fill:black;
+}
+
+.messageText {
+        fill:black;
+    stroke:none;
+    font-family: 'Work Sans', verdana, arial;
+    font-size:12px;
+}
+
+.labelText {
+        fill:black;
+    stroke:none;
+    font-family: 'Work Sans', verdana, arial;
+}
+
+`
 const input = `
 sequenceDiagram
     participant John

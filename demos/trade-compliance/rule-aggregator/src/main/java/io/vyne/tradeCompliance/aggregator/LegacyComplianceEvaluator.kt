@@ -81,6 +81,4 @@ class LegacyComplianceEvaluator(
          ),
          TradeValueRuleResponse::class.java)
    }
-
-
 }
