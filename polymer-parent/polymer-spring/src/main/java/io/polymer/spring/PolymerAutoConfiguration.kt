@@ -50,7 +50,7 @@ class PolymerFactory(private val schemaProvider: SchemaSourceProvider, private v
    }
 
    // For readability
-   fun createPolymer() = `object`
+   fun createPolymer() = getObject()
 
    private fun buildPolymer(): Polymer {
       val polymer = Polymer(QueryEngineFactory.withOperationInvokers(operationInvokers))
