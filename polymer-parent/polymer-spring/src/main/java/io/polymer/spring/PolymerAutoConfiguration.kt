@@ -17,7 +17,7 @@ import lang.taxi.annotations.Service
 import lang.taxi.generators.java.DefaultServiceMapper
 import lang.taxi.generators.java.ServiceMapper
 import lang.taxi.generators.java.TaxiGenerator
-import lang.taxi.generators.java.extensions.HttpServiceAddressProvider
+import lang.taxi.generators.java.extensions.ServiceDiscoveryAddressProvider
 import lang.taxi.generators.java.extensions.SpringMvcHttpOperationExtension
 import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
 import org.springframework.beans.factory.FactoryBean
@@ -160,7 +160,7 @@ class PolymerConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
       }
    }
 
-   private fun registerRemoteSchemaProvider(registry: BeanDefinitionRegistry, schemaStoreClientBeanName:String) {
+   private fun registerRemoteSchemaProvider(registry: BeanDefinitionRegistry, schemaStoreClientBeanName: String) {
       log().debug("Enabling remote schema store")
       registry.registerBeanDefinition("RemoteTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(RemoteTaxiSchemaProvider::class.java)
          .addConstructorArgReference(schemaStoreClientBeanName)
@@ -175,7 +175,7 @@ class PolymerConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
             .addConstructorArgReference("hazelcast")
             .addConstructorArgValue(TaxiSchemaValidator())
             .beanDefinition
-         )
+      )
       registerRemoteSchemaProvider(registry, schemaStoreClientBeanName)
 
 //      registry.registerBeanDefinitionOfType(HazelcastSchemaStoreClient::class.java)
@@ -189,16 +189,11 @@ class PolymerConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
    }
 
    fun serviceMapper(env: Environment): ServiceMapper {
-      val applicationName = env.getProperty("spring.application.name") ?: error("Currently, only service-discovery enabled services are supported.  Please define spring.application.name in properties")
+      val applicationName = env.getProperty("spring.application.name")
+         ?: error("Currently, only service-discovery enabled services are supported.  Please define spring.application.name in properties")
       val operationExtensions = listOf(SpringMvcHttpOperationExtension())
       val serviceExtensions = listOf(SpringMvcHttpServiceExtension(
-         object : HttpServiceAddressProvider {
-            override fun httpAddress(): lang.taxi.types.Annotation {
-               return lang.taxi.types.Annotation("ServiceDiscoveryClient", mapOf("serviceName" to applicationName))
-            }
-
-         }
-      ))
+         ServiceDiscoveryAddressProvider(applicationName)))
       return DefaultServiceMapper(operationExtensions = operationExtensions, serviceExtensions = serviceExtensions)
    }
 
@@ -210,7 +205,7 @@ class PolymerConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
    }
 }
 
-fun BeanDefinitionRegistry.registerBeanDefinitionOfType(clazz: Class<*>):String {
+fun BeanDefinitionRegistry.registerBeanDefinitionOfType(clazz: Class<*>): String {
    val beanName = clazz.simpleName
    this.registerBeanDefinition(beanName,
       BeanDefinitionBuilder.genericBeanDefinition(clazz).beanDefinition)
