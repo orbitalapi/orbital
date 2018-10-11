@@ -6,6 +6,7 @@ import io.vyne.tradeCompliance.TradeRequest
 import lang.taxi.annotations.Operation
 import lang.taxi.annotations.Service
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -14,7 +15,7 @@ class TradeComplianceEvaluator(val vyne: VyneClient) {
 
    @PostMapping("/tradeCompliance")
    @Operation
-   fun evaluate(tradeRequest: TradeRequest): TradeComplianceResult {
+   fun evaluate(@RequestBody tradeRequest: TradeRequest): TradeComplianceResult {
       val ruleEvaluations = vyne
          .given(tradeRequest)
          .gather<RuleEvaluationResult>()
