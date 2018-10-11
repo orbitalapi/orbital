@@ -17,6 +17,7 @@
 
    <properties>
       <jackson.version>2.9.3</jackson.version>
+      <taxi.version>0.1.1-SNAPSHOT</taxi.version>
    </properties>
    <modules>
       <module>polymer</module>
@@ -34,6 +35,25 @@
    <dependencies>
    </dependencies>
 
+   <dependencyManagement>
+      <dependencies>
+         <dependency>
+            <groupId>lang.taxi</groupId>
+            <artifactId>compiler</artifactId>
+            <version>${taxi.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>lang.taxi</groupId>
+            <artifactId>taxi-annotations</artifactId>
+            <version>${taxi.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>lang.taxi</groupId>
+            <artifactId>java2taxi</artifactId>
+            <version>${taxi.version}</version>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
    <repositories>
       <repository>
          <id>central</id>

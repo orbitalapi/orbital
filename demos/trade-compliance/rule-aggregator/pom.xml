@@ -15,7 +15,7 @@
       <dependency>
          <groupId>io.osmosis.polymer</groupId>
          <artifactId>vyne-client-spring</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
+         <version>${vyne.version}</version>
       </dependency>
       <dependency>
          <groupId>io.osmosis.demos.trade-compliance</groupId>
@@ -43,19 +43,18 @@
       <dependency>
          <groupId>io.osmosis.polymer</groupId>
          <artifactId>polymer</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
+         <version>${vyne.version}</version>
       </dependency>
       <dependency>
          <groupId>io.osmosis.polymer</groupId>
          <artifactId>polymer-spring</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
+         <version>${vyne.version}</version>
       </dependency>
       <dependency>
          <groupId>lang.taxi</groupId>
          <artifactId>taxi-annotation-processor</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
+         <version>${taxi.version}</version>
       </dependency>
-
    </dependencies>
    <build>
       <plugins>

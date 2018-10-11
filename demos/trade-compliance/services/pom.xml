@@ -29,12 +29,12 @@
       <dependency>
          <groupId>io.osmosis.polymer</groupId>
          <artifactId>polymer</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
+         <version>${vyne.version}</version>
       </dependency>
       <dependency>
          <groupId>io.osmosis.polymer</groupId>
          <artifactId>polymer-spring</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
+         <version>${vyne.version}</version>
       </dependency>
    </dependencies>
 </project>

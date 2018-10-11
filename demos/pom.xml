@@ -16,6 +16,8 @@
    <version>0.1.0-SNAPSHOT</version>
 
    <properties>
+      <taxi.version>0.1.1-SNAPSHOT</taxi.version>
+      <vyne.version>${project.version}</vyne.version>
       <spring.bom.version>Brussels-SR3</spring.bom.version>
       <spring.cloud.netflix.version>1.3.1.RELEASE</spring.cloud.netflix.version>
    </properties>

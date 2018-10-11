@@ -15,7 +15,7 @@
       <dependency>
          <groupId>lang.taxi</groupId>
          <artifactId>taxi-annotation-processor</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
+         <version>${taxi.version}</version>
       </dependency>
       <dependency>
          <groupId>com.fasterxml.jackson.module</groupId>
