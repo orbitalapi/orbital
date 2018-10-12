@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
       <artifactId>trade-compliance-parent</artifactId>
-      <groupId>io.osmosis.demos.trade-compliance</groupId>
+      <groupId>io.vyne.demos.trade-compliance</groupId>
       <version>0.1.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
@@ -13,17 +13,17 @@
 
    <dependencies>
       <dependency>
-         <groupId>io.osmosis.polymer</groupId>
+         <groupId>io.vyne</groupId>
          <artifactId>vyne-client-spring</artifactId>
          <version>${vyne.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.osmosis.demos.trade-compliance</groupId>
+         <groupId>io.vyne.demos.trade-compliance</groupId>
          <artifactId>rules-provider</artifactId>
          <version>0.1.0-SNAPSHOT</version>
       </dependency>
       <dependency>
-         <groupId>io.osmosis.demos.trade-compliance</groupId>
+         <groupId>io.vyne.demos.trade-compliance</groupId>
          <artifactId>services</artifactId>
          <version>0.1.0-SNAPSHOT</version>
       </dependency>
@@ -32,7 +32,7 @@
          <artifactId>spring-boot-starter-web</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.osmosis.demos.trade-compliance</groupId>
+         <groupId>io.vyne.demos.trade-compliance</groupId>
          <artifactId>common</artifactId>
          <version>0.1.0-SNAPSHOT</version>
       </dependency>
@@ -41,13 +41,13 @@
          <artifactId>spring-cloud-starter-eureka</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.osmosis.polymer</groupId>
-         <artifactId>polymer</artifactId>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
          <version>${vyne.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.osmosis.polymer</groupId>
-         <artifactId>polymer-spring</artifactId>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-spring</artifactId>
          <version>${vyne.version}</version>
       </dependency>
       <dependency>

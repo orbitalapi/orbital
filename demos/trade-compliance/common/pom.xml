@@ -3,7 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <parent>
-      <groupId>io.osmosis.demos.trade-compliance</groupId>
+      <groupId>io.vyne.demos.trade-compliance</groupId>
       <artifactId>trade-compliance-parent</artifactId>
       <version>0.1.0-SNAPSHOT</version>
    </parent>
