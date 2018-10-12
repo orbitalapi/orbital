@@ -28,6 +28,10 @@
       <jackson.version>2.9.3</jackson.version>
    </properties>
 
+   <scm>
+      <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>
+   </scm>
+
    <dependencies>
       <dependency>
          <groupId>org.jetbrains.kotlin</groupId>
