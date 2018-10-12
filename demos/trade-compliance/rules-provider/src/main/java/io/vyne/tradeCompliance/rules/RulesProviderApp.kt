@@ -1,8 +1,8 @@
 package io.vyne.tradeCompliance.rules
 
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import io.polymer.spring.EnablePolymer
-import io.polymer.spring.RemoteSchemaStoreType
+import io.vyne.spring.EnableVyne
+import io.vyne.spring.RemoteSchemaStoreType
 import io.vyne.tradeCompliance.TypeAliases
 import lang.taxi.TypeAliasRegistry
 import org.springframework.boot.SpringApplication
@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Bean
 
 @SpringBootApplication
 @EnableEurekaClient
-@EnablePolymer(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
+@EnableVyne(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
 class RulesProviderApp {
    companion object {
 

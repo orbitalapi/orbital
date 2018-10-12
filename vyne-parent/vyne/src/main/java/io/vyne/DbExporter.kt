@@ -3,7 +3,7 @@ package io.vyne
 import com.orientechnologies.orient.core.command.OCommandOutputListener
 import com.orientechnologies.orient.core.db.tool.ODatabaseExport
 import com.tinkerpop.blueprints.impls.orient.OrientBaseGraph
-import io.osmosis.polymer.utils.log
+import io.vyne.utils.log
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.output.ByteArrayOutputStream
 import java.io.File

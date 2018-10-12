@@ -1,7 +1,7 @@
 package io.vyne.schemas
 
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.models.TypedObject
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
 
 interface ConstraintViolationValueUpdater {
    fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance

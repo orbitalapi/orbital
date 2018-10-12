@@ -7,10 +7,10 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 
-@DataType("polymer.creditInc.Money")
+@DataType("vyne.creditInc.Money")
 data class Money(
-   @field:DataType("polymer.creditInc.Currency") val currency: String,
-   @field:DataType("polymer.creditInc.MoneyAmount") val value: BigDecimal)
+   @field:DataType("vyne.creditInc.Currency") val currency: String,
+   @field:DataType("vyne.creditInc.MoneyAmount") val value: BigDecimal)
 
 
 @Service
@@ -30,7 +30,7 @@ class RateConversionService {
    @ResponseContract(basedOn = "source",
       constraints = ResponseConstraint("currency = targetCurrency")
    )
-   fun convertRates(@RequestBody source: Money, @DataType("polymer.creditInc.Currency") @PathVariable("targetCcy") targetCurrency: String): Money {
+   fun convertRates(@RequestBody source: Money, @DataType("vyne.creditInc.Currency") @PathVariable("targetCcy") targetCurrency: String): Money {
       val exchangeRate = BigDecimal("1.0345")
       return Money(targetCurrency, source.value.multiply(exchangeRate))
    }

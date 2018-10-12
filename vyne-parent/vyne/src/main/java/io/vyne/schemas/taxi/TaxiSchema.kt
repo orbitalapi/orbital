@@ -1,9 +1,9 @@
 package io.vyne.schemas.taxi
 
 import com.google.common.collect.ArrayListMultimap
-import io.osmosis.polymer.SchemaAggregator
-import io.osmosis.polymer.schemas.*
-import io.osmosis.polymer.schemas.Modifier
+import io.vyne.SchemaAggregator
+import io.vyne.schemas.*
+import io.vyne.schemas.Modifier
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.services.Constraint
@@ -154,7 +154,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
 }
 
 private fun lang.taxi.SourceCode.toVyneSource(): SourceCode {
-   return io.osmosis.polymer.schemas.SourceCode(this.origin, TaxiSchema.LANGUAGE, this.content)
+   return io.vyne.schemas.SourceCode(this.origin, TaxiSchema.LANGUAGE, this.content)
 }
 
 private fun List<lang.taxi.CompilationUnit>.toVyneSources(): List<SourceCode> {

@@ -1,8 +1,8 @@
 package io.vyne.queryService
 
-import io.osmosis.polymer.schemas.Schema
-import io.osmosis.polymer.schemas.taxi.TaxiSchema
-import io.polymer.schemaStore.SchemaSourceProvider
+import io.vyne.schemas.Schema
+import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.schemaStore.SchemaSourceProvider
 import org.springframework.web.bind.annotation.*
 
 @RestController

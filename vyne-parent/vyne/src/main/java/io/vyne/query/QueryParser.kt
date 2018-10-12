@@ -1,6 +1,6 @@
 package io.vyne.query
 
-import io.osmosis.polymer.schemas.Schema
+import io.vyne.schemas.Schema
 
 class QueryParser(val schema: Schema) {
    fun parse(query: String): Set<QuerySpecTypeNode> {

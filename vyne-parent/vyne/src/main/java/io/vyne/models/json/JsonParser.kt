@@ -3,14 +3,14 @@ package io.vyne.models.json
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.osmosis.polymer.ModelContainer
-import io.osmosis.polymer.models.TypedCollection
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.models.TypedObject
-import io.osmosis.polymer.models.TypedValue
-import io.osmosis.polymer.schemas.Schema
-import io.osmosis.polymer.schemas.Type
-import io.osmosis.polymer.schemas.TypeReference
+import io.vyne.ModelContainer
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
+import io.vyne.schemas.TypeReference
 
 fun ModelContainer.addJsonModel(typeName: String, json: String): TypedInstance {
    val model = parseJsonModel(typeName, json)

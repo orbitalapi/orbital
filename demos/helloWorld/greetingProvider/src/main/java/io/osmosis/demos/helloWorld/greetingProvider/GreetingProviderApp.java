@@ -1,12 +1,12 @@
 package io.osmosis.demos.helloWorld.greetingProvider;
 
-import io.polymer.spring.EnablePolymer;
-import io.polymer.spring.RemoteSchemaStoreType;
+import io.vyne.spring.EnableVyne;
+import io.vyne.spring.RemoteSchemaStoreType;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 
-@EnablePolymer(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
+@EnableVyne(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
 @EnableEurekaClient
 @SpringBootApplication
 public class GreetingProviderApp {

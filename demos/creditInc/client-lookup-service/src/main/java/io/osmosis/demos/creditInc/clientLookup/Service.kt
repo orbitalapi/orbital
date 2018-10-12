@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RestController
 // It allows microservices to declare their own version of
 // the entity, with the attributes appropriate to it's service
 // and reduces coupling between the services
-@DataType("polymer.creditInc.Client")
-data class Client(@field:DataType("polymer.creditInc.ClientId") val clientId: String,
-                  @field:DataType("polymer.creditInc.ClientName") val clientName: String,
+@DataType("vyne.creditInc.Client")
+data class Client(@field:DataType("vyne.creditInc.ClientId") val clientId: String,
+                  @field:DataType("vyne.creditInc.ClientName") val clientName: String,
                   @field:DataType("isic.uk.SIC2008") val sicCode: String
 )
 
@@ -31,7 +31,7 @@ class ClientLookupService {
 
    @RequestMapping("/clients/{id}")
    @Operation
-   fun findClientById(@DataType("polymer.creditInc.ClientId") @PathVariable("id") clientId: String): Client {
+   fun findClientById(@DataType("vyne.creditInc.ClientId") @PathVariable("id") clientId: String): Client {
       return clientsById[clientId] ?: error("No client with $clientId was found")
    }
 }

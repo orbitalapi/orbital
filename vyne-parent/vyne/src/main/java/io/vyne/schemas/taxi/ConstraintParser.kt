@@ -1,7 +1,7 @@
 package io.vyne.schemas.taxi
 
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.schemas.*
+import io.vyne.models.TypedInstance
+import io.vyne.schemas.*
 import lang.taxi.services.AttributeConstantValueConstraint
 import lang.taxi.services.AttributeValueFromParameterConstraint
 import lang.taxi.services.ReturnValueDerivedFromParameterConstraint
@@ -92,7 +92,7 @@ class AttributeConstantConstraintProvider : InputConstraintProvider {
       val taxiConstraint = constraint as AttributeConstantValueConstraint
       val expectedValue = buildExpectedValueInstance(constrainedType, constraint, schema)
 
-      return io.osmosis.polymer.schemas.AttributeConstantValueConstraint(
+      return io.vyne.schemas.AttributeConstantValueConstraint(
          taxiConstraint.fieldName,
          expectedValue
       )
@@ -120,7 +120,7 @@ class AttributeValueFromParameterConstraintProvider : ContractConstraintProvider
 
    override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): OutputConstraint {
       val taxiConstraint = constraint as AttributeValueFromParameterConstraint
-      return io.osmosis.polymer.schemas.AttributeValueFromParameterConstraint(
+      return io.vyne.schemas.AttributeValueFromParameterConstraint(
          taxiConstraint.fieldName, taxiConstraint.attributePath
       )
    }
@@ -133,7 +133,7 @@ class ReturnValueDerivedFromParameterConstraintProvider : ContractConstraintProv
 
    override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): OutputConstraint {
       val taxiConstraint = constraint as ReturnValueDerivedFromParameterConstraint
-      return io.osmosis.polymer.schemas.ReturnValueDerivedFromParameterConstraint(taxiConstraint.attributePath)
+      return io.vyne.schemas.ReturnValueDerivedFromParameterConstraint(taxiConstraint.attributePath)
    }
 
 }

@@ -1,10 +1,10 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonView
-import io.osmosis.polymer.query.TypeMatchingStrategy
-import io.osmosis.polymer.schemas.taxi.DeferredConstraintProvider
-import io.osmosis.polymer.schemas.taxi.EmptyDeferredConstraintProvider
-import io.osmosis.polymer.utils.assertingThat
+import io.vyne.query.TypeMatchingStrategy
+import io.vyne.schemas.taxi.DeferredConstraintProvider
+import io.vyne.schemas.taxi.EmptyDeferredConstraintProvider
+import io.vyne.utils.assertingThat
 import java.io.Serializable
 
 fun String.fqn(): QualifiedName {

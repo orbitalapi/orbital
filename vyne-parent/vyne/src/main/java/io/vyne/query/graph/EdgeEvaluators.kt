@@ -2,20 +2,20 @@ package io.vyne.query.graph
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import es.usc.citius.hipster.graph.GraphEdge
-import io.osmosis.polymer.Element
-import io.osmosis.polymer.ElementType
-import io.osmosis.polymer.instanceOfType
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.models.TypedObject
-import io.osmosis.polymer.query.FactDiscoveryStrategy
-import io.osmosis.polymer.query.QueryContext
-import io.osmosis.polymer.query.QuerySpecTypeNode
-import io.osmosis.polymer.query.graph.operationInvocation.UnresolvedOperationParametersException
-import io.osmosis.polymer.schemas.Relationship
-import io.osmosis.polymer.schemas.Type
-import io.osmosis.polymer.schemas.fqn
-import io.osmosis.polymer.utils.assertingThat
-import io.osmosis.polymer.utils.log
+import io.vyne.Element
+import io.vyne.ElementType
+import io.vyne.instanceOfType
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.query.FactDiscoveryStrategy
+import io.vyne.query.QueryContext
+import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.Type
+import io.vyne.schemas.fqn
+import io.vyne.utils.assertingThat
+import io.vyne.utils.log
 
 
 fun GraphEdge<Element, Relationship>.description(): String {

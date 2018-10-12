@@ -1,16 +1,16 @@
 package io.vyne.demos
 
 import com.winterbe.expekt.expect
-import io.osmosis.polymer.Polymer
-import io.osmosis.polymer.StubService
-import io.osmosis.polymer.models.json.parseJsonModel
-import io.osmosis.polymer.query.QueryEngineFactory
-import io.osmosis.polymer.schemas.taxi.TaxiSchema
+import io.vyne.Vyne
+import io.vyne.StubService
+import io.vyne.models.json.parseJsonModel
+import io.vyne.query.QueryEngineFactory
+import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
 class InvoiceMarkupTest {
    val taxiDef = """
-namespace polymer.creditInc {
+namespace vyne.creditInc {
     type Client {
         clientId : ClientId
     }
@@ -24,7 +24,7 @@ namespace polymer.creditInc {
     type alias settlementDate as Date
 }
 
-namespace polymer.creditInc {
+namespace vyne.creditInc {
     type Client {
         clientId : ClientId
         clientName : ClientName
@@ -38,11 +38,11 @@ namespace polymer.creditInc {
 namespace io.osmosis.demos.creditInc.clientLookup {
     service ClientLookupService {
         @StubResponse
-        operation findClientById( polymer.creditInc.ClientId ) : polymer.creditInc.Client
+        operation findClientById( vyne.creditInc.ClientId ) : vyne.creditInc.Client
     }
 }
 
-namespace polymer.creditInc {
+namespace vyne.creditInc {
     type Money {
         currency : Currency
         amount : MoneyAmount
@@ -55,11 +55,11 @@ namespace polymer.creditInc {
 namespace io.osmosis.demos.invictus.rates {
     service RateConversionService {
         @StubResponse
-        operation convertRates( polymer.creditInc.Money, polymer.creditInc.Currency ) : polymer.creditInc.Money
+        operation convertRates( vyne.creditInc.Money, vyne.creditInc.Currency ) : vyne.creditInc.Money
     }
 }
 
-namespace polymer.creditInc {
+namespace vyne.creditInc {
     parameter type CreditCostRequest {
         industryCode : isic.uk.SIC2003
     }
@@ -75,10 +75,10 @@ namespace polymer.creditInc {
     type alias CreditRiskCost as Decimal
 }
 
-namespace polymer.creditInc.creditMarkup {
+namespace vyne.creditInc.creditMarkup {
     service CreditCostService {
         @StubResponse
-        operation calculateCreditCosts( polymer.creditInc.CreditCostRequest ) : polymer.creditInc.CreditCostResponse
+        operation calculateCreditCosts( vyne.creditInc.CreditCostRequest ) : vyne.creditInc.CreditCostResponse
     }
 }
 
@@ -111,7 +111,7 @@ namespace io.osmosis.demos.creditInc.isic {
    fun runTest() {
       val stubService = StubService()
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
-      val polymer = Polymer(queryEngineFactory).addSchema(schema)
+      val vyne = Vyne(queryEngineFactory).addSchema(schema)
 
       val invoiceJson = """
 {
@@ -129,11 +129,11 @@ namespace io.osmosis.demos.creditInc.isic {
 "cost" : 250.00
 }"""
       // Set up stub service responses
-      stubService.addResponse("findClientById", polymer.parseJsonModel("polymer.creditInc.Client", clientJson))
-      stubService.addResponse("calculateCreditCosts", polymer.parseJsonModel("polymer.creditInc.CreditCostResponse", creditCostResponse))
+      stubService.addResponse("findClientById", vyne.parseJsonModel("vyne.creditInc.Client", clientJson))
+      stubService.addResponse("calculateCreditCosts", vyne.parseJsonModel("vyne.creditInc.CreditCostResponse", creditCostResponse))
 
-      val invoice = polymer.parseJsonModel("polymer.creditInc.Invoice", invoiceJson)
-      val result = polymer.query().find("polymer.creditInc.CreditRiskCost", setOf(invoice))
-      expect(result["polymer.creditInc.CreditRiskCost"]!!.value).to.equal(250.0)
+      val invoice = vyne.parseJsonModel("vyne.creditInc.Invoice", invoiceJson)
+      val result = vyne.query().find("vyne.creditInc.CreditRiskCost", setOf(invoice))
+      expect(result["vyne.creditInc.CreditRiskCost"]!!.value).to.equal(250.0)
    }
 }

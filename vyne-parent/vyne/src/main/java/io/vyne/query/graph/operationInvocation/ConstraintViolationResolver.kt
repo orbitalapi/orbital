@@ -1,8 +1,8 @@
 package io.vyne.query.graph.operationInvocation
 
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.query.QueryContext
-import io.osmosis.polymer.schemas.*
+import io.vyne.models.TypedInstance
+import io.vyne.query.QueryContext
+import io.vyne.schemas.*
 
 /**
  * Given a constraint on a parameter that is violated,

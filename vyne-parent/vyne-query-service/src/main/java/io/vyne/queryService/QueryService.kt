@@ -1,13 +1,12 @@
 package io.vyne.queryService
 
-import com.fasterxml.jackson.annotation.JsonView
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.query.ProfilerOperation
-import io.osmosis.polymer.query.QueryResponse
-import io.osmosis.polymer.query.SearchFailedException
-import io.osmosis.polymer.schemas.Schema
-import io.osmosis.polymer.schemas.TypeLightView
-import io.polymer.spring.PolymerFactory
+import io.vyne.models.TypedInstance
+import io.vyne.query.ProfilerOperation
+import io.vyne.query.QueryResponse
+import io.vyne.query.SearchFailedException
+import io.vyne.schemas.Schema
+import io.vyne.schemas.TypeLightView
+import io.vyne.spring.VyneFactory
 import io.vyne.query.Query
 import io.vyne.query.QueryMode
 import org.springframework.http.HttpStatus
@@ -25,24 +24,24 @@ data class FailedSearchResponse(val message: String, override val profilerOperat
 interface SchemaLightView : TypeLightView
 
 /**
- * QueryService provides a simple way to submit queries to polymer, and
+ * QueryService provides a simple way to submit queries to vyne, and
  * explore the results.
  *
  * Not something you'd use in production code (your services would interact
- * with Polymer directly), but useful for spiking / demos.
+ * with Vyne directly), but useful for spiking / demos.
  */
 @RestController
-class QueryService(val polymerFactory: PolymerFactory) {
+class QueryService(val vyneFactory: VyneFactory) {
 
    @PostMapping("/query")
    fun submitQuery(@RequestBody query: Query): QueryResponse {
-      val polymer = polymerFactory.createPolymer()
-      val facts = parseFacts(query.facts, polymer.schema)
+      val vyne = vyneFactory.createVyne()
+      val facts = parseFacts(query.facts, vyne.schema)
 
       return try {
          when (query.queryMode) {
-            QueryMode.DISCOVER -> polymer.query().find(query.queryString, facts)
-            QueryMode.GATHER -> polymer.query().gather(query.queryString, facts)
+            QueryMode.DISCOVER -> vyne.query().find(query.queryString, facts)
+            QueryMode.GATHER -> vyne.query().gather(query.queryString, facts)
          }
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation)

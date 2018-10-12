@@ -6,18 +6,17 @@ import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
-import io.osmosis.polymer.Element
-import io.osmosis.polymer.PolymerGraphBuilder
-import io.osmosis.polymer.instanceOfType
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.query.graph.*
-import io.osmosis.polymer.schemas.Link
-import io.osmosis.polymer.schemas.Path
-import io.osmosis.polymer.schemas.Relationship
-import io.osmosis.polymer.schemas.describe
-import io.osmosis.polymer.type
-import io.osmosis.polymer.utils.log
-import io.vyne.query.QueryMode
+import io.vyne.Element
+import io.vyne.VyneGraphBuilder
+import io.vyne.instanceOfType
+import io.vyne.models.TypedInstance
+import io.vyne.query.graph.*
+import io.vyne.schemas.Link
+import io.vyne.schemas.Path
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.describe
+import io.vyne.type
+import io.vyne.utils.log
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
@@ -133,7 +132,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
 
    internal fun search(start: Element, target: Element, queryContext: QueryContext): Pair<TypedInstance, Path>? {
       // TODO : This is expensive.  We should cache against the schema.
-      val graph = PolymerGraphBuilder(queryContext.schema).build(queryContext.facts)
+      val graph = VyneGraphBuilder(queryContext.schema).build(queryContext.facts)
       val searchDescription = "$start -> $target"
       log().debug("Searching for path from $searchDescription")
 //      log().debug("Current graph state: \n ${graph.description()}")
@@ -149,7 +148,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       if (searchResult.state() != target) {
          // Search failed, and couldn't match the node
          log().debug("Search failed: $searchDescription. Nearest match was ${searchResult.state()}")
-         log().debug("Search failed path: \n${searchResult.path().convertToPolymerPath(start, target).description.split(",").joinToString("\n")}")
+         log().debug("Search failed path: \n${searchResult.path().convertToVynePath(start, target).description.split(",").joinToString("\n")}")
          return null
       }
 
@@ -158,7 +157,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       op.addContext("Discovered path", searchResult.path().describeLinks())
       val evaluatedPath = evaluatePath(searchResult, queryContext)
       val resultValue = selectResultValue(evaluatedPath, queryContext, target)
-      val path = searchResult.path().convertToPolymerPath(start, target)
+      val path = searchResult.path().convertToVynePath(start, target)
       return if (resultValue != null) {
          resultValue to path
       } else { // Search failed
@@ -264,7 +263,7 @@ private fun List<WeightedNode<Relationship, Element, Double>>.describe(): String
 private fun List<WeightedNode<Relationship, Element, Double>>.describeLinks(): List<String> {
    return this.toLinks().map { it.toString() }
 }
-private fun List<WeightedNode<Relationship, Element, Double>>.convertToPolymerPath(start: Element, target: Element): Path {
+private fun List<WeightedNode<Relationship, Element, Double>>.convertToVynePath(start: Element, target: Element): Path {
    val links = this.mapIndexed { index, weightedNode ->
       if (index == 0) {
          null
@@ -277,7 +276,7 @@ private fun List<WeightedNode<Relationship, Element, Double>>.convertToPolymerPa
    }.toList().filterNotNull()
    return Path(start.valueAsQualifiedName(), target.valueAsQualifiedName(), links)
 }
-//private fun List<WeightedNode<HipsterDiscoverGraphQueryStrategy.EvaluateRelationshipAction, Element, Double>>.convertToPolymerPath(start: Element, target: Element): Path {
+//private fun List<WeightedNode<HipsterDiscoverGraphQueryStrategy.EvaluateRelationshipAction, Element, Double>>.convertToVynePath(start: Element, target: Element): Path {
 //   val links = this.mapIndexed { index, weightedNode ->
 //      if (index == 0) {
 //         null

@@ -1,11 +1,11 @@
 package io.vyne.query.graph.orientDb
 
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.query.QueryContext
-import io.osmosis.polymer.schemas.Link
-import io.osmosis.polymer.schemas.Path
-import io.osmosis.polymer.schemas.Relationship
-import io.osmosis.polymer.utils.log
+import io.vyne.models.TypedInstance
+import io.vyne.query.QueryContext
+import io.vyne.schemas.Link
+import io.vyne.schemas.Path
+import io.vyne.schemas.Relationship
+import io.vyne.utils.log
 import org.springframework.stereotype.Component
 
 data class EvaluatedLink(val link: Link, val startingPoint: TypedInstance, val result: TypedInstance?, val error: String? = null) {

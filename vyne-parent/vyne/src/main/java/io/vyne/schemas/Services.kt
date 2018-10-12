@@ -1,21 +1,21 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.models.TypedObject
-import io.osmosis.polymer.models.TypedValue
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import lang.taxi.AttributePath
 
 /**
  * DESIGN NOTE:
- * I've duplicated these between Taxi and Polymer, to allow the two projects to remain
+ * I've duplicated these between Taxi and Vyne, to allow the two projects to remain
  * independent.
- * There idea is that Polymer shouldn't have a core-level coupling to Taxi.
+ * There idea is that Vyne shouldn't have a core-level coupling to Taxi.
  * As a result, there's high duplication here.  Revisit this decision later if this
  * starts to suck.
  *
  * Also, while at the time of writing, there's high duplication, I expect
- * that polymer may add more 'constraint evaluation' features, which aren't
+ * that vyne may add more 'constraint evaluation' features, which aren't
  * meaningful within Taxi.
  */
 

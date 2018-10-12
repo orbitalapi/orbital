@@ -5,16 +5,16 @@ import es.usc.citius.hipster.graph.GraphBuilder
 import es.usc.citius.hipster.model.Transition
 import es.usc.citius.hipster.model.impl.WeightedNode
 import es.usc.citius.hipster.model.problem.ProblemBuilder
-import io.osmosis.polymer.*
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.models.TypedObject
-import io.osmosis.polymer.schemas.Relationship
-import io.osmosis.polymer.schemas.taxi.TaxiSchema
+import io.vyne.*
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
 // Note : At the time of writing this test,
 // I'm exploring JHipser as a solver.
-// Will plug in full Polymer parsing once experiment is complete
+// Will plug in full Vyne parsing once experiment is complete
 typealias TypeName = String
 class JHipsterTests {
 

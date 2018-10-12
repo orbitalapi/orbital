@@ -1,6 +1,6 @@
 package io.vyne.schemas
 
-import io.osmosis.polymer.query.graph.EvaluatedEdge
+import io.vyne.query.graph.EvaluatedEdge
 
 enum class Relationship(val description: String) {
    IS_ATTRIBUTE_OF("Is an attribute of"),

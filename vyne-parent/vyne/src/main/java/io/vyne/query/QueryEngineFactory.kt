@@ -1,11 +1,11 @@
 package io.vyne.query
 
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.query.graph.*
-import io.osmosis.polymer.query.graph.operationInvocation.OperationInvocationEvaluator
-import io.osmosis.polymer.query.graph.operationInvocation.OperationInvoker
-import io.osmosis.polymer.query.graph.orientDb.LinkEvaluator
-import io.osmosis.polymer.schemas.Schema
+import io.vyne.models.TypedInstance
+import io.vyne.query.graph.*
+import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
+import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.query.graph.orientDb.LinkEvaluator
+import io.vyne.schemas.Schema
 
 
 interface QueryEngineFactory {

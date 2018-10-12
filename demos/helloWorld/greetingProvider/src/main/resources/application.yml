@@ -3,7 +3,7 @@ server:
 spring:
   application:
     name: hello-world
-polymer:
+vyne:
    schemaStore:
       name: discovery
    schema:
@@ -11,7 +11,7 @@ polymer:
       version: 0.1.0
 logging:
   level:
-      io.polymer: DEBUG
+      io.vyne: DEBUG
       io.osmosis: DEBUG
 ribbon:
    restclient:

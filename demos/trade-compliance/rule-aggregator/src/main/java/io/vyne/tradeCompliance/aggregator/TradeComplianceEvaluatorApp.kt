@@ -1,26 +1,19 @@
 package io.vyne.tradeCompliance.aggregator
 
-import io.polymer.spring.EnablePolymer
-import io.polymer.spring.RemoteSchemaStoreType
+import io.vyne.spring.EnableVyne
+import io.vyne.spring.RemoteSchemaStoreType
 import io.vyne.EnableVyneClient
-import io.vyne.VyneClient
-import io.vyne.tradeCompliance.RuleEvaluationResult
-import io.vyne.tradeCompliance.TradeRequest
 import io.vyne.tradeCompliance.TypeAliases
 import lang.taxi.TypeAliasRegistry
-import lang.taxi.annotations.Operation
-import lang.taxi.annotations.Service
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.cloud.netflix.feign.EnableFeignClients
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RestController
 
 
 @SpringBootApplication
 @EnableEurekaClient
-@EnablePolymer(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
+@EnableVyne(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
 @EnableVyneClient
 @EnableFeignClients
 class TradeComplianceEvaluatorApp {

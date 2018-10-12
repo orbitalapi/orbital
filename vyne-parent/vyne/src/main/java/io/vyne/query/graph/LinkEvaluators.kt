@@ -1,17 +1,17 @@
 package io.vyne.query.graph
 
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.models.TypedObject
-import io.osmosis.polymer.query.FactDiscoveryStrategy
-import io.osmosis.polymer.query.QueryContext
-import io.osmosis.polymer.query.QuerySpecTypeNode
-import io.osmosis.polymer.query.graph.operationInvocation.UnresolvedOperationParametersException
-import io.osmosis.polymer.query.graph.orientDb.EvaluatedLink
-import io.osmosis.polymer.query.graph.orientDb.LinkEvaluator
-import io.osmosis.polymer.schemas.Link
-import io.osmosis.polymer.schemas.Relationship
-import io.osmosis.polymer.schemas.Type
-import io.osmosis.polymer.utils.log
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.query.FactDiscoveryStrategy
+import io.vyne.query.QueryContext
+import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
+import io.vyne.query.graph.orientDb.EvaluatedLink
+import io.vyne.query.graph.orientDb.LinkEvaluator
+import io.vyne.schemas.Link
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.Type
+import io.vyne.utils.log
 
 
 class HasAttributeEvaluator : LinkEvaluator {

@@ -3,13 +3,13 @@ package io.vyne
 import es.usc.citius.hipster.graph.DirectedEdge
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
-import io.osmosis.polymer.schemas.QualifiedName
-import io.osmosis.polymer.schemas.Relationship
-import io.osmosis.polymer.schemas.fqn
-import io.osmosis.polymer.utils.log
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.fqn
+import io.vyne.utils.log
 
 /**
- * Builds a trimmed down version of the Polymer graph,
+ * Builds a trimmed down version of the Vyne graph,
  * suitable for displaying to users.
  */
 class DisplayGraphBuilder {

@@ -1,6 +1,6 @@
 package io.vyne.query
 
-import io.osmosis.polymer.schemas.Type
+import io.vyne.schemas.Type
 import org.springframework.stereotype.Component
 
 /**

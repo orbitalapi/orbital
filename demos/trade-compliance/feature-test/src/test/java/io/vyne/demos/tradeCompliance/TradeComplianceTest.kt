@@ -1,14 +1,14 @@
 package io.vyne.demos.tradeCompliance
 
 import com.winterbe.expekt.expect
-import io.osmosis.polymer.Polymer
-import io.osmosis.polymer.StubService
-import io.osmosis.polymer.models.TypedCollection
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.models.TypedObject
-import io.osmosis.polymer.models.json.parseJsonModel
-import io.osmosis.polymer.query.QueryEngineFactory
-import io.osmosis.polymer.schemas.taxi.TaxiSchema
+import io.vyne.Vyne
+import io.vyne.StubService
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.models.json.parseJsonModel
+import io.vyne.query.QueryEngineFactory
+import io.vyne.schemas.taxi.TaxiSchema
 import org.apache.commons.io.IOUtils
 import org.junit.Before
 import org.junit.Test
@@ -16,7 +16,7 @@ import org.junit.Test
 class TradeComplianceTest {
 
    lateinit var stubService: StubService
-   lateinit var polymer: Polymer
+   lateinit var vyne: Vyne
 
    lateinit var tradeRequest: TypedInstance
 
@@ -70,7 +70,7 @@ class TradeComplianceTest {
 
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
 
-      polymer = Polymer(queryEngineFactory).addSchema(schema)
+      vyne = Vyne(queryEngineFactory).addSchema(schema)
 
 
       val tradeValueInUsd = """{
@@ -79,15 +79,15 @@ class TradeComplianceTest {
           }"""
 
 
-      tradeRequest = polymer.parseJsonModel("io.vyne.TradeRequest", tradeJson)
+      tradeRequest = vyne.parseJsonModel("io.vyne.TradeRequest", tradeJson)
 
 
-      stubService.addResponse("getClient", polymer.parseJsonModel("io.vyne.Client", client))
-      stubService.addResponse("jurisdictionRuleService", polymer.parseJsonModel("io.vyne.JurisdictionRuleResult", ruleResult("jurisdictionRuleResult")))
-      stubService.addResponse("tradeValueRuleService", polymer.parseJsonModel("io.vyne.TradeValueRuleResult", ruleResult("tradeValueRuleResult")))
-      stubService.addResponse("notionalLimitRuleService", polymer.parseJsonModel("io.vyne.NotionalLimitRuleResult", ruleResult("notionalLimitRuleResult")))
-      stubService.addResponse("getTrader", polymer.parseJsonModel("io.vyne.Trader", trader))
-      stubService.addResponse("convertRates", polymer.parseJsonModel("io.vyne.TradeValue", tradeValueInUsd))
+      stubService.addResponse("getClient", vyne.parseJsonModel("io.vyne.Client", client))
+      stubService.addResponse("jurisdictionRuleService", vyne.parseJsonModel("io.vyne.JurisdictionRuleResult", ruleResult("jurisdictionRuleResult")))
+      stubService.addResponse("tradeValueRuleService", vyne.parseJsonModel("io.vyne.TradeValueRuleResult", ruleResult("tradeValueRuleResult")))
+      stubService.addResponse("notionalLimitRuleService", vyne.parseJsonModel("io.vyne.NotionalLimitRuleResult", ruleResult("notionalLimitRuleResult")))
+      stubService.addResponse("getTrader", vyne.parseJsonModel("io.vyne.Trader", trader))
+      stubService.addResponse("convertRates", vyne.parseJsonModel("io.vyne.TradeValue", tradeValueInUsd))
    }
 
    @Test
@@ -96,7 +96,7 @@ class TradeComplianceTest {
       // rather than the returned value itself.
       // This differs from other queries, because in other queries the result from the service is
       // what's used.  Here, we get a result from a query, and then need to inspect a value within it.
-      val result = polymer.query().find("io.vyne.TraderMaxTradeValue", setOf(tradeRequest))
+      val result = vyne.query().find("io.vyne.TraderMaxTradeValue", setOf(tradeRequest))
       expect(result.isFullyResolved).to.be.`true`
 
 
@@ -104,7 +104,7 @@ class TradeComplianceTest {
 
    @Test
    fun canEvaluateJurisdictionRule() {
-      val result = polymer.query().find("io.vyne.JurisdictionRuleResult", setOf(tradeRequest))
+      val result = vyne.query().find("io.vyne.JurisdictionRuleResult", setOf(tradeRequest))
       expect(result.isFullyResolved).to.be.`true`
       val ruleEvaluationResult = result.get("io.vyne.JurisdictionRuleResult") as TypedObject
       expect(ruleEvaluationResult["message"]!!.value).to.equal("All looks good")
@@ -119,7 +119,7 @@ class TradeComplianceTest {
 
    @Test
    fun canEvaluationTradeValueRule() {
-      val result = polymer.query().find("io.vyne.TradeValueRuleResult", setOf(tradeRequest))
+      val result = vyne.query().find("io.vyne.TradeValueRuleResult", setOf(tradeRequest))
       expect(result.isFullyResolved).to.be.`true`
       // 2, because there are two params, not two invocations. A little un-intuitive, will fix this.
       expect(stubService.invocations["convertRates"]!!.size).to.equal(2)
@@ -127,17 +127,17 @@ class TradeComplianceTest {
 
    @Test
    fun canEvaluateNotionalLimitRule() {
-      val result = polymer.query().find("io.vyne.NotionalLimitRuleResult", setOf(tradeRequest))
+      val result = vyne.query().find("io.vyne.NotionalLimitRuleResult", setOf(tradeRequest))
       expect(result.isFullyResolved).to.be.`true`
    }
 
    @Test
    fun canDiscoverTradeComplianceStatus() {
-      val tradeRequest = polymer.parseJsonModel("io.vyne.TradeRequest", tradeJson)
-//      val result = polymer.query().find("io.vyne.tradeCompliance.aggregator.TradeComplianceResult", setOf(tradeRequest))
+      val tradeRequest = vyne.parseJsonModel("io.vyne.TradeRequest", tradeJson)
+//      val result = vyne.query().find("io.vyne.tradeCompliance.aggregator.TradeComplianceResult", setOf(tradeRequest))
       val ruleEvaluationResult = "io.vyne.RuleEvaluationResult"
       val ruleEvaluationResults = "io.vyne.RuleEvaluationResults"
-      val queryResult = polymer.query().gather(ruleEvaluationResult, setOf(tradeRequest))
+      val queryResult = vyne.query().gather(ruleEvaluationResult, setOf(tradeRequest))
 
       expect(queryResult.isFullyResolved).to.be.`true`
       val result = queryResult["io.vyne.RuleEvaluationResult"] as TypedCollection

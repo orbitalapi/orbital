@@ -1,13 +1,13 @@
 package io.vyne.queryService
 
 import es.usc.citius.hipster.graph.GraphEdge
-import io.osmosis.polymer.Element
-import io.osmosis.polymer.ElementType
-import io.osmosis.polymer.PolymerGraphBuilder
-import io.osmosis.polymer.asElement
-import io.osmosis.polymer.schemas.Relationship
-import io.osmosis.polymer.schemas.taxi.TaxiSchema
-import io.polymer.schemaStore.SchemaSourceProvider
+import io.vyne.Element
+import io.vyne.ElementType
+import io.vyne.VyneGraphBuilder
+import io.vyne.asElement
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.schemaStore.SchemaSourceProvider
 import org.springframework.web.bind.annotation.*
 
 data class SchemaGraphNode(val id: String, val label: String, val type: ElementType, val nodeId: String)
@@ -26,7 +26,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
    fun submitSchema(@RequestBody taxiDef: String): SchemaGraph {
 
       val schema: TaxiSchema = TaxiSchema.from(taxiDef)
-      val graph = PolymerGraphBuilder(schema).build()
+      val graph = VyneGraphBuilder(schema).build()
       val nodes = graph.vertices().map { toSchemaGraphNode(it) }.toSet()
       val links = graph.edges().map { toSchemaGraphLink(it) }.toSet()
       return SchemaGraph(nodes, links)
@@ -37,7 +37,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
    fun getLinksFromNode(@PathVariable("elementType") elementType: ElementType, @PathVariable("nodeName") nodeName: String): SchemaGraph {
       val escapedNodeName = nodeName.replace(":", "/")
       val schema: TaxiSchema = TaxiSchema.from(schemaProvider.schemaString())
-      val graph = PolymerGraphBuilder(schema).buildDisplayGraph()
+      val graph = VyneGraphBuilder(schema).buildDisplayGraph()
       val element = Element(escapedNodeName, elementType)
       val edges = graph.edgesOf(element)
       return schemaGraph(edges, schema)
@@ -46,7 +46,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
    @RequestMapping(value = "/types/{typeName}/links")
    fun getLinksFromType(@PathVariable("typeName") typeName: String): SchemaGraph {
       val schema: TaxiSchema = TaxiSchema.from(schemaProvider.schemaString())
-      val graph = PolymerGraphBuilder(schema).buildDisplayGraph()
+      val graph = VyneGraphBuilder(schema).buildDisplayGraph()
       val typeElement = schema.type(typeName).asElement()
       val edges = graph.edgesOf(typeElement)
       return schemaGraph(edges, schema)
@@ -64,7 +64,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
    fun getGraph(@RequestParam("startingFrom", required = false) startNode: String?, @RequestParam("distance", required = false) distance: Int?): SchemaGraph {
 
       val schema: TaxiSchema = TaxiSchema.from(schemaProvider.schemaString())
-      val graph = PolymerGraphBuilder(schema).build()
+      val graph = VyneGraphBuilder(schema).build()
       val nodes = graph.vertices().map { element -> toSchemaGraphNode(element) }.toSet()
       val links = graph.edges().map { edge -> toSchemaGraphLink(edge) }.toSet()
       return SchemaGraph(nodes, links)

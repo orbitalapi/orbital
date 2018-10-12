@@ -24,5 +24,5 @@ class GreetingProviderService {
    }
 }
 
-@DataType("polymer.greeting.Greeting")
-data class Greeting(@field:DataType("polymer.greeting.Message") val message:String)
+@DataType("vyne.greeting.Greeting")
+data class Greeting(@field:DataType("vyne.greeting.Message") val message:String)

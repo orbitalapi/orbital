@@ -1,11 +1,11 @@
 package io.vyne
 
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.query.ProfilerOperation
-import io.osmosis.polymer.query.graph.operationInvocation.OperationInvoker
-import io.osmosis.polymer.schemas.Operation
-import io.osmosis.polymer.schemas.Service
-import io.osmosis.polymer.utils.orElse
+import io.vyne.models.TypedInstance
+import io.vyne.query.ProfilerOperation
+import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.schemas.Operation
+import io.vyne.schemas.Service
+import io.vyne.utils.orElse
 
 class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapOf()) : OperationInvoker {
    constructor(vararg responses: Pair<String, TypedInstance>) : this(responses.toMap().toMutableMap())

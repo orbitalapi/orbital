@@ -3,12 +3,12 @@ server:
 spring:
   application:
     name: query-service
-polymer:
+vyne:
    schemaStore:
       name: discovery
 logging:
   level:
-      io.polymer: DEBUG
+      io.vyne: DEBUG
       io.osmosis: DEBUG
 eureka:
    client:

@@ -7,13 +7,13 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 
-@DataType("polymer.creditInc.Money")
+@DataType("vyne.creditInc.Money")
 @ParameterType
 data class Money(
-   @field:DataType("polymer.creditInc.Currency") val currency: String,
-   @field:DataType("polymer.creditInc.MoneyAmount") val value: BigDecimal)
+   @field:DataType("vyne.creditInc.Currency") val currency: String,
+   @field:DataType("vyne.creditInc.MoneyAmount") val value: BigDecimal)
 
-@DataType("polymer.creditInc.CreditCostRequest")
+@DataType("vyne.creditInc.CreditCostRequest")
 @ParameterType
 data class CreditCostRequest(
    @field:DataType
@@ -35,19 +35,19 @@ data class CreditCostRequest(
 //   @DataType("invictus.industryCode.sic2003")
 //   val industryCode: Int)
 
-@DataType("polymer.creditInc.CreditCostResponse")
+@DataType("vyne.creditInc.CreditCostResponse")
 data class CreditCostResponse(
    // Scenarios to consider:
    // What is this was a joda Money type?
    // What if there were two fields, value & ccy?  How do we indicate the two are related?
-   @field:DataType("polymer.creditInc.CreditRiskCost")
+   @field:DataType("vyne.creditInc.CreditRiskCost")
    val cost: BigDecimal
 )
 
 @RestController
 @RequestMapping("/costs")
 @Service("CreditCostService")
-@Namespace("polymer.creditInc.creditMarkup")
+@Namespace("vyne.creditInc.creditMarkup")
 class CreditCostService {
 
    @PostMapping

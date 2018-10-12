@@ -1,14 +1,14 @@
 package io.vyne.query
 
 import com.winterbe.expekt.expect
-import io.osmosis.polymer.schemas.taxi.TaxiSchema
+import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Ignore
 import org.junit.Test
 
 class QueryParserTest {
 
    val schema = TaxiSchema.from("""
-namespace polymer.example
+namespace vyne.example
 type Invoice {
    clientId : ClientId
    items : Item[]
@@ -28,9 +28,9 @@ type Client {
    val queryParser = QueryParser(schema)
    @Test
    fun given_aSingleTypeName_then_aSetOfSingleTypeIsReturned() {
-      val result = queryParser.parse("polymer.example.Invoice")
+      val result = queryParser.parse("vyne.example.Invoice")
       expect(result).to.have.size(1)
-      expect(result.first().type.name.fullyQualifiedName).to.equal("polymer.example.Invoice")
+      expect(result.first().type.name.fullyQualifiedName).to.equal("vyne.example.Invoice")
    }
 
    @Test

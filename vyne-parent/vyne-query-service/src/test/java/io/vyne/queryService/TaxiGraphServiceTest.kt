@@ -1,6 +1,6 @@
 package io.vyne.queryService
 
-import io.polymer.spring.SimpleTaxiSchemaProvider
+import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.apache.commons.io.IOUtils
 import org.junit.Assert.*
 import org.junit.Test

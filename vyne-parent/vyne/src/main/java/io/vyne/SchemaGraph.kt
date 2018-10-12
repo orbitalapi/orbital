@@ -1,8 +1,8 @@
 package io.vyne
 
-import io.osmosis.polymer.schemas.Path
-import io.osmosis.polymer.schemas.QualifiedName
-import io.osmosis.polymer.schemas.Type
+import io.vyne.schemas.Path
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Type
 
 // Evaluating a path independently of the search result
 // no longer makes sense, as the actual path isn't accurately known

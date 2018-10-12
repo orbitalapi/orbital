@@ -1,11 +1,11 @@
 package io.vyne.query
 
-import io.osmosis.polymer.ModelContainer
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.query.graph.EvaluatedEdge
-import io.osmosis.polymer.query.graph.operationInvocation.SearchRuntimeException
-import io.osmosis.polymer.schemas.Schema
-import io.osmosis.polymer.utils.log
+import io.vyne.ModelContainer
+import io.vyne.models.TypedInstance
+import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.operationInvocation.SearchRuntimeException
+import io.vyne.schemas.Schema
+import io.vyne.utils.log
 import io.vyne.query.QueryMode
 
 

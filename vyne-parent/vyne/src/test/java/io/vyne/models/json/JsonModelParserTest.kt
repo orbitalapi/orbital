@@ -3,11 +3,11 @@ package io.vyne.models.json
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.expect
-import io.osmosis.polymer.Polymer
-import io.osmosis.polymer.models.TypedCollection
-import io.osmosis.polymer.models.TypedObject
-import io.osmosis.polymer.query.QueryEngineFactory
-import io.osmosis.polymer.schemas.taxi.TaxiSchema
+import io.vyne.Vyne
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedObject
+import io.vyne.query.QueryEngineFactory
+import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
 class JsonModelParserTest {
@@ -27,7 +27,7 @@ type Client {
 """
    @Test
    fun parsesJsonObjectToTypedObject() {
-      val polymer = Polymer(QueryEngineFactory.noQueryEngine()).addSchema(TaxiSchema.from(taxiDef))
+      val vyne = Vyne(QueryEngineFactory.noQueryEngine()).addSchema(TaxiSchema.from(taxiDef))
       val json = """
 {
    "clientId" : "marty",
@@ -37,7 +37,7 @@ type Client {
 }
 """
       val map = jacksonObjectMapper().readValue<Map<String, Any>>(json)
-      val schema = polymer.schema
+      val schema = vyne.schema
       val parser = JsonModelParser(schema)
       // Note : Some weirdness with debugging when passing the Json.
       // Looks like a bug in the IntelliJ kotlin plugin, and handling

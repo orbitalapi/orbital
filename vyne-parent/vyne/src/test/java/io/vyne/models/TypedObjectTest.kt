@@ -2,8 +2,8 @@ package io.vyne.models
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
-import io.osmosis.polymer.models.json.JsonModelParser
-import io.osmosis.polymer.schemas.taxi.TaxiSchema
+import io.vyne.models.json.JsonModelParser
+import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Before
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert

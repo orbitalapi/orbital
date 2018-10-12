@@ -33,7 +33,7 @@ import es.usc.citius.hipster.graph.HashBasedHipsterDirectedGraph
 import es.usc.citius.hipster.graph.HashBasedHipsterGraph
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.graph.HipsterGraph
-import io.osmosis.polymer.utils.log
+import io.vyne.utils.log
 import java.util.*
 
 /**

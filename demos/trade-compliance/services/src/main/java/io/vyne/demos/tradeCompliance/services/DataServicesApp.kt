@@ -1,7 +1,7 @@
 package io.vyne.demos.tradeCompliance.services
 
-import io.polymer.spring.EnablePolymer
-import io.polymer.spring.RemoteSchemaStoreType
+import io.vyne.spring.EnableVyne
+import io.vyne.spring.RemoteSchemaStoreType
 import io.vyne.tradeCompliance.TypeAliases
 import lang.taxi.TypeAliasRegistry
 import org.springframework.boot.SpringApplication
@@ -11,7 +11,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnablePolymer(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
+@EnableVyne(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
 class DataServicesApp {
    companion object {
 

@@ -1,7 +1,7 @@
 package io.vyne.query
 
-import io.osmosis.polymer.schemas.QualifiedName
-import io.osmosis.polymer.utils.log
+import io.vyne.schemas.QualifiedName
+import io.vyne.utils.log
 import java.time.Clock
 import java.util.*
 

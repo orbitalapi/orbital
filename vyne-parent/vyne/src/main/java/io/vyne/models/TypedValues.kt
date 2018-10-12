@@ -1,8 +1,8 @@
 package io.vyne.models
 
-import io.osmosis.polymer.schemas.AttributeName
-import io.osmosis.polymer.schemas.Schema
-import io.osmosis.polymer.schemas.Type
+import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 
 interface TypedInstance {
    val type: Type

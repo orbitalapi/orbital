@@ -1,6 +1,6 @@
 package io.vyne.query
 
-import io.osmosis.polymer.models.TypedInstance
+import io.vyne.models.TypedInstance
 
 data class QueryStrategyResult(
    val matchedNodes: Map<QuerySpecTypeNode, TypedInstance?> = emptyMap(),

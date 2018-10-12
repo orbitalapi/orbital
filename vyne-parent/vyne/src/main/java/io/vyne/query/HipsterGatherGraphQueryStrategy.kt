@@ -1,9 +1,9 @@
 package io.vyne.query
 
-import io.osmosis.polymer.models.TypedCollection
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.operation
-import io.osmosis.polymer.utils.log
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.operation
+import io.vyne.utils.log
 import io.vyne.query.QueryMode
 
 class HipsterGatherGraphQueryStrategy(private val graphQueryStrategy: HipsterDiscoverGraphQueryStrategy) : QueryStrategy {

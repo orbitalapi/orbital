@@ -1,35 +1,35 @@
 package io.vyne.demos.conversion.tradeThreshold
 
-import io.osmosis.polymer.utils.log
+import io.vyne.utils.log
 import lang.taxi.annotations.*
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 
-@DataType("polymer.threshold.Notional")
+@DataType("vyne.threshold.Notional")
 data class Notional(
-   @field:DataType("polymer.threshold.NotionalValue")
+   @field:DataType("vyne.threshold.NotionalValue")
    val value:BigDecimal,
-   @field:DataType("polymer.threshold.CurrencySymbol")
+   @field:DataType("vyne.threshold.CurrencySymbol")
    val currency:String) {
    override fun toString(): String {
       return "$currency ${value.toPlainString()}"
    }
 }
 
-@DataType("polymer.threshold.TradeThresholdRequest")
+@DataType("vyne.threshold.TradeThresholdRequest")
 data class TradeThresholdRequest(val notional:Notional)
 
-@DataType("polymer.threshold.TradeThresholdResponse")
+@DataType("vyne.threshold.TradeThresholdResponse")
 data class TradeThresholdResponse(
    val notional: Notional,
-   @field:DataType("polymer.threshold.ExceedsThreshold")
+   @field:DataType("vyne.threshold.ExceedsThreshold")
    val exceedsThreshold:Boolean)
 
-@DataType("polymer.threshold.ConversionRequest")
+@DataType("vyne.threshold.ConversionRequest")
 data class ConversionRequest(val notional: Notional,
-                             @field:DataType("polymer.threshold.CurrencySymbol")
+                             @field:DataType("vyne.threshold.CurrencySymbol")
                              val targetCurrency:String)
 @RestController
 @Service

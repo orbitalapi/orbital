@@ -7,8 +7,8 @@ import com.tinkerpop.blueprints.Vertex
 import com.tinkerpop.blueprints.impls.orient.OrientEdge
 import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx
 import com.tinkerpop.blueprints.impls.orient.OrientVertex
-import io.osmosis.polymer.schemas.*
-import io.osmosis.polymer.utils.log
+import io.vyne.schemas.*
+import io.vyne.utils.log
 
 class OrientDbGraphSearcher(private val orientGraph: OrientGraphNoTx) : SchemaPathResolver {
    override fun findPath(start: String, target: String): Path {

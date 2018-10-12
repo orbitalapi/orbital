@@ -1,14 +1,14 @@
 package io.vyne
 
 import com.winterbe.expekt.expect
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.models.TypedObject
-import io.osmosis.polymer.models.json.parseJsonModel
-import io.osmosis.polymer.models.json.parseKeyValuePair
-import io.osmosis.polymer.query.QueryEngineFactory
-import io.osmosis.polymer.query.QueryResult
-import io.osmosis.polymer.query.StatefulQueryEngine
-import io.osmosis.polymer.schemas.taxi.TaxiSchema
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.models.json.parseJsonModel
+import io.vyne.models.json.parseKeyValuePair
+import io.vyne.query.QueryEngineFactory
+import io.vyne.query.QueryResult
+import io.vyne.query.StatefulQueryEngine
+import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
 class ConstraintsAndConversionsTest {
@@ -48,13 +48,13 @@ service MyService {
       // Setup
       val stubService = StubService()
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
-      val polymer = Polymer(queryEngineFactory /*,"remote:localhost/test" */).addSchema(schema)
-      stubService.addResponse("convertCurrency", money(2, "GBP", polymer))
-      stubService.addResponse("calculateRiskForClient", polymer.parseKeyValuePair("Risk", 0.5))
+      val vyne = Vyne(queryEngineFactory /*,"remote:localhost/test" */).addSchema(schema)
+      stubService.addResponse("convertCurrency", money(2, "GBP", vyne))
+      stubService.addResponse("calculateRiskForClient", vyne.parseKeyValuePair("Risk", 0.5))
 
-      val queryContext = polymer.query()
-      queryContext.addModel(money(5, "USD", polymer))
-      queryContext.addModel(polymer.parseKeyValuePair("ClientId","1234"))
+      val queryContext = vyne.query()
+      queryContext.addModel(money(5, "USD", vyne))
+      queryContext.addModel(vyne.parseKeyValuePair("ClientId","1234"))
       val result = queryContext.find("ClientRisk")
 
       expect(stubService.invocations).to.contain.keys("convertCurrency")
@@ -68,12 +68,12 @@ service MyService {
    fun given_serviceDeclaresRequestObjectWithConstraints_then_conversionsArePerformedToSatisfyConstraint() {
       val stubService = StubService()
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
-      val polymer = Polymer(queryEngineFactory).addSchema(schema)
-      stubService.addResponse("convertCurrency", money(2, "GBP", polymer))
-      stubService.addResponse("calculateRisk", polymer.parseKeyValuePair("Risk", 0.5))
+      val vyne = Vyne(queryEngineFactory).addSchema(schema)
+      stubService.addResponse("convertCurrency", money(2, "GBP", vyne))
+      stubService.addResponse("calculateRisk", vyne.parseKeyValuePair("Risk", 0.5))
 
-      val queryContext = polymer.query()
-      queryContext.addModel(money(5, "USD", polymer))
+      val queryContext = vyne.query()
+      queryContext.addModel(money(5, "USD", vyne))
       val result = queryContext.find("Risk")
 
       expect(stubService.invocations).to.contain.keys("convertCurrency")
@@ -84,8 +84,8 @@ service MyService {
 
    }
 
-   private fun money(amount: Int, currency: String, polymer: Polymer): TypedInstance {
-      return polymer.parseJsonModel("Money", """{ "amount" : $amount, "currency" : "$currency" }""")
+   private fun money(amount: Int, currency: String, vyne: Vyne): TypedInstance {
+      return vyne.parseJsonModel("Money", """{ "amount" : $amount, "currency" : "$currency" }""")
    }
 
 
@@ -105,12 +105,12 @@ service TestService {
       // Setup
       val stubService = StubService()
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
-      val polymer = Polymer(queryEngineFactory).addSchema(TaxiSchema.from(taxiDef))
-      stubService.addResponse("calculateFoo", polymer.parseKeyValuePair("Foo", "Hello"))
-      stubService.addResponse("convertUkSic", polymer.parseKeyValuePair("UkSic2007", "2007-Fully-Sick"))
+      val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(taxiDef))
+      stubService.addResponse("calculateFoo", vyne.parseKeyValuePair("Foo", "Hello"))
+      stubService.addResponse("convertUkSic", vyne.parseKeyValuePair("UkSic2007", "2007-Fully-Sick"))
 
-      val queryContext = polymer.query()
-      queryContext.addModel(polymer.parseKeyValuePair("UkSic2003","SickOf2003"))
+      val queryContext = vyne.query()
+      queryContext.addModel(vyne.parseKeyValuePair("UkSic2003","SickOf2003"))
       val result: QueryResult = queryContext.find("Foo")
 
       expect(result["Foo"]!!.value).to.equal("Hello")
@@ -137,12 +137,12 @@ service TestService {
       // Setup
       val stubService = StubService()
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
-      val polymer = Polymer(queryEngineFactory).addSchema(TaxiSchema.from(taxiDef))
-      stubService.addResponse("calculateFoo", polymer.parseKeyValuePair("Foo", "Hello"))
-      stubService.addResponse("convertUkSic", polymer.parseKeyValuePair("UkSic2007", "2007-Fully-Sick"))
+      val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(taxiDef))
+      stubService.addResponse("calculateFoo", vyne.parseKeyValuePair("Foo", "Hello"))
+      stubService.addResponse("convertUkSic", vyne.parseKeyValuePair("UkSic2007", "2007-Fully-Sick"))
 
-      val queryContext: StatefulQueryEngine = polymer.query()
-      queryContext.addModel(polymer.parseKeyValuePair("UkSic2003","SickOf2003"))
+      val queryContext: StatefulQueryEngine = vyne.query()
+      queryContext.addModel(vyne.parseKeyValuePair("UkSic2003","SickOf2003"))
       val result: QueryResult = queryContext.find("Foo")
 
       expect(result["Foo"]!!.value).to.equal("Hello")

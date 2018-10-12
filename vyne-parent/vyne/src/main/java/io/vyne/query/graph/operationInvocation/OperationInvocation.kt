@@ -1,15 +1,15 @@
 package io.vyne.query.graph.operationInvocation
 
-import io.osmosis.polymer.models.TypedInstance
-import io.osmosis.polymer.query.*
-import io.osmosis.polymer.query.graph.EdgeEvaluator
-import io.osmosis.polymer.query.graph.EvaluatableEdge
-import io.osmosis.polymer.query.graph.EvaluatedEdge
-import io.osmosis.polymer.query.graph.ParameterFactory
-import io.osmosis.polymer.query.graph.orientDb.EvaluatedLink
-import io.osmosis.polymer.query.graph.orientDb.LinkEvaluator
-import io.osmosis.polymer.schemas.*
-import io.osmosis.polymer.utils.log
+import io.vyne.models.TypedInstance
+import io.vyne.query.*
+import io.vyne.query.graph.EdgeEvaluator
+import io.vyne.query.graph.EvaluatableEdge
+import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.ParameterFactory
+import io.vyne.query.graph.orientDb.EvaluatedLink
+import io.vyne.query.graph.orientDb.LinkEvaluator
+import io.vyne.schemas.*
+import io.vyne.utils.log
 import org.springframework.stereotype.Component
 
 /**
