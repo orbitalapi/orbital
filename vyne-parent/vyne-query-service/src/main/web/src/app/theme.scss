@@ -1,0 +1,31 @@
+@import "../theme-colors";
+@import '~@angular/material/theming';
+
+$body-bg: #f5f6fa;
+
+$mono: 'Nanum Gothic Coding', mono;
+
+.page-content {
+  padding: 46px;
+  background-color: $body-bg;
+  height: 100%;
+}
+
+.mat-toolbar {
+  position: sticky;
+  top: 0;
+  height: 96px;
+  &.mat-logo {
+    background-color: #1d2531;
+    color: #fafafa;
+  }
+  &.mat-primary {
+    //background-color: white;
+    box-shadow: 0 2px 5px #dcdcdc;
+    color: #fafafa;
+  }
+}
+
+$light-grey-1: mat-color($vyne-grey-blue-palette, 50);
+$light-grey-2: mat-color($vyne-grey-blue-palette, 100);
+$light-grey-3: mat-color($vyne-grey-blue-palette, 200);

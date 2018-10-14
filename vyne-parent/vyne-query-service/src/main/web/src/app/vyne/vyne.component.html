@@ -1,0 +1,25 @@
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav
+    #drawer
+    class="sidenav"
+    fixedInViewport="true"
+    [attr.role]="(isHandset$ | async) ? 'dialog' : 'navigation'"
+    [mode]="(isHandset$ | async) ? 'over' : 'side'"
+    [opened]="!(isHandset$ | async)">
+    <mat-toolbar color="logo">Vyne</mat-toolbar>
+    <mat-nav-list>
+      <div *ngFor="let element of sidebarElements" class="navbar-route" [routerLink]="element.route" routerLinkActive="active">
+        <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive">
+          <i>
+            <img [src]="rla.isActive ? element.iconActive : element.icon">
+          </i>
+        </a>
+        <a [routerLink]="element.route" routerLinkActive="active">{{element.title}}</a>
+      </div>
+      <!--<a mat-list-item *ngFor="let element of sidebarElements" [routerLink]="element.route">{{ element.title }}</a>-->
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <router-outlet></router-outlet>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,49 @@
+@import "../theme";
+
+
+.search-bar {
+  margin-left: 100px;
+  width: 40rem;
+}
+
+.schema-member-container {
+  display: inline-table;
+
+  .member-type {
+    vertical-align: middle;
+    display: table-cell;
+    width: 20rem;
+    div {
+      width: fit-content;
+      font-size: 0.7rem;
+      padding: 5px 10px;
+      border-radius: 15px;
+
+      &.type {
+        background-color: #afdfff;
+      }
+      &.operation {
+        background-color: #5D38DB;
+        color: #fafafa;
+      }
+    }
+  }
+  .member-qualified-name {
+    display: table-cell;
+    vertical-align: middle;
+    width: 40rem;
+  }
+  .member-package {
+    font-family: $mono;
+    font-size: 0.7rem;
+    color: $grey-1
+  }
+  .member-type-alias {
+    vertical-align: middle;
+    display: table-cell;
+
+    font-family: $mono;
+    font-size: 0.8rem;
+    color: $grey-3
+  }
+}

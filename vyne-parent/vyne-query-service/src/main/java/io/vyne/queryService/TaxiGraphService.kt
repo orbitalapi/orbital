@@ -22,7 +22,6 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
 
 
    @PostMapping("/schemas/taxi-graph")
-   @RequestMapping(method = arrayOf(RequestMethod.POST))
    fun submitSchema(@RequestBody taxiDef: String): SchemaGraph {
 
       val schema: TaxiSchema = TaxiSchema.from(taxiDef)

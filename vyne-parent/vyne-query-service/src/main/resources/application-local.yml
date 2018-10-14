@@ -1,0 +1,3 @@
+cors:
+   enabled: true
+   host: "*"

@@ -1,0 +1,42 @@
+@import "../theme";
+
+.sidenav-container {
+  height: 100%;
+}
+
+.sidenav {
+  width: 96px;
+  background-color: #222c3c;
+}
+
+.mat-nav-list {
+  padding-top: 22px;
+}
+
+.navbar-route {
+
+  opacity: 0.6;
+  &:hover {
+    opacity: 1;
+  }
+
+  &.active {
+    opacity: 1;
+  }
+
+  text-align: center;
+  //font-family: $body-font;
+  color: white;
+  font-size: 11px;
+  font-weight: 400;
+  padding-bottom: 45px;
+  a {
+    i {
+      display: block;
+      padding-bottom: 10px;
+    }
+    &.active {
+      color: #8cc63e;
+    }
+  }
+}
