@@ -79,10 +79,23 @@ export class QueryWizardComponent implements OnInit {
   }
 
   updateFact(formSpec: FactForm, value) {
-    let nestedValue = this.nest(value);
-
     let fullyQualifiedName = formSpec.type.name.fullyQualifiedName;
-    this.facts[fullyQualifiedName] = nestedValue;
+    // TODO: Add a test for this.
+    // The issue I found was that when the type passed in to the
+    // query builder is a simple type (ie., CustomerNumber),
+    // then the request was being built incorrectly, as
+    // CustomerNumber : { CustomerNumber : 1 }
+    // instead of :
+    // CustomerNumber : 1
+    // This whole thing is a smell, and need to get some decent
+    // tests around this.
+    if (formSpec.type.scalar) {
+      let unwrappedValue = Object.values(value)[0];
+      this.facts[fullyQualifiedName] = unwrappedValue;
+    } else {
+      let nestedValue = this.nest(value);
+      this.facts[fullyQualifiedName] = nestedValue;
+    }
   }
 
   submitQuery() {
@@ -189,7 +202,7 @@ export class QueryWizardComponent implements OnInit {
       case "lang.taxi.Decimal" :
         control = {type: TdDynamicType.Number};
         break;
-      case "lang.taxi.Integer" :
+      case "lang.taxi.Int" :
         control = {type: TdDynamicType.Number};
         break;
       case "lang.taxi.Boolean" :

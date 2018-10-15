@@ -54,6 +54,8 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
       val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
          val absoluteUrl = makeUrlAbsolute(service, operation, url)
+         val uriVariables = getUriVariables(parameters)
+
          log().debug("Operation ${operation.name} resolves to $absoluteUrl")
          httpInvokeOperation.addContext("Absolute Url", absoluteUrl)
 
@@ -61,7 +63,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          httpInvokeOperation.addContext("Service", service)
          httpInvokeOperation.addContext("Operation", operation)
 
-         val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, getUriVariables(parameters))
+         val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, uriVariables)
          httpInvokeOperation.stop(result)
 
          httpInvokeOperation.addRemoteCall(RemoteCall(
