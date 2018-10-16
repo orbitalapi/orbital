@@ -264,4 +264,15 @@
          </plugins>
       </pluginManagement>
    </build>
+
+   <distributionManagement>
+      <repository>
+         <id>vyne-releases</id>
+         <url>https://nexus.vyne.io/repository/maven-releases/</url>
+      </repository>
+      <snapshotRepository>
+         <id>vyne-snapshots</id>
+         <url>https://nexus.vyne.io/repository/maven-snapshots/</url>
+      </snapshotRepository>
+   </distributionManagement>
 </project>
