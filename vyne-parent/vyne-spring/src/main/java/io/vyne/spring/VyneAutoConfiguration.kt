@@ -5,13 +5,13 @@ import com.hazelcast.core.HazelcastInstance
 import io.vyne.Vyne
 import io.vyne.query.QueryEngineFactory
 import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.schemaStore.*
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.utils.log
 import io.vyne.spring.invokers.RestTemplateInvoker
 import io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver
 import io.vyne.spring.invokers.ServiceUrlResolver
 import io.vyne.spring.invokers.SpringServiceDiscoveryClient
-import io.vyne.schemaStore.*
+import io.vyne.utils.log
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
 import lang.taxi.generators.java.DefaultServiceMapper
@@ -28,7 +28,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClas
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.cloud.client.discovery.DiscoveryClient
-import org.springframework.cloud.netflix.feign.EnableFeignClients
 import org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration
 import org.springframework.context.EnvironmentAware
 import org.springframework.context.annotation.*
