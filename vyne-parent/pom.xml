@@ -16,7 +16,7 @@
 
    <properties>
       <jackson.version>2.9.3</jackson.version>
-      <taxi.version>0.1.1</taxi.version>
+      <taxi.version>0.1.2</taxi.version>
    </properties>
    <modules>
       <module>vyne</module>
