@@ -71,7 +71,13 @@
                   </goals>
                </execution>
                <execution>
-                  <id>npm-build</id>
+                  <id>run-npm-install</id>
+                  <goals>
+                     <goal>npm</goal>
+                  </goals>
+               </execution>
+               <execution>
+                  <id>ng-build</id>
                   <goals>
                      <goal>npm</goal>
                   </goals>
