@@ -15,7 +15,6 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 
 @SpringBootApplication
-@EnableEurekaClient
 @EnableVyne(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
 class QueryServiceApp {
 
