@@ -193,6 +193,17 @@
       <finalName>${project.artifactId}</finalName>
       <plugins>
          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-release-plugin</artifactId>
+            <configuration>
+               <tagNameFormat>v@{project.version}</tagNameFormat>
+               <!-- Currently skipping tests when deploying.
+               There isn't a good reason for this, just in a hurry.
+               Judge away -->
+               <arguments>-Dmaven.javadoc.skip=true -Dmaven.test.skipTests=true -Dmaven.test.skip=true</arguments>
+            </configuration>
+         </plugin>
+         <plugin>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-maven-plugin</artifactId>
             <version>${kotlin.version}</version>
