@@ -66,7 +66,9 @@ class VyneFactory(private val schemaProvider: SchemaSourceProvider, private val 
 
 @Configuration
 @AutoConfigureAfter(VyneConfigRegistrar::class, RibbonAutoConfiguration::class)
-@EnableFeignClients(basePackageClasses = arrayOf(SchemaService::class))
+// TODO : re-enbale external schema services.
+// https://gitlab.com/vyne/vyne/issues/14
+//@EnableFeignClients(basePackageClasses = arrayOf(SchemaService::class))
 // Don't enable Vyne if we're configuring to be a Schema Discovery service
 @ConditionalOnMissingClass("io.vyne.schemaStore.TaxiSchemaService")
 class VyneAutoConfiguration {
