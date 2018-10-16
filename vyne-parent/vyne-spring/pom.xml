@@ -5,12 +5,12 @@
    <parent>
       <artifactId>vyne-parent</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.1.0-SNAPSHOT</version>
+      <version>0.1.1-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>vyne-spring</artifactId>
-   <version>0.1.0-SNAPSHOT</version>
+   <version>0.1.1-SNAPSHOT</version>
 
    <dependencies>
       <dependency>
@@ -21,7 +21,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
+         <version>0.1.1-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>lang.taxi</groupId>
@@ -34,7 +34,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-store-client</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
+         <version>0.1.1-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>
@@ -52,7 +52,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-store-api</artifactId>
-         <version>0.1.0-SNAPSHOT</version>
+         <version>0.1.1-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>com.hazelcast</groupId>
