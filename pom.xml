@@ -195,6 +195,7 @@
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-release-plugin</artifactId>
+            <version>2.5.3</version>
             <configuration>
                <tagNameFormat>v@{project.version}</tagNameFormat>
                <!-- Currently skipping tests when deploying.
@@ -258,6 +259,11 @@
       </plugins>
       <pluginManagement>
          <plugins>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-source-plugin</artifactId>
+               <version>3.0.1</version>
+            </plugin>
             <plugin>
                <groupId>org.springframework.boot</groupId>
                <artifactId>spring-boot-maven-plugin</artifactId>
