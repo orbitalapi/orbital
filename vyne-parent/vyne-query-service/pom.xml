@@ -43,6 +43,14 @@
 
    <build>
       <plugins>
+         <!-- don't generate a source jar -->
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <configuration>
+               <skipSource>true</skipSource>
+            </configuration>
+         </plugin>
          <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>

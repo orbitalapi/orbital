@@ -88,6 +88,15 @@
    </dependencies>
    <build>
       <plugins>
+         <!-- don't generate a source jar -->
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <configuration>
+               <skipSource>true</skipSource>
+            </configuration>
+         </plugin>
+
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-jar-plugin</artifactId>
