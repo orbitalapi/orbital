@@ -1,10 +1,13 @@
 <mat-toolbar color="primary">
   <span>Type Explorer</span>
-  <mat-form-field class="search-bar" floatLabel="never">
+  <div class="search-bar">
+    <input matInput placeholder="Search" [formControl]="searchInput">
+  </div>
+  <!--<mat-form-field class="search-bar" floatLabel="never">-->
     <!--<mat-icon matPrefix>search</mat-icon>-->
     <!--<mat-label>Search</mat-label>-->
-    <input matInput placeholder="Search" [formControl]="searchInput">
-  </mat-form-field>
+    <!---->
+  <!--</mat-form-field>-->
 </mat-toolbar>
 <div class="page-content">
   <mat-accordion class="example-headers-align">

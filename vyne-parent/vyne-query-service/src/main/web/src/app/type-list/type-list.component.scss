@@ -1,9 +1,45 @@
 @import "../theme";
 
 
+::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+  color: rgba(255,255,255,0.6);
+  font-family: "Nunito";
+}
+::-moz-placeholder { /* Firefox 19+ */
+  color: rgba(255,255,255,0.6);
+  font-family: "Nunito";
+}
+:-ms-input-placeholder { /* IE 10+ */
+  color: rgba(255,255,255,0.6);
+  font-family: "Nunito";
+}
+:-moz-placeholder { /* Firefox 18- */
+  color: rgba(255,255,255,0.6);
+  font-family: "Nunito";
+}
+
 .search-bar {
+  *:focus {
+    outline: none;
+  }
+
   margin-left: 100px;
-  width: 40rem;
+  //width: 40rem;
+  input {
+    color: white;
+    font-size: 1rem;
+    background-color: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 12px;
+    border-radius: 6px;
+    width: 40rem;
+    &:hover {
+      border: 1px solid rgba(255,255,255,0.5);
+    }
+    &:focus {
+      border: 1px solid rgba(255,255,255,0.8);
+    }
+  }
 }
 
 .schema-member-container {

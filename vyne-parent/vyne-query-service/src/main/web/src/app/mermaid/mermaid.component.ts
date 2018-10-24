@@ -96,7 +96,7 @@ text.actor {
 .messageText {
         fill:black;
     stroke:none;
-    font-family: 'Work Sans', verdana, arial;
+    font-family: 'Nunito', verdana, arial;
     font-size:12px;
 }
 
