@@ -6,7 +6,13 @@
     [attr.role]="(isHandset$ | async) ? 'dialog' : 'navigation'"
     [mode]="(isHandset$ | async) ? 'over' : 'side'"
     [opened]="!(isHandset$ | async)">
-    <mat-toolbar color="logo">Vyne</mat-toolbar>
+    <mat-toolbar color="logo">
+      <div class="logo">
+        <img src="assets/img/vyne-logo-round.png">
+        <span>Vyne</span>
+      </div>
+
+    </mat-toolbar>
     <mat-nav-list>
       <div *ngFor="let element of sidebarElements" class="navbar-route" [routerLink]="element.route" routerLinkActive="active">
         <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive">
@@ -18,6 +24,9 @@
       </div>
       <!--<a mat-list-item *ngFor="let element of sidebarElements" [routerLink]="element.route">{{ element.title }}</a>-->
     </mat-nav-list>
+    <div class="appInfo">
+      <span>v{{ appInfo.build.version }} ({{appInfo.git.commit.id}})</span>
+    </div>
   </mat-sidenav>
   <mat-sidenav-content>
     <router-outlet></router-outlet>

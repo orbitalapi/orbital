@@ -2,6 +2,7 @@ import {Component} from '@angular/core';
 import {BreakpointObserver, Breakpoints} from '@angular/cdk/layout';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
+import {AppInfo, AppInfoService} from "../services/app-info.service";
 
 @Component({
   selector: 'vyne-app',
@@ -37,7 +38,11 @@ export class VyneComponent {
     }
   });
 
-  constructor(private breakpointObserver: BreakpointObserver) {
+  appInfo: AppInfo;
+
+  constructor(private breakpointObserver: BreakpointObserver, appInfoService: AppInfoService) {
+    appInfoService.getAppInfo()
+      .subscribe(info => this.appInfo = info)
   }
 
 }
