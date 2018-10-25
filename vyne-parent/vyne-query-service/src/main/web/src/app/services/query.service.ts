@@ -14,6 +14,9 @@ export class QueryService {
     return this.http.post<QueryResult>(`${environment.queryServiceUrl}/query`, query)
   }
 
+  getHistory(): Observable<QueryHistoryRecord[]> {
+    return this.http.get<QueryHistoryRecord[]>(`${environment.queryServiceUrl}/query/history`)
+  }
 }
 
 export class Query {
@@ -33,13 +36,13 @@ export interface QueryResult {
 }
 
 export interface RemoteCall {
-   service: QualifiedName;
-   operation: string;
-   method: string;
-   requestBody: any;
-   resultCode: number;
-   durationMs: number;
-   response: any;
+  service: QualifiedName;
+  operation: string;
+  method: string;
+  requestBody: any;
+  resultCode: number;
+  durationMs: number;
+  response: any;
 }
 
 export interface ProfilerOperation {
@@ -70,4 +73,11 @@ export interface ProfilerOperationResult {
 export enum QueryMode {
   DISCOVER = "DISCOVER",
   GATHER = "GATHER"
+}
+
+
+export interface QueryHistoryRecord {
+  query: Query;
+  response: QueryResult;
+  timestamp: Date;
 }

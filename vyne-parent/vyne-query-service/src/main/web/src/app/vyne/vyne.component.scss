@@ -45,8 +45,9 @@
   padding-bottom: 45px;
   a {
     i {
-      img {
-        width: 32px;
+      .material-icons {
+        font-size: 32px;
+        line-height: 24px;
       }
       display: block;
       padding-bottom: 10px;

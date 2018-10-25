@@ -14,10 +14,13 @@
 
     </mat-toolbar>
     <mat-nav-list>
-      <div *ngFor="let element of sidebarElements" class="navbar-route" [routerLink]="element.route" routerLinkActive="active">
+      <div *ngFor="let element of sidebarElements" class="navbar-route" [routerLink]="element.route"
+           routerLinkActive="active">
         <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive">
           <i>
-            <img [src]="rla.isActive ? element.iconActive : element.icon">
+            <i class="material-icons">
+              {{ element.icon }}
+            </i>
           </i>
         </a>
         <a [routerLink]="element.route" routerLinkActive="active">{{element.title}}</a>
@@ -25,7 +28,7 @@
       <!--<a mat-list-item *ngFor="let element of sidebarElements" [routerLink]="element.route">{{ element.title }}</a>-->
     </mat-nav-list>
     <div class="appInfo">
-      <span>v{{ appInfo.build.version }} ({{appInfo.git.commit.id}})</span>
+      <span>v{{ appInfo?.build?.version }} ({{appInfo?.git?.commit?.id}})</span>
     </div>
   </mat-sidenav>
   <mat-sidenav-content>

@@ -1,14 +1,10 @@
 package io.vyne.queryService
 
 import io.vyne.models.TypedInstance
-import io.vyne.query.ProfilerOperation
-import io.vyne.query.QueryResponse
-import io.vyne.query.SearchFailedException
+import io.vyne.query.*
 import io.vyne.schemas.Schema
 import io.vyne.schemas.TypeLightView
 import io.vyne.spring.VyneFactory
-import io.vyne.query.Query
-import io.vyne.query.QueryMode
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -31,10 +27,16 @@ interface SchemaLightView : TypeLightView
  * with Vyne directly), but useful for spiking / demos.
  */
 @RestController
-class QueryService(val vyneFactory: VyneFactory) {
+class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
 
    @PostMapping("/query")
    fun submitQuery(@RequestBody query: Query): QueryResponse {
+      val response = executeQuery(query)
+      history.add(QueryHistoryRecord(query, response))
+      return response
+   }
+
+   private fun executeQuery(query: Query): QueryResponse {
       val vyne = vyneFactory.createVyne()
       val facts = parseFacts(query.facts, vyne.schema)
 
@@ -46,7 +48,6 @@ class QueryService(val vyneFactory: VyneFactory) {
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation)
       }
-
    }
 
    private fun parseFacts(facts: Map<String, Any>, schema: Schema): Set<TypedInstance> {

@@ -38,16 +38,19 @@ import {CovalentJsonFormatterModule} from '@covalent/core/json-formatter';
 import {PropertyViewComponent} from './type-list/property-view.component';
 import {CdkTableModule} from "@angular/cdk/table";
 import {SourceViewComponent} from './type-list/source-view.component';
-import { TypeLinksComponent } from './type-list/type-links.component';
-import { ResultViewerComponent } from './query-wizard/result-display/result-viewer.component';
+import {TypeLinksComponent} from './type-list/type-links.component';
+import {ResultViewerComponent} from './query-wizard/result-display/result-viewer.component';
 import {ResultContainerComponent} from "./query-wizard/result-display/result-container.component";
-import { MermaidComponent } from './mermaid/mermaid.component';
+import {MermaidComponent} from './mermaid/mermaid.component';
+import {QueryHistoryComponent} from './query-history/query-history.component';
+import {MomentModule} from "angular2-moment";
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
   {path: 'type-explorer', component: TypeListComponent},
   {path: 'query-wizard', component: QueryWizardComponent},
-  {path: 'result-explorer', component: ProfileGraphComponent}
+  {path: 'result-explorer', component: ProfileGraphComponent},
+  {path: 'query-history', component: QueryHistoryComponent}
 ];
 
 @NgModule({
@@ -62,7 +65,8 @@ const appRoutes = [
     SourceViewComponent,
     TypeLinksComponent,
     ResultViewerComponent,
-    MermaidComponent
+    MermaidComponent,
+    QueryHistoryComponent
   ],
   imports: [
     RouterModule.forRoot(
@@ -98,7 +102,9 @@ const appRoutes = [
 
     CovalentDynamicFormsModule,
     CovalentJsonFormatterModule,
-    CovalentHighlightModule
+    CovalentHighlightModule,
+
+    MomentModule
 
   ],
   providers: [TypesService, QueryService],

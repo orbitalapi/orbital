@@ -19,21 +19,31 @@ export class VyneComponent {
   sidebarElements: SidebarElement[] = [
     {
       title: 'Type explorer',
-      icon: 'outline-explore.svg',
-      iconActive: 'outline-explore-active.svg',
+      icon: 'explore',
+      // icon: 'outline-explore.svg',
+      // iconActive: 'outline-explore-active.svg',
       route: 'type-explorer'
     },
     {
       title: 'Query builder',
-      icon: 'outline-layers.svg',
-      iconActive: 'outline-layers-active.svg',
+      icon: 'layers',
+      // icon: 'outline-layers.svg',
+      // iconActive: 'outline-layers-active.svg',
       route: 'query-wizard'
     },
+    {
+      title: 'Query history',
+      icon: 'history',
+      route: 'query-history'
+    }
+
   ].map(value => {
     return {
       title: value.title,
-      icon: `assets/img/${value.icon}`,
-      iconActive: `assets/img/${value.iconActive}`,
+      // icon: `assets/img/${value.icon}`,
+      // iconActive: `assets/img/${value.icon}`,
+      icon: value.icon,
+      iconActive: value.icon,
       route: value.route
     }
   });
