@@ -9,7 +9,7 @@
   </div>
   <div class="result-status unsuccessful-search" *ngIf="isUnsuccessfulSearch">
     <i class="material-icons">error_outline</i>
-    <span>{{ result.message }}</span>
+    <span>Couldn't find a path for the following types: {{ unmatchedNodes }}</span>
   </div>
 
   <div class="results-container">

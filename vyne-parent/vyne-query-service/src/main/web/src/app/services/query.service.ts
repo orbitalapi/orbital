@@ -29,7 +29,7 @@ export class Query {
 export interface QueryResult {
   results: { [key: string]: TypedInstance };
 
-  unmatchedNodes: string[];
+  unmatchedNodes: QualifiedName[];
   fullyResolved: boolean;
   profilerOperation: ProfilerOperation;
   remoteCalls: RemoteCall[]

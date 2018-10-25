@@ -16,6 +16,7 @@ class QueryHistory {
 
    fun list(): List<QueryHistoryRecord> {
       return this.queries.toList()
+         .reversed()
    }
 }
 

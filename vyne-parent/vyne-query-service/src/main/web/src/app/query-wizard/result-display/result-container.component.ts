@@ -44,6 +44,11 @@ export class ResultContainerComponent implements OnInit {
     return this._result;
   }
 
+  get unmatchedNodes(): string {
+    let queryResult = <QueryResult> this.result;
+    return queryResult.unmatchedNodes.map(qn => qn.name).join(", ")
+  }
+
   get queryResultTypeNames(): QualifiedName[] {
     if (!this.isSuccess) return [];
     return Object.keys((<QueryResult>this.result).results)

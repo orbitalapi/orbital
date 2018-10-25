@@ -12,7 +12,6 @@ import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.schemas.*
 import io.vyne.utils.log
-import io.vyne.query.QueryMode
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -35,6 +34,7 @@ data class QuerySpecTypeNode(val type: Type, val children: Set<QuerySpecTypeNode
 data class QueryResult(
    @field:JsonIgnore // we send a lightweight version below
    val results: Map<QuerySpecTypeNode, TypedInstance?>,
+   @field:JsonIgnore // we send a lightweight version below
    val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
    val path: Path?,
    override val profilerOperation: ProfilerOperation? = null
@@ -51,6 +51,9 @@ data class QueryResult(
          .values
          .first()
    }
+
+   @JsonProperty("unmatchedNodes")
+   val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
 
    @JsonProperty("results")
    val resultMap: Map<String, Any?> = this.results.map { (key, value) -> key.type.fullyQualifiedName to value?.toRawObject() }.toMap()
