@@ -52,9 +52,12 @@ data class Type(
    val inherits: List<Type> = emptyList(),
 
    @JsonView(TypeFullView::class)
+   val enumValues:List<String> = emptyList(),
+
+   @JsonView(TypeFullView::class)
    val sources: List<SourceCode>
 ) {
-   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, sources)
+   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, enumValues, sources)
 
    @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForType != null;

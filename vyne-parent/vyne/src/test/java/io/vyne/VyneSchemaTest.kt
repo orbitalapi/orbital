@@ -4,6 +4,7 @@ import com.winterbe.expekt.expect
 import io.vyne.query.QueryEngineFactory
 import io.vyne.schemas.AttributeConstantValueConstraint
 import io.vyne.schemas.AttributeValueFromParameterConstraint
+import io.vyne.schemas.Modifier
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.AttributePath
 import org.junit.Test
@@ -23,7 +24,14 @@ class VyneSchemaTest {
             @Id
             clientId : ClientId as String
             name : ClientName as String
+            clientType : ClientType
          }
+
+         enum ClientType {
+            INDIVIDUAL,
+            COMPANY
+         }
+
          // Entirely unrelated type
          type Website {}
 
@@ -114,6 +122,16 @@ class VyneSchemaTest {
    fun shouldParseTypeAliases() {
       val type = vyne.getType("vyne.example.TaxFileNumber")
       expect(type.aliasForType!!.name).to.equal("String")
+   }
+
+   @Test
+   fun shouldParseEnumTypes() {
+      val type = vyne.getType("vyne.example.ClientType")
+      expect(type.modifiers).to.contain(Modifier.ENUM)
+
+      expect(type.enumValues).to.have.size(2)
+      expect(type.enumValues).to.contain("COMPANY")
+
    }
 
 //   @Test

@@ -74,6 +74,7 @@ export interface Type {
   modifiers: Array<Modifier>
   scalar: boolean
   aliasForType: QualifiedName,
+  enumValues: Array<string>,
   sources: Array<SourceCode>
 }
 

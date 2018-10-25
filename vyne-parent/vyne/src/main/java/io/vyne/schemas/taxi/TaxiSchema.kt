@@ -84,6 +84,10 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
             is TypeAlias -> {
                rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), aliasForType = QualifiedName(taxiType.aliasType!!.qualifiedName), sources = taxiType.compilationUnits.toVyneSources()))
             }
+            is EnumType -> {
+               val enumValues = taxiType.values.map { it.name }
+               rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), modifiers = parseModifiers(taxiType), enumValues = enumValues, sources = taxiType.compilationUnits.toVyneSources()))
+            }
             is ArrayType -> TODO()
             else -> rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), modifiers = parseModifiers(taxiType), sources = taxiType.compilationUnits.toVyneSources()))
          }
