@@ -1,6 +1,13 @@
 <div class="container">
   <div class="list-container">
-    <div class="title-bar"><h4>Query History</h4></div>
+    <div class="title-bar">
+      <h4>Query History</h4>
+      <button (click)="loadData()" mat-icon-button>
+        <i class="material-icons">
+          refresh
+        </i>
+      </button>
+    </div>
     <div class="history-item" *ngFor="let historyRecord of history" (click)="setActiveRecord(historyRecord)">
       <div class="query-description">
         <div class="given-line">

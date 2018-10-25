@@ -18,7 +18,7 @@ export class QueryHistoryComponent implements OnInit {
     this.loadData();
   }
 
-  private loadData() {
+  loadData() {
     this.service.getHistory()
       .subscribe(history => this.history = history)
   }

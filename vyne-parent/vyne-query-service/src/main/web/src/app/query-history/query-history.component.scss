@@ -2,12 +2,20 @@
 
 .title-bar {
   background-color: $light-grey-2;
+  display: flex;
   h4 {
     padding: 0;
     margin: 0;
+    flex-grow: 1;
+  }
+  button {
+    width: unset !important;
+    height: unset !important;
+    line-height: unset !important;
   }
   padding: 10px;
 }
+
 .container {
   height: 100%;
   display: flex;
@@ -19,12 +27,14 @@
     }
   }
 }
+
 .list-container {
   width: 400px;
   height: 100%;
   background-color: $light-grey-1;
   border-right: 1px solid $light-grey-2;
 }
+
 .history-item {
   cursor: pointer;
   background-color: $whiteish;
@@ -34,6 +44,7 @@
     background-color: $light-grey-1;
   }
 }
+
 .query-description {
   font-family: $mono;
   line-height: 1.5rem;
