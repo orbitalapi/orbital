@@ -205,6 +205,13 @@
    </dependencyManagement>
 
    <build>
+      <extensions>
+         <extension>
+            <groupId>org.springframework.build</groupId>
+            <artifactId>aws-maven</artifactId>
+            <version>5.0.0.RELEASE</version>
+         </extension>
+      </extensions>
       <finalName>${project.artifactId}</finalName>
       <plugins>
          <plugin>
@@ -299,12 +306,12 @@
 
    <distributionManagement>
       <repository>
-         <id>vyne-releases</id>
-         <url>https://nexus.vyne.io/repository/maven-releases/</url>
+         <id>repo.vyne.co</id>
+         <url>s3://repo.vyne.co/release</url>
       </repository>
       <snapshotRepository>
-         <id>vyne-snapshots</id>
-         <url>https://nexus.vyne.io/repository/maven-snapshots/</url>
+         <id>repo.vyne.co</id>
+         <url>s3://repo.vyne.co/snapshot</url>
       </snapshotRepository>
    </distributionManagement>
 </project>
