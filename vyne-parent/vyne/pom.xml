@@ -3,12 +3,12 @@
    <parent>
       <artifactId>vyne-parent</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.1.4-SNAPSHOT</version>
+      <version>0.1.3-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>vyne</artifactId>
-   <version>0.1.4-SNAPSHOT</version>
+   <version>0.1.3-SNAPSHOT</version>
 
    <properties>
       <orient-db.version>2.2.17</orient-db.version>
@@ -18,7 +18,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-query-api</artifactId>
-         <version>0.1.4-SNAPSHOT</version>
+         <version>0.1.3-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>org.skyscreamer</groupId>
