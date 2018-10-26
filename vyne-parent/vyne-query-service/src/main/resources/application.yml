@@ -5,7 +5,11 @@ spring:
     name: query-service
 logging:
   level:
+      org.springframework: WARN
+      com.netflix: WARN
+      com.hazelcast: WARN
       io.vyne: DEBUG
+      org.apache.catalina: WARN
 eureka:
    client:
 #      registryFetchIntervalSeconds: 1

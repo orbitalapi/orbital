@@ -3,9 +3,12 @@ package io.vyne.queryService
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.RemoteSchemaStoreType
 import io.vyne.utils.log
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.info.BuildProperties
+import org.springframework.boot.info.GitProperties
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
 import org.springframework.web.servlet.config.annotation.CorsRegistry
@@ -20,6 +23,11 @@ class QueryServiceApp {
       fun main(args: Array<String>) {
          SpringApplication.run(QueryServiceApp::class.java, *args)
       }
+   }
+
+   @Autowired
+   fun logInfo(buildInfo:BuildProperties) {
+      log().info("Vyne query server v${buildInfo.version}")
    }
 
    @Configuration
