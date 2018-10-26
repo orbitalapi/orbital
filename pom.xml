@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <modelVersion>4.0.0</modelVersion>
 
    <groupId>io.vyne</groupId>
@@ -204,6 +205,13 @@
    </dependencyManagement>
 
    <build>
+      <extensions>
+         <extension>
+            <groupId>org.springframework.build</groupId>
+            <artifactId>aws-maven</artifactId>
+            <version>5.0.0.RELEASE</version>
+         </extension>
+      </extensions>
       <finalName>${project.artifactId}</finalName>
       <plugins>
          <plugin>
@@ -297,13 +305,28 @@
    </build>
 
    <distributionManagement>
-      <repository>
-         <id>vyne-releases</id>
-         <url>https://nexus.vyne.io/repository/maven-releases/</url>
-      </repository>
+      <!--<repository>-->
+      <!--<id>vyne-releases</id>-->
+      <!--<url>https://nexus.vyne.io/repository/maven-releases/</url>-->
+      <!--</repository>-->
+      <!--<snapshotRepository>-->
+      <!--<id>vyne-snapshots</id>-->
+      <!--<url>https://nexus.vyne.io/repository/maven-snapshots/</url>-->
+      <!--</snapshotRepository>-->
       <snapshotRepository>
-         <id>vyne-snapshots</id>
-         <url>https://nexus.vyne.io/repository/maven-snapshots/</url>
+         <id>repo.vyne.co</id>
+         <url>s3://repo.vyne.co/snapshot</url>
       </snapshotRepository>
+      <repository>
+         <id>repo.vyne.co</id>
+         <url>s3://repo.vyne.co/release</url>
+      </repository>
    </distributionManagement>
+
+   <!--<repositories>-->
+   <!--<repository>-->
+   <!--<id>repo.teamed.io</id>-->
+   <!--<url>s3://repo.teamed.io/release</url>-->
+   <!--</repository>-->
+   <!--</repositories>-->
 </project>
