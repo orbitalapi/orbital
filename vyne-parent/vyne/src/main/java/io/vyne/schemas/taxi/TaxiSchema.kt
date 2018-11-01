@@ -31,7 +31,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
          Service(QualifiedName(taxiService.qualifiedName),
             operations = taxiService.operations.map { taxiOperation ->
                val returnType = this.type(taxiOperation.returnType.qualifiedName)
-               Operation(taxiOperation.name,
+               Operation(OperationNames.qualifiedName(taxiService.qualifiedName, taxiOperation.name),
                   taxiOperation.parameters.map { taxiParam ->
                      val type = this.type(taxiParam.type.qualifiedName)
                      Parameter(
@@ -105,7 +105,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
                   ?: error("Type ${rawType.fullyQualifiedName} inherits from type $inheritedType, which doesn't exist")
             }
          } else {
-            emptyList<Type>()
+            emptyList()
          }
 
          if (rawType.isTypeAlias) {
@@ -121,15 +121,15 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
 
    private fun getTaxiPrimitiveTypes(): Collection<Type> {
       return PrimitiveType.values().map { taxiPrimitive ->
-         Type(taxiPrimitive.qualifiedName.fqn(), modifiers = parseModifiers(taxiPrimitive), sources = listOf(SourceCode.undefined(TaxiSchema.LANGUAGE)))
+         Type(taxiPrimitive.qualifiedName.fqn(), modifiers = parseModifiers(taxiPrimitive), sources = listOf(SourceCode.native(TaxiSchema.LANGUAGE)))
       }
    }
 
    private fun buildDeferredConstraintProvider(fqn: QualifiedName, constraints: List<Constraint>): DeferredConstraintProvider {
-      return FunctionConstraintProvider({
+      return FunctionConstraintProvider {
          val type = this.type(fqn)
          constraintConverter.buildConstraints(type, constraints)
-      })
+      }
    }
 
    private fun parseModifiers(type: lang.taxi.Type): List<Modifier> {

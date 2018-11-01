@@ -30,9 +30,55 @@ data class QualifiedName(val fullyQualifiedName: String) : Serializable {
    override fun toString(): String = fullyQualifiedName
 }
 
+typealias OperationName = String
+typealias ServiceName = String
+
+object OperationNames {
+   private const val DELIMITER: String = "@@"
+   fun name(serviceName: String, operationName: String): String {
+      return listOf(serviceName, operationName).joinToString(DELIMITER)
+   }
+
+   fun qualifiedName(serviceName: ServiceName, operationName: OperationName): QualifiedName {
+      return name(serviceName, operationName).fqn()
+   }
+
+   fun serviceAndOperation(qualifiedOperationName: QualifiedName): Pair<ServiceName, OperationName> {
+      val parts = qualifiedOperationName.fullyQualifiedName.split(DELIMITER)
+      require(parts.size == 2) { "${qualifiedOperationName.fullyQualifiedName} is not a valid operation name." }
+      return parts[0] to parts[1]
+   }
+
+   fun operationName(qualifiedOperationName: QualifiedName): OperationName {
+      return serviceAndOperation(qualifiedOperationName).second
+   }
+
+   fun serviceName(qualifiedOperationName: QualifiedName): ServiceName {
+      return serviceAndOperation(qualifiedOperationName).first
+   }
+
+   fun isName(memberName: QualifiedName): Boolean {
+      return memberName.fullyQualifiedName.contains(DELIMITER)
+   }
+}
+
 typealias AttributeName = String
 typealias AttributeType = QualifiedName
 typealias DeclaringType = QualifiedName
+
+interface SchemaMember {
+
+   @Deprecated(message = "Workaround for https://gitlab.com/vyne/vyne/issues/34.  Will be removed")
+   val memberQualifiedName: QualifiedName
+      get() {
+         return when (this) {
+            is Type -> this.name
+            is Service -> this.name
+            is Operation -> this.qualifiedName
+            else -> error("Unhandled SchemaMember type : ${this.javaClass.name}")
+         }
+      }
+}
 
 interface TypeFullView : TypeLightView
 interface TypeLightView
@@ -52,11 +98,11 @@ data class Type(
    val inherits: List<Type> = emptyList(),
 
    @JsonView(TypeFullView::class)
-   val enumValues:List<String> = emptyList(),
+   val enumValues: List<String> = emptyList(),
 
    @JsonView(TypeFullView::class)
    val sources: List<SourceCode>
-) {
+) : SchemaMember {
    constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, enumValues, sources)
 
    @JsonView(TypeFullView::class)
@@ -103,7 +149,15 @@ data class SourceCode(
       fun undefined(language: String): SourceCode {
          return SourceCode("Unknown", language, "")
       }
+      fun native(language:String):SourceCode {
+         return SourceCode("Native", language, "");
+      }
    }
+}
+
+class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>) : Schema {
+   override val attributes: Set<QualifiedName> = emptySet()
+   override val links: Set<Link> = emptySet()
 }
 
 interface Schema {
@@ -136,15 +190,25 @@ interface Schema {
       return this.types.any { it.name.fullyQualifiedName == name }
    }
 
+   fun hasService(serviceName: String): Boolean {
+      return this.services.any { it.qualifiedName == serviceName }
+   }
+
    fun service(serviceName: String): Service {
       return this.services.firstOrNull { it.qualifiedName == serviceName }
          ?: throw IllegalArgumentException("Service $serviceName was not found within this schema")
    }
 
+   fun hasOperation(operationName: QualifiedName): Boolean {
+      val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
+      if (!hasService(serviceName)) return false
+
+      val service = service(serviceName)
+      return service.hasOperation(operationName)
+   }
+
    fun operation(operationName: QualifiedName): Pair<Service, Operation> {
-      val parts = operationName.fullyQualifiedName.split("@@").assertingThat({ it.size == 2 })
-      val serviceName = parts[0]
-      val operationName = parts[1]
+      val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
       val service = service(serviceName)
       return service to service.operation(operationName)
    }
@@ -161,4 +225,5 @@ interface Schema {
    fun type(nestedTypeRef: TypeReference): Type {
       return type(nestedTypeRef.name)
    }
+
 }

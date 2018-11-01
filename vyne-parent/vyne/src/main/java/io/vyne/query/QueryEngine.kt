@@ -111,6 +111,7 @@ class DefaultQueryEngine(override val schema: Schema, private val strategies: Li
       if (unresolvedNodes().isNotEmpty()) {
          log().error("The following nodes weren't matched: ${unresolvedNodes().joinToString(", ")}")
       }
+
       //      TODO("Rebuild Path")
       return QueryResult(matchedNodes, unresolvedNodes().toSet(), path = null, profilerOperation = context.profiler.root)
    }

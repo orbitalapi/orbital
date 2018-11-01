@@ -3,6 +3,7 @@ package io.vyne
 import es.usc.citius.hipster.graph.DirectedEdge
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
+import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.fqn
@@ -43,12 +44,8 @@ class DisplayGraphBuilder {
 
    private fun fixOperationNames(element: Element): Element {
       return if (element.elementType == ElementType.OPERATION) {
-         val serviceNameParts = element.valueAsQualifiedName().fullyQualifiedName.split("@@")
-         val serviceName = serviceNameParts[0].fqn().name
-         val operationName = serviceNameParts[1] + "()"
-         Element("$serviceName.$operationName",ElementType.OPERATION)
-
-
+         val (serviceName, operationName) = OperationNames.serviceAndOperation(element.valueAsQualifiedName())
+         Element("$serviceName.$operationName()",ElementType.OPERATION)
       } else element
    }
 

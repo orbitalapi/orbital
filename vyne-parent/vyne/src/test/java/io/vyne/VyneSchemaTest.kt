@@ -81,6 +81,7 @@ class VyneSchemaTest {
       expect(service.operation("getClient").parameters).size(1)
       expect(service.operation("getClient").returnType.name.fullyQualifiedName).to.equal("vyne.example.Client")
       expect(service.operation("convertMoney").parameters).size(2)
+
    }
 
    @Test
@@ -122,6 +123,7 @@ class VyneSchemaTest {
    fun shouldParseTypeAliases() {
       val type = vyne.getType("vyne.example.TaxFileNumber")
       expect(type.aliasForType!!.name).to.equal("String")
+      expect(type.sources.first().content).to.not.be.empty
    }
 
    @Test
@@ -131,8 +133,8 @@ class VyneSchemaTest {
 
       expect(type.enumValues).to.have.size(2)
       expect(type.enumValues).to.contain("COMPANY")
-
    }
+
 
 //   @Test
 //   fun WHEN_pathExistsUsingOperation_that_itIsFound() {

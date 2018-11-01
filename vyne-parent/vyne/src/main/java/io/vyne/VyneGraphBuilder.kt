@@ -2,11 +2,9 @@ package io.vyne
 
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.Multimap
-import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.*
-import io.vyne.utils.log
 
 enum class ElementType {
    TYPE,
@@ -62,7 +60,7 @@ fun type(type: Type) = type(type.fullyQualifiedName)
 fun member(name: String) = Element(name, ElementType.MEMBER)
 fun parameter(paramTypeFqn: String) = Element("param/$paramTypeFqn", ElementType.PARAMETER)
 fun operation(service: Service, operation: Operation): Element {
-   val operationReference = "${service.qualifiedName}@@${operation.name}"
+   val operationReference = OperationNames.name(service.qualifiedName, operation.name)
    return operation(operationReference)
 }
 
@@ -89,10 +87,11 @@ class VyneGraphBuilder(val schema: Schema) {
       return builder.createDirectedGraph()
    }
 
-   fun buildDisplayGraph():HipsterDirectedGraph<Element,Relationship> {
+   fun buildDisplayGraph(): HipsterDirectedGraph<Element, Relationship> {
       val graph = build()
       return DisplayGraphBuilder().convertToDisplayGraph(graph)
    }
+
    private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, facts: Set<TypedInstance>, schema: Schema, typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement>) {
       facts.forEach { typedInstance ->
          val typeFqn = typedInstance.type.fullyQualifiedName

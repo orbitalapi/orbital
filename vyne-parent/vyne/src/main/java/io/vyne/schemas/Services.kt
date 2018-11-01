@@ -159,15 +159,19 @@ data class Parameter(val type: Type,
    }
 }
 
-data class Operation(val name: String, val parameters: List<Parameter>,
+data class Operation(val qualifiedName: QualifiedName, val parameters: List<Parameter>,
                      val returnType: Type, override val metadata: List<Metadata> = emptyList(),
-                     val contract: OperationContract = OperationContract(returnType)) : MetadataTarget {
-
+                     val contract: OperationContract = OperationContract(returnType)) : MetadataTarget, SchemaMember {
+   val name: String = OperationNames.operationName(qualifiedName)
 }
 
-data class Service(val name: QualifiedName, val operations: List<Operation>, override val metadata: List<Metadata> = emptyList(), val sourceCode: List<SourceCode>) : MetadataTarget {
+data class Service(val name: QualifiedName, val operations: List<Operation>, override val metadata: List<Metadata> = emptyList(), val sourceCode: List<SourceCode>) : MetadataTarget, SchemaMember {
    fun operation(name: String): Operation {
       return this.operations.first { it.name == name }
+   }
+
+   fun hasOperation(name: String): Boolean {
+      return this.operations.any { it.name == name }
    }
 
    val qualifiedName = name.fullyQualifiedName

@@ -98,11 +98,11 @@ interface SchemaAggregator {
 class CompositeSchemaBuilder(val aggregators: List<SchemaAggregator> = SchemaAggregator.DEFAULT_AGGREGATORS) {
    fun aggregate(schemas: List<Schema>): Schema {
       var unaggregated = schemas
-      val aggregatedSchemas = aggregators.map { aggregator ->
+      val aggregatedSchemas = aggregators.mapNotNull { aggregator ->
          val (aggregated, remaining) = aggregator.aggregate(unaggregated)
          unaggregated = remaining
          /*return*/ aggregated
-      }.filterNotNull()
+      }
       return CompositeSchema(unaggregated + aggregatedSchemas)
    }
 }
