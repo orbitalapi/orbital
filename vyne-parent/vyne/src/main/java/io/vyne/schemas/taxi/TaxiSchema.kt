@@ -111,7 +111,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
          if (rawType.isTypeAlias) {
             val aliasedType = originalTypes[rawType.aliasForType!!.fullyQualifiedName]
                ?: error("Type ${rawType.fullyQualifiedName} is declared as a type alias of type ${rawType.aliasForType!!.fullyQualifiedName}, but that type doesn't exist")
-            aliasedType.copy(name = rawType.name, aliasForType = aliasedType.name, inherits = inheritedTypes)
+            aliasedType.copy(name = rawType.name, aliasForType = aliasedType.name, inherits = inheritedTypes, sources = rawType.sources)
          } else {
             rawType.copy(inherits = inheritedTypes)
          }
