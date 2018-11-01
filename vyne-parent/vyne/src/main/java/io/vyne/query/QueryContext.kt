@@ -37,8 +37,12 @@ data class QueryResult(
    @field:JsonIgnore // we send a lightweight version below
    val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
    val path: Path?,
+   @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null
 ) : QueryResponse {
+
+   val duration = profilerOperation?.duration
+
    override val isFullyResolved = unmatchedNodes.isEmpty()
    operator fun get(typeName: String): TypedInstance? {
       return this.results.filterKeys { it.type.name.fullyQualifiedName == typeName }
