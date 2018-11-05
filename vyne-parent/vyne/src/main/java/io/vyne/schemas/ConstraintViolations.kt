@@ -14,7 +14,22 @@ object ReplaceValueUpdater : ConstraintViolationValueUpdater {
 class ReplaceFieldValueUpdater(val originalValue: TypedInstance, val fieldName: String) : ConstraintViolationValueUpdater {
    override fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance {
       assert(originalValue is TypedObject, { "Can't replace field within a scalar value: $originalValue" })
-      return (originalValue as TypedObject).copy(replacingArgs = mapOf(fieldName to updatedValue))
+
+      // This needs a test.
+      // The idea here is that sometimes we get responses that contain replacement attributes,
+      // (eg., pluck foo from the response, and copy it to foo of the original.
+      //
+      // Sometimes the replacements are wholesale replacements, and copying just the requested
+      // field isn't enough.
+      // For now, I'm assuming if the originalValue and updatedValue are the same type, then it's
+      // a wholesale replacement.
+      // However, that feels coincidental, there's a whole bunch of scenarios where you asked valueA
+      // to be updated, and in doing so, valueB is also different.  (eg., currency conversion).
+      return if (originalValue.type.name == updatedValue.type.name) {
+         updatedValue
+      } else {
+         (originalValue as TypedObject).copy(replacingArgs = mapOf(fieldName to updatedValue))
+      }
    }
 
 }
@@ -27,7 +42,7 @@ interface ConstraintViolation : ConstraintViolationValueUpdater {
    fun provideResolutionAdvice(operation: Operation, contract: OperationContract): ResolutionAdvice? = null
 
    override fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance {
-      val updated =  updater.resolveWithUpdatedValue(updatedValue)
+      val updated = updater.resolveWithUpdatedValue(updatedValue)
       return updated
    }
 
@@ -35,6 +50,7 @@ interface ConstraintViolation : ConstraintViolationValueUpdater {
 }
 
 typealias ParamName = String
+
 data class ResolutionAdvice(val operation: Operation, val suggestedParams: Map<ParamName, TypedInstance>) {
    fun containsValueForParam(parameter: Parameter): Boolean {
       // Relaxing this.
@@ -56,7 +72,8 @@ data class ResolutionAdvice(val operation: Operation, val suggestedParams: Map<P
 
    fun getParamValue(parameter: Parameter): TypedInstance {
       if (parameter.name != null) {
-         return suggestedParams[parameter.name] ?: error("No parameter for name ${parameter.name} found in suggested params.  This shouldn't happen")
+         return suggestedParams[parameter.name]
+            ?: error("No parameter for name ${parameter.name} found in suggested params.  This shouldn't happen")
       }
 
       return suggestedParams.values.first { it.type == parameter.type }
@@ -76,7 +93,7 @@ data class ExpectedConstantValueMismatch(private val evaluatedInstance: TypedIns
       if (contract.returnType.fullyQualifiedName == this.requiredType.fullyQualifiedName
          && contract.containsConstraint(ReturnValueDerivedFromParameterConstraint::class.java)
          && contract.containsConstraint(AttributeValueFromParameterConstraint::class.java, { it.fieldName == this.fieldName })
-         ) {
+      ) {
 
          val constraintViolatingParam = contract.constraint(ReturnValueDerivedFromParameterConstraint::class.java).attributePath.path to evaluatedInstance
          val paramToAdjustViolatingField = contract.constraint(AttributeValueFromParameterConstraint::class.java, { it.fieldName == this.fieldName }).attributePath.path to expectedValue
