@@ -50,9 +50,10 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
       }
    }
 
-   private fun parseFacts(facts: Map<String, Any>, schema: Schema): Set<TypedInstance> {
-      return facts.map { (typeName, attributes) ->
-         TypedInstance.from(schema.type(typeName), attributes, schema)
+   private fun parseFacts(facts: List<Fact>, schema: Schema): Set<TypedInstance> {
+
+      return facts.map { (typeName, value) ->
+         TypedInstance.from(schema.type(typeName), value, schema)
       }.toSet()
    }
 }

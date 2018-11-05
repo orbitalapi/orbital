@@ -50,10 +50,16 @@ export class TypesService {
   };
 }
 
-export interface QualifiedName {
-  name: string
-  fullyQualifiedName: string
+export class QualifiedName {
+  name: string;
+  fullyQualifiedName: string;
+
+  static nameOnly(fullyQualifiedName: string): string {
+    let parts = fullyQualifiedName.split(".");
+    return parts[parts.length - 1];
+  }
 }
+
 
 export interface TypeReference {
   name: QualifiedName

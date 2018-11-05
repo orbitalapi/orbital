@@ -3,6 +3,7 @@ package io.vyne
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.mrbean.MrBeanModule
+import io.vyne.query.Fact
 import io.vyne.query.Query
 import io.vyne.query.QueryMode
 import lang.taxi.TypeNames
@@ -14,14 +15,17 @@ class VyneClient(private val queryService: VyneQueryService) {
 
    fun given(vararg model: Any): VyneQueryBuilder {
       val facts = model.map { modelValue ->
-         TypeNames.deriveTypeName(modelValue.javaClass) as TypeName to modelValue
-      }.toMap()
+         when (modelValue) {
+            is Fact -> modelValue
+            else -> Fact(TypeNames.deriveTypeName(modelValue.javaClass), modelValue)
+         }
+      }.toList()
 
       return VyneQueryBuilder(facts, queryService)
    }
 }
 
-class VyneQueryBuilder internal constructor(val facts: Map<TypeName, Any>, private val queryService: VyneQueryService) {
+class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val queryService: VyneQueryService) {
 
    inline fun <reified T : Any> discover(): T? {
       val response = query(T::class, QueryMode.DISCOVER)

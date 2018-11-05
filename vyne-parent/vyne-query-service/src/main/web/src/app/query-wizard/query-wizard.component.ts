@@ -10,7 +10,15 @@ import {
 } from '@covalent/dynamic-forms';
 import {FormControl} from "@angular/forms";
 import {Observable} from "rxjs/internal/Observable";
-import {ProfilerOperation, Query, QueryMode, QueryResult, QueryService, RemoteCall} from "../services/query.service";
+import {
+  Fact,
+  ProfilerOperation,
+  Query,
+  QueryMode,
+  QueryResult,
+  QueryService,
+  RemoteCall
+} from "../services/query.service";
 import {HttpErrorResponse} from "@angular/common/http";
 
 @Component({
@@ -99,9 +107,11 @@ export class QueryWizardComponent implements OnInit {
   }
 
   submitQuery() {
+    this.lastQueryResult = null;
+    let factList: Fact[] = Object.keys(this.facts).map(key => new Fact(key, this.facts[key]));
     let query = new Query(
       this.targetTypeInput.value,
-      this.facts,
+      factList,
       this.queryMode.value
     );
     this.queryService.submitQuery(query)

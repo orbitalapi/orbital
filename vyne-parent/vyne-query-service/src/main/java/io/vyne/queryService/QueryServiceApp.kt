@@ -5,6 +5,7 @@ import io.vyne.spring.RemoteSchemaStoreType
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.info.BuildProperties
@@ -21,13 +22,19 @@ class QueryServiceApp {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
-         SpringApplication.run(QueryServiceApp::class.java, *args)
+         val app = SpringApplication(QueryServiceApp::class.java)
+         app.setBannerMode(Banner.Mode.OFF)
+         app.run(*args)
       }
    }
 
+   @Autowired(required = false)
+   var buildInfo: BuildProperties? = null;
+
    @Autowired
-   fun logInfo(buildInfo:BuildProperties) {
-      log().info("Vyne query server v${buildInfo.version}")
+   fun logInfo() {
+      val version = if (buildInfo != null) "v${buildInfo!!.version}" else "Dev version";
+      log().info("Vyne query server $version")
    }
 
    @Configuration
@@ -46,7 +53,7 @@ class QueryServiceApp {
             registry.addMapping("/**")
                .allowedOrigins(allowedHost)
                .exposedHeaders(AuthHeaders.AUTH_HEADER_NAME)
-               .allowedHeaders(AuthHeaders.AUTH_HEADER_NAME)
+               .allowedHeaders("Authorization", "Cache-Control", "Content-Type")
                .allowCredentials(true)
                .allowedMethods("*")
          }

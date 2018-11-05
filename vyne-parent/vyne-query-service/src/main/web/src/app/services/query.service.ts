@@ -21,8 +21,13 @@ export class QueryService {
 
 export class Query {
   constructor(readonly queryString: string,
-              readonly facts: any,
+              readonly facts: Fact[],
               readonly queryMode: QueryMode) {
+  }
+}
+
+export class Fact {
+  constructor(readonly typeName: string, readonly  value: any) {
   }
 }
 
