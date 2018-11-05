@@ -66,8 +66,9 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, uriVariables)
          httpInvokeOperation.stop(result)
 
+         val expandedUri = restTemplate.uriTemplateHandler.expand(absoluteUrl,uriVariables)
          httpInvokeOperation.addRemoteCall(RemoteCall(
-            service.name, operation.name, httpMethod.name, requestBody.body, result.statusCodeValue, httpInvokeOperation.duration, result.body
+            service.name, expandedUri.toASCIIString(), operation.name, httpMethod.name, requestBody.body, result.statusCodeValue, httpInvokeOperation.duration, result.body
          ))
          if (result.statusCode.is2xxSuccessful) {
             handleSuccessfulHttpResponse(result, operation)
@@ -109,7 +110,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       // be improved, using name / position?  (note that parameters don't appear to be ordered in the list).
 
       val requestBodyParamType = operation.parameters[requestBodyParamIdx].type
-      val requestBodyTypedInstance = parameters.first { it.type == requestBodyParamType }
+      val requestBodyTypedInstance = parameters.first { it.type.name == requestBodyParamType.name }
       return HttpEntity(requestBodyTypedInstance.toRawObject())
 
    }

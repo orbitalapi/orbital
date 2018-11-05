@@ -43,7 +43,8 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
                   }, returnType = returnType,
                   metadata = parseAnnotationsToMetadata(taxiOperation.annotations),
                   contract = constraintConverter.buildContract(returnType, taxiOperation.contract?.returnTypeConstraints
-                     ?: emptyList())
+                     ?: emptyList()),
+                  sourceCode = taxiOperation.compilationUnits.toVyneSources()
                )
             },
             metadata = parseAnnotationsToMetadata(taxiService.annotations),
