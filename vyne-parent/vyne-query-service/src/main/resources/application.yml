@@ -6,6 +6,8 @@ spring:
 logging:
   level:
       org.springframework: WARN
+      com.netflix.discovery.InstanceInfoReplicator: ERROR
+      com.netflix.discovery.DiscoveryClient: ERROR
       com.netflix: WARN
       com.hazelcast: WARN
       io.vyne: DEBUG
