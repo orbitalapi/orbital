@@ -33,7 +33,8 @@ publish-snapshot:
   image: maven:3.3.9-jdk-8
   stage: build
   script:
-    - 'mvn $MAVEN_CLI_OPTS deploy'
+  # Tests are skipped.  See issue #41
+    - 'mvn $MAVEN_CLI_OPTS  -DskipTests -Darguments=-DskipTests deploy'
   artifacts:
     reports:
       junit:
