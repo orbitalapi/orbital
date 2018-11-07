@@ -119,6 +119,71 @@
                </execution>
             </executions>
          </plugin>
+
+
+         <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+            <version>0.27.2</version>
+
+            <configuration>
+               <images>
+                  <image>
+                     <name>vyneco/vyne:${project.version}</name>
+                     <build>
+                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
+                        <tags>
+                           <tag>${docker.tag}</tag>
+                        </tags>
+                     </build>
+                  </image>
+               </images>
+            </configuration>
+
+            <!-- Connect start/stop to pre- and
+                 post-integration-test phase, respectively if you want to start
+                 your docker containers during integration tests -->
+            <executions>
+               <execution>
+                  <id>deploy</id>
+                  <phase>deploy</phase>
+                  <goals>
+                     <!-- "build" should be used to create the images with the
+                          artifact -->
+                     <goal>build</goal>
+                     <goal>push</goal>
+                  </goals>
+               </execution>
+               <execution>
+                  <id>stop</id>
+                  <phase>post-integration-test</phase>
+                  <goals>
+                     <goal>stop</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
       </plugins>
    </build>
+
+   <profiles>
+      <profile>
+         <id>snapshot-release</id>
+         <activation>
+            <activeByDefault>false</activeByDefault>
+         </activation>
+         <properties>
+            <docker.tag>latest-snapshot</docker.tag>
+         </properties>
+      </profile>
+      <profile>
+         <id>feature-release</id>
+         <activation>
+            <activeByDefault>false</activeByDefault>
+         </activation>
+         <properties>
+            <docker.tag>latest</docker.tag>
+         </properties>
+      </profile>
+   </profiles>
 </project>
