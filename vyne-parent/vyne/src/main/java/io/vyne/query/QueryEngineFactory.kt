@@ -46,6 +46,7 @@ interface QueryEngineFactory {
          return DefaultQueryEngineFactory(
             strategies = listOf(
                ModelsScanStrategy(),
+               DirectServiceInvocationStrategy(invokers),
                graphQueryStrategy,
                HipsterGatherGraphQueryStrategy(graphQueryStrategy)
             )

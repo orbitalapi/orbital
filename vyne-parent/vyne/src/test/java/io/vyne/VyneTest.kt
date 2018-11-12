@@ -219,6 +219,42 @@ class VyneTest {
       expect(result.isFullyResolved).to.be.`true`
       expect(result["HoldReceipt"]!!.value).to.equal("held-123")
    }
+
+   @Test
+   fun given_targetTypeIsExposedDirectlyByService_then_canDiscoverWithNoStartPoint() {
+      val schema = """
+          type alias EmailAddress as String
+          service CustomerService {
+            operation singleEmail():EmailAddress
+          }
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("singleEmail", vyne.typedValue("EmailAddress", "foo@foo.com"))
+
+      val result = vyne.query().find("EmailAddress")
+
+      expect(result.isFullyResolved).to.be.`true`
+      expect(result["EmailAddress"]!!.value).to.equal("foo@foo.com")
+   }
+
+//   @Test
+   fun canRequestListTypeDirectlyFromService() {
+      val schema = """
+          type alias EmailAddress as String
+          service CustomerService {
+            operation emails():EmailAddress[]
+          }
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("emails", vyne.typedValue("EmailAddress[]", listOf("foo@foo.com","bar@foo.com")))
+
+      val result = vyne.query().find("EmailAddress[]")
+
+      expect(result.isFullyResolved).to.be.`true`
+      expect(result["EmailAddress"]!!.value).to.equal("foo@foo.com")
+   }
 }
 
 fun Vyne.typedValue(typeName: String, value: Any): TypedValue {
