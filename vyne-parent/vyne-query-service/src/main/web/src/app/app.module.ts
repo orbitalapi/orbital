@@ -44,6 +44,7 @@ import {ResultContainerComponent} from "./query-wizard/result-display/result-con
 import {MermaidComponent} from './mermaid/mermaid.component';
 import {QueryHistoryComponent} from './query-history/query-history.component';
 import {MomentModule} from "angular2-moment";
+import { ParameterViewComponent } from './type-list/parameter-view.component';
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
@@ -66,7 +67,8 @@ const appRoutes = [
     TypeLinksComponent,
     ResultViewerComponent,
     MermaidComponent,
-    QueryHistoryComponent
+    QueryHistoryComponent,
+    ParameterViewComponent
   ],
   imports: [
     RouterModule.forRoot(

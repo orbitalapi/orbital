@@ -162,7 +162,7 @@ data class Parameter(val type: Type,
 data class Operation(val qualifiedName: QualifiedName, val parameters: List<Parameter>,
                      val returnType: Type, override val metadata: List<Metadata> = emptyList(),
                      val contract: OperationContract = OperationContract(returnType),
-                     val sourceCode: List<SourceCode>) : MetadataTarget, SchemaMember {
+                     val sources: List<SourceCode>) : MetadataTarget, SchemaMember {
    val name: String = OperationNames.operationName(qualifiedName)
 }
 

@@ -1,0 +1,23 @@
+<div>
+  <table mat-table [dataSource]="members">
+    <ng-container matColumnDef="inputOutput">
+      <th mat-header-cell *matHeaderCellDef> Direction </th>
+      <td mat-cell *matCellDef="let parameter"> {{ parameter.kind }} </td>
+    </ng-container>
+
+
+    <ng-container matColumnDef="name1">
+      <th mat-header-cell *matHeaderCellDef> Name </th>
+      <td mat-cell *matCellDef="let parameter"> {{ parameter.name }} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="type">
+      <th mat-header-cell *matHeaderCellDef> Type </th>
+      <td mat-cell *matCellDef="let parameter" class="type-name"> {{ parameter.type.name.fullyQualifiedName }}</td>
+    </ng-container>
+
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+</div>

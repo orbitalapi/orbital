@@ -28,9 +28,14 @@
       </mat-expansion-panel-header>
       <div>
         <mat-tab-group dynamicHeight="true">
-          <mat-tab label="Properties">
+          <mat-tab label="Properties" *ngIf="member.kind == 'TYPE'">
             <ng-template matTabContent>
               <type-property-view [schemaMember]="member"></type-property-view>
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="Parameters" *ngIf="member.kind == 'OPERATION'">
+            <ng-template matTabContent>
+              <parameter-view [schemaMember]="member"></parameter-view>
             </ng-template>
           </mat-tab>
           <mat-tab label="Source">

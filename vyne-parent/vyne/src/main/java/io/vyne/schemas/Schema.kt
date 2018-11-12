@@ -1,6 +1,8 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonView
+import io.vyne.Element
+import io.vyne.ElementType
 import io.vyne.query.TypeMatchingStrategy
 import io.vyne.schemas.taxi.DeferredConstraintProvider
 import io.vyne.schemas.taxi.EmptyDeferredConstraintProvider
@@ -59,6 +61,11 @@ object OperationNames {
 
    fun isName(memberName: QualifiedName): Boolean {
       return memberName.fullyQualifiedName.contains(DELIMITER)
+   }
+
+   fun displayNameFromOperationName(operationName: QualifiedName): String {
+      val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
+      return "$serviceName.$operationName()"
    }
 }
 

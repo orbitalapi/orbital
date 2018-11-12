@@ -93,8 +93,9 @@ export interface SourceCode {
 export interface Schema {
   types: Array<Type>
   services: Array<Service>
+  operations: Array<Operation>
   // TODO : Are these still required / meaningful?
-  attributes: Set<QualifiedName>
+  // attributes: Set<QualifiedName>
 }
 
 export interface Parameter {
@@ -116,7 +117,7 @@ export interface Operation {
   returnType: Type
   metadata: Array<Metadata>
   contract: OperationContract
-
+  sources: SourceCode[]
 }
 
 export interface Service {
@@ -208,7 +209,7 @@ export class SchemaMember {
         SchemaMemberType.OPERATION,
         null,
         operation,
-        [] // TODO
+        operation.sources
       )
     })
 
@@ -242,12 +243,12 @@ export class SchemaMember {
 }
 
 export enum SchemaMemberType {
-  SERVICE,
-  TYPE,
-  OPERATION
+  SERVICE = 'SERVICE',
+  TYPE = 'TYPE',
+  OPERATION = 'OPERATION'
 }
 
 export interface TypedInstance {
-  type:Type;
-  value:any;
+  type: Type;
+  value: any;
 }

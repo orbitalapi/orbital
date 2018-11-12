@@ -6,7 +6,6 @@ import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
-import io.vyne.schemas.fqn
 import io.vyne.utils.log
 
 /**
@@ -18,15 +17,16 @@ class DisplayGraphBuilder {
       val VISIBLE_ELEMENTS = setOf(ElementType.OPERATION, ElementType.TYPE, ElementType.MEMBER)
 
    }
-   fun convertToDisplayGraph(graph: HipsterDirectedGraph<Element, Relationship>):HipsterDirectedGraph<Element,Relationship> {
-      val viewGraphBuilder = HipsterGraphBuilder.create<Element,Relationship>()
+
+   fun convertToDisplayGraph(graph: HipsterDirectedGraph<Element, Relationship>): HipsterDirectedGraph<Element, Relationship> {
+      val viewGraphBuilder = HipsterGraphBuilder.create<Element, Relationship>()
 
       graph.vertices()
          .filter { visibleInDisplayGraph(it) }
 //         .map { fixOperationNames(it) }
          .forEach { element ->
             graph.outgoingEdgesOf(element)
-               .mapNotNull { convertToDisplayGraphRelationship(it,graph) }
+               .mapNotNull { convertToDisplayGraphRelationship(it, graph) }
                .distinct()
                .forEach { edge -> viewGraphBuilder.connect(toDisplayElement(edge.vertex1)).to(toDisplayElement(edge.vertex2)).withEdge(edge.edgeValue) }
          }
@@ -44,8 +44,8 @@ class DisplayGraphBuilder {
 
    private fun fixOperationNames(element: Element): Element {
       return if (element.elementType == ElementType.OPERATION) {
-         val (serviceName, operationName) = OperationNames.serviceAndOperation(element.valueAsQualifiedName())
-         Element("$serviceName.$operationName()",ElementType.OPERATION)
+         val displayName = OperationNames.displayNameFromOperationName(element.valueAsQualifiedName())
+         Element(displayName, ElementType.OPERATION)
       } else element
    }
 
@@ -56,7 +56,7 @@ class DisplayGraphBuilder {
          Relationship.IS_ATTRIBUTE_OF -> return null // This is a bi-directional relationship, so keep the HAS_ATTRIBUTE direction
          Relationship.REQUIRES_PARAMETER -> {
             val paramType = edge.vertex2.valueAsQualifiedName().fullyQualifiedName.removePrefix("param/")
-            return DirectedEdge(edge.vertex1, type(paramType),Relationship.REQUIRES_PARAMETER)
+            return DirectedEdge(edge.vertex1, type(paramType), Relationship.REQUIRES_PARAMETER)
          }
          Relationship.PROVIDES -> return DirectedEdge(edge.vertex1, type(edge.vertex2.value.toString()), Relationship.PROVIDES)
       }
@@ -75,7 +75,7 @@ class DisplayGraphBuilder {
 
 }
 
-private fun Element.mapName( nameMapper: (QualifiedName) -> String ):Element {
+private fun Element.mapName(nameMapper: (QualifiedName) -> String): Element {
    val updatedName = nameMapper(this.valueAsQualifiedName())
-   return Element(updatedName,this.elementType,this.instanceValue)
+   return Element(updatedName, this.elementType, this.instanceValue)
 }

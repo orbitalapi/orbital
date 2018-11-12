@@ -72,7 +72,8 @@ export class TypeLinksComponent implements OnInit {
   }
 
   private loadTypeLinks(name: QualifiedName) {
-    this.appendSchemaGraph(this.service.getLinks(name.fullyQualifiedName))
+    const sanitized = name.fullyQualifiedName.replace(" #", "@@");
+    this.appendSchemaGraph(this.service.getLinks(sanitized))
   }
 
   private loadNodeLinks(node: SchemaGraphNode) {
