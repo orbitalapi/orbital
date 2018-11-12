@@ -45,7 +45,7 @@
             <filtering>true</filtering>
             <directory>src/main/resources</directory>
             <includes>
-               <include>application.yml</include>
+               <include>application*.yml</include>
             </includes>
          </resource>
       </resources>
