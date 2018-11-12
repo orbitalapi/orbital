@@ -1,6 +1,5 @@
 export const environment = {
   production: true,
-  // need to work out how to provide this at runtime.
-  queryServiceUrl: 'http://localhost:9022'
-
+  // Convention for relative urls:  Start with an /, but don't end with one
+  queryServiceUrl: `//${window.location.host}`
 };
