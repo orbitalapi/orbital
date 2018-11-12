@@ -49,5 +49,9 @@
         <button mat-button color="primary" (click)="startNewQuery(member)">Start a query</button>
       </mat-action-row>
     </mat-expansion-panel>
+    <div *ngIf="members.length === 0" class="empty-state">
+      <img src="assets/img/getting-started.svg">
+      <div>There's nothing registered yet.  Why not try one of our <a href="https://docs.vyne.co">tutorials</a>, and register your first service.</div>
+    </div>
   </mat-accordion>
 </div>

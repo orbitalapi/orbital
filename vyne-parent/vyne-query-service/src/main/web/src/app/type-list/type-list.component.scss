@@ -83,3 +83,15 @@
     color: $grey-3
   }
 }
+
+.empty-state {
+  text-align: center;
+  width: 500px;
+  font-size: 1.4rem;
+  opacity: 0.5;
+  margin: auto;
+  img {
+    width: 256px;
+    opacity: 0.4;
+  }
+}
