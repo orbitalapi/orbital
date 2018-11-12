@@ -17,7 +17,16 @@ class LocalSchemaPublisher(val schemaName: String,
    fun handleEvent(event: ContextRefreshedEvent) {
       if (!startupPublishTriggered) {
          startupPublishTriggered = true
-         publish()
+
+         // Note: we need a try...catch here, because spring calls this eventHandler
+         // via reflection, and seems to swallow exceptions
+         try {
+            publish()
+         } catch (exception:Exception) {
+            log().error("Failed to generate schema", exception)
+            throw exception
+         }
+
       }
 
    }
