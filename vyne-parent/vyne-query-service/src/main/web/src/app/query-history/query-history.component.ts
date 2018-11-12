@@ -29,7 +29,7 @@ export class QueryHistoryComponent implements OnInit {
   };
 
   getFactTypeNames(record: QueryHistoryRecord): string[] {
-    return Object.keys(record.query.facts).map(this.typeName)
+    return record.query.facts.map(fact => this.typeName(fact.typeName))
   }
 
   setActiveRecord(historyRecord: QueryHistoryRecord) {

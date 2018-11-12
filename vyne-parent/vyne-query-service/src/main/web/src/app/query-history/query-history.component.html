@@ -15,7 +15,7 @@
           *ngIf="!isLast">, </span> </span>)
         </div>
         <div class="discover-line">
-          <span class="verb">{{ historyRecord.query.queryMode }} </span>
+          <span class="verb">{{ historyRecord.query.queryMode.toLowerCase() }} </span>
           <span class="type-name">{{ typeName(historyRecord.query.queryString) }}</span>
         </div>
       </div>
