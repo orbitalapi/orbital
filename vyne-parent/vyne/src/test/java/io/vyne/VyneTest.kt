@@ -95,6 +95,26 @@ class VyneTest {
    }
 
    @Test
+   fun shouldBeAbleToQueryWithShortNames() {
+      val stubService = StubService()
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val vyne = TestSchema.vyne(queryEngineFactory)
+
+      val json = """
+{
+   "clientId" : "123",
+   "name" : "Jimmy's Choos",
+   "isicCode" : "retailer"
+}"""
+      val client = vyne.parseJsonModel("Client", json)
+      stubService.addResponse("mockClient", client)
+      vyne.addKeyValuePair("vyne.example.TaxFileNumber", "123")
+      val result: QueryResult = vyne.query().find("ClientName")
+      expect(result.results.size).to.equal(1)
+      expect(result["vyne.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
+   }
+
+   @Test
    fun shouldRetrievePropertyFromService_withMultipleAttributes_whenAttributesArePresentAsKeyValuePairs() {
       val stubService = StubService()
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)

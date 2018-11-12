@@ -101,6 +101,36 @@ class VyneSchemaTest {
    }
 
    @Test
+   fun shouldBeAbleToLookUpViaShortName() {
+      val invoiceType = vyne.getType("Invoice")
+      expect(invoiceType.fullyQualifiedName).to.equal("vyne.example.Invoice")
+   }
+
+   @Test
+   fun cannotLookupByShortNameWhenItIsAmiguous() {
+      val taxiDef = """
+          namespace foo {
+            type Customer {
+               firstName : FirstName as String
+            }
+          }
+          namespace bar {
+            type Customer {
+               lastName : LastName as String
+            }
+          }
+      """.trimIndent()
+      val schema = TaxiSchema.from(taxiDef)
+      expect(schema.hasType("Customer")).to.be.`false`
+      expect(schema.hasType("foo.Customer")).to.be.`true`
+      expect(schema.hasType("bar.Customer")).to.be.`true`
+      expect(schema.hasType("FirstName")).to.be.`true`
+      expect(schema.hasType("foo.FirstName")).to.be.`true`
+      expect(schema.hasType("LastName")).to.be.`true`
+      expect(schema.hasType("bar.LastName")).to.be.`true`
+   }
+
+   @Test
    fun shouldParseServiceContsraints() {
       val service = vyne.getService("vyne.example.ClientService")
       val operation = service.operation("convertMoney")

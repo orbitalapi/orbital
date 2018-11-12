@@ -17,11 +17,12 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
    // TODO : Are these still required / meaningful?
    override val links: Set<Link> = emptySet()
    override val attributes: Set<QualifiedName> = emptySet()
-
+   override val typeCache: TypeCache
    private val constraintConverter = TaxiConstraintConverter(this)
 
    init {
       this.types = parseTypes(document)
+      this.typeCache = DefaultTypeCache(this.types)
       this.services = parseServices(document)
    }
 

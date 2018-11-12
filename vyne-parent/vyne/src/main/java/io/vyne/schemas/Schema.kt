@@ -149,7 +149,8 @@ data class SourceCode(
       fun undefined(language: String): SourceCode {
          return SourceCode("Unknown", language, "")
       }
-      fun native(language:String):SourceCode {
+
+      fun native(language: String): SourceCode {
          return SourceCode("Native", language, "");
       }
    }
@@ -158,6 +159,8 @@ data class SourceCode(
 class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>) : Schema {
    override val attributes: Set<QualifiedName> = emptySet()
    override val links: Set<Link> = emptySet()
+
+   override val typeCache: TypeCache = DefaultTypeCache(this.types)
 }
 
 interface Schema {
@@ -166,6 +169,8 @@ interface Schema {
    // TODO : Are these still required / meaningful?
    val attributes: Set<QualifiedName>
    val links: Set<Link>
+   val typeCache: TypeCache
+
 
    val operations: Set<Operation>
       get() = services.flatMap { it.operations }.toSet()
@@ -177,18 +182,11 @@ interface Schema {
       }.toSet()
    }
 
-   fun type(name: String): Type {
-      return this.types.firstOrNull { it.name.fullyQualifiedName == name }
-         ?: throw IllegalArgumentException("Type $name was not found within this schema")
-   }
+   fun type(name: String) = typeCache.type(name)
 
-   fun type(name: QualifiedName): Type {
-      return type(name.fullyQualifiedName)
-   }
+   fun type(name: QualifiedName) = typeCache.type(name)
 
-   fun hasType(name: String): Boolean {
-      return this.types.any { it.name.fullyQualifiedName == name }
-   }
+   fun hasType(name: String) = typeCache.hasType(name)
 
    fun hasService(serviceName: String): Boolean {
       return this.services.any { it.qualifiedName == serviceName }
@@ -226,4 +224,48 @@ interface Schema {
       return type(nestedTypeRef.name)
    }
 
+}
+
+interface TypeCache {
+   fun type(name: String): Type
+   fun type(name: QualifiedName): Type
+   fun hasType(name: String): Boolean
+}
+
+data class DefaultTypeCache(private val types: Set<Type>) : TypeCache {
+   private val cache: Map<QualifiedName, Type> = types.associateBy { it.name }
+   private val shortNames: Map<String, Type>
+
+   init {
+      val possibleShortNames: MutableMap<String, Pair<Int, QualifiedName?>> = mutableMapOf()
+      cache.forEach { name: QualifiedName, type ->
+         possibleShortNames.compute(name.name) { _, existingPair ->
+            if (existingPair == null) {
+               1 to type.name
+            } else {
+               existingPair.first + 1 to null
+            }
+         }
+      }
+      shortNames = possibleShortNames
+         .filter { (shortName, countAndFqn) -> countAndFqn.first == 1 }
+         .map { (shortName, countAndFqn) ->
+            val type = this.cache[countAndFqn.second!!] ?: error("Expected a type named ${countAndFqn.second!!}")
+            shortName to type
+         }.toMap()
+   }
+
+   override fun type(name: String): Type {
+      return this.cache[name.fqn()]
+         ?: this.shortNames[name]
+         ?: throw IllegalArgumentException("Type $name was not found within this schema, and is not a valid short name")
+   }
+
+   override fun type(name: QualifiedName): Type {
+      return type(name.fullyQualifiedName)
+   }
+
+   override fun hasType(name: String): Boolean {
+      return shortNames.containsKey(name) || cache.containsKey(name.fqn())
+   }
 }
