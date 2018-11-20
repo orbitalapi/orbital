@@ -9,6 +9,10 @@ interface SchemaSource {
 
 }
 
+interface VersionedSchemaProvider {
+   val versionedSchemas: List<VersionedSchema>
+}
+
 interface SchemaProvider {
    fun schemas(): List<Schema>
    fun schema(): Schema = CompositeSchemaBuilder().aggregate(schemas())

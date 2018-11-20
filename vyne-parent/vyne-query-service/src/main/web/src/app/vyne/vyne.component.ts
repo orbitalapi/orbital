@@ -25,6 +25,11 @@ export class VyneComponent {
       route: 'type-explorer'
     },
     {
+      title: 'Schema explorer',
+      icon: 'description',
+      route: 'schema-explorer'
+    },
+    {
       title: 'Query builder',
       icon: 'layers',
       // icon: 'outline-layers.svg',

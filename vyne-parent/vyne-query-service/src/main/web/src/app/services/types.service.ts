@@ -23,6 +23,10 @@ export class TypesService {
       .get<string>(`${environment.queryServiceUrl}/schemas/raw`)
   };
 
+  getVersionedSchemas(): Observable<VersionedSchema[]> {
+    return this.http.get<VersionedSchema[]>(`${environment.queryServiceUrl}/schemas`)
+  }
+
   getLinksForNode = (node: SchemaGraphNode): Observable<SchemaGraph> => {
     return this.http
       .get<SchemaGraph>(`${environment.queryServiceUrl}/nodes/${node.type}/${node.nodeId}/links`)
@@ -251,4 +255,10 @@ export enum SchemaMemberType {
 export interface TypedInstance {
   type: Type;
   value: any;
+}
+
+export interface VersionedSchema {
+  name: string;
+  version: string;
+  content: string;
 }

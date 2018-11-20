@@ -45,11 +45,13 @@ import {QueryHistoryComponent} from './query-history/query-history.component';
 import {MomentModule} from "angular2-moment";
 import {ParameterViewComponent} from './type-list/parameter-view.component';
 import {TaxiViewerModule} from "./query-wizard/taxi-viewer/taxi-viewer.module";
+import { SchemaExplorerComponent } from './schema-explorer/schema-explorer.component';
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
   {path: 'type-explorer', component: TypeListComponent},
   {path: 'query-wizard', component: QueryWizardComponent},
+  {path: 'schema-explorer', component: SchemaExplorerComponent},
   {path: 'result-explorer', component: ProfileGraphComponent},
   {path: 'query-history', component: QueryHistoryComponent}
 ];
@@ -67,7 +69,8 @@ const appRoutes = [
     TypeLinksComponent,
     ResultViewerComponent,
     QueryHistoryComponent,
-    ParameterViewComponent
+    ParameterViewComponent,
+    SchemaExplorerComponent
   ],
   imports: [
     RouterModule.forRoot(

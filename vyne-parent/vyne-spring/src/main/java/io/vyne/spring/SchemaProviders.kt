@@ -1,24 +1,23 @@
 package io.vyne.spring
 
+import io.vyne.schemaStore.*
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
-import io.vyne.schemaStore.SchemaSet
-import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.schemaStore.SchemaStoreClient
 import lang.taxi.generators.java.TaxiGenerator
 
 
-class SimpleTaxiSchemaProvider(val source:String): SchemaSourceProvider {
+class SimpleTaxiSchemaProvider(val source: String) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
       return listOf(source)
    }
 
    override fun schemas(): List<Schema> {
-      return listOf( TaxiSchema.from(source))
+      return listOf(TaxiSchema.from(source))
    }
 
 }
+
 class LocalTaxiSchemaProvider(val models: List<Class<*>>, val services: List<Class<*>>, val taxiGenerator: TaxiGenerator = TaxiGenerator()) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
       return taxiGenerator.forClasses(models + services).generateAsStrings()
@@ -29,11 +28,16 @@ class LocalTaxiSchemaProvider(val models: List<Class<*>>, val services: List<Cla
    }
 }
 
-class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourceProvider {
+class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourceProvider, VersionedSchemaProvider {
 
    init {
       log().info("Initialized RemoteTaxiSchemaProvider, using a store client of type ${storeClient.javaClass.simpleName}")
    }
+
+   override val versionedSchemas: List<VersionedSchema>
+      get() {
+         return currentSchemaSet.schemas
+      }
 
    private var currentSchemaSet = SchemaSet.EMPTY
    private var schemas: List<Schema> = emptyList()
@@ -42,12 +46,12 @@ class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourc
       if (storeClient.schemaSet() != currentSchemaSet) {
          this.currentSchemaSet = storeClient.schemaSet()
          log().debug("Rebuilding schemas based on SchemaSet ${this.currentSchemaSet.id}")
-         this.schemas = schemasByName().map { (name,content) -> TaxiSchema.from(content,name) }
+         this.schemas = schemasByName().map { (name, content) -> TaxiSchema.from(content, name) }
       }
       return this.schemas
    }
 
-   private fun schemasByName():Map<String,String> {
+   private fun schemasByName(): Map<String, String> {
       return storeClient.schemaSet().schemas.map { it.name to it.content }.toMap()
    }
 

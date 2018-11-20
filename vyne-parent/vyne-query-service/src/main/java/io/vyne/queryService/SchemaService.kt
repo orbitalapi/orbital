@@ -1,6 +1,8 @@
 package io.vyne.queryService
 
 import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaStore.VersionedSchema
+import io.vyne.schemaStore.VersionedSchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.generators.SourceFormatter
@@ -11,6 +13,15 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider) {
    @GetMapping(path = ["/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")
+   }
+
+   @GetMapping(path = ["/schemas"])
+   fun getVersionedSchemas(): List<VersionedSchema> {
+      return if (schemaProvider is VersionedSchemaProvider) {
+         schemaProvider.versionedSchemas.sortedBy { it.name }
+      } else {
+         emptyList()
+      }
    }
 
    @GetMapping(path = ["/types"])
