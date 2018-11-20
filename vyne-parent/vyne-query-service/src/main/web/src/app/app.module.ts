@@ -41,10 +41,10 @@ import {SourceViewComponent} from './type-list/source-view.component';
 import {TypeLinksComponent} from './type-list/type-links.component';
 import {ResultViewerComponent} from './query-wizard/result-display/result-viewer.component';
 import {ResultContainerComponent} from "./query-wizard/result-display/result-container.component";
-import {MermaidComponent} from './mermaid/mermaid.component';
 import {QueryHistoryComponent} from './query-history/query-history.component';
 import {MomentModule} from "angular2-moment";
-import { ParameterViewComponent } from './type-list/parameter-view.component';
+import {ParameterViewComponent} from './type-list/parameter-view.component';
+import {TaxiViewerModule} from "./query-wizard/taxi-viewer/taxi-viewer.module";
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
@@ -66,7 +66,6 @@ const appRoutes = [
     SourceViewComponent,
     TypeLinksComponent,
     ResultViewerComponent,
-    MermaidComponent,
     QueryHistoryComponent,
     ParameterViewComponent
   ],
@@ -106,7 +105,9 @@ const appRoutes = [
     CovalentJsonFormatterModule,
     CovalentHighlightModule,
 
-    MomentModule
+    MomentModule,
+
+    TaxiViewerModule
 
   ],
   providers: [TypesService, QueryService],

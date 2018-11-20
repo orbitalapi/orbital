@@ -64,7 +64,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          httpInvokeOperation.addContext("Operation", operation)
 
          val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, uriVariables)
-         httpInvokeOperation.stop(result)
+//         httpInvokeOperation.stop(result)
 
          val expandedUri = restTemplate.uriTemplateHandler.expand(absoluteUrl,uriVariables)
          httpInvokeOperation.addRemoteCall(RemoteCall(

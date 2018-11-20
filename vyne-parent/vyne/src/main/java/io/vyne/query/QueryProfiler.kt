@@ -44,11 +44,16 @@ class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), val ro
 private typealias OperationId = String
 private typealias OperationName = String
 
-enum class OperationType {
-   ROOT,
-   GRAPH_TRAVERSAL,
-   LOOKUP,
-   REMOTE_CALL
+enum class OperationType(
+   /**
+    * Indicates if the cost is part of Vyne doing work, or would've normally occurred anyway
+    */
+   val isInternal: Boolean) {
+   ROOT(false),
+   GRAPH_BUILDING(true),
+   GRAPH_TRAVERSAL(true),
+   LOOKUP(true),
+   REMOTE_CALL(false)
 }
 
 interface ProfilerOperation {
@@ -72,6 +77,27 @@ interface ProfilerOperation {
    val context: Map<String, Any?>
    val remoteCalls: List<RemoteCall>
 
+   /**
+    * Returns a map of operationType to processing duration.
+    * Note that the time spent on children operations is removed, to avoid
+    * double-counting.
+    */
+   val timings: Map<OperationType, Long>
+      get() {
+         val childOperations = children.flatMap { child ->
+            child.timings.toList()
+         }
+         val durationOfChildOperations = childOperations.map { it.second }.sum()
+         val myDuration = duration - durationOfChildOperations
+         val operations = childOperations + listOf(this.type to myDuration)
+         return operations
+            .groupingBy { it.first }
+            .fold(0L) { accumulator, element -> accumulator + element.second }
+      }
+
+   val vyneCost:Long
+      get() = timings.filterKeys { it.isInternal }.values.sum()
+
    fun addContext(key: String, value: Any?)
 
    fun addRemoteCall(remoteCall: RemoteCall)
@@ -84,7 +110,7 @@ interface ProfilerOperation {
 
 data class RemoteCall(
    val service: QualifiedName,
-   val addresss:String,
+   val addresss: String,
    val operation: String,
    val method: String,
    val requestBody: Any?,
@@ -138,7 +164,13 @@ class DefaultProfilerOperation(override val componentName: String,
    override fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R {
       val recorder = startChild(componentName, operationName, type)
       val result = closure.invoke(recorder)
-      recorder.stop(result)
+
+      // Operations may choose to stop themselves
+      if (recorder.result == null) {
+         recorder.stop(result)
+      } else {
+         log().warn("Operation $operationName stopped itself - really shouldn't do that")
+      }
       return result
    }
 

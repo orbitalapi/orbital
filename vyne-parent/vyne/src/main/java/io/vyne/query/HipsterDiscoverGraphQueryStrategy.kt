@@ -132,7 +132,9 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
 
    internal fun search(start: Element, target: Element, queryContext: QueryContext): Pair<TypedInstance, Path>? {
       // TODO : This is expensive.  We should cache against the schema.
-      val graph = VyneGraphBuilder(queryContext.schema).build(queryContext.facts)
+      val graph = queryContext.startChild(this, "Building graph",OperationType.GRAPH_BUILDING) {
+         VyneGraphBuilder(queryContext.schema).build(queryContext.facts)
+      }
       val searchDescription = "$start -> $target"
       log().debug("Searching for path from $searchDescription")
 //      log().debug("Current graph state: \n ${graph.description()}")

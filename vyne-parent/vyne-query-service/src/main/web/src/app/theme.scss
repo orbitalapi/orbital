@@ -5,6 +5,39 @@ $body-bg: #f5f6fa;
 
 $mono: 'Nanum Gothic Coding', mono;
 
+$body: $dark-grey-2;
+
+$mono: 'Source Code Pro', monospace;
+$code-font-size: 15px;
+$code-bg: #33374B;
+
+$whiteish: #d5d9ea;
+
+$grey-1: #f4f7fa;
+$grey-3: #12345f;
+
+// Colors from a pallete here:
+// https://coolors.co/60b609-274060-54457f-282a3a-e66641
+$vyne-green: rgba(96, 182, 9, 1);
+$color2: rgba(39, 64, 96, 1);
+$color3: rgba(84, 69, 127, 1);
+$color4: rgba(40, 42, 58, 1);
+$color5: rgba(230, 102, 65, 1);
+
+
+$blueish: #afdfff;
+
+$vyne-purple: #5160ff;
+$vyne-lilac: #7d73b1;
+//$vyne-green: #519a07;
+//$vyne-green: $color1;
+
+$dark-grey-2: #282a3a;
+
+// TODO : Remove these when I have more time.
+$light-purple-grey: #eef2f9;
+$light-purple-grey-300: #dee3ef;
+
 .page-content {
   padding: 46px;
   background-color: $body-bg;

@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
 
 import * as mermaid from 'mermaid';
-import {log} from "util";
+import {DatePipe} from "@angular/common";
 
 @Component({
   selector: 'mermaid',
@@ -15,7 +15,7 @@ export class MermaidComponent implements OnInit, AfterViewInit {
     return this._chartDef;
   }
 
-  private counter:number = 0;
+  private counter: number = 0;
 
   @Input()
   set chartDef(value: string) {
@@ -30,6 +30,7 @@ export class MermaidComponent implements OnInit, AfterViewInit {
   mermaidContainer: ElementRef;
 
   ngOnInit() {
+    console.log("asdfkjasdfkljasfdl")
     mermaid.initialize({
       theme: "dark"
     });
@@ -65,52 +66,45 @@ export class MermaidComponent implements OnInit, AfterViewInit {
 
     console.log("Generating mermaid for spec:");
     console.log(this.chartDef);
-    var graph = mermaid.render('graphDiv' + this.counter, this._chartDef, insertSvg);
+    var graph = mermaid.render('graphDiv' + Date.now(), this._chartDef, insertSvg);
   }
 
 }
 
-
+const color2 = "#274060";
 const themeCSS = `
 text.actor {
-  font-size: 12px
+  font-size: 14px
 }
 
 .messageLine0 {
     stroke-width:1.5;
     stroke-dasharray: "2 2";
     marker-end:"url(#arrowhead)";
-        stroke:black;
+        stroke:${color2};
 }
 
 .messageLine1 {
     stroke-width:1.5;
     stroke-dasharray: "2 2";
-    stroke:black;
+    stroke:#d5d9ea;
 }
 
 #arrowhead {
-        fill:black;
+        fill:${color2};
 }
 
 .messageText {
-        fill:black;
+        fill:${color2};
     stroke:none;
     font-family: 'Nunito', verdana, arial;
-    font-size:12px;
+    font-size:14px;
 }
 
 .labelText {
-        fill:black;
+        fill:${color2};
     stroke:none;
-    font-family: 'Work Sans', verdana, arial;
+    font-family: 'Nunito', verdana, arial;
 }
 
 `
-const input = `
-sequenceDiagram
-    participant John
-    participant Alice
-    Alice->>John: Hello John, how are you?
-    John-->>Alice: Great!
-`.trim();

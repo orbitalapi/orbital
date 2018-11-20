@@ -69,6 +69,14 @@ interface QueryResponse {
    val profilerOperation: ProfilerOperation?
    val remoteCalls: List<RemoteCall>
       get() = collateRemoteCalls(this.profilerOperation)
+
+   val timings: Map<OperationType, Long>?
+      get() {
+         return profilerOperation?.timings ?: emptyMap()
+      }
+
+   val vyneCost:Long
+      get() = profilerOperation?.vyneCost ?: 0L
 }
 
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {

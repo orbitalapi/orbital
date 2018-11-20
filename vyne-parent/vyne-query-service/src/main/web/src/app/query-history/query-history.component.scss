@@ -1,7 +1,7 @@
 @import "../theme";
 
 .title-bar {
-  background-color: $light-grey-2;
+  background-color: $light-purple-grey;
   display: flex;
   h4 {
     padding: 0;
@@ -31,17 +31,17 @@
 .list-container {
   width: 400px;
   height: 100%;
-  background-color: $light-grey-1;
-  border-right: 1px solid $light-grey-2;
+  background-color: $light-purple-grey;
+  border-right: 1px solid $light-purple-grey-300;
 }
 
 .history-item {
   cursor: pointer;
-  background-color: $whiteish;
+  background-color: $grey-1;
   padding: 10px 20px;
-  border-bottom: 1px solid $light-grey-2;
+  border-bottom: 1px solid $light-purple-grey-300;
   &:hover {
-    background-color: $light-grey-1;
+    background-color: rgba($dark-grey-2,0.1);
   }
 }
 
@@ -51,8 +51,8 @@
   font-size: 1rem;
 
   .type-name {
-    border: 1px solid $light-grey-3;
-    background-color: $light-grey-1;
+    border: 1px solid $light-purple-grey-300;
+    background-color: $light-purple-grey;
     padding: 2px;
     border-radius: 4px;
   }

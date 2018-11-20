@@ -243,3 +243,25 @@ export class FactForm {
   ) {
   }
 }
+
+
+
+const dummyResponse: any = {
+  "results": {"demo.Customer": {"id": 1, "name": "Jimmy", "email": "jimmy@demo.com"}},
+  "unmatchedNodes": [],
+  // "duration": 28,
+  "remoteCalls": [{
+    "service": {
+      "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService",
+      "name": "CustomerService"
+    },
+    "addresss": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
+    "operation": "getCustomerByEmail",
+    "method": "GET",
+    "requestBody": null,
+    "resultCode": 200,
+    "durationMs": 7,
+    "response": {"id": 1, "name": "Jimmy", "email": "jimmy@demo.com"}
+  }],
+  "fullyResolved": true
+}

@@ -83,6 +83,35 @@ class QueryProfilerTest {
       expect(root.children[1].children).to.have.size(1)
    }
 
+   @Test
+   fun canGetTimingsByType() {
+      val root = profiler.startChild("test", "parent", OperationType.ROOT)
+      clock.advanceMillis(10)
+
+      val child1 = profiler.startChild("test", "child1", OperationType.GRAPH_TRAVERSAL)
+      clock.advanceMillis(10)
+      child1.stop()
+
+      val child2 = profiler.startChild("test", "child2", OperationType.GRAPH_BUILDING)
+      clock.advanceMillis(10)
+
+      val grandChild1 = profiler.startChild("test", "grandChild1", OperationType.GRAPH_TRAVERSAL)
+      clock.advanceMillis(10)
+
+      val greatGrandChild = profiler.startChild("test","greatGrandchild",OperationType.REMOTE_CALL)
+      clock.advanceMillis(30)
+
+      greatGrandChild.stop()
+      grandChild1.stop()
+      child2.stop()
+
+      val timings = root.timings
+      expect(timings[OperationType.REMOTE_CALL]!!).to.equal(30)
+      // Note: There were two graph traversal oeprations, each lasting 10ms before invoking a child
+      expect(timings[OperationType.GRAPH_TRAVERSAL!!]).to.equal(20)
+   }
+
+
 }
 
 
