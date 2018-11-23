@@ -8,6 +8,9 @@ logging:
       org.springframework: WARN
       com.netflix.discovery.InstanceInfoReplicator: ERROR
       com.netflix.discovery.DiscoveryClient: ERROR
+#       This is REALLY noisy - it logs errors on startup, complaining it can't connect .. generally those errors are ignorable
+#        But, in some cases we may care -- so consider turning this back on.
+      com.netflix.discovery.shared.transport.decorator.RedirectingEurekaHttpClient: OFF
       com.netflix: WARN
       com.hazelcast: WARN
       io.vyne: DEBUG

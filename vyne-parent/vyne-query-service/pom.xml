@@ -32,6 +32,11 @@
       </dependency>
 
       <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>swagger2taxi</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.jetbrains.kotlin</groupId>
          <artifactId>kotlin-reflect</artifactId>
          <version>${kotlin.version}</version>

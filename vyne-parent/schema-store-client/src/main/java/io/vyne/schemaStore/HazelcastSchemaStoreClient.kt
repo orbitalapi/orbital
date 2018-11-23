@@ -66,6 +66,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
             // TODO : Here, we're still storing ONLY the raw schema we've received, not the merged schema.
             // That seems wasteful, as we're just gonna re-compute this later.
             map().put(hazelcast.cluster.localMember.uuid, VersionedSchema(schemaName, schemaVersion, schema))
+            invalidateCache()
 //            sink.success(schemaSet().id)
          }
          validationResult.left().map { compilationException ->

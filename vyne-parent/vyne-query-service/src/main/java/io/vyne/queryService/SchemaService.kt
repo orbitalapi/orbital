@@ -1,15 +1,16 @@
 package io.vyne.queryService
 
+import io.vyne.queryService.schemas.SchemaImportService
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.VersionedSchema
 import io.vyne.schemaStore.VersionedSchemaProvider
 import io.vyne.schemas.Schema
-import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.generators.SourceFormatter
 import org.springframework.web.bind.annotation.*
+import reactor.core.publisher.Mono
 
 @RestController
-class SchemaService(private val schemaProvider: SchemaSourceProvider) {
+class SchemaService(private val schemaProvider: SchemaSourceProvider, private val importer: SchemaImportService) {
    @GetMapping(path = ["/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")
@@ -59,9 +60,18 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider) {
       return SchemaWithTaxi(schema, taxi)
    }
 
-   @PostMapping(path = ["/schemas"])
-   fun getTypesFromSchema(@RequestBody source: String): Schema {
-      return TaxiSchema.from(source)
+   // TODO : MP - I don't think this is used
+//   @PostMapping(path = ["/schemas"])
+//   fun getTypesFromSchema(@RequestBody source: String): Schema {
+//      return TaxiSchema.from(source)
+//   }
+
+   @PostMapping(path = ["/schemas/{name}/{version}/{format}"])
+   fun submitSchema(@PathVariable("name") schemaName: String,
+                    @PathVariable("version") version: String,
+                    @PathVariable("format") format: String,
+                    @RequestBody schema: String): Mono<VersionedSchema> {
+      return importer.import(schemaName, version, schema, format)
    }
 }
 

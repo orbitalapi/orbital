@@ -36,18 +36,28 @@ class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourc
 
    override val versionedSchemas: List<VersionedSchema>
       get() {
-         return currentSchemaSet.schemas
+         return activeSchemaSet().schemas
       }
 
-   private var currentSchemaSet = SchemaSet.EMPTY
+   private var lastBuildSchemaSet = SchemaSet.EMPTY
    private var schemas: List<Schema> = emptyList()
-   override fun schemas(): List<Schema> {
-      // Cache the schemas until the upstream schema set changes
-      if (storeClient.schemaSet() != currentSchemaSet) {
-         this.currentSchemaSet = storeClient.schemaSet()
-         log().debug("Rebuilding schemas based on SchemaSet ${this.currentSchemaSet.id}")
+
+   private fun activeSchemaSet(): SchemaSet {
+      rebuildCacheIfRequired()
+      return this.lastBuildSchemaSet
+   }
+
+   private fun rebuildCacheIfRequired() {
+      if (storeClient.schemaSet() != lastBuildSchemaSet) {
+         this.lastBuildSchemaSet = storeClient.schemaSet()
+         log().debug("Rebuilding schemas based on SchemaSet ${this.lastBuildSchemaSet.id}")
          this.schemas = schemasByName().map { (name, content) -> TaxiSchema.from(content, name) }
       }
+   }
+
+   override fun schemas(): List<Schema> {
+      // Cache the schemas until the upstream schema set changes
+      rebuildCacheIfRequired()
       return this.schemas
    }
 
