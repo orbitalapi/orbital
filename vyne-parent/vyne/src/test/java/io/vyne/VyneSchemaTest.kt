@@ -25,7 +25,10 @@ class VyneSchemaTest {
             clientId : ClientId as String
             name : ClientName as String
             clientType : ClientType
+            emailAddresses : EmailAddress[]
          }
+
+         type alias EmailAddress as String
 
          enum ClientType {
             INDIVIDUAL,
@@ -52,7 +55,7 @@ class VyneSchemaTest {
             name : String
          }
          """
-   val vyne = Vyne(QueryEngineFactory.default()).addSchema(TaxiSchema.from(taxiDef))
+   val vyne = Vyne(QueryEngineFactory.default()) //.addSchema(TaxiSchema.from(taxiDef))
 
 //   @Test
 //   fun shouldFindLinkBetweenTypeAndProperty() {
@@ -104,6 +107,21 @@ class VyneSchemaTest {
    fun shouldBeAbleToLookUpViaShortName() {
       val invoiceType = vyne.getType("Invoice")
       expect(invoiceType.fullyQualifiedName).to.equal("vyne.example.Invoice")
+   }
+
+   @Test
+   fun canLookUpParameterisedType() {
+      val taxiDef = """
+          type alias EmailAddress as String
+      """.trimIndent()
+      val schema = TaxiSchema.from(taxiDef)
+      expect(schema.hasType("lang.taxi.Array"))
+      expect(schema.hasType("EmailAddress"))
+      expect(schema.hasType("lang.taxi.Array<EmailAddress>"))
+
+      expect(schema.type("lang.taxi.Array")).to.be.not.`null`
+      expect(schema.type("EmailAddress")).to.be.not.`null`
+      expect(schema.type("lang.taxi.Array<EmailAddress>")).to.be.not.`null`
    }
 
    @Test
@@ -163,6 +181,23 @@ class VyneSchemaTest {
 
       expect(type.enumValues).to.have.size(2)
       expect(type.enumValues).to.contain("COMPANY")
+   }
+
+   @Test
+   fun arraysShouldBeParsedToCollectionTypes() {
+      val taxiDef = """
+service Test {
+   operation find():EmailAddress[]
+}
+type alias EmailAddress as String
+      """.trimIndent()
+      val schema = TaxiSchema.from(taxiDef)
+      val operation = schema.service("Test").operation("find")
+      val returnType = operation.returnType
+      val emailAddressType = schema.type("EmailAddress")
+      expect(returnType.name.name).to.equal("Array")
+      expect(returnType.typeParameters).to.have.size(1)
+      expect(returnType.typeParameters.first()).to.equal(emailAddressType)
    }
 
 

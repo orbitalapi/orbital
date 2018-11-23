@@ -238,9 +238,13 @@ class VyneTest {
       expect(result["EmailAddress"]!!.value).to.equal("foo@foo.com")
    }
 
-//   @Test
+   @Test
    fun canRequestListTypeDirectlyFromService() {
       val schema = """
+          type Customer {
+            emails : EmailAddress[]
+          }
+          type alias EmailAddresses as EmailAddress[]
           type alias EmailAddress as String
           service CustomerService {
             operation emails():EmailAddress[]

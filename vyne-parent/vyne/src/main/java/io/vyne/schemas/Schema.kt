@@ -1,17 +1,58 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonView
-import io.vyne.Element
-import io.vyne.ElementType
 import io.vyne.query.TypeMatchingStrategy
 import io.vyne.schemas.taxi.DeferredConstraintProvider
 import io.vyne.schemas.taxi.EmptyDeferredConstraintProvider
 import io.vyne.utils.assertingThat
+import java.io.IOException
 import java.io.Serializable
+import java.io.StreamTokenizer
+import java.io.StringReader
+
 
 fun String.fqn(): QualifiedName {
-   return QualifiedName(this)
+
+   return if (OperationNames.isName(this)) {
+      QualifiedName(this, emptyList())
+   } else {
+      parse(this).toQualifiedName()
+   }
+
 }
+
+private data class GenericTypeName(val baseType: String, val params: List<GenericTypeName>) {
+   fun toQualifiedName(): QualifiedName {
+      return QualifiedName(this.baseType, this.params.map { it.toQualifiedName() })
+   }
+}
+
+private fun parse(s: String): GenericTypeName {
+   val tokenizer = StreamTokenizer(StringReader(s))
+//   tokenizer.w .wordChars(".",".")
+   try {
+      tokenizer.nextToken()  // Skip "BOF" token
+      return parse(tokenizer)
+   } catch (e: IOException) {
+      throw RuntimeException()
+   }
+
+}
+
+private fun parse(tokenizer: StreamTokenizer): GenericTypeName {
+   val baseName = tokenizer.sval
+   tokenizer.nextToken()
+   val params = mutableListOf<GenericTypeName>()
+   if (tokenizer.ttype == '<'.toInt()) {
+      do {
+         tokenizer.nextToken()  // Skip '<' or ','
+         params.add(parse(tokenizer))
+      } while (tokenizer.ttype == ','.toInt())
+      tokenizer.nextToken()  // skip '>'
+   }
+   return GenericTypeName(baseName, params)
+}
+
 
 data class Metadata(val name: QualifiedName, val params: Map<String, Any?> = emptyMap())
 
@@ -25,9 +66,19 @@ data class TypeReference(val name: QualifiedName, val isCollection: Boolean = fa
 
 }
 
-data class QualifiedName(val fullyQualifiedName: String) : Serializable {
+data class QualifiedName(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) : Serializable {
    val name: String
       get() = fullyQualifiedName.split(".").last()
+
+   val parameterizedName: String
+      get() {
+         return if (parameters.isEmpty()) {
+            fullyQualifiedName
+         } else {
+            val params = this.parameters.joinToString(",") { it.parameterizedName }
+            "$fullyQualifiedName<$params>"
+         }
+      }
 
    override fun toString(): String = fullyQualifiedName
 }
@@ -57,6 +108,10 @@ object OperationNames {
 
    fun serviceName(qualifiedOperationName: QualifiedName): ServiceName {
       return serviceAndOperation(qualifiedOperationName).first
+   }
+
+   fun isName(memberName: String): Boolean {
+      return memberName.contains(DELIMITER)
    }
 
    fun isName(memberName: QualifiedName): Boolean {
@@ -108,7 +163,9 @@ data class Type(
    val enumValues: List<String> = emptyList(),
 
    @JsonView(TypeFullView::class)
-   val sources: List<SourceCode>
+   val sources: List<SourceCode>,
+
+   val typeParameters: List<Type> = emptyList()
 ) : SchemaMember {
    constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, enumValues, sources)
 
@@ -174,7 +231,9 @@ interface Schema {
    val types: Set<Type>
    val services: Set<Service>
    // TODO : Are these still required / meaningful?
+   @Deprecated("Not meaningful - remove", level = DeprecationLevel.WARNING)
    val attributes: Set<QualifiedName>
+   @Deprecated("Not meaningful - remove", level = DeprecationLevel.WARNING)
    val links: Set<Link>
    val typeCache: TypeCache
 
@@ -237,6 +296,7 @@ interface TypeCache {
    fun type(name: String): Type
    fun type(name: QualifiedName): Type
    fun hasType(name: String): Boolean
+   fun hasType(name: QualifiedName): Boolean
 }
 
 data class DefaultTypeCache(private val types: Set<Type>) : TypeCache {
@@ -263,16 +323,52 @@ data class DefaultTypeCache(private val types: Set<Type>) : TypeCache {
    }
 
    override fun type(name: String): Type {
-      return this.cache[name.fqn()]
-         ?: this.shortNames[name]
-         ?: throw IllegalArgumentException("Type $name was not found within this schema, and is not a valid short name")
+      return type(name.fqn())
    }
 
    override fun type(name: QualifiedName): Type {
-      return type(name.fullyQualifiedName)
+//      if (isArrayType(name)) {
+//         val typeNameWithoutArray = name.substringBeforeLast("[]")
+//         val type = type(typeNameWithoutArray)
+//         TODO()
+//      } else {
+      return this.cache[name]
+         ?: this.shortNames[name.fullyQualifiedName]
+         ?: parameterisedType(name)
+         ?: throw IllegalArgumentException("Type ${name.parameterizedName} was not found within this schema, and is not a valid short name")
+//      }
+
+//      return type(name.fullyQualifiedName)
+   }
+
+   private fun parameterisedType(name: QualifiedName): Type? {
+      if (name.parameters.isEmpty()) return null
+
+      if (hasType(name.fullyQualifiedName) && name.parameters.all { hasType(it) }) {
+         // We've been asked for a parameterized type.
+         // All the parameters are correctly defined, but no type exists.
+         // This is caused by (for example), a service returning Array<Foo>, where both Array and Foo have been declared as types
+         // but not Array<Foo> directly.
+         // It's still valid, so we'll construct the type
+         val baseType = type(name.fullyQualifiedName)
+         val params = name.parameters.map { type(it) }
+         return baseType.copy(name = name, typeParameters = params)
+      } else {
+         return null
+      }
+
+   }
+
+   override fun hasType(name: QualifiedName): Boolean {
+      if (cache.containsKey(name)) return true
+      if (name.parameters.isNotEmpty()) {
+         return hasType(name.fullyQualifiedName) // this is the base type
+            && name.parameters.all { hasType(it) }
+      }
+      return false
    }
 
    override fun hasType(name: String): Boolean {
-      return shortNames.containsKey(name) || cache.containsKey(name.fqn())
+      return shortNames.containsKey(name) || hasType(name.fqn())
    }
 }

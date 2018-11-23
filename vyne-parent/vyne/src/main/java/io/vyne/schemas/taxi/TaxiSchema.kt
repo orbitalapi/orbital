@@ -31,7 +31,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
          // hahahaha
          Service(QualifiedName(taxiService.qualifiedName),
             operations = taxiService.operations.map { taxiOperation ->
-               val returnType = this.type(taxiOperation.returnType.qualifiedName)
+               val returnType = this.type(taxiOperation.returnType.toVyneQualifiedName())
                Operation(OperationNames.qualifiedName(taxiService.qualifiedName, taxiOperation.name),
                   taxiOperation.parameters.map { taxiParam ->
                      val type = this.type(taxiParam.type.qualifiedName)
@@ -159,6 +159,13 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
    }
 }
 
+private fun lang.taxi.QualifiedName.toVyneQualifiedName(): QualifiedName {
+   return QualifiedName(this.toString(), this.parameters.map { it.toVyneQualifiedName() })
+}
+
+private fun lang.taxi.Type.toVyneQualifiedName():QualifiedName {
+   return this.toQualifiedName().toVyneQualifiedName()
+}
 private fun lang.taxi.SourceCode.toVyneSource(): SourceCode {
    return io.vyne.schemas.SourceCode(this.origin, TaxiSchema.LANGUAGE, this.content)
 }
