@@ -18,13 +18,13 @@ import {Router} from "@angular/router";
   styleUrls: ['./new-schema-wizard.component.scss']
 })
 export class NewSchemaWizardComponent implements OnInit {
-  private importOptionsFormGroup: FormGroup;
+  importOptionsFormGroup: FormGroup;
   schemaTypes = ["Swagger"];
 
   schemaPreview: SchemaPreview;
   working: boolean = false;
   errorMessage: string;
-  private versionedSchema: VersionedSchema;
+  versionedSchema: VersionedSchema;
 
   constructor(private fb: FormBuilder, private typeService: TypesService, private router: Router) {
     this.importOptionsFormGroup = this.fb.group(
