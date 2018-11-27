@@ -52,6 +52,54 @@ export class TypesService {
         )
       );
   };
+
+  createSchemaPreview(request: SchemaPreviewRequest): Observable<SchemaPreview> {
+    return this.http.post<SchemaPreview>(
+      `${environment.queryServiceUrl}/schemas/preview`,
+      request
+    )
+  }
+
+  submitSchema(request: SchemaImportRequest): Observable<VersionedSchema> {
+    return this.http.post<VersionedSchema>(
+      `${environment.queryServiceUrl}/schemas`,
+      request
+    )
+  }
+}
+
+export class SchemaPreviewRequest {
+  constructor(public spec: SchemaSpec, public format: string, public text?: string, public url?: string) {
+  }
+}
+
+export class SchemaImportRequest {
+  constructor(readonly spec: SchemaSpec, readonly format: string, readonly  content: string) {
+  }
+}
+
+export interface SchemaPreview {
+  spec: SchemaSpec
+  content: string
+  messages: Message[]
+}
+
+export interface Message {
+  message: string;
+  level: Level;
+  link?: string;
+}
+
+export enum Level {
+  INFO = "INFO",
+  WARN = "WARN",
+  ERROR = "ERROR"
+}
+
+export interface SchemaSpec {
+  name: string;
+  version: string;
+  defaultNamespace: string
 }
 
 export class QualifiedName {

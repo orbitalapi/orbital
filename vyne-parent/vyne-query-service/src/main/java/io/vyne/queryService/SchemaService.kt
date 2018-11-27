@@ -1,6 +1,9 @@
 package io.vyne.queryService
 
+import io.vyne.queryService.schemas.SchemaImportRequest
 import io.vyne.queryService.schemas.SchemaImportService
+import io.vyne.queryService.schemas.SchemaPreview
+import io.vyne.queryService.schemas.SchemaPreviewRequest
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.VersionedSchema
 import io.vyne.schemaStore.VersionedSchemaProvider
@@ -66,13 +69,16 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
 //      return TaxiSchema.from(source)
 //   }
 
-   @PostMapping(path = ["/schemas/{name}/{version}/{format}"])
-   fun submitSchema(@PathVariable("name") schemaName: String,
-                    @PathVariable("version") version: String,
-                    @PathVariable("format") format: String,
-                    @RequestBody schema: String): Mono<VersionedSchema> {
-      return importer.import(schemaName, version, schema, format)
+   @PostMapping(path = ["/schemas"])
+   fun submitSchema(@RequestBody request: SchemaImportRequest): Mono<VersionedSchema> {
+      return importer.import(request)
    }
+
+   @PostMapping(path = ["/schemas/preview"])
+   fun previewSchema(@RequestBody request: SchemaPreviewRequest): Mono<SchemaPreview> {
+      return importer.preview(request)
+   }
+
 }
 
 data class SchemaWithTaxi(val schema: Schema, val taxi: String)

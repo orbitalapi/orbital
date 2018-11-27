@@ -21,8 +21,9 @@ import {
   MatSidenavModule,
   MatTableModule,
   MatTabsModule,
+  MatMenuModule,
   MatToolbarModule,
-  MatTreeModule,
+  MatTreeModule, MatButtonToggleModule, MatStepperModule, MatProgressSpinnerModule, MatProgressBarModule,
 } from '@angular/material';
 import {TypeListComponent} from './type-list/type-list.component';
 import {CommonModule} from "@angular/common";
@@ -46,12 +47,14 @@ import {MomentModule} from "angular2-moment";
 import {ParameterViewComponent} from './type-list/parameter-view.component';
 import {TaxiViewerModule} from "./query-wizard/taxi-viewer/taxi-viewer.module";
 import { SchemaExplorerComponent } from './schema-explorer/schema-explorer.component';
+import { NewSchemaWizardComponent } from './schema-explorer/new-schema-wizard/new-schema-wizard.component';
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
   {path: 'type-explorer', component: TypeListComponent},
   {path: 'query-wizard', component: QueryWizardComponent},
   {path: 'schema-explorer', component: SchemaExplorerComponent},
+  {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
   {path: 'result-explorer', component: ProfileGraphComponent},
   {path: 'query-history', component: QueryHistoryComponent}
 ];
@@ -70,7 +73,8 @@ const appRoutes = [
     ResultViewerComponent,
     QueryHistoryComponent,
     ParameterViewComponent,
-    SchemaExplorerComponent
+    SchemaExplorerComponent,
+    NewSchemaWizardComponent
   ],
   imports: [
     RouterModule.forRoot(
@@ -98,10 +102,14 @@ const appRoutes = [
     MatFormFieldModule,
     MatAutocompleteModule,
     MatInputModule,
+    MatMenuModule,
+    MatButtonToggleModule,
     MatSelectModule,
+    MatStepperModule,
     MatTreeModule,
     MatTabsModule,
     MatTableModule,
+    MatProgressBarModule,
     CdkTableModule,
 
     CovalentDynamicFormsModule,

@@ -1,28 +1,58 @@
-<mat-toolbar color="primary">
-  <span>Schema Explorer</span>
-</mat-toolbar>
-<div class="page-content">
-  <mat-accordion class="example-headers-align">
-    <mat-expansion-panel hideToggle *ngFor="let schema of schemas | async">
-      <mat-expansion-panel-header>
-        <div class="schema-member-container">
-          <div class="member-qualified-name">
-            <span class="schema-name">{{ schema.name }}</span>
-            <span class="schema-version">v{{ schema.version }}</span>
-          </div>
-        </div>
-      </mat-expansion-panel-header>
-      <ng-template matExpansionPanelContent>
-        <div>
-          <td-highlight lang="typescript">
-            {{ schema.content }}
-          </td-highlight>
-        </div>
-      </ng-template>
-    </mat-expansion-panel>
+<div class="component-container">
+  <mat-toolbar color="primary">
+    <span>Schema Explorer</span>
+  </mat-toolbar>
+  <div class="page-content">
+    <div class="endpoint-list">
+      <div class="add-new">
+
+        <button mat-raised-button color="primary" [matMenuTriggerFor]="appMenu">Add new...</button>
+        <!--<mat-icon svgIcon="add_box"></mat-icon>-->
+        <!--Add a new one-->
+        <mat-menu #appMenu="matMenu">
+          <button mat-menu-item (click)="importSchemaFromUrl()">Add schema from url</button>
+          <!--<button mat-menu-item (click)="createNewSchema()">Add schema directly</button>-->
+        </mat-menu>
+      </div>
+      <div *ngFor="let schema of schemas | async" class="schema-list-member"
+           [ngClass]="selectedSchema == schema ? 'selected' : ''"
+           (click)="selectedSchema = schema">
+        <div class="schema-name">{{ schema.name }}</div>
+        <div class="schema-version">{{ schema.version }}</div>
+      </div>
+    </div>
+    <div class="source-viewer">
+      <td-highlight lang="typescript" *ngIf="selectedSchema">
+        {{ selectedSchema.content }}
+      </td-highlight>
+
+    </div>
+    <!---->
+    <!--<mat-accordion class="example-headers-align">-->
+    <!--<mat-expansion-panel hideToggle *ngFor="let schema of schemas | async">-->
+    <!--<mat-expansion-panel-header>-->
+    <!--<div class="schema-member-container">-->
+    <!--<div class="member-qualified-name">-->
+    <!--<span class="schema-name">{{ schema.name }}</span>-->
+    <!--<span class="schema-version">v{{ schema.version }}</span>-->
+    <!--</div>-->
+    <!--</div>-->
+    <!--</mat-expansion-panel-header>-->
+    <!--<ng-template matExpansionPanelContent>-->
+    <!--<div>-->
+    <!--<td-highlight lang="typescript">-->
+    <!--{{ schema.content }}-->
+    <!--</td-highlight>-->
+    <!--</div>-->
+    <!--</ng-template>-->
+    <!--</mat-expansion-panel>-->
     <div *ngIf="(schemas | async)?.length==0" class="empty-state">
       <img src="assets/img/getting-started.svg">
-      <div>There's nothing registered yet.  Why not try one of our <a href="https://docs.vyne.co">tutorials</a>, and register your first service.</div>
+      <div>There's nothing registered yet. Schemas will appear here as services register, or you can <a
+        href="javascript:"
+        [matMenuTriggerFor]="appMenu">add
+        a new schema</a> manually.
+      </div>
     </div>
-  </mat-accordion>
+  </div>
 </div>
