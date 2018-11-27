@@ -3,7 +3,7 @@
    <parent>
       <artifactId>vyne-parent</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.1.5</version>
+      <version>0.1.6-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -18,7 +18,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-query-api</artifactId>
-         <version>0.1.5</version>
+         <version>0.1.6-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>lang.taxi</groupId>
