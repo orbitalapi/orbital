@@ -40,8 +40,8 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
 
    fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): EvaluatedEdge {
       val relationship = edge.relationship
-      val evaluator = evaluators[relationship] ?:
-         error("No LinkEvaluator provided for relationship ${relationship.name}")
+      val evaluator = evaluators[relationship]
+         ?: error("No LinkEvaluator provided for relationship ${relationship.name}")
       val evaluationResult = queryContext.startChild(this, "Evaluating ${edge.description} with evaluator ${evaluator.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) {
          evaluator.evaluate(edge, queryContext)
       }
@@ -49,7 +49,7 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
       if (evaluationResult.wasSuccessful) {
          return evaluationResult
       } else {
-         throw SearchFailedException("Could not evaluate edge $edge: ${evaluationResult.error!!}", queryContext.evaluatedPath(),queryContext.profiler.root)
+         throw SearchFailedException("Could not evaluate edge $edge: ${evaluationResult.error!!}", queryContext.evaluatedPath(), queryContext.profiler.root)
       }
    }
 }
@@ -85,7 +85,10 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       // We only support DISCOVER mode here.
       if (target.mode != QueryMode.DISCOVER) return QueryStrategyResult.empty()
 
-      if (context.facts.isEmpty()) error("Context must have at least one fact, as these provide the starting points for searches")
+      if (context.facts.isEmpty()) {
+         log().info("Cannot perform a graph search, as no facts provied to serve as starting point. ")
+         return QueryStrategyResult.empty()
+      }
 
       val targetElement = type(target.type)
 
@@ -132,7 +135,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
 
    internal fun search(start: Element, target: Element, queryContext: QueryContext): Pair<TypedInstance, Path>? {
       // TODO : This is expensive.  We should cache against the schema.
-      val graph = queryContext.startChild(this, "Building graph",OperationType.GRAPH_BUILDING) {
+      val graph = queryContext.startChild(this, "Building graph", OperationType.GRAPH_BUILDING) {
          VyneGraphBuilder(queryContext.schema).build(queryContext.facts)
       }
       val searchDescription = "$start -> $target"
@@ -177,7 +180,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
 
       // If the last node in the evaluated path is the type we're after, use that.
       val lastEdgeResult = evaluatedPath.last().resultValue
-      if (lastEdgeResult != null  && lastEdgeResult.type.matches(targetType)) {
+      if (lastEdgeResult != null && lastEdgeResult.type.matches(targetType)) {
          return lastEdgeResult
       }
 
@@ -203,7 +206,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
             // Normally the lastValue would be index-1, but here, it's just index.
             val lastResult = evaluatedEdges[index]
             val endNode = weightedNode.state()
-            val evaluationResult = edgeEvaluator.evaluate(EvaluatableEdge(lastResult,weightedNode.action(),endNode), queryContext)
+            val evaluationResult = edgeEvaluator.evaluate(EvaluatableEdge(lastResult, weightedNode.action(), endNode), queryContext)
             evaluationResult
          }
 
@@ -262,9 +265,11 @@ private fun List<WeightedNode<Relationship, Element, Double>>.toLinks(): List<Li
 private fun List<WeightedNode<Relationship, Element, Double>>.describe(): String {
    return this.toLinks().describe()
 }
+
 private fun List<WeightedNode<Relationship, Element, Double>>.describeLinks(): List<String> {
    return this.toLinks().map { it.toString() }
 }
+
 private fun List<WeightedNode<Relationship, Element, Double>>.convertToVynePath(start: Element, target: Element): Path {
    val links = this.mapIndexed { index, weightedNode ->
       if (index == 0) {
@@ -301,7 +306,8 @@ private fun Algorithm<*, Element, *>.SearchResult.recreatePath(start: Element, t
       } else {
          val fromElement = vertex
          val toElement = path[index + 1]
-         val edge = graph.outgoingEdgesOf(fromElement).firstOrNull { it.vertex2 == toElement } ?: throw IllegalStateException("No edge found from $fromElement -> $toElement, but they were adjoining nodes in the result")
+         val edge = graph.outgoingEdgesOf(fromElement).firstOrNull { it.vertex2 == toElement }
+            ?: throw IllegalStateException("No edge found from $fromElement -> $toElement, but they were adjoining nodes in the result")
          Link(fromElement.valueAsQualifiedName(), edge.edgeValue, toElement.valueAsQualifiedName())
       }
    }.filterNotNull()
@@ -315,6 +321,7 @@ private fun <V, E> HipsterDirectedGraph<V, E>.edgeDescriptions(): List<String> {
       }
    }
 }
+
 private fun <V, E> HipsterDirectedGraph<V, E>.description(): String? {
    return this.edgeDescriptions().joinToString("\n")
 }
