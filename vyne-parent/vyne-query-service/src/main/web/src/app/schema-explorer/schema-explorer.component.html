@@ -16,14 +16,13 @@
       </div>
       <div *ngFor="let schema of schemas | async" class="schema-list-member"
            [ngClass]="selectedSchema == schema ? 'selected' : ''"
-           (click)="selectedSchema = schema">
+           (click)="selectSchema(schema)">
         <div class="schema-name">{{ schema.name }}</div>
         <div class="schema-version">{{ schema.version }}</div>
       </div>
     </div>
     <div class="source-viewer">
-      <td-highlight lang="typescript" *ngIf="selectedSchema">
-        {{ selectedSchema.content }}
+      <td-highlight lang="typescript" *ngIf="selectedSchema" [content]="selectedSchema.content">
       </td-highlight>
 
     </div>

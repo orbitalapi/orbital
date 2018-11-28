@@ -28,4 +28,7 @@ export class SchemaExplorerComponent implements OnInit {
 
   }
 
+  selectSchema(schema: VersionedSchema) {
+    this.selectedSchema = schema;
+  }
 }
