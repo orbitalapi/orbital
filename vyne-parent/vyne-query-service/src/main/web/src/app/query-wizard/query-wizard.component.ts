@@ -20,6 +20,7 @@ import {
   RemoteCall
 } from "../services/query.service";
 import {HttpErrorResponse} from "@angular/common/http";
+import {MatAutocompleteSelectedEvent} from "@angular/material";
 
 @Component({
   selector: 'query-wizard',
@@ -44,6 +45,7 @@ export class QueryWizardComponent implements OnInit {
   private subscribedDynamicForms: TdDynamicFormsComponent[] = [];
 
   lastQueryResult: QueryResult | QueryFailure;
+  addingNewFact: boolean = false;
 
   ngOnInit() {
     this.typesService.getTypes()
@@ -77,7 +79,8 @@ export class QueryWizardComponent implements OnInit {
   }
 
   removeFact(factForm: FactForm) {
-    console.error("TODO!")
+    const index = this.forms.indexOf(factForm);
+    this.forms.splice(index,1);
   }
 
   private _filter(value: string): Type[] {
@@ -87,7 +90,9 @@ export class QueryWizardComponent implements OnInit {
   }
 
   updateFact(formSpec: FactForm, value) {
-    let fullyQualifiedName = formSpec.type.name.fullyQualifiedName;
+    formSpec.value = value;
+
+    // let fullyQualifiedName = formSpec.type.name.fullyQualifiedName;
     // TODO: Add a test for this.
     // The issue I found was that when the type passed in to the
     // query builder is a simple type (ie., CustomerNumber),
@@ -97,18 +102,34 @@ export class QueryWizardComponent implements OnInit {
     // CustomerNumber : 1
     // This whole thing is a smell, and need to get some decent
     // tests around this.
-    if (formSpec.type.scalar) {
-      let unwrappedValue = Object.values(value)[0];
-      this.facts[fullyQualifiedName] = unwrappedValue;
-    } else {
-      let nestedValue = this.nest(value);
-      this.facts[fullyQualifiedName] = nestedValue;
-    }
+    // if (formSpec.type.scalar) {
+    //   let unwrappedValue = Object.values(value)[0];
+    //   this.facts[fullyQualifiedName] = unwrappedValue;
+    // } else {
+    //   let nestedValue = this.nest(value);
+    //   this.facts[fullyQualifiedName] = nestedValue;
+    // }
+  }
+
+  private buildFacts() {
+    const facts = {};
+    this.forms.forEach(formSpec => {
+      let fullyQualifiedName = formSpec.type.name.fullyQualifiedName;
+      if (formSpec.type.scalar) {
+        let unwrappedValue = Object.values(formSpec.value)[0];
+        facts[fullyQualifiedName] = unwrappedValue;
+      } else {
+        let nestedValue = this.nest(formSpec.value);
+        facts[fullyQualifiedName] = nestedValue;
+      }
+    });
+    return facts;
   }
 
   submitQuery() {
     this.lastQueryResult = null;
-    let factList: Fact[] = Object.keys(this.facts).map(key => new Fact(key, this.facts[key]));
+    let facts = this.buildFacts();
+    let factList: Fact[] = Object.keys(facts).map(key => new Fact(key, facts[key]));
     let query = new Query(
       this.targetTypeInput.value,
       factList,
@@ -228,6 +249,14 @@ export class QueryWizardComponent implements OnInit {
   }
 
 
+  addNewFact() {
+    this.addingNewFact = true;
+  }
+
+  onNewFactTypeSelected(event:MatAutocompleteSelectedEvent) {
+    this.appendEmptyType(event.option.value);
+    this.addingNewFact = false;
+  }
 }
 
 export class QueryFailure {
@@ -241,27 +270,11 @@ export class FactForm {
     readonly elements: ITdDynamicElementConfig[],
     readonly  type: Type
   ) {
+
   }
+  value:any
+
 }
 
 
 
-const dummyResponse: any = {
-  "results": {"demo.Customer": {"id": 1, "name": "Jimmy", "email": "jimmy@demo.com"}},
-  "unmatchedNodes": [],
-  // "duration": 28,
-  "remoteCalls": [{
-    "service": {
-      "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService",
-      "name": "CustomerService"
-    },
-    "addresss": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
-    "operation": "getCustomerByEmail",
-    "method": "GET",
-    "requestBody": null,
-    "resultCode": 200,
-    "durationMs": 7,
-    "response": {"id": 1, "name": "Jimmy", "email": "jimmy@demo.com"}
-  }],
-  "fullyResolved": true
-}

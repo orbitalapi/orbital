@@ -3,32 +3,58 @@
 </mat-toolbar>
 <div class="page-content" style="z-index: 0">
   <div class="row">
-    <div class="container fact-forms-container">
+    <div class="container">
       <mat-card>
         <mat-card-header>
           <mat-card-title>Facts</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <mat-accordion>
-            <mat-expansion-panel *ngFor="let factForm of forms">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  {{ factForm.type.name.name }}
-                </mat-panel-title>
-                <mat-panel-description>
-                  <!-- Should we put something here? -->
-                </mat-panel-description>
-              </mat-expansion-panel-header>
-
-              <div>
+          <div class="fact-form-list">
+            <div *ngFor="let factForm of forms" class="fact-form-container">
+              <div class="delete-icon" (click)="removeFact(factForm)"><mat-icon>delete</mat-icon></div>
+              <div class="type-name">{{ factForm.type.name.name }}</div>
+              <div class="fact-editor">
                 <td-dynamic-forms [elements]="getAndRegisterElements(factForm,dynamicForm)"
                                   #dynamicForm></td-dynamic-forms>
               </div>
-              <mat-action-row>
-                <button mat-button (click)="removeFact(factForm)">Remove</button>
-              </mat-action-row>
-            </mat-expansion-panel>
-          </mat-accordion>
+            </div>
+          </div>
+          <div class="new-fact-editor" *ngIf="addingNewFact">
+            <mat-form-field class="fact-type-input">
+              <input type="text" placeholder="Select the type of fact" matInput
+                     [matAutocomplete]="auto"
+                     required>
+              <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption (select)="onNewFactTypeSelected()"
+                                (optionSelected)="onNewFactTypeSelected($event)">
+                <mat-option *ngFor="let type of filteredTypes | async" [value]="type.name.fullyQualifiedName">
+                  {{type.name.name}} ({{type.name.fullyQualifiedName}})
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
+          </div>
+          <div class="add-new">
+            <button mat-raised-button color="primary" (click)="addNewFact()">Add new fact</button>
+          </div>
+          <!--<mat-accordion>-->
+          <!--<mat-expansion-panel >-->
+          <!--<mat-expansion-panel-header>-->
+          <!--<mat-panel-title>-->
+          <!--{{ factForm.type.name.name }}-->
+          <!--</mat-panel-title>-->
+          <!--<mat-panel-description>-->
+          <!--&lt;!&ndash; Should we put something here? &ndash;&gt;-->
+          <!--</mat-panel-description>-->
+          <!--</mat-expansion-panel-header>-->
+
+          <!--<div>-->
+          <!--<td-dynamic-forms [elements]="getAndRegisterElements(factForm,dynamicForm)"-->
+          <!--#dynamicForm></td-dynamic-forms>-->
+          <!--</div>-->
+          <!--<mat-action-row>-->
+          <!--<button mat-button (click)="removeFact(factForm)">Remove</button>-->
+          <!--</mat-action-row>-->
+          <!--</mat-expansion-panel>-->
+          <!--</mat-accordion>-->
         </mat-card-content>
       </mat-card>
     </div>

@@ -2,12 +2,41 @@
 
 .container {
   flex: 1;
+
   &:not(:last-child) {
     padding-right: 45px;
   }
 
 }
-.fact-forms-container {
+
+.fact-form-list {
+  display: table;
+  width: 100%;
+
+  .fact-form-container {
+    display: table-row;
+    width: 100%;
+
+    .delete-icon {
+      display: table-cell;
+      vertical-align: middle;
+      padding-bottom: 8px;
+
+      color: $grey-2;
+      cursor: pointer;
+
+      &:hover {
+        color: $dark-grey-2;
+      }
+    }
+    .type-name {
+      display: table-cell;
+    }
+
+    .fact-editor {
+      display: table-cell;
+    }
+  }
 
 }
 
@@ -19,6 +48,7 @@
   .mat-form-field {
     width: 100%;
   }
+
   .target-type-input {
 
   }
@@ -28,4 +58,13 @@
   width: 100%;
   display: flex;
   margin-bottom: 35px;
+}
+
+.new-fact-editor {
+  width: 100%;
+
+  .mat-form-field {
+    width: 100%;
+  }
+
 }

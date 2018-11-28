@@ -24,7 +24,7 @@ export class NewSchemaWizardComponent implements OnInit {
   schemaPreview: SchemaPreview;
   working: boolean = false;
   errorMessage: string;
-  versionedSchema: VersionedSchema;
+    versionedSchema: VersionedSchema;
 
   constructor(private fb: FormBuilder, private typeService: TypesService, private router: Router) {
     this.importOptionsFormGroup = this.fb.group(
