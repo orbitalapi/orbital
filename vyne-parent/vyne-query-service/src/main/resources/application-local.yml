@@ -1,3 +1,5 @@
 cors:
    enabled: true
    host: "*"
+vyne:
+   newSchemaSubmissionEnabled: true

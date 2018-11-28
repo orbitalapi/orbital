@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 
 @RestController
-class SchemaService(private val schemaProvider: SchemaSourceProvider, private val importer: SchemaImportService) {
+class SchemaService(private val schemaProvider: SchemaSourceProvider, private val importer: SchemaImportService,
+                    private val config: QueryServerConfig) {
    @GetMapping(path = ["/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")
@@ -71,6 +72,9 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
 
    @PostMapping(path = ["/schemas"])
    fun submitSchema(@RequestBody request: SchemaImportRequest): Mono<VersionedSchema> {
+      if (!config.newSchemaSubmissionEnabled) {
+         throw OperationNotPermittedException()
+      }
       return importer.import(request)
    }
 

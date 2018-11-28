@@ -8,14 +8,16 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
-import org.springframework.boot.info.GitProperties
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @SpringBootApplication
+//@EnableConfigurationProperties(QueryServerConfig::class)
 @EnableVyne(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
 class QueryServiceApp {
 
@@ -73,3 +75,11 @@ class QueryServiceApp {
 object AuthHeaders {
    val AUTH_HEADER_NAME = "Authorization"
 }
+
+@Component
+@ConfigurationProperties(prefix = "vyne")
+class QueryServerConfig{
+   var newSchemaSubmissionEnabled: Boolean = false
+}
+
+

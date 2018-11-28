@@ -4,7 +4,7 @@
   </mat-toolbar>
   <div class="page-content">
     <div class="endpoint-list">
-      <div class="add-new">
+      <div class="add-new" *ngIf="config?.newSchemaSubmissionEnabled">
 
         <button mat-raised-button color="primary" [matMenuTriggerFor]="appMenu">Add new...</button>
         <!--<mat-icon svgIcon="add_box"></mat-icon>-->
