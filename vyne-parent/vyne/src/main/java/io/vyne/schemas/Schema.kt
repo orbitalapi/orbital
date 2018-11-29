@@ -5,6 +5,7 @@ import io.vyne.query.TypeMatchingStrategy
 import io.vyne.schemas.taxi.DeferredConstraintProvider
 import io.vyne.schemas.taxi.EmptyDeferredConstraintProvider
 import io.vyne.utils.assertingThat
+import lang.taxi.types.PrimitiveType
 import java.io.IOException
 import java.io.Serializable
 import java.io.StreamTokenizer
@@ -28,7 +29,8 @@ private data class GenericTypeName(val baseType: String, val params: List<Generi
 }
 
 private fun parse(s: String): GenericTypeName {
-   val tokenizer = StreamTokenizer(StringReader(s))
+   val expandedName = convertArrayShorthand(s)
+   val tokenizer = StreamTokenizer(StringReader(expandedName))
 //   tokenizer.w .wordChars(".",".")
    try {
       tokenizer.nextToken()  // Skip "BOF" token
@@ -37,6 +39,17 @@ private fun parse(s: String): GenericTypeName {
       throw RuntimeException()
    }
 
+}
+
+
+// Converts Foo[] to lang.taxi.Array<Foo>
+private fun convertArrayShorthand(name: String):String {
+   if (name.endsWith("[]")) {
+      val arrayType = name.removeSuffix("[]")
+      return PrimitiveType.ARRAY.qualifiedName + "<$arrayType>"
+   } else {
+      return name
+   }
 }
 
 private fun parse(tokenizer: StreamTokenizer): GenericTypeName {
@@ -248,7 +261,10 @@ interface Schema {
       }.toSet()
    }
 
-   fun type(name: String) = typeCache.type(name)
+   fun type(name: String): Type {
+      val type = typeCache.type(name)
+      return type
+   }
 
    fun type(name: QualifiedName) = typeCache.type(name)
 
@@ -289,8 +305,8 @@ interface Schema {
    fun type(nestedTypeRef: TypeReference): Type {
       return type(nestedTypeRef.name)
    }
-
 }
+
 
 interface TypeCache {
    fun type(name: String): Type

@@ -27,7 +27,13 @@ class QualifiedNameTest {
       expect(fqn.parameters[1].parameters).to.have.size(2)
       expect(fqn.parameters[1].parameters[0].fullyQualifiedName).to.equal("d.E")
       expect(fqn.parameters[1].parameters[1].fullyQualifiedName).to.equal("f.G")
+   }
 
-
+   @Test
+   fun parsesArrayShorthandCorrectly() {
+      val fqn = "sample.Foo[]".fqn()
+      expect(fqn.parameters).to.have.size(1)
+      expect(fqn.parameters[0].fullyQualifiedName).to.equal("sample.Foo")
+      expect(fqn.name).to.equal("Array")
    }
 }
