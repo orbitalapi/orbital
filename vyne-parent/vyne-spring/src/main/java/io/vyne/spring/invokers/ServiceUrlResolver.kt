@@ -18,6 +18,21 @@ class ServiceDiscoveryClientUrlResolver(val discoveryClient: ServiceDiscoveryCli
    }
 }
 
+class AbsoluteUrlResolver() : ServiceUrlResolver {
+   override fun canResolve(service: Service, operation: Operation): Boolean {
+      return operation.hasMetadata("HttpOperation")
+         && operation.metadata("HttpOperation").params.containsKey("url")
+         && operation.metadata("HttpOperation").params["url"].let { url ->
+         val urlString = url as String
+         urlString.startsWith("http://") || urlString.startsWith("https://")
+      }
+   }
+
+   override fun makeAbsolute(url: String, service: Service, operation: Operation): String {
+      return url;
+   }
+}
+
 interface ServiceDiscoveryClient {
    fun resolve(serviceName: String): String
 }

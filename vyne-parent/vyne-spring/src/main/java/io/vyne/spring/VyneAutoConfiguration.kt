@@ -7,10 +7,7 @@ import io.vyne.query.QueryEngineFactory
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.*
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.invokers.RestTemplateInvoker
-import io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver
-import io.vyne.spring.invokers.ServiceUrlResolver
-import io.vyne.spring.invokers.SpringServiceDiscoveryClient
+import io.vyne.spring.invokers.*
 import io.vyne.utils.log
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
@@ -103,6 +100,11 @@ class VyneAutoConfiguration {
    @Bean
    fun serviceDiscoveryUrlResolver(discoveryClient: DiscoveryClient): ServiceDiscoveryClientUrlResolver {
       return ServiceDiscoveryClientUrlResolver(SpringServiceDiscoveryClient(discoveryClient))
+   }
+
+   @Bean
+   fun absoluteUrlResolver(): AbsoluteUrlResolver {
+      return AbsoluteUrlResolver()
    }
 
    @Bean

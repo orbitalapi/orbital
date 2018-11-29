@@ -7,9 +7,9 @@ import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Service
-import io.vyne.schemaStore.SchemaProvider
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -27,9 +27,10 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                           val restTemplate: RestTemplate,
                           private val serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver())) : OperationInvoker {
 
-   @Autowired constructor(schemaProvider: SchemaProvider,
-                          restTemplateBuilder: RestTemplateBuilder,
-                          serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()))
+   @Autowired
+   constructor(schemaProvider: SchemaProvider,
+               restTemplateBuilder: RestTemplateBuilder,
+               serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()))
       : this(schemaProvider, restTemplateBuilder
       .errorHandler(CatchingErrorHandler())
       .additionalInterceptors(LoggingRequestInterceptor())
@@ -40,7 +41,8 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    }
 
    override fun canSupport(service: Service, operation: Operation): Boolean {
-      return service.hasMetadata("ServiceDiscoveryClient")
+      return service.hasMetadata("ServiceDiscoveryClient") ||
+         operation.hasHttpMetadata()
    }
 
 
@@ -66,7 +68,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, uriVariables)
 //         httpInvokeOperation.stop(result)
 
-         val expandedUri = restTemplate.uriTemplateHandler.expand(absoluteUrl,uriVariables)
+         val expandedUri = restTemplate.uriTemplateHandler.expand(absoluteUrl, uriVariables)
          httpInvokeOperation.addRemoteCall(RemoteCall(
             service.name, expandedUri.toASCIIString(), operation.name, httpMethod.name, requestBody.body, result.statusCodeValue, httpInvokeOperation.duration, result.body
          ))
@@ -119,6 +121,14 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       return parameters.map { it.type.fullyQualifiedName to it.value }.toMap()
    }
 
+}
+
+private fun Operation.hasHttpMetadata(): Boolean {
+   if (!this.hasMetadata("HttpOperation")) {
+      return false;
+   }
+   val httpMeta = this.metadata("HttpOperation")
+   return httpMeta.params.containsKey("url")
 }
 
 internal class CatchingErrorHandler : ResponseErrorHandler {
