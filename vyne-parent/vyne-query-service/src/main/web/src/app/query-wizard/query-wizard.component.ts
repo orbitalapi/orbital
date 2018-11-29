@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
 import {Modifier, Schema, Type, TypeReference, TypesService} from "../services/types.service";
-import {map, startWith} from "rxjs/operators";
+import {map} from "rxjs/operators";
 import {
   ITdDynamicElementConfig,
   TdDynamicElement,
@@ -9,7 +9,6 @@ import {
   TdDynamicType
 } from '@covalent/dynamic-forms';
 import {FormControl} from "@angular/forms";
-import {Observable} from "rxjs/internal/Observable";
 import {
   Fact,
   ProfilerOperation,
@@ -20,7 +19,6 @@ import {
   RemoteCall
 } from "../services/query.service";
 import {HttpErrorResponse} from "@angular/common/http";
-import {MatAutocompleteSelectedEvent} from "@angular/material";
 
 @Component({
   selector: 'query-wizard',
@@ -29,11 +27,9 @@ import {MatAutocompleteSelectedEvent} from "@angular/material";
 })
 export class QueryWizardComponent implements OnInit {
   schema: Schema;
-  targetTypeInput = new FormControl();
   queryMode = new FormControl();
-  filteredTypes: Observable<Type[]>;
 
-  private facts: any = {};
+  targetType: Type;
 
   constructor(private route: ActivatedRoute,
               private typesService: TypesService,
@@ -57,11 +53,6 @@ export class QueryWizardComponent implements OnInit {
         }
       );
 
-    this.filteredTypes = this.targetTypeInput.valueChanges.pipe(
-      startWith(''),
-      map(value => this._filter(value))
-    );
-
     this.queryMode.setValue(QueryMode.DISCOVER)
   }
 
@@ -80,13 +71,7 @@ export class QueryWizardComponent implements OnInit {
 
   removeFact(factForm: FactForm) {
     const index = this.forms.indexOf(factForm);
-    this.forms.splice(index,1);
-  }
-
-  private _filter(value: string): Type[] {
-    if (!this.schema) return [];
-    const filterValue = value.toLowerCase();
-    return this.schema.types.filter(option => option.name.fullyQualifiedName.toLowerCase().indexOf(filterValue) !== -1);
+    this.forms.splice(index, 1);
   }
 
   updateFact(formSpec: FactForm, value) {
@@ -131,7 +116,8 @@ export class QueryWizardComponent implements OnInit {
     let facts = this.buildFacts();
     let factList: Fact[] = Object.keys(facts).map(key => new Fact(key, facts[key]));
     let query = new Query(
-      this.targetTypeInput.value,
+      this.targetType.name.fullyQualifiedName,
+      // this.targetTypeInput.value,
       factList,
       this.queryMode.value
     );
@@ -190,7 +176,7 @@ export class QueryWizardComponent implements OnInit {
     )
   }
 
-  private getElementsForType(type: Type, schema: Schema, prefix: string[] = []): ITdDynamicElementConfig[] {
+  private getElementsForType(type: Type, schema: Schema, prefix: string[] = [], fieldName: string = null): ITdDynamicElementConfig[] {
     if (type.scalar) {
       // suspect this is a smell I'm doing something wrong.
       // If the original root type was scalar, when we won't have a prefix, so
@@ -198,9 +184,10 @@ export class QueryWizardComponent implements OnInit {
       // Otherwise, if we've navigated into this attribute, use the prefix, which is actually
       // the full path.
       let name = (prefix.length == 0) ? type.name.name : prefix.join(".");
+      let label = (fieldName) ? `${fieldName} (${type.name.name})` : type.name.name
       return [{
         name: name,
-        label: type.name.name,
+        label: label,
         ...this.getInputControlForType(type)
       }];
     } else {
@@ -209,7 +196,7 @@ export class QueryWizardComponent implements OnInit {
         let attributeTypeRef = type.attributes[attributeName] as TypeReference;
         let attributeType = schema.types.find(type => type.name.fullyQualifiedName == attributeTypeRef.fullyQualifiedName);
         let newPrefix = prefix.concat([attributeName]);
-        elements = elements.concat(this.getElementsForType(attributeType, schema, newPrefix));
+        elements = elements.concat(this.getElementsForType(attributeType, schema, newPrefix, attributeName));
       });
       return elements;
     }
@@ -253,8 +240,8 @@ export class QueryWizardComponent implements OnInit {
     this.addingNewFact = true;
   }
 
-  onNewFactTypeSelected(event:MatAutocompleteSelectedEvent) {
-    this.appendEmptyType(event.option.value);
+  onNewFactTypeSelected(type: Type) {
+    this.appendEmptyType(type.name.fullyQualifiedName);
     this.addingNewFact = false;
   }
 }
@@ -272,7 +259,8 @@ export class FactForm {
   ) {
 
   }
-  value:any
+
+  value: any
 
 }
 

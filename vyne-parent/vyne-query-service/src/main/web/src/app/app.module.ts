@@ -49,6 +49,7 @@ import {TaxiViewerModule} from "./query-wizard/taxi-viewer/taxi-viewer.module";
 import { SchemaExplorerComponent } from './schema-explorer/schema-explorer.component';
 import { NewSchemaWizardComponent } from './schema-explorer/new-schema-wizard/new-schema-wizard.component';
 import { FactEditorComponent } from './query-wizard/fact-editor/fact-editor.component';
+import { TypeAutocompleteComponent } from './query-wizard/type-autocomplete.component';
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
@@ -76,7 +77,8 @@ const appRoutes = [
     ParameterViewComponent,
     SchemaExplorerComponent,
     NewSchemaWizardComponent,
-    FactEditorComponent
+    FactEditorComponent,
+    TypeAutocompleteComponent
   ],
   imports: [
     RouterModule.forRoot(

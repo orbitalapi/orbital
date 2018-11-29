@@ -11,7 +11,9 @@
         <mat-card-content>
           <div class="fact-form-list">
             <div *ngFor="let factForm of forms" class="fact-form-container">
-              <div class="delete-icon" (click)="removeFact(factForm)"><mat-icon>delete</mat-icon></div>
+              <div class="delete-icon" (click)="removeFact(factForm)">
+                <mat-icon>delete</mat-icon>
+              </div>
               <div class="type-name">{{ factForm.type.name.name }}</div>
               <div class="fact-editor">
                 <td-dynamic-forms [elements]="getAndRegisterElements(factForm,dynamicForm)"
@@ -20,41 +22,14 @@
             </div>
           </div>
           <div class="new-fact-editor" *ngIf="addingNewFact">
-            <mat-form-field class="fact-type-input">
-              <input type="text" placeholder="Select the type of fact" matInput
-                     [matAutocomplete]="auto"
-                     required>
-              <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption (select)="onNewFactTypeSelected()"
-                                (optionSelected)="onNewFactTypeSelected($event)">
-                <mat-option *ngFor="let type of filteredTypes | async" [value]="type.name.fullyQualifiedName">
-                  {{type.name.name}} ({{type.name.fullyQualifiedName}})
-                </mat-option>
-              </mat-autocomplete>
-            </mat-form-field>
+            <app-type-autocomplete
+              class="fact-type-input"
+              [schema]="schema" (typeSelected)="onNewFactTypeSelected($event)"
+              placeholder="Select the type of fact"></app-type-autocomplete>
           </div>
           <div class="add-new">
             <button mat-raised-button color="primary" (click)="addNewFact()">Add new fact</button>
           </div>
-          <!--<mat-accordion>-->
-          <!--<mat-expansion-panel >-->
-          <!--<mat-expansion-panel-header>-->
-          <!--<mat-panel-title>-->
-          <!--{{ factForm.type.name.name }}-->
-          <!--</mat-panel-title>-->
-          <!--<mat-panel-description>-->
-          <!--&lt;!&ndash; Should we put something here? &ndash;&gt;-->
-          <!--</mat-panel-description>-->
-          <!--</mat-expansion-panel-header>-->
-
-          <!--<div>-->
-          <!--<td-dynamic-forms [elements]="getAndRegisterElements(factForm,dynamicForm)"-->
-          <!--#dynamicForm></td-dynamic-forms>-->
-          <!--</div>-->
-          <!--<mat-action-row>-->
-          <!--<button mat-button (click)="removeFact(factForm)">Remove</button>-->
-          <!--</mat-action-row>-->
-          <!--</mat-expansion-panel>-->
-          <!--</mat-accordion>-->
         </mat-card-content>
       </mat-card>
     </div>
@@ -66,16 +41,10 @@
         </mat-card-header>
         <mat-card-content>
           <form>
-            <mat-form-field class="target-type-input">
-              <input type="text" placeholder="Select the type to discover" aria-label="Number" matInput
-                     [matAutocomplete]="auto"
-                     [formControl]="targetTypeInput" required>
-              <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption>
-                <mat-option *ngFor="let type of filteredTypes | async" [value]="type.name.fullyQualifiedName">
-                  {{type.name.name}} ({{type.name.fullyQualifiedName}})
-                </mat-option>
-              </mat-autocomplete>
-            </mat-form-field>
+            <app-type-autocomplete [schema]="schema"
+                                   placeholder="Select the type to discover"
+                                   (typeSelected)="targetType = $event"
+            ></app-type-autocomplete>
             <mat-form-field>
               <mat-select placeholder="Query mode" [formControl]="queryMode" required>
                 <mat-option value="DISCOVER">Discover (Find a single result)</mat-option>
