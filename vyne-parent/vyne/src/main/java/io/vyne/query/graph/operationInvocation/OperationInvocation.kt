@@ -6,8 +6,8 @@ import io.vyne.query.graph.EdgeEvaluator
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ParameterFactory
-import io.vyne.query.graph.orientDb.EvaluatedLink
-import io.vyne.query.graph.orientDb.LinkEvaluator
+import io.vyne.query.graph.EvaluatedLink
+import io.vyne.query.graph.LinkEvaluator
 import io.vyne.schemas.*
 import io.vyne.utils.log
 import org.springframework.stereotype.Component

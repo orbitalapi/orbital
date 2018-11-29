@@ -6,8 +6,6 @@ import io.vyne.query.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
-import io.vyne.query.graph.orientDb.EvaluatedLink
-import io.vyne.query.graph.orientDb.LinkEvaluator
 import io.vyne.schemas.Link
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type

@@ -4,7 +4,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.query.graph.orientDb.LinkEvaluator
+import io.vyne.query.graph.LinkEvaluator
 import io.vyne.schemas.Schema
 
 
