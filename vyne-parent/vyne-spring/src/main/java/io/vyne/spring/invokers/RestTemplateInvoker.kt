@@ -9,6 +9,7 @@ import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
@@ -22,6 +23,7 @@ import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.ClientHttpResponse
 import org.springframework.web.client.ResponseErrorHandler
 import org.springframework.web.client.RestTemplate
+import java.util.regex.Pattern
 
 class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                           val restTemplate: RestTemplate,
@@ -36,6 +38,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       .additionalInterceptors(LoggingRequestInterceptor())
       .build(), serviceUrlResolvers)
 
+   private val uriVariableProvider = UriVariableProvider()
    init {
       log().info("Rest template invoker starter")
    }
@@ -46,7 +49,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    }
 
 
-   override fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>, profilerOperation: ProfilerOperation): TypedInstance {
+   override fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter,TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance {
       log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",")}")
 
       val annotation = operation.metadata("HttpOperation")
@@ -56,12 +59,12 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
       val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
          val absoluteUrl = makeUrlAbsolute(service, operation, url)
-         val uriVariables = getUriVariables(parameters)
+         val uriVariables = uriVariableProvider.getUriVariables(parameters,url)
 
          log().debug("Operation ${operation.name} resolves to $absoluteUrl")
          httpInvokeOperation.addContext("Absolute Url", absoluteUrl)
 
-         val requestBody = buildRequestBody(operation, parameters)
+         val requestBody = buildRequestBody(operation, parameters.map { it.second })
          httpInvokeOperation.addContext("Service", service)
          httpInvokeOperation.addContext("Operation", operation)
 
@@ -117,11 +120,15 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
    }
 
-   private fun getUriVariables(parameters: List<TypedInstance>): Map<String, Any> {
-      return parameters.map { it.type.fullyQualifiedName to it.value }.toMap()
+   private fun getUriVariables(parameters: List<ParameterValuePair>, url: String): Map<String, Any> {
+
+      TODO()
+//      return parameters.map { it.type.fullyQualifiedName to it.value }.toMap()
    }
 
 }
+
+typealias ParameterValuePair = Pair<Parameter,TypedInstance>
 
 private fun Operation.hasHttpMetadata(): Boolean {
    if (!this.hasMetadata("HttpOperation")) {

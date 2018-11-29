@@ -4,6 +4,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
 import io.vyne.utils.orElse
 
@@ -12,14 +13,14 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
 
    val invocations = mutableMapOf<String, List<TypedInstance>>()
 
-   override fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>, profiler: ProfilerOperation): TypedInstance {
+   override fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter,TypedInstance>>, profiler: ProfilerOperation): TypedInstance {
       val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
          val metadata = operation.metadata("StubResponse")
          (metadata.params["value"] as String?).orElse(operation.name)
       } else {
          operation.name
       }
-      invocations.put(stubResponseKey, parameters)
+      invocations.put(stubResponseKey, parameters.map { it.second })
 
       if (!responses.containsKey(stubResponseKey)) {
          throw IllegalArgumentException("No stub response prepared for operation $stubResponseKey")

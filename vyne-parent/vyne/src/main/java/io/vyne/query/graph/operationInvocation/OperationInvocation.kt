@@ -22,7 +22,7 @@ interface OperationInvocationService {
 interface OperationInvoker {
    fun canSupport(service: Service, operation: Operation): Boolean
    // TODO : This should return some form of reactive type.
-   fun invoke(service: Service, operation: Operation, parameters: List<TypedInstance>, profilerOperation: ProfilerOperation): TypedInstance
+   fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter,TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance
 }
 
 @Component
@@ -65,24 +65,24 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
       val parameters = gatherParameters(operation.parameters, preferredParams, context)
-      val resolvedParams = ensureParametersSatisfyContracts(operation.parameters, parameters, context)
+      val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
       val result: TypedInstance = invoker.invoke(service, operation, resolvedParams, context)
       return result
    }
 
-   private fun gatherParameters(parameters: List<Parameter>, preferredParams: Set<TypedInstance>, context: QueryContext): List<TypedInstance> {
+   private fun gatherParameters(parameters: List<Parameter>, preferredParams: Set<TypedInstance>, context: QueryContext): List<Pair<Parameter,TypedInstance>> {
       val preferredParamsByType = preferredParams.associateBy { it.type }
       val unresolvedParams = mutableListOf<QuerySpecTypeNode>()
       // Holds EITHER the param value, or a QuerySpecTypeNode which can be used
       // to query the engine for a value.
-      val parameterValuesOrQuerySpecs: List<Any> = parameters.map { requiredParam ->
+      val parameterValuesOrQuerySpecs: List<Pair<Parameter,Any>> = parameters.map { requiredParam ->
          when {
-            preferredParamsByType.containsKey(requiredParam.type) -> preferredParamsByType[requiredParam.type]!!
-            context.hasFactOfType(requiredParam.type) -> context.getFact(requiredParam.type)
+            preferredParamsByType.containsKey(requiredParam.type) -> requiredParam to preferredParamsByType[requiredParam.type]!!
+            context.hasFactOfType(requiredParam.type) -> requiredParam to context.getFact(requiredParam.type)
             else -> {
                val queryNode = QuerySpecTypeNode(requiredParam.type)
                unresolvedParams.add(queryNode)
-               queryNode
+               requiredParam to queryNode
             }
          }
       }
@@ -102,11 +102,11 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
       // Now, either all the params were available in the first pass,
       // or they've been subsequently resolved against the context / graph.
       // So, create a final list of values.
-      val parametersWithValues = parameterValuesOrQuerySpecs.map {
-         when (it) {
-            is TypedInstance -> it
-            is QuerySpecTypeNode -> resolvedParams[it]!!
-            else -> error("Unexpected type in parameterValuesOrQuerySpecs -> ${it.javaClass.name}")
+      val parametersWithValues = parameterValuesOrQuerySpecs.map { (param,valueOrQuerySpec) ->
+         when (valueOrQuerySpec) {
+            is TypedInstance -> param to valueOrQuerySpec
+            is QuerySpecTypeNode -> param to resolvedParams[valueOrQuerySpec]!!
+            else -> error("Unexpected type in parameterValuesOrQuerySpecs -> ${valueOrQuerySpec.javaClass.name}")
          }
       }
 
@@ -119,9 +119,8 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
     * If the contract is not satisfied, we attempt to satisfy the contract leveraging
     * the graph, and fail if the resolution was unsuccessful
     */
-   private fun ensureParametersSatisfyContracts(parametersSpecs: List<Parameter>, parameterValues: List<TypedInstance>, context: QueryContext): List<TypedInstance> {
-      val paramsWithSpec = parametersSpecs.zip(parameterValues)
-      val paramsToConstraintEvaluations = paramsWithSpec.map { (paramSpec, paramValue) ->
+   private fun ensureParametersSatisfyContracts(parametersWithValues:List<Pair<Parameter,TypedInstance>>, context: QueryContext): List<Pair<Parameter,TypedInstance>> {
+      val paramsToConstraintEvaluations = parametersWithValues.map { (paramSpec, paramValue) ->
          paramSpec to ConstraintEvaluations(paramValue,
             paramSpec.constraints.map { constraint ->
                constraint.evaluate(paramSpec.type, paramValue)
@@ -130,7 +129,7 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
       }.toMap()
 
       val resolvedParameterValues = constraintViolationResolver.resolveViolations(paramsToConstraintEvaluations, context, this)
-      return resolvedParameterValues.values.toList()
+      return resolvedParameterValues.toList()
    }
 
 }

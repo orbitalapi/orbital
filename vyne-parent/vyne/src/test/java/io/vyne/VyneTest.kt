@@ -10,6 +10,7 @@ import io.vyne.query.*
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
+import kotlin.test.fail
 
 object TestSchema {
    val taxiDef = """
@@ -259,6 +260,28 @@ class VyneTest {
 
       expect(result.isFullyResolved).to.be.`true`
       expect(result["EmailAddress[]".fqn().parameterizedName]!!.value).to.equal(listOf("foo@foo.com","bar@foo.com"))
+   }
+
+   @Test
+   fun canInvokeServiceWithParamMatchingOnType() {
+      val schema = """
+         type Pet {
+            id : Int
+         }
+         service PetService {
+            @HttpOperation(method = "GET" , url = "http://petstore.swagger.io/api/pets/{id}")
+            operation findPetById(  id : Int ) : Pet
+         }
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("findPetById",vyne.typedValue("Pet", mapOf("id" to 100)))
+      vyne.addKeyValuePair("lang.taxi.Int",100)
+      val result = vyne.query().find("Pet")
+
+      expect(result.isFullyResolved).to.be.`true`
+      val params = stubService.invocations["findPetById"]!!.get(0)
+      expect(params.value).to.equal(100)
    }
 }
 
