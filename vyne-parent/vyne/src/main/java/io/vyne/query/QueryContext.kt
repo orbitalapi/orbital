@@ -45,7 +45,7 @@ data class QueryResult(
 
    override val isFullyResolved = unmatchedNodes.isEmpty()
    operator fun get(typeName: String): TypedInstance? {
-      return this.results.filterKeys { it.type.name.fullyQualifiedName == typeName }
+      return this.results.filterKeys { it.type.name.parameterizedName == typeName }
          .values
          .first()
    }

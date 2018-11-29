@@ -7,6 +7,7 @@ import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.*
+import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -257,7 +258,7 @@ class VyneTest {
       val result = vyne.query().find("EmailAddress[]")
 
       expect(result.isFullyResolved).to.be.`true`
-      expect(result["EmailAddress"]!!.value).to.equal("foo@foo.com")
+      expect(result["EmailAddress[]".fqn().parameterizedName]!!.value).to.equal(listOf("foo@foo.com","bar@foo.com"))
    }
 }
 
