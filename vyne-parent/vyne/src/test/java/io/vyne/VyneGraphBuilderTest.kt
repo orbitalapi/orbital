@@ -1,6 +1,7 @@
 package io.vyne
 
 import es.usc.citius.hipster.graph.GraphEdge
+import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Relationship.*
 import io.vyne.schemas.taxi.TaxiSchema
@@ -37,6 +38,24 @@ class VyneGraphBuilderTest {
 
 
       TODO()
+   }
+
+   @Test
+   fun generatesParamsCorrectly() {
+      val taxiDef = """
+    type Customer {
+      email : CustomerEmailAddress as String
+      id : CustomerId as Int
+      name : CustomerName as String
+   }
+   service CustomerService {
+      operation getCustomerByEmail(  CustomerEmailAddress ) : Customer
+   }
+      """.trimIndent()
+      val graph = VyneGraphBuilder(TaxiSchema.from(taxiDef)).buildDisplayGraph()
+      val edges = graph.outgoingEdgesOf(operation(OperationNames.displayName("CustomerService", "getCustomerByEmail")))
+      edges.shouldContain(REQUIRES_PARAMETER, type("CustomerEmailAddress"))
+
    }
 }
 

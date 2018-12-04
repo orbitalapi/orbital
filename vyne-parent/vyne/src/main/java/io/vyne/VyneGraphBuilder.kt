@@ -54,11 +54,11 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
 }
 
 fun Type.asElement(): Element = type(this)
-fun Operation.asElement():Element = operation(this.qualifiedName.fullyQualifiedName)
+fun Operation.asElement(): Element = operation(this.qualifiedName.fullyQualifiedName)
 fun type(name: String) = Element(name, ElementType.TYPE)
 fun type(type: Type) = type(type.fullyQualifiedName)
 fun member(name: String) = Element(name, ElementType.MEMBER)
-fun parameter(paramTypeFqn: String) = Element("param/$paramTypeFqn", ElementType.PARAMETER)
+fun parameter(paramTypeFqn: String) = Element(ParamNames.toParamName(paramTypeFqn), ElementType.PARAMETER)
 fun operation(service: Service, operation: Operation): Element {
    val operationReference = OperationNames.name(service.qualifiedName, operation.name)
    return operation(operationReference)

@@ -14,6 +14,12 @@ class QualifiedNameTest {
    }
 
    @Test
+   fun parsesParamNamesCorrectly() {
+      expect("param/foo.bar.CustomerEmailAddress".fqn().fullyQualifiedName).to.equal("param/foo.bar.CustomerEmailAddress")
+      expect("param/foo.bar.CustomerEmailAddress[]".fqn().parameterizedName).to.equal("param/lang.taxi.Array<foo.bar.CustomerEmailAddress>")
+   }
+
+   @Test
    fun parsesParamterizedNamesCorrectly() {
       val fqn = "foo.baz.Bar<some.Thing<a.B,c.D>,some.other.Thing<d.E,f.G>>".fqn()
       expect(fqn.parameters).to.have.size(2)

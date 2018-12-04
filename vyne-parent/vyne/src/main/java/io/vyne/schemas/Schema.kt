@@ -14,10 +14,10 @@ import java.io.StringReader
 
 fun String.fqn(): QualifiedName {
 
-   return if (OperationNames.isName(this)) {
-      QualifiedName(this, emptyList())
-   } else {
-      parse(this).toQualifiedName()
+   return when {
+      OperationNames.isName(this) -> QualifiedName(this, emptyList())
+      ParamNames.isParamName(this) -> QualifiedName("param/" + ParamNames.typeNameInParamName(this).fqn().parameterizedName)
+      else -> parse(this).toQualifiedName()
    }
 
 }
@@ -43,7 +43,7 @@ private fun parse(s: String): GenericTypeName {
 
 
 // Converts Foo[] to lang.taxi.Array<Foo>
-private fun convertArrayShorthand(name: String):String {
+private fun convertArrayShorthand(name: String): String {
    if (name.endsWith("[]")) {
       val arrayType = name.removeSuffix("[]")
       return PrimitiveType.ARRAY.qualifiedName + "<$arrayType>"
@@ -99,10 +99,28 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
 typealias OperationName = String
 typealias ServiceName = String
 
+object ParamNames {
+   fun isParamName(input: String): Boolean {
+      return input.startsWith("param/")
+   }
+
+   fun typeNameInParamName(paramName: String): String {
+      return paramName.removePrefix("param/")
+   }
+
+   fun toParamName(typeName: String): String {
+      return "param/$typeName"
+   }
+}
+
 object OperationNames {
    private const val DELIMITER: String = "@@"
    fun name(serviceName: String, operationName: String): String {
       return listOf(serviceName, operationName).joinToString(DELIMITER)
+   }
+
+   fun displayName(serviceName: String, operationName: OperationName): String {
+      return "$serviceName.$operationName()"
    }
 
    fun qualifiedName(serviceName: ServiceName, operationName: OperationName): QualifiedName {
@@ -133,7 +151,7 @@ object OperationNames {
 
    fun displayNameFromOperationName(operationName: QualifiedName): String {
       val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
-      return "$serviceName.$operationName()"
+      return displayName(serviceName, operationName)
    }
 }
 
