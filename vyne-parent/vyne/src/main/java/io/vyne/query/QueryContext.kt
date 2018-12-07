@@ -103,7 +103,7 @@ object TypedInstanceTree {
    }
 }
 
-data class QueryContext(override val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine, val profiler: QueryProfiler) : QueryEngine by queryEngine, ProfilerOperation by profiler {
+data class QueryContext(override val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine, val profiler: QueryProfiler, val callerFacts:MutableSet<TypedInstance> = mutableSetOf()) : QueryEngine by queryEngine, ProfilerOperation by profiler {
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val factsByType
       get() = facts.associateBy { it.type }

@@ -14,6 +14,7 @@ import org.antlr.v4.runtime.CharStreams
 class TaxiSchema(private val document: TaxiDocument) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
+   override val policies: Set<Policy>
    // TODO : Are these still required / meaningful?
    override val links: Set<Link> = emptySet()
    override val attributes: Set<QualifiedName> = emptySet()
@@ -24,6 +25,16 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
       this.types = parseTypes(document)
       this.typeCache = DefaultTypeCache(this.types)
       this.services = parseServices(document)
+      this.policies = parsePolicies(document)
+   }
+
+   private fun parsePolicies(document: TaxiDocument): Set<Policy> {
+      return document.policies.map { taxiPolicy ->
+         Policy(QualifiedName(taxiPolicy.qualifiedName),
+            this.type(taxiPolicy.targetType.toVyneQualifiedName()),
+            taxiPolicy.ruleSets
+         )
+      }.toSet()
    }
 
    private fun parseServices(document: TaxiDocument): Set<Service> {
@@ -41,7 +52,9 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
                         metadata = parseAnnotationsToMetadata(taxiParam.annotations),
                         constraints = constraintConverter.buildConstraints(type, taxiParam.constraints)
                      )
-                  }, returnType = returnType,
+                  },
+                  operationType = taxiOperation.scope,
+                  returnType = returnType,
                   metadata = parseAnnotationsToMetadata(taxiOperation.annotations),
                   contract = constraintConverter.buildContract(returnType, taxiOperation.contract?.returnTypeConstraints
                      ?: emptyList()),
@@ -163,9 +176,10 @@ private fun lang.taxi.QualifiedName.toVyneQualifiedName(): QualifiedName {
    return QualifiedName(this.toString(), this.parameters.map { it.toVyneQualifiedName() })
 }
 
-private fun lang.taxi.Type.toVyneQualifiedName():QualifiedName {
+private fun lang.taxi.Type.toVyneQualifiedName(): QualifiedName {
    return this.toQualifiedName().toVyneQualifiedName()
 }
+
 private fun lang.taxi.SourceCode.toVyneSource(): SourceCode {
    return io.vyne.schemas.SourceCode(this.origin, TaxiSchema.LANGUAGE, this.content)
 }

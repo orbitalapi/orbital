@@ -255,12 +255,16 @@ class SimpleSchema(override val types: Set<Type>, override val services: Set<Ser
    override val attributes: Set<QualifiedName> = emptySet()
    override val links: Set<Link> = emptySet()
 
+   override val policies: Set<Policy> = emptySet()
    override val typeCache: TypeCache = DefaultTypeCache(this.types)
 }
 
 interface Schema {
    val types: Set<Type>
    val services: Set<Service>
+
+   val policies: Set<Policy>
+
    // TODO : Are these still required / meaningful?
    @Deprecated("Not meaningful - remove", level = DeprecationLevel.WARNING)
    val attributes: Set<QualifiedName>
@@ -295,6 +299,10 @@ interface Schema {
    fun service(serviceName: String): Service {
       return this.services.firstOrNull { it.qualifiedName == serviceName }
          ?: throw IllegalArgumentException("Service $serviceName was not found within this schema")
+   }
+
+   fun policy(type: Type): Policy? {
+      return this.policies.firstOrNull { it.targetType == type }
    }
 
    fun hasOperation(operationName: QualifiedName): Boolean {

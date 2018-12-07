@@ -9,8 +9,8 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.query.*
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import org.junit.Ignore
 import org.junit.Test
-import kotlin.test.fail
 
 object TestSchema {
    val taxiDef = """
@@ -171,11 +171,13 @@ class VyneTest {
 
 
    @Test
+   @Ignore
    fun given_notAllParamsOfOperationAreDiscoverable_then_methodNotInvoked() {
       TODO("Not sure what we should do here.")
    }
 
    @Test
+   @Ignore
    fun shouldFindAPropertyValueByWalkingADirectRelationship() {
 
       val vyne = TestSchema.vyne()
@@ -254,12 +256,12 @@ class VyneTest {
       """.trimIndent()
 
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("emails", vyne.typedValue("EmailAddress[]", listOf("foo@foo.com","bar@foo.com")))
+      stubService.addResponse("emails", vyne.typedValue("EmailAddress[]", listOf("foo@foo.com", "bar@foo.com")))
 
       val result = vyne.query().find("EmailAddress[]")
 
       expect(result.isFullyResolved).to.be.`true`
-      expect(result["EmailAddress[]".fqn().parameterizedName]!!.value).to.equal(listOf("foo@foo.com","bar@foo.com"))
+      expect(result["EmailAddress[]".fqn().parameterizedName]!!.value).to.equal(listOf("foo@foo.com", "bar@foo.com"))
    }
 
    @Test
@@ -275,8 +277,8 @@ class VyneTest {
       """.trimIndent()
 
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("findPetById",vyne.typedValue("Pet", mapOf("id" to 100)))
-      vyne.addKeyValuePair("lang.taxi.Int",100)
+      stubService.addResponse("findPetById", vyne.typedValue("Pet", mapOf("id" to 100)))
+      vyne.addKeyValuePair("lang.taxi.Int", 100)
       val result = vyne.query().find("Pet")
 
       expect(result.isFullyResolved).to.be.`true`

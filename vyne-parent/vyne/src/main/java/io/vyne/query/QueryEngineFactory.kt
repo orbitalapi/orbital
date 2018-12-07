@@ -2,9 +2,12 @@ package io.vyne.query
 
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
+import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
+import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.query.graph.LinkEvaluator
+import io.vyne.query.policyManager.PolicyAwareOperationInvocationServiceDecorator
+import io.vyne.query.policyManager.PolicyAwareQueryStrategyDecorator
 import io.vyne.schemas.Schema
 
 
@@ -43,10 +46,13 @@ interface QueryEngineFactory {
          val graphQueryStrategy = HipsterDiscoverGraphQueryStrategy(
             edgeEvaluator
          )
+
          return DefaultQueryEngineFactory(
             strategies = listOf(
                ModelsScanStrategy(),
-               DirectServiceInvocationStrategy(invokers),
+//               PolicyAwareQueryStrategyDecorator(
+                  DirectServiceInvocationStrategy(operationInvocationService(invokers)),
+//               ),
                graphQueryStrategy,
                HipsterGatherGraphQueryStrategy(graphQueryStrategy)
             )
@@ -60,10 +66,10 @@ interface QueryEngineFactory {
 //            HasParamOfTypeEvaluator(),
             OperationParameterEvaluator(),
             RequiresParameterEvaluator(),
-            OperationInvocationEvaluator(invokers))
+            OperationInvocationEvaluator(operationInvocationService(invokers)))
       }
 
-      fun edgeEvaluators(invokers: List<OperationInvoker>): List<EdgeEvaluator> {
+      private fun edgeEvaluators(invokers: List<OperationInvoker>): List<EdgeEvaluator> {
          return listOf(RequiresParameterEdgeEvaluator(),
             AttributeOfEdgeEvaluator(),
             IsTypeOfEdgeEvaluator(),
@@ -73,10 +79,18 @@ interface QueryEngineFactory {
             OperationParameterEdgeEvaluator(),
             HasAttributeEdgeEvaluator(),
             CanPopulateEdgeEvaluator(),
-            OperationInvocationEvaluator(invokers)
+            OperationInvocationEvaluator(operationInvocationService(invokers))
          )
       }
+
+      private fun operationInvocationService(invokers: List<OperationInvoker>): OperationInvocationService {
+         return PolicyAwareOperationInvocationServiceDecorator(
+            DefaultOperationInvocationService(invokers)
+         )
+      }
+
    }
+
 
 }
 

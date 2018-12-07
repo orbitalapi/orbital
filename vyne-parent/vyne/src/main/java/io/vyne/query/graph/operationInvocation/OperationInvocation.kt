@@ -25,41 +25,7 @@ interface OperationInvoker {
    fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter,TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance
 }
 
-@Component
-class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver(), val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator, OperationInvocationService {
-   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
-      val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
-      val (service, operation) = context.schema.operation(operationName)
-
-      // Discover parameters.
-      // Note: We can't always assume that the REQUIRES_PARAM relationship has taken care of this
-      // for us, as we don't know what path was travelled to arrive here.
-      // Therefore, just find all the params, and add them to the context.
-      // This will fail if a param is not discoverable
-      operation.parameters.forEach { requiredParam ->
-         val paramInstance = parameterFactory.discover(requiredParam.type, context)
-         context.addFact(paramInstance)
-      }
-
-      // VisitedNodes are better candidates for params, as they are more contextually relevant
-      val visitedInstanceNodes = context.collectVisitedInstanceNodes()
-
-
-      val result: TypedInstance = invokeOperation(service, operation, visitedInstanceNodes, context)
-      context.addFact(result)
-      return edge.success(result)
-   }
-
-   override val relationship: Relationship = Relationship.PROVIDES
-
-   override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
-      val operationName = link.start
-      val (service, operation) = context.schema.operation(operationName)
-      val result: TypedInstance = invokeOperation(service, operation, setOf(startingPoint), context)
-      context.addFact(result)
-      return EvaluatedLink(link, startingPoint, result)
-   }
-
+class DefaultOperationInvocationService(private val invokers:List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
    override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext): TypedInstance {
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
@@ -69,7 +35,6 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
       val result: TypedInstance = invoker.invoke(service, operation, resolvedParams, context)
       return result
    }
-
    private fun gatherParameters(parameters: List<Parameter>, preferredParams: Set<TypedInstance>, context: QueryContext): List<Pair<Parameter,TypedInstance>> {
       val preferredParamsByType = preferredParams.associateBy { it.type }
       val unresolvedParams = mutableListOf<QuerySpecTypeNode>()
@@ -131,6 +96,46 @@ class OperationInvocationEvaluator(val invokers: List<OperationInvoker>, private
       val resolvedParameterValues = constraintViolationResolver.resolveViolations(paramsToConstraintEvaluations, context, this)
       return resolvedParameterValues.toList()
    }
+}
+@Component
+class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
+   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+      val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
+      val (service, operation) = context.schema.operation(operationName)
+
+      // Discover parameters.
+      // Note: We can't always assume that the REQUIRES_PARAM relationship has taken care of this
+      // for us, as we don't know what path was travelled to arrive here.
+      // Therefore, just find all the params, and add them to the context.
+      // This will fail if a param is not discoverable
+      operation.parameters.forEach { requiredParam ->
+         val paramInstance = parameterFactory.discover(requiredParam.type, context)
+         context.addFact(paramInstance)
+      }
+
+      // VisitedNodes are better candidates for params, as they are more contextually relevant
+      val visitedInstanceNodes = context.collectVisitedInstanceNodes()
+
+
+      val result: TypedInstance = invocationService.invokeOperation(service, operation, visitedInstanceNodes, context)
+      context.addFact(result)
+      return edge.success(result)
+   }
+
+   override val relationship: Relationship = Relationship.PROVIDES
+
+   override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
+      TODO("I'm not sure if this is still used")
+      val operationName = link.start
+      val (service, operation) = context.schema.operation(operationName)
+      val result: TypedInstance = invocationService.invokeOperation(service, operation, setOf(startingPoint), context)
+      context.addFact(result)
+      return EvaluatedLink(link, startingPoint, result)
+   }
+
+
+
+
 
 }
 

@@ -80,6 +80,11 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    fun type(typeName: String): Type = getType(typeName)
 
    fun getService(serviceName: String): Service = schema.service(serviceName)
+
+
+   fun getPolicy(type: Type): Policy? {
+      return schema.policy(type)
+   }
 }
 
 

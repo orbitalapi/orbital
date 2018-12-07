@@ -160,7 +160,10 @@ data class Parameter(val type: Type,
 }
 
 data class Operation(val qualifiedName: QualifiedName, val parameters: List<Parameter>,
-                     val returnType: Type, override val metadata: List<Metadata> = emptyList(),
+                     val returnType: Type,
+                     // similar to scope in taxi - ie., read / write
+                     val operationType:String? = null,
+                     override val metadata: List<Metadata> = emptyList(),
                      val contract: OperationContract = OperationContract(returnType),
                      val sources: List<SourceCode>) : MetadataTarget, SchemaMember {
    val name: String = OperationNames.operationName(qualifiedName)
