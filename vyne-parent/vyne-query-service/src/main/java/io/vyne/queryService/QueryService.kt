@@ -42,8 +42,8 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
 
       return try {
          when (query.queryMode) {
-            QueryMode.DISCOVER -> vyne.query().find(query.queryString, facts)
-            QueryMode.GATHER -> vyne.query().gather(query.queryString, facts)
+            QueryMode.DISCOVER -> vyne.query(additionalFacts = facts).find(query.queryString)
+            QueryMode.GATHER -> vyne.query(additionalFacts = facts).gather(query.queryString)
          }
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation)

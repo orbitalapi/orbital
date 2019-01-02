@@ -133,7 +133,7 @@ namespace io.osmosis.demos.creditInc.isic {
       stubService.addResponse("calculateCreditCosts", vyne.parseJsonModel("vyne.creditInc.CreditCostResponse", creditCostResponse))
 
       val invoice = vyne.parseJsonModel("vyne.creditInc.Invoice", invoiceJson)
-      val result = vyne.query().find("vyne.creditInc.CreditRiskCost", setOf(invoice))
+      val result = vyne.query(additionalFacts = setOf(invoice)).find("vyne.creditInc.CreditRiskCost")
       expect(result["vyne.creditInc.CreditRiskCost"]!!.value).to.equal(250.0)
    }
 }

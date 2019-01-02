@@ -1,6 +1,5 @@
 package io.vyne
 
-import es.usc.citius.hipster.graph.GraphBuilder
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryEngineFactory
@@ -29,47 +28,67 @@ interface SchemaContainer {
    fun getType(typeName: String): Type = schema.type(typeName)
 }
 
+
 interface ModelContainer : SchemaContainer {
-   fun addModel(model: TypedInstance): ModelContainer
+   fun addModel(model: TypedInstance, factSetId: FactSetId = FactSets.DEFAULT): ModelContainer
 }
 
 class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFactory, private val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) : ModelContainer {
    private val schemas = mutableListOf<Schema>()
-   private val models = mutableSetOf<TypedInstance>()
-   var graph = GraphBuilder.create<Element, Relationship>().createDirectedGraph()
-      private set;
+   //   private val models = mutableSetOf<TypedInstance>()
+   private val factSets: FactSetMap = FactSetMap.create()
+
+
+//   private var _graph: HipsterDirectedGraph<Element, Relationship>? = null
+//   val graph: HipsterDirectedGraph<Element, Relationship>
+//      get() {
+//         if (_graph == null) {
+//            this._graph = rebuildGraph()
+//         }
+//         return this._graph!!
+//      }
+
 
    override var schema: Schema = compositeSchemaBuilder.aggregate(schemas)
       private set
 
-   fun query(): StatefulQueryEngine {
-      return queryEngineFactory.queryEngine(schema, models)
+   fun queryEngine(factSetIds: Set<FactSetId> = setOf(FactSets.ALL), additionalFacts: Set<TypedInstance> = emptySet()): StatefulQueryEngine {
+      val factSetForQueryEngine:FactSetMap = FactSetMap.create()
+      factSetForQueryEngine.putAll(this.factSets.filterFactSets(factSetIds))
+      factSetForQueryEngine.putAll(FactSets.DEFAULT, additionalFacts)
+      return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
-   fun models(): Set<TypedInstance> {
-      return models.toSet()
+   fun query(factSetIds: Set<FactSetId> = setOf(FactSets.ALL), additionalFacts: Set<TypedInstance> = emptySet()): QueryContext {
+      val queryEngine = queryEngine(factSetIds, additionalFacts)
+      return queryEngine.queryContext(factSetIds)
    }
+
 
    //   fun queryContext(): QueryContext = QueryContext(schema, facts, this)
    constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) : this(emptyList(), queryEngineFactory)
 
-   override fun addModel(model: TypedInstance): Vyne {
+   override fun addModel(model: TypedInstance, factSetId: FactSetId): Vyne {
       log().debug("Added model instance to context: $model")
-      models.add(model)
-      resetGraph()
+      this.factSets[factSetId].add(model)
+//      invalidateGraph()
       return this
    }
 
    fun addSchema(schema: Schema): Vyne {
       schemas.add(schema)
       this.schema = CompositeSchema(schemas)
-      resetGraph()
+//      invalidateGraph()
       return this
    }
 
-   private fun resetGraph() {
-      this.graph = VyneGraphBuilder(schema).build(models)
-   }
+//   private fun invalidateGraph() {
+//      this._graph = null
+//   }
+
+//   private fun rebuildGraph(): HipsterDirectedGraph<Element, Relationship> {
+//      return VyneGraphBuilder(schema).build(models)
+//   }
 
 
    fun from(s: TypedInstance): QueryContext {

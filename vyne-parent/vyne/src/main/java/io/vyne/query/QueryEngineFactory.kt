@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import io.vyne.FactSetMap
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
@@ -7,12 +8,11 @@ import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.query.policyManager.PolicyAwareOperationInvocationServiceDecorator
-import io.vyne.query.policyManager.PolicyAwareQueryStrategyDecorator
 import io.vyne.schemas.Schema
 
 
 interface QueryEngineFactory {
-   fun queryEngine(schema: Schema, models: Set<TypedInstance>): StatefulQueryEngine
+   fun queryEngine(schema: Schema, models: FactSetMap): StatefulQueryEngine
    fun queryEngine(schema: Schema): QueryEngine
 
 //   val pathResolver: SchemaPathResolver
@@ -51,7 +51,7 @@ interface QueryEngineFactory {
             strategies = listOf(
                ModelsScanStrategy(),
 //               PolicyAwareQueryStrategyDecorator(
-                  DirectServiceInvocationStrategy(operationInvocationService(invokers)),
+               DirectServiceInvocationStrategy(operationInvocationService(invokers)),
 //               ),
                graphQueryStrategy,
                HipsterGatherGraphQueryStrategy(graphQueryStrategy)
@@ -97,10 +97,10 @@ interface QueryEngineFactory {
 class DefaultQueryEngineFactory(private val strategies: List<QueryStrategy>) : QueryEngineFactory {
 
    override fun queryEngine(schema: Schema): QueryEngine {
-      return DefaultQueryEngine(schema, strategies)
+      return queryEngine(schema, FactSetMap.create())
    }
 
-   override fun queryEngine(schema: Schema, models: Set<TypedInstance>): StatefulQueryEngine {
-      return StatefulQueryEngine(models, queryEngine(schema))
+   override fun queryEngine(schema: Schema, models: FactSetMap): StatefulQueryEngine {
+      return StatefulQueryEngine(models, schema, strategies)
    }
 }

@@ -137,7 +137,7 @@ class ParameterFactory {
          } else {
 
             // ... if not, try and find the value in the graph
-            val queryResult = context.find(QuerySpecTypeNode(attributeType), context.facts)
+            val queryResult = context.find(QuerySpecTypeNode(attributeType))
             if (queryResult.isFullyResolved) {
                attributeValue = queryResult[attributeType] ?:
                   // TODO : This might actually be legal, as it could be valid for a value to resolve to null
@@ -212,7 +212,9 @@ class CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPUL
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       val previousValue = requireNotNull(edge.previousValue) {"Cannot evaluate $relationship when previous value was null.  Work with me here!"}
-      require(previousValue is TypedObject) {"Cannot evaluate $relationship when the previous value isn't a TypedObject - got ${previousValue::class.simpleName}"}
+      require(previousValue is TypedObject) {
+         "Cannot evaluate $relationship when the previous value isn't a TypedObject - got ${previousValue::class.simpleName}"
+      }
       val previousObject = previousValue as TypedObject
       val pathToAttribute = edge.target.value as String// io.vyne.SomeType/someAttribute
       val attributeName = pathToAttribute.split("/").last()

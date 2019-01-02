@@ -6,13 +6,13 @@ import io.vyne.schemas.Type
 
 interface TypedInstance {
    val type: Type
-   val value: Any
+   val value: Any?
 
    // It's up to instances of this to reconstruct themselves with their type
    // set to the value of the typeAlias.
    fun withTypeAlias(typeAlias: Type): TypedInstance
 
-   fun toRawObject(): Any {
+   fun toRawObject(): Any? {
 
       val unwrapMap = { valueMap: Map<String, Any> ->
          valueMap.map { (entryKey, entryValue) ->
@@ -32,24 +32,31 @@ interface TypedInstance {
          }
       }
 
-      when (value) {
-         is Map<*, *> -> return unwrapMap(value as Map<String, Any>)
-         is Collection<*> -> return unwrapCollection(value as Collection<*>)
+      return when (value) {
+         null -> null
+         is Map<*, *> -> unwrapMap(value as Map<String, Any>)
+         is Collection<*> -> unwrapCollection(value as Collection<*>)
          // TODO : There's likely other types that need unwrapping
-         else -> return value
+         else -> value
       }
    }
 
    companion object {
-      fun from(type: Type, value: Any, schema: Schema): TypedInstance {
-         if (value is Collection<*>) {
-            return TypedCollection(type, value.filterNotNull().map { from(type, it, schema) })
-         } else if (type.isScalar) {
-            return TypedValue(type, value)
-         } else {
-            return TypedObject.fromValue(type, value, schema)
+      fun from(type: Type, value: Any?, schema: Schema): TypedInstance {
+         return when {
+            value == null -> TypedNull(type)
+            value is Collection<*> -> TypedCollection(type, value.filterNotNull().map { from(type, it, schema) })
+            type.isScalar -> TypedValue(type, value)
+            else -> TypedObject.fromValue(type, value, schema)
          }
       }
+   }
+}
+
+data class TypedNull(override val type: Type) : TypedInstance {
+   override val value: Any? = null
+   override fun withTypeAlias(typeAlias: Type): TypedInstance {
+      return TypedNull(typeAlias)
    }
 }
 
@@ -100,12 +107,12 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
       val attributeValue = this.value[thisFieldName]
          ?: error("No attribute named $thisFieldName found on this type (${type.name})")
 
-      if (parts.isEmpty()) {
-         return attributeValue
+      return if (parts.isEmpty()) {
+         attributeValue
       } else {
          val remainingAccessor = parts.joinToString(".")
          if (attributeValue is TypedObject) {
-            return attributeValue[remainingAccessor]
+            attributeValue[remainingAccessor]
          } else {
             throw IllegalArgumentException("Cannot evaluate an accessor ($remainingAccessor) as value is not an object with fields (${attributeValue.type.name})")
          }
@@ -127,5 +134,9 @@ data class TypedValue(override val type: Type, override val value: Any) : TypedI
 data class TypedCollection(override val type: Type, override val value: List<TypedInstance>) : List<TypedInstance> by value, TypedInstance {
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
       return TypedCollection(typeAlias, value)
+   }
+
+   fun parameterizedType(schema: Schema): Type {
+      return schema.type("lang.taxi.Array<${type.name.parameterizedName}>")
    }
 }

@@ -16,7 +16,7 @@ class HipsterGatherGraphQueryStrategy(private val graphQueryStrategy: HipsterDis
          }.flatMap { (originalQuerySpec, service, operation) ->
             val operationElement = operation(service, operation)
             log().debug("Gather strategy deferring to discover from operation ${operationElement.valueAsQualifiedName()} ")
-            val result = context.find(QuerySpecTypeNode(operation.returnType), context.facts)
+            val result = context.find(QuerySpecTypeNode(operation.returnType))
 
             // Convert the "QuerySpecTypeNode" in the result to the one that was originally requested
             result.results.map { (spec, result) -> originalQuerySpec to result }

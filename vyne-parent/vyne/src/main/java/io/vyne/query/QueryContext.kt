@@ -4,10 +4,8 @@ import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import com.google.common.collect.HashMultimap
+import io.vyne.models.*
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.schemas.*
@@ -45,7 +43,8 @@ data class QueryResult(
 
    override val isFullyResolved = unmatchedNodes.isEmpty()
    operator fun get(typeName: String): TypedInstance? {
-      return this.results.filterKeys { it.type.name.parameterizedName == typeName }
+      val requestedParameterizedName = typeName.fqn().parameterizedName
+      return this.results.filterKeys { it.type.name.parameterizedName == requestedParameterizedName }
          .values
          .first()
    }
@@ -75,7 +74,7 @@ interface QueryResponse {
          return profilerOperation?.timings ?: emptyMap()
       }
 
-   val vyneCost:Long
+   val vyneCost: Long
       get() = profilerOperation?.vyneCost ?: 0L
 }
 
@@ -100,13 +99,26 @@ object TypedInstanceTree {
          is TypedCollection -> instance.value
          else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
       }
-   }
+      // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
+   }.filter { it -> it !is TypedNull }
 }
 
-data class QueryContext(override val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine, val profiler: QueryProfiler, val callerFacts:MutableSet<TypedInstance> = mutableSetOf()) : QueryEngine by queryEngine, ProfilerOperation by profiler {
+// Design choice:
+// Query Context's don't have a concept of FactSets, everything is just flattened to facts.
+// However, the QueryEngineFactory DOES retain the concept.
+// This is because by the time you go to run a query, you should be focussed on
+// "What do I know", and not "Where did I learn this?"
+// At one point, the FactSetMap leaked down to QueryContext and beyond, and this caused
+// many different classes to have to become aware of multiple factsets, which felt like a leak.
+// Revisit if the above becomes less true.
+data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine, val profiler: QueryProfiler) : ProfilerOperation by profiler {
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
-   private val factsByType
-      get() = facts.associateBy { it.type }
+
+   fun find(queryString: String): QueryResult = queryEngine.find(queryString, this)
+   fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
+   fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
+
+   fun gather(queryString: String): QueryResult = queryEngine.gather(queryString, this)
 
    companion object {
       fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler) = QueryContext(schema, facts.toMutableSet(), queryEngine, profiler)
@@ -132,6 +144,7 @@ data class QueryContext(override val schema: Schema, val facts: MutableSet<Typed
     * Deeply nested children are less likely to be relevant matches.
     */
    fun modelTree(): Stream<TypedInstance> {
+      // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
       return TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot())
    }
 
@@ -232,4 +245,8 @@ enum class TypeMatchingStrategy {
 
    abstract fun matches(requestedType: Type, candidate: Type): Boolean
 
+}
+
+fun <K, V> HashMultimap<K, V>.copy(): HashMultimap<K, V> {
+   return HashMultimap.create(this)
 }

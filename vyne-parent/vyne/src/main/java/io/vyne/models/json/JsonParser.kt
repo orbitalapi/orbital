@@ -4,13 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.ModelContainer
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeReference
+import io.vyne.schemas.fqn
 import lang.taxi.types.PrimitiveType
 
 fun ModelContainer.addJsonModel(typeName: String, json: String): TypedInstance {
@@ -20,7 +18,7 @@ fun ModelContainer.addJsonModel(typeName: String, json: String): TypedInstance {
 }
 
 fun ModelContainer.parseJsonModel(typeName: String, json: String): TypedInstance {
-   return jsonParser().parse(this.getType(typeName), json)
+   return jsonParser().parse(this.getType(typeName.fqn().parameterizedName), json)
 }
 
 
@@ -32,7 +30,7 @@ class JsonModelParser(val schema: Schema, val mapper: ObjectMapper = jacksonObje
    fun parse(type: Type, json: String): TypedInstance {
       return if (type.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName) {
          val map = mapper.readValue<List<Map<String, Any>>>(json)
-         parseCollection(map,type)
+         parseCollection(map, type.typeParameters[0])
       } else {
          val map = mapper.readValue<Map<String, Any>>(json)
          doParse(type, map)
@@ -57,7 +55,11 @@ class JsonModelParser(val schema: Schema, val mapper: ObjectMapper = jacksonObje
             .filterKeys { attributeName -> valueMap.containsKey(attributeName) }
             .map { (attributeName, attributeTypeRef: TypeReference) ->
                val attributeType = schema.type(attributeTypeRef.name)
-               attributeName to doParse(attributeType, mapOf(attributeName to valueMap[attributeName]!!), isCollection = attributeTypeRef.isCollection)
+               if (valueMap.containsKey(attributeName) && valueMap[attributeName] != null) {
+                  attributeName to doParse(attributeType, mapOf(attributeName to valueMap[attributeName]!!), isCollection = attributeTypeRef.isCollection)
+               } else {
+                  attributeName to TypedNull(attributeType)
+               }
             }.toMap()
          return TypedObject(type, attributeInstances)
       }

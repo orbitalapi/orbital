@@ -16,11 +16,11 @@ class HasAttributeEvaluator : LinkEvaluator {
    override val relationship: Relationship = Relationship.HAS_ATTRIBUTE
 
    override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
-      assert(startingPoint is TypedObject, { "Cannot evaluate attribute ${link.end} on $startingPoint as it doesn't have any attributes" })
+      assert(startingPoint is TypedObject) { "Cannot evaluate attribute ${link.end} on $startingPoint as it doesn't have any attributes" }
       val startingPointObj = startingPoint as TypedObject
       // Attribute names are passed in a qualified form (Type/attribute).  Just pick the attribute part
       val attributeName = link.end.name.split("/").last()
-      assert(startingPointObj.hasAttribute(attributeName), { "${startingPoint.type.name} doesn't define an attribute called $attributeName" })
+      assert(startingPointObj.hasAttribute(attributeName)) { "${startingPoint.type.name} doesn't define an attribute called $attributeName" }
       val value = startingPointObj[attributeName] ?: error("$link evaluated to null")
       return EvaluatedLink(link, startingPoint, value)
    }
@@ -63,7 +63,7 @@ class RequiresParameterEvaluator : LinkEvaluator {
             // Consider making the context aware of what searches are currently taking place,
             // and returning a failed result in the case of a duplicate search
             log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} not present within the context, and not constructable - initiating a query to attempt to resolve it")
-            val queryResult = context.find(QuerySpecTypeNode(attributeType), context.facts)
+            val queryResult = context.find(QuerySpecTypeNode(attributeType))
             if (!queryResult.isFullyResolved) {
                throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ", context.evaluatedPath(), context.profiler.root)
             } else {

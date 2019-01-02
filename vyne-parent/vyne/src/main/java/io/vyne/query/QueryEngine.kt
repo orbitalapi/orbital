@@ -1,12 +1,11 @@
 package io.vyne.query
 
-import io.vyne.ModelContainer
+import io.vyne.*
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.schemas.Schema
 import io.vyne.utils.log
-import io.vyne.query.QueryMode
 
 
 open class SearchFailedException(message: String, val evaluatedPath: List<EvaluatedEdge>, val profilerOperation: ProfilerOperation) : RuntimeException(message)
@@ -14,69 +13,78 @@ open class SearchFailedException(message: String, val evaluatedPath: List<Evalua
 interface QueryEngine {
 
    val schema: Schema
-   fun find(queryString: String, factSet: Set<TypedInstance> = emptySet()): QueryResult
-   fun find(target: QuerySpecTypeNode, factSet: Set<TypedInstance> = emptySet()): QueryResult
-   fun find(target: Set<QuerySpecTypeNode>, factSet: Set<TypedInstance> = emptySet()): QueryResult
+   fun find(queryString: String, context: QueryContext): QueryResult
+   fun find(target: QuerySpecTypeNode, context: QueryContext): QueryResult
    fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult
 
-   fun gather(queryString: String, factSet: Set<TypedInstance> = emptySet()): QueryResult
+   fun gather(queryString: String, context: QueryContext): QueryResult
 
-   fun queryContext(factSet: Set<TypedInstance> = emptySet()): QueryContext
+   fun queryContext(factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT), additionalFacts: Set<TypedInstance> = emptySet()): QueryContext
+
 }
 
 /**
- * An extension to the QueryEngine, allowing for the provision of initial state
+ * A query engine which allows for the provision of initial state
  */
-class StatefulQueryEngine(initialState: Set<TypedInstance>, private val queryEngine: QueryEngine) : QueryEngine by queryEngine, ModelContainer {
-   private val models: MutableSet<TypedInstance> = initialState.toMutableSet()
+class StatefulQueryEngine(initialState: FactSetMap, schema: Schema, strategies: List<QueryStrategy>, private val profiler: QueryProfiler = QueryProfiler()) : BaseQueryEngine(schema, strategies), ModelContainer {
+   private val factSets: FactSetMap = FactSetMap.create()
 
-   override fun find(queryString: String, factSet: Set<TypedInstance>): QueryResult {
-      return queryEngine.find(queryString, factSet + models)
+   init {
+      factSets.putAll(initialState)
    }
 
-   override fun addModel(model: TypedInstance): StatefulQueryEngine {
-      this.models.add(model)
+
+//   override fun find(queryString: String, factSet: Set<TypedInstance>): QueryResult {
+//      val nodeSetsWithLocalState = factSets.copy()
+//      nodeSetsWithLocalState.putAll(FactSets.DEFAULT, factSet)
+//
+//      return super.find(queryString, nodeSetsWithLocalState.values().toSet())
+//   }
+
+   override fun addModel(model: TypedInstance, factSetId: FactSetId): StatefulQueryEngine {
+      this.factSets[factSetId].add(model)
       return this
    }
 
-   fun queryContext(): QueryContext {
-      return queryEngine.queryContext(models)
+   override fun queryContext(factSetIds: Set<FactSetId>, additionalFacts: Set<TypedInstance>): QueryContext {
+      val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
+      return QueryContext.from(schema, facts + additionalFacts, this, profiler)
    }
 }
 
-class DefaultQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, private val profiler: QueryProfiler = QueryProfiler()) : QueryEngine {
+// Note:  originally, there were two query engines (Default and Stateful), but only one was ever used (stateful).
+// I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
+// fold this into a single class later.
+// The seperation between what's in the base and whats in the concrete impl. is not well thought out currently.
+abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
-   override fun gather(queryString: String, factSet: Set<TypedInstance>): QueryResult {
+   override fun gather(queryString: String, context: QueryContext): QueryResult {
       // First pass impl.
       // Thinking here is that if I can add a new Hipster strategy that discovers all the
       // endpoints, then I can compose a result of gather() from multiple finds()
       val gatherQuery = queryParser.parse(queryString).map { it.copy(mode = QueryMode.GATHER) }.toSet()
-      return find(gatherQuery, factSet)
+      return find(gatherQuery, context)
    }
 
-   override fun queryContext(factSet: Set<TypedInstance>): QueryContext {
-      return QueryContext.from(schema, factSet, this, profiler)
-   }
+//   override fun queryContext(factSet: Set<TypedInstance>): QueryContext {
+//      return QueryContext.from(schema, factSet, this, profiler)
+//   }
 
-   override fun find(queryString: String, factSet: Set<TypedInstance>): QueryResult {
+   override fun find(queryString: String, context: QueryContext): QueryResult {
       val target = queryParser.parse(queryString)
-      return find(target, factSet)
+      return find(target, context)
    }
 
-   override fun find(target: QuerySpecTypeNode, factSet: Set<TypedInstance>): QueryResult {
-      return find(setOf(target), factSet)
-   }
-
-   override fun find(target: Set<QuerySpecTypeNode>, factSet: Set<TypedInstance>): QueryResult {
-      return find(target, queryContext(factSet))
+   override fun find(target: QuerySpecTypeNode, context: QueryContext): QueryResult {
+      return find(setOf(target), context)
    }
 
    override fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult {
       try {
          return doFind(target, context)
       } catch (e: Exception) {
-         log().error("Search failed with exception:",e);
+         log().error("Search failed with exception:", e);
          throw SearchRuntimeException(e, context.profiler.root)
       }
    }

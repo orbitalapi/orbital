@@ -45,7 +45,7 @@ service ClientService {
       return queryParser.parse(name)
    }
 
-   fun queryContext(): QueryContext = vyne().query().queryContext()
+   fun queryContext(): QueryContext = vyne().queryEngine().queryContext()
 }
 
 fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
@@ -218,7 +218,7 @@ class VyneTest {
       val (vyne, stubService) = testVyne(schema)
       val tradeValue = vyne.typedValue("TradeValue", "$2.00")
       stubService.addResponse("holdFunds", vyne.typedValue("HoldReceipt", "held-123"))
-      val result = vyne.query().find("HoldReceipt", setOf(tradeValue))
+      val result = vyne.query(additionalFacts = setOf(tradeValue)).find("HoldReceipt")
 
       expect(result.isFullyResolved).to.be.`true`
       expect(result["HoldReceipt"]!!.value).to.equal("held-123")

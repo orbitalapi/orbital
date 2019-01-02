@@ -26,7 +26,7 @@ class ModelsScanStrategyTest {
    fun given_targetIsNotPresentInContext_then_emptyListIsReturned() {
       val json = """{ "name" : "Jimmy's Choos" }"""
       vyne.addJsonModel("vyne.example.Client", json)
-      vyne.query()
+      vyne.queryEngine()
       val result = ModelsScanStrategy().invoke(TestSchema.typeNode("vyne.example.ClientId"), TestSchema.queryContext())
       expect(result.matchedNodes).to.be.empty
    }

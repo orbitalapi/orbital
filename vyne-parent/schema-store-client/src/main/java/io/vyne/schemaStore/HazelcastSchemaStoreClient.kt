@@ -41,7 +41,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
    }
 
    private fun invalidateCache() {
-      log().info("Cluster membership changed, so invalidating the schema cache.  Will rebuild on next query")
+      log().info("Cluster membership changed, so invalidating the schema cache.  Will rebuild on next queryEngine")
       schemaSet.invalidateAll()
    }
 

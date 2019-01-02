@@ -1,7 +1,9 @@
 package io.vyne.query.policyManager
 
+import io.vyne.FactSets
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
+import io.vyne.utils.log
 import lang.taxi.policies.*
 
 
@@ -11,29 +13,44 @@ class PolicyStatementEvaluator(private val evaluators: List<ConditionalPolicySta
       private val defaultEvaluators = listOf(ElseConditionEvaluator(), CaseConditionEvaluator())
    }
 
-   private fun evaluate(statement: PolicyStatement, context: QueryContext): Instruction? {
-      return evaluators.first { it.canSupport(statement.condition) }.evaluate(statement, context)
+   private fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction? {
+      return evaluators.first { it.canSupport(statement.condition) }.evaluate(statement, instance, context)
    }
 
-   fun evaluate(ruleset: RuleSet, context: QueryContext): Instruction? {
+   fun evaluate(ruleset: RuleSet, instance: TypedInstance, context: QueryContext): Instruction? {
+
+//      var matchedInstruction:Instruction? = null
+
       val instruction = ruleset.statements
          .asSequence()
-         .map { evaluate(it, context) }
-         .takeWhile { it == null }
-         .last()
-      TODO()
+         .map { policyStatement ->
+
+            val result = evaluate(policyStatement, instance, context)
+            if (result != null) {
+               log().debug("Policy statement \"${policyStatement.source.source.content}\" matched with instruction ${result.toString()}")
+            } else {
+               log().debug("Policy statement \"${policyStatement.source.source.content}\" did not match")
+            }
+//            matchedInstruction = result
+            result
+         }
+         .firstOrNull { it != null }
+
+//         .takeWhile { it == null }
+//         .last()
+      return instruction
    }
 }
 
 interface ConditionalPolicyStatementEvaluator {
    fun canSupport(condition: Condition): Boolean
-   fun evaluate(statement: PolicyStatement, context: QueryContext): Instruction?
+   fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction?
 }
 
 class ElseConditionEvaluator : ConditionalPolicyStatementEvaluator {
    override fun canSupport(condition: Condition): Boolean = condition is ElseCondition
 
-   override fun evaluate(statement: PolicyStatement, context: QueryContext): Instruction? {
+   override fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction? {
       return statement.instruction
    }
 
@@ -42,26 +59,43 @@ class ElseConditionEvaluator : ConditionalPolicyStatementEvaluator {
 class CaseConditionEvaluator : ConditionalPolicyStatementEvaluator {
    override fun canSupport(condition: Condition) = condition is CaseCondition
 
-   override fun evaluate(statement: PolicyStatement, context: QueryContext): Instruction? {
+   override fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction? {
       val condition = statement.condition as CaseCondition
-      val lhValue = resolve(condition.lhSubject, context)
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+      val lhValue = resolve(condition.lhSubject, instance, context)
+      val rhValue = resolve(condition.rhSubject, instance, context)
+      val evaluator = OperatorEvaluators.get(condition.operator)
+      return if (evaluator.evaluate(lhValue, rhValue)) {
+         statement.instruction
+      } else {
+         null
+      }
    }
 
-   private fun resolve(subject: Subject, context: QueryContext): Any {
+   private fun resolve(subject: Subject, instance: TypedInstance, context: QueryContext): Any? {
       return when (subject) {
-         is RelativeSubject -> resolve(subject, context)
+         is RelativeSubject -> resolve(subject, instance, context)
+         is LiteralArraySubject -> resolve(subject, context)
+         is LiteralSubject -> resolve(subject, context)
          else -> TODO()
       }
    }
 
-   private fun resolve(subject: RelativeSubject, context: QueryContext): TypedInstance {
-      val factSet = when (subject.source) {
-         RelativeSubject.RelativeSubjectSource.CALLER -> context.callerFacts
-         RelativeSubject.RelativeSubjectSource.THIS -> context.facts
+   private fun resolve(subject: LiteralSubject, context: QueryContext): Any? {
+      return subject.value
+   }
+
+   private fun resolve(subject: LiteralArraySubject, context: QueryContext): Any {
+      return subject
+   }
+
+   private fun resolve(subject: RelativeSubject, instance: TypedInstance, context: QueryContext): TypedInstance {
+      val contextToUse = when (subject.source) {
+         RelativeSubject.RelativeSubjectSource.CALLER -> context.queryEngine.queryContext(setOf(FactSets.CALLER))
+         // Use nothing from the context, except the current thing being filtered.
+         RelativeSubject.RelativeSubjectSource.THIS -> context.queryEngine.queryContext(setOf(FactSets.NONE), additionalFacts = setOf(instance))
       }
 
-      val result = context.queryEngine.find(subject.targetType.qualifiedName, factSet)
+      val result = contextToUse.find(subject.targetType.qualifiedName)
       if (result.isFullyResolved) {
          return result[subject.targetType.qualifiedName]!!
       } else {

@@ -149,7 +149,7 @@ namespace io.osmosis.demos.creditInc.isic {
       stubService.addResponse("convertRates", vyne.parseJsonModel("vyne.creditInc.Money", rateConversionResponse))
 
       val invoice = vyne.parseJsonModel("vyne.creditInc.Invoice", invoiceJson)
-      val result = vyne.query().find("vyne.creditInc.CreditRiskCost", setOf(invoice))
+      val result = vyne.query(additionalFacts = setOf(invoice)).find("vyne.creditInc.CreditRiskCost")
 // This is the expected (raw) solution -- other searches exist within this path:
 //      Search Type_instance(vyne.creditInc.Invoice) -> Type(vyne.creditInc.CreditRiskCost) found path:
 //      vyne.creditInc.Invoice -[Instance has attribute]-> vyne.creditInc.Invoice/amount

@@ -1,19 +1,30 @@
 package io.vyne
 
 import com.winterbe.expekt.expect
+import io.vyne.models.*
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
 class VynePolicyTest {
-   val taxiDef = """
+
+   // alt: process using SomeProcessor
+   fun schema(deskMismatchPolicyBehaviour: String = "filter"): TaxiSchema {
+
+      val taxiDef = """
 namespace test {
     type TradingDesk {
         deskId : DeskId as String
     }
+    // Dummy type for testing nested filtering
+    type TradeWrapper {
+        wrapperText : String
+        trade : Trade
+    }
     type Trade {
-        desk : DeskId
+        id : TradeId as Int
+        deskId : DeskId
         counterParty : CounterPartyId as String
         amount : TradeAmount as Decimal
     }
@@ -27,7 +38,7 @@ namespace test {
       userId : UserId as String
       userName : UserName as String
       auth : UserAuthorization
-      deskId : DeskId as String
+      deskId : DeskId as String?
    }
    type TraderConfig {
       userName : UserName
@@ -40,53 +51,173 @@ namespace test {
    }
    service TradeService {
       read operation listTrades():Trade[]
+      read operation getTrade(TradeId):Trade
+      read operation getTradeWrapper(TradeId):TradeWrapper
 
    }
 
     policy TradeDeskPolicy against Trade {
         read external {
             case caller.DeskId = this.DeskId -> permit
-            case caller.Groups = anyOf("ADMIN","COMPLIANCE") -> permit
-            case caller.DeskId != this.DeskId -> process using MaskTradeDetailsProcessor
-            else -> deny
+            case caller.Groups in ["ADMIN","COMPLIANCE"] -> permit
+            case caller.DeskId = null -> filter
+            case caller.DeskId != this.DeskId -> $deskMismatchPolicyBehaviour
+            else -> filter
         }
         read internal {
             permit
         }
         write {
             case caller.DeskId = this.DeskId -> permit
-            case caller.Groups = anyOf("ADMIN","COMPLIANCE") -> permit
-            case caller.DeskId != this.DeskId -> process using MaskTradeDetailsProcessor
-            else -> deny
+            case caller.Groups in ["ADMIN","COMPLIANCE"] -> permit
+            case caller.DeskId != this.DeskId -> $deskMismatchPolicyBehaviour
+            else -> filter
         }
     }
 }
    """.trimIndent()
-   val schema = TaxiSchema.from(taxiDef)
+      return TaxiSchema.from(taxiDef)
+   }
+
+
    @Test
    fun canRetrievePoliciesForType() {
-      val (vyne, stubService) = testVyne(schema)
+      val (vyne, _) = testVyne(schema())
       val type = vyne.getType("test.Trade")
       expect(vyne.getPolicy(type)).not.`null`
    }
 
+   // nonTraderUser doesnt have a deskId
+   private val nonTraderUser = """
+    {
+         "userId" : "supportGuy1",
+         "userName" : "Sean Support",
+         "deskId" : null,
+         "auth" : {
+            "groups" : ["IT-SUPPORT"]
+         }
+    }
+
+   """.trimIndent()
+   private val traderUser = """
+    {
+         "userId" : "jimmy123",
+         "userName" : "Jimmy Trader",
+         "deskId" : "desk1",
+         "auth" : {
+            "groups" : ["TRADERS"]
+         }
+    }
+         """.trimIndent()
+
+   private val trade1 = """{
+      "id" : 1,
+      "deskId" : "desk1",
+      "amount" : 300
+    }"""
+   private val trade2 = """{
+      "id" : 2,
+      "deskId" : "desk2",
+      "amount" : 500
+    }"""
+   private val tradeList = "[$trade1,$trade2]"
+
    @Test
    fun loadsPoliciesForDataType() {
 
-      val (vyne, stubService) = testVyne(schema)
-      vyne.addKeyValuePair("test.SessionToken", "aabbcc")
-      stubService.addResponse("listTrades", vyne.parseJsonModel("test.Trade[]", """
- [{
-   "deskId" : "desk1",
-    "tradeAmount" : 300
- },
- {
-   "deskId" : "desk2",
-   "tradeAmount" : 500
- }]
-      """.trimIndent()))
+      val (vyne, stubService) = testVyne(schema())
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
+      stubService.addResponse("findUser", vyne.parseJsonModel("test.User", traderUser))
+      stubService.addResponse("listTrades", vyne.parseJsonModel("test.Trade[]", tradeList))
 
-      val result = vyne.query().find("test.Trade[]")
-      TODO()
+      val context = vyne.queryEngine().queryContext()
+      context.find("test.Trade[]")
+
+      expect(stubService.invocations["tokenToUserId"]).to.have.size(1)
+      expect(stubService.invocations["findUser"]).to.have.size(1)
+   }
+
+   @Test
+   fun given_policyRestrictsReturnedValue_then_nullIsReturned() {
+      val (vyne, stubService) = testVyne(schema())
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      val tradeResponse = vyne.parseJsonModel("test.Trade", trade1)
+      stubService.addResponse("getTrade", tradeResponse)
+
+      stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
+      stubService.addResponse("findUser", vyne.parseJsonModel("test.User", nonTraderUser))
+
+      // Trade1 is filtered because our user doesn't have a desk id.
+      val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
+      val queryResult = context.find("test.Trade")
+
+      val trade = queryResult["test.Trade"]
+      expect(trade).instanceof(TypedNull::class.java)
+   }
+
+   @Test
+   fun given_policyRestrictsDataReturnedInCollection_then_itIsRemovedFromTheCollection() {
+      val (vyne, stubService) = testVyne(schema())
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      val tradeResponse = vyne.parseJsonModel("test.Trade[]", tradeList)
+      stubService.addResponse("listTrades", tradeResponse)
+
+      stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
+      stubService.addResponse("findUser", vyne.parseJsonModel("test.User", traderUser))
+
+      // Trade2 is filtered because our trader belongs to a different desl
+      val context = vyne.queryEngine().queryContext()
+      val queryResult = context.find("test.Trade[]")
+
+      val tradeCollection = queryResult["test.Trade[]"] as TypedCollection
+
+      // trade 1 is present, trade 2 is filtered
+      expect(tradeCollection).to.have.size(1)
+      val trade = tradeCollection.first() as TypedObject
+      expect(trade["id"].value).to.equal(1)
+   }
+
+   @Test
+   fun given_policyPermitsData_then_itIsPresentInResponse() {
+      val (vyne, stubService) = testVyne(schema())
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      stubService.addResponse("getTrade", vyne.parseJsonModel("test.Trade", trade1))
+
+      stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
+      stubService.addResponse("findUser", vyne.parseJsonModel("test.User", traderUser))
+
+      // Trade1 is filtered because our user doesn't have a desk id.
+      val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
+      val queryResult = context.find("test.Trade")
+
+      val trade = queryResult["test.Trade"]
+      expect(trade).instanceof(TypedInstance::class.java)
+   }
+
+   @Test
+   fun given_policyRestrictsNestedDataType_then_attributeIsReturnedAsNull() {
+      val (vyne, stubService) = testVyne(schema())
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      val tradeResponse = vyne.parseJsonModel("test.TradeWrapper", """
+          {
+             "wrapperText" : "Hello, world",
+             "trade" : $trade1
+          }
+      """.trimIndent())
+      stubService.addResponse("getTradeWrapper", tradeResponse)
+
+      stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
+      stubService.addResponse("findUser", vyne.parseJsonModel("test.User", nonTraderUser))
+
+      // Trade1 is filtered because our user doesn't have a desk id.
+      val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
+      val queryResult = context.find("test.TradeWrapper")
+
+      val trade = queryResult["test.TradeWrapper"]
+      expect(trade).instanceof(TypedObject::class.java)
+      val tradeWrapper = trade as TypedObject
+      expect(tradeWrapper["wrapperText"]).instanceof(TypedValue::class.java)
+      expect(tradeWrapper["trade"]).instanceof(TypedNull::class.java)
    }
 }
