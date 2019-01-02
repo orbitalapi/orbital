@@ -56,7 +56,7 @@ class PolicyAwareOperationInvocationServiceDecorator(private val operationServic
 
    private fun applyPolicyInstruction(value: TypedInstance, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
       val instruction = evaluator.evaluate(value, context, executionScope)
-      val processed = InstructionProcessors.get(instruction).process(instruction, value)
+      val processed = InstructionExecutors.get(instruction).execute(instruction, value)
       return processed
    }
 

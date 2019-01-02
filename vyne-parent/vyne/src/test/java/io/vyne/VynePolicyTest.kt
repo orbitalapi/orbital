@@ -4,6 +4,7 @@ import com.winterbe.expekt.expect
 import io.vyne.models.*
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
+import io.vyne.query.policyManager.StringMaskingProcessor
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -113,12 +114,14 @@ namespace test {
    private val trade1 = """{
       "id" : 1,
       "deskId" : "desk1",
-      "amount" : 300
+      "amount" : 300,
+      "counterParty" : "party1"
     }"""
    private val trade2 = """{
       "id" : 2,
       "deskId" : "desk2",
-      "amount" : 500
+      "amount" : 500,
+      "counterParty" : "party2"
     }"""
    private val tradeList = "[$trade1,$trade2]"
 
@@ -220,4 +223,24 @@ namespace test {
       expect(tradeWrapper["wrapperText"]).instanceof(TypedValue::class.java)
       expect(tradeWrapper["trade"]).instanceof(TypedNull::class.java)
    }
+
+   @Test
+   fun givenPolicyMasksDataType_then_attributeIsReturnedAsMasked() {
+      val (vyne, stubService) = testVyne(schema("process using vyne.StringMasker(['counterParty'])"))
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      val tradeResponse = vyne.parseJsonModel("test.Trade", trade2)
+      stubService.addResponse("getTrade", tradeResponse)
+
+      stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
+      stubService.addResponse("findUser", vyne.parseJsonModel("test.User", traderUser))
+
+      // Trade2 is masked because our users deskId doesn't match
+      val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 2)))
+      val queryResult = context.find("test.Trade")
+
+      val trade = queryResult["test.Trade"] as TypedObject
+      val counterParty = trade["counterParty"]
+      expect(counterParty.value).to.equal(StringMaskingProcessor.MASKED_VALUE)
+   }
+
 }

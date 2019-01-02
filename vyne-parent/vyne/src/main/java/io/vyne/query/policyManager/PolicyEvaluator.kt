@@ -18,7 +18,7 @@ import lang.taxi.policies.OperationScope
  */
 data class ExecutionScope(val operationType: String?, val operationScope: OperationScope)
 
-class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator = PolicyStatementEvaluator(), private val defaultInstruction: Instruction = Instruction(Instruction.InstructionType.PERMIT)) {
+class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator = PolicyStatementEvaluator(), private val defaultInstruction: Instruction = Instruction(Instruction.InstructionType.PERMIT, null)) {
 
 
    fun evaluate(target: Set<QuerySpecTypeNode>, context: QueryContext): PolicyEvaluationResult {
