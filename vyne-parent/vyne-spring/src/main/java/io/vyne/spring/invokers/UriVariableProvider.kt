@@ -15,7 +15,7 @@ class UriVariableProvider {
          val parameterValuePair = parameters.findByTypeName(name)
             ?: parameters.findByParameterName(name)
             ?: error("No argument provided for url variable $name")
-         name to parameterValuePair.second.value
+         name to parameterValuePair.second.value!!
       }.toMap()
    }
 

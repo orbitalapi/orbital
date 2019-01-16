@@ -11,19 +11,22 @@ import {LayoutModule} from '@angular/cdk/layout';
 import {
   MatAutocompleteModule,
   MatButtonModule,
-  MatCardModule,
+  MatButtonToggleModule,
+  MatCardModule, MatChipsModule,
   MatExpansionModule,
   MatFormFieldModule,
   MatIconModule,
   MatInputModule,
   MatListModule,
+  MatMenuModule,
+  MatProgressBarModule,
   MatSelectModule,
-  MatSidenavModule,
+  MatSidenavModule, MatSlideToggleModule,
+  MatStepperModule,
   MatTableModule,
   MatTabsModule,
-  MatMenuModule,
   MatToolbarModule,
-  MatTreeModule, MatButtonToggleModule, MatStepperModule, MatProgressSpinnerModule, MatProgressBarModule,
+  MatTreeModule,
 } from '@angular/material';
 import {TypeListComponent} from './type-list/type-list.component';
 import {CommonModule} from "@angular/common";
@@ -46,10 +49,19 @@ import {QueryHistoryComponent} from './query-history/query-history.component';
 import {MomentModule} from "angular2-moment";
 import {ParameterViewComponent} from './type-list/parameter-view.component';
 import {TaxiViewerModule} from "./query-wizard/taxi-viewer/taxi-viewer.module";
-import { SchemaExplorerComponent } from './schema-explorer/schema-explorer.component';
-import { NewSchemaWizardComponent } from './schema-explorer/new-schema-wizard/new-schema-wizard.component';
-import { FactEditorComponent } from './query-wizard/fact-editor/fact-editor.component';
-import { TypeAutocompleteComponent } from './query-wizard/type-autocomplete.component';
+import {SchemaExplorerComponent} from './schema-explorer/schema-explorer.component';
+import {NewSchemaWizardComponent} from './schema-explorer/new-schema-wizard/new-schema-wizard.component';
+import {FactEditorComponent} from './query-wizard/fact-editor/fact-editor.component';
+import {TypeAutocompleteComponent} from './query-wizard/type-autocomplete.component';
+import {PolicyManagerComponent} from './policy-manager/policy-manager.component';
+import { PolicyEditorComponent } from './policy-manager/policy-editor.component';
+import { CaseConditionEditorComponent } from './policy-manager/case-condition-editor.component';
+import { MultivalueEditorComponent } from './policy-manager/multivalue-editor.component';
+import {EqualsEditorComponent} from "./policy-manager/equals-editor.component";
+import { StatementEditorComponent } from './policy-manager/statement-editor.component';
+import { ElseEditorComponent } from './policy-manager/else-editor.component';
+import { InstructionSelectorComponent } from './policy-manager/instruction-selector.component';
+import { StatementDisplayComponent } from './policy-manager/statement-display.component';
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
@@ -78,7 +90,16 @@ const appRoutes = [
     SchemaExplorerComponent,
     NewSchemaWizardComponent,
     FactEditorComponent,
-    TypeAutocompleteComponent
+    TypeAutocompleteComponent,
+    PolicyManagerComponent,
+    PolicyEditorComponent,
+    CaseConditionEditorComponent,
+    EqualsEditorComponent,
+    MultivalueEditorComponent,
+    StatementEditorComponent,
+    ElseEditorComponent,
+    InstructionSelectorComponent,
+    StatementDisplayComponent
   ],
   imports: [
     RouterModule.forRoot(
@@ -107,6 +128,8 @@ const appRoutes = [
     MatAutocompleteModule,
     MatInputModule,
     MatMenuModule,
+    MatChipsModule,
+    MatSlideToggleModule,
     MatButtonToggleModule,
     MatSelectModule,
     MatStepperModule,

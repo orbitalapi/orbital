@@ -1,0 +1,16 @@
+<div class="content">
+  <div class="policy-list">
+    <div class="add-new">
+      <button mat-raised-button color="primary" (click)="createNewPolicy()">Add new</button>
+    </div>
+    <div *ngFor="let policy of policies" class="policy-list-member"
+         [ngClass]="selectedPolicy == policy ? 'selected' : ''"
+         (click)="selectPolicy(policy)">
+      <div class="policy-name">{{ policy.name }}</div>
+    </div>
+  </div>
+  <div class="policy-editor-container">
+    <app-policy-editor [policy]="selectedPolicy" *ngIf="selectedPolicy"></app-policy-editor>
+  </div>
+</div>
+

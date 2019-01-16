@@ -3,15 +3,16 @@ import {Schema, Type} from "../services/types.service";
 import {FormControl} from "@angular/forms";
 import {map, startWith} from "rxjs/operators";
 import {Observable} from "rxjs";
-import {MatAutocompleteSelectedEvent} from "@angular/material";
+import {FloatLabelType, MatAutocompleteSelectedEvent} from "@angular/material";
 
 @Component({
   selector: 'app-type-autocomplete',
   template: `
-    <mat-form-field style="width: 100%">
+    <mat-form-field style="width: 100%" [floatLabel]="floatLabel">
       <input type="text" [placeholder]="placeholder" matInput
              [matAutocomplete]="auto"
              [formControl]="filterInput"
+             [value]="selectedTypeDisplayName"
              required>
       <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption (select)="onTypeSelected($event)"
                         (optionSelected)="onTypeSelected($event)">
@@ -27,6 +28,8 @@ export class TypeAutocompleteComponent implements OnInit {
   placeholder: string;
   @Input()
   schema: Schema;
+  @Input()
+  floatLabel: FloatLabelType = 'auto';
 
   filteredTypes: Observable<Type[]>;
 
@@ -34,6 +37,11 @@ export class TypeAutocompleteComponent implements OnInit {
 
   @Output()
   typeSelected = new EventEmitter<Type>();
+
+  @Input()
+  displayFullName: boolean = true;
+
+  selectedTypeDisplayName: string;
 
   ngOnInit() {
     this.filteredTypes = this.filterInput.valueChanges.pipe(
@@ -43,8 +51,9 @@ export class TypeAutocompleteComponent implements OnInit {
   }
 
   onTypeSelected(event: MatAutocompleteSelectedEvent) {
-    const selectedType = this.schema.types.find(type => type.name.fullyQualifiedName == event.option.value)
-    this.typeSelected.emit(selectedType)
+    const selectedType = this.schema.types.find(type => type.name.fullyQualifiedName == event.option.value);
+    this.typeSelected.emit(selectedType);
+    this.selectedTypeDisplayName = (this.displayFullName) ? selectedType.name.fullyQualifiedName : selectedType.name.name;
   }
 
   private _filter(value: string): Type[] {

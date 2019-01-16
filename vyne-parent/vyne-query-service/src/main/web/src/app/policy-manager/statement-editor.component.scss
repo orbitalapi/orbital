@@ -1,0 +1,28 @@
+@import "../theme";
+
+.statement-container {
+  display: flex;
+  margin-bottom: 10px;
+  &:hover {
+    .button-container {
+      opacity: 1;
+    }
+  }
+}
+
+.button-container {
+  width: 100px;
+  opacity: 0;
+  mat-icon {
+    padding: 6px;
+    margin: 4px;
+    border: 1px solid $light-purple-grey;
+    cursor: pointer;
+
+    &:hover {
+      border: 1px solid $light-purple-grey-300;
+    }
+  }
+
+
+}

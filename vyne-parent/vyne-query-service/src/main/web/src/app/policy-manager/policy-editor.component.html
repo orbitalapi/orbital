@@ -1,0 +1,17 @@
+<div class="component-container">
+  <form>
+    <mat-form-field appearance="outline">
+      <mat-label>Policy title</mat-label>
+      <input matInput placeholder="Policy title">
+    </mat-form-field>
+  </form>
+  <div class="ruleset-container" *ngFor="let ruleset of policy.rules">
+    <div class="statement-list-container">
+      <div class="statement-container" *ngFor="let statement of ruleset.statements">
+        <app-statement-editor [statement]="statement" [policy]="policy" [ruleset]="ruleset" (statementUpdated)="onStatementUpdated()"
+        (deleteStatement)="deleteStatement(ruleset,$event)"></app-statement-editor>
+      </div>
+      <button mat-stroked-button (click)="addCase(ruleset)">Add case</button>
+    </div>
+  </div>
+</div>

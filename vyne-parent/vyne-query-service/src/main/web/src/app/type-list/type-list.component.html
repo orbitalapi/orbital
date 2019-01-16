@@ -49,6 +49,11 @@
                 <type-links [member]="member"></type-links>
               </ng-template>
             </mat-tab>
+            <mat-tab label="Policies" *ngIf="member.kind == 'TYPE'">
+              <ng-template matTabContent>
+                <app-policy-manager [targetType]="type(member)"></app-policy-manager>
+              </ng-template>
+            </mat-tab>
           </mat-tab-group>
         </div>
         <mat-action-row>

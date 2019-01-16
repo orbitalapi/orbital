@@ -1,5 +1,9 @@
 @import "../theme";
 
+mat-toolbar {
+  flex: 0 0 96px;
+  z-index: 999;
+}
 
 ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
   color: rgba(255,255,255,0.6);

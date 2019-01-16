@@ -30,6 +30,10 @@ export class TypeListComponent implements OnInit {
     );
   }
 
+  type(schemaMember: SchemaMember): Type {
+    return this.schema.types.find((t) => t.name.fullyQualifiedName == schemaMember.name.fullyQualifiedName)
+  }
+
   private loadTypes() {
     this.typeService.getTypes().subscribe(
       schema => {

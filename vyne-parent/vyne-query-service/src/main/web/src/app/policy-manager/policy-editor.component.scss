@@ -1,0 +1,15 @@
+@import "../theme";
+
+.component-container {
+  padding: 0 20px;
+}
+
+.line-wrapper {
+  display: flex;
+  align-items: center;
+  padding-bottom: 8px;
+}
+
+::ng-deep .mat-form-field-infix {
+  border-top: none;
+}
