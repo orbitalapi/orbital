@@ -1,10 +1,10 @@
 @import "./policy-editor.component";
 
 .statement-editor-wrapper {
-  border: 1px solid $light-purple-grey-300;
+  border: 3px solid $vyne-lilac;
   background-color: $light-purple-grey;
-  border-radius: 4px;
-  padding: 8px;
+  border-radius: 8px;
+  padding: 12px;
 }
 
 app-type-autocomplete {

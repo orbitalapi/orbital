@@ -10,6 +10,11 @@
   padding-bottom: 8px;
 }
 
-::ng-deep .mat-form-field-infix {
-  border-top: none;
+//::ng-deep .mat-form-field-infix {
+//  border-top: none;
+//}
+
+.title-form-field {
+  width: 100%;
+  margin-bottom: 30px;
 }

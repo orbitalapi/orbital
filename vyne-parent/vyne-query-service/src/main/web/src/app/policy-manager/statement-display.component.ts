@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {CaseCondition, Policy, PolicyStatement} from "./policies";
+import {CaseCondition, Policy, PolicyStatement, RuleSetUtils} from "./policies";
 
 @Component({
   selector: 'app-statement-display',
@@ -7,12 +7,13 @@ import {CaseCondition, Policy, PolicyStatement} from "./policies";
     <div class="component-container">
       <div *ngIf="caseCondition" class="statement-line">
         <span>When caller's</span>
-        <span class="editable-content" (click)="startEdit()">{{ caseCondition.description() }}</span>
+        <span class="editable-content" (click)="startEdit()" *ngIf="caseCondition.description()">{{ caseCondition.description() }}</span>
+        <span class="editable-content hint" (click)="startEdit()" *ngIf="!caseCondition.description()">Click to edit</span>
         <span>then</span>
         <span class="editable-content" (click)="startEdit()">{{ statement.instruction.description() }}</span>
       </div>
       <div *ngIf="!caseCondition" class="statement-line">
-        <span *ngIf="policy.rules[0].statements.length > 1">Otherwise, </span>
+        <span class="prefix-word">{{elsePrefixWord}}</span>
         <span class="editable-content" (click)="startEdit()">{{statement.instruction.description()}}</span>
       </div>
     </div>
@@ -22,6 +23,10 @@ import {CaseCondition, Policy, PolicyStatement} from "./policies";
 export class StatementDisplayComponent implements OnInit {
 
   ngOnInit() {
+  }
+
+  get elsePrefixWord(): string {
+    return RuleSetUtils.elsePrefixWord(this.policy.rules[0]);
   }
 
   @Input()

@@ -21,6 +21,10 @@ mat-toolbar {
   }
 }
 
+.policy-editor-container {
+  flex-grow: 1;
+}
+
 .policy-list-member {
   padding: 10px;
   border-bottom: 1px solid $light-purple-grey-300;

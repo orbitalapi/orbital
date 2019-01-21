@@ -19,7 +19,7 @@ export class Policy implements SourceElement {
   }
 
   static createNew(targetType: Type): Policy {
-    return new Policy("New Policy", targetType, [
+    return new Policy("NewPolicy", targetType, [
       new RuleSet([
         new PolicyStatement(new ElseCondition(), new Instruction(InstructionType.PERMIT))
       ])
@@ -33,6 +33,13 @@ ${this.rules.map(r => r.src()).join("\n")
   }
 }
 
+
+export class RuleSetUtils {
+  static elsePrefixWord(ruleSet: RuleSet): string {
+    if (!ruleSet) return "";
+    return (ruleSet.statements.length > 1) ? "Otherwise, " : "Always ";
+  }
+}
 
 export class RuleSet implements SourceElement {
   constructor(public statements: PolicyStatement[] = []) {
@@ -58,8 +65,11 @@ ${statementSrc}
 
 export class PolicyStatement implements SourceElement {
   constructor(public condition: Condition,
-              public instruction: Instruction) {
+              public instruction: Instruction,
+              public editing:boolean = false) {
   }
+
+
 
   src(): string {
     return `${this.condition.src()} -> ${this.instruction.src()}`;
@@ -75,13 +85,40 @@ export class Operator {
   static NOT_EQUAL = new Operator("!=", "does not equal");
   static IN = new Operator("in", "is in");
 
-  static operators(): Operator[] {
-    return [
-      this.EQUALS,
-      this.NOT_EQUAL,
-      this.IN
-    ]
-  }
+  static operators: Operator[] = [
+    Operator.EQUALS,
+    Operator.NOT_EQUAL,
+    Operator.IN
+  ];
+
+  static EQUALS_PROPERTY: DisplayOperator = {
+    operator: Operator.EQUALS,
+    label: 'equals property',
+    literalOrProperty: 'property',
+    matches: isOperatorType(Operator.EQUALS, 'RelativeSubject')
+  };
+  static displayOperators: DisplayOperator[] = [
+    Operator.EQUALS_PROPERTY,
+    {
+      operator: Operator.EQUALS,
+      label: 'equals value',
+      literalOrProperty: 'literal',
+      matches: isOperatorType(Operator.EQUALS, 'LiteralSubject')
+    },
+    {
+      operator: Operator.NOT_EQUAL,
+      label: 'does not equal property',
+      literalOrProperty: 'property',
+      matches: isOperatorType(Operator.NOT_EQUAL, 'RelativeSubject')
+    },
+    {
+      operator: Operator.NOT_EQUAL,
+      label: 'does not equal value',
+      literalOrProperty: 'literal',
+      matches: isOperatorType(Operator.NOT_EQUAL, 'LiteralSubject')
+    },
+    {operator: Operator.IN, label: 'is in', matches: isOperatorType(Operator.IN, 'LiteralArraySubject')}
+  ];
 }
 
 
@@ -107,13 +144,34 @@ export class CaseCondition implements Condition, PlainTextElement {
   rhSubject: Subject;
   operator: Operator = Operator.EQUALS;
 
+  // Operators are tricky, as equals property vs equals value isn't knowable
+  // until after the rhSubject is set.
+  // DisplayOperator is set when editing in the UI, and derivable when
+  // receiving from the server
+  private _displayOperator: DisplayOperator;
+
+  get displayOperator(): DisplayOperator {
+    if (this._displayOperator) return this._displayOperator;
+
+    const derived = this.deriveDisplayOperator();
+    return (derived) ? derived : Operator.EQUALS_PROPERTY;
+  }
+
+  set displayOperator(value: DisplayOperator) {
+    this._displayOperator = value;
+  }
+
+  private deriveDisplayOperator(): DisplayOperator {
+    return Operator.displayOperators.find(o => o.matches(this))
+  }
+
   src(): string {
     if (!this.lhSubject || !this.rhSubject) return "";
     return `when ${this.lhSubject.src()} ${this.operator.symbol} ${this.rhSubject.src()}`;
   }
 
   description(): string {
-    if (!this.lhSubject || !this.rhSubject) return "";
+    if (!this.lhSubject || !this.rhSubject) return null;
     return `${this.lhSubject.description()} ${this.operator.label} ${this.rhSubject.description()}`;
   }
 }
@@ -223,6 +281,21 @@ export enum InstructionType {
   PERMIT = "PERMIT",
   PROCESS = "PROCESS",
   FILTER = "FILTER"
+}
+
+
+function isOperatorType(operator: Operator, subjectType: SubjectType) {
+  return function (caseCondition: CaseCondition) {
+    if (!caseCondition || !caseCondition.rhSubject) return false;
+    return caseCondition.rhSubject.type == subjectType && caseCondition.operator == operator;
+  }
+}
+
+export interface DisplayOperator {
+  operator: Operator;
+  label: string;
+  literalOrProperty?: 'literal' | 'property';
+  matches: (CaseCondition) => boolean
 }
 
 

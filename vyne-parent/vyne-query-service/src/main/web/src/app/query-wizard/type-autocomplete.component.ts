@@ -12,7 +12,6 @@ import {FloatLabelType, MatAutocompleteSelectedEvent} from "@angular/material";
       <input type="text" [placeholder]="placeholder" matInput
              [matAutocomplete]="auto"
              [formControl]="filterInput"
-             [value]="selectedTypeDisplayName"
              required>
       <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption (select)="onTypeSelected($event)"
                         (optionSelected)="onTypeSelected($event)">
@@ -35,13 +34,30 @@ export class TypeAutocompleteComponent implements OnInit {
 
   filterInput = new FormControl();
 
+  private _selectedType:Type;
+
+  @Input()
+  set selectedType(value:Type) {
+    this.setSelectedTypeName(value);
+    this.typeSelected.emit(value);
+    this.selectedTypeChange.emit(value);
+    this.setSelectedTypeName(value);
+    this._selectedType = value;
+  }
+
+  get selectedType():Type {
+    return this._selectedType;
+  }
+
+  @Output()
+  selectedTypeChange = new EventEmitter<Type>();
+
+  // Deprecated - bind to selectedType / selectedTypeChange event
   @Output()
   typeSelected = new EventEmitter<Type>();
 
   @Input()
   displayFullName: boolean = true;
-
-  selectedTypeDisplayName: string;
 
   ngOnInit() {
     this.filteredTypes = this.filterInput.valueChanges.pipe(
@@ -51,9 +67,19 @@ export class TypeAutocompleteComponent implements OnInit {
   }
 
   onTypeSelected(event: MatAutocompleteSelectedEvent) {
-    const selectedType = this.schema.types.find(type => type.name.fullyQualifiedName == event.option.value);
-    this.typeSelected.emit(selectedType);
-    this.selectedTypeDisplayName = (this.displayFullName) ? selectedType.name.fullyQualifiedName : selectedType.name.name;
+    console.log("onTypeSelected");
+    const eventType = this.schema.types.find(type => type.name.fullyQualifiedName == event.option.value);
+    this.selectedType = eventType
+  }
+
+  private setSelectedTypeName(selectedType:Type) {
+    if (!selectedType) {
+      this.filterInput.setValue(null)
+      // this.selectedTypeDisplayName = null;
+    } else {
+      const selectedTypeDisplayName = (this.displayFullName) ? selectedType.name.fullyQualifiedName : selectedType.name.name;
+      this.filterInput.setValue(selectedTypeDisplayName);
+    }
   }
 
   private _filter(value: string): Type[] {

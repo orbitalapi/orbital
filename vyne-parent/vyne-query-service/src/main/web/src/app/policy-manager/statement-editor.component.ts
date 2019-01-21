@@ -7,15 +7,15 @@ import {Policy, PolicyStatement, RuleSet} from "./policies";
     <div class="statement-container">
       <div class="button-container row-cell">
         <mat-icon *ngIf="!editing" (click)="editing = true">edit</mat-icon>
-        <mat-icon *ngIf="canDelete" (click)="deleteMe()">delete</mat-icon>
         <mat-icon *ngIf="editing" (click)="editing = false">check</mat-icon>
+        <mat-icon *ngIf="canDelete" (click)="deleteMe()">delete</mat-icon>
       </div>
       <div class="display-editor-container row-cell">
         <app-statement-display (edit)="editing = true" [statement]="statement" *ngIf="!editing" [policy]="policy"></app-statement-display>
         <div class="statement-switch-container" [ngSwitch]="statement.condition.text" *ngIf="editing">
           <app-case-condition-editor (statementUpdated)="onStatementUpdated()" *ngSwitchCase="'case'"
                                      [statement]="statement" [policyType]="policy.targetType"></app-case-condition-editor>
-          <app-else-editor *ngSwitchCase="'else'" [statement]="statement"
+          <app-else-editor *ngSwitchCase="'else'" [statement]="statement" [ruleSet]="policy.rules[0]"
                            (statementUpdated)="onStatementUpdated()"></app-else-editor>
         </div>
       </div>
@@ -24,7 +24,13 @@ import {Policy, PolicyStatement, RuleSet} from "./policies";
 })
 export class StatementEditorComponent implements OnInit {
 
-  editing: boolean = false;
+  get editing(): boolean {
+    return this.statement.editing
+  }
+  set editing(value:boolean) {
+    this.statement.editing = value
+  }
+
 
   @Input()
   statement: PolicyStatement;
@@ -43,7 +49,7 @@ export class StatementEditorComponent implements OnInit {
 
   get canDelete(): boolean {
     const isLast = this.ruleset.statements.indexOf(this.statement) == this.ruleset.statements.length - 1;
-    return !this.editing && !isLast;
+    return !isLast;
   }
 
   ngOnInit() {
