@@ -22,8 +22,9 @@ data class SchemaSet(val schemas: List<VersionedSchema>) {
    }
 }
 
+typealias SchemaId  = String
 data class VersionedSchema(val name: String, val version: String, val content: String) : Serializable {
-   val id = "$name:$version"
+   val id:SchemaId = "$name:$version"
 }
 
 @RequestMapping("/schemas/taxi")

@@ -18,8 +18,8 @@ import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 
 
-object RetyConfig {
-   val RETRYABLE_PROCESS_NAME = "processName"
+object RetryConfig {
+   const val RETRYABLE_PROCESS_NAME = "processName"
    fun simpleRetryWithBackoff(): RetryTemplate {
       val retryPolicy = SimpleRetryPolicy()
       retryPolicy.maxAttempts = Integer.MAX_VALUE
@@ -39,7 +39,7 @@ object RetyConfig {
    }
 }
 
-class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate: RetryTemplate = RetyConfig.simpleRetryWithBackoff(), val pollFrequency: Duration = Duration.ofSeconds(1L)) : SchemaStoreClient {
+class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate: RetryTemplate = RetryConfig.simpleRetryWithBackoff(), val pollFrequency: Duration = Duration.ofSeconds(1L)) : SchemaStoreClient {
 
    private var poller: Disposable? = null
    private var schemaSet: SchemaSet = SchemaSet.EMPTY
@@ -50,7 +50,7 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
                              schemaVersion: String,
                              schema: String): Mono<Either<CompilationException, Schema>> {
       retryTemplate.execute<Any, Exception> { context: RetryContext ->
-         context.setAttribute(RetyConfig.RETRYABLE_PROCESS_NAME, "Publish schemas")
+         context.setAttribute(RetryConfig.RETRYABLE_PROCESS_NAME, "Publish schemas")
          log().debug("Submitting schema $schemaName v$schemaVersion")
          schemaService.submitSchema(schema, schemaName, schemaVersion)
          log().debug("Schema $schemaName v$schemaVersion submitted successfully")

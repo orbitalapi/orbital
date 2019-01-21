@@ -9,6 +9,7 @@ import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import org.funktionale.either.Either
 import reactor.core.publisher.Mono
+import java.io.Serializable
 
 internal typealias ClusterMemberId = String
 
@@ -20,19 +21,22 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       .build(
          object : CacheLoader<SchemaSetCacheKey, SchemaSet>() {
             override fun load(p0: SchemaSetCacheKey?): SchemaSet {
-               return SchemaSet(map().values.toList())
+               return SchemaSet(map().values.toList().map { it.schema })
             }
 
          }
       )
 
    override fun memberRemoved(event: MembershipEvent) {
-      val removedSchema = map().remove(event.member.uuid)
-      if (removedSchema != null) {
-         log().info("Removed schema ${removedSchema.id} because the owning member was removed from the cluster")
-      } else {
-         log().debug("Member ${event.member.uuid} has gone offline, but it's schema has already been removed, likely by another member.  No action required")
-      }
+      log().info("Member ${event.member.uuid} has gone offline - schemas will be evicted, and the cache invalidated")
+      map().removeAll { (_, cachedSchema) -> cachedSchema.cacheMemberId == event.member.uuid }
+//
+//      val removedSchema = map().remove(event.member.uuid)
+//      if (removedSchema != null) {
+//         log().info("Removed schema ${removedSchema.id} because the owning member was removed from the cluster")
+//      } else {
+//         log().debug("Member ${event.member.uuid} has gone offline, but it's schema has already been removed, likely by another member.  No action required")
+//      }
       invalidateCache()
    }
 
@@ -52,7 +56,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       hazelcast.cluster.addMembershipListener(this)
    }
 
-   private fun map(): IMap<ClusterMemberId, VersionedSchema> {
+   private fun map(): IMap<SchemaId, CacheMemberSchema> {
       return hazelcast.getMap("vyneSchemas")
    }
 
@@ -65,7 +69,9 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
 
             // TODO : Here, we're still storing ONLY the raw schema we've received, not the merged schema.
             // That seems wasteful, as we're just gonna re-compute this later.
-            map().put(hazelcast.cluster.localMember.uuid, VersionedSchema(schemaName, schemaVersion, schema))
+
+            val cachedSchema = CacheMemberSchema(hazelcast.cluster.localMember.uuid, versionedSchema)
+            map()[versionedSchema.id] = cachedSchema
             invalidateCache()
 //            sink.success(schemaSet().id)
          }
@@ -85,3 +91,5 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
    }
 
 }
+
+data class CacheMemberSchema(val cacheMemberId: String, val schema: VersionedSchema) : Serializable
