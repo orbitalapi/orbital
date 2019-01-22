@@ -1,6 +1,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {Policy} from "./policies";
-import {Type, TypesService} from "../services/types.service";
+import { TypesService} from "../services/types.service";
+import {Type} from "../services/schema";
 
 @Component({
   selector: 'app-policy-manager',

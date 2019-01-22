@@ -40,7 +40,7 @@ export class StatementDisplayComponent implements OnInit {
 
   get caseCondition(): CaseCondition {
     if (!this.statement || !this.statement.condition) return null;
-    if (this.statement.condition.text !== 'case') return null;
+    if (this.statement.condition.type !== 'case') return null;
     return <CaseCondition>this.statement.condition;
   }
 

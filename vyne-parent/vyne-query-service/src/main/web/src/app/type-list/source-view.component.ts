@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {SchemaMember} from "../services/types.service";
+import {SchemaMember} from "../services/schema";
 
 @Component({
   selector: 'type-source-view',

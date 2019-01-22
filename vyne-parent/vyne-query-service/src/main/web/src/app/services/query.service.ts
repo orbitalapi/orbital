@@ -3,7 +3,7 @@ import {HttpClient} from "@angular/common/http";
 import {Observable} from "rxjs/internal/Observable";
 
 import {environment} from 'src/environments/environment';
-import {QualifiedName, TypedInstance} from "./types.service";
+import {QualifiedName, TypedInstance} from "./schema";
 
 @Injectable()
 export class QueryService {

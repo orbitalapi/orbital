@@ -2,7 +2,7 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {MatChipInputEvent} from '@angular/material';
 import {CaseCondition, LiteralArraySubject} from "./policies";
-import {Schema} from "../services/types.service";
+import {Schema} from "../services/schema";
 
 
 @Component({

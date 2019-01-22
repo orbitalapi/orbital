@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {CaseCondition, Instruction, InstructionProcessor, InstructionType} from "./policies";
 import {MatSelectChange} from "@angular/material";
-import {Schema} from "../services/types.service";
+import {Schema} from "../services/schema";
 
 @Component({
   selector: 'app-instruction-selector',

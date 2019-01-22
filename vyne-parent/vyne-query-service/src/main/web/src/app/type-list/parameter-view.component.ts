@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {Metadata, Operation, Parameter, SchemaMember, Type} from "../services/types.service";
+import {Metadata, Operation, Parameter, SchemaMember, Type} from "../services/schema";
 
 @Component({
   selector: 'parameter-view',

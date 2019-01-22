@@ -1,8 +1,9 @@
 import {Component, OnInit} from '@angular/core';
-import {TypesService, VersionedSchema} from "../services/types.service";
+import {TypesService} from "../services/types.service";
 import {Observable} from "rxjs/internal/Observable";
 import {Router} from "@angular/router";
 import {AppInfoService, QueryServiceConfig} from "../services/app-info.service";
+import {VersionedSchema} from "../services/schema";
 
 @Component({
   selector: 'app-schema-explorer',

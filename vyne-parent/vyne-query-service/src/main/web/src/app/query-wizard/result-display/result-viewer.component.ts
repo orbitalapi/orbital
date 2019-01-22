@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {Schema, Type, TypedInstance, TypeReference} from "../../services/types.service";
+import {Schema, Type, TypedInstance, TypeReference} from "../../services/schema";
 
 @Component({
   selector: 'result-viewer',

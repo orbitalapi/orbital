@@ -3,7 +3,8 @@ import {ProfilerOperation, QueryResult} from "../../services/query.service";
 import {QueryFailure} from "../query-wizard.component";
 import {MatTreeNestedDataSource} from "@angular/material";
 import {NestedTreeControl} from "@angular/cdk/tree";
-import {QualifiedName, Schema, Type, TypesService} from "../../services/types.service";
+import { TypesService} from "../../services/types.service";
+import {QualifiedName, Schema, Type} from "../../services/schema";
 
 @ Component({
   selector: 'query-result-container',

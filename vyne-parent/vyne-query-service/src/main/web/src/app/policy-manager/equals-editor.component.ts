@@ -1,9 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Schema, Type} from "../services/types.service";
+import {QualifiedName, Schema, Type, TypeReference} from "../services/schema";
 import {FormControl} from "@angular/forms";
-import {map, startWith} from "rxjs/operators";
 import {Observable} from "rxjs";
-import {MatAutocompleteSelectedEvent} from "@angular/material";
 import {CaseCondition, LiteralSubject, RelativeSubject, RelativeSubjectSource} from "./policies";
 
 @Component({
@@ -18,16 +16,11 @@ import {CaseCondition, LiteralSubject, RelativeSubject, RelativeSubjectSource} f
       </div>
       <div class="property-input-container" *ngSwitchCase="'property'">
         <mat-form-field style="width: 100%" floatLabel="never">
-          <input type="text" placeholder="Property name" matInput
-                 [matAutocomplete]="auto"
-                 [formControl]="propertyNameInput"
-                 required>
-          <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption (select)="onPropertySelected($event)"
-                            (optionSelected)="onPropertySelected($event)">
-            <mat-option *ngFor="let propertyName of filteredPropertyNames | async" [value]="propertyName">
-              {{ propertyName }}
+          <mat-select placeholder="Property" [(value)]="selectedProperty">
+            <mat-option *ngFor="let property of properties" [value]="property">
+              {{ property.name }}
             </mat-option>
-          </mat-autocomplete>
+          </mat-select>
         </mat-form-field>
       </div>
     </div>
@@ -58,6 +51,11 @@ export class EqualsEditorComponent implements OnInit {
   @Input()
   schema: Schema;
 
+  get properties(): QualifiedName[] {
+    if (!this.type) return [];
+    return Object.values(this.type.attributes).map((typeRef: TypeReference) => typeRef.name)
+  }
+
   @Output()
   statementUpdated: EventEmitter<string> = new EventEmitter();
 
@@ -73,27 +71,20 @@ export class EqualsEditorComponent implements OnInit {
   // literalOrProperty: boolean = this.LITERAL;
 
   ngOnInit() {
-    this.filteredPropertyNames = this.propertyNameInput.valueChanges.pipe(
-      startWith(''),
-      map(value => this._filter(value))
-    );
   }
 
-  onPropertySelected(event: MatAutocompleteSelectedEvent) {
-    const selectedPropertyName = event.option.value;
-    const selectedTypeRef = this.type.attributes[selectedPropertyName];
-    const selectedType = this.schema.types.find((t) => t.name.fullyQualifiedName == selectedTypeRef.fullyQualifiedName)
-    this.caseCondition.rhSubject = new RelativeSubject(RelativeSubjectSource.THIS, selectedType.name, selectedPropertyName);
+  get selectedProperty(): QualifiedName {
+    if (!this.caseCondition || this.caseCondition.rhSubject.type !== "RelativeSubject") {
+      return null
+    }
+    const relativeSubject = this.caseCondition.rhSubject as RelativeSubject;
+    // to match the value in the drop-down, return the property from the type
+    return this.properties.find(p => p.fullyQualifiedName == relativeSubject.targetTypeName.fullyQualifiedName)
+  }
+
+  set selectedProperty(value: QualifiedName) {
+    this.caseCondition.rhSubject = new RelativeSubject(RelativeSubjectSource.THIS, value, null);
     this.statementUpdated.emit("")
-  }
-
-  private _filter(value: string): string[] {
-    if (!this.type) return [];
-    const filterValue = value.toLowerCase();
-    const attributeNames = Object.keys(this.type.attributes);
-    if (!value) return attributeNames;
-
-    return attributeNames.filter(option => option.toLowerCase().indexOf(filterValue) !== -1);
   }
 
   onLiteralValueUpdated($event) {

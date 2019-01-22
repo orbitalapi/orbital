@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {QualifiedName, Schema, Type} from "../services/types.service";
+import {QualifiedName, Schema, Type} from "../services/schema";
 import {FormControl} from "@angular/forms";
 import {map, startWith} from "rxjs/operators";
 import {Observable} from "rxjs";
@@ -38,9 +38,14 @@ export class TypeAutocompleteComponent implements OnInit {
 
   @Input()
   set selectedTypeName(name: QualifiedName) {
-    // TODO : Could this cause issues because the schema isn't provided yet?
-    const type = this.schema.types.find(t => t.name.fullyQualifiedName == name.fullyQualifiedName)
-    this.selectedType = type
+    if (!name) {
+      this.selectedType = null;
+    } else {
+      // TODO : Could this cause issues because the schema isn't provided yet?
+      const type = this.schema.types.find(t => t.name.fullyQualifiedName == name.fullyQualifiedName)
+      this.selectedType = type
+
+    }
   }
 
   @Input()

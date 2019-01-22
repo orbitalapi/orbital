@@ -1,6 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
-import {Modifier, Schema, Type, TypeReference, TypesService} from "../services/types.service";
+import {Modifier, Schema, Type, TypeReference} from "../services/schema";
+import { TypesService} from "../services/types.service";
 import {map} from "rxjs/operators";
 import {
   ITdDynamicElementConfig,

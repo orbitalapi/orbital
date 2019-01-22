@@ -1,5 +1,6 @@
 package io.vyne.queryService.policies
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.vyne.schemas.Policy
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
@@ -42,19 +43,28 @@ data class PolicyStatementDto(
             is CaseCondition -> CaseConditionDto.from(policyStatement.condition as CaseCondition)
             else -> error("Unhandled condition type")
          }
-         return PolicyStatementDto(condition,policyStatement.instruction)
+         return PolicyStatementDto(condition, policyStatement.instruction)
       }
    }
 }
 
-interface ConditionDto
+interface ConditionDto {
+   val type: String
+}
 
-class ElseConditionDto : ConditionDto
+class ElseConditionDto : ConditionDto {
+   @get:JsonProperty
+   override val type: String = "else"
+}
+
 data class CaseConditionDto(
    val lhSubject: SubjectDto,
    val operator: Operator,
    val rhSubject: SubjectDto
 ) : ConditionDto {
+   @get:JsonProperty
+   override val type: String = "case"
+
    companion object {
       fun from(caseCondition: CaseCondition): CaseConditionDto {
          return CaseConditionDto(
@@ -67,9 +77,11 @@ data class CaseConditionDto(
 }
 
 interface SubjectDto {
+   val type: String
+
    companion object {
       fun from(subject: Subject): SubjectDto {
-         return when(subject) {
+         return when (subject) {
             is LiteralSubject -> LiteralSubjectDto(subject.value)
             is LiteralArraySubject -> LiteralArraySubjectDto(subject.values)
             is RelativeSubject -> RelativeSubjectDto(subject)
@@ -79,9 +91,19 @@ interface SubjectDto {
 
 }
 
-data class RelativeSubjectDto(val source: RelativeSubject.RelativeSubjectSource, val targetTypeName: QualifiedName):SubjectDto {
+data class RelativeSubjectDto(val source: RelativeSubject.RelativeSubjectSource, val targetTypeName: QualifiedName) : SubjectDto {
+   @get:JsonProperty
+   override val type: String = "RelativeSubject"
+
    constructor(subject: RelativeSubject) : this(subject.source, subject.targetType.qualifiedName.fqn())
 }
 
-data class LiteralArraySubjectDto(val values: List<Any>) : SubjectDto
-data class LiteralSubjectDto(val value: Any?) : SubjectDto
+data class LiteralArraySubjectDto(val values: List<Any>) : SubjectDto {
+   @get:JsonProperty
+   override val type: String = "LiteralArraySubject"
+}
+
+data class LiteralSubjectDto(val value: Any?) : SubjectDto {
+   @get:JsonProperty
+   override val type: String = "LiteralSubject"
+}

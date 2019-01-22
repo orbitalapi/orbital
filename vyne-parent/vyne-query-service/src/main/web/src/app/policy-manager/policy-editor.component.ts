@@ -1,6 +1,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {CaseCondition, Instruction, Policy, PolicyStatement, RuleSet} from "./policies";
-import {SchemaImportRequest, SchemaSpec, TypesService} from "../services/types.service";
+import {SchemaImportRequest, TypesService} from "../services/types.service";
+import {SchemaSpec} from "../services/schema";
 
 @Component({
   selector: 'app-policy-editor',
@@ -42,7 +43,7 @@ export class PolicyEditorComponent implements OnInit {
   }
 
   addCase(ruleset: RuleSet) {
-    ruleset.appendStatement(new PolicyStatement(new CaseCondition(), Instruction.permit(), true))
+    ruleset.appendStatement(new PolicyStatement(CaseCondition.empty(), Instruction.permit(), true))
   }
 
   onStatementUpdated() {

@@ -1,14 +1,10 @@
 import {Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
 import {
-  QualifiedName,
-  SchemaGraph,
-  SchemaGraphNode,
-  SchemaMember,
-  SchemaNodeSet,
   TypesService
 } from "../services/types.service";
 import * as shape from 'd3-shape';
 import {Observable} from "rxjs/internal/Observable";
+import {QualifiedName, SchemaGraph, SchemaGraphNode, SchemaMember, SchemaNodeSet} from "../services/schema";
 
 @Component({
   selector: 'type-links',

@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {SchemaMember, Type, TypeReference} from "../services/types.service";
+import {SchemaMember, Type, TypeReference} from "../services/schema";
 
 @Component({
   selector: 'type-property-view',

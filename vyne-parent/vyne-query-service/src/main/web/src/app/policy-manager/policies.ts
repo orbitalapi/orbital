@@ -1,6 +1,7 @@
 // import {ElseCondition, Instruction, InstructionType, Policy, PolicyStatement, RuleSet} from "./policies";
 
-import {QualifiedName, Type} from "../services/types.service";
+import {QualifiedName, Type} from "../services/schema";
+import {plainToClass} from "class-transformer";
 
 interface SourceElement {
   src(): string
@@ -48,6 +49,16 @@ ${this.ruleSets.map(r => r.src()).join("\n")}
     imports = imports.concat(this.ruleSets.flatMap(r => r.imports()));
     return imports
   }
+
+  static parseDtoArray(policyDtoArray: any[]): Policy[] {
+    return policyDtoArray.map(dto => this.parseDto(dto));
+  }
+
+  static parseDto(dto: any): Policy {
+    let name = plainToClass(QualifiedName, dto.name as QualifiedName);
+    let typeName = plainToClass(QualifiedName, dto.targetTypeName as QualifiedName);
+    return new Policy(name, typeName, dto.ruleSets.map(r => RuleSet.fromDto(r)))
+  }
 }
 
 
@@ -82,6 +93,10 @@ ${statementSrc}
     const idx = this.statements.indexOf(statement);
     this.statements.splice(idx, 1);
   }
+
+  static fromDto(rulesetDto: any): RuleSet {
+    return new RuleSet(rulesetDto.statements.map(s => PolicyStatement.fromDto(s)));
+  }
 }
 
 export class PolicyStatement implements SourceElement {
@@ -99,21 +114,31 @@ export class PolicyStatement implements SourceElement {
     return this.condition.imports().concat(this.instruction.imports())
   }
 
+  static fromDto(dto: any): PolicyStatement {
+    return new PolicyStatement(
+      ConditionUtils.fromDto(dto.condition),
+      Instruction.fromDto(dto.instruction)
+    )
+  }
 }
 
 export class Operator {
-  constructor(readonly symbol: string, readonly label: string) {
+  constructor(readonly symbol: string, readonly label: string, readonly enumName: string) {
   }
 
-  static EQUALS = new Operator("=", "equals");
-  static NOT_EQUAL = new Operator("!=", "does not equal");
-  static IN = new Operator("in", "is in");
+  static EQUALS = new Operator("=", "equals", "EQUAL");
+  static NOT_EQUAL = new Operator("!=", "does not equal", "NOT_EQUAL");
+  static IN = new Operator("in", "is in", "IN");
 
   static operators: Operator[] = [
     Operator.EQUALS,
     Operator.NOT_EQUAL,
     Operator.IN
   ];
+
+  static fromEnum(enumValue: string): Operator {
+    return this.operators.find(o => o.enumName == enumValue)
+  }
 
   static EQUALS_PROPERTY: DisplayOperator = {
     operator: Operator.EQUALS,
@@ -146,8 +171,19 @@ export class Operator {
 }
 
 
+class ConditionUtils {
+  static fromDto(dto: any): Condition {
+    switch (dto.type) {
+      case "else":
+        return new ElseCondition();
+      case "case":
+        return CaseCondition.fromDto(dto)
+    }
+  }
+}
+
 export interface Condition extends SourceElement {
-  readonly text: string
+  readonly type: string
 }
 
 export class ElseCondition implements Condition {
@@ -155,7 +191,7 @@ export class ElseCondition implements Condition {
     return "else"
   }
 
-  readonly text: string = "else";
+  readonly type: string = "else";
 
   description(): string {
     return "Otherwise,";
@@ -167,10 +203,19 @@ export class ElseCondition implements Condition {
 }
 
 export class CaseCondition implements Condition, PlainTextElement {
-  readonly text: string = "case";
-  lhSubject: Subject;
-  rhSubject: Subject;
-  operator: Operator = Operator.EQUALS;
+  readonly type: string = "case";
+
+  constructor(
+    public lhSubject: Subject,
+    public operator: Operator = Operator.EQUALS,
+    public rhSubject: Subject
+  ) {
+  }
+
+  static empty(): CaseCondition {
+    return new CaseCondition(null, Operator.EQUALS, null)
+  }
+
 
   // Operators are tricky, as equals property vs equals value isn't knowable
   // until after the rhSubject is set.
@@ -207,9 +252,31 @@ export class CaseCondition implements Condition, PlainTextElement {
     if (!this.lhSubject || !this.rhSubject) return null;
     return `${this.lhSubject.description()} ${this.operator.label} ${this.rhSubject.description()}`;
   }
+
+  static fromDto(dto: any): CaseCondition {
+    let c = new CaseCondition(
+      SubjectUtils.fromDto(dto.lhSubject),
+      Operator.fromEnum(dto.operator),
+      SubjectUtils.fromDto(dto.rhSubject)
+    );
+    return c;
+  }
 }
 
 export type  SubjectType = 'RelativeSubject' | 'LiteralSubject' | 'LiteralArraySubject';
+
+class SubjectUtils {
+  static fromDto(subject: any): Subject {
+    switch (subject.type) {
+      case "RelativeSubject":
+        return RelativeSubject.fromDto(subject);
+      case "LiteralArraySubject" :
+        return new LiteralArraySubject(subject.values);
+      case "LiteralSubject" :
+        return new LiteralSubject(subject.value)
+    }
+  }
+}
 
 export interface Subject extends SourceElement, PlainTextElement {
   readonly type: SubjectType
@@ -235,6 +302,11 @@ export class RelativeSubject implements Subject {
 
   description(): string {
     return this.targetTypeName.name
+  }
+
+  static fromDto(subject: any): RelativeSubject {
+    let targetTypeName: QualifiedName = plainToClass(QualifiedName, subject.targetTypeName as QualifiedName);
+    return new RelativeSubject(subject.source, targetTypeName, null)
   }
 }
 
@@ -304,6 +376,13 @@ export class Instruction implements SourceElement, PlainTextElement {
   description(): string {
     const processorString = (this.processor) ? this.processor.description() : "";
     return `${this.type.toString().toLowerCase()}${processorString}`
+  }
+
+  static fromDto(dto: Instruction): Instruction {
+    return new Instruction(
+      dto.type,
+      dto.processor
+    )
   }
 }
 

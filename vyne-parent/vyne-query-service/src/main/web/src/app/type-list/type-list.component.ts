@@ -1,10 +1,11 @@
 import {Component, OnInit} from '@angular/core';
-import {Schema, SchemaMember, SchemaMemberType, Service, Type, TypesService} from "../services/types.service";
+import {TypesService} from "../services/types.service";
 import * as _ from "lodash";
 import {Router} from "@angular/router";
 import {FormControl} from "@angular/forms";
 import {Observable} from "rxjs/internal/Observable";
 import {map, startWith} from "rxjs/operators";
+import {Schema, SchemaMember, SchemaMemberType, Service, Type} from "../services/schema";
 
 @Component({
   selector: 'app-type-list',

@@ -1,15 +1,10 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {
-  CaseCondition, DisplayOperator,
-  Operator,
-  PolicyStatement,
-  RelativeSubject,
-  RelativeSubjectSource,
-  SubjectType
-} from "./policies";
-import {QualifiedName, Schema, Type, TypesService} from "../services/types.service";
+import {CaseCondition, Operator, PolicyStatement, RelativeSubject, RelativeSubjectSource} from "./policies";
+import {QualifiedName, Schema, Type} from "../services/schema";
+import {TypesService} from "../services/types.service";
 import {Observable} from "rxjs";
 import {MatSelectChange} from "@angular/material";
+import {map} from "rxjs/operators";
 
 @Component({
   selector: 'app-case-condition-editor',
@@ -37,7 +32,7 @@ import {MatSelectChange} from "@angular/material";
             </mat-form-field>
           </div>
           <div class="rh-value-container" [ngSwitch]="condition?.displayOperator?.operator.symbol">
-            <app-equals-editor [caseCondition]="condition" [type]="policyType" [schema]="schema | async"
+            <app-equals-editor [caseCondition]="condition" [type]="policyType | async" [schema]="schema | async"
                                *ngSwitchDefault (statementUpdated)="statementUpdated.emit('')"
                                [literalOrProperty]="condition?.displayOperator?.literalOrProperty"></app-equals-editor>
             <app-multivalue-editor [caseCondition]="condition" *ngSwitchCase="'in'"
@@ -57,13 +52,20 @@ import {MatSelectChange} from "@angular/material";
 export class CaseConditionEditorComponent {
 
   @Input()
-  policyType: Type;
+  policyTypeName: QualifiedName;
 
   @Output()
   statementUpdated: EventEmitter<string> = new EventEmitter();
 
   @Input()
   statement: PolicyStatement;
+
+  get policyType(): Observable<Type> {
+    // if (!this.policyTypeName || !this.schema) return null;
+    return this.schema.pipe(map((s:Schema) => {
+      return s.types.find(t => t.name.fullyQualifiedName == this.policyTypeName.fullyQualifiedName)
+    }))
+  }
 
   get condition(): CaseCondition {
     return this.statement ? <CaseCondition>this.statement.condition : null;
@@ -86,6 +88,7 @@ export class CaseConditionEditorComponent {
   }
 
   onCallerTypeSelected(type: Type) {
+    if (!type) return;
     this.condition.lhSubject = new RelativeSubject(RelativeSubjectSource.CALLER, type.name);
     this.statementUpdated.emit("");
     console.log("type selected")

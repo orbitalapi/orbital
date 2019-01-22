@@ -12,10 +12,10 @@ import {Policy, PolicyStatement, RuleSet} from "./policies";
       </div>
       <div class="display-editor-container row-cell">
         <app-statement-display (edit)="editing = true" [statement]="statement" *ngIf="!editing" [policy]="policy"></app-statement-display>
-        <div class="statement-switch-container" [ngSwitch]="statement.condition.text" *ngIf="editing">
+        <div class="statement-switch-container" [ngSwitch]="statement.condition.type" *ngIf="editing">
           <app-case-condition-editor (statementUpdated)="onStatementUpdated()" *ngSwitchCase="'case'"
-                                     [statement]="statement" [policyType]="policy.targetType"></app-case-condition-editor>
-          <app-else-editor *ngSwitchCase="'else'" [statement]="statement" [ruleSet]="policy.rules[0]"
+                                     [statement]="statement" [policyTypeName]="policy.targetTypeName"></app-case-condition-editor>
+          <app-else-editor *ngSwitchCase="'else'" [statement]="statement" [ruleSet]="policy.ruleSets[0]"
                            (statementUpdated)="onStatementUpdated()"></app-else-editor>
         </div>
       </div>
