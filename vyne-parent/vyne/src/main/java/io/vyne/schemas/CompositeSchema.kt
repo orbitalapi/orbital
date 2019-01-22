@@ -1,5 +1,7 @@
 package io.vyne.schemas
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+
 
 class CompositeSchema(private val schemas: List<Schema>) : Schema {
    override val attributes: Set<QualifiedName>
@@ -12,6 +14,7 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
       get() = schemas.flatMap { it.services }.toSet()
 
    override val policies: Set<Policy>
+      @JsonIgnore
       get() = schemas.flatMap { it.policies }.toSet()
 
    override val typeCache: TypeCache

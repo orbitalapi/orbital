@@ -26,7 +26,7 @@ export class StatementDisplayComponent implements OnInit {
   }
 
   get elsePrefixWord(): string {
-    return RuleSetUtils.elsePrefixWord(this.policy.rules[0]);
+    return RuleSetUtils.elsePrefixWord(this.policy.ruleSets[0]);
   }
 
   @Input()

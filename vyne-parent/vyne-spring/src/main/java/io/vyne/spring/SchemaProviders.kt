@@ -2,6 +2,7 @@ package io.vyne.spring
 
 import io.vyne.schemaStore.*
 import io.vyne.schemas.Schema
+import io.vyne.schemas.taxi.NamedSource
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import lang.taxi.generators.java.TaxiGenerator
@@ -51,7 +52,8 @@ class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourc
       if (storeClient.schemaSet() != lastBuildSchemaSet) {
          this.lastBuildSchemaSet = storeClient.schemaSet()
          log().debug("Rebuilding schemas based on SchemaSet ${this.lastBuildSchemaSet.id}")
-         this.schemas = schemasByName().map { (name, content) -> TaxiSchema.from(content, name) }
+         val namedSources = schemasByName().map { (name, content) -> NamedSource(content,name) }
+         this.schemas = TaxiSchema.from(namedSources)
       }
    }
 

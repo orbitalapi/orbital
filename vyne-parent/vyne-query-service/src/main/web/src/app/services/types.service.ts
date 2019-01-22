@@ -6,6 +6,7 @@ import {HttpClient} from "@angular/common/http";
 
 import {environment} from 'src/environments/environment';
 import {map} from "rxjs/operators";
+import {Policy} from "../policy-manager/policies";
 
 @Injectable()
 export class TypesService {
@@ -35,6 +36,10 @@ export class TypesService {
     return this.http
       .get<SchemaGraph>(`${environment.queryServiceUrl}/types/${typeName}/links`)
   };
+
+  getPolicies(typeName:string):Observable<Policy[]> {
+    return this.http.get<Policy[]>(`${environment.queryServiceUrl}/types/${typeName}/policies`)
+  }
 
   getTypes = (): Observable<Schema> => {
     if (this.schema) {
@@ -104,11 +109,23 @@ export interface SchemaSpec {
 
 export class QualifiedName {
   name: string;
+  namespace: string;
   fullyQualifiedName: string;
 
   static nameOnly(fullyQualifiedName: string): string {
     let parts = fullyQualifiedName.split(".");
     return parts[parts.length - 1];
+  }
+
+  static from(fullyQualifiedName:string):QualifiedName {
+    const parts = fullyQualifiedName.split(".");
+    const name = QualifiedName.nameOnly(fullyQualifiedName);
+    const namespace = parts.splice(parts.length - 1, 1).join(".");
+    const qualifiedName = new QualifiedName();
+    qualifiedName.fullyQualifiedName = fullyQualifiedName;
+    qualifiedName.namespace = namespace;
+    qualifiedName.name = name;
+    return qualifiedName
   }
 }
 
@@ -257,7 +274,7 @@ export class SchemaMember {
   static fromService(service: Service): SchemaMember[] {
     return service.operations.map(operation => {
       return new SchemaMember(
-        {name: operation.name, fullyQualifiedName: service.name.fullyQualifiedName + " #" + operation.name},
+        {name: operation.name, fullyQualifiedName: service.name.fullyQualifiedName + " #" + operation.name, namespace: service.name.namespace},
         SchemaMemberType.OPERATION,
         null,
         operation,

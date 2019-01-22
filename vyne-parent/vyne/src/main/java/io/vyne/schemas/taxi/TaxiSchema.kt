@@ -165,10 +165,79 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
    }
 
    companion object {
-      val LANGUAGE = "Taxi"
-      fun from(taxi: String, sourceName: String = "<unknown>"): TaxiSchema {
-         return TaxiSchema(Compiler(CharStreams.fromString(taxi, sourceName)).compile())
+      const val LANGUAGE = "Taxi"
+      fun from(sources: List<NamedSource>, imports: List<TaxiSchema> = emptyList()): List<TaxiSchema> {
+         val typesInSources = sources.flatMap { namedSource ->
+            Compiler(namedSource.taxi).declaredTypeNames().map { it to namedSource }
+         }.toMap()
+
+         val sourcesWithDependencies = sources.map { namedSource ->
+            val dependentSourceFiles = Compiler(namedSource.taxi).declaredImports().mapNotNull { typesInSources[it] }.distinct()
+            SourceWithDependencies(namedSource, dependentSourceFiles)
+         }
+
+         return DependencyAwareSchemaBuilder(sourcesWithDependencies,imports).build()
       }
+
+      internal fun from(source:NamedSource, importSources: List<TaxiSchema> = emptyList()):TaxiSchema {
+         return from(source.taxi, source.sourceName, importSources)
+      }
+
+      fun from(taxi: String, sourceName: String = "<unknown>", importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
+         return TaxiSchema(Compiler(CharStreams.fromString(taxi, sourceName), importSources.map { it.document }).compile())
+      }
+   }
+}
+
+class CircularDependencyInSourcesException(message:String) : RuntimeException(message)
+
+private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependencies>, val importSources:List<TaxiSchema>) {
+   private val namedSources: Map<NamedSource, SourceWithDependencies> = sources.associateBy { it.source }
+   private val builtSchemas = mutableMapOf<SourceWithDependencies, TaxiSchema>()
+   private val schemasBeingBuild = mutableListOf<SourceWithDependencies>()
+   fun build(): List<TaxiSchema> {
+      sources.forEach { source ->
+         buildWithDependencies(source)
+      }
+      return builtSchemas.values.toList()
+   }
+
+   private fun buildWithDependencies(source:SourceWithDependencies) {
+
+      if (!builtSchemas.containsKey(source)) {
+         if (schemasBeingBuild.contains(source)) {
+            val message = "A circular dependency in sources exists: ${schemasBeingBuild.joinToString(" -> ") { it.source.sourceName }}"
+            throw CircularDependencyInSourcesException(message)
+         }
+         schemasBeingBuild.add(source)
+
+         // Build dependencies first
+         source.dependencies.forEach {
+            buildWithDependencies(namedSources[it]!!)
+         }
+
+         // Now build the actual file
+         getOrBuild(source)
+
+         schemasBeingBuild.remove(source)
+      }
+   }
+
+   private fun getOrBuild(source:SourceWithDependencies):TaxiSchema {
+      return builtSchemas.getOrPut(source) {
+         val imports = builtSchemas.values + importSources
+         val schema = TaxiSchema.from(source.source, imports)
+         schema
+      }
+   }
+}
+
+private data class SourceWithDependencies(val source: NamedSource, val dependencies: List<NamedSource>)
+
+data class NamedSource(val taxi: String, val sourceName: String) {
+   companion object {
+      fun unnamed(taxi: String) = NamedSource(taxi, "<unknown>")
+      fun unnamed(taxi: List<String>) = taxi.map { unnamed(it) }
    }
 }
 

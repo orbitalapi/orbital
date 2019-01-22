@@ -7,7 +7,7 @@ import {
   RelativeSubjectSource,
   SubjectType
 } from "./policies";
-import {Schema, Type, TypesService} from "../services/types.service";
+import {QualifiedName, Schema, Type, TypesService} from "../services/types.service";
 import {Observable} from "rxjs";
 import {MatSelectChange} from "@angular/material";
 
@@ -23,7 +23,7 @@ import {MatSelectChange} from "@angular/material";
             class="fact-type-input line-component"
             floatLabel="never"
             displayFullName="false"
-            [selectedType]="selectedCallerType"
+            [selectedTypeName]="selectedCallerType"
             [schema]="schema | async" (typeSelected)="onCallerTypeSelected($event)"
             placeholder="Select type"></app-type-autocomplete>
           <div class="operator-wrapper line-component">
@@ -78,15 +78,15 @@ export class CaseConditionEditorComponent {
     this.schema = typeService.getTypes()
   }
 
-  get selectedCallerType(): Type {
+  get selectedCallerType(): QualifiedName {
     if (!this.condition || !this.condition.lhSubject) return null;
     if (this.condition.lhSubject.type !== 'RelativeSubject') return null;
     const relativeSubject = <RelativeSubject>this.condition.lhSubject;
-    return relativeSubject.targetType
+    return relativeSubject.targetTypeName
   }
 
   onCallerTypeSelected(type: Type) {
-    this.condition.lhSubject = new RelativeSubject(RelativeSubjectSource.CALLER, type);
+    this.condition.lhSubject = new RelativeSubject(RelativeSubjectSource.CALLER, type.name);
     this.statementUpdated.emit("");
     console.log("type selected")
   }

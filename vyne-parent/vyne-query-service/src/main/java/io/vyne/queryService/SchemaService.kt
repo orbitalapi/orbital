@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import io.vyne.queryService.policies.PolicyDto
 import io.vyne.queryService.schemas.SchemaImportRequest
 import io.vyne.queryService.schemas.SchemaImportService
 import io.vyne.queryService.schemas.SchemaPreview
@@ -32,6 +33,17 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
    @GetMapping(path = ["/types"])
    fun getTypes(): Schema {
       return schemaProvider.schema()
+   }
+
+   @GetMapping(path = ["/types/{typeName}/policies"])
+   fun getPolicies(@PathVariable("typeName") typeName: String): List<PolicyDto> {
+      val schema = schemaProvider.schema()
+      if (!schema.hasType(typeName)) {
+         throw NotFoundException("Type $typeName was not found in this schema")
+      }
+      val type = schema.type(typeName)
+      val policy = schema.policy(type)
+      return listOfNotNull(policy).map { PolicyDto.from(it) }
    }
 
    /**

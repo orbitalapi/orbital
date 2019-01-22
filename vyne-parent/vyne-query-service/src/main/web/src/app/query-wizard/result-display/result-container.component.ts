@@ -42,7 +42,7 @@ export class ResultContainerComponent implements OnInit {
   }
 
   get unmatchedNodes(): string {
-    let queryResult = <QueryResult> this.result;
+    let queryResult = <QueryResult>this.result;
     return queryResult.unmatchedNodes.map(qn => qn.name).join(", ")
   }
 
@@ -53,7 +53,8 @@ export class ResultContainerComponent implements OnInit {
         let parts = typeName.split(".");
         return {
           name: parts[parts.length - 1],
-          fullyQualifiedName: typeName
+          fullyQualifiedName: typeName,
+          namespace: parts.concat().splice(parts.length - 1, 1).join(".")
         }
       })
   }

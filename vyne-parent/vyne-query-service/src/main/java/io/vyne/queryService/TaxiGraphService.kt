@@ -9,6 +9,7 @@ import io.vyne.schemas.Relationship
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemas.OperationNames
+import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import org.springframework.web.bind.annotation.*
 
@@ -46,7 +47,8 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
 
    @RequestMapping(value = "/types/{typeName}/links")
    fun getLinksFromType(@PathVariable("typeName") typeName: String): SchemaGraph {
-      val schema: TaxiSchema = TaxiSchema.from(schemaProvider.schemaString())
+
+      val schema: Schema = schemaProvider.schema()
       val graph = VyneGraphBuilder(schema).buildDisplayGraph()
       val typeElement = if (typeName.contains("@@")) {
          val nodeId = OperationNames.displayNameFromOperationName(typeName.fqn())
@@ -59,7 +61,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
       return schemaGraph(edges, schema)
    }
 
-   private fun schemaGraph(edges: MutableIterable<GraphEdge<Element, Relationship>>, schema: TaxiSchema): SchemaGraph {
+   private fun schemaGraph(edges: MutableIterable<GraphEdge<Element, Relationship>>, schema: Schema): SchemaGraph {
       val schemaGraphNodes = edges.collateElements().map { toSchemaGraphNode(it) }.toSet()
       val schemaGraphLinks = edges.map { toSchemaGraphLink(it) }.toSet()
 

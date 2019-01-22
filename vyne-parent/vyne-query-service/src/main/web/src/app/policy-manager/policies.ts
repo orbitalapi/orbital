@@ -1,9 +1,11 @@
 // import {ElseCondition, Instruction, InstructionType, Policy, PolicyStatement, RuleSet} from "./policies";
 
-import {Type} from "../services/types.service";
+import {QualifiedName, Type} from "../services/types.service";
 
 interface SourceElement {
   src(): string
+
+  imports(): QualifiedName[]
 }
 
 interface PlainTextElement {
@@ -12,14 +14,16 @@ interface PlainTextElement {
 
 export class Policy implements SourceElement {
   constructor(
-    public name: string,
-    public targetType: Type,
-    public rules: RuleSet[] = []
+    public name: QualifiedName,
+    public targetTypeName: QualifiedName,
+    public ruleSets: RuleSet[] = []
   ) {
   }
 
   static createNew(targetType: Type): Policy {
-    return new Policy("NewPolicy", targetType, [
+    let qualifiedName = targetType.name.namespace + "." + "NewPolicy";
+
+    return new Policy(QualifiedName.from(qualifiedName), targetType.name, [
       new RuleSet([
         new PolicyStatement(new ElseCondition(), new Instruction(InstructionType.PERMIT))
       ])
@@ -27,9 +31,22 @@ export class Policy implements SourceElement {
   }
 
   src(): string {
-    return `policy ${this.name} against ${this.targetType.name.fullyQualifiedName} {
-${this.rules.map(r => r.src()).join("\n")
-      }`;
+    const importSrc = this.imports().map(imp => `import ${imp.fullyQualifiedName}`).join("\n");
+
+    return `
+${importSrc}
+
+namespace ${this.name.namespace}
+    
+policy ${this.name.name} against ${this.targetTypeName.fullyQualifiedName} {
+${this.ruleSets.map(r => r.src()).join("\n")}
+}`;
+  }
+
+  imports(): QualifiedName[] {
+    let imports = [this.targetTypeName];
+    imports = imports.concat(this.ruleSets.flatMap(r => r.imports()));
+    return imports
   }
 }
 
@@ -57,6 +74,10 @@ ${statementSrc}
   }`;
   }
 
+  imports(): QualifiedName[] {
+    return this.statements.flatMap(s => s.imports())
+  }
+
   removeStatement(statement: PolicyStatement) {
     const idx = this.statements.indexOf(statement);
     this.statements.splice(idx, 1);
@@ -66,13 +87,16 @@ ${statementSrc}
 export class PolicyStatement implements SourceElement {
   constructor(public condition: Condition,
               public instruction: Instruction,
-              public editing:boolean = false) {
+              public editing: boolean = false) {
   }
-
 
 
   src(): string {
     return `${this.condition.src()} -> ${this.instruction.src()}`;
+  }
+
+  imports(): QualifiedName[] {
+    return this.condition.imports().concat(this.instruction.imports())
   }
 
 }
@@ -136,6 +160,10 @@ export class ElseCondition implements Condition {
   description(): string {
     return "Otherwise,";
   }
+
+  imports(): QualifiedName[] {
+    return []
+  }
 }
 
 export class CaseCondition implements Condition, PlainTextElement {
@@ -165,9 +193,14 @@ export class CaseCondition implements Condition, PlainTextElement {
     return Operator.displayOperators.find(o => o.matches(this))
   }
 
+  imports(): QualifiedName[] {
+    if (!this.lhSubject || !this.rhSubject) return [];
+    return this.lhSubject.imports().concat(this.rhSubject.imports())
+  }
+
   src(): string {
     if (!this.lhSubject || !this.rhSubject) return "";
-    return `when ${this.lhSubject.src()} ${this.operator.symbol} ${this.rhSubject.src()}`;
+    return `case ${this.lhSubject.src()} ${this.operator.symbol} ${this.rhSubject.src()}`;
   }
 
   description(): string {
@@ -187,17 +220,21 @@ export class RelativeSubject implements Subject {
 
   constructor(
     public source: RelativeSubjectSource,
-    public targetType: Type,
+    public targetTypeName: QualifiedName,
     public propertyName?: string
   ) {
   }
 
   src(): string {
-    return `${this.source.toString().toLowerCase()}.${this.targetType.name.fullyQualifiedName}`;
+    return `${this.source.toString().toLowerCase()}.${this.targetTypeName.fullyQualifiedName}`;
+  }
+
+  imports(): QualifiedName[] {
+    return [this.targetTypeName]
   }
 
   description(): string {
-    return this.targetType.name.name
+    return this.targetTypeName.name
   }
 }
 
@@ -216,6 +253,11 @@ export class LiteralArraySubject implements Subject {
     return `[ ${this.values.map(v => `"${v}"`).join(",")} ]`;
   }
 
+  imports(): QualifiedName[] {
+    return []
+  }
+
+
   description(): string {
     return this.src();
   }
@@ -229,6 +271,10 @@ export class LiteralSubject implements Subject {
 
   src(): string {
     return `"${this.value.toString()}"`;
+  }
+
+  imports(): QualifiedName[] {
+    return []
   }
 
   description(): string {
@@ -251,6 +297,10 @@ export class Instruction implements SourceElement, PlainTextElement {
     return `${this.type.toString().toLowerCase()}${processorString}`;
   }
 
+  imports(): QualifiedName[] {
+    return []
+  }
+
   description(): string {
     const processorString = (this.processor) ? this.processor.description() : "";
     return `${this.type.toString().toLowerCase()}${processorString}`
@@ -264,6 +314,10 @@ export class InstructionProcessor
 
   src(): string {
     return ` using ${this.name}${this.argsString}`;
+  }
+
+  imports(): QualifiedName[] {
+    return []
   }
 
   private get argsString(): string {

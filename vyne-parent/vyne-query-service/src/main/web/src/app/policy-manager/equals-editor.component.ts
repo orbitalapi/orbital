@@ -83,7 +83,7 @@ export class EqualsEditorComponent implements OnInit {
     const selectedPropertyName = event.option.value;
     const selectedTypeRef = this.type.attributes[selectedPropertyName];
     const selectedType = this.schema.types.find((t) => t.name.fullyQualifiedName == selectedTypeRef.fullyQualifiedName)
-    this.caseCondition.rhSubject = new RelativeSubject(RelativeSubjectSource.THIS, selectedType, selectedPropertyName);
+    this.caseCondition.rhSubject = new RelativeSubject(RelativeSubjectSource.THIS, selectedType.name, selectedPropertyName);
     this.statementUpdated.emit("")
   }
 

@@ -93,6 +93,11 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
          }
       }
 
+   val namespace: String
+      get() {
+         return fullyQualifiedName.split(".").dropLast(1).joinToString(".")
+      }
+
    override fun toString(): String = fullyQualifiedName
 }
 

@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Schema, Type} from "../services/types.service";
+import {QualifiedName, Schema, Type} from "../services/types.service";
 import {FormControl} from "@angular/forms";
 import {map, startWith} from "rxjs/operators";
 import {Observable} from "rxjs";
@@ -34,10 +34,17 @@ export class TypeAutocompleteComponent implements OnInit {
 
   filterInput = new FormControl();
 
-  private _selectedType:Type;
+  private _selectedType: Type;
 
   @Input()
-  set selectedType(value:Type) {
+  set selectedTypeName(name: QualifiedName) {
+    // TODO : Could this cause issues because the schema isn't provided yet?
+    const type = this.schema.types.find(t => t.name.fullyQualifiedName == name.fullyQualifiedName)
+    this.selectedType = type
+  }
+
+  @Input()
+  set selectedType(value: Type) {
     this.setSelectedTypeName(value);
     this.typeSelected.emit(value);
     this.selectedTypeChange.emit(value);
@@ -45,7 +52,7 @@ export class TypeAutocompleteComponent implements OnInit {
     this._selectedType = value;
   }
 
-  get selectedType():Type {
+  get selectedType(): Type {
     return this._selectedType;
   }
 
@@ -72,7 +79,7 @@ export class TypeAutocompleteComponent implements OnInit {
     this.selectedType = eventType
   }
 
-  private setSelectedTypeName(selectedType:Type) {
+  private setSelectedTypeName(selectedType: Type) {
     if (!selectedType) {
       this.filterInput.setValue(null)
       // this.selectedTypeDisplayName = null;
