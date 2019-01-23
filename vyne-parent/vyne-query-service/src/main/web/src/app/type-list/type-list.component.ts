@@ -78,7 +78,7 @@ export class TypeListComponent implements OnInit {
     const filterValue = value.toLowerCase();
     return this.members.filter(member => {
       // Accept exact matches
-      if (member.name.fullyQualifiedName.indexOf(filterValue) !== -1) return true;
+      if (member.name.name.indexOf(filterValue) !== -1) return true;
 
       // Search for CamelHumps
       // We only look at words in the name - ie., exclude the package
