@@ -1,5 +1,6 @@
 package io.vyne
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.loadbalancer.LoadBalanced
@@ -25,8 +26,8 @@ class VyneClientConfiguration {
    }
 
    @Bean
-   fun vyneClient(@Qualifier("vyneRestTemplate") restTemplate: RestTemplate, loadBalancer:LoadBalancerClient): VyneClient {
+   fun vyneClient(@Qualifier("vyneRestTemplate") restTemplate: RestTemplate, loadBalancer:LoadBalancerClient, objectMapper: ObjectMapper): VyneClient {
       val queryService = HttpVyneQueryService(queryServiceUrl, restTemplate)
-      return VyneClient(queryService)
+      return VyneClient(queryService, objectMapper)
    }
 }

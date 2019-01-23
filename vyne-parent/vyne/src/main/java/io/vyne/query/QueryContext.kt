@@ -59,7 +59,7 @@ data class QueryResult(
    val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
 
    @JsonProperty("results")
-   val resultMap: Map<String, Any?> = this.results.map { (key, value) -> key.type.fullyQualifiedName to value?.toRawObject() }.toMap()
+   val resultMap: Map<String, Any?> = this.results.map { (key, value) -> key.type.name.parameterizedName to value?.toRawObject() }.toMap()
 }
 
 // Note : Also models failures, so is fairly generic
