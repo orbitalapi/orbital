@@ -230,6 +230,13 @@ data class Type(
          } else emptySet()
       }
    }
+
+   fun resolvesSameAs(other: Type): Boolean {
+      if (this.fullyQualifiedName == other.fullyQualifiedName) return true;
+      if (this.isTypeAlias && this.aliasForType!!.fullyQualifiedName == other.fullyQualifiedName) return true;
+      if (other.isTypeAlias && other.aliasForType!!.fullyQualifiedName == this.fullyQualifiedName) return true;
+      return false;
+   }
 }
 
 enum class Modifier {

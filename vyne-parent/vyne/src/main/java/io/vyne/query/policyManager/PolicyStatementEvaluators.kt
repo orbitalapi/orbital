@@ -5,6 +5,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.utils.log
 import lang.taxi.policies.*
+import java.lang.RuntimeException
 
 
 class PolicyStatementEvaluator(private val evaluators: List<ConditionalPolicyStatementEvaluator> = defaultEvaluators) {
@@ -99,8 +100,11 @@ class CaseConditionEvaluator : ConditionalPolicyStatementEvaluator {
       if (result.isFullyResolved) {
          return result[subject.targetType.qualifiedName]!!
       } else {
-         TODO()
+         // TODO : Might want to consider something more sophisticated here.
+         throw PolicyNotEvaluatableException("Could not find a path to evaluate ${subject.targetType.qualifiedName} relative to subjectSource ${subject.source}")
       }
    }
 
 }
+
+class PolicyNotEvaluatableException(message:String) : RuntimeException(message)

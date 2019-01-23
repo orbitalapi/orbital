@@ -129,6 +129,15 @@ data class TypedValue(override val type: Type, override val value: Any) : TypedI
       return TypedValue(typeAlias, value)
    }
 
+   /**
+    * Returns true if the two are equal, where the values are the same, and the underlying
+    * types resolve to the same type, considering type aliases.
+    */
+   fun valueEquals(other: TypedValue): Boolean {
+      if (!this.type.resolvesSameAs(other.type)) return false;
+      return this.value == other.value
+   }
+
 }
 
 data class TypedCollection(override val type: Type, override val value: List<TypedInstance>) : List<TypedInstance> by value, TypedInstance {

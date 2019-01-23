@@ -5,6 +5,8 @@ import io.vyne.models.*
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.policyManager.StringMaskingProcessor
+import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -25,13 +27,17 @@ namespace test {
     }
     type Trade {
         id : TradeId as Int
-        deskId : DeskId
+//        deskId : DeskId
         counterParty : CounterPartyId as String
         amount : TradeAmount as Decimal
     }
     type alias Group as String
     type UserAuthorization {
         groups : Groups as Group[]
+    }
+    type Client {
+      id : CounterPartyId
+      deskId : ClientDeskId as DeskId
     }
 
    type alias SessionToken as String
@@ -54,24 +60,27 @@ namespace test {
       read operation listTrades():Trade[]
       read operation getTrade(TradeId):Trade
       read operation getTradeWrapper(TradeId):TradeWrapper
+   }
 
+   service ClientService {
+      operation findClient(CounterPartyId):Client
    }
 
     policy TradeDeskPolicy against Trade {
         read external {
-            case caller.DeskId = this.DeskId -> permit
+            case caller.DeskId = this.ClientDeskId -> permit
             case caller.Groups in ["ADMIN","COMPLIANCE"] -> permit
             case caller.DeskId = null -> filter
-            case caller.DeskId != this.DeskId -> $deskMismatchPolicyBehaviour
+            case caller.DeskId != this.ClientDeskId -> $deskMismatchPolicyBehaviour
             else -> filter
         }
         read internal {
             permit
         }
         write {
-            case caller.DeskId = this.DeskId -> permit
+            case caller.DeskId = this.ClientDeskId -> permit
             case caller.Groups in ["ADMIN","COMPLIANCE"] -> permit
-            case caller.DeskId != this.DeskId -> $deskMismatchPolicyBehaviour
+            case caller.DeskId != this.ClientDeskId -> $deskMismatchPolicyBehaviour
             else -> filter
         }
     }
@@ -88,6 +97,18 @@ namespace test {
       expect(vyne.getPolicy(type)).not.`null`
    }
 
+   private val desk1Client = """
+   {
+      "id" : "desk1Client",
+      "deskId" : "desk1"
+   }
+   """.trimIndent()
+   private val desk2Client = """
+   {
+      "id" : "desk2Client",
+      "deskId" : "desk2"
+   }
+   """.trimIndent()
    // nonTraderUser doesnt have a deskId
    private val nonTraderUser = """
     {
@@ -111,17 +132,26 @@ namespace test {
     }
          """.trimIndent()
 
+   private val traderFromWrongDesk = """
+    {
+         "userId" : "jack123",
+         "userName" : "Jack Trader",
+         "deskId" : "desk2",
+         "auth" : {
+            "groups" : ["TRADERS"]
+         }
+    }
+   """.trimIndent()
+
    private val trade1 = """{
       "id" : 1,
-      "deskId" : "desk1",
       "amount" : 300,
-      "counterParty" : "party1"
+      "counterParty" : "desk1Client"
     }"""
    private val trade2 = """{
       "id" : 2,
-      "deskId" : "desk2",
       "amount" : 500,
-      "counterParty" : "party2"
+      "counterParty" : "desk2Client"
     }"""
    private val tradeList = "[$trade1,$trade2]"
 
@@ -150,7 +180,7 @@ namespace test {
 
       stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
       stubService.addResponse("findUser", vyne.parseJsonModel("test.User", nonTraderUser))
-
+      stubService.addResponse("findClient", vyne.parseJsonModel("test.Client", desk1Client))
       // Trade1 is filtered because our user doesn't have a desk id.
       val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
       val queryResult = context.find("test.Trade")
@@ -168,6 +198,16 @@ namespace test {
 
       stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
       stubService.addResponse("findUser", vyne.parseJsonModel("test.User", traderUser))
+
+      val clientHandler: StubResponseHandler = { operation: Operation, params: List<Pair<Parameter, TypedInstance>> ->
+         val (_, clientId) = params.first()
+         when (clientId.value) {
+            "desk1Client" -> vyne.parseJsonModel("test.Client", desk1Client)
+            "desk2Client" -> vyne.parseJsonModel("test.Client", desk2Client)
+            else -> TODO("Unhandled client")
+         }
+      }
+      stubService.addResponse("findClient", clientHandler)
 
       // Trade2 is filtered because our trader belongs to a different desl
       val context = vyne.queryEngine().queryContext()
