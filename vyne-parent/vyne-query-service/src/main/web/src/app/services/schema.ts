@@ -11,7 +11,7 @@ export class QualifiedName {
   static from(fullyQualifiedName: string): QualifiedName {
     const parts = fullyQualifiedName.split(".");
     const name = QualifiedName.nameOnly(fullyQualifiedName);
-    const namespace = parts.splice(parts.length - 1, 1).join(".");
+    const namespace = parts.slice(0, parts.length - 1).join(".");
     const qualifiedName = new QualifiedName();
     qualifiedName.fullyQualifiedName = fullyQualifiedName;
     qualifiedName.namespace = namespace;

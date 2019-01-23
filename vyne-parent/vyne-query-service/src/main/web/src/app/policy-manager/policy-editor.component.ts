@@ -60,7 +60,7 @@ export class PolicyEditorComponent implements OnInit {
 
   submit() {
     const spec: SchemaSpec = {
-      name: `${this.policy.targetTypeName.fullyQualifiedName}/policies/${this.policy.name}`,
+      name: `${this.policy.targetTypeName.fullyQualifiedName}.${this.policy.name.name}Policy`,
       version: 'next-minor',
       defaultNamespace: this.policy.targetTypeName.namespace
     };

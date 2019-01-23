@@ -1,7 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {QualifiedName, Schema, Type, TypeReference} from "../services/schema";
-import {FormControl} from "@angular/forms";
-import {Observable} from "rxjs";
 import {CaseCondition, LiteralSubject, RelativeSubject, RelativeSubjectSource} from "./policies";
 
 @Component({
@@ -15,13 +13,21 @@ import {CaseCondition, LiteralSubject, RelativeSubject, RelativeSubjectSource} f
         </mat-form-field>
       </div>
       <div class="property-input-container" *ngSwitchCase="'property'">
-        <mat-form-field style="width: 100%" floatLabel="never">
-          <mat-select placeholder="Property" [(value)]="selectedProperty">
-            <mat-option *ngFor="let property of properties" [value]="property">
-              {{ property.name }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+        <!--<mat-form-field style="width: 100%" floatLabel="never">-->
+        <!--<mat-select placeholder="Property" [(value)]="selectedProperty">-->
+        <!--<mat-option *ngFor="let property of properties" [value]="property">-->
+        <!--{{ property.name }}-->
+        <!--</mat-option>-->
+        <!--</mat-select>-->
+        <!--</mat-form-field>-->
+        <app-type-autocomplete
+          class="fact-type-input line-component"
+          floatLabel="never"
+          displayFullName="false"
+          [selectedTypeName]="selectedProperty"
+          [schema]="schema" (typeSelected)="onCallerTypeSelected($event)"
+          placeholder="Select type"></app-type-autocomplete>
+
       </div>
     </div>
   `,
@@ -35,10 +41,6 @@ export class EqualsEditorComponent implements OnInit {
 
   set caseCondition(value: CaseCondition) {
     this._caseCondition = value;
-    if (value && value.rhSubject && value.rhSubject.type === "RelativeSubject") {
-      const relativeSubject: RelativeSubject = <RelativeSubject>value.rhSubject;
-      this.propertyNameInput.setValue(relativeSubject.propertyName);
-    }
   }
 
   @Input()
@@ -59,10 +61,6 @@ export class EqualsEditorComponent implements OnInit {
   @Output()
   statementUpdated: EventEmitter<string> = new EventEmitter();
 
-  propertyNameInput = new FormControl();
-
-  filteredPropertyNames: Observable<string[]>;
-
   get literalSubject(): LiteralSubject {
     if (!this.caseCondition || !this.caseCondition.rhSubject || this.caseCondition.rhSubject.type != "LiteralSubject") return null;
     return <LiteralSubject>this.caseCondition.rhSubject
@@ -74,12 +72,12 @@ export class EqualsEditorComponent implements OnInit {
   }
 
   get selectedProperty(): QualifiedName {
-    if (!this.caseCondition || this.caseCondition.rhSubject.type !== "RelativeSubject") {
+    if (!this.caseCondition || !this.caseCondition.rhSubject || this.caseCondition.rhSubject.type !== "RelativeSubject") {
       return null
     }
     const relativeSubject = this.caseCondition.rhSubject as RelativeSubject;
     // to match the value in the drop-down, return the property from the type
-    return this.properties.find(p => p.fullyQualifiedName == relativeSubject.targetTypeName.fullyQualifiedName)
+    return relativeSubject.targetTypeName
   }
 
   set selectedProperty(value: QualifiedName) {
@@ -91,5 +89,12 @@ export class EqualsEditorComponent implements OnInit {
     const value = $event.target.value;
     this._caseCondition.rhSubject = new LiteralSubject(value);
     this.statementUpdated.emit("")
+  }
+
+  onCallerTypeSelected(type: Type) {
+    if (type) {
+      this.selectedProperty = type.name
+    }
+
   }
 }
