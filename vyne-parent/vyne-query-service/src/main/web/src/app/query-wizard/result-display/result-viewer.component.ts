@@ -25,6 +25,7 @@ export class ResultViewerComponent implements OnInit {
   }
 
   get typedObjectAttributeNames(): string[] {
+    if (!this.type) return [];
     // return Array.from(this.type.attributes.keys())
     return Object.keys(this.type.attributes)
   }

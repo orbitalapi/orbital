@@ -1,7 +1,6 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {CaseCondition, Instruction, Policy, PolicyStatement, RuleSet} from "./policies";
-import {SchemaImportRequest, TypesService} from "../services/types.service";
-import {SchemaSpec} from "../services/schema";
+import {TypesService} from "../services/types.service";
 
 @Component({
   selector: 'app-policy-editor',
@@ -27,7 +26,7 @@ import {SchemaSpec} from "../services/schema";
       </div>
       <div class="button-container">
         <button mat-raised-button color="primary" (click)="submit()">Submit</button>
-        <button mat-raised-button (click)="cancel()">Cancel</button>
+        <button mat-raised-button (click)="doCancel()">Cancel</button>
       </div>
     </div>`
 })
@@ -35,6 +34,12 @@ export class PolicyEditorComponent implements OnInit {
 
   @Input()
   policy: Policy;
+
+  @Output()
+  save = new EventEmitter();
+
+  @Output()
+  cancel = new EventEmitter();
 
   constructor(private schemaService: TypesService) {
   }
@@ -54,21 +59,11 @@ export class PolicyEditorComponent implements OnInit {
     ruleset.removeStatement($event)
   }
 
-  cancel() {
-
+  doCancel() {
+    this.cancel.emit()
   }
 
   submit() {
-    const spec: SchemaSpec = {
-      name: `${this.policy.targetTypeName.fullyQualifiedName}.${this.policy.name.name}Policy`,
-      version: 'next-minor',
-      defaultNamespace: this.policy.targetTypeName.namespace
-    };
-    const request = new SchemaImportRequest(
-      spec, "taxi", this.policy.src()
-    );
-    this.schemaService.submitSchema(request).subscribe(result => {
-      console.log(result);
-    })
+    this.save.emit()
   }
 }

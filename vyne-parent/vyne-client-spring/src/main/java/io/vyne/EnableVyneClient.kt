@@ -1,10 +1,10 @@
 package io.vyne
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.loadbalancer.LoadBalanced
-import org.springframework.cloud.client.loadbalancer.LoadBalancerClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.web.client.RestTemplate
@@ -21,13 +21,14 @@ class VyneClientConfiguration {
 
    @LoadBalanced
    @Bean
-   fun vyneRestTemplate():RestTemplate {
+   fun vyneRestTemplate(): RestTemplate {
       return RestTemplate()
    }
 
    @Bean
-   fun vyneClient(@Qualifier("vyneRestTemplate") restTemplate: RestTemplate, loadBalancer:LoadBalancerClient, objectMapper: ObjectMapper): VyneClient {
+   fun vyneClient(@Qualifier("vyneRestTemplate") restTemplate: RestTemplate, objectMapper: ObjectMapper, @Autowired(required = false) factProviders: List<FactProvider>?): VyneClient {
       val queryService = HttpVyneQueryService(queryServiceUrl, restTemplate)
-      return VyneClient(queryService, objectMapper)
+      val myFactProviders = factProviders ?: emptyList()
+      return VyneClient(queryService, myFactProviders, objectMapper)
    }
 }

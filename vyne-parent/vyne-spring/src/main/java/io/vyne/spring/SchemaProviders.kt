@@ -1,6 +1,7 @@
 package io.vyne.spring
 
 import io.vyne.schemaStore.*
+import io.vyne.schemas.CompositeSchema
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.NamedSource
 import io.vyne.schemas.taxi.TaxiSchema
@@ -61,6 +62,11 @@ class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourc
       // Cache the schemas until the upstream schema set changes
       rebuildCacheIfRequired()
       return this.schemas
+   }
+
+   override fun schema(): Schema {
+      val sources = this.activeSchemaSet().schemas.map { NamedSource(it.content, it.id) }
+      return CompositeSchema(TaxiSchema.from(sources))
    }
 
    private fun schemasByName(): Map<String, String> {

@@ -95,10 +95,10 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    private fun handleSuccessfulHttpResponse(result: ResponseEntity<Any>, operation: Operation): TypedInstance {
       // TODO : Handle scenario where we get a 2xx response, but no body
       log().debug("Result of ${operation.name} was $result")
-      if (result.body is Map<*, *>) {
-         return TypedObject.fromAttributes(operation.returnType, result.body as Map<String, Any>, schemaProvider.schema())
-      } else {
-         return TypedInstance.from(operation.returnType, result.body, schemaProvider.schema())
+      val resultBody = result.body
+      return when (resultBody) {
+          is Map<*, *> -> TypedObject.fromAttributes(operation.returnType, resultBody as Map<String, Any>, schemaProvider.schema())
+         else -> TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema())
       }
    }
 

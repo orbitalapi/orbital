@@ -283,12 +283,12 @@ export interface Subject extends SourceElement, PlainTextElement {
 }
 
 export class RelativeSubject implements Subject {
+  static TYPE_TOKEN = "{thisType}";
   readonly type = "RelativeSubject";
 
   constructor(
     public source: RelativeSubjectSource,
-    public targetTypeName: QualifiedName,
-    public propertyName?: string
+    public targetTypeName: QualifiedName
   ) {
   }
 
@@ -301,12 +301,15 @@ export class RelativeSubject implements Subject {
   }
 
   description(): string {
-    return this.targetTypeName.name
+    // HACK:  using a repacement token, since I can't easily access the type this subect is defined
+    // against in this method
+    const prefix = (this.source == RelativeSubjectSource.THIS) ? `this ${RelativeSubject.TYPE_TOKEN}'s` : "caller's";
+    return `${prefix} ${this.targetTypeName.name}`
   }
 
   static fromDto(subject: any): RelativeSubject {
     let targetTypeName: QualifiedName = plainToClass(QualifiedName, subject.targetTypeName as QualifiedName);
-    return new RelativeSubject(subject.source, targetTypeName, null)
+    return new RelativeSubject(subject.source, targetTypeName)
   }
 }
 

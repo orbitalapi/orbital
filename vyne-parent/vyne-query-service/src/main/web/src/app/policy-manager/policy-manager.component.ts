@@ -1,7 +1,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {Policy} from "./policies";
-import { TypesService} from "../services/types.service";
-import {Type} from "../services/schema";
+import {SchemaImportRequest, TypesService} from "../services/types.service";
+import {SchemaSpec, Type} from "../services/schema";
 
 @Component({
   selector: 'app-policy-manager',
@@ -9,26 +9,24 @@ import {Type} from "../services/schema";
   template: `
     <div class="content">
       <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
-      <div class="policy-list">
-        <div class="add-new">
-          <button mat-raised-button color="primary" (click)="createNewPolicy()">Add new</button>
+      <div class="empty-state" *ngIf="!policy">
+        <div>Policies let you define rules when data can be read as it's served from Vyne. <a href="javascript:void"
+                                                                                              (click)="createNewPolicy()">Create
+          a new policy</a> now to get started.
         </div>
-        <div *ngFor="let policy of policies" class="policy-list-member"
-             [ngClass]="selectedPolicy == policy ? 'selected' : ''"
-             (click)="selectPolicy(policy)">
-          <div class="policy-name">{{ policy.name.name }}</div>
+        <div class="button-container">
+          <button mat-raised-button color="primary" (click)="createNewPolicy()">Add new</button>
         </div>
       </div>
       <div class="policy-editor-container">
-        <app-policy-editor [policy]="selectedPolicy" *ngIf="selectedPolicy"></app-policy-editor>
+        <app-policy-editor [policy]="policy" *ngIf="policy" (save)="save()" (cancel)="cancel()"></app-policy-editor>
       </div>
     </div>
   `
 })
 export class PolicyManagerComponent implements OnInit {
 
-  selectedPolicy: Policy;
-  policies: Policy[] = [];
+  policy: Policy;
 
   loading: boolean = false;
 
@@ -40,16 +38,39 @@ export class PolicyManagerComponent implements OnInit {
 
 
   createNewPolicy() {
-    const policy = Policy.createNew(this.targetType);
-    this.policies.push(policy);
-    this.selectedPolicy = policy
+    this.policy = Policy.createNew(this.targetType)
+  }
+
+  save() {
+    const spec: SchemaSpec = {
+      name: `${this.policy.targetTypeName.fullyQualifiedName}.${this.policy.name.name}Policy`,
+      version: 'next-minor',
+      defaultNamespace: this.policy.targetTypeName.namespace
+    };
+    const request = new SchemaImportRequest(
+      spec, "taxi", this.policy.src()
+    );
+    this.loading = true;
+    this.typeService.submitSchema(request).subscribe(result => {
+      this.loading = false;
+      console.log(result);
+    })
   }
 
   ngOnInit() {
+    this.loadPolicy();
+  }
+
+  private loadPolicy() {
     this.loading = true;
     this.typeService.getPolicies(this.targetType.name.fullyQualifiedName)
       .subscribe(policies => {
-        this.policies = policies;
+        // We only support single policy, so grab the first item from the array if present
+        if (policies.length > 0) {
+          this.policy = policies[0]
+        } else {
+          this.policy = null;
+        }
         this.loading = false
       }, error => {
         console.log("Failed to load policies: ");
@@ -58,8 +79,7 @@ export class PolicyManagerComponent implements OnInit {
       })
   }
 
-  selectPolicy(policy) {
-    this.selectedPolicy = policy
+  cancel() {
+    this.loadPolicy()
   }
-
 }

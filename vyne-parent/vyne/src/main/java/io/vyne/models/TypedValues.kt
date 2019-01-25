@@ -3,6 +3,8 @@ package io.vyne.models
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.log
+import lang.taxi.types.PrimitiveType
 
 interface TypedInstance {
    val type: Type
@@ -45,9 +47,26 @@ interface TypedInstance {
       fun from(type: Type, value: Any?, schema: Schema): TypedInstance {
          return when {
             value == null -> TypedNull(type)
-            value is Collection<*> -> TypedCollection(type, value.filterNotNull().map { from(type, it, schema) })
+            value is Collection<*> -> {
+               val collectionMemberType = getCollectionType(type,schema)
+               TypedCollection(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema) })
+            }
             type.isScalar -> TypedValue(type, value)
             else -> TypedObject.fromValue(type, value, schema)
+         }
+      }
+
+      private fun getCollectionType(type: Type, schema: Schema): Type {
+         if (type.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName) {
+            if (type.typeParameters.size == 1) {
+               return type.typeParameters[0]
+            } else {
+               log().warn("Using raw Array is not recommenced, use a typed array instead.  Collection members are typed as Any")
+               return schema.type(PrimitiveType.ANY.qualifiedName)
+            }
+         } else {
+            log().warn("Collection type could not be determined - expected to find ${PrimitiveType.ARRAY.qualifiedName}, but found ${type.fullyQualifiedName}")
+            return type
          }
       }
    }

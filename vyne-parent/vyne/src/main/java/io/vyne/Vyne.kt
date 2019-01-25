@@ -107,6 +107,18 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
 }
 
 
+/**
+ * This idea should possibly be deprecated.
+ * The original idea was that we'd store schemas in their various formats.
+ * However, its looking more and more like we just convert all inbound sources to Taxi,
+ * which certainly makes life siimpler.
+ *
+ * The current approach of SchemaAggregators don't do a good job of handling imports.
+ *
+ * Instead, CompositeSchema(TaxiSchema.from(List<NamedSource>)) is a better approach, as it DOES
+ * correctly order for imports and root out circular depenenices.
+ */
+@Deprecated("Possibly going away.")
 interface SchemaAggregator {
    companion object {
       val DEFAULT_AGGREGATORS = listOf<SchemaAggregator>(TaxiSchemaAggregator())

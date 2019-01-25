@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import io.vyne.FactSetId
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
 import io.vyne.schemas.Schema
@@ -40,20 +41,24 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
       val vyne = vyneFactory.createVyne()
       val facts = parseFacts(query.facts, vyne.schema)
 
+      facts.forEach { (fact, factSetId) ->
+         vyne.addModel(fact, factSetId)
+      }
+
       return try {
          when (query.queryMode) {
-            QueryMode.DISCOVER -> vyne.query(additionalFacts = facts).find(query.queryString)
-            QueryMode.GATHER -> vyne.query(additionalFacts = facts).gather(query.queryString)
+            QueryMode.DISCOVER -> vyne.query().find(query.queryString)
+            QueryMode.GATHER -> vyne.query().gather(query.queryString)
          }
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation)
       }
    }
 
-   private fun parseFacts(facts: List<Fact>, schema: Schema): Set<TypedInstance> {
+   private fun parseFacts(facts: List<Fact>, schema: Schema): List<Pair<TypedInstance, FactSetId>> {
 
-      return facts.map { (typeName, value) ->
-         TypedInstance.from(schema.type(typeName), value, schema)
-      }.toSet()
+      return facts.map { (typeName, value, factSetId) ->
+         TypedInstance.from(schema.type(typeName), value, schema) to factSetId
+      }
    }
 }

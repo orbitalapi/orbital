@@ -15,7 +15,7 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.WildcardType
 import kotlin.reflect.KClass
 
-class VyneClient(private val queryService: VyneQueryService, private val objectMapper: ObjectMapper = Jackson.objectMapper) {
+class VyneClient(private val queryService: VyneQueryService, private val factProviders: List<FactProvider> = emptyList(), private val objectMapper: ObjectMapper = Jackson.objectMapper) {
    constructor(queryServiceUrl: String) : this(HttpVyneQueryService(queryServiceUrl))
 
    fun given(vararg model: Any): VyneQueryBuilder {
@@ -26,7 +26,9 @@ class VyneClient(private val queryService: VyneQueryService, private val objectM
          }
       }.toList()
 
-      return VyneQueryBuilder(facts, queryService, objectMapper)
+      val allFacts = this.factProviders.foldRight(facts) { provider, currentFacts -> currentFacts + provider.provideFacts(currentFacts) }
+
+      return VyneQueryBuilder(allFacts, queryService, objectMapper)
    }
 
    inline fun <reified T : Any> discover(): T? {
@@ -130,7 +132,7 @@ data class QueryClientResponse(
 typealias TypeName = String
 
 object Jackson {
-   val objectMapper:ObjectMapper = jacksonObjectMapper()
+   val objectMapper: ObjectMapper = jacksonObjectMapper()
       .registerModule(MrBeanModule())
 }
 

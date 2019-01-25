@@ -45,16 +45,17 @@ class VyneFactory(private val schemaProvider: SchemaSourceProvider, private val 
    }
 
    // For readability
-   fun createVyne() = `object`
+   fun createVyne() = getObject()
 
    private fun buildVyne(): Vyne {
       val vyne = Vyne(QueryEngineFactory.withOperationInvokers(operationInvokers))
-      schemaProvider.schemaStrings().forEach { schema ->
-         // TODO :  This is all a bit much ... going to a TaxiSchema and back again.
-         // Should really be able to do:  Vyne().addSchema(TypeSchema.from(type))
-         log().debug("Registering schema: $schema")
-         vyne.addSchema(TaxiSchema.from(schema))
-      }
+      vyne.addSchema(schemaProvider.schema())
+//      schemaProvider.schemaStrings().forEach { schema ->
+//         // TODO :  This is all a bit much ... going to a TaxiSchema and back again.
+//         // Should really be able to do:  Vyne().addSchema(TypeSchema.from(type))
+//         log().debug("Registering schema: $schema")
+//         vyne.addSchema(TaxiSchema.from(schema))
+//      }
       return vyne
    }
 }

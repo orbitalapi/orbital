@@ -13,21 +13,14 @@ import {CaseCondition, LiteralSubject, RelativeSubject, RelativeSubjectSource} f
         </mat-form-field>
       </div>
       <div class="property-input-container" *ngSwitchCase="'property'">
-        <!--<mat-form-field style="width: 100%" floatLabel="never">-->
-        <!--<mat-select placeholder="Property" [(value)]="selectedProperty">-->
-        <!--<mat-option *ngFor="let property of properties" [value]="property">-->
-        <!--{{ property.name }}-->
-        <!--</mat-option>-->
-        <!--</mat-select>-->
-        <!--</mat-form-field>-->
-        <app-type-autocomplete
+         <app-type-autocomplete
           class="fact-type-input line-component"
           floatLabel="never"
           displayFullName="false"
           [selectedTypeName]="selectedProperty"
           [schema]="schema" (typeSelected)="onCallerTypeSelected($event)"
           placeholder="Select type"></app-type-autocomplete>
-
+        <span class="property-explainer">related to this {{type?.name.name}}</span>
       </div>
     </div>
   `,

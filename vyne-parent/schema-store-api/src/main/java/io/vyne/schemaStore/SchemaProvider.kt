@@ -15,6 +15,8 @@ interface VersionedSchemaProvider {
 
 interface SchemaProvider {
    fun schemas(): List<Schema>
+   // TODO : May want to deprecate this approach, and the whole concept of schema aggregators.
+   // See SchemaAggregator for an explanation.
    fun schema(): Schema = CompositeSchemaBuilder().aggregate(schemas())
    fun schema(memberNames: List<String>, includePrimitives: Boolean = false): Schema {
       val qualifiedNames = memberNames.map { it.fqn() }

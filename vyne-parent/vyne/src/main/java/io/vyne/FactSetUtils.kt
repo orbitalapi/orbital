@@ -3,7 +3,6 @@ package io.vyne
 import com.google.common.collect.HashMultimap
 import io.vyne.models.TypedInstance
 
-typealias FactSetId = String
 typealias FactSetMap = HashMultimap<FactSetId, TypedInstance>
 
 fun FactSetMap.filterFactSets(factSetIds: Set<FactSetId>): FactSetMap {
@@ -23,12 +22,3 @@ fun emptyNodesetMap(): FactSetMap {
    return HashMultimap.create()
 }
 
-object FactSets {
-   const val DEFAULT: FactSetId = "DEFAULT"
-   const val CALLER: FactSetId = "CALLER"
-   const val ALL: FactSetId = "@@ALL"
-   const val NONE: FactSetId = "@@NONE"
-   fun new(): FactSetMap {
-      return FactSetMap.create()
-   }
-}

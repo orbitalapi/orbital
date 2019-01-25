@@ -38,7 +38,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
    @RequestMapping(value = "/nodes/{elementType}/{nodeName}/links")
    fun getLinksFromNode(@PathVariable("elementType") elementType: ElementType, @PathVariable("nodeName") nodeName: String): SchemaGraph {
       val escapedNodeName = nodeName.replace(":", "/")
-      val schema: TaxiSchema = TaxiSchema.from(schemaProvider.schemaString())
+      val schema = schemaProvider.schema()
       val graph = VyneGraphBuilder(schema).buildDisplayGraph()
       val element = Element(escapedNodeName, elementType)
       val edges = graph.edgesOf(element)
