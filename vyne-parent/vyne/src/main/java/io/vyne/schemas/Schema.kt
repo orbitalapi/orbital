@@ -314,7 +314,7 @@ interface Schema {
    }
 
    fun policy(type: Type): Policy? {
-      return this.policies.firstOrNull { it.targetType == type }
+      return this.policies.firstOrNull { it.targetType.fullyQualifiedName == type.fullyQualifiedName }
    }
 
    fun hasOperation(operationName: QualifiedName): Boolean {

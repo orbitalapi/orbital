@@ -245,12 +245,12 @@ export class CaseCondition implements Condition, PlainTextElement {
 
   src(): string {
     if (!this.lhSubject || !this.rhSubject) return "";
-    return `case ${this.lhSubject.src()} ${this.operator.symbol} ${this.rhSubject.src()}`;
+    return `case ${this.lhSubject.src()} ${this.displayOperator.operator.symbol} ${this.rhSubject.src()}`;
   }
 
   description(): string {
     if (!this.lhSubject || !this.rhSubject) return null;
-    return `${this.lhSubject.description()} ${this.operator.label} ${this.rhSubject.description()}`;
+    return `${this.lhSubject.description()} ${this.displayOperator.label} ${this.rhSubject.description()}`;
   }
 
   static fromDto(dto: any): CaseCondition {

@@ -194,7 +194,7 @@ class CircularDependencyInSourcesException(message:String) : RuntimeException(me
 private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependencies>, val importSources:List<TaxiSchema>) {
    private val namedSources: Map<NamedSource, SourceWithDependencies> = sources.associateBy { it.source }
    private val builtSchemas = mutableMapOf<SourceWithDependencies, TaxiSchema>()
-   private val schemasBeingBuild = mutableListOf<SourceWithDependencies>()
+   private val schemasBeingBuilt = mutableListOf<SourceWithDependencies>()
    fun build(): List<TaxiSchema> {
       sources.forEach { source ->
          buildWithDependencies(source)
@@ -205,11 +205,11 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
    private fun buildWithDependencies(source:SourceWithDependencies) {
 
       if (!builtSchemas.containsKey(source)) {
-         if (schemasBeingBuild.contains(source)) {
-            val message = "A circular dependency in sources exists: ${schemasBeingBuild.joinToString(" -> ") { it.source.sourceName }}"
+         if (schemasBeingBuilt.contains(source)) {
+            val message = "A circular dependency in sources exists: ${schemasBeingBuilt.joinToString(" -> ") { it.source.sourceName }}"
             throw CircularDependencyInSourcesException(message)
          }
-         schemasBeingBuild.add(source)
+         schemasBeingBuilt.add(source)
 
          // Build dependencies first
          source.dependencies.forEach {
@@ -219,7 +219,7 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
          // Now build the actual file
          getOrBuild(source)
 
-         schemasBeingBuild.remove(source)
+         schemasBeingBuilt.remove(source)
       }
    }
 

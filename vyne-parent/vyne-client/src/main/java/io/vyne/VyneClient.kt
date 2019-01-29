@@ -34,6 +34,16 @@ class VyneClient(private val queryService: VyneQueryService, private val factPro
    inline fun <reified T : Any> discover(): T? {
       return given().discover()
    }
+
+   /**
+    * Discovers based on the provided type, but returns the objects untyped (typically either as a Map<>, or as a
+    * list of Map).
+    * This is useful when a policy is applied, which will cause the type's contracts to be broken (ie., non-nulls
+    * returned as nulls, because of filtered values).
+    */
+   inline fun <reified T : Any> discoverUntyped(): Any? {
+      return given().discoverUntyped<T>()
+   }
 }
 
 class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val queryService: VyneQueryService, val objectMapper: ObjectMapper) {
@@ -42,10 +52,27 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
       val typeRef = object : TypeReference<T>() {}
       val typeName = TypeNames.deriveTypeName(typeRef)
       val response = query(typeName, QueryMode.DISCOVER)
-      if (response.containsResultFor(typeRef)) {
-         return response.getResultFor(typeRef, objectMapper)
+      return if (response.containsResultFor(typeRef)) {
+         response.getResultFor(typeRef, objectMapper)
       } else {
-         return null;
+         null;
+      }
+   }
+
+   /**
+    * Discovers based on the provided type, but returns the objects untyped (typically either as a Map<>, or as a
+    * list of Map).
+    * This is useful when a policy is applied, which will cause the type's contracts to be broken (ie., non-nulls
+    * returned as nulls, because of filtered values).
+    */
+   inline fun <reified T : Any> discoverUntyped(): Any? {
+      val typeRef = object : TypeReference<T>() {}
+      val typeName = TypeNames.deriveTypeName(typeRef)
+      val response = query(typeName, QueryMode.DISCOVER)
+      return if (response.containsResultFor(typeRef)) {
+         response.getUntypedResultFor(typeRef, objectMapper)
+      } else {
+         null;
       }
    }
 
@@ -106,6 +133,11 @@ data class QueryClientResponse(
       return results.containsKey(typeName)
    }
 
+   fun <T : Any> getUntypedResultFor(typeRef: TypeReference<T>, objectMapper: ObjectMapper = Jackson.objectMapper): Any {
+      val typeName = TypeNames.deriveTypeName(typeRef)
+      return results[typeName]!!;
+   }
+
    fun <T : Any> getResultFor(typeRef: TypeReference<T>, objectMapper: ObjectMapper = Jackson.objectMapper): T {
       val typeName = TypeNames.deriveTypeName(typeRef)
       val result = this.results[typeName]!!
@@ -120,6 +152,7 @@ data class QueryClientResponse(
       val typedResult = objectMapper.convertValue(result, type.java)
       return typedResult
    }
+
 
    fun <T : Any> getResultListFor(type: KClass<T>, objectMapper: ObjectMapper = Jackson.objectMapper): List<T> {
       val typeName = TypeNames.deriveTypeName(type.java)

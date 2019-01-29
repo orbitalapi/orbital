@@ -2,13 +2,14 @@ import {Component, Input, OnInit} from '@angular/core';
 import {Policy} from "./policies";
 import {SchemaImportRequest, TypesService} from "../services/types.service";
 import {SchemaSpec, Type} from "../services/schema";
+import {MatSnackBar} from "@angular/material";
 
 @Component({
   selector: 'app-policy-manager',
   styleUrls: ['./policy-manager.component.scss'],
   template: `
     <div class="content">
-      <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
+      <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
       <div class="empty-state" *ngIf="!policy">
         <div>Policies let you define rules when data can be read as it's served from Vyne. <a href="javascript:void"
                                                                                               (click)="createNewPolicy()">Create
@@ -34,7 +35,7 @@ export class PolicyManagerComponent implements OnInit {
   @Input()
   targetType: Type;
 
-  constructor(private typeService: TypesService) {
+  constructor(private typeService: TypesService, private snackBar: MatSnackBar) {
   }
 
 
@@ -54,7 +55,10 @@ export class PolicyManagerComponent implements OnInit {
     this.loading = true;
     this.typeService.submitSchema(request).subscribe(result => {
       this.loading = false;
-      console.log(result);
+      this.snackBar.open("Policy saved", "Dismiss", {duration: 3000});
+    }, error => {
+      this.loading = false;
+      this.snackBar.open("An error occurred.  Your changes have not been saved.", "Dismiss", {duration: 3000});
     })
   }
 
