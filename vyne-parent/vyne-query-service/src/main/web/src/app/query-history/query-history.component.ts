@@ -24,8 +24,17 @@ export class QueryHistoryComponent implements OnInit {
   }
 
   typeName(qualifiedTypeName: string) {
-    let parts = qualifiedTypeName.split(".");
-    return parts[parts.length - 1];
+    // TODO : There's a correct parser for type names on the server
+    // which can handle generics.
+    // Consider usinng that, instead of this dirty hack
+
+    if (qualifiedTypeName.startsWith("lang.taxi.Array<")) {
+      const collectionMemberName = qualifiedTypeName.replace("lang.taxi.Array<", "").slice(0, -1)
+      return this.typeName(collectionMemberName) + "[]";
+    } else {
+      let parts = qualifiedTypeName.split(".");
+      return parts[parts.length - 1];
+    }
   };
 
   getFactTypeNames(record: QueryHistoryRecord): string[] {
