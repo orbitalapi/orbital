@@ -1,5 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {PolicyStatement, RuleSet, RuleSetUtils} from "./policies";
+import {Type} from "../services/schema";
 
 @Component({
   selector: 'app-else-editor',
@@ -7,7 +8,7 @@ import {PolicyStatement, RuleSet, RuleSetUtils} from "./policies";
     <div class="else-editor-container">
       <div class="line-wrapper">
         <span class="prefix-word">{{elsePrefixWord}}</span>
-        <app-instruction-selector [instruction]="statement?.instruction"
+        <app-instruction-selector [statement]="statement" [policyType]="policyType"
                                   (statementUpdated)="statementUpdated.emit()"></app-instruction-selector>
       </div>
     </div>
@@ -24,6 +25,9 @@ export class ElseEditorComponent {
 
   @Input()
   ruleSet: RuleSet;
+
+  @Input()
+  policyType:Type;
 
   get elsePrefixWord(): string {
     return RuleSetUtils.elsePrefixWord(this.ruleSet);

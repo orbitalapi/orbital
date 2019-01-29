@@ -26,7 +26,7 @@ export class Policy implements SourceElement {
 
     return new Policy(QualifiedName.from(qualifiedName), targetType.name, [
       new RuleSet([
-        new PolicyStatement(new ElseCondition(), new Instruction(InstructionType.PERMIT))
+        new PolicyStatement(new ElseCondition(), new PermitInstruction())
       ])
     ])
   }
@@ -117,7 +117,7 @@ export class PolicyStatement implements SourceElement {
   static fromDto(dto: any): PolicyStatement {
     return new PolicyStatement(
       ConditionUtils.fromDto(dto.condition),
-      Instruction.fromDto(dto.instruction)
+      InstructionUtils.fromDto(dto.instruction)
     )
   }
 }
@@ -357,66 +357,151 @@ export class LiteralSubject implements Subject {
   }
 }
 
-export class Instruction implements SourceElement, PlainTextElement {
-  constructor(
-    public type: InstructionType,
-    public processor?: InstructionProcessor) {
-  }
+export interface Instruction extends SourceElement, PlainTextElement {
+  readonly type: InstructionType
+}
 
-  static permit(): Instruction {
-    return new Instruction(InstructionType.PERMIT)
-  }
+export class PermitInstruction implements Instruction {
+  readonly type: InstructionType = InstructionType.PERMIT;
 
-  src(): string {
-    const processorString = (this.processor) ? this.processor.src() : "";
-    return `${this.type.toString().toLowerCase()}${processorString}`;
+  description(): string {
+    return "permit";
   }
 
   imports(): QualifiedName[] {
-    return []
+    return [];
   }
+
+  src(): string {
+    return "permit";
+  }
+}
+
+export class FilterInstruction implements Instruction {
+
+  static filterAll(): FilterInstruction {
+    const i = new FilterInstruction([]);
+    i.isFilterAll = true;
+    return i;
+  }
+
+  static filterAttributes(): FilterInstruction {
+    const i = new FilterInstruction([]);
+    i.isFilterAll = false;
+    return i;
+  }
+
+  constructor(public fieldNames: string[]) {
+  }
+
+  // Set when editing in the UI.  Not sent from the server
+  private _isExplicitFilterAttributes: boolean;
+
+  get isFilterAll(): boolean {
+    if (this._isExplicitFilterAttributes) return false;
+    return this.fieldNames == null || this.fieldNames.length == 0;
+  }
+
+  // Only set from the UI when editing
+  set isFilterAll(value: boolean) {
+    this._isExplicitFilterAttributes = !value;
+  }
+
+  readonly type: InstructionType = InstructionType.FILTER;
 
   description(): string {
-    const processorString = (this.processor) ? this.processor.description() : "";
-    return `${this.type.toString().toLowerCase()}${processorString}`
+    const fieldNameList = (!this.fieldNames || this.fieldNames.length == 0) ? " entire record" : ` properties ${this.fieldNames.join(", ")}`;
+    return `filter ${fieldNameList}`;
   }
 
+  imports(): QualifiedName[] {
+    return [];
+  }
+
+  src(): string {
+    const fieldNameList = (!this.fieldNames || this.fieldNames.length == 0) ? "" : `( ${this.fieldNames.join(", ")} )`;
+    return `filter ${fieldNameList}`;
+  }
+
+  static fromDto(dto: FilterInstruction): FilterInstruction {
+    return new FilterInstruction(dto.fieldNames)
+  }
+}
+
+class InstructionUtils {
   static fromDto(dto: Instruction): Instruction {
-    return new Instruction(
-      dto.type,
-      dto.processor
-    )
+    switch (dto.type) {
+      case InstructionType.PERMIT:
+        return new PermitInstruction();
+      case InstructionType.FILTER:
+        return FilterInstruction.fromDto(dto as FilterInstruction);
+    }
   }
+
 }
 
-export class InstructionProcessor
-  implements SourceElement, PlainTextElement {
-  name: string;
-  args: any[];
-
-  src(): string {
-    return ` using ${this.name}${this.argsString}`;
-  }
-
-  imports(): QualifiedName[] {
-    return []
-  }
-
-  private get argsString(): string {
-    return (this.args) ? `( ${this.args.join(",")} )` : "";
-  }
-
-  description(): string {
-    const nameParts = this.name.split(".");
-    const shortName = nameParts[nameParts.length - 1];
-    return ` using ${shortName}${this.argsString}`;
-  }
-}
+// Commented out while processors are disabled.
+// https://gitlab.com/vyne/vyne/issues/52
+// export class Instruction implements SourceElement, PlainTextElement {
+//   constructor(
+//     public type: InstructionType,
+//     public processor?: InstructionProcessor) {
+//   }
+//
+//   static permit(): Instruction {
+//     return new Instruction(InstructionType.PERMIT)
+//   }
+//
+//   src(): string {
+//     const processorString = (this.processor) ? this.processor.src() : "";
+//     return `${this.type.toString().toLowerCase()}${processorString}`;
+//   }
+//
+//   imports(): QualifiedName[] {
+//     return []
+//   }
+//
+//   description(): string {
+//     const processorString = (this.processor) ? this.processor.description() : "";
+//     return `${this.type.toString().toLowerCase()}${processorString}`
+//   }
+//
+//   static fromDto(dto: Instruction): Instruction {
+//     return new Instruction(
+//       dto.type,
+//       dto.processor
+//     )
+//   }
+// }
+//
+// export class InstructionProcessor
+//   implements SourceElement, PlainTextElement {
+//   name: string;
+//   args: any[];
+//
+//   src(): string {
+//     return ` using ${this.name}${this.argsString}`;
+//   }
+//
+//   imports(): QualifiedName[] {
+//     return []
+//   }
+//
+//   private get argsString(): string {
+//     return (this.args) ? `( ${this.args.join(",")} )` : "";
+//   }
+//
+//   description(): string {
+//     const nameParts = this.name.split(".");
+//     const shortName = nameParts[nameParts.length - 1];
+//     return ` using ${shortName}${this.argsString}`;
+//   }
+// }
 
 export enum InstructionType {
   PERMIT = "PERMIT",
-  PROCESS = "PROCESS",
-  FILTER = "FILTER"
+  // PROCESS = "PROCESS",
+  FILTER = "FILTER",
 }
 
 

@@ -74,7 +74,7 @@ export class EqualsEditorComponent implements OnInit {
   }
 
   set selectedProperty(value: QualifiedName) {
-    this.caseCondition.rhSubject = new RelativeSubject(RelativeSubjectSource.THIS, value, null);
+    this.caseCondition.rhSubject = new RelativeSubject(RelativeSubjectSource.THIS, value);
     this.statementUpdated.emit("")
   }
 

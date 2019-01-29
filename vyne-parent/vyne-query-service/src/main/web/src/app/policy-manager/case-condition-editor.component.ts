@@ -32,7 +32,7 @@ import {map} from "rxjs/operators";
             </mat-form-field>
           </div>
           <div class="rh-value-container" [ngSwitch]="condition?.displayOperator?.operator.symbol">
-            <app-equals-editor [caseCondition]="condition" [type]="policyType | async" [schema]="schema | async"
+            <app-equals-editor [caseCondition]="condition" [type]="policyType" [schema]="schema | async"
                                *ngSwitchDefault (statementUpdated)="statementUpdated.emit('')"
                                [literalOrProperty]="condition?.displayOperator?.literalOrProperty"></app-equals-editor>
             <app-multivalue-editor [caseCondition]="condition" *ngSwitchCase="'in'"
@@ -43,7 +43,8 @@ import {map} from "rxjs/operators";
       <div class="line-wrapper">
         <span>then&nbsp;</span>
         <div class="statement-parts-wrapper">
-          <app-instruction-selector [instruction]="statement.instruction"
+          <app-instruction-selector [statement]="statement"
+                                    [policyType]="policyType"
                                     (statementUpdated)="statementUpdated.emit()"></app-instruction-selector>
         </div>
       </div>
@@ -52,20 +53,13 @@ import {map} from "rxjs/operators";
 export class CaseConditionEditorComponent {
 
   @Input()
-  policyTypeName: QualifiedName;
+  policyType:Type;
 
   @Output()
   statementUpdated: EventEmitter<string> = new EventEmitter();
 
   @Input()
   statement: PolicyStatement;
-
-  get policyType(): Observable<Type> {
-    // if (!this.policyTypeName || !this.schema) return null;
-    return this.schema.pipe(map((s:Schema) => {
-      return s.types.find(t => t.name.fullyQualifiedName == this.policyTypeName.fullyQualifiedName)
-    }))
-  }
 
   get condition(): CaseCondition {
     return this.statement ? <CaseCondition>this.statement.condition : null;

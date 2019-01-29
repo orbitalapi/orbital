@@ -1,5 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Policy, PolicyStatement, RuleSet} from "./policies";
+import {Type} from "../services/schema";
 
 @Component({
   selector: 'app-statement-editor',
@@ -14,8 +15,11 @@ import {Policy, PolicyStatement, RuleSet} from "./policies";
         <app-statement-display (edit)="editing = true" [statement]="statement" *ngIf="!editing" [policy]="policy"></app-statement-display>
         <div class="statement-switch-container" [ngSwitch]="statement.condition.type" *ngIf="editing">
           <app-case-condition-editor (statementUpdated)="onStatementUpdated()" *ngSwitchCase="'case'"
-                                     [statement]="statement" [policyTypeName]="policy.targetTypeName"></app-case-condition-editor>
+                                     [statement]="statement" [policyType]="policyType">
+            
+          </app-case-condition-editor>
           <app-else-editor *ngSwitchCase="'else'" [statement]="statement" [ruleSet]="policy.ruleSets[0]"
+                           [policyType]="policyType"
                            (statementUpdated)="onStatementUpdated()"></app-else-editor>
         </div>
       </div>
@@ -40,6 +44,9 @@ export class StatementEditorComponent implements OnInit {
 
   @Input()
   ruleset: RuleSet;
+
+  @Input()
+  policyType:Type;
 
   @Output()
   statementUpdated: EventEmitter<void> = new EventEmitter();

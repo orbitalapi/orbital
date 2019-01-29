@@ -19,7 +19,8 @@ import {SchemaSpec, Type} from "../services/schema";
         </div>
       </div>
       <div class="policy-editor-container">
-        <app-policy-editor [policy]="policy" *ngIf="policy" (save)="save()" (cancel)="cancel()"></app-policy-editor>
+        <app-policy-editor [policy]="policy" [policyType]="targetType" *ngIf="policy" (save)="save()"
+                           (cancel)="cancel()"></app-policy-editor>
       </div>
     </div>
   `

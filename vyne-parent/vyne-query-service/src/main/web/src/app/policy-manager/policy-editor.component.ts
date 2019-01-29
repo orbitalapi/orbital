@@ -1,6 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {CaseCondition, Instruction, Policy, PolicyStatement, RuleSet} from "./policies";
+import {CaseCondition, Instruction, PermitInstruction, Policy, PolicyStatement, RuleSet} from "./policies";
 import {TypesService} from "../services/types.service";
+import {Type} from "../services/schema";
 
 @Component({
   selector: 'app-policy-editor',
@@ -19,6 +20,7 @@ import {TypesService} from "../services/types.service";
           <div class="statement-container" *ngFor="let statement of ruleset.statements">
             <app-statement-editor [statement]="statement" [policy]="policy" [ruleset]="ruleset"
                                   (statementUpdated)="onStatementUpdated()"
+                                  [policyType]="policyType"
                                   (deleteStatement)="deleteStatement(ruleset,$event)"></app-statement-editor>
           </div>
           <button mat-stroked-button (click)="addCase(ruleset)">Add case</button>
@@ -35,6 +37,9 @@ export class PolicyEditorComponent implements OnInit {
   @Input()
   policy: Policy;
 
+  @Input()
+  policyType:Type;
+
   @Output()
   save = new EventEmitter();
 
@@ -48,7 +53,7 @@ export class PolicyEditorComponent implements OnInit {
   }
 
   addCase(ruleset: RuleSet) {
-    ruleset.appendStatement(new PolicyStatement(CaseCondition.empty(), Instruction.permit(), true))
+    ruleset.appendStatement(new PolicyStatement(CaseCondition.empty(), new PermitInstruction(), true))
   }
 
   onStatementUpdated() {

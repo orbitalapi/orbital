@@ -10,6 +10,7 @@ import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.policies.Instruction
 import lang.taxi.policies.OperationScope
+import lang.taxi.policies.PermitInstruction
 
 /**
  * Similar to a policy scope, exception the operationType may not have been defined.
@@ -18,7 +19,7 @@ import lang.taxi.policies.OperationScope
  */
 data class ExecutionScope(val operationType: String?, val operationScope: OperationScope)
 
-class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator = PolicyStatementEvaluator(), private val defaultInstruction: Instruction = Instruction(Instruction.InstructionType.PERMIT, null)) {
+class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator = PolicyStatementEvaluator(), private val defaultInstruction: Instruction = PermitInstruction) {
 
 
    fun evaluate(target: Set<QuerySpecTypeNode>, context: QueryContext): PolicyEvaluationResult {
@@ -32,7 +33,7 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
 
    fun evaluate(instance: TypedInstance, context: QueryContext, operationScope: ExecutionScope): Instruction {
       val schema = context.schema
-      val policyType = getPolicyType(instance,context)
+      val policyType = getPolicyType(instance, context)
       val policies = findPolicies(schema, policyType)
       val instructions = policies.map { evaluate(it, instance, context, operationScope) }
       return when {
@@ -48,7 +49,7 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
    // not type member type.
    private fun getPolicyType(instance: TypedInstance, context: QueryContext): Type {
       return when (instance) {
-          is TypedCollection -> instance.parameterizedType(context.schema)
+         is TypedCollection -> instance.parameterizedType(context.schema)
          else -> instance.type
       }
    }

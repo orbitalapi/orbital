@@ -4,7 +4,6 @@ import com.winterbe.expekt.expect
 import io.vyne.models.*
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
-import io.vyne.query.policyManager.StringMaskingProcessor
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
@@ -163,12 +162,14 @@ namespace test {
       stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
       stubService.addResponse("findUser", vyne.parseJsonModel("test.User", traderUser))
       stubService.addResponse("listTrades", vyne.parseJsonModel("test.Trade[]", tradeList))
+      stubService.addResponse("findClient", clientHandler(vyne))
 
       val context = vyne.queryEngine().queryContext()
       context.find("test.Trade[]")
 
       expect(stubService.invocations["tokenToUserId"]).to.have.size(1)
       expect(stubService.invocations["findUser"]).to.have.size(1)
+      expect(stubService.invocations["findClient"]).to.have.size(1)
    }
 
    @Test
@@ -199,15 +200,7 @@ namespace test {
       stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
       stubService.addResponse("findUser", vyne.parseJsonModel("test.User", traderUser))
 
-      val clientHandler: StubResponseHandler = { operation: Operation, params: List<Pair<Parameter, TypedInstance>> ->
-         val (_, clientId) = params.first()
-         when (clientId.value) {
-            "desk1Client" -> vyne.parseJsonModel("test.Client", desk1Client)
-            "desk2Client" -> vyne.parseJsonModel("test.Client", desk2Client)
-            else -> TODO("Unhandled client")
-         }
-      }
-      stubService.addResponse("findClient", clientHandler)
+      stubService.addResponse("findClient", clientHandler(vyne))
 
       // Trade2 is filtered because our trader belongs to a different desl
       val context = vyne.queryEngine().queryContext()
@@ -221,6 +214,18 @@ namespace test {
       expect(trade["id"].value).to.equal(1)
    }
 
+   private fun clientHandler(vyne: Vyne): StubResponseHandler {
+      val clientHandler: StubResponseHandler = { operation: Operation, params: List<Pair<Parameter, TypedInstance>> ->
+         val (_, clientId) = params.first()
+         when (clientId.value) {
+               "desk1Client" -> vyne.parseJsonModel("test.Client", desk1Client)
+               "desk2Client" -> vyne.parseJsonModel("test.Client", desk2Client)
+               else -> TODO("Unhandled client")
+         }
+      }
+      return clientHandler
+   }
+
    @Test
    fun given_policyPermitsData_then_itIsPresentInResponse() {
       val (vyne, stubService) = testVyne(schema())
@@ -229,6 +234,7 @@ namespace test {
 
       stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
       stubService.addResponse("findUser", vyne.parseJsonModel("test.User", traderUser))
+      stubService.addResponse("findClient", clientHandler(vyne))
 
       // Trade1 is filtered because our user doesn't have a desk id.
       val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
@@ -252,6 +258,7 @@ namespace test {
 
       stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
       stubService.addResponse("findUser", vyne.parseJsonModel("test.User", nonTraderUser))
+      stubService.addResponse("findClient", clientHandler(vyne))
 
       // Trade1 is filtered because our user doesn't have a desk id.
       val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
@@ -265,14 +272,15 @@ namespace test {
    }
 
    @Test
-   fun givenPolicyMasksDataType_then_attributeIsReturnedAsMasked() {
-      val (vyne, stubService) = testVyne(schema("process using vyne.StringMasker(['counterParty'])"))
+   fun given_policyFiltersAttributes_then_thoseAttributesAreReturnedAsNull() {
+      val (vyne, stubService) = testVyne(schema("filter (counterParty, amount)"))
       vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
       val tradeResponse = vyne.parseJsonModel("test.Trade", trade2)
       stubService.addResponse("getTrade", tradeResponse)
 
       stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
       stubService.addResponse("findUser", vyne.parseJsonModel("test.User", traderUser))
+      stubService.addResponse("findClient", clientHandler(vyne))
 
       // Trade2 is masked because our users deskId doesn't match
       val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 2)))
@@ -280,7 +288,28 @@ namespace test {
 
       val trade = queryResult["test.Trade"] as TypedObject
       val counterParty = trade["counterParty"]
-      expect(counterParty.value).to.equal(StringMaskingProcessor.MASKED_VALUE)
+      expect(counterParty.value).to.be.`null`
    }
+   // Policy processors are disbled:
+   // https://gitlab.com/vyne/vyne/issues/52
+
+//   @Test
+//   fun givenPolicyMasksDataType_then_attributeIsReturnedAsMasked() {
+//      val (vyne, stubService) = testVyne(schema("process using vyne.StringMasker(['counterParty'])"))
+//      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+//      val tradeResponse = vyne.parseJsonModel("test.Trade", trade2)
+//      stubService.addResponse("getTrade", tradeResponse)
+//
+//      stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
+//      stubService.addResponse("findUser", vyne.parseJsonModel("test.User", traderUser))
+//
+//      // Trade2 is masked because our users deskId doesn't match
+//      val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 2)))
+//      val queryResult = context.find("test.Trade")
+//
+//      val trade = queryResult["test.Trade"] as TypedObject
+//      val counterParty = trade["counterParty"]
+//      expect(counterParty.value).to.equal(StringMaskingProcessor.MASKED_VALUE)
+//   }
 
 }
