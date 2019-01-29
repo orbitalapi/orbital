@@ -26,7 +26,7 @@ import {
   MatStepperModule,
   MatTableModule,
   MatTabsModule,
-  MatToolbarModule,
+  MatToolbarModule, MatTooltipModule,
   MatTreeModule,
 } from '@angular/material';
 import {TypeListComponent} from './type-list/type-list.component';
@@ -130,6 +130,7 @@ const appRoutes = [
     MatInputModule,
     MatMenuModule,
     MatChipsModule,
+    MatTooltipModule,
     MatSlideToggleModule,
     MatButtonToggleModule,
     MatSnackBarModule,

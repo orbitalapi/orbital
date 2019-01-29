@@ -58,6 +58,8 @@ mat-toolbar {
 
 .schema-name {
   padding-right: 20px;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .page-content {
