@@ -10,6 +10,7 @@ import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.schemas.*
 import io.vyne.utils.log
+import lang.taxi.policies.Instruction
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -113,6 +114,7 @@ object TypedInstanceTree {
 // Revisit if the above becomes less true.
 data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine, val profiler: QueryProfiler) : ProfilerOperation by profiler {
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
+   private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
 
    fun find(queryString: String): QueryResult = queryEngine.find(queryString, this)
    fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
@@ -173,6 +175,10 @@ data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>
 //         it.elements.filter { it.elementType == ElementType.INSTANCE }
 //            .map { it.value as TypedInstance }
 //      }.toSet()
+   }
+
+   fun addAppliedInstruction(policy: Policy, instruction: Instruction) {
+      policyInstructionCounts.compute(policy.name to instruction) { _, atomicInteger -> if (atomicInteger != null) atomicInteger + 1 else 1 }
    }
 }
 

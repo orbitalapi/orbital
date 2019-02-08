@@ -2,8 +2,8 @@ package io.vyne.query.policyManager
 
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.query.OperationType
 import io.vyne.query.QueryContext
-import io.vyne.query.QuerySpecTypeNode
 import io.vyne.schemas.Policy
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -20,16 +20,6 @@ import lang.taxi.policies.PermitInstruction
 data class ExecutionScope(val operationType: String?, val operationScope: OperationScope)
 
 class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator = PolicyStatementEvaluator(), private val defaultInstruction: Instruction = PermitInstruction) {
-
-
-   fun evaluate(target: Set<QuerySpecTypeNode>, context: QueryContext): PolicyEvaluationResult {
-//      val schema = context.schema
-//      val instructions = target.flatMap { spec ->
-//         val policies = findPolicies(schema, spec.type)
-//         policies.map { evaluate(it, context) }
-//      }
-      TODO()
-   }
 
    fun evaluate(instance: TypedInstance, context: QueryContext, operationScope: ExecutionScope): Instruction {
       val schema = context.schema
@@ -62,13 +52,17 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
          return defaultInstruction
       }
       val ruleSet = RuleSetSelector().select(executionScope, ruleSets)
-      val statementInstruction = statementEvaluator.evaluate(ruleSet, instance, context)
-      return if (statementInstruction == null) {
-         log().debug("Finished evaluating policy ${policy.name.fullyQualifiedName} for executionScope of $executionScope - no instruction matched, so using default instruction of $defaultInstruction")
-         defaultInstruction
-      } else {
-         log().debug("Finished evaluating policy ${policy.name.fullyQualifiedName} for executionScope of $executionScope - matched to instruction of $statementInstruction")
-         statementInstruction
+      return context.startChild(this, "Evaluate policy ${policy.name} ruleSet ${ruleSet.scope}", OperationType.POLICY_EVALUATION) {
+         val statementInstruction = statementEvaluator.evaluate(ruleSet, instance, context)
+         if (statementInstruction == null) {
+            log().debug("Finished evaluating policy ${policy.name.fullyQualifiedName} for executionScope of $executionScope - no instruction matched, so using default instruction of $defaultInstruction")
+            context.addAppliedInstruction(policy, defaultInstruction)
+            defaultInstruction
+         } else {
+            log().debug("Finished evaluating policy ${policy.name.fullyQualifiedName} for executionScope of $executionScope - matched to instruction of $statementInstruction")
+            context.addAppliedInstruction(policy, statementInstruction)
+            statementInstruction
+         }
       }
    }
 

@@ -53,6 +53,7 @@ enum class OperationType(
    GRAPH_BUILDING(true),
    GRAPH_TRAVERSAL(true),
    LOOKUP(true),
+   POLICY_EVALUATION(isInternal = true),
    REMOTE_CALL(false)
 }
 
