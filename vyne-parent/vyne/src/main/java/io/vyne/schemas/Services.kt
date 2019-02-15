@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
-import lang.taxi.AttributePath
+import lang.taxi.types.AttributePath
 
 /**
  * DESIGN NOTE:

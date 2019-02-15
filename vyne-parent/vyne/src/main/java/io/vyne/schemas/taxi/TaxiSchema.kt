@@ -4,6 +4,9 @@ import com.google.common.collect.ArrayListMultimap
 import io.vyne.SchemaAggregator
 import io.vyne.schemas.*
 import io.vyne.schemas.Modifier
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.SourceCode
+import io.vyne.schemas.Type
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.services.Constraint
@@ -77,7 +80,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
       // Register primitives, as they're implicitly defined
       rawTypes.addAll(getTaxiPrimitiveTypes())
 
-      document.types.forEach { taxiType: lang.taxi.Type ->
+      document.types.forEach { taxiType: lang.taxi.types.Type ->
          when (taxiType) {
             is ObjectType -> {
                val typeName = QualifiedName(taxiType.qualifiedName)
@@ -147,7 +150,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
       }
    }
 
-   private fun parseModifiers(type: lang.taxi.Type): List<Modifier> {
+   private fun parseModifiers(type: lang.taxi.types.Type): List<Modifier> {
       return when (type) {
          is EnumType -> listOf(Modifier.ENUM)
          is PrimitiveType -> listOf(Modifier.PRIMITIVE)
@@ -241,19 +244,19 @@ data class NamedSource(val taxi: String, val sourceName: String) {
    }
 }
 
-private fun lang.taxi.QualifiedName.toVyneQualifiedName(): QualifiedName {
+private fun lang.taxi.types.QualifiedName.toVyneQualifiedName(): QualifiedName {
    return QualifiedName(this.toString(), this.parameters.map { it.toVyneQualifiedName() })
 }
 
-private fun lang.taxi.Type.toVyneQualifiedName(): QualifiedName {
+private fun lang.taxi.types.Type.toVyneQualifiedName(): QualifiedName {
    return this.toQualifiedName().toVyneQualifiedName()
 }
 
-private fun lang.taxi.SourceCode.toVyneSource(): SourceCode {
+private fun lang.taxi.types.SourceCode.toVyneSource(): SourceCode {
    return io.vyne.schemas.SourceCode(this.origin, TaxiSchema.LANGUAGE, this.content)
 }
 
-private fun List<lang.taxi.CompilationUnit>.toVyneSources(): List<SourceCode> {
+private fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<SourceCode> {
    return this.map { it.source.toVyneSource() }
 }
 

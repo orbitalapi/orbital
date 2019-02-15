@@ -82,6 +82,9 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
 //      return TaxiSchema.from(source)
 //   }
 
+   // TODO : What's the relationship between this and the schema-store-api?
+   // SHould probably either align the two api's or remove one.
+   // Looks like schema-store-api isn't used anywhere.
    @PostMapping(path = ["/schemas"])
    fun submitSchema(@RequestBody request: SchemaImportRequest): Mono<VersionedSchema> {
       if (!config.newSchemaSubmissionEnabled) {

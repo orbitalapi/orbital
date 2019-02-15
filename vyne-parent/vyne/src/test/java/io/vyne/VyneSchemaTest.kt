@@ -6,7 +6,7 @@ import io.vyne.schemas.AttributeConstantValueConstraint
 import io.vyne.schemas.AttributeValueFromParameterConstraint
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.taxi.TaxiSchema
-import lang.taxi.AttributePath
+import lang.taxi.types.AttributePath
 import org.junit.Test
 
 class VyneSchemaTest {

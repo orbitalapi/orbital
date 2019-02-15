@@ -96,6 +96,11 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       // TODO : Handle scenario where we get a 2xx response, but no body
       log().debug("Result of ${operation.name} was $result")
       val resultBody = result.body
+
+      // TODO: WE should be validating that the response we received conforms with the expected schema,
+      // and doing...something? if it doesn't.
+      // See https://gitlab.com/vyne/vyne/issues/54
+
       return when (resultBody) {
           is Map<*, *> -> TypedObject.fromAttributes(operation.returnType, resultBody as Map<String, Any>, schemaProvider.schema())
          else -> TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema())
