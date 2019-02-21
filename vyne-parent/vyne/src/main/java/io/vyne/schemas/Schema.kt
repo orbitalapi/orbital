@@ -1,7 +1,6 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonView
-import com.sun.xml.internal.bind.v2.model.core.TypeRef
 import io.vyne.query.TypeMatchingStrategy
 import io.vyne.schemas.taxi.DeferredConstraintProvider
 import io.vyne.schemas.taxi.EmptyDeferredConstraintProvider
@@ -73,9 +72,7 @@ data class Metadata(val name: QualifiedName, val params: Map<String, Any?> = emp
 // A pointer to a type.
 // Useful when parsing, and the type that we're referring to may not have been parsed yet.
 // TODO : Move ConstraintProvider, since that's not an attribute of a TypeReference, and now we have fields
-data class TypeReference(val name: QualifiedName, val isCollection: Boolean = false, private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider()) {
-   val constraints: List<Constraint>
-      get() = constraintProvider.buildConstraints()
+data class TypeReference(val name: QualifiedName, val isCollection: Boolean = false) {
    val fullyQualifiedName: String
       get() = name.fullyQualifiedName
 
@@ -163,8 +160,6 @@ object OperationNames {
 }
 
 typealias AttributeName = String
-typealias AttributeType = QualifiedName
-typealias DeclaringType = QualifiedName
 
 interface SchemaMember {
 
@@ -180,7 +175,13 @@ interface SchemaMember {
       }
 }
 
-data class Field(val type:TypeReference, val modifiers: List<FieldModifier>)
+data class Field(val type: TypeReference, val modifiers: List<FieldModifier>, private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider()) {
+   // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
+   // we parse fields before we parse their underlying types, so constrains may not be
+   // fully resolved at construction time.
+   val constraints: List<Constraint> by lazy { constraintProvider.buildConstraints() }
+}
+
 interface TypeFullView : TypeLightView
 interface TypeLightView
 
@@ -217,7 +218,7 @@ data class Type(
    constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, enumValues, sources)
 
    @JsonView(TypeFullView::class)
-   val isTypeAlias = aliasForType != null;
+   val isTypeAlias = aliasForType != null
    @JsonView(TypeFullView::class)
    val isScalar = attributes.isEmpty()
    @JsonView(TypeFullView::class)
@@ -233,7 +234,7 @@ data class Type(
    @JsonView(TypeFullView::class)
    val inheritanceGraph = calculateInheritanceGraph()
 
-   fun attribute(name:AttributeName):Field {
+   fun attribute(name: AttributeName): Field {
       return attributes.getValue(name)
    }
 
@@ -247,16 +248,17 @@ data class Type(
    }
 
    fun resolvesSameAs(other: Type): Boolean {
-      if (this.fullyQualifiedName == other.fullyQualifiedName) return true;
-      if (this.isTypeAlias && this.aliasForType!!.fullyQualifiedName == other.fullyQualifiedName) return true;
-      if (other.isTypeAlias && other.aliasForType!!.fullyQualifiedName == this.fullyQualifiedName) return true;
-      return false;
+      if (this.fullyQualifiedName == other.fullyQualifiedName) return true
+      if (this.isTypeAlias && this.aliasForType!!.fullyQualifiedName == other.fullyQualifiedName) return true
+      if (other.isTypeAlias && other.aliasForType!!.fullyQualifiedName == this.fullyQualifiedName) return true
+      return false
    }
 }
 
 enum class FieldModifier {
    CLOSED
 }
+
 enum class Modifier {
    CLOSED,
    PARAMETER_TYPE,
@@ -277,7 +279,7 @@ data class SourceCode(
       }
 
       fun native(language: String): SourceCode {
-         return SourceCode("Native", language, "");
+         return SourceCode("Native", language, "")
       }
    }
 }

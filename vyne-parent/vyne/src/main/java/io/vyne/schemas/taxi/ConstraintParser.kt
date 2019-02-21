@@ -52,7 +52,7 @@ class TaxiConstraintConverter(val schema: Schema) {
       // FIXME later.
       val nestedConstraints = if (type.isParameterType) {
          type.attributes.flatMap { (attributeName, field) ->
-            field.type.constraints
+            field.constraints
                .filterIsInstance(InputConstraint::class.java)
                .map { NestedAttributeConstraint(attributeName, it, schema) }
          }
