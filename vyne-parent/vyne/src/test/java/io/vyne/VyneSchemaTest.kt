@@ -56,7 +56,7 @@ class VyneSchemaTest {
             name : String
          }
          """
-   val vyne = Vyne(QueryEngineFactory.default()) //.addSchema(TaxiSchema.from(taxiDef))
+   val vyne = Vyne(QueryEngineFactory.default()).addSchema(TaxiSchema.from(taxiDef))
 
 //   @Test
 //   fun shouldFindLinkBetweenTypeAndProperty() {
@@ -198,22 +198,6 @@ type alias EmailAddress as String
       expect(returnType.name.name).to.equal("Array")
       expect(returnType.typeParameters).to.have.size(1)
       expect(returnType.typeParameters.first()).to.equal(emailAddressType)
-   }
-
-
-   @Test
-   fun when_addingComponentType_then_itsFieldsAreNotDiscoverable() {
-      val taxiDef = """
-  component type Money {
-    currency : Currency as String
-    value : MoneyAmount as Decimal
- }
-      """.trimIndent()
-      val schema = TaxiSchema.from(taxiDef)
-      val vyne = Vyne(QueryEngineFactory.default()).addSchema(schema)
-      vyne.addJsonModel("Money", """{ "currency" : "USD" , "value" : 3000 }""")
-      val result = vyne.query().find("Currency")
-      expect(result.isFullyResolved).to.be.`false`
    }
 
 

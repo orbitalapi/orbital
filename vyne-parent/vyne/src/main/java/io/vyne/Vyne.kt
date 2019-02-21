@@ -77,7 +77,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) : this(emptyList(), queryEngineFactory)
 
    override fun addModel(model: TypedInstance, factSetId: FactSetId): Vyne {
-      log().debug("Added model instance to factSet $factSetId: $model")
+      log().debug("Added model instance to factSet $factSetId: ${model.type.fullyQualifiedName}")
       this.factSets[factSetId].add(model)
 //      invalidateGraph()
       return this

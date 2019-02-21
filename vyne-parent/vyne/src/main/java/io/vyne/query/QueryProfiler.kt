@@ -22,9 +22,11 @@ class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), val ro
    }
 
    override fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R {
+      log().debug("Profiler start: $componentName / $operationName")
       val recorder = startChild(componentName, operationName, type)
       val result = closure.invoke(recorder)
       recorder.stop(result)
+      log().debug("Profiler stop: $componentName / $operationName (${recorder.duration}ms)")
       return result
    }
 
