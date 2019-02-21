@@ -47,8 +47,8 @@ class RequiresParameterEvaluator : LinkEvaluator {
    }
 
    private fun attemptToConstruct(paramType: Type, context: QueryContext, typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
-      val fields = paramType.attributes.map { (attributeName, attributeTypeRef) ->
-         val attributeType = context.schema.type(attributeTypeRef.name)
+      val fields = paramType.attributes.map { (attributeName, field) ->
+         val attributeType = context.schema.type(field.type.name)
          if (context.hasFactOfType(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)) {
             attributeName to context.getFact(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
          } else if (!attributeType.isScalar && !typesCurrentlyUnderConstruction.contains(attributeType)) {

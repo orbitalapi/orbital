@@ -5,10 +5,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.ModelContainer
 import io.vyne.models.*
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
-import io.vyne.schemas.TypeReference
-import io.vyne.schemas.fqn
+import io.vyne.schemas.*
 import lang.taxi.types.PrimitiveType
 
 fun ModelContainer.addJsonModel(typeName: String, json: String): TypedInstance {
@@ -53,10 +50,10 @@ class JsonModelParser(val schema: Schema, val mapper: ObjectMapper = jacksonObje
       } else {
          val attributeInstances = type.attributes
             .filterKeys { attributeName -> valueMap.containsKey(attributeName) }
-            .map { (attributeName, attributeTypeRef: TypeReference) ->
-               val attributeType = schema.type(attributeTypeRef.name)
+            .map { (attributeName, field: Field) ->
+               val attributeType = schema.type(field.type.name)
                if (valueMap.containsKey(attributeName) && valueMap[attributeName] != null) {
-                  attributeName to doParse(attributeType, mapOf(attributeName to valueMap[attributeName]!!), isCollection = attributeTypeRef.isCollection)
+                  attributeName to doParse(attributeType, mapOf(attributeName to valueMap.getValue(attributeName)), isCollection = field.type.isCollection)
                } else {
                   attributeName to TypedNull(attributeType)
                }

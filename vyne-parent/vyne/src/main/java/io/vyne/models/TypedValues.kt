@@ -92,16 +92,16 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
 
       fun fromAttributes(type: Type, attributes: Map<String, Any>, schema: Schema): TypedObject {
          val typedAttributes: Map<String, TypedInstance> = attributes.map { (attributeName, value) ->
-            val attributeType = schema.type(type.attributes[attributeName]!!)
+            val attributeType = schema.type(type.attributes.getValue(attributeName).type)
             attributeName to TypedInstance.from(attributeType, value, schema)
          }.toMap()
          return TypedObject(type, typedAttributes)
       }
 
       fun fromValue(type: Type, value: Any, schema: Schema): TypedObject {
-         val attributes: Map<AttributeName, TypedInstance> = type.attributes.map { (attributeName, attributeType) ->
+         val attributes: Map<AttributeName, TypedInstance> = type.attributes.map { (attributeName, field) ->
             val attributeValue = valueReader.read(value, attributeName) ?: TODO("Null values not yet supported")
-            attributeName to TypedInstance.from(schema.type(attributeType.name), attributeValue, schema)
+            attributeName to TypedInstance.from(schema.type(field.type.name), attributeValue, schema)
          }.toMap()
          return TypedObject(type, attributes)
       }

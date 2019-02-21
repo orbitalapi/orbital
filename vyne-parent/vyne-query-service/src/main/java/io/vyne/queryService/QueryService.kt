@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 import io.vyne.FactSetId
+import io.vyne.FactSets
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
 import io.vyne.schemas.Schema
@@ -46,9 +47,11 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
       }
 
       return try {
+         // Note: Only using the default set for the originating query,
+         // but the queryEngine contains all the factSets, so we can expand this later.
          when (query.queryMode) {
-            QueryMode.DISCOVER -> vyne.query().find(query.queryString)
-            QueryMode.GATHER -> vyne.query().gather(query.queryString)
+            QueryMode.DISCOVER -> vyne.query(setOf(FactSets.DEFAULT)).find(query.queryString)
+            QueryMode.GATHER -> vyne.query(setOf(FactSets.DEFAULT)).gather(query.queryString)
          }
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation)

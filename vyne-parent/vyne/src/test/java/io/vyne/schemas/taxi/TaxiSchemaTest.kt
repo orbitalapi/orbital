@@ -1,6 +1,8 @@
 package io.vyne.schemas.taxi
 
 import com.winterbe.expekt.expect
+import io.vyne.schemas.FieldModifier
+import io.vyne.schemas.Modifier
 import org.junit.Test
 
 class TaxiSchemaTest {
@@ -70,4 +72,31 @@ namespace baz
 }"""
       val schemas = TaxiSchema.from(NamedSource.unnamed(listOf(srcC, srcB, srcA)))
    }
+
+   @Test
+   fun given_taxiTypeIsClosed_when_imported_then_vyneTypeShouldBeClosed() {
+
+      val src = """
+ closed type Money {
+   currency : Currency as String
+   value : MoneyValue as Int
+}
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      expect(schema.type("Money").modifiers).to.contain(Modifier.CLOSED)
+   }
+
+   @Test
+   fun given_taxiFieldIsClosed_when_imported_then_vyneFieldShouldBeClosed() {
+      val src = """
+ type Money {
+   closed currency : Currency as String
+   value : MoneyValue as Int
+}
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      expect(schema.type("Money").attribute("currency").modifiers).to.contain(FieldModifier.CLOSED)
+
+   }
+
 }

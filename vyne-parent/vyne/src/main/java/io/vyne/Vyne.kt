@@ -53,14 +53,22 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       private set
 
    fun queryEngine(factSetIds: Set<FactSetId> = setOf(FactSets.ALL), additionalFacts: Set<TypedInstance> = emptySet()): StatefulQueryEngine {
-      val factSetForQueryEngine:FactSetMap = FactSetMap.create()
+      val factSetForQueryEngine: FactSetMap = FactSetMap.create()
       factSetForQueryEngine.putAll(this.factSets.filterFactSets(factSetIds))
       factSetForQueryEngine.putAll(FactSets.DEFAULT, additionalFacts)
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
    fun query(factSetIds: Set<FactSetId> = setOf(FactSets.ALL), additionalFacts: Set<TypedInstance> = emptySet()): QueryContext {
-      val queryEngine = queryEngine(factSetIds, additionalFacts)
+      // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
+      // what is asked for, but only providing the desired factSets to the queryContext.
+      // This is because the context only evalutates the factSets that are provided,
+      // so we limit the set of fact sets to provide.
+      // However, we may want to expand the set of factSets later, (eg., to include a caller
+      // factSet), so leave them present in the queryEngine.
+      // Hopefully, this lets us have the best of both worlds.
+
+      val queryEngine = queryEngine(setOf(FactSets.ALL), additionalFacts)
       return queryEngine.queryContext(factSetIds)
    }
 
@@ -69,7 +77,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) : this(emptyList(), queryEngineFactory)
 
    override fun addModel(model: TypedInstance, factSetId: FactSetId): Vyne {
-      log().debug("Added model instance to context: $model")
+      log().debug("Added model instance to factSet $factSetId: $model")
       this.factSets[factSetId].add(model)
 //      invalidateGraph()
       return this

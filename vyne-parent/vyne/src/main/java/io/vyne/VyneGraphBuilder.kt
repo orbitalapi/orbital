@@ -132,7 +132,7 @@ class VyneGraphBuilder(val schema: Schema) {
             // (attribute) -[IS_ATTRIBUTE_OF]-> (type)
             builder.connect(attributeNode).to(typeNode).withEdge(Relationship.IS_ATTRIBUTE_OF)
 
-            val attributeTypeNode = type(attributeType.fullyQualifiedName)
+            val attributeTypeNode = type(attributeType.type.fullyQualifiedName)
             builder.connect(attributeNode).to(attributeTypeNode).withEdge(Relationship.IS_TYPE_OF)
             typesAndWhereTheyreUsed.put(attributeTypeNode, attributeNode)
             // See the relationship for why commented out ....
@@ -169,7 +169,7 @@ class VyneGraphBuilder(val schema: Schema) {
                   parameter.type.attributes.forEach { attriubteName, typeRef ->
                      // Point back to the "parent" param node (the parameterObject)
                      // might revisit this in the future, and point back to the Operation itself.
-                     builder.connect(parameter(typeRef.fullyQualifiedName)).to(paramNode).withEdge(Relationship.IS_PARAMETER_ON)
+                     builder.connect(parameter(typeRef.type.fullyQualifiedName)).to(paramNode).withEdge(Relationship.IS_PARAMETER_ON)
                   }
                }
             }
@@ -209,15 +209,15 @@ class VyneGraphBuilder(val schema: Schema) {
    }
 
    private fun appendInstanceAttributes(schema: Schema, instanceFqn: String, builder: HipsterGraphBuilder<Element, Relationship>, providedInstance: Element) {
-      schema.type(instanceFqn).attributes.forEach { attributeName, typeReference ->
+      schema.type(instanceFqn).attributes.forEach { attributeName, field ->
          val providedInstanceMember = providedInstanceMember(attributeFqn(instanceFqn, attributeName))
          builder.connect(providedInstance).to(providedInstanceMember).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
          // The "providedInstance" node of the member itself
-         val memberInstance = providedInstance(typeReference.fullyQualifiedName)
+         val memberInstance = providedInstance(field.type.fullyQualifiedName)
          builder.connect(providedInstanceMember).to(memberInstance).withEdge(Relationship.IS_ATTRIBUTE_OF)
          // The member instance we have can populate required params
-         builder.connect(memberInstance).to(parameter(typeReference.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
-         builder.connect(memberInstance).to(type(typeReference.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
+         builder.connect(memberInstance).to(parameter(field.type.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
+         builder.connect(memberInstance).to(type(field.type.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
       }
    }
 

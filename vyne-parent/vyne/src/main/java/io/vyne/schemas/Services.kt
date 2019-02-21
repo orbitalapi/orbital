@@ -48,8 +48,8 @@ data class NestedAttributeConstraint(val fieldName: String, val constraint: Inpu
    override fun evaluate(argumentType: Type, value: TypedInstance): ConstraintEvaluation {
       if (value !is TypedObject) throw IllegalArgumentException("NestedAttributeConstraint must be evaluated against a TypedObject")
       val nestedAttribute = value.get(fieldName)
-      val nestedTypeRef = argumentType.attributes[fieldName]!!
-      val nestedType = schema.type(nestedTypeRef)
+      val field = argumentType.attributes.getValue(fieldName)
+      val nestedType = schema.type(field.type)
       // This is probably wrong - find the argument type of the nested field
       return NestedConstraintEvaluation(value, fieldName, constraint.evaluate(nestedType, nestedAttribute))
    }

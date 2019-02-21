@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonView
+import com.sun.xml.internal.bind.v2.model.core.TypeRef
 import io.vyne.query.TypeMatchingStrategy
 import io.vyne.schemas.taxi.DeferredConstraintProvider
 import io.vyne.schemas.taxi.EmptyDeferredConstraintProvider
@@ -71,6 +72,7 @@ data class Metadata(val name: QualifiedName, val params: Map<String, Any?> = emp
 
 // A pointer to a type.
 // Useful when parsing, and the type that we're referring to may not have been parsed yet.
+// TODO : Move ConstraintProvider, since that's not an attribute of a TypeReference, and now we have fields
 data class TypeReference(val name: QualifiedName, val isCollection: Boolean = false, private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider()) {
    val constraints: List<Constraint>
       get() = constraintProvider.buildConstraints()
@@ -178,13 +180,22 @@ interface SchemaMember {
       }
 }
 
+data class Field(val type:TypeReference, val modifiers: List<FieldModifier>)
 interface TypeFullView : TypeLightView
 interface TypeLightView
+
+/**
+ * TODO: We should consider deprecating and removing the vyne specific versions of the type system,
+ * and just use Taxi's model throughout.
+ * There are clear downsides to becoming coupled to Taxi, but
+ * given how interweaved their evolution is, and tha the Taxi model is now sufficiently more advanced,
+ * it may be worth collapsing them.
+ */
 data class Type(
    @JsonView(TypeLightView::class)
    val name: QualifiedName,
    @JsonView(TypeFullView::class)
-   val attributes: Map<AttributeName, TypeReference> = emptyMap(),
+   val attributes: Map<AttributeName, Field> = emptyMap(),
 
    @JsonView(TypeFullView::class)
    val modifiers: List<Modifier> = emptyList(),
@@ -203,7 +214,7 @@ data class Type(
 
    val typeParameters: List<Type> = emptyList()
 ) : SchemaMember {
-   constructor(name: String, attributes: Map<AttributeName, TypeReference> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, enumValues, sources)
+   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, enumValues, sources)
 
    @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForType != null;
@@ -222,6 +233,10 @@ data class Type(
    @JsonView(TypeFullView::class)
    val inheritanceGraph = calculateInheritanceGraph()
 
+   fun attribute(name:AttributeName):Field {
+      return attributes.getValue(name)
+   }
+
    private fun calculateInheritanceGraph(typesToExclude: List<Type> = emptyList()): List<Type> {
       val allTypesToExclude = typesToExclude + listOf(this)
       return this.inherits.flatMap { inheritedType ->
@@ -239,7 +254,11 @@ data class Type(
    }
 }
 
+enum class FieldModifier {
+   CLOSED
+}
 enum class Modifier {
+   CLOSED,
    PARAMETER_TYPE,
    // TODO : Is it right to treat these as modifiers?  They're not really,
    // but I'm trying to avoid a big collection of boolean flags
@@ -334,7 +353,7 @@ interface Schema {
    fun attribute(attributeName: String): Pair<Type, Type> {
       val parts = attributeName.split("/").assertingThat({ it.size == 2 })
       val declaringType = type(parts[0])
-      val attributeType = type(declaringType.attributes[parts[1]]!!)
+      val attributeType = type(declaringType.attributes.getValue(parts[1]).type)
 
       return declaringType to attributeType
 

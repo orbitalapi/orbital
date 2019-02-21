@@ -122,7 +122,7 @@ class HipsterGraphBuilder<V, E> private constructor() {
             // First, check if the connection already exists with a different edge
             val vertexPair = vertex1 to vertex2
             if (existingConnections.containsKey(vertexPair)) {
-               log().warn("$vertex1 -> $vertex2 already exists with connection ${existingConnections[vertexPair]}.  Trying to add another connection of type $edge ")
+//               log().warn("$vertex1 -> $vertex2 already exists with connection ${existingConnections[vertexPair]}.  Trying to add another connection of type $edge ")
                // do nothing
                return this@HipsterGraphBuilder
                // tODO : Create a multi-link relationship

@@ -51,8 +51,8 @@ class TaxiConstraintConverter(val schema: Schema) {
       // Having written all that, I'm almost certain this is wrong.  But, it's what I'm doing now.
       // FIXME later.
       val nestedConstraints = if (type.isParameterType) {
-         type.attributes.flatMap { (attributeName, typeRef) ->
-            typeRef.constraints
+         type.attributes.flatMap { (attributeName, field) ->
+            field.type.constraints
                .filterIsInstance(InputConstraint::class.java)
                .map { NestedAttributeConstraint(attributeName, it, schema) }
          }
@@ -104,8 +104,8 @@ class AttributeConstantConstraintProvider : InputConstraintProvider {
          // But, support for constraints on primitives is coming, so leaving this here for now,
          // since I wrote it anyway
          if (constraint.fieldName != null) {
-            val typeRef = constrainedType.attributes[constraint.fieldName!!]!!
-            schema.type(typeRef.name)
+            val field = constrainedType.attributes.getValue(constraint.fieldName)
+            schema.type(field.type.name)
          } else {
             constrainedType
          }

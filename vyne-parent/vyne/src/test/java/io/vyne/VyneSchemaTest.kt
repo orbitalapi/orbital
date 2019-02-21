@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.winterbe.expekt.expect
+import io.vyne.models.json.addJsonModel
 import io.vyne.query.QueryEngineFactory
 import io.vyne.schemas.AttributeConstantValueConstraint
 import io.vyne.schemas.AttributeValueFromParameterConstraint
@@ -84,7 +85,6 @@ class VyneSchemaTest {
       expect(service.operation("getClient").parameters).size(1)
       expect(service.operation("getClient").returnType.name.fullyQualifiedName).to.equal("vyne.example.Client")
       expect(service.operation("convertMoney").parameters).size(2)
-
    }
 
    @Test
@@ -198,6 +198,22 @@ type alias EmailAddress as String
       expect(returnType.name.name).to.equal("Array")
       expect(returnType.typeParameters).to.have.size(1)
       expect(returnType.typeParameters.first()).to.equal(emailAddressType)
+   }
+
+
+   @Test
+   fun when_addingComponentType_then_itsFieldsAreNotDiscoverable() {
+      val taxiDef = """
+  component type Money {
+    currency : Currency as String
+    value : MoneyAmount as Decimal
+ }
+      """.trimIndent()
+      val schema = TaxiSchema.from(taxiDef)
+      val vyne = Vyne(QueryEngineFactory.default()).addSchema(schema)
+      vyne.addJsonModel("Money", """{ "currency" : "USD" , "value" : 3000 }""")
+      val result = vyne.query().find("Currency")
+      expect(result.isFullyResolved).to.be.`false`
    }
 
 

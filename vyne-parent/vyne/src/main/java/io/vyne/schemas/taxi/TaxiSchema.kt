@@ -3,6 +3,8 @@ package io.vyne.schemas.taxi
 import com.google.common.collect.ArrayListMultimap
 import io.vyne.SchemaAggregator
 import io.vyne.schemas.*
+import io.vyne.schemas.Field
+import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.SourceCode
@@ -86,10 +88,10 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
                val typeName = QualifiedName(taxiType.qualifiedName)
                val fields = taxiType.allFields.map { field ->
                   when (field.type) {
-                     is ArrayType -> field.name to TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true)
-                     else -> field.name to TypeReference(field.type.qualifiedName.fqn(),
+                     is ArrayType -> field.name to Field(TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true), field.modifiers.toVyneFieldModifiers())
+                     else -> field.name to Field(TypeReference(field.type.qualifiedName.fqn(),
                         constraintProvider = buildDeferredConstraintProvider(field.type.qualifiedName.fqn(), field.constraints)
-                     )
+                     ), field.modifiers.toVyneFieldModifiers())
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType)
@@ -156,6 +158,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
          is PrimitiveType -> listOf(Modifier.PRIMITIVE)
          is ObjectType -> type.modifiers.map {
             when (it) {
+               lang.taxi.types.Modifier.CLOSED -> Modifier.CLOSED
                lang.taxi.types.Modifier.PARAMETER_TYPE -> Modifier.PARAMETER_TYPE
             }
          }
@@ -179,10 +182,10 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
             SourceWithDependencies(namedSource, dependentSourceFiles)
          }
 
-         return DependencyAwareSchemaBuilder(sourcesWithDependencies,imports).build()
+         return DependencyAwareSchemaBuilder(sourcesWithDependencies, imports).build()
       }
 
-      internal fun from(source:NamedSource, importSources: List<TaxiSchema> = emptyList()):TaxiSchema {
+      internal fun from(source: NamedSource, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
          return from(source.taxi, source.sourceName, importSources)
       }
 
@@ -192,9 +195,13 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
    }
 }
 
-class CircularDependencyInSourcesException(message:String) : RuntimeException(message)
+private fun List<lang.taxi.types.FieldModifier>.toVyneFieldModifiers(): List<FieldModifier> {
+   return this.map { FieldModifier.valueOf(it.name) }
+}
 
-private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependencies>, val importSources:List<TaxiSchema>) {
+class CircularDependencyInSourcesException(message: String) : RuntimeException(message)
+
+private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependencies>, val importSources: List<TaxiSchema>) {
    private val namedSources: Map<NamedSource, SourceWithDependencies> = sources.associateBy { it.source }
    private val builtSchemas = mutableMapOf<SourceWithDependencies, TaxiSchema>()
    private val schemasBeingBuilt = mutableListOf<SourceWithDependencies>()
@@ -205,7 +212,7 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
       return builtSchemas.values.toList()
    }
 
-   private fun buildWithDependencies(source:SourceWithDependencies) {
+   private fun buildWithDependencies(source: SourceWithDependencies) {
 
       if (!builtSchemas.containsKey(source)) {
          if (schemasBeingBuilt.contains(source)) {
@@ -226,7 +233,7 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
       }
    }
 
-   private fun getOrBuild(source:SourceWithDependencies):TaxiSchema {
+   private fun getOrBuild(source: SourceWithDependencies): TaxiSchema {
       return builtSchemas.getOrPut(source) {
          val imports = builtSchemas.values + importSources
          val schema = TaxiSchema.from(source.source, imports)
