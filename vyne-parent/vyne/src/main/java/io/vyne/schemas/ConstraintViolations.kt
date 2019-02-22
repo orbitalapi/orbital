@@ -63,7 +63,9 @@ data class ResolutionAdvice(val operation: Operation, val suggestedParams: Map<P
 
       // Check to see if the type is unambiguous
       if (operation.parameters.count { it.type == parameter.type } == 1) {
-         return suggestedParams.filterValues { it.type == parameter.type }.size == 1
+         // TODO : Using resolvesSameAs here is dangerous, as typealiases can come into play,
+         // and we should ensure we're only considering narrowing type aliases.
+         return suggestedParams.filterValues { it.type.resolvesSameAs(parameter.type) }.size == 1
       }
 
       return false
@@ -76,7 +78,7 @@ data class ResolutionAdvice(val operation: Operation, val suggestedParams: Map<P
             ?: error("No parameter for name ${parameter.name} found in suggested params.  This shouldn't happen")
       }
 
-      return suggestedParams.values.first { it.type == parameter.type }
+      return suggestedParams.values.first { it.type.resolvesSameAs(parameter.type) }
    }
 }
 

@@ -2,12 +2,7 @@ package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
-import io.vyne.query.graph.EdgeEvaluator
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.ParameterFactory
-import io.vyne.query.graph.EvaluatedLink
-import io.vyne.query.graph.LinkEvaluator
+import io.vyne.query.graph.*
 import io.vyne.schemas.*
 import io.vyne.utils.log
 import org.springframework.stereotype.Component
@@ -22,10 +17,10 @@ interface OperationInvocationService {
 interface OperationInvoker {
    fun canSupport(service: Service, operation: Operation): Boolean
    // TODO : This should return some form of reactive type.
-   fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter,TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance
+   fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance
 }
 
-class DefaultOperationInvocationService(private val invokers:List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
+class DefaultOperationInvocationService(private val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
    override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext): TypedInstance {
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
@@ -35,14 +30,17 @@ class DefaultOperationInvocationService(private val invokers:List<OperationInvok
       val result: TypedInstance = invoker.invoke(service, operation, resolvedParams, context)
       return result
    }
-   private fun gatherParameters(parameters: List<Parameter>, preferredParams: Set<TypedInstance>, context: QueryContext): List<Pair<Parameter,TypedInstance>> {
+
+   private fun gatherParameters(parameters: List<Parameter>, preferredParams: Set<TypedInstance>, context: QueryContext): List<Pair<Parameter, TypedInstance>> {
       val preferredParamsByType = preferredParams.associateBy { it.type }
       val unresolvedParams = mutableListOf<QuerySpecTypeNode>()
       // Holds EITHER the param value, or a QuerySpecTypeNode which can be used
       // to query the engine for a value.
-      val parameterValuesOrQuerySpecs: List<Pair<Parameter,Any>> = parameters.map { requiredParam ->
+      val parameterValuesOrQuerySpecs: List<Pair<Parameter, Any>> = parameters.map { requiredParam ->
+         val preferredParam = preferredParams.firstOrNull { it.type.resolvesSameAs(requiredParam.type) }
          when {
-            preferredParamsByType.containsKey(requiredParam.type) -> requiredParam to preferredParamsByType[requiredParam.type]!!
+            preferredParam != null -> requiredParam to preferredParam
+            preferredParamsByType.containsKey(requiredParam.type) -> requiredParam to preferredParamsByType.getValue(requiredParam.type)
             context.hasFactOfType(requiredParam.type) -> requiredParam to context.getFact(requiredParam.type)
             else -> {
                val queryNode = QuerySpecTypeNode(requiredParam.type)
@@ -67,7 +65,7 @@ class DefaultOperationInvocationService(private val invokers:List<OperationInvok
       // Now, either all the params were available in the first pass,
       // or they've been subsequently resolved against the context / graph.
       // So, create a final list of values.
-      val parametersWithValues = parameterValuesOrQuerySpecs.map { (param,valueOrQuerySpec) ->
+      val parametersWithValues = parameterValuesOrQuerySpecs.map { (param, valueOrQuerySpec) ->
          when (valueOrQuerySpec) {
             is TypedInstance -> param to valueOrQuerySpec
             is QuerySpecTypeNode -> param to resolvedParams[valueOrQuerySpec]!!
@@ -84,7 +82,7 @@ class DefaultOperationInvocationService(private val invokers:List<OperationInvok
     * If the contract is not satisfied, we attempt to satisfy the contract leveraging
     * the graph, and fail if the resolution was unsuccessful
     */
-   private fun ensureParametersSatisfyContracts(parametersWithValues:List<Pair<Parameter,TypedInstance>>, context: QueryContext): List<Pair<Parameter,TypedInstance>> {
+   private fun ensureParametersSatisfyContracts(parametersWithValues: List<Pair<Parameter, TypedInstance>>, context: QueryContext): List<Pair<Parameter, TypedInstance>> {
       val paramsToConstraintEvaluations = parametersWithValues.map { (paramSpec, paramValue) ->
          paramSpec to ConstraintEvaluations(paramValue,
             paramSpec.constraints.map { constraint ->
@@ -97,6 +95,7 @@ class DefaultOperationInvocationService(private val invokers:List<OperationInvok
       return resolvedParameterValues.toList()
    }
 }
+
 @Component
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
@@ -132,9 +131,6 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       context.addFact(result)
       return EvaluatedLink(link, startingPoint, result)
    }
-
-
-
 
 
 }

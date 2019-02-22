@@ -77,13 +77,13 @@ class ConstraintViolationResolver {
                                          val discoveredParams: List<TypedInstance>) {
       companion object {
          fun from(service: Service, operation: Operation, resolutionAdvice: ResolutionAdvice): OperationInvocationContext {
-            val suggestedParams = operation.parameters.map { param ->
+            val suggestedParams = operation.parameters.mapNotNull { param ->
                if (resolutionAdvice.containsValueForParam(param)) {
                   resolutionAdvice.getParamValue(param)
                } else {
                   null
                }
-            }.filterNotNull()
+            }
             return OperationInvocationContext(service, operation, suggestedParams)
          }
       }
