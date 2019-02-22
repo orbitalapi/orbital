@@ -208,6 +208,7 @@ class HasParamOfTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.TYPE_P
 class OperationParameterEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_PARAMETER_ON)
 class IsInstanceOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_INSTANCE_OF)
 class CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPULATE)
+class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_TYPE)
 
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {

@@ -43,7 +43,7 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
       return this
    }
 
-   fun label():String {
+   fun label(): String {
       return when (elementType) {
          ElementType.TYPE -> valueAsQualifiedName().name
          ElementType.MEMBER -> value.toString().split(".").last()
@@ -120,6 +120,10 @@ class VyneGraphBuilder(val schema: Schema) {
 
          val typeFullyQualifiedName = type.fullyQualifiedName
          val typeNode = type(typeFullyQualifiedName)
+
+         type.inherits.forEach { inheritedType ->
+            builder.connect(typeNode).to(type(inheritedType)).withEdge(Relationship.EXTENDS_TYPE)
+         }
          type.attributes.map { (attributeName, attributeType) ->
             val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)
             val attributeNode = member(attributeQualifiedName)
