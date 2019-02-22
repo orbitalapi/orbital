@@ -13,7 +13,8 @@ export class VyneQueryViewerComponent implements OnInit {
   private generators: Generator[] = [
     new KotlinGenerator(),
     new TypescriptGenerator(),
-    new JsonGenerator()
+    new JsonGenerator(),
+    new GoogleDocsGenerator()
   ];
 
   private _schema: any;
@@ -113,6 +114,21 @@ class JsonGenerator implements Generator {
 
 }
 
+class GoogleDocsGenerator implements Generator {
+  generate(schema: Schema, facts: Fact[], targetType: string, queryMode: QueryMode): Snippet {
+    let formula: string;
+    if (facts.length == 0) {
+      formula = `=discover("${targetType}")`
+    } else if (facts.length === 1) {
+      const fact = facts[0];
+      formula = `=discover("${targetType}","${QualifiedName.nameOnly(fact.typeName)}","${fact.value}")`
+    } else {
+      formula = "Error - Google docs only supports queries with a single fact";
+    }
+    return new Snippet("Google Sheets", "typescript", formula);
+  }
+
+}
 
 abstract class ObjectScalarGenerator {
   getFacts(schema: Schema, facts: Fact[]): string {

@@ -23,7 +23,6 @@ import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.ClientHttpResponse
 import org.springframework.web.client.ResponseErrorHandler
 import org.springframework.web.client.RestTemplate
-import java.util.regex.Pattern
 
 class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                           val restTemplate: RestTemplate,
@@ -39,6 +38,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       .build(), serviceUrlResolvers)
 
    private val uriVariableProvider = UriVariableProvider()
+
    init {
       log().info("Rest template invoker starter")
    }
@@ -49,7 +49,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    }
 
 
-   override fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter,TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance {
+   override fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance {
       log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",")}")
 
       val annotation = operation.metadata("HttpOperation")
@@ -59,7 +59,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
       val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
          val absoluteUrl = makeUrlAbsolute(service, operation, url)
-         val uriVariables = uriVariableProvider.getUriVariables(parameters,url)
+         val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
 
          log().debug("Operation ${operation.name} resolves to $absoluteUrl")
          httpInvokeOperation.addContext("Absolute Url", absoluteUrl)
@@ -73,7 +73,10 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
          val expandedUri = restTemplate.uriTemplateHandler.expand(absoluteUrl, uriVariables)
          httpInvokeOperation.addRemoteCall(RemoteCall(
-            service.name, expandedUri.toASCIIString(), operation.name, httpMethod.name, requestBody.body, result.statusCodeValue, httpInvokeOperation.duration, result.body
+            service.name, expandedUri.toASCIIString(),
+            operation.name,
+            operation.returnType.name,
+            httpMethod.name, requestBody.body, result.statusCodeValue, httpInvokeOperation.duration, result.body
          ))
          if (result.statusCode.is2xxSuccessful) {
             handleSuccessfulHttpResponse(result, operation)
@@ -102,7 +105,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       // See https://gitlab.com/vyne/vyne/issues/54
 
       return when (resultBody) {
-          is Map<*, *> -> TypedObject.fromAttributes(operation.returnType, resultBody as Map<String, Any>, schemaProvider.schema())
+         is Map<*, *> -> TypedObject.fromAttributes(operation.returnType, resultBody as Map<String, Any>, schemaProvider.schema())
          else -> TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema())
       }
    }
@@ -133,7 +136,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
 }
 
-typealias ParameterValuePair = Pair<Parameter,TypedInstance>
+typealias ParameterValuePair = Pair<Parameter, TypedInstance>
 
 private fun Operation.hasHttpMetadata(): Boolean {
    if (!this.hasMetadata("HttpOperation")) {
