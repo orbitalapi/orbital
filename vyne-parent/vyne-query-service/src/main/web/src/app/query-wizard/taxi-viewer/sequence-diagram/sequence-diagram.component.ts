@@ -37,7 +37,7 @@ export class SequenceDiagramComponent implements OnInit {
       resultMessage += remoteCall.resultCode;
       let indent = "    ";
       let lines = [indent + `Vyne ->> ${remoteCall.service.name}: ${remoteCall.operation} (${remoteCall.method})`,
-        indent + `${remoteCall.service.name} ->> Vyne: ${resultMessage} (${remoteCall.durationMs}ms)`
+        indent + `${remoteCall.service.name} ->> Vyne: ${remoteCall.responseTypeName.name} (${remoteCall.durationMs}ms)`
       ].join("\n");
       return lines;
 

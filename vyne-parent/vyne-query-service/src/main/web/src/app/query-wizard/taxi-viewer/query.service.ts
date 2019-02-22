@@ -50,6 +50,7 @@ export interface RemoteCall {
   resultCode: number;
   durationMs: number;
   response: any;
+  responseTypeName : QualifiedName
 }
 
 export interface ProfilerOperation {

@@ -63,6 +63,7 @@ import { StatementEditorComponent } from './policy-manager/statement-editor.comp
 import { ElseEditorComponent } from './policy-manager/else-editor.component';
 import { InstructionSelectorComponent } from './policy-manager/instruction-selector.component';
 import { StatementDisplayComponent } from './policy-manager/statement-display.component';
+import {VyneQueryViewerComponent} from "./query-wizard/taxi-viewer/vyne-query-viewer/vyne-query-viewer.component";
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
@@ -80,6 +81,7 @@ const appRoutes = [
     VyneComponent,
     TypeListComponent,
     QueryWizardComponent,
+
     ResultContainerComponent,
     ProfileGraphComponent,
     PropertyViewComponent,

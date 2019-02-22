@@ -30,9 +30,8 @@ export class MermaidComponent implements OnInit, AfterViewInit {
   mermaidContainer: ElementRef;
 
   ngOnInit() {
-    console.log("asdfkjasdfkljasfdl")
     mermaid.initialize({
-      theme: "dark"
+      themeCSS: themeCSS
     });
     // mermaid.initialize({startOnLoad: false});
   }
@@ -74,7 +73,13 @@ export class MermaidComponent implements OnInit, AfterViewInit {
 const color2 = "#274060";
 const themeCSS = `
 text.actor {
-  font-size: 14px
+  font-size: 13px
+}
+
+.actor {
+  fill: #ffffff;
+  stroke: #4bb04f;
+  stroke-width:1.5;
 }
 
 .messageLine0 {

@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
 import {Modifier, Schema, Type, TypeReference} from "../services/schema";
-import { TypesService} from "../services/types.service";
+import {TypesService} from "../services/types.service";
 import {map} from "rxjs/operators";
 import {
   ITdDynamicElementConfig,
@@ -38,6 +38,7 @@ export class QueryWizardComponent implements OnInit {
   }
 
   forms: FactForm[] = [];
+  facts: Fact[] = [];
 
   private subscribedDynamicForms: TdDynamicFormsComponent[] = [];
 
@@ -73,6 +74,7 @@ export class QueryWizardComponent implements OnInit {
   removeFact(factForm: FactForm) {
     const index = this.forms.indexOf(factForm);
     this.forms.splice(index, 1);
+    this.facts = this.buildFacts();
   }
 
   updateFact(formSpec: FactForm, value) {
@@ -95,27 +97,35 @@ export class QueryWizardComponent implements OnInit {
     //   let nestedValue = this.nest(value);
     //   this.facts[fullyQualifiedName] = nestedValue;
     // }
+
+    this.facts = this.buildFacts();
   }
 
-  private buildFacts() {
-    const facts = {};
-    this.forms.forEach(formSpec => {
-      let fullyQualifiedName = formSpec.type.name.fullyQualifiedName;
-      if (formSpec.type.scalar) {
-        let unwrappedValue = Object.values(formSpec.value)[0];
-        facts[fullyQualifiedName] = unwrappedValue;
-      } else {
-        let nestedValue = this.nest(formSpec.value);
-        facts[fullyQualifiedName] = nestedValue;
-      }
-    });
+  private buildFacts(): Fact[] {
+    // const facts = {};
+    const facts = this.forms
+      .filter(formSpec => formSpec.value)
+      .map(formSpec => {
+        let fullyQualifiedName = formSpec.type.name.fullyQualifiedName;
+        if (formSpec.type.scalar) {
+          let unwrappedValue = Object.values(formSpec.value)[0];
+          return new Fact(fullyQualifiedName, unwrappedValue);
+          // facts[fullyQualifiedName] = unwrappedValue;
+        } else {
+          let nestedValue = this.nest(formSpec.value);
+          return new Fact(fullyQualifiedName, nestedValue);
+          // facts[fullyQualifiedName] = nestedValue;
+        }
+      });
     return facts;
   }
 
+
   submitQuery() {
     this.lastQueryResult = null;
-    let facts = this.buildFacts();
-    let factList: Fact[] = Object.keys(facts).map(key => new Fact(key, facts[key]));
+    // let facts = this.buildFacts();
+    // let factList: Fact[] = Object.keys(facts).map(key => new Fact(key, facts[key]));
+    const factList = this.buildFacts();
     let query = new Query(
       this.targetType.name.fullyQualifiedName,
       // this.targetTypeInput.value,
@@ -265,5 +275,135 @@ export class FactForm {
 
 }
 
-
-
+const stubbedResponse = {
+  "results": {
+    "io.vyne.demos.marketing.shop.AvailableRewards": {
+      "rewards": [{
+        "name": "Weekend at the spa",
+        "priceInGbp": 300
+      }, {"name": "Night at the moview", "priceInGbp": 20}, {"name": "Bottle of wine", "priceInGbp": 10}]
+    }
+  },
+  "unmatchedNodes": [],
+  "path": null,
+  "duration": 166,
+  "remoteCalls": [{
+    "service": {
+      "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService",
+      "parameters": [],
+      "parameterizedName": "io.vyne.demos.rewards.CustomerService",
+      "namespace": "io.vyne.demos.rewards",
+      "name": "CustomerService"
+    },
+    "addresss": "http://192.168.5.73:9200/customers/email/jimmy@demo.com",
+    "operation": "getCustomerByEmail",
+    "responseTypeName": {
+      "fullyQualifiedName": "demo.Customer",
+      "parameters": [],
+      "parameterizedName": "demo.Customer",
+      "namespace": "demo",
+      "name": "Customer"
+    },
+    "method": "GET",
+    "requestBody": null,
+    "resultCode": 200,
+    "durationMs": 11,
+    "response": {"id": 1, "name": "Jimmy", "email": "jimmy@demo.com"}
+  }, {
+    "service": {
+      "fullyQualifiedName": "io.vyne.demos.marketing.MarketingService",
+      "parameters": [],
+      "parameterizedName": "io.vyne.demos.marketing.MarketingService",
+      "namespace": "io.vyne.demos.marketing",
+      "name": "MarketingService"
+    },
+    "addresss": "http://192.168.5.73:9201/marketing/1",
+    "operation": "getMarketingDetailsForCustomer",
+    "responseTypeName": {
+      "fullyQualifiedName": "io.vyne.demos.marketing.CustomerMarketingRecord",
+      "parameters": [],
+      "parameterizedName": "io.vyne.demos.marketing.CustomerMarketingRecord",
+      "namespace": "io.vyne.demos.marketing",
+      "name": "CustomerMarketingRecord"
+    },
+    "method": "GET",
+    "requestBody": null,
+    "resultCode": 200,
+    "durationMs": 10,
+    "response": {"id": 1, "rewardsCardNumber": "4005-2003-2330-1002"}
+  }, {
+    "service": {
+      "fullyQualifiedName": "io.vyne.demos.rewards.balances.RewardsBalanceService",
+      "parameters": [],
+      "parameterizedName": "io.vyne.demos.rewards.balances.RewardsBalanceService",
+      "namespace": "io.vyne.demos.rewards.balances",
+      "name": "RewardsBalanceService"
+    },
+    "addresss": "http://192.168.5.73:9202/balances/4005-2003-2330-1002",
+    "operation": "getRewardsBalance",
+    "responseTypeName": {
+      "fullyQualifiedName": "demo.RewardsAccountBalance",
+      "parameters": [],
+      "parameterizedName": "demo.RewardsAccountBalance",
+      "namespace": "demo",
+      "name": "RewardsAccountBalance"
+    },
+    "method": "GET",
+    "requestBody": null,
+    "resultCode": 200,
+    "durationMs": 7,
+    "response": {"cardNumber": "4005-2003-2330-1002", "balance": 2300, "currencyUnit": "POINTS"}
+  }, {
+    "service": {
+      "fullyQualifiedName": "io.vyne.demos.rewards.balances.RewardsBalanceService",
+      "parameters": [],
+      "parameterizedName": "io.vyne.demos.rewards.balances.RewardsBalanceService",
+      "namespace": "io.vyne.demos.rewards.balances",
+      "name": "RewardsBalanceService"
+    },
+    "addresss": "http://192.168.5.73:9202/balances/POINTS",
+    "operation": "convert",
+    "responseTypeName": {
+      "fullyQualifiedName": "demo.RewardsAccountBalance",
+      "parameters": [],
+      "parameterizedName": "demo.RewardsAccountBalance",
+      "namespace": "demo",
+      "name": "RewardsAccountBalance"
+    },
+    "method": "POST",
+    "requestBody": {"cardNumber": "4005-2003-2330-1002", "balance": 2300, "currencyUnit": "POINTS"},
+    "resultCode": 200,
+    "durationMs": 16,
+    "response": {"cardNumber": "4005-2003-2330-1002", "balance": 1150, "currencyUnit": "POINTS"}
+  }, {
+    "service": {
+      "fullyQualifiedName": "io.vyne.demos.marketing.shop.RewardsShopService",
+      "parameters": [],
+      "parameterizedName": "io.vyne.demos.marketing.shop.RewardsShopService",
+      "namespace": "io.vyne.demos.marketing.shop",
+      "name": "RewardsShopService"
+    },
+    "addresss": "http://192.168.5.73:9205/shop",
+    "operation": "getAvailableRewards",
+    "responseTypeName": {
+      "fullyQualifiedName": "io.vyne.demos.marketing.shop.AvailableRewards",
+      "parameters": [],
+      "parameterizedName": "io.vyne.demos.marketing.shop.AvailableRewards",
+      "namespace": "io.vyne.demos.marketing.shop",
+      "name": "AvailableRewards"
+    },
+    "method": "POST",
+    "requestBody": {"cardNumber": "4005-2003-2330-1002", "balance": 1150, "currencyUnit": "POINTS"},
+    "resultCode": 200,
+    "durationMs": 10,
+    "response": {
+      "rewards": [{"name": "Weekend at the spa", "priceInGbp": 300}, {
+        "name": "Night at the moview",
+        "priceInGbp": 20
+      }, {"name": "Bottle of wine", "priceInGbp": 10}]
+    }
+  }],
+  "vyneCost": 38,
+  "fullyResolved": true,
+  "timings": {"LOOKUP": 0, "GRAPH_TRAVERSAL": 27, "GRAPH_BUILDING": 11, "REMOTE_CALL": 127, "ROOT": 4}
+}

@@ -9,6 +9,17 @@
       <div class="address">{{ getPathOnly(operation.addresss) }}</div>
     </div>
   </div>
-  <app-sequence-diagram [result]="queryResult" *ngIf="!selectedOperation"></app-sequence-diagram>
-  <app-operation-view [operation]="selectedOperation" *ngIf="selectedOperation"></app-operation-view>
+  <div class="chart-container" *ngIf="!selectedOperation">
+    <mat-button-toggle-group [(value)]="selectedChart">
+      <mat-button-toggle value="graph">
+        <mat-icon>timeline</mat-icon>
+      </mat-button-toggle>
+      <mat-button-toggle value="sequence">
+        <mat-icon>compare_arrows</mat-icon>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+    <app-service-graph [result]="queryResult" *ngIf="selectedChart == 'graph'"></app-service-graph>
+    <app-sequence-diagram [result]="queryResult" *ngIf="selectedChart == 'sequence'"></app-sequence-diagram>
+  </div>
+  <app-operation-view [operation]="selectedOperation" *ngIf="selectedOperation" (close)="selectedOperation = null"></app-operation-view>
 </div>

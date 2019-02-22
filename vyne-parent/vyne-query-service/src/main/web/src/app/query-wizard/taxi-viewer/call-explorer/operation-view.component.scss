@@ -3,6 +3,13 @@
 
 .operation-view {
   background-color: $grey-1;
+  position: relative;
+}
+
+.close-container {
+  position: absolute;
+  right: 20px;
+  top: 20px;
 }
 
 .summary-container {
@@ -13,6 +20,7 @@
     h3 {
       margin-right: 60px;
     }
+
     display: flex;
     align-items: center;
   }
@@ -42,6 +50,7 @@
     font-weight: 600;
     white-space: nowrap;
   }
+
   .duration {
     background-color: $vyne-lilac;
   }
@@ -49,6 +58,7 @@
   .status-success {
     background-color: $vyne-green;
   }
+
   .status-error {
     background-color: #ac2b82;
   }

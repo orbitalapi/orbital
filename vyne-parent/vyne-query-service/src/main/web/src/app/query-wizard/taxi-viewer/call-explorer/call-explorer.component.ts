@@ -10,6 +10,8 @@ export class CallExplorerComponent {
   constructor() {
   }
 
+  selectedChart: 'sequence' | 'graph' = 'graph';
+
   @Input()
   queryResult: any; // TODO : Grab the types
 

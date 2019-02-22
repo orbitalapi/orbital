@@ -113,6 +113,7 @@ data class RemoteCall(
    val service: QualifiedName,
    val addresss: String,
    val operation: String,
+   val responseTypeName: QualifiedName,
    val method: String,
    val requestBody: Any?,
    val resultCode: Int,

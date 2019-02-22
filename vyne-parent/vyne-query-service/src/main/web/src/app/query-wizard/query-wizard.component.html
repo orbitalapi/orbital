@@ -60,6 +60,15 @@
     </div>
   </div>
   <div class="row">
+    <app-vyne-query-viewer [targetType]="targetType?.name?.fullyQualifiedName" [facts]="facts"
+                           [schema]="schema"
+                           [queryMode]="queryMode.value"
+                           expanded="true"
+                           class="mat-elevation-z2"
+    ></app-vyne-query-viewer>
+
+  </div>
+  <div class="row">
     <div class="results-container" *ngIf="lastQueryResult">
       <mat-card>
         <mat-card-header>

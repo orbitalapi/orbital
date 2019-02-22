@@ -1,5 +1,9 @@
 @import "../expand-panel";
 
+.title-bar {
+  background-color: white;
+}
+
 .language-selector {
   display: flex;
   transition: opacity 0.3s;
@@ -20,7 +24,9 @@
       background-color: rgba(black, 0.2);
     }
     &.active {
-      color: white;
+      font-weight: 600;
+      color: black;
+      //color: white;
       opacity: 1;
       border-bottom: 2px solid $vyne-green;
     }

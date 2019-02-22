@@ -1,0 +1,20 @@
+@import "../../../theme";
+
+.text-path {
+  fill: $dark-grey-1 !important;
+}
+
+.chart-outer-container {
+  height: 600px;
+  width: 100%;
+}
+
+.chart-col {
+  width: 100%;
+}
+
+.node {
+  font-size: 0.8rem;
+  //font-family: $mono;
+  cursor: pointer;
+}

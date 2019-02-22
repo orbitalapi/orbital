@@ -9,6 +9,10 @@
 
 }
 
+app-vyne-query-viewer {
+  width: 100%;
+}
+
 .fact-form-list {
   display: table;
   width: 100%;
@@ -29,6 +33,7 @@
         color: $dark-grey-2;
       }
     }
+
     .type-name {
       display: table-cell;
     }
@@ -66,6 +71,7 @@
   app-type-autocomplete {
     width: 100%;
   }
+
   .mat-form-field {
     width: 100%;
   }
