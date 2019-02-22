@@ -15,8 +15,12 @@
 
       <ng-template #nodeTemplate let-node>
         <svg:g class="node">
-          <svg:rect [attr.width]="node.width" [attr.height]="node.height" [attr.fill]="node.options.color"/>
-          <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.height / 2">{{node.label}}</svg:text>
+          <svg:rect [attr.width]="node.width" [attr.height]="node.height"
+                    stoke-width="2"
+                    [attr.fill]="getStroke(node)" stroke="#000000" rx="6" ry="6"/>
+          <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.height / 2"
+            fill="#ffffff"
+          >{{node.label}}</svg:text>
         </svg:g>
       </ng-template>
 

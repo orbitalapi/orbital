@@ -83,7 +83,9 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
       SchemaGraphLink(edge.vertex1.browserSafeId(), edge.vertex2.browserSafeId(), edge.edgeValue.description)
 
    private fun toSchemaGraphNode(element: Element): SchemaGraphNode {
-      return SchemaGraphNode(id = element.browserSafeId(), label = element.graphNode().value.toString(),
+      return SchemaGraphNode(id = element.browserSafeId(),
+//         label = element.graphNode().value.toString(),
+         label = element.label(),
          type = element.elementType,
          nodeId = element.value.toString().replace("/", ":"))
    }

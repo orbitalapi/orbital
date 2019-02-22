@@ -1,7 +1,5 @@
 import {Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
-import {
-  TypesService
-} from "../services/types.service";
+import {TypesService} from "../services/types.service";
 import * as shape from 'd3-shape';
 import {Observable} from "rxjs/internal/Observable";
 import {QualifiedName, SchemaGraph, SchemaGraphNode, SchemaMember, SchemaNodeSet} from "../services/schema";
@@ -38,6 +36,13 @@ export class TypeLinksComponent implements OnInit {
   curve = shape.curveBundle.beta(1);
   chartDimensions = [1400, 800];
   autoZoom: boolean = false;
+
+  colors = {
+    'TYPE': '#66BD6D',
+    'MEMBER': '#FA783B',
+    'OPERATION': '#55ACD2'
+  };
+
   colorScheme = {
     domain: [
       '#FAC51D',
@@ -63,6 +68,14 @@ export class TypeLinksComponent implements OnInit {
   ) {
   }
 
+  getStroke(node) {
+    let nodeType = node.type;
+
+    if (!this.colors[nodeType]) {
+      console.log("No color defined for node type " + nodeType);
+    }
+    return this.colors[nodeType] || '#FAC51D';
+  }
 
   ngOnInit() {
   }

@@ -43,6 +43,15 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
       return this
    }
 
+   fun label():String {
+      return when (elementType) {
+         ElementType.TYPE -> valueAsQualifiedName().name
+         ElementType.MEMBER -> value.toString().split(".").last()
+         ElementType.OPERATION -> value.toString().split(".").takeLast(2).joinToString("/")
+         else -> value.toString()
+      }
+   }
+
    fun valueAsQualifiedName(): QualifiedName {
       return value.toString().fqn()
    }
