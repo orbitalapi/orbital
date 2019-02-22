@@ -127,7 +127,7 @@ data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>
    }
 
    fun addFact(fact: TypedInstance) {
-      log().debug("Added fact to queryContext: $fact")
+      log().debug("Added fact to queryContext: ${fact.type.fullyQualifiedName}")
       this.facts.add(fact)
    }
 

@@ -50,7 +50,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
 
    override fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance {
-      log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",")}")
+      log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}")
 
       val annotation = operation.metadata("HttpOperation")
       val httpMethod = HttpMethod.resolve(annotation.params["method"] as String)

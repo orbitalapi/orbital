@@ -55,7 +55,7 @@ class DefaultOperationInvocationService(private val invokers:List<OperationInvok
       // Try to resolve any unresolved params
       var resolvedParams = emptyMap<QuerySpecTypeNode, TypedInstance?>()
       if (unresolvedParams.isNotEmpty()) {
-         log().debug("Querying to find params for Operation : $unresolvedParams")
+         log().debug("Querying to find params for Operation : ${unresolvedParams.map { it.type.fullyQualifiedName }}")
          val paramsToSearchFor = unresolvedParams.map { QuerySpecTypeNode(it.type) }.toSet()
          val queryResult: QueryResult = context.queryEngine.find(paramsToSearchFor, context)
          if (!queryResult.isFullyResolved) {
