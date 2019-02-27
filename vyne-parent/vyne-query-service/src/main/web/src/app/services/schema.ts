@@ -23,12 +23,18 @@ export class QualifiedName {
 
 export interface Type {
   name: QualifiedName
-  attributes: Map<string, TypeReference>
+  attributes: Map<string, Field>
   modifiers: Array<Modifier>
   scalar: boolean
   aliasForType: QualifiedName,
   enumValues: Array<string>,
   sources: Array<SourceCode>
+  closed: boolean;
+}
+
+export interface Field {
+  type: TypeReference
+  modifiers: Array<Modifier>
 }
 
 
@@ -37,7 +43,6 @@ export interface SchemaSpec {
   version: string;
   defaultNamespace: string
 }
-
 
 
 export interface TypeReference {
@@ -50,7 +55,12 @@ export interface TypeReference {
 export enum Modifier {
   PARAMETER_TYPE = "PARAMETER_TYPE",
   ENUM = "ENUM",
+  CLOSED = "CLOSED",
   PRIMITIVE = "PRIMITIVE"
+}
+
+export enum FieldModifier {
+  CLOSED = "CLOSED"
 }
 
 

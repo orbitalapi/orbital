@@ -17,6 +17,10 @@ export class QueryService {
   getHistory(): Observable<QueryHistoryRecord[]> {
     return this.http.get<QueryHistoryRecord[]>(`${environment.queryServiceUrl}/query/history`)
   }
+
+  getQueryProfile(queryId: string): Observable<ProfilerOperation> {
+    return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/query/history/${queryId}/profile`)
+  }
 }
 
 export class Query {
@@ -85,4 +89,5 @@ export interface QueryHistoryRecord {
   query: Query;
   response: QueryResult;
   timestamp: Date;
+  id:string
 }

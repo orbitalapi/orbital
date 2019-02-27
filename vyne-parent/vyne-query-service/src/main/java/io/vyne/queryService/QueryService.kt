@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.models.TypedInstance
@@ -12,10 +13,15 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import java.util.*
 
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
-data class FailedSearchResponse(val message: String, override val profilerOperation: ProfilerOperation) : QueryResponse {
+data class FailedSearchResponse(val message: String,
+                                @field:JsonIgnore // this sends too much information - need to build a lightweight version
+                                override val profilerOperation: ProfilerOperation,
+                                override val queryResponseId: String = UUID.randomUUID().toString()
+) : QueryResponse {
    override val isFullyResolved: Boolean = false
 }
 

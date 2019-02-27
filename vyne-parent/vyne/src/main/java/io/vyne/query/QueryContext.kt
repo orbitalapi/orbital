@@ -11,6 +11,7 @@ import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.schemas.*
 import io.vyne.utils.log
 import lang.taxi.policies.Instruction
+import java.util.*
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -37,10 +38,12 @@ data class QueryResult(
    val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
    val path: Path?,
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
-   override val profilerOperation: ProfilerOperation? = null
+   override val profilerOperation: ProfilerOperation? = null,
+   override val queryResponseId: String = UUID.randomUUID().toString()
 ) : QueryResponse {
 
    val duration = profilerOperation?.duration
+
 
    override val isFullyResolved = unmatchedNodes.isEmpty()
    operator fun get(typeName: String): TypedInstance? {
@@ -65,12 +68,13 @@ data class QueryResult(
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
+   val queryResponseId:String
    val isFullyResolved: Boolean
    val profilerOperation: ProfilerOperation?
    val remoteCalls: List<RemoteCall>
       get() = collateRemoteCalls(this.profilerOperation)
 
-   val timings: Map<OperationType, Long>?
+   val timings: Map<OperationType, Long>
       get() {
          return profilerOperation?.timings ?: emptyMap()
       }
@@ -94,6 +98,12 @@ object TypedInstanceTree {
     * Function which defines how to convert a TypedInstance into a tree, for traversal
     */
    val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance: TypedInstance ->
+
+      // This is a naieve first pass, and I doubt this wil work.
+      // For example, how will we ever use the values within?
+      if (instance.type.isClosed) {
+         return@of emptyList<TypedInstance>()
+      }
       when (instance) {
          is TypedObject -> instance.values.toList()
          is TypedValue -> emptyList()

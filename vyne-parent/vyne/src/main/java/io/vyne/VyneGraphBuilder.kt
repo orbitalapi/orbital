@@ -124,21 +124,25 @@ class VyneGraphBuilder(val schema: Schema) {
          type.inherits.forEach { inheritedType ->
             builder.connect(typeNode).to(type(inheritedType)).withEdge(Relationship.EXTENDS_TYPE)
          }
-         type.attributes.map { (attributeName, attributeType) ->
-            val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)
-            val attributeNode = member(attributeQualifiedName)
-            builder.connect(typeNode).to(attributeNode).withEdge(Relationship.HAS_ATTRIBUTE)
 
-            // (attribute) -[IS_ATTRIBUTE_OF]-> (type)
-            builder.connect(attributeNode).to(typeNode).withEdge(Relationship.IS_ATTRIBUTE_OF)
+         if (!type.isClosed) {
+            type.attributes.map { (attributeName, attributeType) ->
+               val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)
+               val attributeNode = member(attributeQualifiedName)
+               builder.connect(typeNode).to(attributeNode).withEdge(Relationship.HAS_ATTRIBUTE)
 
-            val attributeTypeNode = type(attributeType.type.fullyQualifiedName)
-            builder.connect(attributeNode).to(attributeTypeNode).withEdge(Relationship.IS_TYPE_OF)
-            typesAndWhereTheyreUsed.put(attributeTypeNode, attributeNode)
-            // See the relationship for why commented out ....
-            // migrating this relationship to an INSTNACE_OF node.
+               // (attribute) -[IS_ATTRIBUTE_OF]-> (type)
+               builder.connect(attributeNode).to(typeNode).withEdge(Relationship.IS_ATTRIBUTE_OF)
+
+               val attributeTypeNode = type(attributeType.type.fullyQualifiedName)
+               builder.connect(attributeNode).to(attributeTypeNode).withEdge(Relationship.IS_TYPE_OF)
+               typesAndWhereTheyreUsed.put(attributeTypeNode, attributeNode)
+               // See the relationship for why commented out ....
+               // migrating this relationship to an INSTNACE_OF node.
 //            builder.connect(attributeTypeNode).to(attributeNode).withEdge(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
+            }
          }
+
 //         log().debug("Added attribute ${type.name} to graph")
       }
       return typesAndWhereTheyreUsed
@@ -205,7 +209,9 @@ class VyneGraphBuilder(val schema: Schema) {
       type.inheritanceGraph.forEach { inheritedType ->
          builder.connect(providedInstance).to(parameter(inheritedType.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
       }
-      appendInstanceAttributes(schema, instanceFqn, builder, providedInstance)
+      if (!type.isClosed) {
+         appendInstanceAttributes(schema, instanceFqn, builder, providedInstance)
+      }
    }
 
    private fun appendInstanceAttributes(schema: Schema, instanceFqn: String, builder: HipsterGraphBuilder<Element, Relationship>, providedInstance: Element) {

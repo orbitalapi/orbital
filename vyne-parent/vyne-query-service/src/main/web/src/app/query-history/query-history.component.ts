@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {QueryHistoryRecord, QueryService} from "../services/query.service";
+import {ProfilerOperation, QueryHistoryRecord, QueryService} from "../services/query.service";
 
 @Component({
   selector: 'app-query-history',
@@ -13,6 +13,8 @@ export class QueryHistoryComponent implements OnInit {
   constructor(private service: QueryService) {
   }
 
+  profileLoading: boolean = false;
+  profilerOperation: ProfilerOperation;
 
   ngOnInit() {
     this.loadData();
@@ -42,6 +44,14 @@ export class QueryHistoryComponent implements OnInit {
   }
 
   setActiveRecord(historyRecord: QueryHistoryRecord) {
-    this.activeRecord = historyRecord
+    this.activeRecord = historyRecord;
+    this.profilerOperation = null;
+    this.profileLoading = true;
+    this.service.getQueryProfile(historyRecord.id).subscribe(
+      result => {
+        this.profileLoading = false;
+        this.profilerOperation = result
+      }
+    )
   }
 }

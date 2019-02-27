@@ -223,6 +223,9 @@ data class Type(
    val isScalar = attributes.isEmpty()
    @JsonView(TypeFullView::class)
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
+   @JsonView
+   val isClosed : Boolean = this.modifiers.contains(Modifier.CLOSED)
+
 
    fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {
       return strategy.matches(this, other)

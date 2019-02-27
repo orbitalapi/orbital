@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
-import {Modifier, Schema, Type, TypeReference} from "../services/schema";
+import {Field, Modifier, Schema, Type, TypeReference} from "../services/schema";
 import {TypesService} from "../services/types.service";
 import {map} from "rxjs/operators";
 import {
@@ -204,8 +204,8 @@ export class QueryWizardComponent implements OnInit {
     } else {
       let elements: ITdDynamicElementConfig[] = [];
       Object.keys(type.attributes).forEach(attributeName => {
-        let attributeTypeRef = type.attributes[attributeName] as TypeReference;
-        let attributeType = schema.types.find(type => type.name.fullyQualifiedName == attributeTypeRef.fullyQualifiedName);
+        let attributeTypeRef = type.attributes[attributeName];
+        let attributeType = schema.types.find(type => type.name.fullyQualifiedName == attributeTypeRef.type.fullyQualifiedName);
         let newPrefix = prefix.concat([attributeName]);
         elements = elements.concat(this.getElementsForType(attributeType, schema, newPrefix, attributeName));
       });
