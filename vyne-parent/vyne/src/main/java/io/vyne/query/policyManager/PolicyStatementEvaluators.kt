@@ -3,6 +3,7 @@ package io.vyne.query.policyManager
 import io.vyne.FactSets
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
+import io.vyne.query.TypeNameQueryExpression
 import io.vyne.utils.log
 import lang.taxi.policies.*
 import java.lang.RuntimeException
@@ -96,7 +97,7 @@ class CaseConditionEvaluator : ConditionalPolicyStatementEvaluator {
          RelativeSubject.RelativeSubjectSource.THIS -> context.queryEngine.queryContext(setOf(FactSets.NONE), additionalFacts = setOf(instance))
       }
 
-      val result = contextToUse.find(subject.targetType.qualifiedName)
+      val result = contextToUse.find(TypeNameQueryExpression(subject.targetType.qualifiedName))
       if (result.isFullyResolved) {
          return result[subject.targetType.qualifiedName]!!
       } else {

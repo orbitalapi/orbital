@@ -1,5 +1,6 @@
 <div class="typed-value-container" *ngIf="isPrimitive">
-  <div class="type-name">{{ type.name.name }}</div>
+
+  <div class="type-name">{{ type?.name.name }}</div>
   <div class="type-value">{{ result }}</div>
 </div>
 <div class="typed-object-container" *ngIf="isTypedObject">

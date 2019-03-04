@@ -6,7 +6,7 @@ import java.time.Clock
 import java.util.*
 
 
-class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), val root: ProfilerOperation = DefaultProfilerOperation(QueryProfiler::class.java.name, "Root", OperationType.ROOT, clock, path = "/")) : ProfilerOperation by root {
+class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), val root: ProfilerOperation = DefaultProfilerOperation.root(clock)) : ProfilerOperation by root {
    private val operationStack: Deque<ProfilerOperation> = ArrayDeque(listOf(root))
    override fun startChild(ownerInstance: Any, name: String, type: OperationType): ProfilerOperation = startChild(ownerInstance::class.java.simpleName, name, type)
    override fun startChild(clazz: Class<Any>, name: String, type: OperationType): ProfilerOperation = startChild(clazz.simpleName, name, type)
@@ -98,7 +98,7 @@ interface ProfilerOperation {
             .fold(0L) { accumulator, element -> accumulator + element.second }
       }
 
-   val vyneCost:Long
+   val vyneCost: Long
       get() = timings.filterKeys { it.isInternal }.values.sum()
 
    fun addContext(key: String, value: Any?)
@@ -129,6 +129,26 @@ data class Result(
    val value: Any? = null
 ) {
    val duration = endTime - startTime
+
+   companion object {
+      fun merge(resultA: Result?, resultB: Result?): Result? {
+         if (resultA == null && resultB == null) return null;
+         if (resultA != null && resultB == null) return resultA;
+         if (resultA == null && resultB != null) return resultB;
+
+         val values = listOfNotNull(resultA!!.value, resultB!!.value)
+         val resultValue = when {
+            values.isEmpty() -> null
+            values.size == 1 -> values.first()
+            else -> values
+         }
+         return Result(
+            Math.min(resultA.startTime, resultB.startTime),
+            Math.max(resultA.endTime, resultB.endTime),
+            resultValue
+         )
+      }
+   }
 }
 
 class DefaultProfilerOperation(override val componentName: String,
@@ -136,6 +156,28 @@ class DefaultProfilerOperation(override val componentName: String,
                                override val type: OperationType,
                                private val clock: Clock,
                                val path: String = "/") : ProfilerOperation {
+   companion object {
+      fun mergeChildren(operationA: ProfilerOperation?, operationB: ProfilerOperation?): ProfilerOperation? {
+         if (operationA == null && operationB == null) return null
+         if (operationA != null && operationB == null) return operationA
+         if (operationA == null && operationB != null) return operationB;
+
+         val root = DefaultProfilerOperation.root()
+
+
+         root.children.addAll(operationA!!.children + operationB!!.children)
+         root.context.putAll(operationA.context + operationB.context)
+         root.remoteCalls.addAll(operationA.remoteCalls + operationB.remoteCalls)
+         root.result = Result.merge(operationA.result, operationB.result)
+         return root
+      }
+
+      fun root(clock: Clock = Clock.systemDefaultZone()): DefaultProfilerOperation {
+         return DefaultProfilerOperation(QueryProfiler::class.java.name, "Root", OperationType.ROOT, clock, path = "/")
+      }
+
+   }
+
    override val context: MutableMap<String, Any?> = mutableMapOf()
    override val remoteCalls: MutableList<RemoteCall> = mutableListOf()
 
@@ -162,7 +204,7 @@ class DefaultProfilerOperation(override val componentName: String,
 
    override val duration: Long
       get() {
-         return result?.duration ?: clock.millis()-startTime
+         return result?.duration ?: clock.millis() - startTime
       }
 
    override fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R {

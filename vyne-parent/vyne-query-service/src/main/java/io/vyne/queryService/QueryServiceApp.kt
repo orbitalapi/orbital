@@ -9,8 +9,8 @@ import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
 import org.springframework.web.servlet.config.annotation.CorsRegistry
@@ -29,6 +29,9 @@ class QueryServiceApp {
          app.run(*args)
       }
    }
+
+   @Bean
+   fun vyneJacksonModule() = VyneJacksonModule()
 
    @Autowired(required = false)
    var buildInfo: BuildProperties? = null;
@@ -78,7 +81,7 @@ object AuthHeaders {
 
 @Component
 @ConfigurationProperties(prefix = "vyne")
-class QueryServerConfig{
+class QueryServerConfig {
    var newSchemaSubmissionEnabled: Boolean = false
 }
 

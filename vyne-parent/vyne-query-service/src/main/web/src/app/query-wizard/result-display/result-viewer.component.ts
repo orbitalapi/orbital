@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {Schema, Type, TypedInstance, TypeReference} from "../../services/schema";
+import {Field, Schema, Type, TypedInstance} from "../../services/schema";
 
 @Component({
   selector: 'result-viewer',
@@ -35,17 +35,18 @@ export class ResultViewerComponent implements OnInit {
   }
 
   getTypeForAttribute(attributeName: string): Type {
-    let typeRef: TypeReference = this.type.attributes[attributeName];
-    return this.schema.types.find(type => type.name.fullyQualifiedName == typeRef.fullyQualifiedName)
+    let typeRef: Field = this.type.attributes[attributeName];
+    return this.schema.types.find(type => type.name.fullyQualifiedName == typeRef.type.fullyQualifiedName)
   }
 
 
   // Indicates if it's a straight typedInstance (ie., a typedValue)
   // or a typed object, which is indexed with property names
 
-  get isPrimitive():boolean {
+  get isPrimitive(): boolean {
     return !this.isTypedObject && !this.isArray;
   }
+
   get isTypedObject(): boolean {
     return this.result != null &&
       !this.isArray &&

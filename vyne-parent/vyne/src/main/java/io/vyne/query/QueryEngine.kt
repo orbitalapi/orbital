@@ -13,11 +13,11 @@ open class SearchFailedException(message: String, val evaluatedPath: List<Evalua
 interface QueryEngine {
 
    val schema: Schema
-   fun find(queryString: String, context: QueryContext): QueryResult
+   fun find(queryString: QueryExpression, context: QueryContext): QueryResult
    fun find(target: QuerySpecTypeNode, context: QueryContext): QueryResult
    fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult
 
-   fun gather(queryString: String, context: QueryContext): QueryResult
+   fun gather(queryString: QueryExpression, context: QueryContext): QueryResult
 
    fun queryContext(factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT), additionalFacts: Set<TypedInstance> = emptySet()): QueryContext
 
@@ -59,7 +59,7 @@ class StatefulQueryEngine(initialState: FactSetMap, schema: Schema, strategies: 
 abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
-   override fun gather(queryString: String, context: QueryContext): QueryResult {
+   override fun gather(queryString: QueryExpression, context: QueryContext): QueryResult {
       // First pass impl.
       // Thinking here is that if I can add a new Hipster strategy that discovers all the
       // endpoints, then I can compose a result of gather() from multiple finds()
@@ -71,7 +71,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 //      return QueryContext.from(schema, factSet, this, profiler)
 //   }
 
-   override fun find(queryString: String, context: QueryContext): QueryResult {
+   override fun find(queryString: QueryExpression, context: QueryContext): QueryResult {
       val target = queryParser.parse(queryString)
       return find(target, context)
    }
@@ -89,20 +89,44 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
    }
 
+
    private fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult {
+      // TODO : BIG opportunity to optimize this by evaluating multiple querySpecNodes at once.
+      // Which would allow us to be smarter about results we collect from rest calls.
+      // Optimize later.
+      val results = target.map { doFind(it, context) }
+      val result = results.reduce { acc, queryResult ->
+         QueryResult(
+            acc.results + queryResult.results,
+            acc.unmatchedNodes + queryResult.unmatchedNodes,
+            null,
+            DefaultProfilerOperation.mergeChildren(acc.profilerOperation, queryResult.profilerOperation)
+         )
+      }
+      return result;
+   }
+
+   private fun doFind(target: QuerySpecTypeNode, context: QueryContext): QueryResult {
+
       val matchedNodes = mutableMapOf<QuerySpecTypeNode, TypedInstance?>()
+
+      // Note: We used to take a set<QuerySpecTypeNode>, but currently only take a single.
+      // We'll likely re-optimize to take multiple, but for now wrap in a set.
+      // This can (and should) change in the future
+      val querySet = setOf(target)
+
       // This is cheating, probably.
       // We only resolve top-level nodes, rather than traverse deeply.
       fun unresolvedNodes(): List<QuerySpecTypeNode> {
-         return target.filterNot { matchedNodes.containsKey(it) }
+         return querySet.filterNot { matchedNodes.containsKey(it) }
       }
 
       val strategyIterator: Iterator<QueryStrategy> = strategies.iterator()
       while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
          val queryStrategy = strategyIterator.next()
          val strategyResult = context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) { op ->
-            op.addContext("Search target", target.map { it.type.fullyQualifiedName })
-            queryStrategy.invoke(target, context)
+            op.addContext("Search target", querySet.map { it.type.fullyQualifiedName })
+            queryStrategy.invoke(setOf(target), context)
          }
          // Note : We should add this additional data to the context too,
          // so that it's available for future query strategies to use.

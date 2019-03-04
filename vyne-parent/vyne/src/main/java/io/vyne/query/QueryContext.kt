@@ -68,7 +68,7 @@ data class QueryResult(
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
-   val queryResponseId:String
+   val queryResponseId: String
    val isFullyResolved: Boolean
    val profilerOperation: ProfilerOperation?
    val remoteCalls: List<RemoteCall>
@@ -126,11 +126,12 @@ data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
 
-   fun find(queryString: String): QueryResult = queryEngine.find(queryString, this)
+   fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
+   fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
    fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
    fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
 
-   fun gather(queryString: String): QueryResult = queryEngine.gather(queryString, this)
+   fun gather(queryString: QueryExpression): QueryResult = queryEngine.gather(queryString, this)
 
    companion object {
       fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler) = QueryContext(schema, facts.toMutableSet(), queryEngine, profiler)

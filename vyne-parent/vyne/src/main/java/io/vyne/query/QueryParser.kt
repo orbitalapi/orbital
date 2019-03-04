@@ -3,21 +3,33 @@ package io.vyne.query
 import io.vyne.schemas.Schema
 
 class QueryParser(val schema: Schema) {
+   @Deprecated(message = "Use a TypeNameQueryExpression instead", replaceWith = ReplaceWith("parse(QueryExpression)"))
    fun parse(query: String): Set<QuerySpecTypeNode> {
-      if (query.trim().startsWith("{")) {
-         return parseQueryObject(query)
-      } else if (schema.hasType(query)) {
-         return parseSingleType(query)
-      } else {
-         throw IllegalArgumentException("The query passed was neither a Json object, nor a recognized type.  Unable to proceed:  $query")
+      return parse(TypeNameQueryExpression(query))
+   }
+
+   fun parse(query: QueryExpression): Set<QuerySpecTypeNode> {
+      return when (query) {
+         is TypeNameQueryExpression -> parseSingleType(query)
+         is TypeNameListQueryExpression -> parseQueryList(query)
+         is GraphQlQueryExpression -> parseQueryObject(query)
+         else -> throw IllegalArgumentException("The query passed was neither a Json object, nor a recognized type.  Unable to proceed:  $query")
       }
    }
 
-   private fun parseSingleType(typeName: String): Set<QuerySpecTypeNode> {
-      return setOf(QuerySpecTypeNode(schema.type(typeName)))
+   private fun parseSingleType(expression: TypeNameQueryExpression): Set<QuerySpecTypeNode> {
+      return setOf(getQueryNode(expression.typeName))
    }
 
-   private fun parseQueryObject(query: String): Set<QuerySpecTypeNode> {
+   private fun getQueryNode(typeName: String): QuerySpecTypeNode {
+      return QuerySpecTypeNode(schema.type(typeName))
+   }
+
+   private fun parseQueryList(expression: TypeNameListQueryExpression): Set<QuerySpecTypeNode> {
+      return expression.typeNames.map { getQueryNode(it) }.toSet()
+   }
+
+   private fun parseQueryObject(query: GraphQlQueryExpression): Set<QuerySpecTypeNode> {
       TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
    }
 }
