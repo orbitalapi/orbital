@@ -1,16 +1,13 @@
-package io.vyne.queryService
+package io.vyne.query
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.expect
-import io.vyne.query.QueryExpression
-import io.vyne.query.TypeNameListQueryExpression
-import io.vyne.query.TypeNameQueryExpression
 import org.junit.Test
 
-class QueryExpressionDeserializerTest {
+data class QueryContainer(val expression: QueryExpression)
 
-   data class QueryContainer(val expression: QueryExpression)
+class QueryExpressionDeserializerTest {
 
    private val jackson = jacksonObjectMapper().registerModule(VyneJacksonModule())
 

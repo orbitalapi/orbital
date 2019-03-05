@@ -1,4 +1,4 @@
-package io.vyne.queryService
+package io.vyne.query
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
@@ -8,14 +8,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.TextNode
 import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.vyne.query.QueryExpression
-import io.vyne.query.TypeNameListQueryExpression
-import io.vyne.query.TypeNameQueryExpression
 
 class VyneJacksonModule : SimpleModule("Vyne") {
    init {
-      addSerializer(QueryExpression::class.java, QueryExpressionSerializer())
-      addDeserializer(QueryExpression::class.java, QueryExpressionDeserializer())
+//      addSerializer(QueryExpression::class.java, QueryExpressionSerializer())
+//      addDeserializer(QueryExpression::class.java, QueryExpressionDeserializer())
    }
 }
 

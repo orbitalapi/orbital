@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.query.VyneJacksonModule
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -24,6 +25,9 @@ class VyneClientConfiguration {
    fun vyneRestTemplate(): RestTemplate {
       return RestTemplate()
    }
+
+   @Bean
+   fun vyneJacksonModule() = VyneJacksonModule()
 
    @Bean
    fun vyneClient(@Qualifier("vyneRestTemplate") restTemplate: RestTemplate, objectMapper: ObjectMapper, @Autowired(required = false) factProviders: List<FactProvider>?): VyneClient {

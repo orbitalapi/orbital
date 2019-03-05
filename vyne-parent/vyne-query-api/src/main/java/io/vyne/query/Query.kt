@@ -1,5 +1,7 @@
 package io.vyne.query
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.FactSetId
 import io.vyne.FactSets
 
@@ -13,6 +15,8 @@ data class Query(val expression: QueryExpression, val facts: List<Fact> = emptyL
    constructor(queryString: String, facts: Map<String, Any> = emptyMap(), queryMode: QueryMode = QueryMode.DISCOVER) : this(TypeNameQueryExpression(queryString), facts.map { Fact(it.key, it.value) }, queryMode)
 }
 
+@JsonDeserialize(using = QueryExpressionDeserializer::class)
+@JsonSerialize(using = QueryExpressionSerializer::class)
 interface QueryExpression
 
 data class TypeNameQueryExpression(val typeName: String) : QueryExpression

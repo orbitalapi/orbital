@@ -3,7 +3,10 @@
     <span>Vyne query</span>
     <div class="spacer"></div>
     <div class="language-selector" [ngClass]="expanded ? '' : 'panel-hidden'">
-      <div *ngFor="let snippet of snippets" class="snippet-lang" (click)="selectSnippet(snippet,$event)" [ngClass]="classForSnippet(snippet)">{{ snippet.displayLang }}</div>
+      <div *ngFor="let snippet of snippets" class="snippet-lang" (click)="selectSnippet(snippet,$event)"
+          [class.active]="snippet.displayLang === activeSnippet?.displayLang"
+      >{{ snippet.displayLang }}
+      </div>
     </div>
     <div class="spacer"></div>
     <i class="material-icons" [ngClass]="expanded ? '' : 'panel-hidden'">expand_less</i>

@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import io.vyne.query.VyneJacksonModule
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.RemoteSchemaStoreType
 import io.vyne.utils.log

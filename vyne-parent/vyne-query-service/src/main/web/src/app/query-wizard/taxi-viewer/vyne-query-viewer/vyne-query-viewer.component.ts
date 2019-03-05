@@ -1,7 +1,7 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, NgZone, OnInit} from '@angular/core';
 import * as _ from "lodash";
-import {QualifiedName, Schema} from "../types.service";
 import {Fact, Query, QueryMode} from "../../../services/query.service";
+import {QualifiedName, Schema} from "../../../services/schema";
 
 // import {Fact, Query, QueryMode} from "../query.service";
 
@@ -12,11 +12,15 @@ import {Fact, Query, QueryMode} from "../../../services/query.service";
 })
 export class VyneQueryViewerComponent implements OnInit {
 
+  constructor(private zone: NgZone) {
+
+  }
+
   private generators: Generator[] = [
     new KotlinGenerator(),
     new TypescriptGenerator(),
-    // new JsonGenerator(),
-    // new GoogleDocsGenerator()
+    new JsonGenerator(),
+    new GoogleDocsGenerator()
   ];
 
   private _schema: any;
@@ -69,7 +73,7 @@ export class VyneQueryViewerComponent implements OnInit {
   }
 
   snippets: Snippet[] = [];
-  activeSnippet: Snippet;
+  activeSnippet: Snippet = new Snippet("", "typescript", "");
 
   private generateCode() {
     if (!this._schema || !this.facts || !this._targetTypes || !this._queryMode) {
@@ -77,24 +81,27 @@ export class VyneQueryViewerComponent implements OnInit {
     }
 
     this.snippets = this.generators.map(generator => generator.generate(this._schema, this.facts, this._targetTypes, this._queryMode));
-    this.activeSnippet = this.snippets[1];
   }
 
 
   ngOnInit(): void {
     this.generateCode();
+    this.activeSnippet = this.snippets[0];
   }
 
 
   selectSnippet(snippet: Snippet, $event) {
+    // this.zone.runGuarded(() => {
     console.log("Language selected");
     this.activeSnippet = snippet;
+    console.log(this.activeSnippet.content);
     $event.stopPropagation();
     $event.stopImmediatePropagation();
+    // })
   }
 
   classForSnippet(snippet: Snippet): string {
-    return (this.activeSnippet === snippet) ? "active" : "";
+    return (this.activeSnippet.displayLang === snippet.displayLang) ? "active" : "";
   }
 }
 
