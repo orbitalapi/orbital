@@ -41,9 +41,9 @@
         </mat-card-header>
         <mat-card-content>
           <form>
-            <app-type-autocomplete [schema]="schema"
+            <app-type-autocomplete [schema]="schema" multiSelect="true"
                                    placeholder="Select the type to discover"
-                                   (typeSelected)="targetType = $event"
+                                   (selectedTypesChange)="targetTypes = $event"
             ></app-type-autocomplete>
             <mat-form-field>
               <mat-select placeholder="Query mode" [formControl]="queryMode" required>
@@ -60,7 +60,7 @@
     </div>
   </div>
   <div class="row">
-    <app-vyne-query-viewer [targetType]="targetType?.name?.fullyQualifiedName" [facts]="facts"
+    <app-vyne-query-viewer [targetTypes]="targetTypeNames" [facts]="fakeFacts"
                            [schema]="schema"
                            [queryMode]="queryMode.value"
                            expanded="true"

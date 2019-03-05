@@ -60,8 +60,8 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
    }
 
 //
-//   override fun find(queryString: String, factSet: Set<TypedInstance>): QueryResult {
-//      val target = QueryParser(schema).parse(queryString)
+//   override fun find(expression: String, factSet: Set<TypedInstance>): QueryResult {
+//      val target = QueryParser(schema).parse(expression)
 //      return find(target, factSet)
 //   }
 //

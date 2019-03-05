@@ -1,15 +1,37 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {QualifiedName, Schema, Type} from "../services/schema";
 import {FormControl} from "@angular/forms";
 import {map, startWith} from "rxjs/operators";
 import {Observable} from "rxjs";
 import {FloatLabelType, MatAutocompleteSelectedEvent} from "@angular/material";
+import {COMMA, ENTER} from "@angular/cdk/keycodes";
 
 @Component({
   selector: 'app-type-autocomplete',
   template: `
     <mat-form-field style="width: 100%" [floatLabel]="floatLabel">
-      <input type="text" [placeholder]="placeholder" matInput
+      <mat-chip-list #chipList *ngIf="multiSelect">
+        <mat-chip
+          *ngFor="let selectedType of selectedTypes"
+          selectable="true"
+          removable="true"
+          (removed)="remove(selectedType)">
+          {{selectedType.name.name}}
+          <mat-icon matChipRemove>cancel</mat-icon>
+        </mat-chip>
+        <input
+          [placeholder]="placeholder"
+          #chipInput
+          [formControl]="filterInput"
+          [matAutocomplete]="auto"
+          [matChipInputFor]="chipList"
+          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+          matChipInputAddOnBlur="true"
+          (matChipInputTokenEnd)="add($event)">
+      </mat-chip-list>
+      <input type="text"
+             *ngIf="!multiSelect"
+             [placeholder]="placeholder" matInput
              [matAutocomplete]="auto"
              [formControl]="filterInput"
              required>
@@ -22,6 +44,12 @@ import {FloatLabelType, MatAutocompleteSelectedEvent} from "@angular/material";
     </mat-form-field>`
 })
 export class TypeAutocompleteComponent implements OnInit {
+  separatorKeysCodes: number[] = [ENTER, COMMA];
+
+  @ViewChild('chipInput') chipInput: ElementRef<HTMLInputElement>;
+
+  @Input()
+  multiSelect: boolean = false;
 
   @Input()
   placeholder: string;
@@ -29,6 +57,21 @@ export class TypeAutocompleteComponent implements OnInit {
   schema: Schema;
   @Input()
   floatLabel: FloatLabelType = 'auto';
+
+  @Input()
+  selectedTypes: Type[] = [];
+
+  @Output()
+  selectedTypesChange = new EventEmitter<Type[]>();
+
+  @Input()
+  get selectedTypeNames(): string[] {
+    return this.selectedTypes.map(t => t.name.fullyQualifiedName)
+  }
+
+  set selectedTypeNames(value: string[]) {
+    this.selectedTypes = value.map(name => this.getTypeByName(QualifiedName.from(name)))
+  }
 
   filteredTypes: Observable<Type[]>;
 
@@ -42,10 +85,13 @@ export class TypeAutocompleteComponent implements OnInit {
       this.selectedType = null;
     } else {
       // TODO : Could this cause issues because the schema isn't provided yet?
-      const type = this.schema.types.find(t => t.name.fullyQualifiedName == name.fullyQualifiedName)
-      this.selectedType = type
+      this.selectedType = this.getTypeByName(name);
 
     }
+  }
+
+  private getTypeByName(name: QualifiedName) {
+    return this.schema.types.find(t => t.name.fullyQualifiedName == name.fullyQualifiedName);
   }
 
   @Input()
@@ -80,8 +126,16 @@ export class TypeAutocompleteComponent implements OnInit {
 
   onTypeSelected(event: MatAutocompleteSelectedEvent) {
     console.log("onTypeSelected");
-    const eventType = this.schema.types.find(type => type.name.fullyQualifiedName == event.option.value);
-    this.selectedType = eventType
+    const eventType = this.getTypeByName(QualifiedName.from(event.option.value));
+    if (this.multiSelect) {
+      this.selectedTypes.push(eventType);
+      this.chipInput.nativeElement.value = '';
+      this.filterInput.setValue('');
+      this.selectedTypesChange.emit(this.selectedTypes)
+    } else {
+      this.selectedType = eventType
+    }
+
   }
 
   private setSelectedTypeName(selectedType: Type) {
@@ -101,4 +155,12 @@ export class TypeAutocompleteComponent implements OnInit {
   }
 
 
+  remove(type: Type) {
+    this.selectedTypes.splice(this.selectedTypes.indexOf(type, 1))
+    this.selectedTypesChange.emit(this.selectedTypes)
+  }
+
+  add($event) {
+    // console.log($event)
+  }
 }

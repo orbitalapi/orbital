@@ -1,7 +1,9 @@
 import {Component, Input, OnInit} from '@angular/core';
 import * as _ from "lodash";
 import {QualifiedName, Schema} from "../types.service";
-import {Fact, Query, QueryMode} from "../query.service";
+import {Fact, Query, QueryMode} from "../../../services/query.service";
+
+// import {Fact, Query, QueryMode} from "../query.service";
 
 @Component({
   selector: 'app-vyne-query-viewer',
@@ -13,13 +15,13 @@ export class VyneQueryViewerComponent implements OnInit {
   private generators: Generator[] = [
     new KotlinGenerator(),
     new TypescriptGenerator(),
-    new JsonGenerator(),
-    new GoogleDocsGenerator()
+    // new JsonGenerator(),
+    // new GoogleDocsGenerator()
   ];
 
   private _schema: any;
   private _facts: Fact[];
-  private _targetType: string;
+  private _targetTypes: string[];
   private _queryMode: QueryMode;
 
   @Input()
@@ -46,13 +48,13 @@ export class VyneQueryViewerComponent implements OnInit {
   }
 
 
-  get targetType(): string {
-    return this._targetType;
+  get targetTypes(): string[] {
+    return this._targetTypes;
   }
 
   @Input()
-  set targetType(value: string) {
-    this._targetType = value;
+  set targetTypes(value: string[]) {
+    this._targetTypes = value;
     this.generateCode();
   }
 
@@ -70,12 +72,12 @@ export class VyneQueryViewerComponent implements OnInit {
   activeSnippet: Snippet;
 
   private generateCode() {
-    if (!this._schema || !this.facts || !this._targetType || !this._queryMode) {
+    if (!this._schema || !this.facts || !this._targetTypes || !this._queryMode) {
       return
     }
 
-    this.snippets = this.generators.map(generator => generator.generate(this._schema, this.facts, this._targetType, this._queryMode));
-    this.activeSnippet = this.snippets[0];
+    this.snippets = this.generators.map(generator => generator.generate(this._schema, this.facts, this._targetTypes, this._queryMode));
+    this.activeSnippet = this.snippets[1];
   }
 
 
@@ -85,6 +87,7 @@ export class VyneQueryViewerComponent implements OnInit {
 
 
   selectSnippet(snippet: Snippet, $event) {
+    console.log("Language selected");
     this.activeSnippet = snippet;
     $event.stopPropagation();
     $event.stopImmediatePropagation();
@@ -102,12 +105,12 @@ class Snippet {
 }
 
 interface Generator {
-  generate(schema: Schema, facts: Fact[], targetType: string, queryMode: QueryMode): Snippet
+  generate(schema: Schema, facts: Fact[], targetTypes: string[], queryMode: QueryMode): Snippet
 }
 
 
 class JsonGenerator implements Generator {
-  generate(schema: Schema, facts: Fact[], targetType: string, queryMode: QueryMode): Snippet {
+  generate(schema: Schema, facts: Fact[], targetType: string[], queryMode: QueryMode): Snippet {
     const query = new Query(targetType, facts, queryMode);
     return new Snippet("json", "json", JSON.stringify(query, null, 3));
   }
@@ -115,9 +118,12 @@ class JsonGenerator implements Generator {
 }
 
 class GoogleDocsGenerator implements Generator {
-  generate(schema: Schema, facts: Fact[], targetType: string, queryMode: QueryMode): Snippet {
+  generate(schema: Schema, facts: Fact[], targetTypes: string[], queryMode: QueryMode): Snippet {
+    let targetType = targetTypes[0];
     let formula: string;
-    if (facts.length == 0) {
+    if (targetTypes.length > 1) {
+      formula = "Multiple query targets not supported in Google Sheets";
+    } else if (facts.length == 0) {
       formula = `=discover("${targetType}")`
     } else if (facts.length === 1) {
       const fact = facts[0];
@@ -153,11 +159,11 @@ abstract class ObjectScalarGenerator {
 }
 
 class TypescriptGenerator extends ObjectScalarGenerator implements Generator {
-  generate(schema: Schema, facts: Fact[], targetType: string, queryMode: QueryMode): Snippet {
+  generate(schema: Schema, facts: Fact[], targetType: string[], queryMode: QueryMode): Snippet {
     let factsCode = this.getFacts(schema, facts);
     const code = `
 ${factsCode}
-const query = new Query("${targetType}", [fact], QueryMode.${queryMode})
+const query = new Query("[${targetType.join(",")}]", [fact], QueryMode.${queryMode})
 queryService.submit(query).subscribe(result => console.log(result))
     `.trim();
     return new Snippet("Typescript", "typescript", code);
@@ -175,17 +181,34 @@ queryService.submit(query).subscribe(result => console.log(result))
 
 
 class KotlinGenerator extends ObjectScalarGenerator implements Generator {
-  generate(schema: Schema, facts: Fact[], targetType: string, queryMode: QueryMode): Snippet {
+  generate(schema: Schema, facts: Fact[], targetType: string[], queryMode: QueryMode): Snippet {
     let factsCode = this.getFacts(schema, facts);
 
-    let targetTypeClassName = QualifiedName.nameOnly(targetType);
-    let method = (queryMode == QueryMode.DISCOVER) ? "discover" : "gather"
-    const code = `
-${factsCode}
-vyne.given(fact).${method}<${targetTypeClassName}>()
-    `.trim();
+    let method = (queryMode == QueryMode.DISCOVER) ? "discover" : "gather";
+    let discoveryCode: string;
+
+
+    if (targetType.length == 1) {
+      discoveryCode = this.getSingleDiscoveryCode(targetType[0], method)
+    } else {
+      discoveryCode = this.getMultiDiscoveryCode(targetType, method)
+    }
+
+    let code = factsCode + '\n' + discoveryCode;
+
     return new Snippet("Kotlin", "kotlin", code);
   }
+
+  private getSingleDiscoveryCode(targetType: string, method: string) {
+    let targetTypeClassName = QualifiedName.nameOnly(targetType);
+    return `vyne.given(fact).${method}<${targetTypeClassName}>()`.trim();
+  }
+
+  private getMultiDiscoveryCode(targetType: string[], method: string) {
+    let typeNames = targetType.map(t => `"${t}"`).join(", ");
+    return `vyne.given(fact).${method}(listOf(${typeNames}))`.trim();
+  }
+
 
   protected generateScalarFact(fact: Fact): string {
     const className = _.upperFirst(QualifiedName.nameOnly(fact.typeName));

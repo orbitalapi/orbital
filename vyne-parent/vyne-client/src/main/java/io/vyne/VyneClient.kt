@@ -8,6 +8,7 @@ import com.fasterxml.jackson.module.mrbean.MrBeanModule
 import io.vyne.query.Fact
 import io.vyne.query.Query
 import io.vyne.query.QueryMode
+import io.vyne.query.TypeNameListQueryExpression
 import lang.taxi.TypeNames
 import lang.taxi.TypeReference
 import org.springframework.web.client.RestTemplate
@@ -51,12 +52,17 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
    inline fun <reified T : Any> discover(): T? {
       val typeRef = object : TypeReference<T>() {}
       val typeName = TypeNames.deriveTypeName(typeRef)
-      val response = query(typeName, QueryMode.DISCOVER)
+      val response = query(listOf(typeName), QueryMode.DISCOVER)
       return if (response.containsResultFor(typeRef)) {
          response.getResultFor(typeRef, objectMapper)
       } else {
          null;
       }
+   }
+
+   fun discover(typeNames: List<TypeName>): Map<TypeName, Any?> {
+      val result = query(typeNames, QueryMode.DISCOVER)
+      return result.results
    }
 
    /**
@@ -68,7 +74,7 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
    inline fun <reified T : Any> discoverUntyped(): Any? {
       val typeRef = object : TypeReference<T>() {}
       val typeName = TypeNames.deriveTypeName(typeRef)
-      val response = query(typeName, QueryMode.DISCOVER)
+      val response = query(listOf(typeName), QueryMode.DISCOVER)
       return if (response.containsResultFor(typeRef)) {
          response.getUntypedResultFor(typeRef, objectMapper)
       } else {
@@ -87,12 +93,12 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
 
    fun <T : Any> query(targetType: KClass<T>, mode: QueryMode): QueryClientResponse {
       val desiredTypeName = TypeNames.deriveTypeName(targetType.java)
-      return query(desiredTypeName, mode)
+      return query(listOf(desiredTypeName), mode)
    }
 
-   fun query(typeName: String, mode: QueryMode): QueryClientResponse {
+   fun query(typeNames: List<String>, mode: QueryMode): QueryClientResponse {
       val query = Query(
-         typeName,
+         TypeNameListQueryExpression(typeNames),
          facts,
          mode
       )

@@ -1,10 +1,8 @@
 package io.vyne.queryService
 
+import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.TextNode
@@ -16,11 +14,12 @@ import io.vyne.query.TypeNameQueryExpression
 
 class VyneJacksonModule : SimpleModule("Vyne") {
    init {
+      addSerializer(QueryExpression::class.java, QueryExpressionSerializer())
       addDeserializer(QueryExpression::class.java, QueryExpressionDeserializer())
    }
 }
 
-class QueryExpressionDeserializer(private val mapper:ObjectMapper = jacksonObjectMapper()) : JsonDeserializer<QueryExpression>() {
+class QueryExpressionDeserializer(private val mapper: ObjectMapper = jacksonObjectMapper()) : JsonDeserializer<QueryExpression>() {
 
    override fun deserialize(parser: JsonParser, ctxt: DeserializationContext): QueryExpression {
       val tree = parser.readValueAsTree<JsonNode>()
@@ -29,6 +28,20 @@ class QueryExpressionDeserializer(private val mapper:ObjectMapper = jacksonObjec
          is ArrayNode -> TypeNameListQueryExpression(mapper.convertValue(tree))
          // TODO : GraphQL parsing
          else -> TODO("Unable to create QueryExpression from json $tree")
+      }
+   }
+}
+
+class QueryExpressionSerializer : JsonSerializer<QueryExpression>() {
+   override fun serialize(value: QueryExpression, gen: JsonGenerator, serializers: SerializerProvider) {
+      when (value) {
+         is TypeNameQueryExpression -> gen.writeString(value.typeName)
+         is TypeNameListQueryExpression -> {
+            gen.writeStartArray()
+            value.typeNames.forEach { gen.writeString(it) }
+            gen.writeEndArray()
+         }
+         else -> TODO("Serialization for this type of QueryExpression not supported")
       }
    }
 

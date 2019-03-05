@@ -54,4 +54,8 @@ export class QueryHistoryComponent implements OnInit {
       }
     )
   }
+
+  expressionTypeName(expression: string[]) {
+    return expression.map(t => this.typeName(t)).join(", ")
+  }
 }

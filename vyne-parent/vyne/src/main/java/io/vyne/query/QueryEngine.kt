@@ -34,11 +34,11 @@ class StatefulQueryEngine(initialState: FactSetMap, schema: Schema, strategies: 
    }
 
 
-//   override fun find(queryString: String, factSet: Set<TypedInstance>): QueryResult {
+//   override fun find(expression: String, factSet: Set<TypedInstance>): QueryResult {
 //      val nodeSetsWithLocalState = factSets.copy()
 //      nodeSetsWithLocalState.putAll(FactSets.DEFAULT, factSet)
 //
-//      return super.find(queryString, nodeSetsWithLocalState.values().toSet())
+//      return super.find(expression, nodeSetsWithLocalState.values().toSet())
 //   }
 
    override fun addModel(model: TypedInstance, factSetId: FactSetId): StatefulQueryEngine {
@@ -96,11 +96,12 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // Optimize later.
       val results = target.map { doFind(it, context) }
       val result = results.reduce { acc, queryResult ->
+//         val profilerOperation = DefaultProfilerOperation.mergeChildren(acc.profilerOperation, queryResult.profilerOperation)
          QueryResult(
             acc.results + queryResult.results,
             acc.unmatchedNodes + queryResult.unmatchedNodes,
             null,
-            DefaultProfilerOperation.mergeChildren(acc.profilerOperation, queryResult.profilerOperation)
+            queryResult.profilerOperation
          )
       }
       return result;

@@ -6,11 +6,11 @@ import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.expect
 import io.vyne.query.Query
+import io.vyne.query.TypeNameListQueryExpression
 import lang.taxi.annotations.DataType
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentCaptor
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnitRunner
 
@@ -35,7 +35,7 @@ class VyneClientTest {
          verify(queryService).submitQuery(capture())
 
          val query = lastValue
-         expect(query.queryString).to.equal("foo.Book[]")
+         expect(query.expression).to.equal(TypeNameListQueryExpression(listOf("foo.Book[]")))
       }
    }
 
@@ -47,4 +47,4 @@ class VyneClientTest {
 }
 
 @DataType("foo.Book")
-data class Book(val title:String)
+data class Book(val title: String)

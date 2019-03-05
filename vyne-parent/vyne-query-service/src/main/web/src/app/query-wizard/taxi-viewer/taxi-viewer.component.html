@@ -9,7 +9,7 @@
   <div class="content" [ngClass]="expanded ? '' : 'panel-hidden'">
     <app-code-container name="Taxi" [content]="taxi" lang="typescript"
                         [expanded]="taxiComponentExpanded"></app-code-container>
-    <app-vyne-query-viewer [targetType]="targetType" [facts]="facts"
+    <app-vyne-query-viewer [targetTypes]="targetType" [facts]="facts"
                            [schema]="schemaWithTaxi?.schema"
                            [queryMode]="queryMode"
                            [expanded]="vyneQueryExpanded"

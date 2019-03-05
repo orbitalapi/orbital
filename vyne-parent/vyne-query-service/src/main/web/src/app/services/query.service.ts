@@ -24,7 +24,7 @@ export class QueryService {
 }
 
 export class Query {
-  constructor(readonly queryString: string,
+  constructor(readonly expression: string[],
               readonly facts: Fact[],
               readonly queryMode: QueryMode) {
   }
@@ -89,5 +89,5 @@ export interface QueryHistoryRecord {
   query: Query;
   response: QueryResult;
   timestamp: Date;
-  id:string
+  id: string
 }

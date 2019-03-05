@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
-import {Field, Modifier, Schema, Type, TypeReference} from "../services/schema";
+import {Modifier, Schema, Type} from "../services/schema";
 import {TypesService} from "../services/types.service";
 import {map} from "rxjs/operators";
 import {
@@ -30,7 +30,7 @@ export class QueryWizardComponent implements OnInit {
   schema: Schema;
   queryMode = new FormControl();
 
-  targetType: Type;
+  targetTypes: Type[];
 
   constructor(private route: ActivatedRoute,
               private typesService: TypesService,
@@ -40,10 +40,16 @@ export class QueryWizardComponent implements OnInit {
   forms: FactForm[] = [];
   facts: Fact[] = [];
 
+  fakeFacts:Fact[] = [];
   private subscribedDynamicForms: TdDynamicFormsComponent[] = [];
 
   lastQueryResult: QueryResult | QueryFailure;
   addingNewFact: boolean = false;
+
+  get targetTypeNames(): string[] {
+    if (!this.targetTypes) return [];
+    return this.targetTypes.map(t => t.name.fullyQualifiedName)
+  }
 
   ngOnInit() {
     this.typesService.getTypes()
@@ -127,7 +133,7 @@ export class QueryWizardComponent implements OnInit {
     // let factList: Fact[] = Object.keys(facts).map(key => new Fact(key, facts[key]));
     const factList = this.buildFacts();
     let query = new Query(
-      this.targetType.name.fullyQualifiedName,
+      this.targetTypes.map(t => t.name.fullyQualifiedName),
       // this.targetTypeInput.value,
       factList,
       this.queryMode.value
