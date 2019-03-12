@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
 import {Modifier, Schema, Type} from "../services/schema";
 import {TypesService} from "../services/types.service";
@@ -40,7 +40,7 @@ export class QueryWizardComponent implements OnInit {
   forms: FactForm[] = [];
   facts: Fact[] = [];
 
-  fakeFacts:Fact[] = [];
+  // fakeFacts:Fact[] = [];
   private subscribedDynamicForms: TdDynamicFormsComponent[] = [];
 
   lastQueryResult: QueryResult | QueryFailure;

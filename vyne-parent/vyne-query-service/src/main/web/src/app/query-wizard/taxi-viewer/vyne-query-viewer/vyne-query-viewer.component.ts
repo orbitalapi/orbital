@@ -1,4 +1,4 @@
-import {Component, Input, NgZone, OnInit} from '@angular/core';
+import {Component, Input} from '@angular/core';
 import * as _ from "lodash";
 import {Fact, Query, QueryMode} from "../../../services/query.service";
 import {QualifiedName, Schema} from "../../../services/schema";
@@ -8,11 +8,11 @@ import {QualifiedName, Schema} from "../../../services/schema";
 @Component({
   selector: 'app-vyne-query-viewer',
   templateUrl: './vyne-query-viewer.component.html',
-  styleUrls: ['./vyne-query-viewer.component.scss']
+  styleUrls: ['./vyne-query-viewer.component.scss'],
 })
-export class VyneQueryViewerComponent implements OnInit {
+export class VyneQueryViewerComponent {
 
-  constructor(private zone: NgZone) {
+  constructor() {
 
   }
 
@@ -31,14 +31,12 @@ export class VyneQueryViewerComponent implements OnInit {
   @Input()
   expanded: boolean = true;
 
-  get facts(): Fact[] {
-    return this._facts;
-  }
 
   @Input()
   set facts(value: Fact[]) {
-    this._facts = value;
-    this.generateCode();
+    console.log("Facts changed: " + JSON.stringify(value));
+    this._facts = value.concat()
+
   }
 
   @Input()
@@ -73,14 +71,23 @@ export class VyneQueryViewerComponent implements OnInit {
   }
 
   snippets: Snippet[] = [];
-  activeSnippet: Snippet = new Snippet("", "typescript", "");
+  activeSnippet: Snippet;
 
   private generateCode() {
-    if (!this._schema || !this.facts || !this._targetTypes || !this._queryMode) {
+    if (!this._schema || !this._facts || !this._targetTypes || !this._queryMode) {
       return
     }
 
-    this.snippets = this.generators.map(generator => generator.generate(this._schema, this.facts, this._targetTypes, this._queryMode));
+    let selectedLang;
+    if (this.activeSnippet) selectedLang = this.activeSnippet.displayLang;
+
+
+    this.snippets = this.generators.map(generator => generator.generate(this._schema, this._facts, this._targetTypes, this._queryMode));
+    if (selectedLang) {
+      this.activeSnippet = this.snippets.find(s => s.displayLang === selectedLang)
+    } else {
+      this.activeSnippet = this.snippets[0];
+    }
   }
 
 
@@ -167,10 +174,11 @@ abstract class ObjectScalarGenerator {
 
 class TypescriptGenerator extends ObjectScalarGenerator implements Generator {
   generate(schema: Schema, facts: Fact[], targetType: string[], queryMode: QueryMode): Snippet {
+    const targetTypes = targetType.map(t => `"${t}"`).join(", ");
     let factsCode = this.getFacts(schema, facts);
     const code = `
 ${factsCode}
-const query = new Query("[${targetType.join(",")}]", [fact], QueryMode.${queryMode})
+const query = new Query([${targetTypes}], [fact], QueryMode.${queryMode})
 queryService.submit(query).subscribe(result => console.log(result))
     `.trim();
     return new Snippet("Typescript", "typescript", code);
