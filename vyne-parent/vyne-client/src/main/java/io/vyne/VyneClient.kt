@@ -58,6 +58,18 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
       } else {
          null;
       }
+
+   }
+
+   fun discover(typeName: TypeName) = discover(listOf(typeName))
+   fun <T : Any> discover(typeClass: Class<T>): T? {
+      val typeName = TypeNames.deriveTypeName(typeClass)
+      val response = query(listOf(typeName), QueryMode.DISCOVER)
+      return if (response.containsResultFor(typeClass)) {
+         response.getResultFor(typeClass, objectMapper)
+      } else {
+         null;
+      }
    }
 
    fun discover(typeNames: List<TypeName>): Map<TypeName, Any?> {
@@ -153,9 +165,13 @@ data class QueryClientResponse(
    }
 
    fun <T : Any> getResultFor(type: KClass<T>, objectMapper: ObjectMapper = Jackson.objectMapper): T {
-      val typeName = TypeNames.deriveTypeName(type.java)
+      return getResultFor(type.java, objectMapper)
+   }
+
+   fun <T : Any> getResultFor(type: Class<T>, objectMapper: ObjectMapper = Jackson.objectMapper): T {
+      val typeName = TypeNames.deriveTypeName(type)
       val result = this.results[typeName]!!
-      val typedResult = objectMapper.convertValue(result, type.java)
+      val typedResult = objectMapper.convertValue(result, type)
       return typedResult
    }
 

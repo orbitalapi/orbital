@@ -6,7 +6,7 @@ import io.vyne.FactSetId
 import io.vyne.FactSets
 
 
-data class Fact(val typeName: String, val value: Any, val factSetId: FactSetId = FactSets.DEFAULT)
+data class Fact @JvmOverloads constructor(val typeName: String, val value: Any, val factSetId: FactSetId = FactSets.DEFAULT)
 
 // TODO : facts should be QualifiedName -> TypedInstance, but need to get
 // json deserialization working for that.

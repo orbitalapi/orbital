@@ -313,4 +313,15 @@
          <url>s3://repo.vyne.co/snapshot</url>
       </snapshotRepository>
    </distributionManagement>
+
+   <repositories>
+      <!-- for taxi snapshots -->
+      <repository>
+         <id>vyne-snapshots</id>
+         <url>http://repo.vyne.co/snapshot</url>
+         <snapshots>
+            <enabled>true</enabled>
+         </snapshots>
+      </repository>
+   </repositories>
 </project>
