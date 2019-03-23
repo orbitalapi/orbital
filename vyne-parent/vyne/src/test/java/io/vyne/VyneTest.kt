@@ -9,6 +9,7 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.query.*
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import lang.taxi.Compiler
 import org.junit.Ignore
 import org.junit.Test
 
@@ -284,6 +285,53 @@ class VyneTest {
       expect(result.isFullyResolved).to.be.`true`
       val params = stubService.invocations["findPetById"]!!.get(0)
       expect(params.value).to.equal(100)
+   }
+
+   @Test
+   fun given_xmlBlobWithSchema_then_canAccessValeus() {
+      val src = """
+type Money {
+   amount : MoneyAmount as Decimal
+   currency : Currency as String
+}
+type alias Instrument as String
+type NearLegNotional inherits Money {}
+type FarLegNotional inherits Money {}
+
+type LegacyTradeNotification {
+   nearLegNotional : NearLegNotional {
+       amount by xpath("/tradeNotification/legs/leg[1]/notional/amount/text()")
+       currency by xpath("/tradeNotification/legs/leg[1]/currency/amount/text()")
+   }
+   farLegNotional : FarLegNotional {
+       amount by xpath("/tradeNotification/legs/leg[2]/notional/amount/text()")
+       currency by xpath("/tradeNotification/legs/leg[2]/currency/amount/text()")
+   }
+}
+        """.trimIndent()
+      val (vyne,stubService) = testVyne(src)
+      val xml = """
+ <tradeNotification>
+    <legs>
+        <leg>
+            <notional>
+                <amount>200000</amount>
+                <currency>GBP</currency>
+            </notional>
+        </leg>
+        <leg>
+            <notional>
+                <amount>700000</amount>
+                <currency>GBP</currency>
+            </notional>
+        </leg>
+    </legs>
+</tradeNotification>
+      """.trimIndent()
+      val instance = TypedInstance.from(vyne.schema.type("LegacyTradeNotification"), xml, vyne.schema)
+      vyne.addModel(instance)
+      val queryResult = vyne.query().find("NearLegNotional")
+      TODO()
    }
 }
 

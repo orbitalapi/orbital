@@ -15,6 +15,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>taxi-jvm-common</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-query-api</artifactId>
          <version>0.1.5-SNAPSHOT</version>

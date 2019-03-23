@@ -5,6 +5,7 @@ import io.vyne.query.TypeMatchingStrategy
 import io.vyne.schemas.taxi.DeferredConstraintProvider
 import io.vyne.schemas.taxi.EmptyDeferredConstraintProvider
 import io.vyne.utils.assertingThat
+import lang.taxi.types.Accessor
 import lang.taxi.types.PrimitiveType
 import java.io.IOException
 import java.io.Serializable
@@ -175,7 +176,7 @@ interface SchemaMember {
       }
 }
 
-data class Field(val type: TypeReference, val modifiers: List<FieldModifier>, private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider()) {
+data class Field(val type: TypeReference, val modifiers: List<FieldModifier>, private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider(), val accessor:Accessor?) {
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
    // we parse fields before we parse their underlying types, so constrains may not be
    // fully resolved at construction time.
@@ -226,6 +227,7 @@ data class Type(
    @JsonView
    val isClosed : Boolean = this.modifiers.contains(Modifier.CLOSED)
 
+   val isPrimitive : Boolean = this.modifiers.contains(Modifier.PRIMITIVE)
 
    fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {
       return strategy.matches(this, other)

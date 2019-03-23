@@ -82,6 +82,7 @@ data class TypedNull(override val type: Type) : TypedInstance {
 data class TypedObject(override val type: Type, override val value: Map<String, TypedInstance>) : TypedInstance, Map<String, TypedInstance> by value {
    companion object {
       private val valueReader = ValueReader()
+      private val accessorReader = AccessorReader()
       fun fromValue(typeName: String, value: Any, schema: Schema): TypedObject {
          return fromValue(schema.type(typeName), value, schema)
       }
@@ -100,8 +101,20 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
 
       fun fromValue(type: Type, value: Any, schema: Schema): TypedObject {
          val attributes: Map<AttributeName, TypedInstance> = type.attributes.map { (attributeName, field) ->
-            val attributeValue = valueReader.read(value, attributeName) ?: TODO("Null values not yet supported")
-            attributeName to TypedInstance.from(schema.type(field.type.name), attributeValue, schema)
+            if (field.accessor != null) {
+               val attributeTypedInstance = accessorReader.read(value,field,schema)
+               attributeName to attributeTypedInstance
+            } else {
+                val attributeValue = valueReader.read(value, attributeName)
+               if (attributeValue == null) {
+                  attributeName to TypedNull(schema.type(field.type))
+               } else {
+                  attributeName to TypedInstance.from(schema.type(field.type.name), attributeValue, schema)
+               }
+
+            }
+
+
          }.toMap()
          return TypedObject(type, attributes)
       }
