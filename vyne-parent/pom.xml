@@ -27,7 +27,6 @@
       <module>vyne-client</module>
       <module>vyne-query-api</module>
       <module>vyne-client-spring</module>
-      <module>vyne-test</module>
    </modules>
 
    <dependencies>
