@@ -1,11 +1,10 @@
 <div #chartOuterContianer class="chart-outer-container">
   <div class="chart-col">
     <ngx-graph class="chart-container" [links]="typeLinks.links"
-               (legendLabelClick)="onLegendLabelClick($event)"
                [nodes]="typeLinks.nodes" [view]="chartDimensions" autoZoom="true"
                autoCenter="true"
                [scheme]="colorScheme" [orientation]="orientation"
-               [curve]="curve" (select)="select($event)">
+               [curve]="curve" >
 
       <ng-template #defsTemplate>
         <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4" orient="auto">
