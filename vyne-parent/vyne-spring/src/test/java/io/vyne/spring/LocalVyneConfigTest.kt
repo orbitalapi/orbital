@@ -44,7 +44,7 @@ class LocalVyneConfigTest {
    }
 
 
-   @EnableVyne(remoteSchemaStore = RemoteSchemaStoreType.NONE)
+   @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED)
    @Import(VyneAutoConfiguration::class)
    class vyneConfigWithLocalSchemaStore {}
 }
@@ -91,7 +91,7 @@ class RemoteVyneConfigTest {
    }
 
 
-   @EnableVyne(remoteSchemaStore = RemoteSchemaStoreType.HTTP)
+   @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.REMOTE)
    @Import(VyneAutoConfiguration::class)
    class vyneConfigWithRemoteSchemaStore {}
 }

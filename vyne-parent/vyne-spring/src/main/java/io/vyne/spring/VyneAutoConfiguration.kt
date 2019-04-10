@@ -6,7 +6,6 @@ import io.vyne.Vyne
 import io.vyne.query.QueryEngineFactory
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.*
-import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.invokers.*
 import io.vyne.utils.log
 import lang.taxi.annotations.DataType
@@ -116,7 +115,7 @@ class VyneAutoConfiguration {
    }
 
    @Bean("hazelcast")
-   @ConditionalOnProperty("vyne.schemaStore", havingValue = "HAZELCAST")
+   @ConditionalOnProperty("vyne.publicationMethod", havingValue = "HAZELCAST")
    fun hazelcast(): HazelcastInstance {
       return Hazelcast.newHazelcastInstance()
    }
@@ -132,7 +131,7 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
 
 
    override fun registerBeanDefinitions(importingClassMetadata: AnnotationMetadata, registry: BeanDefinitionRegistry) {
-      val attributes = importingClassMetadata.getAnnotationAttributes(EnableVyne::class.java.name)
+      val attributes = importingClassMetadata.getAnnotationAttributes(VyneSchemaPublisher::class.java.name)
       importingClassMetadata.className
       val basePackageClasses = attributes["basePackageClasses"] as Array<Class<*>>
       val basePackages = basePackageClasses.map { it.`package`.name } + Class.forName(importingClassMetadata.className).`package`.name
@@ -146,11 +145,11 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
          .addConstructorArgValue(taxiGenerator)
          .beanDefinition)
 
-      val remoteSchemaStoreType = attributes["remoteSchemaStore"] as RemoteSchemaStoreType
+      val remoteSchemaStoreType = attributes["publicationMethod"] as SchemaPublicationMethod
       when (remoteSchemaStoreType) {
-         RemoteSchemaStoreType.NONE -> log().info("Not using a remote schema store")
-         RemoteSchemaStoreType.HTTP -> configureHttpSchemaStore(registry)
-         RemoteSchemaStoreType.HAZELCAST -> configureHazelcastSchemaStore(registry)
+//         SchemaPublicationMethod.NONE -> log().info("Not using a remote schema store")
+         SchemaPublicationMethod.REMOTE -> configureHttpSchemaStore(registry)
+         SchemaPublicationMethod.DISTRIBUTED -> configureHazelcastSchemaStore(registry)
       }
 
       if (environment!!.containsProperty("vyne.schema.name")) {
@@ -183,7 +182,7 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
       registerRemoteSchemaProvider(registry, schemaStoreClientBeanName)
 
 //      registry.registerBeanDefinitionOfType(HazelcastSchemaStoreClient::class.java)
-      environment!!.propertySources.addLast(MapPropertySource("VyneHazelcastProperties", mapOf("vyne.schemaStore" to RemoteSchemaStoreType.HAZELCAST.name)))
+      environment!!.propertySources.addLast(MapPropertySource("VyneHazelcastProperties", mapOf("vyne.publicationMethod" to SchemaPublicationMethod.DISTRIBUTED.name)))
    }
 
    private fun configureHttpSchemaStore(registry: BeanDefinitionRegistry) {
