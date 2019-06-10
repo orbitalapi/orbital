@@ -1,12 +1,21 @@
 package io.vyne.models.json
 
+import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.ModelContainer
 import io.vyne.models.*
-import io.vyne.schemas.*
+import io.vyne.schemas.Field
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
+import io.vyne.schemas.fqn
 import lang.taxi.types.PrimitiveType
+
+object RelaxedJsonMapper {
+   val jackson = jacksonObjectMapper()
+      .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
+}
 
 fun ModelContainer.addJsonModel(typeName: String, json: String): TypedInstance {
    val model = parseJsonModel(typeName, json)
@@ -19,7 +28,7 @@ fun ModelContainer.parseJsonModel(typeName: String, json: String): TypedInstance
 }
 
 
-fun ModelContainer.jsonParser(mapper: ObjectMapper = jacksonObjectMapper()): JsonModelParser {
+fun ModelContainer.jsonParser(mapper: ObjectMapper = RelaxedJsonMapper.jackson): JsonModelParser {
    return JsonModelParser(this.schema, mapper)
 }
 

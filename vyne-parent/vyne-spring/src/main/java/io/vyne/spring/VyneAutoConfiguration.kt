@@ -115,7 +115,7 @@ class VyneAutoConfiguration {
    }
 
    @Bean("hazelcast")
-   @ConditionalOnProperty("vyne.publicationMethod", havingValue = "HAZELCAST")
+   @ConditionalOnProperty("vyne.publicationMethod", havingValue = "DISTRIBUTED")
    fun hazelcast(): HazelcastInstance {
       return Hazelcast.newHazelcastInstance()
    }

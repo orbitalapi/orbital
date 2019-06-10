@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 import io.vyne.query.VyneJacksonModule
+import io.vyne.spring.SchemaPublicationMethod
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,13 +14,12 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.stereotype.Component
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class)
-@VyneSchemaPublisher
+@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
 class QueryServiceApp {
 
    companion object {
@@ -80,7 +80,6 @@ object AuthHeaders {
    val AUTH_HEADER_NAME = "Authorization"
 }
 
-@Component
 @ConfigurationProperties(prefix = "vyne")
 class QueryServerConfig {
    var newSchemaSubmissionEnabled: Boolean = false
