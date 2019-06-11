@@ -79,7 +79,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       if (targets.size != 1) TODO("Support for target sets not yet built")
       val target = targets.first()
 
-      // We only support DISCOVER mode here.
+      // We only support DISCOVER_ONE mode here.
       if (target.mode != QueryMode.DISCOVER) return QueryStrategyResult.empty()
 
       if (context.facts.isEmpty()) {

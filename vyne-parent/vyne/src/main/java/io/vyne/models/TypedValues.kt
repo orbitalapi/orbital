@@ -48,7 +48,7 @@ interface TypedInstance {
          return when {
             value == null -> TypedNull(type)
             value is Collection<*> -> {
-               val collectionMemberType = getCollectionType(type,schema)
+               val collectionMemberType = getCollectionType(type, schema)
                TypedCollection(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema) })
             }
             type.isScalar -> TypedValue(type, value)
@@ -102,10 +102,10 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
       fun fromValue(type: Type, value: Any, schema: Schema): TypedObject {
          val attributes: Map<AttributeName, TypedInstance> = type.attributes.map { (attributeName, field) ->
             if (field.accessor != null) {
-               val attributeTypedInstance = accessorReader.read(value,field,schema)
+               val attributeTypedInstance = accessorReader.read(value, field, schema)
                attributeName to attributeTypedInstance
             } else {
-                val attributeValue = valueReader.read(value, attributeName)
+               val attributeValue = valueReader.read(value, attributeName)
                if (attributeValue == null) {
                   attributeName to TypedNull(schema.type(field.type))
                } else {
@@ -173,6 +173,21 @@ data class TypedValue(override val type: Type, override val value: Any) : TypedI
 }
 
 data class TypedCollection(override val type: Type, override val value: List<TypedInstance>) : List<TypedInstance> by value, TypedInstance {
+
+   companion object {
+      /**
+       * Constructs a TypedCollection by interrogating the contents of the
+       * provided list.
+       * If the list is empty, then an exception is thrown
+       */
+      fun from(populatedList: List<TypedInstance>): TypedCollection {
+         // TODO : Find the most compatiable abstract type.
+         val first = populatedList.firstOrNull()
+            ?: error("An empty list was passed, where a populated list was expected.  Cannot infer type.")
+         return TypedCollection(first.type, populatedList)
+      }
+   }
+
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
       return TypedCollection(typeAlias, value)
    }

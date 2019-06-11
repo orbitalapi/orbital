@@ -48,6 +48,7 @@ data class QueryResult(
    override val isFullyResolved = unmatchedNodes.isEmpty()
    operator fun get(typeName: String): TypedInstance? {
       val requestedParameterizedName = typeName.fqn().parameterizedName
+      // TODO : THis should consider inheritence, rather than strict equals
       return this.results.filterKeys { it.type.name.parameterizedName == requestedParameterizedName }
          .values
          .first()
@@ -127,10 +128,12 @@ data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
 
    fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
+
    fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
    fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
    fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
 
+   fun gather(typeName: String): QueryResult = gather(TypeNameQueryExpression(typeName))
    fun gather(queryString: QueryExpression): QueryResult = queryEngine.gather(queryString, this)
 
    companion object {
@@ -237,6 +240,23 @@ enum class FactDiscoveryStrategy {
                log().debug("ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of type ${type.name}, so returning null")
                null
             }
+         }
+      }
+   },
+
+   /**
+    * Will return matches from any depth, providing there is exactly
+    * one DISITNCT match within the context
+    */
+   ANY_DEPTH_ALLOW_MANY {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedCollection? {
+         val matches = context.modelTree()
+            .filter { matcher.matches(type, it.type) }
+            .distinct()
+            .toList()
+         return when {
+            matches.isEmpty() -> null
+            else -> TypedCollection.from(matches)
          }
       }
    };
