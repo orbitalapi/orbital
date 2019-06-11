@@ -24,10 +24,17 @@ class ModelsScanStrategy : QueryStrategy {
          // We need more context in order to be able to search
          // Eg., given an instance of Money, it's concievable that there would be multiple instances
          // within the graph
-         val matches = targetTypes.filter { (type, _) -> context.hasFactOfType(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) }
-            .map { (type, querySpec) -> querySpec to context.getFact(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT) }
+         val matches = targetTypes.filter { (type, querySpec) -> context.hasFactOfType(type, querySpec.mode.discoveryStrategy()) }
+            .map { (type, querySpec) -> querySpec to context.getFact(type, querySpec.mode.discoveryStrategy()) }
             .toMap()
          QueryStrategyResult(matches)
       }
+   }
+}
+
+fun QueryMode.discoveryStrategy(): FactDiscoveryStrategy {
+   return when (this) {
+      QueryMode.DISCOVER -> FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT
+      QueryMode.GATHER -> FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY
    }
 }
