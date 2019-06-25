@@ -16,7 +16,7 @@ interface SchemaValidator {
 class TaxiSchemaValidator(val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) : SchemaValidator {
    override fun validate(existing: SchemaSet, newSchema: VersionedSchema): Either<CompilationException, Schema> {
       return try {
-         val schemaSources = (existing.schemas + newSchema)
+         val schemaSources = (existing.sources + newSchema)
          // TODO : This is sloppy handling of imports, and will cause issues
          // I'm adding each schema as it's compiled into the set of available imports.
          // But, this could cause problems as schemas are removed, as a schema may reference

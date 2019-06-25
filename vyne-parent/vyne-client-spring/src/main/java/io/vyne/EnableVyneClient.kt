@@ -20,6 +20,7 @@ class VyneClientConfiguration {
    @Value("\${vyne.queryServiceUrl}")
    lateinit var queryServiceUrl: String
 
+
    @LoadBalanced
    @Bean
    fun vyneRestTemplate(): RestTemplate {

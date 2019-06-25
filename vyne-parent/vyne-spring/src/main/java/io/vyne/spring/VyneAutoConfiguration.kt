@@ -20,6 +20,7 @@ import org.springframework.beans.factory.FactoryBean
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -67,6 +68,10 @@ class VyneFactory(private val schemaProvider: SchemaSourceProvider, private val 
 //@EnableFeignClients(basePackageClasses = arrayOf(SchemaService::class))
 // Don't enable Vyne if we're configuring to be a Schema Discovery service
 @ConditionalOnMissingClass("io.vyne.schemaStore.TaxiSchemaService")
+
+// If someone is only running a VyneClient,(ie @EnableVyneClient) they don't want the stuff inside this config
+// If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
+@ConditionalOnBean(LocalTaxiSchemaProvider::class)
 class VyneAutoConfiguration {
 
 //   @Bean

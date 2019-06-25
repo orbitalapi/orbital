@@ -14,6 +14,7 @@ import reactor.core.Disposable
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 
@@ -40,9 +41,9 @@ object RetryConfig {
 }
 
 class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate: RetryTemplate = RetryConfig.simpleRetryWithBackoff(), val pollFrequency: Duration = Duration.ofSeconds(1L)) : SchemaStoreClient {
-
    private var poller: Disposable? = null
    private var schemaSet: SchemaSet = SchemaSet.EMPTY
+   private val generationCounter: AtomicInteger = AtomicInteger(0)
 
    override fun schemaSet() = schemaSet
 
@@ -57,6 +58,11 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
       }
       TODO("Migrate this to perform better schema validation, or defer to the schema service")
    }
+
+   override val generation: Int
+      get() {
+         return generationCounter.get()
+      }
 
 
    @PostConstruct
@@ -76,7 +82,8 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
          val schemaSet = schemaService.listSchemas()
          if (this.schemaSet.id != schemaSet.id) {
             this.schemaSet = schemaSet
-            log().info("Updated to schema set ${schemaSet.id} (contains ${schemaSet.size()} schemas)")
+            this.generationCounter.incrementAndGet()
+            log().info("Updated to schema set ${schemaSet.id}, generation $generation (contains ${schemaSet.size()} schemas)")
          }
       } catch (e: Exception) {
          log().warn("Failed to fetch schemas: $e")

@@ -11,4 +11,6 @@ interface SchemaStoreClient {
                     schema: String):Mono<Either<CompilationException, Schema>>
    fun submitSchema(versionedSchema: VersionedSchema) = submitSchema(versionedSchema.name, versionedSchema.version, versionedSchema.content)
    fun schemaSet(): SchemaSet
+
+   val generation:Int
 }

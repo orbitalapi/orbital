@@ -1,9 +1,10 @@
 package io.vyne.spring
 
-import io.vyne.schemaStore.*
-import io.vyne.schemas.CompositeSchema
+import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.schemaStore.VersionedSchema
+import io.vyne.schemaStore.VersionedSchemaProvider
 import io.vyne.schemas.Schema
-import io.vyne.schemas.taxi.NamedSource
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import lang.taxi.generators.java.TaxiGenerator
@@ -31,6 +32,9 @@ class LocalTaxiSchemaProvider(val models: List<Class<*>>, val services: List<Cla
 }
 
 class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourceProvider, VersionedSchemaProvider {
+   override fun schemaStrings(): List<String> {
+      return storeClient.schemaSet().rawSchemaStrings
+   }
 
    init {
       log().info("Initialized RemoteTaxiSchemaProvider, using a store client of type ${storeClient.javaClass.simpleName}")
@@ -38,43 +42,17 @@ class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourc
 
    override val versionedSchemas: List<VersionedSchema>
       get() {
-         return activeSchemaSet().schemas
+         return storeClient.schemaSet().sources
       }
 
-   private var lastBuildSchemaSet = SchemaSet.EMPTY
-   private var schemas: List<Schema> = emptyList()
-
-   private fun activeSchemaSet(): SchemaSet {
-      rebuildCacheIfRequired()
-      return this.lastBuildSchemaSet
-   }
-
-   private fun rebuildCacheIfRequired() {
-      if (storeClient.schemaSet() != lastBuildSchemaSet) {
-         this.lastBuildSchemaSet = storeClient.schemaSet()
-         log().debug("Rebuilding schemas based on SchemaSet ${this.lastBuildSchemaSet.id}")
-         val namedSources = schemasByName().map { (name, content) -> NamedSource(content,name) }
-         this.schemas = TaxiSchema.from(namedSources)
-      }
-   }
 
    override fun schemas(): List<Schema> {
-      // Cache the schemas until the upstream schema set changes
-      rebuildCacheIfRequired()
-      return this.schemas
+      return storeClient.schemaSet().taxiSchemas
    }
 
    override fun schema(): Schema {
-      val sources = this.activeSchemaSet().schemas.map { NamedSource(it.content, it.id) }
-      return CompositeSchema(TaxiSchema.from(sources))
+      return storeClient.schemaSet().schema
    }
 
-   private fun schemasByName(): Map<String, String> {
-      return storeClient.schemaSet().schemas.map { it.name to it.content }.toMap()
-   }
-
-   override fun schemaStrings(): List<String> {
-      return storeClient.schemaSet().schemas.map { it.content }
-   }
 
 }

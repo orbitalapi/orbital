@@ -15,6 +15,7 @@ import lang.taxi.services.Constraint
 import lang.taxi.types.*
 import lang.taxi.types.Annotation
 import org.antlr.v4.runtime.CharStreams
+import java.io.Serializable
 
 class TaxiSchema(private val document: TaxiDocument) : Schema {
    override val types: Set<Type>
@@ -246,7 +247,7 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
 
 private data class SourceWithDependencies(val source: NamedSource, val dependencies: List<NamedSource>)
 
-data class NamedSource(val taxi: String, val sourceName: String) {
+data class NamedSource(val taxi: String, val sourceName: String):Serializable {
    companion object {
       fun unnamed(taxi: String) = NamedSource(taxi, "<unknown>")
       fun unnamed(taxi: List<String>) = taxi.map { unnamed(it) }
