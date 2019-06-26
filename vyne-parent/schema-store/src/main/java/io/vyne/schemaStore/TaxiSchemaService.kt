@@ -10,6 +10,7 @@ import lang.taxi.Compiler
 import lang.taxi.utils.log
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
+import java.util.concurrent.atomic.AtomicInteger
 
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -34,6 +35,7 @@ class TaxiSchemaService : SchemaService, SchemaProvider {
 
    // TODO : Persist these somewhere
    private val schemas = mutableMapOf<String, VersionedSchema>()
+   private val generation:AtomicInteger = AtomicInteger(0);
 
    @RequestMapping(method = arrayOf(RequestMethod.POST), value = "/{schemaId}/{version:.+}")
    override fun submitSchema(@RequestBody schema: String, @PathVariable("schemaId") schemaId: String, @PathVariable("version") version: String): VersionedSchema {
@@ -52,6 +54,7 @@ class TaxiSchemaService : SchemaService, SchemaProvider {
 //         throw UnknownResourceException("$schemaId does not exist at version $version.  We have version ${schema.version} instead")
 //      }
       schemas.remove(schemaId)
+      generation.incrementAndGet()
    }
 
    private fun addSchema(versionedSchema: VersionedSchema) {
@@ -67,11 +70,12 @@ class TaxiSchemaService : SchemaService, SchemaProvider {
 //         }
       }
       schemas.put(versionedSchema.name, versionedSchema)
+      generation.incrementAndGet()
    }
 
    @RequestMapping(method = arrayOf(RequestMethod.GET))
    override fun listSchemas(): SchemaSet {
-      return SchemaSet(schemas.values.toList())
+      return SchemaSet(schemas.values.toList(), generation.get())
    }
    @RequestMapping(path = arrayOf("/raw"), method = arrayOf(RequestMethod.GET))
    fun listRawSchema():String {
