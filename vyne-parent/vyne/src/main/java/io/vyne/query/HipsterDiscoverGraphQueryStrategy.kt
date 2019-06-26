@@ -6,13 +6,16 @@ import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
-import io.vyne.*
+import io.vyne.Element
+import io.vyne.VyneGraphBuilder
+import io.vyne.instanceOfType
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
 import io.vyne.schemas.Link
 import io.vyne.schemas.Path
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.describe
+import io.vyne.type
 import io.vyne.utils.log
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
@@ -99,13 +102,24 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
    }
 
    internal fun find(targetElement: Element, context: QueryContext): Pair<TypedInstance, Path>? {
-      val factItr = context.facts.iterator()
-      var lastResult: Pair<TypedInstance, Path>?
-      do {
-         val start = instanceOfType(factItr.next().type)
-         lastResult = search(start, targetElement, context)
-      } while (factItr.hasNext() && lastResult == null)
-      return lastResult
+//      val factItr = context.facts.iterator()
+//      var lastResult: Pair<TypedInstance, Path>?
+//      do {
+//         val start = instanceOfType(factItr.next().type)
+//         lastResult = search(start, targetElement, context)
+//      } while (factItr.hasNext() && lastResult == null)
+//      return lastResult
+
+      // Take a copy, as the set is mutable, and performing a search is a
+      // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
+      val currentFacts = context.facts.toSet()
+
+      val firstMatch = currentFacts.asSequence()
+         .mapNotNull { fact ->
+            val searchStart = instanceOfType(fact.type)
+            search(searchStart, targetElement, context)
+         }.firstOrNull()
+      return firstMatch
    }
 
 //   override fun queryContext(factSet: Set<TypedInstance>): QueryContext {
