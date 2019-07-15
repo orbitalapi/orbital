@@ -1,5 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {Field, Schema, Type, TypedInstance} from "../../services/schema";
+import {TypedInstanceOrCollection, TypeNamedInstance} from '../../services/query.service';
 
 @Component({
   selector: 'result-viewer',
@@ -9,19 +10,24 @@ import {Field, Schema, Type, TypedInstance} from "../../services/schema";
 export class ResultViewerComponent implements OnInit {
 
   @Input()
-  result: TypeInstanceOrAttributeSet;
+    // result: TypeInstanceOrAttributeSet;
+  result: TypedInstanceOrCollection;
 
   @Input()
   schema: Schema;
 
-  @Input()
-  type: Type;
-
   ngOnInit() {
   }
 
-  get typedObject(): TypedObjectAttributes {
-    return <TypedObjectAttributes>this.result;
+  get typedObject(): TypeNamedInstance {
+    return <TypeNamedInstance>this.result;
+  }
+
+  get type(): Type {
+    if (this.isArray) {
+      return null
+    }
+    return this.schema.types.find(type => type.name.fullyQualifiedName === this.typedObject.typeName)
   }
 
   get typedObjectAttributeNames(): string[] {
@@ -30,8 +36,8 @@ export class ResultViewerComponent implements OnInit {
     return Object.keys(this.type.attributes)
   }
 
-  getTypedObjectAttribute(name: string): TypeInstanceOrAttributeSet {
-    return this.typedObject[name]
+  getTypedObjectAttribute(name: string): TypeNamedInstance {
+    return this.typedObject.value[name]
   }
 
   getTypeForAttribute(attributeName: string): Type {
@@ -44,13 +50,13 @@ export class ResultViewerComponent implements OnInit {
   // or a typed object, which is indexed with property names
 
   get isPrimitive(): boolean {
-    return !this.isTypedObject && !this.isArray;
+    return this.result != null && this.typedObject.value != null && !this.isTypedObject && !this.isArray;
   }
 
   get isTypedObject(): boolean {
     return this.result != null &&
       !this.isArray &&
-      typeof this.result === "object";
+      typeof this.typedObject.value === "object";
     // this.result.hasOwnProperty("type")
     // && (<any>this.result).type.hasOwnProperty("fullyQualifiedName")
   }
@@ -63,3 +69,4 @@ export class ResultViewerComponent implements OnInit {
 
 type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes
 type TypedObjectAttributes = { [key: string]: TypeInstanceOrAttributeSet }
+

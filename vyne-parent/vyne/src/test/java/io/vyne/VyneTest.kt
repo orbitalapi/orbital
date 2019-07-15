@@ -9,7 +9,6 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.query.*
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
-import lang.taxi.Compiler
 import org.junit.Ignore
 import org.junit.Test
 
@@ -179,6 +178,13 @@ class VyneTest {
 
    @Test
    @Ignore
+   // This test is disabled, as we don't really provide a way
+   // in the query api to submit a 'start' node for the query.
+   // Instead, we're just building a bag of facts, and then
+   // asking for a result.
+   // Therefore, this test would simply grab the name directly
+   // from the context, which isn't what it was trying to do.
+   // Not sure if we should allow a more specific API.
    fun shouldFindAPropertyValueByWalkingADirectRelationship() {
 
       val vyne = TestSchema.vyne()
@@ -193,10 +199,13 @@ class VyneTest {
             "clientId" : "123"
          }
          """
-      TODO()
-//      vyne.addData(JsonModel(client, typeName = "vyne.example.Client"))
-//      val result = vyne.from(JsonModel(invoice, typeName = "vyne.example.Invoice")).find("vyne.example.ClientName")
-//      expect(result.result).to.equal("Jimmy's Choos")
+      vyne.addJsonModel(typeName = "vyne.example.Client", json = client)
+
+      val invoiceInstance = vyne.parseJsonModel(typeName = "vyne.example.Invoice", json = invoice)
+      // The below line isn't implemented, and isn't trivial to do so, as it involves us remodelleding
+      // the query api to provide an explicit start point.
+      val result = vyne.from (invoiceInstance).find("vyne.example.ClientName")
+      expect(result["vyne.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
    }
 
    @Test
@@ -288,6 +297,7 @@ class VyneTest {
    }
 
    @Test
+   @Ignore("This feature isn't built yet")
    fun given_xmlBlobWithSchema_then_canAccessValeus() {
       val src = """
 type Money {
@@ -309,7 +319,7 @@ type LegacyTradeNotification {
    }
 }
         """.trimIndent()
-      val (vyne,stubService) = testVyne(src)
+      val (vyne, stubService) = testVyne(src)
       val xml = """
  <tradeNotification>
     <legs>

@@ -52,7 +52,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
          vyne.addModel(fact, factSetId)
       }
 
-      return try {
+      val response = try {
          // Note: Only using the default set for the originating query,
          // but the queryEngine contains all the factSets, so we can expand this later.
          when (query.queryMode) {
@@ -62,6 +62,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation)
       }
+      return response
    }
 
    private fun parseFacts(facts: List<Fact>, schema: Schema): List<Pair<TypedInstance, FactSetId>> {

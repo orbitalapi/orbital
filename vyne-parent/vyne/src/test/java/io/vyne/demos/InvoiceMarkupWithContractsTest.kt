@@ -2,14 +2,13 @@ package io.vyne.demos
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
-import io.vyne.Vyne
 import io.vyne.StubService
+import io.vyne.Vyne
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.QueryEngineFactory
-import io.vyne.query.TypeName
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import org.junit.Test
@@ -198,3 +197,5 @@ fun containsArgWithParams(args: Collection<TypedInstance>, type: String, vararg 
 fun containsArg(args: Collection<TypedInstance>, type: String, value: Any): Boolean {
    return args.any { it.type.fullyQualifiedName == type && it.value == value }
 }
+
+typealias TypeName = String

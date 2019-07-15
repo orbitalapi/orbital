@@ -47,7 +47,14 @@ class JsonModelParser(val schema: Schema, val mapper: ObjectMapper = jacksonObje
       if (type.isTypeAlias) {
          val aliasedType = schema.type(type.aliasForType!!)
          val parsedAliasType = doParse(aliasedType, valueMap, isCollection)
-         return parsedAliasType.withTypeAlias(type)
+         return if (isCollection) {
+             val collection = parsedAliasType as TypedCollection
+             val collectionMembersAsAliasedType = collection.map { it.withTypeAlias(type) }
+            TypedCollection(type,collectionMembersAsAliasedType)
+         } else {
+            parsedAliasType.withTypeAlias(type)
+         }
+
       }
 
       if (type.isScalar && !isCollection) {

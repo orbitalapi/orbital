@@ -36,14 +36,13 @@ data class QueryResult(
    val results: Map<QuerySpecTypeNode, TypedInstance?>,
    @field:JsonIgnore // we send a lightweight version below
    val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
-   val path: Path?,
+   val path: Path? = null,
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
    override val queryResponseId: String = UUID.randomUUID().toString()
 ) : QueryResponse {
 
    val duration = profilerOperation?.duration
-
 
    override val isFullyResolved = unmatchedNodes.isEmpty()
    operator fun get(typeName: String): TypedInstance? {
@@ -63,8 +62,16 @@ data class QueryResult(
    @JsonProperty("unmatchedNodes")
    val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
 
+   // The result map is structured so the key is the thing that was asked for, and the value
+   // is a TypeNamedInstance of the result.
+   // By including the type in both places, it allows for polymorphic return types.
+   // Also, the reason we're using Any for the value is that the result could be a
+   // TypedInstnace, a map of TypedInstnaces, or a collection of TypedInstances.
    @JsonProperty("results")
-   val resultMap: Map<String, Any?> = this.results.map { (key, value) -> key.type.name.parameterizedName to value?.toRawObject() }.toMap()
+   val resultMap: Map<String, Any?> = this.results.map { (key, value) ->
+      val mapped = value?.toTypeNamedInstance()
+      key.type.name.parameterizedName to mapped
+   }.toMap()
 }
 
 // Note : Also models failures, so is fairly generic

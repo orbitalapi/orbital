@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {ProfilerOperation, QueryResult} from "../../services/query.service";
+import {ProfilerOperation, QueryResult, TypedInstanceOrCollection, TypeNamedInstance} from "../../services/query.service";
 import {QueryFailure} from "../query-wizard.component";
 import {MatTreeNestedDataSource} from "@angular/material";
 import {NestedTreeControl} from "@angular/cdk/tree";
@@ -60,12 +60,8 @@ export class ResultContainerComponent implements OnInit {
       })
   }
 
-  getResultForTypeName(typeName: QualifiedName): any {
+  getResultForTypeName(typeName: QualifiedName): TypedInstanceOrCollection {
     return (<QueryResult>this.result).results[typeName.fullyQualifiedName]
-  }
-
-  getTypeByName(typeName: QualifiedName): Type {
-    return this.schema.types.find(type => type.name.fullyQualifiedName == typeName.fullyQualifiedName)
   }
 
   @Input()

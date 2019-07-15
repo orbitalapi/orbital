@@ -18,7 +18,7 @@
         <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-card">
 
           <result-viewer [result]="getResultForTypeName(resultTypeName)" [schema]="schema"
-                         [type]="getTypeByName(resultTypeName)"></result-viewer>
+                         ></result-viewer>
         </div>
       </mat-tab>
       <mat-tab label="Json">

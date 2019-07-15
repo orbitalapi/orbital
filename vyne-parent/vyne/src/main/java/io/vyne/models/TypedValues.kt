@@ -1,10 +1,20 @@
 package io.vyne.models
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.schemas.AttributeName
+import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.types.PrimitiveType
+
+@JsonDeserialize(using = TypeNamedInstanceDeserialzier::class)
+data class TypeNamedInstance(
+   val typeName: String,
+   val value: Any?
+) {
+   constructor(typeName: QualifiedName, value: Any?) : this(typeName.fullyQualifiedName, value)
+}
 
 interface TypedInstance {
    val type: Type
@@ -15,35 +25,53 @@ interface TypedInstance {
    fun withTypeAlias(typeAlias: Type): TypedInstance
 
    fun toRawObject(): Any? {
+      return TypedInstanceConverter(RawObjectMapper()).convert(this)
+//      return convert { it.value }
+   }
 
-      val unwrapMap = { valueMap: Map<String, Any> ->
-         valueMap.map { (entryKey, entryValue) ->
-            when (entryValue) {
-               is TypedInstance -> entryKey to entryValue.toRawObject()
-               else -> entryKey to entryValue
-            }
-         }.toMap()
-      }
-
-      val unwrapCollection = { valueCollection: Collection<*> ->
-         valueCollection.map { collectionMember ->
-            when (collectionMember) {
-               is TypedInstance -> collectionMember.toRawObject()
-               else -> collectionMember
-            }
-         }
-      }
-
-      return when (value) {
-         null -> null
-         is Map<*, *> -> unwrapMap(value as Map<String, Any>)
-         is Collection<*> -> unwrapCollection(value as Collection<*>)
-         // TODO : There's likely other types that need unwrapping
-         else -> value
-      }
+   fun toTypeNamedInstance(): Any? {
+      return TypedInstanceConverter(TypeNamedInstanceMapper()).convert(this)
    }
 
    companion object {
+      fun fromNamedType(typeNamedInstance: TypeNamedInstance, schema: Schema): TypedInstance {
+         val (typeName, value) = typeNamedInstance
+         val type = schema.type(typeName)
+         return when {
+            value == null -> TypedNull(type)
+            value is Collection<*> -> {
+               val collectionMemberType = getCollectionType(type, schema)
+               val members = value.map { member ->
+                  if (member == null) {
+                     TypedNull(collectionMemberType)
+                  } else {
+                     fromNamedType(member as TypeNamedInstance, schema)
+                  }
+               }
+               TypedCollection(collectionMemberType, members)
+            }
+            type.isScalar -> TypedValue(type, value)
+            else -> createTypedObject(typeNamedInstance, schema)
+         }
+      }
+
+      private fun createTypedObject(typeNamedInstance: TypeNamedInstance, schema: Schema): TypedObject {
+         val type = schema.type(typeNamedInstance.typeName)
+         val attributes = typeNamedInstance.value!! as Map<String, Any>
+         val typedAttributes = attributes.map { (attributeName, typedInstance) ->
+            when (typedInstance) {
+               is TypeNamedInstance -> attributeName to fromNamedType(typedInstance,schema)
+               is Collection<*> -> {
+                  val collectionTypeRef = type.attributes[attributeName]?.type ?: error("Cannot look up collection type for attribute $attributeName as it is not a defined attribute on type ${type.name}")
+                  val collectionType = schema.type(collectionTypeRef)
+                  attributeName to TypedCollection(collectionType, typedInstance.map { fromNamedType(it as TypeNamedInstance, schema) })
+               }
+               else -> error("Unhandled scenario creating typedObject from TypeNamedInstance -> ${typedInstance::class.simpleName}")
+            }
+         }.toMap()
+         return TypedObject(type,typedAttributes)
+      }
+
       fun from(type: Type, value: Any?, schema: Schema): TypedInstance {
          return when {
             value == null -> TypedNull(type)

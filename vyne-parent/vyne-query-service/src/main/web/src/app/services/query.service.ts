@@ -3,7 +3,7 @@ import {HttpClient} from "@angular/common/http";
 import {Observable} from "rxjs/internal/Observable";
 
 import {environment} from 'src/environments/environment';
-import {QualifiedName, TypedInstance} from "./schema";
+import {QualifiedName} from "./schema";
 
 @Injectable()
 export class QueryService {
@@ -35,8 +35,15 @@ export class Fact {
   }
 }
 
+export interface TypeNamedInstance {
+  typeName: string;
+  value: any;
+}
+
+
+export type TypedInstanceOrCollection = TypeNamedInstance | TypeNamedInstance[]; // TODO : Could also be a map.
 export interface QueryResult {
-  results: { [key: string]: TypedInstance };
+  results: { [key: string]: TypedInstanceOrCollection };
 
   unmatchedNodes: QualifiedName[];
   fullyResolved: boolean;

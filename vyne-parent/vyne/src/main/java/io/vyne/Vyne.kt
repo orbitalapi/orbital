@@ -1,9 +1,8 @@
 package io.vyne
 
 import io.vyne.models.TypedInstance
-import io.vyne.query.QueryContext
-import io.vyne.query.QueryEngineFactory
-import io.vyne.query.StatefulQueryEngine
+import io.vyne.models.json.addKeyValuePair
+import io.vyne.query.*
 import io.vyne.schemas.*
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
 import io.vyne.utils.log
@@ -111,6 +110,16 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
 
    fun getPolicy(type: Type): Policy? {
       return schema.policy(type)
+   }
+
+   fun execute(query: Query): QueryResult {
+      query.facts.forEach { fact -> this.addKeyValuePair(fact.typeName, fact.value, fact.factSetId) }
+      return if (query.queryMode == QueryMode.DISCOVER) {
+         this.query().find(query.expression)
+      } else {
+         this.query().gather(query.expression)
+      }
+
    }
 }
 

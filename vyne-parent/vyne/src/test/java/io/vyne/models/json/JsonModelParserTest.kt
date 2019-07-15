@@ -48,7 +48,7 @@ type Client {
       expect(result).instanceof(TypedObject::class.java)
       val client = result as TypedObject
       expect(client.type).to.equal(schema.type("Client"))
-      expect(client["clientId"]!!.type).to.equal(schema.type("ClientId"))
+      expect(client["clientId"].type).to.equal(schema.type("ClientId"))
       expect(client["clientId"]!!.value).to.equal("marty")
 
       expect(client["emails"]!!).to.be.instanceof(TypedCollection::class.java)
