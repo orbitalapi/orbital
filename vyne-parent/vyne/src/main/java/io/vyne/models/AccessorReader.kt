@@ -34,7 +34,7 @@ class AccessorReader {
 
    private fun parseXml(value: Any, field: Field, schema: Schema, accessor: XpathAccessor): TypedInstance {
       return when (value) {
-         is String -> xmlParser.parse(value, schema.type(field.type), schema, accessor)
+         is String -> xmlParser.parse(value, schema.type(field.type), accessor)
          else -> TODO()
       }
    }

@@ -1,10 +1,10 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {ProfilerOperation, QueryResult} from "../../services/query.service";
+import {ProfilerOperation, QueryResult, ResultMode, TypedInstanceOrCollection} from "../../services/query.service";
 import {QueryFailure} from "../query-wizard.component";
 import {MatTreeNestedDataSource} from "@angular/material";
 import {NestedTreeControl} from "@angular/cdk/tree";
-import { TypesService} from "../../services/types.service";
-import {QualifiedName, Schema, Type} from "../../services/schema";
+import {TypesService} from "../../services/types.service";
+import {QualifiedName, Schema, Type, TypedInstance} from "../../services/schema";
 
 @ Component({
   selector: 'query-result-container',
@@ -61,7 +61,14 @@ export class ResultContainerComponent implements OnInit {
   }
 
   getResultForTypeName(typeName: QualifiedName): any {
-    return (<QueryResult>this.result).results[typeName.fullyQualifiedName]
+    const queryResult = <QueryResult>this.result;
+    if (queryResult.resultMode === ResultMode.VERBOSE) {
+      const results = < {[key: string]: TypedInstanceOrCollection }>queryResult.results;
+      return results[typeName.fullyQualifiedName];
+    } else {
+      const results = <{[key: string]:TypedInstance}>queryResult.results;
+      return results[typeName.fullyQualifiedName];
+    }
   }
 
   getTypeByName(typeName: QualifiedName): Type {
@@ -121,6 +128,11 @@ export class ResultContainerComponent implements OnInit {
 
   get isUnsuccessfulSearch(): Boolean {
     return this.result && this.isQueryResult(this.result) && !this.result.fullyResolved
+  }
+
+  get isVerboseResult(): Boolean {
+    const queryResult = <QueryResult>this.result;
+    return queryResult && queryResult.resultMode === ResultMode.VERBOSE;
   }
 
   get isError(): Boolean {

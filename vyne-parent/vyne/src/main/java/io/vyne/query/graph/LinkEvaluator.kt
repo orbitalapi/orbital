@@ -15,8 +15,6 @@ data class EvaluatedLink(val link: Link, val startingPoint: TypedInstance, val r
          return EvaluatedLink(link, startingPoint, null, error)
       }
    }
-
-   val wasSuccessful: Boolean = error == null
 }
 
 interface LinkEvaluator {

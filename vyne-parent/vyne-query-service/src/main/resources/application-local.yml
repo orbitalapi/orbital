@@ -1,5 +1,5 @@
 cors:
    enabled: true
-   host: "*"
+   host: http://localhost:4200
 vyne:
    newSchemaSubmissionEnabled: true

@@ -13,7 +13,7 @@ import io.vyne.schemas.fqn
 import lang.taxi.types.PrimitiveType
 
 object RelaxedJsonMapper {
-   val jackson = jacksonObjectMapper()
+   val jackson: ObjectMapper = jacksonObjectMapper()
       .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
 }
 
@@ -32,7 +32,7 @@ fun ModelContainer.jsonParser(mapper: ObjectMapper = RelaxedJsonMapper.jackson):
    return JsonModelParser(this.schema, mapper)
 }
 
-class JsonModelParser(val schema: Schema, val mapper: ObjectMapper = jacksonObjectMapper()) {
+class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jacksonObjectMapper()) {
    fun parse(type: Type, json: String): TypedInstance {
       return if (type.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName) {
          val map = mapper.readValue<List<Map<String, Any>>>(json)
@@ -47,7 +47,14 @@ class JsonModelParser(val schema: Schema, val mapper: ObjectMapper = jacksonObje
       if (type.isTypeAlias) {
          val aliasedType = schema.type(type.aliasForType!!)
          val parsedAliasType = doParse(aliasedType, valueMap, isCollection)
-         return parsedAliasType.withTypeAlias(type)
+         return if (isCollection) {
+             val collection = parsedAliasType as TypedCollection
+             val collectionMembersAsAliasedType = collection.map { it.withTypeAlias(type) }
+            TypedCollection(type,collectionMembersAsAliasedType)
+         } else {
+            parsedAliasType.withTypeAlias(type)
+         }
+
       }
 
       if (type.isScalar && !isCollection) {

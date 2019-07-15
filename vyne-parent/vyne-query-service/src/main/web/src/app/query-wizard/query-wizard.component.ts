@@ -17,7 +17,7 @@ import {
   QueryMode,
   QueryResult,
   QueryService,
-  RemoteCall
+  RemoteCall, ResultMode
 } from "../services/query.service";
 import {HttpErrorResponse} from "@angular/common/http";
 
@@ -29,6 +29,7 @@ import {HttpErrorResponse} from "@angular/common/http";
 export class QueryWizardComponent implements OnInit {
   schema: Schema;
   queryMode = new FormControl();
+  resultMode = new FormControl();
 
   targetTypes: Type[];
 
@@ -62,6 +63,7 @@ export class QueryWizardComponent implements OnInit {
       );
 
     this.queryMode.setValue(QueryMode.DISCOVER)
+    this.resultMode.setValue(ResultMode.SIMPLE)
   }
 
   // Dirty hack to capture the forms generated dynamically, so we can listen for
@@ -136,7 +138,8 @@ export class QueryWizardComponent implements OnInit {
       this.targetTypes.map(t => t.name.fullyQualifiedName),
       // this.targetTypeInput.value,
       factList,
-      this.queryMode.value
+      this.queryMode.value,
+      this.resultMode.value
     );
     this.queryService.submitQuery(query)
       .subscribe(result => {

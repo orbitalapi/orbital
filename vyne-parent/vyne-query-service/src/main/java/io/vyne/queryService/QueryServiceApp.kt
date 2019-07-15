@@ -58,10 +58,6 @@ class QueryServiceApp {
             log().info("Registering Cors host at $allowedHost")
             registry.addMapping("/**")
                .allowedOrigins(allowedHost)
-               .exposedHeaders(AuthHeaders.AUTH_HEADER_NAME)
-               .allowedHeaders("Authorization", "Cache-Control", "Content-Type")
-               .allowCredentials(true)
-               .allowedMethods("*")
          }
       }
 

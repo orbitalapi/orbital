@@ -26,7 +26,8 @@ export class QueryService {
 export class Query {
   constructor(readonly expression: string[],
               readonly facts: Fact[],
-              readonly queryMode: QueryMode) {
+              readonly queryMode: QueryMode,
+              readonly resultMode: ResultMode) {
   }
 }
 
@@ -35,13 +36,20 @@ export class Fact {
   }
 }
 
-export interface QueryResult {
-  results: { [key: string]: TypedInstance };
+export interface TypeNamedInstance {
+  typeName: string;
+  value: any;
+}
 
+
+export type TypedInstanceOrCollection = TypeNamedInstance | TypeNamedInstance[]; // TODO : Could also be a map.
+export interface QueryResult {
+  results: { [key: string]: TypedInstanceOrCollection | TypedInstance  };
   unmatchedNodes: QualifiedName[];
   fullyResolved: boolean;
   profilerOperation: ProfilerOperation;
-  remoteCalls: RemoteCall[]
+  remoteCalls: RemoteCall[];
+  resultMode: ResultMode
 }
 
 export interface RemoteCall {
@@ -84,6 +92,11 @@ export enum QueryMode {
   GATHER = "GATHER"
 }
 
+export enum ResultMode {
+  SIMPLE = "SIMPLE",
+  VERBOSE = "VERBOSE"
+}
+
 
 export interface QueryHistoryRecord {
   query: Query;
@@ -91,3 +104,5 @@ export interface QueryHistoryRecord {
   timestamp: Date;
   id: string
 }
+
+

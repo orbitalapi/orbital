@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import * as _ from "lodash";
-import {Fact, Query, QueryMode} from "../../../services/query.service";
+import {Fact, Query, QueryMode, ResultMode} from "../../../services/query.service";
 import {QualifiedName, Schema} from "../../../services/schema";
 
 // import {Fact, Query, QueryMode} from "../query.service";
@@ -125,7 +125,7 @@ interface Generator {
 
 class JsonGenerator implements Generator {
   generate(schema: Schema, facts: Fact[], targetType: string[], queryMode: QueryMode): Snippet {
-    const query = new Query(targetType, facts, queryMode);
+    const query = new Query(targetType, facts,  queryMode,  ResultMode.VERBOSE);
     return new Snippet("json", "json", JSON.stringify(query, null, 3));
   }
 

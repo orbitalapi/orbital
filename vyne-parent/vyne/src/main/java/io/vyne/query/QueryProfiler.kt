@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.utils.log
 import java.time.Clock
@@ -121,7 +122,9 @@ data class RemoteCall(
    val resultCode: Int,
    val durationMs: Long,
    val response: Any?
-)
+) {
+   val operationQualifiedName: QualifiedName = OperationNames.qualifiedName(service.fullyQualifiedName, operation)
+}
 
 data class Result(
    val startTime: Long,

@@ -20,7 +20,9 @@ import java.util.*
 data class FailedSearchResponse(val message: String,
                                 @field:JsonIgnore // this sends too much information - need to build a lightweight version
                                 override val profilerOperation: ProfilerOperation,
+                                override val resultMode: ResultMode,
                                 override val queryResponseId: String = UUID.randomUUID().toString()
+
 ) : QueryResponse {
    override val isFullyResolved: Boolean = false
 }
@@ -52,16 +54,19 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
          vyne.addModel(fact, factSetId)
       }
 
-      return try {
+      val response = try {
          // Note: Only using the default set for the originating query,
          // but the queryEngine contains all the factSets, so we can expand this later.
          when (query.queryMode) {
-            QueryMode.DISCOVER -> vyne.query(setOf(FactSets.DEFAULT)).find(query.expression)
-            QueryMode.GATHER -> vyne.query(setOf(FactSets.DEFAULT)).gather(query.expression)
+            QueryMode.DISCOVER -> vyne.query(factSetIds = setOf(FactSets.DEFAULT), resultMode = query.resultMode)
+               .find(query.expression)
+            QueryMode.GATHER -> vyne.query(factSetIds = setOf(FactSets.DEFAULT), resultMode = query.resultMode)
+               .gather(query.expression)
          }
       } catch (e: SearchFailedException) {
-         FailedSearchResponse(e.message!!, e.profilerOperation)
+         FailedSearchResponse(e.message!!, e.profilerOperation, query.resultMode)
       }
+      return response
    }
 
    private fun parseFacts(facts: List<Fact>, schema: Schema): List<Pair<TypedInstance, FactSetId>> {

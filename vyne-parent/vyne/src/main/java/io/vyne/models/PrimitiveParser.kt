@@ -10,7 +10,7 @@ import lang.taxi.types.PrimitiveType
  * Responsible for simple conversions between primitives.
  * Cannot parse full objects.
  *
- * Used when parssing some non type-safe wire format (eg., xpath returning a number as a string)
+ * Used when Parsing some non type-safe wire format (eg., xpath returning a number as a string)
  */
 class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapper()) {
    fun parse(value: Any, targetType: Type): TypedInstance {

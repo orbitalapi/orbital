@@ -64,6 +64,7 @@ import { ElseEditorComponent } from './policy-manager/else-editor.component';
 import { InstructionSelectorComponent } from './policy-manager/instruction-selector.component';
 import { StatementDisplayComponent } from './policy-manager/statement-display.component';
 import {VyneQueryViewerComponent} from "./query-wizard/taxi-viewer/vyne-query-viewer/vyne-query-viewer.component";
+import {SimpleResultViewerComponent} from "./query-wizard/result-display/simple-result-viewer-component";
 
 const appRoutes = [
   {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
@@ -88,6 +89,7 @@ const appRoutes = [
     SourceViewComponent,
     TypeLinksComponent,
     ResultViewerComponent,
+    SimpleResultViewerComponent,
     QueryHistoryComponent,
     ParameterViewComponent,
     SchemaExplorerComponent,
