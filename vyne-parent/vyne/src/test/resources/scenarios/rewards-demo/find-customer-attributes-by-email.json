@@ -1,0 +1,84 @@
+{
+   "test": "Given a customer email address, discover attributes from their customer record",
+   "background": "Simple test, given an attribute, return an object from a service, and then pluck values from that object",
+   "scenario":   {
+      "query": {
+         "expression": [
+            "demo.CustomerId",
+            "demo.CustomerName"
+         ],
+         "facts": [
+            {
+               "typeName": "demo.CustomerEmailAddress",
+               "value": "jimmy@demo.com",
+               "factSetId": "DEFAULT"
+            }
+         ],
+         "queryMode": "DISCOVER"
+      },
+      "response": {
+         "results": {
+            "demo.CustomerId": {
+               "typeName": "demo.CustomerId",
+               "value": 1
+            },
+            "demo.CustomerName": {
+               "typeName": "demo.CustomerName",
+               "value": "Jimmy"
+            }
+         },
+         "unmatchedNodes": [],
+         "path": null,
+         "queryResponseId": "67412f6a-062c-4bbe-8fd8-cec6b1c82753",
+         "duration": 26,
+         "fullyResolved": true,
+         "remoteCalls": [
+            {
+               "service": {
+                  "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.rewards",
+                  "parameterizedName": "io.vyne.demos.rewards.CustomerService",
+                  "name": "CustomerService"
+               },
+               "addresss": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
+               "operation": "getCustomerByEmail",
+               "responseTypeName": {
+                  "fullyQualifiedName": "demo.Customer",
+                  "parameters": [],
+                  "namespace": "demo",
+                  "parameterizedName": "demo.Customer",
+                  "name": "Customer"
+               },
+               "method": "GET",
+               "requestBody": null,
+               "resultCode": 200,
+               "durationMs": 11,
+               "response": {
+                  "id": 1,
+                  "name": "Jimmy",
+                  "email": "jimmy@demo.com",
+                  "postcode": "SW11"
+               },
+               "operationQualifiedName": {
+                  "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService@@getCustomerByEmail",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.rewards",
+                  "parameterizedName": "io.vyne.demos.rewards.CustomerService@@getCustomerByEmail",
+                  "name": "CustomerService@@getCustomerByEmail"
+               }
+            }
+         ],
+         "timings": {
+            "LOOKUP": 0,
+            "GRAPH_TRAVERSAL": 6,
+            "GRAPH_BUILDING": 6,
+            "REMOTE_CALL": 12,
+            "ROOT": 52162
+         },
+         "vyneCost": 12
+      },
+      "timestamp": "2019-07-06T15:05:46.815Z",
+      "id": "67412f6a-062c-4bbe-8fd8-cec6b1c82753"
+   }
+}

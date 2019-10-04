@@ -36,14 +36,14 @@ data class QueryResult(
    val results: Map<QuerySpecTypeNode, TypedInstance?>,
    @field:JsonIgnore // we send a lightweight version below
    val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
-   val path: Path?,
+   val path: Path? = null,
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
-   override val queryResponseId: String = UUID.randomUUID().toString()
+   override val queryResponseId: String = UUID.randomUUID().toString(),
+   override val resultMode: ResultMode
 ) : QueryResponse {
 
    val duration = profilerOperation?.duration
-
 
    override val isFullyResolved = unmatchedNodes.isEmpty()
    operator fun get(typeName: String): TypedInstance? {
@@ -63,8 +63,25 @@ data class QueryResult(
    @JsonProperty("unmatchedNodes")
    val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
 
+   // The result map is structured so the key is the thing that was asked for, and the value
+   // is a TypeNamedInstance of the result.
+   // By including the type in both places, it allows for polymorphic return types.
+   // Also, the reason we're using Any for the value is that the result could be a
+   // TypedInstnace, a map of TypedInstnaces, or a collection of TypedInstances.
    @JsonProperty("results")
-   val resultMap: Map<String, Any?> = this.results.map { (key, value) -> key.type.name.parameterizedName to value?.toRawObject() }.toMap()
+   val resultMap: Map<String, Any?> =
+      when(resultMode)
+      {
+         ResultMode.VERBOSE -> this.results.map { (key, value) ->
+            val mapped = value?.toTypeNamedInstance()
+            key.type.name.parameterizedName to mapped
+         }.toMap()
+
+         ResultMode.SIMPLE -> this.results
+            .map { (key, value) -> key.type.name.parameterizedName to value?.toRawObject() }
+            .toMap()
+      }
+
 }
 
 // Note : Also models failures, so is fairly generic
@@ -82,6 +99,8 @@ interface QueryResponse {
 
    val vyneCost: Long
       get() = profilerOperation?.vyneCost ?: 0L
+
+   val resultMode: ResultMode
 }
 
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
@@ -123,7 +142,12 @@ object TypedInstanceTree {
 // At one point, the FactSetMap leaked down to QueryContext and beyond, and this caused
 // many different classes to have to become aware of multiple factsets, which felt like a leak.
 // Revisit if the above becomes less true.
-data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>, val queryEngine: QueryEngine, val profiler: QueryProfiler) : ProfilerOperation by profiler {
+data class QueryContext(
+   val schema: Schema,
+   val facts: MutableSet<TypedInstance>,
+   val queryEngine: QueryEngine,
+   val profiler: QueryProfiler,
+   val resultMode: ResultMode) : ProfilerOperation by profiler {
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
 
@@ -136,8 +160,10 @@ data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>
    fun gather(typeName: String): QueryResult = gather(TypeNameQueryExpression(typeName))
    fun gather(queryString: QueryExpression): QueryResult = queryEngine.gather(queryString, this)
 
+
    companion object {
-      fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler) = QueryContext(schema, facts.toMutableSet(), queryEngine, profiler)
+      fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler, resultMode: ResultMode) =
+         QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, resultMode)
    }
 
    fun addFact(fact: TypedInstance) {
@@ -148,6 +174,7 @@ data class QueryContext(val schema: Schema, val facts: MutableSet<TypedInstance>
    fun addFacts(facts: Collection<TypedInstance>) {
       facts.forEach { this.addFact(it) }
    }
+
 
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 

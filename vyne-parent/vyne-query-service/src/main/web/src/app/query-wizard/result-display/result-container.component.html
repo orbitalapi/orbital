@@ -14,11 +14,18 @@
 
   <div class="results-container">
     <mat-tab-group>
-      <mat-tab label="Result">
+      <mat-tab label="Result" *ngIf="isVerboseResult">
         <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-card">
 
           <result-viewer [result]="getResultForTypeName(resultTypeName)" [schema]="schema"
-                         [type]="getTypeByName(resultTypeName)"></result-viewer>
+                         ></result-viewer>
+        </div>
+      </mat-tab>
+      <mat-tab label="Result" *ngIf="!isVerboseResult">
+        <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-card">
+
+          <simple-result-viewer [result]="getResultForTypeName(resultTypeName)" [schema]="schema"
+                         [type]="getTypeByName(resultTypeName)"></simple-result-viewer>
         </div>
       </mat-tab>
       <mat-tab label="Json">

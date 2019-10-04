@@ -42,6 +42,7 @@ class ConstraintViolationResolver {
       }
       val services = queryContext.schema.services
       return evaluations
+         .asSequence()
          .filter { !it.isValid }
          .map { failedEvaluation ->
             val invocationContext = findServiceToResolveConstraint(param, failedEvaluation, services)
@@ -63,8 +64,8 @@ class ConstraintViolationResolver {
          .map { (service, operation, resolutionAdvice: ResolutionAdvice?) ->
             OperationInvocationContext.from(service, operation, resolutionAdvice!!)
          }
-         // TODO : Consider returning multiple matching operations, and invoking them
-         // until one succeeds
+      // TODO : Consider returning multiple matching operations, and invoking them
+      // until one succeeds
 //         .firstOrNull()
       return operationContexts.firstOrNull()
    }

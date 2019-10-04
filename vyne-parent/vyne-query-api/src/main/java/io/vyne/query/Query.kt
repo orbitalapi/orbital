@@ -10,9 +10,24 @@ data class Fact @JvmOverloads constructor(val typeName: String, val value: Any, 
 
 // TODO : facts should be QualifiedName -> TypedInstance, but need to get
 // json deserialization working for that.
-data class Query(val expression: QueryExpression, val facts: List<Fact> = emptyList(), val queryMode: QueryMode = QueryMode.DISCOVER) {
-   constructor(queryString: QueryExpression, facts: Map<String, Any> = emptyMap(), queryMode: QueryMode = QueryMode.DISCOVER) : this(queryString, facts.map { Fact(it.key, it.value) }, queryMode)
-   constructor(queryString: String, facts: Map<String, Any> = emptyMap(), queryMode: QueryMode = QueryMode.DISCOVER) : this(TypeNameQueryExpression(queryString), facts.map { Fact(it.key, it.value) }, queryMode)
+data class Query(
+   val expression: QueryExpression,
+   val facts: List<Fact> = emptyList(),
+   val queryMode: QueryMode = QueryMode.DISCOVER,
+   val resultMode: ResultMode = ResultMode.SIMPLE) {
+   constructor(
+      queryString: QueryExpression,
+      facts: Map<String, Any> = emptyMap(),
+      queryMode: QueryMode = QueryMode.DISCOVER,
+      resultMode: ResultMode = ResultMode.SIMPLE)
+      : this(queryString, facts.map { Fact(it.key, it.value) }, queryMode, resultMode)
+
+   constructor(
+      queryString: String,
+      facts: Map<String, Any> = emptyMap(),
+      queryMode: QueryMode = QueryMode.DISCOVER,
+      resultMode: ResultMode = ResultMode.SIMPLE)
+      : this(TypeNameQueryExpression(queryString), facts.map { Fact(it.key, it.value) }, queryMode, resultMode)
 }
 
 @JsonDeserialize(using = QueryExpressionDeserializer::class)
@@ -23,7 +38,7 @@ data class TypeNameQueryExpression(val typeName: String) : QueryExpression
 data class TypeNameListQueryExpression(val typeNames: List<String>) : QueryExpression
 // Note - this doesn't exist yet, but I'm leaving it here so I remember why I chose
 // this object type over a simple string.
-data class GraphQlQueryExpression(val shape: Map<String, Object>) : QueryExpression
+data class GraphQlQueryExpression(val shape: Map<String, Any>) : QueryExpression
 
 
 enum class QueryMode {
@@ -37,3 +52,15 @@ enum class QueryMode {
     */
    GATHER
 }
+
+enum class ResultMode {
+   /**
+    * Exclude type information for each attribute in 'results'
+    */
+   SIMPLE,
+   /**
+    * Include type information for each attribute included in 'results'
+    */
+   VERBOSE
+}
+

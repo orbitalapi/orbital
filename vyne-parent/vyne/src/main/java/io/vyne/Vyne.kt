@@ -1,9 +1,8 @@
 package io.vyne
 
 import io.vyne.models.TypedInstance
-import io.vyne.query.QueryContext
-import io.vyne.query.QueryEngineFactory
-import io.vyne.query.StatefulQueryEngine
+import io.vyne.models.json.addKeyValuePair
+import io.vyne.query.*
 import io.vyne.schemas.*
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
 import io.vyne.utils.log
@@ -52,14 +51,19 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    override var schema: Schema = compositeSchemaBuilder.aggregate(schemas)
       private set
 
-   fun queryEngine(factSetIds: Set<FactSetId> = setOf(FactSets.ALL), additionalFacts: Set<TypedInstance> = emptySet()): StatefulQueryEngine {
+   fun queryEngine(
+      factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
+      additionalFacts: Set<TypedInstance> = emptySet()): StatefulQueryEngine {
       val factSetForQueryEngine: FactSetMap = FactSetMap.create()
       factSetForQueryEngine.putAll(this.factSets.filterFactSets(factSetIds))
       factSetForQueryEngine.putAll(FactSets.DEFAULT, additionalFacts)
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
-   fun query(factSetIds: Set<FactSetId> = setOf(FactSets.ALL), additionalFacts: Set<TypedInstance> = emptySet()): QueryContext {
+   fun query(
+      factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
+      additionalFacts: Set<TypedInstance> = emptySet(),
+      resultMode: ResultMode = ResultMode.SIMPLE): QueryContext {
       // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
       // what is asked for, but only providing the desired factSets to the queryContext.
       // This is because the context only evalutates the factSets that are provided,
@@ -69,7 +73,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       // Hopefully, this lets us have the best of both worlds.
 
       val queryEngine = queryEngine(setOf(FactSets.ALL), additionalFacts)
-      return queryEngine.queryContext(factSetIds)
+      return queryEngine.queryContext(factSetIds = factSetIds, resultMode = resultMode)
    }
 
 
@@ -111,6 +115,14 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
 
    fun getPolicy(type: Type): Policy? {
       return schema.policy(type)
+   }
+
+   fun execute(query: Query): QueryResult {
+      query.facts.forEach { fact -> this.addKeyValuePair(fact.typeName, fact.value, fact.factSetId) }
+      return when(query.queryMode) {
+         QueryMode.DISCOVER -> this.query().find(query.expression)
+         QueryMode.GATHER -> this.query().gather(query.expression)
+      }
    }
 }
 

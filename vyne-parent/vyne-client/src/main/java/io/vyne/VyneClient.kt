@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.type.TypeFactory
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.mrbean.MrBeanModule
-import io.vyne.query.Fact
-import io.vyne.query.Query
-import io.vyne.query.QueryMode
-import io.vyne.query.TypeNameListQueryExpression
+import io.vyne.query.*
 import lang.taxi.TypeNames
 import lang.taxi.TypeReference
 import org.springframework.web.client.RestTemplate
@@ -68,7 +65,7 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
       return if (response.containsResultFor(typeClass)) {
          response.getResultFor(typeClass, objectMapper)
       } else {
-         null;
+         null
       }
    }
 
@@ -112,8 +109,8 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
       val query = Query(
          TypeNameListQueryExpression(typeNames),
          facts,
-         mode
-      )
+         queryMode = mode,
+         resultMode = ResultMode.SIMPLE)
       val response = queryService.submitQuery(query)
       return response
    }

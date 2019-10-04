@@ -3,7 +3,7 @@ package io.vyne
 import es.usc.citius.hipster.graph.GraphEdge
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
-import io.vyne.schemas.Relationship.*
+import io.vyne.schemas.Relationship.REQUIRES_PARAMETER
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -29,16 +29,6 @@ class VyneGraphBuilderTest {
     }
  }
    """.trimIndent())
-
-   @Test
-   fun typeInstance_canPopulate_otherObjects() {
-      val graph = VyneGraphBuilder(schema).build()
-      graph.outgoingEdgesOf(operation("vyne.ClientService@@getClient")).shouldContain(PROVIDES, providedInstance("vyne.Client"))
-      graph.outgoingEdgesOf(providedInstance("vyne.Client")).shouldContain(INSTANCE_HAS_ATTRIBUTE, providedInstanceMember("vyne.Client/jurisdiction"))
-
-
-      TODO()
-   }
 
    @Test
    fun generatesParamsCorrectly() {

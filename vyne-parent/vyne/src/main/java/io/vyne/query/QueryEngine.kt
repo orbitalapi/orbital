@@ -19,15 +19,24 @@ interface QueryEngine {
 
    fun gather(queryString: QueryExpression, context: QueryContext): QueryResult
 
-   fun queryContext(factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT), additionalFacts: Set<TypedInstance> = emptySet()): QueryContext
+   fun queryContext(
+      factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
+      additionalFacts: Set<TypedInstance> = emptySet(),
+      resultMode: ResultMode = ResultMode.SIMPLE): QueryContext
 
 }
 
 /**
  * A query engine which allows for the provision of initial state
  */
-class StatefulQueryEngine(initialState: FactSetMap, schema: Schema, strategies: List<QueryStrategy>, private val profiler: QueryProfiler = QueryProfiler()) : BaseQueryEngine(schema, strategies), ModelContainer {
-   private val factSets: FactSetMap = FactSetMap.create()
+class StatefulQueryEngine(
+   initialState: FactSetMap,
+   schema: Schema,
+   strategies: List<QueryStrategy>,
+   private val profiler: QueryProfiler = QueryProfiler()) :
+   BaseQueryEngine(schema, strategies), ModelContainer {
+   private val factSets: FactSetMap
+      = FactSetMap.create()
 
    init {
       factSets.putAll(initialState)
@@ -46,16 +55,19 @@ class StatefulQueryEngine(initialState: FactSetMap, schema: Schema, strategies: 
       return this
    }
 
-   override fun queryContext(factSetIds: Set<FactSetId>, additionalFacts: Set<TypedInstance>): QueryContext {
+   override fun queryContext(
+      factSetIds: Set<FactSetId>,
+      additionalFacts: Set<TypedInstance>,
+      resultMode: ResultMode): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
-      return QueryContext.from(schema, facts + additionalFacts, this, profiler)
+      return QueryContext.from(schema, facts + additionalFacts, this, profiler, resultMode)
    }
 }
 
 // Note:  originally, there were two query engines (Default and Stateful), but only one was ever used (stateful).
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
-// The seperation between what's in the base and whats in the concrete impl. is not well thought out currently.
+// The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
 abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
@@ -84,7 +96,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       try {
          return doFind(target, context)
       } catch (e: Exception) {
-         log().error("Search failed with exception:", e);
+         log().error("Search failed with exception:", e)
          throw SearchRuntimeException(e, context.profiler.root)
       }
    }
@@ -96,15 +108,15 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // Optimize later.
       val results = target.map { doFind(it, context) }
       val result = results.reduce { acc, queryResult ->
-//         val profilerOperation = DefaultProfilerOperation.mergeChildren(acc.profilerOperation, queryResult.profilerOperation)
          QueryResult(
-            acc.results + queryResult.results,
-            acc.unmatchedNodes + queryResult.unmatchedNodes,
-            null,
-            queryResult.profilerOperation
+            results = acc.results + queryResult.results,
+            unmatchedNodes =  acc.unmatchedNodes + queryResult.unmatchedNodes,
+            path = null,
+            profilerOperation =  queryResult.profilerOperation,
+            resultMode = context.resultMode
          )
       }
-      return result;
+      return result
    }
 
    private fun doFind(target: QuerySpecTypeNode, context: QueryContext): QueryResult {
@@ -146,7 +158,12 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
 
       //      TODO("Rebuild Path")
-      return QueryResult(matchedNodes, unresolvedNodes().toSet(), path = null, profilerOperation = context.profiler.root)
+      return QueryResult(
+         matchedNodes,
+         unresolvedNodes().toSet(),
+         path = null,
+         profilerOperation = context.profiler.root,
+         resultMode = context.resultMode)
    }
 }
 

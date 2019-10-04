@@ -16,12 +16,10 @@ class ValueReader {
 
    private fun readFromObject(source: Any, attribute: String): Any? {
       val srcClass = source::class
-      val member = srcClass.memberProperties.filter {
+      val member = srcClass.memberProperties.firstOrNull {
          it.name == attribute || hasDataTypeAnnotation(it, attribute)
-      }
-         .firstOrNull() ?: throw IllegalArgumentException("Source of type ${srcClass.simpleName} does not declare a field $attribute")
-      val value = member.call(source)
-      return value
+      } ?: throw IllegalArgumentException("Source of type ${srcClass.simpleName} does not declare a field $attribute")
+      return member.call(source)
    }
 
    private fun hasDataTypeAnnotation(property: KProperty1<out Any, Any?>, attribute: String): Boolean {
