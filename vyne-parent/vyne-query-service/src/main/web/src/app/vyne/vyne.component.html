@@ -17,13 +17,10 @@
       <div *ngFor="let element of sidebarElements" class="navbar-route" [routerLink]="element.route"
            routerLinkActive="active">
         <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive">
-          <i>
-            <i class="material-icons">
-              {{ element.icon }}
-            </i>
-          </i>
+          <img [src]="element.icon">
+          <span>{{element.title}}</span>
         </a>
-        <a [routerLink]="element.route" routerLinkActive="active">{{element.title}}</a>
+<!--        <a [routerLink]="element.route" routerLinkActive="active">{{element.title}}</a>-->
       </div>
       <!--<a mat-list-item *ngFor="let element of sidebarElements" [routerLink]="element.route">{{ element.title }}</a>-->
     </mat-nav-list>

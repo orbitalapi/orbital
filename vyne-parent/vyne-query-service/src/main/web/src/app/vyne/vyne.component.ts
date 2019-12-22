@@ -19,26 +19,27 @@ export class VyneComponent {
   sidebarElements: SidebarElement[] = [
     {
       title: 'Type explorer',
-      icon: 'explore',
+      icon: 'assets/img/class.svg',
+      // icon: 'explore',
       // icon: 'outline-explore.svg',
       // iconActive: 'outline-explore-active.svg',
       route: 'type-explorer'
     },
     {
       title: 'Schema explorer',
-      icon: 'description',
+      icon: 'assets/img/coding.svg',
       route: 'schema-explorer'
     },
     {
       title: 'Query builder',
-      icon: 'layers',
+      icon: 'assets/img/query.svg',
       // icon: 'outline-layers.svg',
       // iconActive: 'outline-layers-active.svg',
       route: 'query-wizard'
     },
     {
       title: 'Query history',
-      icon: 'history',
+      icon: 'assets/img/history.svg',
       route: 'query-history'
     }
 

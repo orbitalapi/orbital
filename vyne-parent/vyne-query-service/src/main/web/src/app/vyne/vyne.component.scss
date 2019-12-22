@@ -18,12 +18,8 @@
 }
 
 .sidenav {
-  width: 160px;
-  background-color: #222c3c;
-}
-
-.mat-nav-list {
-  padding-top: 22px;
+  width: 230px;
+  background-color: $dark-blue-1;
 }
 
 .navbar-route {
@@ -42,18 +38,21 @@
   color: white;
   font-size: 1rem;
   font-weight: 400;
-  padding-bottom: 45px;
   a {
-    i {
-      .material-icons {
-        font-size: 32px;
-        line-height: 24px;
-      }
-      display: block;
-      padding-bottom: 10px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    img {
+      width:  36px;
+      margin-right: 18px;
+    }
+    span {
+      flex-grow: 1;
+      text-align: left;
     }
     &.active {
-      color: #8cc63e;
+      background-color: rgba(0,0,0,0.5);
+      //color: #8cc63e;
     }
   }
 }

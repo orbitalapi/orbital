@@ -20,10 +20,11 @@ $grey-3: #12345f;
 // https://coolors.co/60b609-274060-54457f-282a3a-e66641
 $vyne-green: rgba(96, 182, 9, 1);
 $color2: rgba(39, 64, 96, 1);
-  $color3: rgba(84, 69, 127, 1);
+$color3: rgba(84, 69, 127, 1);
 $color4: rgba(40, 42, 58, 1);
 $color5: rgba(230, 102, 65, 1);
 
+$dark-blue-1: #171F46;
 
 $blueish: #afdfff;
 
@@ -49,8 +50,9 @@ $light-purple-grey-300: #dee3ef;
   top: 0;
   height: 96px;
   &.mat-logo {
-    background-color: #1d2531;
+    background-color: $dark-blue-1;
     color: #fafafa;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
   &.mat-primary {
     //background-color: white;
