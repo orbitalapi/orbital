@@ -35,7 +35,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
    }
 
 
-   @RequestMapping(value = "/nodes/{elementType}/{nodeName}/links")
+   @RequestMapping(value = ["/nodes/{elementType}/{nodeName}/links"])
    fun getLinksFromNode(@PathVariable("elementType") elementType: ElementType, @PathVariable("nodeName") nodeName: String): SchemaGraph {
       val escapedNodeName = nodeName.replace(":", "/")
       val schema = schemaProvider.schema()
@@ -45,7 +45,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
       return schemaGraph(edges, schema)
    }
 
-   @RequestMapping(value = "/types/{typeName}/links")
+   @RequestMapping(value = ["/types/{typeName}/links"])
    fun getLinksFromType(@PathVariable("typeName") typeName: String): SchemaGraph {
 
       val schema: Schema = schemaProvider.schema()
@@ -69,7 +69,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
       return SchemaGraph(schemaGraphNodes, schemaGraphLinks)
    }
 
-   @RequestMapping(value = "/graph", method = arrayOf(RequestMethod.GET))
+   @RequestMapping(value = ["/graph"], method = [RequestMethod.GET])
    fun getGraph(@RequestParam("startingFrom", required = false) startNode: String?, @RequestParam("distance", required = false) distance: Int?): SchemaGraph {
 
       val schema: TaxiSchema = TaxiSchema.from(schemaProvider.schemaString())

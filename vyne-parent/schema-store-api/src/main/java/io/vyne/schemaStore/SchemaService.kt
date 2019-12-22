@@ -48,10 +48,10 @@ data class VersionedSchema(val name: String, val version: String, val content: S
 @FeignClient(name = "\${vyne.schemaStore.name}")
 interface SchemaService {
 
-   @RequestMapping(method = arrayOf(RequestMethod.POST), value = "/{schemaId}/{version}")
+   @RequestMapping(method = arrayOf(RequestMethod.POST), value = ["/{schemaId}/{version}"])
    fun submitSchema(@RequestBody schema: String, @PathVariable("schemaId") schemaId: String, @PathVariable("version") version: String): VersionedSchema
 
-   @RequestMapping(method = arrayOf(RequestMethod.DELETE), value = "/{schemaId}/{version}")
+   @RequestMapping(method = arrayOf(RequestMethod.DELETE), value = ["/{schemaId}/{version}"])
    fun removeSchema(@PathVariable("schemaId") schemaId: String, @PathVariable("version") version: String)
 
    @RequestMapping(method = arrayOf(RequestMethod.GET))
