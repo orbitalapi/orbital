@@ -1,0 +1,18 @@
+@import "src/theme";
+
+:host {
+  background-color: $body-bg;
+  display: block;
+}
+.page-content {
+  font-family: $font-sans-docs;
+  display: flex;
+}
+
+.type-name {
+  h1 {
+    margin-bottom: 0;
+    font-weight: 700;
+  }
+  margin-bottom: 2rem;
+}

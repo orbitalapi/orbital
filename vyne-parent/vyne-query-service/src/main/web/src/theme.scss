@@ -1,0 +1,35 @@
+@import "typography";
+@import "theme-colors";
+@import 'node_modules/@angular/material/theming';
+@import "code-formatter-theme";
+
+.page-content {
+  padding: 46px;
+  background-color: $body-bg;
+  height: 100%;
+}
+
+.mat-toolbar {
+  position: sticky;
+  top: 0;
+  height: 96px;
+  &.mat-logo {
+    background-color: $dark-blue-1;
+    color: #fafafa;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  &.mat-primary {
+    //background-color: white;
+    box-shadow: 0 2px 5px #dcdcdc;
+    color: #fafafa;
+  }
+}
+
+mat-button-toggle-group.selector-button {
+  border-radius: 20px;
+}
+
+$light-grey-1: mat-color($vyne-grey-blue-palette, 50);
+$light-grey-2: mat-color($vyne-grey-blue-palette, 100);
+$light-grey-3: mat-color($vyne-grey-blue-palette, 200);
+

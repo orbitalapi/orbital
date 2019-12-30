@@ -23,7 +23,7 @@ export class VyneComponent {
       // icon: 'explore',
       // icon: 'outline-explore.svg',
       // iconActive: 'outline-explore-active.svg',
-      route: 'type-explorer'
+      route: 'types'
     },
     {
       title: 'Schema explorer',

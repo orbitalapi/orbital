@@ -30,51 +30,65 @@ import {
   MatTreeModule,
 } from '@angular/material';
 import {TypeListComponent} from './type-list/type-list.component';
-import {CommonModule} from "@angular/common";
-import {RouterModule} from "@angular/router";
-import {HttpClientModule} from "@angular/common/http";
+import {CommonModule} from '@angular/common';
+import {RouterModule} from '@angular/router';
+import {HttpClientModule} from '@angular/common/http';
 import {QueryWizardComponent} from './query-wizard/query-wizard.component';
-import {TypesService} from "./services/types.service";
-import {FormsModule, ReactiveFormsModule} from "@angular/forms";
-import {QueryService} from "./services/query.service";
+import {TypesService} from './services/types.service';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {QueryService} from './services/query.service';
 import {ProfileGraphComponent} from './query-wizard/result-display/profile-graph.component';
 import {NgxGraphModule} from '@swimlane/ngx-graph';
 import {CovalentJsonFormatterModule} from '@covalent/core/json-formatter';
 import {PropertyViewComponent} from './type-list/property-view.component';
-import {CdkTableModule} from "@angular/cdk/table";
+import {CdkTableModule} from '@angular/cdk/table';
 import {SourceViewComponent} from './type-list/source-view.component';
 import {TypeLinksComponent} from './type-list/type-links.component';
 import {ResultViewerComponent} from './query-wizard/result-display/result-viewer.component';
-import {ResultContainerComponent} from "./query-wizard/result-display/result-container.component";
+import {ResultContainerComponent} from './query-wizard/result-display/result-container.component';
 import {QueryHistoryComponent} from './query-history/query-history.component';
 import {ParameterViewComponent} from './type-list/parameter-view.component';
-import { MomentModule } from 'ngx-moment';
-import {TaxiViewerModule} from "./query-wizard/taxi-viewer/taxi-viewer.module";
+import {MomentModule} from 'ngx-moment';
+import {TaxiViewerModule} from './query-wizard/taxi-viewer/taxi-viewer.module';
 import {SchemaExplorerComponent} from './schema-explorer/schema-explorer.component';
 import {NewSchemaWizardComponent} from './schema-explorer/new-schema-wizard/new-schema-wizard.component';
 import {FactEditorComponent} from './query-wizard/fact-editor/fact-editor.component';
 import {TypeAutocompleteComponent} from './query-wizard/type-autocomplete.component';
 import {PolicyManagerComponent} from './policy-manager/policy-manager.component';
-import { PolicyEditorComponent } from './policy-manager/policy-editor.component';
-import { CaseConditionEditorComponent } from './policy-manager/case-condition-editor.component';
-import { MultivalueEditorComponent } from './policy-manager/multivalue-editor.component';
-import {EqualsEditorComponent} from "./policy-manager/equals-editor.component";
-import { StatementEditorComponent } from './policy-manager/statement-editor.component';
-import { ElseEditorComponent } from './policy-manager/else-editor.component';
-import { InstructionSelectorComponent } from './policy-manager/instruction-selector.component';
-import { StatementDisplayComponent } from './policy-manager/statement-display.component';
-import {VyneQueryViewerComponent} from "./query-wizard/taxi-viewer/vyne-query-viewer/vyne-query-viewer.component";
-import {SimpleResultViewerComponent} from "./query-wizard/result-display/simple-result-viewer-component";
+import {PolicyEditorComponent} from './policy-manager/policy-editor.component';
+import {CaseConditionEditorComponent} from './policy-manager/case-condition-editor.component';
+import {MultivalueEditorComponent} from './policy-manager/multivalue-editor.component';
+import {EqualsEditorComponent} from './policy-manager/equals-editor.component';
+import {StatementEditorComponent} from './policy-manager/statement-editor.component';
+import {ElseEditorComponent} from './policy-manager/else-editor.component';
+import {InstructionSelectorComponent} from './policy-manager/instruction-selector.component';
+import {StatementDisplayComponent} from './policy-manager/statement-display.component';
+import {VyneQueryViewerComponent} from './query-wizard/taxi-viewer/vyne-query-viewer/vyne-query-viewer.component';
+import {SimpleResultViewerComponent} from './query-wizard/result-display/simple-result-viewer-component';
+import {TypeViewerComponent} from './type-viewer/type-viewer.component';
+import {AttributeTableComponent} from './type-viewer/attribute-table/attribute-table.component';
+import {TypeViewerContainerComponent} from './type-viewer/type-viewer-container.component';
+import {TocHostDirective} from './type-viewer/toc-host.directive';
+import {ContentsTableComponent} from './type-viewer/contents-table/contents-table.component';
+import {TypeLinkGraphComponent} from './type-viewer/type-link-graph/type-link-graph.component';
+import {TypeLinkGraphContainerComponent} from './type-viewer/type-link-graph/type-link-graph-container.component';
+import { CodeViewerComponent } from './code-viewer/code-viewer.component';
+import {HighlightModule} from "ngx-highlightjs";
 
-const appRoutes = [
-  {path: '', redirectTo: 'type-explorer', pathMatch: 'full'},
-  {path: 'type-explorer', component: TypeListComponent},
-  {path: 'query-wizard', component: QueryWizardComponent},
-  {path: 'schema-explorer', component: SchemaExplorerComponent},
-  {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
-  {path: 'result-explorer', component: ProfileGraphComponent},
-  {path: 'query-history', component: QueryHistoryComponent}
-];
+export const routerModule = RouterModule.forRoot(
+  [
+    {path: '', redirectTo: 'types', pathMatch: 'full'},
+    {path: 'types', component: TypeListComponent},
+    {path: 'types/:typeName', component: TypeViewerContainerComponent},
+    {path: 'query-wizard', component: QueryWizardComponent},
+    {path: 'schema-explorer', component: SchemaExplorerComponent},
+    {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
+    {path: 'result-explorer', component: ProfileGraphComponent},
+    {path: 'query-history', component: QueryHistoryComponent}
+  ],
+  {useHash: true}
+);
+
 
 @NgModule({
   declarations: [
@@ -104,13 +118,18 @@ const appRoutes = [
     StatementEditorComponent,
     ElseEditorComponent,
     InstructionSelectorComponent,
-    StatementDisplayComponent
+    StatementDisplayComponent,
+    TypeViewerComponent,
+    TypeViewerContainerComponent,
+    AttributeTableComponent,
+    TocHostDirective,
+    ContentsTableComponent,
+    TypeLinkGraphComponent,
+    TypeLinkGraphContainerComponent,
+    CodeViewerComponent
   ],
   imports: [
-    RouterModule.forRoot(
-      appRoutes,
-      {useHash: true}
-    ),
+    routerModule,
 
     BrowserModule,
     BrowserAnimationsModule,

@@ -1,5 +1,5 @@
 @import '~@angular/material/theming';
-@import "theme-colors";
+@import "theme";
 /* You can add global styles to this file, and also import other style files */
 
 html, body {
@@ -12,11 +12,11 @@ html, body {
 
 body {
   margin: 0;
-  font-family: 'Nunito', sans-serif;
+  font-family: $font-sans;
 }
 
 $custom-typography: mat-typography-config(
-  $font-family: 'Nunito, sans-serif',
+  $font-family: $font-sans,
   $headline: mat-typography-level(32px, 48px, 700),
   $body-1: mat-typography-level(16px, 24px, 500)
 );

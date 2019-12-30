@@ -1,0 +1,19 @@
+<table>
+  <thead>
+  <tr>
+    <th>Attribute</th>
+    <th>Type</th>
+    <th>Description</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let attributeName of attributeNames">
+    <td>{{ attributeName }}</td>
+    <td>
+      <div><a [routerLink]="routerLinkFor(attributeName)">{{ attributeType(attributeName).name.name}}</a></div>
+      <div><span class="mono-badge">{{ attributeType(attributeName).name.fullyQualifiedName}}</span></div>
+    </td>
+    <td></td>
+  </tr>
+  </tbody>
+</table>

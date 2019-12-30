@@ -1,4 +1,4 @@
-@import "../theme";
+@import "src/theme";
 
 mat-toolbar {
   flex: 0 0 96px;
@@ -7,21 +7,34 @@ mat-toolbar {
 
 ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
   color: rgba(255,255,255,0.6);
-  font-family: "Nunito";
+  font-family: $font-sans;
 }
 ::-moz-placeholder { /* Firefox 19+ */
   color: rgba(255,255,255,0.6);
-  font-family: "Nunito";
+  font-family: $font-sans;
 }
 :-ms-input-placeholder { /* IE 10+ */
   color: rgba(255,255,255,0.6);
-  font-family: "Nunito";
+  font-family: $font-sans;
 }
 :-moz-placeholder { /* Firefox 18- */
   color: rgba(255,255,255,0.6);
-  font-family: "Nunito";
+  font-family: $font-sans;
 }
 
+.search-result {
+  padding: 8px;
+  border: 1px solid transparent;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+
+  &:hover {
+    background-color: white;
+    border: 1px solid $vyne-lilac;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+}
 .search-bar {
   *:focus {
     outline: none;
@@ -46,8 +59,24 @@ mat-toolbar {
   }
 }
 
+.badge {
+  background-color: rgba($vyne-lilac, 0.2);
+  color: $vyne-lilac;
+  font-weight: bold;
+  padding: 2px 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
 .schema-member-container {
   display: inline-table;
+
+  .member-name {
+    display: flex;
+    margin-bottom: 4px;
+    .badges {
+      margin-left: 8px;
+    }
+  }
 
   .member-type {
     vertical-align: middle;

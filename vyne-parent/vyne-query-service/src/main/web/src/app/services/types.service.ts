@@ -1,13 +1,13 @@
-import {Injectable} from "@angular/core";
-import {Observable, of} from "rxjs/index";
+import {Injectable} from '@angular/core';
+import {Observable, of} from 'rxjs/index';
 
-import * as _ from "lodash";
-import {HttpClient} from "@angular/common/http";
+import * as _ from 'lodash';
+import {HttpClient} from '@angular/common/http';
 
 import {environment} from 'src/environments/environment';
-import {map} from "rxjs/operators";
-import {Policy} from "../policy-manager/policies";
-import {Message, Schema, SchemaGraph, SchemaGraphNode, SchemaSpec, VersionedSchema} from "./schema";
+import {map} from 'rxjs/operators';
+import {Policy} from '../policy-manager/policies';
+import {Message, Schema, SchemaGraph, SchemaGraphNode, SchemaMember, SchemaSpec, Type, VersionedSchema} from './schema';
 
 @Injectable()
 export class TypesService {
@@ -17,46 +17,53 @@ export class TypesService {
   constructor(private http: HttpClient) {
     this.getTypes().subscribe(schema => {
       this.schema = schema;
-    })
+    });
   }
 
   getRawSchema = (): Observable<string> => {
     return this.http
-      .get<string>(`${environment.queryServiceUrl}/schemas/raw`)
+      .get<string>(`${environment.queryServiceUrl}/schemas/raw`);
   };
 
   getVersionedSchemas(): Observable<VersionedSchema[]> {
-    return this.http.get<VersionedSchema[]>(`${environment.queryServiceUrl}/schemas`)
+    return this.http.get<VersionedSchema[]>(`${environment.queryServiceUrl}/schemas`);
   }
 
   getLinksForNode = (node: SchemaGraphNode): Observable<SchemaGraph> => {
     return this.http
-      .get<SchemaGraph>(`${environment.queryServiceUrl}/nodes/${node.type}/${node.nodeId}/links`)
-  };
+      .get<SchemaGraph>(`${environment.queryServiceUrl}/nodes/${node.type}/${node.nodeId}/links`);
+  }
+
   getLinks = (typeName: string): Observable<SchemaGraph> => {
     return this.http
-      .get<SchemaGraph>(`${environment.queryServiceUrl}/types/${typeName}/links`)
-  };
+      .get<SchemaGraph>(`${environment.queryServiceUrl}/types/${typeName}/links`);
+  }
 
   getPolicies(typeName: string): Observable<Policy[]> {
     return this.http.get(`${environment.queryServiceUrl}/types/${typeName}/policies`)
       .pipe(map((policyDto: any[]) => {
-        return Policy.parseDtoArray(policyDto)
-      }))
+        return Policy.parseDtoArray(policyDto);
+      }));
+  }
+
+  getType(qualifiedName: string): Observable<Type> {
+    return this.getTypes().pipe(
+      map(schema => schema.types.find(t => t.name.fullyQualifiedName === qualifiedName))
+    );
   }
 
   getTypes = (): Observable<Schema> => {
     if (this.schema) {
-      return of(this.schema)
+      return of(this.schema);
     }
     return this.http
       .get<Schema>(`${environment.queryServiceUrl}/types`)
       .pipe(
         map(schema => {
             schema.types = _.sortBy(schema.types, [(t) => {
-              return t.name.fullyQualifiedName
+              return t.name.fullyQualifiedName;
             }]);
-            return schema
+            return schema;
           }
         )
       );
@@ -66,14 +73,14 @@ export class TypesService {
     return this.http.post<SchemaPreview>(
       `${environment.queryServiceUrl}/schemas/preview`,
       request
-    )
+    );
   }
 
   submitSchema(request: SchemaImportRequest): Observable<VersionedSchema> {
     return this.http.post<VersionedSchema>(
       `${environment.queryServiceUrl}/schemas`,
       request
-    )
+    );
   }
 }
 
@@ -88,7 +95,7 @@ export class SchemaImportRequest {
 }
 
 export interface SchemaPreview {
-  spec: SchemaSpec
-  content: string
-  messages: Message[]
+  spec: SchemaSpec;
+  content: string;
+  messages: Message[];
 }

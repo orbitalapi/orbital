@@ -1,0 +1,42 @@
+<mat-toolbar color="primary">
+  <span>Type Explorer</span>
+  <div class="search-bar">
+    <button>Create</button>
+    <!--    <input matInput placeholder="Search" [formControl]="searchInput">-->
+  </div>
+  <!--<mat-form-field class="search-bar" floatLabel="never">-->
+  <!--<mat-icon matPrefix>search</mat-icon>-->
+  <!--<mat-label>Search</mat-label>-->
+  <!---->
+  <!--</mat-form-field>-->
+</mat-toolbar>
+<div class="page-content" appTocHost tocTag="h2" (contentsChanged)="contents = $event">
+  <div class="documentation" *ngIf="type">
+    <div class="type-name">
+      <h1>{{type?.name?.name}}</h1>
+      <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
+    </div>
+
+
+    <section>
+      <h2>About this type</h2>
+      <p>{{description}}</p>
+    </section>
+    <section *ngIf="hasAttributes">
+      <h2>Attributes</h2>
+      <app-attribute-table [type]="type"></app-attribute-table>
+    </section>
+
+    <section>
+      <h2>Links</h2>
+      <app-type-link-graph-container [member]="schemaMember"></app-type-link-graph-container>
+    </section>
+
+    <section>
+      <h2>Source code</h2>
+      <app-code-viewer [sources]="sources"></app-code-viewer>
+    </section>
+  </div>
+  <app-contents-table [contents]="contents"></app-contents-table>
+</div>
+

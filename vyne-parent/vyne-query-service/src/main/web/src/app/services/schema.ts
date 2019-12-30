@@ -107,6 +107,18 @@ export interface Service {
   sourceCode: SourceCode;
 }
 
+export function isService(candidate): candidate is Service {
+  return (candidate as Service).operations !== undefined;
+}
+
+export function isType(candidate): candidate is Type {
+  return (candidate as Type).scalar !== undefined;
+}
+
+export function isOperation(candidate): candidate is Operation {
+  return (candidate as Operation).returnType !== undefined;
+}
+
 export interface OperationContract {
   returnType: Type;
   constraints: Array<any>;
@@ -126,7 +138,21 @@ export interface SchemaGraphLink {
   label: string;
 }
 
+function isMap(value: any): value is Map<any, any> {
+  return value.keys !== undefined && value.get !== undefined;
+}
+
 export class SchemaGraph {
+  static empty(): SchemaGraph {
+    return new SchemaGraph(new Map(), new Map());
+  }
+
+  static from(nodes, links): SchemaGraph {
+    const graph = this.empty();
+    graph.mergeToMap(nodes, graph.nodes);
+    graph.mergeToMap(links, graph.links);
+    return graph;
+  }
 
   constructor(
     public readonly nodes: Map<string, SchemaGraphNode>,
@@ -148,16 +174,30 @@ export class SchemaGraph {
 
 
   mergeToMap(source: Map<any, any>, target) {
-    Object.keys(source).forEach(key => {
-      if (!target[key]) {
-        target.set(key, source[key]);
+    function setOnTarget(key, value) {
+      if (isMap(target)) {
+        if (!target.has(key)) {
+          target.set(key, value);
+        }
+      } else {
+        if (!target[key]) {
+          target[key] = value;
+        }
       }
-    });
+    }
+
+    if (isMap(source)) {
+      source.forEach((value, key) => {
+        setOnTarget(key, value);
+      });
+    } else {
+      Object.keys(source).forEach(key => {
+        setOnTarget(key, source[key]);
+      });
+    }
+
   }
 
-  static empty(): SchemaGraph {
-    return new SchemaGraph(new Map(), new Map());
-  }
 }
 
 
@@ -175,7 +215,7 @@ export class SchemaMember {
     public readonly member: Type | Service | Operation,
     public readonly sources: SourceCode[]
   ) {
-    this.attributeNames = kind == SchemaMemberType.TYPE
+    this.attributeNames = kind === SchemaMemberType.TYPE
       ? Object.keys((member as Type).attributes)
       : [];
   }
@@ -184,19 +224,23 @@ export class SchemaMember {
 
   static fromService(service: Service): SchemaMember[] {
     return service.operations.map(operation => {
-      return new SchemaMember(
-        {
-          name: operation.name,
-          fullyQualifiedName: service.name.fullyQualifiedName + ' #' + operation.name,
-          namespace: service.name.namespace
-        },
-        SchemaMemberType.OPERATION,
-        null,
-        operation,
-        operation.sources
-      );
+      return this.fromOperation(operation, service);
     });
 
+  }
+
+  private static fromOperation(operation: Operation, service: Service) {
+    return new SchemaMember(
+      {
+        name: operation.name,
+        fullyQualifiedName: service.name.fullyQualifiedName + ' #' + operation.name,
+        namespace: service.name.namespace
+      },
+      SchemaMemberType.OPERATION,
+      null,
+      operation,
+      operation.sources
+    );
   }
 
   static fromType(type: Type): SchemaMember {

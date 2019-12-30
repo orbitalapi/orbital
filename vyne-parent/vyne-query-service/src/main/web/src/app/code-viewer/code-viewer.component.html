@@ -1,0 +1,11 @@
+<div class="code-viewer">
+  <mat-tab-group class="code-viewer">
+    <mat-tab *ngFor="let source of sources" [label]="source.name">
+      <ng-template matTabContent>
+        <td-highlight [content]="source.code" [lang]="source.language"></td-highlight>
+      </ng-template>
+    </mat-tab>
+
+  </mat-tab-group>
+</div>
+

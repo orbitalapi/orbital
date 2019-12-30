@@ -32,7 +32,6 @@
               {
                 "input": "node_modules/@angular/material/prebuilt-themes/indigo-pink.css"
               },
-              "node_modules/highlight.js/styles/vs.css",
               "src/styles.scss"
             ],
             "scripts": []
@@ -105,7 +104,6 @@
               {
                 "input": "src/styles.scss"
               }
-//              "src/styles.scss"
             ],
             "scripts": [],
             "assets": [

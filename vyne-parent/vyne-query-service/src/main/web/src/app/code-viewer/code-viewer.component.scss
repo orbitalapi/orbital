@@ -1,0 +1,13 @@
+@import "src/theme";
+
+.highlight-container {
+  background-color: $code-background;
+}
+
+td-highlight  {
+  background-color: $code-background;
+}
+
+.mat-tab-label::ng-deep {
+  background-color: blue;
+}

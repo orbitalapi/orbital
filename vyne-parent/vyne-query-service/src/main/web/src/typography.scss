@@ -1,0 +1,28 @@
+@import "fonts";
+@import "theme-colors";
+
+$mono: 'Source Sans Pro', monospace;
+// Fonts used in documentation heavy pages
+$font-sans-docs: 'Open Sans',system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
+// Fonts used throughout the app
+$font-sans: 'Nunito', $font-sans-docs;
+$font-sans-alt: Hind,system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
+.mono {
+  font-family: $mono;
+}
+
+.mono-badge {
+  font-family: $mono;
+  font-size: 0.85rem;
+  color: $vyne-lilac;
+  border: 1px solid rgba($vyne-lilac,0.6);
+  background-color: rgba($vyne-lilac, 0.1);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  display: inline-block;
+  margin-top: 0.25rem;
+}
+
+.font-sans-alt {
+  font-family:$font-sans-alt;
+}
