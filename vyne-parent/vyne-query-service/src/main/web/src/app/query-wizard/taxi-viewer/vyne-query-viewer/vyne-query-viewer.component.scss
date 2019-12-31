@@ -1,8 +1,19 @@
+@import "src/theme";
 @import "../expand-panel";
 
 .title-bar {
   background-color: white;
 }
+
+.highlight-container {
+  background-color: $code-background;
+}
+
+td-highlight {
+  background-color: $code-background;
+}
+
+
 
 .language-selector {
   display: flex;

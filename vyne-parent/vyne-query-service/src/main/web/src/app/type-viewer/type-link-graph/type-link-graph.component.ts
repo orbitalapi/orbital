@@ -44,7 +44,7 @@ export class TypeLinkGraphComponent {
 
   showLegend = false;
   curve = shape.curveBundle.beta(1);
-  chartDimensions = [1400, 800];
+  // chartDimensions = [1400, 800];
   autoZoom = false;
 
   colors = {

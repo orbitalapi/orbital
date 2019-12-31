@@ -1,11 +1,13 @@
-<div class="code-viewer">
-  <mat-tab-group class="code-viewer">
-    <mat-tab *ngFor="let source of sources" [label]="source.name">
-      <ng-template matTabContent>
-        <td-highlight [content]="source.code" [lang]="source.language"></td-highlight>
-      </ng-template>
-    </mat-tab>
-
-  </mat-tab-group>
+<div class="file-list" *ngIf="displaySidebar">
+  <div class="file-list-entry" *ngFor="let source of sources">
+    <img class="icon" src="assets/img/file.svg"><span>{{ source.origin }}</span>
+  </div>
 </div>
+<mat-tab-group class="code-viewer">
+  <mat-tab *ngFor="let source of sources" [label]="source.origin">
+    <ng-template matTabContent>
+      <td-highlight [content]="source.content" [lang]="source.language"></td-highlight>
+    </ng-template>
+  </mat-tab>
+</mat-tab-group>
 

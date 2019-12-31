@@ -1,5 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {taxiLangDef} from './taxi-lang-def';
+import {SourceCode} from "../services/schema";
 
 declare const require: any;
 /* tslint:disable-next-line */
@@ -14,11 +15,21 @@ hljs.registerLanguage('taxi', taxiLangDef);
 export class CodeViewerComponent {
 
   @Input()
-  sources: Source[];
+  sources: SourceCode[];
+
+  @Input()
+  sidebarMode: SidebarMode = 'Auto';
+
+  get displaySidebar(): boolean {
+    switch (this.sidebarMode) {
+      case 'Auto':
+        return this.sources && this.sources.length > 1;
+      case 'Visible':
+        return true;
+      case 'Hidden' :
+        return false;
+    }
+  }
 }
 
-export interface Source {
-  name: string;
-  code: string;
-  language: string;
-}
+export type SidebarMode = 'Visible' | 'Hidden' | 'Auto';

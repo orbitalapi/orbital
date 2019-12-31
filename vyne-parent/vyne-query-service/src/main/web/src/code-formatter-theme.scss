@@ -1,21 +1,31 @@
+@import "theme-colors";
+
 $code-background: #333f54;
 //$code-background: #002b36;
 $code-base: rgba(255,255,255,0.85);
 $code-viewer-tooling-background: #1d2539;
-$code-highlight: #2b9efb;
+$code-highlight: $vyne-primary;
+
+$dark-list-item: rgba($code-base,0.7);
+$dark-list-item-hover: rgba($code-base,0.85);
+$dark-list-item-active: $code-base;
 
 .code-viewer {
+  mat-ink-bar {
+    background-color: $code-highlight !important;
+    height: 3px !important;
+  }
   .mat-tab-header {
     border-bottom: 0px;
   }
-  .mat-tab-group.mat-primary .mat-ink-bar {
-    background-color: $code-highlight;
-    height: 3px;
-  }
   .mat-tab-label {
     opacity: 1;
-    color: rgba($code-base,0.7);
+    color: $dark-list-item;
     background-color: $code-viewer-tooling-background;
+
+    &:hover {
+      color: $dark-list-item-hover;
+    }
 
     &.mat-tab-label-active {
       color: $code-base;

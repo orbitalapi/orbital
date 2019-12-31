@@ -1,16 +1,28 @@
 @import "src/theme";
 
+:host {
+  background-color: $body-bg;
+}
+
+mat-toolbar {
+  flex: 0 0 $toolbar-height;
+  z-index: 999;
+  display: flex;
+  padding-right: 4rem;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+app-code-viewer {
+  width: 100%;
+}
+
 .component-container {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
-
-mat-toolbar {
-  flex: 0 0 96px;
-  z-index: 999;
-}
-
 
 .source-viewer {
   height: 100%;
@@ -21,6 +33,7 @@ mat-toolbar {
   flex: 1;
   display: flex;
 }
+
 .endpoint-list {
   background-color: $light-purple-grey;
   border: 1px solid $light-purple-grey-300;

@@ -1,25 +1,54 @@
 @import "src/theme";
 
+:host {
+  background-color: $body-bg;
+  display: block;
+}
+
 mat-toolbar {
-  flex: 0 0 96px;
+  flex: 0 0 $toolbar-height;
   z-index: 999;
 }
 
 ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
-  color: rgba(255,255,255,0.6);
+  color: rgba($body,0.6);
   font-family: $font-sans;
 }
 ::-moz-placeholder { /* Firefox 19+ */
-  color: rgba(255,255,255,0.6);
+  color: rgba($body,0.6);
   font-family: $font-sans;
 }
 :-ms-input-placeholder { /* IE 10+ */
-  color: rgba(255,255,255,0.6);
+  color: rgba($body,0.6);
   font-family: $font-sans;
 }
 :-moz-placeholder { /* Firefox 18- */
-  color: rgba(255,255,255,0.6);
+  color: rgba($body,0.6);
   font-family: $font-sans;
+}
+
+.search-bar {
+  *:focus {
+    outline: none;
+  }
+
+  margin-left: 100px;
+  //width: 40rem;
+  input {
+    color: $body;
+    font-size: 1rem;
+    background-color: transparent;
+    border: 1px solid rgba($dark-grey-3,0.2);
+    padding: 6px 12px;
+    border-radius: 6px;
+    width: 40rem;
+    &:hover {
+      border: 1px solid rgba($dark-grey-3,0.5);
+    }
+    &:focus {
+      border: 1px solid rgba($dark-grey-3,0.8);
+    }
+  }
 }
 
 .search-result {
@@ -32,30 +61,6 @@ mat-toolbar {
     border: 1px solid $vyne-lilac;
     border-radius: 4px;
     cursor: pointer;
-  }
-
-}
-.search-bar {
-  *:focus {
-    outline: none;
-  }
-
-  margin-left: 100px;
-  //width: 40rem;
-  input {
-    color: white;
-    font-size: 1rem;
-    background-color: transparent;
-    border: 1px solid rgba(255,255,255,0.2);
-    padding: 12px;
-    border-radius: 6px;
-    width: 40rem;
-    &:hover {
-      border: 1px solid rgba(255,255,255,0.5);
-    }
-    &:focus {
-      border: 1px solid rgba(255,255,255,0.8);
-    }
   }
 }
 

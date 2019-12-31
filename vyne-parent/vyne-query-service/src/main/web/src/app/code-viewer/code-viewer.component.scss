@@ -1,13 +1,46 @@
 @import "src/theme";
 
+:host {
+  background-color: $code-viewer-tooling-background;
+  display: flex;
+  //font-family: $font-sans-alt;
+}
+
+.code-viewer {
+  flex-grow: 1;
+}
+
+.file-list {
+  min-width: 20rem;
+  margin-top: 48px; // to match height of the tab bar
+  margin-left: 1rem;
+  font-size: 0.9rem;
+}
+
+.file-list-entry {
+  display: flex;
+  color: $dark-list-item;
+  padding: 1rem;
+
+  img {
+    width: 16px;
+    margin-right: 0.5rem;
+  }
+
+  &:hover {
+    color: $dark-list-item-hover;
+    background-color: rgba($code-background,0.5);
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    cursor: pointer;
+  }
+}
+
 .highlight-container {
   background-color: $code-background;
 }
 
-td-highlight  {
+td-highlight {
   background-color: $code-background;
 }
 
-.mat-tab-label::ng-deep {
-  background-color: blue;
-}

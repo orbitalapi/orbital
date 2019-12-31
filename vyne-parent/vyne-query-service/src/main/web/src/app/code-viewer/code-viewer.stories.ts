@@ -93,13 +93,13 @@ storiesOf('CodeViewer', module)
     props: {
       sources: [
         {
-          name: 'Definition published by CustomerService',
-          code: bigTaxi,
+          origin: 'Definition published by CustomerService',
+          content: bigTaxi,
           language: 'taxi'
         },
         {
-          name: 'Documentation',
-          code: typescript,
+          origin: 'Documentation',
+          content: typescript,
           language: 'typescript'
         }]
     }

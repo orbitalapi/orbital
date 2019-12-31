@@ -9,6 +9,17 @@
   display: flex;
 }
 
+mat-toolbar {
+  flex: 0 0 $toolbar-height;
+  z-index: 999;
+  display: flex;
+  padding-right: 4rem;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
 .type-name {
   h1 {
     margin-bottom: 0;

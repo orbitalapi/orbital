@@ -1,7 +1,6 @@
 import {Component, Input} from '@angular/core';
-import {SchemaMember, Type} from '../services/schema';
-import {Contents} from "./toc-host.directive";
-import {Source} from "../code-viewer/code-viewer.component";
+import {SchemaMember, SourceCode, Type} from '../services/schema';
+import {Contents} from './toc-host.directive';
 
 @Component({
   selector: 'app-type-viewer',
@@ -13,7 +12,7 @@ export class TypeViewerComponent {
 
   private _type: Type;
 
-  sources: Source[];
+  sources: SourceCode[];
 
   @Input()
   get type(): Type {
@@ -24,13 +23,7 @@ export class TypeViewerComponent {
     this._type = value;
     if (this.type) {
       this.schemaMember = SchemaMember.fromType(this.type);
-      this.sources = this.schemaMember.sources.map(source => {
-        return {
-          name: `Published by ${source.origin}`,
-          language: 'taxi',
-          code: source.content
-        } as Source;
-      });
+      this.sources = this.schemaMember.sources;
     }
   }
 

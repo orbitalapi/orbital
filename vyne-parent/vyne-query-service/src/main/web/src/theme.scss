@@ -3,8 +3,9 @@
 @import 'node_modules/@angular/material/theming';
 @import "code-formatter-theme";
 
+$toolbar-height: 4rem;
 .page-content {
-  padding: 46px;
+  padding: 2rem;
   background-color: $body-bg;
   height: 100%;
 }
@@ -12,16 +13,21 @@
 .mat-toolbar {
   position: sticky;
   top: 0;
-  height: 96px;
+  height: $toolbar-height;
+  font-size: 1rem;
   &.mat-logo {
     background-color: $dark-blue-1;
     color: #fafafa;
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
   &.mat-primary {
-    //background-color: white;
+    background-color: $whiteish;
     box-shadow: 0 2px 5px #dcdcdc;
-    color: #fafafa;
+    color: $dark-grey-3;
+
+    span {
+      font-size: 1rem;
+    }
   }
 }
 

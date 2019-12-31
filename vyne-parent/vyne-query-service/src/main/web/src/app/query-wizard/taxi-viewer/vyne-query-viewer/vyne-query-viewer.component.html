@@ -1,6 +1,7 @@
 <div class="code-container">
   <div class="title-bar" (click)="expanded = !expanded">
     <span>Vyne query</span>
+    <!-- todo: Why isn't this using code-container component? -->
     <div class="spacer"></div>
     <div class="language-selector" [ngClass]="expanded ? '' : 'panel-hidden'">
       <div *ngFor="let snippet of snippets" class="snippet-lang" (click)="selectSnippet(snippet,$event)"
@@ -11,7 +12,7 @@
     <div class="spacer"></div>
     <i class="material-icons" [ngClass]="expanded ? '' : 'panel-hidden'">expand_less</i>
   </div>
-  <div class="expand-wrapper" [ngClass]="expanded ? '' : 'panel-hidden'">
+  <div class="expand-wrapper highlight-container" [ngClass]="expanded ? '' : 'panel-hidden'">
     <td-highlight [lang]="activeSnippet?.formatterLang"
                   [content]="activeSnippet?.content" *ngIf="activeSnippet">
     </td-highlight>

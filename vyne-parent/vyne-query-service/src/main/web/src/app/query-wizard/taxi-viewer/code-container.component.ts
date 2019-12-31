@@ -11,7 +11,7 @@ import {Component, Input} from '@angular/core';
         <div class="spacer"></div>
         <i class="material-icons" [ngClass]="expandWrapperClass">expand_less</i>
       </div>
-      <div class="expand-wrapper" [ngClass]="expandWrapperClass">
+      <div class="expand-wrapper highlight-container" [ngClass]="expandWrapperClass" >
         <td-highlight [lang]="lang" [content]="_content" *ngIf="hasContent">
         </td-highlight>
       </div>
