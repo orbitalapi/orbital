@@ -37,7 +37,7 @@ class TaxiSchemaService : SchemaService, SchemaProvider {
    private val schemas = mutableMapOf<String, VersionedSchema>()
    private val generation:AtomicInteger = AtomicInteger(0);
 
-   @RequestMapping(method = arrayOf(RequestMethod.POST), value = "/{schemaId}/{version:.+}")
+   @RequestMapping(method = arrayOf(RequestMethod.POST), value = ["/{schemaId}/{version:.+}"])
    override fun submitSchema(@RequestBody schema: String, @PathVariable("schemaId") schemaId: String, @PathVariable("version") version: String): VersionedSchema {
       assertSchemaCompiles(schema)
       val versionedSchema = VersionedSchema(schemaId, version, schema)
@@ -46,7 +46,7 @@ class TaxiSchemaService : SchemaService, SchemaProvider {
       return versionedSchema
    }
 
-   @RequestMapping(method = arrayOf(RequestMethod.DELETE), value = "/{schemaId}/{version:.+}")
+   @RequestMapping(method = arrayOf(RequestMethod.DELETE), value = ["/{schemaId}/{version:.+}"])
    override fun removeSchema(@PathVariable("schemaId") schemaId: String, @PathVariable("version") version: String) {
       val schema = schemas[schemaId] ?: throw UnknownResourceException("Schmea $schemaId was not found")
 //      val semver = Version.valueOf(version)

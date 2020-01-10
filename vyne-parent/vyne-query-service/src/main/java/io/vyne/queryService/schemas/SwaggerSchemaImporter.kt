@@ -7,6 +7,10 @@ import v2.io.swagger.parser.SwaggerParser
 
 @Component
 class SwaggerSchemaImporter : SchemaImporter {
+   companion object {
+      const val SWAGGER_FORMAT = "swagger"
+   }
+
    override fun preview(request: SchemaPreviewRequest): SchemaPreview {
       val spec = getSpec(request.content)
       val generationResult = generator.generateAsStrings(request.content, spec.defaultNamespace!!)
@@ -25,10 +29,9 @@ class SwaggerSchemaImporter : SchemaImporter {
          version = swagger.info?.version,
          defaultNamespace = Namespaces.hostToNamespace(swagger.host)
       )
-
    }
 
-   override val supportedFormats = listOf("swagger")
+   override val supportedFormats = listOf(SWAGGER_FORMAT)
    private val generator = TaxiGenerator()
    override fun import(request: SchemaImportRequest): VersionedSchema {
 

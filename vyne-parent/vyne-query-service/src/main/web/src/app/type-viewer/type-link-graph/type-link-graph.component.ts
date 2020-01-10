@@ -14,6 +14,10 @@ export class TypeLinkGraphComponent {
   schemaGraph: SchemaGraph = SchemaGraph.empty();
   typeLinks: SchemaNodeSet = this.schemaGraph.toNodeSet();
 
+  get hasContent() {
+    return this.typeLinks.links.length > 0 && this.typeLinks.nodes.length > 0;
+  }
+
   private schemaSubscription: Subscription;
   private _schemaGraphs: Observable<SchemaGraph>;
   @Input()
@@ -101,6 +105,8 @@ export class TypeLinkGraphComponent {
   private appendSchemaGraph(schemaGraph: SchemaGraph) {
     this.schemaGraph.add(schemaGraph);
     this.typeLinks = this.schemaGraph.toNodeSet();
+    console.log("Updated typeLinks.  Now:")
+    console.log(JSON.stringify(this.typeLinks));
   }
 
   onLegendLabelClick(event) {

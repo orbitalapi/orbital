@@ -28,7 +28,7 @@ export class TypeViewerComponent {
   }
 
 
-  description = 'A person who buys coffee, hopefully lots of it, and collects points like gollum collects shiney rings.  Filth';
+  description = ''; //'A person who buys coffee, hopefully lots of it, and collects points like gollum collects shiney rings.  Filth';
 
   contents: Contents;
 

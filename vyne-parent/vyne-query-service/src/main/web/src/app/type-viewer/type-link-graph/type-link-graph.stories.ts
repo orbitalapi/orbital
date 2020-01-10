@@ -58,6 +58,8 @@ const linksResponse = {
 
 const schemaGraph = SchemaGraph.from(linksResponse.nodes, linksResponse.links);
 const source: Observable<SchemaGraph> = of(schemaGraph);
+const empty = SchemaGraph.empty()
+const empty$ = of(empty);
 
 storiesOf('TypeLinkGraph', module)
   .addDecorator(
@@ -70,6 +72,13 @@ storiesOf('TypeLinkGraph', module)
     template: `<app-type-link-graph [schemaGraphs]="source"></app-type-link-graph>`,
     props: {
       source
+    }
+  };
+}).add('empty', () => {
+  return {
+    template: `<app-type-link-graph [schemaGraphs]="empty$"></app-type-link-graph>`,
+    props: {
+      empty$
     }
   };
 });

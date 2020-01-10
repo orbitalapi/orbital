@@ -7,7 +7,9 @@ import {Subject} from 'rxjs';
 @Component({
   selector: 'app-type-link-graph-container',
   template: `
-    <app-type-link-graph [schemaGraphs]="schemaGraphs" (nodeClicked)="onNodeClicked($event)"></app-type-link-graph>
+    <div style="width: 100%; height: 100%;">
+        <app-type-link-graph [schemaGraphs]="schemaGraphs" (nodeClicked)="onNodeClicked($event)"></app-type-link-graph>
+    </div>
   `
 })
 export class TypeLinkGraphContainerComponent {
