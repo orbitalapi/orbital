@@ -19,10 +19,10 @@
     </div>
 
 
-<!--    <section>-->
-<!--      <h2>About this type</h2>-->
-<!--      <p>{{description}}</p>-->
-<!--    </section>-->
+    <!--    <section>-->
+    <!--      <h2>About this type</h2>-->
+    <!--      <p>{{description}}</p>-->
+    <!--    </section>-->
     <section *ngIf="hasAttributes">
       <h2>Attributes</h2>
       <app-attribute-table [type]="type"></app-attribute-table>
@@ -31,6 +31,12 @@
     <section>
       <h2>Links</h2>
       <app-type-link-graph-container [member]="schemaMember"></app-type-link-graph-container>
+    </section>
+
+    <section>
+      <h2>Policies</h2>
+      <app-policy-manager-container [targetType]="type"></app-policy-manager-container>
+
     </section>
 
     <section>

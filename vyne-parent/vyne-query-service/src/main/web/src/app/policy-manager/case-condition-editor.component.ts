@@ -1,10 +1,7 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {CaseCondition, Operator, PolicyStatement, RelativeSubject, RelativeSubjectSource} from "./policies";
-import {QualifiedName, Schema, Type} from "../services/schema";
-import {TypesService} from "../services/types.service";
-import {Observable} from "rxjs";
-import {MatSelectChange} from "@angular/material";
-import {map} from "rxjs/operators";
+import {CaseCondition, Operator, PolicyStatement, RelativeSubject, RelativeSubjectSource} from './policies';
+import {QualifiedName, Schema, Type} from '../services/schema';
+import {MatSelectChange} from '@angular/material';
 
 @Component({
   selector: 'app-case-condition-editor',
@@ -19,7 +16,7 @@ import {map} from "rxjs/operators";
             floatLabel="never"
             displayFullName="false"
             [selectedTypeName]="selectedCallerType"
-            [schema]="schema | async" (typeSelected)="onCallerTypeSelected($event)"
+            [schema]="schema" (typeSelected)="onCallerTypeSelected($event)"
             placeholder="Select type"></app-type-autocomplete>
           <div class="operator-wrapper line-component">
             <mat-form-field floatLabel="never">
@@ -32,11 +29,11 @@ import {map} from "rxjs/operators";
             </mat-form-field>
           </div>
           <div class="rh-value-container" [ngSwitch]="condition?.displayOperator?.operator.symbol">
-            <app-equals-editor [caseCondition]="condition" [type]="policyType" [schema]="schema | async"
-                               *ngSwitchDefault (statementUpdated)="statementUpdated.emit('')"
+            <app-equals-editor [caseCondition]="condition" [type]="policyType" [schema]="schema"
+                               *ngSwitchDefault (statementUpdated)="statementUpdated.emit()"
                                [literalOrProperty]="condition?.displayOperator?.literalOrProperty"></app-equals-editor>
             <app-multivalue-editor [caseCondition]="condition" *ngSwitchCase="'in'"
-                                   (statementUpdated)="statementUpdated.emit('')"></app-multivalue-editor>
+                                   (statementUpdated)="statementUpdated.emit()"></app-multivalue-editor>
           </div>
         </div>
       </div>
@@ -53,10 +50,10 @@ import {map} from "rxjs/operators";
 export class CaseConditionEditorComponent {
 
   @Input()
-  policyType:Type;
+  policyType: Type;
 
   @Output()
-  statementUpdated: EventEmitter<string> = new EventEmitter();
+  statementUpdated: EventEmitter<void> = new EventEmitter();
 
   @Input()
   statement: PolicyStatement;
@@ -68,24 +65,27 @@ export class CaseConditionEditorComponent {
 
   operators = Operator.displayOperators;
 
-  schema: Observable<Schema>;
-
-  constructor(private typeService: TypesService) {
-    this.schema = typeService.getTypes()
-  }
+  @Input()
+  schema: Schema;
 
   get selectedCallerType(): QualifiedName {
-    if (!this.condition || !this.condition.lhSubject) return null;
-    if (this.condition.lhSubject.type !== 'RelativeSubject') return null;
+    if (!this.condition || !this.condition.lhSubject) {
+      return null;
+    }
+    if (this.condition.lhSubject.type !== 'RelativeSubject') {
+      return null;
+    }
     const relativeSubject = <RelativeSubject>this.condition.lhSubject;
-    return relativeSubject.targetTypeName
+    return relativeSubject.targetTypeName;
   }
 
   onCallerTypeSelected(type: Type) {
-    if (!type) return;
+    if (!type) {
+      return;
+    }
     this.condition.lhSubject = new RelativeSubject(RelativeSubjectSource.CALLER, type.name);
-    this.statementUpdated.emit("");
-    console.log("type selected")
+    this.statementUpdated.emit();
+    console.log('type selected');
   }
 
   onOperatorChange(event: MatSelectChange) {
@@ -95,7 +95,7 @@ export class CaseConditionEditorComponent {
     // } else {
     //   this.condition.rhSubject = new RelativeSubject(null, null, null)
     // }
-    this.statementUpdated.emit("");
+    this.statementUpdated.emit();
   }
 }
 

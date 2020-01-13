@@ -1,16 +1,16 @@
 // import {ElseCondition, Instruction, InstructionType, Policy, PolicyStatement, RuleSet} from "./policies";
 
-import {QualifiedName, Type} from "../services/schema";
-import {plainToClass} from "class-transformer";
+import {QualifiedName, Type} from '../services/schema';
+import {plainToClass} from 'class-transformer';
 
 interface SourceElement {
-  src(): string
+  src(): string;
 
-  imports(): QualifiedName[]
+  imports(): QualifiedName[];
 }
 
 interface PlainTextElement {
-  description(): string
+  description(): string;
 }
 
 export class Policy implements SourceElement {
@@ -22,32 +22,32 @@ export class Policy implements SourceElement {
   }
 
   static createNew(targetType: Type): Policy {
-    let qualifiedName = targetType.name.namespace + "." + "NewPolicy";
+    const qualifiedName = targetType.name.namespace + '.' + 'NewPolicy';
 
     return new Policy(QualifiedName.from(qualifiedName), targetType.name, [
       new RuleSet([
         new PolicyStatement(new ElseCondition(), new PermitInstruction())
       ])
-    ])
+    ]);
   }
 
   src(): string {
-    const importSrc = this.imports().map(imp => `import ${imp.fullyQualifiedName}`).join("\n");
+    const importSrc = this.imports().map(imp => `import ${imp.fullyQualifiedName}`).join('\n');
 
     return `
 ${importSrc}
 
 namespace ${this.name.namespace}
-    
+
 policy ${this.name.name} against ${this.targetTypeName.fullyQualifiedName} {
-${this.ruleSets.map(r => r.src()).join("\n")}
+${this.ruleSets.map(r => r.src()).join('\n')}
 }`;
   }
 
   imports(): QualifiedName[] {
     let imports = [this.targetTypeName];
     imports = imports.concat(this.ruleSets.flatMap(r => r.imports()));
-    return imports
+    return imports;
   }
 
   static parseDtoArray(policyDtoArray: any[]): Policy[] {
@@ -55,17 +55,17 @@ ${this.ruleSets.map(r => r.src()).join("\n")}
   }
 
   static parseDto(dto: any): Policy {
-    let name = plainToClass(QualifiedName, dto.name as QualifiedName);
-    let typeName = plainToClass(QualifiedName, dto.targetTypeName as QualifiedName);
-    return new Policy(name, typeName, dto.ruleSets.map(r => RuleSet.fromDto(r)))
+    const name = plainToClass(QualifiedName, dto.name as QualifiedName);
+    const typeName = plainToClass(QualifiedName, dto.targetTypeName as QualifiedName);
+    return new Policy(name, typeName, dto.ruleSets.map(r => RuleSet.fromDto(r)));
   }
 }
 
 
 export class RuleSetUtils {
   static elsePrefixWord(ruleSet: RuleSet): string {
-    if (!ruleSet) return "";
-    return (ruleSet.statements.length > 1) ? "Otherwise, " : "Always ";
+    if (!ruleSet) { return ''; }
+    return (ruleSet.statements.length > 1) ? 'Otherwise, ' : 'Always ';
   }
 }
 
@@ -74,19 +74,19 @@ export class RuleSet implements SourceElement {
   }
 
   appendStatement(policyStatement: PolicyStatement) {
-    this.statements.splice(this.statements.length - 1, 0, policyStatement)
+    this.statements.splice(this.statements.length - 1, 0, policyStatement);
   }
 
   src(): string {
     // TODO - scopes etc
-    const statementSrc = this.statements.map(s => `    ${s.src()}`).join("\n");
+    const statementSrc = this.statements.map(s => `    ${s.src()}`).join('\n');
     return `  read {
 ${statementSrc}
   }`;
   }
 
   imports(): QualifiedName[] {
-    return this.statements.flatMap(s => s.imports())
+    return this.statements.flatMap(s => s.imports());
   }
 
   removeStatement(statement: PolicyStatement) {
@@ -111,14 +111,14 @@ export class PolicyStatement implements SourceElement {
   }
 
   imports(): QualifiedName[] {
-    return this.condition.imports().concat(this.instruction.imports())
+    return this.condition.imports().concat(this.instruction.imports());
   }
 
   static fromDto(dto: any): PolicyStatement {
     return new PolicyStatement(
       ConditionUtils.fromDto(dto.condition),
       InstructionUtils.fromDto(dto.instruction)
-    )
+    );
   }
 }
 
@@ -126,9 +126,9 @@ export class Operator {
   constructor(readonly symbol: string, readonly label: string, readonly enumName: string) {
   }
 
-  static EQUALS = new Operator("=", "equals", "EQUAL");
-  static NOT_EQUAL = new Operator("!=", "does not equal", "NOT_EQUAL");
-  static IN = new Operator("in", "is in", "IN");
+  static EQUALS = new Operator('=', 'equals', 'EQUAL');
+  static NOT_EQUAL = new Operator('!=', 'does not equal', 'NOT_EQUAL');
+  static IN = new Operator('in', 'is in', 'IN');
 
   static operators: Operator[] = [
     Operator.EQUALS,
@@ -137,7 +137,7 @@ export class Operator {
   ];
 
   static fromEnum(enumValue: string): Operator {
-    return this.operators.find(o => o.enumName == enumValue)
+    return this.operators.find(o => o.enumName == enumValue);
   }
 
   static EQUALS_PROPERTY: DisplayOperator = {
@@ -174,36 +174,36 @@ export class Operator {
 class ConditionUtils {
   static fromDto(dto: any): Condition {
     switch (dto.type) {
-      case "else":
+      case 'else':
         return new ElseCondition();
-      case "case":
-        return CaseCondition.fromDto(dto)
+      case 'case':
+        return CaseCondition.fromDto(dto);
     }
   }
 }
 
 export interface Condition extends SourceElement {
-  readonly type: string
+  readonly type: string;
 }
 
 export class ElseCondition implements Condition {
   src(): string {
-    return "else"
+    return 'else';
   }
 
-  readonly type: string = "else";
+  readonly type: string = 'else';
 
   description(): string {
-    return "Otherwise,";
+    return 'Otherwise,';
   }
 
   imports(): QualifiedName[] {
-    return []
+    return [];
   }
 }
 
 export class CaseCondition implements Condition, PlainTextElement {
-  readonly type: string = "case";
+  readonly type: string = 'case';
 
   constructor(
     public lhSubject: Subject,
@@ -213,7 +213,7 @@ export class CaseCondition implements Condition, PlainTextElement {
   }
 
   static empty(): CaseCondition {
-    return new CaseCondition(null, Operator.EQUALS, null)
+    return new CaseCondition(null, Operator.EQUALS, null);
   }
 
 
@@ -224,7 +224,7 @@ export class CaseCondition implements Condition, PlainTextElement {
   private _displayOperator: DisplayOperator;
 
   get displayOperator(): DisplayOperator {
-    if (this._displayOperator) return this._displayOperator;
+    if (this._displayOperator) { return this._displayOperator; }
 
     const derived = this.deriveDisplayOperator();
     return (derived) ? derived : Operator.EQUALS_PROPERTY;
@@ -235,26 +235,26 @@ export class CaseCondition implements Condition, PlainTextElement {
   }
 
   private deriveDisplayOperator(): DisplayOperator {
-    return Operator.displayOperators.find(o => o.matches(this))
+    return Operator.displayOperators.find(o => o.matches(this));
   }
 
   imports(): QualifiedName[] {
-    if (!this.lhSubject || !this.rhSubject) return [];
-    return this.lhSubject.imports().concat(this.rhSubject.imports())
+    if (!this.lhSubject || !this.rhSubject) { return []; }
+    return this.lhSubject.imports().concat(this.rhSubject.imports());
   }
 
   src(): string {
-    if (!this.lhSubject || !this.rhSubject) return "";
+    if (!this.lhSubject || !this.rhSubject) { return ''; }
     return `case ${this.lhSubject.src()} ${this.displayOperator.operator.symbol} ${this.rhSubject.src()}`;
   }
 
   description(): string {
-    if (!this.lhSubject || !this.rhSubject) return null;
+    if (!this.lhSubject || !this.rhSubject) { return null; }
     return `${this.lhSubject.description()} ${this.displayOperator.label} ${this.rhSubject.description()}`;
   }
 
   static fromDto(dto: any): CaseCondition {
-    let c = new CaseCondition(
+    const c = new CaseCondition(
       SubjectUtils.fromDto(dto.lhSubject),
       Operator.fromEnum(dto.operator),
       SubjectUtils.fromDto(dto.rhSubject)
@@ -268,23 +268,23 @@ export type  SubjectType = 'RelativeSubject' | 'LiteralSubject' | 'LiteralArrayS
 class SubjectUtils {
   static fromDto(subject: any): Subject {
     switch (subject.type) {
-      case "RelativeSubject":
+      case 'RelativeSubject':
         return RelativeSubject.fromDto(subject);
-      case "LiteralArraySubject" :
+      case 'LiteralArraySubject' :
         return new LiteralArraySubject(subject.values);
-      case "LiteralSubject" :
-        return new LiteralSubject(subject.value)
+      case 'LiteralSubject' :
+        return new LiteralSubject(subject.value);
     }
   }
 }
 
 export interface Subject extends SourceElement, PlainTextElement {
-  readonly type: SubjectType
+  readonly type: SubjectType;
 }
 
 export class RelativeSubject implements Subject {
-  static TYPE_TOKEN = "{thisType}";
-  readonly type = "RelativeSubject";
+  static TYPE_TOKEN = '{thisType}';
+  readonly type = 'RelativeSubject';
 
   constructor(
     public source: RelativeSubjectSource,
@@ -297,39 +297,39 @@ export class RelativeSubject implements Subject {
   }
 
   imports(): QualifiedName[] {
-    return [this.targetTypeName]
+    return [this.targetTypeName];
   }
 
   description(): string {
     // HACK:  using a repacement token, since I can't easily access the type this subect is defined
     // against in this method
-    const prefix = (this.source == RelativeSubjectSource.THIS) ? `this ${RelativeSubject.TYPE_TOKEN}'s` : "caller's";
-    return `${prefix} ${this.targetTypeName.name}`
+    const prefix = (this.source == RelativeSubjectSource.THIS) ? `this ${RelativeSubject.TYPE_TOKEN}'s` : 'caller\'s';
+    return `${prefix} ${this.targetTypeName.name}`;
   }
 
   static fromDto(subject: any): RelativeSubject {
-    let targetTypeName: QualifiedName = plainToClass(QualifiedName, subject.targetTypeName as QualifiedName);
-    return new RelativeSubject(subject.source, targetTypeName)
+    const targetTypeName: QualifiedName = plainToClass(QualifiedName, subject.targetTypeName as QualifiedName);
+    return new RelativeSubject(subject.source, targetTypeName);
   }
 }
 
 export enum RelativeSubjectSource {
-  CALLER = "CALLER",
-  THIS = "THIS"
+  CALLER = 'CALLER',
+  THIS = 'THIS'
 }
 
 export class LiteralArraySubject implements Subject {
-  readonly type = "LiteralArraySubject";
+  readonly type = 'LiteralArraySubject';
 
   constructor(public values: any[]) {
   }
 
   src(): string {
-    return `[ ${this.values.map(v => `"${v}"`).join(",")} ]`;
+    return `[ ${this.values.map(v => `"${v}"`).join(',')} ]`;
   }
 
   imports(): QualifiedName[] {
-    return []
+    return [];
   }
 
 
@@ -339,7 +339,7 @@ export class LiteralArraySubject implements Subject {
 }
 
 export class LiteralSubject implements Subject {
-  readonly type = "LiteralSubject";
+  readonly type = 'LiteralSubject';
 
   constructor(public value: any) {
   }
@@ -349,7 +349,7 @@ export class LiteralSubject implements Subject {
   }
 
   imports(): QualifiedName[] {
-    return []
+    return [];
   }
 
   description(): string {
@@ -358,14 +358,14 @@ export class LiteralSubject implements Subject {
 }
 
 export interface Instruction extends SourceElement, PlainTextElement {
-  readonly type: InstructionType
+  readonly type: InstructionType;
 }
 
 export class PermitInstruction implements Instruction {
   readonly type: InstructionType = InstructionType.PERMIT;
 
   description(): string {
-    return "permit";
+    return 'permit';
   }
 
   imports(): QualifiedName[] {
@@ -373,7 +373,7 @@ export class PermitInstruction implements Instruction {
   }
 
   src(): string {
-    return "permit";
+    return 'permit';
   }
 }
 
@@ -398,7 +398,7 @@ export class FilterInstruction implements Instruction {
   private _isExplicitFilterAttributes: boolean;
 
   get isFilterAll(): boolean {
-    if (this._isExplicitFilterAttributes) return false;
+    if (this._isExplicitFilterAttributes) { return false; }
     return this.fieldNames == null || this.fieldNames.length == 0;
   }
 
@@ -410,7 +410,7 @@ export class FilterInstruction implements Instruction {
   readonly type: InstructionType = InstructionType.FILTER;
 
   description(): string {
-    const fieldNameList = (!this.fieldNames || this.fieldNames.length == 0) ? " entire record" : ` properties ${this.fieldNames.join(", ")}`;
+    const fieldNameList = (!this.fieldNames || this.fieldNames.length == 0) ? ' entire record' : ` properties ${this.fieldNames.join(', ')}`;
     return `filter ${fieldNameList}`;
   }
 
@@ -419,12 +419,12 @@ export class FilterInstruction implements Instruction {
   }
 
   src(): string {
-    const fieldNameList = (!this.fieldNames || this.fieldNames.length == 0) ? "" : `( ${this.fieldNames.join(", ")} )`;
+    const fieldNameList = (!this.fieldNames || this.fieldNames.length == 0) ? '' : `( ${this.fieldNames.join(', ')} )`;
     return `filter ${fieldNameList}`;
   }
 
   static fromDto(dto: FilterInstruction): FilterInstruction {
-    return new FilterInstruction(dto.fieldNames)
+    return new FilterInstruction(dto.fieldNames);
   }
 }
 
@@ -499,24 +499,24 @@ class InstructionUtils {
 // }
 
 export enum InstructionType {
-  PERMIT = "PERMIT",
+  PERMIT = 'PERMIT',
   // PROCESS = "PROCESS",
-  FILTER = "FILTER",
+  FILTER = 'FILTER',
 }
 
 
 function isOperatorType(operator: Operator, subjectType: SubjectType) {
   return function (caseCondition: CaseCondition) {
-    if (!caseCondition || !caseCondition.rhSubject) return false;
+    if (!caseCondition || !caseCondition.rhSubject) { return false; }
     return caseCondition.rhSubject.type == subjectType && caseCondition.operator == operator;
-  }
+  };
 }
 
 export interface DisplayOperator {
   operator: Operator;
   label: string;
   literalOrProperty?: 'literal' | 'property';
-  matches: (CaseCondition) => boolean
+  matches: (CaseCondition) => boolean;
 }
 
 

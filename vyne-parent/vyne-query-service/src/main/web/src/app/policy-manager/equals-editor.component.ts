@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {QualifiedName, Schema, Type, TypeReference} from "../services/schema";
-import {CaseCondition, LiteralSubject, RelativeSubject, RelativeSubjectSource} from "./policies";
+import {Field, FieldMap, QualifiedName, Schema, Type, TypeReference} from '../services/schema';
+import {CaseCondition, LiteralSubject, RelativeSubject, RelativeSubjectSource} from './policies';
 
 @Component({
   selector: 'app-equals-editor',
@@ -47,16 +47,16 @@ export class EqualsEditorComponent implements OnInit {
   schema: Schema;
 
   get properties(): QualifiedName[] {
-    if (!this.type) return [];
-    return Object.values(this.type.attributes).map((typeRef: TypeReference) => typeRef.name)
+    if (!this.type) { return []; }
+    return Object.values(this.type.attributes).map((field: Field) => field.type.name);
   }
 
   @Output()
   statementUpdated: EventEmitter<string> = new EventEmitter();
 
   get literalSubject(): LiteralSubject {
-    if (!this.caseCondition || !this.caseCondition.rhSubject || this.caseCondition.rhSubject.type != "LiteralSubject") return null;
-    return <LiteralSubject>this.caseCondition.rhSubject
+    if (!this.caseCondition || !this.caseCondition.rhSubject || this.caseCondition.rhSubject.type !== 'LiteralSubject') { return null; }
+    return <LiteralSubject>this.caseCondition.rhSubject;
   }
 
   // literalOrProperty: boolean = this.LITERAL;
@@ -65,28 +65,28 @@ export class EqualsEditorComponent implements OnInit {
   }
 
   get selectedProperty(): QualifiedName {
-    if (!this.caseCondition || !this.caseCondition.rhSubject || this.caseCondition.rhSubject.type !== "RelativeSubject") {
-      return null
+    if (!this.caseCondition || !this.caseCondition.rhSubject || this.caseCondition.rhSubject.type !== 'RelativeSubject') {
+      return null;
     }
     const relativeSubject = this.caseCondition.rhSubject as RelativeSubject;
     // to match the value in the drop-down, return the property from the type
-    return relativeSubject.targetTypeName
+    return relativeSubject.targetTypeName;
   }
 
   set selectedProperty(value: QualifiedName) {
     this.caseCondition.rhSubject = new RelativeSubject(RelativeSubjectSource.THIS, value);
-    this.statementUpdated.emit("")
+    this.statementUpdated.emit('');
   }
 
   onLiteralValueUpdated($event) {
     const value = $event.target.value;
     this._caseCondition.rhSubject = new LiteralSubject(value);
-    this.statementUpdated.emit("")
+    this.statementUpdated.emit('');
   }
 
   onCallerTypeSelected(type: Type) {
     if (type) {
-      this.selectedProperty = type.name
+      this.selectedProperty = type.name;
     }
 
   }

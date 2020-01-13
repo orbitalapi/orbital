@@ -1,8 +1,8 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {MatChipInputEvent} from '@angular/material';
-import {CaseCondition, LiteralArraySubject} from "./policies";
-import {Schema} from "../services/schema";
+import {CaseCondition, LiteralArraySubject} from './policies';
+import {Schema} from '../services/schema';
 
 
 @Component({
@@ -48,7 +48,7 @@ export class MultivalueEditorComponent {
     // Add our fruit
     if ((value || '').trim()) {
       this.values.push(value.trim());
-      this.resetCondition()
+      this.resetCondition();
     }
 
     // Reset the input value
@@ -59,7 +59,7 @@ export class MultivalueEditorComponent {
 
   private resetCondition() {
     this.caseCondition.rhSubject = new LiteralArraySubject(this.values);
-    this.statementUpdated.emit("");
+    this.statementUpdated.emit('');
 
   }
 

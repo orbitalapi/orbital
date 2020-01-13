@@ -74,6 +74,7 @@ import {TypeLinkGraphComponent} from './type-viewer/type-link-graph/type-link-gr
 import {TypeLinkGraphContainerComponent} from './type-viewer/type-link-graph/type-link-graph-container.component';
 import { CodeViewerComponent } from './code-viewer/code-viewer.component';
 import {HighlightModule} from "ngx-highlightjs";
+import {PolicyManagerContainerComponent} from "./policy-manager/policy-manager-container.component";
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -110,6 +111,7 @@ export const routerModule = RouterModule.forRoot(
     NewSchemaWizardComponent,
     FactEditorComponent,
     TypeAutocompleteComponent,
+    PolicyManagerContainerComponent,
     PolicyManagerComponent,
     PolicyEditorComponent,
     CaseConditionEditorComponent,

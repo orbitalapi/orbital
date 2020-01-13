@@ -20,10 +20,14 @@ export class QualifiedName {
   }
 }
 
+export interface FieldMap {
+  [key: string]: Field;
+}
+
 
 export interface Type {
   name: QualifiedName;
-  attributes: Map<string, Field>;
+  attributes: FieldMap;
   modifiers: Array<Modifier>;
   scalar: boolean;
   aliasForType: QualifiedName;

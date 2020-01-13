@@ -1,9 +1,13 @@
 @import "src/theme";
+@import "policy-manager-common-styles";
 
-.component-container {
-  padding: 0 20px;
+.read-only-title {
+  display: flex;
+  align-items: center;
+  h4 {
+    padding-right: 24px;
+  }
 }
-
 .line-wrapper {
   display: flex;
   align-items: center;

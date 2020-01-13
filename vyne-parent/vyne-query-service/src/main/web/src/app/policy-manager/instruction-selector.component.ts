@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {FilterInstruction, Instruction, InstructionType, PermitInstruction, PolicyStatement} from "./policies";
-import {MatSelectChange} from "@angular/material";
-import {Type} from "../services/schema";
+import {FilterInstruction, Instruction, InstructionType, PermitInstruction, PolicyStatement} from './policies';
+import {MatSelectChange} from '@angular/material';
+import {Type} from '../services/schema';
 
 @Component({
   selector: 'app-instruction-selector',
@@ -33,10 +33,11 @@ import {Type} from "../services/schema";
 export class InstructionSelectorComponent {
 
   get filterInstruction(): FilterInstruction {
-    if (!this.statement || !this.statement.instruction || this.statement.instruction.type != InstructionType.FILTER)
+    if (!this.statement || !this.statement.instruction || this.statement.instruction.type != InstructionType.FILTER) {
       return null;
+    }
 
-    return this.statement.instruction as FilterInstruction
+    return this.statement.instruction as FilterInstruction;
   }
 
   readonly options: InstructionOption[] = [
@@ -67,18 +68,18 @@ export class InstructionSelectorComponent {
   policyType: Type;
 
   get attributes(): string[] {
-    if (!this.policyType) return [];
+    if (!this.policyType) { return []; }
     return Object.keys(this.policyType.attributes);
   }
 
   get instructionOption(): InstructionOption {
-    if (!this.statement) return this.options[0];
+    if (!this.statement) { return this.options[0]; }
     return this.options.find(o => o.matches(this.statement));
   }
 
   set instructionOption(value: InstructionOption) {
     this.statement.instruction = value.onSelect();
-this.emitStatementUpdated()
+this.emitStatementUpdated();
   }
 
 
@@ -91,7 +92,7 @@ this.emitStatementUpdated()
   }
 
   emitStatementUpdated() {
-    this.statementUpdated.emit()
+    this.statementUpdated.emit();
   }
 
   @Output()
@@ -111,14 +112,14 @@ this.emitStatementUpdated()
   }
 
   onProcessorChanged($event: MatSelectChange) {
-    this.statementUpdated.emit("");
+    this.statementUpdated.emit('');
   }
 }
 
-type InstructionOption = {
-  label: string,
-  onSelect: () => Instruction,
-  matches: (PolicyStatement) => boolean,
-  showAttributeSelector: boolean
+interface InstructionOption {
+  label: string;
+  onSelect: () => Instruction;
+  matches: (PolicyStatement) => boolean;
+  showAttributeSelector: boolean;
 
 }

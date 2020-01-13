@@ -1,44 +1,57 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {CaseCondition, Instruction, PermitInstruction, Policy, PolicyStatement, RuleSet} from "./policies";
-import {TypesService} from "../services/types.service";
-import {Type} from "../services/schema";
+import {CaseCondition, PermitInstruction, Policy, PolicyStatement, RuleSet} from './policies';
+import {Schema, Type} from '../services/schema';
 
 @Component({
   selector: 'app-policy-editor',
   styleUrls: ['./policy-editor.component.scss'],
   template: `
     <div class="component-container">
-      <form>
+      <form *ngIf="editing">
         <mat-form-field appearance="outline" hintLabel="Letters, numbers and punctuation only.  No spaces permitted"
                         class="title-form-field">
           <mat-label>Policy title</mat-label>
           <input matInput placeholder="Policy title" [(ngModel)]="policy.name.name" name="title">
         </mat-form-field>
       </form>
+      <div *ngIf="!editing" class="read-only-title editable-container">
+        <h4>{{ policy.name.name }}</h4>
+        <div class="edit-button-container">
+          <mat-icon (click)="editing = true">edit</mat-icon>
+        </div>
+      </div>
+
       <div class="ruleset-container" *ngFor="let ruleset of policy.ruleSets">
         <div class="statement-list-container">
           <div class="statement-container" *ngFor="let statement of ruleset.statements">
             <app-statement-editor [statement]="statement" [policy]="policy" [ruleset]="ruleset"
                                   (statementUpdated)="onStatementUpdated()"
                                   [policyType]="policyType"
+                                  [readonly]="!editing"
+                                  [schema]="schema"
                                   (deleteStatement)="deleteStatement(ruleset,$event)"></app-statement-editor>
           </div>
-          <button mat-stroked-button (click)="addCase(ruleset)">Add case</button>
+          <button mat-stroked-button (click)="addCase(ruleset)" *ngIf="editing">Add case</button>
         </div>
       </div>
-      <div class="button-container">
+      <div class="button-container" *ngIf="editing">
         <button mat-raised-button color="primary" (click)="submit()">Submit</button>
         <button mat-raised-button (click)="doCancel()">Cancel</button>
       </div>
     </div>`
 })
-export class PolicyEditorComponent implements OnInit {
+export class PolicyEditorComponent {
+
+  editing = false;
 
   @Input()
   policy: Policy;
 
   @Input()
-  policyType:Type;
+  policyType: Type;
+
+  @Input()
+  schema: Schema;
 
   @Output()
   save = new EventEmitter();
@@ -46,29 +59,24 @@ export class PolicyEditorComponent implements OnInit {
   @Output()
   cancel = new EventEmitter();
 
-  constructor(private schemaService: TypesService) {
-  }
-
-  ngOnInit() {
-  }
-
   addCase(ruleset: RuleSet) {
-    ruleset.appendStatement(new PolicyStatement(CaseCondition.empty(), new PermitInstruction(), true))
+    ruleset.appendStatement(new PolicyStatement(CaseCondition.empty(), new PermitInstruction(), true));
   }
 
   onStatementUpdated() {
-    console.log(this.policy.src())
+    console.log(this.policy.src());
   }
 
   deleteStatement(ruleset: RuleSet, $event: PolicyStatement) {
-    ruleset.removeStatement($event)
+    ruleset.removeStatement($event);
   }
 
   doCancel() {
-    this.cancel.emit()
+    this.editing = false;
+    this.cancel.emit();
   }
 
   submit() {
-    this.save.emit()
+    this.save.emit();
   }
 }

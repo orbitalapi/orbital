@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {CaseCondition, Policy, PolicyStatement, RelativeSubject, RuleSetUtils} from "./policies";
+import {CaseCondition, Policy, PolicyStatement, RelativeSubject, RuleSetUtils} from './policies';
 
 @Component({
   selector: 'app-statement-display',
@@ -31,6 +31,9 @@ export class StatementDisplayComponent implements OnInit {
   }
 
   @Input()
+  readonly: boolean;
+
+  @Input()
   policy: Policy;
 
   @Input()
@@ -40,17 +43,20 @@ export class StatementDisplayComponent implements OnInit {
   edit: EventEmitter<void> = new EventEmitter();
 
   get caseCondition(): CaseCondition {
-    if (!this.statement || !this.statement.condition) return null;
-    if (this.statement.condition.type !== 'case') return null;
+    if (!this.statement || !this.statement.condition) { return null; }
+    if (this.statement.condition.type !== 'case') { return null; }
     return <CaseCondition>this.statement.condition;
   }
 
   get caseConditionDescription(): string {
-    if (!this.caseCondition || !this.caseCondition.description()) return null;
-    return this.caseCondition.description().replace(RelativeSubject.TYPE_TOKEN, this.policy.targetTypeName.name)
+    if (!this.caseCondition || !this.caseCondition.description()) { return null; }
+    return this.caseCondition.description().replace(RelativeSubject.TYPE_TOKEN, this.policy.targetTypeName.name);
   }
 
   startEdit() {
-    this.edit.emit()
+    if (!this.readonly) {
+      this.edit.emit();
+    }
+
   }
 }
