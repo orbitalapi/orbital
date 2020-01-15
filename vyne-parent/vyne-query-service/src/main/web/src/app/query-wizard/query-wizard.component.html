@@ -9,6 +9,10 @@
           <mat-card-title>Facts</mat-card-title>
         </mat-card-header>
         <mat-card-content>
+          <div>
+            <p>Add the things you know, which Vyne will use as the starting point for your query</p>
+          </div>
+
           <div class="fact-form-list">
             <div *ngFor="let factForm of forms" class="fact-form-container">
               <div class="delete-icon" (click)="removeFact(factForm)">
@@ -34,7 +38,6 @@
       </mat-card>
     </div>
     <div class="container target-type-container">
-
       <mat-card>
         <mat-card-header>
           <mat-card-title>Target to find</mat-card-title>
@@ -58,10 +61,10 @@
               </mat-select>
             </mat-form-field>
           </form>
+          <div>
+            <button mat-raised-button color="primary" (click)="submitQuery()">Submit query</button>
+          </div>
         </mat-card-content>
-        <mat-card-actions>
-          <button mat-raised-button color="primary" (click)="submitQuery()">Submit query</button>
-        </mat-card-actions>
       </mat-card>
     </div>
   </div>

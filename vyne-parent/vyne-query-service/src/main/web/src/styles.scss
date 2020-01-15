@@ -43,3 +43,4 @@ $vyne-app-theme: mat-light-theme($vyne-app-primary, $vyne-app-accent, $vyne-app-
 // that you are using.
 @include angular-material-theme($vyne-app-theme);
 @include angular-material-typography($custom-typography);
+
