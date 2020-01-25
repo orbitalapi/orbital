@@ -17,13 +17,10 @@ import lang.taxi.types.Annotation
 import org.antlr.v4.runtime.CharStreams
 import java.io.Serializable
 
-class TaxiSchema(private val document: TaxiDocument) : Schema {
+class TaxiSchema(private val document: TaxiDocument, val sources: List<NamedSource>) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
    override val policies: Set<Policy>
-   // TODO : Are these still required / meaningful?
-   override val links: Set<Link> = emptySet()
-   override val attributes: Set<QualifiedName> = emptySet()
    override val typeCache: TypeCache
    private val constraintConverter = TaxiConstraintConverter(this)
 
@@ -98,21 +95,21 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType)
-               val type = Type(typeName, fields, modifiers, sources = taxiType.compilationUnits.toVyneSources())
+               val type = Type(typeName, fields, modifiers, sources = taxiType.compilationUnits.toVyneSources(), typeDoc = taxiType.typeDoc)
                rawTypes.add(type)
                if (taxiType.inheritsFrom.isNotEmpty()) {
                   typesWithInheritence.putAll(type, taxiType.inheritsFromNames)
                }
             }
             is TypeAlias -> {
-               rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), aliasForType = QualifiedName(taxiType.aliasType!!.qualifiedName), sources = taxiType.compilationUnits.toVyneSources()))
+               rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), aliasForType = QualifiedName(taxiType.aliasType!!.qualifiedName), sources = taxiType.compilationUnits.toVyneSources(), typeDoc = taxiType.typeDoc))
             }
             is EnumType -> {
                val enumValues = taxiType.values.map { it.name }
-               rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), modifiers = parseModifiers(taxiType), enumValues = enumValues, sources = taxiType.compilationUnits.toVyneSources()))
+               rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), modifiers = parseModifiers(taxiType), enumValues = enumValues, sources = taxiType.compilationUnits.toVyneSources(), typeDoc = taxiType.typeDoc))
             }
             is ArrayType -> TODO()
-            else -> rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), modifiers = parseModifiers(taxiType), sources = taxiType.compilationUnits.toVyneSources()))
+            else -> rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), modifiers = parseModifiers(taxiType), sources = taxiType.compilationUnits.toVyneSources(), typeDoc = null))
          }
       }
       val originalTypes = rawTypes.associateBy { it.fullyQualifiedName }
@@ -144,7 +141,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
 
    private fun getTaxiPrimitiveTypes(): Collection<Type> {
       return PrimitiveType.values().map { taxiPrimitive ->
-         Type(taxiPrimitive.qualifiedName.fqn(), modifiers = parseModifiers(taxiPrimitive), sources = listOf(SourceCode.native(TaxiSchema.LANGUAGE)))
+         Type(taxiPrimitive.qualifiedName.fqn(), modifiers = parseModifiers(taxiPrimitive), sources = listOf(SourceCode.native(TaxiSchema.LANGUAGE)), typeDoc = taxiPrimitive.typeDoc)
       }
    }
 
@@ -170,7 +167,7 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
    }
 
    fun merge(schema: TaxiSchema): TaxiSchema {
-      return TaxiSchema(this.document.merge(schema.document))
+      return TaxiSchema(this.document.merge(schema.document), this.sources + schema.sources)
    }
 
    companion object {
@@ -189,11 +186,11 @@ class TaxiSchema(private val document: TaxiDocument) : Schema {
       }
 
       internal fun from(source: NamedSource, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
-         return from(source.taxi, source.sourceName, importSources)
+         return TaxiSchema(Compiler(CharStreams.fromString(source.taxi, source.sourceName), importSources.map { it.document }).compile(), listOf(source))
       }
 
       fun from(taxi: String, sourceName: String = "<unknown>", importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
-         return TaxiSchema(Compiler(CharStreams.fromString(taxi, sourceName), importSources.map { it.document }).compile())
+         return from(NamedSource(taxi, sourceName), importSources)
       }
    }
 }
@@ -206,18 +203,34 @@ class CircularDependencyInSourcesException(message: String) : RuntimeException(m
 
 private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependencies>, val importSources: List<TaxiSchema>) {
    private val namedSources: Map<NamedSource, SourceWithDependencies> = sources.associateBy { it.source }
-   private val builtSchemas = mutableMapOf<SourceWithDependencies, TaxiSchema>()
+   private val builtSchemas = mutableMapOf<NamedSource, TaxiSchema>()
    private val schemasBeingBuilt = mutableListOf<SourceWithDependencies>()
    fun build(): List<TaxiSchema> {
-      sources.forEach { source ->
-         buildWithDependencies(source)
+
+      // This little nugget compiles the sources in order, where sources that are imported
+      // later are compiled earlier.
+      // Each iteration appends the total set of compilation sources, so the last unique
+      // source to be compiled will contain the full set of types, as parsed out by the compiler.
+      // (ie., ensuring that imports have been correctly applied, and that type extensions have been
+      // applied).
+      // Because of import order, each source may be processed more than once,
+      // ie., sources that are imported may be visited twice - first when they were imported
+      // by another type, and then again when they are visited as a source of their own.
+      // We only consider each source once - the first time it was imported.
+      // I have a feeling this may not work forever, but its a good start
+      val builtSchemasInOrder = sources.mapNotNull { source ->
+         if (builtSchemas.containsKey(source.source)) {
+            null
+         } else {
+            buildWithDependencies(source)
+         }
       }
-      return builtSchemas.values.toList()
+      return listOf(builtSchemasInOrder.last())
    }
 
-   private fun buildWithDependencies(source: SourceWithDependencies) {
+   private fun buildWithDependencies(source: SourceWithDependencies): TaxiSchema {
 
-      if (!builtSchemas.containsKey(source)) {
+      if (!builtSchemas.containsKey(source.source)) {
          if (schemasBeingBuilt.contains(source)) {
             val message = "A circular dependency in sources exists: ${schemasBeingBuilt.joinToString(" -> ") { it.source.sourceName }}"
             throw CircularDependencyInSourcesException(message)
@@ -234,10 +247,13 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
 
          schemasBeingBuilt.remove(source)
       }
+
+      // It's now guaranteed to be present
+      return builtSchemas.getValue(source.source)
    }
 
    private fun getOrBuild(source: SourceWithDependencies): TaxiSchema {
-      return builtSchemas.getOrPut(source) {
+      return builtSchemas.getOrPut(source.source) {
          val imports = builtSchemas.values + importSources
          val schema = TaxiSchema.from(source.source, imports)
          schema
@@ -247,7 +263,7 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
 
 private data class SourceWithDependencies(val source: NamedSource, val dependencies: List<NamedSource>)
 
-data class NamedSource(val taxi: String, val sourceName: String):Serializable {
+data class NamedSource(val taxi: String, val sourceName: String) : Serializable {
    companion object {
       fun unnamed(taxi: String) = NamedSource(taxi, "<unknown>")
       fun unnamed(taxi: List<String>) = taxi.map { unnamed(it) }

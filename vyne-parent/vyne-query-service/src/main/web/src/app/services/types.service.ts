@@ -7,7 +7,17 @@ import {HttpClient} from '@angular/common/http';
 import {environment} from 'src/environments/environment';
 import {map} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
-import {Message, Schema, SchemaGraph, SchemaGraphNode, SchemaMember, SchemaSpec, Type, VersionedSchema} from './schema';
+import {
+  Message,
+  QualifiedName,
+  Schema,
+  SchemaGraph,
+  SchemaGraphNode,
+  SchemaMember,
+  SchemaSpec,
+  Type,
+  VersionedSchema
+} from './schema';
 
 @Injectable()
 export class TypesService {
@@ -23,7 +33,7 @@ export class TypesService {
   getRawSchema = (): Observable<string> => {
     return this.http
       .get<string>(`${environment.queryServiceUrl}/schemas/raw`);
-  };
+  }
 
   getVersionedSchemas(): Observable<VersionedSchema[]> {
     return this.http.get<VersionedSchema[]>(`${environment.queryServiceUrl}/schemas`);
@@ -67,7 +77,20 @@ export class TypesService {
           }
         )
       );
-  };
+  }
+
+  createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSchema> {
+    const spec: SchemaSpec = {
+      name: `${typeName.fullyQualifiedName}.${typeName.name}${schemaNameSuffix}`,
+      version: 'next-minor',
+      defaultNamespace: typeName.namespace
+    };
+    const request = new SchemaImportRequest(
+      spec, 'taxi', schemaText
+    );
+
+    return this.submitSchema(request);
+  }
 
   createSchemaPreview(request: SchemaPreviewRequest): Observable<SchemaPreview> {
     return this.http.post<SchemaPreview>(

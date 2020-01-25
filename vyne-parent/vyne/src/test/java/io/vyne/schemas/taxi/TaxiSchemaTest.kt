@@ -1,6 +1,7 @@
 package io.vyne.schemas.taxi
 
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
 import org.junit.Test
@@ -37,7 +38,9 @@ namespace baz
       """.trimIndent()
 
       val schemas = TaxiSchema.from(NamedSource.unnamed(listOf(srcC, srcB, srcA)))
-      expect(schemas).to.have.size(3)
+      expect(schemas).to.have.size(1)
+      val schema = schemas.first()
+      schema.type("baz.Library").attribute("inventory").type.fullyQualifiedName.should.equal("bar.Book")
    }
 
    @Test(expected = CircularDependencyInSourcesException::class)
@@ -98,5 +101,29 @@ namespace baz
       expect(schema.type("Money").attribute("currency").modifiers).to.contain(FieldModifier.CLOSED)
 
    }
+
+   @Test
+   fun when_importingTypeExtensionsAcrossMutlipleFiles_then_theyAreApplied() {
+
+      val srcA = """
+namespace foo
+
+type Customer {}""".trimIndent()
+
+      val srcB = """
+import foo.Customer
+
+namespace bar
+
+[[ I am docs ]]
+type extension Customer {}
+      """.trimIndent()
+      val schemas = TaxiSchema.from(NamedSource.unnamed(listOf(srcB, srcA)))
+      expect(schemas).to.have.size(1)
+      val schema = schemas.first()
+      schema.type("foo.Customer").typeDoc.should.equal("I am docs")
+
+   }
+
 
 }

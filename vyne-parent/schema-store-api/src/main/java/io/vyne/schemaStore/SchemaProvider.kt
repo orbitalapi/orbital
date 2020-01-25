@@ -2,6 +2,7 @@ package io.vyne.schemaStore
 
 import io.vyne.CompositeSchemaBuilder
 import io.vyne.schemas.*
+import io.vyne.schemas.taxi.TaxiSchema
 
 interface SchemaSource {
    fun schemaStrings(): List<String>
@@ -17,7 +18,22 @@ interface SchemaProvider {
    fun schemas(): List<Schema>
    // TODO : May want to deprecate this approach, and the whole concept of schema aggregators.
    // See SchemaAggregator for an explanation.
-   fun schema(): Schema = CompositeSchemaBuilder().aggregate(schemas())
+   fun schema(): Schema {
+      if (this.schemas().any { it !is TaxiSchema }) {
+         // Use of non-taxi schemas is no longer supported, for the reasons outlined in
+         // SchemaAggregator.
+         // AS we move more aggressively towards type extensions, we need to simplify the
+         // schema support.
+         error("No longer supporting non TaxiSchema's.")
+      }
+      val taxiSchemas = schemas().map { it as TaxiSchema }
+      // This appproach (creating a single TaxiSchema from all the current taxi schemas)
+      // causes the TaxiCompiler to kick in, which should correctly handle
+      // type extensions.
+      // However, given we're now simplifying around taxi schemas, this feels like it
+      // belongs more earlier, when handled earlier in the registration/recompilation phase.
+      return CompositeSchema(TaxiSchema.from(taxiSchemas.flatMap { it.sources }))
+   }
    fun schema(memberNames: List<String>, includePrimitives: Boolean = false): Schema {
       val qualifiedNames = memberNames.map { it.fqn() }
       return MemberCollector(schema(), includePrimitives).collect(qualifiedNames, mutableMapOf())

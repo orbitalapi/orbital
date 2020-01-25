@@ -2,14 +2,12 @@ package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 
-
+@Deprecated("This class fails to handle type extensions correctly.  Use TaxiSchema.fromNamedSources().first(), which will correctly order, compose and compile the sources")
 class CompositeSchema(private val schemas: List<Schema>) : Schema {
-   override val attributes: Set<QualifiedName>
-      get() = schemas.flatMap { it.attributes }.toSet()
    override val types: Set<Type>
-      get() = schemas.flatMap { it.types }.distinctBy { it.fullyQualifiedName }.toSet()
-   override val links: Set<Link>
-      get() = schemas.flatMap { it.links }.toSet()
+      get() {
+         return schemas.flatMap { it.types }.distinctBy { it.fullyQualifiedName }.toSet()
+      }
    override val services: Set<Service>
       get() = schemas.flatMap { it.services }.distinctBy { it.qualifiedName }.toSet()
 

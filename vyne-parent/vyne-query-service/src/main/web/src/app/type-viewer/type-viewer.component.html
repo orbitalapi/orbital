@@ -23,6 +23,9 @@
     <!--      <h2>About this type</h2>-->
     <!--      <p>{{description}}</p>-->
     <!--    </section>-->
+    <section>
+      <app-description-editor-container [type]="type"></app-description-editor-container>
+    </section>
     <section *ngIf="hasAttributes">
       <h2>Attributes</h2>
       <app-attribute-table [type]="type"></app-attribute-table>
@@ -44,6 +47,7 @@
       <app-code-viewer [sources]="sources"></app-code-viewer>
     </section>
   </div>
+  <div class="spacer-gap"></div>
   <app-contents-table [contents]="contents"></app-contents-table>
 </div>
 

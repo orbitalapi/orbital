@@ -137,8 +137,18 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
  *
  * Instead, CompositeSchema(TaxiSchema.from(List<NamedSource>)) is a better approach, as it DOES
  * correctly order for imports and root out circular depenenices.
+ *
+ * Update: 23-Jan-2020:
+ * We're definitely moving away from supporting diffferent types of schemas, to only
+ * supporting Taxi.
+ * Taxi needs to evolve to keep pace with language features in other scheams,
+ * but is sufficiently ahead of many other representations that we want to simplify
+ * the Vyne side.
+ * As we move more towards type extensions for collboration and general purpose extensibility
+ * this becomes more important, as supporting type extensions cross-schema type is too hard,
+ * given import rules etc.
  */
-@Deprecated("Possibly going away.")
+@Deprecated("Going away.")
 interface SchemaAggregator {
    companion object {
       val DEFAULT_AGGREGATORS = listOf<SchemaAggregator>(TaxiSchemaAggregator())

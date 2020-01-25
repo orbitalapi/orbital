@@ -214,9 +214,11 @@ data class Type(
    @JsonView(TypeFullView::class)
    val sources: List<SourceCode>,
 
-   val typeParameters: List<Type> = emptyList()
+   val typeParameters: List<Type> = emptyList(),
+
+   val typeDoc:String?
 ) : SchemaMember {
-   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, enumValues, sources)
+   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>, typeDoc:String? = null) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, enumValues, sources, typeDoc = typeDoc)
 
    @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForType != null
@@ -290,8 +292,6 @@ data class SourceCode(
 }
 
 class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>) : Schema {
-   override val attributes: Set<QualifiedName> = emptySet()
-   override val links: Set<Link> = emptySet()
 
    override val policies: Set<Policy> = emptySet()
    override val typeCache: TypeCache = DefaultTypeCache(this.types)
@@ -303,11 +303,6 @@ interface Schema {
 
    val policies: Set<Policy>
 
-   // TODO : Are these still required / meaningful?
-   @Deprecated("Not meaningful - remove", level = DeprecationLevel.WARNING)
-   val attributes: Set<QualifiedName>
-   @Deprecated("Not meaningful - remove", level = DeprecationLevel.WARNING)
-   val links: Set<Link>
    val typeCache: TypeCache
 
 

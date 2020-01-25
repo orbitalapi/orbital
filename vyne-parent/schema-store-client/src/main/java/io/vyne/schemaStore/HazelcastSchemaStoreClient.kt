@@ -18,15 +18,17 @@ private class HazelcastSchemaStoreListener(val schemaCache: ConcurrentHashMap<Sc
    }
 
    override fun memberRemoved(event: MembershipEvent) {
+      log().info("Cluster member removed, invalidating schema cache")
       invalidateCache()
    }
 
    override fun memberAdded(event: MembershipEvent) {
+      log().info("Cluster member added, invalidating schema cache")
       invalidateCache()
    }
 
    fun invalidateCache() {
-      log().info("Cluster membership changed, so invalidating the schema cache.  Will rebuild on next queryEngine")
+      log().info("Invalidating the schema cache.  Will rebuild on next queryEngine")
       schemaCache.remove(SchemaSetCacheKey)
    }
 

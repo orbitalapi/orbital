@@ -30,22 +30,15 @@ export class PolicyManagerContainerComponent implements OnInit {
 
 
   save(policy: Policy) {
-    const spec: SchemaSpec = {
-      name: `${policy.targetTypeName.fullyQualifiedName}.${policy.name.name}Policy`,
-      version: 'next-minor',
-      defaultNamespace: policy.targetTypeName.namespace
-    };
-    const request = new SchemaImportRequest(
-      spec, 'taxi', policy.src()
-    );
     this.loading = true;
-    this.typeService.submitSchema(request).subscribe(result => {
-      this.loading = false;
-      this.snackBar.open('Policy saved', 'Dismiss', {duration: 3000});
-    }, error => {
-      this.loading = false;
-      this.snackBar.open('An error occurred.  Your changes have not been saved.', 'Dismiss', {duration: 3000});
-    });
+    this.typeService.createExtensionSchemaFromTaxi(this.policy.targetTypeName, 'Policy', policy.src())
+      .subscribe(result => {
+        this.loading = false;
+        this.snackBar.open('Policy saved', 'Dismiss', {duration: 3000});
+      }, error => {
+        this.loading = false;
+        this.snackBar.open('An error occurred.  Your changes have not been saved.', 'Dismiss', {duration: 3000});
+      });
   }
 
   ngOnInit() {

@@ -41,6 +41,6 @@ class UriVariableProviderTest {
 
 
    fun type(name: String): Type {
-      return Type(name.fqn(), sources = emptyList())
+      return Type(name.fqn(), sources = emptyList(), typeDoc = null)
    }
 }

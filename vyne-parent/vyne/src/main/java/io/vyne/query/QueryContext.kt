@@ -179,7 +179,7 @@ data class QueryContext(
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 
    // Wraps all the known facts under a root node, turning it into a tree
-   private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode".fqn(), sources = listOf(SourceCode.undefined("NoLang"))), facts.toList())
+   private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode".fqn(), sources = listOf(SourceCode.undefined("NoLang")), typeDoc = null), facts.toList())
 
    /**
     * A breadth-first stream of data facts currently held in the collection.

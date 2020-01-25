@@ -73,8 +73,10 @@ import {ContentsTableComponent} from './type-viewer/contents-table/contents-tabl
 import {TypeLinkGraphComponent} from './type-viewer/type-link-graph/type-link-graph.component';
 import {TypeLinkGraphContainerComponent} from './type-viewer/type-link-graph/type-link-graph-container.component';
 import { CodeViewerComponent } from './code-viewer/code-viewer.component';
-import {HighlightModule} from "ngx-highlightjs";
-import {PolicyManagerContainerComponent} from "./policy-manager/policy-manager-container.component";
+import {HighlightModule} from 'ngx-highlightjs';
+import {PolicyManagerContainerComponent} from './policy-manager/policy-manager-container.component';
+import { DescriptionEditorComponent } from './type-viewer/description-editor/description-editor.component';
+import {DescriptionEditorContainerComponent} from './type-viewer/description-editor/description-editor-container.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -124,11 +126,14 @@ export const routerModule = RouterModule.forRoot(
     TypeViewerComponent,
     TypeViewerContainerComponent,
     AttributeTableComponent,
+    DescriptionEditorComponent,
+    DescriptionEditorContainerComponent,
     TocHostDirective,
     ContentsTableComponent,
     TypeLinkGraphComponent,
     TypeLinkGraphContainerComponent,
-    CodeViewerComponent
+    CodeViewerComponent,
+    DescriptionEditorComponent
   ],
   imports: [
     routerModule,

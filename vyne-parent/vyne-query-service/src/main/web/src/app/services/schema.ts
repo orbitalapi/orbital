@@ -34,6 +34,7 @@ export interface Type {
   enumValues: Array<string>;
   sources: Array<SourceCode>;
   closed: boolean;
+  typeDoc?: string;
 }
 
 export interface Field {
