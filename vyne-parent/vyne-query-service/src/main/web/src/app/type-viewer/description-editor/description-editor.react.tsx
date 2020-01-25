@@ -1,6 +1,6 @@
 import {ElementRef, Injector} from '@angular/core';
 import * as React from 'react';
-import { Editor } from 'rich-markdown-editor';
+import RichMarkdownEditor from 'rich-markdown-editor';
 import * as ReactDOM from 'react-dom';
 import {Observable, Subject} from 'rxjs';
 import light from './editor-theme';
@@ -16,11 +16,12 @@ export interface EditorState {
 }
 
 export class ReactEditor extends React.Component<EditorState, any> {
-  // vyneEditorTheme = {
-  //   ...light,
-  //   // See body-bg from theme-colors.scss
-  //   background: '#f5f6fa'
-  // };
+  vyneEditorTheme = {
+    ...light,
+    // Set the background to be transparent, so we inherit the bg
+    // from the components (and keep the styles in scss)
+    background: '#ffffff00'
+  };
 
   constructor(props) {
     super(props);
@@ -29,8 +30,8 @@ export class ReactEditor extends React.Component<EditorState, any> {
   render() {
     return (
       <div className={'renderer'}>
-        <Editor
-          // theme={this.vyneEditorTheme}
+        <RichMarkdownEditor
+          theme={this.vyneEditorTheme}
           placeholder={this.props.placeholder}
           defaultValue={this.props.initialState}
           onChange={value => this.props.changes$.next(value)}
