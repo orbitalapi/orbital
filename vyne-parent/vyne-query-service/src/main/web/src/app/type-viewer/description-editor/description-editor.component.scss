@@ -1,0 +1,36 @@
+@import "src/theme";
+
+.wrapper {
+  padding: 10px;
+  border:1px solid rgba($vyne-lilac, 0.1);
+}
+
+.button-bar {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  button {
+    margin-left: 1rem;
+  }
+}
+
+.visible-on-changes {
+  transition:all linear 0.3s;
+  opacity: 0;
+  &.has-changes {
+    opacity: 1;
+  }
+}
+
+.info-warning {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 0.8rem;
+  img {
+    width: 1.4rem;
+  }
+  span {
+    margin-left: 0.5rem;
+  }
+}
