@@ -22,14 +22,12 @@ class CompositeSchemaImporter(private val importers: List<SchemaImporter>, priva
    override fun import(request: SchemaImportRequest): Mono<VersionedSchema> {
       val importer = importer(request.format)
       val taxiSchema = importer.import(request)
-      return schemaStoreClient.submitSchema(taxiSchema)
-         .map { compilerResult: Either<CompilationException, Schema> ->
-            if (compilerResult.isLeft()) {
-               throw compilerResult.left().get()
-            } else {
-               taxiSchema
-            }
-         }
+      val compilerResult = schemaStoreClient.submitSchema(taxiSchema)
+      return if (compilerResult.isLeft()) {
+         throw compilerResult.left().get()
+      } else {
+         Mono.just(taxiSchema)
+      }
    }
 
    private fun importer(format: String): SchemaImporter {

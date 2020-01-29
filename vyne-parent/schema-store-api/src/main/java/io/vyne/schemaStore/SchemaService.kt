@@ -12,9 +12,10 @@ import java.io.Serializable
 
 typealias SchemaSetId = Int
 
-data class SchemaSet(val sources: List<VersionedSchema>, val generation: Int) {
+data class SchemaSet(val sources: List<VersionedSchema>, val generation: Int) : Serializable {
    val id: Int = sources.hashCode()
 
+   @delegate:Transient
    val taxiSchemas: List<TaxiSchema> by lazy {
       val namedSources = this.sources.map { it.namedSource }
       TaxiSchema.from(namedSources)
@@ -22,6 +23,7 @@ data class SchemaSet(val sources: List<VersionedSchema>, val generation: Int) {
 
    val rawSchemaStrings : List<String> = sources.map { it.content }
 
+   @delegate:Transient
    val schema: CompositeSchema by lazy { CompositeSchema(this.taxiSchemas) }
 
 

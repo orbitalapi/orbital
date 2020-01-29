@@ -206,6 +206,9 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
    private val builtSchemas = mutableMapOf<NamedSource, TaxiSchema>()
    private val schemasBeingBuilt = mutableListOf<SourceWithDependencies>()
    fun build(): List<TaxiSchema> {
+      if (sources.isEmpty()) {
+         return emptyList()
+      }
 
       // This little nugget compiles the sources in order, where sources that are imported
       // later are compiled earlier.

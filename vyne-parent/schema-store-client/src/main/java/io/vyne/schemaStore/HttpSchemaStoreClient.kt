@@ -49,7 +49,7 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
 
    override fun submitSchema(schemaName: String,
                              schemaVersion: String,
-                             schema: String): Mono<Either<CompilationException, Schema>> {
+                             schema: String): Either<CompilationException, Schema> {
       retryTemplate.execute<Any, Exception> { context: RetryContext ->
          context.setAttribute(RetryConfig.RETRYABLE_PROCESS_NAME, "Publish schemas")
          log().debug("Submitting schema $schemaName v$schemaVersion")
