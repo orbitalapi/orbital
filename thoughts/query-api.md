@@ -212,3 +212,12 @@ to guarantee the relationship.  However, by putting the information in it's cont
 the service is stating that it'll make that guarantee.
 
 This is explored in more detail in `Contextual Datatypes`.
+
+## Aggregation
+```
+discover {
+    averagePrice : average(Price) // Price is a type, average is a function,
+    minPrice : min(Price)
+    maxPrice : max(Price)
+}
+```
