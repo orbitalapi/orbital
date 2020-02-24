@@ -12,16 +12,25 @@
    <artifactId>search</artifactId>
 
    <properties>
-      <elasticsearch.version>7.5.2</elasticsearch.version>
+      <lucene.version>8.4.1</lucene.version>
    </properties>
 
    <dependencies>
       <dependency>
-         <groupId>org.elasticsearch.client</groupId>
-         <artifactId>elasticsearch-rest-high-level-client</artifactId>
-         <version>${elasticsearch.version}</version>
+         <groupId>org.apache.lucene</groupId>
+         <artifactId>lucene-core</artifactId>
+         <version>${lucene.version}</version>
       </dependency>
-
+      <dependency>
+         <groupId>org.apache.lucene</groupId>
+         <artifactId>lucene-queryparser</artifactId>
+         <version>${lucene.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.lucene</groupId>
+         <artifactId>lucene-highlighter</artifactId>
+         <version>${lucene.version}</version>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>events-api</artifactId>

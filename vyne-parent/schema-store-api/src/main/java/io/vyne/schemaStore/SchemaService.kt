@@ -29,6 +29,10 @@ data class SchemaSet(val sources: List<VersionedSchema>, val generation: Int) : 
 
    companion object {
       val EMPTY = SchemaSet(emptyList(), -1)
+
+      fun just(src:String):SchemaSet {
+         return SchemaSet(listOf(VersionedSchema("Unnamed", "1.0.0", src)), -1)
+      }
    }
 
    fun size() = sources.size

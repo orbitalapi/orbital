@@ -1,23 +1,21 @@
-package io.vyne.search.elastic
+package io.vyne.search.embedded
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemas.Field
 import io.vyne.schemas.Operation
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import org.elasticsearch.action.bulk.BulkRequest
-import org.elasticsearch.action.delete.DeleteRequest
-import org.elasticsearch.action.index.IndexRequest
-import org.elasticsearch.client.RequestOptions
-import org.elasticsearch.client.RestHighLevelClient
+import org.apache.lucene.document.Document
+import org.apache.lucene.document.Field as LuceneField
+import org.apache.lucene.document.StringField
+import org.apache.lucene.document.TextField
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
-import sun.misc.PerformanceLogger
+
 
 @Component
-class SearchIndexer(val elastic: RestHighLevelClient, val objectMapper: ObjectMapper) {
+class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
 
    @EventListener
    fun onSchemaSetChanged(event: SchemaSetChangedEvent) {
@@ -34,16 +32,19 @@ class SearchIndexer(val elastic: RestHighLevelClient, val objectMapper: ObjectMa
          log().warn("No members in the schema, so not creating search entries")
          return
       }
-      val request = BulkRequest()
-      searchEntries.forEach {
-         request.add(IndexRequest("types").id(it.id).source(objectMapper.writeValueAsString(it)))
+
+      val searchDocs = searchEntries.map { searchEntry ->
+         Document().apply {
+
+            add(StringField(SearchField.QUALIFIED_NAME.fieldName, searchEntry.qualifiedName, LuceneField.Store.YES))
+            add(StringField(SearchField.NAME.fieldName, searchEntry.name, LuceneField.Store.YES))
+            searchEntry.typeDoc?.let { typeDoc ->
+               add(TextField(SearchField.TYPEDOC.fieldName, typeDoc, LuceneField.Store.YES))
+            }
+         }
       }
-      val result = elastic.bulk(request, RequestOptions.DEFAULT)
-      if (result.hasFailures()) {
-         log().warn("Creating search index failed after ${result.took.millis}ms: ${result.buildFailureMessage()}")
-      } else {
-         log().info("Search index created successfully in ${result.took.millis}ms")
-      }
+      searchIndexRepository.writeAll(searchDocs)
+      log().info("Created search index with ${searchDocs.size} entries")
    }
 
    private fun searchIndexEntry(operation: Operation): SearchEntry {
@@ -79,20 +80,25 @@ class SearchIndexer(val elastic: RestHighLevelClient, val objectMapper: ObjectMa
    }
 
    private fun deleteExistingIndex() {
-      val deleteResult = elastic.bulk(
-         BulkRequest().apply {
-            add(DeleteRequest("types", "*"))
-         }
-         , RequestOptions.DEFAULT)
-      if (deleteResult.hasFailures()) {
-         log().warn("Deleting search index failed after ${deleteResult.took.millis}ms: ${deleteResult.buildFailureMessage()}")
-      } else {
-         log().info("Search index destroyed successfully - ${deleteResult.took.millis}ms")
-      }
+//      val deleteResult = elastic.bulk(
+//         BulkRequest().apply {
+//            add(DeleteRequest("types", "*"))
+//         }
+//         , RequestOptions.DEFAULT)
+//      if (deleteResult.hasFailures()) {
+//         log().warn("Deleting search index failed after ${deleteResult.took.millis}ms: ${deleteResult.buildFailureMessage()}")
+//      } else {
+//         log().info("Search index destroyed successfully - ${deleteResult.took.millis}ms")
+//      }
 
    }
 }
 
+enum class SearchField(val fieldName:String) {
+   QUALIFIED_NAME ("qualifiedName"),
+   NAME( "name"),
+   TYPEDOC( "typeDoc")
+}
 enum class SearchEntryType {
    TYPE,
    ATTRIBUTE,
