@@ -23,10 +23,11 @@ class VyneEmbeddedSearchConfiguration {
    @Bean
    fun searchRepository(@Value("\${vyne.search.directory:./search}") searchIndexPath: String, configFactory: ConfigFactory = DefaultConfigFactory()): SearchIndexRepository {
       val directory = FSDirectory.open(Paths.get(searchIndexPath));
-
-
       return SearchIndexRepository(directory,configFactory)
    }
+
+   @Bean
+   fun configFactory():ConfigFactory = DefaultConfigFactory()
 
 }
 

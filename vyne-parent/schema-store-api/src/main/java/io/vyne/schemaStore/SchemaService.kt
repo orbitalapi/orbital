@@ -9,28 +9,60 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 import java.io.Serializable
+import java.util.concurrent.atomic.AtomicReference
 
 typealias SchemaSetId = Int
 
 data class SchemaSet(val sources: List<VersionedSchema>, val generation: Int) : Serializable {
    val id: Int = sources.hashCode()
 
-   @delegate:Transient
-   val taxiSchemas: List<TaxiSchema> by lazy {
+   // The backing fields and accessors here are to avoid
+   // having to serailize attributes into the cache (and make the entire
+   // taxi stack serializable).
+   // However, after deserialization, transient fields are not set, so we need
+   // to reinit before read.
+   @Transient
+   private var _taxiSchemas: List<TaxiSchema>? = null
+   @Transient
+   private var _rawSchemaStrings: List<String>? = null
+   @Transient
+   private var _compositeSchema: CompositeSchema? = null
+
+   val taxiSchemas: List<TaxiSchema>
+      get() {
+         if (this._taxiSchemas == null) {
+            init()
+         }
+         return this._taxiSchemas ?: error("SchemaSet failed to initialize")
+      }
+
+   val rawSchemaStrings: List<String>
+      get() {
+         if (this._rawSchemaStrings == null) {
+            init()
+         }
+         return this._rawSchemaStrings ?: error("SchemaSet failed to initialize")
+      }
+
+   val schema: CompositeSchema
+      get() {
+         if (this._compositeSchema == null) {
+            init()
+         }
+         return this._compositeSchema ?: error("SchemaSet failed to initialize")
+      }
+
+   private fun init() {
       val namedSources = this.sources.map { it.namedSource }
-      TaxiSchema.from(namedSources)
+      this._taxiSchemas = TaxiSchema.from(namedSources)
+      this._rawSchemaStrings = this.sources.map { it.content }
+      this._compositeSchema = CompositeSchema(this._taxiSchemas!!)
    }
-
-   val rawSchemaStrings : List<String> = sources.map { it.content }
-
-   @delegate:Transient
-   val schema: CompositeSchema by lazy { CompositeSchema(this.taxiSchemas) }
-
 
    companion object {
       val EMPTY = SchemaSet(emptyList(), -1)
 
-      fun just(src:String):SchemaSet {
+      fun just(src: String): SchemaSet {
          return SchemaSet(listOf(VersionedSchema("Unnamed", "1.0.0", src)), -1)
       }
    }
@@ -39,6 +71,10 @@ data class SchemaSet(val sources: List<VersionedSchema>, val generation: Int) : 
 
    fun add(schema: VersionedSchema): SchemaSet {
       return SchemaSet(this.sources + schema, this.generation + 1)
+   }
+
+   override fun toString(): String {
+      return "SchemaSet on Generation $generation with id $id and ${this.size()} schemas"
    }
 }
 

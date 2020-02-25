@@ -1,6 +1,8 @@
 package io.vyne.schemaStore
 
 import com.hazelcast.core.*
+import com.hazelcast.map.EntryBackupProcessor
+import com.hazelcast.map.EntryProcessor
 import com.hazelcast.map.listener.EntryAddedListener
 import com.hazelcast.map.listener.EntryUpdatedListener
 import com.hazelcast.query.Predicate
@@ -34,12 +36,12 @@ private class HazelcastSchemaStoreListener(val eventPublisher:ApplicationEventPu
    }
 
    override fun entryAdded(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
-      log().info("SchemaSet has been created - dispatching event")
+      log().info("SchemaSet has been created: ${event.value.toString()} - dispatching event.")
       eventPublisher.publishEvent(SchemaSetChangedEvent(event.oldValue, event.value))
    }
 
    override fun entryUpdated(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
-      log().info("SchemaSet has changed - dispatching event")
+      log().info("SchemaSet has changed: ${event.value.toString()} - dispatching event")
       eventPublisher.publishEvent(SchemaSetChangedEvent(event.oldValue, event.value))
 
    }
@@ -52,7 +54,6 @@ interface SchemaSetInvalidatedListener {
 
 internal object SchemaSetCacheKey : Serializable
 class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, private val schemaValidator: SchemaValidator = TaxiSchemaValidator(), val eventPublisher: ApplicationEventPublisher) : SchemaStoreClient, SchemaSetInvalidatedListener {
-
 
    private val generationCounter = hazelcast.getAtomicLong("schemaGenerationIndex")
    private val schemaSetHolder: IMap<SchemaSetCacheKey, SchemaSet> = hazelcast.getMap("schemaSet")
@@ -85,7 +86,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
          // That seems wasteful, as we're just gonna re-compute this later.
          val cachedSchema = CacheMemberSchema(hazelcast.cluster.localMember.uuid, versionedSchema)
          schemaSourcesMap[versionedSchema.id] = cachedSchema
-         rebuildSchema()
+         rebuildSchemaAndWriteToCache()
       }
       validationResult.left().map { compilationException ->
          log().error("Schema ${versionedSchema.id} is rejected for compilation exception: ${compilationException.message}")
@@ -93,7 +94,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       return validationResult
    }
 
-   private fun rebuildSchema(): SchemaSet {
+   private fun rebuildSchemaAndWriteToCache(): SchemaSet {
       // Note:  I'm worried about a potential race condition here,
       // as this code executes on all the nodes who are participating in the distributed
       // schema cluster.
@@ -104,7 +105,23 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
 
       val sources = getSchemaEntriesOfCurrentClusterMembers()
       val result = SchemaSet(sources, generationCounter.incrementAndGet().toInt())
-      log().info("Rebuilt schema cache, now on generation $generation, with id ${result.id}, containing ${result.size()} schemas")
+      log().info("Rebuilt schema cache - $result")
+      schemaSetHolder.compute(SchemaSetCacheKey) { _, current ->
+         when {
+            current == null -> {
+               log().info("Persisting first schema to cache: $result")
+               result
+            }
+            current.generation >= result.generation -> {
+               log().info("Not updating the cache for $result, as the current seems later. (Current: $current)")
+               current
+            }
+            else -> {
+               log().info("Updating schema cache with $result")
+               result
+            }
+         }
+      }
       return result
    }
 
@@ -115,7 +132,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
          // as we're actively rebuilding the schemaSet on invalidation now (whereas previously
          // we deferred that)
          log().warn("SchemaSet was not present, so computing, however this shouldn't happen")
-         rebuildSchema()
+         rebuildSchemaAndWriteToCache()
       }
    }
 
@@ -127,9 +144,26 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
 
    override fun rebuildRequired() {
       log().info("Rebuild of Schema triggered through cache invalidation")
-      rebuildSchema()
+      val schemaSet = rebuildSchemaAndWriteToCache()
+      schemaSetHolder.submitToKey(SchemaSetCacheKey,RebuildSchemaSetTask(schemaSet))
+   }
+}
+
+private class RebuildSchemaSetTask(private val schemaSet: SchemaSet) : EntryProcessor<SchemaSetCacheKey,SchemaSet>, EntryBackupProcessor<SchemaSetCacheKey,SchemaSet> {
+   override fun getBackupProcessor(): EntryBackupProcessor<SchemaSetCacheKey, SchemaSet>? {
+      return this;
    }
 
+   override fun process(entry: MutableMap.MutableEntry<SchemaSetCacheKey, SchemaSet>): Any {
+      log().info("Updating schema in cache to generation ${schemaSet.generation} with ${schemaSet.sources.size} sources")
+      entry.setValue(schemaSet)
+      return schemaSet
+   }
+
+   override fun processBackup(entry: MutableMap.MutableEntry<SchemaSetCacheKey, SchemaSet>) {
+      log().info("Updating schema in backup cache to generation ${schemaSet.generation} with ${schemaSet.sources.size} sources")
+      entry.setValue(schemaSet)
+   }
 
 }
 

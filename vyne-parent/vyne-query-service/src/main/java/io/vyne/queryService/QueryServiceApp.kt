@@ -1,7 +1,7 @@
 package io.vyne.queryService
 
 import io.vyne.query.VyneJacksonModule
-import io.vyne.search.elastic.EnableVyneElasticSearch
+import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.SchemaPublicationMethod
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
@@ -20,7 +20,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class)
-@EnableVyneElasticSearch
+//@EnableVyneEmbeddedSearch
 @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
 class QueryServiceApp {
 
