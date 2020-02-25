@@ -1,5 +1,7 @@
 package io.vyne.search.embedded
 
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.fqn
 import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.document.Document
 import org.apache.lucene.index.*
@@ -58,11 +60,16 @@ class SearchIndexRepository(private val directory: BaseDirectory, private val co
             highlighter.getBestFragment(analyzer,searchField.fieldName, fieldContents)
                ?.let { highlight -> SearchMatch(searchField,highlight) }
          }
-         SearchResult(doc.getField(SearchField.QUALIFIED_NAME.fieldName).stringValue(), searchMatches)
+         SearchResult(
+            doc.getField(SearchField.QUALIFIED_NAME.fieldName).stringValue().fqn(),
+            doc.getField(SearchField.TYPEDOC.fieldName)?.stringValue(),
+            searchMatches
+         )
       }
    }
 }
 
-data class SearchResult(val qualifiedName: String, val matches:List<SearchMatch>)
+data class SearchResult(val qualifiedName: QualifiedName, val typeDoc: String?, val matches:List<SearchMatch>)
+
 data class SearchMatch(val field:SearchField, val highlightedMatch:String)
 

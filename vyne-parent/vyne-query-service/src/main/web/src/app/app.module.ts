@@ -77,6 +77,8 @@ import {HighlightModule} from 'ngx-highlightjs';
 import {PolicyManagerContainerComponent} from './policy-manager/policy-manager-container.component';
 import { DescriptionEditorComponent } from './type-viewer/description-editor/description-editor.component';
 import {DescriptionEditorContainerComponent} from './type-viewer/description-editor/description-editor-container.component';
+import { SearchResultComponent } from './search/seach-result/search-result.component';
+import { SearchResultListComponent } from './search/search-result-list/search-result-list.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -133,7 +135,9 @@ export const routerModule = RouterModule.forRoot(
     TypeLinkGraphComponent,
     TypeLinkGraphContainerComponent,
     CodeViewerComponent,
-    DescriptionEditorComponent
+    DescriptionEditorComponent,
+    SearchResultComponent,
+    SearchResultListComponent
   ],
   imports: [
     routerModule,
