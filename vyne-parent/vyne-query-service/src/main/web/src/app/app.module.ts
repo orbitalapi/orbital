@@ -79,6 +79,10 @@ import { DescriptionEditorComponent } from './type-viewer/description-editor/des
 import {DescriptionEditorContainerComponent} from './type-viewer/description-editor/description-editor-container.component';
 import { SearchResultComponent } from './search/seach-result/search-result.component';
 import { SearchResultListComponent } from './search/search-result-list/search-result-list.component';
+import { SearchBarComponent } from './search/search-bar/search-bar.component';
+import {NgSelectModule} from '@ng-select/ng-select';
+import {SearchBarContainerComponent} from './search/search-bar/search-bar.container.component';
+import {SearchService} from './search/search.service';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -137,7 +141,9 @@ export const routerModule = RouterModule.forRoot(
     CodeViewerComponent,
     DescriptionEditorComponent,
     SearchResultComponent,
-    SearchResultListComponent
+    SearchResultListComponent,
+    SearchBarComponent,
+    SearchBarContainerComponent
   ],
   imports: [
     routerModule,
@@ -182,10 +188,12 @@ export const routerModule = RouterModule.forRoot(
 
     MomentModule,
 
-    TaxiViewerModule
+    TaxiViewerModule,
+    NgSelectModule
 
   ],
-  providers: [TypesService, QueryService],
+  // Not sure why I'm having to do this -- but here we are
+  providers: [TypesService, QueryService, SearchService],
   bootstrap: [AppComponent]
 })
 export class AppModule {

@@ -1,6 +1,9 @@
 package io.vyne.search.embedded
 
+import com.google.common.base.Stopwatch
+import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaSet
+import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.Field
 import io.vyne.schemas.Operation
 import io.vyne.schemas.SchemaSetChangedEvent
@@ -10,9 +13,18 @@ import org.apache.lucene.document.Document
 import org.apache.lucene.document.Field as LuceneField
 import org.apache.lucene.document.StringField
 import org.apache.lucene.document.TextField
+import org.springframework.context.event.ApplicationEventMulticaster
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
+import java.util.concurrent.TimeUnit
 
+@Component
+class IndexOnStartupTask(private val indexer:SearchIndexer, private val schemaStoreClient: SchemaStoreClient) {
+   init {
+       log().info("Initializing search, indexing current schema")
+      indexer.createNewIndex(schemaStoreClient.schemaSet())
+   }
+}
 
 @Component
 class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
@@ -24,7 +36,8 @@ class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
       createNewIndex(event.newSchemaSet)
    }
 
-   private fun createNewIndex(schemaSet: SchemaSet) {
+   internal fun createNewIndex(schemaSet: SchemaSet) {
+      val stopwatch = Stopwatch.createStarted()
       val searchEntries = schemaSet.schema.types.flatMap { searchIndexEntry(it) } +
          schemaSet.schema.operations.map { searchIndexEntry(it) }
 
@@ -44,7 +57,8 @@ class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
          }
       }
       searchIndexRepository.writeAll(searchDocs)
-      log().info("Created search index with ${searchDocs.size} entries")
+      val elapsed = stopwatch.elapsed(TimeUnit.MILLISECONDS)
+      log().info("Created search index with ${searchDocs.size} entries in $elapsed ms")
    }
 
    private fun searchIndexEntry(operation: Operation): SearchEntry {

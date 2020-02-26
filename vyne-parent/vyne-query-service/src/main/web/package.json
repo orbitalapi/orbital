@@ -29,7 +29,7 @@
     "@covalent/core": "^2.0.1",
     "@covalent/dynamic-forms": "^2.0.1",
     "@covalent/highlight": "^2.1.1",
-    "@ng-select/ng-select": "^2.13.3",
+    "@ng-select/ng-select": "^2.20.5",
     "@swimlane/ngx-graph": "^5.5.0",
     "class-transformer": "^0.2.0",
     "core-js": "^2.5.4",

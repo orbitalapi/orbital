@@ -1,10 +1,7 @@
 package io.vyne.search.embedded
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer
-import org.apache.lucene.document.Document
-import org.apache.lucene.index.IndexWriter
 import org.apache.lucene.index.IndexWriterConfig
-import org.apache.lucene.store.BaseDirectory
 import org.apache.lucene.store.FSDirectory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean

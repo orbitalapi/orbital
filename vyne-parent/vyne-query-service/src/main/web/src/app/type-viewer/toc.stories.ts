@@ -6,7 +6,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {RouterTestingModule} from '@angular/router/testing';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {TocHostDirective} from './toc-host.directive';
-import {action} from "@storybook/addon-actions";
+import {action} from '@storybook/addon-actions';
 
 const actions = {
   contentsChanged: action('contentsChanged')

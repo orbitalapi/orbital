@@ -29,6 +29,7 @@ const typeQualifiedNameSearchResult: SearchResult = {
   ]
 };
 
+export const searchResults: SearchResult[] = [typeDocSearchResult, typeNameSearchResult, typeQualifiedNameSearchResult];
 
 storiesOf('SearchResults', module)
   .addDecorator(

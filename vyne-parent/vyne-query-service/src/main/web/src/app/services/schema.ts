@@ -103,6 +103,7 @@ export interface Operation {
   metadata: Array<Metadata>;
   contract: OperationContract;
   sources: SourceCode[];
+  typeDoc?: string;
 }
 
 export interface Service {
@@ -110,6 +111,7 @@ export interface Service {
   operations: Array<Operation>;
   metadata: Array<Metadata>;
   sourceCode: SourceCode;
+  typeDoc?: string;
 }
 
 export function isService(candidate): candidate is Service {

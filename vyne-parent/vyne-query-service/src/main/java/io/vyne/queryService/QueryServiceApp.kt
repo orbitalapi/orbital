@@ -20,7 +20,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class)
-//@EnableVyneEmbeddedSearch
+@EnableVyneEmbeddedSearch
 @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
 class QueryServiceApp {
 

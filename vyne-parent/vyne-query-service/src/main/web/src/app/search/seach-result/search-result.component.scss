@@ -16,6 +16,9 @@
     font-size: 0.9rem;
     color: lighten($body, 5%);
     margin-top: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 
     .matchedText {
       border-bottom: 2px solid $vyne-primary;
