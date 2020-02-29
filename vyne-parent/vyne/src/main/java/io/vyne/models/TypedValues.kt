@@ -33,6 +33,8 @@ interface TypedInstance {
       return TypedInstanceConverter(TypeNamedInstanceMapper()).convert(this)
    }
 
+   fun valueEquals(valueToCompare: TypedInstance): Boolean
+
    companion object {
       fun fromNamedType(typeNamedInstance: TypeNamedInstance, schema: Schema): TypedInstance {
          val (typeName, value) = typeNamedInstance
@@ -60,20 +62,22 @@ interface TypedInstance {
          val attributes = typeNamedInstance.value!! as Map<String, Any>
          val typedAttributes = attributes.map { (attributeName, typedInstance) ->
             when (typedInstance) {
-               is TypeNamedInstance -> attributeName to fromNamedType(typedInstance,schema)
+               is TypeNamedInstance -> attributeName to fromNamedType(typedInstance, schema)
                is Collection<*> -> {
-                  val collectionTypeRef = type.attributes[attributeName]?.type ?: error("Cannot look up collection type for attribute $attributeName as it is not a defined attribute on type ${type.name}")
+                  val collectionTypeRef = type.attributes[attributeName]?.type
+                     ?: error("Cannot look up collection type for attribute $attributeName as it is not a defined attribute on type ${type.name}")
                   val collectionType = schema.type(collectionTypeRef)
                   attributeName to TypedCollection(collectionType, typedInstance.map { fromNamedType(it as TypeNamedInstance, schema) })
                }
                else -> error("Unhandled scenario creating typedObject from TypeNamedInstance -> ${typedInstance::class.simpleName}")
             }
          }.toMap()
-         return TypedObject(type,typedAttributes)
+         return TypedObject(type, typedAttributes)
       }
 
       fun from(type: Type, value: Any?, schema: Schema): TypedInstance {
          return when {
+            value is TypedInstance -> value
             value == null -> TypedNull(type)
             value is Collection<*> -> {
                val collectionMemberType = getCollectionType(type, schema)
@@ -105,12 +109,14 @@ data class TypedNull(override val type: Type) : TypedInstance {
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
       return TypedNull(typeAlias)
    }
+
+   override fun valueEquals(valueToCompare: TypedInstance): Boolean {
+      return valueToCompare.value == null
+   }
 }
 
 data class TypedObject(override val type: Type, override val value: Map<String, TypedInstance>) : TypedInstance, Map<String, TypedInstance> by value {
    companion object {
-      private val valueReader = ValueReader()
-      private val accessorReader = AccessorReader()
       fun fromValue(typeName: String, value: Any, schema: Schema): TypedObject {
          return fromValue(schema.type(typeName), value, schema)
       }
@@ -128,23 +134,7 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
       }
 
       fun fromValue(type: Type, value: Any, schema: Schema): TypedObject {
-         val attributes: Map<AttributeName, TypedInstance> = type.attributes.map { (attributeName, field) ->
-            if (field.accessor != null) {
-               val attributeTypedInstance = accessorReader.read(value, field, schema)
-               attributeName to attributeTypedInstance
-            } else {
-               val attributeValue = valueReader.read(value, attributeName)
-               if (attributeValue == null) {
-                  attributeName to TypedNull(schema.type(field.type))
-               } else {
-                  attributeName to TypedInstance.from(schema.type(field.type.name), attributeValue, schema)
-               }
-
-            }
-
-
-         }.toMap()
-         return TypedObject(type, attributes)
+         return TypedObjectFactory(type, value, schema).build()
       }
    }
 
@@ -158,6 +148,18 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
 
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
       return TypedObject(typeAlias, value)
+   }
+
+   override fun valueEquals(valueToCompare: TypedInstance): Boolean {
+      if (valueToCompare !is TypedObject) {
+         return false
+      }
+      if (!this.type.resolvesSameAs(valueToCompare.type)) {
+         return false
+      }
+      return this.value.all { (attributeName, value) ->
+         valueToCompare.hasAttribute(attributeName) && valueToCompare.get(attributeName).valueEquals(value)
+      }
    }
 
    // TODO : Needs a test
@@ -193,9 +195,12 @@ data class TypedValue(override val type: Type, override val value: Any) : TypedI
     * Returns true if the two are equal, where the values are the same, and the underlying
     * types resolve to the same type, considering type aliases.
     */
-   fun valueEquals(other: TypedValue): Boolean {
-      if (!this.type.resolvesSameAs(other.type)) return false;
-      return this.value == other.value
+   override fun valueEquals(valueToCompare: TypedInstance): Boolean {
+      if (valueToCompare !is TypedValue) {
+         return false
+      }
+      if (!this.type.resolvesSameAs(valueToCompare.type)) return false;
+      return this.value == valueToCompare.value
    }
 
 }
@@ -218,6 +223,25 @@ data class TypedCollection(override val type: Type, override val value: List<Typ
 
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
       return TypedCollection(typeAlias, value)
+   }
+
+   override fun valueEquals(valueToCompare: TypedInstance): Boolean {
+      if (valueToCompare !is TypedCollection) {
+         return false
+      }
+      if (!this.type.resolvesSameAs(valueToCompare.type)) {
+         return false
+      }
+      if (this.size != valueToCompare.size) {
+         return false
+      }
+      this.forEachIndexed { index, typedInstance ->
+         if (!typedInstance.valueEquals(valueToCompare[index])) {
+            // Fail as soon as any values don't equal
+            return false
+         }
+      }
+      return true
    }
 
    fun parameterizedType(schema: Schema): Type {

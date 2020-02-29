@@ -86,12 +86,18 @@ class TaxiSchema(private val document: TaxiDocument, val sources: List<NamedSour
                val typeName = QualifiedName(taxiType.qualifiedName)
                val fields = taxiType.allFields.map { field ->
                   when (field.type) {
-                     is ArrayType -> field.name to Field(TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true), field.modifiers.toVyneFieldModifiers(), accessor = field.accessor)
+                     is ArrayType -> field.name to Field(
+                        TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true),
+                        field.modifiers.toVyneFieldModifiers(),
+                        accessor = field.accessor,
+                        readCondition = field.readCondition
+                     )
                      else -> field.name to Field(
                         TypeReference(field.type.qualifiedName.fqn()),
                         constraintProvider = buildDeferredConstraintProvider(field.type.qualifiedName.fqn(), field.constraints),
                         modifiers = field.modifiers.toVyneFieldModifiers(),
-                        accessor = field.accessor)
+                        accessor = field.accessor,
+                        readCondition = field.readCondition)
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType)
