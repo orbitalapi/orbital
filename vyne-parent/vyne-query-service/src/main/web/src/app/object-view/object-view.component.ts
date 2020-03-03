@@ -1,26 +1,27 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {Field, Schema, Type, TypedInstance} from '../../services/schema';
-import {TypedInstanceOrCollection, TypeNamedInstance} from '../../services/query.service';
+import {TypedInstanceOrCollection, TypeNamedInstance} from '../services/query.service';
+import {Field, Schema, Type, TypedInstance} from '../services/schema';
 
 @Component({
-  selector: 'result-viewer',
-  templateUrl: './result-viewer.component.html',
-  styleUrls: ['./result-viewer.component.scss']
+  selector: 'app-object-view',
+  templateUrl: './object-view.component.html',
+  styleUrls: ['./object-view.component.scss']
 })
-export class ResultViewerComponent implements OnInit {
+export class ObjectViewComponent {
+
 
   @Input()
     // result: TypeInstanceOrAttributeSet;
-  result: TypedInstanceOrCollection;
+  instance: TypedInstanceOrCollection;
 
   @Input()
   schema: Schema;
 
-  ngOnInit() {
-  }
+  @Input()
+  topLevel = true;
 
   get typedObject(): TypeNamedInstance {
-    return <TypeNamedInstance>this.result;
+    return <TypeNamedInstance>this.instance;
   }
 
   get type(): Type {
@@ -31,7 +32,9 @@ export class ResultViewerComponent implements OnInit {
   }
 
   get typedObjectAttributeNames(): string[] {
-    if (!this.type) { return []; }
+    if (!this.type) {
+      return [];
+    }
     // return Array.from(this.type.attributes.keys())
     return Object.keys(this.type.attributes);
   }
@@ -42,7 +45,7 @@ export class ResultViewerComponent implements OnInit {
 
   getTypeForAttribute(attributeName: string): Type {
     const typeRef: Field = this.type.attributes[attributeName];
-    return this.schema.types.find(type => type.name.fullyQualifiedName == typeRef.type.fullyQualifiedName);
+    return this.schema.types.find(type => type.name.fullyQualifiedName === typeRef.type.fullyQualifiedName);
   }
 
 
@@ -50,11 +53,11 @@ export class ResultViewerComponent implements OnInit {
   // or a typed object, which is indexed with property names
 
   get isPrimitive(): boolean {
-    return this.result != null && this.typedObject.value != null && !this.isTypedObject && !this.isArray;
+    return this.instance != null && this.typedObject.value != null && !this.isTypedObject && !this.isArray;
   }
 
   get isTypedObject(): boolean {
-    return this.result != null &&
+    return this.instance != null &&
       !this.isArray &&
       typeof this.typedObject.value === 'object';
     // this.result.hasOwnProperty("type")
@@ -62,11 +65,13 @@ export class ResultViewerComponent implements OnInit {
   }
 
   get isArray(): boolean {
-    return this.result != null &&
-      this.result.constructor === Array;
+    return this.instance != null &&
+      this.instance.constructor === Array;
   }
 }
 
 type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;
-interface TypedObjectAttributes { [key: string]: TypeInstanceOrAttributeSet; }
 
+interface TypedObjectAttributes {
+  [key: string]: TypeInstanceOrAttributeSet;
+}

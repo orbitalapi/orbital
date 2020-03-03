@@ -83,6 +83,7 @@ import { SearchBarComponent } from './search/search-bar/search-bar.component';
 import {NgSelectModule} from '@ng-select/ng-select';
 import {SearchBarContainerComponent} from './search/search-bar/search-bar.container.component';
 import {SearchService} from './search/search.service';
+import { ObjectViewComponent } from './object-view/object-view.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -143,7 +144,8 @@ export const routerModule = RouterModule.forRoot(
     SearchResultComponent,
     SearchResultListComponent,
     SearchBarComponent,
-    SearchBarContainerComponent
+    SearchBarContainerComponent,
+    ObjectViewComponent
   ],
   imports: [
     routerModule,

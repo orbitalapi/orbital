@@ -1,0 +1,35 @@
+<div class="type-name top-level" *ngIf="topLevel">{{ type.name.name }}</div>
+<div class="typed-value-container" *ngIf="isPrimitive">
+  <!--  <div class="type-name">{{ typedObject.typeName }}</div>-->
+  <div class="type-value">{{ typedObject.value }}</div>
+</div>
+<div class="typed-object-container" *ngIf="isTypedObject">
+  <div *ngFor="let attributeName of typedObjectAttributeNames" class="attribute-row" [class.object-row]="!getTypeForAttribute(attributeName).scalar">
+    <div class="attribute-name">
+      {{ attributeName }}
+    </div>
+    <div class="type-name-container table-cell">
+      <div class="type-name">{{ getTypeForAttribute(attributeName).name.name }}</div>
+    </div>
+    <div class="attribute-value table-cell"
+         *ngIf="getTypeForAttribute(attributeName).scalar">{{ getTypedObjectAttribute(attributeName).value }}</div>
+    <app-object-view *ngIf="!getTypeForAttribute(attributeName).scalar"
+                     [instance]="getTypedObjectAttribute(attributeName)"
+                     [schema]="schema"
+                     [topLevel]="false"
+    ></app-object-view>
+  </div>
+</div>
+<div class="typed-object-container" *ngIf="isArray">
+  <div *ngFor="let collectionMember of instance; let i = index" class="result-collection-member">
+    <div class="collection-index">#{{i + 1}}</div>
+    <div class="collection-member">
+      <app-object-view [instance]="collectionMember"
+                       [schema]="schema"
+                       [topLevel]="false"
+      ></app-object-view>
+
+    </div>
+  </div>
+
+</div>
