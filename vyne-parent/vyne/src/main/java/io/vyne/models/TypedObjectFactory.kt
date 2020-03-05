@@ -45,15 +45,16 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
 
 
    private fun buildField(field: Field, attributeName: AttributeName): TypedInstance {
+      // Questionable design choice: Favour directly supplied values over accessors and conditions.
+      // The idea here is that when we're reading from a file or non parsed source, we need
+      // to know how to construct the instance.
+      // However, if that work has already been done, and we're trying to rebuild the instance
+      // from a parsing result, we need to be able to.
+      // Therefore, if we've been directly supplied the value, use it.
+      // Otherwise, look to leverage conditions.
+      // Note - revisit if this proves to be problematic.
       return when {
-         field.accessor != null -> {
-            readAccessor(field.type, field.accessor)
-
-         }
-         field.readCondition != null -> {
-            conditionalFieldSetEvaluator.evaluate(field.readCondition, attributeName, schema.type(field.type))
-         }
-         else -> {
+         valueReader.contains(value, attributeName) -> {
             val attributeValue = valueReader.read(value, attributeName)
             if (attributeValue == null) {
                TypedNull(schema.type(field.type))
@@ -61,6 +62,14 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
                TypedInstance.from(schema.type(field.type.name), attributeValue, schema)
             }
          }
+         field.accessor != null -> {
+            readAccessor(field.type, field.accessor)
+
+         }
+         field.readCondition != null -> {
+            conditionalFieldSetEvaluator.evaluate(field.readCondition, attributeName, schema.type(field.type))
+         }
+         else -> error("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read")
       }
 
    }

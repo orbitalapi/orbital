@@ -122,6 +122,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return when(query.queryMode) {
          QueryMode.DISCOVER -> this.query().find(query.expression)
          QueryMode.GATHER -> this.query().gather(query.expression)
+         QueryMode.BUILD -> this.query().build(query.expression)
       }
    }
 }

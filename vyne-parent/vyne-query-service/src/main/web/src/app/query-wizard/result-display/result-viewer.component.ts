@@ -1,6 +1,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {Field, Schema, Type, TypedInstance} from '../../services/schema';
-import {TypedInstanceOrCollection, TypeNamedInstance} from '../../services/query.service';
+import {TypeNamedInstance} from '../../services/query.service';
+import {InstanceLikeOrCollection} from '../../object-view/object-view.component';
 
 @Component({
   selector: 'result-viewer',
@@ -11,7 +12,7 @@ export class ResultViewerComponent implements OnInit {
 
   @Input()
     // result: TypeInstanceOrAttributeSet;
-  result: TypedInstanceOrCollection;
+  result: InstanceLikeOrCollection;
 
   @Input()
   schema: Schema;
@@ -42,7 +43,7 @@ export class ResultViewerComponent implements OnInit {
 
   getTypeForAttribute(attributeName: string): Type {
     const typeRef: Field = this.type.attributes[attributeName];
-    return this.schema.types.find(type => type.name.fullyQualifiedName == typeRef.type.fullyQualifiedName);
+    return this.schema.types.find(type => type.name.fullyQualifiedName === typeRef.type.fullyQualifiedName);
   }
 
 

@@ -1,5 +1,6 @@
 package io.vyne.schemas
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
 import io.vyne.query.TypeMatchingStrategy
 import io.vyne.schemas.taxi.DeferredConstraintProvider
@@ -189,6 +190,9 @@ data class Field(
    val modifiers: List<FieldModifier>,
    private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider(),
    val accessor: Accessor?,
+   @JsonIgnore // This causes a stack overflow, becasue the
+   // we have taxi types in here, which have source code elements, that
+   // contain the antlr parse tree ... none of this stuff serializes well.
    val readCondition: FieldSetCondition?
 ) {
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because

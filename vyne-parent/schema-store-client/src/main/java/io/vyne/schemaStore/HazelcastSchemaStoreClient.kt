@@ -76,20 +76,21 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       }
 
 
-   override fun submitSchema(schemaName: String, schemaVersion: String, schema: String): Either<CompilationException, Schema> {
-      val versionedSchema = VersionedSchema(schemaName, schemaVersion, schema)
-      // TODO : This creates a race condition where multiple schemas can pass validation at the same time
-      val validationResult = schemaValidator.validate(schemaSet(), versionedSchema)
+
+   override fun submitSchemas(schemas:List<VersionedSchema>): Either<CompilationException, Schema> {
+      val validationResult = schemaValidator.validate(schemaSet(), schemas)
       validationResult.right().map { validatedSchema ->
 
          // TODO : Here, we're still storing ONLY the raw schema we've received, not the merged schema.
          // That seems wasteful, as we're just gonna re-compute this later.
-         val cachedSchema = CacheMemberSchema(hazelcast.cluster.localMember.uuid, versionedSchema)
-         schemaSourcesMap[versionedSchema.id] = cachedSchema
+         schemas.forEach {versionedSchema ->
+            val cachedSchema = CacheMemberSchema(hazelcast.cluster.localMember.uuid, versionedSchema)
+            schemaSourcesMap[versionedSchema.id] = cachedSchema
+         }
          rebuildSchemaAndWriteToCache()
       }
       validationResult.left().map { compilationException ->
-         log().error("Schema ${versionedSchema.id} is rejected for compilation exception: ${compilationException.message}")
+         log().error("Schema was is rejected for compilation exception: \n${compilationException.message}")
       }
       return validationResult
    }

@@ -28,11 +28,13 @@
       <module>schema-store</module>
       <module>schema-store-client</module>
       <module>schema-store-api</module>
+      <module>simple-schema-server</module>
       <module>vyne-spring-schemaStore</module>
       <module>vyne-query-service</module>
       <module>vyne-client</module>
       <module>vyne-query-api</module>
       <module>vyne-client-spring</module>
+      <module>file-schema-server</module>
    </modules>
 
    <dependencies>
@@ -58,11 +60,7 @@
       </dependencies>
    </dependencyManagement>
    <repositories>
-      <repository>
-         <id>jcenter</id>
-         <name>bintray</name>
-         <url>http://jcenter.bintray.com</url>
-      </repository>
+
       <repository>
          <snapshots>
             <enabled>false</enabled>

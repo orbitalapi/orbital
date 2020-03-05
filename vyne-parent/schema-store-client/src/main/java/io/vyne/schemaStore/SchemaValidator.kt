@@ -9,14 +9,15 @@ import org.funktionale.either.Either
 import org.springframework.stereotype.Component
 
 interface SchemaValidator {
-   fun validate(existing: SchemaSet, newSchema: VersionedSchema): Either<CompilationException, Schema>
+   fun validate(existing: SchemaSet, newSchema: VersionedSchema) = validate(existing, listOf(newSchema))
+   fun validate(existing: SchemaSet, newSchemas: List<VersionedSchema>): Either<CompilationException, Schema>
 }
 
 @Component
 class TaxiSchemaValidator(val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) : SchemaValidator {
-   override fun validate(existing: SchemaSet, newSchema: VersionedSchema): Either<CompilationException, Schema> {
+   override fun validate(existing: SchemaSet, newSchemas: List<VersionedSchema>): Either<CompilationException, Schema> {
       return try {
-         val schemaSources = (existing.sources + newSchema)
+         val schemaSources = (existing.sources + newSchemas)
          // TODO : This is sloppy handling of imports, and will cause issues
          // I'm adding each schema as it's compiled into the set of available imports.
          // But, this could cause problems as schemas are removed, as a schema may reference

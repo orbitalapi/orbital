@@ -50,13 +50,18 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
    override fun submitSchema(schemaName: String,
                              schemaVersion: String,
                              schema: String): Either<CompilationException, Schema> {
-      retryTemplate.execute<Any, Exception> { context: RetryContext ->
-         context.setAttribute(RetryConfig.RETRYABLE_PROCESS_NAME, "Publish schemas")
-         log().debug("Submitting schema $schemaName v$schemaVersion")
-         schemaService.submitSchema(schema, schemaName, schemaVersion)
-         log().debug("Schema $schemaName v$schemaVersion submitted successfully")
-      }
-      TODO("Migrate this to perform better schema validation, or defer to the schema service")
+      TODO("This is currentyl disabled, as I'm upgrading to submit a list of schemas, and focussing on Hazelcast client")
+//      retryTemplate.execute<Any, Exception> { context: RetryContext ->
+//         context.setAttribute(RetryConfig.RETRYABLE_PROCESS_NAME, "Publish schemas")
+//         log().debug("Submitting schema $schemaName v$schemaVersion")
+//         schemaService.submitSchema(schema, schemaName, schemaVersion)
+//         log().debug("Schema $schemaName v$schemaVersion submitted successfully")
+//      }
+//      TODO("Migrate this to perform better schema validation, or defer to the schema service")
+   }
+
+   override fun submitSchemas(schemas: List<VersionedSchema>): Either<CompilationException, Schema> {
+      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
    }
 
    override val generation: Int

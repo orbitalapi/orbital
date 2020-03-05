@@ -90,8 +90,15 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    // Build starts by using facts known in it's current context to build the target type
    override fun build(query: QueryExpression, context: QueryContext): QueryResult {
       // Note - this should be trivial to expand to TypeListQueryExpression too
-      require(query is TypeNameQueryExpression) { "Currently, build only supports TypeNameQueryExpression" }
-      val targetType = context.schema.type(query.typeName)
+      val typeNameQueryExpression = when (query) {
+         is TypeNameQueryExpression -> query
+         is TypeNameListQueryExpression -> {
+            require(query.typeNames.size == 1) { "Currently, build only supports TypeNameQueryExpression, or a list of a single type" }
+            TypeNameQueryExpression(query.typeNames.first())
+         }
+         else -> error("Currently, build only supports TypeNameQueryExpression")
+      }
+      val targetType = context.schema.type(typeNameQueryExpression.typeName)
 
       val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
       val result = ObjectBuilder(this, context).build(targetType)
@@ -99,13 +106,15 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          QueryResult(
             mapOf(querySpecTypeNode to result),
             emptySet(),
-            resultMode = context.resultMode
+            resultMode = context.resultMode,
+            profilerOperation = context.profiler.root
          )
       } else {
          QueryResult(
             emptyMap(),
             setOf(querySpecTypeNode),
-            resultMode = context.resultMode
+            resultMode = context.resultMode,
+            profilerOperation = context.profiler.root
          )
       }
    }

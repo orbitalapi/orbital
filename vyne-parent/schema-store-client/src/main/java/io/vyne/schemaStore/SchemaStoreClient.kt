@@ -8,9 +8,10 @@ import reactor.core.publisher.Mono
 interface SchemaStoreClient {
    fun submitSchema(schemaName: String,
                     schemaVersion: String,
-                    schema: String): Either<CompilationException, Schema>
+                    schema: String) = submitSchema(VersionedSchema(schemaName, schemaVersion, schema))
 
-   fun submitSchema(versionedSchema: VersionedSchema) = submitSchema(versionedSchema.name, versionedSchema.version, versionedSchema.content)
+   fun submitSchema(versionedSchema: VersionedSchema) = submitSchemas(listOf(versionedSchema))
+   fun submitSchemas(schemas: List<VersionedSchema>): Either<CompilationException, Schema>
    fun schemaSet(): SchemaSet
 
    val generation: Int

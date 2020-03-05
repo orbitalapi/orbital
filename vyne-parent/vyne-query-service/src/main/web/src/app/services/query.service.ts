@@ -4,6 +4,7 @@ import {Observable} from 'rxjs/internal/Observable';
 
 import {environment} from 'src/environments/environment';
 import {QualifiedName, TypedInstance} from './schema';
+import {InstanceLikeOrCollection} from '../object-view/object-view.component';
 
 @Injectable()
 export class QueryService {
@@ -42,9 +43,8 @@ export interface TypeNamedInstance {
 }
 
 
-export type TypedInstanceOrCollection = TypeNamedInstance | TypeNamedInstance[]; // TODO : Could also be a map.
 export interface QueryResult {
-  results: { [key: string]: TypedInstanceOrCollection | TypedInstance  };
+  results: { [key: string]: InstanceLikeOrCollection };
   unmatchedNodes: QualifiedName[];
   fullyResolved: boolean;
   profilerOperation: ProfilerOperation;
@@ -89,6 +89,7 @@ export interface ProfilerOperationResult {
 
 export enum QueryMode {
   DISCOVER = 'DISCOVER',
+  BUILD = 'BUILD',
   GATHER = 'GATHER'
 }
 

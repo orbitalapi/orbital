@@ -64,7 +64,6 @@ import {ElseEditorComponent} from './policy-manager/else-editor.component';
 import {InstructionSelectorComponent} from './policy-manager/instruction-selector.component';
 import {StatementDisplayComponent} from './policy-manager/statement-display.component';
 import {VyneQueryViewerComponent} from './query-wizard/taxi-viewer/vyne-query-viewer/vyne-query-viewer.component';
-import {SimpleResultViewerComponent} from './query-wizard/result-display/simple-result-viewer-component';
 import {TypeViewerComponent} from './type-viewer/type-viewer.component';
 import {AttributeTableComponent} from './type-viewer/attribute-table/attribute-table.component';
 import {TypeViewerContainerComponent} from './type-viewer/type-viewer-container.component';
@@ -84,6 +83,9 @@ import {NgSelectModule} from '@ng-select/ng-select';
 import {SearchBarContainerComponent} from './search/search-bar/search-bar.container.component';
 import {SearchService} from './search/search.service';
 import { ObjectViewComponent } from './object-view/object-view.component';
+import { SchemaEditorComponent } from './schema-editor/schema-editor.component';
+import { FileFactSelectorComponent } from './query-wizard/file-fact-selector/file-fact-selector.component';
+import {CovalentFileModule} from '@covalent/core';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -113,7 +115,6 @@ export const routerModule = RouterModule.forRoot(
     SourceViewComponent,
     TypeLinksComponent,
     ResultViewerComponent,
-    SimpleResultViewerComponent,
     QueryHistoryComponent,
     ParameterViewComponent,
     SchemaExplorerComponent,
@@ -145,7 +146,9 @@ export const routerModule = RouterModule.forRoot(
     SearchResultListComponent,
     SearchBarComponent,
     SearchBarContainerComponent,
-    ObjectViewComponent
+    ObjectViewComponent,
+    SchemaEditorComponent,
+    FileFactSelectorComponent
   ],
   imports: [
     routerModule,
@@ -187,6 +190,7 @@ export const routerModule = RouterModule.forRoot(
     CovalentDynamicFormsModule,
     CovalentJsonFormatterModule,
     CovalentHighlightModule,
+    CovalentFileModule,
 
     MomentModule,
 

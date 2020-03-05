@@ -75,7 +75,16 @@ export interface SourceCode {
   content: string;
 }
 
+export function findType(schema: TypeCollection, typeName: string): Type {
+  return schema.types.find(t => t.name.fullyQualifiedName === typeName);
+}
+
+export interface TypeCollection {
+  types: Array<Type>;
+}
+
 export interface Schema {
+
   types: Array<Type>;
   services: Array<Service>;
   operations: Array<Operation>;

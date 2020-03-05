@@ -234,7 +234,12 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
             buildWithDependencies(source)
          }
       }
-      return listOf(builtSchemasInOrder.last())
+
+      val combined = builtSchemas.values.reduce(TaxiSchema::merge)
+
+//      Unclear why I was doing this.
+//      return listOf(builtSchemasInOrder.last())
+      return listOf(combined)
    }
 
    private fun buildWithDependencies(source: SourceWithDependencies): TaxiSchema {
@@ -275,7 +280,7 @@ private data class SourceWithDependencies(val source: NamedSource, val dependenc
 data class NamedSource(val taxi: String, val sourceName: String) : Serializable {
    companion object {
       fun unnamed(taxi: String) = NamedSource(taxi, "<unknown>")
-      fun unnamed(taxi: List<String>) = taxi.map { unnamed(it) }
+      fun unnamed(taxi: List<String>): List<NamedSource> = taxi.map { unnamed(it) }
    }
 }
 

@@ -54,7 +54,15 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
 
    private fun evaluateSelector(selectorExpression: WhenSelectorExpression): TypedInstance {
       return when (selectorExpression) {
-         is AccessorExpressionSelector -> factory.readAccessor(selectorExpression.declaredType.asVyneTypeReference(), selectorExpression.accessor)
+         is AccessorExpressionSelector -> {
+            // Note: I had to split this across several lines
+            // as the compiler was getting confused and throwing
+            // method not found exceptions.
+            // Probably just a local issue, can refactor later
+            val typeReference = selectorExpression.declaredType.asVyneTypeReference()
+            val instance = factory.readAccessor(typeReference, selectorExpression.accessor)
+            instance
+         }
          else -> TODO()
       }
 

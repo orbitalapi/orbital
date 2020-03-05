@@ -57,11 +57,11 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
       val response = try {
          // Note: Only using the default set for the originating query,
          // but the queryEngine contains all the factSets, so we can expand this later.
+         val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT), resultMode = query.resultMode)
          when (query.queryMode) {
-            QueryMode.DISCOVER -> vyne.query(factSetIds = setOf(FactSets.DEFAULT), resultMode = query.resultMode)
-               .find(query.expression)
-            QueryMode.GATHER -> vyne.query(factSetIds = setOf(FactSets.DEFAULT), resultMode = query.resultMode)
-               .gather(query.expression)
+            QueryMode.DISCOVER -> queryContext.find(query.expression)
+            QueryMode.GATHER -> queryContext.gather(query.expression)
+            QueryMode.BUILD -> queryContext.build(query.expression)
          }
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation, query.resultMode)
