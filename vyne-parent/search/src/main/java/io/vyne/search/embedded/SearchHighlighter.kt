@@ -7,6 +7,9 @@ import org.apache.lucene.search.highlight.SimpleHTMLFormatter
 import org.apache.lucene.search.highlight.SimpleSpanFragmenter
 
 object SearchHighlighter  {
+
+   const val PREFIX = "<span class='matchedText'>"
+   const val SUFFIX = "</span>"
    //   private String getHighlightedField(Query query, Analyzer analyzer, String fieldName, String fieldValue) throws IOException, InvalidTokenOffsetsException {
 //      Formatter formatter = new SimpleHTMLFormatter("<span class="\"MatchedText\"">", "</span>");
 //      QueryScorer queryScorer = new QueryScorer(query);
@@ -16,7 +19,7 @@ object SearchHighlighter  {
 //      return highlighter.getBestFragment(this.analyzer, fieldName, fieldValue);
 //   }
    fun newHighlighter(query:Query):Highlighter {
-      val formatter = SimpleHTMLFormatter("<span class='matchedText'>","</span>")
+      val formatter = SimpleHTMLFormatter(PREFIX,SUFFIX)
       val queryScorer = QueryScorer(query)
       val highlighter = Highlighter(formatter,queryScorer)
       highlighter.textFragmenter = SimpleSpanFragmenter(queryScorer, Int.MAX_VALUE)

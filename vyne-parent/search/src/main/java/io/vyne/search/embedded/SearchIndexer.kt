@@ -1,7 +1,6 @@
 package io.vyne.search.embedded
 
 import com.google.common.base.Stopwatch
-import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.Field
@@ -9,20 +8,27 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import org.apache.commons.lang3.StringUtils
 import org.apache.lucene.document.Document
-import org.apache.lucene.document.Field as LuceneField
-import org.apache.lucene.document.StringField
 import org.apache.lucene.document.TextField
-import org.springframework.context.event.ApplicationEventMulticaster
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.util.concurrent.TimeUnit
+import org.apache.lucene.document.Field as LuceneField
 
 @Component
 class IndexOnStartupTask(private val indexer:SearchIndexer, private val schemaStoreClient: SchemaStoreClient) {
    init {
        log().info("Initializing search, indexing current schema")
-      indexer.createNewIndex(schemaStoreClient.schemaSet())
+      try {
+         indexer.createNewIndex(schemaStoreClient.schemaSet())
+      } catch (e:IllegalArgumentException) {
+         // Thrown by lucene when an index has changed config
+         // Lets trash the existing index, and retry
+         log().warn("Exception thrown when updating index.  ( ${e.message} ) - will attempt to recover by deleting existing index, and rebuilding")
+         indexer.deleteAndRebuildIndex(schemaStoreClient.schemaSet())
+      }
+
    }
 }
 
@@ -32,8 +38,12 @@ class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
    @EventListener
    fun onSchemaSetChanged(event: SchemaSetChangedEvent) {
       log().info("Schema set changed, re-indexing")
-      deleteExistingIndex()
       createNewIndex(event.newSchemaSet)
+   }
+
+   internal fun deleteAndRebuildIndex(schemaSet: SchemaSet) {
+      searchIndexRepository.destroyAndInitialize()
+      createNewIndex(schemaSet)
    }
 
    internal fun createNewIndex(schemaSet: SchemaSet) {
@@ -49,8 +59,10 @@ class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
       val searchDocs = searchEntries.map { searchEntry ->
          Document().apply {
 
-            add(StringField(SearchField.QUALIFIED_NAME.fieldName, searchEntry.qualifiedName, LuceneField.Store.YES))
-            add(StringField(SearchField.NAME.fieldName, searchEntry.name, LuceneField.Store.YES))
+            add(TextField(SearchField.QUALIFIED_NAME.fieldName, searchEntry.qualifiedName, LuceneField.Store.YES))
+            add(TextField(SearchField.NAME.fieldName, searchEntry.name, LuceneField.Store.YES))
+            val camelCaseToWordsName = StringUtils.splitByCharacterTypeCamelCase(searchEntry.name).joinToString(" ")
+            add(TextField(SearchField.NAME_AS_WORDS.fieldName, camelCaseToWordsName, LuceneField.Store.YES))
             searchEntry.typeDoc?.let { typeDoc ->
                add(TextField(SearchField.TYPEDOC.fieldName, typeDoc, LuceneField.Store.YES))
             }
@@ -93,25 +105,17 @@ class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
       )
    }
 
-   private fun deleteExistingIndex() {
-//      val deleteResult = elastic.bulk(
-//         BulkRequest().apply {
-//            add(DeleteRequest("types", "*"))
-//         }
-//         , RequestOptions.DEFAULT)
-//      if (deleteResult.hasFailures()) {
-//         log().warn("Deleting search index failed after ${deleteResult.took.millis}ms: ${deleteResult.buildFailureMessage()}")
-//      } else {
-//         log().info("Search index destroyed successfully - ${deleteResult.took.millis}ms")
-//      }
-
-   }
 }
 
-enum class SearchField(val fieldName:String) {
+enum class SearchField(val fieldName:String, val highlightMethod: HighlightMethod = HighlightMethod.HIGHLIGHTER) {
    QUALIFIED_NAME ("qualifiedName"),
-   NAME( "name"),
-   TYPEDOC( "typeDoc")
+   NAME( "name", highlightMethod = HighlightMethod.SUBSTRING),
+   TYPEDOC( "typeDoc"),
+   NAME_AS_WORDS("nameAsWords");
+   enum class HighlightMethod {
+      SUBSTRING,
+      HIGHLIGHTER;
+   }
 }
 enum class SearchEntryType {
    TYPE,

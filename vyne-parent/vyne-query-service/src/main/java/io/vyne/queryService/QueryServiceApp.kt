@@ -36,12 +36,9 @@ class QueryServiceApp {
    @Bean
    fun vyneJacksonModule() = VyneJacksonModule()
 
-   @Autowired(required = false)
-   var buildInfo: BuildProperties? = null;
-
    @Autowired
-   fun logInfo() {
-      val version = if (buildInfo != null) "v${buildInfo!!.version}" else "Dev version";
+   fun logInfo(buildInfo: BuildProperties? = null) {
+      val version = buildInfo?.version ?: "Dev version";
       log().info("Vyne query server $version")
    }
 

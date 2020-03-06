@@ -33,6 +33,8 @@ type Person {
 type Animal {
    breed : Breed as String
 }
+
+type TradeRecord {}
       """.trimIndent()
       indexer.onSchemaSetChanged(SchemaSetChangedEvent(null, SchemaSet.just(src)))
    }
@@ -43,6 +45,20 @@ type Animal {
       results.should.have.size(1)
       results.first().matches.should.have.size(1)
       results.first().matches.first().field.should.equal(SearchField.TYPEDOC)
+   }
+
+   @Test
+   fun searchResultsMatchOnName() {
+      val results = repository.search("Pers")
+      results.should.have.size(1)
+      results.first().matches.should.have.size(4)
+   }
+
+   @Test
+   fun whenNameIsLongishThenSearchingMatchesWithAFewLetters() {
+      // Observed that matches weren't being made on TradeRecord when searching for Tra
+      val results = repository.search("tra")
+      results.find { it.qualifiedName.fullyQualifiedName == "TradeRecord" }.should.not.be. `null`
    }
 
    @Test
@@ -57,8 +73,7 @@ type Animal {
    fun searchResultsMatchOnTypeName() {
       val results = repository.search("animal")
       results.should.have.size(1)
-      results.first().matches.should.have.size(2)
-      results.first().matches.map { it.field }.should.have.elements(SearchField.NAME,SearchField.QUALIFIED_NAME)
+      results.first().matches.should.have.size(3)
    }
 
    @Test
