@@ -39,7 +39,8 @@ export class DescriptionEditorContainerComponent {
     // TODO :  Sanitize and escape any [[ or ]], as these are the code markers
     const typeDoc = `[[ ${newContent} ]]`;
 
-    const taxi = `import ${this.type.name.fullyQualifiedName} \n\n namespace ${this.type.name.namespace}\n\n ${typeDoc} \ntype extension ${this.type.name.name} {}`;
+    const namespaceDeclaration = (this.type.name.namespace) ? `namespace ${this.type.name.namespace}\n\n` : '';
+    const taxi = `import ${this.type.name.fullyQualifiedName}\n\n${namespaceDeclaration}${typeDoc} \ntype extension ${this.type.name.name} {}`;
     console.log(taxi);
     this.loading = true;
     this.typeService.createExtensionSchemaFromTaxi(this.type.name, 'TypeDoc', taxi)

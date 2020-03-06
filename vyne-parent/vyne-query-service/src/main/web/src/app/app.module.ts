@@ -83,7 +83,6 @@ import {NgSelectModule} from '@ng-select/ng-select';
 import {SearchBarContainerComponent} from './search/search-bar/search-bar.container.component';
 import {SearchService} from './search/search.service';
 import { ObjectViewComponent } from './object-view/object-view.component';
-import { SchemaEditorComponent } from './schema-editor/schema-editor.component';
 import { FileFactSelectorComponent } from './query-wizard/file-fact-selector/file-fact-selector.component';
 import {CovalentFileModule} from '@covalent/core';
 
@@ -147,7 +146,6 @@ export const routerModule = RouterModule.forRoot(
     SearchBarComponent,
     SearchBarContainerComponent,
     ObjectViewComponent,
-    SchemaEditorComponent,
     FileFactSelectorComponent
   ],
   imports: [
