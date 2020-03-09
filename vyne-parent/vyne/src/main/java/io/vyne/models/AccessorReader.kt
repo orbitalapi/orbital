@@ -1,25 +1,38 @@
 package io.vyne.models
 
+import io.vyne.models.csv.CsvTypedInstanceParser
+import io.vyne.models.xml.XmlTypedInstanceParser
 import io.vyne.schemas.Field
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeReference
 import lang.taxi.types.Accessor
+import lang.taxi.types.ColumnAccessor
 import lang.taxi.types.DestructuredAccessor
 import lang.taxi.types.XpathAccessor
 
 class AccessorReader {
    private val xmlParser = XmlTypedInstanceParser()
+   private val csvParser = CsvTypedInstanceParser()
 
    fun read(value: Any, targetTypeRef: TypeReference, accessor: Accessor, schema: Schema): TypedInstance {
       val targetType = schema.type(targetTypeRef)
       return read(value, targetType, accessor, schema)
    }
 
-   fun read(value: Any, targetType: Type,  accessor: Accessor, schema: Schema): TypedInstance {
+   fun read(value: Any, targetType: Type, accessor: Accessor, schema: Schema): TypedInstance {
       return when (accessor) {
          is XpathAccessor -> parseXml(value, targetType, schema, accessor)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor)
+         is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor)
+         else -> TODO()
+      }
+   }
+
+   private fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor): TypedInstance {
+      // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
+      return when (value) {
+         is String -> csvParser.parse(value, targetType, accessor)
          else -> TODO()
       }
    }
@@ -34,6 +47,7 @@ class AccessorReader {
    }
 
    private fun parseXml(value: Any, targetType: Type, schema: Schema, accessor: XpathAccessor): TypedInstance {
+      // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
          is String -> xmlParser.parse(value, targetType, accessor)
          else -> TODO()
