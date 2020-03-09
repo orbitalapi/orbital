@@ -5,13 +5,12 @@ import io.vyne.schemaStore.SchemaStoreClient
 import org.funktionale.either.Either
 import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener
-import javax.annotation.PostConstruct
 
 class LocalSchemaPublisher(val schemaName: String,
                            val schemaVersion: String,
                            val localTaxiSchemaProvider: LocalTaxiSchemaProvider,
                            val schemaStoreClient: SchemaStoreClient) {
-   private var startupPublishTriggered:Boolean = false
+   private var startupPublishTriggered: Boolean = false
 
    @EventListener
    fun handleEvent(event: ContextRefreshedEvent) {
@@ -22,7 +21,7 @@ class LocalSchemaPublisher(val schemaName: String,
          // via reflection, and seems to swallow exceptions
          try {
             publish()
-         } catch (exception:Exception) {
+         } catch (exception: Exception) {
             log().error("Failed to generate schema", exception)
             throw exception
          }
@@ -30,6 +29,7 @@ class LocalSchemaPublisher(val schemaName: String,
       }
 
    }
+
    fun publish() {
       // TODO : Add retry logic
       log().info("Publishing schemas")
@@ -38,13 +38,11 @@ class LocalSchemaPublisher(val schemaName: String,
          log().error("No schemas found to publish")
       } else {
          log().debug("Attempting to register schema: $schema")
-         schemaStoreClient.submitSchema(schemaName, schemaVersion, schema)
-            .subscribe { result ->
-               when (result) {
-                  is Either.Left -> log().error("Failed to register schema", result.l.message)
-                  is Either.Right -> log().info("Schema registered successfully")
-               }
-            }
+         val schemaValidationResult = schemaStoreClient.submitSchema(schemaName, schemaVersion, schema)
+         when (schemaValidationResult) {
+            is Either.Left -> log().error("Failed to register schema", schemaValidationResult.l.message)
+            is Either.Right -> log().info("Schema registered successfully")
+         }
       }
    }
 }

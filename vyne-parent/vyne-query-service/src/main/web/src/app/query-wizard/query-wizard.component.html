@@ -31,8 +31,18 @@
               [schema]="schema" (typeSelected)="onNewFactTypeSelected($event)"
               placeholder="Select the type of fact"></app-type-autocomplete>
           </div>
-          <div class="add-new">
+
+          <div class="file-fact-list">
+            <app-file-fact-selector [schema]="schema"
+                                    *ngFor="let fileFactForm of fileFacts"
+                                    (parsedInstanceChanged)="handleFileFactChanged(fileFactForm, $event)"
+                                    (typeSelected)="handleFileFactTypeSelected(fileFactForm, $event)"
+            ></app-file-fact-selector>
+          </div>
+
+          <div class="button-bar">
             <button mat-raised-button color="primary" (click)="addNewFact()">Add new fact</button>
+            <button mat-raised-button color="primary" (click)="addNewFileFact()">Add fact from a file</button>
           </div>
         </mat-card-content>
       </mat-card>
@@ -51,6 +61,7 @@
             <mat-form-field>
               <mat-select placeholder="Query mode" [formControl]="queryMode" required>
                 <mat-option value="DISCOVER">Discover (Find a single result)</mat-option>
+                <mat-option value="BUILD">Build (Transform the data to another type, filling gaps where required)</mat-option>
                 <mat-option value="GATHER">Gather (Find all the possible results)</mat-option>
               </mat-select>
             </mat-form-field>

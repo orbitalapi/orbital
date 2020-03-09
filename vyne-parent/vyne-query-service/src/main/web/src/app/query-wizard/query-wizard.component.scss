@@ -9,6 +9,14 @@
 
 }
 
+.button-bar {
+  display: flex;
+  margin-top: 1rem;
+  button {
+    margin-right: 1.5rem;
+  }
+}
+
 app-vyne-query-viewer {
   width: 100%;
 }

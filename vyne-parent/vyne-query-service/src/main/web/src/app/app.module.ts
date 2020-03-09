@@ -64,7 +64,6 @@ import {ElseEditorComponent} from './policy-manager/else-editor.component';
 import {InstructionSelectorComponent} from './policy-manager/instruction-selector.component';
 import {StatementDisplayComponent} from './policy-manager/statement-display.component';
 import {VyneQueryViewerComponent} from './query-wizard/taxi-viewer/vyne-query-viewer/vyne-query-viewer.component';
-import {SimpleResultViewerComponent} from './query-wizard/result-display/simple-result-viewer-component';
 import {TypeViewerComponent} from './type-viewer/type-viewer.component';
 import {AttributeTableComponent} from './type-viewer/attribute-table/attribute-table.component';
 import {TypeViewerContainerComponent} from './type-viewer/type-viewer-container.component';
@@ -77,6 +76,15 @@ import {HighlightModule} from 'ngx-highlightjs';
 import {PolicyManagerContainerComponent} from './policy-manager/policy-manager-container.component';
 import { DescriptionEditorComponent } from './type-viewer/description-editor/description-editor.component';
 import {DescriptionEditorContainerComponent} from './type-viewer/description-editor/description-editor-container.component';
+import { SearchResultComponent } from './search/seach-result/search-result.component';
+import { SearchResultListComponent } from './search/search-result-list/search-result-list.component';
+import { SearchBarComponent } from './search/search-bar/search-bar.component';
+import {NgSelectModule} from '@ng-select/ng-select';
+import {SearchBarContainerComponent} from './search/search-bar/search-bar.container.component';
+import {SearchService} from './search/search.service';
+import { ObjectViewComponent } from './object-view/object-view.component';
+import { FileFactSelectorComponent } from './query-wizard/file-fact-selector/file-fact-selector.component';
+import {CovalentFileModule} from '@covalent/core';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -106,7 +114,6 @@ export const routerModule = RouterModule.forRoot(
     SourceViewComponent,
     TypeLinksComponent,
     ResultViewerComponent,
-    SimpleResultViewerComponent,
     QueryHistoryComponent,
     ParameterViewComponent,
     SchemaExplorerComponent,
@@ -133,7 +140,13 @@ export const routerModule = RouterModule.forRoot(
     TypeLinkGraphComponent,
     TypeLinkGraphContainerComponent,
     CodeViewerComponent,
-    DescriptionEditorComponent
+    DescriptionEditorComponent,
+    SearchResultComponent,
+    SearchResultListComponent,
+    SearchBarComponent,
+    SearchBarContainerComponent,
+    ObjectViewComponent,
+    FileFactSelectorComponent
   ],
   imports: [
     routerModule,
@@ -175,13 +188,16 @@ export const routerModule = RouterModule.forRoot(
     CovalentDynamicFormsModule,
     CovalentJsonFormatterModule,
     CovalentHighlightModule,
+    CovalentFileModule,
 
     MomentModule,
 
-    TaxiViewerModule
+    TaxiViewerModule,
+    NgSelectModule
 
   ],
-  providers: [TypesService, QueryService],
+  // Not sure why I'm having to do this -- but here we are
+  providers: [TypesService, QueryService, SearchService],
   bootstrap: [AppComponent]
 })
 export class AppModule {

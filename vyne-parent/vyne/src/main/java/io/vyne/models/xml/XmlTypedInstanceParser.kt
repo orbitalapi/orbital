@@ -1,8 +1,10 @@
-package io.vyne.models
+package io.vyne.models.xml
 
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
+import io.vyne.models.PrimitiveParser
+import io.vyne.models.TypedInstance
 import io.vyne.schemas.Type
 import lang.taxi.types.XpathAccessor
 import org.apache.commons.io.IOUtils

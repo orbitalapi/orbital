@@ -1,0 +1,95 @@
+@import "src/theme";
+@import '~@angular/material/theming';
+
+.typed-value-container {
+  display: table-cell;
+  vertical-align: middle;
+  //padding-right: 1rem;
+}
+
+.table-cell {
+  display: table-cell;
+  vertical-align: middle;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.type-name.top-level {
+  font-size: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+.type-name {
+  //@include mat-elevation(1);
+
+  font-family: $mono;
+  color: $vyne-lilac;
+  background-color: rgba($vyne-lilac, 0.1);
+  font-size: 0.8rem;
+
+  border: 1px solid rgba($vyne-lilac, 0.6);
+  border-radius: 6px;
+
+  width: fit-content;
+  padding: 0.2rem 0.4rem;
+}
+
+.result-collection-member {
+  display: inline-table;
+  width: 100%;
+
+  .collection-index {
+    display: table-cell;
+    width: 100px;
+    vertical-align: middle;
+    background-color: $dark-grey-1;
+    color: $light-grey-1;
+    text-align: center;
+    border-bottom: 1px solid $light-grey-1;
+  }
+
+  .collection-member {
+    padding-left: 30px;
+  }
+}
+
+.typed-object-container {
+  display: inline-table;
+  border-collapse: collapse;
+
+  .attribute-row {
+    display: table-row;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid $light-grey-2;
+    }
+
+    &.object-row {
+      .attribute-name, .type-name-container {
+        vertical-align: top;
+        padding-top: 0.5rem;
+      }
+    }
+
+    .attribute-name {
+      padding-right: 1rem;
+      display: table-cell !important;
+      vertical-align: middle;
+      //width: 150px;
+      color: $dark-grey-1;
+      font-family: $mono;
+    }
+
+    .type-name-container {
+      display: table-cell;
+      vertical-align: middle;
+      padding-right: 1rem;
+    }
+
+    .attribute-value {
+      display: table-cell !important;
+      vertical-align: middle;
+    }
+
+  }
+}

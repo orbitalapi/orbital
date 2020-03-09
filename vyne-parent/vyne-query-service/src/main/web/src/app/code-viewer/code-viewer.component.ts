@@ -1,6 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {taxiLangDef} from './taxi-lang-def';
-import {SourceCode} from "../services/schema";
+import {SourceCode} from '../services/schema';
 
 declare const require: any;
 /* tslint:disable-next-line */
@@ -20,6 +20,8 @@ export class CodeViewerComponent {
   @Input()
   sidebarMode: SidebarMode = 'Auto';
 
+  selectedIndex = 0;
+
   get displaySidebar(): boolean {
     switch (this.sidebarMode) {
       case 'Auto':
@@ -29,6 +31,11 @@ export class CodeViewerComponent {
       case 'Hidden' :
         return false;
     }
+  }
+
+  select(source: SourceCode) {
+    this.selectedIndex = this.sources.indexOf(source);
+    console.log('Selected index = ' + this.selectedIndex);
   }
 }
 

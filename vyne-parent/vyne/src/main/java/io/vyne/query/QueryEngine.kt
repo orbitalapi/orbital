@@ -5,6 +5,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.utils.log
 
 
@@ -13,6 +14,7 @@ open class SearchFailedException(message: String, val evaluatedPath: List<Evalua
 interface QueryEngine {
 
    val schema: Schema
+   fun find(type: Type, context: QueryContext): QueryResult
    fun find(queryString: QueryExpression, context: QueryContext): QueryResult
    fun find(target: QuerySpecTypeNode, context: QueryContext): QueryResult
    fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult
@@ -24,6 +26,8 @@ interface QueryEngine {
       additionalFacts: Set<TypedInstance> = emptySet(),
       resultMode: ResultMode = ResultMode.SIMPLE): QueryContext
 
+   fun build(type: Type, context: QueryContext): QueryResult = build(TypeNameQueryExpression(type.fullyQualifiedName), context)
+   fun build(query: QueryExpression, context: QueryContext): QueryResult
 }
 
 /**
@@ -35,8 +39,7 @@ class StatefulQueryEngine(
    strategies: List<QueryStrategy>,
    private val profiler: QueryProfiler = QueryProfiler()) :
    BaseQueryEngine(schema, strategies), ModelContainer {
-   private val factSets: FactSetMap
-      = FactSetMap.create()
+   private val factSets: FactSetMap = FactSetMap.create()
 
    init {
       factSets.putAll(initialState)
@@ -79,13 +82,50 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return find(gatherQuery, context)
    }
 
-//   override fun queryContext(factSet: Set<TypedInstance>): QueryContext {
-//      return QueryContext.from(schema, factSet, this, profiler)
-//   }
+   // Experimental.
+   // I'm starting this by treating find() and build() as seperate operations, but
+   // I'm not sure why...just a gut feel.
+   // The idea use case here is for ETL style transformations, where a user may know
+   // some, but not all, of the facts up front, and then use Vyne to polyfill.
+   // Build starts by using facts known in it's current context to build the target type
+   override fun build(query: QueryExpression, context: QueryContext): QueryResult {
+      // Note - this should be trivial to expand to TypeListQueryExpression too
+      val typeNameQueryExpression = when (query) {
+         is TypeNameQueryExpression -> query
+         is TypeNameListQueryExpression -> {
+            require(query.typeNames.size == 1) { "Currently, build only supports TypeNameQueryExpression, or a list of a single type" }
+            TypeNameQueryExpression(query.typeNames.first())
+         }
+         else -> error("Currently, build only supports TypeNameQueryExpression")
+      }
+      val targetType = context.schema.type(typeNameQueryExpression.typeName)
+
+      val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
+      val result = ObjectBuilder(this, context).build(targetType)
+      return if (result != null) {
+         QueryResult(
+            mapOf(querySpecTypeNode to result),
+            emptySet(),
+            resultMode = context.resultMode,
+            profilerOperation = context.profiler.root
+         )
+      } else {
+         QueryResult(
+            emptyMap(),
+            setOf(querySpecTypeNode),
+            resultMode = context.resultMode,
+            profilerOperation = context.profiler.root
+         )
+      }
+   }
 
    override fun find(queryString: QueryExpression, context: QueryContext): QueryResult {
       val target = queryParser.parse(queryString)
       return find(target, context)
+   }
+
+   override fun find(type: Type, context: QueryContext): QueryResult {
+      return find(TypeNameQueryExpression(type.fullyQualifiedName), context)
    }
 
    override fun find(target: QuerySpecTypeNode, context: QueryContext): QueryResult {
@@ -110,9 +150,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val result = results.reduce { acc, queryResult ->
          QueryResult(
             results = acc.results + queryResult.results,
-            unmatchedNodes =  acc.unmatchedNodes + queryResult.unmatchedNodes,
+            unmatchedNodes = acc.unmatchedNodes + queryResult.unmatchedNodes,
             path = null,
-            profilerOperation =  queryResult.profilerOperation,
+            profilerOperation = queryResult.profilerOperation,
             resultMode = context.resultMode
          )
       }

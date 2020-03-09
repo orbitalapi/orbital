@@ -15,18 +15,26 @@
    <properties>
       <jackson.version>2.9.3</jackson.version>
       <taxi.version>0.2.0-SNAPSHOT</taxi.version>
+
+      <!-- Used in QueryService -->
+      <elasticsearch.version>7.5.2</elasticsearch.version>
    </properties>
    <modules>
+      <module>events-api</module>
+      <module>search</module>
+      <module>utils</module>
       <module>vyne</module>
       <module>vyne-spring</module>
       <module>schema-store</module>
       <module>schema-store-client</module>
       <module>schema-store-api</module>
+      <module>simple-schema-server</module>
       <module>vyne-spring-schemaStore</module>
       <module>vyne-query-service</module>
       <module>vyne-client</module>
       <module>vyne-query-api</module>
       <module>vyne-client-spring</module>
+      <module>file-schema-server</module>
    </modules>
 
    <dependencies>
@@ -52,11 +60,7 @@
       </dependencies>
    </dependencyManagement>
    <repositories>
-      <repository>
-         <id>central</id>
-         <name>bintray</name>
-         <url>http://jcenter.bintray.com</url>
-      </repository>
+
       <repository>
          <snapshots>
             <enabled>false</enabled>

@@ -86,12 +86,18 @@ class TaxiSchema(private val document: TaxiDocument, val sources: List<NamedSour
                val typeName = QualifiedName(taxiType.qualifiedName)
                val fields = taxiType.allFields.map { field ->
                   when (field.type) {
-                     is ArrayType -> field.name to Field(TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true), field.modifiers.toVyneFieldModifiers(), accessor = field.accessor)
+                     is ArrayType -> field.name to Field(
+                        TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true),
+                        field.modifiers.toVyneFieldModifiers(),
+                        accessor = field.accessor,
+                        readCondition = field.readCondition
+                     )
                      else -> field.name to Field(
                         TypeReference(field.type.qualifiedName.fqn()),
                         constraintProvider = buildDeferredConstraintProvider(field.type.qualifiedName.fqn(), field.constraints),
                         modifiers = field.modifiers.toVyneFieldModifiers(),
-                        accessor = field.accessor)
+                        accessor = field.accessor,
+                        readCondition = field.readCondition)
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType)
@@ -206,6 +212,9 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
    private val builtSchemas = mutableMapOf<NamedSource, TaxiSchema>()
    private val schemasBeingBuilt = mutableListOf<SourceWithDependencies>()
    fun build(): List<TaxiSchema> {
+      if (sources.isEmpty()) {
+         return emptyList()
+      }
 
       // This little nugget compiles the sources in order, where sources that are imported
       // later are compiled earlier.
@@ -225,7 +234,12 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
             buildWithDependencies(source)
          }
       }
-      return listOf(builtSchemasInOrder.last())
+
+      val combined = builtSchemas.values.reduce(TaxiSchema::merge)
+
+//      Unclear why I was doing this.
+//      return listOf(builtSchemasInOrder.last())
+      return listOf(combined)
    }
 
    private fun buildWithDependencies(source: SourceWithDependencies): TaxiSchema {
@@ -266,7 +280,7 @@ private data class SourceWithDependencies(val source: NamedSource, val dependenc
 data class NamedSource(val taxi: String, val sourceName: String) : Serializable {
    companion object {
       fun unnamed(taxi: String) = NamedSource(taxi, "<unknown>")
-      fun unnamed(taxi: List<String>) = taxi.map { unnamed(it) }
+      fun unnamed(taxi: List<String>): List<NamedSource> = taxi.map { unnamed(it) }
    }
 }
 

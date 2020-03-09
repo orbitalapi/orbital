@@ -36,5 +36,6 @@ fun QueryMode.discoveryStrategy(): FactDiscoveryStrategy {
    return when (this) {
       QueryMode.DISCOVER -> FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT
       QueryMode.GATHER -> FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY
+      QueryMode.BUILD -> FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT
    }
 }

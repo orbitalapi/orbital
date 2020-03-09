@@ -4,6 +4,7 @@ import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
+import junit.framework.Assert.fail
 import org.junit.Test
 
 class TaxiSchemaTest {
@@ -13,6 +14,7 @@ class TaxiSchemaTest {
       val srcA = """
 namespace foo
 
+type alias Age as Int
 type Person {
    name : FirstName as String
 }""".trimIndent()
@@ -22,6 +24,7 @@ import foo.Person
 
 namespace bar
 
+type alias PageNumber as Int
 type Book {
    author : foo.Person
 }
@@ -32,15 +35,30 @@ import bar.Book
 
 namespace baz
 
+type alias PhoneNumber as String
  type Library {
    inventory : bar.Book[]
 }
       """.trimIndent()
+      // This intentionally has no imports, to ensure it's still picked up correctl
+      val srcD = """
+namespace bak
 
-      val schemas = TaxiSchema.from(NamedSource.unnamed(listOf(srcC, srcB, srcA)))
+type Video {}
+      """.trimIndent()
+
+      // Jumble the order of imported sources
+      val schemas = TaxiSchema.from(NamedSource.unnamed(listOf(srcC, srcA, srcB, srcD)))
       expect(schemas).to.have.size(1)
       val schema = schemas.first()
       schema.type("baz.Library").attribute("inventory").type.fullyQualifiedName.should.equal("bar.Book")
+
+      val missingTypes = listOf("baz.PhoneNumber", "baz.Library", "bar.PageNumber", "bar.Book", "foo.Age", "foo.Person", "bak.Video").mapNotNull {
+         if (!schema.hasType(it)) { it } else null
+      }
+      if (missingTypes.isNotEmpty()) {
+         fail("The following types are missing: ${missingTypes.joinToString(",")}")
+      }
    }
 
    @Test(expected = CircularDependencyInSourcesException::class)

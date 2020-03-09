@@ -1,9 +1,10 @@
-import {Injectable} from "@angular/core";
-import {HttpClient} from "@angular/common/http";
-import {Observable} from "rxjs/internal/Observable";
+import {Injectable} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
+import {Observable} from 'rxjs/internal/Observable';
 
 import {environment} from 'src/environments/environment';
-import {QualifiedName, TypedInstance} from "./schema";
+import {QualifiedName, TypedInstance} from './schema';
+import {InstanceLikeOrCollection} from '../object-view/object-view.component';
 
 @Injectable()
 export class QueryService {
@@ -11,15 +12,15 @@ export class QueryService {
   }
 
   submitQuery(query: Query): Observable<QueryResult> {
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/query`, query)
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/query`, query);
   }
 
   getHistory(): Observable<QueryHistoryRecord[]> {
-    return this.http.get<QueryHistoryRecord[]>(`${environment.queryServiceUrl}/query/history`)
+    return this.http.get<QueryHistoryRecord[]>(`${environment.queryServiceUrl}/query/history`);
   }
 
   getQueryProfile(queryId: string): Observable<ProfilerOperation> {
-    return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/query/history/${queryId}/profile`)
+    return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/query/history/${queryId}/profile`);
   }
 }
 
@@ -42,14 +43,13 @@ export interface TypeNamedInstance {
 }
 
 
-export type TypedInstanceOrCollection = TypeNamedInstance | TypeNamedInstance[]; // TODO : Could also be a map.
 export interface QueryResult {
-  results: { [key: string]: TypedInstanceOrCollection | TypedInstance  };
+  results: { [key: string]: InstanceLikeOrCollection };
   unmatchedNodes: QualifiedName[];
   fullyResolved: boolean;
   profilerOperation: ProfilerOperation;
   remoteCalls: RemoteCall[];
-  resultMode: ResultMode
+  resultMode: ResultMode;
 }
 
 export interface RemoteCall {
@@ -75,7 +75,7 @@ export interface ProfilerOperation {
 
   context: any;
 
-  description: string
+  description: string;
 }
 
 export interface ProfilerOperationResult {
@@ -88,13 +88,14 @@ export interface ProfilerOperationResult {
 }
 
 export enum QueryMode {
-  DISCOVER = "DISCOVER",
-  GATHER = "GATHER"
+  DISCOVER = 'DISCOVER',
+  BUILD = 'BUILD',
+  GATHER = 'GATHER'
 }
 
 export enum ResultMode {
-  SIMPLE = "SIMPLE",
-  VERBOSE = "VERBOSE"
+  SIMPLE = 'SIMPLE',
+  VERBOSE = 'VERBOSE'
 }
 
 
@@ -102,7 +103,7 @@ export interface QueryHistoryRecord {
   query: Query;
   response: QueryResult;
   timestamp: Date;
-  id: string
+  id: string;
 }
 
 

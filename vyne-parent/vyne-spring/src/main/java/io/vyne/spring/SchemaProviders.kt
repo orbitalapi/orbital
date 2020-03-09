@@ -51,7 +51,8 @@ class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourc
    }
 
    override fun schema(): Schema {
-      return storeClient.schemaSet().schema
+      val schemaSet = storeClient.schemaSet()
+      return schemaSet.schema
    }
 
 

@@ -1,15 +1,15 @@
 import {Component, EventEmitter, OnInit, Output} from '@angular/core';
-import {ActivatedRoute} from "@angular/router";
-import {Modifier, Schema, Type} from "../services/schema";
-import {TypesService} from "../services/types.service";
-import {map} from "rxjs/operators";
+import {ActivatedRoute} from '@angular/router';
+import {Modifier, Schema, Type, TypedInstance} from '../services/schema';
+import {ParsedTypeInstance, TypesService} from '../services/types.service';
+import {map} from 'rxjs/operators';
 import {
   ITdDynamicElementConfig,
   TdDynamicElement,
   TdDynamicFormsComponent,
   TdDynamicType
 } from '@covalent/dynamic-forms';
-import {FormControl} from "@angular/forms";
+import {FormControl} from '@angular/forms';
 import {
   Fact,
   ProfilerOperation,
@@ -18,8 +18,8 @@ import {
   QueryResult,
   QueryService,
   RemoteCall, ResultMode
-} from "../services/query.service";
-import {HttpErrorResponse} from "@angular/common/http";
+} from '../services/query.service';
+import {HttpErrorResponse} from '@angular/common/http';
 
 @Component({
   selector: 'query-wizard',
@@ -38,6 +38,7 @@ export class QueryWizardComponent implements OnInit {
               private queryService: QueryService) {
   }
 
+  fileFacts: FileFactForm[] = [];
   forms: FactForm[] = [];
   facts: Fact[] = [];
 
@@ -45,11 +46,13 @@ export class QueryWizardComponent implements OnInit {
   private subscribedDynamicForms: TdDynamicFormsComponent[] = [];
 
   lastQueryResult: QueryResult | QueryFailure;
-  addingNewFact: boolean = false;
+  addingNewFact = false;
 
   get targetTypeNames(): string[] {
-    if (!this.targetTypes) return [];
-    return this.targetTypes.map(t => t.name.fullyQualifiedName)
+    if (!this.targetTypes) {
+      return [];
+    }
+    return this.targetTypes.map(t => t.name.fullyQualifiedName);
   }
 
   ngOnInit() {
@@ -57,23 +60,23 @@ export class QueryWizardComponent implements OnInit {
       .subscribe(next => this.schema = next);
     this.route.queryParamMap
       .subscribe(params => {
-          params.getAll("types")
-            .forEach(type => this.appendEmptyType(type))
+          params.getAll('types')
+            .forEach(type => this.appendEmptyType(type));
         }
       );
 
-    this.queryMode.setValue(QueryMode.DISCOVER)
-    this.resultMode.setValue(ResultMode.SIMPLE)
+    this.queryMode.setValue(QueryMode.DISCOVER);
+    this.resultMode.setValue(ResultMode.SIMPLE);
   }
 
   // Dirty hack to capture the forms generated dynamically, so we can listen for
   // form events
   getAndRegisterElements(factForm: FactForm, component: TdDynamicFormsComponent) {
-    if (this.subscribedDynamicForms.indexOf(component) == -1) {
+    if (this.subscribedDynamicForms.indexOf(component) === -1) {
       component.form.valueChanges.subscribe(valueChangedEvent => {
         this.updateFact(factForm, component.value);
       });
-      this.subscribedDynamicForms.push(component)
+      this.subscribedDynamicForms.push(component);
     }
 
     return factForm.elements;
@@ -111,21 +114,25 @@ export class QueryWizardComponent implements OnInit {
 
   private buildFacts(): Fact[] {
     // const facts = {};
-    const facts = this.forms
+    const formFacts: Fact[] = this.forms
       .filter(formSpec => formSpec.value)
       .map(formSpec => {
-        let fullyQualifiedName = formSpec.type.name.fullyQualifiedName;
+        const fullyQualifiedName = formSpec.type.name.fullyQualifiedName;
         if (formSpec.type.scalar) {
-          let unwrappedValue = Object.values(formSpec.value)[0];
+          const unwrappedValue = Object.values(formSpec.value)[0];
           return new Fact(fullyQualifiedName, unwrappedValue);
           // facts[fullyQualifiedName] = unwrappedValue;
         } else {
-          let nestedValue = this.nest(formSpec.value);
+          const nestedValue = this.nest(formSpec.value);
           return new Fact(fullyQualifiedName, nestedValue);
           // facts[fullyQualifiedName] = nestedValue;
         }
       });
-    return facts;
+
+    const fileFacts: Fact[] = this.fileFacts
+      .filter(f => f.hasFact())
+      .map(fileFact => fileFact.asFact());
+    return formFacts.concat(fileFacts);
   }
 
 
@@ -134,7 +141,7 @@ export class QueryWizardComponent implements OnInit {
     // let facts = this.buildFacts();
     // let factList: Fact[] = Object.keys(facts).map(key => new Fact(key, facts[key]));
     const factList = this.buildFacts();
-    let query = new Query(
+    const query = new Query(
       this.targetTypes.map(t => t.name.fullyQualifiedName),
       // this.targetTypeInput.value,
       factList,
@@ -143,22 +150,25 @@ export class QueryWizardComponent implements OnInit {
     );
     this.queryService.submitQuery(query)
       .subscribe(result => {
-        this.lastQueryResult = result
+        this.lastQueryResult = result;
       }, error => {
-        let errorResponse = error as HttpErrorResponse;
+        const errorResponse = error as HttpErrorResponse;
         if (errorResponse.error && (errorResponse.error as any).hasOwnProperty('profilerOperation')) {
-          this.lastQueryResult = new QueryFailure(errorResponse.error.message, errorResponse.error.profilerOperation, errorResponse.error.remoteCalls)
+          this.lastQueryResult = new QueryFailure(
+            errorResponse.error.message,
+            errorResponse.error.profilerOperation,
+            errorResponse.error.remoteCalls);
         } else {
           // There was an unhandled error...
-          console.error("An unhandled error occurred:");
+          console.error('An unhandled error occurred:');
           console.error(JSON.stringify(error));
         }
-      })
+      });
   }
 
   // Convert a property of "foo.bar = 123" to an object with nested properties
   private nest(value: any): any {
-    let result = {};
+    const result = {};
     Object.keys(value).forEach(attriubteName => {
       this.setValue(result, attriubteName, value[attriubteName]);
     });
@@ -167,14 +177,14 @@ export class QueryWizardComponent implements OnInit {
 
   private setValue(target: any, path: string, value: any) {
     if (path.indexOf('.') === -1) {
-      target[path] = value
+      target[path] = value;
     } else {
-      let pathParts = path.split('.');
-      let thisPart = pathParts.splice(0, 1)[0];
+      const pathParts = path.split('.');
+      const thisPart = pathParts.splice(0, 1)[0];
       if (!target.hasOwnProperty(thisPart)) {
         target[thisPart] = {};
       }
-      this.setValue(target[thisPart], pathParts.join("."), value);
+      this.setValue(target[thisPart], pathParts.join('.'), value);
     }
   }
 
@@ -182,18 +192,18 @@ export class QueryWizardComponent implements OnInit {
     this.typesService.getTypes()
       .pipe(
         map(schema => {
-          let type = schema.types.find(type => type.name.fullyQualifiedName == typeName);
-          return this.buildTypeForm(type, schema)
+          const type = schema.types.find(type => type.name.fullyQualifiedName === typeName);
+          return this.buildTypeForm(type, schema);
         }),
-      ).subscribe(form => this.forms.push(form))
+      ).subscribe(form => this.forms.push(form));
   }
 
   private buildTypeForm(type: Type, schema: Schema): FactForm {
-    let elements = this.getElementsForType(type, schema);
+    const elements = this.getElementsForType(type, schema);
     return new FactForm(
       elements,
       type
-    )
+    );
   }
 
   private getElementsForType(type: Type, schema: Schema, prefix: string[] = [], fieldName: string = null): ITdDynamicElementConfig[] {
@@ -203,8 +213,8 @@ export class QueryWizardComponent implements OnInit {
       // just use the name directly.
       // Otherwise, if we've navigated into this attribute, use the prefix, which is actually
       // the full path.
-      let name = (prefix.length == 0) ? type.name.name : prefix.join(".");
-      let label = (fieldName) ? `${fieldName} (${type.name.name})` : type.name.name
+      const name = (prefix.length === 0) ? type.name.name : prefix.join('.');
+      const label = (fieldName) ? `${fieldName} (${type.name.name})` : type.name.name;
       return [{
         name: name,
         label: label,
@@ -213,9 +223,9 @@ export class QueryWizardComponent implements OnInit {
     } else {
       let elements: ITdDynamicElementConfig[] = [];
       Object.keys(type.attributes).forEach(attributeName => {
-        let attributeTypeRef = type.attributes[attributeName];
-        let attributeType = schema.types.find(type => type.name.fullyQualifiedName == attributeTypeRef.type.fullyQualifiedName);
-        let newPrefix = prefix.concat([attributeName]);
+        const attributeTypeRef = type.attributes[attributeName];
+        const attributeType = schema.types.find(type => type.name.fullyQualifiedName == attributeTypeRef.type.fullyQualifiedName);
+        const newPrefix = prefix.concat([attributeName]);
         elements = elements.concat(this.getElementsForType(attributeType, schema, newPrefix, attributeName));
       });
       return elements;
@@ -224,29 +234,29 @@ export class QueryWizardComponent implements OnInit {
 
   private getInputControlForType(type: Type): any {
     if (!type.scalar) {
-      throw new Error("Can only get inputs for scalar types");
+      throw new Error('Can only get inputs for scalar types');
     }
     // TODO : Aliases could be nested ... follow the chain
-    let targetType = (type.aliasForType) ? type.aliasForType.fullyQualifiedName : type.name.fullyQualifiedName
-    if (type.modifiers.indexOf(Modifier.ENUM) != -1) {
+    const targetType = (type.aliasForType) ? type.aliasForType.fullyQualifiedName : type.name.fullyQualifiedName;
+    if (type.modifiers.indexOf(Modifier.ENUM) !== -1) {
       return {
         type: TdDynamicElement.Select,
         selections: type.enumValues
-      }
+      };
     }
 
     let control: any;
     switch (targetType) {
-      case "lang.taxi.String" :
+      case 'lang.taxi.String' :
         control = {type: TdDynamicElement.Input};
         break;
-      case "lang.taxi.Decimal" :
+      case 'lang.taxi.Decimal' :
         control = {type: TdDynamicType.Number};
         break;
-      case "lang.taxi.Int" :
+      case 'lang.taxi.Int' :
         control = {type: TdDynamicType.Number};
         break;
-      case "lang.taxi.Boolean" :
+      case 'lang.taxi.Boolean' :
         control = {type: TdDynamicElement.Checkbox};
         break;
       default:
@@ -264,6 +274,20 @@ export class QueryWizardComponent implements OnInit {
     this.appendEmptyType(type.name.fullyQualifiedName);
     this.addingNewFact = false;
   }
+
+  handleFileFactTypeSelected(fileFact: FileFactForm, type: Type) {
+    fileFact.type = type;
+    this.facts = this.buildFacts();
+  }
+
+  handleFileFactChanged(fileFact: FileFactForm, parsedTypeInstance: ParsedTypeInstance) {
+    fileFact.instance = parsedTypeInstance;
+    this.facts = this.buildFacts();
+  }
+
+  addNewFileFact() {
+    this.fileFacts.push(new FileFactForm());
+  }
 }
 
 export class QueryFailure {
@@ -280,139 +304,24 @@ export class FactForm {
 
   }
 
-  value: any
+  value: any;
 
 }
 
-const stubbedResponse = {
-  "results": {
-    "io.vyne.demos.marketing.shop.AvailableRewards": {
-      "rewards": [{
-        "name": "Weekend at the spa",
-        "priceInGbp": 300
-      }, {"name": "Night at the moview", "priceInGbp": 20}, {"name": "Bottle of wine", "priceInGbp": 10}]
-    }
-  },
-  "unmatchedNodes": [],
-  "path": null,
-  "duration": 166,
-  "remoteCalls": [{
-    "service": {
-      "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService",
-      "parameters": [],
-      "parameterizedName": "io.vyne.demos.rewards.CustomerService",
-      "namespace": "io.vyne.demos.rewards",
-      "name": "CustomerService"
-    },
-    "addresss": "http://192.168.5.73:9200/customers/email/jimmy@demo.com",
-    "operation": "getCustomerByEmail",
-    "responseTypeName": {
-      "fullyQualifiedName": "demo.Customer",
-      "parameters": [],
-      "parameterizedName": "demo.Customer",
-      "namespace": "demo",
-      "name": "Customer"
-    },
-    "method": "GET",
-    "requestBody": null,
-    "resultCode": 200,
-    "durationMs": 11,
-    "response": {"id": 1, "name": "Jimmy", "email": "jimmy@demo.com"}
-  }, {
-    "service": {
-      "fullyQualifiedName": "io.vyne.demos.marketing.MarketingService",
-      "parameters": [],
-      "parameterizedName": "io.vyne.demos.marketing.MarketingService",
-      "namespace": "io.vyne.demos.marketing",
-      "name": "MarketingService"
-    },
-    "addresss": "http://192.168.5.73:9201/marketing/1",
-    "operation": "getMarketingDetailsForCustomer",
-    "responseTypeName": {
-      "fullyQualifiedName": "io.vyne.demos.marketing.CustomerMarketingRecord",
-      "parameters": [],
-      "parameterizedName": "io.vyne.demos.marketing.CustomerMarketingRecord",
-      "namespace": "io.vyne.demos.marketing",
-      "name": "CustomerMarketingRecord"
-    },
-    "method": "GET",
-    "requestBody": null,
-    "resultCode": 200,
-    "durationMs": 10,
-    "response": {"id": 1, "rewardsCardNumber": "4005-2003-2330-1002"}
-  }, {
-    "service": {
-      "fullyQualifiedName": "io.vyne.demos.rewards.balances.RewardsBalanceService",
-      "parameters": [],
-      "parameterizedName": "io.vyne.demos.rewards.balances.RewardsBalanceService",
-      "namespace": "io.vyne.demos.rewards.balances",
-      "name": "RewardsBalanceService"
-    },
-    "addresss": "http://192.168.5.73:9202/balances/4005-2003-2330-1002",
-    "operation": "getRewardsBalance",
-    "responseTypeName": {
-      "fullyQualifiedName": "demo.RewardsAccountBalance",
-      "parameters": [],
-      "parameterizedName": "demo.RewardsAccountBalance",
-      "namespace": "demo",
-      "name": "RewardsAccountBalance"
-    },
-    "method": "GET",
-    "requestBody": null,
-    "resultCode": 200,
-    "durationMs": 7,
-    "response": {"cardNumber": "4005-2003-2330-1002", "balance": 2300, "currencyUnit": "POINTS"}
-  }, {
-    "service": {
-      "fullyQualifiedName": "io.vyne.demos.rewards.balances.RewardsBalanceService",
-      "parameters": [],
-      "parameterizedName": "io.vyne.demos.rewards.balances.RewardsBalanceService",
-      "namespace": "io.vyne.demos.rewards.balances",
-      "name": "RewardsBalanceService"
-    },
-    "addresss": "http://192.168.5.73:9202/balances/POINTS",
-    "operation": "convert",
-    "responseTypeName": {
-      "fullyQualifiedName": "demo.RewardsAccountBalance",
-      "parameters": [],
-      "parameterizedName": "demo.RewardsAccountBalance",
-      "namespace": "demo",
-      "name": "RewardsAccountBalance"
-    },
-    "method": "POST",
-    "requestBody": {"cardNumber": "4005-2003-2330-1002", "balance": 2300, "currencyUnit": "POINTS"},
-    "resultCode": 200,
-    "durationMs": 16,
-    "response": {"cardNumber": "4005-2003-2330-1002", "balance": 1150, "currencyUnit": "POINTS"}
-  }, {
-    "service": {
-      "fullyQualifiedName": "io.vyne.demos.marketing.shop.RewardsShopService",
-      "parameters": [],
-      "parameterizedName": "io.vyne.demos.marketing.shop.RewardsShopService",
-      "namespace": "io.vyne.demos.marketing.shop",
-      "name": "RewardsShopService"
-    },
-    "addresss": "http://192.168.5.73:9205/shop",
-    "operation": "getAvailableRewards",
-    "responseTypeName": {
-      "fullyQualifiedName": "io.vyne.demos.marketing.shop.AvailableRewards",
-      "parameters": [],
-      "parameterizedName": "io.vyne.demos.marketing.shop.AvailableRewards",
-      "namespace": "io.vyne.demos.marketing.shop",
-      "name": "AvailableRewards"
-    },
-    "method": "POST",
-    "requestBody": {"cardNumber": "4005-2003-2330-1002", "balance": 1150, "currencyUnit": "POINTS"},
-    "resultCode": 200,
-    "durationMs": 10,
-    "response": {
-      "rewards": [{"name": "Weekend at the spa", "priceInGbp": 300}, {
-        "name": "Night at the moview",
-        "priceInGbp": 20
-      }, {"name": "Bottle of wine", "priceInGbp": 10}]
-    }
-  }],
-  "vyneCost": 38,
-  "fullyResolved": true,
-  "timings": {"LOOKUP": 0, "GRAPH_TRAVERSAL": 27, "GRAPH_BUILDING": 11, "REMOTE_CALL": 127, "ROOT": 4}
+
+export class FileFactForm {
+  instance: ParsedTypeInstance = null;
+  type: Type = null;
+
+  asFact(): Fact {
+    return new Fact(this.type.name.fullyQualifiedName, this.instance.raw);
+  }
+
+  hasFact(): boolean {
+    return this.instance !== null && this.type !== null;
+  }
+
+  hasValue(): boolean {
+    return this.instance !== null;
+  }
 }

@@ -11,19 +11,22 @@ mat-toolbar {
 }
 
 ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
-  color: rgba($body,0.6);
+  color: rgba($body, 0.6);
   font-family: $font-sans;
 }
+
 ::-moz-placeholder { /* Firefox 19+ */
-  color: rgba($body,0.6);
+  color: rgba($body, 0.6);
   font-family: $font-sans;
 }
+
 :-ms-input-placeholder { /* IE 10+ */
-  color: rgba($body,0.6);
+  color: rgba($body, 0.6);
   font-family: $font-sans;
 }
+
 :-moz-placeholder { /* Firefox 18- */
-  color: rgba($body,0.6);
+  color: rgba($body, 0.6);
   font-family: $font-sans;
 }
 
@@ -38,15 +41,17 @@ mat-toolbar {
     color: $body;
     font-size: 1rem;
     background-color: transparent;
-    border: 1px solid rgba($dark-grey-3,0.2);
+    border: 1px solid rgba($dark-grey-3, 0.2);
     padding: 6px 12px;
     border-radius: 6px;
     width: 40rem;
+
     &:hover {
-      border: 1px solid rgba($dark-grey-3,0.5);
+      border: 1px solid rgba($dark-grey-3, 0.5);
     }
+
     &:focus {
-      border: 1px solid rgba($dark-grey-3,0.8);
+      border: 1px solid rgba($dark-grey-3, 0.8);
     }
   }
 }
@@ -54,7 +59,7 @@ mat-toolbar {
 .search-result {
   padding: 8px;
   border: 1px solid transparent;
-  border-bottom: 1px solid rgba(0,0,0,0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 
   &:hover {
     background-color: white;
@@ -72,12 +77,14 @@ mat-toolbar {
   font-size: 0.7rem;
   font-weight: bold;
 }
+
 .schema-member-container {
   display: inline-table;
 
   .member-name {
     display: flex;
     margin-bottom: 4px;
+
     .badges {
       margin-left: 8px;
     }
@@ -87,6 +94,7 @@ mat-toolbar {
     vertical-align: middle;
     display: table-cell;
     width: 20rem;
+
     div {
       width: fit-content;
       font-size: 0.7rem;
@@ -96,22 +104,26 @@ mat-toolbar {
       &.type {
         background-color: #afdfff;
       }
+
       &.operation {
         background-color: #5D38DB;
         color: #fafafa;
       }
     }
   }
+
   .member-qualified-name {
     display: table-cell;
     vertical-align: middle;
     width: 40rem;
   }
+
   .member-package {
     font-family: $mono;
     font-size: 0.7rem;
     color: $dark-grey-1
   }
+
   .member-type-alias {
     vertical-align: middle;
     display: table-cell;
@@ -128,8 +140,25 @@ mat-toolbar {
   font-size: 1.4rem;
   opacity: 0.5;
   margin: auto;
+
   img {
     width: 256px;
     opacity: 0.4;
   }
+}
+
+.typedoc-row {
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 700px; // An arbitary number because spanning forever looked poo. A better strategy is clearly needed
+
+  .summary {
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
 }

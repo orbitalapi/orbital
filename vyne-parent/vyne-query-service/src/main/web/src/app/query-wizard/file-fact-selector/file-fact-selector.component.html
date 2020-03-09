@@ -1,0 +1,23 @@
+<div class="container">
+  <div class="file-input-container">
+    <td-file-input *ngIf="!selectedFile" [(ngModel)]="selectedFile" name="selectedFile" color="primary"
+                   (select)="onFileSelected($event)"
+                   accept=".json,.xml,.csv,.psv">
+      <img class="file-icon" src="assets/img/code-white.svg">
+      <span>Choose a file...</span>
+    </td-file-input>
+    <div *ngIf="selectedFile" class="selected-file">
+      <img class="file-icon" src="assets/img/code-black.svg">
+      <span>{{ selectedFile?.name }}</span>
+      <img class="close-icon" src="assets/img/clear-cross.svg" (click)="clearFile()">
+    </div>
+
+  </div>
+  <app-type-autocomplete [schema]="schema"
+                         placeholder="File contains type"
+                         (typeSelected)="contentType= $event"
+  ></app-type-autocomplete>
+
+</div>
+<app-object-view *ngIf="parsedInstance" [schema]="schema"
+                 [instance]="parsedInstance.typeNamedInstance"></app-object-view>

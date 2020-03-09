@@ -15,9 +15,10 @@ import {
   SchemaGraphNode,
   SchemaMember,
   SchemaSpec,
-  Type,
+  Type, TypedInstance,
   VersionedSchema
 } from './schema';
+import {TypeNamedInstance} from './query.service';
 
 @Injectable()
 export class TypesService {
@@ -33,7 +34,7 @@ export class TypesService {
   getRawSchema = (): Observable<string> => {
     return this.http
       .get<string>(`${environment.queryServiceUrl}/schemas/raw`);
-  }
+  };
 
   getVersionedSchemas(): Observable<VersionedSchema[]> {
     return this.http.get<VersionedSchema[]>(`${environment.queryServiceUrl}/schemas`);
@@ -42,12 +43,12 @@ export class TypesService {
   getLinksForNode = (node: SchemaGraphNode): Observable<SchemaGraph> => {
     return this.http
       .get<SchemaGraph>(`${environment.queryServiceUrl}/nodes/${node.type}/${node.nodeId}/links`);
-  }
+  };
 
   getLinks = (typeName: string): Observable<SchemaGraph> => {
     return this.http
       .get<SchemaGraph>(`${environment.queryServiceUrl}/types/${typeName}/links`);
-  }
+  };
 
   getPolicies(typeName: string): Observable<Policy[]> {
     return this.http.get(`${environment.queryServiceUrl}/types/${typeName}/policies`)
@@ -60,6 +61,10 @@ export class TypesService {
     return this.getTypes().pipe(
       map(schema => schema.types.find(t => t.name.fullyQualifiedName === qualifiedName))
     );
+  }
+
+  parse(content: string, type: Type): Observable<ParsedTypeInstance> {
+    return this.http.post<ParsedTypeInstance>(`${environment.queryServiceUrl}/content/parse?type=${type.name.fullyQualifiedName}`, content);
   }
 
   getTypes = (): Observable<Schema> => {
@@ -77,7 +82,7 @@ export class TypesService {
           }
         )
       );
-  }
+  };
 
   createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSchema> {
     const spec: SchemaSpec = {
@@ -121,4 +126,10 @@ export interface SchemaPreview {
   spec: SchemaSpec;
   content: string;
   messages: Message[];
+}
+
+export interface ParsedTypeInstance {
+  instance: TypedInstance;
+  typeNamedInstance: TypeNamedInstance;
+  raw: any;
 }

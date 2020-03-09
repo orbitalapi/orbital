@@ -1,11 +1,13 @@
 package io.vyne.schemas
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
 import io.vyne.query.TypeMatchingStrategy
 import io.vyne.schemas.taxi.DeferredConstraintProvider
 import io.vyne.schemas.taxi.EmptyDeferredConstraintProvider
 import io.vyne.utils.assertingThat
 import lang.taxi.types.Accessor
+import lang.taxi.types.FieldSetCondition
 import lang.taxi.types.PrimitiveType
 import java.io.IOException
 import java.io.Serializable
@@ -76,7 +78,12 @@ data class Metadata(val name: QualifiedName, val params: Map<String, Any?> = emp
 data class TypeReference(val name: QualifiedName, val isCollection: Boolean = false) {
    val fullyQualifiedName: String
       get() = name.fullyQualifiedName
+}
 
+// Part of the migration back to Taxi types
+fun lang.taxi.types.Type.asVyneTypeReference(): TypeReference {
+   // TODO : Resolve isCollection.  Just being lazy.
+   return TypeReference(this.qualifiedName.fqn(), false)
 }
 
 data class QualifiedName(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) : Serializable {
@@ -176,7 +183,18 @@ interface SchemaMember {
       }
 }
 
-data class Field(val type: TypeReference, val modifiers: List<FieldModifier>, private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider(), val accessor:Accessor?) {
+// Note: I'm progressively moving this towards Taxi schemas, as discussed
+// on the Type comment.
+data class Field(
+   val type: TypeReference,
+   val modifiers: List<FieldModifier>,
+   private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider(),
+   val accessor: Accessor?,
+   @JsonIgnore // This causes a stack overflow, becasue the
+   // we have taxi types in here, which have source code elements, that
+   // contain the antlr parse tree ... none of this stuff serializes well.
+   val readCondition: FieldSetCondition?
+) {
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
    // we parse fields before we parse their underlying types, so constrains may not be
    // fully resolved at construction time.
@@ -216,9 +234,9 @@ data class Type(
 
    val typeParameters: List<Type> = emptyList(),
 
-   val typeDoc:String?
+   val typeDoc: String?
 ) : SchemaMember {
-   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>, typeDoc:String? = null) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, enumValues, sources, typeDoc = typeDoc)
+   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>, typeDoc: String? = null) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, enumValues, sources, typeDoc = typeDoc)
 
    @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForType != null
@@ -227,9 +245,9 @@ data class Type(
    @JsonView(TypeFullView::class)
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
    @JsonView
-   val isClosed : Boolean = this.modifiers.contains(Modifier.CLOSED)
+   val isClosed: Boolean = this.modifiers.contains(Modifier.CLOSED)
 
-   val isPrimitive : Boolean = this.modifiers.contains(Modifier.PRIMITIVE)
+   val isPrimitive: Boolean = this.modifiers.contains(Modifier.PRIMITIVE)
 
    fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {
       return strategy.matches(this, other)

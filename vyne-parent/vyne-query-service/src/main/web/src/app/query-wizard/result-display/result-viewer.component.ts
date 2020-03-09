@@ -1,6 +1,7 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {Field, Schema, Type, TypedInstance} from "../../services/schema";
-import {TypedInstanceOrCollection, TypeNamedInstance} from '../../services/query.service';
+import {Field, Schema, Type, TypedInstance} from '../../services/schema';
+import {TypeNamedInstance} from '../../services/query.service';
+import {InstanceLikeOrCollection} from '../../object-view/object-view.component';
 
 @Component({
   selector: 'result-viewer',
@@ -11,7 +12,7 @@ export class ResultViewerComponent implements OnInit {
 
   @Input()
     // result: TypeInstanceOrAttributeSet;
-  result: TypedInstanceOrCollection;
+  result: InstanceLikeOrCollection;
 
   @Input()
   schema: Schema;
@@ -25,24 +26,24 @@ export class ResultViewerComponent implements OnInit {
 
   get type(): Type {
     if (this.isArray) {
-      return null
+      return null;
     }
-    return this.schema.types.find(type => type.name.fullyQualifiedName === this.typedObject.typeName)
+    return this.schema.types.find(type => type.name.fullyQualifiedName === this.typedObject.typeName);
   }
 
   get typedObjectAttributeNames(): string[] {
-    if (!this.type) return [];
+    if (!this.type) { return []; }
     // return Array.from(this.type.attributes.keys())
-    return Object.keys(this.type.attributes)
+    return Object.keys(this.type.attributes);
   }
 
   getTypedObjectAttribute(name: string): TypeNamedInstance {
-    return this.typedObject.value[name]
+    return this.typedObject.value[name];
   }
 
   getTypeForAttribute(attributeName: string): Type {
-    let typeRef: Field = this.type.attributes[attributeName];
-    return this.schema.types.find(type => type.name.fullyQualifiedName == typeRef.type.fullyQualifiedName)
+    const typeRef: Field = this.type.attributes[attributeName];
+    return this.schema.types.find(type => type.name.fullyQualifiedName === typeRef.type.fullyQualifiedName);
   }
 
 
@@ -56,17 +57,17 @@ export class ResultViewerComponent implements OnInit {
   get isTypedObject(): boolean {
     return this.result != null &&
       !this.isArray &&
-      typeof this.typedObject.value === "object";
+      typeof this.typedObject.value === 'object';
     // this.result.hasOwnProperty("type")
     // && (<any>this.result).type.hasOwnProperty("fullyQualifiedName")
   }
 
   get isArray(): boolean {
     return this.result != null &&
-      this.result.constructor === Array
+      this.result.constructor === Array;
   }
 }
 
-type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes
-type TypedObjectAttributes = { [key: string]: TypeInstanceOrAttributeSet }
+type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;
+interface TypedObjectAttributes { [key: string]: TypeInstanceOrAttributeSet; }
 

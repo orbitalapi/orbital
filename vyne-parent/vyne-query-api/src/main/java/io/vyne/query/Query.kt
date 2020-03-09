@@ -50,7 +50,13 @@ enum class QueryMode {
    /**
     * Find all the values
     */
-   GATHER
+   GATHER,
+
+   /**
+    * Build an instance, using the data provided,
+    * polyfilling where required
+    */
+   BUILD
 }
 
 enum class ResultMode {

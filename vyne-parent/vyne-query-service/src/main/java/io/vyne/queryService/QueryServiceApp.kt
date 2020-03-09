@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 import io.vyne.query.VyneJacksonModule
+import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.SchemaPublicationMethod
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
@@ -19,6 +20,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class)
+@EnableVyneEmbeddedSearch
 @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
 class QueryServiceApp {
 
@@ -34,12 +36,9 @@ class QueryServiceApp {
    @Bean
    fun vyneJacksonModule() = VyneJacksonModule()
 
-   @Autowired(required = false)
-   var buildInfo: BuildProperties? = null;
-
    @Autowired
-   fun logInfo() {
-      val version = if (buildInfo != null) "v${buildInfo!!.version}" else "Dev version";
+   fun logInfo(buildInfo: BuildProperties? = null) {
+      val version = buildInfo?.version ?: "Dev version";
       log().info("Vyne query server $version")
    }
 
