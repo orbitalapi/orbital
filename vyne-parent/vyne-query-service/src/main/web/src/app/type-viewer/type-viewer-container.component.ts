@@ -1,8 +1,9 @@
-import {Component, OnInit} from '@angular/core';
-import {TypesService} from '../services/types.service';
-import {ActivatedRoute, ParamMap} from '@angular/router';
-import {map} from 'rxjs/operators';
-import {Type} from '../services/schema';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, ParamMap } from '@angular/router';
+import { map } from 'rxjs/operators';
+
+import { Type } from '../services/schema';
+import { TypesService } from '../services/types.service';
 
 @Component({
   selector: 'app-type-viewer-container',
@@ -15,7 +16,7 @@ export class TypeViewerContainerComponent implements OnInit {
   }
 
   private typeName: string;
-  private type: Type;
+  type: Type;
   description = 'A person who buys coffee, hopefully lots of it, and collects points like gollum collects shiney rings.  Filth';
 
   ngOnInit() {

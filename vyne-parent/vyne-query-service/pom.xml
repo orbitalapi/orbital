@@ -114,7 +114,7 @@
             <version>1.6</version>
             <configuration>
                <workingDirectory>src/main/web/</workingDirectory>
-               <nodeVersion>v10.6.0</nodeVersion>
+               <nodeVersion>v12.16.1</nodeVersion>
             </configuration>
             <executions>
                <execution>
