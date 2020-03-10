@@ -100,6 +100,9 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
          }
       }
 
+   fun rawTypeEquals(other:QualifiedName):Boolean {
+      return this.fullyQualifiedName == other.fullyQualifiedName
+   }
    val namespace: String
       get() {
          return fullyQualifiedName.split(".").dropLast(1).joinToString(".")
@@ -221,6 +224,9 @@ data class Type(
    val modifiers: List<Modifier> = emptyList(),
 
    @JsonView(TypeFullView::class)
+   val metadata: List<Metadata> = emptyList(),
+
+   @JsonView(TypeFullView::class)
    val aliasForType: QualifiedName? = null,
 
    @JsonView(TypeFullView::class)
@@ -236,12 +242,10 @@ data class Type(
 
    val typeDoc: String?
 ) : SchemaMember {
-   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>, typeDoc: String? = null) : this(name.fqn(), attributes, modifiers, aliasForType, inherits, enumValues, sources, typeDoc = typeDoc)
+   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), metadata: List<Metadata> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>, typeDoc: String? = null) : this(name.fqn(), attributes, modifiers, metadata, aliasForType, inherits, enumValues, sources, typeDoc = typeDoc)
 
    @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForType != null
-   @JsonView(TypeFullView::class)
-   val isScalar = attributes.isEmpty()
    @JsonView(TypeFullView::class)
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
    @JsonView
@@ -249,15 +253,21 @@ data class Type(
 
    val isPrimitive: Boolean = this.modifiers.contains(Modifier.PRIMITIVE)
 
-   fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {
-      return strategy.matches(this, other)
-   }
-
    val fullyQualifiedName: String
       get() = name.fullyQualifiedName
 
    @JsonView(TypeFullView::class)
    val inheritanceGraph = calculateInheritanceGraph()
+
+   @JsonView(TypeFullView::class)
+   val isCollection: Boolean = this.inheritsFrom("lang.taxi.Array".fqn())
+
+   @JsonView(TypeFullView::class)
+   val isScalar = attributes.isEmpty() && !isCollection
+
+   fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {
+      return strategy.matches(this, other)
+   }
 
    fun attribute(name: AttributeName): Field {
       return attributes.getValue(name)
@@ -277,6 +287,25 @@ data class Type(
       if (this.isTypeAlias && this.aliasForType!!.fullyQualifiedName == other.fullyQualifiedName) return true
       if (other.isTypeAlias && other.aliasForType!!.fullyQualifiedName == this.fullyQualifiedName) return true
       return false
+   }
+
+   fun inheritsFrom(other: Type): Boolean {
+      return this.inheritsFrom(other.name)
+   }
+
+   private fun inheritsFrom(qualifiedName: QualifiedName): Boolean {
+      // TODO : How does this handle TypeAliases?
+      // Note: This obviously doesn't work properly, as it
+      // ignores generics.
+      // Right now, I'm focussed on isCollection(), which works by looking at
+      // foo.inheritsFrom(lang.taxi.Array).
+      // Need to fix this, but when I do, make sure that isCollection still works.
+      val namesToEvaluate = (setOf(this.name) + this.inheritanceGraph.map { it.name } + setOf(this.aliasForType)).filterNotNull()
+      return namesToEvaluate.any { it.rawTypeEquals(qualifiedName) }
+   }
+
+   fun hasMetadata(name:QualifiedName): Boolean {
+      return this.metadata.any { it.name == name }
    }
 }
 

@@ -84,8 +84,15 @@ interface TypedInstance {
                TypedCollection(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema) })
             }
             type.isScalar -> TypedValue(type, value)
+            // This is a bit special...value isn't a collection, but the type is.  Oooo!
+            // Must be a CSV ish type value.
+            type.isCollection -> readCollectionTypeFromNonCollectionValue(type,value,schema)
             else -> TypedObject.fromValue(type, value, schema)
          }
+      }
+
+      private fun readCollectionTypeFromNonCollectionValue(type: Type, value: Any, schema: Schema): TypedInstance {
+         return CollectionReader.readCollectionFromNonTypedCollectionValue(type,value,schema)
       }
 
       private fun getCollectionType(type: Type, schema: Schema): Type {

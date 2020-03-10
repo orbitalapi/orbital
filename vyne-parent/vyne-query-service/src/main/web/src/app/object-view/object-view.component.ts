@@ -34,11 +34,18 @@ export class ObjectViewComponent {
     if (this._type) {
       return this._type;
     }
-    if (this.instance && isTypedInstance(this.instance)) {
-      return this.instance.type;
+    return this.selectType(this.instance);
+  }
+
+  private selectType(instance: InstanceLikeOrCollection): Type {
+    if (Array.isArray(instance)) {
+      return this.selectType(instance[0]);
     }
-    if (this.instance && isTypeNamedInstance(this.instance)) {
-      return findType(this.schema, this.instance.typeName);
+    if (instance && isTypedInstance(instance)) {
+      return instance.type;
+    }
+    if (instance && isTypeNamedInstance(instance)) {
+      return findType(this.schema, instance.typeName);
     }
     console.error('No scenario for finding a type -- returning null');
     return null;
@@ -61,19 +68,24 @@ export class ObjectViewComponent {
   }
 
   getTypedObjectAttributeValue(name: string): any {
+    if (!this.instance) {
+      return null;
+    }
     const isScalar = this.getTypeForAttribute(name).scalar;
     const attributeValue = this.getTypedObjectAttribute(name);
     if (isTypedInstance(this.instance)) {
       if (isScalar) {
         return attributeValue;
       } else {
-        debugger;
+        // NO particular reason for this, just haven't hit this code path yet
+        throw new Error('This is unhandled - non scalar TypedInstance');
       }
     } else if (isTypeNamedInstance(this.instance)) {
       if (isScalar) {
         return (attributeValue as TypeNamedInstance).value;
       } else {
-        debugger;
+        // NO particular reason for this, just haven't hit this code path yet
+        throw new Error('This is unhandled - non scalar TypeNamedInstance');
       }
     } else if (typeof this.instance === 'object' && isScalar) {
       return this.instance[name];
@@ -87,6 +99,9 @@ export class ObjectViewComponent {
       return null;
     }
     const instance = this.instance as InstanceLike;
+    if (!instance) {
+      return null;
+    }
     if (isTypedInstance(instance)) {
       return instance.value[name];
     } else if (isTypeNamedInstance(instance)) {

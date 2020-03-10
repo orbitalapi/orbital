@@ -63,7 +63,10 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
             val instance = factory.readAccessor(typeReference, selectorExpression.accessor)
             instance
          }
-         else -> TODO()
+         is FieldReferenceSelector -> {
+            factory.getValue(selectorExpression.fieldName)
+         }
+         else -> TODO("WhenFieldSetConditionEvaluator.evaluateSelector not handled for type ${selectorExpression::class.simpleName}")
       }
 
    }

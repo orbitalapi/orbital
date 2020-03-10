@@ -143,5 +143,21 @@ type extension Customer {}
 
    }
 
+   @Test
+   fun canAliasACollection() {
+      val src = """
+type Person {
+   firstName : FirstName as String
+}
+
+type alias PersonCollection as Person[]
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      val type = schema.type("PersonCollection")
+      type.isTypeAlias.should.be.`true`
+      type.aliasForType!!.parameterizedName.should.equal("lang.taxi.Array<Person>")
+      type.isCollection.should.be.`true`
+   }
+
 
 }

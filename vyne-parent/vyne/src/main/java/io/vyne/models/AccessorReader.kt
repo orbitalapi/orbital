@@ -1,8 +1,7 @@
 package io.vyne.models
 
-import io.vyne.models.csv.CsvTypedInstanceParser
+import io.vyne.models.csv.CsvAttributeAccessorParser
 import io.vyne.models.xml.XmlTypedInstanceParser
-import io.vyne.schemas.Field
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeReference
@@ -13,7 +12,7 @@ import lang.taxi.types.XpathAccessor
 
 class AccessorReader {
    private val xmlParser = XmlTypedInstanceParser()
-   private val csvParser = CsvTypedInstanceParser()
+   private val csvParser = CsvAttributeAccessorParser()
 
    fun read(value: Any, targetTypeRef: TypeReference, accessor: Accessor, schema: Schema): TypedInstance {
       val targetType = schema.type(targetTypeRef)

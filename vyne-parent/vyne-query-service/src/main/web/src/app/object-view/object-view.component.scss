@@ -40,12 +40,14 @@
 
   .collection-index {
     display: table-cell;
-    width: 100px;
+    width: 3rem;
     vertical-align: middle;
     background-color: $dark-grey-1;
     color: $light-grey-1;
     text-align: center;
-    border-bottom: 1px solid $light-grey-1;
+  }
+  .collection-index.odd {
+    background-color: lighten($dark-grey-1,20%);
   }
 
   .collection-member {

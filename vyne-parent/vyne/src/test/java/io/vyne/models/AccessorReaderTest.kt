@@ -49,7 +49,7 @@ type LegacyTradeNotification {
     </legs>
 </tradeNotification>
       """.trimIndent()
-      val parsedResult = TypedInstance.from(vyne.schema.type("LegacyTradeNotification"),xml,vyne.schema) as TypedObject
+      val parsedResult = TypedInstance.from(vyne.schema.type("LegacyTradeNotification"), xml, vyne.schema) as TypedObject
       expect(parsedResult.type.fullyQualifiedName).to.equal("LegacyTradeNotification")
       expect(parsedResult["nearLegNotional"].type.fullyQualifiedName).to.equal("NearLegNotional")
 
@@ -73,7 +73,7 @@ type Person {
       val (vyne, _) = testVyne(src)
       val csv = "firstName,lastName\n" +
          "jimmy,parsons"
-      val parsedResult = TypedInstance.from(vyne.schema.type("Person"),csv,vyne.schema) as TypedObject
+      val parsedResult = TypedInstance.from(vyne.schema.type("Person"), csv, vyne.schema) as TypedObject
       expect(parsedResult.type.fullyQualifiedName).to.equal("Person")
       parsedResult["firstName"].value.should.equal("jimmy")
    }
@@ -94,7 +94,7 @@ type alias PersonList as Person[]
       val csv = "firstName,lastName\n" +
          "jimmy,parsons\n" +
          "olly,spurrs"
-      val parsedResult = TypedInstance.from(vyne.schema.type("PersonList"),csv,vyne.schema) as TypedObject
-
+      val parsedResult = TypedInstance.from(vyne.schema.type("PersonList"), csv, vyne.schema)
+      TODO()
    }
 }

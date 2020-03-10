@@ -23,8 +23,8 @@
   </div>
 </div>
 <div class="typed-object-container" *ngIf="isArray">
-  <div *ngFor="let collectionMember of instance; let i = index" class="result-collection-member">
-    <div class="collection-index">#{{i + 1}}</div>
+  <div *ngFor="let collectionMember of instance; let i = index; let odd = odd" class="result-collection-member">
+    <div class="collection-index" [class.odd]="odd">#{{i + 1}}</div>
     <div class="collection-member">
       <app-object-view [instance]="collectionMember"
                        [schema]="schema"
