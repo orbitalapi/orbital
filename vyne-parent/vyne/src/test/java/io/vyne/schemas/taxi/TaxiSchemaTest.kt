@@ -48,9 +48,7 @@ type Video {}
       """.trimIndent()
 
       // Jumble the order of imported sources
-      val schemas = TaxiSchema.from(NamedSource.unnamed(listOf(srcC, srcA, srcB, srcD)))
-      expect(schemas).to.have.size(1)
-      val schema = schemas.first()
+      val schema = TaxiSchema.from(NamedSource.unnamed(listOf(srcC, srcA, srcB, srcD)))
       schema.type("baz.Library").attribute("inventory").type.fullyQualifiedName.should.equal("bar.Book")
 
       val missingTypes = listOf("baz.PhoneNumber", "baz.Library", "bar.PageNumber", "bar.Book", "foo.Age", "foo.Person", "bak.Video").mapNotNull {
@@ -136,9 +134,7 @@ namespace bar
 [[ I am docs ]]
 type extension Customer {}
       """.trimIndent()
-      val schemas = TaxiSchema.from(NamedSource.unnamed(listOf(srcB, srcA)))
-      expect(schemas).to.have.size(1)
-      val schema = schemas.first()
+      val schema = TaxiSchema.from(NamedSource.unnamed(listOf(srcB, srcA)))
       schema.type("foo.Customer").typeDoc.should.equal("I am docs")
 
    }

@@ -143,7 +143,7 @@ class TaxiSchema(private val document: TaxiDocument, val sources: List<NamedSour
       val typesWithAliases = rawTypes.map { rawType ->
          val inheritedTypes = if (typesWithInheritence.containsKey(rawType)) {
             typesWithInheritence[rawType].map { inheritedType ->
-               require(partialCache.hasType(inheritedType)) { "Type ${rawType.fullyQualifiedName} inherits from type $inheritedType, which doesn't exist"}
+               require(partialCache.hasType(inheritedType)) { "Type ${rawType.fullyQualifiedName} inherits from type $inheritedType, which doesn't exist" }
                partialCache.type(inheritedType)
             }
          } else {
@@ -152,7 +152,7 @@ class TaxiSchema(private val document: TaxiDocument, val sources: List<NamedSour
 
          if (rawType.isTypeAlias) {
             require(partialCache.hasType(rawType.aliasForType!!)) { "Type ${rawType.fullyQualifiedName} is declared as a type alias of type ${rawType.aliasForType!!.fullyQualifiedName}, but that type doesn't exist" }
-            val aliasedType =  partialCache.type(rawType.aliasForType)
+            val aliasedType = partialCache.type(rawType.aliasForType)
             aliasedType.copy(name = rawType.name, metadata = rawType.metadata, aliasForType = aliasedType.name, inherits = inheritedTypes, sources = rawType.sources)
          } else {
             rawType.copy(inherits = inheritedTypes)
@@ -194,7 +194,7 @@ class TaxiSchema(private val document: TaxiDocument, val sources: List<NamedSour
 
    companion object {
       const val LANGUAGE = "Taxi"
-      fun from(sources: List<NamedSource>, imports: List<TaxiSchema> = emptyList()): List<TaxiSchema> {
+      fun from(sources: List<NamedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
          val typesInSources = sources.flatMap { namedSource ->
             Compiler(namedSource.taxi).declaredTypeNames().map { it to namedSource }
          }.toMap()
@@ -227,9 +227,14 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
    private val namedSources: Map<NamedSource, SourceWithDependencies> = sources.associateBy { it.source }
    private val builtSchemas = mutableMapOf<NamedSource, TaxiSchema>()
    private val schemasBeingBuilt = mutableListOf<SourceWithDependencies>()
-   fun build(): List<TaxiSchema> {
+   // Note: This contract used to return a List<TaxiSchema>, but I can't
+   // remember why, so I've dropped it back to return a single
+   // We're tring to handle folding all the imports together in a smart way,
+   // so there shoulnd't be a need to reutnr multiple.
+   // If I remember why, swap it back and document it here.
+   fun build(): TaxiSchema {
       if (sources.isEmpty()) {
-         return emptyList()
+         error("Cannot call build without providing sources")
       }
 
       // This little nugget compiles the sources in order, where sources that are imported
@@ -251,11 +256,7 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
          }
       }
 
-      val combined = builtSchemas.values.reduce(TaxiSchema::merge)
-
-//      Unclear why I was doing this.
-//      return listOf(builtSchemasInOrder.last())
-      return listOf(combined)
+      return builtSchemas.values.reduce(TaxiSchema::merge)
    }
 
    private fun buildWithDependencies(source: SourceWithDependencies): TaxiSchema {
@@ -293,6 +294,7 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
 
 private data class SourceWithDependencies(val source: NamedSource, val dependencies: List<NamedSource>)
 
+// TODO : Why do I need this AND VersionedSchema?  There's clearly a big overlap
 data class NamedSource(val taxi: String, val sourceName: String) : Serializable {
    companion object {
       fun unnamed(taxi: String) = NamedSource(taxi, "<unknown>")

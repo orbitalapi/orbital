@@ -20,7 +20,7 @@ class CompilerService(@Value("\${taxi.project-home}") val projectHome: String,
       // multiple versions of the same schema correctly, by not removing
       // the old schemas.
       // Need to resolve this.
-//      counter++
+      counter++
       log().info("Starting to recompile sources at $projectHome")
       val path: Path = Paths.get(projectHome)
       val schemas = path.toFile().walkBottomUp()
