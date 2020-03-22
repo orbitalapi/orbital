@@ -75,7 +75,10 @@ data class Metadata(val name: QualifiedName, val params: Map<String, Any?> = emp
 // A pointer to a type.
 // Useful when parsing, and the type that we're referring to may not have been parsed yet.
 // TODO : Move ConstraintProvider, since that's not an attribute of a TypeReference, and now we have fields
-data class TypeReference(val name: QualifiedName, val isCollection: Boolean = false) {
+// TODO : Remove isCollection, and favour Array<T> types
+data class TypeReference(val name: QualifiedName,
+                         @Deprecated("Replace with lang.taxi.Array<T> types")
+                         val isCollection: Boolean = false) {
    val fullyQualifiedName: String
       get() = name.fullyQualifiedName
 }
@@ -100,9 +103,10 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
          }
       }
 
-   fun rawTypeEquals(other:QualifiedName):Boolean {
+   fun rawTypeEquals(other: QualifiedName): Boolean {
       return this.fullyQualifiedName == other.fullyQualifiedName
    }
+
    val namespace: String
       get() {
          return fullyQualifiedName.split(".").dropLast(1).joinToString(".")
@@ -193,9 +197,6 @@ data class Field(
    val modifiers: List<FieldModifier>,
    private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider(),
    val accessor: Accessor?,
-   @JsonIgnore // This causes a stack overflow, becasue the
-   // we have taxi types in here, which have source code elements, that
-   // contain the antlr parse tree ... none of this stuff serializes well.
    val readCondition: FieldSetCondition?
 ) {
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
@@ -283,6 +284,9 @@ data class Type(
    }
 
    fun resolvesSameAs(other: Type): Boolean {
+      // Note: We need to consider parameterised types here.
+      // In doing so, note that some usages use this approach to check if something
+      // is a collection.
       if (this.fullyQualifiedName == other.fullyQualifiedName) return true
       if (this.isTypeAlias && this.aliasForType!!.fullyQualifiedName == other.fullyQualifiedName) return true
       if (other.isTypeAlias && other.aliasForType!!.fullyQualifiedName == this.fullyQualifiedName) return true
@@ -304,7 +308,7 @@ data class Type(
       return namesToEvaluate.any { it.rawTypeEquals(qualifiedName) }
    }
 
-   fun hasMetadata(name:QualifiedName): Boolean {
+   fun hasMetadata(name: QualifiedName): Boolean {
       return this.metadata.any { it.name == name }
    }
 }

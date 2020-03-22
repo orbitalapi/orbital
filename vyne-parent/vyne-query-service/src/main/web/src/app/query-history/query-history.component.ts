@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {ProfilerOperation, QueryHistoryRecord, QueryService} from "../services/query.service";
+import {ProfilerOperation, QueryHistoryRecord, QueryService} from '../services/query.service';
 
 @Component({
   selector: 'app-query-history',
@@ -13,7 +13,7 @@ export class QueryHistoryComponent implements OnInit {
   constructor(private service: QueryService) {
   }
 
-  profileLoading: boolean = false;
+  profileLoading = false;
   profilerOperation: ProfilerOperation;
 
   ngOnInit() {
@@ -22,7 +22,7 @@ export class QueryHistoryComponent implements OnInit {
 
   loadData() {
     this.service.getHistory()
-      .subscribe(history => this.history = history)
+      .subscribe(history => this.history = history);
   }
 
   typeName(qualifiedTypeName: string) {
@@ -30,17 +30,17 @@ export class QueryHistoryComponent implements OnInit {
     // which can handle generics.
     // Consider usinng that, instead of this dirty hack
 
-    if (qualifiedTypeName.startsWith("lang.taxi.Array<")) {
-      const collectionMemberName = qualifiedTypeName.replace("lang.taxi.Array<", "").slice(0, -1)
-      return this.typeName(collectionMemberName) + "[]";
+    if (qualifiedTypeName.startsWith('lang.taxi.Array<')) {
+      const collectionMemberName = qualifiedTypeName.replace('lang.taxi.Array<', '').slice(0, -1);
+      return this.typeName(collectionMemberName) + '[]';
     } else {
-      let parts = qualifiedTypeName.split(".");
+      const parts = qualifiedTypeName.split('.');
       return parts[parts.length - 1];
     }
-  };
+  }
 
   getFactTypeNames(record: QueryHistoryRecord): string[] {
-    return record.query.facts.map(fact => this.typeName(fact.typeName))
+    return record.query.facts.map(fact => this.typeName(fact.typeName));
   }
 
   setActiveRecord(historyRecord: QueryHistoryRecord) {
@@ -50,12 +50,12 @@ export class QueryHistoryComponent implements OnInit {
     this.service.getQueryProfile(historyRecord.id).subscribe(
       result => {
         this.profileLoading = false;
-        this.profilerOperation = result
+        this.profilerOperation = result;
       }
-    )
+    );
   }
 
   expressionTypeName(expression: string[]) {
-    return expression.map(t => this.typeName(t)).join(", ")
+    return expression.map(t => this.typeName(t)).join(', ');
   }
 }

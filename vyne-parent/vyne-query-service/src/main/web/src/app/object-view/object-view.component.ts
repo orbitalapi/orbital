@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {TypeNamedInstance} from '../services/query.service';
-import {Field, findType, Schema, Type, TypedInstance} from '../services/schema';
+import {Field, findType, getCollectionMemberType, Schema, Type, TypedInstance} from '../services/schema';
 
 /**
  * This displays results fetched from service calls.
@@ -137,6 +137,13 @@ export class ObjectViewComponent {
   get isArray(): boolean {
     return this.instance != null &&
       this.instance.constructor === Array;
+  }
+
+  get collectionMemberType(): Type {
+    if (!this.isArray) {
+      return null;
+    }
+    return getCollectionMemberType(this.type, this.schema);
   }
 }
 

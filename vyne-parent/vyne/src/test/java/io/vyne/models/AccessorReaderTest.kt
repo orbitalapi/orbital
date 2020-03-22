@@ -61,40 +61,6 @@ type LegacyTradeNotification {
       expect(notional["currency"].type.fullyQualifiedName).to.equal("Currency")
    }
 
-   @Test
-   fun canReadCsvData() {
-      val src = """type alias FirstName as String
-type alias LastName as String
-type Person {
-   firstName : FirstName by column(0)
-   lastName : LastName by column(1)
-}
-"""
-      val (vyne, _) = testVyne(src)
-      val csv = "firstName,lastName\n" +
-         "jimmy,parsons"
-      val parsedResult = TypedInstance.from(vyne.schema.type("Person"), csv, vyne.schema) as TypedObject
-      expect(parsedResult.type.fullyQualifiedName).to.equal("Person")
-      parsedResult["firstName"].value.should.equal("jimmy")
-   }
 
-   @Test
-   fun canReadCsvDataWithMultipleRecords() {
-      val src = """type alias FirstName as String
-type alias LastName as String
-type Person {
-   firstName : FirstName by column(0)
-   lastName : LastName by column(1)
-}
 
-@CsvList
-type alias PersonList as Person[]
-"""
-      val (vyne, _) = testVyne(src)
-      val csv = "firstName,lastName\n" +
-         "jimmy,parsons\n" +
-         "olly,spurrs"
-      val parsedResult = TypedInstance.from(vyne.schema.type("PersonList"), csv, vyne.schema)
-      TODO()
-   }
 }

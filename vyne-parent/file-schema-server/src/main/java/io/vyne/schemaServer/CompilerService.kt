@@ -21,6 +21,7 @@ class CompilerService(@Value("\${taxi.project-home}") val projectHome: String,
       // the old schemas.
       // Need to resolve this.
 //      counter++
+      log().info("Starting to recompile sources at $projectHome")
       val path: Path = Paths.get(projectHome)
       val schemas = path.toFile().walkBottomUp()
          .filter { it.extension == "taxi" }

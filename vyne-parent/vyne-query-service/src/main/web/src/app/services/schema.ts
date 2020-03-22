@@ -1,7 +1,10 @@
+import {PrimitiveTypeNames} from './taxi';
+
 export class QualifiedName {
   name: string;
   namespace: string;
   fullyQualifiedName: string;
+  parameters: QualifiedName[] = [];
 
   static nameOnly(fullyQualifiedName: string): string {
     const parts = fullyQualifiedName.split('.');
@@ -250,7 +253,8 @@ export class SchemaMember {
       {
         name: operation.name,
         fullyQualifiedName: service.name.fullyQualifiedName + ' #' + operation.name,
-        namespace: service.name.namespace
+        namespace: service.name.namespace,
+        parameters: []
       },
       SchemaMemberType.OPERATION,
       null,
@@ -316,3 +320,27 @@ export enum Level {
   ERROR = 'ERROR'
 }
 
+
+export function getCollectionMemberType(type: Type, schema: Schema, defaultIfUnknown: Type | String = type): Type {
+  function resolveDefaultType(): Type {
+    return (typeof defaultIfUnknown === 'string') ? findType(schema, defaultIfUnknown) : defaultIfUnknown as Type;
+  }
+
+  if (type.name.fullyQualifiedName === PrimitiveTypeNames.ARRAY) {
+    return collectionMemberTypeFromArray(type.name, schema, resolveDefaultType);
+  } else if (type.aliasForType && type.aliasForType.fullyQualifiedName === PrimitiveTypeNames.ARRAY) {
+    return collectionMemberTypeFromArray(type.aliasForType, schema, resolveDefaultType);
+  } else {
+    console.warn('Cannot determine collection type from a Non-Array type.  Returning default value');
+    return resolveDefaultType();
+  }
+}
+
+function collectionMemberTypeFromArray(name: QualifiedName, schema: Schema, defaultValue: () => Type): Type {
+  if (name.parameters.length === 1) {
+    return findType(schema, name.parameters[0].fullyQualifiedName);
+  } else {
+    console.warn('Received a raw Array type (without parameters.  This is discouraged.  Returning default type');
+    return defaultValue();
+  }
+}

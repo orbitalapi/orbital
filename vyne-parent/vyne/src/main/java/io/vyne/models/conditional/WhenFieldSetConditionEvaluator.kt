@@ -38,7 +38,8 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
       return readCondition.cases.firstOrNull { caseBlock ->
          val valueToCompare = evaluateExpression(caseBlock.matchExpression, selectorValue.type)
          selectorValue.valueEquals(valueToCompare)
-      } ?: error("No matching cases found")
+      } ?:
+      error("No matching cases found")
 
    }
 

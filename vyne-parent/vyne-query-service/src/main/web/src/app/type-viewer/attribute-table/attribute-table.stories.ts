@@ -2,9 +2,9 @@ import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {AttributeTableComponent} from './attribute-table.component';
 import {APP_BASE_HREF, CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
-import {RouterModule} from "@angular/router";
-import {routerModule} from "../../app.module";
-import {RouterTestingModule} from "@angular/router/testing";
+import {RouterModule} from '@angular/router';
+import {routerModule} from '../../app.module';
+import {RouterTestingModule} from '@angular/router/testing';
 
 const type = {
   'name': {

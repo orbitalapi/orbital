@@ -96,7 +96,7 @@ interface TypedInstance {
       }
 
       private fun getCollectionType(type: Type, schema: Schema): Type {
-         if (type.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName) {
+         if (type.resolvesSameAs(schema.type(PrimitiveType.ARRAY.qualifiedName))) {
             if (type.typeParameters.size == 1) {
                return type.typeParameters[0]
             } else {

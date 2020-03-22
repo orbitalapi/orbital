@@ -1,0 +1,42 @@
+type DealtAmount inherits Money
+type SettlementAmount inherits Money
+type alias CustomerId as String
+
+type Money {
+   quantity : Decimal
+   currency : CurrencySymbol as String
+}
+
+type CsvTradeRecord {
+    counterparty : CustomerId by column(0)
+    ccy1 : CurrencySymbol by column(1)
+    ccy2 : CurrencySymbol by column(3)
+    quotedCurrency : CurrencySymbol by column(6)
+    (   dealtAmount : DealtAmount
+        settlementAmount : SettlementAmount
+    ) by when ( quotedCurrency ) {
+        ccy1 -> {
+            dealtAmount(
+                quantity by column(2)
+                currency = ccy1
+            )
+            settlementAmount(
+                quantity by column(4)
+                currency = ccy2
+            )
+        }
+        ccy2 -> {
+        dealtAmount(
+                quantity by column(4)
+                currency = ccy2
+            )
+            settlementAmount(
+                quantity by column(2)
+                currency = ccy1
+            )
+        }
+    }
+}
+
+@CsvList
+type alias CsvTradeRecordList as CsvTradeRecord[]

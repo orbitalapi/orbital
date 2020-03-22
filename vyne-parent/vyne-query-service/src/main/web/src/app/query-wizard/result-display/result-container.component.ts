@@ -51,13 +51,17 @@ export class ResultContainerComponent implements OnInit {
     if (!this.isSuccess) {
       return [];
     }
+    // Is this code still used?  If so, fix this
+    console.log('Warning: Using legacy parsing of QueryResult.  Parameterized types are not properly supported');
     return Object.keys((<QueryResult>this.result).results)
       .map(typeName => {
         const parts = typeName.split('.');
         return {
           name: parts[parts.length - 1],
           fullyQualifiedName: typeName,
-          namespace: parts.concat().splice(parts.length - 1, 1).join('.')
+          namespace: parts.concat().splice(parts.length - 1, 1).join('.'),
+          // TODO : THis is likely to cause issues by ignoring the parameters of types.
+          parameters: []
         };
       });
   }
