@@ -58,4 +58,18 @@ storiesOf('Object Viewer', module)
       typedInstance
     }
   };
-});
+})
+  .add('collections', () => {
+    return {
+      template: `<div style="padding: 40px">
+    <app-object-view [schema]="schema" [instance]="typedInstanceArray"></app-object-view>
+    <hr>
+    <app-object-view [schema]="schema" [instance]="typeNamedInstanceArray"></app-object-view>
+    </div>`,
+      props: {
+        schema,
+        typeNamedInstanceArray: [typeNamedInstance, typeNamedInstance],
+        typedInstanceArray: [typedInstance, typedInstance]
+      }
+    };
+  });

@@ -105,7 +105,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       schemaPurger.removeOldSchemasFromHazelcast(currentClusterMembers)
 
       val sources = getSchemaEntriesOfCurrentClusterMembers()
-      val result = SchemaSet(sources, generationCounter.incrementAndGet().toInt())
+      val result = SchemaSet.from(sources, generationCounter.incrementAndGet().toInt())
       log().info("Rebuilt schema cache - $result")
       schemaSetHolder.compute(SchemaSetCacheKey) { _, current ->
          when {

@@ -9,6 +9,9 @@
 
 }
 
+.spacer {
+  width: 100%;
+}
 .button-bar {
   display: flex;
   margin-top: 1rem;
@@ -34,7 +37,7 @@ app-vyne-query-viewer {
       vertical-align: middle;
       padding-bottom: 8px;
 
-      color: $grey-2;
+      color: $blue-grey-2;
       cursor: pointer;
 
       &:hover {

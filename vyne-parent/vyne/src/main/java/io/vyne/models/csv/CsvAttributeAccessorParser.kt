@@ -12,21 +12,31 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
 import java.util.concurrent.TimeUnit
 
-
-class CsvTypedInstanceParser(private val primitiveParser: PrimitiveParser = PrimitiveParser()) {
-
-   private val documentCache: LoadingCache<String, List<CSVRecord>> = CacheBuilder.newBuilder()
+internal object CsvDocumentCacheBuilder {
+   fun newCache(): LoadingCache<String, List<CSVRecord>> = CacheBuilder.newBuilder()
       .expireAfterAccess(2, TimeUnit.SECONDS)
       .build(object : CacheLoader<String, List<CSVRecord>>() {
          override fun load(key: String): List<CSVRecord> {
-            return CSVFormat.DEFAULT
-               .withFirstRecordAsHeader()
+            // Here, we're just trying to see if there's more than
+            // 1 line - intimiating that there's a csv header here
+            // However, this method is probably very poor performance
+            val suspectHeaderExists = key.lines().size > 1
+            val format = if (suspectHeaderExists) {
+               CSVFormat.DEFAULT.withFirstRecordAsHeader()
+            } else {
+               CSVFormat.DEFAULT
+            }
+            return format
                .parse(CharSource.wrap(key).openBufferedStream())
                .records
          }
-
       })
+}
 
+/**
+ * Parses a single attribute, defined by a ColumnAccessor
+ */
+class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = PrimitiveParser(), private val documentCache: LoadingCache<String, List<CSVRecord>> = CsvDocumentCacheBuilder.newCache()) {
    fun parse(content: String, type: Type, accessor: ColumnAccessor): TypedInstance {
       val source = documentCache.get(content)
       val instances = source.map { record -> parseToType(type, accessor, record) }
@@ -38,7 +48,7 @@ class CsvTypedInstanceParser(private val primitiveParser: PrimitiveParser = Prim
 
    }
 
-   private fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord): TypedInstance {
+   internal fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord): TypedInstance {
       val value = record.get(accessor.index)
       return primitiveParser.parse(value, type)
    }

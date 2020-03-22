@@ -101,18 +101,32 @@ class TaxiSchema(private val document: TaxiDocument, val sources: List<NamedSour
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType)
-               val type = Type(typeName, fields, modifiers, sources = taxiType.compilationUnits.toVyneSources(), typeDoc = taxiType.typeDoc)
+               val type = Type(
+                  typeName,
+                  fields,
+                  modifiers,
+                  metadata = parseAnnotationsToMetadata(taxiType.annotations),
+                  sources = taxiType.compilationUnits.toVyneSources(),
+                  typeDoc = taxiType.typeDoc
+               )
                rawTypes.add(type)
                if (taxiType.inheritsFrom.isNotEmpty()) {
                   typesWithInheritence.putAll(type, taxiType.inheritsFromNames)
                }
             }
             is TypeAlias -> {
-               rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), aliasForType = QualifiedName(taxiType.aliasType!!.qualifiedName), sources = taxiType.compilationUnits.toVyneSources(), typeDoc = taxiType.typeDoc))
+               rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), metadata = parseAnnotationsToMetadata(taxiType.annotations), aliasForType = taxiType.aliasType!!.toQualifiedName().toVyneQualifiedName(), sources = taxiType.compilationUnits.toVyneSources(), typeDoc = taxiType.typeDoc))
             }
             is EnumType -> {
                val enumValues = taxiType.values.map { it.name }
-               rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), modifiers = parseModifiers(taxiType), enumValues = enumValues, sources = taxiType.compilationUnits.toVyneSources(), typeDoc = taxiType.typeDoc))
+               rawTypes.add(Type(
+                  QualifiedName(taxiType.qualifiedName),
+                  modifiers = parseModifiers(taxiType),
+                  metadata = parseAnnotationsToMetadata(taxiType.annotations),
+                  enumValues = enumValues,
+                  sources = taxiType.compilationUnits.toVyneSources(),
+                  typeDoc = taxiType.typeDoc
+               ))
             }
             is ArrayType -> TODO()
             else -> rawTypes.add(Type(QualifiedName(taxiType.qualifiedName), modifiers = parseModifiers(taxiType), sources = taxiType.compilationUnits.toVyneSources(), typeDoc = null))
@@ -124,20 +138,22 @@ class TaxiSchema(private val document: TaxiDocument, val sources: List<NamedSour
       // Now we have a full set of types, expand
       // references to other types - ie., typeAliased types & inheritence,
       // so they have the correct fields / modifiers /etc
+      // Use a partially filled cache, so that we can do complex lookups more easily.
+      val partialCache = DefaultTypeCache(rawTypes)
       val typesWithAliases = rawTypes.map { rawType ->
          val inheritedTypes = if (typesWithInheritence.containsKey(rawType)) {
             typesWithInheritence[rawType].map { inheritedType ->
-               originalTypes[inheritedType]
-                  ?: error("Type ${rawType.fullyQualifiedName} inherits from type $inheritedType, which doesn't exist")
+               require(partialCache.hasType(inheritedType)) { "Type ${rawType.fullyQualifiedName} inherits from type $inheritedType, which doesn't exist" }
+               partialCache.type(inheritedType)
             }
          } else {
             emptyList()
          }
 
          if (rawType.isTypeAlias) {
-            val aliasedType = originalTypes[rawType.aliasForType!!.fullyQualifiedName]
-               ?: error("Type ${rawType.fullyQualifiedName} is declared as a type alias of type ${rawType.aliasForType!!.fullyQualifiedName}, but that type doesn't exist")
-            aliasedType.copy(name = rawType.name, aliasForType = aliasedType.name, inherits = inheritedTypes, sources = rawType.sources)
+            require(partialCache.hasType(rawType.aliasForType!!)) { "Type ${rawType.fullyQualifiedName} is declared as a type alias of type ${rawType.aliasForType!!.fullyQualifiedName}, but that type doesn't exist" }
+            val aliasedType = partialCache.type(rawType.aliasForType)
+            aliasedType.copy(name = rawType.name, metadata = rawType.metadata, aliasForType = aliasedType.name, inherits = inheritedTypes, sources = rawType.sources)
          } else {
             rawType.copy(inherits = inheritedTypes)
          }
@@ -178,7 +194,7 @@ class TaxiSchema(private val document: TaxiDocument, val sources: List<NamedSour
 
    companion object {
       const val LANGUAGE = "Taxi"
-      fun from(sources: List<NamedSource>, imports: List<TaxiSchema> = emptyList()): List<TaxiSchema> {
+      fun from(sources: List<NamedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
          val typesInSources = sources.flatMap { namedSource ->
             Compiler(namedSource.taxi).declaredTypeNames().map { it to namedSource }
          }.toMap()
@@ -211,9 +227,14 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
    private val namedSources: Map<NamedSource, SourceWithDependencies> = sources.associateBy { it.source }
    private val builtSchemas = mutableMapOf<NamedSource, TaxiSchema>()
    private val schemasBeingBuilt = mutableListOf<SourceWithDependencies>()
-   fun build(): List<TaxiSchema> {
+   // Note: This contract used to return a List<TaxiSchema>, but I can't
+   // remember why, so I've dropped it back to return a single
+   // We're tring to handle folding all the imports together in a smart way,
+   // so there shoulnd't be a need to reutnr multiple.
+   // If I remember why, swap it back and document it here.
+   fun build(): TaxiSchema {
       if (sources.isEmpty()) {
-         return emptyList()
+         error("Cannot call build without providing sources")
       }
 
       // This little nugget compiles the sources in order, where sources that are imported
@@ -235,11 +256,7 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
          }
       }
 
-      val combined = builtSchemas.values.reduce(TaxiSchema::merge)
-
-//      Unclear why I was doing this.
-//      return listOf(builtSchemasInOrder.last())
-      return listOf(combined)
+      return builtSchemas.values.reduce(TaxiSchema::merge)
    }
 
    private fun buildWithDependencies(source: SourceWithDependencies): TaxiSchema {
@@ -277,6 +294,7 @@ private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependenc
 
 private data class SourceWithDependencies(val source: NamedSource, val dependencies: List<NamedSource>)
 
+// TODO : Why do I need this AND VersionedSchema?  There's clearly a big overlap
 data class NamedSource(val taxi: String, val sourceName: String) : Serializable {
    companion object {
       fun unnamed(taxi: String) = NamedSource(taxi, "<unknown>")

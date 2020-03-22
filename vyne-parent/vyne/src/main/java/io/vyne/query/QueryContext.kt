@@ -70,8 +70,7 @@ data class QueryResult(
    // TypedInstnace, a map of TypedInstnaces, or a collection of TypedInstances.
    @JsonProperty("results")
    val resultMap: Map<String, Any?> =
-      when(resultMode)
-      {
+      when (resultMode) {
          ResultMode.VERBOSE -> this.results.map { (key, value) ->
             val mapped = value?.toTypeNamedInstance()
             key.type.name.parameterizedName to mapped
@@ -169,13 +168,23 @@ data class QueryContext(
          QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, resultMode)
    }
 
-   fun addFact(fact: TypedInstance) {
-      log().debug("Added fact to queryContext: ${fact.type.fullyQualifiedName}")
-      this.facts.add(fact)
+   /**
+    * Returns a QueryContext, with only the provided fact.
+    * All other parameters (queryEngine, schema, etc) are retained
+    */
+   fun only(fact: TypedInstance): QueryContext {
+      return this.copy(facts = mutableSetOf(fact))
    }
 
-   fun addFacts(facts: Collection<TypedInstance>) {
+   fun addFact(fact: TypedInstance): QueryContext {
+      log().debug("Added fact to queryContext: ${fact.type.fullyQualifiedName}")
+      this.facts.add(fact)
+      return this
+   }
+
+   fun addFacts(facts: Collection<TypedInstance>): QueryContext {
       facts.forEach { this.addFact(it) }
+      return this
    }
 
 

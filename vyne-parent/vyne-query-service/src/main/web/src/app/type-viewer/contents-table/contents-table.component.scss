@@ -9,9 +9,9 @@ h4 {
   font-family: $font-sans-alt;
   font-size: 0.8rem;
   text-transform: uppercase;
-  color: $grey-2;
+  color: $blue-grey-2;
   margin: 0;
-  border-bottom: 1px solid rgba($grey-2, 0.25);
+  border-bottom: 1px solid rgba($blue-grey-2, 0.25);
 }
 
 ul.list-reset {
@@ -22,7 +22,7 @@ ul.list-reset {
 
 li {
   list-style: none;
-  border-bottom: 1px solid rgba($grey-2, 0.25);
+  border-bottom: 1px solid rgba($blue-grey-2, 0.25);
   padding: 0.25rem 0;
   font-size: 0.9rem;
   color: $purple-grey;

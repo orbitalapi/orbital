@@ -27,12 +27,7 @@ interface SchemaProvider {
          error("No longer supporting non TaxiSchema's.")
       }
       val taxiSchemas = schemas().map { it as TaxiSchema }
-      // This appproach (creating a single TaxiSchema from all the current taxi schemas)
-      // causes the TaxiCompiler to kick in, which should correctly handle
-      // type extensions.
-      // However, given we're now simplifying around taxi schemas, this feels like it
-      // belongs more earlier, when handled earlier in the registration/recompilation phase.
-      return CompositeSchema(TaxiSchema.from(taxiSchemas.flatMap { it.sources }))
+      return TaxiSchema.from(taxiSchemas.flatMap { it.sources })
    }
    fun schema(memberNames: List<String>, includePrimitives: Boolean = false): Schema {
       val qualifiedNames = memberNames.map { it.fqn() }

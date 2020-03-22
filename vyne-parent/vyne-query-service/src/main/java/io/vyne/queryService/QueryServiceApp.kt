@@ -36,6 +36,9 @@ class QueryServiceApp {
    @Bean
    fun vyneJacksonModule() = VyneJacksonModule()
 
+   @Bean
+   fun taxiJacksonModule() = TaxiJacksonModule()
+
    @Autowired
    fun logInfo(buildInfo: BuildProperties? = null) {
       val version = buildInfo?.version ?: "Dev version";

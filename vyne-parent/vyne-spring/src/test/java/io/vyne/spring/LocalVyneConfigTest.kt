@@ -75,7 +75,7 @@ class RemoteVyneConfigTest {
 
    @Test
    fun given_schemaServiceReturnsSchemas_then_theyArePresentInvyne() {
-      val schemaSet = SchemaSet(listOf(VersionedSchema("RemoteSchema", "0.1.0", "type MyClient {}")), 1)
+      val schemaSet = SchemaSet.from(listOf(VersionedSchema("RemoteSchema", "0.1.0", "type MyClient {}")), 1)
       whenever(schemaService.listSchemas()).thenReturn(schemaSet)
       schemaStoreClient.pollForSchemaUpdates()
 
