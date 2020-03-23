@@ -29,6 +29,7 @@ export class SchemaExplorerComponent implements OnInit {
             return {
               origin: schema.name,
               language: 'taxi',
+              version: schema.version,
               content: schema.content
             } as SourceCode;
           }

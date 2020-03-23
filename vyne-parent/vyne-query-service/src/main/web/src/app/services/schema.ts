@@ -76,6 +76,7 @@ export interface SourceCode {
   origin: string;
   language: string;
   content: string;
+  version?: string;
 }
 
 export function findType(schema: TypeCollection, typeName: string): Type {

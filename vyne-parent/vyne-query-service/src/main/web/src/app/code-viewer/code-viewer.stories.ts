@@ -3,9 +3,9 @@ import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {CodeViewerComponent} from './code-viewer.component';
 import {CovalentHighlightModule} from '@covalent/highlight';
-import {CovalentTabSelectModule} from "@covalent/core";
-import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
-import {MatTabsModule} from "@angular/material/tabs";
+import {CovalentTabSelectModule} from '@covalent/core';
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {MatTabsModule} from '@angular/material/tabs';
 
 const code = `type Customer {
      email : CustomerEmailAddress
@@ -95,6 +95,7 @@ storiesOf('CodeViewer', module)
         {
           origin: 'Definition published by CustomerService',
           content: bigTaxi,
+          version: '0.1.0',
           language: 'taxi'
         },
         {
