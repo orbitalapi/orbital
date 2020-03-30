@@ -1,7 +1,7 @@
 package io.vyne.queryService.schemas
 
+import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaStoreClient
-import io.vyne.schemaStore.VersionedSchema
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 import lang.taxi.generators.Message
@@ -19,7 +19,7 @@ class CompositeSchemaImporter(private val importers: List<SchemaImporter>, priva
       return Mono.just(preview)
    }
 
-   override fun import(request: SchemaImportRequest): Mono<VersionedSchema> {
+   override fun import(request: SchemaImportRequest): Mono<VersionedSource> {
       val importer = importer(request.format)
       val taxiSchema = importer.import(request)
       val compilerResult = schemaStoreClient.submitSchema(taxiSchema)
@@ -40,11 +40,11 @@ class CompositeSchemaImporter(private val importers: List<SchemaImporter>, priva
 interface SchemaImporter {
    val supportedFormats: List<String>
    fun preview(request: SchemaPreviewRequest): SchemaPreview
-   fun import(request: SchemaImportRequest): VersionedSchema
+   fun import(request: SchemaImportRequest): VersionedSource
 }
 
 interface SchemaImportService {
-   fun import(request: SchemaImportRequest): Mono<VersionedSchema>
+   fun import(request: SchemaImportRequest): Mono<VersionedSource>
    fun preview(request: SchemaPreviewRequest): Mono<SchemaPreview>
 }
 

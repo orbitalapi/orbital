@@ -2,6 +2,7 @@ package io.vyne.schemaStore
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.github.zafarkhaja.semver.Version
+import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationError
@@ -25,22 +26,18 @@ class SchemaExistsException(message: String) : RuntimeException(message)
 @ResponseStatus(HttpStatus.NOT_FOUND)
 class UnknownResourceException(message: String) : RuntimeException(message)
 
-data class VersionedSchema(val name: String, val version: String, val content: String) {
-   @get:JsonIgnore
-   val semver:Version = Version.valueOf(version)
-}
 @RestController
 @RequestMapping("/schemas/taxi")
 class TaxiSchemaService : SchemaService, SchemaProvider {
 
    // TODO : Persist these somewhere
-   private val schemas = mutableMapOf<String, VersionedSchema>()
+   private val schemas = mutableMapOf<String, VersionedSource>()
    private val generation:AtomicInteger = AtomicInteger(0);
 
    @RequestMapping(method = arrayOf(RequestMethod.POST), value = ["/{schemaId}/{version:.+}"])
-   override fun submitSchema(@RequestBody schema: String, @PathVariable("schemaId") schemaId: String, @PathVariable("version") version: String): VersionedSchema {
+   override fun submitSchema(@RequestBody schema: String, @PathVariable("schemaId") schemaId: String, @PathVariable("version") version: String): VersionedSource {
       assertSchemaCompiles(schema)
-      val versionedSchema = VersionedSchema(schemaId, version, schema)
+      val versionedSchema = VersionedSource(schemaId, version, schema)
       addSchema(versionedSchema)
       log().info("Registered schema $schemaId:$version.  This schema server is now updated to schema set id ${listSchemas().id}")
       return versionedSchema
@@ -57,7 +54,7 @@ class TaxiSchemaService : SchemaService, SchemaProvider {
       generation.incrementAndGet()
    }
 
-   private fun addSchema(versionedSchema: VersionedSchema) {
+   private fun addSchema(versionedSchema: VersionedSource) {
       schemas[versionedSchema.name]?.let { existingSchema ->
          // TODO : Version checking
          // Have discabled for now, because YAGNI.  Bring it back
@@ -75,7 +72,7 @@ class TaxiSchemaService : SchemaService, SchemaProvider {
 
    @RequestMapping(method = arrayOf(RequestMethod.GET))
    override fun listSchemas(): SchemaSet {
-      return SchemaSet(schemas.values.toList(), generation.get())
+      return SchemaSet.from(schemas.values.toList(), generation.get())
    }
    @RequestMapping(path = arrayOf("/raw"), method = arrayOf(RequestMethod.GET))
    fun listRawSchema():String {

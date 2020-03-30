@@ -1,9 +1,9 @@
 package io.vyne.spring
 
+import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.SchemaStoreClient
-import io.vyne.schemaStore.VersionedSchema
-import io.vyne.schemaStore.VersionedSchemaProvider
+import io.vyne.schemaStore.VersionedSourceProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
@@ -31,7 +31,7 @@ class LocalTaxiSchemaProvider(val models: List<Class<*>>, val services: List<Cla
    }
 }
 
-class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourceProvider, VersionedSchemaProvider {
+class RemoteTaxiSourceProvider(val storeClient: SchemaStoreClient) : SchemaSourceProvider, VersionedSourceProvider {
    override fun schemaStrings(): List<String> {
       return storeClient.schemaSet().rawSchemaStrings
    }
@@ -40,7 +40,7 @@ class RemoteTaxiSchemaProvider(val storeClient: SchemaStoreClient) : SchemaSourc
       log().info("Initialized RemoteTaxiSchemaProvider, using a store client of type ${storeClient.javaClass.simpleName}")
    }
 
-   override val versionedSchemas: List<VersionedSchema>
+   override val versionedSources: List<VersionedSource>
       get() {
          return storeClient.schemaSet().sources
       }

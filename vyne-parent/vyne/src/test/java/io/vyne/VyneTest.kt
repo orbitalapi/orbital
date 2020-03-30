@@ -121,7 +121,7 @@ class VyneTest {
       val stubService = StubService()
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
-      stubService.addResponse("creditRisk", TypedValue(vyne.getType("vyne.example.CreditRisk"), 100))
+      stubService.addResponse("creditRisk", TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100))
       vyne.addKeyValuePair("vyne.example.ClientId", "123")
       vyne.addKeyValuePair("vyne.example.InvoiceValue", 1000)
       val result: QueryResult = vyne.query().find("vyne.example.CreditRisk")
@@ -148,7 +148,7 @@ class VyneTest {
    "name" : "Jimmy's Choos",
    "isicCode" : "retailer"
 }"""
-      stubService.addResponse("creditRisk", TypedValue(vyne.getType("vyne.example.CreditRisk"), 100))
+      stubService.addResponse("creditRisk", TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100))
 
       val client = vyne.parseJsonModel("vyne.example.Client", json)
       stubService.addResponse("mockClient", client)
@@ -346,7 +346,7 @@ type LegacyTradeNotification {
 }
 
 fun Vyne.typedValue(typeName: String, value: Any): TypedValue {
-   return TypedValue(this.getType(typeName), value)
+   return TypedValue.from(this.getType(typeName), value)
 }
 
 

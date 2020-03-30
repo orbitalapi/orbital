@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
+import io.vyne.VersionedSource
 import io.vyne.Vyne
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
@@ -63,7 +64,7 @@ class RegressionTest {
 
    private fun executeTestsInDirectory(schemaJson: String, testDirectory: File) {
 
-      val schemas = objectMapper.readValue<List<VersionedSchema>>(schemaJson)
+      val schemas = objectMapper.readValue<List<VersionedSource>>(schemaJson)
       val testFiles = testDirectory.listFiles { file ->
          file.name != "schema.json" && file.extension == "json"
       }
@@ -82,7 +83,7 @@ class RegressionTest {
       }
    }
 
-   private fun executeTestScenario(schemas: List<VersionedSchema>, testCase: VyneTestCase): List<VyneTestFailure> {
+   private fun executeTestScenario(schemas: List<VersionedSource>, testCase: VyneTestCase): List<VyneTestFailure> {
       log().info("Executing test ${testCase.test}")
 
       val (vyne, stubService) = replayingVyne(schemas, testCase)
@@ -140,8 +141,6 @@ data class QueryHistoryRecord(
    val id: String = response.queryResponseId
 }
 
-data class VersionedSchema(val name: String, val version: String, val content: String)
-
 // We use this since the QueryResult that we're capturing
 // has been trimmed down during serialziation (since it's intended for the UI,
 // and we don't want to send too much info)
@@ -160,7 +159,7 @@ data class LightweightQueryResult(
 }
 
 
-fun replayingVyne(schemas: List<VersionedSchema>, testCase: VyneTestCase): Pair<Vyne, ReplayingOperationInvoker> {
+fun replayingVyne(schemas: List<VersionedSource>, testCase: VyneTestCase): Pair<Vyne, ReplayingOperationInvoker> {
    val schema = schemas.joinToString("\n") { it.content }
    val taxiSchema = TaxiSchema.from(schema)
    val operationInvoker = ReplayingOperationInvoker(testCase.scenario.response.remoteCalls, taxiSchema)

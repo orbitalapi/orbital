@@ -105,6 +105,6 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jac
       assert(value !is Collection<*>) {
          "Received a collection when expecting a scalar type"
       }
-      return TypedValue(type, value)
+      return TypedValue.from(type, value, performTypeConversions = true)
    }
 }

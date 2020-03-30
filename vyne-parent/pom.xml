@@ -14,12 +14,13 @@
 
    <properties>
       <jackson.version>2.9.3</jackson.version>
-      <taxi.version>0.2.0-SNAPSHOT</taxi.version>
+      <taxi.version>0.3.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
    </properties>
    <modules>
+      <module>vyne-core-types</module>
       <module>events-api</module>
       <module>search</module>
       <module>utils</module>

@@ -1,5 +1,6 @@
 package io.vyne.schemaStore
 
+import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import io.vyne.utils.log
 import lang.taxi.CompilationException
@@ -60,7 +61,7 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
 //      TODO("Migrate this to perform better schema validation, or defer to the schema service")
    }
 
-   override fun submitSchemas(schemas: List<VersionedSchema>): Either<CompilationException, Schema> {
+   override fun submitSchemas(schemas: List<VersionedSource>): Either<CompilationException, Schema> {
       TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
    }
 

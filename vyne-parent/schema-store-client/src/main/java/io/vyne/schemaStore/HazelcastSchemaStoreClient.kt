@@ -6,6 +6,8 @@ import com.hazelcast.map.EntryProcessor
 import com.hazelcast.map.listener.EntryAddedListener
 import com.hazelcast.map.listener.EntryUpdatedListener
 import com.hazelcast.query.Predicate
+import io.vyne.SchemaId
+import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import lang.taxi.CompilationException
@@ -77,7 +79,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
 
 
 
-   override fun submitSchemas(schemas:List<VersionedSchema>): Either<CompilationException, Schema> {
+   override fun submitSchemas(schemas:List<VersionedSource>): Either<CompilationException, Schema> {
       val validationResult = schemaValidator.validate(schemaSet(), schemas)
       validationResult.right().map { validatedSchema ->
 
@@ -137,7 +139,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       }
    }
 
-   private fun getSchemaEntriesOfCurrentClusterMembers(): List<VersionedSchema> {
+   private fun getSchemaEntriesOfCurrentClusterMembers(): List<VersionedSource> {
       return schemaSourcesMap.filter { (_, cacheMemberSchema) ->
          hazelcast.cluster.members.any { it.uuid == cacheMemberSchema.cacheMemberId }
       }.map { (_, value) -> value.schema }
@@ -184,4 +186,4 @@ class HazelcastSchemaPurger(private val hazelcastMap: IMap<SchemaId, CacheMember
    }
 }
 
-data class CacheMemberSchema(val cacheMemberId: String, val schema: VersionedSchema) : Serializable
+data class CacheMemberSchema(val cacheMemberId: String, val schema: VersionedSource) : Serializable

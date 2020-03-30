@@ -1,6 +1,6 @@
 package io.vyne.queryService.schemas
 
-import io.vyne.schemaStore.VersionedSchema
+import io.vyne.VersionedSource
 import lang.taxi.generators.openApi.TaxiGenerator
 import org.springframework.stereotype.Component
 import v2.io.swagger.parser.SwaggerParser
@@ -33,10 +33,10 @@ class SwaggerSchemaImporter : SchemaImporter {
 
    override val supportedFormats = listOf(SWAGGER_FORMAT)
    private val generator = TaxiGenerator()
-   override fun import(request: SchemaImportRequest): VersionedSchema {
+   override fun import(request: SchemaImportRequest): VersionedSource {
 
       val taxi = generator.generateAsStrings(request.content, request.spec.defaultNamespace).taxi.joinToString("\n")
-      return VersionedSchema(request.spec.name, request.spec.version, taxi)
+      return VersionedSource(request.spec.name, request.spec.version, taxi)
    }
 
 }

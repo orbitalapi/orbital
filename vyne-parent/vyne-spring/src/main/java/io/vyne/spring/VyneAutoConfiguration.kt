@@ -115,7 +115,7 @@ class VyneAutoConfiguration {
    @Bean
    @Primary
    fun schemaProvider(localTaxiSchemaProvider: LocalTaxiSchemaProvider,
-                      remoteTaxiSchemaProvider: Optional<RemoteTaxiSchemaProvider>): SchemaSourceProvider {
+                      remoteTaxiSchemaProvider: Optional<RemoteTaxiSourceProvider>): SchemaSourceProvider {
       return if (remoteTaxiSchemaProvider.isPresent) remoteTaxiSchemaProvider.get() else localTaxiSchemaProvider
    }
 
@@ -170,7 +170,7 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
 
    private fun registerRemoteSchemaProvider(registry: BeanDefinitionRegistry, schemaStoreClientBeanName: String) {
       log().debug("Enabling remote schema store")
-      registry.registerBeanDefinition("RemoteTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(RemoteTaxiSchemaProvider::class.java)
+      registry.registerBeanDefinition("RemoteTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(RemoteTaxiSourceProvider::class.java)
          .addConstructorArgReference(schemaStoreClientBeanName)
          .beanDefinition)
    }

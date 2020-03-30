@@ -9,10 +9,18 @@ import lang.taxi.types.Accessor
 import lang.taxi.types.ColumnAccessor
 import lang.taxi.types.DestructuredAccessor
 import lang.taxi.types.XpathAccessor
+import org.apache.commons.csv.CSVRecord
+
+object Parsers {
+   val xmlParser: XmlTypedInstanceParser by lazy { XmlTypedInstanceParser() }
+   val csvParser: CsvAttributeAccessorParser by lazy { CsvAttributeAccessorParser() }
+}
 
 class AccessorReader {
-   private val xmlParser = XmlTypedInstanceParser()
-   private val csvParser = CsvAttributeAccessorParser()
+   // There's a cost to building all the Xml junk - so defer if we don't need it,
+   // and re-use inbetween readers
+   private val xmlParser: XmlTypedInstanceParser by lazy { Parsers.xmlParser }
+   private val csvParser: CsvAttributeAccessorParser by lazy { Parsers.csvParser }
 
    fun read(value: Any, targetTypeRef: TypeReference, accessor: Accessor, schema: Schema): TypedInstance {
       val targetType = schema.type(targetTypeRef)
@@ -31,7 +39,9 @@ class AccessorReader {
    private fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor): TypedInstance {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
-         is String -> csvParser.parse(value, targetType, accessor)
+         is String -> csvParser.parse(value, targetType, accessor, schema)
+         // Efficient parsing where we've already parsed the record once (eg., streaming from disk).
+         is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema)
          else -> TODO()
       }
    }
@@ -48,7 +58,7 @@ class AccessorReader {
    private fun parseXml(value: Any, targetType: Type, schema: Schema, accessor: XpathAccessor): TypedInstance {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
-         is String -> xmlParser.parse(value, targetType, accessor)
+         is String -> xmlParser.parse(value, targetType, accessor, schema)
          else -> TODO()
       }
    }

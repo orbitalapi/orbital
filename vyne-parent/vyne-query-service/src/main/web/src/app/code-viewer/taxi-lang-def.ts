@@ -6,9 +6,10 @@ export function taxiLangDef(hljs) {
   };
 
 
-  const POLICY_KEYWORDS = 'policy against read write case else permit filter'
+  const POLICY_KEYWORDS = 'policy against read write case else permit filter';
+  const MAPPING_KEYWORDS = 'by column xpath json';
   const KEYWORD = {
-    keyword: `type alias enum namespace as service operation ${POLICY_KEYWORDS}`,
+    keyword: `type alias inherits enum namespace as service operation import ${POLICY_KEYWORDS} ${MAPPING_KEYWORDS}`,
     literal: 'true false null',
     built_in: 'Boolean String Int Decimal Date Time DateTime Instant Array Any Double Void'
   };

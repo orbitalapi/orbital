@@ -3,10 +3,13 @@ package io.vyne.models
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.schemas.*
 import lang.taxi.types.Accessor
+import lang.taxi.types.ColumnAccessor
+import org.apache.commons.csv.CSVRecord
+
 
 class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema) {
    private val valueReader = ValueReader()
-   private val accessorReader = AccessorReader()
+   private val accessorReader: AccessorReader by lazy { AccessorReader() }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
 
    private val mappedAttributes: MutableMap<AttributeName, TypedInstance> = mutableMapOf()
@@ -54,24 +57,36 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
       // Otherwise, look to leverage conditions.
       // Note - revisit if this proves to be problematic.
       return when {
-         valueReader.contains(value, attributeName) -> {
-            val attributeValue = valueReader.read(value, attributeName)
-            if (attributeValue == null) {
-               TypedNull(schema.type(field.type))
-            } else {
-               TypedInstance.from(schema.type(field.type.name), attributeValue, schema)
-            }
+         // Cheaper readers first
+         value is CSVRecord && field.accessor is ColumnAccessor -> {
+            readAccessor(field.type, field.accessor)
          }
+
+         // ValueReader can be expensive if the value is an object,
+         // so only use the valueReader early if the value is a map
+         value is Map<*, *> && valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
          field.accessor != null -> {
             readAccessor(field.type, field.accessor)
-
          }
          field.readCondition != null -> {
             conditionalFieldSetEvaluator.evaluate(field.readCondition, attributeName, schema.type(field.type))
          }
+         // Not a map, so could be an object, try the value reader - but this is an expensive
+         // call, so we defer to last-ish
+         valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
+
          else -> error("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read")
       }
 
+   }
+
+   private fun readWithValueReader(attributeName: AttributeName, field: Field): TypedInstance {
+      val attributeValue = valueReader.read(value, attributeName)
+      return if (attributeValue == null) {
+         TypedNull(schema.type(field.type))
+      } else {
+         TypedInstance.from(schema.type(field.type.name), attributeValue, schema, true)
+      }
    }
 
 }

@@ -5,6 +5,7 @@ import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import io.vyne.models.PrimitiveParser
 import io.vyne.models.TypedInstance
+import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.types.XpathAccessor
 import org.apache.commons.io.IOUtils
@@ -35,15 +36,15 @@ class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = Prim
       })
 
 
-   fun parse(xml: Document, type: Type, accessor: XpathAccessor): TypedInstance {
+   fun parse(xml: Document, type: Type, accessor: XpathAccessor, schema:Schema): TypedInstance {
       val xpath = xpathCache.get(accessor.expression)
       val result = xpath.evaluate(xml)
-      return primitiveParser.parse(result, type)
+      return primitiveParser.parse(result, type, schema)
    }
 
 
-   fun parse(xml: String, type: Type, accessor: XpathAccessor): TypedInstance {
+   fun parse(xml: String, type: Type, accessor: XpathAccessor, schema:Schema): TypedInstance {
       val document = documentCache.get(xml)
-      return parse(document, type, accessor)
+      return parse(document, type, accessor, schema)
    }
 }

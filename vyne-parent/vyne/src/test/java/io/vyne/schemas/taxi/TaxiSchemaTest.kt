@@ -2,6 +2,8 @@ package io.vyne.schemas.taxi
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.NamedSource
+import io.vyne.VersionedSource
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
 import junit.framework.Assert.fail
@@ -48,11 +50,13 @@ type Video {}
       """.trimIndent()
 
       // Jumble the order of imported sources
-      val schema = TaxiSchema.from(NamedSource.unnamed(listOf(srcC, srcA, srcB, srcD)))
+      val schema = TaxiSchema.from(listOf(srcC, srcA, srcB, srcD).map { VersionedSource.sourceOnly(it) })
       schema.type("baz.Library").attribute("inventory").type.fullyQualifiedName.should.equal("bar.Book")
 
       val missingTypes = listOf("baz.PhoneNumber", "baz.Library", "bar.PageNumber", "bar.Book", "foo.Age", "foo.Person", "bak.Video").mapNotNull {
-         if (!schema.hasType(it)) { it } else null
+         if (!schema.hasType(it)) {
+            it
+         } else null
       }
       if (missingTypes.isNotEmpty()) {
          fail("The following types are missing: ${missingTypes.joinToString(",")}")
@@ -89,7 +93,7 @@ namespace baz
  type Library {
    inventory : bar.Book[]
 }"""
-      val schemas = TaxiSchema.from(NamedSource.unnamed(listOf(srcC, srcB, srcA)))
+      val schemas = TaxiSchema.from(listOf(srcC, srcB, srcA).map { VersionedSource.sourceOnly(it) })
    }
 
    @Test
@@ -134,7 +138,7 @@ namespace bar
 [[ I am docs ]]
 type extension Customer {}
       """.trimIndent()
-      val schema = TaxiSchema.from(NamedSource.unnamed(listOf(srcB, srcA)))
+      val schema = TaxiSchema.from(listOf(srcB, srcA).map { VersionedSource.sourceOnly(it) })
       schema.type("foo.Customer").typeDoc.should.equal("I am docs")
 
    }

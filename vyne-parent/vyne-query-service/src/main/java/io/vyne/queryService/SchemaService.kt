@@ -1,13 +1,13 @@
 package io.vyne.queryService
 
+import io.vyne.VersionedSource
 import io.vyne.queryService.policies.PolicyDto
 import io.vyne.queryService.schemas.SchemaImportRequest
 import io.vyne.queryService.schemas.SchemaImportService
 import io.vyne.queryService.schemas.SchemaPreview
 import io.vyne.queryService.schemas.SchemaPreviewRequest
 import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.schemaStore.VersionedSchema
-import io.vyne.schemaStore.VersionedSchemaProvider
+import io.vyne.schemaStore.VersionedSourceProvider
 import io.vyne.schemas.Schema
 import lang.taxi.generators.SourceFormatter
 import org.springframework.web.bind.annotation.*
@@ -22,9 +22,9 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
    }
 
    @GetMapping(path = ["/schemas"])
-   fun getVersionedSchemas(): List<VersionedSchema> {
-      return if (schemaProvider is VersionedSchemaProvider) {
-         schemaProvider.versionedSchemas.sortedBy { it.name }
+   fun getVersionedSchemas(): List<VersionedSource> {
+      return if (schemaProvider is VersionedSourceProvider) {
+         schemaProvider.versionedSources.sortedBy { it.name }
       } else {
          emptyList()
       }
@@ -86,7 +86,7 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
    // SHould probably either align the two api's or remove one.
    // Looks like schema-store-api isn't used anywhere.
    @PostMapping(path = ["/schemas"])
-   fun submitSchema(@RequestBody request: SchemaImportRequest): Mono<VersionedSchema> {
+   fun submitSchema(@RequestBody request: SchemaImportRequest): Mono<VersionedSource> {
       if (!config.newSchemaSubmissionEnabled) {
          throw OperationNotPermittedException()
       }

@@ -2,6 +2,9 @@ package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
+import com.google.common.annotations.Beta
+import com.google.common.hash.Hashing
+import io.vyne.VersionedSource
 import io.vyne.query.TypeMatchingStrategy
 import io.vyne.schemas.taxi.DeferredConstraintProvider
 import io.vyne.schemas.taxi.EmptyDeferredConstraintProvider
@@ -13,6 +16,7 @@ import java.io.IOException
 import java.io.Serializable
 import java.io.StreamTokenizer
 import java.io.StringReader
+import java.nio.charset.Charset
 
 
 fun String.fqn(): QualifiedName {
@@ -241,9 +245,14 @@ data class Type(
 
    val typeParameters: List<Type> = emptyList(),
 
+
+   // Part of the migration back to taxi types
+   val taxiType: lang.taxi.types.Type,
+
    val typeDoc: String?
+
 ) : SchemaMember {
-   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), metadata: List<Metadata> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>, typeDoc: String? = null) : this(name.fqn(), attributes, modifiers, metadata, aliasForType, inherits, enumValues, sources, typeDoc = typeDoc)
+   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), metadata: List<Metadata> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>, taxiType: lang.taxi.types.Type, typeDoc: String? = null) : this(name.fqn(), attributes, modifiers, metadata, aliasForType, inherits, enumValues, sources, taxiType = taxiType, typeDoc = typeDoc)
 
    @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForType != null
@@ -313,6 +322,43 @@ data class Type(
    }
 }
 
+/**
+ * Indciates a type, along with the sources that defined it.
+ * The idea here is that if the sources change, the type may have a different
+ * definition
+ */
+@Beta
+data class VersionedType(
+   val sources: List<VersionedSource>,
+   // Migrating away from Vyne Type to taxiType
+   @Deprecated("use taxiType instead")
+   val type: Type,
+   val taxiType: lang.taxi.types.Type
+) {
+   val fullyQualifiedName = type.fullyQualifiedName
+   val versionHash: String
+   val versionedNameHash: String
+
+   val versionedName: String
+
+   init {
+      val sourceIds = sources.map { it.id }
+         .sorted()
+         .joinToString("|")
+      val qualifiedNameHash = Hashing.sha256().hashString(fullyQualifiedName, Charset.defaultCharset()).toString()
+         .substring(0, 6)
+
+      // If the fully qualified name is shorter than the hashed version - just use that.
+      val nameToHash = listOf(type.fullyQualifiedName, qualifiedNameHash).minBy { it.length }!!
+      versionHash = Hashing.sha256().hashString(sourceIds, Charset.defaultCharset()).toString()
+         .substring(0, 6)
+      versionedNameHash = "${nameToHash}_$versionHash"
+      versionedName = "${fullyQualifiedName}@$versionHash"
+   }
+
+
+}
+
 enum class FieldModifier {
    CLOSED
 }
@@ -344,11 +390,16 @@ data class SourceCode(
 
 class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>) : Schema {
 
+   override val sources: List<VersionedSource> = emptyList()
    override val policies: Set<Policy> = emptySet()
    override val typeCache: TypeCache = DefaultTypeCache(this.types)
+   override fun taxiType(name: QualifiedName): lang.taxi.types.Type {
+      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+   }
 }
 
 interface Schema {
+   val sources: List<VersionedSource>
    val types: Set<Type>
    val services: Set<Service>
 
@@ -371,6 +422,13 @@ interface Schema {
       val type = typeCache.type(name)
       return type
    }
+
+   // Note - in the future, we may wish to be smart, and only include the
+   // sources that contributed to the types definition.
+   // That's a bit too much work for now.
+   fun versionedType(name: QualifiedName) = VersionedType(this.sources, type(name), taxiType(name))
+
+   fun taxiType(name:QualifiedName):lang.taxi.types.Type
 
    fun type(name: QualifiedName) = typeCache.type(name)
 

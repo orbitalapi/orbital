@@ -1,12 +1,11 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.utils.log
+import lang.taxi.jvm.common.PrimitiveTypes
 import lang.taxi.types.PrimitiveType
+import org.springframework.core.convert.support.DefaultConversionService
 
 @JsonDeserialize(using = TypeNamedInstanceDeserializer::class)
 data class TypeNamedInstance(
@@ -15,6 +14,11 @@ data class TypeNamedInstance(
 ) {
    constructor(typeName: QualifiedName, value: Any?) : this(typeName.fullyQualifiedName, value)
 }
+
+data class VersionedTypedInstance(
+   val type: VersionedType,
+   val instance: TypedInstance
+)
 
 interface TypedInstance {
    val type: Type
@@ -36,7 +40,7 @@ interface TypedInstance {
    fun valueEquals(valueToCompare: TypedInstance): Boolean
 
    companion object {
-      fun fromNamedType(typeNamedInstance: TypeNamedInstance, schema: Schema): TypedInstance {
+      fun fromNamedType(typeNamedInstance: TypeNamedInstance, schema: Schema, performTypeConversions:Boolean = true): TypedInstance {
          val (typeName, value) = typeNamedInstance
          val type = schema.type(typeName)
          return when {
@@ -47,27 +51,27 @@ interface TypedInstance {
                   if (member == null) {
                      TypedNull(collectionMemberType)
                   } else {
-                     fromNamedType(member as TypeNamedInstance, schema)
+                     fromNamedType(member as TypeNamedInstance, schema, performTypeConversions)
                   }
                }
                TypedCollection(collectionMemberType, members)
             }
-            type.isScalar -> TypedValue(type, value)
-            else -> createTypedObject(typeNamedInstance, schema)
+            type.isScalar -> TypedValue.from(type, value, performTypeConversions)
+            else -> createTypedObject(typeNamedInstance, schema, performTypeConversions)
          }
       }
 
-      private fun createTypedObject(typeNamedInstance: TypeNamedInstance, schema: Schema): TypedObject {
+      private fun createTypedObject(typeNamedInstance: TypeNamedInstance, schema: Schema, performTypeConversions: Boolean): TypedObject {
          val type = schema.type(typeNamedInstance.typeName)
          val attributes = typeNamedInstance.value!! as Map<String, Any>
          val typedAttributes = attributes.map { (attributeName, typedInstance) ->
             when (typedInstance) {
-               is TypeNamedInstance -> attributeName to fromNamedType(typedInstance, schema)
+               is TypeNamedInstance -> attributeName to fromNamedType(typedInstance, schema, performTypeConversions)
                is Collection<*> -> {
                   val collectionTypeRef = type.attributes[attributeName]?.type
                      ?: error("Cannot look up collection type for attribute $attributeName as it is not a defined attribute on type ${type.name}")
                   val collectionType = schema.type(collectionTypeRef)
-                  attributeName to TypedCollection(collectionType, typedInstance.map { fromNamedType(it as TypeNamedInstance, schema) })
+                  attributeName to TypedCollection(collectionType, typedInstance.map { fromNamedType(it as TypeNamedInstance, schema, performTypeConversions) })
                }
                else -> error("Unhandled scenario creating typedObject from TypeNamedInstance -> ${typedInstance::class.simpleName}")
             }
@@ -75,24 +79,26 @@ interface TypedInstance {
          return TypedObject(type, typedAttributes)
       }
 
-      fun from(type: Type, value: Any?, schema: Schema): TypedInstance {
+      fun from(type: Type, value: Any?, schema: Schema, performTypeConversions: Boolean = true): TypedInstance {
          return when {
             value is TypedInstance -> value
             value == null -> TypedNull(type)
             value is Collection<*> -> {
                val collectionMemberType = getCollectionType(type, schema)
-               TypedCollection(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema) })
+               TypedCollection(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema, performTypeConversions) })
             }
-            type.isScalar -> TypedValue(type, value)
+            type.isScalar -> {
+               TypedValue.from(type, value, performTypeConversions)
+            }
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
             // Must be a CSV ish type value.
-            type.isCollection -> readCollectionTypeFromNonCollectionValue(type,value,schema)
+            type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema)
             else -> TypedObject.fromValue(type, value, schema)
          }
       }
 
       private fun readCollectionTypeFromNonCollectionValue(type: Type, value: Any, schema: Schema): TypedInstance {
-         return CollectionReader.readCollectionFromNonTypedCollectionValue(type,value,schema)
+         return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema)
       }
 
       private fun getCollectionType(type: Type, schema: Schema): Type {
@@ -128,14 +134,14 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
          return fromValue(schema.type(typeName), value, schema)
       }
 
-      fun fromAttributes(typeName: String, attributes: Map<String, Any>, schema: Schema): TypedObject {
-         return fromAttributes(schema.type(typeName), attributes, schema)
+      fun fromAttributes(typeName: String, attributes: Map<String, Any>, schema: Schema, performTypeConversions: Boolean = true): TypedObject {
+         return fromAttributes(schema.type(typeName), attributes, schema, performTypeConversions)
       }
 
-      fun fromAttributes(type: Type, attributes: Map<String, Any>, schema: Schema): TypedObject {
+      fun fromAttributes(type: Type, attributes: Map<String, Any>, schema: Schema, performTypeConversions: Boolean = true): TypedObject {
          val typedAttributes: Map<String, TypedInstance> = attributes.map { (attributeName, value) ->
             val attributeType = schema.type(type.attributes.getValue(attributeName).type)
-            attributeName to TypedInstance.from(attributeType, value, schema)
+            attributeName to TypedInstance.from(attributeType, value, schema, performTypeConversions)
          }.toMap()
          return TypedObject(type, typedAttributes)
       }
@@ -193,7 +199,23 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
    }
 }
 
-data class TypedValue(override val type: Type, override val value: Any) : TypedInstance {
+data class TypedValue private constructor(override val type: Type, override val value: Any) : TypedInstance {
+   companion object {
+      private val conversionService = DefaultConversionService()
+      fun from(type: Type, value: Any, performTypeConversions: Boolean = true): TypedValue {
+         val valueToUse = if (performTypeConversions) {
+            if (type.taxiType !is PrimitiveType) {
+               error("Type is not a primitive, cannot be converted")
+            } else {
+               conversionService.convert(value, PrimitiveTypes.getJavaType(type.taxiType))
+            }
+         } else {
+            value
+         }
+         return TypedValue(type, valueToUse)
+      }
+   }
+
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
       return TypedValue(typeAlias, value)
    }
@@ -206,7 +228,7 @@ data class TypedValue(override val type: Type, override val value: Any) : TypedI
       if (valueToCompare !is TypedValue) {
          return false
       }
-      if (!this.type.resolvesSameAs(valueToCompare.type)) return false;
+      if (!(this.type.resolvesSameAs(valueToCompare.type) || valueToCompare.type.inheritsFrom(this.type))) return false;
       return this.value == valueToCompare.value
    }
 

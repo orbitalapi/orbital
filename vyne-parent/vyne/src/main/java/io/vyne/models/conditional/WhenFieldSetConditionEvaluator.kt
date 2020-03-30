@@ -22,13 +22,13 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
       return when(assignment) {
          is ScalarAccessorValueAssignment -> factory.readAccessor(type,assignment.accessor) // WTF? Why isn't the compiler working this out?
          is ReferenceAssignment -> factory.getValue(assignment.reference)
-         is LiteralAssignment -> TypedInstance.from(type,assignment.value,factory.schema)
+         is LiteralAssignment -> TypedInstance.from(type,assignment.value,factory.schema, true)
          is DestructuredAssignment -> {
             val resolvedAttributes = assignment.assignments.map { nestedAssignment ->
                val attributeType = factory.schema.type(type.attribute(nestedAssignment.fieldName).type)
                nestedAssignment.fieldName to evaluateExpression(nestedAssignment, attributeType)
             }.toMap()
-            TypedObject.fromAttributes(type,resolvedAttributes,factory.schema)
+            TypedObject.fromAttributes(type,resolvedAttributes,factory.schema, true)
          }
          else -> TODO()
       }
