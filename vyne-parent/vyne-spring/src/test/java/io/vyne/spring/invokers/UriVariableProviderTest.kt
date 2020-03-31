@@ -1,5 +1,6 @@
 package io.vyne.spring.invokers
 
+import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import io.vyne.models.TypedValue
 import io.vyne.schemas.Parameter
@@ -14,7 +15,7 @@ class UriVariableProviderTest {
    @Test
    fun matchesBasedOnType() {
       val int = type("lang.taxi.Int")
-      val params = listOf(Parameter(int) to TypedValue(int, 5))
+      val params = listOf(Parameter(int) to TypedValue.from(int, 5))
       val url = "http://foo.com/bar/{lang.taxi.Int}"
 
       val variables = provider.getUriVariables(params, url)
@@ -24,7 +25,7 @@ class UriVariableProviderTest {
    @Test
    fun matchesBasedOnName() {
       val int = type("lang.taxi.Int")
-      val params = listOf(Parameter(int, name = "id") to TypedValue(int, 5))
+      val params = listOf(Parameter(int, name = "id") to TypedValue.from(int, 5))
       val url = "http://foo.com/bar/{id}"
 
       val variables = provider.getUriVariables(params, url)
@@ -41,6 +42,6 @@ class UriVariableProviderTest {
 
 
    fun type(name: String): Type {
-      return Type(name.fqn(), sources = emptyList(), typeDoc = null)
+      return Type(name.fqn(), sources = emptyList(), typeDoc = null, taxiType = mock())
    }
 }

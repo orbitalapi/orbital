@@ -204,10 +204,10 @@ data class TypedValue private constructor(override val type: Type, override val 
       private val conversionService = DefaultConversionService()
       fun from(type: Type, value: Any, performTypeConversions: Boolean = true): TypedValue {
          val valueToUse = if (performTypeConversions) {
-            if (type.taxiType !is PrimitiveType) {
+            if (!type.taxiType.inheritsFromPrimitive) {
                error("Type is not a primitive, cannot be converted")
             } else {
-               conversionService.convert(value, PrimitiveTypes.getJavaType(type.taxiType))
+               conversionService.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!))
             }
          } else {
             value
