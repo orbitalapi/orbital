@@ -93,31 +93,6 @@ fun lang.taxi.types.Type.asVyneTypeReference(): TypeReference {
    return TypeReference(this.qualifiedName.fqn(), false)
 }
 
-data class QualifiedName(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) : Serializable {
-   val name: String
-      get() = fullyQualifiedName.split(".").last()
-
-   val parameterizedName: String
-      get() {
-         return if (parameters.isEmpty()) {
-            fullyQualifiedName
-         } else {
-            val params = this.parameters.joinToString(",") { it.parameterizedName }
-            "$fullyQualifiedName<$params>"
-         }
-      }
-
-   fun rawTypeEquals(other: QualifiedName): Boolean {
-      return this.fullyQualifiedName == other.fullyQualifiedName
-   }
-
-   val namespace: String
-      get() {
-         return fullyQualifiedName.split(".").dropLast(1).joinToString(".")
-      }
-
-   override fun toString(): String = fullyQualifiedName
-}
 
 typealias OperationName = String
 typealias ServiceName = String
@@ -321,6 +296,7 @@ data class Type(
       return this.metadata.any { it.name == name }
    }
 }
+
 
 /**
  * Indciates a type, along with the sources that defined it.

@@ -14,7 +14,7 @@ import {MatTabsModule} from '@angular/material/tabs';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {BrowserModule} from '@angular/platform-browser';
 import {MatSelectModule} from '@angular/material/select';
-import {TypeAutocompleteComponent} from '../query-wizard/type-autocomplete.component';
+import {TypeAutocompleteComponent} from '../type-autocomplete/type-autocomplete.component';
 import {MatChipsModule} from '@angular/material/chips';
 import {MatIconModule} from '@angular/material/icon';
 import {MatProgressBarModule} from '@angular/material/progress-bar';

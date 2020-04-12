@@ -36,31 +36,6 @@ import org.springframework.core.type.filter.AnnotationTypeFilter
 import java.util.*
 
 
-class VyneFactory(private val schemaProvider: SchemaSourceProvider, private val operationInvokers: List<OperationInvoker>) : FactoryBean<Vyne> {
-   override fun isSingleton() = true
-   override fun getObjectType() = Vyne::class.java
-
-   override fun getObject(): Vyne {
-      return buildVyne()
-   }
-
-   // For readability
-   fun createVyne() = getObject()
-
-   private fun buildVyne(): Vyne {
-      val vyne = Vyne(QueryEngineFactory.withOperationInvokers(operationInvokers))
-      vyne.addSchema(schemaProvider.schema())
-//      schemaProvider.schemaStrings().forEach { schema ->
-//         // TODO :  This is all a bit much ... going to a TaxiSchema and back again.
-//         // Should really be able to do:  Vyne().addSchema(TypeSchema.from(type))
-//         log().debug("Registering schema: $schema")
-//         vyne.addSchema(TaxiSchema.from(schema))
-//      }
-      return vyne
-   }
-}
-
-
 @Configuration
 @AutoConfigureAfter(VyneConfigRegistrar::class, RibbonAutoConfiguration::class)
 // TODO : re-enbale external schema services.

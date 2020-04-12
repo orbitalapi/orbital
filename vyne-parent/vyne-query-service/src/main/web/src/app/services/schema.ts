@@ -127,6 +127,15 @@ export interface Service {
   typeDoc?: string;
 }
 
+export interface Pipeline {
+  inputChannel: any; // TODO
+  inputType: Type;
+  persistRawInput: boolean;
+
+  outputChannel: any; // TODO
+  outputType: Type;
+}
+
 export function isService(candidate): candidate is Service {
   return (candidate as Service).operations !== undefined;
 }

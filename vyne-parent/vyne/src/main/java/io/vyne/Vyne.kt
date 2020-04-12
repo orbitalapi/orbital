@@ -34,6 +34,7 @@ interface ModelContainer : SchemaContainer {
 
 class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFactory, private val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) : ModelContainer {
    private val schemas = mutableListOf<Schema>()
+
    //   private val models = mutableSetOf<TypedInstance>()
    private val factSets: FactSetMap = FactSetMap.create()
 
@@ -110,6 +111,13 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    //   fun getType(typeName: String): Type = schema.type(typeName)
    fun type(typeName: String): Type = getType(typeName)
 
+   fun type(typeReference: VersionedTypeReference): Type {
+      // TODO : Assert that the versions are the same, or
+      // possibly even go and fetch the type if required
+      log().warn("Not currently asserting type versions match")
+      return getType(typeReference.typeName.fullyQualifiedName)
+   }
+
    fun getService(serviceName: String): Service = schema.service(serviceName)
 
 
@@ -119,7 +127,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
 
    fun execute(query: Query): QueryResult {
       query.facts.forEach { fact -> this.addKeyValuePair(fact.typeName, fact.value, fact.factSetId) }
-      return when(query.queryMode) {
+      return when (query.queryMode) {
          QueryMode.DISCOVER -> this.query().find(query.expression)
          QueryMode.GATHER -> this.query().gather(query.expression)
          QueryMode.BUILD -> this.query().build(query.expression)

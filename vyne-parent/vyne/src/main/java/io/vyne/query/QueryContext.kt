@@ -157,6 +157,7 @@ data class QueryContext(
    fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
    fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
 
+   fun build(typeName: QualifiedName): QueryResult = build(typeName.fullyQualifiedName)
    fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
    fun build(expression: QueryExpression): QueryResult = queryEngine.build(expression, this)
 

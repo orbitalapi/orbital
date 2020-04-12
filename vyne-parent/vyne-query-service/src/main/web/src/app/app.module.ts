@@ -53,7 +53,6 @@ import {TaxiViewerModule} from './query-wizard/taxi-viewer/taxi-viewer.module';
 import {SchemaExplorerComponent} from './schema-explorer/schema-explorer.component';
 import {NewSchemaWizardComponent} from './schema-explorer/new-schema-wizard/new-schema-wizard.component';
 import {FactEditorComponent} from './query-wizard/fact-editor/fact-editor.component';
-import {TypeAutocompleteComponent} from './query-wizard/type-autocomplete.component';
 import {PolicyManagerComponent} from './policy-manager/policy-manager.component';
 import {PolicyEditorComponent} from './policy-manager/policy-editor.component';
 import {CaseConditionEditorComponent} from './policy-manager/case-condition-editor.component';
@@ -71,20 +70,22 @@ import {TocHostDirective} from './type-viewer/toc-host.directive';
 import {ContentsTableComponent} from './type-viewer/contents-table/contents-table.component';
 import {TypeLinkGraphComponent} from './type-viewer/type-link-graph/type-link-graph.component';
 import {TypeLinkGraphContainerComponent} from './type-viewer/type-link-graph/type-link-graph-container.component';
-import { CodeViewerComponent } from './code-viewer/code-viewer.component';
+import {CodeViewerComponent} from './code-viewer/code-viewer.component';
 import {HighlightModule} from 'ngx-highlightjs';
 import {PolicyManagerContainerComponent} from './policy-manager/policy-manager-container.component';
-import { DescriptionEditorComponent } from './type-viewer/description-editor/description-editor.component';
+import {DescriptionEditorComponent} from './type-viewer/description-editor/description-editor.component';
 import {DescriptionEditorContainerComponent} from './type-viewer/description-editor/description-editor-container.component';
-import { SearchResultComponent } from './search/seach-result/search-result.component';
-import { SearchResultListComponent } from './search/search-result-list/search-result-list.component';
-import { SearchBarComponent } from './search/search-bar/search-bar.component';
+import {SearchResultComponent} from './search/seach-result/search-result.component';
+import {SearchResultListComponent} from './search/search-result-list/search-result-list.component';
+import {SearchBarComponent} from './search/search-bar/search-bar.component';
 import {NgSelectModule} from '@ng-select/ng-select';
 import {SearchBarContainerComponent} from './search/search-bar/search-bar.container.component';
 import {SearchService} from './search/search.service';
-import { ObjectViewComponent } from './object-view/object-view.component';
-import { FileFactSelectorComponent } from './query-wizard/file-fact-selector/file-fact-selector.component';
+import {ObjectViewComponent} from './object-view/object-view.component';
+import {FileFactSelectorComponent} from './query-wizard/file-fact-selector/file-fact-selector.component';
 import {CovalentFileModule} from '@covalent/core';
+import {TypeAutocompleteModule} from './type-autocomplete/type-autocomplete.module';
+import {PipelinesModule} from './pipelines/pipelines.module';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -119,7 +120,6 @@ export const routerModule = RouterModule.forRoot(
     SchemaExplorerComponent,
     NewSchemaWizardComponent,
     FactEditorComponent,
-    TypeAutocompleteComponent,
     PolicyManagerContainerComponent,
     PolicyManagerComponent,
     PolicyEditorComponent,
@@ -193,11 +193,15 @@ export const routerModule = RouterModule.forRoot(
     MomentModule,
 
     TaxiViewerModule,
-    NgSelectModule
+    NgSelectModule,
+    TypeAutocompleteModule,
+    PipelinesModule
+
 
   ],
   // Not sure why I'm having to do this -- but here we are
   providers: [TypesService, QueryService, SearchService],
+  exports: [],
   bootstrap: [AppComponent]
 })
 export class AppModule {

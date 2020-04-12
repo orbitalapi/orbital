@@ -36,6 +36,7 @@
       <module>vyne-query-api</module>
       <module>vyne-client-spring</module>
       <module>file-schema-server</module>
+      <module>pipelines</module>
    </modules>
 
    <dependencies>
