@@ -10,6 +10,7 @@ import lang.taxi.policies.RuleSet
  * instead to define how data is treated once it is retrieved, and before it
  * is passed downstream.
  */
+@Deprecated("Migrating back to Taxi policies")
 data class Policy(
    val name: QualifiedName,
    val targetType: Type,
