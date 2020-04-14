@@ -8,6 +8,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.pipelines.*
+import io.vyne.pipelines.runner.events.ObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.pipelines.runner.transport.direct.*
 import io.vyne.schemas.Schema
@@ -19,6 +20,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
+import java.time.Instant
 
 class PipelineTest {
 
@@ -41,7 +43,11 @@ type UserEvent {
 """.trimIndent()
       val (vyne, stub) = testVyne(src)
       stub.addResponse("getUserNameFromId", vyne.parseKeyValuePair("Username", "Jimmy Pitt"))
-      val builder = PipelineBuilder(PipelineTransportFactory(listOf(DirectInputBuilder(), DirectOutputBuilder())), SimpleVyneProvider(vyne))
+      val builder = PipelineBuilder(
+         PipelineTransportFactory(listOf(DirectInputBuilder(), DirectOutputBuilder())),
+         SimpleVyneProvider(vyne),
+         ObserverProvider(ConsoleLogger())
+      )
 
       val source = TestSource(vyne.type("PersonLoggedOnEvent"), vyne.schema)
       val pipeline = Pipeline(
@@ -84,7 +90,8 @@ class TestSource(val type: Type, val schema: Schema) {
       val typedInstance = TypedInstance.from(type, map, schema)
       emitter.sink().next(
          PipelineInputMessage(
-            messageProvider = { typedInstance }
+            messageProvider = { typedInstance },
+            messageTimestamp = Instant.now()
          )
       )
    }

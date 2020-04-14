@@ -56,7 +56,7 @@ class DirectOutput : PipelineOutputTransport {
    override val type: VersionedTypeReference
       get() = TODO("Not yet implemented")
 
-   override fun write(typedInstance: Any) {
+   override fun write(typedInstance: Any, logger: PipelineLogger) {
       require(typedInstance is TypedInstance)
       this.messages.add(typedInstance)
    }

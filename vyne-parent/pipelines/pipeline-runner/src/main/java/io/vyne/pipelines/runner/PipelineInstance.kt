@@ -8,6 +8,6 @@ import reactor.core.Disposable
 class PipelineInstance(
    private val spec: Pipeline,
    private val activePipeline: Disposable,
-   val input:PipelineInputTransport,
-   val output:PipelineOutputTransport
+   val input: PipelineInputTransport,
+   val output: PipelineOutputTransport
 )
