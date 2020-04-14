@@ -7,23 +7,6 @@ import lang.taxi.services.AttributeValueFromParameterConstraint
 import lang.taxi.services.ReturnValueDerivedFromParameterConstraint
 
 
-typealias TaxiConstraint = lang.taxi.services.Constraint
-
-interface ConstraintProvider<out T : Constraint> {
-   fun applies(constraint: TaxiConstraint): Boolean
-   fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): T
-}
-
-interface InputConstraintProvider : ConstraintProvider<InputConstraint>
-interface ContractConstraintProvider : ConstraintProvider<OutputConstraint>
-
-interface DeferredConstraintProvider {
-   fun buildConstraints(): List<InputConstraint>
-}
-
-class EmptyDeferredConstraintProvider : DeferredConstraintProvider {
-   override fun buildConstraints(): List<InputConstraint> = emptyList()
-}
 
 class FunctionConstraintProvider(val function: () -> List<InputConstraint>) : DeferredConstraintProvider {
    override fun buildConstraints(): List<InputConstraint> = function.invoke()

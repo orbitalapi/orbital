@@ -175,7 +175,7 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
 
          if (rawType.isTypeAlias) {
             require(partialCache.hasType(rawType.aliasForType!!)) { "Type ${rawType.fullyQualifiedName} is declared as a type alias of type ${rawType.aliasForType!!.fullyQualifiedName}, but that type doesn't exist" }
-            val aliasedType = partialCache.type(rawType.aliasForType)
+            val aliasedType = partialCache.type(rawType.aliasForType!!)
             aliasedType.copy(name = rawType.name, metadata = rawType.metadata, aliasForType = aliasedType.name, inherits = inheritedTypes, sources = rawType.sources)
          } else {
             rawType.copy(inherits = inheritedTypes)
