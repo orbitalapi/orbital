@@ -40,7 +40,7 @@ class QueryServiceApp {
    fun taxiJacksonModule() = TaxiJacksonModule()
 
    @Autowired
-   fun logInfo(buildInfo: BuildProperties? = null) {
+   fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {
       val version = buildInfo?.version ?: "Dev version";
       log().info("Vyne query server $version")
    }
