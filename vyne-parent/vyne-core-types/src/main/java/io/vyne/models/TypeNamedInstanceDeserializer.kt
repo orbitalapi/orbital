@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
 
+
 class TypeNamedInstanceDeserializer : JsonDeserializer<TypeNamedInstance>() {
    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): TypeNamedInstance {
       val rawMap = p.readValueAs(Any::class.java)

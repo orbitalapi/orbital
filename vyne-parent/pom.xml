@@ -50,6 +50,11 @@
          </dependency>
          <dependency>
             <groupId>lang.taxi</groupId>
+            <artifactId>core-types</artifactId>
+            <version>${taxi.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>lang.taxi</groupId>
             <artifactId>taxi-annotations</artifactId>
             <version>${taxi.version}</version>
          </dependency>
