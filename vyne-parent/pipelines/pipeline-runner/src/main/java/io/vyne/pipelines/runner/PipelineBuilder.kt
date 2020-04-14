@@ -22,10 +22,17 @@ class PipelineBuilder(val transportFactory: PipelineTransportFactory, val vyneFa
             // Need to leverage the efficient reading we've built for vyne-db module
 
             // TODO : Handle errors and record
-            val messageContents = IOUtils.toString(message.inputStream)
-            TypedInstance.from(inputType, messageContents, vyne.schema)
+            // TODO : The idea here is that metadata may provide hints as to whether
+            // or not we want to deserailize the message.
+            // Note, as I type this, that may be redundant, as the input feed
+            // has enough hints to decide that, and is the concerete place to
+            // express the decision.
+            // For now, just deserialize everything.
+            message.messageProvider()
          }
          .map { typedInstance ->
+            // TODO : Handle failed transformations.
+            // Question: Should Pipelines have dead letter or error topics?
             val vyneResult = vyne.query()
                .addFact(typedInstance)
                .build(outputType.name)
@@ -37,7 +44,9 @@ class PipelineBuilder(val transportFactory: PipelineTransportFactory, val vyneFa
 
       return PipelineInstance(
          pipeline,
-         disposable
+         disposable,
+         input,
+         output
       )
    }
 }

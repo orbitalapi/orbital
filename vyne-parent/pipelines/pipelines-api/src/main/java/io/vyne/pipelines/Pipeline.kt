@@ -1,6 +1,7 @@
 package io.vyne.pipelines
 
 import io.vyne.VersionedTypeReference
+import io.vyne.models.TypedInstance
 import reactor.core.publisher.Flux
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -38,13 +39,11 @@ typealias PipelineTransportType = String
  */
 interface PipelineInputTransport {
    val feed: Flux<PipelineInputMessage>
-
-   fun readAs(input:InputStream, type:VersionedTypeReference) // TODO :  Pausing here to extract types
 }
 
 data class PipelineInputMessage(
-   val inputStream: InputStream,
-   val metadata: Map<String,Any> = emptyMap()
+   val metadata: Map<String, Any> = emptyMap(),
+   val messageProvider: () -> TypedInstance
 )
 
 
