@@ -2,6 +2,7 @@ package io.vyne.pipelines
 
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
+import io.vyne.schemas.Schema
 import io.vyne.utils.log
 import reactor.core.publisher.Flux
 import java.io.ByteArrayInputStream
@@ -28,6 +29,7 @@ data class PipelineChannel(
 interface PipelineTransportSpec {
    val type: PipelineTransportType
    val direction: PipelineDirection
+   val targetType: VersionedTypeReference
 }
 
 enum class PipelineDirection {
@@ -51,7 +53,7 @@ data class PipelineInputMessage(
    // has received it
    val messageTimestamp: Instant,
    val metadata: Map<String, Any> = emptyMap(),
-   val messageProvider: (logger: PipelineLogger) -> TypedInstance
+   val messageProvider: (schema: Schema, logger: PipelineLogger) -> TypedInstance
 ) {
    val id = messageTimestamp.toEpochMilli()
 }
@@ -59,7 +61,7 @@ data class PipelineInputMessage(
 
 interface PipelineOutputTransport {
    val type: VersionedTypeReference
-   fun write(typedInstance: Any, logger: PipelineLogger)
+   fun write(typedInstance: TypedInstance, logger: PipelineLogger)
 }
 
 

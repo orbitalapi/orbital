@@ -19,6 +19,9 @@ object DirectTransport {
 data class DirectTransportInputSpec(val source: Flux<PipelineInputMessage>) : PipelineTransportSpec {
    override val type: PipelineTransportType = DirectTransport.TYPE
    override val direction: PipelineDirection = PipelineDirection.INPUT
+   override val targetType: VersionedTypeReference
+      get() = TODO("Not yet implemented")
+
 }
 
 class DirectInputBuilder : PipelineInputTransportBuilder<DirectTransportInputSpec> {
@@ -37,6 +40,8 @@ class DirectInput(override val feed: Flux<PipelineInputMessage>) : PipelineInput
 object DirectOutputSpec : PipelineTransportSpec {
    override val type: PipelineTransportType = DirectTransport.TYPE
    override val direction: PipelineDirection = PipelineDirection.OUTPUT
+   override val targetType: VersionedTypeReference
+      get() = TODO("Not yet implemented")
 }
 
 class DirectOutputBuilder : PipelineOutputTransportBuilder<DirectOutputSpec> {
@@ -56,8 +61,7 @@ class DirectOutput : PipelineOutputTransport {
    override val type: VersionedTypeReference
       get() = TODO("Not yet implemented")
 
-   override fun write(typedInstance: Any, logger: PipelineLogger) {
-      require(typedInstance is TypedInstance)
+   override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
       this.messages.add(typedInstance)
    }
 

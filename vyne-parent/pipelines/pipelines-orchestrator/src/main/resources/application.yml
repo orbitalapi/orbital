@@ -1,0 +1,6 @@
+spring:
+   application:
+      name: pipeline-orchestrator
+
+server:
+   port: 9600

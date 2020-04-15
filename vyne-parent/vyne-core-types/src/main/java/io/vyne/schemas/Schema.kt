@@ -1,7 +1,9 @@
 package io.vyne.schemas
 
 import io.vyne.VersionedSource
+import io.vyne.VersionedTypeReference
 import io.vyne.utils.assertingThat
+import io.vyne.utils.log
 
 
 interface Schema {
@@ -34,7 +36,7 @@ interface Schema {
    // That's a bit too much work for now.
    fun versionedType(name: QualifiedName) = VersionedType(this.sources, type(name), taxiType(name))
 
-   fun taxiType(name:QualifiedName):lang.taxi.types.Type
+   fun taxiType(name: QualifiedName): lang.taxi.types.Type
 
    fun type(name: QualifiedName) = typeCache.type(name)
 
@@ -74,6 +76,12 @@ interface Schema {
 
       return declaringType to attributeType
 
+   }
+
+   fun type(typeRef: VersionedTypeReference): Type {
+      // TODO
+      log().warn("Not validating type versions")
+      return type(typeRef.typeName)
    }
 
    fun type(nestedTypeRef: TypeReference): Type {

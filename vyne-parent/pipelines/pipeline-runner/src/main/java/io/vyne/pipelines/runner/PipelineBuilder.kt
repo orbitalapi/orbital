@@ -17,6 +17,7 @@ class PipelineBuilder(
 ) {
    fun build(pipeline: Pipeline): PipelineInstance {
       val vyne = vyneFactory.createVyne()
+      val schema = vyne.schema
       // Grab the types early, in case they're not present in Vyne
       val inputType = vyne.type(pipeline.input.type)
       val outputType = vyne.type(pipeline.output.type)
@@ -39,7 +40,8 @@ class PipelineBuilder(
                // has enough hints to decide that, and is the concerete place to
                // express the decision.
                // For now, just deserialize everything.
-               sink.success(stageObserverProvider to message.messageProvider(logger))
+               val typedInstance = message.messageProvider(schema, logger)
+               sink.success(stageObserverProvider to typedInstance)
             }.onErrorResume { exception ->
                logger.completedInError(exception)
                Mono.empty()

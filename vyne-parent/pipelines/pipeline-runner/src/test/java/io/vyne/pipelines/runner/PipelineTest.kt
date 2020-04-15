@@ -26,22 +26,7 @@ class PipelineTest {
 
    @Test
    fun pipelineE2eTest() {
-      val src = """
-type PersonLoggedOnEvent {
-   userId : UserId as String
-}
-type alias Username as String
-
-service UserService {
-   operation getUserNameFromId(UserId):Username
-}
-
-type UserEvent {
-   id : UserId
-   name : Username
-}
-""".trimIndent()
-      val (vyne, stub) = testVyne(src)
+      val (vyne, stub) = PipelineTestUtils.pipelineTestVyne()
       stub.addResponse("getUserNameFromId", vyne.parseKeyValuePair("Username", "Jimmy Pitt"))
       val builder = PipelineBuilder(
          PipelineTransportFactory(listOf(DirectInputBuilder(), DirectOutputBuilder())),
@@ -90,7 +75,7 @@ class TestSource(val type: Type, val schema: Schema) {
       val typedInstance = TypedInstance.from(type, map, schema)
       emitter.sink().next(
          PipelineInputMessage(
-            messageProvider = { typedInstance },
+            messageProvider = { _, _ -> typedInstance },
             messageTimestamp = Instant.now()
          )
       )
