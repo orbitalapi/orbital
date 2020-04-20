@@ -13,6 +13,12 @@
 
    <dependencies>
       <dependency>
+         <groupId>org.apache.kafka</groupId>
+         <artifactId>kafka-clients</artifactId>
+         <version>${kafka.version}</version>
+      </dependency>
+
+      <dependency>
          <groupId>lang.taxi</groupId>
          <artifactId>package-repository-api</artifactId>
          <version>${taxi.version}</version>
@@ -25,6 +31,19 @@
       <dependency>
          <groupId>io.projectreactor</groupId>
          <artifactId>reactor-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-web</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-openfeign-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>pipelines-orchestrator-api</artifactId>
+         <version>0.3.0-SNAPSHOT</version>
       </dependency>
    </dependencies>
 </project>

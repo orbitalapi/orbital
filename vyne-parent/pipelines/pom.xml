@@ -11,6 +11,11 @@
 
    <artifactId>pipelines</artifactId>
    <packaging>pom</packaging>
+
+   <properties>
+      <kafka.version>2.0.1</kafka.version>
+   </properties>
+
    <modules>
       <module>pipelines-api</module>
       <module>pipeline-runner</module>

@@ -8,21 +8,24 @@ import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.spring.VyneProvider
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
+import java.time.Instant
 
 @Component
 class PipelineBuilder(
-   val transportFactory: PipelineTransportFactory,
-   val vyneFactory: VyneProvider,
-   val observerProvider: ObserverProvider
+   private val transportFactory: PipelineTransportFactory,
+   private val vyneFactory: VyneProvider,
+   private val observerProvider: ObserverProvider
 ) {
    fun build(pipeline: Pipeline): PipelineInstance {
+      val observer = observerProvider.pipelineObserver(pipeline, null).invoke("Preparing pipeline")
+      observer.info { "Building pipeline ${pipeline.name}" }
       val vyne = vyneFactory.createVyne()
       val schema = vyne.schema
       // Grab the types early, in case they're not present in Vyne
-      val inputType = vyne.type(pipeline.input.type)
-      val outputType = vyne.type(pipeline.output.type)
-      val input = transportFactory.buildInput(pipeline.input.transport)
-      val output = transportFactory.buildOutput(pipeline.output.transport)
+      val inputType = observer.catchAndLog("Failed to resolve input type ${pipeline.input.type}") { vyne.type(pipeline.input.type) }
+      val outputType = observer.catchAndLog("Failed to resolve output type ${pipeline.input.type}") { vyne.type(pipeline.output.type) }
+      val input = observer.catchAndLog("Failed to create pipeline input") { transportFactory.buildInput(pipeline.input.transport) }
+      val output = observer.catchAndLog("Failed to create pipeline output") { transportFactory.buildOutput(pipeline.output.transport) }
       val disposable = input.feed
          .flatMap { message ->
             val stageObserverProvider: PipelineStageObserverProvider = observerProvider.pipelineObserver(
@@ -85,6 +88,7 @@ class PipelineBuilder(
       return PipelineInstance(
          pipeline,
          disposable,
+         Instant.now(),
          input,
          output
       )

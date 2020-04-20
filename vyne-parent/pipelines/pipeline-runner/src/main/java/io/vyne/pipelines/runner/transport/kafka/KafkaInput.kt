@@ -1,17 +1,13 @@
 package io.vyne.pipelines.runner.transport.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
 import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
-import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.common.serialization.IntegerDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
@@ -21,27 +17,6 @@ import reactor.kafka.receiver.ReceiverOptions
 import java.nio.charset.Charset
 import java.time.Duration
 import java.time.Instant
-
-// TODO : This needs to get much richer
-data class KafkaTransportInputSpec(
-   val topic: String,
-   override val targetType: VersionedTypeReference,
-   val consumerProps: Map<String, Any>
-) : PipelineTransportSpec {
-   override val direction: PipelineDirection
-      get() = PipelineDirection.INPUT
-   override val type: PipelineTransportType
-      get() = KafkaTransport.TYPE
-
-
-   // TODO : This all needs to be configurable
-   val props: Map<String, Any> = consumerProps + mapOf(
-      ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.qualifiedName!!,
-      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.qualifiedName!!
-   )
-
-
-}
 
 @Component
 class KafkaInputBuilder(val objectMapper: ObjectMapper) : PipelineInputTransportBuilder<KafkaTransportInputSpec> {
@@ -57,7 +32,11 @@ class KafkaInputBuilder(val objectMapper: ObjectMapper) : PipelineInputTransport
 }
 
 class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper) : PipelineInputTransport {
-   private val receiverOptions = ReceiverOptions.create<String, String>(spec.props)
+   private val defaultProps = mapOf(
+      ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.qualifiedName!!,
+      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.qualifiedName!!
+   )
+   private val receiverOptions = ReceiverOptions.create<String, String>(spec.props + defaultProps)
       .commitBatchSize(0) // Don't commit in batches ..  can explore this later
       .commitInterval(Duration.ZERO) // Don't delay commits .. can explore this later
       .subscription(listOf(spec.topic))
@@ -69,7 +48,6 @@ class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper) : Pi
    init {
       feed = KafkaReceiver.create(receiverOptions)
          .receive()
-         // EEK - this warning is concerning - suggests this ooesn't work
          .flatMap { kafkaMessage ->
             val recordId = kafkaMessage.key()
             val offset = kafkaMessage.offset()
