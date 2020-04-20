@@ -8,6 +8,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.pipelines.*
+import io.vyne.pipelines.runner.events.CollectingEventSink
 import io.vyne.pipelines.runner.events.ObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.pipelines.runner.transport.direct.*
@@ -31,7 +32,7 @@ class PipelineTest {
       val builder = PipelineBuilder(
          PipelineTransportFactory(listOf(DirectInputBuilder(), DirectOutputBuilder())),
          SimpleVyneProvider(vyne),
-         ObserverProvider(ConsoleLogger())
+         ObserverProvider.local()
       )
 
       val source = TestSource(vyne.type("PersonLoggedOnEvent"), vyne.schema)

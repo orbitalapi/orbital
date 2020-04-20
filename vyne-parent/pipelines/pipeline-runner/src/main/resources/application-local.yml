@@ -1,0 +1,18 @@
+eureka:
+   uri: http://127.0.0.1:9022
+   client:
+      registryFetchIntervalSeconds: 1
+      initialInstanceInfoReplicationIntervalSeconds: 5
+      serviceUrl:
+         defaultZone: ${eureka.uri}/eureka/
+   instance:
+      leaseRenewalIntervalInSeconds: 2
+      leaseExpirationDurationInSeconds: 5
+
+vyne:
+   queryServiceUrl: http://query-service
+#   schemaStore:
+#      name: discovery
+#   schema:
+#      name: ${spring.application.name}
+#      version: 0.1.0

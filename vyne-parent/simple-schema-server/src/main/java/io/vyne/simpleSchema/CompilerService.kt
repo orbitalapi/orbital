@@ -1,7 +1,7 @@
 package io.vyne.simpleSchema
 
+import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaStoreClient
-import io.vyne.schemaStore.VersionedSchema
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -19,7 +19,7 @@ class CompilerService(@Value("\${taxi.project-home}") val projectHome: String,
       val schemas = path.toFile().walkBottomUp()
          .filter { it.extension == "taxi" }
          .map {
-            VersionedSchema(it.nameWithoutExtension, "0.1.$counter", it.readText())
+            VersionedSource(it.nameWithoutExtension, "0.1.$counter", it.readText())
          }
          .toList()
       log().info("Recompiling ${schemas.size} files")

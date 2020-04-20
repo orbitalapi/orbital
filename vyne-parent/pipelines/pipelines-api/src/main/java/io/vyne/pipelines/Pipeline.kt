@@ -1,20 +1,25 @@
 package io.vyne.pipelines
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
+import io.vyne.pipelines.runner.transport.PipelineTransportSpecDeserializer
 import io.vyne.schemas.Schema
 import io.vyne.utils.log
 import reactor.core.publisher.Flux
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.time.Instant
+import kotlin.math.absoluteValue
 
 data class Pipeline(
    val name: String,
    val input: PipelineChannel,
    val output: PipelineChannel
 ) {
-   val id = "$name@${hashCode()}"
+   val id = "$name@${hashCode().absoluteValue}"
 }
 
 data class PipelineChannel(
@@ -32,11 +37,21 @@ interface PipelineTransportSpec {
    val targetType: VersionedTypeReference
 }
 
-enum class PipelineDirection {
-   INPUT,
-   OUTPUT
-}
+enum class PipelineDirection(val label: String) {
+   INPUT("in"),
+   OUTPUT("out");
 
+   companion object {
+      fun from(label: String): PipelineDirection {
+         return when (label) {
+            INPUT.label -> INPUT
+            OUTPUT.label -> OUTPUT
+            else -> error("Unknown label: $label")
+         }
+      }
+   }
+
+}
 typealias PipelineTransportType = String
 
 /**
