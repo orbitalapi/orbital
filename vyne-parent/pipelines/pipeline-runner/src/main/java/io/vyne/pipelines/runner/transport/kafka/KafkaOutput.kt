@@ -10,6 +10,7 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Mono
 import reactor.kafka.sender.KafkaSender
 import reactor.kafka.sender.SenderOptions
 import reactor.kafka.sender.SenderRecord
@@ -36,18 +37,17 @@ class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val object
    private val senderOptions = SenderOptions.create<String, String>(spec.props + defaultProps)
    private val sender = KafkaSender.create(senderOptions)
    override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
-      sender.send<String> { sink ->
-         val json = objectMapper.writeValueAsString(typedInstance.toRawObject())
-         logger.debug { "Generated json: $json" }
-         logger.info { "Sending instance ${typedInstance.type.fullyQualifiedName} to Kafka topic ${spec.topic}" }
-         sink.onNext(SenderRecord.create(
-            ProducerRecord(
-               spec.topic,
-               json
-            ),
-            ""
-         ))
-      }
+      val json = objectMapper.writeValueAsString(typedInstance.toRawObject())
+      logger.debug { "Generated json: $json" }
+      logger.info { "Sending instance ${typedInstance.type.fullyQualifiedName} to Kafka topic ${spec.topic}" }
+      val record = ProducerRecord<String, String>(spec.topic, json)
+
+      sender.createOutbound().send(Mono.just(record))
+         .then()
+         // TODO  :This error is lacking enough context to be useful.  Need a ref to the pipeline instance / message
+         .doOnError { error -> logger.error(error) { "Pipeline failed to send to kafka topic ${spec.topic}" } }
+         .doOnSuccess { logger.info { "Pipeline published message to topic ${spec.topic}" } }
+         .subscribe()
    }
 
 }

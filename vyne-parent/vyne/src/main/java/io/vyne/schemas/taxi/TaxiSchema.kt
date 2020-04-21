@@ -1,7 +1,6 @@
 package io.vyne.schemas.taxi
 
 import com.google.common.collect.ArrayListMultimap
-import io.vyne.NamedSource
 import io.vyne.SchemaAggregator
 import io.vyne.VersionedSource
 import io.vyne.schemas.*
@@ -17,7 +16,6 @@ import lang.taxi.services.Constraint
 import lang.taxi.types.*
 import lang.taxi.types.Annotation
 import org.antlr.v4.runtime.CharStreams
-import java.io.Serializable
 
 class TaxiSchema(private val document: TaxiDocument, override val sources: List<VersionedSource>) : Schema {
    override val types: Set<Type>
@@ -225,7 +223,7 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
       const val LANGUAGE = "Taxi"
       fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
          val typesInSources = sources.flatMap { namedSource ->
-            Compiler(namedSource.content).declaredTypeNames().map { it to namedSource }
+            Compiler(namedSource.content, namedSource.id).declaredTypeNames().map { it to namedSource }
          }.toMap()
 
          val sourcesWithDependencies = sources.map { namedSource ->
@@ -344,7 +342,7 @@ private fun lang.taxi.types.Type.toVyneQualifiedName(): QualifiedName {
 }
 
 private fun lang.taxi.types.SourceCode.toVyneSource(): SourceCode {
-   return io.vyne.schemas.SourceCode(this.origin, TaxiSchema.LANGUAGE, this.content)
+   return io.vyne.schemas.SourceCode(this.sourceName, TaxiSchema.LANGUAGE, this.content)
 }
 
 private fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<SourceCode> {

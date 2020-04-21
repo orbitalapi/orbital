@@ -92,7 +92,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
          rebuildSchemaAndWriteToCache()
       }
       validationResult.left().map { compilationException ->
-         log().error("Schema was is rejected for compilation exception: \n${compilationException.message}")
+         log().error("Schema was rejected for compilation exception: \n${compilationException.message}")
       }
       return validationResult
    }
