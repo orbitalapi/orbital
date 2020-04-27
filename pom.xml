@@ -25,6 +25,7 @@
       <spring.cloud.version>Hoxton.SR4</spring.cloud.version>
       <spring.cloud.netflix.version>2.2.2.RELEASE</spring.cloud.netflix.version>
       <jackson.version>2.9.3</jackson.version>
+      <arrow.version>0.10.4</arrow.version>
    </properties>
 
    <scm>
@@ -324,12 +325,6 @@
    </distributionManagement>
 
    <repositories>
-      <repository>
-         <!-- for funktionale stuff -->
-         <id>bintray</id>
-         <name>bintray</name>
-         <url>http://jcenter.bintray.com</url>
-      </repository>
       <!-- for taxi snapshots -->
       <repository>
          <id>vyne-snapshots</id>

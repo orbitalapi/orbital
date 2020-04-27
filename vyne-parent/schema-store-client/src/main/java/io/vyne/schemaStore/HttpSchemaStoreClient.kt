@@ -1,10 +1,10 @@
 package io.vyne.schemaStore
 
+import arrow.core.Either
 import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import io.vyne.utils.log
 import lang.taxi.CompilationException
-import org.funktionale.either.Either
 import org.springframework.retry.RetryCallback
 import org.springframework.retry.RetryContext
 import org.springframework.retry.backoff.FixedBackOffPolicy

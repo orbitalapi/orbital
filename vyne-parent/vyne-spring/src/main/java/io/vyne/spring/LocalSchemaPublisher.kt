@@ -1,8 +1,8 @@
 package io.vyne.spring
 
+import arrow.core.Either
 import io.vyne.utils.log
 import io.vyne.schemaStore.SchemaStoreClient
-import org.funktionale.either.Either
 import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener
 
@@ -40,7 +40,7 @@ class LocalSchemaPublisher(val schemaName: String,
          log().debug("Attempting to register schema: $schema")
          val schemaValidationResult = schemaStoreClient.submitSchema(schemaName, schemaVersion, schema)
          when (schemaValidationResult) {
-            is Either.Left -> log().error("Failed to register schema", schemaValidationResult.l.message)
+            is Either.Left -> log().error("Failed to register schema", schemaValidationResult.a.message)
             is Either.Right -> log().info("Schema registered successfully")
          }
       }

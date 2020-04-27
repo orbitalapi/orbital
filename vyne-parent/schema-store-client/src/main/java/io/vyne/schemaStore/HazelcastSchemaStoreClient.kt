@@ -1,5 +1,7 @@
 package io.vyne.schemaStore
 
+import arrow.core.Either
+import arrow.core.right
 import com.hazelcast.core.*
 import com.hazelcast.map.EntryBackupProcessor
 import com.hazelcast.map.EntryProcessor
@@ -12,11 +14,10 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
-import org.funktionale.either.Either
 import org.springframework.context.ApplicationEventPublisher
 import java.io.Serializable
 
-private class HazelcastSchemaStoreListener(val eventPublisher:ApplicationEventPublisher, val invalidationListener: SchemaSetInvalidatedListener) : MembershipListener, Serializable, EntryAddedListener<SchemaSetCacheKey,SchemaSet>, EntryUpdatedListener<SchemaSetCacheKey,SchemaSet> {
+private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventPublisher, val invalidationListener: SchemaSetInvalidatedListener) : MembershipListener, Serializable, EntryAddedListener<SchemaSetCacheKey, SchemaSet>, EntryUpdatedListener<SchemaSetCacheKey, SchemaSet> {
    override fun memberAttributeChanged(memberAttributeEvent: MemberAttributeEvent?) {
    }
 
@@ -78,21 +79,22 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       }
 
 
-
-   override fun submitSchemas(schemas:List<VersionedSource>): Either<CompilationException, Schema> {
+   override fun submitSchemas(schemas: List<VersionedSource>): Either<CompilationException, Schema> {
       val validationResult = schemaValidator.validate(schemaSet(), schemas)
-      validationResult.right().map { validatedSchema ->
-
-         // TODO : Here, we're still storing ONLY the raw schema we've received, not the merged schema.
-         // That seems wasteful, as we're just gonna re-compute this later.
-         schemas.forEach {versionedSchema ->
-            val cachedSchema = CacheMemberSchema(hazelcast.cluster.localMember.uuid, versionedSchema)
-            schemaSourcesMap[versionedSchema.id] = cachedSchema
+      when (validationResult) {
+         is Either.Right -> {
+            // TODO : Here, we're still storing ONLY the raw schema we've received, not the merged schema.
+            // That seems wasteful, as we're just gonna re-compute this later.
+            schemas.forEach { versionedSchema ->
+               val cachedSchema = CacheMemberSchema(hazelcast.cluster.localMember.uuid, versionedSchema)
+               schemaSourcesMap[versionedSchema.id] = cachedSchema
+            }
+            rebuildSchemaAndWriteToCache()
          }
-         rebuildSchemaAndWriteToCache()
-      }
-      validationResult.left().map { compilationException ->
-         log().error("Schema was rejected for compilation exception: \n${compilationException.message}")
+         is Either.Left -> {
+            val compilationException = validationResult.a
+            log().error("Schema was rejected for compilation exception: \n${compilationException.message}")
+         }
       }
       return validationResult
    }
@@ -148,11 +150,11 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
    override fun rebuildRequired() {
       log().info("Rebuild of Schema triggered through cache invalidation")
       val schemaSet = rebuildSchemaAndWriteToCache()
-      schemaSetHolder.submitToKey(SchemaSetCacheKey,RebuildSchemaSetTask(schemaSet))
+      schemaSetHolder.submitToKey(SchemaSetCacheKey, RebuildSchemaSetTask(schemaSet))
    }
 }
 
-private class RebuildSchemaSetTask(private val schemaSet: SchemaSet) : EntryProcessor<SchemaSetCacheKey,SchemaSet>, EntryBackupProcessor<SchemaSetCacheKey,SchemaSet> {
+private class RebuildSchemaSetTask(private val schemaSet: SchemaSet) : EntryProcessor<SchemaSetCacheKey, SchemaSet>, EntryBackupProcessor<SchemaSetCacheKey, SchemaSet> {
    override fun getBackupProcessor(): EntryBackupProcessor<SchemaSetCacheKey, SchemaSet>? {
       return this;
    }
