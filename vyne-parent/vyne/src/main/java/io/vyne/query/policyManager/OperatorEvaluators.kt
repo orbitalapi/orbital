@@ -1,5 +1,6 @@
 package io.vyne.query.policyManager
 
+import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedValue
 import lang.taxi.policies.LiteralArraySubject
@@ -38,10 +39,9 @@ class InOperatorEvaluator : OperatorEvaluator {
       require(rhSubject is LiteralArraySubject) { "When using the 'in' operator, the right hand side must be an array of values.  (eg., ['a','b']" }
       val rhArraySubject: LiteralArraySubject = rhSubject as LiteralArraySubject
       val rhValues = rhArraySubject.values
-      require(lhSubject is TypedValue) { "When using the 'in' operator, the left hand side must have been resolved to a TypedValue" }
-      val lhValue = (lhSubject as TypedValue).value
+      require(lhSubject is TypedInstance) { "When using the 'in' operator, the left hand side must have been resolved to a TypedInstance" }
 
-      val valueCollection = when (lhValue) {
+      val valueCollection = when (val lhValue = lhSubject.value) {
          is Collection<*> -> lhValue
          else -> listOf(lhValue)
       }

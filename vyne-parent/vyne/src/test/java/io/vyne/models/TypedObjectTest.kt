@@ -61,7 +61,7 @@ class TypedObjectTest {
          "jurisdiction" to TypeNamedInstance(stringType, "EUR"),
          "limit" to TypeNamedInstance("Money".fqn(), mapOf(
             "currency" to TypeNamedInstance(stringType, "USD"),
-            "value" to TypeNamedInstance(decimalType, 100)
+            "value" to TypeNamedInstance(decimalType, 100.toBigDecimal())
          ))
       ))
       expect(raw).to.equal(expected)

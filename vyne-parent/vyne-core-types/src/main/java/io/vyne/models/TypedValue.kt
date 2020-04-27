@@ -3,11 +3,18 @@ package io.vyne.models
 import io.vyne.schemas.Type
 import lang.taxi.jvm.common.PrimitiveTypes
 import org.springframework.core.convert.support.DefaultConversionService
+import java.time.LocalDate
 
 
 data class TypedValue private constructor(override val type: Type, override val value: Any) : TypedInstance {
    companion object {
-      private val conversionService = DefaultConversionService()
+      private val conversionService by lazy {
+         val service = DefaultConversionService()
+         // TODO :  we need to be much richer about date handling.
+         service.addConverter(String::class.java, LocalDate::class.java) { s -> LocalDate.parse(s) }
+         service
+      }
+
       fun from(type: Type, value: Any, performTypeConversions: Boolean = true): TypedValue {
          val valueToUse = if (performTypeConversions) {
             if (!type.taxiType.inheritsFromPrimitive) {

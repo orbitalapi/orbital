@@ -40,10 +40,5 @@
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-openfeign-core</artifactId>
       </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>pipelines-orchestrator-api</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
-      </dependency>
    </dependencies>
 </project>

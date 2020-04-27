@@ -11,9 +11,12 @@ type FxSingleLeg {
    notional : Notional as Decimal
 }
 
+type NearLegNotional inherits Notional
+type FarLegNotional inherits Notional
+
 type FxSwap {
-   nearLegNotional : NearLegNotional inherits Notional
-   farLegNotional : FarLegNotional inherits Notional
+   nearLegNotional : NearLegNotional
+   farLegNotional : FarLegNotional
 }
    """.trimIndent()
 

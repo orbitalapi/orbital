@@ -63,7 +63,7 @@ service MyService {
       expect(calculateRiskCallParam.type.name.name).to.equal("ClientRiskRequest")
 
       val moneyParam = calculateRiskCallParam["amount"] as TypedObject
-      expect(moneyParam["amount"].value).to.equal(2)
+      expect(moneyParam["amount"].value).to.equal(2.toBigDecimal())
       expect(moneyParam["currency"].value).to.equal("GBP")
    }
 
@@ -82,7 +82,7 @@ service MyService {
       expect(stubService.invocations).to.contain.keys("convertCurrency")
       expect(stubService.invocations).to.contain.keys("calculateRisk")
       val calculateRiskCallParam: TypedObject = stubService.invocations["calculateRisk"]!!.first() as TypedObject
-      expect(calculateRiskCallParam["amount"]!!.value).to.equal(2)
+      expect(calculateRiskCallParam["amount"]!!.value).to.equal(2.toBigDecimal())
       expect(calculateRiskCallParam["currency"]!!.value).to.equal("GBP")
 
    }
