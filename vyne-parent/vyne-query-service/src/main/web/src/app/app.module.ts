@@ -86,6 +86,7 @@ import {FileFactSelectorComponent} from './query-wizard/file-fact-selector/file-
 import {CovalentFileModule} from '@covalent/core';
 import {TypeAutocompleteModule} from './type-autocomplete/type-autocomplete.module';
 import {PipelinesModule} from './pipelines/pipelines.module';
+import {TaxiEditorModule} from './taxi-editor/taxi-editor.module';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -146,7 +147,7 @@ export const routerModule = RouterModule.forRoot(
     SearchBarComponent,
     SearchBarContainerComponent,
     ObjectViewComponent,
-    FileFactSelectorComponent
+    FileFactSelectorComponent,
   ],
   imports: [
     routerModule,
@@ -193,6 +194,7 @@ export const routerModule = RouterModule.forRoot(
     MomentModule,
 
     TaxiViewerModule,
+    TaxiEditorModule,
     NgSelectModule,
     TypeAutocompleteModule,
     PipelinesModule
