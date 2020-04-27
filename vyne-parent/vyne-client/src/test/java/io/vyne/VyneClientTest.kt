@@ -35,7 +35,7 @@ class VyneClientTest {
          verify(queryService).submitQuery(capture())
 
          val query = lastValue
-         expect(query.expression).to.equal(TypeNameListQueryExpression(listOf("foo.Book[]")))
+         expect(query.expression).to.equal(TypeNameListQueryExpression(listOf("lang.taxi.Array<foo.Book>")))
       }
    }
 

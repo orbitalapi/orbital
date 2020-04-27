@@ -12,6 +12,7 @@ import io.vyne.query.QueryEngineFactory
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import org.junit.Test
+import java.math.BigDecimal
 
 class InvoiceMarkupWithContractsTest {
    val taxiDef = """
@@ -162,7 +163,7 @@ namespace io.osmosis.demos.creditInc.isic {
 //      vyne.creditInc.CreditCostResponse/cost -[Is type of]-> vyne.creditInc.CreditRiskCost
       val operation = result.profilerOperation
       log().debug(jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(operation))
-      expect(result["vyne.creditInc.CreditRiskCost"]!!.value).to.equal(250.0)
+      expect(result["vyne.creditInc.CreditRiskCost"]!!.value).to.equal(250.0.toBigDecimal())
 
       // Validate the services were called correctly
       expect(stubService.invocations["findClientById"]!!).to.satisfy { containsArg(it, "vyne.creditInc.ClientId", "jim01") }
@@ -170,14 +171,14 @@ namespace io.osmosis.demos.creditInc.isic {
       expect(stubService.invocations["convertRates"]!!).to.satisfy {
          containsArgWithParams(it, "vyne.creditInc.Money",
             Triple("currency", "vyne.creditInc.Currency", "AUD"),
-            Triple("value", "vyne.creditInc.MoneyAmount", "20.55")
+            Triple("value", "vyne.creditInc.MoneyAmount", 20.55.toBigDecimal())
          )
       }
       expect(stubService.invocations["convertRates"]!!).to.satisfy { containsArg(it, "vyne.creditInc.Currency", "GBP") }
       val creditRiskRequest = stubService.invocations["calculateCreditCosts"]!!.first() as TypedObject
       // Assert we called with the converted currency
       expect(creditRiskRequest["invoiceValue.currency"].value).to.equal("GBP")
-      expect(creditRiskRequest["invoiceValue.value"].value).to.equal("10.00")
+      expect(creditRiskRequest["invoiceValue.value"].value).to.equal(BigDecimal("10.00"))
       // Assert we called with the converted SIC code.
       expect(creditRiskRequest["industryCode"].value).to.equal("2003")
 //      expect(stubService.invocations["calculateCreditCosts"]).to.satisfy { containsArgWithParams(it, "vyne.creditInc.CreditCostRequest",

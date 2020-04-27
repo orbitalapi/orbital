@@ -6,6 +6,7 @@ import io.vyne.models.TypedValue
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
+import lang.taxi.types.PrimitiveType
 import org.junit.Test
 
 class UriVariableProviderTest {
@@ -14,17 +15,17 @@ class UriVariableProviderTest {
 
    @Test
    fun matchesBasedOnType() {
-      val int = type("lang.taxi.Int")
+      val int = type(PrimitiveType.INTEGER.qualifiedName, PrimitiveType.INTEGER)
       val params = listOf(Parameter(int) to TypedValue.from(int, 5))
       val url = "http://foo.com/bar/{lang.taxi.Int}"
 
       val variables = provider.getUriVariables(params, url)
-      expect(variables["lang.taxi.Int"]!!).to.equal(5)
+      expect(variables[PrimitiveType.INTEGER.qualifiedName]).to.equal(5)
    }
 
    @Test
    fun matchesBasedOnName() {
-      val int = type("lang.taxi.Int")
+      val int = type(PrimitiveType.INTEGER.qualifiedName, PrimitiveType.INTEGER)
       val params = listOf(Parameter(int, name = "id") to TypedValue.from(int, 5))
       val url = "http://foo.com/bar/{id}"
 
@@ -41,7 +42,7 @@ class UriVariableProviderTest {
    }
 
 
-   fun type(name: String): Type {
-      return Type(name.fqn(), sources = emptyList(), typeDoc = null, taxiType = mock())
+   fun type(name: String, taxiType:lang.taxi.types.Type): Type {
+      return Type(name.fqn(), sources = emptyList(), typeDoc = null, taxiType = taxiType)
    }
 }

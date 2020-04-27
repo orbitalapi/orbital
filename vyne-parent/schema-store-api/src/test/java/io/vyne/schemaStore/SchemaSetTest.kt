@@ -51,7 +51,7 @@ class SchemaSetTest {
       schemaSet.size().should.equal(2)
       schemaSet.contains("foo", "0.1.1").should.be.`true`
       schemaSet.contains("foo", "0.1.0").should.be.`false`
-      schemaSet.contains("bar", "0.1.0").should.be.`true`
+      schemaSet.contains("bar", "0.1.1").should.be.`true`
    }
 
 }

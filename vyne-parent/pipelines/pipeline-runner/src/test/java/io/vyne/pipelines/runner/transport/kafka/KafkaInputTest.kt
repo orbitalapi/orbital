@@ -20,6 +20,7 @@ import io.vyne.pipelines.runner.transport.direct.DirectOutputSpec
 import io.vyne.schemas.fqn
 import io.vyne.spring.SimpleVyneProvider
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.junit.Ignore
 import org.junit.Test
 import reactor.kafka.sender.KafkaSender
 import java.time.Duration
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit
 class KafkaInputTest : AbstractKafkaTest() {
 
    @Test
+   @Ignore("WIP")
    fun canReceiveFromKafkaInput() {
       waitForBrokers()
       val (vyne, stub) = PipelineTestUtils.pipelineTestVyne()

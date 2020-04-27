@@ -51,7 +51,7 @@ type TradeRecord {}
    fun searchResultsMatchOnName() {
       val results = repository.search("Pers")
       results.should.have.size(1)
-      results.first().matches.should.have.size(4)
+      results.first().matches.should.have.size(5)
    }
 
    @Test
@@ -73,7 +73,7 @@ type TradeRecord {}
    fun searchResultsMatchOnTypeName() {
       val results = repository.search("animal")
       results.should.have.size(1)
-      results.first().matches.should.have.size(3)
+      results.first().matches.should.have.size(4)
    }
 
    @Test

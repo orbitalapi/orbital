@@ -51,6 +51,7 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
    override fun submitSchema(schemaName: String,
                              schemaVersion: String,
                              schema: String): Either<CompilationException, Schema> {
+//      submitSchemas(listOf(VersionedSource(schemaName,schemaVersion,schema)))
       TODO("This is currentyl disabled, as I'm upgrading to submit a list of schemas, and focussing on Hazelcast client")
 //      retryTemplate.execute<Any, Exception> { context: RetryContext ->
 //         context.setAttribute(RetryConfig.RETRYABLE_PROCESS_NAME, "Publish schemas")
