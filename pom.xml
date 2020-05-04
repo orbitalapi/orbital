@@ -16,7 +16,6 @@
 
 
    <properties>
-      <jackson.version>2.9.3</jackson.version>
       <taxi.version>0.3.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
@@ -28,7 +27,6 @@
       <logback.version>1.1.10</logback.version>
       <spring.cloud.version>Hoxton.SR4</spring.cloud.version>
       <spring.cloud.netflix.version>2.2.2.RELEASE</spring.cloud.netflix.version>
-      <jackson.version>2.9.3</jackson.version>
       <arrow.version>0.10.4</arrow.version>
    </properties>
 

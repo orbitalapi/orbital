@@ -9,9 +9,6 @@
 
    <artifactId>vyne-query-service</artifactId>
 
-   <properties>
-      <jackson.version>2.9.3</jackson.version>
-   </properties>
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
