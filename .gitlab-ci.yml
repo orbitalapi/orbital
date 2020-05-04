@@ -13,6 +13,7 @@ variables:
 cache:
   paths:
     - .m2/repository
+    - vyne-query-service/src/main/web/node_modules
   key: "$CI_JOB_REF_NAME"
 
 validate:
