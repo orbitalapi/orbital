@@ -87,7 +87,7 @@ data class QueryResult(
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
    val queryResponseId: String
-   val isFullyResolved: Boolean
+   @get:JsonProperty("fullyResolved")  val isFullyResolved: Boolean
    val profilerOperation: ProfilerOperation?
    val remoteCalls: List<RemoteCall>
       get() = collateRemoteCalls(this.profilerOperation)

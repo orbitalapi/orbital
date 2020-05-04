@@ -7,10 +7,12 @@ import io.vyne.pipelines.PipelineChannel
 import io.vyne.query.VyneJacksonModule
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
+import org.junit.Ignore
 import org.junit.Test
 
 class KafkaInputOutputTest : AbstractKafkaTest() {
    @Test
+   @Ignore
    fun canSerializePipeline() {
       val inputTopicName = "pipeline-input"
       val outputTopicName = "pipeline-output"
