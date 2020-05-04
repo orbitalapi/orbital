@@ -17,7 +17,22 @@ cache:
     - vyne-query-service/node
   key: "$CI_JOB_REF_NAME"
 
-validate:
+stages:
+   - build
+   - deploy
+
+build-web:
+  image: trion/ng-cli:7.3.9
+  stage: build
+  script:
+    - cd vyne-query-service/src/main/web
+    - npm install
+    - npm run-script build-prod
+  artifacts:
+    paths:
+      - vyne-query-service/target/classes/static
+
+build-jvm:
   image: maven:3.6.3-jdk-8
   stage: build
   script:
@@ -28,16 +43,17 @@ validate:
       # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
       # However, leaving this here to pick up later
         - "*/target/surefire-reports/TEST-*.xml"
-  except:
-    - develop
-    - master
+#  except:
+#    - develop
+#    - master
 
 publish-snapshot:
   image: maven:3.6.3-jdk-8
-  stage: build
+  stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-    - 'mvn $MAVEN_CLI_OPTS clean deploy'
+#    -don't need to run tests as they were run in the previous stage
+    - 'mvn $MAVEN_CLI_OPTS -Dmaven.test.skip=true deploy'
   artifacts:
     reports:
       junit:
@@ -49,7 +65,7 @@ publish-snapshot:
 
 publish-release:
   image: maven:3.6.3-jdk-8
-  stage: build
+  stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
     - 'mvn $MAVEN_CLI_OPTS release:prepare release:perform'
