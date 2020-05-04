@@ -18,8 +18,7 @@ validate:
   image: maven:3.3.9-jdk-8
   stage: build
   script:
-    # Tests are skipped.  See issue #41
-    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Darguments=-DskipTests install'
+    - 'mvn $MAVEN_CLI_OPTS clean install'
   artifacts:
     reports:
       junit:
@@ -35,8 +34,7 @@ publish-snapshot:
   stage: build
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-  # Tests are skipped.  See issue #41
-    - 'mvn $MAVEN_CLI_OPTS  -DskipTests -Darguments=-DskipTests deploy'
+    - 'mvn $MAVEN_CLI_OPTS clean deploy'
   artifacts:
     reports:
       junit:
