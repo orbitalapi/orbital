@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <groupId>io.vyne</groupId>
+      <artifactId>platform</artifactId>
+      <version>0.3.0-SNAPSHOT</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>cask</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>lang.taxi</groupId>
+            <artifactId>compiler</artifactId>
+            <version>${taxi.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.vyne</groupId>
+            <artifactId>vyne</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.bytefish</groupId>
+            <artifactId>pgbulkinsert</artifactId>
+            <version>3.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.8</version>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor.kotlin</groupId>
+            <artifactId>reactor-kotlin-extensions</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.nhaarman.mockitokotlin2/mockito-kotlin -->
+        <dependency>
+            <groupId>com.nhaarman.mockitokotlin2</groupId>
+            <artifactId>mockito-kotlin</artifactId>
+            <version>2.2.0</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+                <configuration>
+                    <compilerPlugins>
+                        <!-- Or "spring" for the Spring support -->
+                        <plugin>spring</plugin>
+                        <plugin>jpa</plugin>
+                        <plugin>no-arg</plugin>
+                    </compilerPlugins>
+
+                </configuration>
+
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-allopen</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-noarg</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.3</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+           <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <version>2.12.4</version>
+              <configuration>
+                 <!-- TODO Uncomment once we have postgres running as part of local/ci builds -->
+                 <excludes>
+                    <exclude>**/IngesterTest.*</exclude>
+                    <exclude>**/PostgresDdlGeneratorTest.*</exclude>
+                 </excludes>
+              </configuration>
+           </plugin>
+
+        </plugins>
+    </build>
+</project>
