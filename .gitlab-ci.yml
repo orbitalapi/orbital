@@ -16,7 +16,7 @@ cache:
   key: "$CI_JOB_REF_NAME"
 
 validate:
-  image: maven:3.3.9-jdk-8
+  image: maven:3.6.3-jdk-8
   stage: build
   script:
     - 'mvn $MAVEN_CLI_OPTS clean install'
@@ -31,7 +31,7 @@ validate:
     - master
 
 publish-snapshot:
-  image: maven:3.3.9-jdk-8
+  image: maven:3.6.3-jdk-8
   stage: build
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
@@ -46,7 +46,7 @@ publish-snapshot:
     - develop
 
 publish-release:
-  image: maven:3.3.9-jdk-8
+  image: maven:3.6.3-jdk-8
   stage: build
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
