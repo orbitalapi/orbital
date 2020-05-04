@@ -15,6 +15,7 @@ cache:
     - .m2/repository
     - vyne-query-service/src/main/web/node_modules
     - vyne-query-service/node
+    - vyne-query-service/src/main/web/.npm
   key: "$CI_JOB_REF_NAME"
 
 stages:
@@ -22,18 +23,18 @@ stages:
    - deploy
 
 build-web:
-  image: trion/ng-cli:7.3.9
+#  image: trion/ng-cli:7.3.9
   stage: build
   script:
     - cd vyne-query-service/src/main/web
-    - npm install
+    - npm ci --cache .npm --prefer-offline
     - npm run-script build-prod
   artifacts:
     paths:
       - vyne-query-service/target/classes/static
 
 build-jvm:
-  image: maven:3.6.3-jdk-8
+#  image: maven:3.6.3-jdk-8
   stage: build
   script:
     - 'mvn $MAVEN_CLI_OPTS clean install'
@@ -48,7 +49,7 @@ build-jvm:
 #    - master
 
 publish-snapshot:
-  image: maven:3.6.3-jdk-8
+#  image: maven:3.6.3-jdk-8
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
@@ -64,7 +65,7 @@ publish-snapshot:
     - develop
 
 publish-release:
-  image: maven:3.6.3-jdk-8
+#  image: maven:3.6.3-jdk-8
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
