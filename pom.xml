@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <modelVersion>4.0.0</modelVersion>
 
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
    <version>0.3.0-SNAPSHOT</version>
-   <modules>
-      <!--<module>demos</module>-->
-      <module>vyne-parent</module>
-   </modules>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -17,7 +14,14 @@
       <version>2.2.6.RELEASE</version>
    </parent>
 
+
    <properties>
+      <jackson.version>2.9.3</jackson.version>
+      <taxi.version>0.3.0-SNAPSHOT</taxi.version>
+
+      <!-- Used in QueryService -->
+      <elasticsearch.version>7.5.2</elasticsearch.version>
+
       <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
       <kotlin.version>1.3.50</kotlin.version>
       <java.version>1.8</java.version>
@@ -27,6 +31,25 @@
       <jackson.version>2.9.3</jackson.version>
       <arrow.version>0.10.4</arrow.version>
    </properties>
+
+   <modules>
+      <module>vyne-core-types</module>
+      <module>events-api</module>
+      <module>vyne-search</module>
+      <module>utils</module>
+      <module>vyne</module>
+      <module>vyne-spring</module>
+      <module>schema-store</module>
+      <module>schema-store-client</module>
+      <module>schema-store-api</module>
+      <module>vyne-spring-schemaStore</module>
+      <module>vyne-query-service</module>
+      <module>vyne-client</module>
+      <module>vyne-query-api</module>
+      <module>vyne-client-spring</module>
+      <module>file-schema-server</module>
+      <module>pipelines</module>
+   </modules>
 
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>
@@ -82,15 +105,15 @@
       <dependency>
          <groupId>org.mockito</groupId>
          <artifactId>mockito-core</artifactId>
-<!--         <version>2.28.2</version>-->
+         <!--         <version>2.28.2</version>-->
          <scope>test</scope>
       </dependency>
-<!--      <dependency>-->
-<!--         <groupId>net.bytebuddy</groupId>-->
-<!--         <artifactId>byte-buddy-dep</artifactId>-->
-<!--         <version>1.9.12</version>-->
-<!--         <scope>test</scope>-->
-<!--      </dependency>-->
+      <!--      <dependency>-->
+      <!--         <groupId>net.bytebuddy</groupId>-->
+      <!--         <artifactId>byte-buddy-dep</artifactId>-->
+      <!--         <version>1.9.12</version>-->
+      <!--         <scope>test</scope>-->
+      <!--      </dependency>-->
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-test</artifactId>
@@ -157,11 +180,6 @@
 
    <dependencyManagement>
       <dependencies>
-<!--         <dependency>-->
-<!--            <groupId>io.projectreactor</groupId>-->
-<!--            <artifactId>reactor-core</artifactId>-->
-<!--            <version>3.0.7.RELEASE</version>-->
-<!--         </dependency>-->
          <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-bom</artifactId>
@@ -209,6 +227,26 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>lang.taxi</groupId>
+            <artifactId>compiler</artifactId>
+            <version>${taxi.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>lang.taxi</groupId>
+            <artifactId>core-types</artifactId>
+            <version>${taxi.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>lang.taxi</groupId>
+            <artifactId>taxi-annotations</artifactId>
+            <version>${taxi.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>lang.taxi</groupId>
+            <artifactId>java2taxi</artifactId>
+            <version>${taxi.version}</version>
          </dependency>
       </dependencies>
    </dependencyManagement>
@@ -332,6 +370,14 @@
          <snapshots>
             <enabled>true</enabled>
          </snapshots>
+      </repository>
+      <repository>
+         <snapshots>
+            <enabled>false</enabled>
+         </snapshots>
+         <id>bintray-taxi-lang-releases</id>
+         <name>bintray</name>
+         <url>https://dl.bintray.com/taxi-lang/releases</url>
       </repository>
    </repositories>
 </project>
