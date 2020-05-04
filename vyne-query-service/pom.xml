@@ -111,7 +111,7 @@
             <version>1.6</version>
             <configuration>
                <workingDirectory>src/main/web/</workingDirectory>
-               <nodeVersion>v13.9.0</nodeVersion>
+               <nodeVersion>v12.16.3</nodeVersion>
             </configuration>
             <executions>
                <execution>
@@ -125,6 +125,9 @@
                   <goals>
                      <goal>npm</goal>
                   </goals>
+                  <configuration>
+                     <arguments>install</arguments>
+                  </configuration>
                </execution>
                <execution>
                   <id>ng-build</id>
