@@ -179,4 +179,4 @@ shipman-cli/
 shipman-core/
 shipman-store/
 
-search/
+#search/
