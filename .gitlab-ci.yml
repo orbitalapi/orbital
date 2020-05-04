@@ -14,6 +14,7 @@ cache:
   paths:
     - .m2/repository
     - vyne-query-service/src/main/web/node_modules
+    - vyne-query-service/node
   key: "$CI_JOB_REF_NAME"
 
 validate:
