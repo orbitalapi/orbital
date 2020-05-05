@@ -15,17 +15,10 @@ import reactor.kafka.sender.KafkaSender
 import reactor.kafka.sender.SenderOptions
 import reactor.kafka.sender.SenderRecord
 
-@Component
-class KafkaOutputBuilder(val objectMapper: ObjectMapper) : PipelineOutputTransportBuilder<KafkaTransportOutputSpec> {
-   override fun canBuild(spec: PipelineTransportSpec): Boolean {
-      return spec.type == KafkaTransport.TYPE
-         && spec.direction == PipelineDirection.OUTPUT
-   }
+open class KafkaOutputBuilder(val objectMapper: ObjectMapper) : PipelineOutputTransportBuilder<KafkaTransportOutputSpec> {
+   override fun canBuild(spec: PipelineTransportSpec) = spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 
-   override fun build(spec: KafkaTransportOutputSpec): PipelineOutputTransport {
-      return KafkaOutput(spec, objectMapper)
-   }
-
+   override fun build(spec: KafkaTransportOutputSpec) = KafkaOutput(spec, objectMapper)
 }
 
 class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val objectMapper: ObjectMapper) : PipelineOutputTransport {

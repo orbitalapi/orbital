@@ -1,7 +1,12 @@
 package io.vyne.pipelines.runner
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.pipelines.orchestrator.events.PipelineEventsApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
+import io.vyne.pipelines.runner.transport.kafka.KafkaInput
+import io.vyne.pipelines.runner.transport.kafka.KafkaInputBuilder
+import io.vyne.pipelines.runner.transport.kafka.KafkaOutputBuilder
+import io.vyne.pipelines.runner.transport.kafka.KafkaTransportInputSpec
 import io.vyne.spring.SchemaPublicationMethod
 import io.vyne.spring.VyneSchemaPublisher
 import org.springframework.boot.SpringApplication
@@ -9,6 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.annotation.Bean
+import org.springframework.stereotype.Component
 
 @SpringBootApplication
 @EnableDiscoveryClient
@@ -26,5 +32,17 @@ class PipelineRunnerCacibApp {
 
       @Bean
       fun pipelineModule() = PipelineJacksonModule()
+
    }
 }
+
+@Component
+class CacibKafkaInputBuilder(objectMapper: ObjectMapper) : KafkaInputBuilder(objectMapper) {
+
+   override fun build(spec: KafkaTransportInputSpec) = KafkaInput(spec, objectMapper) { it.get("payload") as Map<String, Any> } // FIXME improve the cast
+}
+
+@Component
+class CacibKafkaOutputuilder(objectMapper: ObjectMapper) : KafkaOutputBuilder(objectMapper)
+
+

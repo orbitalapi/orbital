@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-class RunnerJobService(private val pipelineBuilder: PipelineBuilder) : PipelineRunnerApi {
+class RunnerJobController(private val pipelineBuilder: PipelineBuilder) : PipelineRunnerApi {
    override fun submitPipeline(@RequestBody pipeline: Pipeline): PipelineInstanceReference {
       val instance = pipelineBuilder.build(pipeline)
       return instance
