@@ -3,7 +3,7 @@ import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {SchemaImportRequest, SchemaPreview, SchemaPreviewRequest, TypesService,} from "../../services/types.service";
 import {MatStepper} from "@angular/material";
 import {Router} from "@angular/router";
-import {Level, Message, VersionedSchema} from "../../services/schema";
+import {Level, Message, VersionedSource} from "../../services/schema";
 
 @Component({
   selector: 'app-new-schema-wizard',
@@ -17,7 +17,7 @@ export class NewSchemaWizardComponent implements OnInit {
   schemaPreview: SchemaPreview;
   working: boolean = false;
   errorMessage: string;
-  versionedSchema: VersionedSchema;
+  versionedSchema: VersionedSource;
 
   constructor(private fb: FormBuilder, private typeService: TypesService, private router: Router) {
     this.importOptionsFormGroup = this.fb.group(

@@ -1,6 +1,7 @@
 package io.vyne.schemaStore
 
 import io.vyne.CompositeSchemaBuilder
+import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.schemas.*
 import io.vyne.schemas.taxi.TaxiSchema
@@ -13,6 +14,7 @@ interface SchemaSource {
 
 interface VersionedSourceProvider {
    val versionedSources: List<VersionedSource>
+   val parsedSources: List<ParsedSource>
 }
 
 interface SchemaProvider {

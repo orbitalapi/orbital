@@ -12,7 +12,8 @@ import {
   MatAutocompleteModule,
   MatButtonModule,
   MatButtonToggleModule,
-  MatCardModule, MatChipsModule,
+  MatCardModule,
+  MatChipsModule,
   MatExpansionModule,
   MatFormFieldModule,
   MatIconModule,
@@ -21,12 +22,14 @@ import {
   MatMenuModule,
   MatProgressBarModule,
   MatSelectModule,
-  MatSidenavModule, MatSlideToggleModule,
+  MatSidenavModule,
+  MatSlideToggleModule,
   MatSnackBarModule,
   MatStepperModule,
   MatTableModule,
   MatTabsModule,
-  MatToolbarModule, MatTooltipModule,
+  MatToolbarModule,
+  MatTooltipModule,
   MatTreeModule,
 } from '@angular/material';
 import {TypeListComponent} from './type-list/type-list.component';
@@ -62,7 +65,6 @@ import {StatementEditorComponent} from './policy-manager/statement-editor.compon
 import {ElseEditorComponent} from './policy-manager/else-editor.component';
 import {InstructionSelectorComponent} from './policy-manager/instruction-selector.component';
 import {StatementDisplayComponent} from './policy-manager/statement-display.component';
-import {VyneQueryViewerComponent} from './query-wizard/taxi-viewer/vyne-query-viewer/vyne-query-viewer.component';
 import {TypeViewerComponent} from './type-viewer/type-viewer.component';
 import {AttributeTableComponent} from './type-viewer/attribute-table/attribute-table.component';
 import {TypeViewerContainerComponent} from './type-viewer/type-viewer-container.component';
@@ -71,7 +73,6 @@ import {ContentsTableComponent} from './type-viewer/contents-table/contents-tabl
 import {TypeLinkGraphComponent} from './type-viewer/type-link-graph/type-link-graph.component';
 import {TypeLinkGraphContainerComponent} from './type-viewer/type-link-graph/type-link-graph-container.component';
 import {CodeViewerComponent} from './code-viewer/code-viewer.component';
-import {HighlightModule} from 'ngx-highlightjs';
 import {PolicyManagerContainerComponent} from './policy-manager/policy-manager-container.component';
 import {DescriptionEditorComponent} from './type-viewer/description-editor/description-editor.component';
 import {DescriptionEditorContainerComponent} from './type-viewer/description-editor/description-editor-container.component';
@@ -86,6 +87,7 @@ import {FileFactSelectorComponent} from './query-wizard/file-fact-selector/file-
 import {CovalentFileModule} from '@covalent/core';
 import {TypeAutocompleteModule} from './type-autocomplete/type-autocomplete.module';
 import {PipelinesModule} from './pipelines/pipelines.module';
+import {MonacoEditorModule} from '@materia-ui/ngx-monaco-editor';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -189,6 +191,8 @@ export const routerModule = RouterModule.forRoot(
     CovalentJsonFormatterModule,
     CovalentHighlightModule,
     CovalentFileModule,
+
+    MonacoEditorModule,
 
     MomentModule,
 

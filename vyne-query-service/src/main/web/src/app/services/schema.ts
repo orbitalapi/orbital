@@ -72,11 +72,26 @@ export enum FieldModifier {
 }
 
 
+// Deprecate, favour VersionedSource and ParsedSource
 export interface SourceCode {
   origin: string;
   language: string;
   content: string;
   version?: string;
+}
+
+export interface SourceCompilationError {
+  detailMessage: string;
+  sourceName: string;
+  line: number;
+  char: number;
+}
+
+export interface ParsedSource {
+  source: VersionedSource;
+  errors: SourceCompilationError[];
+  isValid: boolean;
+
 }
 
 export function findType(schema: TypeCollection, typeName: string): Type {
@@ -311,7 +326,7 @@ export interface TypedInstance {
   value: any;
 }
 
-export interface VersionedSchema {
+export interface VersionedSource {
   name: string;
   version: string;
   content: string;

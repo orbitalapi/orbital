@@ -6,13 +6,9 @@
   //font-family: $font-sans-alt;
 }
 
-.code-viewer {
-  flex-grow: 1;
-}
-
 .file-list {
   min-width: 20rem;
-  margin-top: 48px; // to match height of the tab bar
+  //margin-top: 48px; // to match height of the tab bar
   margin-left: 1rem;
   font-size: 0.9rem;
 }
@@ -46,13 +42,29 @@
     padding: 0.2rem 0.5rem;
     border-radius: 10rem;
   }
+
+
+  .error-count {
+    background-color: rgba($red-light, 0.5);
+    color: $purple-white;
+    display: block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6rem;
+    margin-right: 0.6rem;
+  }
+
 }
 
 .highlight-container {
   background-color: $code-background;
 }
 
-td-highlight {
-  background-color: $code-background;
-}
+.code-editor {
+  //display: block;
+  width: 600px;
+  height: 600px;
 
+  //.editor-container {
+  //  height: calc(100vh - 100px);
+  //}
+}
