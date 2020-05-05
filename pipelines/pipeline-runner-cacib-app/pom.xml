@@ -9,37 +9,18 @@
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
-   <artifactId>pipelines-orchestrator</artifactId>
-
+   <artifactId>pipeline-runner-cacib-app</artifactId>
 
    <dependencies>
       <dependency>
-         <groupId>com.fasterxml.jackson.module</groupId>
-         <artifactId>jackson-module-kotlin</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-openfeign</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-      </dependency>
-      <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>pipelines-orchestrator-api</artifactId>
+         <artifactId>pipeline-runner</artifactId>
          <version>0.3.0-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-web</artifactId>
       </dependency>
    </dependencies>
 
    <build>
-
       <plugins>
-
          <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>

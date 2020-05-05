@@ -16,11 +16,11 @@ import org.springframework.context.annotation.Bean
 // @EnableVyneClient didn't work. Need to investigate
 @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
 @EnableFeignClients(basePackageClasses = [PipelineEventsApi::class])
-class PipelineRunnerApp {
+class PipelineRunnerCacibApp {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
-         val app = SpringApplication(PipelineRunnerApp::class.java)
+         val app = SpringApplication(PipelineRunnerCacibApp::class.java)
          app.run(*args)
       }
 
