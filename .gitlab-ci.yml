@@ -58,7 +58,7 @@ add-static-web:
    script:
       - cd vyne-query-service
       - 'mvn $MAVEN_CLI_OPTS install -Dmaven.test.skip=true'
-  only:
+   only:
     - develop
     - master
 
