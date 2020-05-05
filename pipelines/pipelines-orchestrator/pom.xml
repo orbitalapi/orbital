@@ -52,7 +52,7 @@
             <configuration>
                <images>
                   <image>
-                     <name>vyneco/{project.artifactId}:${project.version}</name>
+                     <name>vyneco/${project.artifactId}:${project.version}</name>
                      <build>
                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                         <tags>
