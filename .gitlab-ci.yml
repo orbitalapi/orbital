@@ -20,6 +20,7 @@ cache:
 
 stages:
    - build
+   - assemble
    - deploy
 
 build-web:
@@ -47,6 +48,19 @@ build-jvm:
 #  except:
 #    - develop
 #    - master
+
+# This step injects the angular code back into the vyne-query-service jar.
+# Angular artifacts were built earlier and cached into vyne-query-service/target/classes/static
+# So will be restored to that location before this step runs.
+# The maven build will then inject those intot he jar as part of the standard maven process.
+add-static-web:
+   stage: assemble
+   script:
+      - cd vyne-query-service
+      - 'mvn $MAVEN_CLI_OPTS install -Dmaven.test.skip=true'
+  only:
+    - develop
+    - master
 
 publish-snapshot:
 #  image: maven:3.6.3-jdk-8
