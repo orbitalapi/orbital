@@ -20,19 +20,19 @@ cache:
 
 stages:
    - build
-   - assemble
+#   - assemble
    - deploy
 
-build-web:
-#  image: trion/ng-cli:7.3.9
-  stage: build
-  script:
-    - cd vyne-query-service/src/main/web
-    - npm ci --cache .npm --prefer-offline
-    - npm run-script build-prod
-  artifacts:
-    paths:
-      - vyne-query-service/target/classes/static
+#build-web:
+##  image: trion/ng-cli:7.3.9
+#  stage: build
+#  script:
+#    - cd vyne-query-service/src/main/web
+#    - npm ci --cache .npm --prefer-offline
+#    - npm run-script build-prod
+#  artifacts:
+#    paths:
+#      - vyne-query-service/target/classes/static
 
 build-jvm:
 #  image: maven:3.6.3-jdk-8
@@ -53,14 +53,14 @@ build-jvm:
 # Angular artifacts were built earlier and cached into vyne-query-service/target/classes/static
 # So will be restored to that location before this step runs.
 # The maven build will then inject those intot he jar as part of the standard maven process.
-add-static-web:
-   stage: assemble
-   script:
-      - cd vyne-query-service
-      - 'mvn $MAVEN_CLI_OPTS install -Dmaven.test.skip=true'
-   only:
-    - develop
-    - master
+#add-static-web:
+#   stage: assemble
+#   script:
+#      - cd vyne-query-service
+#      - 'mvn $MAVEN_CLI_OPTS install -Dmaven.test.skip=true'
+#   only:
+#    - develop
+#    - master
 
 publish-snapshot:
 #  image: maven:3.6.3-jdk-8
@@ -83,7 +83,7 @@ publish-release:
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-    - 'mvn $MAVEN_CLI_OPTS release:prepare release:perform'
+    - 'mvn $MAVEN_CLI_OPTS -Dmaven.test.skip=true release:prepare release:perform'
   artifacts:
     reports:
       junit:
