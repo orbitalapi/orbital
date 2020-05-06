@@ -13,6 +13,6 @@ services:
       ports:
          - 5701-5721
       volumes:
-         - ./schemas:/var/lib/postgresql/data
+         - ./schemas:/var/lib/vyne/schemas
       environment:
-         OPTIONS: --Dtaxi.project-home=/var/lib/vyne/schemas
+         OPTIONS: --taxi.project-home=/var/lib/vyne/schemas --eureka.uri=http://vyne:9022

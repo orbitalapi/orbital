@@ -42,8 +42,14 @@ class CompilerService(@Value("\${taxi.project-home}") val projectHome: String,
             VersionedSource(pathRelativeToSourceRoot, lastVersion.toString(), it.readText())
          }
          .toList()
-      log().info("Recompiling ${schemas.size} files")
-      schemaStoreClient.submitSchemas(schemas)
+
+      if (schemas.isNotEmpty()) {
+         log().info("Recompiling ${schemas.size} files")
+         schemaStoreClient.submitSchemas(schemas)
+      } else {
+         log().warn("No sources were found at $projectHome. I'll just wait here.")
+      }
+
    }
 
    private fun getProjectConfigFile(projectHomePath: Path): ProjectConfig? {
@@ -68,6 +74,7 @@ class CompilerService(@Value("\${taxi.project-home}") val projectHome: String,
          projectHomePath.resolve(taxiConfig.sourceRoot)
       }
    }
+
    private fun resolveVersion(taxiConfig: ProjectConfig?): Version {
       val defaultVersion = Version.valueOf("0.1.0")
       return if (taxiConfig == null) {
