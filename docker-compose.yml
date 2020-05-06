@@ -8,6 +8,6 @@ services:
    file-schema-server:
       image: vyneco/file-schema-server
       volumes:
-      -  
+      -  ./schemas:/var/lib/postgresql/data
       environment:
-         OPTIONS: --Dtaxi.project-home=/var/taxi
+         OPTIONS: --Dtaxi.project-home=/var/lib/vyne/schemas
