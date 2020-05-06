@@ -1,0 +1,13 @@
+version: 3.8
+services:
+   vyne:
+      image: vyneco/vyne
+      environment:
+         PROFILE: embedded-discovery
+
+   file-schema-server:
+      image: vyneco/file-schema-server
+      volumes:
+      -  
+      environment:
+         OPTIONS: --Dtaxi.project-home=/var/taxi
