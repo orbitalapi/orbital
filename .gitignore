@@ -180,3 +180,5 @@ shipman-core/
 shipman-store/
 
 /search/
+/schemas/
+/schemas
