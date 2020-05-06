@@ -32,11 +32,11 @@ export interface Type {
   name: QualifiedName;
   attributes: FieldMap;
   modifiers: Array<Modifier>;
-  scalar: boolean;
+  isScalar: boolean;
   aliasForType: QualifiedName;
   enumValues: Array<string>;
-  sources: Array<SourceCode>;
-  closed: boolean;
+  sources: Array<VersionedSource>;
+  isClosed: boolean;
   typeDoc?: string;
 }
 
@@ -130,7 +130,7 @@ export interface Operation {
   returnType: Type;
   metadata: Array<Metadata>;
   contract: OperationContract;
-  sources: SourceCode[];
+  sources: VersionedSource[];
   typeDoc?: string;
 }
 
@@ -138,7 +138,7 @@ export interface Service {
   name: QualifiedName;
   operations: Array<Operation>;
   metadata: Array<Metadata>;
-  sourceCode: SourceCode;
+  sourceCode: VersionedSource;
   typeDoc?: string;
 }
 
@@ -156,7 +156,7 @@ export function isService(candidate): candidate is Service {
 }
 
 export function isType(candidate): candidate is Type {
-  return (candidate as Type).scalar !== undefined;
+  return (candidate as Type).isScalar !== undefined;
 }
 
 export function isOperation(candidate): candidate is Operation {
@@ -257,7 +257,7 @@ export class SchemaMember {
     public readonly kind: SchemaMemberType,
     public readonly aliasForType: string,
     public readonly member: Type | Service | Operation,
-    public readonly sources: SourceCode[]
+    public readonly sources: VersionedSource[]
   ) {
     this.attributeNames = kind === SchemaMemberType.TYPE
       ? Object.keys((member as Type).attributes)

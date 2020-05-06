@@ -1,13 +1,12 @@
 import {Component, Input, OnInit, ViewChild} from '@angular/core';
 import {taxiLangDef} from './taxi-lang-def';
-import {ParsedSource} from '../services/schema';
+import {ParsedSource, SourceCompilationError, VersionedSource} from '../services/schema';
 import {editor, MarkerSeverity} from 'monaco-editor';
-import IMarkerData = editor.IMarkerData;
-import ITextModel = editor.ITextModel;
 import {taxiLanguageConfiguration, taxiLanguageTokenProvider} from './taxi-lang.monaco';
 import {MonacoEditorComponent, MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
 import {filter, take} from 'rxjs/operators';
-import {debug} from 'util';
+import IMarkerData = editor.IMarkerData;
+import ITextModel = editor.ITextModel;
 
 declare const require: any;
 declare const monaco: any; // monaco
@@ -22,26 +21,45 @@ hljs.registerLanguage('taxi', taxiLangDef);
 })
 export class CodeViewerComponent implements OnInit {
   @Input()
-  sources: ParsedSource[];
+  sources: ParsedSource[] | VersionedSource[];
 
   @Input()
   sidebarMode: SidebarMode = 'Auto';
 
-  selectedSource: ParsedSource;
+  selectedSource: VersionedSource;
 
   @ViewChild(MonacoEditorComponent)
   editor: MonacoEditorComponent;
 
   selectedIndex = 0;
-  editorOptions: { theme: 'vs-dark', language: 'taxi', automaticLayout: true };
+  editorOptions: { theme: 'vs-dark', language: 'taxi' };
 
   monacoModel: ITextModel;
+
+  private static isVersionedSource(source: ParsedSource | VersionedSource): source is VersionedSource {
+    if (!source) {
+      return false;
+    }
+    const isParsedSource = (source as ParsedSource).source !== undefined && (source as ParsedSource).errors !== undefined;
+    return !isParsedSource;
+  }
+
+  private static versionedSource(input: ParsedSource | VersionedSource): VersionedSource {
+    if (CodeViewerComponent.isVersionedSource(input)) {
+      return input;
+    } else {
+      return (input as ParsedSource).source;
+    }
+  }
 
   constructor(private monacoLoaderService: MonacoEditorLoaderService) {
     this.monacoLoaderService.isMonacoLoaded.pipe(
       filter(isLoaded => isLoaded),
       take(1),
     ).subscribe(() => {
+      monaco.editor.onDidCreateEditor(editorInstance => {
+        editorInstance.updateOptions({readOnly: true});
+      });
       monaco.editor.onDidCreateModel(model => {
         this.monacoModel = model;
         monaco.editor.defineTheme('vyne', {
@@ -81,7 +99,7 @@ export class CodeViewerComponent implements OnInit {
     if (!this.selectedSource) {
       return '';
     } else {
-      return this.selectedSource.source.content;
+      return this.selectedSource.content;
     }
   }
 
@@ -89,17 +107,28 @@ export class CodeViewerComponent implements OnInit {
     this.select(this.sources[0]);
   }
 
+  private get selectedSourceErrors(): SourceCompilationError[] {
+    if (!this.selectedSource) {
+      return [];
+    }
+    if (CodeViewerComponent.isVersionedSource(this.selectedSource)) {
+      return [];
+    } else {
+      return (this.selectedSource as ParsedSource).errors;
+    }
+  }
 
-  select(source: ParsedSource) {
-    this.selectedIndex = this.sources.indexOf(source);
-    this.selectedSource = source;
+
+  select(source: ParsedSource | VersionedSource) {
+    this.selectedIndex = (this.sources as any[]).indexOf(source);
+    this.selectedSource = CodeViewerComponent.versionedSource(source);
 
     // this.editorModel = {
     //   value: this.selectedSource.source.content,
     //   language: 'typescript',
     //   uri: monaco.Uri.parse(`http://${this.selectedSource.source.name}`)// https://github.com/atularen/ngx-monaco-editor/issues/128
     // } as NgxEditorModel;
-    const markers = source.errors.map(error => {
+    const markers = this.selectedSourceErrors.map(error => {
       return {
         severity: MarkerSeverity.Error,
         message: error.detailMessage,

@@ -118,7 +118,7 @@ export class QueryWizardComponent implements OnInit {
       .filter(formSpec => formSpec.value)
       .map(formSpec => {
         const fullyQualifiedName = formSpec.type.name.fullyQualifiedName;
-        if (formSpec.type.scalar) {
+        if (formSpec.type.isScalar) {
           const unwrappedValue = Object.values(formSpec.value)[0];
           return new Fact(fullyQualifiedName, unwrappedValue);
           // facts[fullyQualifiedName] = unwrappedValue;
@@ -207,7 +207,7 @@ export class QueryWizardComponent implements OnInit {
   }
 
   private getElementsForType(type: Type, schema: Schema, prefix: string[] = [], fieldName: string = null): ITdDynamicElementConfig[] {
-    if (type.scalar) {
+    if (type.isScalar) {
       // suspect this is a smell I'm doing something wrong.
       // If the original root type was scalar, when we won't have a prefix, so
       // just use the name directly.
@@ -233,7 +233,7 @@ export class QueryWizardComponent implements OnInit {
   }
 
   private getInputControlForType(type: Type): any {
-    if (!type.scalar) {
+    if (!type.isScalar) {
       throw new Error('Can only get inputs for scalar types');
     }
     // TODO : Aliases could be nested ... follow the chain

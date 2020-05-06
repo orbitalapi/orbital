@@ -187,7 +187,7 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
          Type(
             taxiPrimitive.qualifiedName.fqn(),
             modifiers = parseModifiers(taxiPrimitive),
-            sources = listOf(SourceCode.native(TaxiSchema.LANGUAGE)),
+            sources = listOf(VersionedSource.sourceOnly("Native")),
             typeDoc = taxiPrimitive.typeDoc,
             taxiType = taxiPrimitive
          )
@@ -341,11 +341,12 @@ private fun lang.taxi.types.Type.toVyneQualifiedName(): QualifiedName {
    return this.toQualifiedName().toVyneQualifiedName()
 }
 
-private fun lang.taxi.types.SourceCode.toVyneSource(): SourceCode {
-   return io.vyne.schemas.SourceCode(this.sourceName, TaxiSchema.LANGUAGE, this.content)
+private fun lang.taxi.types.SourceCode.toVyneSource(): VersionedSource {
+   // TODO : Find the version.
+   return VersionedSource(this.sourceName,VersionedSource.DEFAULT_VERSION.toString(),this.content)
 }
 
-private fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<SourceCode> {
+private fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<VersionedSource> {
    return this.map { it.source.toVyneSource() }
 }
 

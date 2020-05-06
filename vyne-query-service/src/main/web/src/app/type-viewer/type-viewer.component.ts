@@ -1,5 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {SchemaMember, SourceCode, Type} from '../services/schema';
+import {SchemaMember, SourceCode, Type, VersionedSource} from '../services/schema';
 import {Contents} from './toc-host.directive';
 
 @Component({
@@ -12,7 +12,7 @@ export class TypeViewerComponent {
 
   private _type: Type;
 
-  sources: SourceCode[];
+  sources: VersionedSource[];
 
   @Input()
   get type(): Type {
