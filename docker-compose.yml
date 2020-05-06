@@ -1,0 +1,18 @@
+version: "3.8"
+services:
+   vyne:
+      image: vyneco/vyne
+      ports:
+         - 5701-5721
+         - 9022:9022
+      environment:
+         PROFILE: embedded-discovery
+
+   file-schema-server:
+      image: vyneco/file-schema-server
+      ports:
+         - 5701-5721
+      volumes:
+         - ./schemas:/var/lib/vyne/schemas
+      environment:
+         OPTIONS: --taxi.project-home=/var/lib/vyne/schemas --eureka.uri=http://vyne:9022

@@ -153,6 +153,7 @@
                      <build>
                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                         <tags>
+                           <!-- defined in profiles.  see root pom.xml -->
                            <tag>${docker.tag}</tag>
                         </tags>
                      </build>
@@ -178,25 +179,4 @@
          </plugin>
       </plugins>
    </build>
-
-   <profiles>
-      <profile>
-         <id>snapshot-release</id>
-         <activation>
-            <activeByDefault>false</activeByDefault>
-         </activation>
-         <properties>
-            <docker.tag>latest-snapshot</docker.tag>
-         </properties>
-      </profile>
-      <profile>
-         <id>feature-release</id>
-         <activation>
-            <activeByDefault>false</activeByDefault>
-         </activation>
-         <properties>
-            <docker.tag>latest</docker.tag>
-         </properties>
-      </profile>
-   </profiles>
 </project>

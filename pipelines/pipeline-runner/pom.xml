@@ -125,6 +125,7 @@
                      <build>
                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                         <tags>
+                           <!-- defined in profiles.  see root pom.xml -->
                            <tag>${docker.tag}</tag>
                         </tags>
                      </build>
