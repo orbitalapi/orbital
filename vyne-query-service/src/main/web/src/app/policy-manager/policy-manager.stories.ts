@@ -102,7 +102,7 @@ const type = {
   'isParameterType': false,
   'isClosed': false,
   'inheritanceGraph': [],
-  'closed': false,
+  'isClosed': false,
   'fullyQualifiedName': 'demo.Customer',
   'memberQualifiedName': {
     'fullyQualifiedName': 'demo.Customer',
@@ -113,7 +113,7 @@ const type = {
   },
   'parameterType': false,
   'typeAlias': false,
-  'scalar': false,
+  'isScalar': false,
   'primitive': false
 } as Type;
 

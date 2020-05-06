@@ -1,17 +1,18 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
-import arrow.core.right
 import com.hazelcast.core.*
 import com.hazelcast.map.EntryBackupProcessor
 import com.hazelcast.map.EntryProcessor
 import com.hazelcast.map.listener.EntryAddedListener
 import com.hazelcast.map.listener.EntryUpdatedListener
 import com.hazelcast.query.Predicate
+import io.vyne.ParsedSource
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
+import io.vyne.toSourceCompilationErrors
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import org.springframework.context.ApplicationEventPublisher
@@ -79,24 +80,49 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       }
 
 
-   override fun submitSchemas(schemas: List<VersionedSource>): Either<CompilationException, Schema> {
-      val validationResult = schemaValidator.validate(schemaSet(), schemas)
-      when (validationResult) {
+   override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
+      val validationResult = schemaValidator.validate(schemaSet(), versionedSources)
+      val (parsedSources,returnValue)  = when(validationResult) {
          is Either.Right -> {
-            // TODO : Here, we're still storing ONLY the raw schema we've received, not the merged schema.
-            // That seems wasteful, as we're just gonna re-compute this later.
-            schemas.forEach { versionedSchema ->
-               val cachedSchema = CacheMemberSchema(hazelcast.cluster.localMember.uuid, versionedSchema)
-               schemaSourcesMap[versionedSchema.id] = cachedSchema
-            }
-            rebuildSchemaAndWriteToCache()
+            validationResult.b.second to Either.right(validationResult.b.first)
          }
          is Either.Left -> {
-            val compilationException = validationResult.a
-            log().error("Schema was rejected for compilation exception: \n${compilationException.message}")
+            validationResult.a.second to Either.left(validationResult.a.first)
          }
       }
-      return validationResult
+      parsedSources.forEach { parsedSource ->
+         // TODO : We now allow storing schemas that have errors.
+         // This is because if schemas depend on other schemas that go away, (ie., from a service
+         // that goes down).
+         // we want them to become valid when the other schema returns, and not have to have the
+         // publisher re-register.
+         // Also, this is useful for UI tooling.
+         // However, by overwriting the source in the cache using the id, there's a small
+         // chance that if publishers aren't incrementing their ids properly, that we
+         // overwrite a valid source with on that contains compilation errors.
+         // Deal with that if the scenario arises.
+         val cachedSource = CacheMemberSchema(hazelcast.cluster.localMember.uuid, parsedSource)
+         schemaSourcesMap[parsedSource.source.id] = cachedSource
+      }
+      rebuildSchemaAndWriteToCache()
+
+      // This is what this used to do.  Leaving this here for a bit, as this was a big change.
+//      when (validationResult) {
+//         is Either.Right -> {
+//            // TODO : Here, we're still storing ONLY the raw schema we've received, not the merged schema.
+//            // That seems wasteful, as we're just gonna re-compute this later.
+//            versionedSources.forEach { versionedSource ->
+//               val cachedSchema = CacheMemberSchema(hazelcast.cluster.localMember.uuid, versionedSource)
+//               schemaSourcesMap[versionedSource.id] = cachedSchema
+//            }
+//            rebuildSchemaAndWriteToCache()
+//         }
+//         is Either.Left -> {
+//            val compilationException = validationResult.a
+//            log().error("Schema was rejected for compilation exception: \n${compilationException.message}")
+//         }
+//      }
+      return returnValue
    }
 
    private fun rebuildSchemaAndWriteToCache(): SchemaSet {
@@ -109,7 +135,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       schemaPurger.removeOldSchemasFromHazelcast(currentClusterMembers)
 
       val sources = getSchemaEntriesOfCurrentClusterMembers()
-      val result = SchemaSet.from(sources, generationCounter.incrementAndGet().toInt())
+      val result = SchemaSet.fromParsed(sources, generationCounter.incrementAndGet().toInt())
       log().info("Rebuilt schema cache - $result")
       schemaSetHolder.compute(SchemaSetCacheKey) { _, current ->
          when {
@@ -141,7 +167,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       }
    }
 
-   private fun getSchemaEntriesOfCurrentClusterMembers(): List<VersionedSource> {
+   private fun getSchemaEntriesOfCurrentClusterMembers(): List<ParsedSource> {
       return schemaSourcesMap.filter { (_, cacheMemberSchema) ->
          hazelcast.cluster.members.any { it.uuid == cacheMemberSchema.cacheMemberId }
       }.map { (_, value) -> value.schema }
@@ -188,4 +214,4 @@ class HazelcastSchemaPurger(private val hazelcastMap: IMap<SchemaId, CacheMember
    }
 }
 
-data class CacheMemberSchema(val cacheMemberId: String, val schema: VersionedSource) : Serializable
+data class CacheMemberSchema(val cacheMemberId: String, val schema: ParsedSource) : Serializable

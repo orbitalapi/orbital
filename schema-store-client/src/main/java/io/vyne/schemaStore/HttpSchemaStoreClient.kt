@@ -62,7 +62,7 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
 //      TODO("Migrate this to perform better schema validation, or defer to the schema service")
    }
 
-   override fun submitSchemas(schemas: List<VersionedSource>): Either<CompilationException, Schema> {
+   override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
       TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
    }
 

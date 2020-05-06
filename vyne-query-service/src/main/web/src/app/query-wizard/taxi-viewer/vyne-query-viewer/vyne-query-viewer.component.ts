@@ -158,7 +158,7 @@ abstract class ObjectScalarGenerator {
         console.error(`Fact ${fact.typeName} was not found!`);
         return 'error';
       }
-      if (factType.scalar) {
+      if (factType.isScalar) {
         return this.generateScalarFact(fact);
       } else {
         return this.generateObjectType(fact);

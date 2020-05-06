@@ -1,15 +1,22 @@
 <div class="file-list" *ngIf="displaySidebar">
-  <div class="file-list-entry" *ngFor="let source of sources" (click)="select(source)">
+  <div class="file-list-entry" *ngFor="let parsedSource of sources" (click)="select(parsedSource)">
     <img class="icon" src="assets/img/file.svg">
-    <span class="file-name">{{ source.origin }}</span>
-    <span class="version" *ngIf="source.version">{{ source.version }}</span>
+    <span class="file-name">{{ parsedSource.source?.name }}</span>
+    <span class="error-count" *ngIf="parsedSource.errors.length > 0">{{ parsedSource.errors.length }}</span>
+    <span class="version" *ngIf="parsedSource.source?.version">{{ parsedSource.source.version }}</span>
   </div>
 </div>
-<mat-tab-group class="code-viewer" [(selectedIndex)]="selectedIndex">
-  <mat-tab *ngFor="let source of sources" [label]="source.origin">
-    <ng-template matTabContent>
-      <td-highlight [content]="source.content" [lang]="source.language"></td-highlight>
-    </ng-template>
-  </mat-tab>
-</mat-tab-group>
-
+<!--<mat-tab-group class="code-viewer" [(selectedIndex)]="selectedIndex">-->
+<!--  <mat-tab *ngFor="let parsedSource of sources" [label]="parsedSource.source.name">-->
+<!--    <ng-template matTabContent>-->
+<!--      <div>-->
+<!--        -->
+<!--      </div>-->
+<!--    </ng-template>-->
+<!--  </mat-tab>-->
+<!--</mat-tab-group>-->
+<ngx-monaco-editor [options]="editorOptions"
+                   class="code-editor"
+                   [ngModel]="sourceContent"
+                   #editor
+                   ></ngx-monaco-editor>

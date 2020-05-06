@@ -6,6 +6,9 @@ import {CovalentHighlightModule} from '@covalent/highlight';
 import {CovalentTabSelectModule} from '@covalent/core';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatTabsModule} from '@angular/material/tabs';
+import {sampleParsedSource} from './sample-code';
+import {FormsModule} from '@angular/forms';
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 const code = `type Customer {
      email : CustomerEmailAddress
@@ -85,24 +88,13 @@ storiesOf('CodeViewer', module)
   .addDecorator(
     moduleMetadata({
       declarations: [CodeViewerComponent],
-      imports: [CommonModule, BrowserModule, CovalentHighlightModule, MatTabsModule, BrowserAnimationsModule]
+      imports: [CommonModule, BrowserModule,  MonacoEditorModule, MatTabsModule, FormsModule, BrowserAnimationsModule]
     })
   ).add('default', () => {
   return {
     template: `<app-code-viewer [sources]="sources"></app-code-viewer>`,
     props: {
-      sources: [
-        {
-          origin: 'Definition published by CustomerService',
-          content: bigTaxi,
-          version: '0.1.0',
-          language: 'taxi'
-        },
-        {
-          origin: 'Documentation',
-          content: typescript,
-          language: 'typescript'
-        }]
+      sources: sampleParsedSource
     }
   };
 });

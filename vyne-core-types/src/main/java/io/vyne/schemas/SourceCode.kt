@@ -1,5 +1,6 @@
 package io.vyne.schemas
 
+@Deprecated("Favour VersionedSource")
 data class SourceCode(
    val origin: String,
    val language: String,

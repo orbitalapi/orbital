@@ -1,8 +1,6 @@
 package io.vyne.schemaStore
 
-import com.github.zafarkhaja.semver.Version
-import io.vyne.CompositeSchemaBuilder
-import io.vyne.NamedSource
+import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.schemas.CompositeSchema
 import io.vyne.schemas.taxi.TaxiSchema
@@ -13,12 +11,10 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 import java.io.Serializable
-import java.time.Instant
-import java.util.concurrent.atomic.AtomicReference
 
 typealias SchemaSetId = Int
 
-data class SchemaSet private constructor(val sources: List<VersionedSource>, val generation: Int) : Serializable {
+data class SchemaSet private constructor(val sources: List<ParsedSource>, val generation: Int) : Serializable {
    val id: Int = sources.hashCode()
 
    // The backing fields and accessors here are to avoid
@@ -28,11 +24,16 @@ data class SchemaSet private constructor(val sources: List<VersionedSource>, val
    // to reinit before read.
    @Transient
    private var _taxiSchemas: List<TaxiSchema>? = null
+
    @Transient
    private var _rawSchemaStrings: List<String>? = null
+
    @Transient
    private var _compositeSchema: CompositeSchema? = null
 
+   val validSources = sources.filter { it.isValid }.map { it.source }
+   val invalidSources = sources.filter { !it.isValid }.map { it.source }
+   val allSources = sources.map { it.source }
    val taxiSchemas: List<TaxiSchema>
       get() {
          if (this._taxiSchemas == null) {
@@ -65,8 +66,8 @@ data class SchemaSet private constructor(val sources: List<VersionedSource>, val
       } else {
          // TODO : Partway through simplifying everything to have a single schema.
          // Not sure what the impact of changing this is, so will chicken out and defer
-         this._taxiSchemas = listOf(TaxiSchema.from(sources))
-         this._rawSchemaStrings = this.sources.map { it.content }
+         this._taxiSchemas = listOf(TaxiSchema.from(validSources))
+         this._rawSchemaStrings = this.validSources.map { it.content }
          this._compositeSchema = CompositeSchema(this._taxiSchemas!!)
       }
    }
@@ -74,47 +75,64 @@ data class SchemaSet private constructor(val sources: List<VersionedSource>, val
    companion object {
       val EMPTY = SchemaSet(emptyList(), -1)
 
+      @Deprecated("call fromParsed instead")
       fun just(src: String): SchemaSet {
-         return SchemaSet(listOf(VersionedSource.sourceOnly(src)), -1)
+         return from(listOf(VersionedSource.sourceOnly(src)), -1)
       }
 
-      fun from(sources: List<VersionedSource>, generation: Int): SchemaSet {
+      fun fromParsed(sources: List<ParsedSource>, generation: Int): SchemaSet {
          val byName = sources.groupBy { it.name }
-         val latestVersionsOfSources = byName.map { (_,candidates) ->
-            candidates.maxBy { it.semver }!!
+         val latestVersionsOfSources = byName.map { (_, candidates) ->
+            candidates.maxBy { it.source.semver }!!
          }
          return SchemaSet(latestVersionsOfSources, generation)
       }
+
+      @Deprecated("call fromParsed instead")
+      fun from(sources: List<VersionedSource>, generation: Int): SchemaSet {
+         log().warn("Creating a schemaSet without parsing content first can lead to unexpected results")
+         return fromParsed(sources.map { ParsedSource(it, emptyList()) }, generation)
+      }
+
    }
 
    fun size() = sources.size
 
    fun contains(name: String, version: String): Boolean {
-      return this.sources.any { it.name == name && it.version == version }
+      return this.sources.any { it.source.name == name && it.source.version == version }
    }
 
-   fun add(schemas: List<VersionedSource>): SchemaSet {
-      return schemas.fold(this) { schemaSet, versionedSource -> schemaSet.add(versionedSource) }
+   fun offerSource(source:VersionedSource): List<VersionedSource>  {
+      return this.allSources.addIfNewer(source)
    }
 
-   fun add(schema: VersionedSource): SchemaSet {
-      val existingSchema = this.sources.firstOrNull { it.name == schema.name }
-      val sourcesToUse = if (existingSchema != null) {
-         if (existingSchema.semver >= schema.semver) {
-            log().info("When adding ${schema.id} version ${existingSchema.id} was found, so not making any changes")
-            return this
-         } else {
-            log().info("Replacing ${existingSchema.id} with ${schema.id}")
-            this.sources.subtract(listOf(existingSchema)).toList()
-         }
-      } else {
-         this.sources
-      }
-      return SchemaSet(sourcesToUse + schema, this.generation + 1)
+   fun offerSources(sources: List<VersionedSource>): List<VersionedSource> {
+      return sources.fold(this.allSources) { acc,source -> acc.addIfNewer(source)  }
    }
+
 
    override fun toString(): String {
-      return "SchemaSet on Generation $generation with id $id and ${this.size()} schemas"
+      val invalidSchemaSuffix = if (invalidSources.isNotEmpty()) {
+         ", ${invalidSources.size} of which have errors"
+      } else {
+         ""
+      }
+      return "SchemaSet on Generation $generation with id $id and ${this.size()} schemas$invalidSchemaSuffix"
+   }
+
+   private fun List<VersionedSource>.addIfNewer(source:VersionedSource):List<VersionedSource> {
+      val existingSource = this.firstOrNull { it.name == source.name }
+      return if (existingSource != null) {
+         if (existingSource.semver >= source.semver) {
+            log().info("When adding ${source.id} version ${existingSource.id} was found, so not making any changes")
+            return this
+         } else {
+            log().info("Replacing ${existingSource.id} with ${source.id}")
+            this.subtract(listOf(existingSource)).toList() + source
+         }
+      } else {
+         this + source
+      }
    }
 }
 
