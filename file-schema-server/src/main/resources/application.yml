@@ -1,5 +1,5 @@
 taxi:
-   project-home: /home/marty/dev/vyne-demos/schema-project
+   project-home: /home/marty/dev/cacib/taxonomy
 spring:
    application:
       name: file-schema-server

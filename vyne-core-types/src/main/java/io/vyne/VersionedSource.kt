@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.github.zafarkhaja.semver.Version
 import com.google.common.annotations.VisibleForTesting
 import io.vyne.utils.log
+import io.vyne.utils.orElse
+import lang.taxi.CompilationError
 import java.io.Serializable
 import java.time.Instant
 import kotlin.reflect.jvm.internal.impl.metadata.deserialization.VersionSpecificBehaviorKt
@@ -26,6 +28,7 @@ data class VersionedSource(val name: String, val version: String, val content: S
 
    @Transient
    private var _semver: Version? = null
+
    @get:JsonIgnore
    val semver: Version
       get() {
@@ -42,3 +45,30 @@ data class VersionedSource(val name: String, val version: String, val content: S
 }
 
 typealias SchemaId = String
+
+// Note - we're duplicating Taxi's CompilationError concept here.
+// However, we omit the Token type, which is complex and tricky to serialize
+data class SourceCompilationError(val detailMessage: String, val sourceName: String, val line: Int, val char: Int) : Serializable {
+   companion object {
+      fun fromCompilationError(error: CompilationError): SourceCompilationError {
+         return SourceCompilationError(
+            error.detailMessage.orEmpty(),
+            error.sourceName.orElse(VersionedSource.UNNAMED),
+            error.line,
+            error.char
+         )
+      }
+   }
+}
+
+fun CompilationError.toSourceCompilationError():SourceCompilationError {
+   return SourceCompilationError.fromCompilationError(this)
+}
+fun List<CompilationError>.toSourceCompilationErrors():List<SourceCompilationError> {
+   return this.map { it.toSourceCompilationError() }
+}
+data class ParsedSource(val source:VersionedSource, val errors:List<SourceCompilationError> = emptyList()) : Serializable {
+   val isValid = errors.isEmpty()
+
+   val name = source.name
+}

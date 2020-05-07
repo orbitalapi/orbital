@@ -1,5 +1,7 @@
 package io.vyne.schemas
 
+import io.vyne.VersionedSource
+
 
 typealias OperationName = String
 typealias ServiceName = String
@@ -76,11 +78,11 @@ data class Operation(val qualifiedName: QualifiedName, val parameters: List<Para
                      val operationType:String? = null,
                      override val metadata: List<Metadata> = emptyList(),
                      val contract: OperationContract = OperationContract(returnType),
-                     val sources: List<SourceCode>) : MetadataTarget, SchemaMember {
+                     val sources: List<VersionedSource>) : MetadataTarget, SchemaMember {
    val name: String = OperationNames.operationName(qualifiedName)
 }
 
-data class Service(val name: QualifiedName, val operations: List<Operation>, override val metadata: List<Metadata> = emptyList(), val sourceCode: List<SourceCode>) : MetadataTarget, SchemaMember {
+data class Service(val name: QualifiedName, val operations: List<Operation>, override val metadata: List<Metadata> = emptyList(), val sourceCode: List<VersionedSource>) : MetadataTarget, SchemaMember {
    fun operation(name: String): Operation {
       return this.operations.first { it.name == name }
    }

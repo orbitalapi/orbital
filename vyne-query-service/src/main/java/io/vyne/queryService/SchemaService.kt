@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.queryService.policies.PolicyDto
 import io.vyne.queryService.schemas.SchemaImportRequest
@@ -19,6 +20,15 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
    @GetMapping(path = ["/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")
+   }
+
+   @GetMapping(path = ["/parsedSources"])
+   fun getParsedSources(): List<ParsedSource> {
+      return if (schemaProvider is VersionedSourceProvider) {
+         schemaProvider.parsedSources.sortedBy { it.source.name }
+      } else {
+         emptyList()
+      }
    }
 
    @GetMapping(path = ["/schemas"])

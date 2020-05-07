@@ -5,6 +5,7 @@ import com.diffplug.common.base.TreeStream
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.collect.HashMultimap
+import io.vyne.VersionedSource
 import io.vyne.models.*
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.graph.EvaluatedEdge
@@ -193,7 +194,7 @@ data class QueryContext(
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 
    // Wraps all the known facts under a root node, turning it into a tree
-   private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode".fqn(), sources = listOf(SourceCode.undefined("NoLang")), typeDoc = null, taxiType = VoidType.VOID), facts.toList())
+   private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode".fqn(), sources = listOf(VersionedSource.sourceOnly("Undefined")), typeDoc = null, taxiType = VoidType.VOID), facts.toList())
 
    /**
     * A breadth-first stream of data facts currently held in the collection.

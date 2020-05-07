@@ -71,7 +71,7 @@ export class ObjectViewComponent {
     if (!this.instance) {
       return null;
     }
-    const isScalar = this.getTypeForAttribute(name).scalar;
+    const isScalar = this.getTypeForAttribute(name).isScalar;
     const attributeValue = this.getTypedObjectAttribute(name);
     if (isTypedInstance(this.instance)) {
       if (isScalar) {
@@ -129,7 +129,7 @@ export class ObjectViewComponent {
     if (!this.type) {
       return false;
     }
-    return !this.type.scalar;
+    return !this.type.isScalar;
     // this.result.hasOwnProperty("type")
     // && (<any>this.result).type.hasOwnProperty("fullyQualifiedName")
   }

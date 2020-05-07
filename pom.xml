@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>0.3.0-SNAPSHOT</taxi.version>
+      <taxi.version>0.3.4-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -262,6 +262,7 @@
             <version>2.5.3</version>
             <configuration>
                <tagNameFormat>v@{project.version}</tagNameFormat>
+               <releaseProfiles>release</releaseProfiles>
                <!-- Currently skipping tests when deploying.
                There isn't a good reason for this, just in a hurry.
                Judge away -->
@@ -380,4 +381,25 @@
          <url>https://dl.bintray.com/taxi-lang/releases</url>
       </repository>
    </repositories>
+
+   <profiles>
+      <profile>
+         <id>snapshot-release</id>
+         <activation>
+            <activeByDefault>false</activeByDefault>
+         </activation>
+         <properties>
+            <docker.tag>latest-snapshot</docker.tag>
+         </properties>
+      </profile>
+      <profile>
+         <id>release</id>
+         <activation>
+            <activeByDefault>false</activeByDefault>
+         </activation>
+         <properties>
+            <docker.tag>latest</docker.tag>
+         </properties>
+      </profile>
+   </profiles>
 </project>

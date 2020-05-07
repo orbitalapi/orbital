@@ -8,7 +8,7 @@ import {environment} from 'src/environments/environment';
 import {map} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
-  Message,
+  Message, ParsedSource,
   QualifiedName,
   Schema,
   SchemaGraph,
@@ -16,7 +16,7 @@ import {
   SchemaMember,
   SchemaSpec,
   Type, TypedInstance,
-  VersionedSchema
+  VersionedSource
 } from './schema';
 import {TypeNamedInstance} from './query.service';
 
@@ -34,21 +34,25 @@ export class TypesService {
   getRawSchema = (): Observable<string> => {
     return this.http
       .get<string>(`${environment.queryServiceUrl}/schemas/raw`);
-  };
+  }
 
-  getVersionedSchemas(): Observable<VersionedSchema[]> {
-    return this.http.get<VersionedSchema[]>(`${environment.queryServiceUrl}/schemas`);
+  getVersionedSchemas(): Observable<VersionedSource[]> {
+    return this.http.get<VersionedSource[]>(`${environment.queryServiceUrl}/schemas`);
+  }
+
+  getParsedSources(): Observable<ParsedSource[]> {
+    return this.http.get<ParsedSource[]>(`${environment.queryServiceUrl}/parsedSources`);
   }
 
   getLinksForNode = (node: SchemaGraphNode): Observable<SchemaGraph> => {
     return this.http
       .get<SchemaGraph>(`${environment.queryServiceUrl}/nodes/${node.type}/${node.nodeId}/links`);
-  };
+  }
 
   getLinks = (typeName: string): Observable<SchemaGraph> => {
     return this.http
       .get<SchemaGraph>(`${environment.queryServiceUrl}/types/${typeName}/links`);
-  };
+  }
 
   getPolicies(typeName: string): Observable<Policy[]> {
     return this.http.get(`${environment.queryServiceUrl}/types/${typeName}/policies`)
@@ -82,9 +86,9 @@ export class TypesService {
           }
         )
       );
-  };
+  }
 
-  createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSchema> {
+  createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
     const spec: SchemaSpec = {
       name: `${typeName.fullyQualifiedName}.${typeName.name}${schemaNameSuffix}`,
       version: 'next-minor',
@@ -104,8 +108,8 @@ export class TypesService {
     );
   }
 
-  submitSchema(request: SchemaImportRequest): Observable<VersionedSchema> {
-    return this.http.post<VersionedSchema>(
+  submitSchema(request: SchemaImportRequest): Observable<VersionedSource> {
+    return this.http.post<VersionedSource>(
       `${environment.queryServiceUrl}/schemas`,
       request
     );

@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonView
+import io.vyne.VersionedSource
 
 interface TypeFullView : TypeLightView
 interface TypeLightView
@@ -36,7 +37,7 @@ data class Type(
    val enumValues: List<String> = emptyList(),
 
    @JsonView(TypeFullView::class)
-   val sources: List<SourceCode>,
+   val sources: List<VersionedSource>,
 
    val typeParameters: List<Type> = emptyList(),
 
@@ -47,7 +48,7 @@ data class Type(
    val typeDoc: String?
 
 ) : SchemaMember {
-   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), metadata: List<Metadata> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<SourceCode>, taxiType: lang.taxi.types.Type, typeDoc: String? = null) : this(name.fqn(), attributes, modifiers, metadata, aliasForType, inherits, enumValues, sources, taxiType = taxiType, typeDoc = typeDoc)
+   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), metadata: List<Metadata> = emptyList(), aliasForType: QualifiedName? = null, inherits: List<Type>, enumValues: List<String> = emptyList(), sources: List<VersionedSource>, taxiType: lang.taxi.types.Type, typeDoc: String? = null) : this(name.fqn(), attributes, modifiers, metadata, aliasForType, inherits, enumValues, sources, taxiType = taxiType, typeDoc = typeDoc)
 
    @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForType != null

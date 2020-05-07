@@ -13,6 +13,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>package-importer</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
          <version>0.3.0-SNAPSHOT</version>
@@ -50,6 +55,44 @@
                </execution>
             </executions>
          </plugin>
+
+         <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+
+            <configuration>
+               <images>
+                  <image>
+                     <name>vyneco/${project.artifactId}:${project.version}</name>
+                     <build>
+                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
+                        <tags>
+                           <!-- defined in profiles.  see root pom.xml -->
+                           <tag>${docker.tag}</tag>
+                        </tags>
+                     </build>
+                  </image>
+               </images>
+            </configuration>
+
+            <!-- Connect start/stop to pre- and
+                 post-integration-test phase, respectively if you want to start
+                 your docker containers during integration tests -->
+            <executions>
+               <execution>
+                  <id>deploy</id>
+                  <phase>deploy</phase>
+                  <goals>
+                     <!-- "build" should be used to create the images with the
+                          artifact -->
+                     <goal>build</goal>
+                     <goal>push</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+
+
       </plugins>
    </build>
 </project>
