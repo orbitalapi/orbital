@@ -15,6 +15,7 @@ import reactor.kafka.sender.KafkaSender
 import reactor.kafka.sender.SenderOptions
 import reactor.kafka.sender.SenderRecord
 
+@Component
 open class KafkaOutputBuilder(val objectMapper: ObjectMapper) : PipelineOutputTransportBuilder<KafkaTransportOutputSpec> {
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 

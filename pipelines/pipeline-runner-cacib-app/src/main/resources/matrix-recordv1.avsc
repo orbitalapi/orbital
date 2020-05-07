@@ -1,0 +1,10 @@
+{
+  "type" : "record",
+  "name" : "MatrixRecord",
+  "namespace" : "com.cacib.cemaforr.common.record",
+  "fields" : [ {
+    "name" : "data",
+    "type" : [ "null", "string" ],
+    "default" : null
+  }]
+}

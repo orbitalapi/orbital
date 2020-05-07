@@ -29,7 +29,7 @@ open class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: EurekaC
       val caskServer = client.getNextServerFromEureka(caskServiceName, false)
 
       var endpoint = with(caskServer) { "ws://$hostName:$port/cask/${spec.targetType.typeName.name}" }
-      endpoint = "ws://echo.websocket.org"
+      // endpoint = "ws://echo.websocket.org" // FOR TESTS
       return CaskOutput(spec, objectMapper, endpoint)
    }
 }
@@ -41,7 +41,7 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
    private val output: EmitterProcessor<String> = EmitterProcessor.create<String>()
 
    init {
-      val sessionMono = client.execute(URI(endpoint)) { session ->
+      val disposable = client.execute(URI(endpoint)) { session ->
          session.receive()
             .map { obj: WebSocketMessage -> obj.payloadAsText }
             .subscribeWith(output)
@@ -50,11 +50,7 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
             .doOnError { "Websocket Error: $it" }
             .doOnComplete { "Websocket completed" }
             .then()
-      }
-
-      // FIXME
-      output.doOnSubscribe { s -> sessionMono.subscribe()}.subscribe();
-      output.subscribe()
+      }.subscribe() // FIXME clean
    }
 
    override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
@@ -65,8 +61,5 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
       output.onNext(json);
 
    }
-
-
-
 
 }

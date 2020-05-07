@@ -1,16 +1,15 @@
 package io.vyne.pipelines.runner.transport.kafka
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.treeToValue
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
 import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
 import io.vyne.schemas.Schema
-import io.vyne.schemas.TypeReference
 import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kafka.receiver.KafkaReceiver
@@ -19,6 +18,7 @@ import java.nio.charset.Charset
 import java.time.Duration
 import java.time.Instant
 
+@Component
 open class KafkaInputBuilder(val objectMapper: ObjectMapper) : PipelineInputTransportBuilder<KafkaTransportInputSpec> {
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.INPUT
@@ -27,7 +27,7 @@ open class KafkaInputBuilder(val objectMapper: ObjectMapper) : PipelineInputTran
 
 }
 
-class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, transformer: (JsonNode) -> JsonNode = { it }) : PipelineInputTransport {
+class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper) : PipelineInputTransport {
    private val defaultProps = mapOf(
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.qualifiedName!!,
       ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.qualifiedName!!
@@ -64,11 +64,9 @@ class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, tran
                logger.debug { "Deserializing record $partition/$offset" }
                val messageJson = kafkaMessage.value()
 
-               var node = objectMapper.readTree(messageJson)
-
                logger.debug { "Converting Map to TypeInstance of ${targetType.fullyQualifiedName}" }
 
-               var map = objectMapper.treeToValue<Map<String, Any>>(transformer(node))
+               val map = objectMapper.readValue<Map<String, Any>>(messageJson)
                TypedInstance.from(targetType, map, schema)
             }
             Mono.create<PipelineInputMessage> { sink ->
