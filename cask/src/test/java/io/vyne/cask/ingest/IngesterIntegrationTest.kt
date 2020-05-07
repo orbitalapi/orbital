@@ -6,7 +6,7 @@ import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.Benchmark
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
-import io.vyne.cask.format.csv.CsvPipelineSource
+import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.schemas.fqn
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.io.FileUtils
@@ -19,7 +19,7 @@ import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
 
 
-class IngesterTest {
+class IngesterIntegrationTest {
 
     @Rule
     @JvmField
@@ -48,8 +48,8 @@ class IngesterTest {
         val schema = CoinbaseOrderSchema.schemaV1
         val type = schema.versionedType("OrderWindowSummary".fqn())
         val resource = Resources.getResource("Coinbase_BTCUSD_1h.csv").toURI()
-        val pipelineSource = CsvPipelineSource(resource, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-        val pipeline = Pipeline(
+        val pipelineSource = CsvStreamSource(resource, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+        val pipeline = IngestionStream(
            type,
            TypeDbWrapper(type, schema, pipelineSource.cachePath, null),
            pipelineSource)
@@ -78,8 +78,8 @@ class IngesterTest {
         val schemaV2 = CoinbaseOrderSchema.schemaV2
         val typeV2 = schemaV2.versionedType("OrderWindowSummary".fqn())
         val resource = Resources.getResource("Coinbase_BTCUSD_1h.csv").toURI()
-        val pipelineSource = CsvPipelineSource(resource, typeV1, schemaV1, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-        val pipeline = Pipeline(
+        val pipelineSource = CsvStreamSource(resource, typeV1, schemaV1, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+        val pipeline = IngestionStream(
            typeV1,
            TypeDbWrapper(typeV1, schemaV1, pipelineSource.cachePath, null),
            pipelineSource)

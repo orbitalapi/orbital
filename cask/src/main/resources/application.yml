@@ -1,2 +1,6 @@
+spring:
+   application:
+      name: cask
+
 server:
   port: 8800

@@ -9,24 +9,24 @@ import org.postgresql.PGConnection
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
 
-data class Pipeline(
+data class IngestionStream(
    val type: VersionedType,
    val dbWrapper: TypeDbWrapper,
-   val feed: PipelineSource
+   val feed: StreamSource
 )
 
-class Ingester(private val jdbcTemplate: JdbcTemplate, private val pipeline: Pipeline) {
+class Ingester(private val jdbcTemplate: JdbcTemplate, private val ingestionStream: IngestionStream) {
 
     fun destroy() {
-        jdbcTemplate.execute(pipeline.dbWrapper.dropTableStatement)
-        TableMetadata.deleteEntry(pipeline.type, jdbcTemplate)
+        jdbcTemplate.execute(ingestionStream.dbWrapper.dropTableStatement)
+        TableMetadata.deleteEntry(ingestionStream.type, jdbcTemplate)
     }
 
     fun initialize() {
         jdbcTemplate.execute(TableMetadata.CREATE_TABLE)
-        val createTableStatement = pipeline.dbWrapper.createTableStatement
+        val createTableStatement = ingestionStream.dbWrapper.createTableStatement
         val generatedTableName = createTableStatement.generatedTableName
-        log().info("Initializing table $generatedTableName for pipeline for type ${pipeline.type.versionedName}")
+        log().info("Initializing table $generatedTableName for pipeline for type ${ingestionStream.type.versionedName}")
         jdbcTemplate.execute(createTableStatement.ddlStatement)
         log().info("Table $generatedTableName created")
 
@@ -37,10 +37,10 @@ class Ingester(private val jdbcTemplate: JdbcTemplate, private val pipeline: Pip
     fun ingest(): Flux<InstanceAttributeSet> {
         val connection = jdbcTemplate.dataSource!!.connection
         val pgConnection = connection.unwrap(PGConnection::class.java)
-        val table = pipeline.dbWrapper.rowWriterTable
+        val table = ingestionStream.dbWrapper.rowWriterTable
         val writer = SimpleRowWriter(table)
         writer.open(pgConnection)
-        return pipeline.feed.stream
+        return ingestionStream.feed.stream
                 .doOnComplete {
                     writer.close()
                     connection.close()
@@ -48,7 +48,7 @@ class Ingester(private val jdbcTemplate: JdbcTemplate, private val pipeline: Pip
                 .doOnEach { signal ->
                     signal.get()?.let { instance ->
                         writer.startRow { rowWriter ->
-                            pipeline.dbWrapper.write(rowWriter, instance)
+                            ingestionStream.dbWrapper.write(rowWriter, instance)
                         }
                     }
 
@@ -57,7 +57,7 @@ class Ingester(private val jdbcTemplate: JdbcTemplate, private val pipeline: Pip
     }
 
     fun getRowCount(): Int {
-        val count = jdbcTemplate.queryForObject("SELECT COUNT(*) AS rowcount FROM ${pipeline.dbWrapper.tableName}", Int::class.java)!!
+        val count = jdbcTemplate.queryForObject("SELECT COUNT(*) AS rowcount FROM ${ingestionStream.dbWrapper.tableName}", Int::class.java)!!
         return count
     }
 }
