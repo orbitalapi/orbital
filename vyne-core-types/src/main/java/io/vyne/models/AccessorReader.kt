@@ -1,6 +1,8 @@
 package io.vyne.models
 
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.vyne.models.csv.CsvAttributeAccessorParser
+import io.vyne.models.json.JsonAttributeAccessorParser
 import io.vyne.models.xml.XmlTypedInstanceParser
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -14,6 +16,7 @@ import org.apache.commons.csv.CSVRecord
 object Parsers {
    val xmlParser: XmlTypedInstanceParser by lazy { XmlTypedInstanceParser() }
    val csvParser: CsvAttributeAccessorParser by lazy { CsvAttributeAccessorParser() }
+   val jsonParser: JsonAttributeAccessorParser by lazy { JsonAttributeAccessorParser() }
 }
 
 class AccessorReader {
@@ -21,6 +24,7 @@ class AccessorReader {
    // and re-use inbetween readers
    private val xmlParser: XmlTypedInstanceParser by lazy { Parsers.xmlParser }
    private val csvParser: CsvAttributeAccessorParser by lazy { Parsers.csvParser }
+   private val jsonParser: JsonAttributeAccessorParser by lazy { Parsers.jsonParser }
 
    fun read(value: Any, targetTypeRef: TypeReference, accessor: Accessor, schema: Schema): TypedInstance {
       val targetType = schema.type(targetTypeRef)
@@ -59,6 +63,7 @@ class AccessorReader {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
          is String -> xmlParser.parse(value, targetType, accessor, schema)
+         is ObjectNode -> jsonParser.parseToType(targetType, accessor, value, schema)
          else -> TODO()
       }
    }

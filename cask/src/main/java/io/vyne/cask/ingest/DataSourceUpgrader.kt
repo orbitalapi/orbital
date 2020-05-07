@@ -5,7 +5,7 @@ import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ddl.TypeMigration
-import io.vyne.cask.format.csv.CsvBinaryCachePipelineSource
+import io.vyne.cask.format.csv.CsvBinaryCacheStreamSource
 import io.vyne.cask.types.FieldAdded
 import io.vyne.cask.types.FieldChanged
 import io.vyne.cask.types.TypeDiffer
@@ -27,12 +27,12 @@ class DataSourceUpgrader(val schema: TaxiSchema, val strategy: UpgradeDataSource
            originalType
         )
         val readCachePath = strategy.source.readCachePath!!
-        val pipeline = Pipeline(
+        val ingestionStream = IngestionStream(
            strategy.targetType,
            TypeDbWrapper(strategy.targetType, schema, readCachePath, migration),
-           CsvBinaryCachePipelineSource(readCachePath, migration, schema)
+           CsvBinaryCacheStreamSource(readCachePath, migration, schema)
         )
-       Ingester(jdbcTemplate, pipeline)
+       Ingester(jdbcTemplate, ingestionStream)
     }
 
     fun execute(): Flux<InstanceAttributeSet> {

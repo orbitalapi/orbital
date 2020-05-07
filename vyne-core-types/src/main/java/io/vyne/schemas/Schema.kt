@@ -36,6 +36,8 @@ interface Schema {
    // That's a bit too much work for now.
    fun versionedType(name: QualifiedName) = VersionedType(this.sources, type(name), taxiType(name))
 
+   fun versionedType(versionedTypeReference: VersionedTypeReference) = VersionedType(this.sources, type(versionedTypeReference.typeName), taxiType(versionedTypeReference.typeName))
+
    fun taxiType(name: QualifiedName): lang.taxi.types.Type
 
    fun type(name: QualifiedName) = typeCache.type(name)

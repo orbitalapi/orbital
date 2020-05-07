@@ -4,7 +4,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ingest.InstanceAttributeSet
-import io.vyne.cask.ingest.PipelineSource
+import io.vyne.cask.ingest.StreamSource
 import io.vyne.cask.log
 import lang.taxi.types.ColumnAccessor
 import lang.taxi.types.Field
@@ -12,7 +12,7 @@ import reactor.core.publisher.Flux
 import java.nio.file.Files
 import java.nio.file.Path
 
-class CsvBinaryCachePipelineSource(private val readCachePath: Path, private val migration: TypeMigration, private val schema: TaxiSchema) : PipelineSource {
+class CsvBinaryCacheStreamSource(private val readCachePath: Path, private val migration: TypeMigration, private val schema: TaxiSchema) : StreamSource {
     init {
         require(Files.exists(readCachePath)) { "$readCachePath does not exist" }
         require(Files.isRegularFile(readCachePath)) { "$readCachePath is not a file" }

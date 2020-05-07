@@ -3,7 +3,9 @@ package io.vyne.cask.ddl
 import com.google.common.annotations.VisibleForTesting
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.VersionedSource
+import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
+import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
@@ -122,10 +124,10 @@ class PostgresDdlGenerator {
         return "DROP TABLE IF EXISTS ${tableName(versionedType)};"
     }
 
-    fun generateDdl(versionedType: VersionedType, schema: TaxiSchema, cachePath: Path?, typeMigration: TypeMigration?): TableGenerationStatement {
+    fun generateDdl(versionedType: VersionedType, schema: Schema, cachePath: Path?, typeMigration: TypeMigration?): TableGenerationStatement {
         // Design choice - I'm generating against the Taxi type, not the vyne
         // one, as we're migrating back to Taxi types
-        val type = schema.taxi.type(versionedType.type.fullyQualifiedName)
+        val type = schema.type(versionedType.fullyQualifiedName.fqn()).taxiType
         val deltaAgainstTableName = typeMigration?.predecessorType?.let { tableName(it) }
 
         // if we're not migrating types, store all fields on the type
@@ -134,7 +136,7 @@ class PostgresDdlGenerator {
         return generateDdl(type, schema, versionedType, fields, cachePath, deltaAgainstTableName)
     }
 
-    private fun generateDdl(type: Type, schema: TaxiSchema, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
+    private fun generateDdl(type: Type, schema: Schema, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
         return when (type) {
             is ObjectType -> generateObjectDdl(type, schema, versionedType, fields, cachePath, deltaAgainstTableName)
             else -> TODO("Type ${type::class.simpleName} not yet supported")
@@ -144,7 +146,7 @@ class PostgresDdlGenerator {
     // Note - could probably collapse this with the caller method at the moment, since
     // we're not supporting anything other than ObjectTypes.
     // However, that'll change shortly, and don't wanna refactor this again.
-    private fun generateObjectDdl(type: ObjectType, schema: TaxiSchema, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
+    private fun generateObjectDdl(type: ObjectType, schema: Schema, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
         val columns = fields.map { generateColumnForField(it) }
         val fieldDef = columns.joinToString(", \n") { it.sql }
         val tableName = tableName(versionedType)
