@@ -1,5 +1,6 @@
 package io.vyne.pipelines.runner
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.pipelines.orchestrator.events.PipelineEventsApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
@@ -15,6 +16,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.annotation.Bean
 import org.springframework.stereotype.Component
+import java.lang.RuntimeException
+import java.util.function.UnaryOperator
 
 @SpringBootApplication
 @EnableDiscoveryClient
@@ -39,7 +42,11 @@ class PipelineRunnerCacibApp {
 @Component
 class CacibKafkaInputBuilder(objectMapper: ObjectMapper) : KafkaInputBuilder(objectMapper) {
 
-   override fun build(spec: KafkaTransportInputSpec) = KafkaInput(spec, objectMapper) { it.get("payload") as Map<String, Any> } // FIXME improve the cast
+   override fun build(spec: KafkaTransportInputSpec): KafkaInput = KafkaInput(spec, objectMapper) { root ->
+      var fields = checkNotNull(root.at("/fields"))
+      check(fields.isArray)
+      fields.first { it.get("name").asText() == "data" } .get("value")
+   }
 }
 
 @Component

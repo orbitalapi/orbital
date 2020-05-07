@@ -12,6 +12,7 @@ class ObserverProvider(private val eventSink: PipelineEventSink) {
          return ObserverProvider(CollectingEventSink())
       }
    }
+
    fun pipelineObserver(pipeline: Pipeline, message: PipelineInputMessage?): PipelineStageObserverProvider {
 
       return { stageName ->
