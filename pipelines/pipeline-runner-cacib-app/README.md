@@ -5,7 +5,6 @@ Currently, the AVRO deserialization is <b>NOT</b> supported.
 ## Prerequisites
 * Java 8+
 * Maven 3.x
-* Docker/Docker-compose
 
 ## Compile
 `mvn clean compile`
@@ -63,4 +62,5 @@ You can post the following json to your server (e.g `localhost:9610/runner/pipel
 ```
 
 ## Send messages
-As for now, only json is supported. You can send messages to the topic defined above. The pipeline will listen to these messages and stream them to the cask.
+As for now, only plain json is supported. You can send messages to the topic defined above. The pipeline will listen to these messages and stream them to the cask.
+
