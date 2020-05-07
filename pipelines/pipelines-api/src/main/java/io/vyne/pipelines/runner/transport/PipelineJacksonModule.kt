@@ -13,18 +13,18 @@ import io.vyne.pipelines.runner.transport.cask.CaskTransportOutputSpec
 import io.vyne.pipelines.runner.transport.kafka.KafkaTransportInputSpec
 import io.vyne.pipelines.runner.transport.kafka.KafkaTransportOutputSpec
 
-class PipelineJacksonModule : SimpleModule() {
-
-   init {
-      addDeserializer(PipelineTransportSpec::class.java, PipelineTransportSpecDeserializer())
-   }
-}
-
-class PipelineTransportSpecDeserializer(private val ids: List<PipelineTransportSpecId> = listOf(
+class PipelineJacksonModule(ids: List<PipelineTransportSpecId> = listOf(
    KafkaTransportInputSpec.specId,
    CaskTransportOutputSpec.specId,
    KafkaTransportOutputSpec.specId
-)) : JsonDeserializer<PipelineTransportSpec>() {
+)) : SimpleModule() {
+
+   init {
+      addDeserializer(PipelineTransportSpec::class.java, PipelineTransportSpecDeserializer(ids))
+   }
+}
+
+class PipelineTransportSpecDeserializer(val ids: List<PipelineTransportSpecId>) : JsonDeserializer<PipelineTransportSpec>() {
    private val innerJackson = jacksonObjectMapper()
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): PipelineTransportSpec {

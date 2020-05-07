@@ -51,11 +51,7 @@
       "values" : "string"
     } ],
     "default" : null
-  }, {
-    "name" : "SentTimeUtc",
-    "type" : "long",
-     "doc": "Producer Components will put this as System time in current milliseconds, so we know when it was sent last. This can be used for monitoring ass well to know when was the last message came from a particular component"
- } ]
+  }]
 }
 
 

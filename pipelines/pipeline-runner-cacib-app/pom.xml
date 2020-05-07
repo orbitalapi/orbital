@@ -87,6 +87,7 @@
                   <configuration>
                      <sourceDirectory>${project.basedir}/src/main/resources/</sourceDirectory>
                      <outputDirectory>${project.build.directory}/generated-sources/cacib</outputDirectory>
+                     <stringType>String</stringType>
                   </configuration>
                </execution>
             </executions>
