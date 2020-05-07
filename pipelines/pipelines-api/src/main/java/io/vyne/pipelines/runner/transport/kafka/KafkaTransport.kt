@@ -5,10 +5,6 @@ import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.PipelineTransportType
 import io.vyne.pipelines.runner.transport.PipelineTransportSpecId
-import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.common.serialization.StringDeserializer
-import org.apache.kafka.common.serialization.StringSerializer
 
 object KafkaTransport {
    const val TYPE: PipelineTransportType = "kafka"
@@ -30,6 +26,7 @@ data class KafkaTransportInputSpec(
    override val type: PipelineTransportType
       get() = KafkaTransport.TYPE
 }
+
 
 data class KafkaTransportOutputSpec(
    val topic: String,

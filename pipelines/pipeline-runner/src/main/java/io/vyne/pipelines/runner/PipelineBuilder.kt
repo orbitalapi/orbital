@@ -27,7 +27,6 @@ class PipelineBuilder(
    fun build(pipeline: Pipeline): PipelineInstance {
       val observer = observerProvider.pipelineObserver(pipeline, null).invoke("Preparing pipeline")
       observer.info { "Building pipeline ${pipeline.name}" }
-   println("BUILDING")
       val vyne = vyneFactory.createVyne()
       val schema = vyne.schema
       // Grab the types early, in case they're not present in Vyne
@@ -56,7 +55,7 @@ class PipelineBuilder(
          pipeline,
          message
       )
-      println("INGEST")
+
       val logger = stageObserverProvider("Ingest")
       return loggedMono(logger) { sink ->
          // Naieve first implementation.
@@ -74,7 +73,6 @@ class PipelineBuilder(
    }
 
    fun transform(pipelineInput: Pair<PipelineStageObserverProvider, TypedInstance>, vyne: Vyne, outputType: Type): Mono<Pair<PipelineStageObserverProvider, TypedInstance>> {
-      println("TRANSFORM")
       val (observerProvider, typedInstance) = pipelineInput
       val logger = observerProvider("Transform")
       return loggedMono(logger) { sink ->
@@ -89,7 +87,6 @@ class PipelineBuilder(
    }
 
    fun publish(pipelineInput: Pair<PipelineStageObserverProvider, TypedInstance>, output: PipelineOutputTransport): Mono<TypedInstance> {
-      println("PUBLISH")
       val (observerProvider, typedInstance) = pipelineInput
       val logger = observerProvider("Publish")
       return loggedMono(logger) { sink ->

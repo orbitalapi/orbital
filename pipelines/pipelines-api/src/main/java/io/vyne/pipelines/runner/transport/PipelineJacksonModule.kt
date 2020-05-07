@@ -9,6 +9,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.PipelineTransportType
+import io.vyne.pipelines.runner.transport.cask.CaskTransportOutputSpec
 import io.vyne.pipelines.runner.transport.kafka.KafkaTransportInputSpec
 import io.vyne.pipelines.runner.transport.kafka.KafkaTransportOutputSpec
 
@@ -21,6 +22,7 @@ class PipelineJacksonModule : SimpleModule() {
 
 class PipelineTransportSpecDeserializer(private val ids: List<PipelineTransportSpecId> = listOf(
    KafkaTransportInputSpec.specId,
+   CaskTransportOutputSpec.specId,
    KafkaTransportOutputSpec.specId
 )) : JsonDeserializer<PipelineTransportSpec>() {
    private val innerJackson = jacksonObjectMapper()

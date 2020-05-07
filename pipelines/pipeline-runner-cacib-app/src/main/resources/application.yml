@@ -4,3 +4,7 @@ spring:
 
 server:
    port: 9610
+
+service:
+   cask:
+      name: PIPELINE-RUNNER

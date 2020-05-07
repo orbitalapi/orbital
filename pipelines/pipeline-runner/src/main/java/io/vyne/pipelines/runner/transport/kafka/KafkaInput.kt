@@ -45,7 +45,6 @@ class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, tran
       feed = KafkaReceiver.create(receiverOptions)
          .receive()
          .flatMap { kafkaMessage ->
-            println("MESSAGEE")
             val recordId = kafkaMessage.key()
             val offset = kafkaMessage.offset()
             val partition = kafkaMessage.partition()

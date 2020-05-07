@@ -1,10 +1,16 @@
 package io.vyne.pipelines.runner.transport
 
-import io.vyne.pipelines.*
+import com.netflix.discovery.EurekaClient
+import io.vyne.pipelines.PipelineInputTransport
+import io.vyne.pipelines.PipelineOutputTransport
+import io.vyne.pipelines.PipelineTransportSpec
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+
 
 @Component
 class PipelineTransportFactory(private val builders: List<PipelineTransportBuilder<out PipelineTransportSpec>>) {
+
    fun buildInput(spec: PipelineTransportSpec): PipelineInputTransport {
       return builders
          .filterIsInstance<PipelineInputTransportBuilder<PipelineTransportSpec>>()
