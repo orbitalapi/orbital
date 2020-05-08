@@ -19,9 +19,21 @@ hljs.registerLanguage('taxi', taxiLangDef);
   templateUrl: './code-viewer.component.html',
   styleUrls: ['./code-viewer.component.scss']
 })
-export class CodeViewerComponent implements OnInit {
+export class CodeViewerComponent {
+
+  private _sources: ParsedSource[] | VersionedSource[];
+
   @Input()
-  sources: ParsedSource[] | VersionedSource[];
+  get sources(): ParsedSource[] | VersionedSource[] {
+    return this._sources;
+  }
+
+  set sources(value: ParsedSource[] | VersionedSource[]) {
+    this._sources = value;
+    if (this.sources && (this.sources as any[]).length > 0) {
+      this.select(this.sources[0]);
+    }
+  }
 
   @Input()
   sidebarMode: SidebarMode = 'Auto';
@@ -87,7 +99,7 @@ export class CodeViewerComponent implements OnInit {
   get displaySidebar(): boolean {
     switch (this.sidebarMode) {
       case 'Auto':
-        return this.sources && this.sources.length > 1;
+        return this._sources && this._sources.length > 1;
       case 'Visible':
         return true;
       case 'Hidden' :
@@ -103,10 +115,6 @@ export class CodeViewerComponent implements OnInit {
     }
   }
 
-  ngOnInit(): void {
-    this.select(this.sources[0]);
-  }
-
   private get selectedSourceErrors(): SourceCompilationError[] {
     if (!this.selectedSource) {
       return [];
@@ -120,7 +128,7 @@ export class CodeViewerComponent implements OnInit {
 
 
   select(source: ParsedSource | VersionedSource) {
-    this.selectedIndex = (this.sources as any[]).indexOf(source);
+    this.selectedIndex = (this._sources as any[]).indexOf(source);
     this.selectedSource = CodeViewerComponent.versionedSource(source);
 
     // this.editorModel = {
