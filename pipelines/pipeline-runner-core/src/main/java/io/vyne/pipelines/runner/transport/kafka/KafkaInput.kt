@@ -66,7 +66,7 @@ class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper) : Pi
 
                logger.debug { "Converting Map to TypeInstance of ${targetType.fullyQualifiedName}" }
 
-               val map = objectMapper.readValue<Map<String, Any>>(messageJson)
+               val map = objectMapper.readTree(messageJson)
                TypedInstance.from(targetType, map, schema)
             }
             Mono.create<PipelineInputMessage> { sink ->

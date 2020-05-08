@@ -3,7 +3,7 @@
 ## Prerequisites
 * Java 8+
 * Maven 3.x
-* Kafka
+* Kafka Tools (https://kafka.apache.org/quickstart)
 
 ## Compile
 `mvn clean compile`

@@ -10,9 +10,11 @@ import io.vyne.pipelines.PipelineOutputTransport
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import io.vyne.utils.log
+import org.reactivestreams.Subscription
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketMessage
+import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import reactor.core.publisher.EmitterProcessor
 import java.net.URI
@@ -26,7 +28,7 @@ class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: EurekaClient
    override fun build(spec: CaskTransportOutputSpec): PipelineOutputTransport {
       val caskServer = client.getNextServerFromEureka(caskServiceName, false)
 
-      var endpoint = with(caskServer) { "ws://$hostName:$port/cask/${spec.targetType.typeName.name}" }
+      var endpoint = with(caskServer) { "ws://$hostName:$port/cask/${spec.targetType.typeName.fullyQualifiedName}" }
       //endpoint = "ws://echo.websocket.org" // FOR TESTS
       return CaskOutput(spec, objectMapper, endpoint)
    }
@@ -39,16 +41,17 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
    private val output: EmitterProcessor<String> = EmitterProcessor.create<String>()
 
    init {
-      val sessionMono = client.execute(URI(endpoint)) { session ->
-         session.receive()
-            .map { obj: WebSocketMessage -> obj.payloadAsText }
-            .subscribeWith(output)
-            .doOnNext { log().info("Echo from websocket: $it") }
+      val sessionMono = client.execute(URI(endpoint)
+      ) { session: WebSocketSession ->
+         session.send(output.map(session::textMessage))
+            .doOnNext { log().info("Next") }
             .doAfterTerminate { log().info("Websocket terminated") }
             .doOnError { log().info("Websocket Error: $it") }
-            .doOnComplete { log().info("Websocket completed") }
             .then()
-      }.subscribe()  // FIXME cleanup
+         // FIXME add receive
+      }
+
+      output.doOnSubscribe { s: Subscription? -> sessionMono.subscribe() }.subscribe()
    }
 
    override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
