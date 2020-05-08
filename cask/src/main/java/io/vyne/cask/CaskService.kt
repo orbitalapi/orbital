@@ -2,6 +2,7 @@ package io.vyne.cask
 
 import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.json.JsonStreamSource
@@ -18,7 +19,7 @@ import java.io.InputStream
 @Component
 class CaskService(val schemaProvider: SchemaProvider,
                   val ingesterFactory: IngesterFactory,
-                  val objectMapper: ObjectMapper = ObjectMapper()) {
+                  val objectMapper: ObjectMapper = jacksonObjectMapper()) {
 
     data class TypeError(val message: String)
 
