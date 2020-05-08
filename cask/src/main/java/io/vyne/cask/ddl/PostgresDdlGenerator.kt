@@ -148,7 +148,7 @@ class PostgresDdlGenerator {
     // However, that'll change shortly, and don't wanna refactor this again.
     private fun generateObjectDdl(type: ObjectType, schema: Schema, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
         val columns = fields.map { generateColumnForField(it) }
-        val fieldDef = columns.joinToString(", \n") { it.sql }
+        val fieldDef = columns.joinToString(",\n") { it.sql }
         val tableName = tableName(versionedType)
         val ddl = """
 CREATE TABLE IF NOT EXISTS $tableName (

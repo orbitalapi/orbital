@@ -86,7 +86,12 @@
             <version>2.2.0</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.opentable.components</groupId>
+            <artifactId>otj-pg-embedded</artifactId>
+            <version>0.13.3</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -131,13 +136,10 @@
            <plugin>
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-surefire-plugin</artifactId>
-              <version>2.12.4</version>
               <configuration>
-                 <!-- TODO Uncomment once we have postgres running as part of local/ci builds -->
+                 <!-- TODO Uncomment once we mock SchemaProvider in unit tests -->
                  <excludes>
-                    <exclude>**/*IntegrationTest.*</exclude>
-                    <exclude>**/IngesterTest.*</exclude>
-                    <exclude>**/PostgresDdlGeneratorTest.*</exclude>
+                    <exclude>**/CaskAppIntegrationTest.*</exclude>
                  </excludes>
               </configuration>
            </plugin>
