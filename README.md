@@ -1,10 +1,13 @@
 # Development Environment
 
+## Server side
+* JDK8 (todo upgrade to Java 11)
+* Maven 3.x
+
 ## Client Side
 
-Install
-
-* npm (tested with version 6.9.0)
+* Node.js 12.16.3
+* Npm (tested with version 6.9.0)
 
 # Running App Locally for development purpose
 
@@ -23,3 +26,44 @@ running on localhost:4200
 
 * If you are not interested in client side development, you can simply run 'mvn clean install -DskipTests' for 'vyne-query-service' and
 run QueryServiceApp. That'd make client application avalilable at localhost:9022
+
+# Running application locally using docker
+
+## Windows
+
+### How to install docker
+Follow instructions here:
+* https://docs.docker.com/docker-for-windows/install/
+This should install docker engine and docker-compose.
+
+### How to start docker
+* Click windows start button, search/type for Docker, and select Docker Desktop in the search results.
+* Wait for it to start, about 30-60 seconds
+
+## How to build vyne docker containers locally (Optional)
+Command below should compile code (java/npm) and build docker containers locally:
+```
+mvn clean install docker:build -Dmaven.test.skip=true -P snapshot-release
+```
+Note: vyne-query-service docker images is huge, on windows the build may look like it hanged, please be patient.
+
+## How start vyne
+
+Open cmd console or git-bash console in vyne root project (e.g. ```C:\dev\workspace\vyne``` and type in:
+```
+docker-compse up
+```
+this should:
+* pull down all the docker containers
+* start them up (review logs for any errors)
+* start web UI on http://localhost:9022
+
+## How to stop vyne
+* ctrl+c - this should stop gracefully all the containers, if not
+* if not, type in:
+```
+docker-compose down
+```
+
+# Unix/Ubuntu
+...

@@ -10,7 +10,8 @@ data class Field(
    val modifiers: List<FieldModifier>,
    private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider(),
    val accessor: Accessor?,
-   val readCondition: FieldSetCondition?
+   val readCondition: FieldSetCondition?,
+   val typeDoc:String?
 ) {
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
    // we parse fields before we parse their underlying types, so constrains may not be

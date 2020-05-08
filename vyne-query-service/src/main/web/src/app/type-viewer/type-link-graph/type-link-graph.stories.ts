@@ -1,12 +1,11 @@
 import {moduleMetadata, storiesOf} from '@storybook/angular';
-import {ContentsTableComponent} from '../contents-table/contents-table.component';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {TypeLinkGraphComponent} from './type-link-graph.component';
 import {SchemaGraph} from '../../services/schema';
 import {Observable, of} from 'rxjs';
 import {NgxGraphModule} from '@swimlane/ngx-graph';
-import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 
 
 const linksResponse = {
@@ -69,14 +68,14 @@ storiesOf('TypeLinkGraph', module)
     })
   ).add('default', () => {
   return {
-    template: `<app-type-link-graph [schemaGraphs]="source"></app-type-link-graph>`,
+    template: `<app-type-link-graph [schemaGraph$]="source"></app-type-link-graph>`,
     props: {
       source
     }
   };
 }).add('empty', () => {
   return {
-    template: `<app-type-link-graph [schemaGraphs]="empty$"></app-type-link-graph>`,
+    template: `<app-type-link-graph [schemaGraph$]="empty$"></app-type-link-graph>`,
     props: {
       empty$
     }

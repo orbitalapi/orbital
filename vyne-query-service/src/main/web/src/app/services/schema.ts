@@ -27,8 +27,11 @@ export interface FieldMap {
   [key: string]: Field;
 }
 
+export interface Documented {
+  typeDoc: string | null;
+}
 
-export interface Type {
+export interface Type extends Documented {
   name: QualifiedName;
   attributes: FieldMap;
   modifiers: Array<Modifier>;
@@ -37,10 +40,9 @@ export interface Type {
   enumValues: Array<string>;
   sources: Array<VersionedSource>;
   isClosed: boolean;
-  typeDoc?: string;
 }
 
-export interface Field {
+export interface Field extends Documented {
   type: TypeReference;
   modifiers: Array<Modifier>;
 }

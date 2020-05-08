@@ -1,5 +1,5 @@
 import {Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
-import {Type} from '../../services/schema';
+import {Documented, Type} from '../../services/schema';
 import * as ReactDOM from 'react-dom';
 import {ContentSupplier, ReactEditorWrapper} from './description-editor.react';
 import {BehaviorSubject} from 'rxjs';
@@ -12,29 +12,68 @@ import {BehaviorSubject} from 'rxjs';
 @Component({
   selector: 'app-description-editor',
   template: `
-    <div class="wrapper">
-<!--      <div class="info-warning visible-on-changes" [class.has-changes]="hasChanges">-->
-<!--        <img src="assets/img/info.svg">-->
-<!--        <span>You have unsaved changes</span>-->
-<!--      </div>-->
+    <div class="wrapper" *ngIf="editable">
+      <!--      <div class="info-warning visible-on-changes" [class.has-changes]="hasChanges">-->
+      <!--        <img src="assets/img/info.svg">-->
+      <!--        <span>You have unsaved changes</span>-->
+      <!--      </div>-->
       <div #container></div>
       <div class="button-bar visible-on-changes" [class.has-changes]="hasChanges" *ngIf="hasChanges">
         <button mat-button (click)="cancelEdits.emit()">Cancel</button>
         <button mat-raised-button color="primary" (click)="saveChanges()">Save changes</button>
       </div>
-    </div>`,
+    </div>
+    <markdown [data]="documentationSource.typeDoc" *ngIf="!editable"></markdown>
+  `,
   styleUrls: ['./description-editor.component.scss']
 })
 export class DescriptionEditorComponent implements OnInit, OnDestroy {
-  private _type: Type;
+  private _documentationSource: Documented;
 
   private changeEventCount: number;
   private lastChangeEvent: ContentSupplier;
 
+  // Editing is disabled by default, as we don't currently have
+  // any way of persisting it.
+  // Also, when we come to enable editing, we need to consider that the editor
+  // is a very heavy-weight component, and don't want to have it for every
+  // field on a type.  We'll need to do something where we start with the
+  // markdown renderer, and then swap to the rich editor when we enter an
+  // edit mode.
+  private _editable = false;
+
+  @Input()
+  get editable(): boolean {
+    return this._editable;
+  }
+
+  set editable(value: boolean) {
+    const wasEditable = this._editable;
+    if (value === wasEditable) {
+      return;
+    }
+    this._editable = value;
+    if (this.editable) {
+      this.resetEditor();
+      this.changes$.subscribe(next => {
+        console.log('Has changes');
+        this.changeEventCount++;
+        this.lastChangeEvent = next;
+      });
+    } else {
+      if (wasEditable) {
+        this.destroyEditor();
+      }
+    }
+  }
+
+  @Input()
+  placeholder: string;
+
   get hasChanges(): boolean {
     // We ignore the first change event, as it's the event triggered by
     // setting the initial state
-    return this.changeEventCount > 1;
+    return this.editable && this.changeEventCount > 1;
   }
 
   @Output()
@@ -44,12 +83,12 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   cancelEdits: EventEmitter<void> = new EventEmitter<void>();
 
   @Input()
-  get type(): Type {
-    return this._type;
+  get documentationSource(): Documented {
+    return this._documentationSource;
   }
 
-  set type(value: Type) {
-    this._type = value;
+  set documentationSource(value: Documented) {
+    this._documentationSource = value;
     this.resetEditor();
   }
 
@@ -61,17 +100,15 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   @ViewChild('container') containerRef: ElementRef;
 
   ngOnInit() {
-    this.resetEditor();
-    this.changes$.subscribe(next => {
-      console.log('Has changes');
-      this.changeEventCount++;
-      this.lastChangeEvent = next;
-    });
+
   }
 
   private resetEditor() {
+    if (!this._editable) {
+      return;
+    }
     if (!this.containerRef) {
-      console.error('ContainerREf not set - this looks like an angular lifecycle problem');
+      console.error('ContainerRef not set - this looks like an angular lifecycle problem');
       return;
     }
     this.changeEventCount = 0;
@@ -79,19 +116,25 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
       {
         changes$: this.changes$,
         initialState: this.initialState,
-        placeholder: `Write something great that describes a ${this.type.name.name}`
+        placeholder: this.placeholder
       });
   }
 
   ngOnDestroy() {
+    if (this.editable) {
+      this.destroyEditor();
+    }
+  }
+
+  private destroyEditor() {
     ReactDOM.unmountComponentAtNode(this.containerRef.nativeElement);
   }
 
   private get initialState(): string {
-    if (!this.type) {
+    if (!this.documentationSource) {
       return 'Type not set.  This shouldn\'t happen';
     } else {
-      return this.type.typeDoc || '';
+      return this.documentationSource.typeDoc || '';
     }
   }
 

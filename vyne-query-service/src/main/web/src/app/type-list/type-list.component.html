@@ -1,13 +1,13 @@
 <mat-toolbar color="primary">
   <span>Type Explorer</span>
-  <div class="search-bar">
-    <input matInput placeholder="Search" [formControl]="searchInput">
-  </div>
-  <!--<mat-form-field class="search-bar" floatLabel="never">-->
-  <!--<mat-icon matPrefix>search</mat-icon>-->
-  <!--<mat-label>Search</mat-label>-->
-  <!---->
-  <!--</mat-form-field>-->
+  <div class="toolbar-spacer"></div>
+  <app-search-bar-container></app-search-bar-container>
+  <!-- TODO : Experimenting with using the global search here, rather than
+  filtering results. I think ideally we should apply the same behaviour in
+  both components -->
+<!--  <div class="search-bar">-->
+<!--    <input matInput placeholder="Search" [formControl]="searchInput">-->
+<!--  </div>-->
 </mat-toolbar>
 <div class="page-content">
   <div *ngFor="let member of filteredMembers | async" class="search-result" (click)="navigateToMember(member)">

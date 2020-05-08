@@ -108,7 +108,7 @@ storiesOf('DescriptionEditor', module)
     })
   ).add('with default docs', () => {
   return {
-    template: `<div style="padding: 20px"><app-description-editor [type]="type"></app-description-editor></div>`,
+    template: `<div style="padding: 20px"><app-description-editor [documentationSource]="type"></app-description-editor></div>`,
     props: {
       type: typeWithDoc
     }
@@ -116,7 +116,7 @@ storiesOf('DescriptionEditor', module)
 })
 .add('without default docs', () => {
   return {
-    template: `<div style="padding: 20px"><app-description-editor [type]="type"></app-description-editor></div>`,
+    template: `<div style="padding: 20px"><app-description-editor [documentationSource]="type"></app-description-editor></div>`,
     props: {
       type: typeWithoutDoc
     }

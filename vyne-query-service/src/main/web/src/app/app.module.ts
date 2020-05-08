@@ -88,6 +88,7 @@ import {CovalentFileModule} from '@covalent/core';
 import {TypeAutocompleteModule} from './type-autocomplete/type-autocomplete.module';
 import {PipelinesModule} from './pipelines/pipelines.module';
 import {MonacoEditorModule} from '@materia-ui/ngx-monaco-editor';
+import {MarkdownModule} from 'ngx-markdown';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -100,7 +101,7 @@ export const routerModule = RouterModule.forRoot(
     {path: 'result-explorer', component: ProfileGraphComponent},
     {path: 'query-history', component: QueryHistoryComponent}
   ],
-  {useHash: true}
+  {useHash: true, anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled'}
 );
 
 
@@ -193,7 +194,7 @@ export const routerModule = RouterModule.forRoot(
     CovalentFileModule,
 
     MonacoEditorModule,
-
+    MarkdownModule.forRoot(),
     MomentModule,
 
     TaxiViewerModule,

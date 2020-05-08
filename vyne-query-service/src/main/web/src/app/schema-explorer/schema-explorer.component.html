@@ -1,7 +1,7 @@
 <div class="component-container">
   <mat-toolbar color="primary">
     <span>Schema Explorer</span>
-    <div class="spacer"></div>
+    <div class="toolbar-spacer"></div>
     <div class="add-new" *ngIf="config?.newSchemaSubmissionEnabled">
       <button mat-raised-button color="primary" [matMenuTriggerFor]="appMenu">Add new...</button>
       <!--<mat-icon svgIcon="add_box"></mat-icon>-->
@@ -11,6 +11,7 @@
         <!--<button mat-menu-item (click)="createNewSchema()">Add schema directly</button>-->
       </mat-menu>
     </div>
+    <app-search-bar-container></app-search-bar-container>
   </mat-toolbar>
   <div class="page-content">
     <app-code-viewer [sources]="schemas | async" sidebarMode="Visible"></app-code-viewer>
