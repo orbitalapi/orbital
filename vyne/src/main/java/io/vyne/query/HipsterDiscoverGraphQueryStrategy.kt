@@ -195,6 +195,15 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
          return lastEdgeResult
       }
 
+      // Handles the case where the target type is an alias for a collection type.
+      if (lastEdgeResult != null &&
+         targetType.isCollection &&
+         targetType.isTypeAlias &&
+         targetType.typeParameters.isNotEmpty() &&
+         lastEdgeResult.type.matches(targetType.typeParameters.first())) {
+         return lastEdgeResult
+      }
+
 
       if (queryContext.hasFactOfType(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
          return queryContext.getFact(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)

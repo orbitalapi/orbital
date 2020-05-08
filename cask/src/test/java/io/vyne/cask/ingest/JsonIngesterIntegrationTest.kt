@@ -9,8 +9,8 @@ import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.Benchmark
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
-import io.vyne.cask.log
 import io.vyne.schemas.fqn
+import io.vyne.utils.log
 import org.apache.commons.io.FileUtils
 import org.junit.After
 import org.junit.Before
@@ -26,66 +26,67 @@ import java.time.Duration
 
 class JsonIngesterIntegrationTest {
 
-    @Rule
-    @JvmField
-    val folder = TemporaryFolder()
+   @Rule
+   @JvmField
+   val folder = TemporaryFolder()
 
-    @Rule
-    @JvmField
-    val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6660) }
+   @Rule
+   @JvmField
+   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6660) }
 
-    lateinit var jdbcTemplate: JdbcTemplate
-    lateinit var ingester: Ingester
+   lateinit var jdbcTemplate: JdbcTemplate
+   lateinit var ingester: Ingester
 
-    @Before
-    fun setup() {
-        val dataSource = DataSourceBuilder.create()
-                .url("jdbc:postgresql://localhost:6660/postgres")
-                .username("postgres")
-                .build()
-        jdbcTemplate = JdbcTemplate(dataSource)
-        jdbcTemplate.execute(TableMetadata.DROP_TABLE)
-    }
+   @Before
+   fun setup() {
+      val dataSource = DataSourceBuilder.create()
+         .url("jdbc:postgresql://localhost:6660/postgres")
+         .username("postgres")
+         .build()
+      jdbcTemplate = JdbcTemplate(dataSource)
+      jdbcTemplate.execute(TableMetadata.DROP_TABLE)
+   }
 
-    @After
-    fun tearDown() {
-        ingester.destroy()
-    }
+   @After
+   fun tearDown() {
+      ingester.destroy()
+   }
 
-    @Test
-    fun canStreamDataToPostgresOnStart() {
-        val taxiSchema = CoinbaseJsonOrderSchema.schemaV1
-        val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())
-        val resource = Resources.getResource("Coinbase_BTCUSD.json").toURI()
+   @Test
+   fun canStreamDataToPostgresOnStart() {
+      val taxiSchema = CoinbaseJsonOrderSchema.schemaV1
+      val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())
+      val resource = Resources.getResource("Coinbase_BTCUSD.json").toURI()
 
-        Benchmark.benchmark("ingest JSON to db") { stopwatch ->
+      Benchmark.benchmark("ingest JSON to db") { stopwatch ->
 
-            val pipelineSource = JsonStreamSource(
-                    Flux.just(File(resource).inputStream()),
-                    versionedType,
-                    taxiSchema,
-                    folder.root.toPath(),
-                    ObjectMapper())
+         val pipelineSource = JsonStreamSource(
+            Flux.just(File(resource).inputStream()),
+            versionedType,
+            taxiSchema,
+            folder.root.toPath(),
+            ObjectMapper())
 
-            val pipeline = IngestionStream(
-                    versionedType,
-                    TypeDbWrapper(versionedType, taxiSchema, pipelineSource.cachePath, null),
-                    pipelineSource)
+         val pipeline = IngestionStream(
+            versionedType,
+            TypeDbWrapper(versionedType, taxiSchema, pipelineSource.cachePath, null),
+            pipelineSource)
 
-            ingester = Ingester(jdbcTemplate, pipeline)
-            ingester.destroy()
-            ingester.initialize()
+         ingester = Ingester(jdbcTemplate, pipeline)
+         ingester.destroy()
+         ingester.initialize()
 
-            ingester.ingest().collectList()
-                    .doOnError { error ->
-                        log().error("Error ", error)
-                    }
-                    .block(Duration.ofMillis(500))
-            stopwatch.stop()
+         ingester.ingest().collectList()
+            .doOnError { error ->
+               log().error("Error ", error)
+            }
+            .block(Duration.ofMillis(500))
+         stopwatch.stop()
 
-            val rowCount = ingester.getRowCount()
-            rowCount.should.equal(10061)
-            FileUtils.cleanDirectory(folder.root);
-        }
-    }
+         val rowCount = ingester.getRowCount()
+         rowCount.should.equal(10061)
+         FileUtils.cleanDirectory(folder.root);
+      }
+   }
 }
+

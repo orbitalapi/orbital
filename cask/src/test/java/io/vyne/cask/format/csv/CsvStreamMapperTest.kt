@@ -1,7 +1,7 @@
 package io.vyne.cask.format.csv
 
 import com.google.common.io.Resources
-import io.vyne.cask.log
+import io.vyne.utils.log
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder

@@ -5,7 +5,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.ingest.StreamSource
-import io.vyne.cask.log
+import io.vyne.utils.log
 import lang.taxi.types.ColumnAccessor
 import lang.taxi.types.Field
 import reactor.core.publisher.Flux

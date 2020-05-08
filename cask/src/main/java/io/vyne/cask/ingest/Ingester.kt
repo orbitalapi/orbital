@@ -1,10 +1,10 @@
 package io.vyne.cask.ingest
 
 import de.bytefish.pgbulkinsert.row.SimpleRowWriter
-import io.vyne.schemas.VersionedType
-import io.vyne.utils.log
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
+import io.vyne.schemas.VersionedType
+import io.vyne.utils.log
 import org.postgresql.PGConnection
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
@@ -15,7 +15,9 @@ data class IngestionStream(
    val feed: StreamSource
 )
 
-class Ingester(private val jdbcTemplate: JdbcTemplate, private val ingestionStream: IngestionStream) {
+class Ingester(
+   private val jdbcTemplate: JdbcTemplate,
+   private val ingestionStream: IngestionStream) {
 
     fun destroy() {
         jdbcTemplate.execute(ingestionStream.dbWrapper.dropTableStatement)

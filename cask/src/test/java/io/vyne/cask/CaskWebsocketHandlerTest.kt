@@ -12,6 +12,7 @@ import io.vyne.cask.websocket.MockWebSocketSession
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import org.junit.Test
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketMessage
 import reactor.core.publisher.Flux
@@ -23,6 +24,7 @@ import java.time.Duration
 
 class CaskWebsocketHandlerTest {
    val ingester: Ingester = mock()
+   val applicationEventPublisher = mock<ApplicationEventPublisher>()
 
    class IngesterFactoryMock(val ingester: Ingester) : IngesterFactory(mock()) {
       override fun create(ingestionStream: IngestionStream): Ingester {
@@ -37,7 +39,7 @@ class CaskWebsocketHandlerTest {
       }
    }
 
-   val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester))
+   private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester), applicationEventPublisher)
 
    @Test
    fun closeWebsocketWhenTypeNotFound() {
