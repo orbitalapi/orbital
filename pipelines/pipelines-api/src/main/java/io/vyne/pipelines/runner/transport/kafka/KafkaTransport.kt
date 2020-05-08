@@ -12,7 +12,7 @@ object KafkaTransport {
    val OUTPUT = KafkaTransportOutputSpec.specId
 }
 
-data class KafkaTransportInputSpec(
+open class KafkaTransportInputSpec(
    val topic: String,
    override val targetType: VersionedTypeReference,
    val props: Map<String, Any>

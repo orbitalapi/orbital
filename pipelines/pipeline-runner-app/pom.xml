@@ -11,8 +11,6 @@
 
    <artifactId>pipeline-runner-app</artifactId>
 
-
-
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
