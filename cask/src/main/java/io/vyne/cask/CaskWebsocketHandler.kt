@@ -1,6 +1,9 @@
 package io.vyne.cask
 
 import arrow.core.Either
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.schemas.VersionedType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.CloseStatus
@@ -10,7 +13,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @Component
-class CaskWebsocketHandler(val caskService: CaskService) : WebSocketHandler {
+class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMapper = jacksonObjectMapper()) : WebSocketHandler {
     override fun handle(session: WebSocketSession): Mono<Void> {
         val typeReferenceFromPath = session.handshakeInfo.uri.path.replace("/cask/", "")
 
@@ -39,22 +42,23 @@ class CaskWebsocketHandler(val caskService: CaskService) : WebSocketHandler {
         return session.receive()
                 .doOnNext { websocketMessage ->
                     log().info("Ingesting message from sessionId=${session.id}")
-                    val input = Flux.just(websocketMessage.payload.asInputStream())
                     try {
+                        val input = Flux.just(websocketMessage.payload.asInputStream())
                         val ingestionResult = caskService
                                 .ingestRequest(versionedType, input)
                                 .count()
-                                .map { count ->
-                                    // LENS-43 define api that signals successful ingestion
-                                    val response = """{"success": true, "message": "Successfully ingested ${count} records"}"""
-                                    session.textMessage(response)
-                                }
+                                .map { "Successfully ingested ${it} records" }
+                                .map { CaskIngestionResponse.success(it) }
+                                .map(mapper::writeValueAsString)
+                                .map(session::textMessage)
                         session.send(ingestionResult).subscribe()
                     } catch (e: Exception) {
                         log().error("Error ingesting message from sessionId=${session.id}", e)
-                        // LENS-43 define api that can signal errors to clients
-                        val response = """{"success": false, "message": "Error ingesting message"}"""
-                        session.send(Flux.just(session.textMessage(response))).subscribe()
+                        val errorResult = Flux.just("Error ingesting message")
+                                .map{CaskIngestionResponse.rejected(it)}
+                                .map(mapper::writeValueAsString)
+                                .map(session::textMessage)
+                        session.send(errorResult).subscribe()
                     }
                 }
                 .doOnComplete {
