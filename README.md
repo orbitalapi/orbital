@@ -40,30 +40,30 @@ This should install docker engine and docker-compose.
 * Click windows start button, search/type for Docker, and select Docker Desktop in the search results.
 * Wait for it to start, about 30-60 seconds
 
-## How to building vyne docker containers locally
+## How to build vyne docker containers locally (Optional)
 Command below should compile code (java/npm) and build docker containers locally:
 ```
 mvn clean install docker:build -Dmaven.test.skip=true -P snapshot-release
 ```
 Note: vyne-query-service docker images is huge, on windows the build may look like it hanged, please be patient.
 
-## How starting vyne
+## How start vyne
 
 Open cmd console or git-bash console in vyne root project (e.g. ```C:\dev\workspace\vyne``` and type in:
 ```
 docker-compse up
 ```
-this should pull down all the docker containers fr
+this should:
+* pull down all the docker containers
+* start them up (review logs for any errors)
+* start web UI on http://localhost:9022
 
-## How to stopping vyne
+## How to stop vyne
 * ctrl+c - this should stop gracefully all the containers, if not
-* if not use the command below:
+* if not, type in:
 ```
 docker-compose down
 ```
-
-## How to accessing vyne UI
-* http://localhost:9022
 
 # Unix/Ubuntu
 ...
