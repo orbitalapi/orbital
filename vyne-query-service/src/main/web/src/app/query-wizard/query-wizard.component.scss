@@ -1,4 +1,5 @@
 @import "src/theme";
+@import "src/toolbar";
 
 .container {
   flex: 1;
@@ -9,9 +10,6 @@
 
 }
 
-.spacer {
-  width: 100%;
-}
 .button-bar {
   display: flex;
   margin-top: 1rem;

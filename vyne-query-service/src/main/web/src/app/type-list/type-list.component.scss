@@ -1,13 +1,8 @@
 @import "src/theme";
-
+@import "src/toolbar";
 :host {
   background-color: $body-bg;
   display: block;
-}
-
-mat-toolbar {
-  flex: 0 0 $toolbar-height;
-  z-index: 999;
 }
 
 ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
