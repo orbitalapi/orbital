@@ -13,7 +13,7 @@
       <div><a [routerLink]="routerLinkFor(attributeName)">{{ attributeType(attributeName).name.name}}</a></div>
       <div><span class="mono-badge">{{ attributeType(attributeName).name.fullyQualifiedName}}</span></div>
     </td>
-    <td></td>
+    <td><app-description-editor *ngIf="attribute(attributeName).typeDoc" [documentationSource]="attribute(attributeName)"></app-description-editor> </td>
   </tr>
   </tbody>
 </table>

@@ -34,3 +34,10 @@
     margin-left: 0.5rem;
   }
 }
+
+::ng-deep {
+  markdown > p {
+    // TODO : I suspect this will look naff when there are multiple paragraphs
+    margin: 0;
+  }
+}

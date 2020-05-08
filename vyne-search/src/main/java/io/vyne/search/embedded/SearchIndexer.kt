@@ -17,12 +17,12 @@ import java.util.concurrent.TimeUnit
 import org.apache.lucene.document.Field as LuceneField
 
 @Component
-class IndexOnStartupTask(private val indexer:SearchIndexer, private val schemaStoreClient: SchemaStoreClient) {
+class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaStoreClient: SchemaStoreClient) {
    init {
-       log().info("Initializing search, indexing current schema")
+      log().info("Initializing search, indexing current schema")
       try {
          indexer.createNewIndex(schemaStoreClient.schemaSet())
-      } catch (e:IllegalArgumentException) {
+      } catch (e: IllegalArgumentException) {
          // Thrown by lucene when an index has changed config
          // Lets trash the existing index, and retry
          log().warn("Exception thrown when updating index.  ( ${e.message} ) - will attempt to recover by deleting existing index, and rebuilding")
@@ -63,6 +63,10 @@ class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
             add(TextField(SearchField.NAME.fieldName, searchEntry.name, LuceneField.Store.YES))
             val camelCaseToWordsName = StringUtils.splitByCharacterTypeCamelCase(searchEntry.name).joinToString(" ")
             add(TextField(SearchField.NAME_AS_WORDS.fieldName, camelCaseToWordsName, LuceneField.Store.YES))
+            searchEntry.fieldName?.let { fieldName ->
+               add(TextField(SearchField.FIELD_ON_TYPE.fieldName, fieldName, LuceneField.Store.YES))
+            }
+
             searchEntry.typeDoc?.let { typeDoc ->
                add(TextField(SearchField.TYPEDOC.fieldName, typeDoc, LuceneField.Store.YES))
             }
@@ -98,25 +102,28 @@ class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
       return SearchEntry(
          id,
          name,
-         id,
+         declaringType.fullyQualifiedName,
          SearchEntryType.ATTRIBUTE,
-         null, // TODO : should be field.typedoc
-         declaringType.fullyQualifiedName
+         field.typeDoc,
+         name
       )
    }
 
 }
 
-enum class SearchField(val fieldName:String, val highlightMethod: HighlightMethod = HighlightMethod.HIGHLIGHTER) {
-   QUALIFIED_NAME ("qualifiedName"),
-   NAME( "name", highlightMethod = HighlightMethod.SUBSTRING),
-   TYPEDOC( "typeDoc"),
+enum class SearchField(val fieldName: String, val highlightMethod: HighlightMethod = HighlightMethod.HIGHLIGHTER) {
+   QUALIFIED_NAME("qualifiedName"),
+   NAME("name", highlightMethod = HighlightMethod.SUBSTRING),
+   TYPEDOC("typeDoc"),
+   FIELD_ON_TYPE(fieldName = "fieldNameOnType"),
    NAME_AS_WORDS("nameAsWords");
+
    enum class HighlightMethod {
       SUBSTRING,
       HIGHLIGHTER;
    }
 }
+
 enum class SearchEntryType {
    TYPE,
    ATTRIBUTE,
@@ -125,4 +132,11 @@ enum class SearchEntryType {
    OPERATION
 }
 
-data class SearchEntry(val id: String, val name: String, val qualifiedName: String, val searchEntryType: SearchEntryType, val typeDoc: String?, val declaringEntityQualifiedName: String? = null)
+data class SearchEntry(
+   val id: String,
+   val name: String,
+   val qualifiedName: String,
+   val searchEntryType: SearchEntryType,
+   val typeDoc: String?,
+   val fieldName: String? = null
+)

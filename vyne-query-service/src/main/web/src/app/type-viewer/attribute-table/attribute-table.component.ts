@@ -51,6 +51,10 @@ export class AttributeTableComponent {
     return field.type;
   }
 
+  attribute(name: string): Field {
+    return this.type.attributes[name];
+  }
+
 
   routerLinkFor(attributeName: string): string[] {
     return ['/types', this.attributeType(attributeName).fullyQualifiedName];
