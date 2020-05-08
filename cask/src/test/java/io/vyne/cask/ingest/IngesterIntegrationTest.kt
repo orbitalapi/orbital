@@ -1,6 +1,7 @@
 package io.vyne.cask.ingest
 
 import com.google.common.io.Resources
+import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
@@ -25,14 +26,18 @@ class IngesterIntegrationTest {
     @JvmField
     val folder = TemporaryFolder()
 
+    @Rule
+    @JvmField
+    val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6660) }
+    // Atm there is no way to override dbname/username/pwd
+
     lateinit var jdbcTemplate: JdbcTemplate
     lateinit var ingester: Ingester
     @Before
     fun setup() {
         val dataSource = DataSourceBuilder.create()
-                .url("jdbc:postgresql://localhost:5432/vynedb")
-                .username("vynedb")
-                .password("vynedb")
+                .url("jdbc:postgresql://localhost:6660/postgres")
+                .username("postgres")
                 .build()
         jdbcTemplate = JdbcTemplate(dataSource)
         jdbcTemplate.execute(TableMetadata.DROP_TABLE)
@@ -108,7 +113,7 @@ class IngesterIntegrationTest {
 //        val rowCount = ingester.getRowCount()
 //        rowCount.should.equal(23695)
         ingester.destroy()
-        FileUtils.cleanDirectory(folder.root);
+        FileUtils.forceDeleteOnExit(folder.root);// this was failing on windows
 //        }
     }
 
