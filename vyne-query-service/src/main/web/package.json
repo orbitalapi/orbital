@@ -42,7 +42,7 @@
     "moment": "^2.24.0",
     "monaco-editor": "^0.15.6",
     "ngx-highlightjs": "^4.0.0",
-    "ngx-markdown": "^9.0.0",
+    "ngx-markdown": "^8.2.2",
     "ngx-moment": "^3.4.0",
     "npm": "^6.14.5",
     "path": "^0.12.7",

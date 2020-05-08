@@ -101,7 +101,7 @@ export const routerModule = RouterModule.forRoot(
     {path: 'result-explorer', component: ProfileGraphComponent},
     {path: 'query-history', component: QueryHistoryComponent}
   ],
-  {useHash: true}
+  {useHash: true, anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled'}
 );
 
 

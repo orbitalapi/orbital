@@ -19,21 +19,43 @@ export class TypeLinkGraphComponent {
   }
 
   private schemaSubscription: Subscription;
-  private _schemaGraphs: Observable<SchemaGraph>;
+  private resetEventsSubscription: Subscription;
+  private _schemaGraph$: Observable<SchemaGraph>;
+
   @Input()
-  get schemaGraphs(): Observable<SchemaGraph> {
-    return this._schemaGraphs;
+  get schemaGraph$(): Observable<SchemaGraph> {
+    return this._schemaGraph$;
   }
 
-  set schemaGraphs(value: Observable<SchemaGraph>) {
+  set schemaGraph$(value: Observable<SchemaGraph>) {
     if (this.schemaSubscription) {
       this.schemaSubscription.unsubscribe();
       this.schemaGraph = SchemaGraph.empty();
     }
-    this._schemaGraphs = value;
-    if (this.schemaGraphs) {
-      this.schemaSubscription = this.schemaGraphs.subscribe(schemaGraph => {
+    this._schemaGraph$ = value;
+    if (this.schemaGraph$) {
+      this.schemaSubscription = this.schemaGraph$.subscribe(schemaGraph => {
         this.appendSchemaGraph(schemaGraph);
+      });
+    }
+  }
+
+  private _resetGraphEvents$: Observable<void>;
+
+  @Input()
+  get resetGraphEvents$(): Observable<void> {
+    return this._resetGraphEvents$;
+  }
+
+  set resetGraphEvents$(value: Observable<void>) {
+    if (this.resetEventsSubscription) {
+      this.resetEventsSubscription.unsubscribe();
+      this.resetEventsSubscription = null;
+    }
+    this._resetGraphEvents$ = value;
+    if (value) {
+      this.resetEventsSubscription = this.resetGraphEvents$.subscribe(() => {
+        this.schemaGraph = SchemaGraph.empty();
       });
     }
   }
@@ -101,11 +123,10 @@ export class TypeLinkGraphComponent {
     return node.label.split('/')[1];
   }
 
-
   private appendSchemaGraph(schemaGraph: SchemaGraph) {
     this.schemaGraph.add(schemaGraph);
     this.typeLinks = this.schemaGraph.toNodeSet();
-    console.log("Updated typeLinks.  Now:")
+    console.log('Updated typeLinks.  Now:');
     console.log(JSON.stringify(this.typeLinks));
   }
 
