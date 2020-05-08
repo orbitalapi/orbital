@@ -46,7 +46,7 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
          session.send(output.map(session::textMessage))
             .doOnNext { log().info("Next") }
             .doAfterTerminate { log().info("Websocket terminated") }
-            .doOnError { log().info("Websocket Error: $it") }
+            .doOnError { log().error("Websocket Error: $it") }
             .then()
          // FIXME add receive
       }
