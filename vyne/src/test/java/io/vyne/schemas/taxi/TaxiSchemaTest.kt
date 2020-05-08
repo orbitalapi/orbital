@@ -2,7 +2,6 @@ package io.vyne.schemas.taxi
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.NamedSource
 import io.vyne.VersionedSource
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
@@ -159,5 +158,17 @@ type alias PersonCollection as Person[]
       type.isCollection.should.be.`true`
    }
 
+   @Test
+   fun fieldsWithUnderscoresInNamesAreConvertedIntoVyneTypesCorrectly() {
+      val src = """
+type Sample {
+   something_S0 : Something_S0 as String
+}
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      val type = schema.type("Sample")
+      val field = type.attribute("something_S0")
+      field.type.fullyQualifiedName.should.equal("Something_S0")
+   }
 
 }
