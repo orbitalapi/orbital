@@ -1,10 +1,10 @@
 package io.vyne.schemas
 
+import lang.taxi.types.PrimitiveType
 import java.io.IOException
 import java.io.Serializable
 import java.io.StreamTokenizer
 import java.io.StringReader
-import lang.taxi.types.PrimitiveType
 
 data class QualifiedName(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) : Serializable {
    val name: String
@@ -33,8 +33,6 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
 }
 
 
-
-
 fun String.fqn(): QualifiedName {
 
    return when {
@@ -54,10 +52,9 @@ private data class GenericTypeName(val baseType: String, val params: List<Generi
 private fun parse(s: String): GenericTypeName {
    val expandedName = convertArrayShorthand(s)
    val tokenizer = StreamTokenizer(StringReader(expandedName))
-//   tokenizer.w .wordChars(".",".")
+   tokenizer.wordChars('_'.toInt(), '_'.toInt())
    try {
-      tokenizer.nextToken()  // Skip "BOF" token
-      return parse(tokenizer)
+      return parse(tokenizer, listOf(StreamTokenizer.TT_EOF)) // Parse until the end
    } catch (e: IOException) {
       throw RuntimeException()
    }
@@ -75,17 +72,28 @@ private fun convertArrayShorthand(name: String): String {
    }
 }
 
-private fun parse(tokenizer: StreamTokenizer): GenericTypeName {
-   val baseName = tokenizer.sval
-   tokenizer.nextToken()
+private fun parse(tokenizer: StreamTokenizer, terminalCharacterCodes: List<Int>): GenericTypeName {
+   val BOF_MARKER = -4
+   val baseNameParts = mutableListOf<String>()
    val params = mutableListOf<GenericTypeName>()
-   if (tokenizer.ttype == '<'.toInt()) {
-      do {
-         tokenizer.nextToken()  // Skip '<' or ','
-         params.add(parse(tokenizer))
-      } while (tokenizer.ttype == ','.toInt())
-      tokenizer.nextToken()  // skip '>'
+   while (!terminalCharacterCodes.contains(tokenizer.ttype)) {
+      when (tokenizer.ttype) {
+         BOF_MARKER -> {
+            tokenizer.nextToken() // Skip it
+         }
+         '<'.toInt() -> {
+            do {
+               tokenizer.nextToken()  // Skip '<' or ','
+               params.add(parse(tokenizer, terminalCharacterCodes = listOf('>'.toInt(), ','.toInt())))
+            } while (tokenizer.ttype == ','.toInt())
+            tokenizer.nextToken() // Skip past the closing >
+         }
+         else -> {
+            baseNameParts.add(tokenizer.sval)
+            tokenizer.nextToken()
+         }
+      }
    }
-   return GenericTypeName(baseName, params)
+   return GenericTypeName(baseNameParts.joinToString(""), params)
 }
 

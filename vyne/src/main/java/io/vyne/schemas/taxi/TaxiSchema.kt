@@ -8,7 +8,6 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.SourceCode
 import io.vyne.schemas.Type
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
@@ -96,14 +95,16 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
                         TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true),
                         field.modifiers.toVyneFieldModifiers(),
                         accessor = field.accessor,
-                        readCondition = field.readCondition
+                        readCondition = field.readCondition,
+                        typeDoc = field.typeDoc
                      )
                      else -> field.name to Field(
                         TypeReference(field.type.qualifiedName.fqn()),
                         constraintProvider = buildDeferredConstraintProvider(field.type.qualifiedName.fqn(), field.constraints),
                         modifiers = field.modifiers.toVyneFieldModifiers(),
                         accessor = field.accessor,
-                        readCondition = field.readCondition)
+                        readCondition = field.readCondition,
+                        typeDoc = field.typeDoc)
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType)

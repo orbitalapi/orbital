@@ -16,7 +16,6 @@ export class TypeViewerContainerComponent implements OnInit {
 
   private typeName: string;
   type: Type;
-  description = 'A person who buys coffee, hopefully lots of it, and collects points like gollum collects shiney rings.  Filth';
 
   ngOnInit() {
     this.activeRoute.paramMap.pipe(

@@ -80,6 +80,7 @@ class SearchIndexRepository(private val directory: BaseDirectory, private val co
          SearchResult(
             doc.getField(SearchField.QUALIFIED_NAME.fieldName).stringValue().fqn(),
             doc.getField(SearchField.TYPEDOC.fieldName)?.stringValue(),
+            doc.getField(SearchField.FIELD_ON_TYPE.fieldName)?.stringValue(),
             searchMatches
          )
       }
@@ -127,7 +128,7 @@ class SearchIndexRepository(private val directory: BaseDirectory, private val co
    }
 }
 
-data class SearchResult(val qualifiedName: QualifiedName, val typeDoc: String?, val matches: List<SearchMatch>)
+data class SearchResult(val qualifiedName: QualifiedName, val typeDoc: String?, val matchedFieldName:String?, val matches: List<SearchMatch>)
 
 data class SearchMatch(val field: SearchField, val highlightedMatch: String)
 

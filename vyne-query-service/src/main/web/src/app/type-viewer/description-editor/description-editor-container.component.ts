@@ -6,7 +6,8 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 @Component({
   selector: 'app-description-editor-container',
   template: `
-    <app-description-editor [type]="type" (save)="doSave($event)"
+    <app-description-editor [documentationSource]="type" (save)="doSave($event)"
+                            [placeholder]="'Write something great that describes ' + type.name.name"
                             (cancelEdits)="cancelEdits()"></app-description-editor>
   `,
   styleUrls: ['./description-editor.component.scss']
@@ -40,6 +41,7 @@ export class DescriptionEditorContainerComponent {
     const typeDoc = `[[ ${newContent} ]]`;
 
     const namespaceDeclaration = (this.type.name.namespace) ? `namespace ${this.type.name.namespace}\n\n` : '';
+    // tslint:disable-next-line:max-line-length
     const taxi = `import ${this.type.name.fullyQualifiedName}\n\n${namespaceDeclaration}${typeDoc} \ntype extension ${this.type.name.name} {}`;
     console.log(taxi);
     this.loading = true;

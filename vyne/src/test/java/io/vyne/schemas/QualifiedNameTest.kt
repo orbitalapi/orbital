@@ -6,6 +6,25 @@ import org.junit.Test
 class QualifiedNameTest {
 
    @Test
+   fun parsesNameWithUnderscoresCorrectly() {
+      val fqn = "foo.baz.Bar_Bop".fqn()
+      expect(fqn.name).to.equal("Bar_Bop")
+      expect(fqn.fullyQualifiedName).to.equal("foo.baz.Bar_Bop")
+      expect(fqn.parameters).to.be.empty
+   }
+
+   @Test
+   fun parsesUnderscoresInGenericsCorrectly() {
+      val genericFqn = "foo.baz.Bar_Bop<foo.baz.Sup_Dog>".fqn()
+      expect(genericFqn.name).to.equal("Bar_Bop")
+      expect(genericFqn.fullyQualifiedName).to.equal("foo.baz.Bar_Bop")
+      expect(genericFqn.parameters).to.have.size(1)
+      expect(genericFqn.parameters[0].name).to.equal("Sup_Dog")
+      expect(genericFqn.parameters[0].fullyQualifiedName).to.equal("foo.baz.Sup_Dog")
+      expect(genericFqn.parameters[0].parameters).to.be.empty
+   }
+
+   @Test
    fun parsesNamesCorrectly() {
       val fqn = "foo.baz.Bar".fqn()
       expect(fqn.name).to.equal("Bar")
