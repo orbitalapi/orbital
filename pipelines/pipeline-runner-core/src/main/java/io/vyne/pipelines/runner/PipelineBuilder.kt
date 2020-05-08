@@ -31,7 +31,7 @@ class PipelineBuilder(
       val schema = vyne.schema
       // Grab the types early, in case they're not present in Vyne
       val inputType = observer.catchAndLog("Failed to resolve input type ${pipeline.input.type}") { vyne.type(pipeline.input.type) }
-      val outputType = observer.catchAndLog("Failed to resolve output type ${pipeline.input.type}") { vyne.type(pipeline.output.type) }
+      val outputType = observer.catchAndLog("Failed to resolve output type ${pipeline.output.type}") { vyne.type(pipeline.output.type) }
       val input = observer.catchAndLog("Failed to create pipeline input") { transportFactory.buildInput(pipeline.input.transport) }
       val output = observer.catchAndLog("Failed to create pipeline output") { transportFactory.buildOutput(pipeline.output.transport) }
 
