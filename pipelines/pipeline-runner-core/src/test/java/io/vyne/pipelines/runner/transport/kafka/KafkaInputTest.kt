@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit
 class KafkaInputTest : AbstractKafkaTest() {
 
    @Test
-   @Ignore
+   @Ignore("WIP")
    fun canReceiveFromKafkaInput() {
       waitForBrokers()
       val (vyne, stub) = PipelineTestUtils.pipelineTestVyne()
@@ -60,11 +60,20 @@ class KafkaInputTest : AbstractKafkaTest() {
       val pipelineInstance = builder.build(pipeline)
 
       val sender = KafkaSender.create(senderOptions)
+      sender.createOutbound()
+         .send { records ->
+            records.onNext(ProducerRecord(
+               topicName,
+               "1",
+               PipelineTestUtils.personLoggedOnEvent
+            ))
+         }
+
 
       val output = pipelineInstance.output as DirectOutput
 
       await().atMost(5, TimeUnit.SECONDS).until {
-         output.messages.isEmpty()
+         output.messages.isNotEmpty()
       }
       output.messages.should.have.size(1)
    }
