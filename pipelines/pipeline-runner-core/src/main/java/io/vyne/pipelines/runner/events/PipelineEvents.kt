@@ -99,6 +99,6 @@ class PipelineStageObserver private constructor(
    fun completedInError(exception: Throwable) {
       finish(PipelineStageStatus.FAILED)
       exception.printStackTrace()
-      error(exception) { "Failed:  ${exception.message}"  }
+      error(exception) { "Failed"  }
    }
 }

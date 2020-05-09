@@ -11,7 +11,6 @@
 
    <artifactId>pipelines-orchestrator</artifactId>
 
-
    <dependencies>
       <dependency>
          <groupId>com.fasterxml.jackson.module</groupId>
@@ -28,7 +27,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>pipelines-orchestrator-api</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>

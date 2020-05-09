@@ -38,6 +38,7 @@ class PipelineSerializationTest() {
    }
 
    @Test
+   @Ignore
    fun canSerializePipeline() {
       val inputTopicName = "pipeline-input"
       val outputTopicName = "pipeline-output"
