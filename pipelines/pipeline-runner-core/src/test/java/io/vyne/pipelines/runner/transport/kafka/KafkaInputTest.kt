@@ -61,19 +61,8 @@ class KafkaInputTest : AbstractKafkaTest() {
 
       val sender = KafkaSender.create(senderOptions)
 
-
-      var outboundFlux =
-      Flux.range(1, 2) .map { i -> SenderRecord.create( ProducerRecord(topicName, "$i", "Message_" + i), i) };
-
-      sender.send(outboundFlux)
-         .doOnError { e: Any? -> log().info("Send failed" + e) }
-         .doOnNext { r: Any -> log().info("Message send response: \n") }
-         .subscribe()
-
-
       val output = pipelineInstance.output as DirectOutput
 
-      Thread.sleep(5000)
       await().atMost(5, TimeUnit.SECONDS).until {
          output.messages.isEmpty()
       }
