@@ -70,7 +70,6 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
       }
    }
 
-
    private fun Flux<WebSocketMessage>.handleCaskResponse(): Flux<CaskIngestionResponse> {
 
       return map { it.payloadAsText }
