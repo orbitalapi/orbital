@@ -11,29 +11,24 @@ import io.vyne.pipelines.PipelineOutputTransport
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import io.vyne.utils.log
-import org.reactivestreams.Subscription
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketMessage
-import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import reactor.core.publisher.EmitterProcessor
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
-import java.time.Duration
-import java.time.Instant
 
 
 @Component
 class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: EurekaClient, @Value("\${service.cask.name}") var caskServiceName: String) : PipelineOutputTransportBuilder<CaskTransportOutputSpec> {
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == CaskTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 
-
    override fun build(spec: CaskTransportOutputSpec): PipelineOutputTransport {
       val caskServer = client.getNextServerFromEureka(caskServiceName, false)
 
       var endpoint = with(caskServer) { "ws://$hostName:$port/cask/${spec.targetType.typeName.fullyQualifiedName}" }
-      //endpoint = "ws://echo.websocket.org" // FOR TESTS
       return CaskOutput(spec, objectMapper, endpoint)
    }
 }
@@ -45,42 +40,46 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
    private val output = EmitterProcessor.create<String>()
 
    init {
-
-      var m = """
-      {"id": "${Instant.now()}","firstName": "Leo","lastName": "Northman"}
-    """.trimIndent();
-
-      val sessionMono = client.execute(URI(endpoint)) { session ->
-         session.send(
-            output.map { session.textMessage(m) }
-         )
-         .and(
-            session.receive()
-               .map { it.payload.asInputStream() }
-               .map { objectMapper.readValue(it, CaskIngestionResponse::class.java) }
-               .map { it.toString() }
-               .doOnNext { log().info(it) }
-         )
-         .doOnError { log().error("Websocket error", it) }
-         .doOnTerminate { log().info("Websocket terminated") }
-         .then()
-      }
-
-      output.doOnSubscribe { s: Subscription? -> sessionMono.subscribe() }.subscribe()
-   }
-
-   fun handeCaskResponse(message: String): String {
-      log().info(message)
-      return message
+      var sessionMono = connect()
+      output.doOnSubscribe { sessionMono.subscribe() }.subscribe()
    }
 
    override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
-
       val json = objectMapper.writeValueAsString(typedInstance.toRawObject())
-      logger.debug { "Generated json: $json" }
       logger.info { "Sending instance ${typedInstance.type.fullyQualifiedName} to Cask" }
       output.onNext(json);
-
    }
 
+   private fun connect(): Mono<Void> {
+      return client.execute(URI(endpoint)) { session ->
+         session.send(
+            output.map { session.textMessage(it) }
+         )
+            .and(
+               session.receive().handleCaskResponse().then()
+            )
+            .doOnError {
+               // ENHANCE read error and recover if possible
+               log().error("Websocket error", it)
+            }
+            .doAfterTerminate {
+               // ENHANCE check reason (any code somewhere ?) and try to reconnect
+               log().info("Websocket terminated ")
+            }
+            .then()
+      }
+   }
+
+
+   private fun Flux<WebSocketMessage>.handleCaskResponse(): Flux<CaskIngestionResponse> {
+
+      return map { it.payloadAsText }
+         .map { objectMapper.readValue(it, CaskIngestionResponse::class.java) }
+         .doOnNext {
+            it.log().info("Received response from websocket: ${it.result}")
+         }
+   }
 }
+
+
+
