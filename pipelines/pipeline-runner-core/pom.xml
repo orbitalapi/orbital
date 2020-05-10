@@ -43,7 +43,12 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>vyne-client-spring</artifactId>
+         <artifactId>pipelines-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>cask-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>

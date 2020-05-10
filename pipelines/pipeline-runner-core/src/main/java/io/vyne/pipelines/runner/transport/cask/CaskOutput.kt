@@ -3,6 +3,7 @@ package io.vyne.pipelines.runner.transport.cask
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.discovery.EurekaClient
 import io.vyne.VersionedTypeReference
+import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineLogger
@@ -17,7 +18,10 @@ import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import reactor.core.publisher.EmitterProcessor
+import reactor.core.publisher.Mono
 import java.net.URI
+import java.time.Duration
+import java.time.Instant
 
 
 @Component
@@ -38,20 +42,36 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
    override val type: VersionedTypeReference = spec.targetType
 
    private val client = ReactorNettyWebSocketClient()
-   private val output: EmitterProcessor<String> = EmitterProcessor.create<String>()
+   private val output = EmitterProcessor.create<String>()
 
    init {
-      val sessionMono = client.execute(URI(endpoint)
-      ) { session: WebSocketSession ->
-         session.send(output.map(session::textMessage))
-            .doOnNext { log().info("Next") }
-            .doAfterTerminate { log().info("Websocket terminated") }
-            .doOnError { log().error("Websocket Error: $it") }
-            .then()
-         // FIXME add receive
+
+      var m = """
+      {"id": "${Instant.now()}","firstName": "Leo","lastName": "Northman"}
+    """.trimIndent();
+
+      val sessionMono = client.execute(URI(endpoint)) { session ->
+         session.send(
+            output.map { session.textMessage(m) }
+         )
+         .and(
+            session.receive()
+               .map { it.payload.asInputStream() }
+               .map { objectMapper.readValue(it, CaskIngestionResponse::class.java) }
+               .map { it.toString() }
+               .doOnNext { log().info(it) }
+         )
+         .doOnError { log().error("Websocket error", it) }
+         .doOnTerminate { log().info("Websocket terminated") }
+         .then()
       }
 
       output.doOnSubscribe { s: Subscription? -> sessionMono.subscribe() }.subscribe()
+   }
+
+   fun handeCaskResponse(message: String): String {
+      log().info(message)
+      return message
    }
 
    override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
