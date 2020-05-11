@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.io.JsonEOFException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.cask.api.CaskIngestionResponse
+import io.vyne.cask.websocket.queryParams
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.orElse
 import org.springframework.stereotype.Component
@@ -13,14 +14,13 @@ import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.lang.IllegalArgumentException
 
 @Component
 class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMapper = jacksonObjectMapper()) : WebSocketHandler {
     override fun handle(session: WebSocketSession): Mono<Void> {
         val typeReferenceFromPath = session.handshakeInfo.uri.path.replace("/cask/", "")
 
-        log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri.path}")
+        log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri.path} query=${session.handshakeInfo.uri.query}")
 
         val versionedType = caskService.resolveType(typeReferenceFromPath)
         return when (versionedType) {
@@ -42,7 +42,9 @@ class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMappe
     }
 
     private fun ingestMessages(session: WebSocketSession, versionedType: VersionedType): Mono<Void> {
-        val sendIngestionResponse:Boolean = session.handshakeInfo.uri.query?.contains("debug=true").orElse(false)
+       // ReactorNettyRequestUpgradeStrategy.upgrade method does not pass request object so we have to parse uri.query
+       val queryParams = session.handshakeInfo.uri.queryParams()
+       val sendIngestionResponse = queryParams?.get("debug")?.firstOrNull().orElse("false").equals("true")
         return session.receive()
                 .doOnNext { websocketMessage ->
                     log().info("Ingesting message from sessionId=${session.id}")
