@@ -17,6 +17,7 @@ import org.springframework.web.reactive.socket.WebSocketMessage
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import java.io.ByteArrayInputStream
+import java.lang.IllegalArgumentException
 import java.time.Duration
 
 
@@ -93,6 +94,21 @@ class CaskWebsocketHandlerTest {
    }
 
    @Test
+   fun illegalArgumentExceptionError() {
+      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage())))
+      val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
+      val wsHandler = CaskWebsocketHandler(caskService)
+      whenever(ingester.ingest()).thenThrow(RuntimeException(null, IllegalArgumentException()))
+
+      wsHandler.handle(session).block()
+
+      StepVerifier
+         .create(session.textOutput.take(1))
+         .expectNext("""{"result":"REJECTED","message":"An IllegalArgumentException was thrown, but no further details are available."}""")
+         .verifyComplete()
+   }
+
+   @Test
    fun ingestionErrorCausedByInvalidType() {
       val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(invalidIngestionMessage())))
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
@@ -102,7 +118,7 @@ class CaskWebsocketHandlerTest {
 
       StepVerifier
          .create(session.textOutput.take(1))
-         .expectNext("""{"result":"REJECTED","message":"Cannot deserialize value of type `java.math.BigDecimal` from String \"6300USD\": not a valid representation\n at [Source: UNKNOWN; line: -1, column: -1]"}""")
+         .expectNext("""{"result":"REJECTED","message":"java.lang.IllegalArgumentException: Cannot deserialize value of type `java.math.BigDecimal` from String \"6300USD\": not a valid representation\n at [Source: UNKNOWN; line: -1, column: -1]"}""")
          .verifyComplete()
    }
 
@@ -120,7 +136,7 @@ class CaskWebsocketHandlerTest {
       StepVerifier
          .create(session.textOutput.take(3))
          .expectNext("""{"result":"REJECTED","message":"Malformed JSON message"}""")
-         .expectNext("""{"result":"REJECTED","message":"Cannot deserialize value of type `java.math.BigDecimal` from String \"6300USD\": not a valid representation\n at [Source: UNKNOWN; line: -1, column: -1]"}""")
+         .expectNext("""{"result":"REJECTED","message":"java.lang.IllegalArgumentException: Cannot deserialize value of type `java.math.BigDecimal` from String \"6300USD\": not a valid representation\n at [Source: UNKNOWN; line: -1, column: -1]"}""")
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
          .verifyComplete()
    }

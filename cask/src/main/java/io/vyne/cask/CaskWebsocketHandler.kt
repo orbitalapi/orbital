@@ -60,10 +60,10 @@ class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMappe
                     } catch (e: Exception) {
                        log().error("Error ingesting message from sessionId=${session.id}", e)
                        when(e.cause) {
-                          // This can leak some of the internal data structures/ classes
-                          is IllegalArgumentException -> respondWithError(session, e.cause?.message!!)
+                          // This can leak some of the internal data structures/classes
+                          is IllegalArgumentException -> respondWithError(session, e.message.orElse("An IllegalArgumentException was thrown, but no further details are available."))
                           is JsonEOFException -> respondWithError(session, "Malformed JSON message")
-                          else -> respondWithError(session)
+                          else -> respondWithError(session, "Unexpected ingestion error")
                        }
 
                     }
@@ -77,7 +77,7 @@ class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMappe
                 .then()
     }
 
-   private fun respondWithError(session: WebSocketSession, errorMessage: String = "Unexpected ingestion error") {
+   private fun respondWithError(session: WebSocketSession, errorMessage: String) {
       val errorResult = Flux.just(errorMessage)
          .map { CaskIngestionResponse.rejected(it) }
          .map(mapper::writeValueAsString)
