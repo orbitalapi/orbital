@@ -1,16 +1,19 @@
 package io.vyne.cask
 
 import arrow.core.Either
+import com.fasterxml.jackson.core.io.JsonEOFException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.schemas.VersionedType
+import io.vyne.utils.orElse
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.lang.IllegalArgumentException
 
 @Component
 class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMapper = jacksonObjectMapper()) : WebSocketHandler {
@@ -39,6 +42,7 @@ class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMappe
     }
 
     private fun ingestMessages(session: WebSocketSession, versionedType: VersionedType): Mono<Void> {
+        val sendIngestionResponse:Boolean = session.handshakeInfo.uri.query?.contains("debug=true").orElse(false)
         return session.receive()
                 .doOnNext { websocketMessage ->
                     log().info("Ingesting message from sessionId=${session.id}")
@@ -47,18 +51,21 @@ class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMappe
                         val ingestionResult = caskService
                                 .ingestRequest(versionedType, input)
                                 .count()
+                                .filter { sendIngestionResponse }
                                 .map { "Successfully ingested ${it} records" }
                                 .map { CaskIngestionResponse.success(it) }
                                 .map(mapper::writeValueAsString)
                                 .map(session::textMessage)
                         session.send(ingestionResult).subscribe()
                     } catch (e: Exception) {
-                        log().error("Error ingesting message from sessionId=${session.id}", e)
-                        val errorResult = Flux.just("Error ingesting message")
-                                .map{CaskIngestionResponse.rejected(it)}
-                                .map(mapper::writeValueAsString)
-                                .map(session::textMessage)
-                        session.send(errorResult).subscribe()
+                       log().error("Error ingesting message from sessionId=${session.id}", e)
+                       when(e.cause) {
+                          // This can leak some of the internal data structures/ classes
+                          is IllegalArgumentException -> respondWithError(session, e.cause?.message!!)
+                          is JsonEOFException -> respondWithError(session, "Malformed JSON message")
+                          else -> respondWithError(session)
+                       }
+
                     }
                 }
                 .doOnComplete {
@@ -69,4 +76,12 @@ class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMappe
                 }
                 .then()
     }
+
+   private fun respondWithError(session: WebSocketSession, errorMessage: String = "Unexpected ingestion error") {
+      val errorResult = Flux.just(errorMessage)
+         .map { CaskIngestionResponse.rejected(it) }
+         .map(mapper::writeValueAsString)
+         .map(session::textMessage)
+      session.send(errorResult).subscribe()
+   }
 }
