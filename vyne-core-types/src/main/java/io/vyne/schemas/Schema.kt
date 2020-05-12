@@ -89,5 +89,7 @@ interface Schema {
    fun type(nestedTypeRef: TypeReference): Type {
       return type(nestedTypeRef.name)
    }
+
+   fun toTaxiType(versionedType: VersionedType) = type(versionedType.fullyQualifiedName.fqn()).taxiType
 }
 

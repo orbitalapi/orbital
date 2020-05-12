@@ -1,12 +1,11 @@
 package io.vyne.cask.ingest
 
 import com.google.common.annotations.VisibleForTesting
+import io.vyne.cask.ddl.TableMetadata
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.cask.ddl.TableMetadata
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.sql.Connection
 import java.sql.ResultSet
@@ -32,25 +31,7 @@ class QueryView(private val jdbcTemplate: JdbcTemplate) {
     }
 
     fun getQueryStrategy(type: VersionedType): DataQuerySpec {
-        val existingDataSources = jdbcTemplate.query(
-                { con: Connection ->
-                    con.prepareStatement("SELECT * from ${TableMetadata.TABLE_NAME} where qualifiedTypeName = ?")
-                            .apply { setString(1, type.fullyQualifiedName) }
-                }
-
-        ) { rs: ResultSet, rowNum: Int ->
-           TableMetadata(
-              tableName = rs.getString(1),
-              qualifiedTypeName = rs.getString(2),
-              versionHash = rs.getString(3),
-              sourceSchemaIds = (rs.getArray(4).array as Array<String>).toList(),
-              sources = (rs.getArray(5).array as Array<String>).toList(),
-              timestamp = rs.getTimestamp(6).toInstant(),
-              readCachePath = Paths.get(rs.getString(7)),
-              deltaAgainstTableName = rs.getString(8)
-           )
-        }
-
+        val existingDataSources = tableMetadataForVersionedType(type, jdbcTemplate)
         if (existingDataSources.isEmpty()) {
             error("No data exists for type ${type.fullyQualifiedName}")
         }
@@ -61,6 +42,26 @@ class QueryView(private val jdbcTemplate: JdbcTemplate) {
         val latestDataSource = existingDataSources.maxBy { it.timestamp }!!
         return UpgradeDataSourceSpec(latestDataSource, type)
     }
+   companion object {
+      fun tableMetadataForVersionedType(type: VersionedType, jdbcTemplate: JdbcTemplate): List<TableMetadata> = jdbcTemplate.query(
+         { con: Connection ->
+            con.prepareStatement("SELECT * from ${TableMetadata.TABLE_NAME} where qualifiedTypeName = ?")
+               .apply { setString(1, type.fullyQualifiedName) }
+         }
+
+      ) { rs: ResultSet, _: Int ->
+         TableMetadata(
+            tableName = rs.getString(1),
+            qualifiedTypeName = rs.getString(2),
+            versionHash = rs.getString(3),
+            sourceSchemaIds = (rs.getArray(4).array as Array<String>).toList(),
+            sources = (rs.getArray(5).array as Array<String>).toList(),
+            timestamp = rs.getTimestamp(6).toInstant(),
+            readCachePath = Paths.get(rs.getString(7)),
+            deltaAgainstTableName = rs.getString(8)
+         )
+      }
+   }
 }
 
 interface DataQuerySpec

@@ -8,6 +8,7 @@ import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.websocket.queryParams
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.orElse
+import io.vyne.utils.log
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketHandler
@@ -22,20 +23,19 @@ class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMappe
 
         log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri.path} query=${session.handshakeInfo.uri.query}")
 
-        val versionedType = caskService.resolveType(typeReferenceFromPath)
-        return when (versionedType) {
-            is Either.Right -> {
-                log().info("Closing sessionId=${session.id} as the type failed to resolve.  Error: ${versionedType.b.message}")
+       return when (val versionedType = caskService.resolveType(typeReferenceFromPath)) {
+            is Either.Left -> {
+                log().info("Closing sessionId=${session.id} as the type failed to resolve.  Error: ${versionedType.a.message}")
                 /**
                  * 1003 indicates that an endpoint is terminating the connection
                  * because it has received a type of data it cannot accept.
                  * Reference: https://tools.ietf.org/html/rfc6455#section-7.4
                  */
-                val closeStatus = CloseStatus(CloseStatus.NOT_ACCEPTABLE.code, versionedType.b.message)
+                val closeStatus = CloseStatus(CloseStatus.NOT_ACCEPTABLE.code, versionedType.a.message)
                 return session.close(closeStatus).then()
             }
-            is Either.Left -> {
-                return ingestMessages(session, versionedType.a)
+            is Either.Right -> {
+                return ingestMessages(session, versionedType.b)
             }
 
         }

@@ -11,6 +11,8 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
+import io.vyne.spring.hasHttpMetadata
+import io.vyne.spring.isServiceDiscoveryClient
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -44,8 +46,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    }
 
    override fun canSupport(service: Service, operation: Operation): Boolean {
-      return service.hasMetadata("ServiceDiscoveryClient") ||
-         operation.hasHttpMetadata()
+      return service.isServiceDiscoveryClient() || operation.hasHttpMetadata()
    }
 
 
@@ -137,14 +138,6 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 }
 
 typealias ParameterValuePair = Pair<Parameter, TypedInstance>
-
-private fun Operation.hasHttpMetadata(): Boolean {
-   if (!this.hasMetadata("HttpOperation")) {
-      return false;
-   }
-   val httpMeta = this.metadata("HttpOperation")
-   return httpMeta.params.containsKey("url")
-}
 
 internal class CatchingErrorHandler : ResponseErrorHandler {
    override fun handleError(p0: ClientHttpResponse?) {

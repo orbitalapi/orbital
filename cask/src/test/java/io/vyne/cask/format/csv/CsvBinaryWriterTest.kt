@@ -3,7 +3,7 @@ package io.vyne.cask.format.csv
 import com.google.common.base.Stopwatch
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
-import io.vyne.cask.log
+import io.vyne.utils.log
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder

@@ -2,7 +2,9 @@ package io.vyne.spring.invokers
 
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Service
+import io.vyne.spring.*
 import org.springframework.cloud.client.discovery.DiscoveryClient
+import org.springframework.web.util.UriComponentsBuilder
 
 interface ServiceUrlResolver {
    fun canResolve(service: Service, operation: Operation): Boolean
@@ -10,22 +12,21 @@ interface ServiceUrlResolver {
 }
 
 class ServiceDiscoveryClientUrlResolver(val discoveryClient: ServiceDiscoveryClient = NoOpServiceDiscoveryClient()) : ServiceUrlResolver {
-   override fun canResolve(service: Service, operation: Operation): Boolean = service.hasMetadata("ServiceDiscoveryClient")
+   override fun canResolve(service: Service, operation: Operation): Boolean = service.isServiceDiscoveryClient()
 
    override fun makeAbsolute(url: String, service: Service, operation: Operation): String {
-      val serviceName = service.metadata("ServiceDiscoveryClient").params["serviceName"] as String
-      return discoveryClient.resolve(serviceName) + url.trimStart('/')
+      val serviceName = service.serviceDiscoveryClientName()
+      return UriComponentsBuilder
+         .fromUriString(discoveryClient.resolve(serviceName))
+         .path(url)
+         .build()
+         .toUriString()
    }
 }
 
 class AbsoluteUrlResolver() : ServiceUrlResolver {
    override fun canResolve(service: Service, operation: Operation): Boolean {
-      return operation.hasMetadata("HttpOperation")
-         && operation.metadata("HttpOperation").params.containsKey("url")
-         && operation.metadata("HttpOperation").params["url"].let { url ->
-         val urlString = url as String
-         urlString.startsWith("http://") || urlString.startsWith("https://")
-      }
+      return operation.hasHttpMetadata() && operation.isHttpOperation()
    }
 
    override fun makeAbsolute(url: String, service: Service, operation: Operation): String {

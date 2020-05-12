@@ -27,7 +27,7 @@ class TypeDbWrapper(val type: VersionedType, schema: Schema, cachePath: Path?, t
     val dropTableStatement: String = postgresDdlGenerator.generateDrop(type)
     val createTableStatement: TableGenerationStatement = postgresDdlGenerator.generateDdl(type, schema, cachePath, typeMigration)
     val columns = createTableStatement.columns
-    val tableName = postgresDdlGenerator.tableName(type)
+    val tableName = PostgresDdlGenerator.tableName(type)
 
     val rowWriterTable = SimpleRowWriter.Table(tableName, *createTableStatement.columns.map { it.name }.toTypedArray())
 }

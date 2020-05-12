@@ -1,11 +1,11 @@
 package io.vyne.cask
 
 import com.google.common.base.Stopwatch
+import io.vyne.utils.log
 import java.util.concurrent.TimeUnit
 
 object Timer {
-    val log = log()
-
+    val log = Timer.log()
 }
 
 fun <T> xtimed(name: String, log: Boolean = false, timeUnit: TimeUnit = TimeUnit.MILLISECONDS, block: () -> T): T {

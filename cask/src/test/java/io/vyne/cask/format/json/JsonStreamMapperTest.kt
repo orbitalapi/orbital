@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.io.Resources
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.format.csv.Benchmark
-import io.vyne.cask.log
+import io.vyne.utils.log
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
