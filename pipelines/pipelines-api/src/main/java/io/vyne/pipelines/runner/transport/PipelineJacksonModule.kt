@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.pipelines.GenericPipelineTransportSpec
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.PipelineTransportType
@@ -33,9 +34,9 @@ class PipelineTransportSpecDeserializer(val ids: List<PipelineTransportSpecId>) 
       val direction = map["direction"] as? String ?: error("Property 'direction' was expected")
       val pipelineDirection = PipelineDirection.valueOf(direction)
       val specId = ids.firstOrNull { it.type == type && it.direction == pipelineDirection }
-         ?: error("No spec type matches type $type and direction $direction")
 
-      val result = innerJackson.convertValue(map, specId.clazz)
+
+      val result = innerJackson.convertValue(map, specId?.clazz ?: GenericPipelineTransportSpec::class.java)
       return result
    }
 

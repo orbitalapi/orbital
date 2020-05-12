@@ -31,6 +31,8 @@ interface PipelineTransportSpec {
    val targetType: VersionedTypeReference
 }
 
+data class GenericPipelineTransportSpec(override val type: PipelineTransportType, override val direction: PipelineDirection, override val targetType: VersionedTypeReference) : PipelineTransportSpec
+
 enum class PipelineDirection(val label: String) {
    INPUT("in"),
    OUTPUT("out");

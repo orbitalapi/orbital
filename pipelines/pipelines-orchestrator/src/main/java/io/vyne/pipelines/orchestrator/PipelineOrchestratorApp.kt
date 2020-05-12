@@ -1,6 +1,6 @@
 package io.vyne.pipelines.orchestrator
 
-import io.vyne.pipelines.runner.PipelineRunnerApi
+import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
