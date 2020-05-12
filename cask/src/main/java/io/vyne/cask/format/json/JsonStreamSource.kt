@@ -17,27 +17,27 @@ class JsonStreamSource(val input: Flux<InputStream>,
                        val readCacheDirectory: Path,
                        val objectMapper: ObjectMapper) : StreamSource {
 
-    // TODO LENS-47 save input stream to disk for replay
-    val cachePath: Path by lazy {
-        Files.createFile(readCacheDirectory.resolve(vyneType.fullyQualifiedName))
-    }
+   // TODO LENS-47 save input stream to disk for replay
+   val cachePath: Path by lazy {
+      Files.createFile(readCacheDirectory.resolve(vyneType.fullyQualifiedName))
+   }
 
-    override val stream: Flux<InstanceAttributeSet>
-        get() {
-            val mapper = JsonStreamMapper(vyneType.type, schema)
-            return Flux.create { emitter ->
-                input
-                        .map { stream -> objectMapper.readTree(stream) }
-                        .filter { record -> !record.isEmpty }
-                        .map { record ->
-                            // when
-                            when (record) {
-                                is ArrayNode -> record.map { emitter.next(mapper.map(it)) }
-                                else -> emitter.next(mapper.map(record))
-                            }
-                        }
-                        .doOnComplete(emitter::complete)
-                        .subscribe()
-            }
-        }
+   override val stream: Flux<InstanceAttributeSet>
+      get() {
+         val mapper = JsonStreamMapper(vyneType.type, schema)
+         return Flux.create { emitter ->
+            input
+               .map { stream -> objectMapper.readTree(stream) }
+               .filter { record -> !record.isEmpty }
+               .map { record ->
+                  // when
+                  when (record) {
+                     is ArrayNode -> record.map { emitter.next(mapper.map(it)) }
+                     else -> emitter.next(mapper.map(record))
+                  }
+               }
+               .doOnComplete(emitter::complete)
+               .subscribe()
+         }
+      }
 }

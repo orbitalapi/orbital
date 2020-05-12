@@ -22,7 +22,7 @@ class MockWebSocketSession(val uri: String,
    var closed: Boolean = false
    lateinit var closeStatus: CloseStatus
    val textOutput: EmitterProcessor<String> = EmitterProcessor.create()
-   val textOutputSink:FluxSink<String> = textOutput.sink()
+   val textOutputSink: FluxSink<String> = textOutput.sink()
 
    override fun getId(): String {
       return sessionId

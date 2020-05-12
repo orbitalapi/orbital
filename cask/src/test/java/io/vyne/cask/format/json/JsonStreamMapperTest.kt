@@ -12,26 +12,26 @@ import reactor.core.publisher.Flux
 import java.io.File
 
 class JsonStreamMapperTest {
-    @Rule
-    @JvmField
-    val folder = TemporaryFolder()
+   @Rule
+   @JvmField
+   val folder = TemporaryFolder()
 
-    @Test
-    fun can_ingestAndMapToTypedInstance() {
-        val schema = CoinbaseJsonOrderSchema.schemaV1
-        val typeReference = "OrderWindowSummary"
-        val versionedType = schema.versionedType(VersionedTypeReference.parse(typeReference))
-        val resource = Resources.getResource("Coinbase_BTCUSD.json").toURI()
+   @Test
+   fun can_ingestAndMapToTypedInstance() {
+      val schema = CoinbaseJsonOrderSchema.schemaV1
+      val typeReference = "OrderWindowSummary"
+      val versionedType = schema.versionedType(VersionedTypeReference.parse(typeReference))
+      val resource = Resources.getResource("Coinbase_BTCUSD.json").toURI()
 
-        // Ingest it a few times to get an average performance
-        Benchmark.benchmark("can_ingestAndMapToTypedInstance") {
-            val stream = JsonStreamSource(Flux.just(File(resource).inputStream()), versionedType, schema, folder.root.toPath(), ObjectMapper())
-            val noOfMappedRows = stream
-                    .stream
-                    .count()
-                    .block()
+      // Ingest it a few times to get an average performance
+      Benchmark.benchmark("can_ingestAndMapToTypedInstance") {
+         val stream = JsonStreamSource(Flux.just(File(resource).inputStream()), versionedType, schema, folder.root.toPath(), ObjectMapper())
+         val noOfMappedRows = stream
+            .stream
+            .count()
+            .block()
 
-            log().info("Mapped ${noOfMappedRows} rows to typed instance")
-        }
-    }
+         log().info("Mapped ${noOfMappedRows} rows to typed instance")
+      }
+   }
 }

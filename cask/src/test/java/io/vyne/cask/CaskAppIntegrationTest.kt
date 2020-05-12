@@ -22,38 +22,38 @@ import java.net.URI
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = [
-            "spring.main.allow-bean-definition-overriding=true",
-            "eureka.client.enabled=false"
-        ])
+   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+   properties = [
+      "spring.main.allow-bean-definition-overriding=true",
+      "eureka.client.enabled=false"
+   ])
 class CaskAppIntegrationTest {
 
-    @LocalServerPort
-    val randomServerPort = 0
+   @LocalServerPort
+   val randomServerPort = 0
 
-    @Test
-    fun contextLoads() {
-    }
+   @Test
+   fun contextLoads() {
+   }
 
-    @TestConfiguration
-    class SpringConfig {
-        @Bean
-        @Primary
-        fun schemaProvider(): SchemaProvider {
-            return object : SchemaProvider {
-                override fun schemas(): List<Schema> = listOf(CoinbaseJsonOrderSchema.schemaV1)
-            }
-        }
-    }
+   @TestConfiguration
+   class SpringConfig {
+      @Bean
+      @Primary
+      fun schemaProvider(): SchemaProvider {
+         return object : SchemaProvider {
+            override fun schemas(): List<Schema> = listOf(CoinbaseJsonOrderSchema.schemaV1)
+         }
+      }
+   }
 
-    @Test
-    @Ignore("LENS-44 Run local Postgres db as part of integration tests")
-    fun testWebsocket() {
-        val output: EmitterProcessor<String> = EmitterProcessor.create()
-        val client: WebSocketClient = ReactorNettyWebSocketClient()
-        val uri = URI.create("ws://localhost:${randomServerPort}/cask/OrderWindowSummary")
-        val caskRequest = """{
+   @Test
+   @Ignore("LENS-44 Run local Postgres db as part of integration tests")
+   fun testWebsocket() {
+      val output: EmitterProcessor<String> = EmitterProcessor.create()
+      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val uri = URI.create("ws://localhost:${randomServerPort}/cask/OrderWindowSummary")
+      val caskRequest = """{
         "Date": "2020-03-19 11-PM",
         "Symbol": "BTCUSD",
         "Open": "6300",
@@ -64,16 +64,16 @@ class CaskAppIntegrationTest {
         "Volume USD": "5115937.58"
          }""".trimIndent()
 
-        client.execute(uri)
-        { session ->
-            session.send(Mono.just(session.textMessage(caskRequest)))
-                    .thenMany(session.receive()
-                            .log()
-                            .map(WebSocketMessage::getPayloadAsText)
-                            .subscribeWith(output))
-                    .then()
-        }.subscribe()
+      client.execute(uri)
+      { session ->
+         session.send(Mono.just(session.textMessage(caskRequest)))
+            .thenMany(session.receive()
+               .log()
+               .map(WebSocketMessage::getPayloadAsText)
+               .subscribeWith(output))
+            .then()
+      }.subscribe()
 
-        output.blockFirst()
-    }
+      output.blockFirst()
+   }
 }

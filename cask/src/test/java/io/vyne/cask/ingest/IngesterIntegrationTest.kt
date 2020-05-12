@@ -33,6 +33,7 @@ class IngesterIntegrationTest {
 
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
+
    @Before
    fun setup() {
       val dataSource = DataSourceBuilder.create()
@@ -105,7 +106,7 @@ class IngesterIntegrationTest {
 
       Benchmark.benchmark("Update type") { stopwatch ->
          val strategy = queryView.getQueryStrategy(typeV2)
-         val upgradeResult = queryView.prepare(strategy,schemaV2).collectList().block()
+         val upgradeResult = queryView.prepare(strategy, schemaV2).collectList().block()
          stopwatch.stop()
          queryView.destroy(strategy, schemaV2)
          upgradeResult

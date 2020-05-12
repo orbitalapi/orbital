@@ -1,37 +1,37 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+   <!-- Required meta tags -->
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+   <!-- Bootstrap CSS -->
+   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
-    <title>Cask testharness page</title>
+   <title>Cask testharness page</title>
 </head>
 <body>
 <div class="container">
-    <h1>Cask testharness page</h1>
-    <div class="form-group">
-        <label for="caskUrl">Cask URL</label>
-        <input class="form-control" id="caskUrl" rows="3"></input>
-    </div>
-    <button type="submit" class="btn btn-primary" id="connectToCaskButton">Connect</button>
-    <br/><br/>
+   <h1>Cask testharness page</h1>
+   <div class="form-group">
+      <label for="caskUrl">Cask URL</label>
+      <input class="form-control" id="caskUrl" rows="3"></input>
+   </div>
+   <button type="submit" class="btn btn-primary" id="connectToCaskButton">Connect</button>
+   <br/><br/>
 
-    <div class="form-group">
-        <label for="inputMessage">Input message</label>
-        <textarea class="form-control" id="inputMessage" rows="3"></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary" id="sendToCaskButton">Send</button>
-    <br/><br/>
+   <div class="form-group">
+      <label for="inputMessage">Input message</label>
+      <textarea class="form-control" id="inputMessage" rows="3"></textarea>
+   </div>
+   <button type="submit" class="btn btn-primary" id="sendToCaskButton">Send</button>
+   <br/><br/>
 
-    <div class="form-group">
-        <label for="caskResponse">Responses</label>
-        <textarea class="form-control" id="caskResponse" rows="20"></textarea>
-    </div>
+   <div class="form-group">
+      <label for="caskResponse">Responses</label>
+      <textarea class="form-control" id="caskResponse" rows="20"></textarea>
+   </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
@@ -44,60 +44,60 @@
         integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
         crossorigin="anonymous"></script>
 <script>
-    var caskUrl = "ws://localhost:8800/cask/OrderWindowSummary?debug=true";
-    var clientWebSocket;
-    var message = {
-        "Date": "2020-03-19 11-PM",
-        "Symbol": "BTCUSD",
-        "Open": "6300",
-        "High": "6330",
-        "Low": "6186.08",
-        "Close": "6235.2",
-        "Volume BTC": "817.78",
-        "Volume USD": "5115937.58"
-    };
+   var caskUrl = "ws://localhost:8800/cask/OrderWindowSummary?debug=true";
+   var clientWebSocket;
+   var message = {
+      "Date": "2020-03-19 11-PM",
+      "Symbol": "BTCUSD",
+      "Open": "6300",
+      "High": "6330",
+      "Low": "6186.08",
+      "Close": "6235.2",
+      "Volume BTC": "817.78",
+      "Volume USD": "5115937.58"
+   };
 
-    function connectToCask(url) {
-        clientWebSocket = new WebSocket(url);
-        clientWebSocket.onopen = function () {
-            console.log("clientWebSocket.onopen", clientWebSocket);
-            console.log("clientWebSocket.readyState", "websocketstatus");
-            logMessage("Connected to " + url);
-        }
-        clientWebSocket.onclose = function (closeEvent) {
-            console.log("clientWebSocket.onclose", clientWebSocket);
-            console.log(closeEvent);
-            logMessage("Closing websocket connection code=" + closeEvent.code + " reason=" + closeEvent.reason);
-        }
-        clientWebSocket.onerror = function (error) {
-            console.log("clientWebSocket.onerror", clientWebSocket, error);
-            logMessage("An error occured");
-            logMessage(error)
-        }
-        clientWebSocket.onmessage = function (error) {
-            console.log("clientWebSocket.onmessage", clientWebSocket, error);
-            logMessage(error.data);
-        }
-        return clientWebSocket;
-    }
+   function connectToCask(url) {
+      clientWebSocket = new WebSocket(url);
+      clientWebSocket.onopen = function () {
+         console.log("clientWebSocket.onopen", clientWebSocket);
+         console.log("clientWebSocket.readyState", "websocketstatus");
+         logMessage("Connected to " + url);
+      }
+      clientWebSocket.onclose = function (closeEvent) {
+         console.log("clientWebSocket.onclose", clientWebSocket);
+         console.log(closeEvent);
+         logMessage("Closing websocket connection code=" + closeEvent.code + " reason=" + closeEvent.reason);
+      }
+      clientWebSocket.onerror = function (error) {
+         console.log("clientWebSocket.onerror", clientWebSocket, error);
+         logMessage("An error occured");
+         logMessage(error)
+      }
+      clientWebSocket.onmessage = function (error) {
+         console.log("clientWebSocket.onmessage", clientWebSocket, error);
+         logMessage(error.data);
+      }
+      return clientWebSocket;
+   }
 
-    function logMessage(responseEvent) {
-        console.log("Message");
-        console.log(responseEvent);
-        $( "#caskResponse" ).append(responseEvent + "\n" );
-    }
+   function logMessage(responseEvent) {
+      console.log("Message");
+      console.log(responseEvent);
+      $("#caskResponse").append(responseEvent + "\n");
+   }
 
-    $( document ).ready(function() {
-        $( "#inputMessage" ).append( JSON.stringify(message) );
-        $( "#caskUrl" ).val( caskUrl );
-        $( "#sendToCaskButton" ).click(function() {
-            clientWebSocket.send($( "#inputMessage" ).val());
-        });
-        $( "#connectToCaskButton" ).click(function() {
-            var url = encodeURI($( "#caskUrl" ).val());
-            connectToCask(url);
-        });
-    });
+   $(document).ready(function () {
+      $("#inputMessage").append(JSON.stringify(message));
+      $("#caskUrl").val(caskUrl);
+      $("#sendToCaskButton").click(function () {
+         clientWebSocket.send($("#inputMessage").val());
+      });
+      $("#connectToCaskButton").click(function () {
+         var url = encodeURI($("#caskUrl").val());
+         connectToCask(url);
+      });
+   });
 </script>
 </body>
 </html>
