@@ -18,7 +18,8 @@
 
    <modules>
       <module>pipelines-api</module>
-      <module>pipeline-runner</module>
+      <module>pipeline-runner-core</module>
+      <module>pipeline-runner-app</module>
       <module>pipelines-orchestrator-api</module>
       <module>pipelines-orchestrator</module>
    </modules>

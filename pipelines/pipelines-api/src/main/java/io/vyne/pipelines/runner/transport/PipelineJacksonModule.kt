@@ -9,20 +9,22 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.PipelineTransportType
+import io.vyne.pipelines.runner.transport.cask.CaskTransportOutputSpec
 import io.vyne.pipelines.runner.transport.kafka.KafkaTransportInputSpec
 import io.vyne.pipelines.runner.transport.kafka.KafkaTransportOutputSpec
 
-class PipelineJacksonModule : SimpleModule() {
+class PipelineJacksonModule(ids: List<PipelineTransportSpecId> = listOf(
+   KafkaTransportInputSpec.specId,
+   CaskTransportOutputSpec.specId,
+   KafkaTransportOutputSpec.specId
+)) : SimpleModule() {
 
    init {
-      addDeserializer(PipelineTransportSpec::class.java, PipelineTransportSpecDeserializer())
+      addDeserializer(PipelineTransportSpec::class.java, PipelineTransportSpecDeserializer(ids))
    }
 }
 
-class PipelineTransportSpecDeserializer(private val ids: List<PipelineTransportSpecId> = listOf(
-   KafkaTransportInputSpec.specId,
-   KafkaTransportOutputSpec.specId
-)) : JsonDeserializer<PipelineTransportSpec>() {
+class PipelineTransportSpecDeserializer(val ids: List<PipelineTransportSpecId>) : JsonDeserializer<PipelineTransportSpec>() {
    private val innerJackson = jacksonObjectMapper()
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): PipelineTransportSpec {

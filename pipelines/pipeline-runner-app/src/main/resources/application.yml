@@ -1,0 +1,10 @@
+spring:
+   application:
+      name: pipeline-runner
+
+server:
+   port: 9610
+
+service:
+   cask:
+      name: cask

@@ -9,36 +9,41 @@
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
-   <artifactId>pipelines-orchestrator</artifactId>
+   <artifactId>pipeline-runner-app</artifactId>
 
    <dependencies>
       <dependency>
-         <groupId>com.fasterxml.jackson.module</groupId>
-         <artifactId>jackson-module-kotlin</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-openfeign</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-      </dependency>
-      <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>pipelines-orchestrator-api</artifactId>
+         <artifactId>pipeline-runner-core</artifactId>
          <version>${project.version}</version>
       </dependency>
+
       <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-web</artifactId>
+         <groupId>org.springframework.kafka</groupId>
+         <artifactId>spring-kafka-test</artifactId>
+         <scope>test</scope>
       </dependency>
+
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>pipeline-runner-core</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+         <scope>test</scope>
+      </dependency>
+
    </dependencies>
 
    <build>
-
       <plugins>
-
          <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
@@ -55,7 +60,6 @@
                      <build>
                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                         <tags>
-                           <!-- defined in profiles.  see root pom.xml -->
                            <tag>${docker.tag}</tag>
                         </tags>
                      </build>
