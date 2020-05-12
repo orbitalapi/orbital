@@ -13,6 +13,7 @@ import io.vyne.pipelines.PipelineTransportType
 import io.vyne.pipelines.runner.transport.cask.CaskTransportOutputSpec
 import io.vyne.pipelines.runner.transport.kafka.KafkaTransportInputSpec
 import io.vyne.pipelines.runner.transport.kafka.KafkaTransportOutputSpec
+import io.vyne.utils.orElse
 
 class PipelineJacksonModule(ids: List<PipelineTransportSpecId> = listOf(
    KafkaTransportInputSpec.specId,
@@ -33,11 +34,10 @@ class PipelineTransportSpecDeserializer(val ids: List<PipelineTransportSpecId>) 
       val type = map["type"] as? String ?: error("Property 'type' was expected")
       val direction = map["direction"] as? String ?: error("Property 'direction' was expected")
       val pipelineDirection = PipelineDirection.valueOf(direction)
-      val specId = ids.firstOrNull { it.type == type && it.direction == pipelineDirection }
+      val clazz = ids.firstOrNull() { it.type == type && it.direction == pipelineDirection }?.clazz ?: GenericPipelineTransportSpec::class.java
 
 
-      val result = innerJackson.convertValue(map, specId?.clazz ?: GenericPipelineTransportSpec::class.java)
-      return result
+      return innerJackson.convertValue(map, clazz)
    }
 
 }
