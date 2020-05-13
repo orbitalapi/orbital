@@ -3,7 +3,16 @@ package io.vyne.pipelines.orchestrator
 
 import com.nhaarman.mockito_kotlin.any
 import com.winterbe.expekt.should
+import io.vyne.VersionedTypeReference
+import io.vyne.pipelines.Pipeline
+import io.vyne.pipelines.PipelineChannel
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
+import io.vyne.pipelines.runner.PipelineInstanceReference
+import io.vyne.pipelines.runner.SimplePipelineInstance
+import io.vyne.pipelines.runner.transport.cask.CaskTransportOutputSpec
+import io.vyne.pipelines.runner.transport.kafka.KafkaTransportInputSpec
+import io.vyne.schemas.fqn
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.BDDMockito.given
@@ -14,6 +23,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.http.HttpStatus
 import org.springframework.test.context.junit4.SpringRunner
+import java.time.Instant
 
 
 @RunWith(SpringRunner::class)
@@ -32,38 +42,56 @@ class PipelineOrchestratorAppIntegrationTest {
    @MockBean
    private lateinit var runner: PipelineRunnerApi;
 
+   @Before
+   fun setup() {
+
+      val pipeline = Pipeline(
+         "test-pipeline",
+         PipelineChannel(
+            VersionedTypeReference("PersonLoggedOnEvent".fqn()),
+            KafkaTransportInputSpec(topic = "pipeline-input", targetType = VersionedTypeReference("PersonLoggedOnEvent".fqn()), props = mapOf("key1" to "value1")
+            )
+         ),
+         PipelineChannel(
+            VersionedTypeReference("UserEvent".fqn()),
+            CaskTransportOutputSpec(targetType = VersionedTypeReference("UserEvent".fqn()),  props = mapOf("key1" to "value1")
+            )
+         )
+      )
+      var pipelineReference = SimplePipelineInstance(pipeline, Instant.now())
+
+      given(runner.submitPipeline(any())).willReturn(pipelineReference);
+   }
+
    @Test
    fun testValidPipelineDescriptionIngestion() {
 
       var pipelineDescription = pipelineDescription("kafka", "cask")
-      given(runner.submitPipeline(any())).willReturn(pipelineDescription);
 
-      var response = postPipeline(pipelineDescription)
+      var response = postPipeline(pipelineDescription, PipelineInstanceReference::class.java)
 
       response.statusCode.should.equal(HttpStatus.OK)
-      response.body.should.equal(pipelineDescription)
-
+      response.body.spec.name.should.be.equal("test-pipeline")
+      response.body.spec.input.transport.type.should.be.equal("kafka")
+      response.body.spec.output.transport.type.should.be.equal("cask")
    }
 
    @Test
    fun testValidPipelineDescriptionIngestionUnknownType() {
 
       var pipelineDescription = pipelineDescription("XXX", "YYY")
-      given(runner.submitPipeline(any())).willReturn(pipelineDescription);
 
-      var response = postPipeline(pipelineDescription)
+      var response = postPipeline(pipelineDescription, PipelineInstanceReference::class.java)
 
       response.statusCode.should.equal(HttpStatus.OK)
-      response.body.should.equal(pipelineDescription)
-
+      response.body.spec.name.should.be.equal("test-pipeline")
    }
 
    @Test
    fun testInvalidPipelineDescriptionIngestion() {
 
-      given(runner.submitPipeline(any())).willReturn(INVALID_PIPELINE_DESCRIPTION);
 
-      var response = postPipeline(INVALID_PIPELINE_DESCRIPTION)
+      var response = postPipeline(INVALID_PIPELINE_DESCRIPTION, String::class.java)
 
       response.statusCode.should.equal(HttpStatus.BAD_REQUEST)
       response.body.should.be.not.`null`
@@ -72,7 +100,7 @@ class PipelineOrchestratorAppIntegrationTest {
    /**
     * Convenient method to post a pipeline through the TestRestTemplate
     */
-   private fun postPipeline(pipelineDescription: String) = restTemplate.postForEntity("/runner/pipelines", pipelineDescription, String::class.java)
+   private fun <T> postPipeline(pipelineDescription: String, clazz: Class<T>) = restTemplate.postForEntity("/runner/pipelines", pipelineDescription, clazz)
 
    private fun pipelineDescription(inputType: String, outputType: String) = VALID_PIPELINE_DESCRIPTION.format(inputType, outputType)
 
