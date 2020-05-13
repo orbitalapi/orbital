@@ -6,12 +6,14 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.pipelines.GenericPipelineTransportSpec
 import io.vyne.pipelines.PipelineDirection
 import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.PipelineTransportType
 import io.vyne.pipelines.runner.transport.cask.CaskTransportOutputSpec
 import io.vyne.pipelines.runner.transport.kafka.KafkaTransportInputSpec
 import io.vyne.pipelines.runner.transport.kafka.KafkaTransportOutputSpec
+import io.vyne.utils.orElse
 
 class PipelineJacksonModule(ids: List<PipelineTransportSpecId> = listOf(
    KafkaTransportInputSpec.specId,
@@ -32,11 +34,15 @@ class PipelineTransportSpecDeserializer(val ids: List<PipelineTransportSpecId>) 
       val type = map["type"] as? String ?: error("Property 'type' was expected")
       val direction = map["direction"] as? String ?: error("Property 'direction' was expected")
       val pipelineDirection = PipelineDirection.valueOf(direction)
-      val specId = ids.firstOrNull { it.type == type && it.direction == pipelineDirection }
-         ?: error("No spec type matches type $type and direction $direction")
 
-      val result = innerJackson.convertValue(map, specId.clazz)
-      return result
+    val clazz = ids
+       .filter{it.type == type}
+       .filter{it.direction == pipelineDirection}
+       .firstOrNull()
+       ?.clazz
+       .orElse(GenericPipelineTransportSpec::class.java)
+
+      return innerJackson.convertValue(map, clazz)
    }
 
 }
