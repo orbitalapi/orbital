@@ -19,7 +19,7 @@ class PipelineOrchestratorController(val pipelineDeserialiser: PipelineDeseriali
       log().info("Received submitted pipeline: \n$pipelineDefinition")
 
       try {
-         // Deserialise
+         // As for now, the output of deserialisation is not used. This is just to ensure we can actually deserialise the pipeline before sending it to any runner
          val pipeline = pipelineDeserialiser.deserialise(pipelineDefinition)
 
          // TODO : Here, we'd want some way of storing which pipelines are running where.
