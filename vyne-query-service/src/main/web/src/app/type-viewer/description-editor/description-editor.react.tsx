@@ -1,6 +1,6 @@
 import {ElementRef, Injector} from '@angular/core';
 import * as React from 'react';
-import RichMarkdownEditor from 'rich-markdown-editor';
+// import RichMarkdownEditor from 'rich-markdown-editor';
 import * as ReactDOM from 'react-dom';
 import {Observable, Subject} from 'rxjs';
 import light from './editor-theme';
@@ -30,12 +30,12 @@ export class ReactEditor extends React.Component<EditorState, any> {
   render() {
     return (
       <div className={'renderer'}>
-        <RichMarkdownEditor
+        {/*<RichMarkdownEditor
           theme={this.vyneEditorTheme}
           placeholder={this.props.placeholder}
           defaultValue={this.props.initialState}
           onChange={value => this.props.changes$.next(value)}
-        />
+        />*/}
       </div>
     );
   }
