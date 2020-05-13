@@ -129,7 +129,7 @@ class PipelineSerializationTest {
                   "type" : "kafka"
                 \}
               \},
-              "id" : "test-pipeline@[0-9]{10}"
+              "id" : "test-pipeline@[0-9]{5,10}"
             \}
       """.trimIndent()
 
