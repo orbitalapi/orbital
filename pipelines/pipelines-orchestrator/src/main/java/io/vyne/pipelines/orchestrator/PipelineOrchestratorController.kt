@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 class PipelineOrchestratorController(val pipelineDeserialiser: PipelineDeserialiser, val runner: PipelineRunnerApi) {
 
    @PostMapping("/runner/pipelines")
-   fun submitPipeline(@RequestBody pipelineDefinition: String): ResponseEntity<String> {
+   fun submitPipeline(@RequestBody pipelineDefinition: String): ResponseEntity<Any> {
       log().info("Received submitted pipeline: \n$pipelineDefinition")
 
       try {
@@ -28,8 +28,6 @@ class PipelineOrchestratorController(val pipelineDeserialiser: PipelineDeseriali
          // which makes recovering from restarts a bit easier.
 
          // Submit the pipeline to the runner
-         // We need to submit the full string and not the deserialized Pipeline object or we might lose information
-         // if the Input or the Output types are not known by the Orchestrator
          val runnerResponse = runner.submitPipeline(pipelineDefinition)
          return ok(runnerResponse)
       } catch (e: InvalidPipelineDescriptionException) {
