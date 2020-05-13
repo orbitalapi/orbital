@@ -30,7 +30,7 @@ class PipelineOrchestratorController(val pipelineDeserialiser: PipelineDeseriali
          // Submit the pipeline to the runner
          // We need to submit the full string and not the deserialized Pipeline object or we might lose information
          // if the Input or the Output types are not known by the Orchestrator
-         var runnerResponse = runner.submitPipeline(pipelineDefinition)
+         val runnerResponse = runner.submitPipeline(pipelineDefinition)
          return ok(runnerResponse)
       } catch (e: InvalidPipelineDescriptionException) {
          return badRequest().body(e.message)
