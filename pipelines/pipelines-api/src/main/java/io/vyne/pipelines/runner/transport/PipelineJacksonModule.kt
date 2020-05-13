@@ -34,8 +34,13 @@ class PipelineTransportSpecDeserializer(val ids: List<PipelineTransportSpecId>) 
       val type = map["type"] as? String ?: error("Property 'type' was expected")
       val direction = map["direction"] as? String ?: error("Property 'direction' was expected")
       val pipelineDirection = PipelineDirection.valueOf(direction)
-      val clazz = ids.firstOrNull() { it.type == type && it.direction == pipelineDirection }?.clazz ?: GenericPipelineTransportSpec::class.java
 
+    val clazz = ids
+       .filter{it.type == type}
+       .filter{it.direction == pipelineDirection}
+       .firstOrNull()
+       ?.clazz
+       .orElse(GenericPipelineTransportSpec::class.java)
 
       return innerJackson.convertValue(map, clazz)
    }
