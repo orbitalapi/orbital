@@ -8,7 +8,6 @@ import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineChannel
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
 import io.vyne.schemas.fqn
-import io.vyne.utils.log
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
@@ -18,14 +17,14 @@ import java.util.*
 
 class PipelineSerializationTest {
 
-   fun producerProps(): Map<String, Any> {
+   private fun producerProps(): Map<String, Any> {
       val props: MutableMap<String, Any> = HashMap<String, Any>()
       props[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = "127.0.0.1:9092"
       props[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
       return props
    }
 
-   protected fun consumerProps(groupId: String): Map<String, Any> {
+   private fun consumerProps(groupId: String): Map<String, Any> {
       val props: MutableMap<String, Any> = HashMap<String, Any>()
       props[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = "127.0.0.1:9092"
       props[ConsumerConfig.GROUP_ID_CONFIG] = groupId
@@ -41,7 +40,7 @@ class PipelineSerializationTest {
 
    @Test
    fun canDeserializePipeline() {
-      var pipelineJson = """
+      val pipelineJson = """
             {
               "name" : "test-pipeline",
               "input" : {
@@ -99,7 +98,7 @@ class PipelineSerializationTest {
 
       val json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(pipeline)
 
-      var pipelineJson = """
+      val pipelineJson = """
             \{
               "name" : "test-pipeline",
               "input" : \{
