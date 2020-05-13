@@ -106,6 +106,10 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
       return this.allSources.addIfNewer(source)
    }
 
+   /**
+    * Evaluates the set of offered sources, and returns a merged set
+    * containing the latest of all schemas (as determined using their semantic version)
+    */
    fun offerSources(sources: List<VersionedSource>): List<VersionedSource> {
       return sources.fold(this.allSources) { acc,source -> acc.addIfNewer(source)  }
    }

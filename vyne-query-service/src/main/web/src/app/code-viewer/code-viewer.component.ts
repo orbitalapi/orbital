@@ -39,6 +39,7 @@ export class CodeViewerComponent {
   sidebarMode: SidebarMode = 'Auto';
 
   selectedSource: VersionedSource;
+  selectedSourceErrors: SourceCompilationError[];
 
   @ViewChild(MonacoEditorComponent)
   editor: MonacoEditorComponent;
@@ -115,22 +116,10 @@ export class CodeViewerComponent {
     }
   }
 
-  private get selectedSourceErrors(): SourceCompilationError[] {
-    if (!this.selectedSource) {
-      return [];
-    }
-    if (CodeViewerComponent.isVersionedSource(this.selectedSource)) {
-      return [];
-    } else {
-      return (this.selectedSource as ParsedSource).errors;
-    }
-  }
-
-
   select(source: ParsedSource | VersionedSource) {
     this.selectedIndex = (this._sources as any[]).indexOf(source);
     this.selectedSource = CodeViewerComponent.versionedSource(source);
-
+    this.selectedSourceErrors = (source as ParsedSource).errors || [];
     // this.editorModel = {
     //   value: this.selectedSource.source.content,
     //   language: 'typescript',
