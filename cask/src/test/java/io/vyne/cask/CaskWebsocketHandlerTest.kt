@@ -42,6 +42,28 @@ class CaskWebsocketHandlerTest {
    private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester), applicationEventPublisher)
 
    @Test
+   fun closeWebsocketForUnknownContentType() {
+      val session = MockWebSocketSession("/cask/OrderWindowSummary?contentType=testContentType")
+      val wsHandler = CaskWebsocketHandler(caskService)
+
+      wsHandler.handle(session)
+
+      session.closed.should.be.`true`
+      session.closeStatus.should.equal(CloseStatus(1003, "Unknown contentType=testContentType"))
+   }
+
+   @Test
+   fun closeWebsocketForUnsupportedContentType() {
+      val session = MockWebSocketSession("/cask/OrderWindowSummary?contentType=application/xml")
+      val wsHandler = CaskWebsocketHandler(caskService)
+
+      wsHandler.handle(session)
+
+      session.closed.should.be.`true`
+      session.closeStatus.should.equal(CloseStatus(1003, "Unsupported contentType=application/xml"))
+   }
+
+   @Test
    fun closeWebsocketWhenTypeNotFound() {
       val session = MockWebSocketSession("/cask/OrderWindowSummary2")
       val wsHandler = CaskWebsocketHandler(caskService)
