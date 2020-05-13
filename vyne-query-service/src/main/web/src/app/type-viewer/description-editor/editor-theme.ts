@@ -1,7 +1,7 @@
 // This file is ripped straight from the source.
 // Importing it seemed to cause problems with references to color etc.
 // see https://raw.githubusercontent.com/outline/rich-markdown-editor/master/src/theme.js
-import { Theme } from 'rich-markdown-editor';
+// import { Theme } from 'rich-markdown-editor';
 
 const colors = {
   almostBlack: '#181A1B',
@@ -48,7 +48,7 @@ export const base = {
   codeImportant: '#c94922',
 };
 
-export const light: Theme = {
+export const light = {
   ...base,
   background: colors.white,
   text: colors.almostBlack,
@@ -74,7 +74,7 @@ export const light: Theme = {
   imageErrorBackground: colors.greyLight,
 };
 
-export const dark: Theme = {
+export const dark  = {
   ...base,
   background: colors.almostBlack,
   text: colors.almostWhite,
