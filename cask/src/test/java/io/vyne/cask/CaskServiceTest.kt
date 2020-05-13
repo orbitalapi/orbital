@@ -13,7 +13,9 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.SimpleSchema
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.http.MediaType
 import reactor.core.publisher.Flux
+import reactor.test.StepVerifier
 import java.io.File
 import java.io.InputStream
 
@@ -46,7 +48,13 @@ class CaskServiceTest {
    }
 
    @Test
-   fun testIngestRequest() {
+   fun testRequestedContentTypeSupported() {
+      val service = CaskService(schemaProvider, ingesterFactory, applicationEventPublisher)
+      service.resolveContentType(MediaType.APPLICATION_JSON_VALUE).isRight().should.`true`
+   }
+
+   @Test
+   fun successfulIngestionRequest() {
       val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummary")
       val versionedType = schemaProvider.schema().versionedType(versionedTypeReference)
       val service = CaskService(schemaProvider, ingesterFactory, applicationEventPublisher)
@@ -58,6 +66,20 @@ class CaskServiceTest {
       service.ingestRequest(versionedType, input)
 
       verify(ingester, times(1)).ingest()
+   }
+
+   @Test
+   fun contentTypeNotSupported() {
+      val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummary")
+      val versionedType = schemaProvider.schema().versionedType(versionedTypeReference)
+      val service = CaskService(schemaProvider, ingesterFactory, applicationEventPublisher)
+
+      val ingestRequest = service.ingestRequest(versionedType, Flux.empty(), MediaType.APPLICATION_XML)
+
+      verify(ingester, times(0)).ingest()
+      StepVerifier
+         .create(ingestRequest)
+         .verifyErrorMessage("Ingestion of contentType=application/xml not supported!")
    }
 
    fun schemaProvider(): SchemaProvider {

@@ -14,6 +14,7 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import java.io.File
@@ -26,6 +27,24 @@ class CaskService(val schemaProvider: SchemaProvider,
                   val objectMapper: ObjectMapper = jacksonObjectMapper()) {
 
    data class TypeError(val message: String)
+   data class MediaTypeError(val message: String)
+
+   val supportedContentTypes: List<MediaType> = listOf(MediaType.APPLICATION_JSON)
+
+   fun resolveContentType(contentTypeName: String): Either<MediaTypeError, MediaType> {
+      // https://www.iana.org/assignments/media-types/media-types.xhtml
+      return try {
+         val contentType = MediaType.parseMediaType(contentTypeName)
+         return if (supportedContentTypes.contains(contentType)) {
+            Either.right(contentType)
+         }
+         else {
+            Either.left(MediaTypeError("Unsupported contentType=${contentTypeName}"))
+         }
+      } catch (e: java.lang.Exception) {
+         Either.left(MediaTypeError("Unknown contentType=${contentTypeName}"))
+      }
+   }
 
    fun resolveType(typeReference: String): Either<TypeError, VersionedType> {
       val schema = schemaProvider.schema()
@@ -45,15 +64,25 @@ class CaskService(val schemaProvider: SchemaProvider,
       }
    }
 
-   fun ingestRequest(versionedType: VersionedType, input: Flux<InputStream>): Flux<InstanceAttributeSet> {
+   fun ingestRequest(versionedType: VersionedType,
+                     inputStream: Flux<InputStream>,
+                     contentType: MediaType = MediaType.APPLICATION_JSON): Flux<InstanceAttributeSet> {
       val schema = schemaProvider.schema()
       val cacheDirectory = File.createTempFile(versionedType.versionedName, "").toPath()
-      val streamSource = JsonStreamSource(
-         input,
-         versionedType,
-         schema,
-         cacheDirectory,
-         objectMapper)
+
+      val streamSource = when (contentType) {
+         MediaType.APPLICATION_JSON -> {
+            JsonStreamSource(
+               inputStream,
+               versionedType,
+               schema,
+               cacheDirectory,
+               objectMapper)
+         }
+         else -> {
+            return Flux.error(NotImplementedError("Ingestion of contentType=${contentType} not supported!"))
+         }
+      }
 
       val ingestionStream = IngestionStream(
          versionedType,
