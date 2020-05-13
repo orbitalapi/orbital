@@ -98,7 +98,6 @@ class PipelineSerializationTest {
       )
 
       val json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(pipeline)
-      log().info("PipelineJson: \n$json")
 
       var pipelineJson = """
             \{
