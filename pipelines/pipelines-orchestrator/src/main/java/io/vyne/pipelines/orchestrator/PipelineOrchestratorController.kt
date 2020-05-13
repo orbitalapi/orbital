@@ -1,6 +1,5 @@
 package io.vyne.pipelines.orchestrator
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.pipelines.orchestrator.pipelines.InvalidPipelineDescriptionException
 import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
@@ -13,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-class PipelineOrchestratorController(val pipelineDeserialiser: PipelineDeserialiser, val runner: PipelineRunnerApi, val objectMapper: ObjectMapper) {
+class PipelineOrchestratorController(val pipelineDeserialiser: PipelineDeserialiser, val runner: PipelineRunnerApi) {
 
    @PostMapping("/runner/pipelines")
    fun submitPipeline(@RequestBody pipelineDefinition: String): ResponseEntity<String> {
