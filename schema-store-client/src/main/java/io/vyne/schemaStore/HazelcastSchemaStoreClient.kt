@@ -12,7 +12,6 @@ import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
-import io.vyne.toSourceCompilationErrors
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import org.springframework.context.ApplicationEventPublisher

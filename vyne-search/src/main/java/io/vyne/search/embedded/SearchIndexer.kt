@@ -8,6 +8,7 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import lang.taxi.CompilationException
 import org.apache.commons.lang3.StringUtils
 import org.apache.lucene.document.Document
 import org.apache.lucene.document.TextField
@@ -27,6 +28,8 @@ class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaS
          // Lets trash the existing index, and retry
          log().warn("Exception thrown when updating index.  ( ${e.message} ) - will attempt to recover by deleting existing index, and rebuilding")
          indexer.deleteAndRebuildIndex(schemaStoreClient.schemaSet())
+      } catch (e:CompilationException) {
+         log().warn("Compilation exception found when trying to create search indexes on startup - we'll just wait. \n ${e.message}")
       }
 
    }

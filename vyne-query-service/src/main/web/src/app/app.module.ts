@@ -89,6 +89,7 @@ import {TypeAutocompleteModule} from './type-autocomplete/type-autocomplete.modu
 import {PipelinesModule} from './pipelines/pipelines.module';
 import {MonacoEditorModule} from '@materia-ui/ngx-monaco-editor';
 import {MarkdownModule} from 'ngx-markdown';
+import {ErrorListComponent} from './code-viewer/error-list.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -149,7 +150,8 @@ export const routerModule = RouterModule.forRoot(
     SearchBarComponent,
     SearchBarContainerComponent,
     ObjectViewComponent,
-    FileFactSelectorComponent
+    FileFactSelectorComponent,
+    ErrorListComponent
   ],
   imports: [
     routerModule,

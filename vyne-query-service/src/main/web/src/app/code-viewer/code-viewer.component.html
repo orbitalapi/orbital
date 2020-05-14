@@ -15,8 +15,11 @@
 <!--    </ng-template>-->
 <!--  </mat-tab>-->
 <!--</mat-tab-group>-->
-<ngx-monaco-editor [options]="editorOptions"
-                   class="code-editor"
-                   [ngModel]="sourceContent"
-                   #editor
-                   ></ngx-monaco-editor>
+<div class="code-viewer-container">
+  <ngx-monaco-editor [options]="editorOptions"
+                     class="code-editor"
+                     [ngModel]="sourceContent"
+                     #editor
+  ></ngx-monaco-editor>
+  <app-error-list *ngIf="selectedSourceErrors.length > 0" [errors]="selectedSourceErrors"></app-error-list>
+</div>
