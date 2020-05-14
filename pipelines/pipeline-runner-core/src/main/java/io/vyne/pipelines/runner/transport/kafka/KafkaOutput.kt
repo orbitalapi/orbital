@@ -3,10 +3,7 @@ package io.vyne.pipelines.runner.transport.kafka
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
-import io.vyne.pipelines.PipelineDirection
-import io.vyne.pipelines.PipelineLogger
-import io.vyne.pipelines.PipelineOutputTransport
-import io.vyne.pipelines.PipelineTransportSpec
+import io.vyne.pipelines.*
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -23,7 +20,7 @@ class KafkaOutputBuilder(val objectMapper: ObjectMapper) : PipelineOutputTranspo
    override fun build(spec: KafkaTransportOutputSpec) = KafkaOutput(spec, objectMapper)
 }
 
-class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val objectMapper: ObjectMapper) : PipelineOutputTransport {
+class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val objectMapper: ObjectMapper) : PipelineOutputTransport, AbstractPipelineTransportHealthMonitor() {
    override val type: VersionedTypeReference = spec.targetType
    private val defaultProps = mapOf(
       ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.qualifiedName!!,

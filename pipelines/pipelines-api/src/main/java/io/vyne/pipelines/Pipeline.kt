@@ -2,8 +2,10 @@ package io.vyne.pipelines
 
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
 import io.vyne.schemas.Schema
 import io.vyne.utils.log
+import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import java.time.Instant
 import kotlin.math.absoluteValue
@@ -54,8 +56,18 @@ typealias PipelineTransportType = String
  * Maker interface for the actual IO pipe where we'll connect
  * eg., kafka / files / etc
  */
-interface PipelineInputTransport {
+interface PipelineInputTransport: PipelineTransportHealthMonitor {
    val feed: Flux<PipelineInputMessage>
+
+   /**
+    * Pause the input events ingestion
+    */
+   fun pause() { }
+
+   /**
+    * Resume the input events ingestion
+    */
+   fun resume() { }
 }
 
 data class PipelineInputMessage(
@@ -70,9 +82,51 @@ data class PipelineInputMessage(
 }
 
 
-interface PipelineOutputTransport {
+interface PipelineOutputTransport : PipelineTransportHealthMonitor {
    val type: VersionedTypeReference
    fun write(typedInstance: TypedInstance, logger: PipelineLogger)
+
+}
+
+interface PipelineTransportHealthMonitor {
+
+   /**
+    * Flux reporting the state's changes of this Transport
+    */
+   fun health(): Flux<PipelineTransportStatus> = Flux.just(PipelineTransportStatus.UP)
+
+   /**
+    * Report a new status changes.
+    */
+   fun reportStatus(status: PipelineTransportStatus) { }
+
+   /**
+    * Transports' status
+    */
+   enum class PipelineTransportStatus {
+      UP,
+      DOWN
+   }
+}
+
+/**
+ * Default PipelineTransportHealthMonitor implementation, using an EmitterProcessor
+ */
+open class AbstractPipelineTransportHealthMonitor : PipelineTransportHealthMonitor{
+
+   private var processor: EmitterProcessor<PipelineTransportStatus> = EmitterProcessor.create()
+   private val sink = processor.sink()
+
+   /**
+    * Returns a flux of status emitted by the transport
+    */
+   override fun health(): Flux<PipelineTransportStatus> = processor
+
+   /**
+    * Report a new transport status
+    */
+   override fun reportStatus(status: PipelineTransportStatus)  { sink.next(status) }
+
 }
 
 

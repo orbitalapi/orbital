@@ -26,7 +26,7 @@ class PipelineBuilder(
 
    fun build(pipeline: Pipeline): PipelineInstance {
       val observer = observerProvider.pipelineObserver(pipeline, null).invoke("Preparing pipeline")
-      observer.info { "Building pipeline ${pipeline.name}" }
+      observer.info { "Building pipeline ${pipeline.name} [Input = ${pipeline.input.transport.type}, output = ${pipeline.output.transport.type}]" }
       val vyne = vyneFactory.createVyne()
       val schema = vyne.schema
       // Grab the types early, in case they're not present in Vyne
@@ -35,15 +35,14 @@ class PipelineBuilder(
       val input = observer.catchAndLog("Failed to create pipeline input") { transportFactory.buildInput(pipeline.input.transport) }
       val output = observer.catchAndLog("Failed to create pipeline output") { transportFactory.buildOutput(pipeline.output.transport) }
 
-      val disposable = input.feed
+      val flux = input.feed
          .flatMap { message -> ingest(message, pipeline, schema) }
          .flatMap { pipelineInput -> transform(pipelineInput, vyne, outputType) }
          .flatMap { pipelineInput -> publish(pipelineInput, output) }
-         .subscribe()
 
       return PipelineInstance(
          pipeline,
-         disposable,
+         flux,
          Instant.now(),
          input,
          output
