@@ -1,4 +1,4 @@
-package io.vyne.cask.ingest
+package io.vyne.cask.query
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.io.Resources
@@ -9,6 +9,8 @@ import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.Benchmark
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
+import io.vyne.cask.ingest.Ingester
+import io.vyne.cask.ingest.IngestionStream
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
 import org.apache.commons.io.FileUtils
@@ -23,8 +25,7 @@ import reactor.core.publisher.Flux
 import java.io.File
 import java.time.Duration
 
-
-class JsonIngesterIntegrationTest {
+class CaskDAOIntegrationTest {
 
    @Rule
    @JvmField
@@ -36,6 +37,7 @@ class JsonIngesterIntegrationTest {
 
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
+   lateinit var caskDao: CaskDAO
 
    @Before
    fun setup() {
@@ -45,6 +47,7 @@ class JsonIngesterIntegrationTest {
          .build()
       jdbcTemplate = JdbcTemplate(dataSource)
       jdbcTemplate.execute(TableMetadata.DROP_TABLE)
+      caskDao = CaskDAO(jdbcTemplate)
    }
 
    @After
@@ -53,12 +56,12 @@ class JsonIngesterIntegrationTest {
    }
 
    @Test
-   fun canStreamDataToPostgresOnStart() {
+   fun canQueryIngestedDataFromDatabase() {
       val taxiSchema = CoinbaseJsonOrderSchema.schemaV1
       val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())
       val resource = Resources.getResource("Coinbase_BTCUSD.json").toURI()
 
-      Benchmark.benchmark("ingest JSON to db") { stopwatch ->
+      Benchmark.benchmark("ingest JSON to db and query") { stopwatch ->
 
          val pipelineSource = JsonStreamSource(
             Flux.just(File(resource).inputStream()),
@@ -83,10 +86,10 @@ class JsonIngesterIntegrationTest {
             .block(Duration.ofMillis(500))
          stopwatch.stop()
 
-         val rowCount = ingester.getRowCount()
-         rowCount.should.equal(10061)
+         caskDao.findBy(versionedType, "symbol", "BTCUSD").size.should.equal(10061)
+         caskDao.findBy(versionedType, "open", "6300").size.should.equal(7)
+         caskDao.findBy(versionedType, "close", "6330").size.should.equal(9689)
          FileUtils.cleanDirectory(folder.root)
       }
    }
 }
-

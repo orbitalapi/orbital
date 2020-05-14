@@ -10,6 +10,7 @@
 }
 app-code-viewer {
   width: 100%;
+  height: 100%;
 }
 
 .component-container {
@@ -26,6 +27,7 @@ app-code-viewer {
 .page-content  {
   flex: 1;
   display: flex;
+  height: calc(100% - #{$toolbar-height});
 }
 
 .endpoint-list {
