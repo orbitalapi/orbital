@@ -1,18 +1,15 @@
 package io.vyne.pipelines.runner
 
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.spy
-import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.spy
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
-import io.vyne.pipelines.runner.transport.direct.DirectInput
-import io.vyne.pipelines.runner.transport.direct.DirectOutput
 import org.junit.Before
 import org.junit.Test
 import reactor.core.publisher.Flux
