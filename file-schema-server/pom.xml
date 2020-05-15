@@ -40,6 +40,22 @@
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
       </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-configuration-processor</artifactId>
+         <optional>true</optional>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jgit</groupId>
+         <artifactId>org.eclipse.jgit</artifactId>
+         <version>5.7.0.202003110725-r</version>
+      </dependency>
+      <dependency>
+         <groupId>com.nhaarman.mockitokotlin2</groupId>
+         <artifactId>mockito-kotlin</artifactId>
+         <version>2.2.0</version>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
    <build>
       <finalName>${project.artifactId}</finalName>

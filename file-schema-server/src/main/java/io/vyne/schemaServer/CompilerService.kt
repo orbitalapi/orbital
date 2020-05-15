@@ -8,14 +8,13 @@ import lang.taxi.packages.ProjectConfig
 import lang.taxi.packages.TaxiProjectLoader
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import java.lang.Exception
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import javax.annotation.PostConstruct
 
 @Component
-class CompilerService(@Value("\${taxi.project-home}") val projectHome: String,
+class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: String,
                       val schemaStoreClient: SchemaStoreClient) {
 
    private var counter = 0
@@ -25,7 +24,7 @@ class CompilerService(@Value("\${taxi.project-home}") val projectHome: String,
    fun recompile() {
       counter++
       log().info("Starting to recompile sources at $projectHome")
-      val projectHomePath: Path = Paths.get(projectHome)
+      val projectHomePath: Path = Paths.get(projectHome!!)
       val taxiConf = getProjectConfigFile(projectHomePath)
       val sourceRoot = getSourceRoot(projectHomePath, taxiConf)
       if (lastVersion == null) {

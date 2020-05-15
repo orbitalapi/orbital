@@ -19,7 +19,7 @@ class FileWatcherInitializer(val watcher: FileWatcher) {
 }
 
 @Component
-class FileWatcher(@Value("\${taxi.project-home}") val projectHome: String,
+class FileWatcher(@Value("\${taxi.schema-local-storage}") val schemaLocalStorage: String?,
                   val compilerService: CompilerService,
                   val excludedDirectoryNames: List<String> = FileWatcher.excludedDirectoryNames) {
 
@@ -33,9 +33,14 @@ class FileWatcher(@Value("\${taxi.project-home}") val projectHome: String,
 
    @Async
    fun watch() {
-      log().info("Starting to watch $projectHome")
+      if(schemaLocalStorage.isNullOrEmpty()) {
+         log().warn("schema-local-storage parameter in config file is empty, skipping.")
+         return
+      }
+
+      log().info("Starting to watch $schemaLocalStorage")
       val watchService = FileSystems.getDefault().newWatchService()
-      val path: Path = Paths.get(projectHome)
+      val path: Path = Paths.get(schemaLocalStorage!!)
       path.toFile().walkTopDown()
          .onEnter {
             val excluded = (it.isDirectory && excludedDirectoryNames.contains(it.name))
