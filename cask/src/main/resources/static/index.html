@@ -84,7 +84,11 @@
    function logMessage(responseEvent) {
       console.log("Message");
       console.log(responseEvent);
-      $("#caskResponse").append(responseEvent + "\n");
+      if (typeof responseEvent === 'object' && responseEvent !== null) {
+         document.getElementById("caskResponse").innerHTML = JSON.stringify(responseEvent) + '\n' + document.getElementById("caskResponse").innerHTML;
+      } else {
+         document.getElementById("caskResponse").innerHTML = responseEvent + '\n' + document.getElementById("caskResponse").innerHTML;
+      }
    }
 
    $(document).ready(function () {

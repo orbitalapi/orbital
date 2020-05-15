@@ -1,16 +1,21 @@
 package io.vyne.cask
 
+import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.ingest.Ingester
 import io.vyne.cask.ingest.IngesterFactory
+import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.websocket.MockDataBuffer
 import io.vyne.cask.websocket.MockWebSocketSession
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
+import org.junit.Before
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.web.reactive.socket.CloseStatus
@@ -18,13 +23,13 @@ import org.springframework.web.reactive.socket.WebSocketMessage
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import java.io.ByteArrayInputStream
-import java.lang.IllegalArgumentException
 import java.time.Duration
 
 
 class CaskWebsocketHandlerTest {
    val ingester: Ingester = mock()
    val applicationEventPublisher = mock<ApplicationEventPublisher>()
+   lateinit var wsHandler: CaskWebsocketHandler
 
    class IngesterFactoryMock(val ingester: Ingester) : IngesterFactory(mock()) {
       override fun create(ingestionStream: IngestionStream): Ingester {
@@ -39,12 +44,17 @@ class CaskWebsocketHandlerTest {
       }
    }
 
-   private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester), applicationEventPublisher)
+   private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester))
+
+   @Before()
+   fun setUp() {
+      wsHandler = CaskWebsocketHandler(caskService, applicationEventPublisher)
+   }
 
    @Test
    fun closeWebsocketForUnknownContentType() {
       val session = MockWebSocketSession("/cask/OrderWindowSummary?contentType=testContentType")
-      val wsHandler = CaskWebsocketHandler(caskService)
+      val wsHandler = CaskWebsocketHandler(caskService, applicationEventPublisher)
 
       wsHandler.handle(session)
 
@@ -55,7 +65,6 @@ class CaskWebsocketHandlerTest {
    @Test
    fun closeWebsocketForUnsupportedContentType() {
       val session = MockWebSocketSession("/cask/OrderWindowSummary?contentType=application/xml")
-      val wsHandler = CaskWebsocketHandler(caskService)
 
       wsHandler.handle(session)
 
@@ -66,7 +75,6 @@ class CaskWebsocketHandlerTest {
    @Test
    fun closeWebsocketWhenTypeNotFound() {
       val session = MockWebSocketSession("/cask/OrderWindowSummary2")
-      val wsHandler = CaskWebsocketHandler(caskService)
 
       wsHandler.handle(session)
 
@@ -78,7 +86,7 @@ class CaskWebsocketHandlerTest {
    fun successfulIngestionResponseWhenDebugEnabled() {
       val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage())))
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
-      val wsHandler = CaskWebsocketHandler(caskService)
+      val captor = argumentCaptor<IngestionInitialisedEvent>()
 
       wsHandler.handle(session).block()
 
@@ -86,13 +94,15 @@ class CaskWebsocketHandlerTest {
          .create(session.textOutput.take(Duration.ofMillis(200)))
          .expectNextCount(0)
          .verifyComplete()
+      verify(applicationEventPublisher, times(1)).publishEvent(captor.capture())
+      "OrderWindowSummary".should.be.equal(captor.firstValue.type.fullyQualifiedName)
    }
 
    @Test
    fun noIngestionResponseWhenDebugDisabled() {
       val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage())))
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary?debug=true", input = sessionInput)
-      val wsHandler = CaskWebsocketHandler(caskService)
+      val captor = argumentCaptor<IngestionInitialisedEvent>()
 
       wsHandler.handle(session).block()
 
@@ -100,13 +110,14 @@ class CaskWebsocketHandlerTest {
          .create(session.textOutput.take(1))
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
          .verifyComplete()
+      verify(applicationEventPublisher, times(1)).publishEvent(captor.capture())
+      "OrderWindowSummary".should.be.equal(captor.firstValue.type.fullyQualifiedName)
    }
 
    @Test
    fun unexpectedIngestionError() {
       val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage())))
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
-      val wsHandler = CaskWebsocketHandler(caskService)
       whenever(ingester.ingest()).thenThrow(RuntimeException("No database connection"))
 
       wsHandler.handle(session).block()
@@ -121,7 +132,6 @@ class CaskWebsocketHandlerTest {
    fun illegalArgumentExceptionError() {
       val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage())))
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
-      val wsHandler = CaskWebsocketHandler(caskService)
       whenever(ingester.ingest()).thenThrow(RuntimeException(null, IllegalArgumentException()))
 
       wsHandler.handle(session).block()
@@ -136,13 +146,11 @@ class CaskWebsocketHandlerTest {
    fun ingestionErrorCausedByInvalidType() {
       val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(invalidIngestionMessage())))
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
-      val wsHandler = CaskWebsocketHandler(caskService)
-
       wsHandler.handle(session).block()
 
       StepVerifier
          .create(session.textOutput.take(1))
-         .expectNext("""{"result":"REJECTED","message":"java.lang.IllegalArgumentException: Cannot deserialize value of type `java.math.BigDecimal` from String \"6300USD\": not a valid representation\n at [Source: UNKNOWN; line: -1, column: -1]"}""")
+         .expectNext("""{"result":"REJECTED","message":"Cannot deserialize value of type `java.math.BigDecimal` from String \"6300USD\": not a valid representation\n at [Source: UNKNOWN; line: -1, column: -1]"}""")
          .verifyComplete()
    }
 
@@ -153,14 +161,12 @@ class CaskWebsocketHandlerTest {
       val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage()))
       val sessionInput = Flux.just(malformedJson, invalidType, validMessage)
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary?debug=true", input = sessionInput)
-      val wsHandler = CaskWebsocketHandler(caskService)
-
       wsHandler.handle(session).block()
 
       StepVerifier
          .create(session.textOutput.take(3))
-         .expectNext("""{"result":"REJECTED","message":"Malformed JSON message"}""")
-         .expectNext("""{"result":"REJECTED","message":"java.lang.IllegalArgumentException: Cannot deserialize value of type `java.math.BigDecimal` from String \"6300USD\": not a valid representation\n at [Source: UNKNOWN; line: -1, column: -1]"}""")
+         .expectNext("""{"result":"REJECTED","message":"com.fasterxml.jackson.core.io.JsonEOFException: Unexpected end-of-input in VALUE_STRING\n at [Source: (ByteArrayInputStream); line: 1, column: 15]"}""")
+         .expectNext("""{"result":"REJECTED","message":"Cannot deserialize value of type `java.math.BigDecimal` from String \"6300USD\": not a valid representation\n at [Source: UNKNOWN; line: -1, column: -1]"}""")
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
          .verifyComplete()
    }
