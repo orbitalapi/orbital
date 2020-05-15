@@ -35,7 +35,7 @@ class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper): Abs
 
 }
 
-abstract class  AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, deserializerClass: String) : PipelineInputTransport, AbstractPipelineTransportHealthMonitor() {
+abstract class  AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, deserializerClass: String) : PipelineInputTransport, DefaultPipelineTransportHealthMonitor() {
 
    override val feed: Flux<PipelineInputMessage>
    private val receiver: KafkaReceiver<String, V>;
@@ -62,8 +62,7 @@ abstract class  AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectM
       receiver = KafkaReceiver.create(getReceiverOptions(spec))
       feed = receiver
          .receive()
-         .log("KAKFA")
-         .doOnError { reportStatus(DOWN) }
+            .doOnError { reportStatus(DOWN) }
          .flatMap { kafkaMessage ->
             val recordId = kafkaMessage.key()
             val offset = kafkaMessage.offset()

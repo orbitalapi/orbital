@@ -20,7 +20,7 @@ class KafkaOutputBuilder(val objectMapper: ObjectMapper) : PipelineOutputTranspo
    override fun build(spec: KafkaTransportOutputSpec) = KafkaOutput(spec, objectMapper)
 }
 
-class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val objectMapper: ObjectMapper) : PipelineOutputTransport, AbstractPipelineTransportHealthMonitor() {
+class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val objectMapper: ObjectMapper) : PipelineOutputTransport, DefaultPipelineTransportHealthMonitor() {
    override val type: VersionedTypeReference = spec.targetType
    private val defaultProps = mapOf(
       ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.qualifiedName!!,

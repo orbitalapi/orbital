@@ -30,7 +30,7 @@ class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: EurekaClient
 
 }
 
-class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: ObjectMapper, private val eurekaClient: EurekaClient, private val caskServiceName: String) : PipelineOutputTransport, AbstractPipelineTransportHealthMonitor() {
+class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: ObjectMapper, private val eurekaClient: EurekaClient, private val caskServiceName: String) : PipelineOutputTransport, DefaultPipelineTransportHealthMonitor() {
    override val type: VersionedTypeReference = spec.targetType
 
    private val wsClient = ReactorNettyWebSocketClient()
@@ -103,6 +103,7 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
    private fun Flux<WebSocketMessage>.handleCaskResponse(): Flux<CaskIngestionResponse> {
 
       // For now just log
+      // LENS-50 - cask will return the message in case of error
       return map { it.payloadAsText }
          .map { objectMapper.readValue(it, CaskIngestionResponse::class.java) }
          .doOnNext {

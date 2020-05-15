@@ -122,19 +122,13 @@ interface PipelineTransportHealthMonitor {
 /**
  * Default PipelineTransportHealthMonitor implementation, using an EmitterProcessor
  */
-open class AbstractPipelineTransportHealthMonitor : PipelineTransportHealthMonitor{
+open class DefaultPipelineTransportHealthMonitor : PipelineTransportHealthMonitor {
 
    private val processor: EmitterProcessor<PipelineTransportStatus> = EmitterProcessor.create()
    private val sink = processor.sink()
 
-   /**
-    * Returns a flux of status emitted by the transport
-    */
-   override fun health(): Flux<PipelineTransportStatus> = processor
 
-   /**
-    * Report a new transport status
-    */
+   override fun health(): Flux<PipelineTransportStatus> = processor
    override fun reportStatus(status: PipelineTransportStatus)  { sink.next(status) }
 
 }

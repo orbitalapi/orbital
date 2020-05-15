@@ -17,8 +17,8 @@ import reactor.core.publisher.Flux
 
 class PipelineInstanceTest {
 
-   class DummyInput(override val feed: Flux<PipelineInputMessage>) : PipelineInputTransport, AbstractPipelineTransportHealthMonitor()
-   class DummyOutput(override val type: VersionedTypeReference) : PipelineOutputTransport, AbstractPipelineTransportHealthMonitor() {
+   class DummyInput(override val feed: Flux<PipelineInputMessage>) : PipelineInputTransport, DefaultPipelineTransportHealthMonitor()
+   class DummyOutput(override val type: VersionedTypeReference) : PipelineOutputTransport, DefaultPipelineTransportHealthMonitor() {
       override fun write(typedInstance: TypedInstance, logger: PipelineLogger) { }
    }
 
