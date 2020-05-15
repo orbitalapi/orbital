@@ -41,7 +41,8 @@ class PipelineInstance(
    }
 
    private fun reportStatus(direction: PipelineDirection, status: PipelineTransportStatus) {
-      log().info("Pipeline transport direction $direction (${(if (direction == INPUT) input else output).javaClass.simpleName}) reported status $status") // FIXME if
+      val otherTransport = if(direction == INPUT) input else output
+      log().info("Pipeline transport direction $direction (${otherTransport.javaClass.simpleName}) reported status $status")
 
       // ENHANCE: this might not be the best place to perform this logic? Consider moving it to PipelineBuilder once we expose pipeline data to the outside world/Eureka
       // ENHANCE: this method might need to be thread safe?

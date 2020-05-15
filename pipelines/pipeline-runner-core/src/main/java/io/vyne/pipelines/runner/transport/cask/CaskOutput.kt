@@ -58,7 +58,8 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
          val endpoint = with(caskServer) { "ws://$hostName:$port/cask/${type.typeName.fullyQualifiedName}" }
          log().info("Found for $caskServiceName service server in Eureka [endpoint=$endpoint]")
          Mono.just(endpoint)
-      } catch (e: RuntimeException) { // FIXME check if more fine grained exception is possible
+      } catch (e: RuntimeException) {
+         // ENHANCE check if more fine grained exception is possible ?
          log().info("Could not find $caskServiceName server. Reason: ${e.message}")
          Mono.empty()
       }
