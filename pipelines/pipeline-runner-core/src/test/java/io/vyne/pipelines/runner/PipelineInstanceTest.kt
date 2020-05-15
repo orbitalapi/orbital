@@ -2,6 +2,7 @@ package io.vyne.pipelines.runner
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.spy
+import com.nhaarman.mockitokotlin2.whenever
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.times
@@ -29,6 +30,8 @@ class PipelineInstanceTest {
    @Before
    fun setup() {
       flux =  mock();
+      whenever(flux.subscribe()).thenReturn(mock())
+
       input = spy(DummyInput(mock()))
       output = spy(DummyOutput(mock()))
 
