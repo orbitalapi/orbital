@@ -124,7 +124,7 @@ interface PipelineTransportHealthMonitor {
  */
 open class AbstractPipelineTransportHealthMonitor : PipelineTransportHealthMonitor{
 
-   private var processor: EmitterProcessor<PipelineTransportStatus> = EmitterProcessor.create()
+   private val processor: EmitterProcessor<PipelineTransportStatus> = EmitterProcessor.create()
    private val sink = processor.sink()
 
    /**

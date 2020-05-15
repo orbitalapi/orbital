@@ -47,13 +47,13 @@ class PipelineInstance(
       // ENHANCE: this method might need to be thread safe?
 
       // Store the direction update <Old status, New status>
-      var directionUpdate = when (direction) {
+      val directionUpdate = when (direction) {
          INPUT -> state.first to status
          OUTPUT -> state.second to status
       }
 
       // Store the other direction status
-      var otherDirectionState = when (direction) {
+      val otherDirectionState = when (direction) {
          INPUT -> state.second
          OUTPUT -> state.first
       }
@@ -64,7 +64,7 @@ class PipelineInstance(
          INIT to UP -> {
             if (otherDirectionState == UP) {
                // If the other transport is UP, subscribe to the flux and get data in
-               flux.subscribe()
+               pipelineDisposable = flux.subscribe()
             }
          }
 

@@ -68,7 +68,7 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
     * Initiate a websocket connection to the Cask server
     */
    private fun connectTo(endpoint: String) {
-      var handshakeMono = wsClient.execute(URI(endpoint)) { session ->
+      val handshakeMono = wsClient.execute(URI(endpoint)) { session ->
          // At this point, this handshake is established!
          // ENHANCE: There might be a better place to hook on for this status
          reportStatus(UP)
