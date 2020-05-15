@@ -33,15 +33,15 @@ class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: EurekaClient
 class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: ObjectMapper, private val eurekaClient: EurekaClient, private val caskServiceName: String) : PipelineOutputTransport, AbstractPipelineTransportHealthMonitor() {
    override val type: VersionedTypeReference = spec.targetType
 
-   private val client = ReactorNettyWebSocketClient()
-   private val output = EmitterProcessor.create<String>()
+   private val wsClient = ReactorNettyWebSocketClient()
+   private val wsOutput = EmitterProcessor.create<String>()
 
    init {
-      findCaskEndpoint().subscribe { connectTo(it) }
+      tryToRestart()
    }
 
    private fun findCaskEndpoint(): Mono<String> {
-      // ENHANCE: we might not want to poll indefinitelyhere
+      // ENHANCE: we might not want to poll indefinitely here
       // add .take(X) to limit that, and create new status TERMINATED for this transport ?
       return Flux.interval(ofMillis(3000))
          .onBackpressureDrop()
@@ -53,63 +53,51 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
     * Poll Eureka for the next Cask server available
     */
    private fun pollCaskServiceServer(): Mono<String> {
-      try {
+      return try {
          val caskServer = eurekaClient.getNextServerFromEureka(caskServiceName, false)
-         var endpoint = with(caskServer) { "ws://$hostName:$port/cask/${type.typeName.fullyQualifiedName}" }
+         val endpoint = with(caskServer) { "ws://$hostName:$port/cask/${type.typeName.fullyQualifiedName}" }
          log().info("Found for $caskServiceName service server in Eureka [endpoint=$endpoint]")
-         return Mono.just(endpoint)
-      } catch (e: RuntimeException) {
-         // FIXME check if more fine grained exception is possible
+         Mono.just(endpoint)
+      } catch (e: RuntimeException) { // FIXME check if more fine grained exception is possible
          log().info("Could not find $caskServiceName server. Reason: ${e.message}")
-         return Mono.empty()
+         Mono.empty()
       }
    }
 
    /**
     * Initiate a websocket connection to the Cask server
     */
-   private fun connectTo(endpoint: String){
-      var handshakeMono = client.execute(URI(endpoint)) { session ->
+   private fun connectTo(endpoint: String) {
+      var handshakeMono = wsClient.execute(URI(endpoint)) { session ->
          // At this point, this handshake is established!
          // ENHANCE: There might be a better place to hook on for this status
          reportStatus(UP)
 
          // Configure the session: inbounds and outbounds messages
-         session.send(
-            output.map { session.textMessage(it) }
-         )
-         .and(
-            session.receive().handleCaskResponse().then()
-         )
-         .doOnError { handleWebsocketTermination(it) }
-         .doOnSuccess { handleWebsocketTermination(null) }
-         //.log("CASK")
-         .then()
+         session.send(wsOutput.map { session.textMessage(it) })
+            .and(
+               session.receive().handleCaskResponse().then()
+            )
+            .doOnError { handleWebsocketTermination(it) }
+            .doOnSuccess { handleWebsocketTermination(null) } // Is this ever called ?
+            .then()
       }
-      .log("HANDSHAKE")
-         .doOnSuccess { println("SUCCESS")}
-         .doOnError { handleWebsocketHandshakeError(it) }
-      output.doOnSubscribe { handshakeMono.subscribe() }
-         //.log("OUTPUT")
-         .subscribe()
-   }
+         .doOnError { handleWebsocketTermination(it) }
 
-   private fun handleWebsocketHandshakeError(throwable: Throwable) {
-      log().info("Websocket connection error: ${throwable?.message}")
-      tryToRestart()
+      // Subscribe to all
+      wsOutput.doOnSubscribe { handshakeMono.subscribe() }.subscribe()
    }
 
    private fun handleWebsocketTermination(throwable: Throwable?) {
-      log().info("Websocket terminated: ${throwable?.message}")
+      log().info("Websocket terminated: ${throwable?.message ?: "Unknown reason"}")
+      reportStatus(DOWN)
       tryToRestart()
    }
 
    private fun tryToRestart() {
-      log().info("Initiating reconnection to $caskServiceName service")
-      reportStatus(DOWN)
-      findCaskEndpoint().subscribe { connectTo(it) }
+      log().info("Initiating (re)connection to $caskServiceName service")
+      findCaskEndpoint().doOnSuccess { connectTo(it) }.subscribe()
    }
-
 
    private fun Flux<WebSocketMessage>.handleCaskResponse(): Flux<CaskIngestionResponse> {
 
@@ -124,8 +112,9 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
    override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
       val json = objectMapper.writeValueAsString(typedInstance.toRawObject())
       logger.info { "Sending instance ${typedInstance.type.fullyQualifiedName} to Cask" }
-      output.onNext(json);
+      wsOutput.onNext(json);
    }
+
 }
 
 

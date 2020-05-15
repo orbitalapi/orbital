@@ -42,6 +42,11 @@ abstract class  AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectM
 
    private lateinit var topicPartitions: Collection<TopicPartition>
 
+   private val defaultProps = mapOf(
+      ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.qualifiedName!!,
+      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to  deserializerClass
+   )
+
    /**
     * Convert the incoming Kafka message to String for ingestion.
     * Example: convert an Avro binary message to Json string
@@ -49,7 +54,9 @@ abstract class  AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectM
    abstract fun toStringMessage(message: V) : String
 
 
+
    init {
+      // ENHANCE: there might be a way to hook on some events from the flux below to know when we are actually connected to kafka
       reportStatus(UP)
 
       receiver = KafkaReceiver.create(getReceiverOptions(spec))
@@ -74,14 +81,19 @@ abstract class  AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectM
 
             val messageProvider = { schema: Schema, logger: PipelineLogger ->
                val targetType = schema.type(spec.targetType)
-               logger.debug { "Deserializing record $partition/$offset" }
+               logger.debug { "Deserializing record partition=$partition/ offset=$offset and maping to ${targetType.fullyQualifiedName}" }
+
+               // Step 1. Get the message
                val message = kafkaMessage.value()
 
-               logger.debug { "Converting Map to TypeInstance of ${targetType.fullyQualifiedName}" }
-
+               // Step 2. The actual Kafka message ingested can have different type (e.g plain json, avro, other binary formats...)
+               // Extract the json string from the message
                val map = toStringMessage(message)
+
+               // Step 3. Map the json to Vyne type
                TypedInstance.from(targetType, objectMapper.readTree(map), schema)
             }
+
             Mono.create<PipelineInputMessage> { sink ->
                sink.success(PipelineInputMessage(
                   Instant.now(), // TODO : Surely this is in the headers somewhere?
@@ -94,11 +106,6 @@ abstract class  AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectM
             }
          }
    }
-
-   private val defaultProps = mapOf(
-      ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.qualifiedName!!,
-      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to  deserializerClass
-   )
 
    fun getReceiverOptions(spec: KafkaTransportInputSpec): ReceiverOptions<String, V> {
       return ReceiverOptions.create<String, V>(spec.props + defaultProps)

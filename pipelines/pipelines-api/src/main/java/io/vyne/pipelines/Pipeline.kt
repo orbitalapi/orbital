@@ -104,8 +104,18 @@ interface PipelineTransportHealthMonitor {
     * Transports' status
     */
    enum class PipelineTransportStatus {
+
+      // Transport is initialising for the first time
+      INIT,
+
+      // Transport is up and ready to receive events
       UP,
-      DOWN
+
+      // Transport is down (for any reason) but can be recovered
+      DOWN,
+
+      // Transport is down and can't be recovered
+      TERMINATED
    }
 }
 

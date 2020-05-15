@@ -57,7 +57,7 @@ class PipelineBuilder(
 
       val logger = stageObserverProvider("Ingest")
       return loggedMono(logger) { sink ->
-         // Naieve first implementation.
+         // Naive first implementation.
          // Need to leverage the efficient reading we've built for vyne-db module
 
          // TODO : The idea here is that metadata may provide hints as to whether
