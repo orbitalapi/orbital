@@ -1,15 +1,18 @@
 package io.vyne.cask
 
 import arrow.core.Either
-import com.fasterxml.jackson.core.io.JsonEOFException
+import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.cask.api.CaskIngestionResponse
+import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.websocket.getParam
 import io.vyne.cask.websocket.queryParams
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import io.vyne.utils.orElse
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.CloseStatus
@@ -17,11 +20,15 @@ import org.springframework.web.reactive.socket.CloseStatus.NOT_ACCEPTABLE
 import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
+import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @Component
-class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMapper = jacksonObjectMapper()) : WebSocketHandler {
+class CaskWebsocketHandler(
+   val caskService: CaskService,
+   val applicationEventPublisher: ApplicationEventPublisher,
+   val mapper: ObjectMapper = jacksonObjectMapper()) : WebSocketHandler {
 
    override fun handle(session: WebSocketSession): Mono<Void> {
       log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri.path} query=${session.handshakeInfo.uri.query}")
@@ -63,6 +70,7 @@ class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMappe
                .then()
          }
          is Either.Right -> {
+            applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, versionedType.b))
             return ingestMessages(
                session,
                versionedType.b,
@@ -76,60 +84,67 @@ class CaskWebsocketHandler(val caskService: CaskService, val mapper: ObjectMappe
                               versionedType: VersionedType,
                               contentType: MediaType,
                               sendResponse: Boolean): Mono<Void> {
-      return session.receive()
-         .doOnNext { websocketMessage ->
-            ingestMessage(
-               session,
-               websocketMessage,
-               versionedType,
-               contentType,
-               sendResponse)
+      val output: EmitterProcessor<WebSocketMessage> = EmitterProcessor.create()
+      val outputSink = output.sink()
+
+      // i don't like this, it's pretty ugly
+      // partially because exceptions are thrown outside flux pipelines
+      // we have to refactor code behind ingestion to fix this problem
+      session.receive()
+         .map {
+            log().info("Ingesting message from sessionId=${session.id}")
+            try {
+               caskService
+                  .ingestRequest(versionedType, Flux.just(it.payload.asInputStream()), contentType)
+                  .count()
+                  .map { "Successfully ingested ${it} records" }
+                  .subscribe(
+                     { result ->
+                        if (sendResponse) {
+                           outputSink.next(successResponse(session, result))
+                        }
+                     },
+                     { error ->
+                        log().error("Error ingesting message from sessionId=${session.id} ", error)
+                        outputSink.next(errorResponse(session, extractError(error)))
+                     }
+                  )
+            } catch (error: Exception) {
+               log().error("Error ingesting message from sessionId=${session.id} ", error)
+               outputSink.next(errorResponse(session, extractError(error)))
+            }
          }
          .doOnComplete {
             log().info("Closing sessionId=${session.id}")
+            output.onComplete()
          }
          .doOnError { error ->
-            log().error("Error ingesting message from sessionId=${session.id}", error)
+            log().error("Error ingesting message from sessionId=${session.id} ", error)
          }
-         .then()
+         .subscribe()
+
+      return session.send(output)
    }
 
-   private fun ingestMessage(session: WebSocketSession,
-                             websocketMessage: WebSocketMessage,
-                             versionedType: VersionedType,
-                             contentType: MediaType,
-                             sendResponse: Boolean) {
-
-      log().info("Ingesting message from sessionId=${session.id}")
-      try {
-         val input = Flux.just(websocketMessage.payload.asInputStream())
-         val ingestionResult = caskService
-            .ingestRequest(versionedType, input, contentType)
-            .count()
-            .filter { sendResponse }
-            .map { "Successfully ingested ${it} records" }
-            .map { CaskIngestionResponse.success(it) }
-            .map(mapper::writeValueAsString)
-            .map(session::textMessage)
-         session.send(ingestionResult).subscribe()
-      } catch (e: Exception) {
-         log().error("Error ingesting message from sessionId=${session.id}", e)
-         when (e.cause) {
-            // This can leak some of the internal data structures/classes
-            is IllegalArgumentException -> respondWithError(session, e.message.orElse("An IllegalArgumentException was thrown, but no further details are available."))
-            is JsonEOFException -> respondWithError(session, "Malformed JSON message")
-            else -> respondWithError(session, "Unexpected ingestion error")
-         }
+   private fun extractError(error: Throwable): String {
+      return when (error.cause) {
+         // This can leak some of the internal data structures/classes
+         is InvalidFormatException -> error.message.orElse("An InvalidFormatException was thrown, but no further details are available.")
+         is IllegalArgumentException -> error.message.orElse("An IllegalArgumentException was thrown, but no further details are available.")
+         is JsonParseException -> error.message.orElse("Malformed JSON message")
+         else -> "Unexpected ingestion error"
       }
    }
 
-   private fun respondWithError(
-      session: WebSocketSession,
-      errorMessage: String) {
-      val errorResult = Flux.just(errorMessage)
-         .map { CaskIngestionResponse.rejected(it) }
-         .map(mapper::writeValueAsString)
-         .map(session::textMessage)
-      session.send(errorResult).subscribe()
+   private fun successResponse(session: WebSocketSession, message: String): WebSocketMessage {
+      val msg = CaskIngestionResponse.success(message)
+      val json = mapper.writeValueAsString(msg)
+      return session.textMessage(json)
+   }
+
+   private fun errorResponse(session: WebSocketSession, errorMessage: String): WebSocketMessage {
+      val msg = CaskIngestionResponse.rejected(errorMessage)
+      val json = mapper.writeValueAsString(msg)
+      return session.textMessage(json)
    }
 }

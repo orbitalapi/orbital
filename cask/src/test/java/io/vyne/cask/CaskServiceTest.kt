@@ -12,7 +12,6 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SimpleSchema
 import org.junit.Test
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.MediaType
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
@@ -23,11 +22,10 @@ class CaskServiceTest {
    val schemaProvider: SchemaProvider = schemaProvider()
    val ingesterFactory = mock<IngesterFactory>()
    val ingester = mock<Ingester>()
-   val applicationEventPublisher = mock<ApplicationEventPublisher>()
 
    @Test
    fun testRequestedTypeNotFound() {
-      val service = CaskService(schemaProvider, ingesterFactory, applicationEventPublisher)
+      val service = CaskService(schemaProvider, ingesterFactory)
       val expectedError = Either.left(CaskService.TypeError("Type reference 'WrongType' not found."))
       service.resolveType("WrongType").should.equal(expectedError)
    }
@@ -36,20 +34,20 @@ class CaskServiceTest {
    fun testEmptySchema() {
       val schemaProviderMock = mock<SchemaProvider>()
       whenever(schemaProviderMock.schema()).thenReturn(SimpleSchema(emptySet(), emptySet()))
-      val service = CaskService(schemaProviderMock, ingesterFactory, applicationEventPublisher)
+      val service = CaskService(schemaProviderMock, ingesterFactory)
       val expectedError = Either.left(CaskService.TypeError("Empty schema, no types defined."))
       service.resolveType("WrongType").should.equal(expectedError)
    }
 
    @Test
    fun testRequestedTypeValid() {
-      val service = CaskService(schemaProvider, ingesterFactory, applicationEventPublisher)
+      val service = CaskService(schemaProvider, ingesterFactory)
       service.resolveType("OrderWindowSummary").isRight().should.equal(true)
    }
 
    @Test
    fun testRequestedContentTypeSupported() {
-      val service = CaskService(schemaProvider, ingesterFactory, applicationEventPublisher)
+      val service = CaskService(schemaProvider, ingesterFactory)
       service.resolveContentType(MediaType.APPLICATION_JSON_VALUE).isRight().should.`true`
    }
 
@@ -57,7 +55,7 @@ class CaskServiceTest {
    fun successfulIngestionRequest() {
       val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummary")
       val versionedType = schemaProvider.schema().versionedType(versionedTypeReference)
-      val service = CaskService(schemaProvider, ingesterFactory, applicationEventPublisher)
+      val service = CaskService(schemaProvider, ingesterFactory)
       val resource = Resources.getResource("Coinbase_BTCUSD.json").toURI()
       val input: Flux<InputStream> = Flux.just(File(resource).inputStream())
       whenever(ingesterFactory.create(isA())).thenReturn(ingester)
@@ -72,7 +70,7 @@ class CaskServiceTest {
    fun contentTypeNotSupported() {
       val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummary")
       val versionedType = schemaProvider.schema().versionedType(versionedTypeReference)
-      val service = CaskService(schemaProvider, ingesterFactory, applicationEventPublisher)
+      val service = CaskService(schemaProvider, ingesterFactory)
 
       val ingestRequest = service.ingestRequest(versionedType, Flux.empty(), MediaType.APPLICATION_XML)
 

@@ -25,19 +25,16 @@ class JsonStreamSource(val input: Flux<InputStream>,
    override val stream: Flux<InstanceAttributeSet>
       get() {
          val mapper = JsonStreamMapper(vyneType.type, schema)
-         return Flux.create { emitter ->
-            input
-               .map { stream -> objectMapper.readTree(stream) }
-               .filter { record -> !record.isEmpty }
-               .map { record ->
-                  // when
-                  when (record) {
-                     is ArrayNode -> record.map { emitter.next(mapper.map(it)) }
-                     else -> emitter.next(mapper.map(record))
-                  }
+         return input
+            .map { stream -> objectMapper.readTree(stream) }
+            .filter { record -> !record.isEmpty }
+            .map { record ->
+               // when
+               when (record) {
+                  is ArrayNode -> record.map { mapper.map(it) }
+                  else ->
+                     listOf(mapper.map(record))
                }
-               .doOnComplete(emitter::complete)
-               .subscribe()
-         }
+            }.flatMapIterable { it }
       }
 }

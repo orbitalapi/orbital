@@ -7,22 +7,49 @@ import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
+import lang.taxi.types.PrimitiveType
 import org.springframework.stereotype.Component
+import java.lang.StringBuilder
 
 @Component
 class CaskServiceSchemaWriter(private val schemaStoreClient: SchemaStoreClient, private val schemaWriter: SchemaWriter = SchemaWriter()) {
    fun write(taxiDocument: TaxiDocument, versionedType: VersionedType, type: Type) {
-      val serviceSchema = schemaWriter.generateSchemas(listOf(taxiDocument)).first()
+      val serviceSchema = addRequiredImportsStatements(taxiDocument, schemaWriter.generateSchemas(listOf(taxiDocument)).first())
       log().info("injecting cask service schema for {} as {}", type.toQualifiedName(), serviceSchema)
       try {
          schemaStoreClient.submitSchema(
             caskServiceSchemaName(type, versionedType.versionedName),
             CaskServiceSchemaVersion,
             serviceSchema)
-      } catch(e: Exception) {
+      } catch (e: Exception) {
          log().error("Error in submitting schema", e)
       }
    }
+
+   // TODO This should be part of schemaWriter.
+   private fun addRequiredImportsStatements(taxiDocument: TaxiDocument, serviceSchema: String): String {
+      val builder = StringBuilder()
+      val importStatements = mutableSetOf<String>()
+      val serviceTypeNames = taxiDocument.types.map { type -> type.qualifiedName }
+      taxiDocument.services.forEach { service ->
+         service.operations.forEach { operation ->
+            val returnTypeName = operation.returnType.qualifiedName
+            if (!serviceTypeNames.contains(returnTypeName) && !PrimitiveType.isPrimitiveType(returnTypeName)) {
+               importStatements.add("import ${operation.returnType.qualifiedName}")
+            }
+            operation.parameters.forEach { parameter ->
+               val paramTypeName = parameter.type.qualifiedName
+               if (!serviceTypeNames.contains(paramTypeName) && !PrimitiveType.isPrimitiveType(paramTypeName)) {
+                  importStatements.add("import $paramTypeName")
+               }
+            }
+         }
+      }
+         importStatements.forEach { importStatement -> builder.appendln(importStatement) }
+         builder.appendln()
+          return builder.appendln(serviceSchema).toString()
+   }
+
    companion object {
       // The rationale for not putting the types version ask the version for the cask schema is that
       // the cask schema generation logic will evolve independently of the underlying type that it's generated from.
