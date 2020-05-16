@@ -6,6 +6,7 @@ import io.vyne.models.TypedObjectFactory
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Type
 import io.vyne.schemas.asVyneTypeReference
+import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.types.*
 
 class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
@@ -60,7 +61,7 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
             // as the compiler was getting confused and throwing
             // method not found exceptions.
             // Probably just a local issue, can refactor later
-            val typeReference = selectorExpression.declaredType.asVyneTypeReference()
+            val typeReference = selectorExpression.declaredType.toQualifiedName().toVyneQualifiedName()
             val instance = factory.readAccessor(typeReference, selectorExpression.accessor)
             instance
          }

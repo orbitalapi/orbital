@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {Field, SchemaMember, Type, TypeReference} from "../services/schema";
+import {Field, QualifiedName, SchemaMember, Type} from '../services/schema';
 
 @Component({
   selector: 'type-property-view',
@@ -22,11 +22,11 @@ export class PropertyViewComponent implements OnInit {
   }
 
   get attributeNames(): string[] {
-    if (!this.schemaMember) return [];
-    return this.schemaMember.attributeNames
+    if (!this.schemaMember) { return []; }
+    return this.schemaMember.attributeNames;
   }
 
-  displayedColumns: string[] = ["name1", "type"];
+  displayedColumns: string[] = ['name1', 'type'];
 
   // displayedColumns: string[] = ['position', 'name', 'weight', 'symbol'];
 
@@ -34,9 +34,9 @@ export class PropertyViewComponent implements OnInit {
     return <Type>this.schemaMember.member;
   }
 
-  attribute(name: string): TypeReference {
-    let field: Field = this.type.attributes[name];
-    return field.type
+  attribute(name: string): QualifiedName {
+    const field: Field = this.type.attributes[name];
+    return field.type;
   }
 
 }

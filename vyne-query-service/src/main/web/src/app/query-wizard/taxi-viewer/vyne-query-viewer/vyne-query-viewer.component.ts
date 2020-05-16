@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import * as _ from 'lodash';
 import {Fact, Query, QueryMode, ResultMode} from '../../../services/query.service';
 import {QualifiedName, Schema} from '../../../services/schema';
@@ -10,7 +10,7 @@ import {QualifiedName, Schema} from '../../../services/schema';
   templateUrl: './vyne-query-viewer.component.html',
   styleUrls: ['./vyne-query-viewer.component.scss'],
 })
-export class VyneQueryViewerComponent {
+export class VyneQueryViewerComponent implements OnInit {
 
   constructor() {
 
@@ -34,7 +34,7 @@ export class VyneQueryViewerComponent {
 
   @Input()
   set facts(value: Fact[]) {
-    console.log('Facts changed: ' + JSON.stringify(value));
+    // console.log('Facts changed: ' + JSON.stringify(value));
     this._facts = value.concat();
 
   }
@@ -79,7 +79,9 @@ export class VyneQueryViewerComponent {
     }
 
     let selectedLang;
-    if (this.activeSnippet) { selectedLang = this.activeSnippet.displayLang; }
+    if (this.activeSnippet) {
+      selectedLang = this.activeSnippet.displayLang;
+    }
 
 
     this.snippets = this.generators.map(generator => generator.generate(this._schema, this._facts, this._targetTypes, this._queryMode));
@@ -125,7 +127,7 @@ interface Generator {
 
 class JsonGenerator implements Generator {
   generate(schema: Schema, facts: Fact[], targetType: string[], queryMode: QueryMode): Snippet {
-    const query = new Query(targetType, facts,  queryMode,  ResultMode.VERBOSE);
+    const query = new Query(targetType, facts, queryMode, ResultMode.VERBOSE);
     return new Snippet('json', 'json', JSON.stringify(query, null, 3));
   }
 
@@ -137,7 +139,7 @@ class GoogleDocsGenerator implements Generator {
     let formula: string;
     if (targetTypes.length > 1) {
       formula = 'Multiple query targets not supported in Google Sheets';
-    } else if (facts.length == 0) {
+    } else if (facts.length === 0) {
       formula = `=discover("${targetType}")`;
     } else if (facts.length === 1) {
       const fact = facts[0];
@@ -199,11 +201,11 @@ class KotlinGenerator extends ObjectScalarGenerator implements Generator {
   generate(schema: Schema, facts: Fact[], targetType: string[], queryMode: QueryMode): Snippet {
     const factsCode = this.getFacts(schema, facts);
 
-    const method = (queryMode == QueryMode.DISCOVER) ? 'discover' : 'gather';
+    const method = (queryMode === QueryMode.DISCOVER) ? 'discover' : 'gather';
     let discoveryCode: string;
 
 
-    if (targetType.length == 1) {
+    if (targetType.length === 1) {
       discoveryCode = this.getSingleDiscoveryCode(targetType[0], method);
     } else {
       discoveryCode = this.getMultiDiscoveryCode(targetType, method);

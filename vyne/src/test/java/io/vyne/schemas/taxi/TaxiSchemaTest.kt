@@ -1,12 +1,15 @@
 package io.vyne.schemas.taxi
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
+import io.vyne.schemas.TypeFullView
 import junit.framework.Assert.fail
 import org.junit.Test
+import org.skyscreamer.jsonassert.JSONAssert
 
 class TaxiSchemaTest {
 
@@ -50,7 +53,7 @@ type Video {}
 
       // Jumble the order of imported sources
       val schema = TaxiSchema.from(listOf(srcC, srcA, srcB, srcD).map { VersionedSource.sourceOnly(it) })
-      schema.type("baz.Library").attribute("inventory").type.fullyQualifiedName.should.equal("bar.Book")
+      schema.type("baz.Library").attribute("inventory").type.parameterizedName.should.equal("lang.taxi.Array<bar.Book>")
 
       val missingTypes = listOf("baz.PhoneNumber", "baz.Library", "bar.PageNumber", "bar.Book", "foo.Age", "foo.Person", "bak.Video").mapNotNull {
          if (!schema.hasType(it)) {
@@ -154,7 +157,7 @@ type alias PersonCollection as Person[]
       val schema = TaxiSchema.from(src)
       val type = schema.type("PersonCollection")
       type.isTypeAlias.should.be.`true`
-      type.aliasForType!!.parameterizedName.should.equal("lang.taxi.Array<Person>")
+      type.aliasForTypeName!!.parameterizedName.should.equal("lang.taxi.Array<Person>")
       type.isCollection.should.be.`true`
    }
 
@@ -171,4 +174,162 @@ type Sample {
       field.type.fullyQualifiedName.should.equal("Something_S0")
    }
 
+   @Test
+   fun parsesArrayTypes() {
+      val src = """
+         type alias Email as String
+         type Person {
+            emails : Email[]
+         }
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      schema.type("Person").attribute("emails").type.parameterizedName.should.equal("lang.taxi.Array<Email>")
+   }
+
+   @Test
+   fun typeAliasTypesAreSetCorrectly() {
+      val src = """
+         type alias Name as String
+         type FirstName inherits Name
+         type alias GivenName as FirstName
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      schema.type("Name").aliasForType!!.name.fullyQualifiedName.should.equal("lang.taxi.String")
+      schema.type("GivenName").aliasForType!!.name.fullyQualifiedName.should.equal("FirstName")
+   }
+
+   @Test
+   fun inheritenceIsPopulatedCorrectly() {
+      val src = """
+         type alias Name as String
+         type FirstName inherits Name
+         type alias GivenName as FirstName
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      val type = schema.type("FirstName")
+      type.inherits.should.have.size(1)
+      type.inherits.map { it.name.fullyQualifiedName }.should.contain("Name")
+      schema.type("FirstName").inherits.should.have.size(1)
+      schema.type("FirstName").inheritanceGraph.should.have.size(1)
+      schema.type("GivenName").inheritanceGraph.map { it.name.fullyQualifiedName }.should.contain("Name")
+   }
+
+   @Test
+   fun canSerializeTypeToJson() {
+      val src = """
+   type Customer {
+      email : CustomerEmailAddress as String
+      id : CustomerId as String
+      name : CustomerName as String
+      postcode : Postcode as String
+   }
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      val type = schema.type("Customer")
+      val json = jacksonObjectMapper()
+         .writerWithDefaultPrettyPrinter()
+         .withView(TypeFullView::class.java)
+         .writeValueAsString(type)
+
+      JSONAssert.assertEquals(expectedJson,json,true)
+   }
+
+   private val expectedJson = """
+{
+  "name" : {
+    "fullyQualifiedName" : "Customer",
+    "parameters" : [ ],
+    "name" : "Customer",
+    "parameterizedName" : "Customer",
+    "namespace" : ""
+  },
+  "attributes" : {
+    "email" : {
+      "type" : {
+        "fullyQualifiedName" : "CustomerEmailAddress",
+        "parameters" : [ ],
+        "name" : "CustomerEmailAddress",
+        "parameterizedName" : "CustomerEmailAddress",
+        "namespace" : ""
+      },
+      "modifiers" : [ ],
+      "accessor" : null,
+      "readCondition" : null,
+      "typeDoc" : null,
+      "constraints" : [ ]
+    },
+    "id" : {
+      "type" : {
+        "fullyQualifiedName" : "CustomerId",
+        "parameters" : [ ],
+        "name" : "CustomerId",
+        "parameterizedName" : "CustomerId",
+        "namespace" : ""
+      },
+      "modifiers" : [ ],
+      "accessor" : null,
+      "readCondition" : null,
+      "typeDoc" : null,
+      "constraints" : [ ]
+    },
+    "name" : {
+      "type" : {
+        "fullyQualifiedName" : "CustomerName",
+        "parameters" : [ ],
+        "name" : "CustomerName",
+        "parameterizedName" : "CustomerName",
+        "namespace" : ""
+      },
+      "modifiers" : [ ],
+      "accessor" : null,
+      "readCondition" : null,
+      "typeDoc" : null,
+      "constraints" : [ ]
+    },
+    "postcode" : {
+      "type" : {
+        "fullyQualifiedName" : "Postcode",
+        "parameters" : [ ],
+        "name" : "Postcode",
+        "parameterizedName" : "Postcode",
+        "namespace" : ""
+      },
+      "modifiers" : [ ],
+      "accessor" : null,
+      "readCondition" : null,
+      "typeDoc" : null,
+      "constraints" : [ ]
+    }
+  },
+  "modifiers" : [ ],
+  "metadata" : [ ],
+  "aliasForType" : null,
+  "inheritsFrom" : [ ],
+  "enumValues" : [ ],
+  "sources" : [ {
+    "name" : "<unknown>",
+    "version" : "0.0.0",
+    "content" : "type Customer {\n   email : CustomerEmailAddress as String\n   id : CustomerId as String\n   name : CustomerName as String\n   postcode : Postcode as String\n}",
+    "id" : "<unknown>:0.0.0"
+  } ],
+  "typeParametersTypeNames" : [ ],
+  "typeDoc" : "",
+  "isTypeAlias" : false,
+  "isParameterType" : false,
+  "isClosed" : false,
+  "isPrimitive" : false,
+  "fullyQualifiedName" : "Customer",
+  "memberQualifiedName" : {
+    "fullyQualifiedName" : "Customer",
+    "parameters" : [ ],
+    "name" : "Customer",
+    "parameterizedName" : "Customer",
+    "namespace" : ""
+  },
+  "isCollection" : false,
+  "isScalar" : false
 }
+   """.trimIndent()
+}
+
+

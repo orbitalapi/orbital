@@ -2,6 +2,8 @@ package io.vyne
 
 import io.vyne.models.TypedInstance
 import io.vyne.query.ProfilerOperation
+import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
+import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
@@ -13,6 +15,11 @@ typealias StubResponseHandler = (Operation, List<Pair<Parameter, TypedInstance>>
 class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapOf(), val handlers: MutableMap<String, StubResponseHandler> = mutableMapOf()) : OperationInvoker {
    constructor(vararg responses: Pair<String, TypedInstance>) : this(responses.toMap().toMutableMap())
 
+   fun toOperationInvocationService():OperationInvocationService {
+      return DefaultOperationInvocationService(
+         listOf(this)
+      )
+   }
    val invocations = mutableMapOf<String, List<TypedInstance>>()
 
    override fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profiler: ProfilerOperation): TypedInstance {

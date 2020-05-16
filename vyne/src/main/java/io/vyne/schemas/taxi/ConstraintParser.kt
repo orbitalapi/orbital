@@ -2,10 +2,8 @@ package io.vyne.schemas.taxi
 
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.*
-import lang.taxi.services.AttributeConstantValueConstraint
-import lang.taxi.services.AttributeValueFromParameterConstraint
-import lang.taxi.services.ReturnValueDerivedFromParameterConstraint
-
+import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
+import lang.taxi.services.operations.constraints.ReturnValueDerivedFromParameterConstraint
 
 
 class FunctionConstraintProvider(val function: () -> List<InputConstraint>) : DeferredConstraintProvider {
@@ -14,8 +12,9 @@ class FunctionConstraintProvider(val function: () -> List<InputConstraint>) : De
 
 class TaxiConstraintConverter(val schema: Schema) {
    private val constraintProviders = listOf(
-      AttributeConstantConstraintProvider(),
-      AttributeValueFromParameterConstraintProvider(),
+//      AttributeConstantConstraintProvider(),
+//      AttributeValueFromParameterConstraintProvider(),
+      PropertyToParameterConstraintProvider(),
       ReturnValueDerivedFromParameterConstraintProvider()
    )
 
@@ -65,46 +64,17 @@ class TaxiConstraintConverter(val schema: Schema) {
    }
 }
 
-
-class AttributeConstantConstraintProvider : InputConstraintProvider {
+class PropertyToParameterConstraintProvider : ContractConstraintProvider {
    override fun applies(constraint: TaxiConstraint): Boolean {
-      return constraint is AttributeConstantValueConstraint
-   }
-
-   override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): InputConstraint {
-      val taxiConstraint = constraint as AttributeConstantValueConstraint
-      val expectedValue = buildExpectedValueInstance(constrainedType, constraint, schema)
-
-      return io.vyne.schemas.AttributeConstantValueConstraint(
-         taxiConstraint.fieldName,
-         expectedValue
-      )
-   }
-
-   private fun buildExpectedValueInstance(constrainedType: Type, constraint: AttributeConstantValueConstraint, schema: Schema): TypedInstance {
-      val constrainedAttribute =
-         // Note: This is techncially not possible at the moment. (it;s never null)
-         // But, support for constraints on primitives is coming, so leaving this here for now,
-         // since I wrote it anyway
-         if (constraint.fieldName != null) {
-            val field = constrainedType.attributes.getValue(constraint.fieldName)
-            schema.type(field.type.name)
-         } else {
-            constrainedType
-         }
-      return TypedInstance.from(constrainedAttribute, constraint.expectedValue, schema)
-   }
-}
-
-class AttributeValueFromParameterConstraintProvider : ContractConstraintProvider {
-   override fun applies(constraint: TaxiConstraint): Boolean {
-      return constraint is AttributeValueFromParameterConstraint
+      return constraint is PropertyToParameterConstraint
    }
 
    override fun build(constrainedType: Type, constraint: TaxiConstraint, schema: Schema): OutputConstraint {
-      val taxiConstraint = constraint as AttributeValueFromParameterConstraint
-      return io.vyne.schemas.AttributeValueFromParameterConstraint(
-         taxiConstraint.fieldName, taxiConstraint.attributePath
+      val taxiConstraint = constraint as PropertyToParameterConstraint
+      return io.vyne.schemas.PropertyToParameterConstraint(
+         taxiConstraint.propertyIdentifier,
+         taxiConstraint.operator,
+         taxiConstraint.expectedValue
       )
    }
 }
