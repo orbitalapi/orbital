@@ -15,6 +15,7 @@ type OrderWindowSummary {
     open : Price by xpath("/Open")
     // Note, this is intentionally wrong, so we can redefine it in v2
     close : Price by xpath("/High")
+    orderDate: Date by xpath("/Date")
 }""".trimIndent()
 
    private val sourceV2 = """

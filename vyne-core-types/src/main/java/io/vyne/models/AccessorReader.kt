@@ -64,7 +64,7 @@ class AccessorReader {
       return when (value) {
          is String -> xmlParser.parse(value, targetType, accessor, schema)
          is ObjectNode -> jsonParser.parseToType(targetType, accessor, value, schema)
-         else -> TODO()
+         else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
    }
 

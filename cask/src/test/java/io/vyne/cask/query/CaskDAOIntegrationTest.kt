@@ -89,6 +89,7 @@ class CaskDAOIntegrationTest {
          caskDao.findBy(versionedType, "symbol", "BTCUSD").size.should.equal(10061)
          caskDao.findBy(versionedType, "open", "6300").size.should.equal(7)
          caskDao.findBy(versionedType, "close", "6330").size.should.equal(9689)
+         caskDao.findBy(versionedType, "orderDate", "2020-03-19").size.should.equal(10061)
          FileUtils.cleanDirectory(folder.root)
       }
    }
