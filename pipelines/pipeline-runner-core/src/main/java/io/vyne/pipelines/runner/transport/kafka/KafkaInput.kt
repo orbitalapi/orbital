@@ -129,7 +129,7 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
    }
 
    fun isPaused(): Boolean {
-      var paused = receiver.doOnConsumer { it.paused() }.blockOptional()
+      val paused = receiver.doOnConsumer { it.paused() }.blockOptional()
       return paused.isPresent.orElse(false)
    }
 }

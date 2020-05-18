@@ -16,11 +16,11 @@ class KafkaInputTest : AbstractKafkaTest() {
    @Test
    fun canReceiveFromKafkaInput() {
       // Pipeline Kafka -> Direct
-      var pipeline = buildPipeline(
+      val pipeline = buildPipeline(
          inputTransportSpec = kafkaInputSpec(),
          outputTransportSpec = directOutputSpec()
       )
-      var pipelineInstance = buildPipelineBuilder().build(pipeline)
+      val pipelineInstance = buildPipelineBuilder().build(pipeline)
       pipelineInstance.output.reportStatus(UP)
 
       // Send for messages into kafka
@@ -34,7 +34,7 @@ class KafkaInputTest : AbstractKafkaTest() {
       await().until { output.messages.should.have.size(4) }
 
       // Check the values in the output
-      var outputMessages = output.messages.map { it as TypedObject }.map { it["id"].value as String }
+      val outputMessages = output.messages.map { it as TypedObject }.map { it["id"].value as String }
       outputMessages.should.have.all.elements("Marty", "Paul", "Andrzej", "Markus")
    }
 
@@ -42,11 +42,11 @@ class KafkaInputTest : AbstractKafkaTest() {
    fun canReceiveKafkaInputPaused() {
 
       // Pipeline Kafka -> Direct
-      var pipeline = buildPipeline(
+      val pipeline = buildPipeline(
          inputTransportSpec = kafkaInputSpec(),
          outputTransportSpec = directOutputSpec()
       )
-      var pipelineInstance = buildPipelineBuilder().build(pipeline)
+      val pipelineInstance = buildPipelineBuilder().build(pipeline)
 
       val input = pipelineInstance.input as KafkaInput
       val output = pipelineInstance.output as DirectOutput
@@ -75,7 +75,7 @@ class KafkaInputTest : AbstractKafkaTest() {
       await().until { output.messages.should.have.size(5) }
 
       // We should now ingest the 3 new messages. Total of 5
-      var outputMessages = output.messages.map { it as TypedObject }.map { it["id"].value as String }
+      val outputMessages = output.messages.map { it as TypedObject }.map { it["id"].value as String }
       outputMessages.should.have.all.elements("Marty", "Paul", "Andrzej", "Markus", "Eric")
    }
 

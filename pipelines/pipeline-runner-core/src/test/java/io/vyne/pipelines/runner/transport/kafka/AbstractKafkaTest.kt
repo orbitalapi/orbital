@@ -30,7 +30,7 @@ open class AbstractKafkaTest {
 
    @JvmField
    @Rule
-   var testName = TestName()
+   val testName = TestName()
    protected lateinit var topicName: String
 
    @Autowired
@@ -44,8 +44,8 @@ open class AbstractKafkaTest {
 
    fun <T> sendKafkaMessage(message: T) {
       val record = ProducerRecord<String, T>(topicName, message)
-      var producerProps = KafkaTestUtils.producerProps(embeddedKafkaBroker)
-      var producer = KafkaProducer<String, T>(producerProps)
+      val producerProps = KafkaTestUtils.producerProps(embeddedKafkaBroker)
+      val producer = KafkaProducer<String, T>(producerProps)
       producer.send(record)
    }
 
