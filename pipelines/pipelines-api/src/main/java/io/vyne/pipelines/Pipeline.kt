@@ -57,6 +57,10 @@ typealias PipelineTransportType = String
  * eg., kafka / files / etc
  */
 interface PipelineInputTransport: PipelineTransportHealthMonitor {
+
+   /**
+    * Input feed of messages
+    */
    val feed: Flux<PipelineInputMessage>
 
    /**
@@ -126,7 +130,6 @@ open class DefaultPipelineTransportHealthMonitor : PipelineTransportHealthMonito
 
    private val processor: EmitterProcessor<PipelineTransportStatus> = EmitterProcessor.create()
    private val sink = processor.sink()
-
 
    override fun health(): Flux<PipelineTransportStatus> = processor
    override fun reportStatus(status: PipelineTransportStatus)  { sink.next(status) }

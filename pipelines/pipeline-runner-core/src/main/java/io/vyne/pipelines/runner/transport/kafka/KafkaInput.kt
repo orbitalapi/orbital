@@ -1,6 +1,7 @@
 package io.vyne.pipelines.runner.transport.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
@@ -8,6 +9,7 @@ import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.
 import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
 import io.vyne.schemas.Schema
 import io.vyne.utils.log
+import io.vyne.utils.orElse
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -21,7 +23,7 @@ import java.time.Duration
 import java.time.Instant
 
 @Component
-class KafkaInputBuilder(val objectMapper: ObjectMapper) : PipelineInputTransportBuilder<KafkaTransportInputSpec> {
+class KafkaInputBuilder(val objectMapper: ObjectMapper = jacksonObjectMapper()) : PipelineInputTransportBuilder<KafkaTransportInputSpec> {
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.INPUT
 
@@ -29,40 +31,40 @@ class KafkaInputBuilder(val objectMapper: ObjectMapper) : PipelineInputTransport
 
 }
 
-class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper): AbstractKafkaInput<String>(spec, objectMapper, StringDeserializer::class.qualifiedName!!) {
+class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper) : AbstractKafkaInput<String>(spec, objectMapper, StringDeserializer::class.qualifiedName!!) {
 
    override fun toStringMessage(message: String): String = message
 
 }
 
-abstract class  AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, deserializerClass: String) : PipelineInputTransport, DefaultPipelineTransportHealthMonitor() {
+abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, deserializerClass: String) : PipelineInputTransport, DefaultPipelineTransportHealthMonitor() {
 
    override val feed: Flux<PipelineInputMessage>
    private val receiver: KafkaReceiver<String, V>;
 
-   private lateinit var topicPartitions: Collection<TopicPartition>
+   private var topicPartitions: Collection<TopicPartition>? = null
 
    private val defaultProps = mapOf(
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.qualifiedName!!,
-      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to  deserializerClass
+      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to deserializerClass
    )
 
    /**
     * Convert the incoming Kafka message to String for ingestion.
     * Example: convert an Avro binary message to Json string
     */
-   abstract fun toStringMessage(message: V) : String
-
-
+   abstract fun toStringMessage(message: V): String
 
    init {
       // ENHANCE: there might be a way to hook on some events from the flux below to know when we are actually connected to kafka
       reportStatus(UP)
 
-      receiver = KafkaReceiver.create(getReceiverOptions(spec))
+      var options = getReceiverOptions(spec)
+      receiver = KafkaReceiver.create(options)
       feed = receiver
          .receive()
-            .doOnError { reportStatus(DOWN) }
+         .doOnSubscribe { println("SUBSCRIBE") }
+         .doOnError { reportStatus(DOWN) }
          .flatMap { kafkaMessage ->
             val recordId = kafkaMessage.key()
             val offset = kafkaMessage.offset()
@@ -112,13 +114,22 @@ abstract class  AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectM
          .commitInterval(Duration.ZERO) // Don't delay commits .. can explore this later
          .subscription(listOf(spec.topic))
          .addAssignListener { partitions ->
-            log().debug("onPartitionsAssigned: $partitions")
+            log().debug("Partitions assigned to KafkaInput: $partitions")
             topicPartitions = partitions.map { it.topicPartition() }
          }
-         .addRevokeListener { partitions -> log().debug("onPartitionsRevoked: $partitions") }
+         .addRevokeListener { partitions -> log().debug("Partitions revoked to KafkaInput: $partitions") }
    }
 
-   override fun pause() { receiver.doOnConsumer { it.pause(topicPartitions) }.subscribe() }
-   override fun resume() { receiver.doOnConsumer { it.resume(topicPartitions) }.subscribe() }
+   override fun pause() {
+      receiver.doOnConsumer { if (topicPartitions != null) it.pause(topicPartitions) }.subscribe()
+   }
 
+   override fun resume() {
+      receiver.doOnConsumer { if (topicPartitions != null) it.resume(topicPartitions) }.subscribe()
+   }
+
+   fun isPaused(): Boolean {
+      var paused = receiver.doOnConsumer { it.paused() }.blockOptional()
+      return paused.isPresent.orElse(false)
+   }
 }

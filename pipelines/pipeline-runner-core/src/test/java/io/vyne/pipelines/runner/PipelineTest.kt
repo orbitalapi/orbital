@@ -10,6 +10,7 @@ import io.vyne.models.json.parseKeyValuePair
 import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineChannel
 import io.vyne.pipelines.PipelineInputMessage
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
 import io.vyne.pipelines.runner.events.ObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.pipelines.runner.transport.direct.*
@@ -55,7 +56,12 @@ class PipelineTest {
          | }
       """.trimMargin())
 
+
+      val input = pipelineInstance.output as DirectOutput
       val output = pipelineInstance.output as DirectOutput
+      input.reportStatus(UP)
+      output.reportStatus(UP)
+
       output.messages.should.have.size(1)
       val message = output.messages.first()
       require(message is TypedObject)
