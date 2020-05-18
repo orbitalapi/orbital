@@ -8,6 +8,24 @@ import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+
+fun String.toLocalDate(): LocalDate {
+   return LocalDate.parse(this)
+}
+
+fun String.toLocalDateTime(): LocalDateTime {
+   return LocalDateTime.parse(this)
+}
+
+// TODO TIME db type
+//fun String.toTime(): LocalDateTime {
+//   // Postgres api does not accept LocalTime so have to map to LocalDateTime
+//   return LocalDateTime.of(LocalDate.of(1970, 1, 1), LocalTime.parse(this, DateTimeFormatter.ISO_TIME))
+//}
 
 @Component
 class CaskDAO(private val jdbcTemplate: JdbcTemplate) {
@@ -30,6 +48,10 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate) {
       PrimitiveType.DOUBLE -> arg.toBigDecimal()
       PrimitiveType.INTEGER ->arg.toBigDecimal()
       PrimitiveType.BOOLEAN -> arg.toBoolean()
+      PrimitiveType.LOCAL_DATE -> arg.toLocalDate()
+      // TODO TIME db column type
+      //PrimitiveType.TIME -> arg.toTime()
+      PrimitiveType.INSTANT -> arg.toLocalDateTime()
 
       else -> TODO("type ${field.name} not yet mapped")
    }
