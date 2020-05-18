@@ -1,9 +1,7 @@
-// Lines related to Rich-Markdown-Editor are commented out in order to bypass the issue of bundling.
-
 import {Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
 import {Documented, Type} from '../../services/schema';
 import * as ReactDOM from 'react-dom';
-// import {ContentSupplier, ReactEditorWrapper} from './description-editor.react';
+import {ContentSupplier, ReactEditorWrapper} from './description-editor.react';
 import {BehaviorSubject} from 'rxjs';
 
 // Links:
@@ -33,7 +31,7 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   private _documentationSource: Documented;
 
   private changeEventCount: number;
-  // private lastChangeEvent: ContentSupplier;
+  private lastChangeEvent: ContentSupplier;
 
   // Editing is disabled by default, as we don't currently have
   // any way of persisting it.
@@ -57,11 +55,11 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
     this._editable = value;
     if (this.editable) {
       this.resetEditor();
- /*     this.changes$.subscribe(next => {
+      this.changes$.subscribe(next => {
         console.log('Has changes');
         this.changeEventCount++;
         // this.lastChangeEvent = next;
-      });*/
+      });
     } else {
       if (wasEditable) {
         this.destroyEditor();
@@ -94,7 +92,7 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
     this.resetEditor();
   }
 
-  // private changes$ = new BehaviorSubject<ContentSupplier>(() => '');
+  private changes$ = new BehaviorSubject<ContentSupplier>(() => '');
 
   constructor() {
   }
@@ -114,12 +112,12 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
       return;
     }
     this.changeEventCount = 0;
-/*    ReactEditorWrapper.initialize(this.containerRef,
+    ReactEditorWrapper.initialize(this.containerRef,
       {
         changes$: this.changes$,
         initialState: this.initialState,
         placeholder: this.placeholder
-      });*/
+      });
   }
 
   ngOnDestroy() {
@@ -141,6 +139,6 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   }
 
   saveChanges() {
-    // this.save.emit(this.lastChangeEvent());
+    this.save.emit(this.lastChangeEvent());
   }
 }
