@@ -312,7 +312,7 @@ type Sample {
     "content" : "type Customer {\n   email : CustomerEmailAddress as String\n   id : CustomerId as String\n   name : CustomerName as String\n   postcode : Postcode as String\n}",
     "id" : "<unknown>:0.0.0"
   } ],
-  "typeParametersTypeNames" : [ ],
+  "typeParameters" : [ ],
   "typeDoc" : "",
   "isTypeAlias" : false,
   "isParameterType" : false,
