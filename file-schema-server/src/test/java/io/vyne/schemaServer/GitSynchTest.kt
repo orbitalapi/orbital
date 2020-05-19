@@ -2,54 +2,66 @@ package io.vyne.schemaServer
 
 import com.nhaarman.mockitokotlin2.*
 import com.winterbe.expekt.should
-import org.eclipse.jgit.api.CloneCommand
+import org.eclipse.jgit.lib.Repository
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.junit.After
 import org.junit.Test
 import java.io.File
 
 class GitSynchTest {
-   private val mockCloneCommand = mock<CloneCommand>()
+   private val repoRoot = "${System.getProperty("user.dir")}${File.separator}repoRoot"
+   private val mockGitRepoProvider = mock<GitRepoProvider>()
+   private val mockGitRepo = mock<GitRepo>()
+   private val gitConfigs = listOf(GitSchemaRepoConfig.GitRemoteRepo(
+      name = "config1",
+      branch = "branch1",
+      sshPassPhrase = "sshPhasePhrase1",
+      sshPrivateKeyPath = "keyPath1",
+      uri = "uri1")
+   )
+   private val gitSchemaRepoConfig = GitSchemaRepoConfig(
+      schemaLocalStorage = repoRoot,
+      gitSchemaRepos = gitConfigs
+   )
+   private val gitSynch = GitSynch(gitSchemaRepoConfig, mockGitRepoProvider)
+
+   private val repoRootCaptor = argumentCaptor<String>()
+   private val repoConfigCaptor = argumentCaptor<GitSchemaRepoConfig.GitRemoteRepo>()
 
    @After
    fun cleanUp() {
-      File("repoRoot").deleteRecursively()
+      File(repoRoot).deleteRecursively()
    }
 
    @Test
-   fun cloneReposTest() {
-      // Given
-      val gitConfigs = listOf(GitSchemaRepoConfig.GitRemoteRepo(
-         name = "config1",
-         branch = "branch1",
-         sshPassPhrase = "sshPhasePhrase1",
-         sshPrivateKeyPath = "keyPath1",
-         uri = "uri1")
-      )
-      val gitSchemaRepoConfig = GitSchemaRepoConfig("repoRoot", gitConfigs)
-      val gitSynch = GitSynch(gitSchemaRepoConfig)
-      val gitSchemaRepoConfigsCaptor = argumentCaptor<File>()
-      val uriArgumentCaptor = argumentCaptor<String>()
-      val branchArgumentCaptor = argumentCaptor<String>()
-      val transportCallbackCaptor = argumentCaptor<SshTransportConfigCallback>()
+   fun gitSynchCloneTest() {
+      whenever(mockGitRepoProvider.provideRepo(any(), any())).thenReturn(mockGitRepo)
+      whenever(mockGitRepo.existsLocally()).thenReturn(false)
 
-      whenever(mockCloneCommand.setDirectory(any())).thenReturn(mockCloneCommand)
-      whenever(mockCloneCommand.setURI(any())).thenReturn(mockCloneCommand)
-      whenever(mockCloneCommand.setBranch(any())).thenReturn(mockCloneCommand)
-      whenever(mockCloneCommand.setTransportConfigCallback(any())).thenReturn(mockCloneCommand)
+      gitSynch.synch()
 
-      // When
-      gitSynch.cloneRepos(mockCloneCommand)
+      verify(mockGitRepoProvider, times(1)).provideRepo(repoRootCaptor.capture(), repoConfigCaptor.capture())
+      repoRoot.should.equal(repoRootCaptor.firstValue)
+      verify(mockGitRepo, times(1)).lsRemote()
+      verify(mockGitRepo, times(1)).existsLocally()
+      verify(mockGitRepo, times(1)).checkout()
+      verify(mockGitRepo, times(1)).clone()
+      verify(mockGitRepo, times(1)).close()
+   }
 
-      // Then
-      verify(mockCloneCommand, times(1)).setDirectory(gitSchemaRepoConfigsCaptor.capture())
-      "repoRoot${File.separator}config1".should.equal(gitSchemaRepoConfigsCaptor.firstValue.path)
-      verify(mockCloneCommand, times(1)).setURI(uriArgumentCaptor.capture())
-      "uri1".should.equal(uriArgumentCaptor.firstValue)
-      verify(mockCloneCommand, times(1)).setBranch(branchArgumentCaptor.capture())
-      "branch1".should.equal(branchArgumentCaptor.firstValue)
-      verify(mockCloneCommand, times(1)).setTransportConfigCallback(transportCallbackCaptor.capture())
-      "keyPath1".should.equal(transportCallbackCaptor.firstValue.sshPrivateKeyPath)
-      "sshPhasePhrase1".should.equal(transportCallbackCaptor.firstValue.sshPassPhrase)
-      verify(mockCloneCommand, times(1)).call()
+   @Test
+   fun gitSynchPullTest() {
+      whenever(mockGitRepoProvider.provideRepo(any(), any())).thenReturn(mockGitRepo)
+      whenever(mockGitRepo.existsLocally()).thenReturn(true)
+
+      gitSynch.synch()
+
+      verify(mockGitRepoProvider, times(1)).provideRepo(repoRootCaptor.capture(), repoConfigCaptor.capture())
+      repoRoot.should.equal(repoRootCaptor.firstValue)
+      verify(mockGitRepo, times(1)).lsRemote()
+      verify(mockGitRepo, times(1)).existsLocally()
+      verify(mockGitRepo, times(1)).checkout()
+      verify(mockGitRepo, times(1)).pull()
+      verify(mockGitRepo, times(1)).close()
    }
 }
