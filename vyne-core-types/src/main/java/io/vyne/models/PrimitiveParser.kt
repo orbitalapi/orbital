@@ -7,6 +7,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.jvm.common.PrimitiveTypes
 import lang.taxi.types.PrimitiveType
+import java.lang.IllegalArgumentException
 
 /**
  * Responsible for simple conversions between primitives.
@@ -20,6 +21,9 @@ class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapp
       val taxiPrimitive = PrimitiveType.fromDeclaration(underlyingPrimitive.fullyQualifiedName)
       val javaType = PrimitiveTypes.getJavaType(taxiPrimitive)
       val convertedValue = objectMapper.convertValue(value, javaType)
+      if (convertedValue == null) {
+         throw IllegalArgumentException("Unable to parse primitive type=${targetType.taxiType.basePrimitive} name=${targetType.name} value=null.")
+      }
       return TypedValue.from(targetType, convertedValue, performTypeConversions = false)
    }
 }
