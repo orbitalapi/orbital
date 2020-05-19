@@ -100,13 +100,15 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
       findCaskEndpoint().doOnSuccess { connectTo(it) }.subscribe()
    }
 
-   private fun Flux<WebSocketMessage>.handleCaskResponse(): Flux<String> {
+   private fun Flux<WebSocketMessage>.handleCaskResponse(): Flux<CaskIngestionResponse> {
 
-      // For now just log
-      // LENS-50 - cask will return the message in case of error
       return map { it.payloadAsText }
-         .doOnNext {
-            it.log().info("Received response from websocket: $it")
+         .map {
+            try {
+               objectMapper.readValue(it, CaskIngestionResponse::class.java)
+            } catch (e: Exception) {
+               CaskIngestionResponse.rejected(it, "Could not deserialise to CaskIngestionResponse")
+            }
          }
    }
 

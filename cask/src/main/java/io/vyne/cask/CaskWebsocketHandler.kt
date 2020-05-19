@@ -93,6 +93,8 @@ class CaskWebsocketHandler(
       session.receive()
          .map {
             log().info("Ingesting message from sessionId=${session.id}")
+            var inputMessage = it.payloadAsText
+
             try {
                caskService
                   .ingestRequest(versionedType, Flux.just(it.payload.asInputStream()), contentType)
@@ -101,17 +103,17 @@ class CaskWebsocketHandler(
                   .subscribe(
                      { result ->
                         if (sendResponse) {
-                           outputSink.next(successResponse(session, result))
+                           outputSink.next(successResponse(inputMessage, session, result))
                         }
                      },
                      { error ->
                         log().error("Error ingesting message from sessionId=${session.id} ", error)
-                        outputSink.next(errorResponse(session, extractError(error)))
+                        outputSink.next(errorResponse(inputMessage, session, extractError(error)))
                      }
                   )
             } catch (error: Exception) {
                log().error("Error ingesting message from sessionId=${session.id} ", error)
-               outputSink.next(errorResponse(session, extractError(error)))
+               outputSink.next(errorResponse(inputMessage, session, extractError(error)))
             }
          }
          .doOnComplete {
@@ -136,14 +138,14 @@ class CaskWebsocketHandler(
       }
    }
 
-   private fun successResponse(session: WebSocketSession, message: String): WebSocketMessage {
-      val msg = CaskIngestionResponse.success(message)
+   private fun successResponse(inputMessage: String, session: WebSocketSession, message: String): WebSocketMessage {
+      val msg = CaskIngestionResponse.success(inputMessage, message)
       val json = mapper.writeValueAsString(msg)
       return session.textMessage(json)
    }
 
-   private fun errorResponse(session: WebSocketSession, errorMessage: String): WebSocketMessage {
-      val msg = CaskIngestionResponse.rejected(errorMessage)
+   private fun errorResponse(inputMessage: String, session: WebSocketSession, errorMessage: String): WebSocketMessage {
+      val msg = CaskIngestionResponse.rejected(inputMessage, errorMessage)
       val json = mapper.writeValueAsString(msg)
       return session.textMessage(json)
    }
