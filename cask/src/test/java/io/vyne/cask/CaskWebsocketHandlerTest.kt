@@ -124,7 +124,7 @@ class CaskWebsocketHandlerTest {
 
       StepVerifier
          .create(session.textOutput.take(1))
-         .expectNext("""{"result":"REJECTED","message":"Unexpected ingestion error"}""")
+         .expectNext("""{"result":"REJECTED","message":"No database connection"}""")
          .verifyComplete()
    }
 
@@ -151,6 +151,18 @@ class CaskWebsocketHandlerTest {
       StepVerifier
          .create(session.textOutput.take(1))
          .expectNext("""{"result":"REJECTED","message":"Cannot deserialize value of type `java.math.BigDecimal` from String \"6300USD\": not a valid representation\n at [Source: UNKNOWN; line: -1, column: -1]"}""")
+         .verifyComplete()
+   }
+
+   @Test
+   fun ingestionErrorCausedByMissingValue() {
+      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(ingestionMessageWithMissingValue())))
+      val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
+      wsHandler.handle(session).block()
+
+      StepVerifier
+         .create(session.textOutput.take(1))
+         .expectNext("""{"result":"REJECTED","message":"Unable to parse primitive type=STRING name=Symbol value=null."}""")
          .verifyComplete()
    }
 
@@ -187,6 +199,16 @@ class CaskWebsocketHandlerTest {
         "Date": "2020-03-19",
         "Symbol": "BTCUSD",
         "Open": "6300USD",
+        "High": "6330",
+        "Low": "6186.08",
+        "Close": "6235.2"
+         }""".byteInputStream()
+   }
+
+   private fun ingestionMessageWithMissingValue(): ByteArrayInputStream {
+      return """{
+        "Date": "2020-03-19",
+        "Open": "6300",
         "High": "6330",
         "Low": "6186.08",
         "Close": "6235.2"
