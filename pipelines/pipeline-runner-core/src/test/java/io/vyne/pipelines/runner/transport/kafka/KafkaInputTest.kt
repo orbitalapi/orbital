@@ -21,7 +21,7 @@ class KafkaInputTest : AbstractKafkaTest() {
          outputTransportSpec = directOutputSpec()
       )
       val pipelineInstance = buildPipelineBuilder().build(pipeline)
-      pipelineInstance.output.reportStatus(UP)
+      pipelineInstance.output.healthMonitor.reportStatus(UP)
 
       // Send for messages into kafka
       sendKafkaMessage(""" {"userId":"Marty"} """)
@@ -50,7 +50,7 @@ class KafkaInputTest : AbstractKafkaTest() {
 
       val input = pipelineInstance.input as KafkaInput
       val output = pipelineInstance.output as DirectOutput
-      pipelineInstance.output.reportStatus(UP)
+      pipelineInstance.output.healthMonitor.reportStatus(UP)
 
       // Send for messages into kafka
       sendKafkaMessage(""" {"userId":"Marty"} """)
@@ -58,7 +58,7 @@ class KafkaInputTest : AbstractKafkaTest() {
       await().until { output.messages.should.have.size(2) }
 
       // Output is now down
-      pipelineInstance.output.reportStatus(DOWN)
+      pipelineInstance.output.healthMonitor.reportStatus(DOWN)
       await().until { input.isPaused().should.be.`true` }
 
       // Send 3 other messages
@@ -71,7 +71,7 @@ class KafkaInputTest : AbstractKafkaTest() {
       output.messages.should.have.size(2)
 
       // Output is back UP
-      pipelineInstance.output.reportStatus(UP)
+      pipelineInstance.output.healthMonitor.reportStatus(UP)
       await().until { output.messages.should.have.size(5) }
 
       // We should now ingest the 3 new messages. Total of 5

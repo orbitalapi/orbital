@@ -3,11 +3,9 @@ package io.vyne.pipelines.runner.transport.cask
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.discovery.EurekaClient
 import io.vyne.VersionedTypeReference
-import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
-import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
-import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
@@ -19,6 +17,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
 import java.time.Duration.ofMillis
+import java.util.*
 
 
 @Component
@@ -30,8 +29,10 @@ class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: EurekaClient
 
 }
 
-class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: ObjectMapper, private val eurekaClient: EurekaClient, private val caskServiceName: String) : PipelineOutputTransport, DefaultPipelineTransportHealthMonitor() {
+class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: ObjectMapper, private val eurekaClient: EurekaClient, private val caskServiceName: String) : PipelineOutputTransport {
    override val type: VersionedTypeReference = spec.targetType
+
+   override val healthMonitor = EmitterPipelineTransportHealthMonitor()
 
    private val wsClient = ReactorNettyWebSocketClient()
    private val wsOutput = EmitterProcessor.create<String>()
@@ -45,23 +46,26 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
       // add .take(X) to limit that, and create new status TERMINATED for this transport ?
       return Flux.interval(ofMillis(3000))
          .onBackpressureDrop()
-         .flatMap { pollCaskServiceServer() }
+         .map { getCaskServiceEndpoint() }
+         .filter { it.isPresent }
+         .map { it.get() }
          .next()
    }
 
    /**
     * Poll Eureka for the next Cask server available
     */
-   private fun pollCaskServiceServer(): Mono<String> {
-      return try {
+   private fun getCaskServiceEndpoint(): Optional<String> {
+
+      return return try {
          val caskServer = eurekaClient.getNextServerFromEureka(caskServiceName, false)
          val endpoint = with(caskServer) { "ws://$hostName:$port/cask/${type.typeName.fullyQualifiedName}" }
          log().info("Found for $caskServiceName service server in Eureka [endpoint=$endpoint]")
-         Mono.just(endpoint)
+         Optional.of(endpoint)
       } catch (e: RuntimeException) {
          // ENHANCE check if more fine grained exception is possible ?
          log().info("Could not find $caskServiceName server. Reason: ${e.message}")
-         Mono.empty()
+         Optional.empty()
       }
    }
 
@@ -72,7 +76,7 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
       val handshakeMono = wsClient.execute(URI(endpoint)) { session ->
          // At this point, this handshake is established!
          // ENHANCE: There might be a better place to hook on for this status
-         reportStatus(UP)
+         healthMonitor.reportStatus(UP)
 
          // Configure the session: inbounds and outbounds messages
          session.send(wsOutput.map { session.textMessage(it) })
@@ -91,13 +95,15 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
 
    private fun handleWebsocketTermination(throwable: Throwable?) {
       log().info("Websocket terminated: ${throwable?.message ?: "Unknown reason"}")
-      reportStatus(DOWN)
+      healthMonitor.reportStatus(DOWN)
       tryToRestart()
    }
 
    private fun tryToRestart() {
       log().info("Initiating (re)connection to $caskServiceName service")
-      findCaskEndpoint().doOnSuccess { connectTo(it) }.subscribe()
+      findCaskEndpoint()
+         .doOnError { healthMonitor.reportStatus(TERMINATED) }
+         .doOnSuccess { connectTo(it) }.subscribe()
    }
 
    private fun Flux<WebSocketMessage>.handleCaskResponse(): Flux<String> {

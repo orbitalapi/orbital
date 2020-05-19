@@ -17,7 +17,7 @@ import java.time.Instant
 
 class PipelineInstance(
    override val spec: Pipeline,
-   private val flux: Flux<TypedInstance>,
+   private val instancesFeed: Flux<TypedInstance>,
    override val startedTimestamp: Instant,
    @JsonIgnore
    val input: PipelineInputTransport,
@@ -36,8 +36,8 @@ class PipelineInstance(
    private val outputHealthDisposable: Disposable
 
    init {
-      inputHealthDisposable = input.health().subscribe { reportStatus(INPUT, it) }
-      outputHealthDisposable = output.health().subscribe { reportStatus(OUTPUT, it) }
+      inputHealthDisposable = input.healthMonitor.healthEvents.subscribe { reportStatus(INPUT, it) }
+      outputHealthDisposable = output.healthMonitor.healthEvents.subscribe { reportStatus(OUTPUT, it) }
    }
 
    private fun reportStatus(direction: PipelineDirection, status: PipelineTransportStatus) {
@@ -65,7 +65,7 @@ class PipelineInstance(
          INIT to UP -> {
             if (otherDirectionState == UP) {
                // If the other transport is UP, subscribe to the flux and get data in
-               pipelineDisposable = flux.subscribe()
+               pipelineDisposable = instancesFeed.subscribe()
             }
          }
 

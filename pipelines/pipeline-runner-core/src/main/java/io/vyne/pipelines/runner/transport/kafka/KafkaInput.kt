@@ -37,17 +37,20 @@ class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper) : Ab
 
 }
 
-abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, deserializerClass: String) : PipelineInputTransport, DefaultPipelineTransportHealthMonitor() {
+abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, deserializerClass: String) : PipelineInputTransport {
 
    override val feed: Flux<PipelineInputMessage>
-   private val receiver: KafkaReceiver<String, V>;
 
+   // Kafka specifics
+   private val receiver: KafkaReceiver<String, V>;
    private var topicPartitions: Collection<TopicPartition>? = null
 
    private val defaultProps = mapOf(
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.qualifiedName!!,
       ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to deserializerClass
    )
+
+   override val healthMonitor = EmitterPipelineTransportHealthMonitor()
 
    /**
     * Convert the incoming Kafka message to String for ingestion.
@@ -57,14 +60,13 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
 
    init {
       // ENHANCE: there might be a way to hook on some events from the flux below to know when we are actually connected to kafka
-      reportStatus(UP)
+      healthMonitor.reportStatus(UP)
 
-      var options = getReceiverOptions(spec)
+      val options = getReceiverOptions(spec)
       receiver = KafkaReceiver.create(options)
       feed = receiver
          .receive()
-         .doOnSubscribe { println("SUBSCRIBE") }
-         .doOnError { reportStatus(DOWN) }
+         .doOnError { healthMonitor.reportStatus(DOWN) }
          .flatMap { kafkaMessage ->
             val recordId = kafkaMessage.key()
             val offset = kafkaMessage.offset()

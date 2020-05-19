@@ -1,11 +1,6 @@
 package io.vyne.pipelines.runner
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.spy
-import com.nhaarman.mockitokotlin2.whenever
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.*
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
@@ -17,9 +12,12 @@ import reactor.core.publisher.Flux
 
 class PipelineInstanceTest {
 
-   class DummyInput(override val feed: Flux<PipelineInputMessage>) : PipelineInputTransport, DefaultPipelineTransportHealthMonitor()
-   class DummyOutput(override val type: VersionedTypeReference) : PipelineOutputTransport, DefaultPipelineTransportHealthMonitor() {
+   class DummyInput(override val feed: Flux<PipelineInputMessage>) : PipelineInputTransport {
+      override val healthMonitor= EmitterPipelineTransportHealthMonitor()
+   }
+   class DummyOutput(override val type: VersionedTypeReference) : PipelineOutputTransport {
       override fun write(typedInstance: TypedInstance, logger: PipelineLogger) { }
+      override val healthMonitor = EmitterPipelineTransportHealthMonitor()
    }
 
    lateinit var input: PipelineInputTransport
@@ -37,7 +35,7 @@ class PipelineInstanceTest {
 
       instance = PipelineInstance(
          spec = mock(),
-         flux = flux ,
+         instancesFeed = flux ,
          startedTimestamp = mock(),
          input = input,
          output = output
@@ -47,8 +45,8 @@ class PipelineInstanceTest {
    @Test
    fun testBothInputUp() {
       // Events [input UP, output UP]
-      input.reportStatus(UP)
-      output.reportStatus(UP)
+      input.healthMonitor.reportStatus(UP)
+      output.healthMonitor.reportStatus(UP)
 
       // We should subscribe
       verify(flux).subscribe()
@@ -58,7 +56,7 @@ class PipelineInstanceTest {
    @Test
    fun testOnlyInputUp() {
       // Events [input UP]
-      input.reportStatus(UP)
+      input.healthMonitor.reportStatus(UP)
 
       // We shouldn't subscribe
       verify(flux, never()).subscribe()
@@ -67,7 +65,7 @@ class PipelineInstanceTest {
    @Test
    fun testOnlyOutputUp() {
       // Events [output UP]
-      output.reportStatus(UP)
+      output.healthMonitor.reportStatus(UP)
 
       // We shouldn't subscribe
       verify(flux, never()).subscribe()
@@ -76,9 +74,9 @@ class PipelineInstanceTest {
    @Test
    fun testInputUpDownOutputUp() {
       // Events [input UP, input DOWN, input UP]
-      input.reportStatus(UP)
-      input.reportStatus(DOWN)
-      output.reportStatus(UP)
+      input.healthMonitor.reportStatus(UP)
+      input.healthMonitor.reportStatus(DOWN)
+      output.healthMonitor.reportStatus(UP)
 
       // We shouldn't subscribe
       verify(flux, never()).subscribe()
@@ -87,9 +85,9 @@ class PipelineInstanceTest {
    @Test
    fun testOutputUpDownOutputUp() {
       // Events [output UP, output DOWN, output UP]
-      output.reportStatus(UP)
-      output.reportStatus(DOWN)
-      output.reportStatus(UP)
+      output.healthMonitor.reportStatus(UP)
+      output.healthMonitor.reportStatus(DOWN)
+      output.healthMonitor.reportStatus(UP)
 
       // We shouldn't subscribe
       verify(flux, never()).subscribe()
@@ -98,9 +96,9 @@ class PipelineInstanceTest {
    @Test
    fun testBothUpThenInputDown() {
       // Events [input UP, output UP, input DOWN]
-      input.reportStatus(UP)
-      output.reportStatus(UP)
-      input.reportStatus(DOWN)
+      input.healthMonitor.reportStatus(UP)
+      output.healthMonitor.reportStatus(UP)
+      input.healthMonitor.reportStatus(DOWN)
 
       // We should subscribe
       verify(flux, times(1)).subscribe()
@@ -111,9 +109,9 @@ class PipelineInstanceTest {
    @Test
    fun testBothUpThenOuptutDown() {
       // Events [output UP,  input UP, output DOWN]
-      output.reportStatus(UP)
-      input.reportStatus(UP)
-      input.reportStatus(DOWN)
+      output.healthMonitor.reportStatus(UP)
+      input.healthMonitor.reportStatus(UP)
+      input.healthMonitor.reportStatus(DOWN)
 
       // We should subscribe, pause and never resume
       verify(flux, times(1)).subscribe()
@@ -124,10 +122,10 @@ class PipelineInstanceTest {
    @Test
    fun testBothUpThenOneDownThenUp() {
       // Events [output UP,  input UP, output DOWN, output UP]
-      output.reportStatus(UP)
-      input.reportStatus(UP)
-      input.reportStatus(DOWN)
-      input.reportStatus(UP)
+      output.healthMonitor.reportStatus(UP)
+      input.healthMonitor.reportStatus(UP)
+      input.healthMonitor.reportStatus(DOWN)
+      input.healthMonitor.reportStatus(UP)
 
       // We should subscribe, pause and resume
       verify(flux, times(1)).subscribe()
