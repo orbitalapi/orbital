@@ -1,59 +1,60 @@
 package io.vyne.schemaServer
 
 import io.vyne.utils.log
-import org.eclipse.jgit.api.CloneCommand
-import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.api.TransportConfigCallback
 import org.springframework.stereotype.Component
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Component
-class GitSynch(private val gitSchemaRepoConfig: GitSchemaRepoConfig) {
+class GitSynch(private val gitSchemaRepoConfig: GitSchemaRepoConfig, private val gitRepoProvider: GitRepoProvider) {
    private var inProgress = AtomicBoolean(false)
 
-   fun cloneRepos(cloneCommand: CloneCommand) {
-      if(inProgress.get()) {
+   fun isInProgress(): Boolean {
+      return inProgress.get()
+   }
+
+   fun synch() {
+      if (inProgress.get()) {
          log().warn("Another cloning process is running, exiting.")
          return
       }
+
       inProgress.set(true)
 
-      val rootDir = File(gitSchemaRepoConfig.schemaLocalStorage.toString())
+      try {
+         val rootDir = File(gitSchemaRepoConfig.schemaLocalStorage!!)
 
-      if (!rootDir.exists()) {
-         rootDir.mkdir()
-      }
-
-      gitSchemaRepoConfig.gitSchemaRepos.forEach { repo ->
-         log().info("Cloning repository: ${repo.name} - ${repo.uri} / ${repo.branch}")
-
-         val workingDir = File(rootDir, repo.name)
-
-         // TODO implement a proper client
-         if (workingDir.exists()) {
-            workingDir.deleteRecursively()
+         if (!rootDir.exists()) {
+            rootDir.mkdir()
          }
-         workingDir.mkdir()
 
-         try {
-            var git = cloneCommand
-               .setDirectory(workingDir)
-               .setURI(repo.uri)
-               .setBranch(repo.branch)
+         gitSchemaRepoConfig.gitSchemaRepos.forEach { repoConfig ->
+            log().info("Synchronizing repository: ${repoConfig.name} - ${repoConfig.uri} / ${repoConfig.branch}")
 
-            if (!repo.sshPrivateKeyPath.isNullOrEmpty()) {
-               val transportConfigCallback: TransportConfigCallback = SshTransportConfigCallback(repo.sshPrivateKeyPath, repo.sshPassPhrase)
+            val git = gitRepoProvider.provideRepo(rootDir.absolutePath, repoConfig)
 
-               git = git.setTransportConfigCallback(transportConfigCallback)
+            try {
+               git.use { it ->
+                  if(it.lsRemote() == OperationResult.FAILURE) {
+                     log().error("Synch error: Could not reach repository ${repoConfig.name} - ${repoConfig.uri} / ${repoConfig.branch}")
+                     return@forEach
+                  }
+                  if(it.existsLocally()) {
+                     it.checkout()
+                     it.pull()
+                  } else {
+                     it.clone()
+                     it.checkout()
+                  }
+               }
+            } catch (e: Exception) {
+               log().error("Synch error: ${repoConfig.name}\n${e.message}")
             }
-
-            git.call().close()
-         } catch (e: Exception) {
-            log().error("Cloning error in ${repo.uri} / ${repo.branch}", e)
          }
+      } catch (e: Exception) {
+         log().error("Synch error: ${e.message}")
+      } finally {
+         inProgress.set(false)
       }
-
-      inProgress.set(false)
    }
 }

@@ -19,6 +19,8 @@ type Person {
     age : Int
     alive: Boolean
     spouseName : Name? as String
+    dateOfBirth: Date
+    timestamp: Instant
 }""".trim())
         val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
         statement.ddlStatement.should.equal("""
@@ -26,7 +28,9 @@ CREATE TABLE IF NOT EXISTS Person_c99239 (
 firstName VARCHAR(255) NOT NULL,
 age INTEGER NOT NULL,
 alive BOOLEAN NOT NULL,
-spouseName VARCHAR(255)
+spouseName VARCHAR(255),
+dateOfBirth DATE NOT NULL,
+timestamp TIMESTAMP NOT NULL
 )""".trim())
     }
 
@@ -38,6 +42,8 @@ type Person {
     age : Int
     alive: Boolean
     spouseName : Name? as String
+    dateOfBirth: Date
+    timestamp: Instant
 }""".trim())
         val person = taxi.objectType("Person")
         generator.generateColumnForField(person.field("firstName")).sql
@@ -52,6 +58,11 @@ type Person {
         generator.generateColumnForField(person.field("spouseName")).sql
                 .should.equal("spouseName VARCHAR(255)")
 
+       generator.generateColumnForField(person.field("dateOfBirth")).sql
+          .should.equal("dateOfBirth DATE NOT NULL")
+
+       generator.generateColumnForField(person.field("timestamp")).sql
+          .should.equal("timestamp TIMESTAMP NOT NULL")
 
     }
 

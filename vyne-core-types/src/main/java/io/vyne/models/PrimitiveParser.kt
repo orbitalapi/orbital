@@ -1,6 +1,7 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -13,7 +14,7 @@ import lang.taxi.types.PrimitiveType
  *
  * Used when Parsing some non type-safe wire format (eg., xpath returning a number as a string)
  */
-class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapper()) {
+class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())) {
    fun parse(value: Any, targetType: Type, schema: Schema): TypedInstance {
       val underlyingPrimitive = Primitives.getUnderlyingPrimitive(targetType, schema)
       val taxiPrimitive = PrimitiveType.fromDeclaration(underlyingPrimitive.fullyQualifiedName)

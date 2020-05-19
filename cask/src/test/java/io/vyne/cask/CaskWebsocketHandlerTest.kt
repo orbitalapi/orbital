@@ -173,7 +173,7 @@ class CaskWebsocketHandlerTest {
 
    private fun validIngestionMessage(): ByteArrayInputStream {
       return """{
-        "Date": "2020-03-19 11-PM",
+        "Date": "2020-03-19",
         "Symbol": "BTCUSD",
         "Open": "6300",
         "High": "6330",
@@ -184,7 +184,7 @@ class CaskWebsocketHandlerTest {
 
    private fun invalidIngestionMessage(): ByteArrayInputStream {
       return """{
-        "Date": "2020-03-19 11-PM",
+        "Date": "2020-03-19",
         "Symbol": "BTCUSD",
         "Open": "6300USD",
         "High": "6330",

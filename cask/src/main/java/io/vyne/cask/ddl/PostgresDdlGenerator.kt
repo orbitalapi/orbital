@@ -16,7 +16,7 @@ import java.math.BigDecimal
 import java.nio.file.Path
 import java.sql.Timestamp
 import java.sql.Types
-import java.time.Instant
+import java.time.*
 
 data class TableMetadata(
    val tableName: String,
@@ -197,6 +197,17 @@ $fieldDef
          PrimitiveType.DOUBLE -> ScalarTypes.numeric() to { row, v -> row.setNumeric(fieldName, v as BigDecimal) }
          PrimitiveType.INTEGER -> ScalarTypes.integer() to { row, v -> row.setNumeric(fieldName, v as BigDecimal) }
          PrimitiveType.BOOLEAN -> ScalarTypes.boolean() to { row, v -> row.setBoolean(fieldName, v as Boolean) }
+         PrimitiveType.LOCAL_DATE -> ScalarTypes.date() to { row, v -> row.setDate(fieldName, v as LocalDate) }
+         PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(fieldName, LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC")))}
+         // TODO TIME db column type
+//         PrimitiveType.TIME -> ScalarTypes.timestamp() to { row, v ->
+//            run {
+//               val time = (v as LocalTime)
+//               val date = LocalDate.of(1970, 1, 1)
+//               // Postgres api does not accept LocalTime so have to map to LocalDateTime
+//               row.setTimeStamp(fieldName, LocalDateTime.of(date, time))
+//            }
+//         }
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
       val (postgresType, writer) = p
@@ -211,6 +222,8 @@ private object ScalarTypes {
    fun numeric(precision: Int = 30, scale: Int = 15) = "NUMERIC($precision,$scale)"
    fun integer() = "INTEGER"
    fun boolean() = "BOOLEAN"
+   fun timestamp() = "TIMESTAMP"
+   fun date() = "DATE"
 }
 
 typealias RowWriter = (rowWriter: SimpleRow, value: Any) -> Unit
