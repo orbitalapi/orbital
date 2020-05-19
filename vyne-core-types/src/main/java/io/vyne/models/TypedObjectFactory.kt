@@ -42,7 +42,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
       return accessorReader.read(value, type, accessor, schema)
    }
 
-   internal fun readAccessor(type: TypeReference, accessor: Accessor): TypedInstance {
+   internal fun readAccessor(type: QualifiedName, accessor: Accessor): TypedInstance {
       return accessorReader.read(value, type, accessor, schema)
    }
 

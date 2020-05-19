@@ -25,7 +25,7 @@ interface TypedInstance {
    fun valueEquals(valueToCompare: TypedInstance): Boolean
 
    companion object {
-      fun fromNamedType(typeNamedInstance: TypeNamedInstance, schema: Schema, performTypeConversions:Boolean = true): TypedInstance {
+      fun fromNamedType(typeNamedInstance: TypeNamedInstance, schema: Schema, performTypeConversions: Boolean = true): TypedInstance {
          val (typeName, value) = typeNamedInstance
          val type = schema.type(typeName)
          return when {
@@ -87,16 +87,16 @@ interface TypedInstance {
       }
 
       private fun getCollectionType(type: Type, schema: Schema): Type {
-         if (type.resolvesSameAs(schema.type(PrimitiveType.ARRAY.qualifiedName))) {
+         return if (type.resolvesSameAs(schema.type(PrimitiveType.ARRAY.qualifiedName), considerTypeParameters = false)) {
             if (type.typeParameters.size == 1) {
-               return type.typeParameters[0]
+               type.typeParameters[0]
             } else {
                log().warn("Using raw Array is not recommended, use a typed array instead.  Collection members are typed as Any")
-               return schema.type(PrimitiveType.ANY.qualifiedName)
+               schema.type(PrimitiveType.ANY.qualifiedName)
             }
          } else {
             log().warn("Collection type could not be determined - expected to find ${PrimitiveType.ARRAY.qualifiedName}, but found ${type.fullyQualifiedName}")
-            return type
+            type
          }
       }
    }

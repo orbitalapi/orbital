@@ -5,6 +5,8 @@ import java.io.IOException
 import java.io.Serializable
 import java.io.StreamTokenizer
 import java.io.StringReader
+import java.lang.Exception
+import kotlin.math.log
 
 data class QualifiedName(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) : Serializable {
    val name: String
@@ -32,6 +34,9 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
    override fun toString(): String = fullyQualifiedName
 }
 
+fun lang.taxi.types.QualifiedName.toVyneQualifiedName():QualifiedName {
+   return this.parameterizedName.fqn()
+}
 
 fun String.fqn(): QualifiedName {
 
@@ -76,23 +81,29 @@ private fun parse(tokenizer: StreamTokenizer, terminalCharacterCodes: List<Int>)
    val BOF_MARKER = -4
    val baseNameParts = mutableListOf<String>()
    val params = mutableListOf<GenericTypeName>()
-   while (!terminalCharacterCodes.contains(tokenizer.ttype)) {
-      when (tokenizer.ttype) {
-         BOF_MARKER -> {
-            tokenizer.nextToken() // Skip it
-         }
-         '<'.toInt() -> {
-            do {
-               tokenizer.nextToken()  // Skip '<' or ','
-               params.add(parse(tokenizer, terminalCharacterCodes = listOf('>'.toInt(), ','.toInt())))
-            } while (tokenizer.ttype == ','.toInt())
-            tokenizer.nextToken() // Skip past the closing >
-         }
-         else -> {
-            baseNameParts.add(tokenizer.sval)
-            tokenizer.nextToken()
+   try {
+
+      while (!terminalCharacterCodes.contains(tokenizer.ttype)) {
+         when (tokenizer.ttype) {
+            BOF_MARKER -> {
+               tokenizer.nextToken() // Skip it
+            }
+            '<'.toInt() -> {
+               do {
+                  tokenizer.nextToken()  // Skip '<' or ','
+                  params.add(parse(tokenizer, terminalCharacterCodes = listOf('>'.toInt(), ','.toInt())))
+               } while (tokenizer.ttype == ','.toInt())
+               tokenizer.nextToken() // Skip past the closing >
+            }
+            else -> {
+               baseNameParts.add(tokenizer.sval)
+               tokenizer.nextToken()
+            }
          }
       }
+   } catch (e:Exception) {
+      // TODO  : Bring logging in here...
+      throw e
    }
    return GenericTypeName(baseNameParts.joinToString(""), params)
 }

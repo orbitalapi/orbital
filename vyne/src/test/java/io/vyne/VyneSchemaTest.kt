@@ -1,12 +1,17 @@
 package io.vyne
 
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import io.vyne.models.json.addJsonModel
 import io.vyne.query.QueryEngineFactory
 import io.vyne.schemas.AttributeConstantValueConstraint
 import io.vyne.schemas.AttributeValueFromParameterConstraint
 import io.vyne.schemas.Modifier
+import io.vyne.schemas.PropertyToParameterConstraint
 import io.vyne.schemas.taxi.TaxiSchema
+import lang.taxi.Operator
+import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
+import lang.taxi.services.operations.constraints.RelativeValueExpression
 import lang.taxi.types.AttributePath
 import org.junit.Test
 
@@ -45,7 +50,7 @@ class VyneSchemaTest {
             operation findClient(TaxFileNumber):Client
             operation getClient(ClientId):Client
 
-            operation convertMoney(Money(currency = 'GBP'),target : CurrencySymbol):Money( currency = target )
+            operation convertMoney(Money(this.currency = 'GBP'),target : CurrencySymbol):Money( this.currency = target )
          }
 
          parameter type SomeRequestType {
@@ -153,12 +158,10 @@ class VyneSchemaTest {
       val service = vyne.getService("vyne.example.ClientService")
       val operation = service.operation("convertMoney")
       expect(operation.parameters[0].constraints).size(1)
-      val constraint = operation.parameters[0].constraints.first() as AttributeConstantValueConstraint
-      expect(constraint.fieldName).to.equal("currency")
-      expect(constraint.expectedValue.value).to.equal("GBP")
+      operation.parameters[0].constraints.first().should.be.instanceof(PropertyToParameterConstraint::class.java)
       expect(operation.contract).not.`null`
       expect(operation.contract.constraints).size(1)
-      expect(operation.contract.constraints.first()).to.equal(AttributeValueFromParameterConstraint("currency", AttributePath.from("target")))
+      expect(operation.contract.constraints.first()).to.equal(PropertyToParameterConstraint(PropertyFieldNameIdentifier("currency"),Operator.EQUAL,RelativeValueExpression("target")))
    }
 
    @Test
@@ -170,7 +173,7 @@ class VyneSchemaTest {
    @Test
    fun shouldParseTypeAliases() {
       val type = vyne.getType("vyne.example.TaxFileNumber")
-      expect(type.aliasForType!!.name).to.equal("String")
+      expect(type.aliasForTypeName!!.name).to.equal("String")
       expect(type.sources.first().content).to.not.be.empty
    }
 

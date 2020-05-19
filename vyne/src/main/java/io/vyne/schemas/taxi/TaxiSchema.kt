@@ -11,7 +11,6 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
-import lang.taxi.services.Constraint
 import lang.taxi.types.*
 import lang.taxi.types.Annotation
 import org.antlr.v4.runtime.CharStreams
@@ -80,11 +79,8 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
    }
 
    private fun parseTypes(document: TaxiDocument): Set<Type> {
-      val rawTypes = mutableSetOf<Type>()
-      val typesWithInheritence = ArrayListMultimap.create<Type, String>()
       // Register primitives, as they're implicitly defined
-      rawTypes.addAll(getTaxiPrimitiveTypes())
-
+      val typeCache = DefaultTypeCache(getTaxiPrimitiveTypes())
       document.types.forEach { taxiType: lang.taxi.types.Type ->
          when (taxiType) {
             is ObjectType -> {
@@ -92,14 +88,14 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
                val fields = taxiType.allFields.map { field ->
                   when (field.type) {
                      is ArrayType -> field.name to Field(
-                        TypeReference((field.type as ArrayType).type.qualifiedName.fqn(), isCollection = true),
+                        field.type.toVyneQualifiedName(),
                         field.modifiers.toVyneFieldModifiers(),
                         accessor = field.accessor,
                         readCondition = field.readCondition,
                         typeDoc = field.typeDoc
                      )
                      else -> field.name to Field(
-                        TypeReference(field.type.qualifiedName.fqn()),
+                        field.type.qualifiedName.fqn(),
                         constraintProvider = buildDeferredConstraintProvider(field.type.qualifiedName.fqn(), field.constraints),
                         modifiers = field.modifiers.toVyneFieldModifiers(),
                         accessor = field.accessor,
@@ -112,21 +108,19 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
                   typeName,
                   fields,
                   modifiers,
+                  inheritsFromTypeNames = taxiType.inheritsFromNames.map { it.fqn() },
                   metadata = parseAnnotationsToMetadata(taxiType.annotations),
                   sources = taxiType.compilationUnits.toVyneSources(),
                   typeDoc = taxiType.typeDoc,
                   taxiType = taxiType
                )
-               rawTypes.add(type)
-               if (taxiType.inheritsFrom.isNotEmpty()) {
-                  typesWithInheritence.putAll(type, taxiType.inheritsFromNames)
-               }
+               typeCache.add(type)
             }
             is TypeAlias -> {
-               rawTypes.add(Type(
+               typeCache.add(Type(
                   QualifiedName(taxiType.qualifiedName),
                   metadata = parseAnnotationsToMetadata(taxiType.annotations),
-                  aliasForType = taxiType.aliasType!!.toQualifiedName().toVyneQualifiedName(),
+                  aliasForTypeName = taxiType.aliasType!!.toQualifiedName().toVyneQualifiedName(),
                   sources = taxiType.compilationUnits.toVyneSources(),
                   typeDoc = taxiType.typeDoc,
                   taxiType = taxiType
@@ -134,7 +128,7 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
             }
             is EnumType -> {
                val enumValues = taxiType.values.map { it.name }
-               rawTypes.add(Type(
+               typeCache.add(Type(
                   QualifiedName(taxiType.qualifiedName),
                   modifiers = parseModifiers(taxiType),
                   metadata = parseAnnotationsToMetadata(taxiType.annotations),
@@ -145,7 +139,7 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
                ))
             }
             is ArrayType -> TODO()
-            else -> rawTypes.add(Type(
+            else -> typeCache.add(Type(
                QualifiedName(taxiType.qualifiedName),
                modifiers = parseModifiers(taxiType),
                sources = taxiType.compilationUnits.toVyneSources(),
@@ -154,36 +148,10 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
             ))
          }
       }
-      val originalTypes = rawTypes.associateBy { it.fullyQualifiedName }
-
-
-      // Now we have a full set of types, expand
-      // references to other types - ie., typeAliased types & inheritence,
-      // so they have the correct fields / modifiers /etc
-      // Use a partially filled cache, so that we can do complex lookups more easily.
-      val partialCache = DefaultTypeCache(rawTypes)
-      val typesWithAliases = rawTypes.map { rawType ->
-         val inheritedTypes = if (typesWithInheritence.containsKey(rawType)) {
-            typesWithInheritence[rawType].map { inheritedType ->
-               require(partialCache.hasType(inheritedType)) { "Type ${rawType.fullyQualifiedName} inherits from type $inheritedType, which doesn't exist" }
-               partialCache.type(inheritedType)
-            }
-         } else {
-            emptyList()
-         }
-
-         if (rawType.isTypeAlias) {
-            require(partialCache.hasType(rawType.aliasForType!!)) { "Type ${rawType.fullyQualifiedName} is declared as a type alias of type ${rawType.aliasForType!!.fullyQualifiedName}, but that type doesn't exist" }
-            val aliasedType = partialCache.type(rawType.aliasForType!!)
-            aliasedType.copy(name = rawType.name, metadata = rawType.metadata, aliasForType = aliasedType.name, inherits = inheritedTypes, sources = rawType.sources)
-         } else {
-            rawType.copy(inherits = inheritedTypes)
-         }
-      }.toSet()
-      return typesWithAliases
+      return typeCache.types
    }
 
-   private fun getTaxiPrimitiveTypes(): Collection<Type> {
+   private fun getTaxiPrimitiveTypes(): Set<Type> {
       return PrimitiveType.values().map { taxiPrimitive ->
          Type(
             taxiPrimitive.qualifiedName.fqn(),
@@ -192,10 +160,10 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
             typeDoc = taxiPrimitive.typeDoc,
             taxiType = taxiPrimitive
          )
-      }
+      }.toSet()
    }
 
-   private fun buildDeferredConstraintProvider(fqn: QualifiedName, constraints: List<Constraint>): DeferredConstraintProvider {
+   private fun buildDeferredConstraintProvider(fqn: QualifiedName, constraints: List<lang.taxi.services.operations.constraints.Constraint>): DeferredConstraintProvider {
       return FunctionConstraintProvider {
          val type = this.type(fqn)
          constraintConverter.buildConstraints(type, constraints)

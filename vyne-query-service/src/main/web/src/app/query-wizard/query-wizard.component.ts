@@ -192,7 +192,7 @@ export class QueryWizardComponent implements OnInit {
     this.typesService.getTypes()
       .pipe(
         map(schema => {
-          const type = schema.types.find(type => type.name.fullyQualifiedName === typeName);
+          const type = schema.types.find(schemaType => schemaType.name.fullyQualifiedName === typeName);
           return this.buildTypeForm(type, schema);
         }),
       ).subscribe(form => this.forms.push(form));
@@ -224,7 +224,7 @@ export class QueryWizardComponent implements OnInit {
       let elements: ITdDynamicElementConfig[] = [];
       Object.keys(type.attributes).forEach(attributeName => {
         const attributeTypeRef = type.attributes[attributeName];
-        const attributeType = schema.types.find(type => type.name.fullyQualifiedName == attributeTypeRef.type.fullyQualifiedName);
+        const attributeType = schema.types.find(schemaType => schemaType.name.fullyQualifiedName === attributeTypeRef.type.fullyQualifiedName);
         const newPrefix = prefix.concat([attributeName]);
         elements = elements.concat(this.getElementsForType(attributeType, schema, newPrefix, attributeName));
       });

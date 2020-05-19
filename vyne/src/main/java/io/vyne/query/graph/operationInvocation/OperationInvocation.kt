@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
  * The parent to OperationInvokers
  */
 interface OperationInvocationService {
-   fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext): TypedInstance
+   fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): TypedInstance
 }
 
 interface OperationInvoker {
@@ -21,23 +21,29 @@ interface OperationInvoker {
 }
 
 class DefaultOperationInvocationService(private val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
-   override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext): TypedInstance {
+   override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): TypedInstance {
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
-      val parameters = gatherParameters(operation.parameters, preferredParams, context)
+      val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
       val result: TypedInstance = invoker.invoke(service, operation, resolvedParams, context)
       return result
    }
 
-   private fun gatherParameters(parameters: List<Parameter>, preferredParams: Set<TypedInstance>, context: QueryContext): List<Pair<Parameter, TypedInstance>> {
-      val preferredParamsByType = preferredParams.associateBy { it.type }
+   private fun gatherParameters(parameters: List<Parameter>, candidateParamValues: Set<TypedInstance>, context: QueryContext, providedParamValues:List<Pair<Parameter,TypedInstance>>): List<Pair<Parameter, TypedInstance>> {
+      // NOTE : See DirectServiceInvocationStrategy, where we have an alternative approach for gatehring params.
+      // Suggest merging that here.
+
+      val preferredParamsByType = candidateParamValues.associateBy { it.type }
       val unresolvedParams = mutableListOf<QuerySpecTypeNode>()
       // Holds EITHER the param value, or a QuerySpecTypeNode which can be used
       // to query the engine for a value.
-      val parameterValuesOrQuerySpecs: List<Pair<Parameter, Any>> = parameters.map { requiredParam ->
-         val preferredParam = preferredParams.firstOrNull { it.type.resolvesSameAs(requiredParam.type) }
+      val parameterValuesOrQuerySpecs: List<Pair<Parameter, Any>> = parameters
+         // Filter out the params that we've already been provided
+         .filter { requiredParam -> providedParamValues.none { (providedParam,_) -> requiredParam == providedParam } }
+         .map { requiredParam ->
+         val preferredParam = candidateParamValues.firstOrNull { it.type.resolvesSameAs(requiredParam.type) }
          when {
             preferredParam != null -> requiredParam to preferredParam
             preferredParamsByType.containsKey(requiredParam.type) -> requiredParam to preferredParamsByType.getValue(requiredParam.type)
@@ -71,7 +77,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
             is QuerySpecTypeNode -> param to resolvedParams[valueOrQuerySpec]!!
             else -> error("Unexpected type in parameterValuesOrQuerySpecs -> ${valueOrQuerySpec.javaClass.name}")
          }
-      }
+      } + providedParamValues
 
       return parametersWithValues
    }
@@ -86,7 +92,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       val paramsToConstraintEvaluations = parametersWithValues.map { (paramSpec, paramValue) ->
          paramSpec to ConstraintEvaluations(paramValue,
             paramSpec.constraints.map { constraint ->
-               constraint.evaluate(paramSpec.type, paramValue)
+               constraint.evaluate(paramSpec.type, paramValue, context.schema)
             }
          )
       }.toMap()

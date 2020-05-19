@@ -3,15 +3,12 @@ package io.vyne.query
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.Field
-import io.vyne.schemas.Type
-import io.vyne.schemas.TypeReference
+import io.vyne.schemas.*
 import io.vyne.utils.log
 
 class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext) {
 
-   fun build(targetType: TypeReference): TypedInstance? {
+   fun build(targetType: QualifiedName): TypedInstance? {
       return build(context.schema.type(targetType))
    }
 

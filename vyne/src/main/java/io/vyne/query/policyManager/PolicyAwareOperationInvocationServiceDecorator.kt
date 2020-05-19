@@ -4,11 +4,12 @@ import io.vyne.models.*
 import io.vyne.query.QueryContext
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
 import lang.taxi.policies.OperationScope
 
 class PolicyAwareOperationInvocationServiceDecorator(private val operationService: OperationInvocationService, private val evaluator: PolicyEvaluator = PolicyEvaluator()) : OperationInvocationService {
-   override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext): TypedInstance {
+   override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): TypedInstance {
       // For now, treating everything as external.
       // Need to update the query manager to differentiate between external
       // TODO: Get these from the operation (operationType) and query engine (scope)
@@ -23,7 +24,7 @@ class PolicyAwareOperationInvocationServiceDecorator(private val operationServic
       // have access to the data yet, so rules aren't easily expressable.
       // Service / operation level security is likely best handled as a specific service / operation
       // level concern, outside of Vyne on the service itself.
-      val result = operationService.invokeOperation(service, operation, preferredParams, context)
+      val result = operationService.invokeOperation(service, operation, preferredParams, context, providedParamValues)
 
       val processed = process(result, context, executionScope)
       return processed

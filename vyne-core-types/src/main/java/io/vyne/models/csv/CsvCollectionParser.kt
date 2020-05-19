@@ -17,8 +17,8 @@ class CsvCollectionParser(val content: String, val type: Type, val schema: Schem
 
    init {
       require(this.type.isCollection) { "The passed type should be a collection type" }
-      require(this.type.typeParameters.size == 1) { "The collection type should contain exactly 1 type param" }
-      this.memberType = this.type.typeParameters.first()
+      require(this.type.resolveAliases().typeParameters.size == 1) { "The collection type should contain exactly 1 type param" }
+      this.memberType = this.type.resolveAliases().typeParameters.first()
    }
 
    fun parse(): TypedInstance {
