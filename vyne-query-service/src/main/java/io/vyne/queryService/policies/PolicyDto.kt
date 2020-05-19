@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.vyne.schemas.Policy
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
+import lang.taxi.Operator
 import lang.taxi.policies.*
 
 data class PolicyDto(

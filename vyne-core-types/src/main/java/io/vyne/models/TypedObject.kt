@@ -1,8 +1,10 @@
 package io.vyne.models
 
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
+import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
+import lang.taxi.services.operations.constraints.PropertyIdentifier
+import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
+import lang.taxi.types.AttributePath
 
 
 data class TypedObject(override val type: Type, override val value: Map<String, TypedInstance>) : TypedInstance, Map<String, TypedInstance> by value {
@@ -50,6 +52,36 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
       return this.value.all { (attributeName, value) ->
          valueToCompare.hasAttribute(attributeName) && valueToCompare.get(attributeName).valueEquals(value)
       }
+   }
+
+   /**
+    * Returns the attribute value identified by the propertyIdentifer
+    */
+   fun getAttribute(propertyIdentifier: PropertyIdentifier, schema: Schema): TypedInstance {
+      return when (propertyIdentifier) {
+         is PropertyFieldNameIdentifier -> get(propertyIdentifier.name)
+         is PropertyTypeIdentifier -> getAttributeIdentifiedByType(propertyIdentifier.type.toVyneQualifiedName(), schema)
+      }
+   }
+
+   fun getAttributeIdentifiedByType(typeName: QualifiedName, schema: Schema): TypedInstance {
+      return getAttributeIdentifiedByType(schema.type(typeName))
+   }
+
+   fun getAttributeIdentifiedByType(type: Type): TypedInstance {
+      val candidates = this.value.filter { (name,value) -> value.type.isAssignableTo(type) }
+      return when {
+         candidates.isEmpty() -> error("No properties on type ${this.type.name.parameterizedName} have type ${type.name.parameterizedName}")
+         candidates.size > 1 -> {
+            val candidateDescription = candidates.entries.joinToString{ "${it.key} : ${it.value.type.name.parameterizedName}"  }
+            error("Ambiguous property - there are ${candidates.size} possible matches for type ${type.name.parameterizedName}: $candidateDescription")
+         }
+         else -> candidates.values.first()
+      }
+   }
+
+   operator fun get(path: AttributePath): TypedInstance {
+      return get(path.path)
    }
 
    // TODO : Needs a test

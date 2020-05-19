@@ -13,8 +13,13 @@ class QueryParser(val schema: Schema) {
          is TypeNameQueryExpression -> parseSingleType(query)
          is TypeNameListQueryExpression -> parseQueryList(query)
          is GraphQlQueryExpression -> parseQueryObject(query)
+         is ConstrainedTypeNameQueryExpression -> parseQueryObject(query)
          else -> throw IllegalArgumentException("The query passed was neither a Json object, nor a recognized type.  Unable to proceed:  $query")
       }
+   }
+
+   private fun parseQueryObject(query: ConstrainedTypeNameQueryExpression): Set<QuerySpecTypeNode> {
+      return setOf(QuerySpecTypeNode(schema.type(query.typeName), dataConstraints = query.constraint))
    }
 
    private fun parseSingleType(expression: TypeNameQueryExpression): Set<QuerySpecTypeNode> {

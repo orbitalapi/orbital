@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 import io.vyne.VersionedSource
+import lang.taxi.Equality
 
 class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>) : Schema {
 
@@ -11,13 +12,24 @@ class SimpleSchema(override val types: Set<Type>, override val services: Set<Ser
       TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
    }
 }
-data class DefaultTypeCache(private val types: Set<Type>) : TypeCache {
-   private val cache: Map<QualifiedName, Type> = types.associateBy { it.name }
-   private val shortNames: Map<String, Type>
+
+class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
+   private val cache: MutableMap<QualifiedName, Type> = mutableMapOf()
+   private var shortNames: Map<String, Type> = emptyMap()
 
    init {
+      types.forEach { add(it) }
+      recalculateShortNames()
+   }
+
+   val types: Set<Type>
+      get() {
+         return this.cache.values.toSet()
+      }
+
+   private fun recalculateShortNames() {
       val possibleShortNames: MutableMap<String, Pair<Int, QualifiedName?>> = mutableMapOf()
-      cache.forEach { name: QualifiedName, type ->
+      cache.forEach { (name: QualifiedName, type) ->
          possibleShortNames.compute(name.name) { _, existingPair ->
             if (existingPair == null) {
                1 to type.name
@@ -32,6 +44,17 @@ data class DefaultTypeCache(private val types: Set<Type>) : TypeCache {
             val type = this.cache[countAndFqn.second!!] ?: error("Expected a type named ${countAndFqn.second!!}")
             shortName to type
          }.toMap()
+   }
+
+   /**
+    * Adds the type to the cache, and returns a new copy, with the
+    * type cache updated.
+    */
+   fun add(type: Type): Type {
+      val withReference = type.copy(typeCache = this)
+      cache[type.name] = withReference
+      recalculateShortNames()
+      return withReference
    }
 
    override fun type(name: String): Type {
@@ -56,17 +79,16 @@ data class DefaultTypeCache(private val types: Set<Type>) : TypeCache {
    private fun parameterisedType(name: QualifiedName): Type? {
       if (name.parameters.isEmpty()) return null
 
-      if (hasType(name.fullyQualifiedName) && name.parameters.all { hasType(it) }) {
+      return if (hasType(name.fullyQualifiedName) && name.parameters.all { hasType(it) }) {
          // We've been asked for a parameterized type.
          // All the parameters are correctly defined, but no type exists.
          // This is caused by (for example), a service returning Array<Foo>, where both Array and Foo have been declared as types
          // but not Array<Foo> directly.
          // It's still valid, so we'll construct the type
          val baseType = type(name.fullyQualifiedName)
-         val params = name.parameters.map { type(it) }
-         return baseType.copy(name = name, typeParameters = params)
+         baseType.copy(name = name, typeParametersTypeNames = name.parameters)
       } else {
-         return null
+         null
       }
 
    }

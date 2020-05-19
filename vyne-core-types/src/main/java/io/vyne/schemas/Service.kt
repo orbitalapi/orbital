@@ -80,6 +80,10 @@ data class Operation(val qualifiedName: QualifiedName, val parameters: List<Para
                      val contract: OperationContract = OperationContract(returnType),
                      val sources: List<VersionedSource>) : MetadataTarget, SchemaMember {
    val name: String = OperationNames.operationName(qualifiedName)
+
+   fun parameter(name:String):Parameter? {
+      return this.parameters.firstOrNull { it.name == name }
+   }
 }
 
 data class Service(val name: QualifiedName, val operations: List<Operation>, override val metadata: List<Metadata> = emptyList(), val sourceCode: List<VersionedSource>) : MetadataTarget, SchemaMember {
@@ -102,15 +106,11 @@ data class OperationContract(val returnType: Type, val constraints: List<OutputC
    }
 
    fun <T : OutputConstraint> containsConstraint(clazz: Class<T>, predicate: (T) -> Boolean): Boolean {
-      return constraints.filterIsInstance(clazz)
-         .filter(predicate)
-         .isNotEmpty()
+      return constraints.filterIsInstance(clazz).any(predicate)
    }
 
    fun <T : OutputConstraint> constraint(clazz: Class<T>, predicate: (T) -> Boolean): T {
-      return constraints.filterIsInstance(clazz)
-         .filter(predicate)
-         .first()
+      return constraints.filterIsInstance(clazz).first(predicate)
    }
 
    fun <T : OutputConstraint> constraint(clazz: Class<T>): T {

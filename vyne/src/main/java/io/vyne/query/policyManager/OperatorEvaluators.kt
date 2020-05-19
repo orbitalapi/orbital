@@ -3,8 +3,8 @@ package io.vyne.query.policyManager
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedValue
+import lang.taxi.Operator
 import lang.taxi.policies.LiteralArraySubject
-import lang.taxi.policies.Operator
 
 object OperatorEvaluators {
 

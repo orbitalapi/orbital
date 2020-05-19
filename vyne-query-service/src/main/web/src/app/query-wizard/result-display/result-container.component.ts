@@ -7,7 +7,7 @@ import {TypesService} from '../../services/types.service';
 import {findType, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
 import {InstanceLike, InstanceLikeOrCollection} from '../../object-view/object-view.component';
 
-@ Component({
+@Component({
   selector: 'query-result-container',
   templateUrl: './result-container.component.html',
   styleUrls: ['./result-container.component.scss']
@@ -51,19 +51,9 @@ export class ResultContainerComponent implements OnInit {
     if (!this.isSuccess) {
       return [];
     }
-    // Is this code still used?  If so, fix this
-    console.log('Warning: Using legacy parsing of QueryResult.  Parameterized types are not properly supported');
-    return Object.keys((<QueryResult>this.result).results)
-      .map(typeName => {
-        const parts = typeName.split('.');
-        return {
-          name: parts[parts.length - 1],
-          fullyQualifiedName: typeName,
-          namespace: parts.concat().splice(parts.length - 1, 1).join('.'),
-          // TODO : THis is likely to cause issues by ignoring the parameters of types.
-          parameters: []
-        };
-      });
+    const typeNames = Object.keys((<QueryResult>this.result).results)
+      .map(typeName => findType(this.schema, typeName).name);
+    return typeNames;
   }
 
   getResultForTypeName(typeName: QualifiedName): InstanceLikeOrCollection {
@@ -89,7 +79,7 @@ export class ResultContainerComponent implements OnInit {
     if (queryResult.resultMode === ResultMode.VERBOSE) {
       return null;
     } else {
-      return findType(this.schema, queryTypeName.fullyQualifiedName);
+      return findType(this.schema, queryTypeName.parameterizedName);
     }
 
   }

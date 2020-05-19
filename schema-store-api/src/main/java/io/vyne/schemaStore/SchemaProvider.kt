@@ -120,7 +120,7 @@ private class MemberCollector(val schema: Schema, val includePrimitives: Boolean
 
    private fun collectTypeReferences(type: io.vyne.schemas.Type): List<QualifiedName> {
       return type.inheritanceGraph.map { it.name } +
-         type.attributes.values.map { it.type.name } +
-         listOfNotNull(type.aliasForType)
+         type.attributes.values.map { it.type } +
+         listOfNotNull(type.aliasForTypeName)
    }
 }

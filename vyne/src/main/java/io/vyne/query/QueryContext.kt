@@ -31,7 +31,14 @@ import kotlin.streams.toList
  */
 // TODO : Why isn't the type enough, given that has children?  Why do I need to explicitly list the children I want?
 
-data class QuerySpecTypeNode(val type: Type, val children: Set<QuerySpecTypeNode> = emptySet(), val mode: QueryMode = QueryMode.DISCOVER)
+data class QuerySpecTypeNode(
+   val type: Type,
+   val children: Set<QuerySpecTypeNode> = emptySet(),
+   val mode: QueryMode = QueryMode.DISCOVER,
+   // Note: Not really convinced these need to be OutputCOnstraints (vs Constraints).
+   // Revisit later
+   val dataConstraints: List<OutputConstraint> = emptyList()
+)
 
 data class QueryResult(
    @field:JsonIgnore // we send a lightweight version below
@@ -88,7 +95,8 @@ data class QueryResult(
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
    val queryResponseId: String
-   @get:JsonProperty("fullyResolved")  val isFullyResolved: Boolean
+   @get:JsonProperty("fullyResolved")
+   val isFullyResolved: Boolean
    val profilerOperation: ProfilerOperation?
    val remoteCalls: List<RemoteCall>
       get() = collateRemoteCalls(this.profilerOperation)
@@ -165,6 +173,8 @@ data class QueryContext(
    fun gather(typeName: String): QueryResult = gather(TypeNameQueryExpression(typeName))
    fun gather(queryString: QueryExpression): QueryResult = queryEngine.gather(queryString, this)
 
+   fun parseQuery(typeName: String) = queryEngine.parse(TypeNameQueryExpression(typeName))
+   fun parseQuery(expression: QueryExpression) = queryEngine.parse(expression)
 
    companion object {
       fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler, resultMode: ResultMode) =

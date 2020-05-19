@@ -27,6 +27,7 @@ export class ObjectViewComponent {
   @Input()
   topLevel = true;
 
+  private fieldTypes = new Map<Field, Type>();
   private _type: Type;
 
   @Input()
@@ -113,8 +114,14 @@ export class ObjectViewComponent {
 
 
   getTypeForAttribute(attributeName: string): Type {
-    const typeRef: Field = this.type.attributes[attributeName];
-    return findType(this.schema, typeRef.type.fullyQualifiedName);
+    const field: Field = this.type.attributes[attributeName];
+    if (this.fieldTypes.has(field)) {
+      return this.fieldTypes.get(field);
+    } else {
+      const fieldType = findType(this.schema, field.type.parameterizedName);
+      this.fieldTypes.set(field, fieldType);
+      return fieldType;
+    }
   }
 
 
