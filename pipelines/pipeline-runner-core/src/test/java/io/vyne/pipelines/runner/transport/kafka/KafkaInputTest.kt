@@ -67,7 +67,6 @@ class KafkaInputTest : AbstractKafkaTest() {
       sendKafkaMessage(""" {"userId":"Markus"} """)
 
       // We shouldn't have more messages incoming
-      Thread.sleep(2000) // FIXME use await until
       output.messages.should.have.size(2)
 
       // Output is back UP
