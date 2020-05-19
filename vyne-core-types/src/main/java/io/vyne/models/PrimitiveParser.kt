@@ -7,6 +7,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.jvm.common.PrimitiveTypes
 import lang.taxi.types.PrimitiveType
+import java.lang.IllegalArgumentException
 
 /**
  * Responsible for simple conversions between primitives.
@@ -20,13 +21,16 @@ class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapp
       val taxiPrimitive = PrimitiveType.fromDeclaration(underlyingPrimitive.fullyQualifiedName)
       val javaType = PrimitiveTypes.getJavaType(taxiPrimitive)
       val convertedValue = objectMapper.convertValue(value, javaType)
+      if (convertedValue == null) {
+         throw IllegalArgumentException("Unable to parse primitive type=${targetType.taxiType.basePrimitive} name=${targetType.name} value=null.")
+      }
       return TypedValue.from(targetType, convertedValue, performTypeConversions = false)
    }
 }
 
 object Primitives {
    fun getUnderlyingPrimitive(type: Type, schema: Schema): Type {
-      val primitiveCandidates = getUnderlyingPrimitiveIfExists(type,schema)
+      val primitiveCandidates = getUnderlyingPrimitiveIfExists(type, schema)
       return when {
          primitiveCandidates.isEmpty() -> error("Type ${type.fullyQualifiedName} is not mappable to a primitive type")
          primitiveCandidates.size > 1 -> error("Type ${type.fullyQualifiedName} ambiguously maps to multiple primitive types: ${primitiveCandidates.joinToString { it.fullyQualifiedName }}")
@@ -34,19 +38,19 @@ object Primitives {
       }
    }
 
-   private fun getUnderlyingPrimitiveIfExists(type:Type, schema: Schema, typesToIgnore:Set<Type> = emptySet()):Set<Type> {
+   private fun getUnderlyingPrimitiveIfExists(type: Type, schema: Schema, typesToIgnore: Set<Type> = emptySet()): Set<Type> {
       if (type.isPrimitive) {
          val actualPrimitive = when {
             PrimitiveType.isPrimitiveType(type.fullyQualifiedName) -> type
-            type.isTypeAlias && PrimitiveType.isPrimitiveType(type.aliasForType!!.fullyQualifiedName) ->schema.type(type.aliasForType)
+            type.isTypeAlias && PrimitiveType.isPrimitiveType(type.aliasForType!!.fullyQualifiedName) -> type.aliasForType!!
             else -> error("Type ${type.fullyQualifiedName} is marked as Primitive, but couldn't find an underlying primitive type")
          }
          return setOf(actualPrimitive)
       }
 
-      val typesToConsider = (type.inheritanceGraph + type.aliasForType?.let { schema.type(it) }).filterNotNull()
+      val typesToConsider = (type.inheritanceGraph + type.aliasForType).filterNotNull()
       val recursiveTypesToIgnore = typesToIgnore + type
-      val types = typesToConsider.flatMap { getUnderlyingPrimitiveIfExists(it,schema,recursiveTypesToIgnore) }.toSet()
+      val types = typesToConsider.flatMap { getUnderlyingPrimitiveIfExists(it, schema, recursiveTypesToIgnore) }.toSet()
       return types
 
    }

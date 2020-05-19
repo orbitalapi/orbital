@@ -132,7 +132,7 @@ class CaskWebsocketHandler(
          is InvalidFormatException -> error.message.orElse("An InvalidFormatException was thrown, but no further details are available.")
          is IllegalArgumentException -> error.message.orElse("An IllegalArgumentException was thrown, but no further details are available.")
          is JsonParseException -> error.message.orElse("Malformed JSON message")
-         else -> "Unexpected ingestion error"
+         else -> error.message.orElse("Unexpected ingestion error.")
       }
    }
 

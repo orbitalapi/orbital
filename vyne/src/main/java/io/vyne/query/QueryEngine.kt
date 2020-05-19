@@ -29,6 +29,8 @@ interface QueryEngine {
 
    fun build(type: Type, context: QueryContext): QueryResult = build(TypeNameQueryExpression(type.fullyQualifiedName), context)
    fun build(query: QueryExpression, context: QueryContext): QueryResult
+
+   fun parse(queryExpression: QueryExpression): Set<QuerySpecTypeNode>
 }
 
 /**
@@ -133,8 +135,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    }
 
    private fun mapCollectionToCollection(targetType: Type, context: QueryContext): TypedInstance? {
-      require(targetType.typeParameters.size == 1) { "Expected collection type to contain exactly 1 parameter" }
-      val collectionType = targetType.typeParameters[0]
+      require(targetType.resolveAliases().typeParameters.size == 1) { "Expected collection type to contain exactly 1 parameter" }
+      val collectionType = targetType.resolveAliases().typeParameters[0]
 
       val inboundFactList = (context.facts.first() as TypedCollection).value
       val transformed = inboundFactList.mapNotNull { typedInstance ->
@@ -154,6 +156,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return TypedCollection.from(transformed);
    }
 
+   override fun parse(queryExpression: QueryExpression):Set<QuerySpecTypeNode> {
+      return queryParser.parse(queryExpression)
+   }
    override fun find(queryString: QueryExpression, context: QueryContext): QueryResult {
       val target = queryParser.parse(queryString)
       return find(target, context)

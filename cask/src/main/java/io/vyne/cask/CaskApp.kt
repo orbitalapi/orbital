@@ -1,5 +1,7 @@
 package io.vyne.cask
 
+import io.micrometer.core.aop.TimedAspect
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.query.CaskApiHandler
 import io.vyne.cask.query.CaskServiceSchemaGenerator.Companion.CaskApiRootPath
 import io.vyne.spring.SchemaPublicationMethod
@@ -8,9 +10,9 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.web.client.RestTemplateBuilder
-import org.springframework.boot.web.servlet.ServletComponentScan
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.core.io.ClassPathResource
 import org.springframework.http.HttpRequest
 import org.springframework.http.MediaType.APPLICATION_JSON
@@ -18,11 +20,9 @@ import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
-import org.springframework.web.reactive.function.server.RouterFunctions
+import org.springframework.web.reactive.function.server.router
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter
-import org.springframework.web.reactive.function.server.RequestPredicates
-import org.springframework.web.reactive.function.server.router
 import java.time.Duration
 
 
@@ -30,6 +30,7 @@ import java.time.Duration
 @EnableDiscoveryClient
 @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
 @EnableWebFlux
+@EnableAspectJAutoProxy
 class CaskApp {
    companion object {
       @JvmStatic
@@ -72,5 +73,10 @@ class CaskApp {
          }
       }
       resources("/static/**", ClassPathResource("static/"))
+   }
+
+   @Bean
+   fun timedAspect(registry: MeterRegistry?): TimedAspect? {
+      return TimedAspect(registry)
    }
 }

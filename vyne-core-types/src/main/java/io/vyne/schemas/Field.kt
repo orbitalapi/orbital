@@ -6,7 +6,7 @@ import lang.taxi.types.FieldSetCondition
 // Note: I'm progressively moving this towards Taxi schemas, as discussed
 // on the Type comment.
 data class Field(
-   val type: TypeReference,
+   val type: QualifiedName,
    val modifiers: List<FieldModifier>,
    private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider(),
    val accessor: Accessor?,

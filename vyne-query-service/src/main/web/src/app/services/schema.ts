@@ -4,6 +4,7 @@ export class QualifiedName {
   name: string;
   namespace: string;
   fullyQualifiedName: string;
+  parameterizedName: string;
   parameters: QualifiedName[] = [];
 
   static nameOnly(fullyQualifiedName: string): string {
@@ -40,10 +41,14 @@ export interface Type extends Documented {
   enumValues: Array<string>;
   sources: Array<VersionedSource>;
   isClosed: boolean;
+  isCollection: boolean;
+  isParameterType: boolean;
+  typeParameters: QualifiedName[];
+  inheritsFrom: QualifiedName[];
 }
 
 export interface Field extends Documented {
-  type: TypeReference;
+  type: QualifiedName;
   modifiers: Array<Modifier>;
 }
 
@@ -96,8 +101,37 @@ export interface ParsedSource {
 
 }
 
+function buildArrayType(schema: TypeCollection, typeName: string): Type {
+  const innerType = typeName.replace('lang.taxi.Array<', '')
+    .replace('>', '');
+  const arrayType = schema.types.find(t => t.name.parameterizedName === 'lang.taxi.Array');
+  const name = QualifiedName.from(arrayType.name.fullyQualifiedName);
+  name.parameterizedName = typeName;
+  const paramType = findType(schema, innerType);
+  name.parameters = [paramType.name];
+  const result = {
+    ...arrayType,
+    name,
+    isParameterType: true,
+    isCollection: true,
+    typeParameters: name.parameters
+  } as Type;
+  return result;
+}
+
 export function findType(schema: TypeCollection, typeName: string): Type {
-  return schema.types.find(t => t.name.fullyQualifiedName === typeName);
+  if (typeName === 'lang.taxi.Array') {
+    console.warn('A search was performed for a raw array.  Favour parameterizedName over QualifiedName to avoid this');
+  }
+  // TODO : Actual support for generics
+  if (typeName.startsWith('lang.taxi.Array<')) {
+    return buildArrayType(schema, typeName);
+  }
+  const name = schema.types.find(t => t.name.parameterizedName === typeName);
+  if (!name) {
+    throw new Error(`No type name ${typeName} was found`);
+  }
+  return name;
 }
 
 export interface TypeCollection {
@@ -276,12 +310,14 @@ export class SchemaMember {
   }
 
   private static fromOperation(operation: Operation, service: Service) {
+    const qualifiedName = service.name.fullyQualifiedName + ' #' + operation.name;
     return new SchemaMember(
       {
         name: operation.name,
-        fullyQualifiedName: service.name.fullyQualifiedName + ' #' + operation.name,
+        fullyQualifiedName: qualifiedName,
         namespace: service.name.namespace,
-        parameters: []
+        parameters: [],
+        parameterizedName: qualifiedName
       },
       SchemaMemberType.OPERATION,
       null,

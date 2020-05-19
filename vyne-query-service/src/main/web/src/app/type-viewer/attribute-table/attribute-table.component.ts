@@ -1,15 +1,5 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {
-  Field,
-  isOperation,
-  isService,
-  isType,
-  Operation,
-  SchemaMember,
-  Service,
-  Type,
-  TypeReference
-} from '../../services/schema';
+import {Component, Input} from '@angular/core';
+import {Field, isType, QualifiedName, SchemaMember, Type} from '../../services/schema';
 import {error} from '@angular/compiler/src/util';
 
 @Component({
@@ -46,7 +36,7 @@ export class AttributeTableComponent {
   }
 
 
-  attributeType(name: string): TypeReference {
+  attributeType(name: string): QualifiedName {
     const field: Field = this.type.attributes[name];
     return field.type;
   }

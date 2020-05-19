@@ -3,6 +3,7 @@ package io.vyne.cask
 import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.micrometer.core.annotation.Timed
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.json.JsonStreamSource
@@ -60,6 +61,7 @@ class CaskService(val schemaProvider: SchemaProvider,
       }
    }
 
+   @Timed("cask.ingestion.request", percentiles = [0.5, 0.9, 0.99, 0.9999])
    fun ingestRequest(versionedType: VersionedType,
                      inputStream: Flux<InputStream>,
                      contentType: MediaType = MediaType.APPLICATION_JSON): Flux<InstanceAttributeSet> {
