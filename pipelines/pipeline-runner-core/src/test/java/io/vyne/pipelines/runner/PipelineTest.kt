@@ -2,6 +2,8 @@ package io.vyne.pipelines.runner
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.jayway.awaitility.Awaitility
+import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
@@ -59,10 +61,11 @@ class PipelineTest {
 
       val input = pipelineInstance.output as DirectOutput
       val output = pipelineInstance.output as DirectOutput
-      input.reportStatus(UP)
-      output.reportStatus(UP)
+      input.healthMonitor.reportStatus(UP)
+      output.healthMonitor.reportStatus(UP)
 
-      output.messages.should.have.size(1)
+      await().until { output.messages.should.have.size(1) }
+
       val message = output.messages.first()
       require(message is TypedObject)
       message.type.fullyQualifiedName.should.equal("UserEvent")
