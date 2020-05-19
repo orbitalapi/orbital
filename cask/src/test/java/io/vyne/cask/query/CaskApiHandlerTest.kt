@@ -27,13 +27,13 @@ class CaskApiHandlerTest {
       }
       val mockedVersionedType = mock<VersionedType>()
       val columnNameCaptor = argumentCaptor<String>()
-      val projectionValueCaptor = argumentCaptor<Any>()
+      val projectionValueCaptor = argumentCaptor<String>()
       whenever(mockCaskService.resolveType(eq("OrderWindowSummary"))).thenReturn(Either.right(mockedVersionedType))
       // When
       caskApiHandler.findBy(request)
       // Then
       verify(mockCaskDao, times(1)).findBy(any(), columnNameCaptor.capture(), projectionValueCaptor.capture())
       "symbol".should.equal(columnNameCaptor.firstValue)
-      "BTCUSD".should.equal(projectionValueCaptor.firstValue.toString())
+      "BTCUSD".should.equal(projectionValueCaptor.firstValue)
    }
 }

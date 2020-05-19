@@ -7,13 +7,11 @@ import io.vyne.VersionedTypeReference
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.IngesterFactory
-import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
@@ -23,7 +21,6 @@ import java.io.InputStream
 @Component
 class CaskService(val schemaProvider: SchemaProvider,
                   val ingesterFactory: IngesterFactory,
-                  val applicationEventPublisher: ApplicationEventPublisher,
                   val objectMapper: ObjectMapper = jacksonObjectMapper()) {
 
    data class TypeError(val message: String)
@@ -37,8 +34,7 @@ class CaskService(val schemaProvider: SchemaProvider,
          val contentType = MediaType.parseMediaType(contentTypeName)
          return if (supportedContentTypes.contains(contentType)) {
             Either.right(contentType)
-         }
-         else {
+         } else {
             Either.left(MediaTypeError("Unsupported contentType=${contentTypeName}"))
          }
       } catch (e: java.lang.Exception) {
@@ -91,10 +87,13 @@ class CaskService(val schemaProvider: SchemaProvider,
 
       val ingester = ingesterFactory.create(ingestionStream)
       ingester.initialize()
-      applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, versionedType))
+      // This code executes every time a new message is pushed to cask
+      // So every request we inject cask service schema as a namespace vyne.casks
+      // It also crashes vyne
+      // TODO find the best place for this logic
+      //applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, versionedType))
 
       return ingester
          .ingest()
-         .doOnError { log().error("Error ", it) }
    }
 }

@@ -46,7 +46,7 @@ class CaskServiceSchemaGeneratorTest {
       verify(schemaStoreClient, times(1)).submitSchema(schemaName.capture(), schemaVersion.capture(), serviceSchema.capture())
       schemaName.firstValue.should.startWith("vyne.casks.OrderWindowSummary-OrderWindowSummary")
       "1.0.0".should.equal(schemaVersion.firstValue)
-      """namespace vyne.casks {
+      """import Symbol import Price namespace vyne.casks {
 
    type alias OrderWindowSummaryList as OrderWindowSummary[]
 

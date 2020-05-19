@@ -1,5 +1,6 @@
 package io.vyne.cask.websocket
 
+import io.vyne.utils.log
 import org.reactivestreams.Publisher
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferFactory
@@ -57,9 +58,13 @@ class MockWebSocketSession(val uri: String,
    }
 
    override fun send(messages: Publisher<WebSocketMessage>): Mono<Void> {
-      return Mono.from(messages).doOnNext {
-         textOutputSink.next(it.payloadAsText)
-      }.then()
+      return Flux.from(messages)
+         .log() // handy with debugging issues
+         .doOnNext {
+            val text = it.payloadAsText
+            log().info("Sending message to WS client ${text}")
+            textOutputSink.next(text)
+         }.then()
    }
 
    override fun close(status: CloseStatus): Mono<Void> {

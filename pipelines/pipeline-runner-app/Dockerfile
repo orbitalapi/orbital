@@ -4,4 +4,4 @@ COPY target/pipeline-runner-app.jar /opt/service/
 
 WORKDIR /opt/service/
 
-CMD java $JVM_OPTS -jar -Dspring.profiles.active=${PROFILE} pipeline-runner-app.jar $OPTIONS
+CMD $BEFORE_START_COMMAND && java $JVM_OPTS -jar -Dspring.profiles.active=${PROFILE} pipeline-runner-app.jar $OPTIONS
