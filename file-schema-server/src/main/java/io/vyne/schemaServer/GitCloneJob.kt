@@ -1,7 +1,5 @@
 package io.vyne.schemaServer
 
-import org.eclipse.jgit.api.CloneCommand
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -13,8 +11,8 @@ class GitCloneJob(
 
    @Scheduled(fixedRateString = "\${taxi.gitCloningJobPeriodMs:300000}")
    fun run() {
-      if (jobEnabled) {
-         synch.cloneRepos(CloneCommand())
+      if (jobEnabled && !synch.isInProgress()) {
+         synch.synch()
       }
    }
 }
