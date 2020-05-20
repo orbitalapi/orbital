@@ -122,6 +122,7 @@ class PostgresDdlGenerator {
          require(tableName.length <= POSTGRES_MAX_NAME_LENGTH) { "Generated tableName $tableName exceeds Postgres max of 31 characters" }
          return tableName
       }
+      fun toColumnName(field: Field) = """"${field.name}""""
    }
 
    fun generateDrop(versionedType: VersionedType): String {
@@ -189,16 +190,16 @@ $fieldDef
    }
 
    private fun generateColumnForField(field: Field, primitiveType: PrimitiveType): PostgresColumn {
-      val fieldName = field.name
+      val columnName = toColumnName(field)
       val p: Pair<String, RowWriter> = when (primitiveType) {
-         PrimitiveType.STRING -> ScalarTypes.varchar() to { row, v -> row.setText(fieldName, v.toString()) }
-         PrimitiveType.ANY -> ScalarTypes.varchar() to { row, v -> row.setText(fieldName, v.toString()) }
-         PrimitiveType.DECIMAL -> ScalarTypes.numeric() to { row, v -> row.setNumeric(fieldName, v as BigDecimal) }
-         PrimitiveType.DOUBLE -> ScalarTypes.numeric() to { row, v -> row.setNumeric(fieldName, v as BigDecimal) }
-         PrimitiveType.INTEGER -> ScalarTypes.integer() to { row, v -> row.setNumeric(fieldName, v as BigDecimal) }
-         PrimitiveType.BOOLEAN -> ScalarTypes.boolean() to { row, v -> row.setBoolean(fieldName, v as Boolean) }
-         PrimitiveType.LOCAL_DATE -> ScalarTypes.date() to { row, v -> row.setDate(fieldName, v as LocalDate) }
-         PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(fieldName, LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC")))}
+         PrimitiveType.STRING -> ScalarTypes.varchar() to { row, v -> row.setText(columnName, v.toString()) }
+         PrimitiveType.ANY -> ScalarTypes.varchar() to { row, v -> row.setText(columnName, v.toString()) }
+         PrimitiveType.DECIMAL -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, v as BigDecimal) }
+         PrimitiveType.DOUBLE -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, v as BigDecimal) }
+         PrimitiveType.INTEGER -> ScalarTypes.integer() to { row, v -> row.setNumeric(columnName, v as BigDecimal) }
+         PrimitiveType.BOOLEAN -> ScalarTypes.boolean() to { row, v -> row.setBoolean(columnName, v as Boolean) }
+         PrimitiveType.LOCAL_DATE -> ScalarTypes.date() to { row, v -> row.setDate(columnName, v as LocalDate) }
+         PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC")))}
          // TODO TIME db column type
 //         PrimitiveType.TIME -> ScalarTypes.timestamp() to { row, v ->
 //            run {
@@ -213,7 +214,7 @@ $fieldDef
       val (postgresType, writer) = p
       val nullable = if (field.nullable) "" else " NOT NULL"
 
-      return PostgresColumn(fieldName, field, "$fieldName $postgresType$nullable", primitiveType, writer)
+      return PostgresColumn(columnName, field, "$columnName $postgresType$nullable", primitiveType, writer)
    }
 }
 

@@ -57,6 +57,6 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate) {
    }
 
    companion object {
-      fun findByQuery(tableName: String, columnName: String) = "SELECT * FROM $tableName WHERE $columnName = ?"
+      fun findByQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" = ?"""
    }
 }

@@ -62,7 +62,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE open = ?")
+      statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE "open" = ?""")
       argsCaptor.firstValue.should.equal(BigDecimal("6300"))
    }
 
@@ -74,7 +74,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE symbol = ?")
+      statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE "symbol" = ?""")
       argsCaptor.firstValue.should.equal("BTCUSD")
    }
 
@@ -86,7 +86,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE isRolled = ?")
+      statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE "isRolled" = ?""")
       argsCaptor.firstValue.should.equal(true)
    }
 
@@ -98,7 +98,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE high = ?")
+      statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE "high" = ?""")
       argsCaptor.firstValue.should.equal(BigDecimal("6300.0"))
    }
 
@@ -110,7 +110,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE close = ?")
+      statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE "close" = ?""")
       argsCaptor.firstValue.should.equal(BigDecimal("1"))
    }
 
@@ -122,7 +122,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE orderDate = ?")
+      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE \"orderDate\" = ?")
       argsCaptor.firstValue.should.equal("2020-01-01".toLocalDate())
    }
 
@@ -134,7 +134,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE timestamp = ?")
+      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE \"timestamp\" = ?")
       argsCaptor.firstValue.should.equal("2020-01-01T12:00:01.000".toLocalDateTime())
    }
 }
