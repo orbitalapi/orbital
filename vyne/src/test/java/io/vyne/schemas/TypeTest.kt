@@ -13,6 +13,7 @@ class TypeTest {
    // We need a construct like type Name : String support
    // See LENS-72
    val taxi = """
+      type alias EyeColour as String
       type alias Name as String
       type alias Identifier as Name
 
@@ -23,6 +24,12 @@ class TypeTest {
 
    """.trimIndent()
    val schema = TaxiSchema.from(taxi)
+
+   @Test
+   fun aliasedPrimitivesCannotBeAssignedToEachOther() {
+      schema.type("Name").isAssignableTo(schema.type("EyeColour")).should.be.`false`
+      schema.type("EyeColour").isAssignableTo(schema.type("Name")).should.be.`false`
+   }
 
    @Test
    fun isAssignableToShouldBeRight() { // Fuck it, you come up with a better name.
@@ -38,14 +45,14 @@ class TypeTest {
       schema.type("GivenName[]").isAssignableTo(schema.type("Name[]")).should.be.`true`
       schema.type("Name[]").isAssignableTo(schema.type("FirstName[]")).should.be.`false`
       schema.type("Name[]").isAssignableTo(schema.type("GivenName[]")).should.be.`false`
+   }
 
-      // Checking variance across type aliases
+   @Test
+   fun isAssignableAcrossTypeAliasesConsiderVarianceRules() {
       schema.type("NameList").isAssignableTo(schema.type("FirstName[]")).should.be.`true`
       schema.type("FirstName[]").isAssignableTo(schema.type("NameList")).should.be.`true`
       schema.type("GivenName[]").isAssignableTo(schema.type("NameList")).should.be.`true`
       schema.type("NameList").isAssignableTo(schema.type("GivenName[]")).should.be.`true`
-
-
    }
 
    @Test

@@ -12,6 +12,7 @@ import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.schemas.*
 import io.vyne.utils.log
 import lang.taxi.policies.Instruction
+import lang.taxi.types.PrimitiveType
 import lang.taxi.types.VoidType
 import java.util.*
 import java.util.stream.Stream
@@ -204,7 +205,7 @@ data class QueryContext(
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 
    // Wraps all the known facts under a root node, turning it into a tree
-   private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode".fqn(), sources = listOf(VersionedSource.sourceOnly("Undefined")), typeDoc = null, taxiType = VoidType.VOID), facts.toList())
+   private fun dataTreeRoot(): TypedInstance = TypedCollection.arrayOf(schema.type(PrimitiveType.ANY), facts.toList())
 
    /**
     * A breadth-first stream of data facts currently held in the collection.

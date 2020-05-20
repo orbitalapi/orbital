@@ -68,7 +68,7 @@ class QueryResultSerializationTest {
           | "isicCode" : "isic"
           | }
       """.trimMargin())
-      val collection = TypedCollection(clientType, listOf(clientInstnace))
+      val collection = TypedCollection.arrayOf(clientType, listOf(clientInstnace))
       val result = QueryResult(
          results = mapOf(
             QuerySpecTypeNode(clientType) to collection

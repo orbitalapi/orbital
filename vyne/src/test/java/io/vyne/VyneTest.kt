@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.models.json.addJsonModel
@@ -149,7 +150,7 @@ class VyneTest {
 //      val stubService = StubService()
 //      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
 //      val vyne = TestSchema.vyne(queryEngineFactory)
-      val (vyne,stubService) = testVyne(TestSchema.schema)
+      val (vyne, stubService) = testVyne(TestSchema.schema)
 
       // Given...
       val json = """
@@ -168,9 +169,9 @@ class VyneTest {
       vyne.addKeyValuePair("vyne.example.InvoiceValue", 1000)
 
       //When....
-      val result:QueryResult = try {
+      val result: QueryResult = try {
          vyne.query().find("vyne.example.CreditRisk")
-      } catch (e:Exception) {
+      } catch (e: Exception) {
          fail()
       }
 
@@ -219,7 +220,7 @@ class VyneTest {
       val invoiceInstance = vyne.parseJsonModel(typeName = "vyne.example.Invoice", json = invoice)
       // The below line isn't implemented, and isn't trivial to do so, as it involves us remodelleding
       // the query api to provide an explicit start point.
-      val result = vyne.from (invoiceInstance).find("vyne.example.ClientName")
+      val result = vyne.from(invoiceInstance).find("vyne.example.ClientName")
       expect(result["vyne.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
    }
 
@@ -229,7 +230,7 @@ class VyneTest {
           type Money {
             amount:String
           }
-          type TradeValue inherits Money {}
+          type TradeValue inherits Money
 
           type alias HoldReceipt as String
           service LedgerService {
@@ -287,6 +288,67 @@ class VyneTest {
 
       expect(result.isFullyResolved).to.be.`true`
       expect(result.resultMap["EmailAddress[]".fqn().parameterizedName]).to.equal(listOf("foo@foo.com", "bar@foo.com"))
+   }
+
+   @Test
+   fun canRequestTypeAliasOfCollectionDirectlyFromService() {
+      val schema = """
+          type Customer {
+            emails : EmailAddress[]
+          }
+          type alias EmailAddresses as EmailAddress[]
+          type alias EmailAddress as String
+          service CustomerService {
+            operation emails():EmailAddresses
+          }
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("emails", vyne.typedValue("EmailAddresses", listOf("foo@foo.com", "bar@foo.com")))
+
+      val result = vyne.query().find("EmailAddresses")
+
+      expect(result.isFullyResolved).to.be.`true`
+      expect(result.resultMap["EmailAddresses".fqn().parameterizedName]).to.equal(listOf("foo@foo.com", "bar@foo.com"))
+
+      // Discovery by the aliases type name should work too
+      val resultFromAliasName = vyne.query().find("EmailAddress[]")
+      expect(resultFromAliasName.isFullyResolved).to.be.`true`
+      expect(resultFromAliasName.resultMap["EmailAddress[]".fqn().parameterizedName]).to.equal(listOf("foo@foo.com", "bar@foo.com"))
+
+   }
+
+   @Test
+   fun canDiscoverAliasedTypesWhenUsingGraphDiscoveryStrategy() {
+      val schema = """
+          type Customer {
+            name : CustomerName as String
+            emails : EmailAddresses
+          }
+          type alias EmailAddresses as EmailAddress[]
+          type alias EmailAddress as String
+          type alias Region as String
+          type alias CustomerList as Customer[]
+          service CustomerService {
+            operation customersInRegion(Region):CustomerList
+          }
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("customersInRegion", vyne.addJsonModel("CustomerList", """
+         [
+            { "name" : "Jimmy", "emails" : [ "foo@foo.com" ] },
+            { "name" : "Jack", "emails" : [ "baz@foo.com" ] }
+         ]
+         """.trimIndent()))
+
+      listOf("CustomerList", "Customer[]").forEach { typeToDiscover ->
+         val result = vyne.query(additionalFacts = setOf(vyne.typedValue("Region", "UK")))
+            .find(typeToDiscover)
+         result.isFullyResolved.should.equal(true)
+         val resultList = result[typeToDiscover] as List<*>
+         resultList.should.have.size(2)
+      }
    }
 
    @Test

@@ -31,7 +31,7 @@ interface TypedInstance {
          return when {
             value == null -> TypedNull(type)
             value is Collection<*> -> {
-               val collectionMemberType = getCollectionType(type, schema)
+               val collectionMemberType = getCollectionType(type)
                val members = value.map { member ->
                   if (member == null) {
                      TypedNull(collectionMemberType)
@@ -69,8 +69,8 @@ interface TypedInstance {
             value is TypedInstance -> value
             value == null -> TypedNull(type)
             value is Collection<*> -> {
-               val collectionMemberType = getCollectionType(type, schema)
-               TypedCollection(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema, performTypeConversions) })
+               val collectionMemberType = getCollectionType(type)
+               TypedCollection.arrayOf(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema, performTypeConversions) })
             }
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions)
@@ -86,14 +86,9 @@ interface TypedInstance {
          return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema)
       }
 
-      private fun getCollectionType(type: Type, schema: Schema): Type {
-         return if (type.resolvesSameAs(schema.type(PrimitiveType.ARRAY.qualifiedName), considerTypeParameters = false)) {
-            if (type.typeParameters.size == 1) {
-               type.typeParameters[0]
-            } else {
-               log().warn("Using raw Array is not recommended, use a typed array instead.  Collection members are typed as Any")
-               schema.type(PrimitiveType.ANY.qualifiedName)
-            }
+      private fun getCollectionType(type: Type): Type {
+         return if (type.isCollection) {
+            type.collectionType ?: error("Type should return a collection when isCollection is true.")
          } else {
             log().warn("Collection type could not be determined - expected to find ${PrimitiveType.ARRAY.qualifiedName}, but found ${type.fullyQualifiedName}")
             type
