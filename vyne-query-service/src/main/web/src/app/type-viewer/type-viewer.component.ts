@@ -1,6 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {SchemaMember, SourceCode, Type, VersionedSource} from '../services/schema';
 import {Contents} from './toc-host.directive';
+import {environment} from "../../environments/environment";
 
 @Component({
   selector: 'app-type-viewer',
@@ -8,11 +9,16 @@ import {Contents} from './toc-host.directive';
   styleUrls: ['./type-viewer.component.scss']
 })
 export class TypeViewerComponent {
+  showPolicyManager
   schemaMember: SchemaMember;
 
   private _type: Type;
 
   sources: VersionedSource[];
+
+  constructor() {
+    this.showPolicyManager = environment.showPolicyManager
+  }
 
   @Input()
   get type(): Type {
@@ -38,6 +44,5 @@ export class TypeViewerComponent {
     }
     return this._type.attributes && Object.keys(this._type.attributes).length > 0;
   }
-
 
 }
