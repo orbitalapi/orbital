@@ -22,8 +22,46 @@ class TypeTest {
 
       type alias NameList as FirstName[]
 
+      type Person {
+         name : FirstName
+      }
+      type alias Human as Person
+
    """.trimIndent()
    val schema = TaxiSchema.from(taxi)
+
+   @Test
+   fun isPrimitiveDeriviedCorrectly() {
+      schema.type("lang.taxi.String").isPrimitive.should.be.`true`
+      // Alias
+      schema.type("Name").isPrimitive.should.be.`false`
+      // Inherited alias
+      schema.type("FirstName").isPrimitive.should.be.`false`
+
+      // Array
+      schema.type("NameList").isPrimitive.should.be.`false`
+
+      // Hmm... not sure bout this, I guess technicaly it is primitive, since it's
+      // Array<FirstName>, but that feels wrong
+      schema.type("FirstName[]").isPrimitive.should.be.`true`
+   }
+
+   @Test
+   fun isScalarDerivesCorrectly() {
+      schema.type("lang.taxi.String").isScalar.should.be.`true`
+      // Alias
+      schema.type("Name").isScalar.should.be.`true`
+      // Inherited alias
+      schema.type("FirstName").isScalar.should.be.`true`
+
+      // Array
+      schema.type("NameList").isScalar.should.be.`false`
+      schema.type("FirstName[]").isScalar.should.be.`false`
+
+      schema.type("Person").isScalar.should.be.`false`
+      // Type alias to object
+      schema.type("Human").isScalar.should.be.`false`
+   }
 
    @Test
    fun aliasedPrimitivesCannotBeAssignedToEachOther() {
