@@ -52,11 +52,21 @@ enum class PipelineDirection(val label: String) {
 }
 typealias PipelineTransportType = String
 
+
+interface PipelineTransort {
+
+   /**
+    * Pipeline health monitor
+    */
+   val healthMonitor: PipelineTransportHealthMonitor
+      get() = AlwaysUpPipelineTransportMonitor()
+}
+
 /**
  * Maker interface for the actual IO pipe where we'll connect
  * eg., kafka / files / etc
  */
-interface PipelineInputTransport: PipelineTransportHealthMonitor {
+interface PipelineInputTransport : PipelineTransort {
 
    /**
     * Input feed of messages
@@ -66,12 +76,12 @@ interface PipelineInputTransport: PipelineTransportHealthMonitor {
    /**
     * Pause the input events ingestion
     */
-   fun pause() { }
+   fun pause() {}
 
    /**
     * Resume the input events ingestion
     */
-   fun resume() { }
+   fun resume() {}
 }
 
 data class PipelineInputMessage(
@@ -86,23 +96,28 @@ data class PipelineInputMessage(
 }
 
 
-interface PipelineOutputTransport : PipelineTransportHealthMonitor {
+interface PipelineOutputTransport : PipelineTransort {
+
    val type: VersionedTypeReference
    fun write(typedInstance: TypedInstance, logger: PipelineLogger)
 
 }
 
+class AlwaysUpPipelineTransportMonitor: PipelineTransportHealthMonitor
+
+
 interface PipelineTransportHealthMonitor {
 
    /**
-    * Flux reporting the state's changes of this Transport
+    * Pipeline Transport Status feed
     */
-   fun health(): Flux<PipelineTransportStatus> = Flux.just(PipelineTransportStatus.UP)
+   val healthEvents
+      get() = Flux.just(PipelineTransportStatus.UP)
 
    /**
     * Report a new status changes.
     */
-   fun reportStatus(status: PipelineTransportStatus) { }
+   fun reportStatus(status: PipelineTransportStatus) {}
 
    /**
     * Transports' status
@@ -126,13 +141,15 @@ interface PipelineTransportHealthMonitor {
 /**
  * Default PipelineTransportHealthMonitor implementation, using an EmitterProcessor
  */
-open class DefaultPipelineTransportHealthMonitor : PipelineTransportHealthMonitor {
+open class EmitterPipelineTransportHealthMonitor : PipelineTransportHealthMonitor {
 
    private val processor: EmitterProcessor<PipelineTransportStatus> = EmitterProcessor.create()
    private val sink = processor.sink()
 
-   override fun health(): Flux<PipelineTransportStatus> = processor
-   override fun reportStatus(status: PipelineTransportStatus)  { sink.next(status) }
+   override val healthEvents = processor
+   override fun reportStatus(status: PipelineTransportStatus) {
+      sink.next(status)
+   }
 
 }
 

@@ -20,8 +20,11 @@ class KafkaOutputBuilder(val objectMapper: ObjectMapper) : PipelineOutputTranspo
    override fun build(spec: KafkaTransportOutputSpec) = KafkaOutput(spec, objectMapper)
 }
 
-class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val objectMapper: ObjectMapper) : PipelineOutputTransport, DefaultPipelineTransportHealthMonitor() {
+class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val objectMapper: ObjectMapper) : PipelineOutputTransport {
    override val type: VersionedTypeReference = spec.targetType
+
+   override val healthMonitor = EmitterPipelineTransportHealthMonitor()
+
    private val defaultProps = mapOf(
       ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.qualifiedName!!,
       ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.qualifiedName!!
@@ -41,5 +44,4 @@ class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val object
          .doOnSuccess { logger.info { "Pipeline published message to topic ${spec.topic}" } }
          .subscribe()
    }
-
 }

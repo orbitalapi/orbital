@@ -35,14 +35,14 @@ class PipelineBuilder(
       val input = observer.catchAndLog("Failed to create pipeline input") { transportFactory.buildInput(pipeline.input.transport) }
       val output = observer.catchAndLog("Failed to create pipeline output") { transportFactory.buildOutput(pipeline.output.transport) }
 
-      val flux = input.feed
+      val instancesFeed = input.feed
          .flatMap { message -> ingest(message, pipeline, schema) }
          .flatMap { pipelineInput -> transform(pipelineInput, vyne, outputType) }
          .flatMap { pipelineInput -> publish(pipelineInput, output) }
 
       return PipelineInstance(
          pipeline,
-         flux,
+         instancesFeed,
          Instant.now(),
          input,
          output

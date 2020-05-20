@@ -23,7 +23,7 @@ data class DirectTransportInputSpec(val source: Flux<PipelineInputMessage>) : Pi
 
 }
 
-class DirectInputBuilder : PipelineInputTransportBuilder<DirectTransportInputSpec>, DefaultPipelineTransportHealthMonitor() {
+class DirectInputBuilder : PipelineInputTransportBuilder<DirectTransportInputSpec> {
    override fun canBuild(spec: PipelineTransportSpec): Boolean {
       return spec.type == DirectTransport.TYPE
          && spec.direction == PipelineDirection.INPUT
@@ -54,8 +54,10 @@ class DirectOutputBuilder : PipelineOutputTransportBuilder<DirectOutputSpec> {
 
 }
 
-class DirectOutput : PipelineOutputTransport, DefaultPipelineTransportHealthMonitor() {
+class DirectOutput : PipelineOutputTransport {
    val messages: MutableList<TypedInstance> = mutableListOf()
+
+   override val healthMonitor = EmitterPipelineTransportHealthMonitor()
 
    override val type: VersionedTypeReference
       get() = TODO("Not yet implemented")
