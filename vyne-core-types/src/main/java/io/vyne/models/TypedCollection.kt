@@ -5,8 +5,19 @@ import io.vyne.schemas.Type
 
 
 data class TypedCollection(override val type: Type, override val value: List<TypedInstance>) : List<TypedInstance> by value, TypedInstance {
+   init {
+      require(type.isCollection) {
+         "Type ${type.name} was passed to TypedCollection, but it is not a collection type.  Call TypedCollection.arrayOf(...) instead"
+      }
+   }
+
+   val collectionType: Type = type.collectionType!!
 
    companion object {
+      fun arrayOf(collectionType: Type, value: List<TypedInstance>): TypedCollection {
+         return TypedCollection(collectionType.asArrayType(), value)
+      }
+
       /**
        * Constructs a TypedCollection by interrogating the contents of the
        * provided list.
@@ -14,13 +25,16 @@ data class TypedCollection(override val type: Type, override val value: List<Typ
        */
       fun from(populatedList: List<TypedInstance>): TypedCollection {
          // TODO : Find the most compatiable abstract type.
-         val first = populatedList.firstOrNull()
-            ?: error("An empty list was passed, where a populated list was expected.  Cannot infer type.")
-         return TypedCollection(first.type, populatedList)
+         val types = populatedList.map { it.type.resolveAliases() }.distinct()
+         if (types.isEmpty()) {
+            error("An empty list was passed, where a populated list was expected.  Cannot infer type.")
+         }
+         val commonType = types.first().commonTypeAncestor(types)
+         return TypedCollection.arrayOf(commonType, populatedList)
       }
    }
 
-   override fun withTypeAlias(typeAlias: Type): TypedInstance {
+   override fun withTypeAlias(typeAlias: Type): TypedCollection {
       return TypedCollection(typeAlias, value)
    }
 

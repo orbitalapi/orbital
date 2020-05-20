@@ -318,6 +318,8 @@ type Sample {
   "isParameterType" : false,
   "isClosed" : false,
   "isPrimitive" : false,
+  "collectionType" : null,
+  "underlyingTypeParameters" : [],
   "fullyQualifiedName" : "Customer",
   "memberQualifiedName" : {
     "fullyQualifiedName" : "Customer",

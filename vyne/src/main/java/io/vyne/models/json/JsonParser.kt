@@ -10,6 +10,7 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
+import io.vyne.utils.log
 import lang.taxi.types.PrimitiveType
 
 object RelaxedJsonMapper {
@@ -34,9 +35,9 @@ fun ModelContainer.jsonParser(mapper: ObjectMapper = RelaxedJsonMapper.jackson):
 
 class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jacksonObjectMapper()) {
    fun parse(type: Type, json: String): TypedInstance {
-      return if (type.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName) {
+      return if (type.isCollection) {
          val map = mapper.readValue<List<Map<String, Any>>>(json)
-         parseCollection(map, type.typeParameters[0])
+         parseCollection(map, type)
       } else {
          val map = mapper.readValue<Map<String, Any>>(json)
          doParse(type, map)
@@ -95,7 +96,11 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jac
    }
 
    private fun parseCollection(collection: Collection<Map<String, Any>>, type: Type): TypedCollection {
-      val values = collection.map { doParse(type, it, isCollection = false) }
+      if (!type.isCollection) {
+         // TODO : Could just wrap this in an array..
+         error("${type.name} is not a collection type")
+      }
+      val values = collection.map { doParse(type.collectionType!!, it, isCollection = false) }
       return TypedCollection(type, values)
    }
 
