@@ -28,7 +28,7 @@ class HipsterGatherGraphQueryStrategy(private val graphQueryStrategy: HipsterDis
             // I chose to do this so that there's still a single return value for each
             // querySpecTypeNode in the result.
             // The alternative is to use a multi-map, which is a pretty annoying change to the API.
-            querySpec to TypedCollection(querySpec.type, results.filterNotNull())
+            querySpec to TypedCollection.arrayOf(querySpec.type, results.filterNotNull())
          }.toMap()
       return QueryStrategyResult(queryResults)
    }
