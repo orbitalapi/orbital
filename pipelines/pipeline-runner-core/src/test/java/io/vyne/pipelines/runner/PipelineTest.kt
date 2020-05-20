@@ -2,6 +2,8 @@ package io.vyne.pipelines.runner
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.jayway.awaitility.Awaitility
+import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
@@ -10,6 +12,7 @@ import io.vyne.models.json.parseKeyValuePair
 import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineChannel
 import io.vyne.pipelines.PipelineInputMessage
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
 import io.vyne.pipelines.runner.events.ObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.pipelines.runner.transport.direct.*
@@ -55,8 +58,14 @@ class PipelineTest {
          | }
       """.trimMargin())
 
+
+      val input = pipelineInstance.output as DirectOutput
       val output = pipelineInstance.output as DirectOutput
-      output.messages.should.have.size(1)
+      input.healthMonitor.reportStatus(UP)
+      output.healthMonitor.reportStatus(UP)
+
+      await().until { output.messages.should.have.size(1) }
+
       val message = output.messages.first()
       require(message is TypedObject)
       message.type.fullyQualifiedName.should.equal("UserEvent")

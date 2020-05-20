@@ -2,8 +2,10 @@ package io.vyne.pipelines
 
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
 import io.vyne.schemas.Schema
 import io.vyne.utils.log
+import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import java.time.Instant
 import kotlin.math.absoluteValue
@@ -50,12 +52,36 @@ enum class PipelineDirection(val label: String) {
 }
 typealias PipelineTransportType = String
 
+
+interface PipelineTransort {
+
+   /**
+    * Pipeline health monitor
+    */
+   val healthMonitor: PipelineTransportHealthMonitor
+      get() = AlwaysUpPipelineTransportMonitor()
+}
+
 /**
  * Maker interface for the actual IO pipe where we'll connect
  * eg., kafka / files / etc
  */
-interface PipelineInputTransport {
+interface PipelineInputTransport : PipelineTransort {
+
+   /**
+    * Input feed of messages
+    */
    val feed: Flux<PipelineInputMessage>
+
+   /**
+    * Pause the input events ingestion
+    */
+   fun pause() {}
+
+   /**
+    * Resume the input events ingestion
+    */
+   fun resume() {}
 }
 
 data class PipelineInputMessage(
@@ -70,9 +96,61 @@ data class PipelineInputMessage(
 }
 
 
-interface PipelineOutputTransport {
+interface PipelineOutputTransport : PipelineTransort {
+
    val type: VersionedTypeReference
    fun write(typedInstance: TypedInstance, logger: PipelineLogger)
+
+}
+
+class AlwaysUpPipelineTransportMonitor: PipelineTransportHealthMonitor
+
+
+interface PipelineTransportHealthMonitor {
+
+   /**
+    * Pipeline Transport Status feed
+    */
+   val healthEvents
+      get() = Flux.just(PipelineTransportStatus.UP)
+
+   /**
+    * Report a new status changes.
+    */
+   fun reportStatus(status: PipelineTransportStatus) {}
+
+   /**
+    * Transports' status
+    */
+   enum class PipelineTransportStatus {
+
+      // Transport is initialising for the first time
+      INIT,
+
+      // Transport is up and ready to receive events
+      UP,
+
+      // Transport is down (for any reason) but can be recovered
+      DOWN,
+
+      // Transport is down and can't be recovered
+      TERMINATED
+   }
+}
+
+/**
+ * Default PipelineTransportHealthMonitor implementation, using an EmitterProcessor
+ */
+open class EmitterPipelineTransportHealthMonitor : PipelineTransportHealthMonitor {
+
+   private val processor: EmitterProcessor<PipelineTransportStatus> = EmitterProcessor.create()
+   private val sink = processor.sink()
+
+   override val healthEvents = processor
+   override fun reportStatus(status: PipelineTransportStatus) {
+      sink.next(status)
+   }
+
 }
 
 

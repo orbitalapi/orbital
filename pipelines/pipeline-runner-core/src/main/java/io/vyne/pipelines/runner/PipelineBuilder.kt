@@ -26,7 +26,7 @@ class PipelineBuilder(
 
    fun build(pipeline: Pipeline): PipelineInstance {
       val observer = observerProvider.pipelineObserver(pipeline, null).invoke("Preparing pipeline")
-      observer.info { "Building pipeline ${pipeline.name}" }
+      observer.info { "Building pipeline ${pipeline.name} [Input = ${pipeline.input.transport.type}, output = ${pipeline.output.transport.type}]" }
       val vyne = vyneFactory.createVyne()
       val schema = vyne.schema
       // Grab the types early, in case they're not present in Vyne
@@ -35,15 +35,14 @@ class PipelineBuilder(
       val input = observer.catchAndLog("Failed to create pipeline input") { transportFactory.buildInput(pipeline.input.transport) }
       val output = observer.catchAndLog("Failed to create pipeline output") { transportFactory.buildOutput(pipeline.output.transport) }
 
-      val disposable = input.feed
+      val instancesFeed = input.feed
          .flatMap { message -> ingest(message, pipeline, schema) }
          .flatMap { pipelineInput -> transform(pipelineInput, vyne, outputType) }
          .flatMap { pipelineInput -> publish(pipelineInput, output) }
-         .subscribe()
 
       return PipelineInstance(
          pipeline,
-         disposable,
+         instancesFeed,
          Instant.now(),
          input,
          output
@@ -58,7 +57,7 @@ class PipelineBuilder(
 
       val logger = stageObserverProvider("Ingest")
       return loggedMono(logger) { sink ->
-         // Naieve first implementation.
+         // Naive first implementation.
          // Need to leverage the efficient reading we've built for vyne-db module
 
          // TODO : The idea here is that metadata may provide hints as to whether

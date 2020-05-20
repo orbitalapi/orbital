@@ -1,80 +1,81 @@
 package io.vyne.pipelines.runner.transport.kafka
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
-import io.vyne.VersionedTypeReference
-import io.vyne.models.json.parseKeyValuePair
-import io.vyne.pipelines.Pipeline
-import io.vyne.pipelines.PipelineChannel
-import io.vyne.pipelines.runner.PipelineBuilder
-import io.vyne.pipelines.runner.PipelineTestUtils
-import io.vyne.pipelines.runner.events.ObserverProvider
-import io.vyne.pipelines.runner.transport.PipelineTransportFactory
+import io.vyne.models.TypedObject
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
 import io.vyne.pipelines.runner.transport.direct.DirectOutput
-import io.vyne.pipelines.runner.transport.direct.DirectOutputBuilder
-import io.vyne.pipelines.runner.transport.direct.DirectOutputSpec
-import io.vyne.schemas.fqn
-import io.vyne.spring.SimpleVyneProvider
-import io.vyne.utils.log
-import org.apache.kafka.clients.producer.ProducerRecord
-import org.junit.Ignore
 import org.junit.Test
-import reactor.core.publisher.Flux
-import reactor.kafka.sender.KafkaSender
-import reactor.kafka.sender.SenderRecord
-import java.util.concurrent.TimeUnit
+import org.junit.runner.RunWith
+import org.springframework.test.context.junit4.SpringRunner
 
+@RunWith(SpringRunner::class)
 class KafkaInputTest : AbstractKafkaTest() {
 
    @Test
-   @Ignore("WIP")
    fun canReceiveFromKafkaInput() {
-      waitForBrokers()
-      val (vyne, stub) = PipelineTestUtils.pipelineTestVyne()
-      stub.addResponse("getUserNameFromId", vyne.parseKeyValuePair("Username", "Jimmy Pitt"))
-      val builder = PipelineBuilder(
-         PipelineTransportFactory(listOf(KafkaInputBuilder(jacksonObjectMapper()), DirectOutputBuilder())),
-         SimpleVyneProvider(vyne),
-         ObserverProvider.local()
+      // Pipeline Kafka -> Direct
+      val pipeline = buildPipeline(
+         inputTransportSpec = kafkaInputSpec(),
+         outputTransportSpec = directOutputSpec()
       )
+      val pipelineInstance = buildPipelineBuilder().build(pipeline)
+      pipelineInstance.output.healthMonitor.reportStatus(UP)
 
+      // Send for messages into kafka
+      sendKafkaMessage(""" {"userId":"Marty"} """)
+      sendKafkaMessage(""" {"userId":"Paul"} """)
+      sendKafkaMessage(""" {"userId":"Andrzej"} """)
+      sendKafkaMessage(""" {"userId":"Markus"} """)
 
-      val topicName = testName.methodName
-      val pipeline = Pipeline(
-         "testPipeline",
-         input = PipelineChannel(
-            VersionedTypeReference("PersonLoggedOnEvent".fqn()),
-            KafkaTransportInputSpec(
-               topic = topicName,
-               targetType = VersionedTypeReference("PersonLoggedOnEvent".fqn()),
-               props = consumerProps("vyne-pipeline-group")
-            )
-         ),
-         output = PipelineChannel(
-            VersionedTypeReference("UserEvent".fqn()),
-            DirectOutputSpec
-         )
-      )
-
-      val pipelineInstance = builder.build(pipeline)
-
-      val sender = KafkaSender.create(senderOptions)
-      sender.createOutbound()
-         .send { records ->
-            records.onNext(ProducerRecord(
-               topicName,
-               "1",
-               PipelineTestUtils.personLoggedOnEvent
-            ))
-         }
-
-
+      // Wait until we wrote 4 messages in the output
       val output = pipelineInstance.output as DirectOutput
+      await().until { output.messages.should.have.size(4) }
 
-      await().atMost(5, TimeUnit.SECONDS).until {
-         output.messages.isNotEmpty()
-      }
-      output.messages.should.have.size(1)
+      // Check the values in the output
+      val outputMessages = output.messages.map { it as TypedObject }.map { it["id"].value as String }
+      outputMessages.should.have.all.elements("Marty", "Paul", "Andrzej", "Markus")
    }
+
+   @Test
+   fun canReceiveKafkaInputPaused() {
+
+      // Pipeline Kafka -> Direct
+      val pipeline = buildPipeline(
+         inputTransportSpec = kafkaInputSpec(),
+         outputTransportSpec = directOutputSpec()
+      )
+      val pipelineInstance = buildPipelineBuilder().build(pipeline)
+
+      val input = pipelineInstance.input as KafkaInput
+      val output = pipelineInstance.output as DirectOutput
+      pipelineInstance.output.healthMonitor.reportStatus(UP)
+
+      // Send for messages into kafka
+      sendKafkaMessage(""" {"userId":"Marty"} """)
+      sendKafkaMessage(""" {"userId":"Paul"} """)
+      await().until { output.messages.should.have.size(2) }
+
+      // Output is now down
+      pipelineInstance.output.healthMonitor.reportStatus(DOWN)
+      await().until { input.isPaused().should.be.`true` }
+
+      // Send 3 other messages
+      sendKafkaMessage(""" {"userId":"Eric"} """)
+      sendKafkaMessage(""" {"userId":"Andrzej"} """)
+      sendKafkaMessage(""" {"userId":"Markus"} """)
+
+      // We shouldn't have more messages incoming
+      output.messages.should.have.size(2)
+
+      // Output is back UP
+      pipelineInstance.output.healthMonitor.reportStatus(UP)
+      await().until { output.messages.should.have.size(5) }
+
+      // We should now ingest the 3 new messages. Total of 5
+      val outputMessages = output.messages.map { it as TypedObject }.map { it["id"].value as String }
+      outputMessages.should.have.all.elements("Marty", "Paul", "Andrzej", "Markus", "Eric")
+   }
+
 }

@@ -8,3 +8,10 @@ server:
 service:
    cask:
       name: cask
+
+feign:
+   client:
+      config:
+         default:
+            connectTimeout: 2000
+            readTimeout: 2000

@@ -19,6 +19,13 @@
       </dependency>
 
       <dependency>
+         <groupId>com.nhaarman.mockitokotlin2</groupId>
+         <artifactId>mockito-kotlin</artifactId>
+         <version>2.2.0</version>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-openfeign</artifactId>
       </dependency>
@@ -67,24 +74,16 @@
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-web</artifactId>
       </dependency>
-      <!-- https://mvnrepository.com/artifact/io.projectreactor.kafka/reactor-kafka -->
       <dependency>
          <groupId>io.projectreactor.kafka</groupId>
          <artifactId>reactor-kafka</artifactId>
          <version>1.2.2.RELEASE</version>
       </dependency>
       <dependency>
-         <groupId>org.apache.kafka</groupId>
-         <artifactId>kafka_2.11</artifactId>
-         <version>${kafka.version}</version>
+         <groupId>org.springframework.kafka</groupId>
+         <artifactId>spring-kafka-test</artifactId>
          <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.kafka</groupId>
-         <artifactId>kafka_2.11</artifactId>
-         <version>${kafka.version}</version>
-         <classifier>test</classifier>
-         <scope>test</scope>
+         <version>2.2.12.RELEASE</version>
       </dependency>
       <dependency>
          <groupId>org.apache.kafka</groupId>
@@ -93,12 +92,12 @@
          <classifier>test</classifier>
          <scope>test</scope>
       </dependency>
-      <!--      <dependency>-->
-      <!--         <groupId>org.springframework.kafka</groupId>-->
-      <!--         <artifactId>spring-kafka-test</artifactId>-->
-      <!--         <scope>test</scope>-->
-      <!--         <version>2.2.12.RELEASE</version>-->
-      <!--      </dependency>-->
+
+      <dependency>
+         <groupId>org.eclipse.jetty.websocket</groupId>
+         <artifactId>websocket-server</artifactId>
+         <scope>test</scope>
+      </dependency>
 
    </dependencies>
    <dependencyManagement>
@@ -107,7 +106,7 @@
          <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>2.0.0</version>
+            <version>${kafka.version}</version>
          </dependency>
       </dependencies>
    </dependencyManagement>
