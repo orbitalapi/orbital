@@ -187,8 +187,11 @@ data class Type(
    // If changing, make sure tests pass.
    @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isScalar")
-   val isScalar by lazy {
-      attributes.isEmpty() && !isCollection
+   val isScalar: Boolean by lazy {
+      resolveAliases().let { underlyingType ->
+         underlyingType.attributes.isEmpty() && !underlyingType.isCollection
+      }
+
    }
 
    fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {
