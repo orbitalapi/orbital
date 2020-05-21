@@ -10,6 +10,8 @@ import reactor.core.publisher.Flux
 import java.time.Instant
 import kotlin.math.absoluteValue
 
+val PIPELINE_METADATA_KEY = "pipeline"
+
 data class Pipeline(
    val name: String,
    val input: PipelineChannel,
