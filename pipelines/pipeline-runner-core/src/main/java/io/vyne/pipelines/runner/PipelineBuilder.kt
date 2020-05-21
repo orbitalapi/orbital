@@ -36,6 +36,9 @@ class PipelineBuilder(
       val output = observer.catchAndLog("Failed to create pipeline output") { transportFactory.buildOutput(pipeline.output.transport) }
 
       val instancesFeed = input.feed
+         .name("pipeline_ingestion_request")
+         .tag("pipeline_name", pipeline.name)
+         .metrics()
          .flatMap { message -> ingest(message, pipeline, schema) }
          .flatMap { pipelineInput -> transform(pipelineInput, vyne, outputType) }
          .flatMap { pipelineInput -> publish(pipelineInput, output) }

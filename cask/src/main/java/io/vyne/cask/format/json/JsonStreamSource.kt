@@ -21,10 +21,10 @@ class JsonStreamSource(val input: Flux<InputStream>,
    val cachePath: Path by lazy {
       Files.createFile(readCacheDirectory.resolve(vyneType.fullyQualifiedName))
    }
+   val mapper = JsonStreamMapper(vyneType.type, schema)
 
    override val stream: Flux<InstanceAttributeSet>
       get() {
-         val mapper = JsonStreamMapper(vyneType.type, schema)
          return input
             .map { stream -> objectMapper.readTree(stream) }
             .filter { record -> !record.isEmpty }
