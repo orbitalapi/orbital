@@ -40,6 +40,7 @@ interface Schema {
 
    fun taxiType(name: QualifiedName): lang.taxi.types.Type
 
+   fun type(taxiType: lang.taxi.types.Type):Type = type(taxiType.qualifiedName.fqn())
    fun type(name: QualifiedName) = typeCache.type(name)
 
    fun hasType(name: String) = typeCache.hasType(name)

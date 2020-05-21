@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
 import io.vyne.VersionedSource
+import io.vyne.utils.log
 import lang.taxi.Equality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.AttributePath
+import lang.taxi.types.PrimitiveType
 import lang.taxi.utils.takeHead
 
 interface TypeFullView : TypeLightView
@@ -114,9 +116,23 @@ data class Type(
       this.typeParametersTypeNames.map { typeCache.type(it) }
    }
 
+   // TODO : This name sucks.  Need a consistent term for "the real thing, unwrapping the aliases if they exist"
+   @get:JsonIgnore
+   val underlyingTypeParameters: List<Type> by lazy {
+      this.resolveAliases().typeParameters
+   }
+
+   @get:JsonProperty("underlyingTypeParameters")
+   val underlyingTypeParameterNames: List<QualifiedName> by lazy {
+      this.underlyingTypeParameters.map { it.name }
+   }
+
+
+   // TODO : I suspect all of these isXxxx vars need to defer to the underlying aliased type.
    @JsonView(TypeFullView::class)
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
 
+   // TODO : I suspect all of these isXxxx vars need to defer to the underlying aliased type.
    @JsonView
    val isClosed: Boolean = this.modifiers.contains(Modifier.CLOSED)
 
@@ -145,13 +161,37 @@ data class Type(
       }).any { it.parameterizedName.startsWith(lang.taxi.types.PrimitiveType.ARRAY.qualifiedName) }
    }
 
+   @get:JsonIgnore
+   val collectionType: Type? by lazy {
+      if (isCollection) {
+         underlyingTypeParameters.firstOrNull().let { collectionTypeParam ->
+            if (collectionTypeParam == null) {
+               log().warn("Collection does not have a declared type.  Using raw arrays is discouraged.  Will return Any")
+               typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
+            } else {
+               collectionTypeParam
+            }
+         }
+      } else {
+         null
+      }
+   }
+
+   @get:JsonProperty("collectionType")
+   val collectionTypeName: QualifiedName? by lazy {
+      collectionType?.name
+   }
+
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.
    @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isScalar")
-   val isScalar by lazy {
-      attributes.isEmpty() && !isCollection
+   val isScalar: Boolean by lazy {
+      resolveAliases().let { underlyingType ->
+         underlyingType.attributes.isEmpty() && !underlyingType.isCollection
+      }
+
    }
 
    fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {
@@ -233,7 +273,7 @@ data class Type(
          if (!isAssignableTo(otherWithoutAliases, considerTypeParameters = false)) {
             return false
          }
-         this.typeParameters.forEachIndexed { index, type ->
+         thisWithoutAliases.typeParameters.forEachIndexed { index, type ->
             val otherParamType = otherWithoutAliases.typeParameters[index].resolveAliases()
             val thisParamType = type.resolveAliases()
             if (!thisParamType.isAssignableTo(otherParamType)) {
@@ -256,7 +296,19 @@ data class Type(
       return if (!this.isTypeAlias) {
          this
       } else {
-         this.aliasForType!!.resolveAliases()
+         // Experiment...
+         // type aliases for primtiives are a core building block for taxonomies
+         // But they're causing problems :
+         // type alias Height as Int
+         // type alias Weight as Int
+         // We clearly didn't mean that Height = Weight
+         // Ideally, we need better constructrs in the langauge to suport definint the primitve types.
+         // For now, let's stop resolving aliases one step before the primitive
+         when {
+            aliasForTypeName!!.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName -> this.aliasForType!!.resolveAliases()
+            this.aliasForType!!.isPrimitive -> this
+            else -> this.aliasForType!!.resolveAliases()
+         }
       }
    }
 
@@ -314,6 +366,28 @@ data class Type(
 
    fun hasMetadata(name: QualifiedName): Boolean {
       return this.metadata.any { it.name == name }
+   }
+
+   fun asArrayType(): Type {
+      return this.typeCache.type("lang.taxi.Array<${this.name.parameterizedName}>")
+   }
+
+   /**
+    * Returns the type that is most in common with the between this and the
+    * other types in the list.
+    * Note: This is a placeholder and will currently return Any if there's mixed types.
+    * Callers should always code for the scneario that Any is returned, but in a future implementation
+    * we'll consider more types within the type hierarchy
+    */
+   fun commonTypeAncestor(types: List<Type>): Type {
+      val resolvedTypes = (types.map { it.resolveAliases() } + this.resolveAliases())
+         .map { it.name to it }
+         .toMap()
+      return if (resolvedTypes.size > 1) {
+         this.typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
+      } else {
+         resolvedTypes.values.first()
+      }
    }
 }
 

@@ -91,6 +91,11 @@ class CaskWebsocketHandler(
       // partially because exceptions are thrown outside flux pipelines
       // we have to refactor code behind ingestion to fix this problem
       session.receive()
+         .name("cask_ingestion_request")
+         // This will register timer with the above name
+         // Registry instance is auto-detected
+         // Percentiles are configured globally for all the timers, see CaskApp
+         .metrics()
          .map {
             log().info("Ingesting message from sessionId=${session.id}")
             try {
@@ -100,6 +105,7 @@ class CaskWebsocketHandler(
                   .map { "Successfully ingested ${it} records" }
                   .subscribe(
                      { result ->
+                        log().info("Successfully ingested message from sessionId=${session.id}")
                         if (sendResponse) {
                            outputSink.next(successResponse(session, result))
                         }

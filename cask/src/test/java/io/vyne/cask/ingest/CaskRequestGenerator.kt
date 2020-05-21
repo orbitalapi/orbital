@@ -22,11 +22,11 @@ import java.util.*
  * 4. Start this client
  * 5. Go to http://localhost:8800/actuator/prometheus and observe cask_ingestion_request_seconds metric
  */
-class WebSocketRequestGenerator {
+class CaskRequestGenerator {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
-         val noOfRequestsPerSecond = 20
+         val noOfRequestsPerSecond = 10
          val client: WebSocketClient = ReactorNettyWebSocketClient()
          client.execute(URI.create("ws://localhost:8800/cask/OrderWindowSummary")) { session ->
             val requestIntervalInMs = Duration.ofMillis(1000L / noOfRequestsPerSecond)
@@ -43,6 +43,7 @@ class WebSocketRequestGenerator {
          val orders = generateOrders()
          val mapper = jacksonObjectMapper()
                   .registerModule(JavaTimeModule())
+                  // enforcing property names starting with uppercase letter
                   .setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE);
           return mapper.writeValueAsString(orders)
       }

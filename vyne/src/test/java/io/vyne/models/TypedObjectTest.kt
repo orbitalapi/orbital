@@ -70,7 +70,7 @@ class TypedObjectTest {
    @Test
    fun canConvertTypedCollectionToTypeNamedObject() {
       val trader = JsonModelParser(schema).parse(schema.type("Trader"), traderJson)
-      val collection = TypedCollection(schema.type("Trader"), listOf(trader))
+      val collection = TypedCollection.arrayOf(schema.type("Trader"), listOf(trader))
       val raw = collection.toTypeNamedInstance() as List<TypeNamedInstance>
       expect(raw).to.have.size(1)
       expect(raw.first().typeName).to.equal("Trader")
