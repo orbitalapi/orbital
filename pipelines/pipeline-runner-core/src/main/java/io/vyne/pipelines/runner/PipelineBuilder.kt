@@ -28,7 +28,7 @@ class PipelineBuilder(
    fun build(pipeline: Pipeline): PipelineInstance {
       val observer = observerProvider.pipelineObserver(pipeline, null).invoke("Preparing pipeline")
       observer.info { "Building pipeline ${pipeline.name} [Input = ${pipeline.input.transport.type}, output = ${pipeline.output.transport.type}]" }
-      val vyne = vyneFactory.createVyne() // FIXME do we need to create vyne each time ?
+      val vyne = vyneFactory.createVyne()
       // Grab the types early, in case they're not present in Vyne
       val inputType = observer.catchAndLog("Failed to resolve input type ${pipeline.input.type}") { vyne.type(pipeline.input.type) }
       val outputType = observer.catchAndLog("Failed to resolve output type ${pipeline.output.type}") { vyne.type(pipeline.output.type) }
@@ -58,8 +58,11 @@ class PipelineBuilder(
          message
       )
 
+
       val logger = stageObserverProvider("Ingest")
       return loggedMono(logger) {
+
+
          stageObserverProvider to message.messageProvider(logger)
       }
    }
@@ -72,7 +75,6 @@ class PipelineBuilder(
 
          // Transform if needed
          var transformedMessage = if (inputType == outputType) {
-            logger.info { "No transformation required" }
             message
          } else {
             vyneTransformation(message, vyne, inputType, outputType)
@@ -84,6 +86,12 @@ class PipelineBuilder(
    }
 
    fun vyneTransformation(message: String, vyne: Vyne, inputType: Type, outputType: Type): String {
+      // TODO : The idea here is that metadata may provide hints as to whether
+      // or not we want to deserailize the message.
+      // Note, as I type this, that may be redundant, as the input feed
+      // has enough hints to decide that, and is the concerete place to
+      // express the decision.
+
       // Type input message
       var inputInstance = TypedInstance.from(inputType, objectMapper.readTree(message), vyne.schema)
 
@@ -94,7 +102,7 @@ class PipelineBuilder(
       // TODO : Handle failed transformations.
       // Question: Should Pipelines have dead letter or error topics?
 
-      return objectMapper.writeValueAsString(outputInstance.toRawObject())!! // FIXME !! ??
+      return objectMapper.writeValueAsString(outputInstance.toRawObject())
    }
 
    fun publish(pipelineInput: Pair<PipelineStageObserverProvider, String>, output: PipelineOutputTransport): Mono<String> {
