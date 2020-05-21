@@ -82,19 +82,14 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
                "headers" to headers
             )
 
-            val messageProvider = { schema: Schema, logger: PipelineLogger ->
-               val targetType = schema.type(spec.targetType)
-               logger.debug { "Deserializing record partition=$partition/ offset=$offset and maping to ${targetType.fullyQualifiedName}" }
+            val messageProvider = { logger: PipelineLogger ->
+               logger.debug { "Deserializing record partition=$partition/ offset=$offset" }
 
                // Step 1. Get the message
                val message = kafkaMessage.value()
 
-               // Step 2. The actual Kafka message ingested can have different type (e.g plain json, avro, other binary formats...)
-               // Extract the json string from the message
-               val map = toStringMessage(message)
-
-               // Step 3. Map the json to Vyne type
-               TypedInstance.from(targetType, objectMapper.readTree(map), schema)
+               // Step 2. The actual Kafka message ingested can have different type (e.g plain json, avro, other binary formats...). Extract the json string from the message
+               toStringMessage(message)
             }
 
             Mono.create<PipelineInputMessage> { sink ->
@@ -104,7 +99,6 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
                   messageProvider
                ))
             }.doOnSuccess {
-               log().info("ACKNOWLEDGE MESSAGE")
                kafkaMessage.receiverOffset().acknowledge()
             }
          }

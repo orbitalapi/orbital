@@ -55,15 +55,15 @@ class DirectOutputBuilder : PipelineOutputTransportBuilder<DirectOutputSpec> {
 }
 
 class DirectOutput : PipelineOutputTransport {
-   val messages: MutableList<TypedInstance> = mutableListOf()
+   val messages: MutableList<String> = mutableListOf()
 
    override val healthMonitor = EmitterPipelineTransportHealthMonitor()
 
    override val type: VersionedTypeReference
       get() = TODO("Not yet implemented")
 
-   override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
-      this.messages.add(typedInstance)
+   override fun write(message: String, logger: PipelineLogger) {
+      this.messages.add(message)
    }
 
 }

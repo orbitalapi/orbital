@@ -31,11 +31,11 @@ class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val object
    )
    private val senderOptions = SenderOptions.create<String, String>(spec.props + defaultProps)
    private val sender = KafkaSender.create(senderOptions)
-   override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
-      val json = objectMapper.writeValueAsString(typedInstance.toRawObject())
-      logger.debug { "Generated json: $json" }
-      logger.info { "Sending instance ${typedInstance.type.fullyQualifiedName} to Kafka topic ${spec.topic}" }
-      val record = ProducerRecord<String, String>(spec.topic, json)
+   override fun write(message: String, logger: PipelineLogger) {
+
+      logger.info { "Sending mesage to Kafka topic ${spec.topic}" }
+
+      val record = ProducerRecord<String, String>(spec.topic, message)
 
       sender.createOutbound().send(Mono.just(record))
          .then()

@@ -3,7 +3,6 @@ package io.vyne.pipelines.runner.transport.cask
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.discovery.EurekaClient
 import io.vyne.VersionedTypeReference
-import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
@@ -116,10 +115,9 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
          }
    }
 
-   override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
-      val json = objectMapper.writeValueAsString(typedInstance.toRawObject())
-      logger.info { "Sending instance ${typedInstance.type.fullyQualifiedName} to Cask" }
-      wsOutput.onNext(json);
+   override fun write(message: String, logger: PipelineLogger) {
+      logger.info { "Sending message to Cask" }
+      wsOutput.onNext(message)
    }
 
 }

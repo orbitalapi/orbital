@@ -17,7 +17,7 @@ import java.time.Instant
 
 class PipelineInstance(
    override val spec: Pipeline,
-   private val instancesFeed: Flux<TypedInstance>,
+   private val instancesFeed: Flux<String>,
    override val startedTimestamp: Instant,
    @JsonIgnore
    val input: PipelineInputTransport,

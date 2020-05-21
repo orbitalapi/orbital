@@ -1,5 +1,7 @@
 package io.vyne.pipelines.runner
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.Vyne
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.Pipeline
@@ -9,26 +11,24 @@ import io.vyne.pipelines.runner.events.ObserverProvider
 import io.vyne.pipelines.runner.events.PipelineStageObserver
 import io.vyne.pipelines.runner.events.PipelineStageObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
-import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.spring.VyneProvider
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
-import reactor.core.publisher.MonoSink
 import java.time.Instant
 
 @Component
 class PipelineBuilder(
    private val transportFactory: PipelineTransportFactory,
    private val vyneFactory: VyneProvider,
-   private val observerProvider: ObserverProvider
+   private val observerProvider: ObserverProvider,
+   private val objectMapper: ObjectMapper = jacksonObjectMapper()
 ) {
 
    fun build(pipeline: Pipeline): PipelineInstance {
       val observer = observerProvider.pipelineObserver(pipeline, null).invoke("Preparing pipeline")
       observer.info { "Building pipeline ${pipeline.name} [Input = ${pipeline.input.transport.type}, output = ${pipeline.output.transport.type}]" }
-      val vyne = vyneFactory.createVyne()
-      val schema = vyne.schema
+      val vyne = vyneFactory.createVyne() // FIXME do we need to create vyne each time ?
       // Grab the types early, in case they're not present in Vyne
       val inputType = observer.catchAndLog("Failed to resolve input type ${pipeline.input.type}") { vyne.type(pipeline.input.type) }
       val outputType = observer.catchAndLog("Failed to resolve output type ${pipeline.output.type}") { vyne.type(pipeline.output.type) }
@@ -39,9 +39,9 @@ class PipelineBuilder(
          .name("pipeline_ingestion_request")
          .tag("pipeline_name", pipeline.name)
          .metrics()
-         .flatMap { message -> ingest(message, pipeline, schema) }
-         .flatMap { pipelineInput -> transform(pipelineInput, vyne, outputType) }
-         .flatMap { pipelineInput -> publish(pipelineInput, output) }
+         .flatMap { ingest(it, pipeline) }
+         .flatMap { transform(it, vyne, inputType, outputType) }
+         .flatMap { publish(it, output) }
 
       return PipelineInstance(
          pipeline,
@@ -52,60 +52,71 @@ class PipelineBuilder(
       )
    }
 
-   fun ingest(message: PipelineInputMessage, pipeline: Pipeline, schema: Schema): Mono<Pair<PipelineStageObserverProvider, TypedInstance>> {
+   fun ingest(message: PipelineInputMessage, pipeline: Pipeline): Mono<Pair<PipelineStageObserverProvider, String>> {
       val stageObserverProvider: PipelineStageObserverProvider = observerProvider.pipelineObserver(
          pipeline,
          message
       )
 
       val logger = stageObserverProvider("Ingest")
-      return loggedMono(logger) { sink ->
-         // Naive first implementation.
-         // Need to leverage the efficient reading we've built for vyne-db module
-
-         // TODO : The idea here is that metadata may provide hints as to whether
-         // or not we want to deserailize the message.
-         // Note, as I type this, that may be redundant, as the input feed
-         // has enough hints to decide that, and is the concerete place to
-         // express the decision.
-         // For now, just deserialize everything.
-         val typedInstance = message.messageProvider(schema, logger)
-         sink.success(stageObserverProvider to typedInstance)
+      return loggedMono(logger) {
+         stageObserverProvider to message.messageProvider(logger)
       }
    }
 
-   fun transform(pipelineInput: Pair<PipelineStageObserverProvider, TypedInstance>, vyne: Vyne, outputType: Type): Mono<Pair<PipelineStageObserverProvider, TypedInstance>> {
-      val (observerProvider, typedInstance) = pipelineInput
+   fun transform(pipelineInput: Pair<PipelineStageObserverProvider, String>, vyne: Vyne, inputType: Type, outputType: Type): Mono<Pair<PipelineStageObserverProvider, String>> {
+      val (observerProvider, message) = pipelineInput
       val logger = observerProvider("Transform")
-      return loggedMono(logger) { sink ->
-         // TODO : Handle failed transformations.
-         // Question: Should Pipelines have dead letter or error topics?
-         val queryResult = vyne.query()
-            .addFact(typedInstance)
-            .build(outputType.name)
-         val resultInstance = queryResult.get(outputType.fullyQualifiedName) ?: error("Conversion failed")
-         sink.success(observerProvider to resultInstance)
-      }
-   }
 
-   fun publish(pipelineInput: Pair<PipelineStageObserverProvider, TypedInstance>, output: PipelineOutputTransport): Mono<TypedInstance> {
-      val (observerProvider, typedInstance) = pipelineInput
-      val logger = observerProvider("Publish")
-      return loggedMono(logger) { sink ->
-         output.write(typedInstance, logger)
-         sink.success(typedInstance)
-      }
-   }
+      return loggedMono(logger) {
 
-   fun <T> loggedMono(logger: PipelineStageObserver, mono: (MonoSink<T>) -> Unit): Mono<T> {
-      return Mono.create<T> { mono(it) }
-         .onErrorResume { exception ->
-            logger.completedInError(exception)
-            Mono.empty()
-         }.doOnSuccess {
-            logger.completedSuccessfully()
+         // Transform if needed
+         var transformedMessage = if (inputType == outputType) {
+            logger.info { "No transformation required" }
+            message
+         } else {
+            vyneTransformation(message, vyne, inputType, outputType)
          }
+
+         // Send to following steps
+         observerProvider to transformedMessage
+      }
+   }
+
+   fun vyneTransformation(message: String, vyne: Vyne, inputType: Type, outputType: Type): String {
+      // Type input message
+      var inputInstance = TypedInstance.from(inputType, objectMapper.readTree(message), vyne.schema)
+
+      // Transform
+      val queryResult = vyne.query().addFact(inputInstance).build(outputType.name)
+      val outputInstance = queryResult.get(outputType.fullyQualifiedName) ?: error("Conversion failed")
+
+      // TODO : Handle failed transformations.
+      // Question: Should Pipelines have dead letter or error topics?
+
+      return objectMapper.writeValueAsString(outputInstance.toRawObject())!! // FIXME !! ??
+   }
+
+   fun publish(pipelineInput: Pair<PipelineStageObserverProvider, String>, output: PipelineOutputTransport): Mono<String> {
+      val (observerProvider, message) = pipelineInput
+      val logger = observerProvider("Publish")
+      return loggedMono(logger) {
+         output.write(message, logger)
+         message
+      }
+   }
+
+   fun <T> loggedMono(logger: PipelineStageObserver, action: () -> T): Mono<T> {
+      return Mono.create<T> { sink ->
+         sink.success(action.invoke())
+      }.onErrorResume { exception ->
+         logger.completedInError(exception)
+         Mono.empty()
+      }.doOnSuccess {
+         logger.completedSuccessfully()
+      }
    }
 
 
 }
+

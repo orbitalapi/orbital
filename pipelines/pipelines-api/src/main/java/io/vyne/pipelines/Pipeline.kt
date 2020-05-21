@@ -90,7 +90,7 @@ data class PipelineInputMessage(
    // has received it
    val messageTimestamp: Instant,
    val metadata: Map<String, Any> = emptyMap(),
-   val messageProvider: (schema: Schema, logger: PipelineLogger) -> TypedInstance
+   val messageProvider: (logger: PipelineLogger) -> String
 ) {
    val id = messageTimestamp.toEpochMilli()
 }
@@ -99,7 +99,7 @@ data class PipelineInputMessage(
 interface PipelineOutputTransport : PipelineTransort {
 
    val type: VersionedTypeReference
-   fun write(typedInstance: TypedInstance, logger: PipelineLogger)
+   fun write(message: String, logger: PipelineLogger)
 
 }
 
