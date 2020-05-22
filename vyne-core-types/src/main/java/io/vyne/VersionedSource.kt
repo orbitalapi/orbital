@@ -6,6 +6,7 @@ import com.google.common.annotations.VisibleForTesting
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import lang.taxi.CompilationError
+import lang.taxi.packages.TaxiPackageSources
 import java.io.Serializable
 import java.time.Instant
 
@@ -49,4 +50,11 @@ data class ParsedSource(val source: VersionedSource, val errors: List<Compilatio
    val isValid = errors.isEmpty()
 
    val name = source.name
+}
+
+
+fun TaxiPackageSources.versionedSources(): List<VersionedSource> {
+   return this.sources.map { source ->
+      VersionedSource(source.sourceName, this.project.version, source.content)
+   }
 }
