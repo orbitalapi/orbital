@@ -67,8 +67,7 @@ class PipelineSerializationTest {
                   "props" : {
                   }
                }
-              },
-              "id" : "test-pipeline@196343942"
+              }
             }
       """.trimIndent()
 

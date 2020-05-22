@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.annotation.Bean
+import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.client.RestTemplate
 
@@ -24,6 +25,17 @@ class PipelineOrchestratorApp {
 
       @Bean
       fun pipelineJacksonModule() = PipelineJacksonModule()
+
+      @Bean
+      fun restTemplate(): RestTemplate {
+         var template = RestTemplate()
+         template.interceptors.add(ClientHttpRequestInterceptor { request, body, execution ->
+            request.headers.set("content-type", "application/json");
+            execution.execute(request, body);
+         })
+         return template
+      }
+
 
 
    }

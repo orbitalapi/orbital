@@ -21,8 +21,8 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager) {
       log().info("Received submitted pipeline: \n$pipelineDefinition")
 
       return try {
-         var instanceRef = pipelineManager.addPipeline(pipelineDefinition)
-         ok(null) // FIXME what do we return ?
+         var pipeline = pipelineManager.addPipeline(pipelineDefinition)
+         ok(pipeline)
       } catch (e: InvalidPipelineDescriptionException) {
          badRequest().body(e.message)
       }
@@ -39,7 +39,7 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager) {
       }
    }
 
-   @GetMapping("/runner/pipelines")
+   @GetMapping("/pipelines")
    fun getPipelines(): ResponseEntity<Any> {
 
       return try {
@@ -51,15 +51,8 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager) {
    }
 }
 
-class PipelineAlreadyExistsException(message: String) : Exception(message)
 
-data class PipelineStateSnapshot(val pipeline: Pipeline,
-                                 val pipelineDescription: String,
-                                 var instance: ServiceInstance?,
-                                 var state: PipelineState,
-                                 var info: String? = "") {
-   val id = pipeline.id
-}
+
 
 
 

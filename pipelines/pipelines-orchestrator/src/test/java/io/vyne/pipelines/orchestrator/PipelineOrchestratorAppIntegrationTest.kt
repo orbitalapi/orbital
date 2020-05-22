@@ -60,7 +60,7 @@ class PipelineOrchestratorAppIntegrationTest {
       )
       var pipelineReference = SimplePipelineInstance(pipeline, Instant.now())
 
-      given(runner.submitPipeline(any())).willReturn(pipelineReference);
+      given(runner.submitPipeline(any(), any())).willReturn(pipelineReference);
    }
 
    @Test

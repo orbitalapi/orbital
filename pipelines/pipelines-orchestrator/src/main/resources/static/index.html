@@ -44,7 +44,7 @@
             <tr>
                <th scope="col">Running on</th>
                <th scope="col">State</th>
-               <th scope="col">Id</th>
+               <th scope="col">Name</th>
                <th scope="col">Input</th>
                <th scope="col">Output</th>
                <th scope="col">Info</th>
@@ -75,10 +75,10 @@
         $("#pipelines").empty()
 
         responseEvent.sort((a, b) => {
-           if(a.state == b.state) {
-               return a.id > b.id ? 1 : -1
+           if(a.instanceId == b.instanceId) {
+               return a.name > b.name ? 1 : -1
            } else {
-             return a.state > b.state ? 1 : -1
+             return a.instanceId > b.instanceId ? 1 : -1
            }
         }).forEach(i => {
 
@@ -86,7 +86,7 @@
                 <tr>
                   <td>${i.instance? i.instance.instanceId : ' '}</th>
                   <td>${i.state}</td>
-                  <td>${i.id}</th>
+                  <td>${i.name}</th>
                   <td>${i.pipeline.input.transport.type}</td>
                   <td>${i.pipeline.output.transport.type}</td>
                   <td>${i.info}</td>
@@ -122,7 +122,7 @@
 
     function fetchPipelines() {
          $.ajax({
-             url: '/runner/pipelines',
+             url: '/pipelines',
              type: 'GET',
              contentType: 'application/json',
              success: function (data) {
