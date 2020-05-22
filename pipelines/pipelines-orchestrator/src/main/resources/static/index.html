@@ -1,13 +1,12 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    <title>Pipeline Orchestator</title>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+   <title>Pipeline Orchestator</title>
    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-
 
 
 </head>
@@ -20,12 +19,12 @@
       <div class="col-3">
 
          <div class="row">
-            <div class="col text-center">
-               <h3 ><span class="fa fa-server">  <b>Runners</b></span></h3>
+            <div class="col text-center m-3">
+               <h3><span class="fa fa-server">  <b>Runners</b></span></h3>
             </div>
          </div>
 
-         <div id="runners" >
+         <div id="runners">
 
          </div>
 
@@ -35,7 +34,7 @@
       <div class="col">
 
          <div class="row">
-            <div class="col text-center">
+            <div class="col text-center m-3">
                <h3><span class="fa fa-exchange">  <b>Pipelines</b></span></h3>
             </div>
          </div>
@@ -83,7 +82,6 @@
            }
         }).forEach(i => {
 
-        console.log(JSON.stringify(i.pipelineDescription))
           $("#pipelines").append( `
                 <tr>
                   <td>${i.instance? i.instance.instanceId : ' '}</th>
@@ -167,6 +165,7 @@
          }, 5000)
 
     });
+
 </script>
 </body>
 </html>
