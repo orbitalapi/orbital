@@ -3,6 +3,7 @@ package io.vyne.models
 import io.vyne.schemas.Type
 import lang.taxi.jvm.common.PrimitiveTypes
 import org.springframework.core.convert.support.DefaultConversionService
+import java.time.Instant
 import java.time.LocalDate
 
 
@@ -12,6 +13,7 @@ data class TypedValue private constructor(override val type: Type, override val 
          val service = DefaultConversionService()
          // TODO :  we need to be much richer about date handling.
          service.addConverter(String::class.java, LocalDate::class.java) { s -> LocalDate.parse(s) }
+         service.addConverter(String::class.java, Instant::class.java) { s -> Instant.parse(s)}
          service
       }
 
