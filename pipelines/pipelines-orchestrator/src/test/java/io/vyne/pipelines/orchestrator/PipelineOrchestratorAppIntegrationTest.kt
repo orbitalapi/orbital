@@ -42,8 +42,12 @@ class PipelineOrchestratorAppIntegrationTest {
    @MockBean
    private lateinit var runner: PipelineRunnerApi;
 
+   @Autowired
+   private lateinit var pipelinesManager: PipelinesManager
+
    @Before
    fun setup() {
+      pipelinesManager.pipelines.clear()
 
       val pipeline = Pipeline(
          "test-pipeline",
