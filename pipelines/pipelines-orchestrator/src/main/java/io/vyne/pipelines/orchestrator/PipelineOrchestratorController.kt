@@ -21,7 +21,7 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager) {
       log().info("Received submitted pipeline: \n$pipelineDefinition")
 
       return try {
-         var pipeline = pipelineManager.addPipeline(pipelineDefinition)
+         val pipeline = pipelineManager.addPipeline(pipelineDefinition)
          ok(pipeline)
       } catch (e: InvalidPipelineDescriptionException) {
          badRequest().body(e.message)
@@ -32,7 +32,7 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager) {
    fun getInstances(): ResponseEntity<Any> {
 
       return try {
-         var instances = pipelineManager.runnerInstances
+         val instances = pipelineManager.runnerInstances
          ok(instances)
       } catch (e: Exception) {
          badRequest().body(e.message)
@@ -50,13 +50,3 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager) {
       }
    }
 }
-
-
-
-
-
-
-
-
-
-

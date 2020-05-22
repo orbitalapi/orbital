@@ -115,7 +115,7 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
             .filter { it.second != null }
             .map { it.first to it.second!! } // (Maybe a better way to do that ?)
             .map { // Save internal state of these running pipelines
-               var pipeline = pipelineDeserialiser.deserialise(it.second)
+               val pipeline = pipelineDeserialiser.deserialise(it.second)
                pipeline.name to PipelineStateSnapshot(pipeline.name, it.second, it.first, RUNNING)
             }.toMap()
 
@@ -136,7 +136,7 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
    }
 
    /**
-    * Immediately reload state when the orchestrator register itself
+    * Immediately reload state after the orchestrator register itself to the discovery server
     */
    override fun onApplicationEvent(event: InstanceRegisteredEvent<Any>) {
       reloadState()

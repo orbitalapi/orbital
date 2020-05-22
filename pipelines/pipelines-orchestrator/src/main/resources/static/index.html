@@ -70,8 +70,7 @@
 
 <script>
     function addPipelines(responseEvent) {
-        console.log('Pipelines')
-        console.log(responseEvent)
+
         $("#pipelines").empty()
 
         responseEvent.sort((a, b) => {
@@ -99,8 +98,7 @@
     }
 
      function addRunners(responseEvent) {
-        console.log('Runners')
-        console.log(responseEvent)
+
         $("#runners").empty()
 
 
@@ -156,8 +154,6 @@
     $(document).ready(function () {
          fetchPipelines();
          fetchRunners();
-
-
 
           window.setInterval(function(){
            fetchPipelines();

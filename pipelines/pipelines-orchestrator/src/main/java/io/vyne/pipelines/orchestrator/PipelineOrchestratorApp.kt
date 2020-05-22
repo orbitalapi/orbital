@@ -28,7 +28,7 @@ class PipelineOrchestratorApp {
 
       @Bean
       fun restTemplate(): RestTemplate {
-         var template = RestTemplate()
+         val template = RestTemplate()
          template.interceptors.add(ClientHttpRequestInterceptor { request, body, execution ->
             request.headers.set("content-type", "application/json");
             execution.execute(request, body);

@@ -63,7 +63,7 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
             log().info("Could not find $caskServiceName server. Reason: No cask instances running.")
             return Optional.empty()
          }
-         val caskServer = caskServers.random() // FIXME check if there are soe builtin client side load balancing
+         val caskServer = caskServers.random()  // ENHANCE client side load balancing ?
 
          val endpoint = with(caskServer) { "ws://$host:$port/cask/${type.typeName.fullyQualifiedName}" }
          log().info("Found for $caskServiceName service server in Eureka [endpoint=$endpoint]")
