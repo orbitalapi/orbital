@@ -33,11 +33,13 @@ class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val object
    private val sender = KafkaSender.create(senderOptions)
    override fun write(message: String, logger: PipelineLogger) {
 
-      logger.info { "Sending mesage to Kafka topic ${spec.topic}" }
+      var producer = Mono.create<ProducerRecord<String, String>> { sink ->
+         logger.info { "Sending message to Kafka topic ${spec.topic}" }
+         sink.success(ProducerRecord<String, String>(spec.topic, message))
+      }
 
-      val record = ProducerRecord<String, String>(spec.topic, message)
 
-      sender.createOutbound().send(Mono.just(record))
+      sender.createOutbound().send(producer)
          .then()
          // TODO  :This error is lacking enough context to be useful.  Need a ref to the pipeline instance / message
          .doOnError { error -> logger.error(error) { "Pipeline failed to send to kafka topic ${spec.topic}" } }
