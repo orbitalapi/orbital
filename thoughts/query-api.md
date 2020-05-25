@@ -221,3 +221,40 @@ discover {
     maxPrice : max(Price)
 }
 ```
+
+# 25-May thoughts
+
+```
+query { // query vs discover? query|stream?
+    Order[](
+        TradeDate >= '2019-12-20' AND // Thoughts on logical operators here?
+        TradeDate < '2019-12-22'
+    )
+}
+as SomeOrderType[]  // as for Projections
+
+// could also do
+
+query {
+..
+} as {
+    someField : SomeType
+    someOtherField : SomeOtherType
+}[] // Cardinality -- should be an error to go from A -> B[] or A[] -> B (unless B is a type alias to B[])
+
+
+```
+
+## Projections
+For now, we should error if someone tries to project where cardinality
+isn't obvious.
+
+ie.,
+
+should be an error to go from A -> B[] or A[] -> B (unless B is a type alias to B[])
+
+Also for projecting A[] to B[], we're gonna treat that as: 
+
+```
+A[].map { A -> vyne.given(A).build(B) }
+```
