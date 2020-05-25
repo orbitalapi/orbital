@@ -39,7 +39,7 @@ class PipelineStateManager(val appInfoManager: ApplicationInfoManager, val objec
 
    fun registerPipeline(pipeline: Pipeline): PipelineInstance {
 
-      BadRequestException.throwIf(pipelineInstance != null, "Runner unavailable. Already running ${pipelineInstance!!.spec.id}")
+      BadRequestException.throwIf(pipelineInstance != null, "Runner unavailable. Already running ${pipelineInstance?.spec?.id}")
 
       // Build the pipeline
       val instance = pipelineBuilder.build(pipeline)
