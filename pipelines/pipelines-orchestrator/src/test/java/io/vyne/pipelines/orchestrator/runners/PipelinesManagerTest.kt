@@ -162,7 +162,7 @@ class PipelinesManagerTest {
       }
 
       manager.pipelines.size.should.be.equal(1)
-      var pipelineReference = PipelineReference("runner-1", """ { "name": "runner-1" } """)
+      var pipelineReference = PipelineReference("pipeline-1", """ { "name": "pipeline-1" } """)
       manager.addPipeline(pipelineReference)
 
    }
@@ -210,16 +210,16 @@ class PipelinesManagerTest {
    }
 
    private fun mockRunners(vararg runners: ServiceInstance) {
-      var runners = listOf(*runners);
+      val runners = listOf(*runners);
       // Mock runner instances
       whenever(discoveryClient.getInstances("pipeline-runner")).thenReturn(runners)
 
       // Mock running pipeline discovery
-      whenever(runningPipelineDiscoverer.discoverPipelines(runners)).thenReturn(
-         runners.filter { it.metadata["name"] != null }.map {
-            PipelineReference(it.metadata["name"]!!, it.metadata[PIPELINE_METADATA_KEY]!!) to it
-         }.toMap()
-      )
+      val map = runners.filter { it.metadata["name"] != null }.map {
+         PipelineReference(it.metadata["name"]!!, it.metadata[PIPELINE_METADATA_KEY]!!) to it
+      }.toMap()
+
+      whenever(runningPipelineDiscoverer.discoverPipelines(runners)).thenReturn(map)
 
       manager.reloadState()
    }
