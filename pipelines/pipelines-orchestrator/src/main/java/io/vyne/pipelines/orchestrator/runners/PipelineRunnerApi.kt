@@ -1,8 +1,10 @@
 package io.vyne.pipelines.orchestrator.runners
 
 import io.vyne.pipelines.runner.PipelineInstanceReference
+import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
 
+@Component
 class PipelineRunnerApi(private val restTemplate: RestTemplate) {
 
    /**
