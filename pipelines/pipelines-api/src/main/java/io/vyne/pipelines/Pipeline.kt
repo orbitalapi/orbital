@@ -3,6 +3,7 @@ package io.vyne.pipelines
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
+import io.vyne.schemas.Type
 import io.vyne.utils.log
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
@@ -83,9 +84,9 @@ interface PipelineInputTransport : PipelineTransort {
    fun resume() {}
 }
 
-sealed class PipelineMessage(val content: String)
-class TransformablePipelineMessage(content: String, val instance: TypedInstance, var transformedInstance: TypedInstance? = null)  : PipelineMessage(content)
-class RawPipelineMessage( content: String): PipelineMessage(content)
+sealed class PipelineMessage(val content: String, val pipeline: Pipeline, val inputType: Type, val outputType: Type)
+class TransformablePipelineMessage(content: String,  pipeline: Pipeline,  inputType: Type, outputType: Type, val instance: TypedInstance, var transformedInstance: TypedInstance? = null)  : PipelineMessage(content, pipeline, inputType, outputType)
+class RawPipelineMessage( content: String, pipeline: Pipeline,  inputType: Type, outputType: Type): PipelineMessage(content, pipeline, inputType, outputType)
 
 
 data class PipelineInputMessage(

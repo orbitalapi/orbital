@@ -38,7 +38,7 @@ class PipelineBuilder(
          .tag("pipeline_name", pipeline.name)
          .metrics()
          .flatMap { ingest(it, inputType, outputType, pipeline) }
-         .flatMap { transform(it, inputType, outputType) }
+         .flatMap { transform(it) }
          .flatMap { publish(it, output) }
 
       return PipelineInstance(
@@ -55,16 +55,15 @@ class PipelineBuilder(
          pipeline,
          message
       )
-
       val logger = stageObserverProvider("Ingest")
 
       val inputMessage = message.messageProvider(logger)
 
       val pipelineMessage = when (inputType == outputType) {
-         true -> RawPipelineMessage(inputMessage)
+         true -> RawPipelineMessage(inputMessage, pipeline, inputType, outputType)
          false -> {
             val typedInstance = TypedInstance.from(inputType, objectMapper.readTree(inputMessage), vyne.schema)
-            TransformablePipelineMessage(inputMessage, typedInstance)
+            TransformablePipelineMessage(inputMessage, pipeline, inputType, outputType, typedInstance)
          }
       }
 
@@ -73,7 +72,7 @@ class PipelineBuilder(
       }
    }
 
-   private fun transform(pipelineInput: Pair<PipelineStageObserverProvider, PipelineMessage>, inputType: Type, outputType: Type): Mono<Pair<PipelineStageObserverProvider, PipelineMessage>> {
+   private fun transform(pipelineInput: Pair<PipelineStageObserverProvider, PipelineMessage>): Mono<Pair<PipelineStageObserverProvider, PipelineMessage>> {
       val (observerProvider, message) = pipelineInput
       val logger = observerProvider("Transform")
 
@@ -83,8 +82,9 @@ class PipelineBuilder(
          // Transform if needed
          var pipelineMessage = pipelineInput.second
          when (pipelineMessage) {
-            is TransformablePipelineMessage -> pipelineMessage.transformedInstance = vyneTransformation(pipelineMessage, outputType)
-            is RawPipelineMessage -> { }
+            is TransformablePipelineMessage -> pipelineMessage.transformedInstance = vyneTransformation(pipelineMessage, pipelineMessage.outputType)
+            is RawPipelineMessage -> {
+            }
          }
 
          // Send to following steps
