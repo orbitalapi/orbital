@@ -8,11 +8,18 @@ import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.*
+import io.vyne.schemas.PropertyToParameterConstraint
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import lang.taxi.Operator
+import lang.taxi.services.operations.constraints.ConstantValueExpression
+import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
+import lang.taxi.types.QualifiedName
 import org.junit.Ignore
 import org.junit.Test
-import java.lang.Exception
+import java.time.Instant
+import java.time.LocalDate
+import kotlin.test.assertEquals
 import kotlin.test.fail
 
 object TestSchema {
@@ -420,12 +427,177 @@ type LegacyTradeNotification {
       val queryResult = vyne.query().find("NearLegNotional")
       TODO()
    }
+
+   val schema = """
+type alias OrderDate as Date
+type alias OrderId as String
+
+model IMadOrder {
+   id: OrderId
+   date: OrderDate
+}
+
+model Order {
+}
+type HpcOrder inherits Order {
+   hpcID: OrderId
+   hpcDate: OrderDate
+}
+type IonOrder inherits Order {
+   ionID: OrderId
+   ionDate: OrderDate
+}
+
+// operations
+service HpcService {
+   operation getHpcOrders( start : OrderDate, end : OrderDate) : HpcOrder[] (OrderDate >= start, OrderDate < end)
+}
+service IonService {
+   operation getIonOrders( start : OrderDate, end : OrderDate) : IonOrder[] (OrderDate >= start, OrderDate < end)
+}
+
+""".trimIndent()
+
+   @Test
+   fun canGatherOrdersFromTwoDifferentServices() {
+      // prepare
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+         [
+            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+         [
+            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+
+      // act
+      val result = vyne.query().gather("Order[]")
+
+      // assert
+      expect(result.isFullyResolved).to.be.`true`
+      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }.flatMap { it as ArrayList<*> }
+      resultList.should.contain.all.elements(
+         mapOf(Pair("hpcID", "hpcOrder1"), Pair("hpcDate", LocalDate.parse("2020-01-01"))),
+         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate", LocalDate.parse("2020-01-01")))
+      )
+   }
+
+   @Test
+   @Ignore("Filtering by date range does not work!")
+   fun canGatherOrdersFromTwoDifferentServices_AndFilterByDateRange() {
+      // prepare
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+         [
+            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"},
+            { "hpcID" : "hpcOrder2", "hpcDate" : "2020-01-02"}
+         ]
+         """.trimIndent()))
+      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+         [
+            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"},
+            { "ionID" : "ionOrder2", "ionDate" : "2020-01-02"}
+         ]
+         """.trimIndent()))
+
+      // act
+      // Direct service invocation, would this work with Serhat's PR?
+      val result = vyne.query().find(
+         ConstrainedTypeNameQueryExpression("Order[]", listOf(
+            PropertyToParameterConstraint(
+               PropertyTypeIdentifier(QualifiedName.from("OrderDate")),
+               Operator.GREATER_THAN_OR_EQUAL_TO,
+               ConstantValueExpression(LocalDate.parse("2020-01-01"))
+            ),
+            PropertyToParameterConstraint(
+               PropertyTypeIdentifier(QualifiedName.from("OrderDate")),
+               Operator.LESS_THAN,
+               ConstantValueExpression(LocalDate.parse("2020-01-02"))
+            )
+         ))
+      )
+      // This fails with the following error
+      // 09:22:27.473 DEBUG          io.vyne.query.HipsterDiscoverGraphQueryStrategy.doSearch(172) - Search Type_instance(lang.taxi.Array) -> Type(lang.taxi.Array) found path:
+      // lang.taxi.Array -[Is instanceOfType of]-> lang.taxi.Array
+      //09:22:27.478 ERROR                            io.vyne.query.StatefulQueryEngine.find(198) - Search failed with exception:
+      //java.lang.IllegalArgumentException: The queryContext doesn't have a fact present of type lang.taxi.Array, but this is the starting point of the discovered solution.
+      //at io.vyne.query.HipsterDiscoverGraphQueryStrategy.getStartingEdge(HipsterDiscoverGraphQueryStrategy.kt:239)
+
+      // assert
+      expect(result.isFullyResolved).to.be.`true`
+      expect(result.resultMap.values).to.equal(
+         setOf(
+            listOf(
+               mapOf(Pair("hpcID", "hpcOrder1"), Pair("hpcDate", LocalDate.parse("2020-01-01"))),
+               mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate", LocalDate.parse("2020-01-01")))
+            )
+         )
+      )
+   }
+
+   @Test
+   fun canProjectDifferentOrderTypesToSingleType() {
+      // prepare
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+         [
+            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+         [
+            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+
+      // act
+      val result = vyne.query().build("IMadOrder[]")
+      // This should not be working!! think about that.
+
+      // assert
+      expect(result.isFullyResolved).to.be.`true`
+      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
+      resultList.should.contain.all.elements(
+         mapOf(Pair("id", "hpcOrder1"), Pair("date", LocalDate.parse("2020-01-01"))),
+         mapOf(Pair("id", "ionOrder1"), Pair("date", LocalDate.parse("2020-01-01")))
+      )
+   }
+
+   @Test
+   fun canProjectDifferentOrderTypesToSingleType_whenSomeValuesAreMissing() {
+      // prepare
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+         [
+            { "hpcID" : "hpcOrder1"}
+         ]
+         """.trimIndent()))
+      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+         [
+            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+
+      // act
+      val result = vyne.query().gather("Order[]")
+
+      // assert
+      expect(result.isFullyResolved).to.be.`true`
+      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }.flatMap { it as ArrayList<*> }
+      resultList.should.contain.all.elements(
+         mapOf(Pair("hpcID", "hpcOrder1")),
+         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate", LocalDate.parse("2020-01-01")))
+      )
+   }
+
 }
 
 fun Vyne.typedValue(typeName: String, value: Any): TypedInstance {
    return TypedInstance.from(this.getType(typeName), value, this.schema)
 //   return TypedValue.from(this.getType(typeName), value)
 }
-
 
 
