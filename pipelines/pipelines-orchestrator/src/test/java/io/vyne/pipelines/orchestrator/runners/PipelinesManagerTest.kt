@@ -1,18 +1,14 @@
 package io.vyne.pipelines.orchestrator.runners
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
 import io.vyne.pipelines.PIPELINE_METADATA_KEY
-import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.orchestrator.PipelineAlreadyExistsException
-import io.vyne.pipelines.orchestrator.PipelineDiscovery
 import io.vyne.pipelines.orchestrator.PipelineReference
 import io.vyne.pipelines.orchestrator.PipelineState.*
 import io.vyne.pipelines.orchestrator.PipelinesManager
-import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
+import io.vyne.pipelines.orchestrator.RunningPipelineDiscoverer
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,26 +23,18 @@ class PipelinesManagerTest {
    lateinit var manager: PipelinesManager
 
    @Mock
-   lateinit var deserialiser: PipelineDeserialiser
-
-   @Mock
    lateinit var discoveryClient: DiscoveryClient
 
    @Mock
    lateinit var pipelineRunnerApi: PipelineRunnerApi
 
    @Mock
-   lateinit var pipelineDiscovery: PipelineDiscovery
+   lateinit var runningPipelineDiscoverer: RunningPipelineDiscoverer
 
    @Before
    fun setup() {
 
-      whenever(deserialiser.deserialise(any())).thenAnswer { args ->
-         var name = jacksonObjectMapper().readTree(args.arguments[0] as String)["name"].asText()
-         Pipeline(name, mock(), mock())
-      }
-
-      manager = PipelinesManager(deserialiser, discoveryClient, pipelineRunnerApi, pipelineDiscovery)
+      manager = PipelinesManager(discoveryClient, pipelineRunnerApi, runningPipelineDiscoverer)
    }
 
    @Test
@@ -222,7 +210,17 @@ class PipelinesManagerTest {
    }
 
    private fun mockRunners(vararg runners: ServiceInstance) {
-      whenever(discoveryClient.getInstances("pipeline-runner")).thenReturn(listOf(*runners))
+      var runners = listOf(*runners);
+      // Mock runner instances
+      whenever(discoveryClient.getInstances("pipeline-runner")).thenReturn(runners)
+
+      // Mock running pipeline discovery
+      whenever(runningPipelineDiscoverer.discoverPipelines(runners)).thenReturn(
+         runners.filter { it.metadata["name"] != null }.map {
+            PipelineReference(it.metadata["name"]!!, it.metadata[PIPELINE_METADATA_KEY]!!) to it
+         }.toMap()
+      )
+
       manager.reloadState()
    }
 
@@ -234,7 +232,10 @@ class PipelinesManagerTest {
 
    private fun busyRunner(instanceName: String, pipelineName: String): ServiceInstance {
       val instance = mock<ServiceInstance>()
-      whenever(instance.metadata).thenReturn(mapOf(PIPELINE_METADATA_KEY to """ {"name" : "$pipelineName"} """))
+      whenever(instance.metadata).thenReturn(mapOf(
+         PIPELINE_METADATA_KEY to """ {"name" : "$pipelineName"} """,
+         "name" to pipelineName
+      ))
       whenever(instance.instanceId).thenReturn(instanceName)
       return instance
    }

@@ -14,10 +14,9 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 @Component
-class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
-                       private val discoveryClient: DiscoveryClient,
+class PipelinesManager(private val discoveryClient: DiscoveryClient,
                        private val pipelineRunnerApi: PipelineRunnerApi,
-                       private val pipelineDiscovery: PipelineDiscovery) : ApplicationListener<InstanceRegisteredEvent<Any>> {
+                       private val runningPipelineDiscoverer: RunningPipelineDiscoverer) : ApplicationListener<InstanceRegisteredEvent<Any>> {
 
 
    // All pipeline runners instances
@@ -107,7 +106,7 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
          runnerInstances.addAll(discoveryClient.getInstances("pipeline-runner"))
 
          // 2. See what pipelines are currently running
-         val pipelineInstances = pipelineDiscovery.discoverPipelines(runnerInstances)
+         val pipelineInstances = runningPipelineDiscoverer.discoverPipelines(runnerInstances)
 
          // 3. Overwrite the running pipelines
          val runningPipelines = pipelineInstances.map {
@@ -126,7 +125,7 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
    }
 
    fun reschedulePipelines(previousPipelines: List<PipelineStateSnapshot>, runningPipelines: Map<String, PipelineStateSnapshot>) {
-      previousPipelines // A pipeline must be started if:
+      previousPipelines // A pipeline must be rescheduled if:
          .filter { !runningPipelines.containsKey(it.name) }  // he's not currently running
          .filter { it.state != STARTING } // and he's not currently starting
          .forEach { schedulePipeline(it.name, it.pipelineDescription) }
@@ -142,7 +141,7 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
 }
 
 @Component
-class PipelineDiscovery(val pipelineDeserialiser: PipelineDeserialiser) {
+class RunningPipelineDiscoverer(val pipelineDeserialiser: PipelineDeserialiser) {
 
    /**
     * Returns all the pipelines running on a specific set of instances
