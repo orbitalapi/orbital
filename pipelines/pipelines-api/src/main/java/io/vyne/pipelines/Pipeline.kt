@@ -3,7 +3,6 @@ package io.vyne.pipelines
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
-import io.vyne.schemas.Schema
 import io.vyne.utils.log
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
@@ -83,6 +82,11 @@ interface PipelineInputTransport : PipelineTransort {
     */
    fun resume() {}
 }
+
+sealed class PipelineMessage(val content: String)
+class TransformablePipelineMessage(content: String, val instance: TypedInstance, var transformedInstance: TypedInstance? = null)  : PipelineMessage(content)
+class RawPipelineMessage( content: String): PipelineMessage(content)
+
 
 data class PipelineInputMessage(
    // Publishers should try to use the time that the

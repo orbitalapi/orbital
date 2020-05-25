@@ -2,7 +2,6 @@ package io.vyne.pipelines.runner
 
 import com.nhaarman.mockitokotlin2.*
 import io.vyne.VersionedTypeReference
-import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
@@ -22,7 +21,7 @@ class PipelineInstanceTest {
 
    lateinit var input: PipelineInputTransport
    lateinit var output: PipelineOutputTransport
-   lateinit var flux: Flux<String>
+   lateinit var flux: Flux<PipelineMessage>
    lateinit var instance: PipelineInstance;
 
    @Before
@@ -35,7 +34,7 @@ class PipelineInstanceTest {
 
       instance = PipelineInstance(
          spec = mock(),
-         instancesFeed = flux ,
+         instancesFeed = flux,
          startedTimestamp = mock(),
          input = input,
          output = output
