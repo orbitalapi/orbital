@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<!--  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">-->
+  <!--  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">-->
   <meta charset="utf-8">
   <title>Vyne</title>
   <base href="/">
@@ -12,7 +13,26 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 
 </head>
+
 <body>
-<app-root></app-root>
+<script>
+  function isIE() {
+    return /Trident\/|MSIE/.test(window.navigator.userAgent);
+  }
+
+  if (isIE()) {
+    document.getElementById('noSupport');
+  } else {
+    document.getElementById('root');
+  }
+</script>
+<div id="root">
+  <app-root></app-root>
+</div>
+<div id="noSupport">
+  <p>Your browser is not supported.</p>
+</div>
+
 </body>
+
 </html>
