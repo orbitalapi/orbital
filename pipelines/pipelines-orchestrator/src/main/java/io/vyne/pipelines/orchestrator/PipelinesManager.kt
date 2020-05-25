@@ -1,7 +1,6 @@
 package io.vyne.pipelines.orchestrator
 
 import io.vyne.pipelines.PIPELINE_METADATA_KEY
-import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.orchestrator.PipelineState.RUNNING
 import io.vyne.pipelines.orchestrator.PipelineState.STARTING
 import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
@@ -17,7 +16,8 @@ import org.springframework.stereotype.Component
 @Component
 class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
                        private val discoveryClient: DiscoveryClient,
-                       private val pipelineRunnerApi: PipelineRunnerApi) : ApplicationListener<InstanceRegisteredEvent<Any>> {
+                       private val pipelineRunnerApi: PipelineRunnerApi,
+                       private val pipelineDiscovery: PipelineDiscovery) : ApplicationListener<InstanceRegisteredEvent<Any>> {
 
 
    // All pipeline runners instances
@@ -29,19 +29,16 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
    /**
     * Add a pipeline to the global state. Perform some verification/validation here
     */
-   fun addPipeline(pipelineDefinition: String): Pipeline {
+   fun addPipeline(pipelineRef: PipelineReference) {
 
-      // Deserialise the full pipeline. We only need the name for now. But it allows us to validate the json and in the future, perform some validations
-      val pipeline = pipelineDeserialiser.deserialise(pipelineDefinition)
 
-      if (pipelines.containsKey(pipeline.name)) {
-         throw PipelineAlreadyExistsException("Pipeline with name ${pipeline.name} already exists")
+      if (pipelines.containsKey(pipelineRef.name)) {
+         throw PipelineAlreadyExistsException("Pipeline with name ${pipelineRef.name} already exists")
       }
 
       // if pipeline is valid, we schedule it
-      schedulePipeline(pipeline.name, pipelineDefinition)
+      schedulePipeline(pipelineRef.name, pipelineRef.description)
 
-      return pipeline
    }
 
    /**
@@ -88,15 +85,11 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
       }
    }
 
-
    /**
     * Periodically refresh the state
     */
    @Scheduled(fixedRate = 5000)
    fun getServers() = reloadState()
-
-
-
 
    /**
     * Reloads the internal state of the Orchestrator
@@ -114,34 +107,29 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
          runnerInstances.addAll(discoveryClient.getInstances("pipeline-runner"))
 
          // 2. See what pipelines are currently running
-         val runningPipelines = runnerInstances
-            .mapNotNull { extractRunnerMetadata(it) }
-            .map { // Save internal state of these running pipelines
-               val pipeline = pipelineDeserialiser.deserialise(it.second)
-               pipeline.name to PipelineStateSnapshot(pipeline.name, it.second, it.first, RUNNING)
-            }.toMap()
+         val pipelineInstances = pipelineDiscovery.discoverPipelines(runnerInstances)
 
          // 3. Overwrite the running pipelines
+         val runningPipelines = pipelineInstances.map {
+            val pipelineRef = it.key
+            pipelineRef.name to PipelineStateSnapshot(pipelineRef.name, pipelineRef.description, it.value, RUNNING)
+         }.toMap()
+
          pipelines.putAll(runningPipelines)
 
-         // 4. Schedule pipelines which must be started. A pipeline must be started if:
-         previousPipelines
-            .filter { !runningPipelines.containsKey(it.name) }  // he's not currently running
-            .filter { it.state != STARTING } // and he's not currently starting
-            .forEach { schedulePipeline(it.name, it.pipelineDescription) }
+         // 4. Schedule pipelines which must be started.
+         reschedulePipelines(previousPipelines, runningPipelines)
 
       } catch (e: Exception) {
          log().error("Error while reloading internal state", e)
       }
-
    }
 
-   fun extractRunnerMetadata(runnerInstance: ServiceInstance):Pair<ServiceInstance,String>? {
-      val metadata = runnerInstance.metadata[PIPELINE_METADATA_KEY]
-      return when(metadata) {
-         null -> null
-         else -> runnerInstance to metadata
-      }
+   fun reschedulePipelines(previousPipelines: List<PipelineStateSnapshot>, runningPipelines: Map<String, PipelineStateSnapshot>) {
+      previousPipelines // A pipeline must be started if:
+         .filter { !runningPipelines.containsKey(it.name) }  // he's not currently running
+         .filter { it.state != STARTING } // and he's not currently starting
+         .forEach { schedulePipeline(it.name, it.pipelineDescription) }
    }
 
    /**
@@ -151,6 +139,31 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
       reloadState()
    }
 
+}
+
+@Component
+class PipelineDiscovery(val pipelineDeserialiser: PipelineDeserialiser) {
+
+   /**
+    * Returns all the pipelines running on a specific set of instances
+    */
+   fun discoverPipelines(runnerInstances: List<ServiceInstance>): Map<PipelineReference, ServiceInstance> {
+      return runnerInstances.mapNotNull { extractRunnerMetadata(it) }
+         .map {
+            val pipeline = pipelineDeserialiser.deserialise(it.first)
+            PipelineReference(pipeline.name, it.first) to it.second
+         }.toMap()
+   }
+
+   /**
+    * Extract the pipeline information from a service instance
+    */
+   fun extractRunnerMetadata(runnerInstance: ServiceInstance): Pair<String, ServiceInstance>? {
+      return when (val metadata = runnerInstance.metadata[PIPELINE_METADATA_KEY]) {
+         null -> null
+         else -> metadata to runnerInstance
+      }
+   }
 }
 
 data class PipelineStateSnapshot(val name: String,
@@ -170,6 +183,8 @@ enum class PipelineState {
    // Pipeline is running on a runner. For now, running means just that the pipeline has been sent to a runner, and the runner acknowledged the pipeline (wrote it in its metadata)
    RUNNING
 }
+
+data class PipelineReference(val name: String, val description: String)
 
 class PipelineAlreadyExistsException(message: String) : Exception(message)
 

@@ -8,6 +8,8 @@ import com.winterbe.expekt.should
 import io.vyne.pipelines.PIPELINE_METADATA_KEY
 import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.orchestrator.PipelineAlreadyExistsException
+import io.vyne.pipelines.orchestrator.PipelineDiscovery
+import io.vyne.pipelines.orchestrator.PipelineReference
 import io.vyne.pipelines.orchestrator.PipelineState.*
 import io.vyne.pipelines.orchestrator.PipelinesManager
 import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
@@ -33,6 +35,9 @@ class PipelinesManagerTest {
    @Mock
    lateinit var pipelineRunnerApi: PipelineRunnerApi
 
+   @Mock
+   lateinit var pipelineDiscovery: PipelineDiscovery
+
    @Before
    fun setup() {
 
@@ -41,7 +46,7 @@ class PipelinesManagerTest {
          Pipeline(name, mock(), mock())
       }
 
-      manager = PipelinesManager(deserialiser, discoveryClient, pipelineRunnerApi)
+      manager = PipelinesManager(deserialiser, discoveryClient, pipelineRunnerApi, pipelineDiscovery)
    }
 
    @Test
@@ -156,24 +161,28 @@ class PipelinesManagerTest {
          busyRunner("runner-1", "pipeline-1")
       )
 
-      manager.addPipeline(""" { "name": "pipeline-1" } """)
+      var pipelineReference = PipelineReference("pipeline-1", """ { "name": "pipeline-1" } """)
+      manager.addPipeline(pipelineReference)
    }
 
    @Test(expected = PipelineAlreadyExistsException::class)
    fun testAddPipelineTwice() {
       try {
-         manager.addPipeline(""" { "name": "runner-1" } """)
+         var pipelineReference = PipelineReference("pipeline-1", """ { "name": "pipeline-1" } """)
+         manager.addPipeline(pipelineReference)
       } catch (e: Exception) {
       }
 
       manager.pipelines.size.should.be.equal(1)
-      manager.addPipeline(""" { "name": "runner-1" } """)
+      var pipelineReference = PipelineReference("runner-1", """ { "name": "runner-1" } """)
+      manager.addPipeline(pipelineReference)
 
    }
 
    @Test
    fun testAddPipelineNoRunner() {
-      manager.addPipeline(""" { "name": "runner-1" } """)
+      var pipelineReference = PipelineReference("runner-1", """ { "name": "runner-1" } """)
+      manager.addPipeline(pipelineReference)
 
       manager.runnerInstances.size.should.be.equal(0)
       manager.pipelines.size.should.be.equal(1)
@@ -186,7 +195,8 @@ class PipelinesManagerTest {
          busyRunner("runner-1", "pipeline-1")
       )
 
-      manager.addPipeline(""" { "name": "pipeline-2" } """)
+      var pipelineReference = PipelineReference("pipeline-2", """ { "name": "pipeline-2" } """)
+      manager.addPipeline(pipelineReference)
 
       manager.runnerInstances.size.should.be.equal(1)
       manager.pipelines.size.should.be.equal(2)
@@ -201,7 +211,8 @@ class PipelinesManagerTest {
          freeRunner("runner-2")
       )
 
-      manager.addPipeline(""" { "name": "pipeline-2" } """)
+      var pipelineReference = PipelineReference("pipeline-2", """ { "name": "pipeline-2" } """)
+      manager.addPipeline(pipelineReference)
 
       manager.runnerInstances.size.should.be.equal(2)
       manager.pipelines.size.should.be.equal(2)

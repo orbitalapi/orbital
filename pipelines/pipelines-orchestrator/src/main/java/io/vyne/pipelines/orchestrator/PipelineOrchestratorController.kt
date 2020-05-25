@@ -2,25 +2,27 @@ package io.vyne.pipelines.orchestrator
 
 import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.orchestrator.pipelines.InvalidPipelineDescriptionException
+import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
 import io.vyne.utils.log
-import org.springframework.cloud.client.ServiceInstance
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.http.ResponseEntity.badRequest
 import org.springframework.http.ResponseEntity.ok
 import org.springframework.web.bind.annotation.*
 import java.lang.RuntimeException
 
 
 @RestController
-class PipelineOrchestratorController(val pipelineManager: PipelinesManager) {
+class PipelineOrchestratorController(val pipelineManager: PipelinesManager, val pipelineDeserialiser: PipelineDeserialiser) {
 
    @PostMapping("/runner/pipelines")
-   fun submitPipeline(@RequestBody pipelineDefinition: String): ResponseEntity<Pipeline> {
-      log().info("Received submitted pipeline: \n$pipelineDefinition")
+   fun submitPipeline(@RequestBody pipelineDescription: String): ResponseEntity<Pipeline> {
+      log().info("Received submitted pipeline: \n$pipelineDescription")
 
       return try {
-         val pipeline = pipelineManager.addPipeline(pipelineDefinition)
+         // Deserialise the full pipeline. We only need the name for now. But it allows us to validate the json and in the future, perform some validations
+         val pipeline = pipelineDeserialiser.deserialise(pipelineDescription)
+
+         pipelineManager.addPipeline(PipelineReference(pipeline.name, pipelineDescription))
          ok(pipeline)
       } catch (e: InvalidPipelineDescriptionException) {
          throw BadRequestException("Invalid pipeline description", e)
