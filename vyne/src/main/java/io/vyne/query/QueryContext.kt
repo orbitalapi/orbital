@@ -226,9 +226,19 @@ data class QueryContext(
       return strategy.getFact(this, type) != null
    }
 
+   fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY, strictness: TypeMatchingStrategy): Boolean {
+      // This could be optimized, as we're searching twice for everything, and not caching anything
+      return strategy.getFact(this, type, strictness) != null
+   }
+
    fun getFact(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): TypedInstance {
       // This could be optimized, as we're searching twice for everything, and not caching anything
       return strategy.getFact(this, type)!!
+   }
+
+   fun getFact(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY, strictness: TypeMatchingStrategy): TypedInstance {
+      // This could be optimized, as we're searching twice for everything, and not caching anything
+      return strategy.getFact(this, type, strictness)!!
    }
 
    fun evaluatedPath(): List<EvaluatedEdge> {

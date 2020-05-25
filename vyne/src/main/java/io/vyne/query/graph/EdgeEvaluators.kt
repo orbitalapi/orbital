@@ -7,15 +7,23 @@ import io.vyne.ElementType
 import io.vyne.instanceOfType
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
+import io.vyne.parameter
+import io.vyne.providedInstance
 import io.vyne.query.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
+import io.vyne.schemas.ParamNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
+import io.vyne.schemas.TypeMatchingStrategy
 import io.vyne.schemas.fqn
 import io.vyne.utils.assertingThat
 import io.vyne.utils.log
+import io.vyne.utils.synonymFullQualifiedName
+import io.vyne.utils.synonymValue
+import lang.taxi.types.EnumType
 
 
 fun GraphEdge<Element, Relationship>.description(): String {
@@ -108,6 +116,11 @@ class ParameterFactory {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
          return context.getFact(paramType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
       }
+
+      if (context.hasFactOfType(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT, strictness = TypeMatchingStrategy.ALLOW_SYNONYMS)) {
+         return context.getFact(paramType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT, TypeMatchingStrategy.ALLOW_SYNONYMS)
+      }
+
 
 //      if (startingPoint.type == paramType) {
 //         return EvaluatedLink.success(link, startingPoint, startingPoint)
@@ -209,6 +222,29 @@ class OperationParameterEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS
 class IsInstanceOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_INSTANCE_OF)
 class CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPULATE)
 class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_TYPE)
+class CanPopulateWithSynonymEdgeEvaluator: PassThroughEdgeEvaluator(Relationship.CAN_POPULATE_WITH_SYNONYM) {
+   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+      val result = edge.previousValue?.let { typedInstance ->
+         if (typedInstance.value != null && typedInstance.type.isEnum) {
+            val targetEnumTypeName = ParamNames.typeNameInParamName(edge.target.valueAsQualifiedName().fullyQualifiedName)
+            val underlyingEnumType = typedInstance.type.taxiType as EnumType
+             underlyingEnumType
+               .values
+               .flatMap { enumValue -> enumValue.synonyms }
+               .find { synonym -> synonym.synonymFullQualifiedName() == targetEnumTypeName }
+               ?.let { synonym ->
+                  val targetEnumType = context.schema.type(targetEnumTypeName)
+                  val targetEnumTaxiType = targetEnumType.taxiType as EnumType
+                  val targetEnumValue = targetEnumTaxiType.values.first { it.name ==  synonym.synonymValue()}.value
+                  val result = TypedValue.from(targetEnumType, targetEnumValue, false)
+                  context.addFact(result)
+                  return EvaluatedEdge.success(edge, edge.target, result)
+               }
+         }
+      }
+      return EvaluatedEdge.success(edge, edge.target, edge.previousValue)
+   }
+}
 
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {

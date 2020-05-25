@@ -33,7 +33,8 @@ enum class Relationship(val description: String) {
    IS_INSTANCE_OF("Is instanceOfType of"),
    PROVIDES("provides"),
    EXTENDS_TYPE("extends"),
-   CAN_POPULATE("can populate");
+   CAN_POPULATE("can populate"),
+   CAN_POPULATE_WITH_SYNONYM("can populate with synonym ");
 
    override fun toString(): String {
       return this.description

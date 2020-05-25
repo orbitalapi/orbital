@@ -80,6 +80,7 @@ interface QueryEngineFactory {
             HasAttributeEdgeEvaluator(),
             CanPopulateEdgeEvaluator(),
             ExtendsTypeEdgeEvaluator(),
+            CanPopulateWithSynonymEdgeEvaluator(),
             OperationInvocationEvaluator(operationInvocationService(invokers))
          )
       }

@@ -4,10 +4,12 @@ import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
+import io.vyne.models.json.addAnnotatedInstance
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.*
+import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Ignore
@@ -30,6 +32,15 @@ type Client {
 type alias TaxFileNumber as String
 type alias CreditRisk as Int
 
+model Trade {
+   productType : ProductType
+}
+
+enum ProductType {
+   FX_SPOT("FX Spot"),
+   FX_FORWARD("FX Forward")
+}
+
 service ClientService {
    @StubResponse("mockClient")
    operation getClient(TaxFileNumber):Client
@@ -41,7 +52,7 @@ service ClientService {
    val schema = TaxiSchema.from(taxiDef)
 
 
-   fun vyne(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) = Vyne(queryEngineFactory).addSchema(schema)
+   fun vyne(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(), initialSchema: Schema = this.schema) = Vyne(queryEngineFactory).addSchema(initialSchema)
    val queryParser = QueryParser(schema)
 
    fun typeNode(name: String): Set<QuerySpecTypeNode> {
@@ -69,7 +80,7 @@ class VyneTest {
       val vyne = TestSchema.vyne()
       val json = """
 {
-   "clientId" : "123",
+   "productType" : "123",
    "name" : "Jimmy's Choos",
    "isicCode" : "retailer"
 }"""
@@ -77,6 +88,47 @@ class VyneTest {
       val result = vyne.query().find("vyne.example.ClientName")
       expect(result.results.size).to.equal(1)
       expect(result["vyne.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
+   }
+
+   @Test
+   fun `vyne should emit values that conform to the enum spec`() {
+      val enumSchema = TaxiSchema.from("""
+                namespace companyX {
+                   model Product {
+                     name : String
+                  }
+                  enum ProductType {
+                     SPOT(919),
+                     FORWARD(920)
+                  }
+                  service ProductTaxonomyService {
+                     @StubResponse("mockProduct")
+                     operation getProduct(ProductType):Product
+                  }
+                }
+                namespace vendorA {
+                   enum ProductType {
+                      FX_SPOT("Spot") synonym of companyX.ProductType.SPOT
+                   }
+                }
+
+      """.trimIndent())
+
+      val stubService = StubService()
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val vyne = TestSchema.vyne(queryEngineFactory, enumSchema)
+      val product = vyne.parseJsonModel("companyX.Product", """
+         {
+            "name": "USD/GBP"
+         }
+      """.trimIndent())
+      stubService.addResponse("mockProduct", product)
+      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema)
+      vyne.addModel(instance)
+      val queryResult = vyne.query().find("companyX.Product")
+      expect(queryResult.results.size).to.equal(1)
+      val attributeMap = queryResult["companyX.Product"]!!.value as Map<String, TypedValue>
+      expect((attributeMap["name"] ?: error("")).value).to.equal("USD/GBP")
    }
 
    @Test

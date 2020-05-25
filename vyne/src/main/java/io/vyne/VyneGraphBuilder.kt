@@ -5,6 +5,8 @@ import com.google.common.collect.Multimap
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.*
+import io.vyne.utils.synonymFullQualifiedName
+import lang.taxi.types.EnumType
 
 enum class ElementType {
    TYPE,
@@ -105,6 +107,16 @@ class VyneGraphBuilder(val schema: Schema) {
       facts.forEach { typedInstance ->
          val typeFqn = typedInstance.type.fullyQualifiedName
          appendProvidedInstances(builder, typeFqn, schema)
+         if (typedInstance.type.isEnum) {
+            val underlyingEnumType = typedInstance.type.taxiType as EnumType
+            underlyingEnumType.values.forEach {
+               it.synonyms.forEach { synonym ->
+                  val providedType = providedInstance(typeFqn)
+                  val synonymEnumTypeName = synonym.synonymFullQualifiedName()
+                  builder.connect(providedType).to(parameter(synonymEnumTypeName)).withEdge(Relationship.CAN_POPULATE_WITH_SYNONYM)
+               }
+            }
+         }
 //         val providedInstance = providedInstance(typeFqn)
 ////         val instance = instance(typedInstance)
 //         builder.connect(providedInstance).to(type(typedInstance.type)).withEdge(Relationship.IS_INSTANCE_OF)

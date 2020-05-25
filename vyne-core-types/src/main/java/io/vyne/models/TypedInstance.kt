@@ -3,6 +3,7 @@ package io.vyne.models
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 
 interface TypedInstance {
@@ -66,12 +67,14 @@ interface TypedInstance {
 
       fun from(type: Type, value: Any?, schema: Schema, performTypeConversions: Boolean = true): TypedInstance {
          return when {
+
             value is TypedInstance -> value
             value == null -> TypedNull(type)
             value is Collection<*> -> {
                val collectionMemberType = getCollectionType(type)
                TypedCollection.arrayOf(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema, performTypeConversions) })
             }
+            type.isEnum -> toEnum(type, value)
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions)
             }
@@ -82,6 +85,17 @@ interface TypedInstance {
          }
       }
 
+      private fun toEnum(type: Type, value: Any?): TypedInstance {
+         if (value == null) {
+            return TypedNull(type)
+         }
+         val enumType = type.taxiType as EnumType
+         val typedValue = enumType.values.find { enumValue -> enumValue.value == value || enumValue.name == value.toString() }?.let {
+            TypedValue.from(type, it.name)
+         }
+
+         return typedValue ?: TypedNull(type)
+      }
       private fun readCollectionTypeFromNonCollectionValue(type: Type, value: Any, schema: Schema): TypedInstance {
          return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema)
       }

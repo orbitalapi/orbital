@@ -5,11 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
 import io.vyne.VersionedSource
 import io.vyne.utils.log
+import io.vyne.utils.synonymFullQualifiedName
 import lang.taxi.Equality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.AttributePath
+import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.utils.takeHead
 
@@ -182,9 +184,13 @@ data class Type(
       collectionType?.name
    }
 
-   // Note : Lazy evaluation to work around that aliases are partiall populated during
-   // construction.
-   // If changing, make sure tests pass.
+   @get:JsonIgnore
+   val isEnum: Boolean by lazy {
+      resolveAliases().let { underlyingType ->
+         underlyingType.taxiType is EnumType
+      }
+   }
+
    @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isScalar")
    val isScalar: Boolean by lazy {
@@ -342,6 +348,7 @@ data class Type(
     * matches the JVM convention.
     */
    fun inheritsFrom(other: Type, considerTypeParameters: Boolean = true): Boolean {
+
       if (this.resolveAliases().resolvesSameAs(other.resolveAliases())) {
          return true
       }

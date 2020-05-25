@@ -37,8 +37,8 @@ class VyneSchemaTest {
          type alias EmailAddress as String
 
          enum ClientType {
-            INDIVIDUAL,
-            COMPANY
+            INDIVIDUAL("Sole Trader"),
+            COMPANY("Public Limited Company")
          }
 
          // Entirely unrelated type
