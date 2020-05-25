@@ -110,9 +110,15 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          && context.facts.first() is TypedCollection
          && targetType.isCollection
 
+      val isCollectionsToCollectionTransformation =
+         context.facts.stream().allMatch {it is TypedCollection}
+         && targetType.isCollection
+
       val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
       val result: TypedInstance? = if (isCollectionToCollectionTransformation) {
          mapCollectionToCollection(targetType, context)
+      } else if (isCollectionsToCollectionTransformation) {
+         mapCollectionsToCollection(targetType, context)
       } else {
          ObjectBuilder(this, context).build(targetType)
       }
@@ -134,26 +140,39 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
    }
 
+   private fun mapCollectionsToCollection(targetType: Type, context: QueryContext): TypedInstance? {
+      val targetCollectionType = targetType.resolveAliases().typeParameters[0]
+      val transformed = context.facts
+         .map { it as TypedCollection }
+         .map { projectToAnotherType(context, it, targetCollectionType) }
+         .mapNotNull { it }
+      return TypedCollection.from(transformed);
+   }
+
    private fun mapCollectionToCollection(targetType: Type, context: QueryContext): TypedInstance? {
       require(targetType.resolveAliases().typeParameters.size == 1) { "Expected collection type to contain exactly 1 parameter" }
       val collectionType = targetType.resolveAliases().typeParameters[0]
 
       val inboundFactList = (context.facts.first() as TypedCollection).value
-      val transformed = inboundFactList.mapNotNull { typedInstance ->
-         val transformationResult = context.only(typedInstance).build(collectionType.fullyQualifiedName)
-         if (transformationResult.isFullyResolved) {
-            require(transformationResult.results.size == 1) { "Expected only a single transformation result" }
-            val result = transformationResult.results.values.first()
-            if (result == null) {
-               log().warn("Transformation from $typedInstance to instance of ${collectionType.fullyQualifiedName} was reported as sucessful, but result was null")
-            }
-            result
-         } else {
-            log().warn("Failed to transform from $typedInstance to instance of ${collectionType.fullyQualifiedName}")
-            null
-         }
+      val transformed = inboundFactList.mapNotNull {
+         projectToAnotherType(context, it, collectionType)
       }
       return TypedCollection.from(transformed);
+   }
+
+   private fun projectToAnotherType(context: QueryContext, typedInstance: TypedInstance, targetType: Type): TypedInstance? {
+      val transformationResult = context.only(typedInstance).build(targetType.fullyQualifiedName)
+      return if (transformationResult.isFullyResolved) {
+         require(transformationResult.results.size == 1) { "Expected only a single transformation result" }
+         val result = transformationResult.results.values.first()
+         if (result == null) {
+            log().warn("Transformation from $typedInstance to instance of ${targetType.fullyQualifiedName} was reported as sucessful, but result was null")
+         }
+         result
+      } else {
+         log().warn("Failed to transform from $typedInstance to instance of ${targetType.fullyQualifiedName}")
+         null
+      }
    }
 
    override fun parse(queryExpression: QueryExpression):Set<QuerySpecTypeNode> {

@@ -6,6 +6,10 @@ import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
+import io.vyne.cask.query.generators.AfterTemporalOperationGenerator
+import io.vyne.cask.query.generators.BeforeTemporalOperationGenerator
+import io.vyne.cask.query.generators.BetweenTemporalOperationGenerator
+import io.vyne.cask.query.generators.FindByFieldIdOperationGenerator
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.fqn
@@ -22,10 +26,16 @@ class CaskServiceSchemaGeneratorTest {
     type OrderWindowSummary {
     symbol : Symbol by xpath("/Symbol")
     open : Price by xpath("/Open")
-    // Added column
     high : Price by xpath("/High")
-    // Changed column
     close : Price by xpath("/Close")
+    @Before
+    @After
+    @Between
+    maturityDate: Date
+    @Before
+    @After
+    @Between
+    orderTime: Instant
 }
 
    """.trimIndent()
@@ -36,7 +46,14 @@ class CaskServiceSchemaGeneratorTest {
       val typeSchema = lang.taxi.Compiler(schema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf())
       whenever(schemaProvider.schema()).thenReturn(taxiSchema)
-      val serviceSchemaGenerator = CaskServiceSchemaGenerator(schemaProvider, caskServiceSchemaWriter)
+      val serviceSchemaGenerator = CaskServiceSchemaGenerator(
+         schemaProvider,
+         caskServiceSchemaWriter,
+         listOf(
+            FindByFieldIdOperationGenerator(),
+            AfterTemporalOperationGenerator(),
+            BeforeTemporalOperationGenerator(),
+            BetweenTemporalOperationGenerator()))
       val schemaName = argumentCaptor<String>()
       val schemaVersion = argumentCaptor<String>()
       val serviceSchema = argumentCaptor<String>()
@@ -60,6 +77,16 @@ class CaskServiceSchemaGeneratorTest {
       operation findByHigh( @PathVariable(name = "high") high : Price ) : OrderWindowSummaryList
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/close/{Price}")
       operation findByClose( @PathVariable(name = "close") close : Price ) : OrderWindowSummaryList
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/{lang.taxi.Date}")
+      operation findByMaturityDate( @PathVariable(name = "maturityDate") maturityDate : Date ) : OrderWindowSummaryList
+      operation findByMaturityDateAfter(  after : Date ) : OrderWindowSummaryList( this:lang.taxi.Date > after )
+      operation findByMaturityDateBefore(  before : Date ) : OrderWindowSummaryList( this:lang.taxi.Date < before )
+      operation findByMaturityDateBetween(  start : Date,  end : Date ) : OrderWindowSummaryList( this:lang.taxi.Date >= start, this:lang.taxi.Date < end )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderTime/{lang.taxi.Instant}")
+      operation findByOrderTime( @PathVariable(name = "orderTime") orderTime : Instant ) : OrderWindowSummaryList
+      operation findByOrderTimeAfter(  after : Instant ) : OrderWindowSummaryList( this:lang.taxi.Instant > after )
+      operation findByOrderTimeBefore(  before : Instant ) : OrderWindowSummaryList( this:lang.taxi.Instant < before )
+      operation findByOrderTimeBetween(  start : Instant,  end : Instant ) : OrderWindowSummaryList( this:lang.taxi.Instant >= start, this:lang.taxi.Instant < end )
    }
 }
 

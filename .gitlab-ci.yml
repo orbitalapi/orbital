@@ -42,8 +42,8 @@ publish-snapshot:
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-#    -don't need to run tests as they were run in the previous stage
-    - 'mvn $MAVEN_CLI_OPTS -Dmaven.test.skip=true deploy -P snapshot-release'
+#    -don't need to run tests as they were run in the previous stage, but still compile the test-jars for deployment
+    - 'mvn $MAVEN_CLI_OPTS -DskipTests test-compile jar:test-jar deploy -P snapshot-release'
   artifacts:
     reports:
       junit:
