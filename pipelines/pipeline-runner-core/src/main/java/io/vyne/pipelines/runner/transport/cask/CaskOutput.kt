@@ -60,7 +60,7 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
          val caskServers = discoveryClient.getInstances(caskServiceName)
 
          if(caskServers.isEmpty()){
-            log().info("Could not find $caskServiceName server. Reason: No cask instances running.")
+            log().error("Could not find $caskServiceName server. Reason: No cask instances running.")
             return Optional.empty()
          }
          val caskServer = caskServers.random()  // ENHANCE client side load balancing ?
@@ -69,7 +69,7 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
          log().info("Found for $caskServiceName service server in Eureka [endpoint=$endpoint]")
          Optional.of(endpoint)
       } catch (e: RuntimeException) {
-         log().info("Could not find $caskServiceName server. Reason: ${e.message}")
+         log().error("Could not find $caskServiceName server. Reason: ${e.message}")
          Optional.empty()
       }
    }

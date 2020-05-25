@@ -4,27 +4,26 @@ import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.orchestrator.pipelines.InvalidPipelineDescriptionException
 import io.vyne.utils.log
 import org.springframework.cloud.client.ServiceInstance
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.ResponseEntity.badRequest
 import org.springframework.http.ResponseEntity.ok
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
+import java.lang.RuntimeException
 
 
 @RestController
 class PipelineOrchestratorController(val pipelineManager: PipelinesManager) {
 
    @PostMapping("/runner/pipelines")
-   fun submitPipeline(@RequestBody pipelineDefinition: String): ResponseEntity<Any> {
+   fun submitPipeline(@RequestBody pipelineDefinition: String): ResponseEntity<Pipeline> {
       log().info("Received submitted pipeline: \n$pipelineDefinition")
 
       return try {
          val pipeline = pipelineManager.addPipeline(pipelineDefinition)
          ok(pipeline)
       } catch (e: InvalidPipelineDescriptionException) {
-         badRequest().body(e.message)
+         throw BadRequestException("Invalid pipeline description", e)
       }
    }
 
@@ -35,7 +34,7 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager) {
          val instances = pipelineManager.runnerInstances
          ok(instances)
       } catch (e: Exception) {
-         badRequest().body(e.message)
+         throw BadRequestException("Error while getting instances", e)
       }
    }
 
@@ -46,7 +45,20 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager) {
          val pipelines = pipelineManager.pipelines.map { it.value }
          ok(pipelines)
       } catch (e: Exception) {
-         badRequest().body(e.message)
+         throw BadRequestException("Error while getting pipelines", e)
+      }
+   }
+}
+
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+class BadRequestException(message: String, e: Exception? = null) : RuntimeException(message, e) {
+
+   companion object {
+
+      fun throwIf(condition: Boolean, message: String) {
+         if (condition) {
+            throw BadRequestException(message)
+         }
       }
    }
 }

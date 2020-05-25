@@ -21,10 +21,10 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
 
 
    // All pipeline runners instances
-   var runnerInstances: List<ServiceInstance> = ArrayList()
+   val runnerInstances = mutableListOf<ServiceInstance>()
 
-   // Current pipelines <Pipeline name, Pipeline state>
-   val pipelines = HashMap<String, PipelineStateSnapshot>()
+   // Current pipelines
+   val pipelines = mutableMapOf<String, PipelineStateSnapshot>()
 
    /**
     * Add a pipeline to the global state. Perform some verification/validation here
@@ -62,7 +62,7 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
     * Select a runner instance and run the pipeline on it
     */
    private fun runPipeline(pipelineName: String) {
-      var pipelineSnapshot = pipelines[pipelineName]!!
+      val pipelineSnapshot = pipelines[pipelineName]!!
       try {
 
          val availableServers = runnerInstances.filter { it.metadata[PIPELINE_METADATA_KEY] == null }
@@ -95,6 +95,9 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
    @Scheduled(fixedRate = 5000)
    fun getServers() = reloadState()
 
+
+
+
    /**
     * Reloads the internal state of the Orchestrator
     * - Discover all pipeline-runner services
@@ -104,21 +107,19 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
    @Synchronized
    fun reloadState() {
       try {
-         var previousPipelines = pipelines.map { it.value }
+         val previousPipelines = pipelines.map { it.value }
 
          // 1. Find all the runner instances
-         runnerInstances = discoveryClient.getInstances("pipeline-runner")
+         runnerInstances.clear()
+         runnerInstances.addAll(discoveryClient.getInstances("pipeline-runner"))
 
          // 2. See what pipelines are currently running
-         var runningPipelines = runnerInstances
-            .map { it to it.metadata[PIPELINE_METADATA_KEY] } // only get the instances running a pipelines
-            .filter { it.second != null }
-            .map { it.first to it.second!! } // (Maybe a better way to do that ?)
+         val runningPipelines = runnerInstances
+            .mapNotNull { extractRunnerMetadata(it) }
             .map { // Save internal state of these running pipelines
                val pipeline = pipelineDeserialiser.deserialise(it.second)
                pipeline.name to PipelineStateSnapshot(pipeline.name, it.second, it.first, RUNNING)
             }.toMap()
-
 
          // 3. Overwrite the running pipelines
          pipelines.putAll(runningPipelines)
@@ -133,6 +134,14 @@ class PipelinesManager(private val pipelineDeserialiser: PipelineDeserialiser,
          log().error("Error while reloading internal state", e)
       }
 
+   }
+
+   fun extractRunnerMetadata(runnerInstance: ServiceInstance):Pair<ServiceInstance,String>? {
+      val metadata = runnerInstance.metadata[PIPELINE_METADATA_KEY]
+      return when(metadata) {
+         null -> null
+         else -> runnerInstance to metadata
+      }
    }
 
    /**
