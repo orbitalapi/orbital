@@ -1,6 +1,5 @@
 package io.vyne.schemas.taxi
 
-import com.google.common.collect.ArrayListMultimap
 import io.vyne.SchemaAggregator
 import io.vyne.VersionedSource
 import io.vyne.schemas.*
@@ -9,16 +8,20 @@ import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
+import io.vyne.versionedSources
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
+import lang.taxi.packages.TaxiPackageProject
+import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.types.*
 import lang.taxi.types.Annotation
 import org.antlr.v4.runtime.CharStreams
+import java.nio.file.Path
 
 class TaxiSchema(private val document: TaxiDocument, override val sources: List<VersionedSource>) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
-   override val policies: Set<Policy>
+   override val policies : Set<Policy>
    override val typeCache: TypeCache
    override fun taxiType(name: QualifiedName): lang.taxi.types.Type {
       return taxi.type(name.fullyQualifiedName)
@@ -190,6 +193,10 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
 
    companion object {
       const val LANGUAGE = "Taxi"
+      fun forPackageAtPath(path: Path):TaxiSchema {
+         return from(TaxiSourcesLoader.loadPackage(path).versionedSources())
+      }
+
       fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
          val typesInSources = sources.flatMap { namedSource ->
             Compiler(namedSource.content, namedSource.id).declaredTypeNames().map { it to namedSource }
@@ -310,7 +317,7 @@ private fun lang.taxi.types.Type.toVyneQualifiedName(): QualifiedName {
    return this.toQualifiedName().toVyneQualifiedName()
 }
 
-private fun lang.taxi.types.SourceCode.toVyneSource(): VersionedSource {
+private fun lang.taxi.sources.SourceCode.toVyneSource(): VersionedSource {
    // TODO : Find the version.
    return VersionedSource(this.sourceName,VersionedSource.DEFAULT_VERSION.toString(),this.content)
 }
