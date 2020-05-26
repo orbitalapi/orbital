@@ -3,12 +3,14 @@ package io.vyne.pipelines.runner.transport.cask
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.discovery.EurekaClient
 import io.vyne.VersionedTypeReference
+import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
@@ -21,7 +23,7 @@ import java.util.*
 
 
 @Component
-class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: EurekaClient, @Value("\${service.cask.name}") var caskServiceName: String) : PipelineOutputTransportBuilder<CaskTransportOutputSpec> {
+class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: DiscoveryClient, @Value("\${service.cask.name}") var caskServiceName: String) : PipelineOutputTransportBuilder<CaskTransportOutputSpec> {
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == CaskTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 
@@ -29,10 +31,8 @@ class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: EurekaClient
 
 }
 
-class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: ObjectMapper, private val eurekaClient: EurekaClient, private val caskServiceName: String) : PipelineOutputTransport {
+class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: ObjectMapper, private val discoveryClient: DiscoveryClient, private val caskServiceName: String) : PipelineOutputTransport  {
    override val type: VersionedTypeReference = spec.targetType
-
-   override val healthMonitor = EmitterPipelineTransportHealthMonitor()
 
    private val wsClient = ReactorNettyWebSocketClient()
    private val wsOutput = EmitterProcessor.create<String>()
@@ -56,15 +56,20 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
     * Poll Eureka for the next Cask server available
     */
    private fun getCaskServiceEndpoint(): Optional<String> {
+      return try {
+         val caskServers = discoveryClient.getInstances(caskServiceName)
 
-      return return try {
-         val caskServer = eurekaClient.getNextServerFromEureka(caskServiceName, false)
-         val endpoint = with(caskServer) { "ws://$hostName:$port/cask/${type.typeName.fullyQualifiedName}" }
+         if(caskServers.isEmpty()){
+            log().error("Could not find $caskServiceName server. Reason: No cask instances running.")
+            return Optional.empty()
+         }
+         val caskServer = caskServers.random()  // ENHANCE client side load balancing ?
+
+         val endpoint = with(caskServer) { "ws://$host:$port/cask/${type.typeName.fullyQualifiedName}" }
          log().info("Found for $caskServiceName service server in Eureka [endpoint=$endpoint]")
          Optional.of(endpoint)
       } catch (e: RuntimeException) {
-         // ENHANCE check if more fine grained exception is possible ?
-         log().info("Could not find $caskServiceName server. Reason: ${e.message}")
+         log().error("Could not find $caskServiceName server. Reason: ${e.message}")
          Optional.empty()
       }
    }
@@ -116,10 +121,9 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
          }
    }
 
-   override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
-      val json = objectMapper.writeValueAsString(typedInstance.toRawObject())
-      logger.info { "Sending instance ${typedInstance.type.fullyQualifiedName} to Cask" }
-      wsOutput.onNext(json);
+   override fun write(message: String, logger: PipelineLogger) {
+      logger.info { "Sending message to Cask" }
+      wsOutput.onNext(message)
    }
 
 }

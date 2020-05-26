@@ -224,92 +224,37 @@ discover {
 
 # 25-May thoughts
 
- * `discover | gather | stream` -> `findOne | findAll | stream`
- * given is still useful, as is provides a starting point.  
-
 ```
-findAll { // query vs discover? query|stream?
+query { // query vs discover? query|stream?
     Order[](
         TradeDate >= '2019-12-20' AND // Thoughts on logical operators here?
         TradeDate < '2019-12-22'
     )
 }
-as IMadOrder[]  // as for Projections
+as SomeOrderType[]  // as for Projections
 
 // could also do
 
 query {
 ..
-} as { // inlining type definition (effectively an anonymous type)
+} as {
     someField : SomeType
     someOtherField : SomeOtherType
-}[] // Need to consider cardinality -- see below
+}[] // Cardinality -- should be an error to go from A -> B[] or A[] -> B (unless B is a type alias to B[])
+
 
 ```
 
-### Existing Vyne demos:
-```
-given {
-    CustomerEmailAddress = 'jimmy@demo.com'
-}
-findOne {
-    AvailableRewards[]  // Find one service that returns AvaialbleRewards[]
-}
-
-
-given {
-    CustomerEmailAddress = 'jimmy@demo.com'
-}
-findAll {
-    Promotion[] // Find all services that return Promotion (...or `Promotion[]` ?), and join together
-}
-```
 ## Projections
- * the `as` block is optional.  If it's not provided, vyne will return the data that's requested
-
-### Cardinality in Projections
 For now, we should error if someone tries to project where cardinality
 isn't obvious.
 
- Cardinality is ambiguous if:
-  * A query requests transfomration from A -> B[], and
-    * there is no operation that returns B[] whose contract is satisfied 
-    
-    
 ie.,
 
-should be an error to go from A -> B[] or A[] -> B (unless B is a type alias to B[]), except
-where an operation directly provides this function.
+should be an error to go from A -> B[] or A[] -> B (unless B is a type alias to B[])
 
 Also for projecting A[] to B[], we're gonna treat that as: 
 
 ```
 A[].map { A -> vyne.given(A).build(B) }
-```
-
-## Property names in projected types
-When we're asking for things that are `concept`s, they may not have names
-
-eg:
-
-```
-concept Order {
-    OrderId
-    BankDirection
-    Quantity
-    Symbol
-    Product
-}
-```
-
-If this is returned (ie., without being projected to another type), Vyne will generate property names, as unambiguously as possible:
-
-```json 
-{
-    "orderId" : ...  <-- property names defined by camelCasing type name
-    "bankDirection" : ...
-    "com.acme.products.Id" : ... <-- Uses qualified name if the name is ambgious
-    "com.acme.clients.Id" : ...
-}
-
 ```

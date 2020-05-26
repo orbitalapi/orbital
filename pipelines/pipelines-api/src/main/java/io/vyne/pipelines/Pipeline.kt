@@ -3,12 +3,14 @@ package io.vyne.pipelines
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
-import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.utils.log
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import java.time.Instant
 import kotlin.math.absoluteValue
+
+const val PIPELINE_METADATA_KEY = "pipeline"
 
 data class Pipeline(
    val name: String,
@@ -84,13 +86,18 @@ interface PipelineInputTransport : PipelineTransort {
    fun resume() {}
 }
 
+sealed class PipelineMessage(val content: String, val pipeline: Pipeline, val inputType: Type, val outputType: Type)
+class TransformablePipelineMessage(content: String,  pipeline: Pipeline,  inputType: Type, outputType: Type, val instance: TypedInstance, var transformedInstance: TypedInstance? = null)  : PipelineMessage(content, pipeline, inputType, outputType)
+class RawPipelineMessage( content: String, pipeline: Pipeline,  inputType: Type, outputType: Type): PipelineMessage(content, pipeline, inputType, outputType)
+
+
 data class PipelineInputMessage(
    // Publishers should try to use the time that the
    // message was produced, not the time the consumer
    // has received it
    val messageTimestamp: Instant,
    val metadata: Map<String, Any> = emptyMap(),
-   val messageProvider: (schema: Schema, logger: PipelineLogger) -> TypedInstance
+   val messageProvider: (logger: PipelineLogger) -> String
 ) {
    val id = messageTimestamp.toEpochMilli()
 }
@@ -99,7 +106,7 @@ data class PipelineInputMessage(
 interface PipelineOutputTransport : PipelineTransort {
 
    val type: VersionedTypeReference
-   fun write(typedInstance: TypedInstance, logger: PipelineLogger)
+   fun write(message: String, logger: PipelineLogger)
 
 }
 

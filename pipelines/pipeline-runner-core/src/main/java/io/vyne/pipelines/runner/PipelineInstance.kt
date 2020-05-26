@@ -1,13 +1,9 @@
 package io.vyne.pipelines.runner
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.vyne.models.TypedInstance
-import io.vyne.pipelines.Pipeline
-import io.vyne.pipelines.PipelineDirection
+import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineDirection.INPUT
 import io.vyne.pipelines.PipelineDirection.OUTPUT
-import io.vyne.pipelines.PipelineInputTransport
-import io.vyne.pipelines.PipelineOutputTransport
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
 import io.vyne.utils.log
@@ -17,7 +13,7 @@ import java.time.Instant
 
 class PipelineInstance(
    override val spec: Pipeline,
-   private val instancesFeed: Flux<TypedInstance>,
+   private val instancesFeed: Flux<PipelineMessage>,
    override val startedTimestamp: Instant,
    @JsonIgnore
    val input: PipelineInputTransport,
