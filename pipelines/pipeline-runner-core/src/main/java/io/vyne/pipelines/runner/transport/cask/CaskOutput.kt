@@ -33,6 +33,7 @@ class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: DiscoveryCli
 
 class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: ObjectMapper, private val discoveryClient: DiscoveryClient, private val caskServiceName: String) : PipelineOutputTransport  {
    override val type: VersionedTypeReference = spec.targetType
+   override val healthMonitor = EmitterPipelineTransportHealthMonitor()
 
    private val wsClient = ReactorNettyWebSocketClient()
    private val wsOutput = EmitterProcessor.create<String>()
