@@ -4,8 +4,8 @@ import com.github.zafarkhaja.semver.Version
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.utils.log
-import lang.taxi.packages.ProjectConfig
-import lang.taxi.packages.TaxiProjectLoader
+import lang.taxi.packages.TaxiPackageProject
+import lang.taxi.packages.TaxiPackageLoader
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.nio.file.Files
@@ -34,7 +34,7 @@ class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: S
          lastVersion = lastVersion!!.incrementPatchVersion()
       }
 
-      val schemas = sourceRoot.toFile().walkBottomUp()
+      val sources = sourceRoot.toFile().walkBottomUp()
          .filter { it.extension == "taxi" }
          .map {
             val pathRelativeToSourceRoot = sourceRoot.relativize(it.toPath()).toString()
@@ -42,21 +42,21 @@ class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: S
          }
          .toList()
 
-      if (schemas.isNotEmpty()) {
-         log().info("Recompiling ${schemas.size} files")
-         schemaStoreClient.submitSchemas(schemas)
+      if (sources.isNotEmpty()) {
+         log().info("Recompiling ${sources.size} files")
+         schemaStoreClient.submitSchemas(sources)
       } else {
          log().warn("No sources were found at $projectHome. I'll just wait here.")
       }
 
    }
 
-   private fun getProjectConfigFile(projectHomePath: Path): ProjectConfig? {
+   private fun getProjectConfigFile(projectHomePath: Path): TaxiPackageProject? {
       val projectFile = projectHomePath.resolve("taxi.conf")
       return if (Files.exists(projectFile)) {
          log().info("Found taxi.conf file at $projectFile - will use this for config")
          try {
-            TaxiProjectLoader().withConfigFileAt(projectFile).load()
+            TaxiPackageLoader().withConfigFileAt(projectFile).load()
          } catch (e: Exception) {
             log().error("Failed to read config file", e)
             null
@@ -66,23 +66,23 @@ class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: S
       }
    }
 
-   private fun getSourceRoot(projectHomePath: Path, taxiConfig: ProjectConfig?): Path {
-      return if (taxiConfig == null) {
+   private fun getSourceRoot(projectHomePath: Path, taxiPackageProject: TaxiPackageProject?): Path {
+      return if (taxiPackageProject == null) {
          projectHomePath
       } else {
-         projectHomePath.resolve(taxiConfig.sourceRoot)
+         projectHomePath.resolve(taxiPackageProject.sourceRoot)
       }
    }
 
-   private fun resolveVersion(taxiConfig: ProjectConfig?): Version {
+   private fun resolveVersion(taxiPackageProject: TaxiPackageProject?): Version {
       val defaultVersion = Version.valueOf("0.1.0")
-      return if (taxiConfig == null) {
+      return if (taxiPackageProject == null) {
          defaultVersion
       } else {
          try {
-            Version.valueOf(taxiConfig.version)
+            Version.valueOf(taxiPackageProject.version)
          } catch (e: Exception) {
-            log().error("Failed to parse version of ${taxiConfig.version}, will use defaultVersion of $defaultVersion", e)
+            log().error("Failed to parse version of ${taxiPackageProject.version}, will use defaultVersion of $defaultVersion", e)
             defaultVersion
          }
       }
