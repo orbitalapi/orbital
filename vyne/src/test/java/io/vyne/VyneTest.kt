@@ -19,9 +19,7 @@ import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.QualifiedName
 import org.junit.Ignore
 import org.junit.Test
-import java.time.Instant
 import java.time.LocalDate
-import kotlin.test.assertEquals
 import kotlin.test.fail
 
 object TestSchema {
@@ -583,7 +581,7 @@ service IonService {
          """.trimIndent()))
 
       // act
-      val result = vyne.query().gather("Order[]")
+      val result = vyne.query().findAll("Order[]")
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -663,8 +661,7 @@ service IonService {
          """.trimIndent()))
 
       // act
-      val result = vyne.query().build("IMadOrder[]")
-      // This should not be working!! think about that.
+      val result = vyne.query().projectResultsTo("IMadOrder[]").findAll("Order[]")
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -691,7 +688,7 @@ service IonService {
          """.trimIndent()))
 
       // act
-      val result = vyne.query().gather("Order[]")
+      val result = vyne.query().findAll("Order[]")
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
