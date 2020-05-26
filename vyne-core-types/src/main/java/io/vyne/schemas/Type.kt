@@ -10,6 +10,7 @@ import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.AttributePath
+import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.utils.takeHead
 
@@ -180,6 +181,13 @@ data class Type(
    @get:JsonProperty("collectionType")
    val collectionTypeName: QualifiedName? by lazy {
       collectionType?.name
+   }
+
+   @get:JsonIgnore
+   val isEnum: Boolean by lazy {
+      resolveAliases().let { underlyingType ->
+         underlyingType.taxiType is EnumType
+      }
    }
 
    // Note : Lazy evaluation to work around that aliases are partiall populated during
