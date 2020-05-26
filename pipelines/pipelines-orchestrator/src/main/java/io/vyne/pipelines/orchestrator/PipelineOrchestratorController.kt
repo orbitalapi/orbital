@@ -1,42 +1,66 @@
 package io.vyne.pipelines.orchestrator
 
+import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.orchestrator.pipelines.InvalidPipelineDescriptionException
 import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
-import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
 import io.vyne.utils.log
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.http.ResponseEntity.badRequest
 import org.springframework.http.ResponseEntity.ok
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
+import java.lang.RuntimeException
+
 
 @RestController
-class PipelineOrchestratorController(val pipelineDeserialiser: PipelineDeserialiser, val runner: PipelineRunnerApi) {
+class PipelineOrchestratorController(val pipelineManager: PipelinesManager, val pipelineDeserialiser: PipelineDeserialiser) {
 
    @PostMapping("/runner/pipelines")
-   fun submitPipeline(@RequestBody pipelineDefinition: String): ResponseEntity<Any> {
-      log().info("Received submitted pipeline: \n$pipelineDefinition")
+   fun submitPipeline(@RequestBody pipelineDescription: String): ResponseEntity<Pipeline> {
+      log().info("Received submitted pipeline: \n$pipelineDescription")
 
-      try {
-         // As for now, the output of deserialisation is not used. This is just to ensure we can actually deserialise the pipeline before sending it to any runner
-         val pipeline = pipelineDeserialiser.deserialise(pipelineDefinition)
+      return try {
+         // Deserialise the full pipeline. We only need the name for now. But it allows us to validate the json and in the future, perform some validations
+         val pipeline = pipelineDeserialiser.deserialise(pipelineDescription)
 
-         // TODO : Here, we'd want some way of storing which pipelines are running where.
-         // However, ideally, we'd be using Eureka et al to track this in a distributed way, so that
-         // instances are reporting which pipelines are running in a distributed manner,
-         // which makes recovering from restarts a bit easier.
-
-         // Submit the pipeline to the runner
-         val runnerResponse = runner.submitPipeline(pipelineDefinition)
-         return ok(runnerResponse)
+         pipelineManager.addPipeline(PipelineReference(pipeline.name, pipelineDescription))
+         ok(pipeline)
       } catch (e: InvalidPipelineDescriptionException) {
-         return badRequest().body(e.message)
+         throw BadRequestException("Invalid pipeline description", e)
       }
+   }
 
+   @GetMapping("/runners")
+   fun getInstances(): ResponseEntity<Any> {
 
+      return try {
+         val instances = pipelineManager.runnerInstances
+         ok(instances)
+      } catch (e: Exception) {
+         throw BadRequestException("Error while getting instances", e)
+      }
+   }
+
+   @GetMapping("/pipelines")
+   fun getPipelines(): ResponseEntity<Any> {
+
+      return try {
+         val pipelines = pipelineManager.pipelines.map { it.value }
+         ok(pipelines)
+      } catch (e: Exception) {
+         throw BadRequestException("Error while getting pipelines", e)
+      }
    }
 }
 
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+class BadRequestException(message: String, e: Exception? = null) : RuntimeException(message, e) {
 
+   companion object {
 
+      fun throwIf(condition: Boolean, message: String) {
+         if (condition) {
+            throw BadRequestException(message)
+         }
+      }
+   }
+}

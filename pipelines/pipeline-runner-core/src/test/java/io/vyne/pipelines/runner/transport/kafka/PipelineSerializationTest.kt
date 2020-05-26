@@ -67,14 +67,13 @@ class PipelineSerializationTest {
                   "props" : {
                   }
                }
-              },
-              "id" : "test-pipeline@196343942"
+              }
             }
       """.trimIndent()
 
       val pipeline = objectMapper.readValue(pipelineJson, Pipeline::class.java)
 
-      pipeline.id.should.equal("test-pipeline@196343942")
+      pipeline.id.should.startWith("test-pipeline")
       pipeline.name.should.equal("test-pipeline")
       pipeline.input.transport.type.should.equal("kafka")
       pipeline.output.transport.type.should.equal("cask")
