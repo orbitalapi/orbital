@@ -102,7 +102,6 @@ data class QueryResult(
             .map { (key, value) -> key.type.name.parameterizedName to value?.toRawObject() }
             .toMap()
       }
-
 }
 
 // Note : Also models failures, so is fairly generic
@@ -173,6 +172,7 @@ data class QueryContext(
    val resultMode: ResultMode) : ProfilerOperation by profiler {
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
+   private var projectResultsTo: Type? = null
 
    fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
 
@@ -184,8 +184,8 @@ data class QueryContext(
    fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
    fun build(expression: QueryExpression): QueryResult = queryEngine.build(expression, this)
 
-   fun gather(typeName: String): QueryResult = gather(TypeNameQueryExpression(typeName))
-   fun gather(queryString: QueryExpression): QueryResult = queryEngine.gather(queryString, this)
+   fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
+   fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
 
    fun parseQuery(typeName: String) = queryEngine.parse(TypeNameQueryExpression(typeName))
    fun parseQuery(expression: QueryExpression) = queryEngine.parse(expression)
@@ -238,6 +238,14 @@ data class QueryContext(
       return this
    }
 
+   fun projectResultsTo(targetType: String): QueryContext {
+      return projectResultsTo(schema.type(targetType))
+   }
+
+   fun projectResultsTo(targetType: Type): QueryContext {
+      projectResultsTo = targetType
+      return this
+   }
 
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 
@@ -270,6 +278,10 @@ data class QueryContext(
 
    fun evaluatedPath(): List<EvaluatedEdge> {
       return evaluatedEdges.toList()
+   }
+
+   fun projectResultsTo(): Type? {
+      return projectResultsTo
    }
 
    fun collectVisitedInstanceNodes(): Set<TypedInstance> {

@@ -20,7 +20,7 @@ interface QueryEngine {
    fun find(target: QuerySpecTypeNode, context: QueryContext): QueryResult
    fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult
 
-   fun gather(queryString: QueryExpression, context: QueryContext): QueryResult
+   fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult
 
    fun queryContext(
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
@@ -77,12 +77,12 @@ class StatefulQueryEngine(
 abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
-   override fun gather(queryString: QueryExpression, context: QueryContext): QueryResult {
+   override fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult {
       // First pass impl.
       // Thinking here is that if I can add a new Hipster strategy that discovers all the
       // endpoints, then I can compose a result of gather() from multiple finds()
-      val gatherQuery = queryParser.parse(queryString).map { it.copy(mode = QueryMode.GATHER) }.toSet()
-      return find(gatherQuery, context)
+      val findAllQuery = queryParser.parse(queryString).map { it.copy(mode = QueryMode.GATHER) }.toSet()
+      return find(findAllQuery, context)
    }
 
    // Experimental.
@@ -103,6 +103,10 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
       val targetType = context.schema.type(typeNameQueryExpression.typeName)
 
+      return projectTo(targetType, context)
+   }
+
+   private fun projectTo(targetType: Type, context: QueryContext): QueryResult {
       // EXPERIMENT: Detecting transforming of collections, ie A[] -> B[]
       // We're hacking this to to A.map{ build(B) }.
       // This could cause other issues, but I want to explore this approach
@@ -111,8 +115,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          && targetType.isCollection
 
       val isCollectionsToCollectionTransformation =
-         context.facts.stream().allMatch {it is TypedCollection}
-         && targetType.isCollection
+         context.facts.stream().allMatch { it is TypedCollection }
+            && targetType.isCollection
 
       val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
       val result: TypedInstance? = if (isCollectionToCollectionTransformation) {
@@ -144,23 +148,24 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val targetCollectionType = targetType.resolveAliases().typeParameters[0]
       val transformed = context.facts
          .map { it as TypedCollection }
-         .map { projectToAnotherType(context, it, targetCollectionType) }
+         .flatMap {it}
+         .map { typedInstance -> mapTo(targetCollectionType, typedInstance, context) }
          .mapNotNull { it }
       return TypedCollection.from(transformed);
    }
 
    private fun mapCollectionToCollection(targetType: Type, context: QueryContext): TypedInstance? {
       require(targetType.resolveAliases().typeParameters.size == 1) { "Expected collection type to contain exactly 1 parameter" }
-      val collectionType = targetType.resolveAliases().typeParameters[0]
+      val targetCollectionType = targetType.resolveAliases().typeParameters[0]
 
       val inboundFactList = (context.facts.first() as TypedCollection).value
       val transformed = inboundFactList.mapNotNull {
-         projectToAnotherType(context, it, collectionType)
+         mapTo(targetCollectionType, it, context)
       }
       return TypedCollection.from(transformed);
    }
 
-   private fun projectToAnotherType(context: QueryContext, typedInstance: TypedInstance, targetType: Type): TypedInstance? {
+   private fun mapTo(targetType: Type, typedInstance: TypedInstance, context: QueryContext): TypedInstance? {
       val transformationResult = context.only(typedInstance).build(targetType.fullyQualifiedName)
       return if (transformationResult.isFullyResolved) {
          require(transformationResult.results.size == 1) { "Expected only a single transformation result" }
@@ -256,13 +261,15 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          log().error("The following nodes weren't matched: ${unresolvedNodes().joinToString(", ")}")
       }
 
-      //      TODO("Rebuild Path")
-      return QueryResult(
+      return context.projectResultsTo()?.let {
+         projectTo(it, context)
+      } ?: QueryResult(
          matchedNodes,
          unresolvedNodes().toSet(),
          path = null,
          profilerOperation = context.profiler.root,
-         resultMode = context.resultMode)
+         resultMode = context.resultMode
+      )
    }
 }
 

@@ -129,7 +129,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       query.facts.forEach { fact -> this.addKeyValuePair(fact.typeName, fact.value, fact.factSetId) }
       return when (query.queryMode) {
          QueryMode.DISCOVER -> this.query().find(query.expression)
-         QueryMode.GATHER -> this.query().gather(query.expression)
+         QueryMode.GATHER -> this.query().findAll(query.expression)
          QueryMode.BUILD -> this.query().build(query.expression)
       }
    }
