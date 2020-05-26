@@ -7,10 +7,16 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.annotation.Bean
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
+import org.springframework.http.client.ClientHttpRequestInterceptor
+import org.springframework.scheduling.annotation.EnableScheduling
+import org.springframework.web.client.RestTemplate
 
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients(basePackageClasses = [PipelineRunnerApi::class])
+@EnableScheduling
 class PipelineOrchestratorApp {
    companion object {
       @JvmStatic
@@ -21,5 +27,18 @@ class PipelineOrchestratorApp {
 
       @Bean
       fun pipelineJacksonModule() = PipelineJacksonModule()
+
+      @Bean
+      fun restTemplate(): RestTemplate {
+         val template = RestTemplate()
+         template.interceptors.add(ClientHttpRequestInterceptor { request, body, execution ->
+            request.headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+            execution.execute(request, body);
+         })
+         return template
+      }
+
+
+
    }
 }

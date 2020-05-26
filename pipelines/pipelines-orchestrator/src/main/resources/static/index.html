@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+   <title>Pipeline Orchestator</title>
+   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+</head>
+<body>
+<div class="container-fluid">
+
+   <div class="row">
+
+      <!-- RUNNER INSTANCES -->
+      <div class="col-3">
+
+         <div class="row">
+            <div class="col text-center m-3">
+               <h3><span class="fa fa-server">  <b>Runners</b></span></h3>
+            </div>
+         </div>
+
+         <div id="runners">
+
+         </div>
+
+      </div>
+
+      <!-- PIPELINES INSTANCES -->
+      <div class="col">
+
+         <div class="row">
+            <div class="col text-center m-3">
+               <h3><span class="fa fa-exchange">  <b>Pipelines</b></span></h3>
+            </div>
+         </div>
+
+         <table class="table">
+            <thead class="thead-dark">
+            <tr>
+               <th scope="col">Running on</th>
+               <th scope="col">State</th>
+               <th scope="col">Name</th>
+               <th scope="col">Input</th>
+               <th scope="col">Output</th>
+               <th scope="col">Info</th>
+            </tr>
+            </thead>
+            <tbody id="pipelines">
+
+            </tbody>
+         </table>
+
+      </div>
+   </div>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+
+<script>
+    function addPipelines(responseEvent) {
+
+        $("#pipelines").empty()
+
+        responseEvent.sort((a, b) => {
+           if(a.instanceId == b.instanceId) {
+               return a.name > b.name ? 1 : -1
+           } else {
+             return a.instanceId > b.instanceId ? 1 : -1
+           }
+        }).forEach(i => {
+
+          $("#pipelines").append( `
+                <tr>
+                  <td>${i.instance? i.instance.instanceId : ' '}</th>
+                  <td>${i.state}</td>
+                  <td>${i.name}</th>
+                  <td>${i.pipeline.input.transport.type}</td>
+                  <td>${i.pipeline.output.transport.type}</td>
+                  <td>${i.info}</td>
+               </tr>
+          `)
+        })
+
+
+
+    }
+
+     function addRunners(responseEvent) {
+
+        $("#runners").empty()
+
+
+
+        responseEvent.sort((a, b) =>  a.instanceId > b.instanceId ? 1 : -1).forEach(i => {
+          $("#runners").append( `
+             <div class="row">
+                <div class="col-8 offset-2 text-center">
+                   <div class="card">
+                    <div class="card-body">
+                      ${i.instanceId}
+                    </div>
+                 </div>
+               </div>
+            </div>
+          `)
+        })
+    }
+
+    function fetchPipelines() {
+         $.ajax({
+             url: '/pipelines',
+             type: 'GET',
+             contentType: 'application/json',
+             success: function (data) {
+                 addPipelines(data);
+             },
+         });
+    }
+
+     function fetchPipelineDynamicInfo(instance, id) {
+         $.ajax({
+             url: instance+'/runner/pipelines/id',
+             type: 'GET',
+             contentType: 'application/json',
+             success: function (data) {
+                 addPipelines(data);
+             },
+         });
+    }
+
+    function fetchRunners() {
+         $.ajax({
+             url: '/runners',
+             type: 'GET',
+             contentType: 'application/json',
+             success: function (data) {
+                 addRunners(data);
+             },
+         });
+   }
+
+    $(document).ready(function () {
+         fetchPipelines();
+         fetchRunners();
+
+          window.setInterval(function(){
+           fetchPipelines();
+           fetchRunners();
+         }, 5000)
+
+    });
+
+</script>
+</body>
+</html>

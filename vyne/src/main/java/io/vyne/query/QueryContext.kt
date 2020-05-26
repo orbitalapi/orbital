@@ -5,16 +5,28 @@ import com.diffplug.common.base.TreeStream
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.collect.HashMultimap
-import io.vyne.VersionedSource
-import io.vyne.models.*
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.schemas.*
+import io.vyne.schemas.OutputConstraint
+import io.vyne.schemas.Path
+import io.vyne.schemas.Policy
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
+import io.vyne.schemas.TypeMatchingStrategy
+import io.vyne.schemas.fqn
+import io.vyne.schemas.synonymFullQualifiedName
+import io.vyne.schemas.synonymValue
 import io.vyne.utils.log
 import lang.taxi.policies.Instruction
+import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
-import lang.taxi.types.VoidType
-import java.util.*
+import java.util.UUID
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -96,6 +108,7 @@ data class QueryResult(
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
    val queryResponseId: String
+
    @get:JsonProperty("fullyResolved")
    val isFullyResolved: Boolean
    val profilerOperation: ProfilerOperation?
@@ -178,8 +191,28 @@ data class QueryContext(
    fun parseQuery(expression: QueryExpression) = queryEngine.parse(expression)
 
    companion object {
-      fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler, resultMode: ResultMode) =
-         QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, resultMode)
+      fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler, resultMode: ResultMode): QueryContext {
+         val mutableFacts = facts.flatMap { fact -> resolveSynonyms(fact, schema) }.toMutableSet()
+         return QueryContext(schema, mutableFacts, queryEngine, profiler, resultMode)
+      }
+
+      private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
+         return if (fact.type.isEnum) {
+            val underlyingEnumType = fact.type.taxiType as EnumType
+            underlyingEnumType
+               .values
+               .first { enumValue -> enumValue.value == fact.value }
+               .synonyms
+               .map { synonym ->
+               val synonymType = schema.type(synonym.synonymFullQualifiedName())
+               val synonymTypeTaxiType = synonymType.taxiType as EnumType
+               val targetEnumValue = synonymTypeTaxiType.values.first { it.name == synonym.synonymValue() }.value
+               TypedValue.from(synonymType, targetEnumValue, false)
+            }.toSet().plus(fact)
+         } else {
+            setOf(fact)
+         }
+      }
    }
 
    /**
@@ -192,7 +225,11 @@ data class QueryContext(
 
    fun addFact(fact: TypedInstance): QueryContext {
       log().debug("Added fact to queryContext: ${fact.type.fullyQualifiedName}")
-      this.facts.add(fact)
+      if (fact.type.isEnum) {
+         this.facts.addAll(resolveSynonyms(fact, schema))
+      } else {
+         this.facts.add(fact)
+      }
       return this
    }
 

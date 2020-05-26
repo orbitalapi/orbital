@@ -36,9 +36,7 @@ class PipelineTransportSpecDeserializer(val ids: List<PipelineTransportSpecId>) 
       val pipelineDirection = PipelineDirection.valueOf(direction)
 
     val clazz = ids
-       .filter{it.type == type}
-       .filter{it.direction == pipelineDirection}
-       .firstOrNull()
+       .filter { it.type == type }.firstOrNull { it.direction == pipelineDirection }
        ?.clazz
        .orElse(GenericPipelineTransportSpec::class.java)
 
