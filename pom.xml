@@ -50,6 +50,7 @@
       <module>pipelines</module>
        <module>cask-api</module>
       <module>vyne-ql</module>
+       <module>vyne-taxi</module>
    </modules>
 
    <scm>

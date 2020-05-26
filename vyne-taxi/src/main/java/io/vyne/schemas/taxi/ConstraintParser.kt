@@ -49,10 +49,14 @@ class TaxiConstraintConverter(val schema: Schema) {
 
    }
 
-   fun buildContract(returnType: Type, source: List<TaxiConstraint>): OperationContract {
-      val constraints = source
-         .map { buildConstraint(returnType, it) }
+   fun buildOutputConstraints(type: Type, source: List<TaxiConstraint>): List<OutputConstraint> {
+      return source
+         .map { buildConstraint(type, it) }
          .filterIsInstance(OutputConstraint::class.java)
+   }
+
+   fun buildContract(returnType: Type, source: List<TaxiConstraint>): OperationContract {
+      val constraints = buildOutputConstraints(returnType,source)
       return OperationContract(returnType, constraints)
    }
 

@@ -20,8 +20,16 @@
          <artifactId>vyne-core-types</artifactId>
          <version>0.3.0-SNAPSHOT</version>
       </dependency>
-
-
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-taxi</artifactId>
+         <version>0.3.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-ql-compiler</artifactId>
+         <version>0.3.0-SNAPSHOT</version>
+      </dependency>
       <dependency>
          <groupId>lang.taxi</groupId>
          <artifactId>taxi-jvm-common</artifactId>

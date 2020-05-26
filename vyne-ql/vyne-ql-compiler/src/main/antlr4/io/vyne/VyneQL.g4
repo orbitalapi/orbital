@@ -21,7 +21,16 @@ findOneDirective: 'findOne';
 
 queryDirective: findAllDirective | findOneDirective;
 
+givenBlock : 'given' '{' factList '}';
+
+factList : fact (',' fact)*;
+
+// TODO :  We could/should make variableName optional
+fact : variableName typeType '=' literal;
+
+variableName: Identifier ':';
 queryBody:
+   givenBlock?
 	queryDirective '{' queryTypeList '}' queryProjection?;
 
 queryTypeList: typeType (',' typeType)*;

@@ -4,9 +4,12 @@ import io.vyne.VersionedSource
 import io.vyne.VersionedTypeReference
 import io.vyne.utils.assertingThat
 import io.vyne.utils.log
+import lang.taxi.TaxiDocument
 
 
 interface Schema {
+   // I've pretty much given up on avoiding the Taxi vs Schema abstraction at this point..
+   val taxi: TaxiDocument
    val sources: List<VersionedSource>
    val types: Set<Type>
    val services: Set<Service>
@@ -40,7 +43,7 @@ interface Schema {
 
    fun taxiType(name: QualifiedName): lang.taxi.types.Type
 
-   fun type(taxiType: lang.taxi.types.Type):Type = type(taxiType.qualifiedName.fqn())
+   fun type(taxiType: lang.taxi.types.Type): Type = type(taxiType.qualifiedName.fqn())
    fun type(name: QualifiedName) = typeCache.type(name)
 
    fun hasType(name: String) = typeCache.hasType(name)
