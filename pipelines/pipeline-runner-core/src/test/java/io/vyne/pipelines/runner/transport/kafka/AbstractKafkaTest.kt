@@ -70,7 +70,9 @@ open class AbstractKafkaTest {
 
    fun buildPipelineBuilder(): PipelineBuilder {
       val (vyne, stub) = PipelineTestUtils.pipelineTestVyne()
-      stub.addResponse("getUserNameFromId", vyne.parseKeyValuePair("Username", "Jimmy Pitt"))
+      stub.addResponse("getUserNameFromId") { op, params ->
+         vyne.parseKeyValuePair("Username", params[0].second.value as String + "@mail.com")
+      }
 
       return PipelineBuilder(
          PipelineTransportFactory(listOf(KafkaInputBuilder(), DirectOutputBuilder())),

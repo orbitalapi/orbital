@@ -28,7 +28,7 @@ import java.time.Instant
 class PipelineTest {
 
    @Test
-   fun pipelineE2eTest() {
+   fun pipelineE2eWithTransformation() {
       val (vyne, stub) = PipelineTestUtils.pipelineTestVyne()
       stub.addResponse("getUserNameFromId", vyne.parseKeyValuePair("Username", "Jimmy Pitt"))
       val builder = PipelineBuilder(
@@ -53,10 +53,13 @@ class PipelineTest {
       )
 
       val pipelineInstance = builder.build(pipeline)
-      source.send("""{
+
+      var json = """{
          | "userId" : "jimmy"
          | }
-      """.trimMargin())
+      """.trimMargin();
+
+      source.send(json)
 
 
       val input = pipelineInstance.output as DirectOutput
@@ -67,10 +70,56 @@ class PipelineTest {
       await().until { output.messages.should.have.size(1) }
 
       val message = output.messages.first()
-      require(message is TypedObject)
-      message.type.fullyQualifiedName.should.equal("UserEvent")
-      message["id"].value.should.equal("jimmy")
-      message["name"].value.should.equal("Jimmy Pitt")
+
+
+      message.should.be.equal("""{"id":"jimmy","name":"Jimmy Pitt"}""")
+   }
+
+   @Test
+   fun pipelineE2eWithoutTransformation() {
+      val (vyne, stub) = PipelineTestUtils.pipelineTestVyne()
+      stub.addResponse("getUserNameFromId", vyne.parseKeyValuePair("Username", "Jimmy Pitt"))
+      val builder = PipelineBuilder(
+         PipelineTransportFactory(listOf(DirectInputBuilder(), DirectOutputBuilder())),
+         SimpleVyneProvider(vyne),
+         ObserverProvider.local()
+      )
+
+      val source = TestSource(vyne.type("PersonLoggedOnEvent"), vyne.schema)
+      val pipeline = Pipeline(
+         "testPipeline",
+         input = PipelineChannel(
+            VersionedTypeReference("PersonLoggedOnEvent".fqn()),
+            DirectTransportInputSpec(
+               source.flux
+            )
+         ),
+         output = PipelineChannel(
+            VersionedTypeReference("PersonLoggedOnEvent".fqn()),
+            DirectOutputSpec
+         )
+      )
+
+      val pipelineInstance = builder.build(pipeline)
+
+      var message = """{
+         a,b,f,r
+      """.trimMargin();
+
+      source.send(message)
+
+
+      val input = pipelineInstance.output as DirectOutput
+      val output = pipelineInstance.output as DirectOutput
+      input.healthMonitor.reportStatus(UP)
+      output.healthMonitor.reportStatus(UP)
+
+      await().until { output.messages.should.have.size(1) }
+
+      val outputMessage = output.messages.first()
+
+
+      outputMessage.should.be.equal(message)
    }
 }
 
@@ -80,11 +129,9 @@ class TestSource(val type: Type, val schema: Schema) {
 
    val flux: Flux<PipelineInputMessage> = emitter
    fun send(message: String) {
-      val map = jacksonObjectMapper().readValue<Map<String, Any>>(message)
-      val typedInstance = TypedInstance.from(type, map, schema)
       emitter.sink().next(
          PipelineInputMessage(
-            messageProvider = { _, _ -> typedInstance },
+            messageProvider = { _ -> message },
             messageTimestamp = Instant.now()
          )
       )

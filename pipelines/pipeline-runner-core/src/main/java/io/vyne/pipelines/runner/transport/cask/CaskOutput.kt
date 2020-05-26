@@ -121,10 +121,9 @@ class CaskOutput(spec: CaskTransportOutputSpec, private val objectMapper: Object
          }
    }
 
-   override fun write(typedInstance: TypedInstance, logger: PipelineLogger) {
-      val json = objectMapper.writeValueAsString(typedInstance.toRawObject())
-      logger.info { "Sending instance ${typedInstance.type.fullyQualifiedName} to Cask" }
-      wsOutput.onNext(json);
+   override fun write(message: String, logger: PipelineLogger) {
+      logger.info { "Sending message to Cask" }
+      wsOutput.onNext(message)
    }
 
 }
