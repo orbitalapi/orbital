@@ -49,6 +49,7 @@
       <module>file-schema-server</module>
       <module>pipelines</module>
        <module>cask-api</module>
+      <module>vyne-ql</module>
    </modules>
 
    <scm>
