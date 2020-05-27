@@ -1,13 +1,9 @@
 package io.vyne.pipelines.runner
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.vyne.models.TypedInstance
-import io.vyne.pipelines.Pipeline
-import io.vyne.pipelines.PipelineDirection
+import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineDirection.INPUT
 import io.vyne.pipelines.PipelineDirection.OUTPUT
-import io.vyne.pipelines.PipelineInputTransport
-import io.vyne.pipelines.PipelineOutputTransport
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
 import io.vyne.utils.log
@@ -17,7 +13,7 @@ import java.time.Instant
 
 class PipelineInstance(
    override val spec: Pipeline,
-   private val flux: Flux<TypedInstance>,
+   private val instancesFeed: Flux<PipelineMessage>,
    override val startedTimestamp: Instant,
    @JsonIgnore
    val input: PipelineInputTransport,
@@ -36,8 +32,8 @@ class PipelineInstance(
    private val outputHealthDisposable: Disposable
 
    init {
-      inputHealthDisposable = input.health().subscribe { reportStatus(INPUT, it) }
-      outputHealthDisposable = output.health().subscribe { reportStatus(OUTPUT, it) }
+      inputHealthDisposable = input.healthMonitor.healthEvents.subscribe { reportStatus(INPUT, it) }
+      outputHealthDisposable = output.healthMonitor.healthEvents.subscribe { reportStatus(OUTPUT, it) }
    }
 
    private fun reportStatus(direction: PipelineDirection, status: PipelineTransportStatus) {
@@ -65,7 +61,7 @@ class PipelineInstance(
          INIT to UP -> {
             if (otherDirectionState == UP) {
                // If the other transport is UP, subscribe to the flux and get data in
-               pipelineDisposable = flux.subscribe()
+               pipelineDisposable = instancesFeed.subscribe()
             }
          }
 

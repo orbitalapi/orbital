@@ -1,17 +1,25 @@
 package io.vyne
 
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.*
+import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.PropertyToParameterConstraint
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import lang.taxi.Operator
+import lang.taxi.services.operations.constraints.ConstantValueExpression
+import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
+import lang.taxi.types.QualifiedName
 import org.junit.Ignore
 import org.junit.Test
-import java.lang.Exception
+import java.time.LocalDate
 import kotlin.test.fail
 
 object TestSchema {
@@ -40,7 +48,9 @@ service ClientService {
    val schema = TaxiSchema.from(taxiDef)
 
 
-   fun vyne(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) = Vyne(queryEngineFactory).addSchema(schema)
+   fun vyne(
+      queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(),
+      testSchema: TaxiSchema = schema) = Vyne(queryEngineFactory).addSchema(testSchema)
    val queryParser = QueryParser(schema)
 
    fun typeNode(name: String): Set<QuerySpecTypeNode> {
@@ -76,6 +86,111 @@ class VyneTest {
       val result = vyne.query().find("vyne.example.ClientName")
       expect(result.results.size).to.equal(1)
       expect(result["vyne.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
+   }
+
+   @Test
+   fun `vyne should emit values that conform to the enum spec`() {
+      val enumSchema = TaxiSchema.from("""
+                namespace companyX {
+                   model Product {
+                     name : String
+                  }
+                  enum ProductType {
+                     SPOT(919),
+                     FORWARD(920)
+                  }
+                  service ProductTaxonomyService {
+                     @StubResponse("mockProduct")
+                     operation getProduct(ProductType):Product
+                  }
+                }
+                namespace vendorA {
+                   enum ProductType {
+                      FX_SPOT("Spot") synonym of companyX.ProductType.SPOT
+                   }
+                }
+
+      """.trimIndent())
+
+      val stubService = StubService()
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val vyne = TestSchema.vyne(queryEngineFactory, enumSchema)
+      val product = vyne.parseJsonModel("companyX.Product", """
+         {
+            "name": "USD/GBP"
+         }
+      """.trimIndent())
+      stubService.addResponse("mockProduct", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(1)
+            parameters.first().second.value.should.be.equal(919)
+            return product
+         }
+      })
+      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema)
+      vyne.addModel(instance)
+      val queryResult = vyne.query().find("companyX.Product")
+      expect(queryResult.results.size).to.equal(1)
+      val attributeMap = queryResult["companyX.Product"]!!.value as Map<String, TypedValue>
+      expect((attributeMap["name"] ?: error("")).value).to.equal("USD/GBP")
+   }
+
+   @Test
+   fun `vyne should emit values transitively that conform to the enum spec`() {
+      val enumSchema = TaxiSchema.from("""
+                namespace companyY {
+                   model Product {
+                     name : String
+                  }
+
+                  enum ProductClassification {
+                     T_PLUS_2("FX_T2"),
+                     T_PLUS_N("FX_TN")
+                  }
+
+                  service ProductTaxonomyService {
+                     @StubResponse("mockProduct")
+                     operation getProduct(ProductClassification):Product
+                  }
+                }
+                namespace companyX {
+                   model Product {
+                     name : String
+                  }
+                  enum ProductType {
+                     SPOT(919) synonym of companyY.ProductClassification.T_PLUS_2,
+                     FORWARD(920)
+                  }
+                }
+                namespace vendorA {
+                   enum ProductType {
+                      FX_SPOT("Spot") synonym of companyX.ProductType.SPOT
+                   }
+                }
+
+      """.trimIndent())
+
+      val stubService = StubService()
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val vyne = TestSchema.vyne(queryEngineFactory, enumSchema)
+      val product = vyne.parseJsonModel("companyY.Product", """
+         {
+            "name": "USD/GBP"
+         }
+      """.trimIndent())
+      stubService.addResponse("mockProduct", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(1)
+            parameters.first().second.value.should.be.equal("FX_T2")
+            return product
+         }
+      })
+      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema)
+      vyne.addModel(instance)
+      val queryResult = vyne.query().find("companyY.Product")
+      expect(queryResult.results.size).to.equal(1)
+      val attributeMap = queryResult["companyY.Product"]!!.value as Map<String, TypedValue>
+      expect((attributeMap["name"] ?: error("")).value).to.equal("USD/GBP")
    }
 
    @Test
@@ -149,7 +264,7 @@ class VyneTest {
 //      val stubService = StubService()
 //      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
 //      val vyne = TestSchema.vyne(queryEngineFactory)
-      val (vyne,stubService) = testVyne(TestSchema.schema)
+      val (vyne, stubService) = testVyne(TestSchema.schema)
 
       // Given...
       val json = """
@@ -168,9 +283,9 @@ class VyneTest {
       vyne.addKeyValuePair("vyne.example.InvoiceValue", 1000)
 
       //When....
-      val result:QueryResult = try {
+      val result: QueryResult = try {
          vyne.query().find("vyne.example.CreditRisk")
-      } catch (e:Exception) {
+      } catch (e: Exception) {
          fail()
       }
 
@@ -219,7 +334,7 @@ class VyneTest {
       val invoiceInstance = vyne.parseJsonModel(typeName = "vyne.example.Invoice", json = invoice)
       // The below line isn't implemented, and isn't trivial to do so, as it involves us remodelleding
       // the query api to provide an explicit start point.
-      val result = vyne.from (invoiceInstance).find("vyne.example.ClientName")
+      val result = vyne.from(invoiceInstance).find("vyne.example.ClientName")
       expect(result["vyne.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
    }
 
@@ -229,7 +344,7 @@ class VyneTest {
           type Money {
             amount:String
           }
-          type TradeValue inherits Money {}
+          type TradeValue inherits Money
 
           type alias HoldReceipt as String
           service LedgerService {
@@ -287,6 +402,67 @@ class VyneTest {
 
       expect(result.isFullyResolved).to.be.`true`
       expect(result.resultMap["EmailAddress[]".fqn().parameterizedName]).to.equal(listOf("foo@foo.com", "bar@foo.com"))
+   }
+
+   @Test
+   fun canRequestTypeAliasOfCollectionDirectlyFromService() {
+      val schema = """
+          type Customer {
+            emails : EmailAddress[]
+          }
+          type alias EmailAddresses as EmailAddress[]
+          type alias EmailAddress as String
+          service CustomerService {
+            operation emails():EmailAddresses
+          }
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("emails", vyne.typedValue("EmailAddresses", listOf("foo@foo.com", "bar@foo.com")))
+
+      val result = vyne.query().find("EmailAddresses")
+
+      expect(result.isFullyResolved).to.be.`true`
+      expect(result.resultMap["EmailAddresses".fqn().parameterizedName]).to.equal(listOf("foo@foo.com", "bar@foo.com"))
+
+      // Discovery by the aliases type name should work too
+      val resultFromAliasName = vyne.query().find("EmailAddress[]")
+      expect(resultFromAliasName.isFullyResolved).to.be.`true`
+      expect(resultFromAliasName.resultMap["EmailAddress[]".fqn().parameterizedName]).to.equal(listOf("foo@foo.com", "bar@foo.com"))
+
+   }
+
+   @Test
+   fun canDiscoverAliasedTypesWhenUsingGraphDiscoveryStrategy() {
+      val schema = """
+          type Customer {
+            name : CustomerName as String
+            emails : EmailAddresses
+          }
+          type alias EmailAddresses as EmailAddress[]
+          type alias EmailAddress as String
+          type alias Region as String
+          type alias CustomerList as Customer[]
+          service CustomerService {
+            operation customersInRegion(Region):CustomerList
+          }
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("customersInRegion", vyne.addJsonModel("CustomerList", """
+         [
+            { "name" : "Jimmy", "emails" : [ "foo@foo.com" ] },
+            { "name" : "Jack", "emails" : [ "baz@foo.com" ] }
+         ]
+         """.trimIndent()))
+
+      listOf("CustomerList", "Customer[]").forEach { typeToDiscover ->
+         val result = vyne.query(additionalFacts = setOf(vyne.typedValue("Region", "UK")))
+            .find(typeToDiscover)
+         result.isFullyResolved.should.equal(true)
+         val resultList = result[typeToDiscover] as List<*>
+         resultList.should.have.size(2)
+      }
    }
 
    @Test
@@ -358,12 +534,176 @@ type LegacyTradeNotification {
       val queryResult = vyne.query().find("NearLegNotional")
       TODO()
    }
+
+   val schema = """
+type alias OrderDate as Date
+type alias OrderId as String
+
+model IMadOrder {
+   id: OrderId
+   date: OrderDate
+}
+
+model Order {
+}
+type HpcOrder inherits Order {
+   hpcID: OrderId
+   hpcDate: OrderDate
+}
+type IonOrder inherits Order {
+   ionID: OrderId
+   ionDate: OrderDate
+}
+
+// operations
+service HpcService {
+   operation getHpcOrders( start : OrderDate, end : OrderDate) : HpcOrder[] (OrderDate >= start, OrderDate < end)
+}
+service IonService {
+   operation getIonOrders( start : OrderDate, end : OrderDate) : IonOrder[] (OrderDate >= start, OrderDate < end)
+}
+
+""".trimIndent()
+
+   @Test
+   fun canGatherOrdersFromTwoDifferentServices() {
+      // prepare
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+         [
+            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+         [
+            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+
+      // act
+      val result = vyne.query().findAll("Order[]")
+
+      // assert
+      expect(result.isFullyResolved).to.be.`true`
+      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }.flatMap { it as ArrayList<*> }
+      resultList.should.contain.all.elements(
+         mapOf(Pair("hpcID", "hpcOrder1"), Pair("hpcDate", LocalDate.parse("2020-01-01"))),
+         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate", LocalDate.parse("2020-01-01")))
+      )
+   }
+
+   @Test
+   @Ignore("Filtering by date range does not work!")
+   fun canGatherOrdersFromTwoDifferentServices_AndFilterByDateRange() {
+      // prepare
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+         [
+            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"},
+            { "hpcID" : "hpcOrder2", "hpcDate" : "2020-01-02"}
+         ]
+         """.trimIndent()))
+      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+         [
+            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"},
+            { "ionID" : "ionOrder2", "ionDate" : "2020-01-02"}
+         ]
+         """.trimIndent()))
+
+      // act
+      // Direct service invocation, would this work with Serhat's PR?
+      val result = vyne.query().find(
+         ConstrainedTypeNameQueryExpression("Order[]", listOf(
+            PropertyToParameterConstraint(
+               PropertyTypeIdentifier(QualifiedName.from("OrderDate")),
+               Operator.GREATER_THAN_OR_EQUAL_TO,
+               ConstantValueExpression(LocalDate.parse("2020-01-01"))
+            ),
+            PropertyToParameterConstraint(
+               PropertyTypeIdentifier(QualifiedName.from("OrderDate")),
+               Operator.LESS_THAN,
+               ConstantValueExpression(LocalDate.parse("2020-01-02"))
+            )
+         ))
+      )
+      // This fails with the following error
+      // 09:22:27.473 DEBUG          io.vyne.query.HipsterDiscoverGraphQueryStrategy.doSearch(172) - Search Type_instance(lang.taxi.Array) -> Type(lang.taxi.Array) found path:
+      // lang.taxi.Array -[Is instanceOfType of]-> lang.taxi.Array
+      //09:22:27.478 ERROR                            io.vyne.query.StatefulQueryEngine.find(198) - Search failed with exception:
+      //java.lang.IllegalArgumentException: The queryContext doesn't have a fact present of type lang.taxi.Array, but this is the starting point of the discovered solution.
+      //at io.vyne.query.HipsterDiscoverGraphQueryStrategy.getStartingEdge(HipsterDiscoverGraphQueryStrategy.kt:239)
+
+      // assert
+      expect(result.isFullyResolved).to.be.`true`
+      expect(result.resultMap.values).to.equal(
+         setOf(
+            listOf(
+               mapOf(Pair("hpcID", "hpcOrder1"), Pair("hpcDate", LocalDate.parse("2020-01-01"))),
+               mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate", LocalDate.parse("2020-01-01")))
+            )
+         )
+      )
+   }
+
+   @Test
+   fun canProjectDifferentOrderTypesToSingleType() {
+      // prepare
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+         [
+            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+         [
+            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+
+      // act
+      val result = vyne.query().projectResultsTo("IMadOrder[]").findAll("Order[]")
+
+      // assert
+      expect(result.isFullyResolved).to.be.`true`
+      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
+      resultList.should.contain.all.elements(
+         mapOf(Pair("id", "hpcOrder1"), Pair("date", LocalDate.parse("2020-01-01"))),
+         mapOf(Pair("id", "ionOrder1"), Pair("date", LocalDate.parse("2020-01-01")))
+      )
+   }
+
+   @Test
+   fun canProjectDifferentOrderTypesToSingleType_whenSomeValuesAreMissing() {
+      // prepare
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+         [
+            { "hpcID" : "hpcOrder1"}
+         ]
+         """.trimIndent()))
+      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+         [
+            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+
+      // act
+      val result = vyne.query().findAll("Order[]")
+
+      // assert
+      expect(result.isFullyResolved).to.be.`true`
+      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }.flatMap { it as ArrayList<*> }
+      resultList.should.contain.all.elements(
+         mapOf(Pair("hpcID", "hpcOrder1")),
+         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate", LocalDate.parse("2020-01-01")))
+      )
+   }
+
 }
 
 fun Vyne.typedValue(typeName: String, value: Any): TypedInstance {
    return TypedInstance.from(this.getType(typeName), value, this.schema)
 //   return TypedValue.from(this.getType(typeName), value)
 }
-
 
 

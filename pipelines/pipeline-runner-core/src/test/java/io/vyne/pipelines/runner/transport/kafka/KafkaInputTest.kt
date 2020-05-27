@@ -2,7 +2,6 @@ package io.vyne.pipelines.runner.transport.kafka
 
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
-import io.vyne.models.TypedObject
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
 import io.vyne.pipelines.runner.transport.direct.DirectOutput
@@ -21,7 +20,7 @@ class KafkaInputTest : AbstractKafkaTest() {
          outputTransportSpec = directOutputSpec()
       )
       val pipelineInstance = buildPipelineBuilder().build(pipeline)
-      pipelineInstance.output.reportStatus(UP)
+      pipelineInstance.output.healthMonitor.reportStatus(UP)
 
       // Send for messages into kafka
       sendKafkaMessage(""" {"userId":"Marty"} """)
@@ -34,8 +33,12 @@ class KafkaInputTest : AbstractKafkaTest() {
       await().until { output.messages.should.have.size(4) }
 
       // Check the values in the output
-      val outputMessages = output.messages.map { it as TypedObject }.map { it["id"].value as String }
-      outputMessages.should.have.all.elements("Marty", "Paul", "Andrzej", "Markus")
+      output.messages.should.have.all.elements(
+         """{"id":"Marty","name":"Marty@mail.com"}""",
+         """{"id":"Paul","name":"Paul@mail.com"}""",
+         """{"id":"Andrzej","name":"Andrzej@mail.com"}""",
+         """{"id":"Markus","name":"Markus@mail.com"}"""
+      )
    }
 
    @Test
@@ -50,7 +53,7 @@ class KafkaInputTest : AbstractKafkaTest() {
 
       val input = pipelineInstance.input as KafkaInput
       val output = pipelineInstance.output as DirectOutput
-      pipelineInstance.output.reportStatus(UP)
+      pipelineInstance.output.healthMonitor.reportStatus(UP)
 
       // Send for messages into kafka
       sendKafkaMessage(""" {"userId":"Marty"} """)
@@ -58,7 +61,7 @@ class KafkaInputTest : AbstractKafkaTest() {
       await().until { output.messages.should.have.size(2) }
 
       // Output is now down
-      pipelineInstance.output.reportStatus(DOWN)
+      pipelineInstance.output.healthMonitor.reportStatus(DOWN)
       await().until { input.isPaused().should.be.`true` }
 
       // Send 3 other messages
@@ -67,16 +70,20 @@ class KafkaInputTest : AbstractKafkaTest() {
       sendKafkaMessage(""" {"userId":"Markus"} """)
 
       // We shouldn't have more messages incoming
-      Thread.sleep(2000) // FIXME use await until
       output.messages.should.have.size(2)
 
       // Output is back UP
-      pipelineInstance.output.reportStatus(UP)
+      pipelineInstance.output.healthMonitor.reportStatus(UP)
       await().until { output.messages.should.have.size(5) }
 
       // We should now ingest the 3 new messages. Total of 5
-      val outputMessages = output.messages.map { it as TypedObject }.map { it["id"].value as String }
-      outputMessages.should.have.all.elements("Marty", "Paul", "Andrzej", "Markus", "Eric")
+      output.messages.should.have.all.elements(
+         """{"id":"Marty","name":"Marty@mail.com"}""",
+         """{"id":"Paul","name":"Paul@mail.com"}""",
+         """{"id":"Eric","name":"Eric@mail.com"}""",
+         """{"id":"Andrzej","name":"Andrzej@mail.com"}""",
+         """{"id":"Markus","name":"Markus@mail.com"}"""
+      )
    }
 
 }

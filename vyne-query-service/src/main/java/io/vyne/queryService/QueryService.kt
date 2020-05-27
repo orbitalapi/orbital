@@ -60,7 +60,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
          val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT), resultMode = query.resultMode)
          when (query.queryMode) {
             QueryMode.DISCOVER -> queryContext.find(query.expression)
-            QueryMode.GATHER -> queryContext.gather(query.expression)
+            QueryMode.GATHER -> queryContext.findAll(query.expression)
             QueryMode.BUILD -> queryContext.build(query.expression)
          }
       } catch (e: SearchFailedException) {

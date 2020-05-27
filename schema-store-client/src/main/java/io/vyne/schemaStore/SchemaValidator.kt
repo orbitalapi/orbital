@@ -7,7 +7,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
-import lang.taxi.SourceLocation
+import lang.taxi.sources.SourceLocation
 import org.springframework.stereotype.Component
 
 interface SchemaValidator {

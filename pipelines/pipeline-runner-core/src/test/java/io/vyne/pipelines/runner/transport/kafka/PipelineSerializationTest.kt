@@ -13,6 +13,8 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
 import org.junit.Before
 import org.junit.Test
+import org.skyscreamer.jsonassert.JSONAssert
+import org.skyscreamer.jsonassert.JSONCompareMode
 import java.util.*
 
 class PipelineSerializationTest {
@@ -65,14 +67,13 @@ class PipelineSerializationTest {
                   "props" : {
                   }
                }
-              },
-              "id" : "test-pipeline@196343942"
+              }
             }
       """.trimIndent()
 
       val pipeline = objectMapper.readValue(pipelineJson, Pipeline::class.java)
 
-      pipeline.id.should.equal("test-pipeline@196343942")
+      pipeline.id.should.startWith("test-pipeline")
       pipeline.name.should.equal("test-pipeline")
       pipeline.input.transport.type.should.equal("kafka")
       pipeline.output.transport.type.should.equal("cask")
@@ -98,39 +99,37 @@ class PipelineSerializationTest {
 
       val json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(pipeline)
 
-      val pipelineJson = """
-            \{
-              "name" : "test-pipeline",
-              "input" : \{
-                "type" : "PersonLoggedOnEvent",
-                "transport" : \{
-                  "topic" : "pipeline-input",
-                  "targetType" : "PersonLoggedOnEvent",
-                  "props" : \{
-                    "group.id" : "vyne-pipeline-group",
-                    "bootstrap.servers" : "127.0.0.1:9092"
-                  \},
-                  "direction" : "INPUT",
-                  "type" : "kafka"
-                \}
-              \},
-              "output" : \{
-                "type" : "UserEvent",
-                "transport" : \{
-                  "topic" : "pipeline-output",
-                  "props" : \{
-                    "bootstrap.servers" : "127.0.0.1:9092",
-                    "key.serializer" : "org.apache.kafka.common.serialization.StringSerializer"
-                  \},
-                  "targetType" : "UserEvent",
-                  "direction" : "OUTPUT",
-                  "type" : "kafka"
-                \}
-              \},
-              "id" : "test-pipeline@[0-9]{5,10}"
-            \}
-      """.trimIndent()
+      val pipelineJson = """{
+  "name" : "test-pipeline",
+  "input" : {
+    "type" : "PersonLoggedOnEvent",
+    "transport" : {
+      "topic" : "pipeline-input",
+      "targetType" : "PersonLoggedOnEvent",
+      "props" : {
+        "group.id" : "vyne-pipeline-group",
+        "bootstrap.servers" : "127.0.0.1:9092"
+      },
+      "type" : "kafka",
+      "direction" : "INPUT"
+    }
+  },
+  "output" : {
+    "type" : "UserEvent",
+    "transport" : {
+      "topic" : "pipeline-output",
+      "props" : {
+        "bootstrap.servers" : "127.0.0.1:9092",
+        "key.serializer" : "org.apache.kafka.common.serialization.StringSerializer"
+      },
+      "targetType" : "UserEvent",
+      "type" : "kafka",
+      "direction" : "OUTPUT"
+    }
+  },
+  "id" : "${pipeline.id}"
+}"""
 
-      json.should.match(Regex(pipelineJson))
+      JSONAssert.assertEquals(pipelineJson, json, JSONCompareMode.LENIENT);
    }
 }

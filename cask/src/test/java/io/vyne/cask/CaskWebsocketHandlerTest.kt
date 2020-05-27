@@ -124,7 +124,7 @@ class CaskWebsocketHandlerTest {
 
       StepVerifier
          .create(session.textOutput.take(1))
-         .expectNext("""{"result":"REJECTED","message":"Unexpected ingestion error"}""")
+         .expectNext("""{"result":"REJECTED","message":"No database connection"}""")
          .verifyComplete()
    }
 
@@ -155,6 +155,18 @@ class CaskWebsocketHandlerTest {
    }
 
    @Test
+   fun ingestionErrorCausedByMissingValue() {
+      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(ingestionMessageWithMissingValue())))
+      val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
+      wsHandler.handle(session).block()
+
+      StepVerifier
+         .create(session.textOutput.take(1))
+         .expectNext("""{"result":"REJECTED","message":"Unable to parse primitive type=STRING name=Symbol value=null."}""")
+         .verifyComplete()
+   }
+
+   @Test
    fun continueProcessingMessagesAfterError() {
       val malformedJson = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(malformedJsonMessage()))
       val invalidType = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(invalidIngestionMessage()))
@@ -173,7 +185,7 @@ class CaskWebsocketHandlerTest {
 
    private fun validIngestionMessage(): ByteArrayInputStream {
       return """{
-        "Date": "2020-03-19 11-PM",
+        "Date": "2020-03-19",
         "Symbol": "BTCUSD",
         "Open": "6300",
         "High": "6330",
@@ -184,9 +196,19 @@ class CaskWebsocketHandlerTest {
 
    private fun invalidIngestionMessage(): ByteArrayInputStream {
       return """{
-        "Date": "2020-03-19 11-PM",
+        "Date": "2020-03-19",
         "Symbol": "BTCUSD",
         "Open": "6300USD",
+        "High": "6330",
+        "Low": "6186.08",
+        "Close": "6235.2"
+         }""".byteInputStream()
+   }
+
+   private fun ingestionMessageWithMissingValue(): ByteArrayInputStream {
+      return """{
+        "Date": "2020-03-19",
+        "Open": "6300",
         "High": "6330",
         "Low": "6186.08",
         "Close": "6235.2"

@@ -25,16 +25,16 @@ type alias ClientId as String
 
 // For demonstrating constraints on request objects
 parameter type ClientRiskRequest {
-   amount : Money(currency = 'GBP')
+   amount : Money(this.currency = 'GBP')
    clientId : ClientId
 }
 
 service MyService {
    @StubResponse("calculateRisk")
-   operation calculateRisk(Money(currency = 'GBP')):Risk
+   operation calculateRisk(Money(this.currency = 'GBP')):Risk
 
    @StubResponse("convertCurrency")
-   operation convertCurrency(source : Money , target : Currency) : Money( from source, currency = target )
+   operation convertCurrency(source : Money , target : Currency) : Money( from source, this.currency = target )
 
    @StubResponse("calculateRiskForClient")
    operation calculateRiskForClient(ClientRiskRequest):ClientRisk

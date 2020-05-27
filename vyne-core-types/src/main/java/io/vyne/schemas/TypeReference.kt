@@ -4,6 +4,7 @@ package io.vyne.schemas
 // Useful when parsing, and the type that we're referring to may not have been parsed yet.
 // TODO : Move ConstraintProvider, since that's not an attribute of a TypeReference, and now we have fields
 // TODO : Remove isCollection, and favour Array<T> types
+@Deprecated("Use QualifiedName with array syntax")
 data class TypeReference(val name: QualifiedName,
                          @Deprecated("Replace with lang.taxi.Array<T> types")
                          val isCollection: Boolean = false) {

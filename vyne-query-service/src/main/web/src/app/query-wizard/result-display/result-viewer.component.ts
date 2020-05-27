@@ -32,7 +32,9 @@ export class ResultViewerComponent implements OnInit {
   }
 
   get typedObjectAttributeNames(): string[] {
-    if (!this.type) { return []; }
+    if (!this.type) {
+      return [];
+    }
     // return Array.from(this.type.attributes.keys())
     return Object.keys(this.type.attributes);
   }
@@ -43,7 +45,7 @@ export class ResultViewerComponent implements OnInit {
 
   getTypeForAttribute(attributeName: string): Type {
     const typeRef: Field = this.type.attributes[attributeName];
-    return this.schema.types.find(type => type.name.fullyQualifiedName === typeRef.type.fullyQualifiedName);
+    return this.schema.types.find(type => type.name.parameterizedName === typeRef.type.parameterizedName);
   }
 
 
@@ -69,5 +71,8 @@ export class ResultViewerComponent implements OnInit {
 }
 
 type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;
-interface TypedObjectAttributes { [key: string]: TypeInstanceOrAttributeSet; }
+
+interface TypedObjectAttributes {
+  [key: string]: TypeInstanceOrAttributeSet;
+}
 

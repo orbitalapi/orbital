@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Field, FieldMap, QualifiedName, Schema, Type, TypeReference} from '../services/schema';
+import {Field, QualifiedName, Schema, Type} from '../services/schema';
 import {CaseCondition, LiteralSubject, RelativeSubject, RelativeSubjectSource} from './policies';
 
 @Component({
@@ -13,7 +13,7 @@ import {CaseCondition, LiteralSubject, RelativeSubject, RelativeSubjectSource} f
         </mat-form-field>
       </div>
       <div class="property-input-container" *ngSwitchCase="'property'">
-         <app-type-autocomplete
+        <app-type-autocomplete
           class="fact-type-input line-component"
           floatLabel="never"
           displayFullName="false"
@@ -47,15 +47,19 @@ export class EqualsEditorComponent implements OnInit {
   schema: Schema;
 
   get properties(): QualifiedName[] {
-    if (!this.type) { return []; }
-    return Object.values(this.type.attributes).map((field: Field) => field.type.name);
+    if (!this.type) {
+      return [];
+    }
+    return Object.values(this.type.attributes).map((field: Field) => field.type);
   }
 
   @Output()
   statementUpdated: EventEmitter<string> = new EventEmitter();
 
   get literalSubject(): LiteralSubject {
-    if (!this.caseCondition || !this.caseCondition.rhSubject || this.caseCondition.rhSubject.type !== 'LiteralSubject') { return null; }
+    if (!this.caseCondition || !this.caseCondition.rhSubject || this.caseCondition.rhSubject.type !== 'LiteralSubject') {
+      return null;
+    }
     return <LiteralSubject>this.caseCondition.rhSubject;
   }
 

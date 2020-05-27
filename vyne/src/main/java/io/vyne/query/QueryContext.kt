@@ -5,15 +5,28 @@ import com.diffplug.common.base.TreeStream
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.collect.HashMultimap
-import io.vyne.VersionedSource
-import io.vyne.models.*
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.schemas.*
+import io.vyne.schemas.OutputConstraint
+import io.vyne.schemas.Path
+import io.vyne.schemas.Policy
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
+import io.vyne.schemas.TypeMatchingStrategy
+import io.vyne.schemas.fqn
+import io.vyne.schemas.synonymFullQualifiedName
+import io.vyne.schemas.synonymValue
 import io.vyne.utils.log
 import lang.taxi.policies.Instruction
-import lang.taxi.types.VoidType
-import java.util.*
+import lang.taxi.types.EnumType
+import lang.taxi.types.PrimitiveType
+import java.util.UUID
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -31,7 +44,14 @@ import kotlin.streams.toList
  */
 // TODO : Why isn't the type enough, given that has children?  Why do I need to explicitly list the children I want?
 
-data class QuerySpecTypeNode(val type: Type, val children: Set<QuerySpecTypeNode> = emptySet(), val mode: QueryMode = QueryMode.DISCOVER)
+data class QuerySpecTypeNode(
+   val type: Type,
+   val children: Set<QuerySpecTypeNode> = emptySet(),
+   val mode: QueryMode = QueryMode.DISCOVER,
+   // Note: Not really convinced these need to be OutputCOnstraints (vs Constraints).
+   // Revisit later
+   val dataConstraints: List<OutputConstraint> = emptyList()
+)
 
 data class QueryResult(
    @field:JsonIgnore // we send a lightweight version below
@@ -82,13 +102,14 @@ data class QueryResult(
             .map { (key, value) -> key.type.name.parameterizedName to value?.toRawObject() }
             .toMap()
       }
-
 }
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
    val queryResponseId: String
-   @get:JsonProperty("fullyResolved")  val isFullyResolved: Boolean
+
+   @get:JsonProperty("fullyResolved")
+   val isFullyResolved: Boolean
    val profilerOperation: ProfilerOperation?
    val remoteCalls: List<RemoteCall>
       get() = collateRemoteCalls(this.profilerOperation)
@@ -151,6 +172,7 @@ data class QueryContext(
    val resultMode: ResultMode) : ProfilerOperation by profiler {
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
+   private var projectResultsTo: Type? = null
 
    fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
 
@@ -162,13 +184,35 @@ data class QueryContext(
    fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
    fun build(expression: QueryExpression): QueryResult = queryEngine.build(expression, this)
 
-   fun gather(typeName: String): QueryResult = gather(TypeNameQueryExpression(typeName))
-   fun gather(queryString: QueryExpression): QueryResult = queryEngine.gather(queryString, this)
+   fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
+   fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
 
+   fun parseQuery(typeName: String) = queryEngine.parse(TypeNameQueryExpression(typeName))
+   fun parseQuery(expression: QueryExpression) = queryEngine.parse(expression)
 
    companion object {
-      fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler, resultMode: ResultMode) =
-         QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, resultMode)
+      fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler, resultMode: ResultMode): QueryContext {
+         val mutableFacts = facts.flatMap { fact -> resolveSynonyms(fact, schema) }.toMutableSet()
+         return QueryContext(schema, mutableFacts, queryEngine, profiler, resultMode)
+      }
+
+      private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
+         return if (fact.type.isEnum) {
+            val underlyingEnumType = fact.type.taxiType as EnumType
+            underlyingEnumType
+               .values
+               .first { enumValue -> enumValue.value == fact.value }
+               .synonyms
+               .map { synonym ->
+               val synonymType = schema.type(synonym.synonymFullQualifiedName())
+               val synonymTypeTaxiType = synonymType.taxiType as EnumType
+               val targetEnumValue = synonymTypeTaxiType.values.first { it.name == synonym.synonymValue() }.value
+               TypedValue.from(synonymType, targetEnumValue, false)
+            }.toSet().plus(fact)
+         } else {
+            setOf(fact)
+         }
+      }
    }
 
    /**
@@ -181,7 +225,11 @@ data class QueryContext(
 
    fun addFact(fact: TypedInstance): QueryContext {
       log().debug("Added fact to queryContext: ${fact.type.fullyQualifiedName}")
-      this.facts.add(fact)
+      if (fact.type.isEnum) {
+         this.facts.addAll(resolveSynonyms(fact, schema))
+      } else {
+         this.facts.add(fact)
+      }
       return this
    }
 
@@ -190,11 +238,19 @@ data class QueryContext(
       return this
    }
 
+   fun projectResultsTo(targetType: String): QueryContext {
+      return projectResultsTo(schema.type(targetType))
+   }
+
+   fun projectResultsTo(targetType: Type): QueryContext {
+      projectResultsTo = targetType
+      return this
+   }
 
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 
    // Wraps all the known facts under a root node, turning it into a tree
-   private fun dataTreeRoot(): TypedCollection = TypedCollection(Type("osmosis.internal.RootNode".fqn(), sources = listOf(VersionedSource.sourceOnly("Undefined")), typeDoc = null, taxiType = VoidType.VOID), facts.toList())
+   private fun dataTreeRoot(): TypedInstance = TypedCollection.arrayOf(schema.type(PrimitiveType.ANY), facts.toList())
 
    /**
     * A breadth-first stream of data facts currently held in the collection.
@@ -222,6 +278,10 @@ data class QueryContext(
 
    fun evaluatedPath(): List<EvaluatedEdge> {
       return evaluatedEdges.toList()
+   }
+
+   fun projectResultsTo(): Type? {
+      return projectResultsTo
    }
 
    fun collectVisitedInstanceNodes(): Set<TypedInstance> {

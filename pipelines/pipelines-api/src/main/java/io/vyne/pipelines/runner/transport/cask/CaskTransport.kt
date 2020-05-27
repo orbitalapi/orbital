@@ -12,7 +12,7 @@ object CaskTransport {
 }
 
 data class CaskTransportOutputSpec(
-   val props: Map<String, Any>,
+   val props: Map<String, String>,
    override val targetType: VersionedTypeReference
 ) : PipelineTransportSpec {
 

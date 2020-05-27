@@ -10,6 +10,7 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
+import io.vyne.utils.log
 import lang.taxi.types.PrimitiveType
 
 object RelaxedJsonMapper {
@@ -34,9 +35,9 @@ fun ModelContainer.jsonParser(mapper: ObjectMapper = RelaxedJsonMapper.jackson):
 
 class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jacksonObjectMapper()) {
    fun parse(type: Type, json: String): TypedInstance {
-      return if (type.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName) {
+      return if (type.isCollection) {
          val map = mapper.readValue<List<Map<String, Any>>>(json)
-         parseCollection(map, type.typeParameters[0])
+         parseCollection(map, type)
       } else {
          val map = mapper.readValue<Map<String, Any>>(json)
          doParse(type, map)
@@ -45,7 +46,7 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jac
 
    internal fun doParse(type: Type, valueMap: Map<String, Any>, isCollection: Boolean = false): TypedInstance {
       if (type.isTypeAlias) {
-         val aliasedType = schema.type(type.aliasForType!!)
+         val aliasedType = type.aliasForType!!
          val parsedAliasType = doParse(aliasedType, valueMap, isCollection)
          return if (isCollection) {
              val collection = parsedAliasType as TypedCollection
@@ -67,9 +68,9 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jac
          val attributeInstances = type.attributes
             .filterKeys { attributeName -> valueMap.containsKey(attributeName) }
             .map { (attributeName, field: Field) ->
-               val attributeType = schema.type(field.type.name)
+               val attributeType = schema.type(field.type.parameterizedName)
                if (valueMap.containsKey(attributeName) && valueMap[attributeName] != null) {
-                  attributeName to doParse(attributeType, mapOf(attributeName to valueMap.getValue(attributeName)), isCollection = field.type.isCollection)
+                  attributeName to doParse(attributeType, mapOf(attributeName to valueMap.getValue(attributeName)), schema.type(field.type).isCollection)
                } else {
                   attributeName to TypedNull(attributeType)
                }
@@ -90,12 +91,16 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jac
          "Received a collection when expecting a scalar type"
       }
       val collection = value as Collection<*>
-      val values = collection.filterNotNull().map { doParse(type, mapOf(key to it), isCollection = false) }
+      val values = collection.filterNotNull().map { doParse(type.typeParameters[0], mapOf(key to it), isCollection = false) }
       return TypedCollection(type, values)
    }
 
    private fun parseCollection(collection: Collection<Map<String, Any>>, type: Type): TypedCollection {
-      val values = collection.map { doParse(type, it, isCollection = false) }
+      if (!type.isCollection) {
+         // TODO : Could just wrap this in an array..
+         error("${type.name} is not a collection type")
+      }
+      val values = collection.map { doParse(type.collectionType!!, it, isCollection = false) }
       return TypedCollection(type, values)
    }
 

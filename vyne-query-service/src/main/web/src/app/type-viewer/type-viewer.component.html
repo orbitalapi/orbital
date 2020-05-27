@@ -35,7 +35,7 @@
       <app-type-link-graph-container [member]="schemaMember"></app-type-link-graph-container>
     </section>
 
-    <section>
+    <section *ngIf="showPolicyManager">
       <h2>Policies</h2>
       <app-policy-manager-container [targetType]="type"></app-policy-manager-container>
 

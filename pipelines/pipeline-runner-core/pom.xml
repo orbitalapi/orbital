@@ -98,6 +98,17 @@
          <artifactId>websocket-server</artifactId>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>org.skyscreamer</groupId>
+         <artifactId>jsonassert</artifactId>
+         <version>1.5.0</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
 
    </dependencies>
    <dependencyManagement>
@@ -116,7 +127,6 @@
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-jar-plugin</artifactId>
-            <version>2.4</version>
             <executions>
                <execution>
                   <goals>

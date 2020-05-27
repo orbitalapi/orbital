@@ -1,11 +1,6 @@
 package io.vyne.cask.query
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.*
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.ddl.TableMetadata
@@ -31,6 +26,9 @@ class CaskDAOTest {
     // Changed column
     close : Int by xpath("/Close")
     isRolled: Boolean
+    orderDate: Date
+    orderTime: Time
+    timestamp: Instant
 }
 
    """.trimIndent()
@@ -64,7 +62,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE open = ?")
+      statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE "open" = ?""")
       argsCaptor.firstValue.should.equal(BigDecimal("6300"))
    }
 
@@ -76,7 +74,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE symbol = ?")
+      statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE "symbol" = ?""")
       argsCaptor.firstValue.should.equal("BTCUSD")
    }
 
@@ -88,7 +86,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE isRolled = ?")
+      statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE "isRolled" = ?""")
       argsCaptor.firstValue.should.equal(true)
    }
 
@@ -100,7 +98,7 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE high = ?")
+      statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE "high" = ?""")
       argsCaptor.firstValue.should.equal(BigDecimal("6300.0"))
    }
 
@@ -112,7 +110,31 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
-      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE close = ?")
+      statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE "close" = ?""")
       argsCaptor.firstValue.should.equal(BigDecimal("1"))
+   }
+
+   @Test
+   fun `A Date type can be queried correctly via findBy`() {
+      // when
+      caskDAO.findBy(versionedType, "orderDate", "2020-01-01")
+      // then
+      val statementCaptor = argumentCaptor<String>()
+      val argsCaptor = argumentCaptor<Any>()
+      verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
+      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE \"orderDate\" = ?")
+      argsCaptor.firstValue.should.equal("2020-01-01".toLocalDate())
+   }
+
+   @Test
+   fun `An Instant type can be queried correctly via findBy`() {
+      // when
+      caskDAO.findBy(versionedType, "timestamp", "2020-01-01T12:00:01.000")
+      // then
+      val statementCaptor = argumentCaptor<String>()
+      val argsCaptor = argumentCaptor<Any>()
+      verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
+      statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE \"timestamp\" = ?")
+      argsCaptor.firstValue.should.equal("2020-01-01T12:00:01.000".toLocalDateTime())
    }
 }

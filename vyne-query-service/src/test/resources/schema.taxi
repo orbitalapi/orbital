@@ -61,7 +61,7 @@ namespace io.vyne {
     }
 
      parameter type TradeValueRuleRequest {
-        tradeValue : TradeValue(currency = "USD")
+        tradeValue : TradeValue(this.currency = "USD")
         traderLimit : TraderMaxTradeValue
     }
 
@@ -75,7 +75,7 @@ namespace io.vyne {
     service RateConversionService {
          @StubResponse
          @HttpOperation(method = "POST", url = "/rates/{targetCurrency}")
-         operation convertRates( @RequestBody source : TradeValue, targetCurrency : Currency ) : TradeValue( from source, currency = targetCurrency )
+         operation convertRates( @RequestBody source : TradeValue, targetCurrency : Currency ) : TradeValue( from source, this.currency = targetCurrency )
     }
 
     @ServiceDiscoveryClient(serviceName = "rules-provider")

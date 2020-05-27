@@ -1,10 +1,13 @@
 package io.vyne.cask.ddl
 
+import com.nhaarman.mockitokotlin2.eq
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
+import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 
 class PostgresDdlGeneratorTest {
@@ -19,14 +22,18 @@ type Person {
     age : Int
     alive: Boolean
     spouseName : Name? as String
+    dateOfBirth: Date
+    timestamp: Instant
 }""".trim())
         val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
         statement.ddlStatement.should.equal("""
 CREATE TABLE IF NOT EXISTS Person_c99239 (
-firstName VARCHAR(255) NOT NULL,
-age INTEGER NOT NULL,
-alive BOOLEAN NOT NULL,
-spouseName VARCHAR(255)
+"firstName" VARCHAR(255) NOT NULL,
+"age" INTEGER NOT NULL,
+"alive" BOOLEAN NOT NULL,
+"spouseName" VARCHAR(255),
+"dateOfBirth" DATE NOT NULL,
+"timestamp" TIMESTAMP NOT NULL
 )""".trim())
     }
 
@@ -38,20 +45,27 @@ type Person {
     age : Int
     alive: Boolean
     spouseName : Name? as String
+    dateOfBirth: Date
+    timestamp: Instant
 }""".trim())
         val person = taxi.objectType("Person")
         generator.generateColumnForField(person.field("firstName")).sql
-                .should.equal("firstName VARCHAR(255) NOT NULL")
+                .should.equal(""""firstName" VARCHAR(255) NOT NULL""")
 
         generator.generateColumnForField(person.field("age")).sql
-                .should.equal("age INTEGER NOT NULL")
+                .should.equal(""""age" INTEGER NOT NULL""")
 
         generator.generateColumnForField(person.field("alive")).sql
-                .should.equal("alive BOOLEAN NOT NULL")
+                .should.equal(""""alive" BOOLEAN NOT NULL""")
 
         generator.generateColumnForField(person.field("spouseName")).sql
-                .should.equal("spouseName VARCHAR(255)")
+                .should.equal(""""spouseName" VARCHAR(255)""")
 
+       generator.generateColumnForField(person.field("dateOfBirth")).sql
+          .should.equal(""""dateOfBirth" DATE NOT NULL""")
+
+       generator.generateColumnForField(person.field("timestamp")).sql
+          .should.equal(""""timestamp" TIMESTAMP NOT NULL""")
 
     }
 

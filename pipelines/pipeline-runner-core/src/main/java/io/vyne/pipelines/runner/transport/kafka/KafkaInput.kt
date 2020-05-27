@@ -37,17 +37,20 @@ class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper) : Ab
 
 }
 
-abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, deserializerClass: String) : PipelineInputTransport, DefaultPipelineTransportHealthMonitor() {
+abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, deserializerClass: String) : PipelineInputTransport {
 
    override val feed: Flux<PipelineInputMessage>
-   private val receiver: KafkaReceiver<String, V>;
 
+   // Kafka specifics
+   private val receiver: KafkaReceiver<String, V>;
    private var topicPartitions: Collection<TopicPartition>? = null
 
    private val defaultProps = mapOf(
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.qualifiedName!!,
       ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to deserializerClass
    )
+
+   override val healthMonitor = EmitterPipelineTransportHealthMonitor()
 
    /**
     * Convert the incoming Kafka message to String for ingestion.
@@ -57,14 +60,13 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
 
    init {
       // ENHANCE: there might be a way to hook on some events from the flux below to know when we are actually connected to kafka
-      reportStatus(UP)
+      healthMonitor.reportStatus(UP)
 
-      var options = getReceiverOptions(spec)
+      val options = getReceiverOptions(spec)
       receiver = KafkaReceiver.create(options)
       feed = receiver
          .receive()
-         .doOnSubscribe { println("SUBSCRIBE") }
-         .doOnError { reportStatus(DOWN) }
+         .doOnError { healthMonitor.reportStatus(DOWN) }
          .flatMap { kafkaMessage ->
             val recordId = kafkaMessage.key()
             val offset = kafkaMessage.offset()
@@ -80,19 +82,14 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
                "headers" to headers
             )
 
-            val messageProvider = { schema: Schema, logger: PipelineLogger ->
-               val targetType = schema.type(spec.targetType)
-               logger.debug { "Deserializing record partition=$partition/ offset=$offset and maping to ${targetType.fullyQualifiedName}" }
+            val messageProvider = { logger: PipelineLogger ->
+               logger.debug { "Deserializing record partition=$partition/ offset=$offset" }
 
                // Step 1. Get the message
                val message = kafkaMessage.value()
 
-               // Step 2. The actual Kafka message ingested can have different type (e.g plain json, avro, other binary formats...)
-               // Extract the json string from the message
-               val map = toStringMessage(message)
-
-               // Step 3. Map the json to Vyne type
-               TypedInstance.from(targetType, objectMapper.readTree(map), schema)
+               // Step 2. The actual Kafka message ingested can have different type (e.g plain json, avro, other binary formats...). Extract the json string from the message
+               toStringMessage(message)
             }
 
             Mono.create<PipelineInputMessage> { sink ->
@@ -102,7 +99,6 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
                   messageProvider
                ))
             }.doOnSuccess {
-               log().info("ACKNOWLEDGE MESSAGE")
                kafkaMessage.receiverOffset().acknowledge()
             }
          }

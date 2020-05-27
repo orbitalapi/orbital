@@ -1,20 +1,18 @@
-#taxi:
-#   schema-local-storage: C:\gitRemoteTest
-## In order to use git cloning, uncomment the code below
 taxi:
    schema-local-storage: C:\gitRemoteTest
-   gitSchemaRepos:
-      -
-         name: test1
-         uri: git@gitlab.com:devrim.bostanci/remotefilewatcher.git
-         branch: master
-         sshPrivateKeyPath: C:\Users\Devrim\.ssh\id_rsa
-         sshPassPhrase: 123456
-      -
-         name: test2
-         uri: git@gitlab.com:devrim.bostanci/remotefileschemas.git
-         branch: master
-         sshPrivateKeyPath: C:\Users\Devrim\.ssh\id_rsa
-         sshPassPhrase: 123456
-   gitCloningJobEnabled: true
-   gitCloningJobPeriodMs: 300000
+## In order to use git cloning, uncomment the code below
+#taxi:
+#   schema-local-storage: C:\gitRemoteTest
+#   gitSchemaRepos:
+#      -  name: test1
+#         uri: git@gitlab.com:devrim.bostanci/remotefilewatcher.git
+#         branch: master
+#         sshPrivateKeyPath: C:\Users\Devrim\.ssh\id_rsa
+#         sshPassPhrase: 123456
+#      -  name: test2
+#         uri: git@gitlab.com:devrim.bostanci/remotefileschemas.git
+#         branch: master
+#         sshPrivateKeyPath: C:\Users\Devrim\.ssh\id_rsa
+#         sshPassPhrase: 123456
+#   gitCloningJobEnabled: true
+#   gitCloningJobPeriodMs: 300000

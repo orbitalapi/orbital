@@ -2,7 +2,7 @@ package io.vyne.schemas
 
 import io.vyne.models.TypedInstance
 
-typealias TaxiConstraint = lang.taxi.services.Constraint
+typealias TaxiConstraint = lang.taxi.services.operations.constraints.Constraint
 
 interface ConstraintEvaluation {
    val evaluatedValue: TypedInstance
@@ -35,7 +35,7 @@ interface InputConstraint : Constraint {
    // Therefore, swapping it out to type.
    // It's possible this may need to be richer to pass additional attributes
    // from the param wrapper, but at present, type is all we're using.
-   fun evaluate(argumentType: Type, value: TypedInstance): ConstraintEvaluation
+   fun evaluate(argumentType: Type, value: TypedInstance, schema: Schema): ConstraintEvaluation
 }
 
 interface OutputConstraint : Constraint

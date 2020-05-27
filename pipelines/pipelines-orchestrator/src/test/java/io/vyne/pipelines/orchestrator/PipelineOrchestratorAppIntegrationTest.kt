@@ -42,8 +42,12 @@ class PipelineOrchestratorAppIntegrationTest {
    @MockBean
    private lateinit var runner: PipelineRunnerApi;
 
+   @Autowired
+   private lateinit var pipelinesManager: PipelinesManager
+
    @Before
    fun setup() {
+      pipelinesManager.pipelines.clear()
 
       val pipeline = Pipeline(
          "test-pipeline",
@@ -60,7 +64,7 @@ class PipelineOrchestratorAppIntegrationTest {
       )
       var pipelineReference = SimplePipelineInstance(pipeline, Instant.now())
 
-      given(runner.submitPipeline(any())).willReturn(pipelineReference);
+      given(runner.submitPipeline(any(), any())).willReturn(pipelineReference);
    }
 
    @Test
@@ -68,12 +72,12 @@ class PipelineOrchestratorAppIntegrationTest {
 
       var pipelineDescription = pipelineDescription("kafka", "cask")
 
-      var response = postPipeline(pipelineDescription, PipelineInstanceReference::class.java)
+      var response = postPipeline(pipelineDescription, Pipeline::class.java)
 
       response.statusCode.should.equal(HttpStatus.OK)
-      response.body.spec.name.should.be.equal("test-pipeline")
-      response.body.spec.input.transport.type.should.be.equal("kafka")
-      response.body.spec.output.transport.type.should.be.equal("cask")
+      response.body.name.should.be.equal("test-pipeline")
+      response.body.input.transport.type.should.be.equal("kafka")
+      response.body.output.transport.type.should.be.equal("cask")
    }
 
    @Test
@@ -81,10 +85,10 @@ class PipelineOrchestratorAppIntegrationTest {
 
       var pipelineDescription = pipelineDescription("XXX", "YYY")
 
-      var response = postPipeline(pipelineDescription, PipelineInstanceReference::class.java)
+      var response = postPipeline(pipelineDescription, Pipeline::class.java)
 
       response.statusCode.should.equal(HttpStatus.OK)
-      response.body.spec.name.should.be.equal("test-pipeline")
+      response.body.name.should.be.equal("test-pipeline")
    }
 
    @Test

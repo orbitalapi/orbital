@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import io.vyne.models.csv.CsvAttributeAccessorParser
 import io.vyne.models.json.JsonAttributeAccessorParser
 import io.vyne.models.xml.XmlTypedInstanceParser
+import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeReference
@@ -26,7 +27,7 @@ class AccessorReader {
    private val csvParser: CsvAttributeAccessorParser by lazy { Parsers.csvParser }
    private val jsonParser: JsonAttributeAccessorParser by lazy { Parsers.jsonParser }
 
-   fun read(value: Any, targetTypeRef: TypeReference, accessor: Accessor, schema: Schema): TypedInstance {
+   fun read(value: Any, targetTypeRef: QualifiedName, accessor: Accessor, schema: Schema): TypedInstance {
       val targetType = schema.type(targetTypeRef)
       return read(value, targetType, accessor, schema)
    }
@@ -64,7 +65,7 @@ class AccessorReader {
       return when (value) {
          is String -> xmlParser.parse(value, targetType, accessor, schema)
          is ObjectNode -> jsonParser.parseToType(targetType, accessor, value, schema)
-         else -> TODO()
+         else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
    }
 

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.FactSetId
 import io.vyne.FactSets
+import io.vyne.schemas.Constraint
+import io.vyne.schemas.OutputConstraint
 
 
 data class Fact @JvmOverloads constructor(val typeName: String, val value: Any, val factSetId: FactSetId = FactSets.DEFAULT)
@@ -34,6 +36,10 @@ data class Query(
 @JsonSerialize(using = QueryExpressionSerializer::class)
 interface QueryExpression
 
+data class ConstrainedTypeNameQueryExpression(val typeName:String,
+                                              // Note: Not convinced this needs to be OutputConstraint (vs plain old
+                                              // constraint). Revisit if this proves problematic
+                                              val constraint:List<OutputConstraint>):QueryExpression
 data class TypeNameQueryExpression(val typeName: String) : QueryExpression
 data class TypeNameListQueryExpression(val typeNames: List<String>) : QueryExpression
 // Note - this doesn't exist yet, but I'm leaving it here so I remember why I chose
