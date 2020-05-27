@@ -7,13 +7,12 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.ingest.IngestionInitialisedEvent
-import io.vyne.cask.websocket.getParam
-import io.vyne.cask.websocket.queryParams
-import io.vyne.schemas.VersionedType
+import io.vyne.cask.websocket.CaskWebsocketRequest
+import io.vyne.cask.websocket.contentType
+import io.vyne.cask.websocket.typeReference
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.CloseStatus.NOT_ACCEPTABLE
@@ -31,65 +30,31 @@ class CaskWebsocketHandler(
    val mapper: ObjectMapper = jacksonObjectMapper()) : WebSocketHandler {
 
    override fun handle(session: WebSocketSession): Mono<Void> {
-      log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri.path} query=${session.handshakeInfo.uri.query}")
+      log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri}")
 
-      val queryParams = session.queryParams()
-      val contentTypeName = queryParams?.getParam("contentType").orElse(MediaType.APPLICATION_JSON_VALUE)
+      val contentType = caskService.resolveContentType(session.contentType())
+      val versionedType = caskService.resolveType(session.typeReference())
 
-      when (val contentType = caskService.resolveContentType(contentTypeName)) {
+      return when (val request = CaskWebsocketRequest.create(session, contentType, versionedType)) {
          is Either.Left -> {
-            log().info("Closing sessionId=${session.id}.  Error: ${contentType.a.message}")
-            return session
-               .close(CloseStatus(NOT_ACCEPTABLE.code, contentType.a.message))
-               .then()
+            log().info("Closing sessionId=${session.id}.  Error: ${request.a.message}")
+            session.close(CloseStatus(NOT_ACCEPTABLE.code, request.a.message)).then()
          }
          is Either.Right -> {
-            val sendResponse = queryParams
-               ?.getParam("debug")
-               .orElse("false")
-               .equals("true")
-
-            return findTypeReference(
-               session,
-               contentType.b,
-               sendResponse)
+            applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, request.b.versionedType))
+            ingestMessages(request.b)
          }
       }
    }
 
-   private fun findTypeReference(session: WebSocketSession,
-                                 contentType: MediaType,
-                                 sendResponse: Boolean): Mono<Void> {
-
-      val typeReferenceFromPath = session.handshakeInfo.uri.path.replace("/cask/", "")
-      when (val versionedType = caskService.resolveType(typeReferenceFromPath)) {
-         is Either.Left -> {
-            log().info("Closing sessionId=${session.id}. Error: ${versionedType.a.message}")
-            return session
-               .close(CloseStatus(NOT_ACCEPTABLE.code, versionedType.a.message))
-               .then()
-         }
-         is Either.Right -> {
-            applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, versionedType.b))
-            return ingestMessages(
-               session,
-               versionedType.b,
-               contentType,
-               sendResponse)
-         }
-      }
-   }
-
-   private fun ingestMessages(session: WebSocketSession,
-                              versionedType: VersionedType,
-                              contentType: MediaType,
-                              sendResponse: Boolean): Mono<Void> {
+   private fun ingestMessages(request: CaskWebsocketRequest): Mono<Void> {
       val output: EmitterProcessor<WebSocketMessage> = EmitterProcessor.create()
       val outputSink = output.sink()
 
       // i don't like this, it's pretty ugly
       // partially because exceptions are thrown outside flux pipelines
       // we have to refactor code behind ingestion to fix this problem
+      val session = request.session
       session.receive()
          .name("cask_ingestion_request")
          // This will register timer with the above name
@@ -97,26 +62,26 @@ class CaskWebsocketHandler(
          // Percentiles are configured globally for all the timers, see CaskApp
          .metrics()
          .map {
-            log().info("Ingesting message from sessionId=${session.id}")
+            log().info("Ingesting message from sessionId=${request.session.id}")
             try {
                caskService
-                  .ingestRequest(versionedType, Flux.just(it.payload.asInputStream()), contentType)
+                  .ingestRequest(request, Flux.just(it.payload.asInputStream()))
                   .count()
                   .map { "Successfully ingested ${it} records" }
                   .subscribe(
                      { result ->
                         log().info("Successfully ingested message from sessionId=${session.id}")
-                        if (sendResponse) {
+                        if (request.debug()) {
                            outputSink.next(successResponse(session, result))
                         }
                      },
                      { error ->
-                        log().error("Error ingesting message from sessionId=${session.id} ", error)
+                        log().error("Error ingesting message from sessionId=${session.id}", error)
                         outputSink.next(errorResponse(session, extractError(error)))
                      }
                   )
             } catch (error: Exception) {
-               log().error("Error ingesting message from sessionId=${session.id} ", error)
+               log().error("Error ingesting message from sessionId=${session.id}", error)
                outputSink.next(errorResponse(session, extractError(error)))
             }
          }
@@ -125,7 +90,7 @@ class CaskWebsocketHandler(
             output.onComplete()
          }
          .doOnError { error ->
-            log().error("Error ingesting message from sessionId=${session.id} ", error)
+            log().error("Error ingesting message from sessionId=${session.id}", error)
          }
          .subscribe()
 
