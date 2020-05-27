@@ -86,8 +86,8 @@
                   <td>${i.instance? i.instance.instanceId : ' '}</th>
                   <td>${i.state}</td>
                   <td>${i.name}</th>
-                  <td>${i.pipeline.input.transport.type}</td>
-                  <td>${i.pipeline.output.transport.type}</td>
+                  <td>${JSON.parse(i.pipelineDescription).input.transport.type}</td>
+                  <td>${JSON.parse(i.pipelineDescription).output.transport.type}</td>
                   <td>${i.info}</td>
                </tr>
           `)
