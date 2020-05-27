@@ -5,18 +5,21 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.ddl.TypeDbWrapper
+import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.ingest.InstanceAttributeSet
+import io.vyne.cask.websocket.CaskWebsocketRequest
+import io.vyne.cask.websocket.CsvWebsocketRequest
+import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
-import java.io.File
 import java.io.InputStream
+import java.nio.file.Files
 
 @Component
 class CaskService(val schemaProvider: SchemaProvider,
@@ -24,21 +27,20 @@ class CaskService(val schemaProvider: SchemaProvider,
                   val objectMapper: ObjectMapper = jacksonObjectMapper()) {
 
    data class TypeError(val message: String)
-   data class MediaTypeError(val message: String)
+   data class ContentTypeError(val message: String)
+   enum class ContentType { json, csv}
+   val supportedContentTypes: List<ContentType> = listOf(ContentType.json, ContentType.csv)
 
-   val supportedContentTypes: List<MediaType> = listOf(MediaType.APPLICATION_JSON)
-
-   fun resolveContentType(contentTypeName: String): Either<MediaTypeError, MediaType> {
-      // https://www.iana.org/assignments/media-types/media-types.xhtml
+   fun resolveContentType(contentTypeName: String): Either<ContentTypeError, ContentType> {
       return try {
-         val contentType = MediaType.parseMediaType(contentTypeName)
+         val contentType = ContentType.valueOf(contentTypeName)
          return if (supportedContentTypes.contains(contentType)) {
             Either.right(contentType)
          } else {
-            Either.left(MediaTypeError("Unsupported contentType=${contentTypeName}"))
+            Either.left(ContentTypeError("Unsupported contentType=${contentTypeName}"))
          }
       } catch (e: java.lang.Exception) {
-         Either.left(MediaTypeError("Unknown contentType=${contentTypeName}"))
+         Either.left(ContentTypeError("Unknown contentType=${contentTypeName}"))
       }
    }
 
@@ -60,14 +62,14 @@ class CaskService(val schemaProvider: SchemaProvider,
       }
    }
 
-   fun ingestRequest(versionedType: VersionedType,
-                     inputStream: Flux<InputStream>,
-                     contentType: MediaType = MediaType.APPLICATION_JSON): Flux<InstanceAttributeSet> {
+   fun ingestRequest(request: CaskWebsocketRequest,
+                     inputStream: Flux<InputStream>): Flux<InstanceAttributeSet> {
       val schema = schemaProvider.schema()
-      val cacheDirectory = File.createTempFile(versionedType.versionedName, "").toPath()
+      val versionedType = request.versionedType
+      val cacheDirectory = Files.createTempDirectory(versionedType.versionedName)
 
-      val streamSource = when (contentType) {
-         MediaType.APPLICATION_JSON -> {
+      val streamSource = when (request) {
+         is JsonWebsocketRequest -> {
             JsonStreamSource(
                inputStream,
                versionedType,
@@ -75,8 +77,16 @@ class CaskService(val schemaProvider: SchemaProvider,
                cacheDirectory,
                objectMapper)
          }
-         else -> {
-            return Flux.error(NotImplementedError("Ingestion of contentType=${contentType} not supported!"))
+         is CsvWebsocketRequest -> {
+            CsvStreamSource(
+               input = inputStream,
+               type = versionedType,
+               schema = schema,
+               readCacheDirectory = cacheDirectory,
+               csvFormat = request.csvFormat()
+            )
+         } else -> {
+            return Flux.error(NotImplementedError("Ingestion $request not supported!"))
          }
       }
 

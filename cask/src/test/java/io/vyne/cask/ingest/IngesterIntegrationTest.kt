@@ -18,6 +18,9 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
+import reactor.core.publisher.Flux
+import java.io.File
+import java.io.InputStream
 
 
 class IngesterIntegrationTest {
@@ -54,16 +57,18 @@ class IngesterIntegrationTest {
       val schema = CoinbaseOrderSchema.schemaV1
       val type = schema.versionedType("OrderWindowSummary".fqn())
       val resource = Resources.getResource("Coinbase_BTCUSD_1h.csv").toURI()
-      val pipelineSource = CsvStreamSource(resource, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(
-         type,
-         TypeDbWrapper(type, schema, pipelineSource.cachePath, null),
-         pipelineSource)
 
-      ingester = Ingester(jdbcTemplate, pipeline)
-      // Ensure clean before we start
-      ingester.destroy()
       Benchmark.benchmark("ingest to db") { stopwatch ->
+         val input: Flux<InputStream> = Flux.just(File(resource).inputStream())
+         val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+         val pipeline = IngestionStream(
+            type,
+            TypeDbWrapper(type, schema, pipelineSource.cachePath, null),
+            pipelineSource)
+
+         ingester = Ingester(jdbcTemplate, pipeline)
+         // Ensure clean before we start
+         ingester.destroy()
 
          ingester.initialize()
 
@@ -84,7 +89,8 @@ class IngesterIntegrationTest {
       val schemaV2 = CoinbaseOrderSchema.schemaV2
       val typeV2 = schemaV2.versionedType("OrderWindowSummary".fqn())
       val resource = Resources.getResource("Coinbase_BTCUSD_1h.csv").toURI()
-      val pipelineSource = CsvStreamSource(resource, typeV1, schemaV1, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val input: Flux<InputStream> = Flux.just(File(resource).inputStream())
+      val pipelineSource = CsvStreamSource(input, typeV1, schemaV1, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(
          typeV1,
          TypeDbWrapper(typeV1, schemaV1, pipelineSource.cachePath, null),
