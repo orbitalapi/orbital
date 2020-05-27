@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketHandler
-import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import org.springframework.web.reactive.socket.client.WebSocketClient
@@ -144,23 +143,16 @@ class CaskOutput(
          // Configure the session: inbounds and outbounds messages
          return session.send(wsOutput.map { session.textMessage(it) })
             .and(
-               session.receive().handleCaskResponse().then()
+               session.receive().map { it.payloadAsText }
+                  .doOnNext {
+                     // LENS-50 - cask will return the message in case of error
+                     it.log().info("Received response from websocket: $it")
+                  }.then()
             )
             .doOnError { onTermination(it) }
             .doOnSuccess { onTermination(null) } // Is this ever called ?
             .then()
       }
-
-      private fun Flux<WebSocketMessage>.handleCaskResponse(): Flux<String> {
-
-         // For now just log
-         // LENS-50 - cask will return the message in case of error
-         return map { it.payloadAsText }
-            .doOnNext {
-               it.log().info("Received response from websocket: $it")
-            }
-      }
-
 
    }
 }
