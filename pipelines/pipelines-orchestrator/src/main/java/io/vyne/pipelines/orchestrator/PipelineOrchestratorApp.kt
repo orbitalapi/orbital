@@ -1,5 +1,6 @@
 package io.vyne.pipelines.orchestrator
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
 import org.springframework.boot.SpringApplication
@@ -10,8 +11,10 @@ import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequestInterceptor
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.client.RestTemplate
+
 
 @SpringBootApplication
 @EnableDiscoveryClient
@@ -29,12 +32,17 @@ class PipelineOrchestratorApp {
       fun pipelineJacksonModule() = PipelineJacksonModule()
 
       @Bean
-      fun restTemplate(): RestTemplate {
+      fun restTemplate(objectMapper: ObjectMapper): RestTemplate {
          val template = RestTemplate()
          template.interceptors.add(ClientHttpRequestInterceptor { request, body, execution ->
             request.headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
             execution.execute(request, body);
          })
+
+         val messageConverter = MappingJackson2HttpMessageConverter()
+         messageConverter.objectMapper = objectMapper
+         template.messageConverters.add(messageConverter)
+
          return template
       }
 
