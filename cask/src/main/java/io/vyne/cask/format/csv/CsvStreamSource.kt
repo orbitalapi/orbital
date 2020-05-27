@@ -15,7 +15,8 @@ class CsvStreamSource(val input: Flux<InputStream>,
                       val schema: Schema,
                       val readCacheDirectory: Path,
                       val bytesPerColumn: Int = 30,
-                      val csvFormat: CSVFormat = CSVFormat.DEFAULT) : StreamSource {
+                      val csvFormat: CSVFormat = CSVFormat.DEFAULT,
+                      val nullValues: Set<String> = emptySet()) : StreamSource {
 
    val cachePath: Path by lazy {
       Files.createFile(readCacheDirectory.resolve(type.versionedName))
@@ -27,6 +28,6 @@ class CsvStreamSource(val input: Flux<InputStream>,
          return input
             .map { writer.convert(it, cachePath) }
             .concatMap { it }
-            .map { mapper.map(it) }
+            .map { mapper.map(it, nullValues) }
       }
 }

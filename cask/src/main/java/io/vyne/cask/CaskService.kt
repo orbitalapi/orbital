@@ -83,7 +83,8 @@ class CaskService(val schemaProvider: SchemaProvider,
                type = versionedType,
                schema = schema,
                readCacheDirectory = cacheDirectory,
-               csvFormat = request.csvFormat()
+               csvFormat = request.csvFormat(),
+               nullValues = request.nullValues()
             )
          } else -> {
             return Flux.error(NotImplementedError("Ingestion $request not supported!"))

@@ -6,14 +6,20 @@ import io.vyne.cask.CaskService
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.orElse
 import org.apache.commons.csv.CSVFormat
+import org.springframework.util.MultiValueMap
 import org.springframework.web.reactive.socket.WebSocketSession
 
 abstract class CaskWebsocketRequest {
    data class CaskWebsocketRequestError(val message: String)
    abstract val session: WebSocketSession
    abstract val versionedType: VersionedType
-   fun params() = session.queryParams()
-   fun debug() = params()?.getParam("debug").orElse("false").toBoolean()
+   val params: MultiValueMap<String, String?>?
+        get() = session.queryParams()
+
+   fun debug() : Boolean = params?.getParam("debug").orElse("false").toBoolean()
+   fun nullValues() : Set<String> = params?.getParams("nullValue").orElse(emptyList<String>())
+      .filterNotNull()
+      .toSet()
 
    companion object {
       @JvmStatic
@@ -44,10 +50,9 @@ abstract class CaskWebsocketRequest {
 
 data class JsonWebsocketRequest(override val session: WebSocketSession, override val versionedType: VersionedType) : CaskWebsocketRequest()
 data class CsvWebsocketRequest(override val session: WebSocketSession, override val versionedType: VersionedType) : CaskWebsocketRequest() {
-   private val csvDelimiter: Char = params()?.getParam("csvDelimiter").orElse(",").single()
-   private val csvFirstRecordAsHeader: Boolean = params()?.getParam("csvFirstRecordAsHeader").orElse("true").toBoolean()
-
    fun csvFormat(): CSVFormat {
+      val csvDelimiter: Char = params?.getParam("csvDelimiter").orElse(",").single()
+      val csvFirstRecordAsHeader: Boolean = params?.getParam("csvFirstRecordAsHeader").orElse("true").toBoolean()
       val format = CSVFormat.DEFAULT.withDelimiter(csvDelimiter)
       if (csvFirstRecordAsHeader) {
          return format.withFirstRecordAsHeader()

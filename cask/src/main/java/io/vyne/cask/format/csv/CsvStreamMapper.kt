@@ -12,9 +12,9 @@ import java.util.concurrent.TimeUnit
 class CsvStreamMapper(private val targetType: Type, private val schema: Schema) {
     private val versionedType = schema.versionedType(targetType.name)
 
-    fun map(csvRecord: CSVRecord): InstanceAttributeSet {
+    fun map(csvRecord: CSVRecord, nullValues: Set<String> = emptySet()): InstanceAttributeSet {
         val instance = xtimed("createTypedInstance", timeUnit = TimeUnit.MICROSECONDS) {
-           TypedInstance.from(targetType, csvRecord, schema)
+           TypedInstance.from(targetType, csvRecord, schema, nullValues = nullValues)
         }
 
         return InstanceAttributeSet(
