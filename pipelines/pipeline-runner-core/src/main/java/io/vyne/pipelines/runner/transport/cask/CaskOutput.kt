@@ -41,9 +41,11 @@ class CaskOutput(
 ) : PipelineOutputTransport {
 
    override val type: VersionedTypeReference = spec.targetType
-   private val wsOutput: EmitterProcessor<String> = EmitterProcessor.create()
 
    private val CASK_CONTENT_TYPE_PARAMETER = "content-type"
+
+   val wsOutput: EmitterProcessor<String> = EmitterProcessor.create()
+   val wsHandler = CaskWebsocketHandler(healthMonitor, wsOutput) { handleWebsocketTermination(it) }
 
    init {
       tryToRestart()
@@ -107,7 +109,6 @@ class CaskOutput(
     */
    private fun connectTo(endpoint: String) {
 
-      val wsHandler = CaskWebsocketHandler(healthMonitor, wsOutput) { handleWebsocketTermination(it) }
 
       // Connect to the websocket
       val handshakeMono = wsClient.execute(URI(endpoint), wsHandler)
@@ -130,31 +131,32 @@ class CaskOutput(
       wsOutput.onNext(message)
    }
 
-   class CaskWebsocketHandler(
-      val healthMonitor: PipelineTransportHealthMonitor,
-      val wsOutput: EmitterProcessor<String>,
-      val onTermination: (throwable: Throwable?) -> Unit
-   ) : WebSocketHandler {
-      override fun handle(session: WebSocketSession): Mono<Void> {
-         // At this point, this handshake is established!
-         // ENHANCE: There might be a better place to hook on for this status
-         healthMonitor.reportStatus(UP)
+}
 
-         // Configure the session: inbounds and outbounds messages
-         return session.send(wsOutput.map { session.textMessage(it) })
-            .and(
-               session.receive().map { it.payloadAsText }
-                  .doOnNext {
-                     // LENS-50 - cask will return the message in case of error
-                     it.log().info("Received response from websocket: $it")
-                  }.then()
-            )
-            .doOnError { onTermination(it) }
-            .doOnSuccess { onTermination(null) } // Is this ever called ?
-            .then()
-      }
+class CaskWebsocketHandler(
+   val healthMonitor: PipelineTransportHealthMonitor,
+   val wsOutput: EmitterProcessor<String>,
+   val onTermination: (throwable: Throwable?) -> Unit
+) : WebSocketHandler {
+   override fun handle(session: WebSocketSession): Mono<Void> {
+      // At this point, this handshake is established!
+      // ENHANCE: There might be a better place to hook on for this status
+      healthMonitor.reportStatus(UP)
 
+      // Configure the session: inbounds and outbounds messages
+      return session.send(wsOutput.map { session.textMessage(it) })
+         .and(
+            session.receive().map { it.payloadAsText }
+               .doOnNext {
+                  // LENS-50 - cask will return the message in case of error
+                  it.log().info("Received response from websocket: $it")
+               }.then()
+         )
+         .doOnError { onTermination(it) }
+         .doOnSuccess { onTermination(null) } // Is this ever called ?
+         .then()
    }
+
 }
 
 
