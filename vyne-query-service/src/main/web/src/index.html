@@ -11,64 +11,65 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <style>
+    #noSupport {
+      position: relative;
+      height: 100vh;
+    }
 
+    #noSupport .noSupport {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      -webkit-transform: translate(-50%, -50%);
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+
+    .noSupport {
+      max-width: 750px;
+      width: 100%;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .noSupport p {
+      font-size: 24px;
+      color: #000;
+      font-weight: 400;
+    }
+  </style>
 </head>
 
 <body>
 
-<div id="root">
-  <app-root></app-root>
-</div>
-<div id="noSupport" style="visibility: hidden">
-  <div class="noSupport">
-    <img src="assets/img/vyne-logo-round.png">
-    <p>This browser isn't supported. Try Chrome or Firefox. </p>
+  <div id="root">
+    <app-root></app-root>
   </div>
-</div>
+  <div id="noSupport" style="visibility: hidden">
+    <div class="noSupport">
+      <img src="assets/img/vyne-logo-round.png" width="128px" height="128px">
+      <p>Oh no! Your browser has gone the way of the dinosaur, and isn't supported. We suggest you give Firefox or
+        Chrome
+        a go.
+      </p>
+    </div>
+  </div>
+  <script>
+    function isIE() {
+      return /Trident\/|MSIE/.test(window.navigator.userAgent);
+    }
 
+    if (isIE()) {
+      document.getElementById('noSupport').style.visibility = 'visible';
+      document.getElementById('root').style.visibility = 'hidden';
+
+    } else {
+      document.getElementById('root').style.visibility = 'visible';
+      document.getElementById('noSupport').style.visibility = 'hidden';
+
+    }
+  </script>
 </body>
-<script>
-  function isIE() {
-    return /Trident\/|MSIE/.test(window.navigator.userAgent);
-  }
-
-  if (isIE()) {
-    document.getElementById('noSupport').style.visibility = 'visible';
-    document.getElementById('root').style.visibility = 'hidden';
-
-  } else {
-    document.getElementById('root').style.visibility = 'visible';
-    document.getElementById('noSupport').style.visibility = 'hidden';
-
-  }
-</script>
-<style>
-  #noSupport {
-    position: relative;
-    height: 100vh;
-  }
-
-  #noSupport .noSupport {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    -webkit-transform: translate(-50%, -50%);
-    -ms-transform: translate(-50%, -50%);
-    transform: translate(-50%, -50%);
-  }
-
-  .noSupport {
-    max-width: 460px;
-    width: 100%;
-    text-align: center;
-    line-height: 1.4;
-  }
-
-  .noSupport p {
-    font-size: 16px;
-    color: #000;
-    font-weight: 400;
-  }
-</style>
 
 </html>
