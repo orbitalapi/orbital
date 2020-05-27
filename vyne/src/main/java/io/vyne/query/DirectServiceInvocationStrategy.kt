@@ -1,11 +1,9 @@
 package io.vyne.query
 
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
-import io.vyne.schemas.Operation
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.PropertyToParameterConstraint
-import io.vyne.schemas.Schema
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.RelativeValueExpression
@@ -25,14 +23,36 @@ class DirectServiceInvocationStrategy(private val invocationService: OperationIn
          val matchedNodes = getCandidateOperations(context.schema, target)
             .filter { (_,operationToParameters) -> operationToParameters.isNotEmpty() }
             .map { (queryNode, operationToParameters) ->
-               if (operationToParameters.size > 1) {
-                  log().warn("Multiple candidate operations detected - ${operationToParameters.keys.joinToString { it.name }} - this isn't supported yet, will just pick the first one")
+               val operationsToInvoke = when {
+                  operationToParameters.size > 1 && queryNode.mode != QueryMode.GATHER -> {
+                     log().warn("Running in query mode ${queryNode.mode} and multiple candidate operations detected - ${operationToParameters.keys.joinToString { it.name }} - this isn't supported yet, will just pick the first one")
+                     listOf(operationToParameters.keys.first())
+                  }
+                  queryNode.mode == QueryMode.GATHER -> operationToParameters.keys.toList()
+                  else -> listOf(operationToParameters.keys.first())
                }
-               val operation = operationToParameters.keys.first()
-               val parameters = operationToParameters.getValue(operation)
-               val (service, _) = context.schema.operation(operation.qualifiedName)
-               val serviceResult = invocationService.invokeOperation(service, operation, emptySet(), context, parameters.toList())
-               queryNode to serviceResult
+
+
+               val serviceResults = operationsToInvoke.map { operation ->
+                  val parameters = operationToParameters.getValue(operation)
+                  val (service, _) = context.schema.operation(operation.qualifiedName)
+                  val serviceResult = invocationService.invokeOperation(
+                     service,
+                     operation,
+                     context = context,
+                     preferredParams = emptySet(),
+                     providedParamValues = parameters.toList()
+                  )
+                  serviceResult
+               }.flattenNestedTypedCollections(flattenedType = queryNode.type)
+
+               val strategyResult = when {
+                  serviceResults.isEmpty() -> null
+                  serviceResults is TypedCollection -> serviceResults
+                  serviceResults.size == 1 -> serviceResults.first()
+                  else -> TypedCollection(queryNode.type,serviceResults) // Not sure this is a valid
+               }
+               queryNode to strategyResult
             }.toMap()
 
          QueryStrategyResult(matchedNodes)
@@ -44,11 +64,13 @@ class DirectServiceInvocationStrategy(private val invocationService: OperationIn
     * Returns the operations that we can invoke, grouped by target query node.
     */
    internal fun getCandidateOperations(schema: Schema, target: Set<QuerySpecTypeNode>, requireAllParametersResolved: Boolean = true): Map<QuerySpecTypeNode, Map<Operation, Map<Parameter, TypedInstance>>> {
-      return target.map { it to getCandidateOperations(schema, it, requireAllParametersResolved) }
+      val grouped =  target.map { it to getCandidateOperations(schema, it, requireAllParametersResolved) }
          .groupBy({ it.first }, { it.second })
-         .mapValues { (querySpecTypeNode, operationParameterMaps) ->
+
+val result = grouped.mapValues { (_, operationParameterMaps) ->
             operationParameterMaps.reduce { acc, map -> acc + map }
          }
+      return result
    }
 
    /**
@@ -57,8 +79,8 @@ class DirectServiceInvocationStrategy(private val invocationService: OperationIn
     * and the set of parameters that we have identified values for
     */
    internal fun getCandidateOperations(schema: Schema, target: QuerySpecTypeNode, requireAllParametersResolved: Boolean): Map<Operation, Map<Parameter, TypedInstance>> {
-      return schema.operations
-         .filter { it.returnType.resolvesSameAs(target.type) }
+      val operations =  schema.operations
+         .filter { it.returnType.isAssignableTo(target.type) }
          .mapNotNull { operation ->
             val (satisfiesConstraints, operationParameters) = compareOperationContractToDataRequirementsAndFetchSearchParams(operation, target, schema)
             if (!satisfiesConstraints) {
@@ -77,7 +99,8 @@ class DirectServiceInvocationStrategy(private val invocationService: OperationIn
             } else {
                true
             }
-         }.toMap()
+         }
+      return operations.toMap()
    }
 
    /**
@@ -126,5 +149,14 @@ class DirectServiceInvocationStrategy(private val invocationService: OperationIn
          }.toMap()
       val allOperationConstraintsSatisfied = operationConstraintParameterValues.size == target.dataConstraints.size
       return allOperationConstraintsSatisfied to operationConstraintParameterValues
+   }
+}
+
+private fun List<TypedInstance>.flattenNestedTypedCollections(flattenedType:Type): List<TypedInstance> {
+   return if (this.all { it is TypedCollection }) {
+      val values = this.flatMap { (it as TypedCollection).value }
+      TypedCollection(flattenedType,values)
+   } else {
+      this
    }
 }

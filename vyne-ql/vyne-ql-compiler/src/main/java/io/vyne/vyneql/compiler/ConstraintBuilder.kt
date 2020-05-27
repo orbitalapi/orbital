@@ -55,7 +55,7 @@ private fun VyneQLParser.QualifiedNameContext.asDotJoinedPath(): String {
    return this.Identifier().joinToString(".") { it.text }
 }
 
-private fun VyneQLParser.LiteralContext.value(): Any {
+fun VyneQLParser.LiteralContext.value(): Any {
    return when {
       this.StringLiteral() != null -> {
          // can be either ' or "

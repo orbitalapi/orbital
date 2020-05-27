@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.getOrHandle
 import io.vyne.VyneQLLexer
 import io.vyne.VyneQLParser
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.vyneql.compiler.TokenProcessor
 import lang.taxi.*
 import org.antlr.v4.runtime.CharStream
@@ -22,7 +23,7 @@ class VyneQlCompiler(val query: CharStream, val schema: TaxiDocument) {
    }
 
    fun compile(): Either<List<CompilationError>, VyneQlQuery> {
-      val listener = TokenProcessor(schema)
+      val listener = TokenProcessor(schema, TaxiSchema(schema, emptyList()))
       val errorListener = CollectingErrorListener(query.sourceName)
       val lexer = VyneQLLexer(query)
       val parser = VyneQLParser(CommonTokenStream(lexer))

@@ -2,9 +2,19 @@ package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
+import lang.taxi.TaxiDocument
 
 @Deprecated("This class fails to handle type extensions correctly.  Use TaxiSchema.fromNamedSources().first(), which will correctly order, compose and compile the sources")
 class CompositeSchema(private val schemas: List<Schema>) : Schema {
+   override val taxi: TaxiDocument
+      get() {
+         // TODO : Not keen on solving this problem, since CompositeSchemas are going away
+         if (schemas.size != 1) {
+            TODO()
+         }
+         return schemas.first().taxi
+      }
+
    override val sources: List<VersionedSource>
       get() {
          return schemas.flatMap { it.sources }
