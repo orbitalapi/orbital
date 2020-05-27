@@ -44,7 +44,7 @@ class CaskOutput(
 
    override val type: VersionedTypeReference = spec.targetType
 
-   private val CASK_CONTENT_TYPE_HEADER = "content-type"
+   private val CASK_CONTENT_TYPE_PARAMETER = "content-type"
 
    init {
       tryToRestart()
@@ -75,7 +75,7 @@ class CaskOutput(
          val caskServer = caskServers.random()  // ENHANCE client side load balancing ?
 
          // Build the WS connection parameters
-         val contentType = spec.props[CASK_CONTENT_TYPE_HEADER] ?: "json"
+         val contentType = spec.props[CASK_CONTENT_TYPE_PARAMETER] ?: "json"
          val params = buildWsParameters(spec, contentType)
 
          // Build th final endpoint
