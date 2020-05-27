@@ -65,7 +65,7 @@ class CaskOutputTest {
          "json.nonIncluded" to "YYY"
          ), VersionedTypeReference("Actor".fqn()))
 
-      caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, wsOutput, 100)
+      caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       Awaitility.await().atMost(2, TimeUnit.SECONDS).until {
          verify(wsClient).execute(eq(URI("ws://192.168.0.2:8989/cask/csv/Actor?delimiter=%7C&header.included=false&otherParam=XXX")), any())
@@ -76,7 +76,7 @@ class CaskOutputTest {
    fun testCaskServerNoParameters() {
       mockCaskServer()
 
-      caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, wsOutput, 100)
+      caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       Awaitility.await().atMost(2, TimeUnit.SECONDS).until {
          verify(wsClient).execute(eq(URI("ws://192.168.0.2:8989/cask/json/imdb.Actor?")), any())

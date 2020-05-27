@@ -38,11 +38,11 @@ class CaskOutput(
    private val caskServiceName: String,
    override val healthMonitor: PipelineTransportHealthMonitor = EmitterPipelineTransportHealthMonitor(),
    private val wsClient: WebSocketClient = ReactorNettyWebSocketClient(),
-   private val wsOutput: EmitterProcessor<String> = EmitterProcessor.create(),
    private val pollIntervalMillis: Long = 3000
 ) : PipelineOutputTransport {
 
    override val type: VersionedTypeReference = spec.targetType
+   private val wsOutput: EmitterProcessor<String> = EmitterProcessor.create()
 
    private val CASK_CONTENT_TYPE_PARAMETER = "content-type"
 
