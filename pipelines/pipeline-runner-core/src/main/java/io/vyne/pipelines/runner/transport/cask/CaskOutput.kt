@@ -134,7 +134,7 @@ class CaskOutput(
    class CaskWebsocketHandler(
       val healthMonitor: PipelineTransportHealthMonitor,
       val wsOutput: EmitterProcessor<String>,
-      val onError: (throwable: Throwable?) -> Unit
+      val onTermination: (throwable: Throwable?) -> Unit
    ) : WebSocketHandler {
       override fun handle(session: WebSocketSession): Mono<Void> {
          // At this point, this handshake is established!
@@ -146,8 +146,8 @@ class CaskOutput(
             .and(
                session.receive().handleCaskResponse().then()
             )
-            .doOnError { onError(it) }
-            .doOnSuccess { onError(null) } // Is this ever called ?
+            .doOnError { onTermination(it) }
+            .doOnSuccess { onTermination(null) } // Is this ever called ?
             .then()
       }
 
