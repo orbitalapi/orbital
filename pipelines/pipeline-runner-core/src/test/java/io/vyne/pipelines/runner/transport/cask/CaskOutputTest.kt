@@ -83,14 +83,4 @@ class CaskOutputTest {
       }
    }
 
-   @Test
-   fun testCaskServerConnectionError() {
-      whenever(wsClient.execute(any(), any())).thenThrow(RuntimeException("Error."))
-
-      caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, wsOutput, 100)
-
-      Awaitility.await().atMost(1, TimeUnit.SECONDS).until {
-         verify(healthMonitor).reportStatus(DOWN)
-      }
-   }
 }
