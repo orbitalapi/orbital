@@ -108,7 +108,7 @@ class CaskOutput(
     */
    private fun connectTo(endpoint: String) {
 
-      val wsHandler = WebSocketHandlerr(healthMonitor, wsOutput) { handleWebsocketTermination(it) }
+      val wsHandler = CaskWebsocketHandler(healthMonitor, wsOutput) { handleWebsocketTermination(it) }
 
       // Connect to the websocket
       val handshakeMono = wsClient.execute(URI(endpoint), wsHandler)
@@ -131,7 +131,7 @@ class CaskOutput(
       wsOutput.onNext(message)
    }
 
-   class WebSocketHandlerr(
+   class CaskWebsocketHandler(
       val healthMonitor: PipelineTransportHealthMonitor,
       val wsOutput: EmitterProcessor<String>,
       val onError: (throwable: Throwable?) -> Unit
