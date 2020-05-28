@@ -64,7 +64,7 @@ interface TypedInstance {
          return TypedObject(type, typedAttributes)
       }
 
-      fun from(type: Type, value: Any?, schema: Schema, performTypeConversions: Boolean = true): TypedInstance {
+      fun from(type: Type, value: Any?, schema: Schema, performTypeConversions: Boolean = true, nullValues: Set<String> = emptySet()): TypedInstance {
          return when {
             value is TypedInstance -> value
             value == null -> TypedNull(type)
@@ -78,7 +78,7 @@ interface TypedInstance {
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
             // Must be a CSV ish type value.
             type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema)
-            else -> TypedObject.fromValue(type, value, schema)
+            else -> TypedObject.fromValue(type, value, schema, nullValues)
          }
       }
 

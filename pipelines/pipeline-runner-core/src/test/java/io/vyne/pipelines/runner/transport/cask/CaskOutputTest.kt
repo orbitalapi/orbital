@@ -4,8 +4,7 @@ import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockitokotlin2.*
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.PipelineTransportHealthMonitor
-import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.TERMINATED
-import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
 import io.vyne.schemas.fqn
 import org.junit.Before
 import org.junit.Test
@@ -76,13 +75,14 @@ class CaskOutputTest {
          "csv.delimiter" to "|",
          "csv.otherParam" to "XXX",
          "csv.header.included" to "false",
-         "json.nonIncluded" to "YYY"
-         ), VersionedTypeReference("Actor".fqn()))
+         "json.nonIncluded" to "YYY",
+         "csv.nullValue" to "N/A,NULL,null"
+      ), VersionedTypeReference("Actor".fqn()))
 
       caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       await().atMost(2, SECONDS).until {
-         verify(wsClient).execute(eq(URI("ws://192.168.0.2:8989/cask/csv/Actor?delimiter=%7C&header.included=false&otherParam=XXX")), any())
+         verify(wsClient).execute(eq(URI("ws://192.168.0.2:8989/cask/csv/Actor?delimiter=%7C&header.included=false&nullValue=N%2FA&nullValue=NULL&nullValue=null&otherParam=XXX")), any())
       }
    }
 
@@ -106,7 +106,7 @@ class CaskOutputTest {
       caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       await().atMost(2, SECONDS).until {
-         verify(healthMonitor).reportStatus(TERMINATED)
+         verify(healthMonitor).reportStatus(DOWN)
       }
    }
 

@@ -14,10 +14,10 @@ type OrderWindowSummary {
     orderDate: Date by xpath("/Date")
 }
 type OrderWindowSummaryCsv {
-    orderDate : Date by column(0)
-    symbol : Symbol by column(1)
-    open : Price by column(2)
-    close : Price by column(3)
+    orderDate : Date by column(1)
+    symbol : Symbol by column(2)
+    open : Price by column(3)
+    close : Price by column(4)
 }
 """.trimIndent()
    val schemaV1 = TaxiSchema.from(sourceV1, "Coinbase", "0.1.0")

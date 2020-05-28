@@ -7,7 +7,7 @@ import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
 
 
-class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema) {
+class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet()) {
    private val valueReader = ValueReader()
    private val accessorReader: AccessorReader by lazy { AccessorReader() }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
@@ -43,7 +43,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
    }
 
    internal fun readAccessor(type: QualifiedName, accessor: Accessor): TypedInstance {
-      return accessorReader.read(value, type, accessor, schema)
+      return accessorReader.read(value, type, accessor, schema, nullValues)
    }
 
 

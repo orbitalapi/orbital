@@ -10,6 +10,10 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import lang.taxi.generators.java.TaxiGenerator
 
+class ClassPathSchemaSourceProvider(private val schemaFile: String): SchemaSourceProvider {
+   override fun schemas() = schemaStrings().map { TaxiSchema.from(it) }
+   override fun schemaStrings() = listOf(ClassLoader.getSystemResource(schemaFile).readText(Charsets.UTF_8))
+}
 
 class SimpleTaxiSchemaProvider(val source: String) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
@@ -22,7 +26,9 @@ class SimpleTaxiSchemaProvider(val source: String) : SchemaSourceProvider {
 
 }
 
-class LocalTaxiSchemaProvider(val models: List<Class<*>>, val services: List<Class<*>>, val taxiGenerator: TaxiGenerator = TaxiGenerator()) : SchemaSourceProvider {
+class LocalTaxiSchemaProvider(val models: List<Class<*>>,
+                              val services: List<Class<*>>,
+                              val taxiGenerator: TaxiGenerator = TaxiGenerator()) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
       return taxiGenerator.forClasses(models + services).generateAsStrings()
    }

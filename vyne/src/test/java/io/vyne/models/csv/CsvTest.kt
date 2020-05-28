@@ -15,8 +15,8 @@ class CsvTest  {
       val src = """type alias FirstName as String
 type alias LastName as String
 type Person {
-   firstName : FirstName by column(0)
-   lastName : LastName by column(1)
+   firstName : FirstName by column(1)
+   lastName : LastName by column(2)
 }
 """
       val (vyne, _) = testVyne(src)
@@ -32,8 +32,8 @@ type Person {
       val src = """type alias FirstName as String
 type alias LastName as String
 type Person {
-   firstName : FirstName by column(0)
-   lastName : LastName by column(1)
+   firstName : FirstName by column(1)
+   lastName : LastName by column(2)
 }
 
 @CsvList
@@ -59,8 +59,8 @@ type alias PersonList as Person[]
       val src = """type alias FirstName as String
 type alias LastName as String
 type Person {
-   firstName : FirstName by column(0)
-   lastName : LastName by column(1)
+   firstName : FirstName by column(1)
+   lastName : LastName by column(2)
 }
 
 @CsvList

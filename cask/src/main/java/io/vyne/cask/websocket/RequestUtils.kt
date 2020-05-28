@@ -7,7 +7,7 @@ import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 
 fun URI.queryParams(): MultiValueMap<String, String?>? {
-   return UriComponentsBuilder.fromUri(this).build().queryParams
+   return UriComponentsBuilder.newInstance().query(this.query).build().queryParams
 }
 
 fun WebSocketSession.queryParams(): MultiValueMap<String, String?>? {
@@ -16,6 +16,9 @@ fun WebSocketSession.queryParams(): MultiValueMap<String, String?>? {
 
 fun MultiValueMap<String, String?>.getParam(paramName: String): String? {
    return this.get(paramName)?.firstOrNull()
+}
+fun MultiValueMap<String, String?>.getParams(paramName: String): MutableList<String?>? {
+   return this.get(paramName)
 }
 
 fun WebSocketSession.typeReference() : String {

@@ -1,5 +1,6 @@
 package io.vyne.schemas
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
 import io.vyne.VersionedTypeReference
 import io.vyne.utils.assertingThat
@@ -9,13 +10,15 @@ import lang.taxi.TaxiDocument
 
 interface Schema {
    // I've pretty much given up on avoiding the Taxi vs Schema abstraction at this point..
+   @get:JsonIgnore
    val taxi: TaxiDocument
+   @get:JsonIgnore
    val sources: List<VersionedSource>
    val types: Set<Type>
    val services: Set<Service>
 
    val policies: Set<Policy>
-
+   @get:JsonIgnore
    val typeCache: TypeCache
 
 

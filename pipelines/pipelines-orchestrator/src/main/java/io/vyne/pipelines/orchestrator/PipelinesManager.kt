@@ -64,7 +64,10 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
          val availableServers = runnerInstances.filter { it.metadata[PIPELINE_METADATA_KEY] == null }
 
          when (availableServers.size) {
-            0 -> pipelineSnapshot.info = "No Pipeline Runner available"
+            0 -> {
+               log().info("No runners available")
+               pipelineSnapshot.info = "No Pipeline Runner available"
+            }
 
             // For now, pick a server at random
             // In the future, the selection will be more elaborated and can involve tagging and capacity
@@ -87,7 +90,7 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
    /**
     * Periodically refresh the state
     */
-   @Scheduled(fixedRate = 5000)
+   @Scheduled(fixedRate = 15000)
    fun getServers() = reloadState()
 
    /**

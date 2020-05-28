@@ -84,7 +84,7 @@ class CaskOutput(
             "ws://$host:$port/cask/${contentType}/${type.typeName.fullyQualifiedName}${params}"
 
          }
-         log().info("Found for $caskServiceName service server in Eureka [endpoint=$endpoint]")
+         log().info("Found $caskServiceName service server in Service Discovery [endpoint=$endpoint]")
          Optional.of(endpoint)
       } catch (e: RuntimeException) {
          log().error("Could not find $caskServiceName server. Reason: ${e.message}")
@@ -94,7 +94,14 @@ class CaskOutput(
 
    private fun buildWsParameters(spec: CaskTransportOutputSpec, contentType: String) = spec.props.entries
       .filter { it.key.startsWith("${contentType}.") }
-      .map { it.key.removePrefix("${contentType}.") to it.value }
+      .flatMap {
+         var parameterName = it.key.removePrefix("${contentType}.")
+         if (parameterName == "nullValue") {
+            it.value.split(",").map { nullValue -> parameterName to nullValue }
+         } else {
+            listOf(parameterName to it.value)
+         }
+      }
       .sortedBy { it.first }
       .joinToString(separator = "&", prefix = "?") { e -> e.first + "=" + URLEncoder.encode(e.second, "UTF-8") }
 
@@ -112,7 +119,7 @@ class CaskOutput(
 
       // Connect to the websocket
       val handshakeMono = wsClient.execute(URI(endpoint), wsHandler)
-         .doOnError { healthMonitor.reportStatus(TERMINATED) } // Handshake error = terminated
+         .doOnError { healthMonitor.reportStatus(DOWN) } // Handshake error = terminated (down for now as terminated is not handled)
 
       // Subscribe to all
       wsOutput.doOnSubscribe { handshakeMono.subscribe() }.subscribe()

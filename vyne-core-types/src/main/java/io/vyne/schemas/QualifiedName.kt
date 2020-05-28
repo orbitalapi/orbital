@@ -32,6 +32,26 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
          return fullyQualifiedName.split(".").dropLast(1).joinToString(".")
       }
 
+   // Convenience for the UI
+   val longDisplayName: String
+      get() {
+         return if (this.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName && parameters.size == 1) {
+            parameters[0].fullyQualifiedName + "[]"
+         } else {
+            this.parameterizedName
+         }
+      }
+
+   // Convenience for the UI
+   val shortDisplayName: String
+      get() {
+         return if (this.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName && parameters.size == 1) {
+            parameters[0].shortDisplayName + "[]"
+         } else {
+            this.name
+         }
+      }
+
    override fun toString(): String = fullyQualifiedName
 }
 

@@ -17,22 +17,22 @@ object CoinbaseOrderSchema {
 type alias Price as Decimal
 type alias Symbol as String
 type OrderWindowSummary {
-    symbol : Symbol by column(1)
-    open : Price by column(2)
+    symbol : Symbol by column(2)
+    open : Price by column(3)
     // Note, this is intentionally wrong, so we can redefine it in v2
-    close : Price by column(3)
+    close : Price by column(4)
 }""".trimIndent()
 
    private val sourceV2 = """
 type alias Price as Decimal
 type alias Symbol as String
 type OrderWindowSummary {
-    symbol : Symbol by column(1)
-    open : Price by column(2)
+    symbol : Symbol by column(2)
+    open : Price by column(3)
     // Added column
-    high : Price by column(3)
+    high : Price by column(4)
     // Changed column
-    close : Price by column(5)
+    close : Price by column(6)
 }""".trimIndent()
 
    val schemaV1 = TaxiSchema.from(sourceV1, "Coinbase", "0.1.0")
