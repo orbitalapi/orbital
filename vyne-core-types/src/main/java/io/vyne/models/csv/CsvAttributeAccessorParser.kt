@@ -55,7 +55,14 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
       if (!nullValues.isEmpty() && nullValues.contains(value)) {
          return TypedInstance.from(type, null, schema);
       }
-      return primitiveParser.parse(value, type, schema)
+      try {
+         return primitiveParser.parse(value, type, schema)
+      } catch (exception: Exception) {
+         val message = "Failed to parse value $value from column ${accessor.index} to type ${type.name.fullyQualifiedName} - ${exception.message}"
+         throw ParsingException(message, exception)
+      }
+
    }
 }
+
 
