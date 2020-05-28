@@ -213,6 +213,19 @@ class CaskWebsocketHandlerTest {
    }
 
    @Test
+   fun csvMessageIngestionWithSemicolonDelimiterUrlEncoded() {
+      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validCsvMessage(";")))
+      val sessionInput = Flux.just(validMessage)
+      val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=%3B", input = sessionInput) // %3B = ;
+      wsHandler.handle(session).block()
+
+      StepVerifier
+         .create(session.textOutput.take(1).timeout(Duration.ofSeconds(1)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
+         .verifyComplete()
+   }
+
+   @Test
    fun csvMessageIngestionWithoutColumnNameHeader() {
       val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validCsvMessage(",", false)))
       val sessionInput = Flux.just(validMessage)
@@ -245,6 +258,29 @@ class CaskWebsocketHandlerTest {
       }
       buf.append("2020-03-19,BTCUSD,6300,6330,6186.08,6235.2")
       return buf.toString().replace(",", delimiter).byteInputStream()
+   }
+
+   @Test
+   fun csvMessageIngestionWithNullValues() {
+      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(csvMessageWithNullValues()))
+      val sessionInput = Flux.just(validMessage)
+      val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&nullValue=NULL&nullValue=UNKNOWN&nullValue=N%2FA", input = sessionInput) // N%2FA = N/A
+      wsHandler.handle(session).block()
+
+      StepVerifier
+         .create(session.textOutput.take(1).timeout(Duration.ofSeconds(1)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+         .verifyComplete()
+   }
+
+   private fun csvMessageWithNullValues(): ByteArrayInputStream {
+      return """
+         Date,Symbol,Open,High,Low,Close
+         NULL,BTCUSD,6300,6330,6186.08,6235.2
+         2020-03-19,UNKNOWN,6300,6330,6186.08,6235.2
+         2020-03-19,BTCUSD,N/A,6330,6186.08,6235.2
+         2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
+      """.trimIndent().byteInputStream()
    }
 
    private fun invalidCsvMessage(): ByteArrayInputStream {

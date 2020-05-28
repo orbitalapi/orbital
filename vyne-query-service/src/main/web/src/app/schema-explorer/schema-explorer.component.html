@@ -14,7 +14,7 @@
     <app-search-bar-container></app-search-bar-container>
   </mat-toolbar>
   <div class="page-content">
-    <app-code-viewer [sources]="schemas | async" sidebarMode="Visible"></app-code-viewer>
+    <app-code-viewer [sources]="schemas | async" sidebarMode="Visible" *ngIf="(schemas | async)?.length>0" ></app-code-viewer>
 
 <!--    <div class="endpoint-list">-->
 <!--      <div *ngFor="let schema of schemas | async" class="schema-list-member"-->
@@ -31,10 +31,8 @@
 <!--    </div>-->
     <div *ngIf="(schemas | async)?.length==0" class="empty-state">
       <img src="assets/img/getting-started.svg">
-      <div>There's nothing registered yet. Schemas will appear here as services register, or you can <a
-        href="javascript:"
-        [matMenuTriggerFor]="appMenu">add
-        a new schema</a> manually.
+      <div>There's nothing registered yet. Schemas will appear here as services register, or you can add
+        a new schema manually from the toolbar above.
       </div>
     </div>
   </div>

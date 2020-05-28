@@ -17,6 +17,9 @@ fun WebSocketSession.queryParams(): MultiValueMap<String, String?>? {
 fun MultiValueMap<String, String?>.getParam(paramName: String): String? {
    return this.get(paramName)?.firstOrNull()
 }
+fun MultiValueMap<String, String?>.getParams(paramName: String): MutableList<String?>? {
+   return this.get(paramName)
+}
 
 fun WebSocketSession.typeReference() : String {
    // backward-compatibility with pipeline-runner, e.x. uri=/cask/[typeReference]
