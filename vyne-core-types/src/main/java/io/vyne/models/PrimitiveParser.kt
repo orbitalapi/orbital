@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.jvm.common.PrimitiveTypes
+import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 
 /**
@@ -22,22 +23,26 @@ class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapp
       val underlyingPrimitive = Primitives.getUnderlyingPrimitive(targetType, schema)
       val taxiPrimitive = PrimitiveType.fromDeclaration(underlyingPrimitive.fullyQualifiedName)
       val javaType = PrimitiveTypes.getJavaType(taxiPrimitive)
-      //try {
-         val convertedValue = objectMapper.convertValue(value, javaType) //TODO report field name?
-         if (convertedValue == null) {
-            throw IllegalArgumentException("Unable to parse primitive type=${targetType.taxiType.basePrimitive} name=${targetType.name} value=null.")
-         }
-         return TypedValue.from(targetType, convertedValue, performTypeConversions = false)
-//      } catch (e: Exception) {
-//         log().error("Value ${value} javaType=${javaType} taxiPrimitive=${taxiPrimitive} targetType=${targetType}  ", e)
-//         throw e;
-//      }
+      val convertedValue = objectMapper.convertValue(value, javaType) //TODO report field name?
+      if (convertedValue == null) {
+         throw IllegalArgumentException("Unable to parse primitive type=${targetType.taxiType.basePrimitive} name=${targetType.name} value=null.")
+      }
+      return TypedValue.from(targetType, convertedValue, performTypeConversions = false)
    }
 
    private fun parseEnum(value: Any, targetType: Type): TypedInstance {
       return when (targetType.enumValues.contains(value)) {
          true -> TypedValue.from(targetType, value, false)
-         else -> error("Unable to map Value=${value} to Enum Type=${targetType.fullyQualifiedName}, allowed values=${targetType.enumValues}")
+         else -> {
+            // TODO fix me, vyne type should have enum values just as taxitype!
+            val taxiType = (targetType.taxiType as EnumType)
+            val taxiEnumName = taxiType.values.find { it.value == value }?.name
+            taxiEnumName
+               ?.let { TypedValue.from(targetType, it, false) }
+               ?: error("Unable to map Value=${value} " +
+                  "to Enum Type=${targetType.fullyQualifiedName}, " +
+                  "allowed values=${taxiType.definition?.values?.map { Pair(it.name, it.value) }}")
+         }
       }
    }
 }
