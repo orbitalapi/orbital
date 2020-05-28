@@ -1,6 +1,6 @@
 package io.vyne.cask.api
 
-data class CaskIngestionResponse(val result: ResponseResult, val inputMessage: String?, val message: String?) {
+data class CaskIngestionResponse(val result : ResponseResult, val message : String?) {
    enum class ResponseResult {
       SUCCESS,
       WARNING,
@@ -9,13 +9,12 @@ data class CaskIngestionResponse(val result: ResponseResult, val inputMessage: S
 
    companion object {
       @JvmStatic
-      fun success(inputMessage: String, infoMessage: String?): CaskIngestionResponse {
-         return CaskIngestionResponse(ResponseResult.SUCCESS, inputMessage, infoMessage)
+      fun success(message: String?): CaskIngestionResponse {
+         return CaskIngestionResponse(ResponseResult.SUCCESS, message)
       }
-
       @JvmStatic
-      fun rejected(inputMessage: String, errorMessage: String): CaskIngestionResponse {
-         return CaskIngestionResponse(ResponseResult.REJECTED, inputMessage, errorMessage)
+      fun rejected(message: String): CaskIngestionResponse {
+         return CaskIngestionResponse(ResponseResult.REJECTED, message)
       }
    }
 }
