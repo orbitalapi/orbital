@@ -80,18 +80,18 @@ service MyService {
       val provider = ClassPathSchemaSourceProvider("foo.taxi")
       expect(provider.schemaStrings()).size.equal(1)
       """
-         import TaxFileNumber
          namespace vyne.example {
-            type Client {
-               clientId : ClientId as String
-               name : ClientName as String
-               isicCode : IsicCode as String
-            }
+   type Client {
+      clientId : ClientId as String
+      name : ClientName as String
+      isicCode : IsicCode as String
+   }
 
-            service ClientService {
-               operation getClient(TaxFileNumber):Client
-            }
-         }
+   service ClientService {
+      operation getClient(ClientId):Client
+   }
+}
+
       """.replace("\\s".toRegex(), "").should.equal(provider.schemaString().replace("\\s".toRegex(), ""))
    }
 }
