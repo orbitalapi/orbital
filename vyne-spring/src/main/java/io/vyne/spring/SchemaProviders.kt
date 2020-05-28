@@ -9,10 +9,11 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import lang.taxi.generators.java.TaxiGenerator
+import org.springframework.core.io.ClassPathResource
 
 class ClassPathSchemaSourceProvider(private val schemaFile: String): SchemaSourceProvider {
    override fun schemas() = schemaStrings().map { TaxiSchema.from(it) }
-   override fun schemaStrings() = listOf(ClassLoader.getSystemResource(schemaFile).readText(Charsets.UTF_8))
+   override fun schemaStrings() = listOf(ClassPathResource(schemaFile).inputStream.bufferedReader(Charsets.UTF_8).readText())
 }
 
 class SimpleTaxiSchemaProvider(val source: String) : SchemaSourceProvider {
