@@ -212,7 +212,7 @@ $fieldDef
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
       val (postgresType, writer) = p
-      val nullable = if (field.nullable) "" else " NOT NULL"
+      val nullable = "" //if (field.nullable) "" else " NOT NULL"
 
       return PostgresColumn(columnName, field, "$columnName $postgresType$nullable", primitiveType, writer)
    }
