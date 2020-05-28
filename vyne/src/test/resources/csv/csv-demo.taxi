@@ -8,30 +8,30 @@ type Money {
 }
 
 type CsvTradeRecord {
-    counterparty : CustomerId by column(0)
-    ccy1 : CurrencySymbol by column(1)
-    ccy2 : CurrencySymbol by column(3)
-    quotedCurrency : CurrencySymbol by column(6)
+    counterparty : CustomerId by column(1)
+    ccy1 : CurrencySymbol by column(2)
+    ccy2 : CurrencySymbol by column(4)
+    quotedCurrency : CurrencySymbol by column(7)
     (   dealtAmount : DealtAmount
         settlementAmount : SettlementAmount
     ) by when ( quotedCurrency ) {
         ccy1 -> {
             dealtAmount(
-                quantity by column(2)
+                quantity by column(3)
                 currency = ccy1
             )
             settlementAmount(
-                quantity by column(4)
+                quantity by column(5)
                 currency = ccy2
             )
         }
         ccy2 -> {
         dealtAmount(
-                quantity by column(4)
+                quantity by column(6)
                 currency = ccy2
             )
             settlementAmount(
-                quantity by column(2)
+                quantity by column(3)
                 currency = ccy1
             )
         }
