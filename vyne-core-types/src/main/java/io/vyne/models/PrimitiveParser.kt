@@ -15,12 +15,12 @@ import java.lang.IllegalArgumentException
  *
  * Used when Parsing some non type-safe wire format (eg., xpath returning a number as a string)
  */
-class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())) {
+class PrimitiveParser(private val conversionService: ConversionService = ConversionService.default()) {
    fun parse(value: Any, targetType: Type, schema: Schema): TypedInstance {
       val underlyingPrimitive = Primitives.getUnderlyingPrimitive(targetType, schema)
       val taxiPrimitive = PrimitiveType.fromDeclaration(underlyingPrimitive.fullyQualifiedName)
       val javaType = PrimitiveTypes.getJavaType(taxiPrimitive)
-      val convertedValue = objectMapper.convertValue(value, javaType)
+      val convertedValue = conversionService.convert(value,javaType,targetType.format)
       if (convertedValue == null) {
          throw IllegalArgumentException("Unable to parse primitive type=${targetType.taxiType.basePrimitive} name=${targetType.name} value=null.")
       }
@@ -30,11 +30,12 @@ class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapp
 
 object Primitives {
    fun getUnderlyingPrimitive(type: Type, schema: Schema): Type {
-      val primitiveCandidates = getUnderlyingPrimitiveIfExists(type, schema)
+
       return when {
-         primitiveCandidates.isEmpty() -> error("Type ${type.fullyQualifiedName} is not mappable to a primitive type")
-         primitiveCandidates.size > 1 -> error("Type ${type.fullyQualifiedName} ambiguously maps to multiple primitive types: ${primitiveCandidates.joinToString { it.fullyQualifiedName }}")
-         else -> primitiveCandidates.first()
+         type.taxiType.basePrimitive == null -> {
+            error("Type ${type.fullyQualifiedName} is not mappable to a primitive type")
+         }
+         else -> schema.type(type.taxiType.basePrimitive!!.qualifiedName)
       }
    }
 
