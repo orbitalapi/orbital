@@ -203,38 +203,38 @@
    // ACTIONS
     var pipelineOrchestratorUrl = "/runner/pipelines";
     var pipelineDefinition = {
-        "name": "trade-pipeline",
-        "input": {
-            "type": "Order",
-            "transport": {
-                "topic": "pipeline-input-avro",
-                "targetType": "Order",
-                "props": {
-                    "group.id": "vyne-pipeline-group",
-                    "bootstrap.servers": "kafka:9092,",
-                    "heartbeat.interval.ms": "3000",
-                    "session.timeout.ms": "10000",
-                    "auto.offset.reset": "earliest"
-                },
-                "type": "kafka-cacib",
-                "direction": "INPUT"
-            }
-        },
-        "output": {
-            "type": "Order",
-            "transport": {
-                "props": {
-                  "content-type": "csv",
-                  "csv.csvDelimiter": "|",
-                  "csv.nullValue": "null,N/A",
-                  "csv.csvFirstRecordAsHeader": "true"
-                },
-                "targetType": "Order",
-                "type": "cask",
-                "direction": "OUTPUT"
-            }
+    "name": "trade-pipeline",
+    "input": {
+        "type": "hpc.orders.Order",
+        "transport": {
+            "topic": "pipeline-input-avro",
+            "targetType": "hpc.orders.Order",
+            "props": {
+                "group.id": "vyne-pipeline-group",
+                "bootstrap.servers": "kafka:9092,",
+                "heartbeat.interval.ms": "3000",
+                "session.timeout.ms": "10000",
+                "auto.offset.reset": "earliest"
+            },
+            "type": "kafka-cacib",
+            "direction": "INPUT"
+        }
+    },
+    "output": {
+        "type": "hpc.orders.Order",
+        "transport": {
+            "props": {
+                "content-type": "csv",
+                "csv.csvDelimiter": "|",
+                "csv.nullValue": "NULL,N/A",
+                "csv.csvFirstRecordAsHeader": "true"
+            },
+            "targetType": "hpc.orders.Order",
+            "type": "cask",
+            "direction": "OUTPUT"
         }
     }
+}
 
 
 

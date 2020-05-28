@@ -94,7 +94,14 @@ class CaskOutput(
 
    private fun buildWsParameters(spec: CaskTransportOutputSpec, contentType: String) = spec.props.entries
       .filter { it.key.startsWith("${contentType}.") }
-      .map { it.key.removePrefix("${contentType}.") to it.value }
+      .flatMap {
+         var paramValue = it.key.removePrefix("${contentType}.")
+         if (paramValue == "nullValue") {
+            it.value.split(",").map { paramValue to it }
+         } else {
+            listOf(paramValue to it.value)
+         }
+      }
       .sortedBy { it.first }
       .joinToString(separator = "&", prefix = "?") { e -> e.first + "=" + URLEncoder.encode(e.second, "UTF-8") }
 
