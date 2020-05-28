@@ -142,6 +142,10 @@ data class Type(
    val fullyQualifiedName: String
       get() = name.fullyQualifiedName
 
+   @get:JsonIgnore
+   val qualifiedName: QualifiedName
+      get() = QualifiedName(fullyQualifiedName, typeParametersTypeNames)
+
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.

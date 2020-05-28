@@ -39,7 +39,7 @@ export interface QueryResult {
   unmatchedNodes: QualifiedName[];
   fullyResolved: boolean;
   profilerOperation: ProfilerOperation;
-  remoteCalls: RemoteCall[]
+  remoteCalls: RemoteCall[];
 }
 
 export interface RemoteCall {
@@ -50,7 +50,7 @@ export interface RemoteCall {
   resultCode: number;
   durationMs: number;
   response: any;
-  responseTypeName : QualifiedName
+  responseTypeName: QualifiedName;
 }
 
 export interface ProfilerOperation {

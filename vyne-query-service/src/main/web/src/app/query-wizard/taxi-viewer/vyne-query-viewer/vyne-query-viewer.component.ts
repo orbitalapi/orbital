@@ -27,6 +27,7 @@ export class VyneQueryViewerComponent implements OnInit {
   private _facts: Fact[];
   private _targetTypes: string[];
   private _queryMode: QueryMode;
+  private _findAsArray: boolean;
 
   @Input()
   expanded = true;
@@ -65,6 +66,12 @@ export class VyneQueryViewerComponent implements OnInit {
     return this._queryMode;
   }
 
+  @Input()
+  set findAsArray(value: boolean) {
+    this._findAsArray = value;
+    this.generateCode();
+  }
+
   set queryMode(value: QueryMode) {
     this._queryMode = value;
     this.generateCode();
@@ -84,7 +91,12 @@ export class VyneQueryViewerComponent implements OnInit {
     }
 
 
-    this.snippets = this.generators.map(generator => generator.generate(this._schema, this._facts, this._targetTypes, this._queryMode));
+    this.snippets = this.generators.map(generator => {
+      const retTypes = this._findAsArray ?
+        this._targetTypes.map(tt => `${tt}[]`) : this._targetTypes;
+      return generator.generate(this._schema, this._facts, retTypes, this._queryMode);
+      }
+    );
     if (selectedLang) {
       this.activeSnippet = this.snippets.find(s => s.displayLang === selectedLang);
     } else {

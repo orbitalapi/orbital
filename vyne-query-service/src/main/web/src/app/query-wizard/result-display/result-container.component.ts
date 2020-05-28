@@ -60,10 +60,10 @@ export class ResultContainerComponent implements OnInit {
     const queryResult = <QueryResult>this.result;
     if (queryResult.resultMode === ResultMode.VERBOSE) {
       const results = <{ [key: string]: InstanceLikeOrCollection }>queryResult.results;
-      return results[typeName.fullyQualifiedName] as InstanceLikeOrCollection;
+      return results[typeName.parameterizedName] as InstanceLikeOrCollection;
     } else {
       const results = <{ [key: string]: TypedInstance }>queryResult.results;
-      return results[typeName.fullyQualifiedName];
+      return results[typeName.parameterizedName];
     }
   }
 

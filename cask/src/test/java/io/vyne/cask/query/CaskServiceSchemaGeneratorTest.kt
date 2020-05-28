@@ -65,28 +65,27 @@ class CaskServiceSchemaGeneratorTest {
       "1.0.0".should.equal(schemaVersion.firstValue)
       """import Symbol import Price namespace vyne.casks {
 
-   type alias OrderWindowSummaryList as OrderWindowSummary[]
 
    @ServiceDiscoveryClient(serviceName = "cask")
    service OrderWindowSummaryCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/symbol/{Symbol}")
-      operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummaryList
+      operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/open/{Price}")
-      operation findByOpen( @PathVariable(name = "open") open : Price ) : OrderWindowSummaryList
+      operation findByOpen( @PathVariable(name = "open") open : Price ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/high/{Price}")
-      operation findByHigh( @PathVariable(name = "high") high : Price ) : OrderWindowSummaryList
+      operation findByHigh( @PathVariable(name = "high") high : Price ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/close/{Price}")
-      operation findByClose( @PathVariable(name = "close") close : Price ) : OrderWindowSummaryList
+      operation findByClose( @PathVariable(name = "close") close : Price ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/{lang.taxi.Date}")
-      operation findByMaturityDate( @PathVariable(name = "maturityDate") maturityDate : Date ) : OrderWindowSummaryList
-      operation findByMaturityDateAfter(  after : Date ) : OrderWindowSummaryList( this:lang.taxi.Date > after )
-      operation findByMaturityDateBefore(  before : Date ) : OrderWindowSummaryList( this:lang.taxi.Date < before )
-      operation findByMaturityDateBetween(  start : Date,  end : Date ) : OrderWindowSummaryList( this:lang.taxi.Date >= start, this:lang.taxi.Date < end )
+      operation findByMaturityDate( @PathVariable(name = "maturityDate") maturityDate : Date ) : OrderWindowSummary[]
+      operation findByMaturityDateAfter(  after : Date ) : OrderWindowSummary[]( this:lang.taxi.Date > after )
+      operation findByMaturityDateBefore(  before : Date ) : OrderWindowSummary[]( this:lang.taxi.Date < before )
+      operation findByMaturityDateBetween(  start : Date,  end : Date ) : OrderWindowSummary[]( this:lang.taxi.Date >= start, this:lang.taxi.Date < end )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderTime/{lang.taxi.Instant}")
-      operation findByOrderTime( @PathVariable(name = "orderTime") orderTime : Instant ) : OrderWindowSummaryList
-      operation findByOrderTimeAfter(  after : Instant ) : OrderWindowSummaryList( this:lang.taxi.Instant > after )
-      operation findByOrderTimeBefore(  before : Instant ) : OrderWindowSummaryList( this:lang.taxi.Instant < before )
-      operation findByOrderTimeBetween(  start : Instant,  end : Instant ) : OrderWindowSummaryList( this:lang.taxi.Instant >= start, this:lang.taxi.Instant < end )
+      operation findByOrderTime( @PathVariable(name = "orderTime") orderTime : Instant ) : OrderWindowSummary[]
+      operation findByOrderTimeAfter(  after : Instant ) : OrderWindowSummary[]( this:lang.taxi.Instant > after )
+      operation findByOrderTimeBefore(  before : Instant ) : OrderWindowSummary[]( this:lang.taxi.Instant < before )
+      operation findByOrderTimeBetween(  start : Instant,  end : Instant ) : OrderWindowSummary[]( this:lang.taxi.Instant >= start, this:lang.taxi.Instant < end )
    }
 }
 
