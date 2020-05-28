@@ -13,10 +13,10 @@
 <body>
 <div class="container-fluid">
 
-   <div class="row">
+   <div class="row " style="min-height: 250px">
 
       <!-- RUNNER INSTANCES -->
-      <div class="col-3">
+      <div class="col-4">
 
          <div class="row">
             <div class="col text-center m-3">
@@ -56,6 +56,56 @@
          </table>
 
       </div>
+   </div>
+
+   <hr class="m-5"/>
+   <!--
+      PIPELINES ACTIONS
+   -->
+   <h3><span class="fa fa-cogs">  <b>Orchestrator</b></span></h3>
+
+
+   <div class="row">
+      <div class="col-6  text-center">
+
+         <!-- CREATE PIPELINES -->
+         <div class="form-group">
+            <textarea class="form-control" id="pipelineDefinition" rows="10"></textarea>
+         </div>
+         <button type="submit" class="btn btn-primary" id="deployToPipelineOrchestratorButton">Deploy pipeline</button>
+
+      </div>
+
+      <!--
+      <div class="col">
+
+         <div class="form-row">
+            <div class="form-group col-md-6">
+               <label for="kafkaHost"><b>Kafka host</b></label>
+               <input class="form-control" id="kafkaHost"></input>
+            </div>
+            <div class="form-group col-md-6">
+               <label for="kafkaTopic"><b>Kafka topic name</b></label>
+               <input class="form-control" id="kafkaTopic"></input>
+            </div>
+         </div>
+         <div class="form-group">
+            <label for="kafkaMessage"><b>Kafka message</b></label>
+            <textarea class="form-control" id="kafkaMessage" rows="5"></textarea>
+         </div>
+         <div class=" text-center">
+            <button type="submit" class="btn btn-primary" id="kafkaMessageSubmitButton">Send message</button>
+         </div>
+      </div>
+
+      <div class="col">
+
+         <div class="form-group">
+            <label for="debugConsole">Responses</label>
+            <textarea class="form-control" id="debugConsole" rows="9"></textarea>
+         </div>
+      </div>
+   -->
    </div>
 
 </div>
@@ -100,8 +150,6 @@
      function addRunners(responseEvent) {
 
         $("#runners").empty()
-
-
 
         responseEvent.sort((a, b) =>  a.instanceId > b.instanceId ? 1 : -1).forEach(i => {
           $("#runners").append( `
@@ -151,7 +199,63 @@
          });
    }
 
+
+   // ACTIONS
+    var pipelineOrchestratorUrl = "/runner/pipelines";
+    var pipelineDefinition = {
+        "name": "trade-pipeline",
+        "input": {
+            "type": "Order",
+            "transport": {
+                "topic": "pipeline-input-avro",
+                "targetType": "Order",
+                "props": {
+                    "group.id": "vyne-pipeline-group",
+                    "bootstrap.servers": "kafka:9092,",
+                    "heartbeat.interval.ms": "3000",
+                    "session.timeout.ms": "10000",
+                    "auto.offset.reset": "earliest"
+                },
+                "type": "kafka-cacib",
+                "direction": "INPUT"
+            }
+        },
+        "output": {
+            "type": "Order",
+            "transport": {
+                "props": {
+                  "content-type": "csv",
+                  "csv.csvDelimiter": "|",
+                  "csv.nullValue": "null,N/A",
+                  "csv.csvFirstRecordAsHeader": "true"
+                },
+                "targetType": "Order",
+                "type": "cask",
+                "direction": "OUTPUT"
+            }
+        }
+    }
+
+
+
     $(document).ready(function () {
+
+        $("#pipelineDefinition").append(JSON.stringify(pipelineDefinition, null, 4));
+        $("#pipelineOrchestratorUrl").val(pipelineOrchestratorUrl);
+        $("#deployToPipelineOrchestratorButton").click(function () {
+            $.ajax({
+                url: '/runner/pipelines',
+                type: 'POST',
+                contentType: 'application/json',
+                data: $("#pipelineDefinition").val(),
+                dataType: 'json',
+                success: function (data) {
+                    logMessage(data);
+                },
+            });
+        });
+
+
          fetchPipelines();
          fetchRunners();
 
@@ -161,6 +265,10 @@
          }, 5000)
 
     });
+
+
+
+
 
 </script>
 </body>

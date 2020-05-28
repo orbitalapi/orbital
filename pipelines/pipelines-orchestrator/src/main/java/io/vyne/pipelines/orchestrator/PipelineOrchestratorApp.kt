@@ -41,12 +41,11 @@ class PipelineOrchestratorApp {
 
          val messageConverter = MappingJackson2HttpMessageConverter()
          messageConverter.objectMapper = objectMapper
+         template.messageConverters.removeIf { it is MappingJackson2HttpMessageConverter }
          template.messageConverters.add(messageConverter)
 
          return template
       }
-
-
 
    }
 }
