@@ -325,6 +325,7 @@ type Sample {
   "typeParameters" : [ ],
   "typeDoc" : "",
   "isTypeAlias" : false,
+  "format" : null,
   "isParameterType" : false,
   "isClosed" : false,
   "isPrimitive" : false,
