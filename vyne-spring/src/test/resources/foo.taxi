@@ -1,0 +1,12 @@
+import TaxFileNumber
+namespace vyne.example {
+   type Client {
+      clientId : ClientId as String
+      name : ClientName as String
+      isicCode : IsicCode as String
+   }
+
+   service ClientService {
+      operation getClient(TaxFileNumber):Client
+   }
+}
