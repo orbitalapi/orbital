@@ -43,7 +43,6 @@
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
       </dependency>
-
       <dependency>
          <groupId>lang.taxi</groupId>
          <artifactId>swagger2taxi</artifactId>
@@ -54,6 +53,10 @@
          <artifactId>kotlin-reflect</artifactId>
          <version>${kotlin.version}</version>
          <scope>compile</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.google.guava</groupId>
+         <artifactId>guava</artifactId>
       </dependency>
    </dependencies>
 

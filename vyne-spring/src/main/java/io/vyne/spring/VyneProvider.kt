@@ -2,6 +2,7 @@ package io.vyne.spring
 
 import io.vyne.Vyne
 import io.vyne.query.QueryEngineFactory
+import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaSourceProvider
 import org.springframework.beans.factory.FactoryBean
@@ -32,7 +33,8 @@ class VyneFactory(private val schemaProvider: SchemaSourceProvider, private val 
    override fun createVyne() = getObject()
 
    private fun buildVyne(): Vyne {
-      val vyne = Vyne(QueryEngineFactory.withOperationInvokers(operationInvokers))
+
+      val vyne = Vyne(QueryEngineFactory.withOperationInvokers(operationInvokers.map { CacheAwareOperationInvocationDecorator(it) }))
       vyne.addSchema(schemaProvider.schema())
 //      schemaProvider.schemaStrings().forEach { schema ->
 //         // TODO :  This is all a bit much ... going to a TaxiSchema and back again.
