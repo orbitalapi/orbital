@@ -1,5 +1,6 @@
 package io.vyne.schemas.taxi
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
 import io.vyne.schemas.*
 import io.vyne.schemas.Field
@@ -17,10 +18,12 @@ import lang.taxi.types.Annotation
 import org.antlr.v4.runtime.CharStreams
 import java.nio.file.Path
 
-class TaxiSchema(private val document: TaxiDocument, override val sources: List<VersionedSource>) : Schema {
+class TaxiSchema(private val document: TaxiDocument, @get:JsonIgnore override val sources: List<VersionedSource>) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
    override val policies : Set<Policy>
+
+   @get:JsonIgnore
    override val typeCache: TypeCache
    override fun taxiType(name: QualifiedName): lang.taxi.types.Type {
       return taxi.type(name.fullyQualifiedName)
@@ -35,6 +38,7 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
       this.policies = parsePolicies(document)
    }
 
+   @get:JsonIgnore
    override val taxi = document
 
    private fun parsePolicies(document: TaxiDocument): Set<Policy> {

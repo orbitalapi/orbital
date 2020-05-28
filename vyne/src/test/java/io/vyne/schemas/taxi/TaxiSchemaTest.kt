@@ -241,7 +241,9 @@ type Sample {
     "parameters" : [ ],
     "name" : "Customer",
     "parameterizedName" : "Customer",
-    "namespace" : ""
+    "namespace" : "",
+    "longDisplayName" : "Customer",
+    "shortDisplayName" : "Customer"
   },
   "attributes" : {
     "email" : {
@@ -250,7 +252,9 @@ type Sample {
         "parameters" : [ ],
         "name" : "CustomerEmailAddress",
         "parameterizedName" : "CustomerEmailAddress",
-        "namespace" : ""
+        "namespace" : "",
+        "longDisplayName" : "CustomerEmailAddress",
+        "shortDisplayName" : "CustomerEmailAddress"
       },
       "modifiers" : [ ],
       "accessor" : null,
@@ -264,7 +268,9 @@ type Sample {
         "parameters" : [ ],
         "name" : "CustomerId",
         "parameterizedName" : "CustomerId",
-        "namespace" : ""
+        "namespace" : "",
+        "longDisplayName" : "CustomerId",
+        "shortDisplayName" : "CustomerId"
       },
       "modifiers" : [ ],
       "accessor" : null,
@@ -278,7 +284,9 @@ type Sample {
         "parameters" : [ ],
         "name" : "CustomerName",
         "parameterizedName" : "CustomerName",
-        "namespace" : ""
+        "namespace" : "",
+        "longDisplayName" : "CustomerName",
+        "shortDisplayName" : "CustomerName"
       },
       "modifiers" : [ ],
       "accessor" : null,
@@ -292,7 +300,9 @@ type Sample {
         "parameters" : [ ],
         "name" : "Postcode",
         "parameterizedName" : "Postcode",
-        "namespace" : ""
+        "namespace" : "",
+        "longDisplayName" : "Postcode",
+        "shortDisplayName" : "Postcode"
       },
       "modifiers" : [ ],
       "accessor" : null,
@@ -318,17 +328,19 @@ type Sample {
   "isParameterType" : false,
   "isClosed" : false,
   "isPrimitive" : false,
-  "collectionType" : null,
-  "underlyingTypeParameters" : [],
   "fullyQualifiedName" : "Customer",
   "memberQualifiedName" : {
     "fullyQualifiedName" : "Customer",
     "parameters" : [ ],
     "name" : "Customer",
     "parameterizedName" : "Customer",
-    "namespace" : ""
+    "namespace" : "",
+    "longDisplayName" : "Customer",
+    "shortDisplayName" : "Customer"
   },
   "isCollection" : false,
+  "underlyingTypeParameters" : [ ],
+  "collectionType" : null,
   "isScalar" : false
 }
    """.trimIndent()

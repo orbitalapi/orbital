@@ -6,6 +6,8 @@ export class QualifiedName {
   fullyQualifiedName: string;
   parameterizedName: string;
   parameters: QualifiedName[] = [];
+  longDisplayName: string;
+  shortDisplayName: string;
 
   static nameOnly(fullyQualifiedName: string): string {
     const parts = fullyQualifiedName.split('.');
@@ -317,7 +319,9 @@ export class SchemaMember {
         fullyQualifiedName: qualifiedName,
         namespace: service.name.namespace,
         parameters: [],
-        parameterizedName: qualifiedName
+        parameterizedName: qualifiedName,
+        shortDisplayName: operation.name,
+        longDisplayName: qualifiedName
       },
       SchemaMemberType.OPERATION,
       null,
