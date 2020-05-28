@@ -95,11 +95,11 @@ class CaskOutput(
    private fun buildWsParameters(spec: CaskTransportOutputSpec, contentType: String) = spec.props.entries
       .filter { it.key.startsWith("${contentType}.") }
       .flatMap {
-         var paramValue = it.key.removePrefix("${contentType}.")
-         if (paramValue == "nullValue") {
-            it.value.split(",").map { paramValue to it }
+         var parameterName = it.key.removePrefix("${contentType}.")
+         if (parameterName == "nullValue") {
+            it.value.split(",").map { nullValue -> parameterName to nullValue }
          } else {
-            listOf(paramValue to it.value)
+            listOf(parameterName to it.value)
          }
       }
       .sortedBy { it.first }
