@@ -27,26 +27,26 @@ class AccessorReader {
    private val csvParser: CsvAttributeAccessorParser by lazy { Parsers.csvParser }
    private val jsonParser: JsonAttributeAccessorParser by lazy { Parsers.jsonParser }
 
-   fun read(value: Any, targetTypeRef: QualifiedName, accessor: Accessor, schema: Schema): TypedInstance {
+   fun read(value: Any, targetTypeRef: QualifiedName, accessor: Accessor, schema: Schema, nullValues: Set<String> = emptySet()): TypedInstance {
       val targetType = schema.type(targetTypeRef)
-      return read(value, targetType, accessor, schema)
+      return read(value, targetType, accessor, schema, nullValues)
    }
 
-   fun read(value: Any, targetType: Type, accessor: Accessor, schema: Schema): TypedInstance {
+   fun read(value: Any, targetType: Type, accessor: Accessor, schema: Schema, nullValues: Set<String> = emptySet()): TypedInstance {
       return when (accessor) {
          is XpathAccessor -> parseXml(value, targetType, schema, accessor)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor)
-         is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor)
+         is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues)
          else -> TODO()
       }
    }
 
-   private fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor): TypedInstance {
+   private fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor, nullValues: Set<String> = emptySet()): TypedInstance {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
          is String -> csvParser.parse(value, targetType, accessor, schema)
          // Efficient parsing where we've already parsed the record once (eg., streaming from disk).
-         is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema)
+         is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues)
          else -> TODO()
       }
    }

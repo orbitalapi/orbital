@@ -25,8 +25,8 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
          return TypedObject(type, typedAttributes)
       }
 
-      fun fromValue(type: Type, value: Any, schema: Schema): TypedObject {
-         return TypedObjectFactory(type, value, schema).build()
+      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet()): TypedObject {
+         return TypedObjectFactory(type, value, schema, nullValues).build()
       }
    }
 
