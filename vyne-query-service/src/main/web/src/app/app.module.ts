@@ -31,6 +31,7 @@ import {
   MatToolbarModule,
   MatTooltipModule,
   MatTreeModule,
+  MatCheckboxModule
 } from '@angular/material';
 import {TypeListComponent} from './type-list/type-list.component';
 import {CommonModule} from '@angular/common';
@@ -188,6 +189,7 @@ export const routerModule = RouterModule.forRoot(
     MatTabsModule,
     MatTableModule,
     MatProgressBarModule,
+    MatCheckboxModule,
     CdkTableModule,
 
     CovalentDynamicFormsModule,

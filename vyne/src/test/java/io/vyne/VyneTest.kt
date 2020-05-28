@@ -2,6 +2,7 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.models.json.addJsonModel
@@ -36,6 +37,7 @@ type Client {
 }
 type alias TaxFileNumber as String
 type alias CreditRisk as Int
+type alias NaicsCode as Int
 
 service ClientService {
    @StubResponse("mockClient")
@@ -43,6 +45,9 @@ service ClientService {
 
    @StubResponse("creditRisk")
    operation getCreditRisk(ClientId,InvoiceValue):CreditRisk
+
+   @StubResponse("mockClients")
+   operation getClients(NaicsCode):Client[]
 }
 """
    val schema = TaxiSchema.from(taxiDef)
@@ -713,6 +718,42 @@ service IonService {
       )
    }
 
+   @Test
+   fun `Can process typed array return values from a service`() {
+      val stubService = StubService()
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val vyne = TestSchema.vyne(queryEngineFactory)
+
+      val json = """[
+{
+   "clientId" : "123",
+   "name" : "Jimmy's Choos",
+   "isicCode" : "retailer"
+},
+{
+   "clientId" : "1234",
+   "name" : "Givenchy",
+   "isicCode" : "retailer"
+}
+]"""
+      val clients = vyne.parseJsonModel("vyne.example.Client[]", json)
+      stubService.addResponse("mockClients", clients)
+      vyne.addKeyValuePair("vyne.example.NaicsCode", 911)
+      val result: QueryResult = vyne.query().find("vyne.example.Client[]")
+      expect(result.results.size).to.equal(1)
+      val resultList = (result.resultMap.values.first() as List<LinkedHashMap<*, *>>)
+         .flatMap { it.entries }
+         .map { Pair(it.key, it.value) }
+
+      resultList.should.contain.all.elements(
+         Pair("clientId", "123"),
+         Pair("name", "Jimmy's Choos"),
+         Pair("isicCode", "retailer"),
+         Pair("clientId", "1234"),
+         Pair("name", "Givenchy"),
+         Pair("isicCode", "retailer")
+        )
+   }
 }
 
 fun Vyne.typedValue(typeName: String, value: Any): TypedInstance {

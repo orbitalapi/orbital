@@ -15,8 +15,6 @@ import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
-import lang.taxi.types.TypeAlias
-import lang.taxi.types.TypeAliasDefinition
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -49,19 +47,12 @@ class CaskServiceSchemaGenerator(
       // TODO Handle Type Migration.
       val fields = typeMigration?.fields ?: versionedType.allFields()
       if (type is ObjectType) {
-         val taxiDocument = TaxiDocument(services = setOf(generateCaskService(fields, type)), types = setOf(operationReturnType(type)))
+         val taxiDocument = TaxiDocument(services = setOf(generateCaskService(fields, type)), types = setOf())
          caskServiceSchemaWriter.write(taxiDocument, versionedType, type)
       } else {
          TODO("Type ${type::class.simpleName} not yet supported")
       }
    }
-
-   private fun operationReturnType(type: Type) = TypeAlias(
-      operationReturnTypeQualifiedName(type),
-      TypeAliasDefinition(ArrayType(
-         type = type,
-         source = CompilationUnit.unspecified(), inheritsFrom = setOf()), compilationUnit = CompilationUnit.unspecified())
-   )
 
    private fun generateCaskService(fields: List<Field>, type: Type) = Service(
       qualifiedName = fullyQualifiedCaskServiceName(type),
@@ -79,12 +70,6 @@ class CaskServiceSchemaGenerator(
       private fun fullyQualifiedCaskServiceName(type: Type) = "$CaskNamespacePrefix${type.toQualifiedName()}CaskService"
       const val CaskApiRootPath = "/api/cask/"
       private fun operationReturnTypeQualifiedName(type: Type) = "$CaskNamespacePrefix${type.toQualifiedName().typeName}List"
-      fun operationReturnType(type: Type) = TypeAlias(
-         operationReturnTypeQualifiedName(type),
-         TypeAliasDefinition(ArrayType(
-            type = type,
-            source = CompilationUnit.unspecified(), inheritsFrom = setOf()), compilationUnit = CompilationUnit.unspecified())
-      )
    }
 }
 

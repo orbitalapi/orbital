@@ -63,6 +63,10 @@ app-vyne-query-viewer {
     width: 100%;
   }
 
+  ::ng-deep .mat-checkbox-layout {
+    margin-bottom: 10px;
+  }
+
   .target-type-input {
 
   }
@@ -86,3 +90,5 @@ app-vyne-query-viewer {
   }
 
 }
+
+
