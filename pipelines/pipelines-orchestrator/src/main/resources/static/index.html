@@ -205,10 +205,10 @@
     var pipelineDefinition = {
         "name": "trade-pipeline",
         "input": {
-            "type": "TradeSummary",
+            "type": "Order",
             "transport": {
                 "topic": "pipeline-input-avro",
-                "targetType": "TradeSummary",
+                "targetType": "Order",
                 "props": {
                     "group.id": "vyne-pipeline-group",
                     "bootstrap.servers": "kafka:9092,",
@@ -221,7 +221,7 @@
             }
         },
         "output": {
-            "type": "TradeSummary",
+            "type": "Order",
             "transport": {
                 "props": {
                   "content-type": "csv",
@@ -229,7 +229,7 @@
                   "csv.nullValue": "null,N/A",
                   "csv.csvFirstRecordAsHeader": "true"
                 },
-                "targetType": "TradeSummary",
+                "targetType": "Order",
                 "type": "cask",
                 "direction": "OUTPUT"
             }

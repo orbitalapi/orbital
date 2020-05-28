@@ -2,6 +2,7 @@ package io.vyne.pipelines.runner
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.netflix.appinfo.ApplicationInfoManager
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
 import io.vyne.pipelines.runner.events.ObserverProvider
