@@ -20,6 +20,15 @@ class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapp
       if (targetType.isEnum) {
          return parseEnum(value, targetType)
       }
+      // TODO fix me https://projects.notional.uk/youtrack/issue/LENS-128
+      val inheritsFromEnum = targetType.inherits.filter { it.isEnum }
+      if (inheritsFromEnum.isNotEmpty()) {
+         return parseEnum(value, inheritsFromEnum.first())
+      }
+      return parsePrimitive(value, targetType, schema)
+   }
+
+   private fun parsePrimitive(value: Any, targetType: Type, schema: Schema): TypedValue {
       val underlyingPrimitive = Primitives.getUnderlyingPrimitive(targetType, schema)
       val taxiPrimitive = PrimitiveType.fromDeclaration(underlyingPrimitive.fullyQualifiedName)
       val javaType = PrimitiveTypes.getJavaType(taxiPrimitive)
