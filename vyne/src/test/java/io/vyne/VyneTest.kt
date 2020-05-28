@@ -9,6 +9,7 @@ import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.*
+import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.PropertyToParameterConstraint
@@ -718,41 +719,58 @@ service IonService {
       )
    }
 
+   @Ignore("This test throws StackOverFlowException, will be investigated.")
    @Test
-   fun `Can process typed array return values from a service`() {
-      val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
-      val vyne = TestSchema.vyne(queryEngineFactory)
+   fun `should use cache for multiple invocations of given service operation`() {
+      val testSchema = """
+         model Client {
+            name : PersonName as String
+            country : CountryCode as String
+         }
+         model Country {
+             countryCode : CountryCode
+             countryName : CountryName as String
+         }
+         model ClientAndCountry {
+            personName : PersonName
+            countryName : CountryName
+         }
 
-      val json = """[
-{
-   "clientId" : "123",
-   "name" : "Jimmy's Choos",
-   "isicCode" : "retailer"
-},
-{
-   "clientId" : "1234",
-   "name" : "Givenchy",
-   "isicCode" : "retailer"
-}
-]"""
-      val clients = vyne.parseJsonModel("vyne.example.Client[]", json)
-      stubService.addResponse("mockClients", clients)
-      vyne.addKeyValuePair("vyne.example.NaicsCode", 911)
-      val result: QueryResult = vyne.query().find("vyne.example.Client[]")
-      expect(result.results.size).to.equal(1)
-      val resultList = (result.resultMap.values.first() as List<LinkedHashMap<*, *>>)
-         .flatMap { it.entries }
-         .map { Pair(it.key, it.value) }
+         service MultipleInvocationService {
+            @StubResponse("mockCustomers")
+            operation getCustomers():Client[]
 
-      resultList.should.contain.all.elements(
-         Pair("clientId", "123"),
-         Pair("name", "Jimmy's Choos"),
-         Pair("isicCode", "retailer"),
-         Pair("clientId", "1234"),
-         Pair("name", "Givenchy"),
-         Pair("isicCode", "retailer")
-        )
+            @StubResponse("mockCountry")
+            operation getCountry(CountryCode): Country
+         }
+      """.trimIndent()
+      val stubInvocationService = StubService()
+
+      val cacheAwareInvocationService = CacheAwareOperationInvocationDecorator(stubInvocationService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(cacheAwareInvocationService)
+      val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
+      stubInvocationService.addResponse("mockCustomers", vyne.parseJsonModel("Client[]", """
+         [
+            { name : "Jimmy", country : "UK" },
+            { name : "Marty", country : "UK" },
+            { name : "Devrim", country : "TR" }
+         ]
+         """.trimIndent()))
+
+
+      stubInvocationService.addResponse("mockCountry", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            val countryCode = parameters.first().second.value!!.toString()
+            return if (countryCode == "UK") {
+               vyne.typedValue("Country", "United Kingdom")
+            } else {
+               vyne.typedValue("Country", "Turkey")
+            }
+         }
+      })
+//      val result =  vyne.query("""
+//        findAll { Client } as ClientAndCountry
+//      """.trimIndent())
    }
 }
 
