@@ -1,11 +1,11 @@
 package io.vyne.cask.query.generators
 
 import io.vyne.cask.query.CaskServiceSchemaGenerator
-import io.vyne.cask.query.CaskServiceSchemaGenerator.Companion.operationReturnType
 import io.vyne.cask.query.OperationGenerator
 import lang.taxi.services.Operation
 import lang.taxi.services.Parameter
 import lang.taxi.types.Annotation
+import lang.taxi.types.ArrayType
 import lang.taxi.types.AttributePath
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
@@ -22,11 +22,12 @@ class FindByFieldIdOperationGenerator: OperationGenerator {
          name = field.name,
          constraints = listOf())
 
+      val returnType = ArrayType(type = type, source = CompilationUnit.unspecified())
       return Operation(
          name = "findBy${field.name.capitalize()}",
          parameters = listOf(parameter),
          annotations = listOf(Annotation("HttpOperation", mapOf("method" to "GET", "url" to getFindByIdRestPath(type, field)))),
-         returnType = operationReturnType(type),
+         returnType = returnType,
          compilationUnits = listOf(CompilationUnit.unspecified())
       )
    }

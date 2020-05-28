@@ -32,6 +32,7 @@ export class QueryWizardComponent implements OnInit {
   resultMode = new FormControl();
 
   targetTypes: Type[];
+  findAsArray = false;
 
   constructor(private route: ActivatedRoute,
               private typesService: TypesService,
@@ -140,9 +141,10 @@ export class QueryWizardComponent implements OnInit {
     this.lastQueryResult = null;
     // let facts = this.buildFacts();
     // let factList: Fact[] = Object.keys(facts).map(key => new Fact(key, facts[key]));
+    console.log('findAsArray:' + this.findAsArray);
     const factList = this.buildFacts();
     const query = new Query(
-      this.targetTypes.map(t => t.name.fullyQualifiedName),
+      this.targetTypes.map(t => this.findAsArray ? `${t.name.fullyQualifiedName}[]` : t.name.fullyQualifiedName),
       // this.targetTypeInput.value,
       factList,
       this.queryMode.value,
