@@ -4,8 +4,7 @@ import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockitokotlin2.*
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.PipelineTransportHealthMonitor
-import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.TERMINATED
-import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
 import io.vyne.schemas.fqn
 import org.junit.Before
 import org.junit.Test
@@ -106,7 +105,7 @@ class CaskOutputTest {
       caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       await().atMost(2, SECONDS).until {
-         verify(healthMonitor).reportStatus(TERMINATED)
+         verify(healthMonitor).reportStatus(DOWN)
       }
    }
 
