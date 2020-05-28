@@ -2,7 +2,7 @@
   <div class="file-list-entry" *ngFor="let parsedSource of sources" (click)="select(parsedSource)">
     <img class="icon" src="assets/img/file.svg">
     <span class="file-name">{{ parsedSource.source?.name }}</span>
-    <span class="error-count" *ngIf="parsedSource.errors.length > 0">{{ parsedSource.errors.length }}</span>
+    <span class="error-count" *ngIf="parsedSource.errors?.length > 0">{{ parsedSource.errors.length }}</span>
     <span class="version" *ngIf="parsedSource.source?.version">{{ parsedSource.source.version }}</span>
   </div>
 </div>
@@ -21,5 +21,5 @@
                      [ngModel]="sourceContent"
                      #editor
   ></ngx-monaco-editor>
-  <app-error-list *ngIf="selectedSourceErrors.length > 0" [errors]="selectedSourceErrors"></app-error-list>
+  <app-error-list *ngIf="selectedSourceErrors?.length > 0" [errors]="selectedSourceErrors"></app-error-list>
 </div>
