@@ -7,7 +7,6 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.jvm.common.PrimitiveTypes
 import lang.taxi.types.PrimitiveType
-import java.lang.IllegalArgumentException
 
 /**
  * Responsible for simple conversions between primitives.
@@ -17,14 +16,29 @@ import java.lang.IllegalArgumentException
  */
 class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())) {
    fun parse(value: Any, targetType: Type, schema: Schema): TypedInstance {
+      if (targetType.isEnum) {
+         return parseEnum(value, targetType)
+      }
       val underlyingPrimitive = Primitives.getUnderlyingPrimitive(targetType, schema)
       val taxiPrimitive = PrimitiveType.fromDeclaration(underlyingPrimitive.fullyQualifiedName)
       val javaType = PrimitiveTypes.getJavaType(taxiPrimitive)
-      val convertedValue = objectMapper.convertValue(value, javaType)
-      if (convertedValue == null) {
-         throw IllegalArgumentException("Unable to parse primitive type=${targetType.taxiType.basePrimitive} name=${targetType.name} value=null.")
+      //try {
+         val convertedValue = objectMapper.convertValue(value, javaType) //TODO report field name?
+         if (convertedValue == null) {
+            throw IllegalArgumentException("Unable to parse primitive type=${targetType.taxiType.basePrimitive} name=${targetType.name} value=null.")
+         }
+         return TypedValue.from(targetType, convertedValue, performTypeConversions = false)
+//      } catch (e: Exception) {
+//         log().error("Value ${value} javaType=${javaType} taxiPrimitive=${taxiPrimitive} targetType=${targetType}  ", e)
+//         throw e;
+//      }
+   }
+
+   private fun parseEnum(value: Any, targetType: Type): TypedInstance {
+      return when (targetType.enumValues.contains(value)) {
+         true -> TypedValue.from(targetType, value, false)
+         else -> error("Unable to map Value=${value} to Enum Type=${targetType.fullyQualifiedName}, allowed values=${targetType.enumValues}")
       }
-      return TypedValue.from(targetType, convertedValue, performTypeConversions = false)
    }
 }
 

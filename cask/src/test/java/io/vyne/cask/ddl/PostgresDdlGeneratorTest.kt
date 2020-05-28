@@ -40,6 +40,14 @@ CREATE TABLE IF NOT EXISTS Person_c99239 (
     @Test
     fun generatesPrimitivesAsColumns() {
         val (_, taxi) = schema("""
+enum Gender {
+   Male,
+   Female
+}
+enum GenderType {
+   Male synonym of Gender.Male
+}
+type OriginalGender inherits Gender
 type Person {
     firstName : FirstName as String
     age : Int
@@ -47,6 +55,8 @@ type Person {
     spouseName : Name? as String
     dateOfBirth: Date
     timestamp: Instant
+    gender : GenderType
+    originalGender : OriginalGender
 }""".trim())
         val person = taxi.objectType("Person")
         generator.generateColumnForField(person.field("firstName")).sql
@@ -66,6 +76,12 @@ type Person {
 
        generator.generateColumnForField(person.field("timestamp")).sql
           .should.equal(""""timestamp" TIMESTAMP NOT NULL""")
+
+       generator.generateColumnForField(person.field("gender")).sql
+          .should.equal(""""gender" VARCHAR(255) NOT NULL""")
+
+       generator.generateColumnForField(person.field("originalGender")).sql
+          .should.equal(""""originalGender" VARCHAR(255) NOT NULL""")
 
     }
 
