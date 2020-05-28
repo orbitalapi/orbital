@@ -134,10 +134,14 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
             .addConstructorArgValue(scanForCandidates(basePackages, DataType::class.java))
             .addConstructorArgValue(scanForCandidates(basePackages, Service::class.java))
             .addConstructorArgValue(taxiGenerator)
+            .addConstructorArgValue(null)
             .beanDefinition)
       } else {
-         registry.registerBeanDefinition("localTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(ClassPathSchemaSourceProvider::class.java)
-            .addConstructorArgValue(schemaFileInClassPath)
+         registry.registerBeanDefinition("localTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(LocalTaxiSchemaProvider::class.java)
+            .addConstructorArgValue(scanForCandidates(basePackages, DataType::class.java))
+            .addConstructorArgValue(scanForCandidates(basePackages, Service::class.java))
+            .addConstructorArgValue(taxiGenerator)
+            .addConstructorArgValue(ClassPathSchemaSourceProvider(schemaFileInClassPath))
             .beanDefinition)
       }
 

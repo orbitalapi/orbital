@@ -28,13 +28,14 @@ class SimpleTaxiSchemaProvider(val source: String) : SchemaSourceProvider {
 
 class LocalTaxiSchemaProvider(val models: List<Class<*>>,
                               val services: List<Class<*>>,
-                              val taxiGenerator: TaxiGenerator = TaxiGenerator()) : SchemaSourceProvider {
+                              val taxiGenerator: TaxiGenerator = TaxiGenerator(),
+                              val classPathSchemaSourceProvider: ClassPathSchemaSourceProvider? = null) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
-      return taxiGenerator.forClasses(models + services).generateAsStrings()
+      return classPathSchemaSourceProvider?.schemaStrings() ?: taxiGenerator.forClasses(models + services).generateAsStrings()
    }
 
    override fun schemas(): List<Schema> {
-      return schemaStrings().map { TaxiSchema.from(it) }
+      return classPathSchemaSourceProvider?.schemas() ?: schemaStrings().map { TaxiSchema.from(it) }
    }
 }
 
