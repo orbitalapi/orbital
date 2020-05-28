@@ -20,4 +20,12 @@ class TypedValueTest {
 
       instance.value.should.equal(Instant.parse("2020-05-14T22:00:00Z"))
    }
+
+   @Test
+   fun shouldParseIntsWithTrailingZerosAsInts() {
+      val schema = TaxiSchema.from("")
+      val instance = TypedInstance.from(schema.type(PrimitiveType.INTEGER), "10.00", schema)
+
+      instance.value.should.equal(10)
+   }
 }
