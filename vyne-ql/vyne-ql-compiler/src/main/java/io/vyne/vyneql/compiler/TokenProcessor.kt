@@ -4,6 +4,9 @@ import arrow.core.Either
 import arrow.core.flatMap
 import io.vyne.VyneQLBaseListener
 import io.vyne.VyneQLParser
+import io.vyne.models.TypedInstance
+import io.vyne.schemas.Schema
+import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.vyneql.DiscoveryType
 import io.vyne.vyneql.QueryMode
 import io.vyne.vyneql.VyneQlQuery
@@ -17,8 +20,9 @@ import lang.taxi.utils.invertEitherList
 import lang.taxi.utils.wrapErrorsInList
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
+import java.lang.Exception
 
-class TokenProcessor(private val schema: TaxiDocument) : VyneQLBaseListener() {
+class TokenProcessor(private val taxi: TaxiDocument, private val schema: Schema) : VyneQLBaseListener() {
    private val typeResolver: NamespaceQualifiedTypeResolver = object : NamespaceQualifiedTypeResolver {
       override val namespace: String = Namespaces.DEFAULT_NAMESPACE // We don't support ns in VyneQl yet
 
@@ -26,10 +30,10 @@ class TokenProcessor(private val schema: TaxiDocument) : VyneQLBaseListener() {
 
       override fun resolve(requestedTypeName: String, context: ParserRuleContext): Either<CompilationError, Type> {
          return lookupTypeFromClassTypeContext(requestedTypeName, context)
-            .map { schema.type(it) }
+            .map { taxi.type(it) }
       }
    }
-   private val constraintBuilder = ConstraintBuilder(schema, typeResolver)
+   private val constraintBuilder = ConstraintBuilder(taxi, typeResolver)
 
    private lateinit var parsedQuery: Either<List<CompilationError>, VyneQlQuery>
 
@@ -93,20 +97,46 @@ class TokenProcessor(private val schema: TaxiDocument) : VyneQLBaseListener() {
          else -> error("Unhandled Query Directive")
       }
 
-      val query: Either<List<CompilationError>, VyneQlQuery> = parseQueryTypeList(ctx.queryTypeList()).flatMap { typesToDiscover ->
-         parseTypeToProject(ctx.queryProjection())
-            .wrapErrorsInList()
-            .map { typeToProject ->
-               VyneQlQuery(
-                  name = name,
-                  queryMode = queryDirective,
-                  parameters = parameters,
-                  typesToFind = typesToDiscover,
-                  projectedType = typeToProject
-               )
+      val factsOrErrors = ctx.givenBlock()?.let { parseFacts(it) } ?: Either.right(emptyMap())
+      val queryOrErrors = factsOrErrors.flatMap { facts ->
+         parseQueryTypeList(ctx.queryTypeList())
+            .flatMap { typesToDiscover ->
+
+               parseTypeToProject(ctx.queryProjection())
+                  .wrapErrorsInList()
+                  .map { typeToProject ->
+                     VyneQlQuery(
+                        name = name,
+                        facts = facts,
+                        queryMode = queryDirective,
+                        parameters = parameters,
+                        typesToFind = typesToDiscover,
+                        projectedType = typeToProject
+                     )
+                  }
             }
       }
-      return query
+      return queryOrErrors
+   }
+
+   private fun parseFacts(givenBlock: VyneQLParser.GivenBlockContext): Either<List<CompilationError>, Map<String, TypedInstance>> {
+      return givenBlock.factList().fact().map {
+         parseFact(it)
+      }.invertEitherList()
+         .map { it.toMap() }
+   }
+
+   private fun parseFact(factCtx: VyneQLParser.FactContext): Either<CompilationError, Pair<String, TypedInstance>> {
+      val variableName = factCtx.variableName().Identifier().text
+      return lookupType(factCtx.typeType()).flatMap { factType ->
+         try {
+            Either.right(variableName to TypedInstance.from(schema.type(factType.toVyneQualifiedName()), factCtx.literal().value(), schema))
+         } catch (e: Exception) {
+            Either.left(CompilationError(factCtx.start, "Failed to create TypedInstance - ${e.message}"))
+         }
+
+      }
+
    }
 
    private fun parseTypeToProject(queryProjection: VyneQLParser.QueryProjectionContext?): Either<CompilationError, QualifiedName?> {
@@ -121,7 +151,7 @@ class TokenProcessor(private val schema: TaxiDocument) : VyneQLBaseListener() {
          lookupType(queryType)
             .mapLeft { listOf(it) }
             .flatMap { qualifiedName ->
-               val type = schema.type(qualifiedName.parameterizedName)
+               val type = taxi.type(qualifiedName.parameterizedName)
                val constraintsOrErrors = queryType.parameterConstraint()?.parameterConstraintExpressionList()?.let { constraintExpressionList ->
                   constraintBuilder.build(constraintExpressionList, type)
                } ?: Either.right(emptyList())
@@ -149,18 +179,18 @@ class TokenProcessor(private val schema: TaxiDocument) : VyneQLBaseListener() {
 
    private fun lookupTypeFromClassTypeContext(requestedTypeName: String, context: ParserRuleContext): Either<CompilationError, QualifiedName> {
       // Handle the name doesn't need qualifying
-      return if (schema.containsType(requestedTypeName)) {
+      return if (taxi.containsType(requestedTypeName)) {
          Either.right(QualifiedName.from(requestedTypeName))
       } else {
          // Is there an explicit import?
          val imports = context.importsInFile().filter { it.typeName == requestedTypeName }
-         when  {
+         when {
             imports.size == 1 -> Either.right(imports.first())
-            imports.size >1 -> Either.left(CompilationError(context.start, "Type $requestedTypeName is ambiguous and could refer to any of ${imports.joinToString(",")}}"))
+            imports.size > 1 -> Either.left(CompilationError(context.start, "Type $requestedTypeName is ambiguous and could refer to any of ${imports.joinToString(",")}}"))
             else -> {
                // There were no matching imports.
                // Check to see if this type is resolvable by name only
-               val matchesOnNameOnly = schema.types.filter { it.toQualifiedName().typeName == requestedTypeName }
+               val matchesOnNameOnly = taxi.types.filter { it.toQualifiedName().typeName == requestedTypeName }
                when {
                   matchesOnNameOnly.isEmpty() -> Either.left(CompilationError(context.start, "Type $requestedTypeName could not be resolved"))
                   matchesOnNameOnly.size == 1 -> Either.right(matchesOnNameOnly.first().toQualifiedName())

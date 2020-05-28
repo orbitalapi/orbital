@@ -65,7 +65,9 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
 fun Type.asElement(): Element = type(this)
 fun Operation.asElement(): Element = operation(this.qualifiedName.fullyQualifiedName)
 fun type(name: String) = Element(name, ElementType.TYPE)
-fun type(type: Type) = type(type.fullyQualifiedName)
+fun type(type: Type): Element {
+   return type(type.qualifiedName.parameterizedName)
+}
 fun member(name: String) = Element(name, ElementType.MEMBER)
 fun parameter(paramTypeFqn: String) = Element(ParamNames.toParamName(paramTypeFqn), ElementType.PARAMETER)
 fun operation(service: Service, operation: Operation): Element {
@@ -81,7 +83,10 @@ fun providedInstanceMember(name: String) = Element(name, ElementType.PROVIDED_IN
 // becomes unattainable (ie., when searching with a startNode: typedInstance(someName), it won't find entries
 // added as typedInstance(someName, value).
 // Might need to rethink this.  Should we add the typedInstance with a link of instanceValue?
-fun instanceOfType(type: Type) = providedInstance(type.fullyQualifiedName) // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
+fun instanceOfType(type: Type): Element {
+   val qualifiedName = QualifiedName(type.fullyQualifiedName, type.typeParametersTypeNames)
+   return providedInstance(qualifiedName.parameterizedName)
+} // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
 //fun instance(value: TypedInstance) = providedInstance(value.type.fullyQualifiedName, value) // Element(value.type.fullyQualifiedName, ElementType.TYPE_INSTANCE, value)
 
 typealias TypeElement = Element
@@ -103,7 +108,7 @@ class VyneGraphBuilder(val schema: Schema) {
 
    private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, facts: Set<TypedInstance>, schema: Schema, typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement>) {
       facts.forEach { typedInstance ->
-         val typeFqn = typedInstance.type.fullyQualifiedName
+         val typeFqn = typedInstance.type.qualifiedName.parameterizedName
          appendProvidedInstances(builder, typeFqn, schema)
 //         val providedInstance = providedInstance(typeFqn)
 ////         val instance = instance(typedInstance)
@@ -181,7 +186,7 @@ class VyneGraphBuilder(val schema: Schema) {
             // Build the instance.
             // It connects to it's type, but also to the attributes that are
             // now traversable, as we have an actual instance of the thing
-            val resultInstanceFqn = operation.returnType.fullyQualifiedName
+            val resultInstanceFqn = operation.returnType.qualifiedName.parameterizedName
             appendProvidedInstances(builder, resultInstanceFqn, schema, operationNode)
 
 

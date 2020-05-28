@@ -1,15 +1,15 @@
 package io.vyne.cask.format.csv
 
-import io.vyne.models.TypedInstance
-import io.vyne.models.VersionedTypedInstance
-import io.vyne.schemas.Type
-import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.xtimed
+import io.vyne.models.TypedInstance
+import io.vyne.models.VersionedTypedInstance
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import org.apache.commons.csv.CSVRecord
 import java.util.concurrent.TimeUnit
 
-class CsvStreamMapper(private val targetType: Type, private val schema: TaxiSchema) {
+class CsvStreamMapper(private val targetType: Type, private val schema: Schema) {
     private val versionedType = schema.versionedType(targetType.name)
 
     fun map(csvRecord: CSVRecord): InstanceAttributeSet {

@@ -11,6 +11,11 @@ object VyneQlGrammarSpek : Spek({
       val schema = """
          namespace foo
 
+         type Customer {
+            email : CustomerEmailAddress as String
+         }
+         type Trade
+
          type OutputOrder {
          }
          type Order {
@@ -75,13 +80,28 @@ object VyneQlGrammarSpek : Spek({
          typeToFind.constraints.should.have.size(2)
       }
 
+      it("should compile a query that exposes facts") {
+         val src = """
+            given {
+               email : CustomerEmailAddress = "jimmy@demo.com"
+            }
+            findAll { Trade }
+         """.trimIndent()
+         val query = VyneQlCompiler(src, taxi).query()
+         query.facts.should.have.size(1)
+         val (name,fact) = query.facts.entries.first()
+         name.should.equal("email")
+         fact.type.fullyQualifiedName.should.equal("foo.CustomerEmailAddress")
+         fact.value.should.equal("jimmy@demo.com")
+      }
+
       it("should compile an unnamed query") {
          val src = """
             import foo.Order
             import foo.OutputOrder
 
             findAll {
-               Order[]( TradeDate  >= startDate , TradeDate < $\endDate )
+               Order[]( TradeDate  >= startDate , TradeDate < endDate )
             }
       """.trimIndent()
          val query = VyneQlCompiler(src, taxi).query()

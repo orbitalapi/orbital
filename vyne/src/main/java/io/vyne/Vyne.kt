@@ -4,14 +4,11 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.query.*
 import io.vyne.schemas.*
+import io.vyne.schemas.taxi.TaxiConstraintConverter
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
 import io.vyne.utils.log
-
-object GraphAttributes {
-   val NODE_TYPE = "nodeType"
-   val QUALIFIED_NAME = "qualifiedName"
-   val EDGE_KEY = "edgeKey"
-}
+import io.vyne.vyneql.VyneQlCompiler
+import io.vyne.vyneql.VyneQlQuery
 
 enum class NodeTypes {
    ATTRIBUTE,
@@ -35,19 +32,7 @@ interface ModelContainer : SchemaContainer {
 class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFactory, private val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) : ModelContainer {
    private val schemas = mutableListOf<Schema>()
 
-   //   private val models = mutableSetOf<TypedInstance>()
    private val factSets: FactSetMap = FactSetMap.create()
-
-
-//   private var _graph: HipsterDirectedGraph<Element, Relationship>? = null
-//   val graph: HipsterDirectedGraph<Element, Relationship>
-//      get() {
-//         if (_graph == null) {
-//            this._graph = rebuildGraph()
-//         }
-//         return this._graph!!
-//      }
-
 
    override var schema: Schema = compositeSchemaBuilder.aggregate(schemas)
       private set
@@ -59,6 +44,38 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       factSetForQueryEngine.putAll(this.factSets.filterFactSets(factSetIds))
       factSetForQueryEngine.putAll(FactSets.DEFAULT, additionalFacts)
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
+   }
+
+   fun query(vyneQlQuery: String): QueryResult {
+      val vyneQuery = VyneQlCompiler(vyneQlQuery, this.schema.taxi).query()
+      return query(vyneQuery)
+   }
+
+   fun query(vyneQl: VyneQlQuery): QueryResult {
+      var queryContext = query(additionalFacts = vyneQl.facts.values.toSet())
+      queryContext = vyneQl.projectedType?.let { queryContext.projectResultsTo(it.fullyQualifiedName) } ?: queryContext
+
+      val constraintProvider = TaxiConstraintConverter(this.schema)
+      val queryExpressions = vyneQl.typesToFind.map { discoveryType ->
+         val targetType = schema.type(discoveryType.type.toVyneQualifiedName())
+         val expression = if (discoveryType.constraints.isNotEmpty()) {
+            val constraints = constraintProvider.buildOutputConstraints(targetType,discoveryType.constraints)
+            ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)
+         } else {
+            TypeNameQueryExpression(discoveryType.type.toVyneQualifiedName().parameterizedName)
+         }
+
+         expression
+      }
+
+      if (queryExpressions.size > 1) {
+         TODO("Handle multiple target types in VyneQL")
+      }
+      val expression = queryExpressions.first()
+      return when(vyneQl.queryMode) {
+         io.vyne.vyneql.QueryMode.FIND_ALL -> queryContext.findAll(expression)
+         io.vyne.vyneql.QueryMode.FIND_ONE -> queryContext.find(expression)
+      }
    }
 
    fun query(

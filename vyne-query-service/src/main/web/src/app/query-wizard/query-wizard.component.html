@@ -60,6 +60,7 @@
                                    placeholder="Select the type to discover"
                                    (selectedTypesChange)="targetTypes = $event"
             ></app-type-autocomplete>
+            <mat-checkbox [(ngModel)] = "findAsArray" name="findAsArray">Find As Array</mat-checkbox>
             <mat-form-field>
               <mat-select placeholder="Query mode" [formControl]="queryMode" required>
                 <mat-option value="DISCOVER">Discover (Find a single result)</mat-option>
@@ -82,9 +83,11 @@
     </div>
   </div>
   <div class="row">
-    <app-vyne-query-viewer [targetTypes]="targetTypeNames" [facts]="facts"
+    <app-vyne-query-viewer [targetTypes]="targetTypeNames"
+                           [facts]="facts"
                            [schema]="schema"
                            [queryMode]="queryMode.value"
+                           [findAsArray]="findAsArray"
                            expanded="true"
                            class="mat-elevation-z2"
     ></app-vyne-query-viewer>

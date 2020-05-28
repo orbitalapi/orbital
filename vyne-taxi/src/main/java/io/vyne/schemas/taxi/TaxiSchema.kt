@@ -1,6 +1,5 @@
 package io.vyne.schemas.taxi
 
-import io.vyne.SchemaAggregator
 import io.vyne.VersionedSource
 import io.vyne.schemas.*
 import io.vyne.schemas.Field
@@ -36,7 +35,7 @@ class TaxiSchema(private val document: TaxiDocument, override val sources: List<
       this.policies = parsePolicies(document)
    }
 
-   val taxi = document
+   override val taxi = document
 
    private fun parsePolicies(document: TaxiDocument): Set<Policy> {
       return document.policies.map { taxiPolicy ->
@@ -324,17 +323,4 @@ private fun lang.taxi.sources.SourceCode.toVyneSource(): VersionedSource {
 
 private fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<VersionedSource> {
    return this.map { it.source.toVyneSource() }
-}
-
-
-class TaxiSchemaAggregator : SchemaAggregator {
-   override fun aggregate(schemas: List<Schema>): Pair<Schema?, List<Schema>> {
-      val taxiSchemas = schemas.filterIsInstance(TaxiSchema::class.java)
-      val remaining = schemas - taxiSchemas
-      val aggregatedSchema = if (taxiSchemas.isNotEmpty()) {
-         taxiSchemas.reduce { a, b -> a.merge(b) }
-      } else null
-      return aggregatedSchema to remaining
-   }
-
 }
