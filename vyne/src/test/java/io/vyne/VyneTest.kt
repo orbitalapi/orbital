@@ -687,8 +687,8 @@ service IonService {
       expect(result.isFullyResolved).to.be.`true`
       val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
       resultList.should.contain.all.elements(
-         mapOf(Pair("id", "hpcOrder1"), Pair("date", LocalDate.parse("2020-01-01"))),
-         mapOf(Pair("id", "ionOrder1"), Pair("date", LocalDate.parse("2020-01-01")))
+         mapOf(Pair("id", "hpcOrder1"), Pair("date", "2020-01-01")),
+         mapOf(Pair("id", "ionOrder1"), Pair("date", "2020-01-01"))
       )
    }
 
@@ -715,7 +715,7 @@ service IonService {
       val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }.flatMap { it as ArrayList<*> }
       resultList.should.contain.all.elements(
          mapOf(Pair("hpcID", "hpcOrder1")),
-         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate", LocalDate.parse("2020-01-01")))
+         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate","2020-01-01"))
       )
    }
 
