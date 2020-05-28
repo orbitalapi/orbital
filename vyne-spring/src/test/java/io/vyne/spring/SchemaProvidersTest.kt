@@ -1,6 +1,7 @@
 package io.vyne.spring
 
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.fqn
 import org.junit.Test
@@ -74,4 +75,23 @@ service MyService {
       expect(schema.hasOperation(OperationNames.qualifiedName("MyService","deletePerson"))).to.be.`true`
    }
 
+   @Test
+   fun `should be able to fetch schema from a file in classpath`() {
+      val provider = ClassPathSchemaSourceProvider("foo.taxi")
+      expect(provider.schemaStrings()).size.equal(1)
+      """
+         import TaxFileNumber
+         namespace vyne.example {
+            type Client {
+               clientId : ClientId as String
+               name : ClientName as String
+               isicCode : IsicCode as String
+            }
+
+            service ClientService {
+               operation getClient(TaxFileNumber):Client
+            }
+         }
+      """.replace("\\s".toRegex(), "").should.equal(provider.schemaString().replace("\\s".toRegex(), ""))
+   }
 }

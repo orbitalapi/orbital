@@ -22,6 +22,7 @@ enum class SchemaPublicationMethod {
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @Import(VyneConfigRegistrar::class)
-annotation class VyneSchemaPublisher(val basePackageClasses: Array<KClass<out Any>> = emptyArray(),
-                                     val publicationMethod: SchemaPublicationMethod = SchemaPublicationMethod.REMOTE
+annotation class VyneSchemaPublisher(val basePackageClasses: Array<KClass<out Any>> = [],
+                                     val publicationMethod: SchemaPublicationMethod = SchemaPublicationMethod.REMOTE,
+                                     val schemaFile: String = ""
 )

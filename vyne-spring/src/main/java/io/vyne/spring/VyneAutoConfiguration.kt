@@ -2,11 +2,17 @@ package io.vyne.spring
 
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
-import io.vyne.Vyne
-import io.vyne.query.QueryEngineFactory
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.schemaStore.*
-import io.vyne.spring.invokers.*
+import io.vyne.schemaStore.HazelcastSchemaStoreClient
+import io.vyne.schemaStore.HttpSchemaStoreClient
+import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaStore.TaxiSchemaValidator
+import io.vyne.spring.invokers.AbsoluteUrlResolver
+import io.vyne.spring.invokers.RestTemplateInvoker
+import io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver
+import io.vyne.spring.invokers.ServiceUrlResolver
+import io.vyne.spring.invokers.SpringServiceDiscoveryClient
 import io.vyne.utils.log
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
@@ -16,7 +22,6 @@ import lang.taxi.generators.java.TaxiGenerator
 import lang.taxi.generators.java.extensions.ServiceDiscoveryAddressProvider
 import lang.taxi.generators.java.extensions.SpringMvcHttpOperationExtension
 import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
-import org.springframework.beans.factory.FactoryBean
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
@@ -27,13 +32,17 @@ import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration
 import org.springframework.context.EnvironmentAware
-import org.springframework.context.annotation.*
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
+import org.springframework.context.annotation.Primary
 import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
-import java.util.*
+import java.util.Optional
 
 
 @Configuration
@@ -112,21 +121,28 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
 
    override fun registerBeanDefinitions(importingClassMetadata: AnnotationMetadata, registry: BeanDefinitionRegistry) {
       val attributes = importingClassMetadata.getAnnotationAttributes(VyneSchemaPublisher::class.java.name)
-      importingClassMetadata.className
       val basePackageClasses = attributes["basePackageClasses"] as Array<Class<*>>
+      val schemaFileInClassPath = attributes["schemaFile"] as String
+
       val basePackages = basePackageClasses.map { it.`package`.name } + Class.forName(importingClassMetadata.className).`package`.name
 
       val serviceMapper = serviceMapper(environment!!)
       val taxiGenerator = TaxiGenerator(serviceMapper = serviceMapper)
 
-      registry.registerBeanDefinition("localTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(LocalTaxiSchemaProvider::class.java)
-         .addConstructorArgValue(scanForCandidates(basePackages, DataType::class.java))
-         .addConstructorArgValue(scanForCandidates(basePackages, Service::class.java))
-         .addConstructorArgValue(taxiGenerator)
-         .beanDefinition)
+      if (schemaFileInClassPath.isBlank()) {
+         registry.registerBeanDefinition("localTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(LocalTaxiSchemaProvider::class.java)
+            .addConstructorArgValue(scanForCandidates(basePackages, DataType::class.java))
+            .addConstructorArgValue(scanForCandidates(basePackages, Service::class.java))
+            .addConstructorArgValue(taxiGenerator)
+            .beanDefinition)
+      } else {
+         registry.registerBeanDefinition("localTaxiSchemaProvider", BeanDefinitionBuilder.genericBeanDefinition(ClassPathSchemaSourceProvider::class.java)
+            .addConstructorArgValue(schemaFileInClassPath)
+            .beanDefinition)
+      }
 
-      val remoteSchemaStoreType = attributes["publicationMethod"] as SchemaPublicationMethod
-      when (remoteSchemaStoreType) {
+
+      when (attributes["publicationMethod"] as SchemaPublicationMethod) {
 //         SchemaPublicationMethod.NONE -> log().info("Not using a remote schema store")
          SchemaPublicationMethod.REMOTE -> configureHttpSchemaStore(registry)
          SchemaPublicationMethod.DISTRIBUTED -> configureHazelcastSchemaStore(registry)
@@ -171,7 +187,7 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
       registerRemoteSchemaProvider(registry, schemaStoreClientBeanName)
    }
 
-   fun serviceMapper(env: Environment): ServiceMapper {
+   private fun serviceMapper(env: Environment): ServiceMapper {
       val applicationName = env.getProperty("spring.application.name")
          ?: error("Currently, only service-discovery enabled services are supported.  Please define spring.application.name in properties")
       val operationExtensions = listOf(SpringMvcHttpOperationExtension())
@@ -180,7 +196,7 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
       return DefaultServiceMapper(operationExtensions = operationExtensions, serviceExtensions = serviceExtensions)
    }
 
-   fun scanForCandidates(basePackages: List<String>, annotationClass: Class<out Annotation>): List<Class<*>> {
+   private fun scanForCandidates(basePackages: List<String>, annotationClass: Class<out Annotation>): List<Class<*>> {
       val scanner = ClassPathScanningCandidateComponentProvider(false)
       scanner.addIncludeFilter(AnnotationTypeFilter(annotationClass))
       return basePackages.flatMap { scanner.findCandidateComponents(it) }
