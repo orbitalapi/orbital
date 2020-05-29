@@ -7,6 +7,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 import java.lang.IllegalStateException
+import java.lang.NumberFormatException
 
 
 // Note - this tests a class in vyne-core-types.  Testing there is awkward because of lack of access to taxi-schema
@@ -86,9 +87,7 @@ type alias OrderNumber as String
 
    @Test
    fun primitiveTypeParsingFailure() {
-      exception.expect(IllegalArgumentException::class.java)
-      exception.expectMessage("""Cannot deserialize value of type `int` from String "order_1": not a valid Integer value
- at [Source: UNKNOWN; line: -1, column: -1]""")
+      exception.expect(NumberFormatException::class.java)
 
       val src = """
 type alias OrderNumber as Int

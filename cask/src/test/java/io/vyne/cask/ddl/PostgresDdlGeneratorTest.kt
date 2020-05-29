@@ -78,10 +78,10 @@ type Person {
           .should.equal(""""timestamp" TIMESTAMP""")
 
        generator.generateColumnForField(person.field("gender")).sql
-          .should.equal(""""gender" VARCHAR(255) NOT NULL""")
+          .should.equal(""""gender" VARCHAR(255)""")
 
        generator.generateColumnForField(person.field("originalGender")).sql
-          .should.equal(""""originalGender" VARCHAR(255) NOT NULL""")
+          .should.equal(""""originalGender" VARCHAR(255)""")
 
     }
 
