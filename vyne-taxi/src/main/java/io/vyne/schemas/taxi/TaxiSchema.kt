@@ -2,6 +2,7 @@ package io.vyne.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
+import io.vyne.VersionedSource.Companion.UNNAMED
 import io.vyne.schemas.*
 import io.vyne.schemas.Field
 import io.vyne.schemas.FieldModifier
@@ -206,7 +207,11 @@ class TaxiSchema(private val document: TaxiDocument, @get:JsonIgnore override va
          }.toMap()
 
          val sourcesWithDependencies = sources.map { namedSource ->
-            val dependentSourceFiles = Compiler(namedSource.content).declaredImports().mapNotNull { typesInSources[it] }.distinct()
+            val dependentSourceFiles = Compiler(namedSource.content)
+               .declaredImports()
+               .mapNotNull { typesInSources[it] }
+               .distinct()
+               .filter { it.name == UNNAMED || (it.name != namedSource.name) }
             SourceWithDependencies(namedSource, dependentSourceFiles)
          }
 

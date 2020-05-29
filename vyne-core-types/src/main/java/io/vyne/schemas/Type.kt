@@ -101,6 +101,8 @@ data class Type(
    @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForTypeName != null
 
+   @JsonView(TypeFullView::class)
+   val format:String? = taxiType.format
 
    @get:JsonIgnore
    val inherits: List<Type> by lazy {

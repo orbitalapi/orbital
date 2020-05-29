@@ -118,6 +118,7 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
 
 interface VyneQueryService {
    fun submitQuery(query: Query): QueryClientResponse
+   fun submitVyneQl(vyneQL: String): QueryClientResponse
 }
 
 
@@ -126,6 +127,15 @@ class HttpVyneQueryService(private val queryServiceUrl: String, private val rest
       val queryResult = restTemplate.postForObject(
          "$queryServiceUrl/query",
          query,
+         QueryClientResponse::class.java
+      )
+      return queryResult
+   }
+
+   override fun submitVyneQl(vyneQL: String): QueryClientResponse {
+      val queryResult = restTemplate.postForObject(
+         "$queryServiceUrl/vyneql",
+         vyneQL,
          QueryClientResponse::class.java
       )
       return queryResult

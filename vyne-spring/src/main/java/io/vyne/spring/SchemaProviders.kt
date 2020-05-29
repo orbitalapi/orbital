@@ -9,10 +9,11 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import lang.taxi.generators.java.TaxiGenerator
+import org.springframework.core.io.ClassPathResource
 
 class ClassPathSchemaSourceProvider(private val schemaFile: String): SchemaSourceProvider {
    override fun schemas() = schemaStrings().map { TaxiSchema.from(it) }
-   override fun schemaStrings() = listOf(ClassLoader.getSystemResource(schemaFile).readText(Charsets.UTF_8))
+   override fun schemaStrings() = listOf(ClassPathResource(schemaFile).inputStream.bufferedReader(Charsets.UTF_8).readText())
 }
 
 class SimpleTaxiSchemaProvider(val source: String) : SchemaSourceProvider {
@@ -28,13 +29,14 @@ class SimpleTaxiSchemaProvider(val source: String) : SchemaSourceProvider {
 
 class LocalTaxiSchemaProvider(val models: List<Class<*>>,
                               val services: List<Class<*>>,
-                              val taxiGenerator: TaxiGenerator = TaxiGenerator()) : SchemaSourceProvider {
+                              val taxiGenerator: TaxiGenerator = TaxiGenerator(),
+                              val classPathSchemaSourceProvider: ClassPathSchemaSourceProvider? = null) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
-      return taxiGenerator.forClasses(models + services).generateAsStrings()
+      return classPathSchemaSourceProvider?.schemaStrings() ?: taxiGenerator.forClasses(models + services).generateAsStrings()
    }
 
    override fun schemas(): List<Schema> {
-      return schemaStrings().map { TaxiSchema.from(it) }
+      return classPathSchemaSourceProvider?.schemas() ?: schemaStrings().map { TaxiSchema.from(it) }
    }
 }
 

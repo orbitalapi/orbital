@@ -22,6 +22,17 @@ class TypedValueTest {
    }
 
    @Test
+   fun canParseDatesWithFormats() {
+      val schema = TaxiSchema.from("""
+         type KiwiDate inherits Instant( @format = "dd/MM/yy'T'HH:mm:ss" )
+      """.trimIndent())
+      val instance = TypedInstance.from(schema.type("KiwiDate"), "28/04/19T22:00:00", schema)
+      val instant = instance.value as Instant
+      instant.should.equal(Instant.parse("2019-04-28T22:00:00Z"))
+
+   }
+
+   @Test
    fun shouldParseIntsWithTrailingZerosAsInts() {
       val schema = TaxiSchema.from("")
       val instance = TypedInstance.from(schema.type(PrimitiveType.INTEGER), "10.00", schema)

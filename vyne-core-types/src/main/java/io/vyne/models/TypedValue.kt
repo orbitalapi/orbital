@@ -9,14 +9,19 @@ import org.springframework.lang.Nullable
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 interface ConversionService {
-   fun <T> convert(@Nullable source: Any?, targetType: Class<T>): T
+   fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: String?): T
 
    companion object {
       fun default(): ConversionService {
          return StringToIntegerConverter(
-            VyneDefaultConversionService
+            FormattedInstantConverter(
+               VyneDefaultConversionService
+            )
          )
       }
    }
@@ -26,7 +31,7 @@ interface ConversionService {
  * Used when you don't want to perform any conversions
  */
 object NoOpConversionService : ConversionService {
-   override fun <T> convert(source: Any?, targetType: Class<T>): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
       return source!! as T
    }
 }
@@ -36,11 +41,10 @@ object VyneDefaultConversionService : ConversionService {
       val service = DefaultConversionService()
       // TODO :  we need to be much richer about date handling.
       service.addConverter(String::class.java, LocalDate::class.java) { s -> LocalDate.parse(s) }
-      service.addConverter(String::class.java, Instant::class.java) { s -> Instant.parse(s) }
       service
    }
 
-   override fun <T> convert(source: Any?, targetType: Class<T>): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
       return innerConversionService.convert(source, targetType)!!
    }
 }
@@ -49,12 +53,27 @@ interface ForwardingConversionService : ConversionService {
    val next: ConversionService
 }
 
+class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
+      return if (source is String && targetType == Instant::class.java) {
+         require(format != null) { "Formats are expected for Instants" }
+         val formatter = DateTimeFormatter.ofPattern(format)
+         val instant = LocalDateTime.parse(source, formatter)
+            .toInstant(ZoneOffset.UTC) // TODO : We should be able to detect that from the format sometimes
+         instant as T
+      } else {
+         next.convert(source, targetType, format)
+      }
+   }
+
+}
+
 class StringToIntegerConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
-   override fun <T> convert(source: Any?, targetType: Class<T>): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
       return if (source is String && targetType == Int::class.java) {
          BigDecimal(source).intValueExact() as T
       } else {
-         next.convert(source, targetType)
+         next.convert(source, targetType, format)
       }
    }
 }
@@ -69,7 +88,7 @@ data class TypedValue private constructor(override val type: Type, override val 
          if (!type.taxiType.inheritsFromPrimitive) {
             error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
          } else {
-            val valueToUse = converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!))
+            val valueToUse = converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
             return TypedValue(type, valueToUse)
          }
 

@@ -5,20 +5,22 @@ import com.nhaarman.mockito_kotlin.eq
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import io.vyne.VersionedSource
+import io.vyne.schemaStore.HazelcastSchemaStoreClient
 import io.vyne.schemaStore.HttpSchemaStoreClient
 import io.vyne.schemaStore.SchemaService
 import io.vyne.schemaStore.SchemaSet
+import io.vyne.schemaStore.SchemaStoreClient
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
@@ -28,26 +30,39 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 @RunWith(SpringJUnit4ClassRunner::class)
 @ContextConfiguration(classes = [PropertyConfig::class, LocalVyneConfigTest.vyneConfigWithLocalSchemaStore::class])
 @TestPropertySource(properties = ["vyne.schema.name=testSchema", "vyne.schema.version=0.1.0", "spring.application.name=vyneTest"])
-@Ignore("Currently failing, needs investigation, part of a migration, and the Http schema support, which this is dependent on, has fallen behind")
 class LocalVyneConfigTest {
 
    @Autowired
-   internal var vyneFactory: VyneFactory? = null
+   lateinit var vyneFactory: VyneFactory
 
    @MockBean
-   internal var schemaService: SchemaService? = null
+   internal var schemaStoreClient: SchemaStoreClient? = null
 
    @Test
    fun parsesContextCorrectly() {
       val vyne = vyneFactory!!.`object`
       expect(vyne).not.`null`
       expect(vyne.schema.services).to.have.size(1)
-      expect(vyne.schema.types).to.have.size(1)
+      vyne.schema.types.map { it.taxiType.qualifiedName }.should.contain.all.elements(
+         "lang.taxi.Boolean",
+         "lang.taxi.String",
+         "lang.taxi.Int",
+         "lang.taxi.Decimal",
+         "lang.taxi.Date",
+         "lang.taxi.Time",
+         "lang.taxi.DateTime",
+         "lang.taxi.Instant",
+         "lang.taxi.Array",
+         "lang.taxi.Any",
+         "lang.taxi.Double",
+         "lang.taxi.Void",
+         "io.vyne.spring.MyClient"
+      )
    }
 
 
    @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED)
-   @Import(VyneAutoConfiguration::class)
+   @EnableAutoConfiguration
    class vyneConfigWithLocalSchemaStore {}
 }
 
@@ -55,50 +70,79 @@ class LocalVyneConfigTest {
 @ContextConfiguration(classes = [PropertyConfig::class, RemoteVyneConfigTest.vyneConfigWithRemoteSchemaStore::class])
 @TestPropertySource(properties = ["vyne.schema.name=testSchema", "vyne.schema.version=0.1.0", "spring.application.name=vyneTest"])
 @DirtiesContext
-@Ignore("Currently failing, needs investigation, part of a migration, and the Http schema support, which this is dependent on, has fallen behind")
 class RemoteVyneConfigTest {
 
    @Autowired
    lateinit var vyneFactory: VyneFactory
 
-   @MockBean
-   lateinit var schemaService: SchemaService
-
-   @Autowired
-   lateinit var schemaStoreClient: HttpSchemaStoreClient
-
-
-   @Test
-   fun given_noSchemasFromRemoteService_then_vyneIsEmpty() {
-      val vyne = vyneFactory.createVyne()
-      expect(vyne).not.`null`
-      expect(vyne.schema.services).to.be.empty
-      expect(vyne.schema.types).to.be.empty
-   }
-
    @Test
    fun given_schemaServiceReturnsSchemas_then_theyArePresentInvyne() {
-      val schemaSet = SchemaSet.from(listOf(VersionedSource("RemoteSchema", "0.1.0", "type MyClient {}")), 1)
-      whenever(schemaService.listSchemas()).thenReturn(schemaSet)
-      schemaStoreClient.pollForSchemaUpdates()
-
       val vyne = vyneFactory.createVyne()
       expect(vyne).not.`null`
-      expect(vyne.schema.types).to.have.size(1)
-      expect(vyne.schema.type("MyClient")).not.to.be.`null`
+      vyne.schema.types.map { it.taxiType.qualifiedName }.should.contain.all.elements(
+         "lang.taxi.Boolean",
+         "lang.taxi.String",
+         "lang.taxi.Int",
+         "lang.taxi.Decimal",
+         "lang.taxi.Date",
+         "lang.taxi.Time",
+         "lang.taxi.DateTime",
+         "lang.taxi.Instant",
+         "lang.taxi.Array",
+         "lang.taxi.Any",
+         "lang.taxi.Double",
+         "lang.taxi.Void",
+         "io.vyne.spring.MyClient"
+      )
    }
 
-   @Test
-   fun shouldPublishLocalSchemaOnStartup() {
-      verify(schemaService).submitSchema(any(), eq("testSchema"), eq("0.1.0"))
-   }
-
-
-   @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.REMOTE)
-   @Import(VyneAutoConfiguration::class)
+   @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
+   @EnableAutoConfiguration
    class vyneConfigWithRemoteSchemaStore {}
 }
 
+
+@RunWith(SpringJUnit4ClassRunner::class)
+@ContextConfiguration(classes = [PropertyConfig::class, LocalVyneClassPathSchemaFileConfigTest.vyneConfigWithLocalClassPathSchemaFile::class])
+@TestPropertySource(properties = ["vyne.schema.name=testSchema", "vyne.schema.version=0.1.0", "spring.application.name=vyneTest"])
+class LocalVyneClassPathSchemaFileConfigTest {
+
+   @Autowired
+   lateinit var vyneFactory: VyneFactory
+
+   @MockBean
+   internal var schemaStoreClient: SchemaStoreClient? = null
+
+   @Test
+   fun parsesContextCorrectly() {
+      val vyne = vyneFactory!!.`object`
+      expect(vyne).not.`null`
+      expect(vyne.schema.services).to.have.size(1)
+      vyne.schema.types.map { it.taxiType.qualifiedName }.should.contain.all.elements(
+         "lang.taxi.Boolean",
+         "lang.taxi.String",
+         "lang.taxi.Int",
+         "lang.taxi.Decimal",
+         "lang.taxi.Date",
+         "lang.taxi.Time",
+         "lang.taxi.DateTime",
+         "lang.taxi.Instant",
+         "lang.taxi.Array",
+         "lang.taxi.Any",
+         "lang.taxi.Double",
+         "lang.taxi.Void",
+         "vyne.example.Client",
+         "vyne.example.ClientId",
+         "vyne.example.ClientName",
+         "vyne.example.IsicCode"
+      )
+   }
+
+
+   @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED, schemaFile = "foo.taxi")
+   @EnableAutoConfiguration
+   class vyneConfigWithLocalClassPathSchemaFile {}
+}
 @Configuration
 class PropertyConfig {
    @Bean

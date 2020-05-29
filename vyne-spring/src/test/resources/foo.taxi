@@ -1,4 +1,3 @@
-import TaxFileNumber
 namespace vyne.example {
    type Client {
       clientId : ClientId as String
@@ -7,6 +6,6 @@ namespace vyne.example {
    }
 
    service ClientService {
-      operation getClient(TaxFileNumber):Client
+      operation getClient(ClientId):Client
    }
 }

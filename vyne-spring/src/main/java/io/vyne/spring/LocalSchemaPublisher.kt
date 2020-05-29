@@ -1,7 +1,6 @@
 package io.vyne.spring
 
 import arrow.core.Either
-import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.utils.log
 import io.vyne.schemaStore.SchemaStoreClient
 import org.springframework.context.event.ContextRefreshedEvent
@@ -9,7 +8,7 @@ import org.springframework.context.event.EventListener
 
 class LocalSchemaPublisher(val schemaName: String,
                            val schemaVersion: String,
-                           val localTaxiSchemaProvider: SchemaSourceProvider,
+                           val localTaxiSchemaProvider: LocalTaxiSchemaProvider,
                            val schemaStoreClient: SchemaStoreClient) {
    private var startupPublishTriggered: Boolean = false
 

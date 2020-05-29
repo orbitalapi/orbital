@@ -13,6 +13,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -80,6 +81,7 @@ type CoinbaseOrder {
    private val taxiSchema = TaxiSchema.from(schemaStr, "Coinbase", "1.0.0")
 
    @Test
+   @Ignore
    fun testDatabaseColumnTypes() {
       val versionedType = taxiSchema.versionedType("CoinbaseOrder".fqn())
       val input: Flux<InputStream> = Flux.just(coinbaseOrder)
