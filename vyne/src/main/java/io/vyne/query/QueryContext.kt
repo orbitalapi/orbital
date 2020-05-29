@@ -197,20 +197,35 @@ data class QueryContext(
       }
 
       private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
-         return if (fact.type.isEnum) {
+         return if (fact is TypedObject) {
+            val typeObject = fact as TypedObject
+            typeObject.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
+         } else {
+            resolveSynonym(fact, schema, true)
+         }
+      }
+
+      private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
+         val derivedFacts = if (fact.type.isEnum) {
             val underlyingEnumType = fact.type.taxiType as EnumType
             underlyingEnumType
                .values
                .first { enumValue -> enumValue.value == fact.value }
                .synonyms
                .map { synonym ->
-               val synonymType = schema.type(synonym.synonymFullQualifiedName())
-               val synonymTypeTaxiType = synonymType.taxiType as EnumType
-               val targetEnumValue = synonymTypeTaxiType.values.first { it.name == synonym.synonymValue() }.value
-               TypedValue.from(synonymType, targetEnumValue, false)
-            }.toSet().plus(fact)
+                  val synonymType = schema.type(synonym.synonymFullQualifiedName())
+                  val synonymTypeTaxiType = synonymType.taxiType as EnumType
+                  val targetEnumValue = synonymTypeTaxiType.values.first { it.name == synonym.synonymValue() }.value
+                  TypedValue.from(synonymType, targetEnumValue, false)
+               }.toSet()
          } else {
-            setOf(fact)
+            setOf()
+         }
+
+         return if (includeGivenFact) {
+            derivedFacts.plus(fact)
+         } else {
+            derivedFacts
          }
       }
    }
