@@ -719,6 +719,24 @@ service IonService {
       )
    }
 
+   @Test
+   fun formattedValueWithSameTypeButDifferentFormatsAreDiscoverable() {
+      val schema  = """
+         type EventDate inherits Instant
+         model Source {
+            eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
+         }
+         model Target {
+            eventDate : EventDate( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSX" )
+         }
+      """.trimIndent()
+      val (vyne, _) = testVyne(schema)
+      vyne.addJsonModel("Source", """{ "eventDate" : "05/28/20T13:44:23.000Z" }""")
+      val result = vyne.query().build("Target")
+      result.isFullyResolved.should.be.`true`
+      (result["Target"]!!.toRawObject() as Map<*,*>).get("eventDate").should.equal("2020-05-28T13:44:23.000Z")
+   }
+
    @Ignore("This test throws StackOverFlowException, will be investigated.")
    @Test
    fun `should use cache for multiple invocations of given service operation`() {
