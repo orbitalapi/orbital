@@ -326,6 +326,7 @@ type Sample {
   "typeDoc" : "",
   "isTypeAlias" : false,
   "format" : null,
+  "hasFormat" : false,
   "isParameterType" : false,
   "isClosed" : false,
   "isPrimitive" : false,
