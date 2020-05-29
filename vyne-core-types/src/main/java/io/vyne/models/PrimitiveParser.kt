@@ -43,7 +43,7 @@ class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapp
       return when (targetType.enumValues.contains(value)) {
          true -> TypedValue.from(targetType, value, false)
          else -> {
-            // TODO fix me, vyne type should have enum values just as taxitype!
+            // TODO fix me, vyne type should have enum values https://projects.notional.uk/youtrack/issue/LENS-131
             val taxiType = (targetType.taxiType as EnumType)
             val taxiEnumName = taxiType.values.find { it.value == value }?.name
             taxiEnumName
