@@ -42,6 +42,9 @@ ngx-monaco-editor {
   .file-name {
     flex-grow: 1;
     margin-right: 2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .version {
     background-color: rgba(0, 0, 0, 0.2);
