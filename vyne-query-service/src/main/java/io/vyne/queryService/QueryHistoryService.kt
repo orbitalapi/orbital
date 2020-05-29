@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController
 class QueryHistoryService(val history: QueryHistory) {
 
    @GetMapping("/query/history")
-   fun listHistory(): List<QueryHistoryRecord> {
+   fun listHistory(): List<QueryHistoryRecord<out Any>> {
       return history.list()
    }
 

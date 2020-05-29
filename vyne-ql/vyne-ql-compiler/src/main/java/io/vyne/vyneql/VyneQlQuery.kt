@@ -23,3 +23,6 @@ enum class QueryMode(val directive: String) {
    FIND_ONE("findOne"),
    FIND_ALL("findAll"); // TODO : Stream
 }
+
+
+typealias VyneQLQueryString = String
