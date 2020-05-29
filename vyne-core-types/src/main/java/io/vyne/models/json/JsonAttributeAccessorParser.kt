@@ -12,7 +12,7 @@ import lang.taxi.types.XpathAccessor
  */
 class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser = PrimitiveParser()) {
    fun parseToType(type: Type, accessor: XpathAccessor, record: ObjectNode, schema: Schema): TypedInstance {
-      val value = record.at(accessor.expression)
+      val value = record.at(accessor.expression).textValue()
       return primitiveParser.parse(value, type, schema)
    }
 }

@@ -14,7 +14,7 @@ class CsvStreamSource(val input: Flux<InputStream>,
                       val type: VersionedType,
                       val schema: Schema,
                       val readCacheDirectory: Path,
-                      val bytesPerColumn: Int = 30,
+                      val bytesPerColumn: Int = 100,
                       val csvFormat: CSVFormat = CSVFormat.DEFAULT,
                       val nullValues: Set<String> = emptySet()) : StreamSource {
 

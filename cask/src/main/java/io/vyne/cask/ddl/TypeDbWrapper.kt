@@ -17,8 +17,8 @@ data class TypeMigration(
 class TypeDbWrapper(val type: VersionedType, schema: Schema, cachePath: Path?, typeMigration: TypeMigration?) {
     fun write(rowWriter: SimpleRow, attributeSet: InstanceAttributeSet) {
         columns.map { column ->
-            val value = attributeSet.attributes.getValue(column.field.name).value ?: TODO("Null handling")
-            column.write(rowWriter, value)
+            val value = attributeSet.attributes.getValue(column.field.name).value
+            value?.run { column.write(rowWriter, value) }
         }
 
     }

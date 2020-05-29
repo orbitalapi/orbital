@@ -1,13 +1,10 @@
 package io.vyne.models
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.jvm.common.PrimitiveTypes
+import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
-import java.lang.IllegalArgumentException
 
 /**
  * Responsible for simple conversions between primitives.
@@ -17,6 +14,18 @@ import java.lang.IllegalArgumentException
  */
 class PrimitiveParser(private val conversionService: ConversionService = ConversionService.default()) {
    fun parse(value: Any, targetType: Type, schema: Schema): TypedInstance {
+      if (targetType.isEnum) {
+         return parseEnum(value, targetType)
+      }
+      // TODO fix me https://projects.notional.uk/youtrack/issue/LENS-128
+      val inheritsFromEnum = targetType.inherits.filter { it.isEnum }
+      if (inheritsFromEnum.isNotEmpty()) {
+         return parseEnum(value, inheritsFromEnum.first())
+      }
+      return parsePrimitive(value, targetType, schema)
+   }
+
+   private fun parsePrimitive(value: Any, targetType: Type, schema: Schema): TypedValue {
       val underlyingPrimitive = Primitives.getUnderlyingPrimitive(targetType, schema)
       val taxiPrimitive = PrimitiveType.fromDeclaration(underlyingPrimitive.fullyQualifiedName)
       val javaType = PrimitiveTypes.getJavaType(taxiPrimitive)
@@ -25,6 +34,22 @@ class PrimitiveParser(private val conversionService: ConversionService = Convers
          throw IllegalArgumentException("Unable to parse primitive type=${targetType.taxiType.basePrimitive} name=${targetType.name} value=null.")
       }
       return TypedValue.from(targetType, convertedValue, performTypeConversions = false)
+   }
+
+   private fun parseEnum(value: Any, targetType: Type): TypedInstance {
+      return when (targetType.enumValues.contains(value)) {
+         true -> TypedValue.from(targetType, value, false)
+         else -> {
+            // TODO fix me, vyne type should have enum values https://projects.notional.uk/youtrack/issue/LENS-131
+            val taxiType = (targetType.taxiType as EnumType)
+            val taxiEnumName = taxiType.values.find { it.value == value }?.name
+            taxiEnumName
+               ?.let { TypedValue.from(targetType, it, false) }
+               ?: error("Unable to map Value=${value} " +
+                  "to Enum Type=${targetType.fullyQualifiedName}, " +
+                  "allowed values=${taxiType.definition?.values?.map { Pair(it.name, it.value) }}")
+         }
+      }
    }
 }
 
