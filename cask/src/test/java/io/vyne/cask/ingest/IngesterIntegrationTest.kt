@@ -12,7 +12,9 @@ import io.vyne.schemas.fqn
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.io.FileUtils
 import org.junit.After
+import org.junit.AfterClass
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -22,7 +24,7 @@ import reactor.core.publisher.Flux
 import java.io.File
 import java.io.InputStream
 
-
+@Ignore
 class IngesterIntegrationTest {
 
    @Rule
@@ -31,7 +33,7 @@ class IngesterIntegrationTest {
 
    @Rule
    @JvmField
-   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6660) }
+   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6661) }
    // Atm there is no way to override dbname/username/pwd
 
    lateinit var jdbcTemplate: JdbcTemplate
@@ -53,6 +55,7 @@ class IngesterIntegrationTest {
    }
 
    @Test
+   @Ignore
    fun canStreamDataToPostgresOnStart() {
       val schema = CoinbaseOrderSchema.schemaV1
       val type = schema.versionedType("OrderWindowSummary".fqn())
@@ -83,6 +86,7 @@ class IngesterIntegrationTest {
    }
 
    @Test
+   @Ignore
    fun canGenerateDeltaTable() {
       val schemaV1 = CoinbaseOrderSchema.schemaV1
       val typeV1 = schemaV1.versionedType("OrderWindowSummary".fqn())
@@ -123,5 +127,4 @@ class IngesterIntegrationTest {
       FileUtils.forceDeleteOnExit(folder.root)// this was failing on windows
 //        }
    }
-
 }
