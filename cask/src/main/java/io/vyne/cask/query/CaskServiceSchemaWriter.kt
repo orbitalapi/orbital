@@ -13,12 +13,12 @@ import java.lang.StringBuilder
 
 @Component
 class CaskServiceSchemaWriter(private val schemaStoreClient: SchemaStoreClient, private val schemaWriter: SchemaWriter = SchemaWriter()) {
-   fun write(taxiDocument: TaxiDocument, versionedType: VersionedType, type: Type) {
+   fun write(taxiDocument: TaxiDocument, versionedType: VersionedType) {
       val serviceSchema = addRequiredImportsStatements(taxiDocument, schemaWriter.generateSchemas(listOf(taxiDocument)).first())
-      log().info("injecting cask service schema for {} as {}", type.toQualifiedName(), serviceSchema)
+      log().info("injecting cask service schema for $versionedType: \n$serviceSchema")
       try {
          schemaStoreClient.submitSchema(
-            caskServiceSchemaName(type, versionedType.versionedName),
+            caskServiceSchemaName(versionedType),
             CaskServiceSchemaVersion,
             serviceSchema)
       } catch (e: Exception) {
@@ -54,6 +54,8 @@ class CaskServiceSchemaWriter(private val schemaStoreClient: SchemaStoreClient, 
       // The rationale for not putting the types version ask the version for the cask schema is that
       // the cask schema generation logic will evolve independently of the underlying type that it's generated from.
       private const val CaskServiceSchemaVersion = "1.0.0"
-      private fun caskServiceSchemaName(type: Type, versionName: String) = "$CaskNamespacePrefix${type.toQualifiedName()}-$versionName"
+      private fun caskServiceSchemaName(versionedType: VersionedType):String {
+         return "$CaskNamespacePrefix${versionedType.versionedName}"
+      }
    }
 }

@@ -16,6 +16,8 @@ import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import org.springframework.context.ApplicationEventPublisher
 import java.io.Serializable
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 
 private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventPublisher, val invalidationListener: SchemaSetInvalidatedListener) : MembershipListener, Serializable, EntryAddedListener<SchemaSetCacheKey, SchemaSet>, EntryUpdatedListener<SchemaSetCacheKey, SchemaSet> {
    override fun memberAttributeChanged(memberAttributeEvent: MemberAttributeEvent?) {
@@ -64,6 +66,8 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
    private val hazelcastSchemaStoreListener = HazelcastSchemaStoreListener(eventPublisher, this)
    private val schemaPurger = HazelcastSchemaPurger(schemaSourcesMap)
 
+   private var localSchemaSet = ConcurrentHashMap<SchemaSetCacheKey, SchemaSet>()
+
    init {
       hazelcast.cluster.addMembershipListener(hazelcastSchemaStoreListener)
 
@@ -81,7 +85,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
 
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
       val validationResult = schemaValidator.validate(schemaSet(), versionedSources)
-      val (parsedSources,returnValue)  = when(validationResult) {
+      val (parsedSources, returnValue) = when (validationResult) {
          is Either.Right -> {
             validationResult.b.second to Either.right(validationResult.b.first)
          }
@@ -157,13 +161,27 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
 
 
    override fun schemaSet(): SchemaSet {
-      return schemaSetHolder.computeIfAbsent(SchemaSetCacheKey) {
+      val schemaSetFromHazelcast = schemaSetHolder.computeIfAbsent(SchemaSetCacheKey) {
          // Note: This should very rarely get called,
          // as we're actively rebuilding the schemaSet on invalidation now (whereas previously
          // we deferred that)
          log().warn("SchemaSet was not present, so computing, however this shouldn't happen")
          rebuildSchemaAndWriteToCache()
       }
+
+      // Using the schemaset from Hazelcast bears an init cost.
+      // If our local instance is the same as the one in the cache, use that, so we
+      // only wear the cost once.
+      val schemaSetToUse = this.localSchemaSet.compute(SchemaSetCacheKey) { schemaSetCacheKey, existingSchemaSet ->
+         when {
+            existingSchemaSet != null && existingSchemaSet.id == schemaSetFromHazelcast.id -> existingSchemaSet
+            else -> {
+               log().warn("Initializing local copy of schema from Hazelcast.  This is expensive, let's not do this too much")
+               schemaSetFromHazelcast
+            }
+         }
+      }
+      return schemaSetToUse!!
    }
 
    private fun getSchemaEntriesOfCurrentClusterMembers(): List<ParsedSource> {
