@@ -16,6 +16,7 @@ import io.vyne.utils.log
 import org.apache.commons.io.FileUtils
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -25,6 +26,7 @@ import reactor.core.publisher.Flux
 import java.io.File
 import java.time.Duration
 
+@Ignore
 class CaskDAOIntegrationTest {
 
    @Rule
@@ -33,7 +35,7 @@ class CaskDAOIntegrationTest {
 
    @Rule
    @JvmField
-   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6660) }
+   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6663) }
 
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
