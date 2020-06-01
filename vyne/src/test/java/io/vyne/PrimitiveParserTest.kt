@@ -6,8 +6,10 @@ import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
+import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.lang.NumberFormatException
+import java.time.Instant
 
 
 // Note - this tests a class in vyne-core-types.  Testing there is awkward because of lack of access to taxi-schema
@@ -94,5 +96,28 @@ type alias OrderNumber as Int
       """.trimIndent()
       val schema = TaxiSchema.from(src)
       PrimitiveParser().parse("order_1",schema.type("OrderNumber"), schema)
+   }
+
+   @Test
+   fun parseLongAsInstant() {
+      val src = """
+type alias OrderDate as Instant
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      val value = PrimitiveParser().parse(java.lang.Long.valueOf(1575389279798), schema.type("OrderDate"), schema)
+      value.value.should.equal(Instant.parse("2019-12-03T16:07:59.798Z"))
+   }
+
+   @Test
+   fun reportMeaningfulException() {
+      exception.expect(IllegalArgumentException::class.java)
+      exception.expectMessage("""Unable to convert value=389279798 to type=class java.time.Instant Error: No converter found capable of converting from type [java.lang.Integer] to type [java.time.Instant]""")
+
+      val src = """
+type alias OrderDate as Instant
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      PrimitiveParser().parse(java.lang.Integer.valueOf(389279798), schema.type("OrderDate"), schema)
+
    }
 }

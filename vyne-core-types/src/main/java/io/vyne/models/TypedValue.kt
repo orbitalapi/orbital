@@ -4,8 +4,10 @@ package io.vyne.models
 
 import io.vyne.schemas.Type
 import lang.taxi.jvm.common.PrimitiveTypes
+import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
 import org.springframework.lang.Nullable
+import java.lang.IllegalArgumentException
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -41,11 +43,16 @@ object VyneDefaultConversionService : ConversionService {
       val service = DefaultConversionService()
       // TODO :  we need to be much richer about date handling.
       service.addConverter(String::class.java, LocalDate::class.java) { s -> LocalDate.parse(s) }
+      service.addConverter(java.lang.Long::class.java, Instant::class.java) { s -> Instant.ofEpochMilli(s.toLong()) }
       service
    }
 
    override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
-      return innerConversionService.convert(source, targetType)!!
+      try {
+         return innerConversionService.convert(source, targetType)!!
+      } catch (e: ConverterNotFoundException) {
+         throw IllegalArgumentException("Unable to convert value=${source} to type=${targetType} Error: ${e.message}", e)
+      }
    }
 }
 
