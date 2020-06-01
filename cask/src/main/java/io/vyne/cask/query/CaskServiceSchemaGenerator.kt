@@ -10,7 +10,6 @@ import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 import lang.taxi.services.Service
 import lang.taxi.types.Annotation
-import lang.taxi.types.ArrayType
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
@@ -31,8 +30,8 @@ class CaskServiceSchemaGenerator(
 
    @EventListener
    fun onIngesterInitialised(event: IngestionInitialisedEvent) {
-      log().info("Received Ingestion Initialised event {}", event.type)
-      generate(event.type)
+      log().info("Received Ingestion Initialised event ${event.type}")
+      generateAndPublishSchema(event.type)
    }
 
    @EventListener
@@ -41,17 +40,20 @@ class CaskServiceSchemaGenerator(
       // TODO
    }
 
-   fun generate(versionedType: VersionedType, typeMigration: TypeMigration? = null) {
-      val schema = schemaProvider.schema()
-      val type = schema.toTaxiType(versionedType)
+   fun generateSchema(versionedType: VersionedType, typeMigration: TypeMigration? = null): TaxiDocument {
+      val taxiType = versionedType.taxiType
       // TODO Handle Type Migration.
       val fields = typeMigration?.fields ?: versionedType.allFields()
-      if (type is ObjectType) {
-         val taxiDocument = TaxiDocument(services = setOf(generateCaskService(fields, type)), types = setOf())
-         caskServiceSchemaWriter.write(taxiDocument, versionedType, type)
+      return if (taxiType is ObjectType) {
+         TaxiDocument(services = setOf(generateCaskService(fields, taxiType)), types = setOf())
       } else {
-         TODO("Type ${type::class.simpleName} not yet supported")
+         TODO("Type ${taxiType::class.simpleName} not yet supported")
       }
+   }
+
+   fun generateAndPublishSchema(versionedType: VersionedType, typeMigration: TypeMigration? = null) {
+      val caskSchema = generateSchema(versionedType, typeMigration)
+      caskServiceSchemaWriter.write(caskSchema, versionedType)
    }
 
    private fun generateCaskService(fields: List<Field>, type: Type) = Service(

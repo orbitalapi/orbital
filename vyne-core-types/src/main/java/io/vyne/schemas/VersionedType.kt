@@ -40,5 +40,8 @@ data class VersionedType(
       versionedName = "${fullyQualifiedName}@$versionHash"
    }
 
+   override fun toString(): String {
+      return versionedName
+   }
 
 }

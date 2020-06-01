@@ -1,10 +1,6 @@
 package io.vyne.cask.query
 
-import com.nhaarman.mockito_kotlin.argumentCaptor
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.times
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockito_kotlin.*
 import com.winterbe.expekt.should
 import io.vyne.cask.query.generators.AfterTemporalOperationGenerator
 import io.vyne.cask.query.generators.BeforeTemporalOperationGenerator
@@ -14,6 +10,7 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import lang.taxi.types.PrimitiveType
 import org.junit.Test
 
 class CaskServiceSchemaGeneratorTest {
@@ -41,6 +38,37 @@ class CaskServiceSchemaGeneratorTest {
    """.trimIndent()
 
    @Test
+   fun `schemas with formatted date types generate valid schemas`() {
+      val schema = """
+         model Trade {
+            @Before
+            tradeDate : Instant( @format = 'yyyy-mm-ddThh:mm:ss' )
+         }
+      """.trimIndent()
+      val (serviceSchemaGenerator,taxiSchema) = schemaGeneratorFor(schema)
+      val serviceSchema = argumentCaptor<String>()
+      // When
+      val generated = serviceSchemaGenerator.generateSchema(taxiSchema.versionedType("Trade".fqn()))
+      val operation = generated.services.first().operation("findByTradeDateBefore")
+      operation.parameters.first().type.qualifiedName.should.equal(PrimitiveType.INSTANT.qualifiedName)
+   }
+
+   private fun schemaGeneratorFor(schema: String): Pair<CaskServiceSchemaGenerator,TaxiSchema> {
+      val typeSchema = lang.taxi.Compiler(schema).compile()
+      val taxiSchema = TaxiSchema(typeSchema, listOf())
+      whenever(schemaProvider.schema()).thenReturn(taxiSchema)
+      return CaskServiceSchemaGenerator(
+         schemaProvider,
+         caskServiceSchemaWriter,
+         listOf(
+            FindByFieldIdOperationGenerator(),
+            AfterTemporalOperationGenerator(),
+            BeforeTemporalOperationGenerator(),
+            BetweenTemporalOperationGenerator())) to taxiSchema
+
+   }
+
+   @Test
    fun `Cask generates service schema from valid type schema`() {
       // given
       val typeSchema = lang.taxi.Compiler(schema).compile()
@@ -58,10 +86,10 @@ class CaskServiceSchemaGeneratorTest {
       val schemaVersion = argumentCaptor<String>()
       val serviceSchema = argumentCaptor<String>()
       // When
-      serviceSchemaGenerator.generate(taxiSchema.versionedType("OrderWindowSummary".fqn()))
+      serviceSchemaGenerator.generateAndPublishSchema(taxiSchema.versionedType("OrderWindowSummary".fqn()))
       // Then
       verify(schemaStoreClient, times(1)).submitSchema(schemaName.capture(), schemaVersion.capture(), serviceSchema.capture())
-      schemaName.firstValue.should.startWith("vyne.casks.OrderWindowSummary-OrderWindowSummary")
+      schemaName.firstValue.should.startWith("vyne.casks.OrderWindowSummary@")
       "1.0.0".should.equal(schemaVersion.firstValue)
       """import Symbol import Price namespace vyne.casks {
 
