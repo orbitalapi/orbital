@@ -120,7 +120,11 @@ class CaskOutput(
 
       // Connect to the websocket
       val handshakeMono = wsClient.execute(URI(endpoint), wsHandler)
-         .doOnError { healthMonitor.reportStatus(DOWN) } // Handshake error = terminated (down for now as terminated is not handled)
+         .doOnError {
+            log().error("Could not connect to CASK. Handshake error.", it)
+            healthMonitor.reportStatus(DOWN) // Handshake error = terminated (down for now as terminated is not handled)
+            tryToRestart()
+         }
 
       // Subscribe to all
       wsOutput.doOnSubscribe { handshakeMono.subscribe() }.subscribe()
@@ -158,7 +162,6 @@ class CaskWebsocketHandler(
             session.receive().map { it.payloadAsText }
                .doOnNext {
                   logger.error { "Received response from websocket: $it"}
-                  it.log().error( "Received response from websocket: $it")
                }.then()
          )
          .doOnError { onTermination(it) }
