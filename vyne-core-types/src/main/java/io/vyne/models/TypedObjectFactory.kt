@@ -85,7 +85,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
       return if (attributeValue == null) {
          TypedNull(schema.type(field.type))
       } else {
-         TypedInstance.from(schema.type(field.type.name), attributeValue, schema, true)
+         TypedInstance.from(schema.type(field.type.fullyQualifiedName), attributeValue, schema, true)
       }
    }
 
