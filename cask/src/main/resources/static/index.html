@@ -44,19 +44,56 @@
         integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
         crossorigin="anonymous"></script>
 <script>
-   var caskUrl = "ws://localhost:8800/cask/OrderWindowSummary?contentType=application/json&debug=true";
+   var caskUrl = "ws://localhost:8800/cask/json/cacib.cemafor.orders.Order";
    var clientWebSocket;
-   var message = {
-      "Date": "2020-03-19 11-PM",
-      "Symbol": "BTCUSD",
-      "Open": "6300",
-      "High": "6330",
-      "Low": "6186.08",
-      "Close": "6235.2",
-      "Volume BTC": "817.78",
-      "Volume USD": "5115937.58",
-      "OrderDate": "2020-01-01"
-   };
+   var message = JSON.stringify({
+   "tradeNumber":"USDINFLA-2020-05-05T09:10:54.1826197Z",
+   "eventType":"Open",
+   "tradeVersion":1,
+   "rfqId":"RfqId",
+   "entryType":"WithHeld",
+   "time":"2019-12-03 16:07:59.7980000",
+   "securityType":"Bond",
+   "subSecurityType":"??",
+   "identifierCode":"Identifier Code",
+   "identifierValue":"???",
+   "securityDescription":"Security Description",
+   "price":{
+      "currency":"EUR",
+      "amount":10.7
+
+},
+   "buySellFlag":"Buys",
+   "exchange":"CEM0",
+   "trader":"Trader 001",
+   "maturityDate":"2019-12-03",
+   "startDate":"2019-12-03",
+   "counterParty1":"PlacingCounterpartyName",
+   "counterParty2":"CounterpartyName",
+   "sourceSystem":"SourceSystemName",
+   "brokerFee":1.07,
+   "leg1Currency":"USD",
+   "leg1DayCountFraction":"ThirtyOverThreeSixty",
+   "leg1NotionalValue":1700000,
+   "leg1PaymentFrequency":0.78,
+   "leg1Rate":0.00995,
+   "leg1RateSpread": 1,
+   "leg1ResetFrequency": 1,
+   "leg2Currency":"USD",
+   "leg2DayCountFraction":"ActOverThreeSixFixFiveL",
+   "leg2NotionalValue":1700000,
+   "leg2PaymentFrequency":0.55,
+   "leg2Rate": 0.95,
+   "leg2RateSpread": 1,
+   "leg2ResetFrequency": 2,
+   "tenorMultiplier":2,
+   "tenorPeriod":"W",
+   "fixedLegMultiplier":2,
+   "fixedLegPeriod":"W",
+   "floatingRateIndex":"Libor",
+   "notionalExchange": 10
+})
+;
 
    function connectToCask(url) {
       clientWebSocket = new WebSocket(url);
