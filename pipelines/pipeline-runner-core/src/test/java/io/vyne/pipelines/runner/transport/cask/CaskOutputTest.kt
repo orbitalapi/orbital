@@ -109,7 +109,7 @@ class CaskOutputTest {
       caskOutput = CaskOutput(spec, pipelineLogger, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       await().atMost(2, SECONDS).until {
-         verify(healthMonitor).reportStatus(DOWN)
+         verify(healthMonitor, atLeast( 1)).reportStatus(DOWN)
       }
    }
 
