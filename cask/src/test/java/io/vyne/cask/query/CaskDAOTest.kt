@@ -5,6 +5,7 @@ import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
 import org.junit.Test
 import org.springframework.jdbc.core.JdbcTemplate
@@ -51,7 +52,7 @@ class CaskDAOTest {
          null,
          null
       )))
-      caskDAO = CaskDAO(mockJdbcTemplate)
+      caskDAO = CaskDAO(mockJdbcTemplate, SimpleTaxiSchemaProvider(schema))
    }
 
    @Test

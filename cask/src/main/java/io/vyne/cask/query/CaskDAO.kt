@@ -1,6 +1,7 @@
 package io.vyne.cask.query
 
 import io.vyne.cask.ingest.QueryView
+import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import lang.taxi.types.Field
@@ -10,8 +11,6 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
 fun String.toLocalDate(): LocalDate {
    return LocalDate.parse(this)
@@ -28,13 +27,13 @@ fun String.toLocalDateTime(): LocalDateTime {
 //}
 
 @Component
-class CaskDAO(private val jdbcTemplate: JdbcTemplate) {
+class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider: SchemaProvider) {
    fun findBy(versionedType: VersionedType, columnName: String, arg: String): List<Map<String, Any>> {
       val existingMetadaList = QueryView.tableMetadataForVersionedType(versionedType, jdbcTemplate)
       val exactVersionMatch = existingMetadaList.firstOrNull { it.versionHash == versionedType.versionHash }
          ?: existingMetadaList.maxBy { it.timestamp } ?: throw IllegalArgumentException(versionedType.fullyQualifiedName)
       val tableName = exactVersionMatch.tableName
-      val originalTypeSchema = exactVersionMatch.schema
+      val originalTypeSchema = schemaProvider.schema()
       val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
       val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
       val findByArg = jdbcQueryArgumentType(fieldType, arg)

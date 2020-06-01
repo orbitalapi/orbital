@@ -12,6 +12,7 @@ import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.Ingester
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.schemas.fqn
+import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.log
 import org.apache.commons.io.FileUtils
 import org.junit.After
@@ -44,12 +45,12 @@ class CaskDAOIntegrationTest {
    @Before
    fun setup() {
       val dataSource = DataSourceBuilder.create()
-         .url("jdbc:postgresql://localhost:6660/postgres")
+         .url("jdbc:postgresql://localhost:6663/postgres")
          .username("postgres")
          .build()
       jdbcTemplate = JdbcTemplate(dataSource)
       jdbcTemplate.execute(TableMetadata.DROP_TABLE)
-      caskDao = CaskDAO(jdbcTemplate)
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(CoinbaseJsonOrderSchema.sourceV1))
    }
 
    @After

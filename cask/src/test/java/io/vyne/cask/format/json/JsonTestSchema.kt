@@ -3,7 +3,7 @@ package io.vyne.cask.format.json
 import io.vyne.schemas.taxi.TaxiSchema
 
 object CoinbaseJsonOrderSchema {
-   private val sourceV1 = """
+   val sourceV1 = """
 type alias Price as Decimal
 type alias Symbol as String
 type OrderWindowSummary {
