@@ -48,7 +48,7 @@ class CaskAppIntegrationTest {
    }
 
    @Test
-   @Ignore("LENS-44 Run local Postgres db as part of integration tests")
+//   @Ignore("LENS-44 Run local Postgres db as part of integration tests")
    fun testWebsocket() {
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()

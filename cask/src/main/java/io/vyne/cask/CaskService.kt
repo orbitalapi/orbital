@@ -10,25 +10,33 @@ import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.ingest.InstanceAttributeSet
+import io.vyne.cask.ingest.StreamSource
 import io.vyne.cask.websocket.CaskWebsocketRequest
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import java.io.InputStream
 import java.nio.file.Files
+import java.nio.file.Path
 
 @Component
-class CaskService(val schemaProvider: SchemaProvider,
-                  val ingesterFactory: IngesterFactory,
-                  val objectMapper: ObjectMapper = jacksonObjectMapper()) {
+class CaskService(private val schemaProvider: SchemaProvider,
+                  private val ingesterFactory: IngesterFactory,
+                  private val objectMapper: ObjectMapper = jacksonObjectMapper()) {
 
-   data class TypeError(val message: String)
-   data class ContentTypeError(val message: String)
-   enum class ContentType { json, csv}
+   interface CaskServiceError {
+      val message:String
+   }
+   data class TypeError(override val message: String) : CaskServiceError
+   data class ContentTypeError(override val message: String) : CaskServiceError
+
+   enum class ContentType { json, csv }
+
    val supportedContentTypes: List<ContentType> = listOf(ContentType.json, ContentType.csv)
 
    fun resolveContentType(contentTypeName: String): Either<ContentTypeError, ContentType> {
@@ -62,35 +70,17 @@ class CaskService(val schemaProvider: SchemaProvider,
       }
    }
 
-   fun ingestRequest(request: CaskWebsocketRequest,
-                     inputStream: Flux<InputStream>): Flux<InstanceAttributeSet> {
+   fun ingestRequest(request: CaskIngestionRequest, input: Flux<InputStream>): Flux<InstanceAttributeSet> {
       val schema = schemaProvider.schema()
       val versionedType = request.versionedType
       val cacheDirectory = Files.createTempDirectory(versionedType.versionedName)
 
-      val streamSource = when (request) {
-         is JsonWebsocketRequest -> {
-            JsonStreamSource(
-               inputStream,
-               versionedType,
-               schema,
-               cacheDirectory,
-               objectMapper)
-         }
-         is CsvWebsocketRequest -> {
-            CsvStreamSource(
-               input = inputStream,
-               type = versionedType,
-               schema = schema,
-               readCacheDirectory = cacheDirectory,
-               csvFormat = request.csvFormat(),
-               nullValues = request.nullValues()
-            )
-         } else -> {
-            return Flux.error(NotImplementedError("Ingestion $request not supported!"))
-         }
-      }
-
+      val streamSource: StreamSource = request.buildStreamSource(
+         input = input,
+         type = versionedType,
+         schema = schema,
+         readCacheDirectory = cacheDirectory
+      )
       val ingestionStream = IngestionStream(
          versionedType,
          TypeDbWrapper(versionedType, schema, cacheDirectory, null),
@@ -107,4 +97,9 @@ class CaskService(val schemaProvider: SchemaProvider,
       return ingester
          .ingest()
    }
+}
+
+interface CaskIngestionRequest {
+   fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, readCacheDirectory: Path): StreamSource
+   val versionedType: VersionedType
 }

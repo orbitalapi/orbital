@@ -1,6 +1,7 @@
 package io.vyne.cask
 
-import arrow.core.Either
+import arrow.core.*
+import arrow.core.extensions.either.applicativeError.handleError
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
@@ -32,19 +33,21 @@ class CaskWebsocketHandler(
    override fun handle(session: WebSocketSession): Mono<Void> {
       log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri}")
 
-      val contentType = caskService.resolveContentType(session.contentType())
-      val versionedType = caskService.resolveType(session.typeReference())
+      val requestOrError = caskService.resolveContentType(session.contentType())
+         .flatMap { contentType ->
+            caskService.resolveType(session.typeReference()).map { versionedType ->
+               CaskWebsocketRequest.create(session, contentType, versionedType, mapper)
+            }
+         }
 
-      return when (val request = CaskWebsocketRequest.create(session, contentType, versionedType)) {
-         is Either.Left -> {
-            log().info("Closing sessionId=${session.id}.  Error: ${request.a.message}")
-            session.close(CloseStatus(NOT_ACCEPTABLE.code, request.a.message)).then()
+      return requestOrError
+         .map { request ->
+            applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, request.versionedType))
+            ingestMessages(request)
+         }.getOrHandle { error ->
+            log().info("Closing sessionId=${session.id}.  Error: ${error.message}")
+            session.close(CloseStatus(NOT_ACCEPTABLE.code, error.message)).then()
          }
-         is Either.Right -> {
-            applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, request.b.versionedType))
-            ingestMessages(request.b)
-         }
-      }
    }
 
    private fun ingestMessages(request: CaskWebsocketRequest): Mono<Void> {

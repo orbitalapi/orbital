@@ -14,6 +14,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.*
 
 interface ConversionService {
    fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: String?): T
@@ -61,15 +62,29 @@ interface ForwardingConversionService : ConversionService {
 }
 
 class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
+   private fun toLocalDateTime(source: String, format: String?): LocalDateTime {
+      require(format != null) { "Formats are expected for Instants" }
+      // Note - using US Locale so that AM PM in uppercase is supported
+      val locale = when {
+         source.contains("pm") || source.contains("am") -> Locale.UK
+         source.contains("PM") || source.contains("AM") -> Locale.US
+         else -> Locale.getDefault()
+      }
+      val formatter = DateTimeFormatter.ofPattern(format,  locale)
+      return LocalDateTime.parse(source, formatter)
+   }
+
    override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
-      return if (source is String && targetType == Instant::class.java) {
-         require(format != null) { "Formats are expected for Instants" }
-         val formatter = DateTimeFormatter.ofPattern(format)
-         val instant = LocalDateTime.parse(source, formatter)
-            .toInstant(ZoneOffset.UTC) // TODO : We should be able to detect that from the format sometimes
-         instant as T
-      } else {
-         next.convert(source, targetType, format)
+      return when {
+         source is String && targetType == Instant::class.java -> {
+            toLocalDateTime(source, format).toInstant(ZoneOffset.UTC) as T
+         }
+         source is String && targetType == LocalDateTime::class.java -> {
+            toLocalDateTime(source, format) as T
+         }
+         else -> {
+            next.convert(source, targetType, format)
+         }
       }
    }
 
