@@ -36,6 +36,14 @@ class Ingester(
         createTableStatement.metadata.executeInsert(jdbcTemplate)
     }
 
+    // TODO refactor so that we open/close transaction based on types of messages
+    //   1. Message StartTransaction
+    //   2. receive InstanceAttributeSet
+    //   3. receive InstanceAttributeSet
+    //   4. receive InstanceAttributeSet
+    //   ...
+    //   N receive CommitTransaction
+
     fun ingest(): Flux<InstanceAttributeSet> {
         val connection = jdbcTemplate.dataSource!!.connection
         val pgConnection = connection.unwrap(PGConnection::class.java)

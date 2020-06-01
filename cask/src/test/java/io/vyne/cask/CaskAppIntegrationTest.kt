@@ -1,24 +1,32 @@
 package io.vyne.cask
 
+import com.opentable.db.postgres.embedded.EmbeddedPostgres
+import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
-import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemas.Schema
-import org.junit.Ignore
+import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.spring.SchemaPublicationMethod
+import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.utils.log
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import org.springframework.web.reactive.socket.client.WebSocketClient
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Mono
+import reactor.test.StepVerifier
 import java.net.URI
-
+import java.time.Duration
+import javax.annotation.PreDestroy
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -27,10 +35,13 @@ import java.net.URI
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false"
    ])
+@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED)
 class CaskAppIntegrationTest {
-
    @LocalServerPort
    val randomServerPort = 0
+
+   @Autowired
+   lateinit var schemaStoreClient: SchemaStoreClient
 
    @Test
    fun contextLoads() {
@@ -38,33 +49,42 @@ class CaskAppIntegrationTest {
 
    @TestConfiguration
    class SpringConfig {
+      val pg = EmbeddedPostgres.builder().setPort(6662).start()
       @Bean
       @Primary
-      fun schemaProvider(): SchemaProvider {
-         return object : SchemaProvider {
-            override fun schemas(): List<Schema> = listOf(CoinbaseJsonOrderSchema.schemaV1)
-         }
+      fun jdbcTemplate(): JdbcTemplate {
+         val dataSource = DataSourceBuilder.create()
+            .url("jdbc:postgresql://localhost:6662/postgres")
+            .username("postgres")
+            .build()
+         val jdbcTemplate = JdbcTemplate(dataSource)
+         jdbcTemplate.execute(TableMetadata.DROP_TABLE)
+         return jdbcTemplate
+      }
+
+      @PreDestroy
+      fun destroy() {
+         log().info("Closing embedded Postgres...")
+         pg.close()
       }
    }
 
    @Test
-   @Ignore("LENS-44 Run local Postgres db as part of integration tests")
-   fun testWebsocket() {
+   fun canIngestContentViaWebsocketConnection() {
+      // mock schema
+      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
-      val uri = URI.create("ws://localhost:${randomServerPort}/cask/OrderWindowSummary")
-      val caskRequest = """{
-        "Date": "2020-03-19 11-PM",
-        "Symbol": "BTCUSD",
-        "Open": "6300",
-        "High": "6330",
-        "Low": "6186.08",
-        "Close": "6235.2",
-        "Volume BTC": "817.78",
-        "Volume USD": "5115937.58"
-         }""".trimIndent()
+      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+      val caskRequest = """
+Date,Symbol,Open,High,Low,Close
+2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
+2020-03-19,NULL,6300,6330,6186.08,6235.2
+2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
+2020-03-19,BTCUSD,6300,6330,6186.08,6235.2""".trimIndent()
 
-      client.execute(uri)
+      val wsConnection = client.execute(uri)
       { session ->
          session.send(Mono.just(session.textMessage(caskRequest)))
             .thenMany(session.receive()
@@ -74,6 +94,10 @@ class CaskAppIntegrationTest {
             .then()
       }.subscribe()
 
-      output.blockFirst()
+      StepVerifier
+         .create(output.take(1).timeout(Duration.ofSeconds(1)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+         .verifyComplete()
+         .run { wsConnection.dispose() }
    }
 }
