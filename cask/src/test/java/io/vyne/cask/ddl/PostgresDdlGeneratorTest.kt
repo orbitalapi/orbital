@@ -28,18 +28,26 @@ type Person {
         val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
         statement.ddlStatement.should.equal("""
 CREATE TABLE IF NOT EXISTS Person_c99239 (
-"firstName" VARCHAR(255) NOT NULL,
-"age" INTEGER NOT NULL,
-"alive" BOOLEAN NOT NULL,
+"firstName" VARCHAR(255),
+"age" INTEGER,
+"alive" BOOLEAN,
 "spouseName" VARCHAR(255),
-"dateOfBirth" DATE NOT NULL,
-"timestamp" TIMESTAMP NOT NULL
+"dateOfBirth" DATE,
+"timestamp" TIMESTAMP
 )""".trim())
     }
 
     @Test
     fun generatesPrimitivesAsColumns() {
         val (_, taxi) = schema("""
+enum Gender {
+   Male,
+   Female
+}
+enum GenderType {
+   Male synonym of Gender.Male
+}
+type OriginalGender inherits Gender
 type Person {
     firstName : FirstName as String
     age : Int
@@ -47,25 +55,33 @@ type Person {
     spouseName : Name? as String
     dateOfBirth: Date
     timestamp: Instant
+    gender : GenderType
+    originalGender : OriginalGender
 }""".trim())
         val person = taxi.objectType("Person")
         generator.generateColumnForField(person.field("firstName")).sql
-                .should.equal(""""firstName" VARCHAR(255) NOT NULL""")
+                .should.equal(""""firstName" VARCHAR(255)""")
 
         generator.generateColumnForField(person.field("age")).sql
-                .should.equal(""""age" INTEGER NOT NULL""")
+                .should.equal(""""age" INTEGER""")
 
         generator.generateColumnForField(person.field("alive")).sql
-                .should.equal(""""alive" BOOLEAN NOT NULL""")
+                .should.equal(""""alive" BOOLEAN""")
 
         generator.generateColumnForField(person.field("spouseName")).sql
                 .should.equal(""""spouseName" VARCHAR(255)""")
 
        generator.generateColumnForField(person.field("dateOfBirth")).sql
-          .should.equal(""""dateOfBirth" DATE NOT NULL""")
+          .should.equal(""""dateOfBirth" DATE""")
 
        generator.generateColumnForField(person.field("timestamp")).sql
-          .should.equal(""""timestamp" TIMESTAMP NOT NULL""")
+          .should.equal(""""timestamp" TIMESTAMP""")
+
+       generator.generateColumnForField(person.field("gender")).sql
+          .should.equal(""""gender" VARCHAR(255)""")
+
+       generator.generateColumnForField(person.field("originalGender")).sql
+          .should.equal(""""originalGender" VARCHAR(255)""")
 
     }
 

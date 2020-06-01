@@ -1,11 +1,14 @@
 package io.vyne.cask
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
+import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.ingest.Ingester
 import io.vyne.cask.ingest.IngesterFactory
@@ -17,6 +20,7 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import org.junit.Before
 import org.junit.Test
+import org.skyscreamer.jsonassert.JSONAssert
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketMessage
@@ -153,7 +157,7 @@ class CaskWebsocketHandlerTest {
 
       StepVerifier
          .create(session.textOutput.take(1))
-         .expectNext("""{"result":"REJECTED","message":"Cannot deserialize value of type `java.math.BigDecimal` from String \"6300USD\": not a valid representation\n at [Source: UNKNOWN; line: -1, column: -1]"}""")
+         .expectNextMatches { json -> json.rejectedWithReason("Failed to convert from type [java.lang.String] to type [java.math.BigDecimal] for value '6300USD'") }
          .verifyComplete()
    }
 
@@ -165,7 +169,7 @@ class CaskWebsocketHandlerTest {
 
       StepVerifier
          .create(session.textOutput.take(1))
-         .expectNext("""{"result":"REJECTED","message":"Unable to parse primitive type=STRING name=Symbol value=null."}""")
+         .expectNextMatches { json -> json.rejectedWithReason("value must not be null") }
          .verifyComplete()
    }
 
@@ -180,8 +184,8 @@ class CaskWebsocketHandlerTest {
 
       StepVerifier
          .create(session.textOutput.take(3))
-         .expectNext("""{"result":"REJECTED","message":"com.fasterxml.jackson.core.io.JsonEOFException: Unexpected end-of-input in VALUE_STRING\n at [Source: (ByteArrayInputStream); line: 1, column: 15]"}""")
-         .expectNext("""{"result":"REJECTED","message":"Cannot deserialize value of type `java.math.BigDecimal` from String \"6300USD\": not a valid representation\n at [Source: UNKNOWN; line: -1, column: -1]"}""")
+         .expectNextMatches { json -> json.rejectedWithReason("com.fasterxml.jackson.core.io.JsonEOFException: Unexpected end-of-input in VALUE_STRING") }
+         .expectNextMatches { json -> json.rejectedWithReason("Failed to convert from type [java.lang.String] to type [java.math.BigDecimal] for value '6300USD'") }
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
          .verifyComplete()
    }
@@ -273,6 +277,12 @@ class CaskWebsocketHandlerTest {
          .verifyComplete()
    }
 
+   private fun String.rejectedWithReason(reason:String):Boolean {
+      val response = jacksonObjectMapper().readValue<CaskIngestionResponse>(this)
+      response.result.should.equal(CaskIngestionResponse.ResponseResult.REJECTED)
+      response.message.should.startWith(reason)
+      return true
+   }
    private fun csvMessageWithNullValues(): ByteArrayInputStream {
       return """
          Date,Symbol,Open,High,Low,Close

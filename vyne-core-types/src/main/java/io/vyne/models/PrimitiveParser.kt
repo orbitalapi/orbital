@@ -1,13 +1,10 @@
 package io.vyne.models
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.jvm.common.PrimitiveTypes
+import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
-import java.lang.IllegalArgumentException
 
 /**
  * Responsible for simple conversions between primitives.
@@ -15,26 +12,55 @@ import java.lang.IllegalArgumentException
  *
  * Used when Parsing some non type-safe wire format (eg., xpath returning a number as a string)
  */
-class PrimitiveParser(private val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())) {
+class PrimitiveParser(private val conversionService: ConversionService = ConversionService.default()) {
    fun parse(value: Any, targetType: Type, schema: Schema): TypedInstance {
+      if (targetType.isEnum) {
+         return parseEnum(value, targetType)
+      }
+      // TODO fix me https://projects.notional.uk/youtrack/issue/LENS-128
+      val inheritsFromEnum = targetType.inherits.filter { it.isEnum }
+      if (inheritsFromEnum.isNotEmpty()) {
+         return parseEnum(value, inheritsFromEnum.first())
+      }
+      return parsePrimitive(value, targetType, schema)
+   }
+
+   private fun parsePrimitive(value: Any, targetType: Type, schema: Schema): TypedValue {
       val underlyingPrimitive = Primitives.getUnderlyingPrimitive(targetType, schema)
       val taxiPrimitive = PrimitiveType.fromDeclaration(underlyingPrimitive.fullyQualifiedName)
       val javaType = PrimitiveTypes.getJavaType(taxiPrimitive)
-      val convertedValue = objectMapper.convertValue(value, javaType)
+      val convertedValue = conversionService.convert(value,javaType,targetType.format)
       if (convertedValue == null) {
          throw IllegalArgumentException("Unable to parse primitive type=${targetType.taxiType.basePrimitive} name=${targetType.name} value=null.")
       }
       return TypedValue.from(targetType, convertedValue, performTypeConversions = false)
    }
+
+   private fun parseEnum(value: Any, targetType: Type): TypedInstance {
+      return when (targetType.enumValues.contains(value)) {
+         true -> TypedValue.from(targetType, value, false)
+         else -> {
+            // TODO fix me, vyne type should have enum values https://projects.notional.uk/youtrack/issue/LENS-131
+            val taxiType = (targetType.taxiType as EnumType)
+            val taxiEnumName = taxiType.values.find { it.value == value }?.name
+            taxiEnumName
+               ?.let { TypedValue.from(targetType, it, false) }
+               ?: error("Unable to map Value=${value} " +
+                  "to Enum Type=${targetType.fullyQualifiedName}, " +
+                  "allowed values=${taxiType.definition?.values?.map { Pair(it.name, it.value) }}")
+         }
+      }
+   }
 }
 
 object Primitives {
    fun getUnderlyingPrimitive(type: Type, schema: Schema): Type {
-      val primitiveCandidates = getUnderlyingPrimitiveIfExists(type, schema)
+
       return when {
-         primitiveCandidates.isEmpty() -> error("Type ${type.fullyQualifiedName} is not mappable to a primitive type")
-         primitiveCandidates.size > 1 -> error("Type ${type.fullyQualifiedName} ambiguously maps to multiple primitive types: ${primitiveCandidates.joinToString { it.fullyQualifiedName }}")
-         else -> primitiveCandidates.first()
+         type.taxiType.basePrimitive == null -> {
+            error("Type ${type.fullyQualifiedName} is not mappable to a primitive type")
+         }
+         else -> schema.type(type.taxiType.basePrimitive!!.qualifiedName)
       }
    }
 

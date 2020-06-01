@@ -112,4 +112,52 @@ class TypeTest {
       schema.type("GivenName").isCollection.should.be.`false`
       schema.type("Name").isCollection.should.be.`false`
    }
+
+   @Test
+   fun formattedTypesShouldResolveAliasesToTheirUnformattedType() {
+      val schema = TaxiSchema.from("""
+         type EventDate inherits Instant
+         model Source {
+            eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
+         }
+         model ThingWithInlineInstant {
+            eventDate : Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSX" )
+         }
+      """)
+      schema.type("EventDate").resolveAliases().fullyQualifiedName.should.equal("EventDate")
+      schema.type(schema.type("Source").attribute("eventDate").type).resolveAliases().fullyQualifiedName.should.equal("EventDate")
+      schema.type(schema.type("ThingWithInlineInstant").attribute("eventDate").type).resolveAliases().fullyQualifiedName.should.equal("lang.taxi.Instant")
+   }
+
+   @Test
+   fun whenTwoUnformattedTypesAreAssignableThenTheyAreAssignableWhenFormatted() {
+      val schema = TaxiSchema.from("""
+         type EventDate inherits Instant
+         type LunchTime inherits Instant
+
+         model Source {
+            eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
+         }
+         model Target {
+            eventDate : EventDate( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSX" )
+         }
+      """)
+      val sourceType = schema.type(schema.type("Source").attribute("eventDate").type)
+      val targetType = schema.type(schema.type("Target").attribute("eventDate").type)
+      sourceType.isAssignableTo(targetType).should.be.`true`
+      targetType.isAssignableTo(sourceType).should.be.`true`
+
+      schema.type("LunchTime").isAssignableTo(sourceType).should.be.`false`
+      schema.type("LunchTime").isAssignableTo(targetType).should.be.`false`
+      targetType.isAssignableTo(schema.type("LunchTime")).should.be.`false`
+      sourceType.isAssignableTo(schema.type("LunchTime")).should.be.`false`
+   }
+
+   @Test
+   fun typeAliasesOnFormattedTypesShouldResolveCorrectly() {
+      val schema = TaxiSchema.from("""
+         type alias EventDate as Instant
+      """)
+      schema.type("EventDate").resolveAliases().fullyQualifiedName.should.equal("EventDate")
+   }
 }

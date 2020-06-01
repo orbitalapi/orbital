@@ -7,10 +7,7 @@ import io.vyne.cask.types.allFields
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
-import lang.taxi.types.Field
-import lang.taxi.types.ObjectType
-import lang.taxi.types.PrimitiveType
-import lang.taxi.types.Type
+import lang.taxi.types.*
 import org.springframework.jdbc.core.JdbcTemplate
 import java.math.BigDecimal
 import java.nio.file.Path
@@ -177,17 +174,24 @@ $fieldDef
       return TableGenerationStatement(ddl, versionedType, tableName, columns, metadata)
    }
 
-
    @VisibleForTesting
    internal fun generateColumnForField(field: Field): PostgresColumn {
-      if (PrimitiveType.isAssignableToPrimitiveType(field.type)) {
-         val primitive = PrimitiveType.getUnderlyingPrimitive(field.type)
-         return generateColumnForField(field, primitive)
-      } else {
-         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-      }
-
+      val primitiveType = getPrimitiveType(field, field.type)
+      return generateColumnForField(field, primitiveType)
    }
+
+   internal fun getPrimitiveType(field: Field, type: Type): PrimitiveType {
+      if (PrimitiveType.isAssignableToPrimitiveType(type)) {
+         return PrimitiveType.getUnderlyingPrimitive(type)
+      } else if (type is EnumType) {
+         return PrimitiveType.STRING
+      } else if (type.inheritsFrom.size == 1) {
+         return getPrimitiveType(field, type.inheritsFrom.first())
+      } else {
+         TODO("Unable to generate column for field=${field}, type=${type}") //To change body of created functions use File | Settings | File Templates.
+      }
+   }
+
 
    private fun generateColumnForField(field: Field, primitiveType: PrimitiveType): PostgresColumn {
       val columnName = toColumnName(field)
@@ -212,7 +216,7 @@ $fieldDef
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
       val (postgresType, writer) = p
-      val nullable = if (field.nullable) "" else " NOT NULL"
+      val nullable = "" //if (field.nullable) "" else " NOT NULL"
 
       return PostgresColumn(columnName, field, "$columnName $postgresType$nullable", primitiveType, writer)
    }

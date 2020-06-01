@@ -50,7 +50,7 @@ class ValueReader {
       return (dataType.value == attribute)
    }
 
-   private fun readFromMap(source: Map<*, *>, attribute: String): Any {
-      return source[attribute] ?: IllegalArgumentException("Source map does not contain an attribute $attribute")
+   private fun readFromMap(source: Map<*, *>, attribute: String): Any? {
+      return source[attribute]
    }
 }

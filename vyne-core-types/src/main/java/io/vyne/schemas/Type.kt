@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
 import io.vyne.VersionedSource
 import io.vyne.utils.log
+import io.vyne.utils.orElse
 import lang.taxi.Equality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
@@ -101,6 +102,11 @@ data class Type(
    @JsonView(TypeFullView::class)
    val isTypeAlias = aliasForTypeName != null
 
+   @JsonView(TypeFullView::class)
+   val format: String? = taxiType.format
+
+   @JsonView(TypeFullView::class)
+   val hasFormat = format != null
 
    @get:JsonIgnore
    val inherits: List<Type> by lazy {
@@ -294,7 +300,7 @@ data class Type(
          }
          return true
       } else {
-         return this.inheritsFrom(other, considerTypeParameters)
+         return thisWithoutAliases.inheritsFrom(otherWithoutAliases, considerTypeParameters)
       }
 
 
@@ -305,8 +311,9 @@ data class Type(
     * type
     */
    fun resolveAliases(): Type {
-      return if (!this.isTypeAlias) {
-         this
+      val resolvedFormattedType = resolveUnderlyingFormattedType()
+      return if (!resolvedFormattedType.isTypeAlias) {
+         resolvedFormattedType
       } else {
          // Experiment...
          // type aliases for primtiives are a core building block for taxonomies
@@ -317,10 +324,44 @@ data class Type(
          // Ideally, we need better constructrs in the langauge to suport definint the primitve types.
          // For now, let's stop resolving aliases one step before the primitive
          when {
-            aliasForTypeName!!.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName -> this.aliasForType!!.resolveAliases()
-            this.aliasForType!!.isPrimitive -> this
-            else -> this.aliasForType!!.resolveAliases()
+            aliasForTypeName!!.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName -> resolvedFormattedType.aliasForType!!.resolveAliases()
+            resolvedFormattedType.aliasForType!!.isPrimitive -> this
+            else -> resolvedFormattedType.aliasForType!!.resolveAliases()
          }
+      }
+   }
+
+   // Don't call this directly, use resolveAliases()
+   private fun resolveUnderlyingFormattedType(): Type {
+      if (this.format == null) {
+         return this
+      }
+      require(this.inherits.size <= 1) { "A formatted type should have at most 1 supertype" }
+      // Same apporoach as below -- stop the inheritence on formatted types before
+      // hitting primitives
+      if (this.isPrimitive) {
+         return this
+      }
+      if (this.inherits.isEmpty()) {
+         return this // probably a type alias
+      }
+      val superType = this.inherits.first()
+      // If our supertype is primitive without being resolved, that means
+      // we're an inline format -- ie, a format against an attribute on a type
+      //          model ThingWithInlineInstant {
+      //            eventDate : Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSX" )
+      //         }
+      // In this scneario, we want to refer to the primitive, because there's no other option.
+      if (superType.isPrimitive && this.format != superType.format) {
+         return superType
+      }
+      val resolvedSuperType = superType.resolveAliases()
+      // Otherwise, if our supertype resolves to a primitive,
+      // then we're at the bottom of the inheritence chain, and return this.
+      return if (resolvedSuperType.isPrimitive) {
+         this
+      } else {
+         resolvedSuperType
       }
    }
 

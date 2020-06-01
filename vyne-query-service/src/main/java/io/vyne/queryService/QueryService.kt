@@ -8,6 +8,8 @@ import io.vyne.query.*
 import io.vyne.schemas.Schema
 import io.vyne.schemas.TypeLightView
 import io.vyne.spring.VyneFactory
+import io.vyne.vyneql.VyneQLQueryString
+import lang.taxi.CompilationException
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -19,7 +21,7 @@ import java.util.*
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 data class FailedSearchResponse(val message: String,
                                 @field:JsonIgnore // this sends too much information - need to build a lightweight version
-                                override val profilerOperation: ProfilerOperation,
+                                override val profilerOperation: ProfilerOperation?,
                                 override val resultMode: ResultMode,
                                 override val queryResponseId: String = UUID.randomUUID().toString()
 
@@ -42,8 +44,26 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
    @PostMapping("/query")
    fun submitQuery(@RequestBody query: Query): QueryResponse {
       val response = executeQuery(query)
-      history.add(QueryHistoryRecord(query, response))
+      history.add(RestfulQueryHistoryRecord(query, response))
       return response
+   }
+
+   @PostMapping("/vyneql")
+   fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString): QueryResponse {
+      val vyne = vyneFactory.createVyne()
+      val response: QueryResponse = try {
+         vyne.query(query)
+      } catch (e: CompilationException) {
+         FailedSearchResponse(
+            message = e.message!!, // Message contains the error messages from the compiler
+            profilerOperation = null,
+            resultMode = ResultMode.SIMPLE
+         )
+      }
+      history.add(VyneQlQueryHistoryRecord(query, response))
+      return response
+
+
    }
 
    private fun executeQuery(query: Query): QueryResponse {

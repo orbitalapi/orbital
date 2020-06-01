@@ -687,8 +687,8 @@ service IonService {
       expect(result.isFullyResolved).to.be.`true`
       val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
       resultList.should.contain.all.elements(
-         mapOf(Pair("id", "hpcOrder1"), Pair("date", LocalDate.parse("2020-01-01"))),
-         mapOf(Pair("id", "ionOrder1"), Pair("date", LocalDate.parse("2020-01-01")))
+         mapOf(Pair("id", "hpcOrder1"), Pair("date", "2020-01-01")),
+         mapOf(Pair("id", "ionOrder1"), Pair("date", "2020-01-01"))
       )
    }
 
@@ -715,8 +715,26 @@ service IonService {
       val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }.flatMap { it as ArrayList<*> }
       resultList.should.contain.all.elements(
          mapOf(Pair("hpcID", "hpcOrder1")),
-         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate", LocalDate.parse("2020-01-01")))
+         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate","2020-01-01"))
       )
+   }
+
+   @Test
+   fun formattedValueWithSameTypeButDifferentFormatsAreDiscoverable() {
+      val schema  = """
+         type EventDate inherits Instant
+         model Source {
+            eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
+         }
+         model Target {
+            eventDate : EventDate( @format = "yyyy-MM-dd'T'HH:mm:ss.SSSX" )
+         }
+      """.trimIndent()
+      val (vyne, _) = testVyne(schema)
+      vyne.addJsonModel("Source", """{ "eventDate" : "05/28/20T13:44:23.000Z" }""")
+      val result = vyne.query().build("Target")
+      result.isFullyResolved.should.be.`true`
+      (result["Target"]!!.toRawObject() as Map<*,*>).get("eventDate").should.equal("2020-05-28T13:44:23.000Z")
    }
 
    @Ignore("This test throws StackOverFlowException, will be investigated.")
@@ -771,6 +789,42 @@ service IonService {
 //      val result =  vyne.query("""
 //        findAll { Client } as ClientAndCountry
 //      """.trimIndent())
+   }
+
+   @Test
+   fun `should build by using synonyms`() {
+      val enumSchema = TaxiSchema.from("""
+                namespace common {
+                   enum BankDirection {
+                     BankBuys,
+                     BankSell
+                   }
+
+                   model CommonOrder {
+                      direction: BankDirection
+                   }
+                }
+                namespace BankX {
+                   enum BankXDirection {
+                        BUY synonym of common.BankDirection.BankBuys,
+                        SELL synonym of common.BankDirection.BankSell
+                   }
+                   model BankOrder {
+                      buySellIndicator: BankXDirection
+                   }
+                }
+
+      """.trimIndent())
+
+      val (vyne, stubService) = testVyne(enumSchema)
+      vyne.addJsonModel(
+         "BankX.BankOrder",
+         """
+            { "buySellIndicator" : "BUY" }
+         """.trimIndent())
+      val result = vyne.query().build("common.CommonOrder")
+      val rawResult = result.results.values.first()!!.toRawObject()
+      rawResult.should.equal(mapOf("direction" to "BankBuys"))
    }
 }
 

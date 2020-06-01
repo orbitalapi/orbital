@@ -3,6 +3,7 @@ package io.vyne.query
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.schemas.*
 import io.vyne.utils.log
 
@@ -17,7 +18,17 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext) {
          val instance = context.getFact(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
          when (instance.size) {
             0 -> error("Found 0 instances of ${targetType.fullyQualifiedName}, but hasFactOfType returned true")
-            1 -> return instance.first()
+            1 -> {
+               val discoveredValue = instance.first()
+               // Handle formatting
+               // Choosing to copy the type, since as we got this far, we know that
+               // the types are compatible.  However, this may prove to cause problems.
+               return if (discoveredValue is TypedValue && targetType.hasFormat && targetType.format != discoveredValue.type.format) {
+                  discoveredValue.copy(targetType)
+               } else {
+                  discoveredValue
+               }
+            }
             else -> error("Found ${instance.size} instances of ${targetType.fullyQualifiedName}.  We should handle this, but we don't.")
          }
       }
