@@ -13,6 +13,12 @@ class ValueReaderTest {
    }
 
    @Test
+   fun canReadNullValueFromMap() {
+      val src = mapOf("foo" to "bar")
+      expect(ValueReader().read(src,"unknownAttribute")).to.`null`
+   }
+
+   @Test
    fun canReadValueFromObject() {
       data class SampleInput(val name:String)
       val src = SampleInput("Jimmy")
