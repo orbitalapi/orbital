@@ -12,9 +12,10 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Locale
 
 interface ConversionService {
    fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: String?): T
@@ -45,6 +46,8 @@ object VyneDefaultConversionService : ConversionService {
       // TODO :  we need to be much richer about date handling.
       service.addConverter(String::class.java, LocalDate::class.java) { s -> LocalDate.parse(s) }
       service.addConverter(java.lang.Long::class.java, Instant::class.java) { s -> Instant.ofEpochMilli(s.toLong()) }
+      // TODO Check this as it is a quick addition for the demo!
+      service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate(); }
       service
    }
 
@@ -77,7 +80,7 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
    override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
       return when {
          source is String && targetType == Instant::class.java -> {
-            toLocalDateTime(source, format).toInstant(ZoneOffset.UTC) as T
+            toLocalDateTime(source, format).toInstant(ZoneOffset.UTC) as T  // TODO : We should be able to detect that from the format sometimes
          }
          source is String && targetType == LocalDateTime::class.java -> {
             toLocalDateTime(source, format) as T

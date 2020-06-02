@@ -10,12 +10,9 @@ import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.query.CaskDAO
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.log
-import org.junit.After
-import org.junit.Before
-import org.junit.Ignore
-import org.junit.Rule
-import org.junit.Test
+import org.junit.*
 import org.junit.rules.TemporaryFolder
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
@@ -51,7 +48,7 @@ class DbColumnTypesIntegrationTest {
          .build()
       jdbcTemplate = JdbcTemplate(dataSource)
       jdbcTemplate.execute(TableMetadata.DROP_TABLE)
-      caskDao = CaskDAO(jdbcTemplate)
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(schemaStr))
    }
 
    @After

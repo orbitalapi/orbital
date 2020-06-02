@@ -16,7 +16,7 @@ fun <T> timed(name: String, log: Boolean = true, timeUnit: TimeUnit = TimeUnit.M
     val stopwatch = Stopwatch.createStarted()
     val response = block()
     if (log) {
-        Timer.log.debug("$name completed in ${stopwatch.duration(timeUnit)}")
+        Timer.log.info("$name completed in ${stopwatch.duration(timeUnit)}")
     }
 
     return response

@@ -32,15 +32,18 @@ object TemporalFieldUtils {
          .find { annotation -> annotation.name == name }
    }
 
-   fun constraintFor(field: Field, op: Operator, path: String) = PropertyToParameterConstraint(
-      propertyIdentifier = PropertyTypeIdentifier(field.type.toQualifiedName()),
-      operator = op,
-      expectedValue = RelativeValueExpression(AttributePath.from(path)),
-      compilationUnits = listOf(CompilationUnit.unspecified())
-   )
+   fun constraintFor(field: Field, op: Operator, path: String): PropertyToParameterConstraint{
+      val inheritedType = if (field.type.inheritsFrom.isEmpty()) field.type else field.type.inheritsFrom.first()
+      return PropertyToParameterConstraint(
+         propertyIdentifier = PropertyTypeIdentifier(inheritedType.toQualifiedName()),
+         operator = op,
+         expectedValue = RelativeValueExpression(AttributePath.from(path)),
+         compilationUnits = listOf(CompilationUnit.unspecified())
+      )
+   }
 
-   fun parameterFor(type: Type, name: String) = Parameter(
-      annotations = listOf(),
+   fun parameterFor(type: Type, name: String, annotations: List<Annotation> = listOf()) = Parameter(
+      annotations = annotations,
       type = type,
       name = name,
       constraints = listOf())

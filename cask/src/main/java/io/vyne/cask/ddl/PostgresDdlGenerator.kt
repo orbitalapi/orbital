@@ -3,6 +3,7 @@ package io.vyne.cask.ddl
 import com.google.common.annotations.VisibleForTesting
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.VersionedSource
+import io.vyne.cask.timed
 import io.vyne.cask.types.allFields
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
@@ -13,7 +14,11 @@ import java.math.BigDecimal
 import java.nio.file.Path
 import java.sql.Timestamp
 import java.sql.Types
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.util.concurrent.TimeUnit
 
 data class TableMetadata(
    val tableName: String,
@@ -31,7 +36,13 @@ data class TableMetadata(
       VersionedSource.forIdAndContent(schemaId, source)
    }
 
-   val schema = TaxiSchema.from(versionedSources)
+   // TODO This is slow for large schemas, generates lots of garbage objects
+   // this object is not used here, only by DatasourceUpgrader and CaskDao
+   val schema: TaxiSchema by lazy {
+      timed("Initializing schema", true, TimeUnit.MILLISECONDS) {
+         TaxiSchema.from(versionedSources)
+      }
+   }
 
    companion object {
       const val TABLE_NAME = "Table_Metadata"
