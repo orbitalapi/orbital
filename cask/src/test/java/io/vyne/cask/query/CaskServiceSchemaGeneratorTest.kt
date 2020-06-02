@@ -2,12 +2,14 @@ package io.vyne.cask.query
 
 import com.nhaarman.mockito_kotlin.*
 import com.winterbe.expekt.should
+import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.query.generators.AfterTemporalOperationGenerator
 import io.vyne.cask.query.generators.BeforeTemporalOperationGenerator
 import io.vyne.cask.query.generators.BetweenTemporalOperationGenerator
 import io.vyne.cask.query.generators.FindByFieldIdOperationGenerator
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.PrimitiveType
@@ -119,4 +121,33 @@ class CaskServiceSchemaGeneratorTest {
 
 """.replace("\\s".toRegex(), "").should.equal(serviceSchema.firstValue.replace("\\s".toRegex(), ""))
    }
+
+   @Test
+   fun `Cask does not create service if one already exists`() {
+      // given
+      val typeSchema = lang.taxi.Compiler(schema).compile()
+      val versionedType = TaxiSchema(typeSchema, listOf()).versionedType("OrderWindowSummary".fqn())
+
+      val schema: Schema = mock()
+      whenever(schemaProvider.schema()).thenReturn(schema)
+      whenever(schema.hasService("vyne.casks.OrderWindowSummaryCaskService")).thenReturn(true)
+      whenever(schema.versionedType("OrderWindowSummary".fqn())).thenReturn(versionedType)
+
+      val serviceSchemaGenerator = CaskServiceSchemaGenerator(
+         schemaProvider,
+         caskServiceSchemaWriter,
+         listOf(
+            FindByFieldIdOperationGenerator(),
+            AfterTemporalOperationGenerator(),
+            BeforeTemporalOperationGenerator(),
+            BetweenTemporalOperationGenerator()))
+
+      // When
+      serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
+      serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
+
+      // Then
+      verify(schemaStoreClient, times(0)).submitSchema(any(), any(), any())
+   }
+
 }

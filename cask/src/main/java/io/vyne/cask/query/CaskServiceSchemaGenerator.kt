@@ -31,6 +31,13 @@ class CaskServiceSchemaGenerator(
    @EventListener
    fun onIngesterInitialised(event: IngestionInitialisedEvent) {
       log().info("Received Ingestion Initialised event ${event.type}")
+      val serviceName = fullyQualifiedCaskServiceName(event.type.taxiType)
+      if (schemaProvider.schema().hasService(serviceName)) {
+         log().info("Service ${serviceName} already exists!")
+         // TODO 1. Initialize  cask services on startup (some other pace in code)
+         // TODO 2. Update cask service when type changes (e.g. new attributes added)
+         return
+      }
       generateAndPublishSchema(event.type)
    }
 
