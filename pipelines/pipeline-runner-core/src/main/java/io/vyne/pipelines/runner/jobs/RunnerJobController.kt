@@ -22,6 +22,7 @@ class RunnerJobController(val pipelineStateManager: PipelineStateManager) : Pipe
    }
 
    @GetMapping("/runner/pipelines/{id}")
+   @CrossOrigin
    fun getPipeline(@PathVariable id: String): ResponseEntity<PipelineInstance> {
 
       return when (pipelineStateManager.pipelineInstance) {

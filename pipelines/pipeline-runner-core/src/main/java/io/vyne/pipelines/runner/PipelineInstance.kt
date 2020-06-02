@@ -24,7 +24,7 @@ class PipelineInstance(
    /**
     * <INPUT/OUPUT> transport statuses
     */
-   private var state = INIT to INIT
+   var state = INIT to INIT
 
    // DISPOSABLES from flux
    private lateinit var pipelineDisposable: Disposable

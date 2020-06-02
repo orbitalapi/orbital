@@ -31,7 +31,7 @@
       </div>
 
       <!-- PIPELINES INSTANCES -->
-      <div class="col">
+      <div class="col-6">
 
          <div class="row">
             <div class="col text-center m-3">
@@ -56,6 +56,13 @@
          </table>
 
       </div>
+
+      <!-- PIPELINES DETAIL
+      <div class="col-4" >
+         <div  id="pipeline-detail" style="font-size:8px; max-height: 400px">
+
+         </div>
+      </div> -->
    </div>
 
    <hr class="m-5"/>
@@ -66,46 +73,32 @@
 
 
    <div class="row">
-      <div class="col-6  text-center">
+      <div class="col-3  text-center">
 
-         <!-- CREATE PIPELINES -->
+         <!-- CREATE PIPELINES 1-->
          <div class="form-group">
-            <textarea class="form-control" id="pipelineDefinition" rows="10"></textarea>
+            <textarea class="form-control" id="pipelineDefinition-left" rows="10"></textarea>
          </div>
-         <button type="submit" class="btn btn-primary" id="deployToPipelineOrchestratorButton">Deploy pipeline</button>
+         <button type="submit" class="btn btn-primary" id="deployToPipelineOrchestratorButtonLeft">Deploy HPC pipeline</button>
 
       </div>
 
-      <!--
-      <div class="col">
+      <div class="col-3 text-center">
 
-         <div class="form-row">
-            <div class="form-group col-md-6">
-               <label for="kafkaHost"><b>Kafka host</b></label>
-               <input class="form-control" id="kafkaHost"></input>
-            </div>
-            <div class="form-group col-md-6">
-               <label for="kafkaTopic"><b>Kafka topic name</b></label>
-               <input class="form-control" id="kafkaTopic"></input>
-            </div>
-         </div>
+         <!-- CREATE PIPELINES 2-->
          <div class="form-group">
-            <label for="kafkaMessage"><b>Kafka message</b></label>
-            <textarea class="form-control" id="kafkaMessage" rows="5"></textarea>
+            <textarea class="form-control" id="pipelineDefinition-right" rows="10"></textarea>
          </div>
-         <div class=" text-center">
-            <button type="submit" class="btn btn-primary" id="kafkaMessageSubmitButton">Send message</button>
-         </div>
+         <button type="submit" class="btn btn-primary" id="deployToPipelineOrchestratorButtonRight">Deploy CEMA4 pipeline</button>
+
       </div>
 
-      <div class="col">
-
+      <div class="col-4 offset-1 text-center">
          <div class="form-group">
             <label for="debugConsole">Responses</label>
-            <textarea class="form-control" id="debugConsole" rows="9"></textarea>
+            <textarea class="form-control" id="debugConsole" rows="20" style="font-size:10px"></textarea>
          </div>
       </div>
-   -->
    </div>
 
 </div>
@@ -132,7 +125,7 @@
         }).forEach(i => {
 
           $("#pipelines").append( `
-                <tr>
+                <tr onclick="fetchPipelineDynamicInfo('${i.instance ? i.instance.uri: null}', '1')">
                   <td>${i.instance? i.instance.instanceId : ' '}</th>
                   <td>${i.state}</td>
                   <td>${i.name}</th>
@@ -143,8 +136,6 @@
           `)
         })
 
-
-
     }
 
      function addRunners(responseEvent) {
@@ -152,6 +143,7 @@
         $("#runners").empty()
 
         responseEvent.sort((a, b) =>  a.instanceId > b.instanceId ? 1 : -1).forEach(i => {
+        console.log(i)
           $("#runners").append( `
              <div class="row">
                 <div class="col-8 offset-2 text-center">
@@ -178,14 +170,16 @@
     }
 
      function fetchPipelineDynamicInfo(instance, id) {
-         $.ajax({
-             url: instance+'/runner/pipelines/id',
-             type: 'GET',
-             contentType: 'application/json',
-             success: function (data) {
-                 addPipelines(data);
-             },
-         });
+      if(instance) {
+            $.ajax({
+                url: instance+'/runner/pipelines/' + id,
+                type: 'GET',
+                contentType: 'application/json',
+                success: function (data) {
+                },
+            });
+        }
+
     }
 
     function fetchRunners() {
@@ -202,7 +196,7 @@
 
    // ACTIONS
     var pipelineOrchestratorUrl = "/runner/pipelines";
-    var pipelineDefinition = {
+    var pipelineDefinitionHpc = {
         "name": "hpc-csv-avro-pipeline",
         "input": {
             "type": "hpc.orders.Order",
@@ -236,20 +230,80 @@
         }
       }
 
+       var pipelineDefinitionCemafor = {
+        "name": "cemafor-json-avro-pipeline",
+        "input": {
+            "type": "cacib.cemafor.orders.Order",
+            "transport": {
+                "topic": "cemafor-json-avro-input",
+                "targetType": "cacib.cemafor.orders.Order",
+                "props": {
+                    "group.id": "vyne-cemafor-pipeline-group",
+                    "bootstrap.servers": "kafka:9092,",
+                    "heartbeat.interval.ms": "3000",
+                    "session.timeout.ms": "10000",
+                    "auto.offset.reset": "earliest"
+                },
+                "type": "kafka-cacib",
+                "direction": "INPUT"
+            }
+        },
+        "output": {
+            "type": "cacib.cemafor.orders.Order",
+            "transport": {
+                "props": {
+                    "content-type": "json"
+                },
+                "targetType": "cacib.cemafor.orders.Order",
+                "type": "cask",
+                "direction": "OUTPUT"
+            }
+        }
+      }
+
+    function logMessage(responseEvent) {
+        console.log("Message");
+        console.log(responseEvent);
+        if (typeof responseEvent === 'object' && responseEvent !== null) {
+            document.getElementById("debugConsole").innerHTML = JSON.stringify(responseEvent) + '\n' + document.getElementById("debugConsole").innerHTML;
+        } else {
+            document.getElementById("debugConsole").innerHTML = responseEvent + '\n' + document.getElementById("debugConsole").innerHTML;
+        }
+    }
+
     $(document).ready(function () {
 
-        $("#pipelineDefinition").append(JSON.stringify(pipelineDefinition, null, 4));
+        $("#pipelineDefinition-left").append(JSON.stringify(pipelineDefinitionHpc, null, 4));
+        $("#pipelineDefinition-right").append(JSON.stringify(pipelineDefinitionCemafor, null, 4));
         $("#pipelineOrchestratorUrl").val(pipelineOrchestratorUrl);
-        $("#deployToPipelineOrchestratorButton").click(function () {
+        $("#deployToPipelineOrchestratorButtonLeft").click(function () {
             $.ajax({
                 url: '/runner/pipelines',
                 type: 'POST',
                 contentType: 'application/json',
-                data: $("#pipelineDefinition").val(),
+                data: $("#pipelineDefinition-left").val(),
                 dataType: 'json',
                 success: function (data) {
-                    logMessage(data);
+                    logMessage('Pipeline sent to orchestrator OK');
                 },
+                 error: function (xhr, textStatus, errorThrown) {
+                   logMessage(xhr.responseText);
+                }
+            });
+        });
+          $("#deployToPipelineOrchestratorButtonRight").click(function () {
+            $.ajax({
+                url: '/runner/pipelines',
+                type: 'POST',
+                contentType: 'application/json',
+                data: $("#pipelineDefinition-right").val(),
+                dataType: 'json',
+                success: function (data) {
+                    logMessage('Pipeline sent to orchestrator OK');
+                },
+                 error: function (xhr) {
+                   logMessage(xhr.responseText);
+                }
             });
         });
 
