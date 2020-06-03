@@ -58,6 +58,7 @@ class BadRequestException(message: String, e: Exception? = null) : RuntimeExcept
    companion object {
 
       fun throwIf(condition: Boolean, message: String) {
+
          if (condition) {
             throw BadRequestException(message)
          }

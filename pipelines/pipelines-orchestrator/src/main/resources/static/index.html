@@ -265,9 +265,9 @@
         console.log("Message");
         console.log(responseEvent);
         if (typeof responseEvent === 'object' && responseEvent !== null) {
-            document.getElementById("debugConsole").innerHTML = JSON.stringify(responseEvent) + '\n' + document.getElementById("debugConsole").innerHTML;
+            document.getElementById("debugConsole").innerHTML = JSON.stringify(responseEvent) + '\n---\n' + document.getElementById("debugConsole").innerHTML;
         } else {
-            document.getElementById("debugConsole").innerHTML = responseEvent + '\n' + document.getElementById("debugConsole").innerHTML;
+            document.getElementById("debugConsole").innerHTML = responseEvent + '\n---\n' + document.getElementById("debugConsole").innerHTML;
         }
     }
 
