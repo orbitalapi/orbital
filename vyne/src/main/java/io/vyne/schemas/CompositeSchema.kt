@@ -31,8 +31,9 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
       @JsonIgnore
       get() = schemas.flatMap { it.policies }.distinctBy { it.name.fullyQualifiedName }.toSet()
 
-   override val typeCache: TypeCache
-      get() = DefaultTypeCache(this.types)
+   override val typeCache: TypeCache by lazy {
+      DefaultTypeCache(this.types)
+   }
 
    override fun taxiType(name: QualifiedName): lang.taxi.types.Type {
       return schemas.first {

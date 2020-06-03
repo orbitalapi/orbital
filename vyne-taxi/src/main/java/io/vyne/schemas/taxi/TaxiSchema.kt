@@ -19,7 +19,7 @@ import lang.taxi.types.Annotation
 import org.antlr.v4.runtime.CharStreams
 import java.nio.file.Path
 
-class TaxiSchema(private val document: TaxiDocument, @get:JsonIgnore override val sources: List<VersionedSource>) : Schema {
+class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val sources: List<VersionedSource>) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
    override val policies : Set<Policy>
@@ -202,20 +202,22 @@ class TaxiSchema(private val document: TaxiDocument, @get:JsonIgnore override va
       }
 
       fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
-         val typesInSources = sources.flatMap { namedSource ->
-            Compiler(namedSource.content, namedSource.id).declaredTypeNames().map { it to namedSource }
-         }.toMap()
-
-         val sourcesWithDependencies = sources.map { namedSource ->
-            val dependentSourceFiles = Compiler(namedSource.content)
-               .declaredImports()
-               .mapNotNull { typesInSources[it] }
-               .distinct()
-               .filter { it.name == UNNAMED || (it.name != namedSource.name) }
-            SourceWithDependencies(namedSource, dependentSourceFiles)
-         }
-
-         return DependencyAwareSchemaBuilder(sourcesWithDependencies, imports).build()
+         val doc = Compiler(sources.map { CharStreams.fromString(it.content,it.name) }, imports.map { it.document }).compile()
+         return TaxiSchema(doc,sources)
+//         val typesInSources = sources.flatMap { namedSource ->
+//            Compiler(namedSource.content, namedSource.id).declaredTypeNames().map { it to namedSource }
+//         }.toMap()
+//
+//         val sourcesWithDependencies = sources.map { namedSource ->
+//            val dependentSourceFiles = Compiler(namedSource.content)
+//               .declaredImports()
+//               .mapNotNull { typesInSources[it] }
+//               .distinct()
+//               .filter { it.name == UNNAMED || (it.name != namedSource.name) }
+//            SourceWithDependencies(namedSource, dependentSourceFiles)
+//         }
+//
+//         return DependencyAwareSchemaBuilder(sourcesWithDependencies, imports).build()
       }
 //      private fun from(sources: List<NamedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
 //         val typesInSources = sources.flatMap { namedSource ->

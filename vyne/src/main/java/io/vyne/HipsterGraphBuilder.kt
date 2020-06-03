@@ -34,6 +34,7 @@ import es.usc.citius.hipster.graph.HashBasedHipsterGraph
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.graph.HipsterGraph
 import io.vyne.utils.log
+import io.vyne.utils.timed
 import java.util.*
 
 /**
@@ -50,6 +51,13 @@ import java.util.*
 </pre> *
  */
 class HipsterGraphBuilder<V, E> private constructor() {
+
+   fun copy():HipsterGraphBuilder<V,E> {
+      val builder = HipsterGraphBuilder.create<V,E>()
+      builder.existingConnections.putAll(this.existingConnections)
+      builder.connections.addAll(this.connections)
+      return builder
+   }
 
    private data class Connection<V,E>(val vertex1: V, val vertex2: V, val edge: E)
 
@@ -68,10 +76,12 @@ class HipsterGraphBuilder<V, E> private constructor() {
 
    fun createDirectedGraph(): HipsterDirectedGraph<V, E> {
       val graph = HashBasedHipsterDirectedGraph.create<V, E>()
-      for (c in connections) {
-         graph.add(c.vertex1)
-         graph.add(c.vertex2)
-         graph.connect(c.vertex1!!, c.vertex2!!, c.edge)
+      timed("createDirectedGraph") {
+         for (c in connections) {
+            graph.add(c.vertex1)
+            graph.add(c.vertex2)
+            graph.connect(c.vertex1!!, c.vertex2!!, c.edge)
+         }
       }
       return graph
    }

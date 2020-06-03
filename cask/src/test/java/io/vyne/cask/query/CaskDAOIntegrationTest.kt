@@ -6,13 +6,13 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
-import io.vyne.cask.format.csv.Benchmark
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.Ingester
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.schemas.fqn
 import io.vyne.spring.SimpleTaxiSchemaProvider
+import io.vyne.utils.Benchmark
 import io.vyne.utils.log
 import org.apache.commons.io.FileUtils
 import org.junit.After
