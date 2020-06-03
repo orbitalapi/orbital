@@ -45,7 +45,7 @@ export class CodeViewerComponent {
   editor: MonacoEditorComponent;
 
   selectedIndex = 0;
-  editorOptions: { theme: 'vs-dark', language: 'taxi' };
+  editorOptions: { theme: 'vs-dark', language: 'taxi'};
 
   monacoModel: ITextModel;
 
@@ -71,7 +71,23 @@ export class CodeViewerComponent {
       take(1),
     ).subscribe(() => {
       monaco.editor.onDidCreateEditor(editorInstance => {
-        editorInstance.updateOptions({readOnly: true});
+        editorInstance.updateOptions({readOnly: true})
+
+        editorInstance.onDidChangeModelDecorations(() => {
+          setTimeout(()=> {
+            const editorDomNode = editorInstance.getDomNode();
+            if (editorDomNode) {
+              const codeContainer = editorInstance.getDomNode().getElementsByClassName('view-lines')[0];
+              const calculatedHeight = codeContainer.offsetHeight + 'px';
+              editorDomNode.style.height = calculatedHeight;
+              const firstParent = editorDomNode.parentElement;
+              firstParent.style.height = calculatedHeight;
+              const secondParent = firstParent.parentElement;
+              secondParent.style.height = calculatedHeight
+              editorInstance.layout();
+            }
+          },10);
+        });
       });
       monaco.editor.onDidCreateModel(model => {
         this.monacoModel = model;
@@ -92,6 +108,7 @@ export class CodeViewerComponent {
       monaco.languages.setLanguageConfiguration('taxi', taxiLanguageConfiguration);
       monaco.languages.setMonarchTokensProvider('taxi', taxiLanguageTokenProvider);
       // here, we retrieve monaco-editor instance
+
     });
   }
 
