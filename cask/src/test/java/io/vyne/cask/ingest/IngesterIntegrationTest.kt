@@ -5,10 +5,10 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
-import io.vyne.cask.format.csv.Benchmark
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.schemas.fqn
+import io.vyne.utils.Benchmark
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.io.FileUtils
 import org.junit.After

@@ -1,8 +1,8 @@
 package io.vyne.schemaStore
 
-import io.vyne.Element
-import io.vyne.ElementType
-import io.vyne.VyneGraphBuilder
+import io.vyne.query.graph.Element
+import io.vyne.query.graph.ElementType
+import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationException
 import org.springframework.http.HttpHeaders
