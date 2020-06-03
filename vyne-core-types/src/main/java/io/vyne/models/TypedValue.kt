@@ -7,7 +7,6 @@ import lang.taxi.jvm.common.PrimitiveTypes
 import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
 import org.springframework.lang.Nullable
-import java.lang.IllegalArgumentException
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -15,6 +14,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
 import java.util.Locale
 
 interface ConversionService {
@@ -73,7 +73,11 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
          source.contains("PM") || source.contains("AM") -> Locale.US
          else -> Locale.getDefault()
       }
-      val formatter = DateTimeFormatter.ofPattern(format, locale)
+
+      val formatter = DateTimeFormatterBuilder()
+         .appendOptional(DateTimeFormatter.ofPattern(format, locale))
+         .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+         .toFormatter()
       return LocalDateTime.parse(source, formatter)
    }
 
@@ -90,7 +94,6 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
          }
       }
    }
-
 }
 
 class StringToIntegerConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
