@@ -10,6 +10,8 @@ import org.junit.Before
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 class TypedObjectTest {
 
@@ -82,26 +84,48 @@ class TypedObjectTest {
    @Test
    fun when_unwrappingDatesWithFormats_then_stringAreReturnedForNonStandard() {
       val schema  = TaxiSchema.from("""
-         type TradeDate inherits Instant ( @format = "dd/MM/yy'T'HH:mm:ss" )
+         type TradeDateInstant inherits Instant ( @format = "dd/MM/yy'T'HH:mm:ss" )
+         type TradeDateDate inherits Date ( @format = "MM-dd-yyyy" )
+         type TradeDateDateTime inherits DateTime ( @format = "dd/MM/yyyy HH:mm:ss" )
          type Trade {
-            tradeDate : TradeDate
+            tradeDateInstant : TradeDateInstant
+            tradeDateDate : TradeDateDate
+            tradeDateDateTime : TradeDateDateTime
          }
       """)
       val tradeJson = """
          {
-            "tradeDate" : "13/05/20T19:33:22"
+            "tradeDateInstant" : "13/05/20T19:33:22",
+            "tradeDateDate" : "12-06-2019",
+            "tradeDateDateTime" : "15/07/2020 21:33:22"
          }
       """.trimIndent()
       val trade = JsonModelParser(schema).parse(schema.type("Trade"), tradeJson) as TypedObject
-      // tradeDate should be an instant
-      val tradeDate = trade["tradeDate"].value as Instant
-      tradeDate.should.equal(Instant.parse("2020-05-13T19:33:22Z"))
+
+      // tradeDateInstant should be an instant
+      val tradeDateInstant = trade["tradeDateInstant"].value as Instant
+      tradeDateInstant.should.equal(Instant.parse("2020-05-13T19:33:22Z"))
+
+      // tradeDateDate should be an date
+      val tradeDateDate = trade["tradeDateDate"].value as LocalDate
+      tradeDateDate.should.equal(LocalDate.of(2019, 12, 6))
+
+      // tradeDateDateTime should be an date
+      val tradeDateDateTime = trade["tradeDateDateTime"].value as LocalDateTime
+      tradeDateDateTime.should.equal(LocalDateTime.of(2020,7,15,21,33,22))
 
       val raw = trade.toRawObject()
 
       /// When we write it, the tradeDate should adhere to the format on the type
       val rawJson = jacksonObjectMapper().writeValueAsString(raw)
-      val expectedJson = """{"tradeDate":"13/05/20T19:33:22"}"""
+      val expectedJson = """
+         {
+           "tradeDateInstant":"13/05/20T19:33:22",
+           "tradeDateDate":"12-06-2019",
+           "tradeDateDateTime":"15/07/2020 21:33:22"
+         }
+
+         """.trimMargin()
       JSONAssert.assertEquals(expectedJson, rawJson, true);
    }
 

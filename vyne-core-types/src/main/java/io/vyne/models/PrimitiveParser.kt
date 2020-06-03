@@ -42,8 +42,8 @@ class PrimitiveParser(private val conversionService: ConversionService = Convers
          else -> {
             // TODO fix me, vyne type should have enum values https://projects.notional.uk/youtrack/issue/LENS-131
             val taxiType = (targetType.taxiType as EnumType)
-            val taxiEnumName = taxiType.values.find { it.value == value }?.name
-            taxiEnumName
+            val taxiEnumValue = taxiType.values.find { it.value == value }?.value
+            taxiEnumValue
                ?.let { TypedValue.from(targetType, it, false) }
                ?: error("Unable to map Value=${value} " +
                   "to Enum Type=${targetType.fullyQualifiedName}, " +
