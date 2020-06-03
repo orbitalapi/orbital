@@ -27,7 +27,7 @@ class KafkaInputBuilder(val objectMapper: ObjectMapper = jacksonObjectMapper()) 
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.INPUT
 
-   override fun build(spec: KafkaTransportInputSpec) = KafkaInput(spec, objectMapper)
+   override fun build(spec: KafkaTransportInputSpec, logger: PipelineLogger) = KafkaInput(spec, objectMapper)
 
 }
 

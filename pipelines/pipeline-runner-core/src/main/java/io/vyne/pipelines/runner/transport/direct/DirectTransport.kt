@@ -29,7 +29,7 @@ class DirectInputBuilder : PipelineInputTransportBuilder<DirectTransportInputSpe
          && spec.direction == PipelineDirection.INPUT
    }
 
-   override fun build(spec: DirectTransportInputSpec): PipelineInputTransport {
+   override fun build(spec: DirectTransportInputSpec, logger: PipelineLogger): PipelineInputTransport {
       return DirectInput(spec.source)
    }
 }
@@ -48,7 +48,7 @@ class DirectOutputBuilder : PipelineOutputTransportBuilder<DirectOutputSpec> {
       return spec is DirectOutputSpec
    }
 
-   override fun build(spec: DirectOutputSpec): PipelineOutputTransport {
+   override fun build(spec: DirectOutputSpec, logger: PipelineLogger): PipelineOutputTransport {
       return DirectOutput()
    }
 
