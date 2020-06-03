@@ -2,6 +2,8 @@ package io.vyne.spring
 
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
+import io.vyne.asVersionedSource
+import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemaStore.VersionedSourceProvider
@@ -9,9 +11,35 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import lang.taxi.generators.java.TaxiGenerator
+import lang.taxi.packages.TaxiSourcesLoader
 import org.springframework.core.io.ClassPathResource
+import java.nio.file.Path
 
-class ClassPathSchemaSourceProvider(private val schemaFile: String): SchemaSourceProvider {
+class LocalResourceSchemaProvider(private val resourcePath: Path) : SchemaProvider {
+   private val sources: List<VersionedSource> by lazy {
+      TaxiSourcesLoader(resourcePath).load()
+         .map { it.asVersionedSource() }
+   }
+
+   private val taxiSchema by lazy {
+      TaxiSchema.from(this.sources)
+   }
+
+   private val taxiSchemaList by lazy {
+      listOf(taxiSchema)
+   }
+
+   override fun schema(): Schema {
+      return taxiSchema
+   }
+
+   override fun schemas(): List<Schema> {
+      return taxiSchemaList
+   }
+}
+
+
+class ClassPathSchemaSourceProvider(private val schemaFile: String) : SchemaSourceProvider {
    override fun schemas() = schemaStrings().map { TaxiSchema.from(it) }
    override fun schemaStrings() = listOf(ClassPathResource(schemaFile).inputStream.bufferedReader(Charsets.UTF_8).readText())
 }
@@ -32,7 +60,8 @@ class LocalTaxiSchemaProvider(val models: List<Class<*>>,
                               val taxiGenerator: TaxiGenerator = TaxiGenerator(),
                               val classPathSchemaSourceProvider: ClassPathSchemaSourceProvider? = null) : SchemaSourceProvider {
    override fun schemaStrings(): List<String> {
-      return classPathSchemaSourceProvider?.schemaStrings() ?: taxiGenerator.forClasses(models + services).generateAsStrings()
+      return classPathSchemaSourceProvider?.schemaStrings()
+         ?: taxiGenerator.forClasses(models + services).generateAsStrings()
    }
 
    override fun schemas(): List<Schema> {

@@ -7,6 +7,7 @@ import io.vyne.utils.log
 import io.vyne.utils.orElse
 import lang.taxi.CompilationError
 import lang.taxi.packages.TaxiPackageSources
+import lang.taxi.sources.SourceCode
 import java.io.Serializable
 import java.time.Instant
 
@@ -54,7 +55,9 @@ data class ParsedSource(val source: VersionedSource, val errors: List<Compilatio
 
 
 fun TaxiPackageSources.versionedSources(): List<VersionedSource> {
-   return this.sources.map { source ->
-      VersionedSource(source.sourceName, this.project.version, source.content)
+   return this.sources.map { source -> source.asVersionedSource(this.project.version) }
    }
+
+fun SourceCode.asVersionedSource(version: String = VersionedSource.DEFAULT_VERSION.toString()): VersionedSource {
+   return VersionedSource(this.sourceName, version, this.content)
 }
