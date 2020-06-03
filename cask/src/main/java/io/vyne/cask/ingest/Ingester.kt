@@ -3,11 +3,13 @@ package io.vyne.cask.ingest
 import de.bytefish.pgbulkinsert.row.SimpleRowWriter
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
+import io.vyne.cask.timed
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import org.postgresql.PGConnection
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
+import java.util.concurrent.TimeUnit
 
 data class IngestionStream(
    val type: VersionedType,
@@ -25,6 +27,7 @@ class Ingester(
     }
 
     fun initialize() {
+       timed("Ingester.initialize", true, TimeUnit.MILLISECONDS) {
         jdbcTemplate.execute(TableMetadata.CREATE_TABLE)
         val createTableStatement = ingestionStream.dbWrapper.createTableStatement
         val generatedTableName = createTableStatement.generatedTableName
@@ -34,6 +37,7 @@ class Ingester(
 
         log().info("Creating TableMetadata entry for $generatedTableName")
         createTableStatement.metadata.executeInsert(jdbcTemplate)
+      }
     }
 
     // TODO refactor so that we open/close transaction based on types of messages

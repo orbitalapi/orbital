@@ -17,7 +17,7 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
          error("Could not find xpath ${accessor.expression} in record")
       } else {
          val value = node.asText()
-         return primitiveParser.parse(value, type, schema)
+         return primitiveParser.parse(value, type)
       }
    }
 }
