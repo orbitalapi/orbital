@@ -831,6 +831,43 @@ service IonService {
    }
 
    @Test
+   fun `should build by using synonyms value and name`() {
+      val enumSchema = TaxiSchema.from("""
+
+
+                 enum BankXDirection {
+                     BUY("buy") synonym of BankDirection.BankBuys,
+                     SELL("sell") synonym of BankDirection.BankSell
+                 }
+
+                  model BankOrder {
+                      buySellIndicator: BankXDirection
+                  }
+
+                enum BankDirection {
+                     BankBuys("bankbuys"),
+                     BankSell("banksell")
+                }
+
+
+      """.trimIndent())
+
+      val (vyne, stubService) = testVyne(enumSchema)
+
+      // Query by enum value
+      val factValue = vyne.parseJsonModel("BankDirection", """ { "name": "bankbuys" } """)
+      val resultValue = vyne.query(additionalFacts = setOf(factValue)).build("BankOrder")
+      val rawResultValue = resultValue.results.values.first()!!.toRawObject()
+      rawResultValue.should.equal(mapOf("buySellIndicator" to "buy"))
+
+      // Query by enum name
+      val factName = vyne.parseJsonModel("BankDirection", """ { "name": "BankSell" } """)
+      val resultName = vyne.query(additionalFacts = setOf(factName)).build("BankOrder")
+      val rawResultName = resultName.results.values.first()!!.toRawObject()
+      rawResultName.should.equal(mapOf("buySellIndicator" to "sell"))
+   }
+
+   @Test
    fun `vyne should accept Instant parameters that are in ISO format`() {
       val testSchema = """
          type alias Symbol as String
