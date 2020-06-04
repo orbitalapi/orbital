@@ -65,7 +65,12 @@ interface ForwardingConversionService : ConversionService {
 }
 
 class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
-   private fun toLocalDateTime(source: String, format: String?): LocalDateTime {
+   private fun <D> toTemporalObject(
+      source: String,
+      format: String?,
+      doConvert: (source: String, formatter: DateTimeFormatter) -> D,
+      optionalFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+   ): D {
       require(format != null) { "Formats are expected for Instants" }
       // Note - using US Locale so that AM PM in uppercase is supported
       val locale = when {
@@ -76,18 +81,22 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
 
       val formatter = DateTimeFormatterBuilder()
          .appendOptional(DateTimeFormatter.ofPattern(format, locale))
-         .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+         .appendOptional(optionalFormatter)
          .toFormatter()
-      return LocalDateTime.parse(source, formatter)
+      return doConvert(source, formatter)
    }
+
 
    override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
       return when {
          source is String && targetType == Instant::class.java -> {
-            toLocalDateTime(source, format).toInstant(ZoneOffset.UTC) as T  // TODO : We should be able to detect that from the format sometimes
+            toTemporalObject(source, format, LocalDateTime::parse).toInstant(ZoneOffset.UTC) as T  // TODO : We should be able to detect that from the format sometimes
          }
          source is String && targetType == LocalDateTime::class.java -> {
-            toLocalDateTime(source, format) as T
+            toTemporalObject(source, format, LocalDateTime::parse) as T
+         }
+         source is String && targetType == LocalDate::class.java -> {
+            toTemporalObject(source, format, LocalDate::parse, DateTimeFormatter.ISO_LOCAL_DATE) as T
          }
          else -> {
             next.convert(source, targetType, format)
