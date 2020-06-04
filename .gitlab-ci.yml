@@ -26,6 +26,8 @@ build-jvm:
 #  image: maven:3.6.3-jdk-8
   stage: build
   script:
+    - 'git clone git@gitlab.com:notional/cacib/taxonomy.git'
+    - 'ln -s taxonomy src/test/resources/taxonomy'
     - 'mvn $MAVEN_CLI_OPTS clean install'
   artifacts:
     reports:
