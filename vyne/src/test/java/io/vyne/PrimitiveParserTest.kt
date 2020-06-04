@@ -27,7 +27,7 @@ enum Country {
 }
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("NZ",schema.type("Country"), schema)
+      val enum = PrimitiveParser().parse("NZ",schema.type("Country"))
       enum.type.name.fullyQualifiedName.should.equal("Country")
       enum.value.should.equal("NZ")
    }
@@ -41,7 +41,7 @@ enum Country {
 }
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("New Zealand",schema.type("Country"), schema)
+      val enum = PrimitiveParser().parse("New Zealand",schema.type("Country"))
       enum.type.name.fullyQualifiedName.should.equal("Country")
       enum.value.should.equal("NZ")
    }
@@ -58,7 +58,7 @@ enum Country {
 }
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      PrimitiveParser().parse("Great Britain",schema.type("Country"), schema)
+      PrimitiveParser().parse("Great Britain",schema.type("Country"))
    }
 
    @Test
@@ -71,9 +71,20 @@ enum Country {
 type CountryCode inherits Country
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("NZ",schema.type("CountryCode"), schema)
-      enum.type.name.fullyQualifiedName.should.equal("Country")
+      val enum = PrimitiveParser().parse("NZ",schema.type("CountryCode"))
+      enum.type.name.fullyQualifiedName.should.equal("CountryCode")
       enum.value.should.equal("NZ")
+   }
+
+   @Test
+   fun canParseInheritedPrimitive() {
+      val src = """
+type OrderNumber inherits String
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      val enum = PrimitiveParser().parse("order_1",schema.type("OrderNumber"))
+      enum.type.name.fullyQualifiedName.should.equal("OrderNumber")
+      enum.value.should.equal("order_1")
    }
 
    @Test
@@ -82,7 +93,7 @@ type CountryCode inherits Country
 type alias OrderNumber as String
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val enum = PrimitiveParser().parse("order_1",schema.type("OrderNumber"), schema)
+      val enum = PrimitiveParser().parse("order_1",schema.type("OrderNumber"))
       enum.type.name.fullyQualifiedName.should.equal("OrderNumber")
       enum.value.should.equal("order_1")
    }
@@ -95,7 +106,7 @@ type alias OrderNumber as String
 type alias OrderNumber as Int
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      PrimitiveParser().parse("order_1",schema.type("OrderNumber"), schema)
+      PrimitiveParser().parse("order_1",schema.type("OrderNumber"))
    }
 
    @Test
@@ -104,7 +115,7 @@ type alias OrderNumber as Int
 type alias OrderDate as Instant
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      val value = PrimitiveParser().parse(java.lang.Long.valueOf(1575389279798), schema.type("OrderDate"), schema)
+      val value = PrimitiveParser().parse(java.lang.Long.valueOf(1575389279798), schema.type("OrderDate"))
       value.value.should.equal(Instant.parse("2019-12-03T16:07:59.798Z"))
    }
 
@@ -117,7 +128,7 @@ type alias OrderDate as Instant
 type alias OrderDate as Instant
       """.trimIndent()
       val schema = TaxiSchema.from(src)
-      PrimitiveParser().parse(java.lang.Integer.valueOf(389279798), schema.type("OrderDate"), schema)
+      PrimitiveParser().parse(java.lang.Integer.valueOf(389279798), schema.type("OrderDate"))
 
    }
 }

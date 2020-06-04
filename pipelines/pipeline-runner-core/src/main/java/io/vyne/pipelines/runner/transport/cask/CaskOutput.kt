@@ -27,12 +27,13 @@ class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: DiscoveryCli
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == CaskTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 
-   override fun build(spec: CaskTransportOutputSpec): PipelineOutputTransport = CaskOutput(spec, client, caskServiceName)
+   override fun build(spec: CaskTransportOutputSpec, logger: PipelineLogger): PipelineOutputTransport = CaskOutput(spec, logger, client, caskServiceName)
 
 }
 
 class CaskOutput(
    val spec: CaskTransportOutputSpec,
+   logger: PipelineLogger,
    private val discoveryClient: DiscoveryClient,
    private val caskServiceName: String,
    override val healthMonitor: PipelineTransportHealthMonitor = EmitterPipelineTransportHealthMonitor(),
@@ -45,7 +46,7 @@ class CaskOutput(
    private val CASK_CONTENT_TYPE_PARAMETER = "content-type"
 
    val wsOutput: EmitterProcessor<String> = EmitterProcessor.create()
-   val wsHandler = CaskWebsocketHandler(healthMonitor, wsOutput) { handleWebsocketTermination(it) }
+   val wsHandler = CaskWebsocketHandler(logger, healthMonitor, wsOutput) { handleWebsocketTermination(it) }
 
    init {
       tryToRestart()
@@ -119,7 +120,11 @@ class CaskOutput(
 
       // Connect to the websocket
       val handshakeMono = wsClient.execute(URI(endpoint), wsHandler)
-         .doOnError { healthMonitor.reportStatus(DOWN) } // Handshake error = terminated (down for now as terminated is not handled)
+         .doOnError {
+            log().error("Could not connect to CASK. Handshake error.", it)
+            healthMonitor.reportStatus(DOWN) // Handshake error = terminated (down for now as terminated is not handled)
+            tryToRestart()
+         }
 
       // Subscribe to all
       wsOutput.doOnSubscribe { handshakeMono.subscribe() }.subscribe()
@@ -141,6 +146,7 @@ class CaskOutput(
 }
 
 class CaskWebsocketHandler(
+   val logger: PipelineLogger,
    val healthMonitor: PipelineTransportHealthMonitor,
    val wsOutput: EmitterProcessor<String>,
    val onTermination: (throwable: Throwable?) -> Unit
@@ -155,8 +161,7 @@ class CaskWebsocketHandler(
          .and(
             session.receive().map { it.payloadAsText }
                .doOnNext {
-                  // LENS-50 - cask will return the message in case of error
-                  it.log().info("Received response from websocket: $it")
+                  logger.error { "Received response from websocket: $it"}
                }.then()
          )
          .doOnError { onTermination(it) }

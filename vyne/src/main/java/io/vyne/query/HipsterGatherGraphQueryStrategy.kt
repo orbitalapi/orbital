@@ -2,9 +2,8 @@ package io.vyne.query
 
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.operation
+import io.vyne.query.graph.operation
 import io.vyne.utils.log
-import io.vyne.query.QueryMode
 
 class HipsterGatherGraphQueryStrategy(private val graphQueryStrategy: HipsterDiscoverGraphQueryStrategy) : QueryStrategy {
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {

@@ -37,7 +37,7 @@ class JsonAttributeAccessorParserTest() {
 
       parser.parseToType(mock(), accessor, node, mock())
 
-      verify(primitiveParser).parse(eq("1"), any(), any())
+      verify(primitiveParser).parse(eq("1"), any())
    }
 
    @Test
@@ -48,7 +48,7 @@ class JsonAttributeAccessorParserTest() {
 
       parser.parseToType(mock(), accessor, node, mock())
 
-      verify(primitiveParser).parse(eq("1"), any(), any())
+      verify(primitiveParser).parse(eq("1"), any())
 
    }
 

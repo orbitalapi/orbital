@@ -3,6 +3,9 @@ package io.vyne
 import es.usc.citius.hipster.graph.DirectedEdge
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
+import io.vyne.query.graph.Element
+import io.vyne.query.graph.ElementType
+import io.vyne.query.graph.type
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
@@ -45,7 +48,7 @@ class DisplayGraphBuilder {
    private fun fixOperationNames(element: Element): Element {
       return if (element.elementType == ElementType.OPERATION) {
          val displayName = OperationNames.displayNameFromOperationName(element.valueAsQualifiedName())
-         Element(displayName, ElementType.OPERATION)
+          Element(displayName, ElementType.OPERATION)
       } else element
    }
 

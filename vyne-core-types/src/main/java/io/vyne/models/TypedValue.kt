@@ -8,9 +8,14 @@ import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
 import org.springframework.lang.Nullable
 import java.math.BigDecimal
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.time.format.DateTimeFormatterBuilder
+import java.util.Locale
 
 interface ConversionService {
    fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: String?): T
@@ -19,11 +24,7 @@ interface ConversionService {
       fun default(): ConversionService {
          return StringToIntegerConverter(
             FormattedInstantConverter(
-               FormattedLocalDateTimeConverter(
-                  FormattedLocalDateConverter(
-                     VyneDefaultConversionService
-                  )
-               )
+               VyneDefaultConversionService
             )
          )
       }
@@ -63,34 +64,37 @@ interface ForwardingConversionService : ConversionService {
    val next: ConversionService
 }
 
-
-abstract class FormattedTemporalConverter<D>(private val temporalClass: Class<D>,
-                                             override val next: ConversionService = NoOpConversionService,
-                                             val doFormat: (source: String, formatter: DateTimeFormatter) -> D) : ForwardingConversionService {
-
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
-      return if (source is String && temporalClass == targetType) {
-         require(format != null) { "Formats are expected for ${temporalClass.simpleName}" }
-         val formatter = DateTimeFormatter.ofPattern(format, Locale.UK)
-         return doFormat(source, formatter) as T
-      } else {
-         next.convert(source, targetType, format)
+class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
+   private fun toLocalDateTime(source: String, format: String?): LocalDateTime {
+      require(format != null) { "Formats are expected for Instants" }
+      // Note - using US Locale so that AM PM in uppercase is supported
+      val locale = when {
+         source.contains("pm") || source.contains("am") -> Locale.UK
+         source.contains("PM") || source.contains("AM") -> Locale.US
+         else -> Locale.getDefault()
       }
+
+      val formatter = DateTimeFormatterBuilder()
+         .appendOptional(DateTimeFormatter.ofPattern(format, locale))
+         .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+         .toFormatter()
+      return LocalDateTime.parse(source, formatter)
    }
 
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
+      return when {
+         source is String && targetType == Instant::class.java -> {
+            toLocalDateTime(source, format).toInstant(ZoneOffset.UTC) as T  // TODO : We should be able to detect that from the format sometimes
+         }
+         source is String && targetType == LocalDateTime::class.java -> {
+            toLocalDateTime(source, format) as T
+         }
+         else -> {
+            next.convert(source, targetType, format)
+         }
+      }
+   }
 }
-
-class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) : FormattedTemporalConverter<Instant>(Instant::class.java, next,
-   // TODO : We should be able to detect timezone from the format sometimes
-    { source, formatter -> LocalDateTime.parse(source, formatter).toInstant(ZoneOffset.UTC) }
-)
-
-class FormattedLocalDateTimeConverter(override val next: ConversionService = NoOpConversionService) : FormattedTemporalConverter<LocalDateTime>(LocalDateTime::class.java, next, LocalDateTime::parse)
-
-class FormattedLocalDateConverter(override val next: ConversionService = NoOpConversionService) : FormattedTemporalConverter<LocalDate>(LocalDate::class.java, next, LocalDate::parse)
-
-
-
 
 class StringToIntegerConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
    override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {

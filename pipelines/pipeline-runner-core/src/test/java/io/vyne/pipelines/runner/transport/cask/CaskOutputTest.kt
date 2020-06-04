@@ -3,6 +3,7 @@ package io.vyne.pipelines.runner.transport.cask
 import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockitokotlin2.*
 import io.vyne.VersionedTypeReference
+import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineTransportHealthMonitor
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
 import io.vyne.schemas.fqn
@@ -24,13 +25,14 @@ class CaskOutputTest {
    lateinit var caskOutput: CaskOutput
 
    lateinit var spec: CaskTransportOutputSpec
+   lateinit var pipelineLogger: PipelineLogger
    lateinit var discoveryClient: DiscoveryClient
    val caskServiceName = "CASK"
    lateinit var healthMonitor: PipelineTransportHealthMonitor
    lateinit var wsClient: WebSocketClient
 
    lateinit var session: WebSocketSession
-   val caskInputMessages =  EmitterProcessor.create<WebSocketMessage>()
+   val caskInputMessages = EmitterProcessor.create<WebSocketMessage>()
 
    @Before
    fun setup() {
@@ -38,6 +40,7 @@ class CaskOutputTest {
       discoveryClient = mock()
       healthMonitor = mock()
       wsClient = mock()
+      pipelineLogger = mock()
 
       mockWebSocketSession()
    }
@@ -79,7 +82,7 @@ class CaskOutputTest {
          "csv.nullValue" to "N/A,NULL,null"
       ), VersionedTypeReference("Actor".fqn()))
 
-      caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
+      caskOutput = CaskOutput(spec, pipelineLogger, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       await().atMost(2, SECONDS).until {
          verify(wsClient).execute(eq(URI("ws://192.168.0.2:8989/cask/csv/Actor?delimiter=%7C&header.included=false&nullValue=N%2FA&nullValue=NULL&nullValue=null&otherParam=XXX")), any())
@@ -90,7 +93,7 @@ class CaskOutputTest {
    fun testCaskServerNoParameters() {
       mockCaskServer()
 
-      caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
+      caskOutput = CaskOutput(spec, pipelineLogger, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       await().atMost(2, SECONDS).until {
          verify(wsClient).execute(eq(URI("ws://192.168.0.2:8989/cask/json/imdb.Actor?")), any())
@@ -101,12 +104,12 @@ class CaskOutputTest {
    fun testCaskServerHandshakeError() {
       mockCaskServer()
 
-      whenever(wsClient.execute(any(),any())).thenReturn(Mono.error(RuntimeException("Test")))
+      whenever(wsClient.execute(any(), any())).thenReturn(Mono.error(RuntimeException("Test")))
 
-      caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
+      caskOutput = CaskOutput(spec, pipelineLogger, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       await().atMost(2, SECONDS).until {
-         verify(healthMonitor).reportStatus(DOWN)
+         verify(healthMonitor, atLeast( 1)).reportStatus(DOWN)
       }
    }
 
@@ -114,7 +117,7 @@ class CaskOutputTest {
    fun testCaskServerHandshakeSuccess() {
       mockCaskServer()
 
-      caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
+      caskOutput = CaskOutput(spec, pipelineLogger, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
 
       caskOutput.wsHandler.handle(session)
@@ -128,7 +131,7 @@ class CaskOutputTest {
    fun testCaskOutputWrite() {
       mockCaskServer()
 
-      caskOutput = CaskOutput(spec, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
+      caskOutput = CaskOutput(spec,mock(),  discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       caskOutput.write(""" This is a Message """, mock())
       caskOutput.write(""" This is a second message """, mock())

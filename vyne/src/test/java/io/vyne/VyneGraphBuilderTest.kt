@@ -1,6 +1,10 @@
 package io.vyne
 
 import es.usc.citius.hipster.graph.GraphEdge
+import io.vyne.query.graph.Element
+import io.vyne.query.graph.VyneGraphBuilder
+import io.vyne.query.graph.operation
+import io.vyne.query.graph.type
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Relationship.REQUIRES_PARAMETER

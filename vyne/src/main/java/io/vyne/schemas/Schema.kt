@@ -3,6 +3,7 @@ package io.vyne.schemas
 import io.vyne.VersionedSource
 import lang.taxi.Equality
 import lang.taxi.TaxiDocument
+import lang.taxi.utils.log
 
 class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>) : Schema {
 
@@ -21,6 +22,7 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
    private var shortNames: Map<String, Type> = emptyMap()
 
    init {
+      log().info("DefaultTypeCache initialized")
       types.forEach { add(it) }
       recalculateShortNames()
    }

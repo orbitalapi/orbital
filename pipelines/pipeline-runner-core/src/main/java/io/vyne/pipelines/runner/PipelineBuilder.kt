@@ -25,13 +25,18 @@ class PipelineBuilder(
    private val vyne = vyneFactory.createVyne()
 
    fun build(pipeline: Pipeline): PipelineInstance {
-      val observer = observerProvider.pipelineObserver(pipeline, null).invoke("Preparing pipeline")
+      var observerProvider = observerProvider.pipelineObserver(pipeline, null)
+      var observer = observerProvider("Preparing pipeline")
       observer.info { "Building pipeline ${pipeline.name} [Input = ${pipeline.input.transport.type}, output = ${pipeline.output.transport.type}]" }
+
+      val inputObserver = observerProvider("Pipeline Input")
+      val outputObserver = observerProvider("Pipeline Output")
+
       // Grab the types early, in case they're not present in Vyne
       val inputType = observer.catchAndLog("Failed to resolve input type ${pipeline.input.type}") { vyne.type(pipeline.input.type) }
       val outputType = observer.catchAndLog("Failed to resolve output type ${pipeline.output.type}") { vyne.type(pipeline.output.type) }
-      val input = observer.catchAndLog("Failed to create pipeline input") { transportFactory.buildInput(pipeline.input.transport) }
-      val output = observer.catchAndLog("Failed to create pipeline output") { transportFactory.buildOutput(pipeline.output.transport) }
+      val input = observer.catchAndLog("Failed to create pipeline input") { transportFactory.buildInput(pipeline.input.transport, inputObserver) }
+      val output = observer.catchAndLog("Failed to create pipeline output") { transportFactory.buildOutput(pipeline.output.transport, outputObserver) }
 
       val instancesFeed = input.feed
          .name("pipeline_ingestion_request")

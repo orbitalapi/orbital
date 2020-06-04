@@ -21,6 +21,7 @@ import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.QualifiedName
 import org.junit.Ignore
 import org.junit.Test
+import java.time.Instant
 import java.time.LocalDate
 import kotlin.test.fail
 
@@ -57,6 +58,7 @@ service ClientService {
    fun vyne(
       queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(),
       testSchema: TaxiSchema = schema) = Vyne(queryEngineFactory).addSchema(testSchema)
+
    val queryParser = QueryParser(schema)
 
    fun typeNode(name: String): Set<QuerySpecTypeNode> {
@@ -715,13 +717,13 @@ service IonService {
       val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }.flatMap { it as ArrayList<*> }
       resultList.should.contain.all.elements(
          mapOf(Pair("hpcID", "hpcOrder1")),
-         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate","2020-01-01"))
+         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate", "2020-01-01"))
       )
    }
 
    @Test
    fun formattedValueWithSameTypeButDifferentFormatsAreDiscoverable() {
-      val schema  = """
+      val schema = """
          type EventDate inherits Instant
          model Source {
             eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
@@ -734,7 +736,7 @@ service IonService {
       vyne.addJsonModel("Source", """{ "eventDate" : "05/28/20T13:44:23.000Z" }""")
       val result = vyne.query().build("Target")
       result.isFullyResolved.should.be.`true`
-      (result["Target"]!!.toRawObject() as Map<*,*>).get("eventDate").should.equal("2020-05-28T13:44:23.000Z")
+      (result["Target"]!!.toRawObject() as Map<*, *>).get("eventDate").should.equal("2020-05-28T13:44:23.000Z")
    }
 
    @Ignore("This test throws StackOverFlowException, will be investigated.")
@@ -825,6 +827,52 @@ service IonService {
       val result = vyne.query().build("common.CommonOrder")
       val rawResult = result.results.values.first()!!.toRawObject()
       rawResult.should.equal(mapOf("direction" to "BankBuys"))
+   }
+
+   @Test
+   fun `vyne should accept Instant parameters that are in ISO format`() {
+      val testSchema = """
+         type alias Symbol as String
+         type TransactionEventDateTime inherits Instant
+
+         type OrderWindowSummary {
+            symbol : Symbol by xpath("/symbol")
+            // 2019-12-03 16:07:59.7980000
+            @Between
+            orderDateTime : TransactionEventDateTime( @format = "yyyy-MM-dd HH:mm:ss.SSSSSSS") by xpath("/eventDate")
+         }
+
+         service CacheService {
+            @StubResponse("findBetween")
+            operation findByOrderDateTimeBetween(start : TransactionEventDateTime, end : TransactionEventDateTime ):
+                       OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime < end )
+         }
+      """.trimIndent()
+      val stubInvocationService = StubService()
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubInvocationService)
+      val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
+      stubInvocationService.addResponse("findBetween", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(2)
+            parameters[0].second.value.should.be.equal(Instant.parse("2011-12-03T10:15:30Z"))
+            parameters[1].second.value.should.be.equal(Instant.parse("2021-12-03T10:15:30Z"))
+            return vyne.parseJsonModel("OrderWindowSummary[]",
+               """
+                  [
+                    {
+                         "symbol": "USD",
+                         "orderDateTime": "2019-12-03 13:07:59.7980000"
+                     }
+                  ]
+               """.trimIndent())
+         }
+      })
+      vyne.query(
+         """
+              findAll {
+                 OrderWindowSummary[] ( TransactionEventDateTime  >= "2011-12-03T10:15:30", TransactionEventDateTime < "2021-12-03T10:15:30" )
+              }
+              """.trimIndent())
    }
 }
 

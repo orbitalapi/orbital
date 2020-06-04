@@ -65,8 +65,7 @@ type Video {}
       }
    }
 
-   @Test(expected = CircularDependencyInSourcesException::class)
-   fun when_importingMultipeSources_that_circularDependenciesAreNotPermitted() {
+   fun when_importingMultipeSources_that_circularDependenciesArePermitted() {
       val srcA = """
 import baz.Library
 namespace foo
