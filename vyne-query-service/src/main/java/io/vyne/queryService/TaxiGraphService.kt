@@ -1,10 +1,7 @@
 package io.vyne.queryService
 
 import es.usc.citius.hipster.graph.GraphEdge
-import io.vyne.Element
-import io.vyne.ElementType
-import io.vyne.VyneGraphBuilder
-import io.vyne.asElement
+import io.vyne.query.graph.*
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.schemaStore.SchemaSourceProvider
@@ -52,7 +49,7 @@ class TaxiGraphService(private val schemaProvider: SchemaSourceProvider) {
       val graph = VyneGraphBuilder(schema).buildDisplayGraph()
       val typeElement = if (typeName.contains("@@")) {
          val nodeId = OperationNames.displayNameFromOperationName(typeName.fqn())
-         io.vyne.operation(nodeId)
+          operation(nodeId)
       } else {
          schema.type(typeName).asElement()
       }

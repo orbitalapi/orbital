@@ -2,9 +2,6 @@ package io.vyne.query.graph
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import es.usc.citius.hipster.graph.GraphEdge
-import io.vyne.Element
-import io.vyne.ElementType
-import io.vyne.instanceOfType
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.FactDiscoveryStrategy

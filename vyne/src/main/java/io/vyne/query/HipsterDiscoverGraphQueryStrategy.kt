@@ -1,22 +1,23 @@
 package io.vyne.query
 
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
+import com.google.common.cache.LoadingCache
 import es.usc.citius.hipster.algorithm.Algorithm
 import es.usc.citius.hipster.algorithm.Hipster
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
-import io.vyne.Element
-import io.vyne.VyneGraphBuilder
-import io.vyne.instanceOfType
+import io.vyne.query.graph.Element
+import io.vyne.query.graph.VyneGraphBuilder
+import io.vyne.query.graph.instanceOfType
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
-import io.vyne.schemas.Link
-import io.vyne.schemas.Path
-import io.vyne.schemas.Relationship
-import io.vyne.schemas.describe
-import io.vyne.type
+import io.vyne.query.graph.type
+import io.vyne.schemas.*
 import io.vyne.utils.log
+import io.vyne.utils.timed
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
@@ -57,24 +58,46 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
 
 class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : QueryStrategy {
 
+   private data class SchemaFactSetCacheKey(val schema: Schema, val facts: Set<TypedInstance>)
+
+   private val schemaGraphCache = CacheBuilder.newBuilder()
+      .maximumSize(10) // arbitary cache size, we can explore tuning this later
+      .weakKeys()
+      .build(object : CacheLoader<Schema, VyneGraphBuilder>() {
+         override fun load(schema: Schema): VyneGraphBuilder {
+            return VyneGraphBuilder(schema)
+         }
+
+      })
+
+   private val schemaGraphFactSetCache = CacheBuilder.newBuilder()
+      .maximumSize(10)  // arbitary cache size, we can explore tuning this later
+      // I tried using weak keys here, and is caused frequent cache misses.
+      .recordStats()
+      .build(object : CacheLoader<SchemaFactSetCacheKey, HipsterDirectedGraph<Element, Relationship>>() {
+         override fun load(key: SchemaFactSetCacheKey): HipsterDirectedGraph<Element, Relationship> {
+
+            return schemaGraphCache[key.schema].build(key.facts)
+         }
+      })
+
+   private data class SearchCacheKey(val from: Element, val to: Element, val graph: HipsterDirectedGraph<Element, Relationship>)
+
+   private val graphSearchResultCache = CacheBuilder.newBuilder()
+      .recordStats()
+      .maximumSize(100)
+      .build(object : CacheLoader<SearchCacheKey, WeightedNode<Relationship, Element, Double>>() {
+         override fun load(key: SearchCacheKey): WeightedNode<Relationship, Element, Double> {
+            val (from, to, graph) = key
+            val problem = GraphSearchProblem.startingFrom(from).`in`(graph).takeCostsFromEdges().build()
+            return Hipster.createAStar(problem).search(to).goalNode
+         }
+      })
+
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
 
       return find(target, context)
    }
-
-//
-//   override fun find(expression: String, factSet: Set<TypedInstance>): QueryResult {
-//      val target = QueryParser(schema).parse(expression)
-//      return find(target, factSet)
-//   }
-//
-//   override fun find(target: QuerySpecTypeNode, factSet: Set<TypedInstance>): QueryResult {
-//      return find(setOf(target), factSet)
-//   }
-//
-//   override fun find(target: Set<QuerySpecTypeNode>, factSet: Set<TypedInstance>): QueryResult {
-//      return find(target, queryContext(factSet))
-//   }
 
    fun find(targets: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
       // Note : There is an existing, working impl. of this in QueryEngine (the OrientDB approach),
@@ -93,7 +116,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       val targetElement = type(target.type)
 
       // search from every fact in the context
-      var lastResult: Pair<TypedInstance, Path>? = find(targetElement, context)
+      val lastResult: Pair<TypedInstance, Path>? = find(targetElement, context)
       return if (lastResult != null) {
          QueryStrategyResult(mapOf(target to lastResult.first))
       } else {
@@ -147,24 +170,37 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
    internal fun search(start: Element, target: Element, queryContext: QueryContext): Pair<TypedInstance, Path>? {
       // TODO : This is expensive.  We should cache against the schema.
       val graph = queryContext.startChild(this, "Building graph", OperationType.GRAPH_BUILDING) {
-         VyneGraphBuilder(queryContext.schema).build(queryContext.facts)
+
+         val result = schemaGraphFactSetCache.get(SchemaFactSetCacheKey(queryContext.schema, queryContext.facts))
+         val stats = schemaGraphFactSetCache.stats()
+         log().info("Built graph.  Stats: $stats")
+         result
       }
       val searchDescription = "$start -> $target"
       log().debug("Searching for path from $searchDescription")
 //      log().debug("Current graph state: \n ${graph.description()}")
 
       return queryContext.startChild(this, "Searching for path ${start.valueAsQualifiedName().name} -> ${target.valueAsQualifiedName().name}", OperationType.GRAPH_TRAVERSAL) { op ->
-         op.addContext("Current graph", graph.edgeDescriptions())
+         // Note: The below call is very expensive.  If it turns out we need it, we should
+         // do some work to optimize it.
+//         op.addContext("Current graph", graph.edgeDescriptions())
          doSearch(start, target, graph, searchDescription, queryContext, op)
       }
    }
 
    private fun doSearch(start: Element, target: Element, graph: HipsterDirectedGraph<Element, Relationship>, searchDescription: String, queryContext: QueryContext, op: ProfilerOperation): Pair<TypedInstance, Path>? {
-      val searchResult = graphSearch(start, target, graph)
+      val searchResult = timed("graph search") {
+         graphSearch(start, target, graph)
+      }
+
       if (searchResult.state() != target) {
          // Search failed, and couldn't match the node
          log().debug("Search failed: $searchDescription. Nearest match was ${searchResult.state()}")
-         log().debug("Search failed path: \n${searchResult.path().convertToVynePath(start, target).description.split(",").joinToString("\n")}")
+         timed("search failure logging") {
+            log().debug("Search failed path: \n${searchResult.path().convertToVynePath(start, target).description.split(",").joinToString("\n")}")
+            null
+         }
+
          return null
       }
 
@@ -181,9 +217,12 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       }
    }
 
+
+
    private fun graphSearch(from: Element, to: Element, graph: HipsterDirectedGraph<Element, Relationship>): WeightedNode<Relationship, Element, Double> {
-      val problem = GraphSearchProblem.startingFrom(from).`in`(graph).takeCostsFromEdges().build()
-      return Hipster.createAStar(problem).search(to).goalNode
+      val result = graphSearchResultCache.get(SearchCacheKey(from, to, graph))
+      log().info("Graph search completed.  Cache results: ${graphSearchResultCache.stats()}")
+      return result
    }
 
    private fun selectResultValue(evaluatedPath: List<PathEvaluation>, queryContext: QueryContext, target: Element): TypedInstance? {
