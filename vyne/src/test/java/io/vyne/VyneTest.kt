@@ -135,7 +135,7 @@ class VyneTest {
             return product
          }
       })
-      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema)
+      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "FX_SPOT", vyne.schema)
       vyne.addModel(instance)
       val queryResult = vyne.query().find("companyX.Product")
       expect(queryResult.results.size).to.equal(1)
@@ -195,6 +195,7 @@ class VyneTest {
       })
       val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema)
       vyne.addModel(instance)
+
       val queryResult = vyne.query().find("companyY.Product")
       expect(queryResult.results.size).to.equal(1)
       val attributeMap = queryResult["companyY.Product"]!!.value as Map<String, TypedValue>

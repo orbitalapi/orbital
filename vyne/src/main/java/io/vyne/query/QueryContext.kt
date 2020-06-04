@@ -198,8 +198,7 @@ data class QueryContext(
 
       private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
          return if (fact is TypedObject) {
-            val typeObject = fact as TypedObject
-            typeObject.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
+            fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
          } else {
             resolveSynonym(fact, schema, true)
          }
