@@ -124,6 +124,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       } else if (isCollectionsToCollectionTransformation) {
          mapCollectionsToCollection(targetType, context)
       } else {
+         context.isProjecting = true
          ObjectBuilder(this, context).build(targetType)
       }
 
@@ -261,9 +262,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          log().error("The following nodes weren't matched: ${unresolvedNodes().joinToString(", ")}")
       }
 
-      return context.projectResultsTo()?.let {
-         projectTo(it, context)
-      } ?: QueryResult(
+      return if( !context.isProjecting && context.projectResultsTo() != null) {
+         projectTo(context.projectResultsTo()!!, context)
+      } else QueryResult(
          matchedNodes,
          unresolvedNodes().toSet(),
          path = null,

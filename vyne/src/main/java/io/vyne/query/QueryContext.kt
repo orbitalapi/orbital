@@ -172,6 +172,7 @@ data class QueryContext(
    val resultMode: ResultMode) : ProfilerOperation by profiler {
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
+   var isProjecting = false
    private var projectResultsTo: Type? = null
 
    fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
