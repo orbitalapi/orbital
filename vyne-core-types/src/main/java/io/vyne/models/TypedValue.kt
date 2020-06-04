@@ -7,13 +7,15 @@ import lang.taxi.jvm.common.PrimitiveTypes
 import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
 import org.springframework.lang.Nullable
-import java.lang.IllegalArgumentException
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.util.Locale
 
 interface ConversionService {
    fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: String?): T
@@ -44,6 +46,8 @@ object VyneDefaultConversionService : ConversionService {
       // TODO :  we need to be much richer about date handling.
       service.addConverter(String::class.java, LocalDate::class.java) { s -> LocalDate.parse(s) }
       service.addConverter(java.lang.Long::class.java, Instant::class.java) { s -> Instant.ofEpochMilli(s.toLong()) }
+      // TODO Check this as it is a quick addition for the demo!
+      service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate(); }
       service
    }
 
@@ -61,18 +65,44 @@ interface ForwardingConversionService : ConversionService {
 }
 
 class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
-      return if (source is String && targetType == Instant::class.java) {
-         require(format != null) { "Formats are expected for Instants" }
-         val formatter = DateTimeFormatter.ofPattern(format)
-         val instant = LocalDateTime.parse(source, formatter)
-            .toInstant(ZoneOffset.UTC) // TODO : We should be able to detect that from the format sometimes
-         instant as T
-      } else {
-         next.convert(source, targetType, format)
+   private fun <D> toTemporalObject(
+      source: String,
+      format: String?,
+      doConvert: (source: String, formatter: DateTimeFormatter) -> D,
+      optionalFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+   ): D {
+      require(format != null) { "Formats are expected for Instants" }
+      // Note - using US Locale so that AM PM in uppercase is supported
+      val locale = when {
+         source.contains("pm") || source.contains("am") -> Locale.UK
+         source.contains("PM") || source.contains("AM") -> Locale.US
+         else -> Locale.getDefault()
       }
+
+      val formatter = DateTimeFormatterBuilder()
+         .appendOptional(DateTimeFormatter.ofPattern(format, locale))
+         .appendOptional(optionalFormatter)
+         .toFormatter()
+      return doConvert(source, formatter)
    }
 
+
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
+      return when {
+         source is String && targetType == Instant::class.java -> {
+            toTemporalObject(source, format, LocalDateTime::parse).toInstant(ZoneOffset.UTC) as T  // TODO : We should be able to detect that from the format sometimes
+         }
+         source is String && targetType == LocalDateTime::class.java -> {
+            toTemporalObject(source, format, LocalDateTime::parse) as T
+         }
+         source is String && targetType == LocalDate::class.java -> {
+            toTemporalObject(source, format, LocalDate::parse, DateTimeFormatter.ISO_LOCAL_DATE) as T
+         }
+         else -> {
+            next.convert(source, targetType, format)
+         }
+      }
+   }
 }
 
 class StringToIntegerConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {

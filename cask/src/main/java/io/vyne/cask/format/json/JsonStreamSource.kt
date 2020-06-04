@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.ingest.StreamSource
+import io.vyne.cask.timed
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import reactor.core.publisher.Flux
@@ -26,7 +27,7 @@ class JsonStreamSource(val input: Flux<InputStream>,
    override val stream: Flux<InstanceAttributeSet>
       get() {
          return input
-            .map { stream -> objectMapper.readTree(stream) }
+            .map { stream -> timed("JsonStreamSource.read") { objectMapper.readTree(stream) } }
             .filter { record -> !record.isEmpty }
             .map { record ->
                // when

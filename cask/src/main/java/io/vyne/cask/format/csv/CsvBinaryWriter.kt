@@ -2,6 +2,7 @@ package io.vyne.cask.format.csv
 
 import io.vyne.cask.format.byteArrayOfLength
 import io.vyne.cask.format.unPad
+import io.vyne.cask.timed
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
 import reactor.core.publisher.Flux
@@ -27,18 +28,20 @@ class CsvBinaryWriter(private val bytesPerColumn: Int = 15, private val format: 
                 var header: Header? = null
                 format.parse(input.bufferedReader())
                         .forEach { record ->
-                            if (header == null) {
-                                header = writeHeader(outputStream, record)
-                            }
-                            require(record.size() == header!!.recordsPerRow) { "Record ${record.recordNumber} has invalid number of columns.  Expected ${header!!.recordsPerRow} but got ${record.size()}" }
-                            record.forEach { columnValue ->
-                                // TODO : The strategy here is to capture that we've overflowed on a specific column,
-                                // and then add the adjusted offsets to a header that we take into account when reading
-                                require(columnValue.length <= bytesPerColumn) { "Overflow not yet supported.  '$columnValue' had lenght of ${columnValue.length} which exceeds max column size of ${bytesPerColumn}" }
+                           timed("CsvBinaryWriter.parse") {
+                              if (header == null) {
+                                 header = writeHeader(outputStream, record)
+                              }
+                              require(record.size() == header!!.recordsPerRow) { "Record ${record.recordNumber} has invalid number of columns.  Expected ${header!!.recordsPerRow} but got ${record.size()}" }
+                              record.forEach { columnValue ->
+                                 // TODO : The strategy here is to capture that we've overflowed on a specific column,
+                                 // and then add the adjusted offsets to a header that we take into account when reading
+                                 require(columnValue.length <= bytesPerColumn) { "Overflow not yet supported.  '$columnValue' had lenght of ${columnValue.length} which exceeds max column size of ${bytesPerColumn}" }
 
-                                outputStream.write(columnValue.byteArrayOfLength(bytesPerColumn))
-                            }
-                            emitter.next(record)
+                                 outputStream.write(columnValue.byteArrayOfLength(bytesPerColumn))
+                              }
+                              emitter.next(record)
+                           }
                         }
                 emitter.complete()
             }

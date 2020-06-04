@@ -6,10 +6,10 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
-import io.vyne.cask.format.csv.Benchmark
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.schemas.fqn
+import io.vyne.utils.Benchmark
 import io.vyne.utils.log
 import org.apache.commons.io.FileUtils
 import org.junit.After
@@ -41,7 +41,7 @@ class JsonIngesterIntegrationTest {
    @Before
    fun setup() {
       val dataSource = DataSourceBuilder.create()
-         .url("jdbc:postgresql://localhost:6660/postgres")
+         .url("jdbc:postgresql://localhost:6662/postgres")
          .username("postgres")
          .build()
       jdbcTemplate = JdbcTemplate(dataSource)

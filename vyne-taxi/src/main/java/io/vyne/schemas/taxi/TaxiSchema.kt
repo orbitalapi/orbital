@@ -11,6 +11,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
 import io.vyne.versionedSources
 import lang.taxi.Compiler
+import lang.taxi.Equality
 import lang.taxi.TaxiDocument
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiSourcesLoader
@@ -19,10 +20,19 @@ import lang.taxi.types.Annotation
 import org.antlr.v4.runtime.CharStreams
 import java.nio.file.Path
 
-class TaxiSchema(private val document: TaxiDocument, @get:JsonIgnore override val sources: List<VersionedSource>) : Schema {
+class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val sources: List<VersionedSource>) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
    override val policies : Set<Policy>
+
+   private val equality = Equality(this, TaxiSchema::document, TaxiSchema::sources)
+   override fun equals(other: Any?): Boolean {
+      return equality.isEqualTo(other)
+   }
+
+   override fun hashCode(): Int {
+      return equality.hash()
+   }
 
    @get:JsonIgnore
    override val typeCache: TypeCache
@@ -202,33 +212,10 @@ class TaxiSchema(private val document: TaxiDocument, @get:JsonIgnore override va
       }
 
       fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
-         val typesInSources = sources.flatMap { namedSource ->
-            Compiler(namedSource.content, namedSource.id).declaredTypeNames().map { it to namedSource }
-         }.toMap()
-
-         val sourcesWithDependencies = sources.map { namedSource ->
-            val dependentSourceFiles = Compiler(namedSource.content)
-               .declaredImports()
-               .mapNotNull { typesInSources[it] }
-               .distinct()
-               .filter { it.name == UNNAMED || (it.name != namedSource.name) }
-            SourceWithDependencies(namedSource, dependentSourceFiles)
-         }
-
-         return DependencyAwareSchemaBuilder(sourcesWithDependencies, imports).build()
+         val doc = Compiler(sources.map { CharStreams.fromString(it.content,it.name) }, imports.map { it.document }).compile()
+         return TaxiSchema(doc,sources)
       }
-//      private fun from(sources: List<NamedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
-//         val typesInSources = sources.flatMap { namedSource ->
-//            Compiler(namedSource.taxi).declaredTypeNames().map { it to namedSource }
-//         }.toMap()
-//
-//         val sourcesWithDependencies = sources.map { namedSource ->
-//            val dependentSourceFiles = Compiler(namedSource.taxi).declaredImports().mapNotNull { typesInSources[it] }.distinct()
-//            SourceWithDependencies(namedSource, dependentSourceFiles)
-//         }
-//
-//         return DependencyAwareSchemaBuilder(sourcesWithDependencies, imports).build()
-//      }
+
 
       fun from(source: VersionedSource, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
          return TaxiSchema(Compiler(CharStreams.fromString(source.content, source.name), importSources.map { it.document }).compile(), listOf(source))
@@ -243,79 +230,6 @@ class TaxiSchema(private val document: TaxiDocument, @get:JsonIgnore override va
 private fun List<lang.taxi.types.FieldModifier>.toVyneFieldModifiers(): List<FieldModifier> {
    return this.map { FieldModifier.valueOf(it.name) }
 }
-
-class CircularDependencyInSourcesException(message: String) : RuntimeException(message)
-
-private class DependencyAwareSchemaBuilder(val sources: List<SourceWithDependencies>, val importSources: List<TaxiSchema>) {
-   private val namedSources: Map<VersionedSource, SourceWithDependencies> = sources.associateBy { it.source }
-   private val builtSchemas = mutableMapOf<VersionedSource, TaxiSchema>()
-   private val schemasBeingBuilt = mutableListOf<SourceWithDependencies>()
-   // Note: This contract used to return a List<TaxiSchema>, but I can't
-   // remember why, so I've dropped it back to return a single
-   // We're tring to handle folding all the imports together in a smart way,
-   // so there shoulnd't be a need to reutnr multiple.
-   // If I remember why, swap it back and document it here.
-   fun build(): TaxiSchema {
-      if (sources.isEmpty()) {
-         error("Cannot call build without providing sources")
-      }
-
-      // This little nugget compiles the sources in order, where sources that are imported
-      // later are compiled earlier.
-      // Each iteration appends the total set of compilation sources, so the last unique
-      // source to be compiled will contain the full set of types, as parsed out by the compiler.
-      // (ie., ensuring that imports have been correctly applied, and that type extensions have been
-      // applied).
-      // Because of import order, each source may be processed more than once,
-      // ie., sources that are imported may be visited twice - first when they were imported
-      // by another type, and then again when they are visited as a source of their own.
-      // We only consider each source once - the first time it was imported.
-      // I have a feeling this may not work forever, but its a good start
-      val builtSchemasInOrder = sources.mapNotNull { source ->
-         if (builtSchemas.containsKey(source.source)) {
-            null
-         } else {
-            buildWithDependencies(source)
-         }
-      }
-
-      return builtSchemas.values.reduce(TaxiSchema::merge)
-   }
-
-   private fun buildWithDependencies(source: SourceWithDependencies): TaxiSchema {
-
-      if (!builtSchemas.containsKey(source.source)) {
-         if (schemasBeingBuilt.contains(source)) {
-            val message = "A circular dependency in sources exists: ${schemasBeingBuilt.joinToString(" -> ") { it.source.name }}"
-            throw CircularDependencyInSourcesException(message)
-         }
-         schemasBeingBuilt.add(source)
-
-         // Build dependencies first
-         source.dependencies.forEach {
-            buildWithDependencies(namedSources[it]!!)
-         }
-
-         // Now build the actual file
-         getOrBuild(source)
-
-         schemasBeingBuilt.remove(source)
-      }
-
-      // It's now guaranteed to be present
-      return builtSchemas.getValue(source.source)
-   }
-
-   private fun getOrBuild(source: SourceWithDependencies): TaxiSchema {
-      return builtSchemas.getOrPut(source.source) {
-         val imports = builtSchemas.values + importSources
-         val schema = TaxiSchema.from(source.source, imports)
-         schema
-      }
-   }
-}
-
-private data class SourceWithDependencies(val source: VersionedSource, val dependencies: List<VersionedSource>)
 
 private fun lang.taxi.types.QualifiedName.toVyneQualifiedName(): QualifiedName {
    return QualifiedName(this.toString(), this.parameters.map { it.toVyneQualifiedName() })

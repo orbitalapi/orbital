@@ -103,6 +103,13 @@ val result = grouped.mapValues { (_, operationParameterMaps) ->
       return operations.toMap()
    }
 
+   private fun filterPropertyToParameterConstraint(operationConstraint: PropertyToParameterConstraint, requiredConstraint: PropertyToParameterConstraint): Boolean {
+    return   operationConstraint.propertyIdentifier == requiredConstraint.propertyIdentifier
+         && operationConstraint.operator == requiredConstraint.operator
+         && operationConstraint.expectedValue is RelativeValueExpression
+         && requiredConstraint.expectedValue is ConstantValueExpression
+
+   }
    /**
     * Checks to see if the operation satisfies the contract of the target (if either exist).
     * If a contract exists on the target which provides input params, and the operation
@@ -131,12 +138,7 @@ val result = grouped.mapValues { (_, operationParameterMaps) ->
          .flatMap { requiredConstraint ->
             operation.contract.constraints
                .filterIsInstance<PropertyToParameterConstraint>()
-               .filter { operationConstraint ->
-                  operationConstraint.propertyIdentifier == requiredConstraint.propertyIdentifier
-                     && operationConstraint.operator == requiredConstraint.operator
-                     && operationConstraint.expectedValue is RelativeValueExpression
-                     && requiredConstraint.expectedValue is ConstantValueExpression
-               }
+               .filter { operationConstraint -> filterPropertyToParameterConstraint(operationConstraint, requiredConstraint) }
                .map { operationConstraint ->
                   val path = (operationConstraint.expectedValue as RelativeValueExpression).path
                   val parameter = operation.parameter(path.path)

@@ -1,8 +1,6 @@
 package io.vyne.pipelines.runner.transport.kafka
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.VersionedTypeReference
-import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -14,13 +12,13 @@ import reactor.kafka.sender.KafkaSender
 import reactor.kafka.sender.SenderOptions
 
 @Component
-class KafkaOutputBuilder(val objectMapper: ObjectMapper) : PipelineOutputTransportBuilder<KafkaTransportOutputSpec> {
+class KafkaOutputBuilder : PipelineOutputTransportBuilder<KafkaTransportOutputSpec> {
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 
-   override fun build(spec: KafkaTransportOutputSpec) = KafkaOutput(spec, objectMapper)
+   override fun build(spec: KafkaTransportOutputSpec, logger: PipelineLogger) = KafkaOutput(spec)
 }
 
-class KafkaOutput(private val spec: KafkaTransportOutputSpec, private val objectMapper: ObjectMapper) : PipelineOutputTransport {
+class KafkaOutput(private val spec: KafkaTransportOutputSpec) : PipelineOutputTransport {
    override val type: VersionedTypeReference = spec.targetType
 
    override val healthMonitor = EmitterPipelineTransportHealthMonitor()

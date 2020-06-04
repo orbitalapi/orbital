@@ -47,7 +47,10 @@ class CaskServiceSchemaWriter(private val schemaStoreClient: SchemaStoreClient, 
       }
          importStatements.forEach { importStatement -> builder.appendln(importStatement) }
          builder.appendln()
-          return builder.appendln(serviceSchema).toString()
+      // replace("this:", "") is nasty hack, but Schema Write generates
+      // constraint method parameters with this: e.g. - this:MaturityData >= start
+      // and above fais to compile!!!
+      return builder.appendln(serviceSchema).toString().replace("this:", "")
    }
 
    companion object {

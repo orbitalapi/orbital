@@ -11,7 +11,6 @@ import io.vyne.schemas.Type
 import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
-import java.lang.IllegalArgumentException
 import java.util.concurrent.TimeUnit
 
 internal object CsvDocumentCacheBuilder {
@@ -58,7 +57,7 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
          return TypedInstance.from(type, null, schema);
       }
       try {
-         return primitiveParser.parse(value, type, schema)
+         return primitiveParser.parse(value, type)
       } catch (e: Exception) {
          val message = "Failed to parse value $value from column ${accessor.index} to type ${type.name.fullyQualifiedName} - ${e.message}"
          throw ParsingException(message, e)

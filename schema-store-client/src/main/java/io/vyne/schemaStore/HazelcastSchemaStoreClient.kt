@@ -18,6 +18,7 @@ import org.springframework.context.ApplicationEventPublisher
 import java.io.Serializable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.thread
 
 private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventPublisher, val invalidationListener: SchemaSetInvalidatedListener) : MembershipListener, Serializable, EntryAddedListener<SchemaSetCacheKey, SchemaSet>, EntryUpdatedListener<SchemaSetCacheKey, SchemaSet> {
    override fun memberAttributeChanged(memberAttributeEvent: MemberAttributeEvent?) {
@@ -67,6 +68,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
    private val schemaPurger = HazelcastSchemaPurger(schemaSourcesMap)
 
    private var localSchemaSet = ConcurrentHashMap<SchemaSetCacheKey, SchemaSet>()
+   private val rebuildTaskQueue = hazelcast.getQueue<Int>("rebuildTaskQueue")
 
    init {
       hazelcast.cluster.addMembershipListener(hazelcastSchemaStoreListener)
@@ -75,6 +77,19 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
       // The node running this code may not have been the node that triggered the change, so we have to work
       // in an observer, rather than in the change / invalidation code.
       schemaSetHolder.addEntryListener(hazelcastSchemaStoreListener, true)
+      thread(start = true) {
+         try  {
+            while(true) {
+               val generation = rebuildTaskQueue.take()
+               log().info("rebuilding schema for trigger $generation")
+               val schemaSet = rebuildSchemaAndWriteToCache()
+               schemaSetHolder.submitToKey(SchemaSetCacheKey, RebuildSchemaSetTask(schemaSet))
+            }
+         } catch (e: Exception) {
+            log().error("Error in processing schema rebuild", e)
+         }
+      }
+
    }
 
    override val generation: Int
@@ -192,8 +207,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
 
    override fun rebuildRequired() {
       log().info("Rebuild of Schema triggered through cache invalidation")
-      val schemaSet = rebuildSchemaAndWriteToCache()
-      schemaSetHolder.submitToKey(SchemaSetCacheKey, RebuildSchemaSetTask(schemaSet))
+      rebuildTaskQueue.put(this.generation)
    }
 }
 
