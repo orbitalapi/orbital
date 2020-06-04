@@ -89,6 +89,9 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
          source is String && targetType == LocalDateTime::class.java -> {
             toLocalDateTime(source, format) as T
          }
+         source is String && targetType == LocalDate::class.java -> {
+            LocalDate.parse(source, DateTimeFormatter.ofPattern(format)) as T
+         }
          else -> {
             next.convert(source, targetType, format)
          }
