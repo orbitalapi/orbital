@@ -11,13 +11,15 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZonedDateTime
 
 fun String.toLocalDate(): LocalDate {
    return LocalDate.parse(this)
 }
 
 fun String.toLocalDateTime(): LocalDateTime {
-   return LocalDateTime.parse(this)
+   // Vyne is passing with the Zone information.
+   return ZonedDateTime.parse(this).toLocalDateTime()
 }
 
 // TODO TIME db type

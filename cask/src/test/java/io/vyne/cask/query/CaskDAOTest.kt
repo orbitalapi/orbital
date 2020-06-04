@@ -130,12 +130,12 @@ class CaskDAOTest {
    @Test
    fun `An Instant type can be queried correctly via findBy`() {
       // when
-      caskDAO.findBy(versionedType, "timestamp", "2020-01-01T12:00:01.000")
+      caskDAO.findBy(versionedType, "timestamp", "2020-01-01T12:00:01.000Z")
       // then
       val statementCaptor = argumentCaptor<String>()
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_0641a7 WHERE \"timestamp\" = ?")
-      argsCaptor.firstValue.should.equal("2020-01-01T12:00:01.000".toLocalDateTime())
+      argsCaptor.firstValue.should.equal("2020-01-01T12:00:01.000Z".toLocalDateTime())
    }
 }
