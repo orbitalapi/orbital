@@ -39,7 +39,7 @@ class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = Prim
    fun parse(xml: Document, type: Type, accessor: XpathAccessor, schema:Schema): TypedInstance {
       val xpath = xpathCache.get(accessor.expression)
       val result = xpath.evaluate(xml)
-      return primitiveParser.parse(result, type, schema)
+      return primitiveParser.parse(result, type)
    }
 
 

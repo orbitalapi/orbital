@@ -1,7 +1,7 @@
 package io.vyne.cask.format.csv
 
 import io.vyne.cask.ingest.InstanceAttributeSet
-import io.vyne.cask.xtimed
+import io.vyne.cask.timed
 import io.vyne.models.TypedInstance
 import io.vyne.models.VersionedTypedInstance
 import io.vyne.schemas.Schema
@@ -13,7 +13,7 @@ class CsvStreamMapper(private val targetType: Type, private val schema: Schema) 
     private val versionedType = schema.versionedType(targetType.name)
 
     fun map(csvRecord: CSVRecord, nullValues: Set<String> = emptySet()): InstanceAttributeSet {
-        val instance = xtimed("createTypedInstance", timeUnit = TimeUnit.MICROSECONDS) {
+        val instance = timed("CsvStreamMapper.map", timeUnit = TimeUnit.MILLISECONDS) {
            TypedInstance.from(targetType, csvRecord, schema, nullValues = nullValues)
         }
 

@@ -41,7 +41,7 @@ class JsonIngesterIntegrationTest {
    @Before
    fun setup() {
       val dataSource = DataSourceBuilder.create()
-         .url("jdbc:postgresql://localhost:6660/postgres")
+         .url("jdbc:postgresql://localhost:6662/postgres")
          .username("postgres")
          .build()
       jdbcTemplate = JdbcTemplate(dataSource)
