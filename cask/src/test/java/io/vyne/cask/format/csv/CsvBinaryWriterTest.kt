@@ -57,7 +57,7 @@ id,firstName,lastName,country
         val resource = Resources.getResource("Coinbase_BTCUSD_1h.csv").toURI()
 
         // Ingest it a few times to get an average performance
-        val writer = CsvBinaryWriter(bytesPerColumn = 30)
+        val writer = CsvBinaryWriter(bytesPerColumn = 30, shouldLogIndividualWriteTime = false)
        Benchmark.benchmark("canIngestLargeFile") {
           val file = folder.newFile()
           writer.convert(File(resource).inputStream(), file.toPath()).collectList().block()

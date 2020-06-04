@@ -10,9 +10,13 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.TimeUnit
 
 
-class CsvBinaryWriter(private val bytesPerColumn: Int = 15, private val format: CSVFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader()) {
+class CsvBinaryWriter(
+   private val bytesPerColumn: Int = 15,
+   private val format: CSVFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), 
+   private  val shouldLogIndividualWriteTime: Boolean = true) {
 
     fun convert(input: InputStream, outputPath: Path): Flux<CSVRecord> {
         if (Files.exists(outputPath) && Files.size(outputPath) > 0) {
@@ -28,7 +32,7 @@ class CsvBinaryWriter(private val bytesPerColumn: Int = 15, private val format: 
                 var header: Header? = null
                 format.parse(input.bufferedReader())
                         .forEach { record ->
-                           timed("CsvBinaryWriter.parse") {
+                           timed("CsvBinaryWriter.parse", shouldLogIndividualWriteTime , TimeUnit.NANOSECONDS) {
                               if (header == null) {
                                  header = writeHeader(outputStream, record)
                               }

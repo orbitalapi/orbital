@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit
 class CsvStreamMapper(private val targetType: Type, private val schema: Schema) {
     private val versionedType = schema.versionedType(targetType.name)
 
-    fun map(csvRecord: CSVRecord, nullValues: Set<String> = emptySet()): InstanceAttributeSet {
-        val instance = timed("CsvStreamMapper.map", timeUnit = TimeUnit.MILLISECONDS) {
+    fun map(csvRecord: CSVRecord, nullValues: Set<String> = emptySet(), logMappingTime: Boolean = true): InstanceAttributeSet {
+        val instance = timed("CsvStreamMapper.map", log = logMappingTime, timeUnit = TimeUnit.MILLISECONDS) {
            TypedInstance.from(targetType, csvRecord, schema, nullValues = nullValues)
         }
 

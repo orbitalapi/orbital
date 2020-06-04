@@ -33,7 +33,7 @@ object TemporalFieldUtils {
    }
 
    fun constraintFor(field: Field, op: Operator, path: String): PropertyToParameterConstraint{
-      val inheritedType = if (field.type.inheritsFrom.isEmpty()) field.type else field.type.inheritsFrom.first()
+      val inheritedType = parameterType(field)
       return PropertyToParameterConstraint(
          propertyIdentifier = PropertyTypeIdentifier(inheritedType.toQualifiedName()),
          operator = op,
@@ -47,6 +47,8 @@ object TemporalFieldUtils {
       type = type,
       name = name,
       constraints = listOf())
+
+   fun parameterType(field: Field) = if (field.type.inheritsFrom.isEmpty()) field.type else field.type.inheritsFrom.first()
 
    const val Start = "start"
    const val End = "end"

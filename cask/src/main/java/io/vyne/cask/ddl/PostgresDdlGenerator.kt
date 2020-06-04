@@ -214,6 +214,7 @@ $fieldDef
          PrimitiveType.INTEGER -> ScalarTypes.integer() to { row, v -> row.setNumeric(columnName, v as BigDecimal) }
          PrimitiveType.BOOLEAN -> ScalarTypes.boolean() to { row, v -> row.setBoolean(columnName, v as Boolean) }
          PrimitiveType.LOCAL_DATE -> ScalarTypes.date() to { row, v -> row.setDate(columnName, v as LocalDate) }
+         PrimitiveType.DATE_TIME -> ScalarTypes.date() to { row, v -> row.setTimeStamp(columnName, v as LocalDateTime) }
          PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC")))}
          // TODO TIME db column type
 //         PrimitiveType.TIME -> ScalarTypes.timestamp() to { row, v ->
