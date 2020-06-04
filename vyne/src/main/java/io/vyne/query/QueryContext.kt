@@ -208,14 +208,12 @@ data class QueryContext(
       private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
          val derivedFacts = if (fact.type.isEnum) {
             val underlyingEnumType = fact.type.taxiType as EnumType
-            underlyingEnumType
-               .values
-               .first { enumValue -> enumValue.value == fact.value }
+            underlyingEnumType.of(fact.value)
                .synonyms
                .map { synonym ->
                   val synonymType = schema.type(synonym.synonymFullQualifiedName())
                   val synonymTypeTaxiType = synonymType.taxiType as EnumType
-                  val targetEnumValue = synonymTypeTaxiType.values.first { it.name == synonym.synonymValue() }.value
+                  val targetEnumValue = synonymTypeTaxiType.of( synonym.synonymValue() ).value
                   TypedValue.from(synonymType, targetEnumValue, false)
                }.toSet()
          } else {
