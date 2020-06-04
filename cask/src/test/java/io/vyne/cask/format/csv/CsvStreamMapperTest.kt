@@ -45,7 +45,7 @@ class CsvStreamMapperTest {
            val file = folder.newFile()
 
            writer.convert(File(resource).inputStream(), file.toPath())
-              .map { mapper.map(it) }
+              .map { mapper.map(it, logMappingTime = false) }
               .collectList()
               .block()
            file
