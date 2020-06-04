@@ -2,10 +2,10 @@ package io.vyne.cask.ingest
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.io.Resources
-import io.vyne.cask.format.csv.Benchmark
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.schemas.fqn
+import io.vyne.utils.Benchmark
 import org.apache.commons.io.FileUtils
 import org.junit.Ignore
 import org.junit.Rule
