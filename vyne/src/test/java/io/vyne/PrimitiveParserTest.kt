@@ -43,7 +43,7 @@ enum Country {
       val schema = TaxiSchema.from(src)
       val enum = PrimitiveParser().parse("New Zealand",schema.type("Country"))
       enum.type.name.fullyQualifiedName.should.equal("Country")
-      enum.value.should.equal("NZ")
+      enum.value.should.equal("New Zealand")
    }
 
    @Test

@@ -25,6 +25,7 @@ import io.vyne.schemas.synonymValue
 import io.vyne.utils.log
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
+import lang.taxi.types.EnumValue
 import lang.taxi.types.PrimitiveType
 import java.util.UUID
 import java.util.stream.Stream
@@ -213,8 +214,12 @@ data class QueryContext(
                .map { synonym ->
                   val synonymType = schema.type(synonym.synonymFullQualifiedName())
                   val synonymTypeTaxiType = synonymType.taxiType as EnumType
-                  val targetEnumValue = synonymTypeTaxiType.of( synonym.synonymValue() ).value
-                  TypedValue.from(synonymType, targetEnumValue, false)
+                  val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
+
+                  // Instantiate with either name or value depending on what we have as input
+                  val value = if(underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
+
+                  TypedValue.from(synonymType, value, false)
                }.toSet()
          } else {
             setOf()

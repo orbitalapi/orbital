@@ -135,7 +135,7 @@ class VyneTest {
             return product
          }
       })
-      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "FX_SPOT", vyne.schema)
+      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema)
       vyne.addModel(instance)
       val queryResult = vyne.query().find("companyX.Product")
       expect(queryResult.results.size).to.equal(1)
@@ -864,7 +864,7 @@ service IonService {
       val factName = vyne.parseJsonModel("BankDirection", """ { "name": "BankSell" } """)
       val resultName = vyne.query(additionalFacts = setOf(factName)).build("BankOrder")
       val rawResultName = resultName.results.values.first()!!.toRawObject()
-      rawResultName.should.equal(mapOf("buySellIndicator" to "sell"))
+      rawResultName.should.equal(mapOf("buySellIndicator" to "SELL"))
    }
 
    @Test

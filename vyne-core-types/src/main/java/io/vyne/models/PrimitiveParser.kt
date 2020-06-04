@@ -22,7 +22,7 @@ class PrimitiveParser(private val conversionService: ConversionService = Convers
       val enumType = targetType.taxiType as EnumType
 
       return if(enumType.has(value)){
-        TypedValue.from(targetType, enumType.of(value).name, conversionService)
+         TypedValue.from(targetType, value, conversionService)
       } else {
          error("""
    Unable to map Value=${value} to Enum Type=${targetType.fullyQualifiedName}, allowed values=${enumType.definition?.values?.map { it.name to it.value }}
