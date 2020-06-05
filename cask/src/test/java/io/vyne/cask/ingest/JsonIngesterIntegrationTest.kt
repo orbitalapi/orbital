@@ -33,7 +33,7 @@ class JsonIngesterIntegrationTest {
 
    @Rule
    @JvmField
-   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6662) }
+   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(0) }
 
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
@@ -41,7 +41,7 @@ class JsonIngesterIntegrationTest {
    @Before
    fun setup() {
       val dataSource = DataSourceBuilder.create()
-         .url("jdbc:postgresql://localhost:6662/postgres")
+         .url("jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres")
          .username("postgres")
          .build()
       jdbcTemplate = JdbcTemplate(dataSource)
