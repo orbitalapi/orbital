@@ -124,6 +124,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       } else if (isCollectionsToCollectionTransformation) {
          mapCollectionsToCollection(targetType, context)
       } else {
+         context.isProjecting = true
          ObjectBuilder(this, context).build(targetType)
       }
 
@@ -261,9 +262,13 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          log().error("The following nodes weren't matched: ${unresolvedNodes().joinToString(", ")}")
       }
 
-      return context.projectResultsTo()?.let {
-         projectTo(it, context)
-      } ?: QueryResult(
+      // isProjecting is a (maybe) temporary little fix to allow projection
+      // Without it, there's a stack overflow error as projectTo seems to call ObjectBuilder.build which calls projectTo again.
+      // ... Investigate
+
+      return if( !context.isProjecting && context.projectResultsTo() != null) {
+         projectTo(context.projectResultsTo()!!, context)
+      } else QueryResult(
          matchedNodes,
          unresolvedNodes().toSet(),
          path = null,

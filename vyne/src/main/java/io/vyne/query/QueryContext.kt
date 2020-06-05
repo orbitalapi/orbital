@@ -25,6 +25,7 @@ import io.vyne.schemas.synonymValue
 import io.vyne.utils.log
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
+import lang.taxi.types.EnumValue
 import lang.taxi.types.PrimitiveType
 import java.util.UUID
 import java.util.stream.Stream
@@ -172,6 +173,7 @@ data class QueryContext(
    val resultMode: ResultMode) : ProfilerOperation by profiler {
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
+   var isProjecting = false
    private var projectResultsTo: Type? = null
 
    fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
@@ -198,8 +200,7 @@ data class QueryContext(
 
       private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
          return if (fact is TypedObject) {
-            val typeObject = fact as TypedObject
-            typeObject.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
+            fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
          } else {
             resolveSynonym(fact, schema, true)
          }
@@ -208,15 +209,17 @@ data class QueryContext(
       private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
          val derivedFacts = if (fact.type.isEnum) {
             val underlyingEnumType = fact.type.taxiType as EnumType
-            underlyingEnumType
-               .values
-               .first { enumValue -> enumValue.value == fact.value }
+            underlyingEnumType.of(fact.value)
                .synonyms
                .map { synonym ->
                   val synonymType = schema.type(synonym.synonymFullQualifiedName())
                   val synonymTypeTaxiType = synonymType.taxiType as EnumType
-                  val targetEnumValue = synonymTypeTaxiType.values.first { it.name == synonym.synonymValue() }.value
-                  TypedValue.from(synonymType, targetEnumValue, false)
+                  val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
+
+                  // Instantiate with either name or value depending on what we have as input
+                  val value = if(underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
+
+                  TypedValue.from(synonymType, value, false)
                }.toSet()
          } else {
             setOf()

@@ -49,6 +49,7 @@ class IngesterIntegrationTest {
    }
 
    @Test
+   @Ignore
    fun canStreamDataToPostgresOnStart() {
       val schema = CoinbaseOrderSchema.schemaV1
       val type = schema.versionedType("OrderWindowSummary".fqn())
@@ -79,6 +80,7 @@ class IngesterIntegrationTest {
    }
 
    @Test
+   @Ignore("LENS-136")
    fun canIngestCsvToCask() {
       val source = Resources.getResource("Coinbase_BTCUSD_single.csv").toURI()
       val input: Flux<InputStream> = Flux.just(File(source).inputStream())
@@ -98,6 +100,7 @@ class IngesterIntegrationTest {
    }
 
    @Test
+   @Ignore("LENS-136")
    fun canGenerateDeltaTable() {
       val schemaV1 = CoinbaseOrderSchema.schemaV1
       val typeV1 = schemaV1.versionedType("OrderWindowSummary".fqn())

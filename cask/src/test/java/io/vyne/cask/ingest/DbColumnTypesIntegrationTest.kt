@@ -1,7 +1,6 @@
 package io.vyne.cask.ingest
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.PostgresDdlGenerator
@@ -39,7 +38,7 @@ class DbColumnTypesIntegrationTest {
 
    @Rule
    @JvmField
-   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(0) }
+   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6660) }
 
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester

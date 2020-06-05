@@ -195,6 +195,7 @@ class VyneTest {
       })
       val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema)
       vyne.addModel(instance)
+
       val queryResult = vyne.query().find("companyY.Product")
       expect(queryResult.results.size).to.equal(1)
       val attributeMap = queryResult["companyY.Product"]!!.value as Map<String, TypedValue>
@@ -827,6 +828,43 @@ service IonService {
       val result = vyne.query().build("common.CommonOrder")
       val rawResult = result.results.values.first()!!.toRawObject()
       rawResult.should.equal(mapOf("direction" to "BankBuys"))
+   }
+
+   @Test
+   fun `should build by using synonyms value and name`() {
+      val enumSchema = TaxiSchema.from("""
+
+
+                 enum BankXDirection {
+                     BUY("buy") synonym of BankDirection.BankBuys,
+                     SELL("sell") synonym of BankDirection.BankSell
+                 }
+
+                  model BankOrder {
+                      buySellIndicator: BankXDirection
+                  }
+
+                enum BankDirection {
+                     BankBuys("bankbuys"),
+                     BankSell("banksell")
+                }
+
+
+      """.trimIndent())
+
+      val (vyne, stubService) = testVyne(enumSchema)
+
+      // Query by enum value
+      val factValue = vyne.parseJsonModel("BankDirection", """ { "name": "bankbuys" } """)
+      val resultValue = vyne.query(additionalFacts = setOf(factValue)).build("BankOrder")
+      val rawResultValue = resultValue.results.values.first()!!.toRawObject()
+      rawResultValue.should.equal(mapOf("buySellIndicator" to "buy"))
+
+      // Query by enum name
+      val factName = vyne.parseJsonModel("BankDirection", """ { "name": "BankSell" } """)
+      val resultName = vyne.query(additionalFacts = setOf(factName)).build("BankOrder")
+      val rawResultName = resultName.results.values.first()!!.toRawObject()
+      rawResultName.should.equal(mapOf("buySellIndicator" to "SELL"))
    }
 
    @Test
