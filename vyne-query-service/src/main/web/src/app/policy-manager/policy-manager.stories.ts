@@ -1,3 +1,4 @@
+/* tslint:disable:max-line-length */
 import {storiesOf, moduleMetadata} from '@storybook/angular';
 import {PolicyEditorComponent} from './policy-editor.component';
 import {CaseConditionEditorComponent} from './case-condition-editor.component';
@@ -25,96 +26,117 @@ import {Schema, Type} from '../services/schema';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
 
+
 const type = {
   'name': {
     'fullyQualifiedName': 'demo.Customer',
     'parameters': [],
+    'name': 'Customer',
+    'shortDisplayName': 'Customer',
+    'longDisplayName': 'demo.Customer',
     'namespace': 'demo',
-    'parameterizedName': 'demo.Customer',
-    'name': 'Customer'
+    'parameterizedName': 'demo.Customer'
   },
   'attributes': {
     'email': {
       'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.CustomerEmailAddress',
-          'parameters': [],
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerEmailAddress',
-          'name': 'CustomerEmailAddress'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.CustomerEmailAddress', isCollection: false,
-        constraints: [],
-
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+        'fullyQualifiedName': 'demo.CustomerEmailAddress',
+        'parameters': [],
+        'name': 'CustomerEmailAddress',
+        'shortDisplayName': 'CustomerEmailAddress',
+        'longDisplayName': 'demo.CustomerEmailAddress',
+        'namespace': 'demo',
+        'parameterizedName': 'demo.CustomerEmailAddress'
+      },
+      'modifiers': [],
+      'accessor': null,
+      'readCondition': null,
+      'typeDoc': null,
+      'constraints': []
     },
     'id': {
       'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.CustomerId',
-          'parameters': [],
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerId',
-          'name': 'CustomerId'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.CustomerId', isCollection: false,
-        constraints: [],
-
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+        'fullyQualifiedName': 'demo.CustomerId',
+        'parameters': [],
+        'name': 'CustomerId',
+        'shortDisplayName': 'CustomerId',
+        'longDisplayName': 'demo.CustomerId',
+        'namespace': 'demo',
+        'parameterizedName': 'demo.CustomerId'
+      },
+      'modifiers': [],
+      'accessor': null,
+      'readCondition': null,
+      'typeDoc': null,
+      'constraints': []
     },
     'name': {
       'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.CustomerName',
-          'parameters': [],
-          'namespace': 'demo',
-          'parameterizedName': 'demo.CustomerName',
-          'name': 'CustomerName'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.CustomerName', isCollection: false,
-        constraints: [],
-
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+        'fullyQualifiedName': 'demo.CustomerName',
+        'parameters': [],
+        'name': 'CustomerName',
+        'shortDisplayName': 'CustomerName',
+        'longDisplayName': 'demo.CustomerName',
+        'namespace': 'demo',
+        'parameterizedName': 'demo.CustomerName'
+      },
+      'modifiers': [],
+      'accessor': null,
+      'readCondition': null,
+      'typeDoc': null,
+      'constraints': []
     },
     'postcode': {
       'type': {
-        'name': {
-          'fullyQualifiedName': 'demo.Postcode',
-          'parameters': [],
-          'namespace': 'demo',
-          'parameterizedName': 'demo.Postcode',
-          'name': 'Postcode'
-        }, 'collection': false, 'fullyQualifiedName': 'demo.Postcode', isCollection: false,
-        constraints: [],
-      }, 'modifiers': [], 'accessor': null, 'constraints': []
+        'fullyQualifiedName': 'demo.Postcode',
+        'parameters': [],
+        'name': 'Postcode',
+        'shortDisplayName': 'Postcode',
+        'longDisplayName': 'demo.Postcode',
+        'namespace': 'demo',
+        'parameterizedName': 'demo.Postcode'
+      },
+      'modifiers': [],
+      'accessor': null,
+      'readCondition': null,
+      'typeDoc': null,
+      'constraints': []
     }
   },
   'modifiers': [],
+  'metadata': [],
   'aliasForType': null,
-  'inherits': [],
+  'inheritsFrom': [],
   'enumValues': [],
-  'sources': [{
-    'origin': 'customer-service:0.1.0',
-    'language': 'Taxi',
-    // tslint:disable-next-line:max-line-length
-    'content': 'type Customer {\\n      email : CustomerEmailAddress\\n      id : CustomerId\\n      name : CustomerName\\n      postcode : Postcode\\n   }'
-  }],
+  'sources': [
+    {
+      'name': 'customer-service',
+      'version': '0.0.0',
+      'content': 'type Customer {\n      email : CustomerEmailAddress\n      id : CustomerId\n      name : CustomerName\n      postcode : Postcode\n   }',
+    }
+  ],
   'typeParameters': [],
+  'typeDoc': '',
   'isTypeAlias': false,
-  'isScalar': false,
+  'format': null,
+  'hasFormat': false,
   'isParameterType': false,
   'isClosed': false,
-  'inheritanceGraph': [],
-  'isClosed': false,
+  'isPrimitive': false,
   'fullyQualifiedName': 'demo.Customer',
   'memberQualifiedName': {
     'fullyQualifiedName': 'demo.Customer',
     'parameters': [],
+    'name': 'Customer',
+    'shortDisplayName': 'Customer',
+    'longDisplayName': 'demo.Customer',
     'namespace': 'demo',
-    'parameterizedName': 'demo.Customer',
-    'name': 'Customer'
+    'parameterizedName': 'demo.Customer'
   },
-  'parameterType': false,
-  'typeAlias': false,
-  'isScalar': false,
-  'primitive': false
+  'isCollection': false,
+  'underlyingTypeParameters': [],
+  'collectionType': null,
+  'isScalar': false
 } as Type;
 
 const schema: Schema = {
