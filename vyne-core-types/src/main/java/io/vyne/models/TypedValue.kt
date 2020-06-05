@@ -48,6 +48,7 @@ object VyneDefaultConversionService : ConversionService {
       service.addConverter(java.lang.Long::class.java, Instant::class.java) { s -> Instant.ofEpochMilli(s.toLong()) }
       // TODO Check this as it is a quick addition for the demo!
       service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate(); }
+      service.addConverter(java.lang.Long::class.java, LocalDateTime::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDateTime(); }
       service
    }
 

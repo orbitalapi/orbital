@@ -1,7 +1,7 @@
 package io.vyne.cask.ingest
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules
+import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.TableMetadata
@@ -12,7 +12,11 @@ import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.log
-import org.junit.*
+import org.junit.After
+import org.junit.Before
+import org.junit.Ignore
+import org.junit.Rule
+import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
@@ -22,6 +26,7 @@ import java.io.InputStream
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 import javax.sql.DataSource
 
@@ -31,10 +36,7 @@ class DbColumnTypesIntegrationTest {
    @JvmField
    val folder = TemporaryFolder()
 
-   @Rule
-   @JvmField
-   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6660) }
-
+   lateinit var pg: EmbeddedPostgres
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
    lateinit var dataSource: DataSource
@@ -42,6 +44,7 @@ class DbColumnTypesIntegrationTest {
 
    @Before
    fun setup() {
+      pg = EmbeddedPostgres.builder().setPort(6660).start()
       dataSource = DataSourceBuilder.create()
          .url("jdbc:postgresql://localhost:6660/postgres")
          .username("postgres")
@@ -54,6 +57,7 @@ class DbColumnTypesIntegrationTest {
    @After
    fun tearDown() {
       ingester.destroy()
+      pg.close()
    }
 
    private val schemaStr = """
@@ -65,6 +69,7 @@ type CoinbaseOrder {
     price : Price by xpath("/Price")
     orderDate: Date by xpath("/OrderDate")
     timestamp: Instant by xpath("/Timestamp")
+    maturityDate: DateTime by xpath("/MaturityDate")
 }""".trimIndent()
 
    private val coinbaseOrder: ByteArrayInputStream = """
@@ -72,13 +77,14 @@ type CoinbaseOrder {
 "Symbol": "BTCUSD",
 "Price": "6186.08",
 "OrderDate": "2020-03-19",
-"Timestamp": "2020-03-19T13:00:01.000Z"
+"Timestamp": "2020-03-19T13:00:01.000Z",
+"MaturityDate": "2011-12-03T10:15:30"
 }""".byteInputStream()
 
    private val taxiSchema = TaxiSchema.from(schemaStr, "Coinbase", "1.0.0")
 
    @Test
-   @Ignore
+   @Ignore("LENS-136")
    fun testDatabaseColumnTypes() {
       val versionedType = taxiSchema.versionedType("CoinbaseOrder".fqn())
       val input: Flux<InputStream> = Flux.just(coinbaseOrder)
@@ -112,7 +118,8 @@ type CoinbaseOrder {
             rs.getString("Symbol"),
             rs.getDouble("Price"),
             rs.getDate("OrderDate").toLocalDate(),
-            rs.getTimestamp("Timestamp").toLocalDateTime().atOffset(ZoneOffset.UTC).toInstant()
+            rs.getTimestamp("Timestamp").toLocalDateTime().atOffset(ZoneOffset.UTC).toInstant(),
+            rs.getTimestamp("MaturityDate").toLocalDateTime()
          )
       }
 
@@ -120,18 +127,20 @@ type CoinbaseOrder {
          "BTCUSD",
          6186.08,
          LocalDate.parse("2020-03-19"),
-         Instant.parse("2020-03-19T13:00:01.000Z"))
+         Instant.parse("2020-03-19T13:00:01.000Z"),
+         LocalDateTime.parse("2011-12-03T10:15:30"))
       list.should.contain(anOrder)
 
       caskDao.findBy(versionedType, "symbol", "BTCUSD").size.should.equal(1)
       caskDao.findBy(versionedType, "orderDate", "2020-03-19").size.should.equal(1)
-      caskDao.findBy(versionedType, "timestamp", "2020-03-19T13:00:01.000").size.should.equal(1)
+      caskDao.findBy(versionedType, "timestamp", "2020-03-19T13:00:01.000Z").size.should.equal(1)
    }
 
    data class CoinbaseOrder(
       val symbol: String,
       val price: Double,
       val orderDate: LocalDate,
-      val timestamp: Instant)
+      val timestamp: Instant,
+      val maturityDate: LocalDateTime)
 }
 
