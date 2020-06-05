@@ -38,7 +38,7 @@ class DbColumnTypesIntegrationTest {
 
    @Rule
    @JvmField
-   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6660) }
+   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(0) }
 
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
