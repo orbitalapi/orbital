@@ -1,7 +1,7 @@
 package io.vyne.cask.ingest
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
+import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.TableMetadata
@@ -36,7 +36,10 @@ class DbColumnTypesIntegrationTest {
    @JvmField
    val folder = TemporaryFolder()
 
-   lateinit var pg: EmbeddedPostgres
+   @Rule
+   @JvmField
+   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6660) }
+
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
    lateinit var dataSource: DataSource
@@ -44,9 +47,8 @@ class DbColumnTypesIntegrationTest {
 
    @Before
    fun setup() {
-      pg = EmbeddedPostgres.builder().setPort(6660).start()
       dataSource = DataSourceBuilder.create()
-         .url("jdbc:postgresql://localhost:6660/postgres")
+         .url("jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres")
          .username("postgres")
          .build()
       jdbcTemplate = JdbcTemplate(dataSource)
@@ -57,7 +59,6 @@ class DbColumnTypesIntegrationTest {
    @After
    fun tearDown() {
       ingester.destroy()
-      pg.close()
    }
 
    private val schemaStr = """

@@ -36,7 +36,7 @@ class CaskDAOIntegrationTest {
 
    @Rule
    @JvmField
-   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(6663) }
+   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(0) }
 
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
@@ -45,7 +45,7 @@ class CaskDAOIntegrationTest {
    @Before
    fun setup() {
       val dataSource = DataSourceBuilder.create()
-         .url("jdbc:postgresql://localhost:6663/postgres")
+         .url("jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres")
          .username("postgres")
          .build()
       jdbcTemplate = JdbcTemplate(dataSource)

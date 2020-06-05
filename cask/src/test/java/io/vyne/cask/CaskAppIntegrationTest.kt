@@ -7,6 +7,8 @@ import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.spring.SchemaPublicationMethod
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
+import org.junit.AfterClass
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -43,18 +45,33 @@ class CaskAppIntegrationTest {
    @Autowired
    lateinit var schemaStoreClient: SchemaStoreClient
 
-   @Test
-   fun contextLoads() {
+
+   companion object {
+      lateinit var pg: EmbeddedPostgres
+
+      @BeforeClass
+      @JvmStatic
+      fun setupDb() {
+         pg =  EmbeddedPostgres.builder().setPort(0).start()
+      }
+
+      @AfterClass
+      @JvmStatic
+      fun cleanupdb() {
+         pg.close()
+      }
    }
+
+
 
    @TestConfiguration
    class SpringConfig {
-      val pg = EmbeddedPostgres.builder().setPort(6662).start()
+
       @Bean
       @Primary
       fun jdbcTemplate(): JdbcTemplate {
          val dataSource = DataSourceBuilder.create()
-            .url("jdbc:postgresql://localhost:6662/postgres")
+            .url("jdbc:postgresql://localhost:${pg.port}/postgres")
             .username("postgres")
             .build()
          val jdbcTemplate = JdbcTemplate(dataSource)
@@ -65,6 +82,7 @@ class CaskAppIntegrationTest {
       @PreDestroy
       fun destroy() {
          log().info("Closing embedded Postgres...")
+         // As long as we don't have dirty context, the PostConstruct should be fine. Close again AfterClass just in case. Doesn't hurt
          pg.close()
       }
    }

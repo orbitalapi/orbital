@@ -2,7 +2,6 @@ package io.vyne.cask.ingest
 
 import arrow.core.getOrElse
 import com.google.common.io.Resources
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import io.vyne.cask.CaskService
@@ -16,12 +15,7 @@ import io.vyne.spring.LocalResourceSchemaProvider
 import io.vyne.utils.Benchmark
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.io.FileUtils
-import org.junit.After
-import org.junit.AfterClass
-import org.junit.Before
-import org.junit.Ignore
-import org.junit.Rule
-import org.junit.Test
+import org.junit.*
 import org.junit.rules.TemporaryFolder
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
@@ -37,31 +31,25 @@ class IngesterIntegrationTest {
    @JvmField
    val folder = TemporaryFolder()
 
-   lateinit var pg: EmbeddedPostgres
-   // Atm there is no way to override dbname/username/pwd
+   @Rule
+   @JvmField
+   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(0) }
 
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
 
    @Before
    fun setup() {
-      pg = EmbeddedPostgres.builder().setPort(6660).start()
       val dataSource = DataSourceBuilder.create()
-         .url("jdbc:postgresql://localhost:6660/postgres")
+         .url("jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres")
          .username("postgres")
          .build()
       jdbcTemplate = JdbcTemplate(dataSource)
       jdbcTemplate.execute(TableMetadata.DROP_TABLE)
-
-   }
-
-   @After
-   fun tearDown() {
-      pg.close()
    }
 
    @Test
-   @Ignore("LENS-136")
+   @Ignore
    fun canStreamDataToPostgresOnStart() {
       val schema = CoinbaseOrderSchema.schemaV1
       val type = schema.versionedType("OrderWindowSummary".fqn())
