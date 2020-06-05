@@ -18,19 +18,17 @@ class PrimitiveParser(private val conversionService: ConversionService = Convers
    }
 
    private fun parseEnum(value: Any, targetType: Type): TypedInstance {
-      return when (targetType.enumValues.contains(value)) {
-         true -> TypedValue.from(targetType, value, conversionService)
-         else -> {
-            // TODO fix me, vyne type should have enum values https://projects.notional.uk/youtrack/issue/LENS-131
-            val taxiType = (targetType.taxiType as EnumType)
-            val taxiEnumName = taxiType.values.find { it.value == value }?.name
-            taxiEnumName
-               ?.let { TypedValue.from(targetType, it, conversionService) }
-               ?: error("Unable to map Value=${value} " +
-                  "to Enum Type=${targetType.fullyQualifiedName}, " +
-                  "allowed values=${taxiType.definition?.values?.map { Pair(it.name, it.value) }}")
-         }
+
+      val enumType = targetType.taxiType as EnumType
+
+      return if(enumType.has(value)){
+         TypedValue.from(targetType, value, conversionService)
+      } else {
+         error("""
+   Unable to map Value=${value} to Enum Type=${targetType.fullyQualifiedName}, allowed values=${enumType.definition?.values?.map { it.name to it.value }}
+            """)
       }
+
    }
 }
 
