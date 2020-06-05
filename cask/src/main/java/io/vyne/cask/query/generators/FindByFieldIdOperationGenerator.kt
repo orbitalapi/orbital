@@ -2,6 +2,7 @@ package io.vyne.cask.query.generators
 
 import io.vyne.cask.query.CaskServiceSchemaGenerator
 import io.vyne.cask.query.OperationGenerator
+import io.vyne.cask.query.generators.TemporalFieldUtils.parameterType
 import lang.taxi.services.Operation
 import lang.taxi.services.Parameter
 import lang.taxi.types.Annotation
@@ -18,7 +19,7 @@ class FindByFieldIdOperationGenerator: OperationGenerator {
    override fun generate(field: Field, type: Type): Operation {
       val parameter = Parameter(
          annotations = listOf(Annotation("PathVariable", mapOf("name" to field.name))),
-         type = field.type,
+         type = parameterType(field),
          name = field.name,
          constraints = listOf())
 
@@ -38,7 +39,7 @@ class FindByFieldIdOperationGenerator: OperationGenerator {
 
    private fun getFindByIdRestPath(type: Type, field: Field): String {
       val typeQualifiedName = type.toQualifiedName()
-      val fieldTypeQualifiedName = field.type.toQualifiedName()
+      val fieldTypeQualifiedName =  parameterType(field).toQualifiedName()
       val path = AttributePath.from(typeQualifiedName.toString())
       return "${CaskServiceSchemaGenerator.CaskApiRootPath}${path.parts.joinToString("/")}/${field.name}/{$fieldTypeQualifiedName}"
    }

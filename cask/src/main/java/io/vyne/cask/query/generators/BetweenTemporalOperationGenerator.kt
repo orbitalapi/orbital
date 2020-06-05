@@ -2,6 +2,7 @@ package io.vyne.cask.query.generators
 
 import io.vyne.cask.query.CaskServiceSchemaGenerator
 import io.vyne.cask.query.OperationGenerator
+import io.vyne.cask.query.generators.TemporalFieldUtils.parameterType
 import io.vyne.schemas.asVyneTypeReference
 import lang.taxi.Operator
 import lang.taxi.services.Operation
@@ -18,8 +19,7 @@ import org.springframework.stereotype.Component
 @Component
 class BetweenTemporalOperationGenerator: OperationGenerator {
    override fun generate(field: Field, type: Type): Operation {
-      val primitive = TemporalFieldUtils.validate(field)!!
-      val inheritedType = if (field.type.inheritsFrom.isEmpty()) field.type else field.type.inheritsFrom.first()
+      val inheritedType = parameterType(field)
       val startParameter = TemporalFieldUtils.parameterFor(
          inheritedType,
          TemporalFieldUtils.Start,

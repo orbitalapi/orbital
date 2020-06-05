@@ -1,6 +1,11 @@
 package io.vyne.cask.query
 
-import com.nhaarman.mockito_kotlin.*
+import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.argumentCaptor
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.times
+import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.query.generators.AfterTemporalOperationGenerator
@@ -96,7 +101,6 @@ class CaskServiceSchemaGeneratorTest {
       """import Symbol
 import Price
 import MaturityDate
-import FormattedTransactionEventDateTime_1b14a7
 import TransactionEventDateTime
 
 namespace vyne.casks {
@@ -117,8 +121,8 @@ namespace vyne.casks {
       operation findByMaturityDate( @PathVariable(name = "maturityDate") maturityDate : MaturityDate ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/Between/{start}/{end}")
       operation findByMaturityDateBetween( @PathVariable(name = "start") start : MaturityDate, @PathVariable(name = "end") end : MaturityDate ) : OrderWindowSummary[]( MaturityDate >= start, MaturityDate < end )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/{FormattedTransactionEventDateTime_1b14a7}")
-      operation findByOrderDateTime( @PathVariable(name = "orderDateTime") orderDateTime : FormattedTransactionEventDateTime_1b14a7 ) : OrderWindowSummary[]
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/{TransactionEventDateTime}")
+      operation findByOrderDateTime( @PathVariable(name = "orderDateTime") orderDateTime : TransactionEventDateTime ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/Between/{start}/{end}")
       operation findByOrderDateTimeBetween( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime < end )
    }
