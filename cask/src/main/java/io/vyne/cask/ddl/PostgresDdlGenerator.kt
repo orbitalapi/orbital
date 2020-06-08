@@ -1,6 +1,5 @@
 package io.vyne.cask.ddl
 
-import com.google.common.annotations.VisibleForTesting
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.VersionedSource
 import io.vyne.cask.timed
@@ -48,7 +47,7 @@ data class TableMetadata(
       const val TABLE_NAME = "Table_Metadata"
       const val DROP_TABLE = """DROP TABLE IF EXISTS $TABLE_NAME"""
 
-      // TODO : Use Flyway for static tables
+      // TODO refactor/cleanup this is no managed by Flyway
       val CREATE_TABLE = """CREATE TABLE IF NOT EXISTS $TABLE_NAME (
             | tableName varchar(32) NOT NULL,
             | qualifiedTypeName varchar(255) NOT NULL,
@@ -80,6 +79,7 @@ data class TableMetadata(
       }
    }
 
+   // TODO refactor/cleanup this is no managed by Flyway
    private val dml = """INSERT into $TABLE_NAME (
         | tableName,
         | qualifiedTypeName,
@@ -116,6 +116,10 @@ data class TableGenerationStatement(
    val columns: List<PostgresColumn>,
    val metadata: TableMetadata
 )
+
+fun VersionedType.caskRecordTable(): String {
+   return PostgresDdlGenerator.tableName(this)
+}
 
 class PostgresDdlGenerator {
    companion object {
@@ -161,13 +165,8 @@ class PostgresDdlGenerator {
    // However, that'll change shortly, and don't wanna refactor this again.
    private fun generateObjectDdl(type: ObjectType, schema: Schema, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
       val columns = fields.map { generateColumnForField(it) }
-      val fieldDef = columns.joinToString(",\n") { it.sql }
       val tableName = tableName(versionedType)
-      val ddl = """
-CREATE TABLE IF NOT EXISTS $tableName (
-$fieldDef
-)
-        """.trim()
+      val ddl = generateCaskTableDdl(versionedType, fields)
       val metadata = TableMetadata(
          tableName,
          type.qualifiedName,
@@ -185,8 +184,15 @@ $fieldDef
       return TableGenerationStatement(ddl, versionedType, tableName, columns, metadata)
    }
 
-   @VisibleForTesting
-   internal fun generateColumnForField(field: Field): PostgresColumn {
+   fun generateCaskTableDdl(versionedType: VersionedType, fields: List<Field>): String {
+      val tableName = tableName(versionedType)
+      val columns = fields.map { generateColumnForField(it) }
+      val fieldDef = columns.joinToString(",\n") { it.sql }
+      return """CREATE TABLE IF NOT EXISTS $tableName (
+$fieldDef)""".trim()
+   }
+
+   fun generateColumnForField(field: Field): PostgresColumn {
       val primitiveType = getPrimitiveType(field, field.type)
       return generateColumnForField(field, primitiveType)
    }

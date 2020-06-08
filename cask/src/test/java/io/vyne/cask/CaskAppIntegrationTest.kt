@@ -19,6 +19,7 @@ import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
@@ -38,6 +39,7 @@ import javax.annotation.PreDestroy
       "eureka.client.enabled=false"
    ])
 @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED)
+@ActiveProfiles("test")
 class CaskAppIntegrationTest {
    @LocalServerPort
    val randomServerPort = 0
@@ -52,7 +54,8 @@ class CaskAppIntegrationTest {
       @BeforeClass
       @JvmStatic
       fun setupDb() {
-         pg =  EmbeddedPostgres.builder().setPort(0).start()
+         // port used in the config by the Flyway, hence hardcoded
+         pg =  EmbeddedPostgres.builder().setPort(6662).start()
       }
 
       @AfterClass
@@ -61,8 +64,6 @@ class CaskAppIntegrationTest {
          pg.close()
       }
    }
-
-
 
    @TestConfiguration
    class SpringConfig {

@@ -14,24 +14,28 @@ import io.vyne.cask.ingest.Ingester
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.ingest.IngestionStream
+import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.MockDataBuffer
 import io.vyne.cask.websocket.MockWebSocketSession
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
+import io.vyne.schemas.VersionedType
 import org.junit.Before
 import org.junit.Test
-import org.skyscreamer.jsonassert.JSONAssert
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketMessage
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import java.io.ByteArrayInputStream
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Duration
 
 
 class CaskWebsocketHandlerTest {
    val ingester: Ingester = mock()
+   val caskDao: CaskDAO = mock()
    val applicationEventPublisher = mock<ApplicationEventPublisher>()
    lateinit var wsHandler: CaskWebsocketHandler
 
@@ -48,7 +52,7 @@ class CaskWebsocketHandlerTest {
       }
    }
 
-   private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester))
+   private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester), caskDao)
 
    @Before()
    fun setUp() {
@@ -81,6 +85,9 @@ class CaskWebsocketHandlerTest {
       val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage())))
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
       val captor = argumentCaptor<IngestionInitialisedEvent>()
+      val versionedType = argumentCaptor<VersionedType>()
+      val cachePath = argumentCaptor<Path>()
+      val messageId = argumentCaptor<String>()
 
       wsHandler.handle(session).block()
 
@@ -90,6 +97,10 @@ class CaskWebsocketHandlerTest {
          .verifyComplete()
       verify(applicationEventPublisher, times(1)).publishEvent(captor.capture())
       "OrderWindowSummary".should.be.equal(captor.firstValue.type.fullyQualifiedName)
+
+      verify(caskDao, times(1)).createCaskMessage(versionedType.capture(), cachePath.capture(), messageId.capture())
+      val expectedPath = Paths.get(System.getProperty("java.io.tmpdir"), versionedType.firstValue.versionedName, "json", messageId.firstValue)
+      cachePath.firstValue.should.be.equal(expectedPath)
    }
 
    @Test

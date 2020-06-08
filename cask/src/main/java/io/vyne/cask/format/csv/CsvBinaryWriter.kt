@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 
 class CsvBinaryWriter(
    private val bytesPerColumn: Int = 15,
-   private val format: CSVFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), 
+   private val format: CSVFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(),
    private  val shouldLogIndividualWriteTime: Boolean = true) {
 
     fun convert(input: InputStream, outputPath: Path): Flux<CSVRecord> {
@@ -32,7 +32,7 @@ class CsvBinaryWriter(
                 var header: Header? = null
                 format.parse(input.bufferedReader())
                         .forEach { record ->
-                           timed("CsvBinaryWriter.parse", shouldLogIndividualWriteTime , TimeUnit.NANOSECONDS) {
+                           //timed("CsvBinaryWriter.parse", shouldLogIndividualWriteTime , TimeUnit.NANOSECONDS) { // commenting out as it generates lots of noise in tests
                               if (header == null) {
                                  header = writeHeader(outputStream, record)
                               }
@@ -45,7 +45,7 @@ class CsvBinaryWriter(
                                  outputStream.write(columnValue.byteArrayOfLength(bytesPerColumn))
                               }
                               emitter.next(record)
-                           }
+                           //}
                         }
                 emitter.complete()
             }
