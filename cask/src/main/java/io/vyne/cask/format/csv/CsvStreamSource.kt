@@ -24,15 +24,13 @@ class CsvStreamSource(val input: Flux<InputStream>,
       Files.createFile(readCacheDirectory.resolve(type.versionedName))
    }
    private val writer = CsvBinaryWriter(bytesPerColumn, csvFormat)
-   private val mapper =  CsvStreamMapper(type.type, schema)
+   private val mapper = CsvStreamMapper(type.type, schema)
 
    override val stream: Flux<InstanceAttributeSet>
       get() {
-         return timed("CsvStreamSource.get", true, TimeUnit.MILLISECONDS) {
-            input
-               .map { writer.convert(it, cachePath) }
-               .concatMap { it }
-               .map { mapper.map(it, nullValues) }
-         }
+         return input
+            .map { writer.convert(it, cachePath) }
+            .concatMap { it }
+            .map { mapper.map(it, nullValues) }
       }
 }

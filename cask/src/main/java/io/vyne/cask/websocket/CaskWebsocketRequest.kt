@@ -1,7 +1,5 @@
 package io.vyne.cask.websocket
 
-import arrow.core.Either
-import arrow.core.flatMap
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.cask.CaskIngestionRequest
 import io.vyne.cask.CaskService
@@ -43,6 +41,7 @@ abstract class CaskWebsocketRequest : CaskIngestionRequest {
       }
 
 data class JsonWebsocketRequest(override val session: WebSocketSession, override val versionedType: VersionedType, private val objectMapper: ObjectMapper) : CaskWebsocketRequest() {
+   override val contentType = CaskService.ContentType.json
    override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, readCacheDirectory: Path): StreamSource {
       return JsonStreamSource(
          input,
@@ -55,6 +54,7 @@ data class JsonWebsocketRequest(override val session: WebSocketSession, override
 }
 
 data class CsvWebsocketRequest(override val session: WebSocketSession, override val versionedType: VersionedType) : CaskWebsocketRequest() {
+   override val contentType = CaskService.ContentType.csv
    fun csvFormat(): CSVFormat {
       val csvDelimiter: Char = params?.getParam("csvDelimiter").orElse(",").single()
       val csvFirstRecordAsHeader: Boolean = params?.getParam("csvFirstRecordAsHeader").orElse("true").toBoolean()
@@ -74,9 +74,8 @@ data class CsvWebsocketRequest(override val session: WebSocketSession, override 
    }
 }
 
-
 data class CsvIngestionRequest(val format: CSVFormat, override val versionedType: VersionedType, val nullValues: Set<String>) : CaskIngestionRequest {
-
+   override val contentType = CaskService.ContentType.csv
    override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, readCacheDirectory: Path): StreamSource {
       return CsvStreamSource(
          input,
@@ -86,3 +85,4 @@ data class CsvIngestionRequest(val format: CSVFormat, override val versionedType
       )
    }
 }
+

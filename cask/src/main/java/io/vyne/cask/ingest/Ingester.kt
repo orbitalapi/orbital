@@ -21,11 +21,13 @@ class Ingester(
    private val jdbcTemplate: JdbcTemplate,
    private val ingestionStream: IngestionStream) {
 
+   @Deprecated("Remove this in faver of CaskDao")
     fun destroy() {
         jdbcTemplate.execute(ingestionStream.dbWrapper.dropTableStatement)
         TableMetadata.deleteEntry(ingestionStream.type, jdbcTemplate)
     }
 
+   @Deprecated("Remove this in faver of CaskDao")
     fun initialize() {
        timed("Ingester.initialize", true, TimeUnit.MILLISECONDS) {
         jdbcTemplate.execute(TableMetadata.CREATE_TABLE)

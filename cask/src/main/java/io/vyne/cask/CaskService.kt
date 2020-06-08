@@ -1,19 +1,13 @@
 package io.vyne.cask
 
 import arrow.core.Either
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.ddl.TypeDbWrapper
-import io.vyne.cask.format.csv.CsvStreamSource
-import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.ingest.StreamSource
-import io.vyne.cask.websocket.CaskWebsocketRequest
-import io.vyne.cask.websocket.CsvWebsocketRequest
-import io.vyne.cask.websocket.JsonWebsocketRequest
+import io.vyne.cask.query.CaskDAO
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
@@ -23,11 +17,13 @@ import reactor.core.publisher.Flux
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.*
 
 @Component
 class CaskService(private val schemaProvider: SchemaProvider,
                   private val ingesterFactory: IngesterFactory,
-                  private val objectMapper: ObjectMapper = jacksonObjectMapper()) {
+                  private val caskDAO: CaskDAO) {
 
    interface CaskServiceError {
       val message:String
@@ -73,33 +69,44 @@ class CaskService(private val schemaProvider: SchemaProvider,
    fun ingestRequest(request: CaskIngestionRequest, input: Flux<InputStream>): Flux<InstanceAttributeSet> {
       val schema = schemaProvider.schema()
       val versionedType = request.versionedType
-      val cacheDirectory = Files.createTempDirectory(versionedType.versionedName)
+      val messageId = UUID.randomUUID().toString()
+      val cacheDirectory = createCacheDirectory(versionedType, request, messageId)
+
+      // capturing path to the message
+      caskDAO.createCaskMessage(versionedType, cacheDirectory, messageId)
 
       val streamSource: StreamSource = request.buildStreamSource(
          input = input,
-               type = versionedType,
-               schema = schema,
+         type = versionedType,
+         schema = schema,
          readCacheDirectory = cacheDirectory
-            )
+      )
       val ingestionStream = IngestionStream(
          versionedType,
          TypeDbWrapper(versionedType, schema, cacheDirectory, null),
          streamSource)
 
-      val ingester = ingesterFactory.create(ingestionStream)
-      ingester.initialize()
-      // This code executes every time a new message is pushed to cask
-      // So every request we inject cask service schema as a namespace vyne.casks
-      // It also crashes vyne
-      // TODO find the best place for this logic
-      //applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, versionedType))
-
-      return ingester
+      return ingesterFactory
+         .create(ingestionStream)
          .ingest()
+   }
+
+   private fun createCacheDirectory(versionedType: VersionedType, request: CaskIngestionRequest, messageId: String): Path {
+      // TODO setup folder via config once we start making a use of it
+      val caskMessageCache = System.getProperty("java.io.tmpdir")
+      val cachePath = Paths.get(
+         caskMessageCache,
+         versionedType.versionedName,
+         request.contentType.name,
+         messageId)
+      log().info("CaskMessage cachePath=$cachePath")
+      Files.createDirectories(cachePath)
+      return cachePath
    }
 }
 
 interface CaskIngestionRequest {
    fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, readCacheDirectory: Path): StreamSource
    val versionedType: VersionedType
+   val contentType: CaskService.ContentType
 }

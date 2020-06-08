@@ -1,13 +1,10 @@
 package io.vyne.cask.ddl
 
-import com.nhaarman.mockitokotlin2.eq
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.TaxiDocument
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 
 class PostgresDdlGeneratorTest {
@@ -33,8 +30,7 @@ CREATE TABLE IF NOT EXISTS Person_c99239 (
 "alive" BOOLEAN,
 "spouseName" VARCHAR(255),
 "dateOfBirth" DATE,
-"timestamp" TIMESTAMP
-)""".trim())
+"timestamp" TIMESTAMP)""".trim())
     }
 
     @Test

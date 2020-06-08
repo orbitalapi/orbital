@@ -2,6 +2,7 @@ package io.vyne.cask.ingest
 
 import arrow.core.getOrElse
 import com.google.common.io.Resources
+import com.nhaarman.mockito_kotlin.mock
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import io.vyne.cask.CaskService
@@ -9,13 +10,18 @@ import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
 import io.vyne.cask.format.csv.CsvStreamSource
+import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.CsvIngestionRequest
 import io.vyne.schemas.fqn
 import io.vyne.spring.LocalResourceSchemaProvider
 import io.vyne.utils.Benchmark
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.io.FileUtils
-import org.junit.*
+import org.flywaydb.core.Flyway
+import org.junit.Before
+import org.junit.Ignore
+import org.junit.Rule
+import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
@@ -44,6 +50,10 @@ class IngesterIntegrationTest {
          .url("jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres")
          .username("postgres")
          .build()
+      Flyway.configure()
+         .dataSource(dataSource)
+         .load()
+         .migrate()
       jdbcTemplate = JdbcTemplate(dataSource)
       jdbcTemplate.execute(TableMetadata.DROP_TABLE)
    }
@@ -86,9 +96,11 @@ class IngesterIntegrationTest {
       val input: Flux<InputStream> = Flux.just(File(source).inputStream())
       val schemaProvider = LocalResourceSchemaProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
       val ingesterFactory = IngesterFactory(jdbcTemplate)
+      val caskDAO: CaskDAO = mock()
       val caskService = CaskService(
          schemaProvider,
-         ingesterFactory
+         ingesterFactory,
+         caskDAO
       )
       val type = caskService.resolveType("OrderWindowSummaryCsv").getOrElse {
          error("Type not found")
