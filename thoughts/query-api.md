@@ -258,3 +258,33 @@ Also for projecting A[] to B[], we're gonna treat that as:
 ```
 A[].map { A -> vyne.given(A).build(B) }
 ```
+
+
+## Cross Entity Discovery
+query {
+    order : Order,
+    trades: Trade[]( OrderId = order.OrderId )
+}
+sort
+
+ * How do we capture the concept of a row / entity?
+ * How do we handle duplicate attributes
+
+
+
+### Required Output
+
+```json
+
+[   ]
+
+
+
+
+
+
+
+
+
+
+```

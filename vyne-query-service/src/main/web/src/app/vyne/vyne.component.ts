@@ -39,6 +39,11 @@ export class VyneComponent {
       route: 'query-wizard'
     },
     {
+      title: 'Data explorer',
+      icon: 'assets/img/data-explorer.svg',
+      route: 'data-explorer'
+    },
+    {
       title: 'Query history',
       icon: 'assets/img/history.svg',
       route: 'query-history'

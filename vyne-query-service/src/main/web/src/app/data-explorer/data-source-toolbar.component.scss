@@ -1,0 +1,22 @@
+.container {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+
+}
+.data-source-configuration {
+  display: flex;
+  align-items: center;
+  margin: 1rem;
+
+  width: 100%;
+
+  span {
+    margin: 0 2rem;
+  }
+
+  app-type-autocomplete {
+    min-width: 300px;
+    width: 100%;
+  }
+}
