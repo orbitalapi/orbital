@@ -55,6 +55,15 @@ class TypedObjectTest {
 
 
    @Test
+   fun canParseJsonUsingTypedInstanceFrom() {
+      val trader = TypedInstance.from(schema.type("Trader"),traderJson, schema)
+      val raw = trader.toRawObject()
+      val rawJson = jacksonObjectMapper().writeValueAsString(raw)
+      JSONAssert.assertEquals(traderJson, rawJson, false);
+
+   }
+
+   @Test
    fun canConvertTypedInstanceToTypeNamedObject() {
       val trader = JsonModelParser(schema).parse(schema.type("Trader"), traderJson)
       val raw = trader.toTypeNamedInstance()

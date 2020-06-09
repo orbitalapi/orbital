@@ -1,5 +1,6 @@
 package io.vyne.models
 
+import io.vyne.models.json.JsonModelParser
 import io.vyne.schemas.*
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
@@ -69,11 +70,11 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
    }
 
    fun getAttributeIdentifiedByType(type: Type): TypedInstance {
-      val candidates = this.value.filter { (name,value) -> value.type.isAssignableTo(type) }
+      val candidates = this.value.filter { (name, value) -> value.type.isAssignableTo(type) }
       return when {
          candidates.isEmpty() -> error("No properties on type ${this.type.name.parameterizedName} have type ${type.name.parameterizedName}")
          candidates.size > 1 -> {
-            val candidateDescription = candidates.entries.joinToString{ "${it.key} : ${it.value.type.name.parameterizedName}"  }
+            val candidateDescription = candidates.entries.joinToString { "${it.key} : ${it.value.type.name.parameterizedName}" }
             error("Ambiguous property - there are ${candidates.size} possible matches for type ${type.name.parameterizedName}: $candidateDescription")
          }
          else -> candidates.values.first()
