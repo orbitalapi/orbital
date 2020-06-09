@@ -7,9 +7,15 @@ import io.vyne.VersionedSource
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.TypeFullView
+import io.vyne.schemas.fqn
+import io.vyne.utils.log
 import junit.framework.Assert.fail
+import org.junit.Ignore
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.stream.Collectors
 
 class TaxiSchemaTest {
 
@@ -345,6 +351,25 @@ type Sample {
   "isScalar" : false
 }
    """.trimIndent()
+
+
+   @Test
+   @Ignore("This test is handy for debugging issues with type hashes")
+   fun loadSchemaFromDirectory() {
+      val taxonomyPath = Paths.get("C:\\dev\\workspace\\lens\\test-schemas\\taxonomy\\src")
+      val schemaContentList:List<VersionedSource> = Files.walk(taxonomyPath)
+         .filter { it.toFile().isFile }
+         .filter { it.toFile().extension.equals("taxi") }
+         .map {
+            val content = String(Files.readAllBytes(it.toAbsolutePath()))
+            VersionedSource(it.toAbsolutePath().toString(), "1.0.0", content)
+         }.collect(Collectors.toList())
+      val schema = TaxiSchema.from(schemaContentList)
+
+      val versionedType = schema.versionedType("hpc.orders.Order".fqn())
+      log().info("Hash: ${versionedType.versionHash}")
+      log().info("VersionedName: ${versionedType.versionedName}")
+   }
 }
 
 

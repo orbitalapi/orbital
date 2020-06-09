@@ -19,23 +19,18 @@ data class VersionedType(
    val type: Type,
    val taxiType: lang.taxi.types.Type
 ) {
-   val fullyQualifiedName = type.fullyQualifiedName
+   val fullyQualifiedName = taxiType.qualifiedName
    val versionHash: String
    val versionedNameHash: String
-
    val versionedName: String
 
    init {
-      val sourceIds = sources.map { it.id }
-         .sorted()
-         .joinToString("|")
       val qualifiedNameHash = Hashing.sha256().hashString(fullyQualifiedName, Charset.defaultCharset()).toString()
          .substring(0, 6)
 
       // If the fully qualified name is shorter than the hashed version - just use that.
-      val nameToHash = listOf(type.fullyQualifiedName, qualifiedNameHash).minBy { it.length }!!
-      versionHash = Hashing.sha256().hashString(sourceIds, Charset.defaultCharset()).toString()
-         .substring(0, 6)
+      val nameToHash = listOf(fullyQualifiedName, qualifiedNameHash).minBy { it.length }!!
+      versionHash = taxiType.definitionHash!!
       versionedNameHash = "${nameToHash}_$versionHash"
       versionedName = "${fullyQualifiedName}@$versionHash"
    }
