@@ -12,17 +12,17 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 
-class JsonStreamSource(val input: Flux<InputStream>,
-                       val vyneType: VersionedType,
-                       val schema: Schema,
-                       val readCacheDirectory: Path,
-                       val objectMapper: ObjectMapper) : StreamSource {
+class JsonStreamSource(private val input: Flux<InputStream>,
+                       private val versionedType: VersionedType,
+                       private val schema: Schema,
+                       private val readCacheDirectory: Path,
+                       private val objectMapper: ObjectMapper) : StreamSource {
 
    // TODO LENS-47 save input stream to disk for replay
    val cachePath: Path by lazy {
-      Files.createFile(readCacheDirectory.resolve(vyneType.fullyQualifiedName))
+      Files.createFile(readCacheDirectory.resolve(versionedType.fullyQualifiedName))
    }
-   val mapper = JsonStreamMapper(vyneType.type, schema)
+   private val mapper = JsonStreamMapper(versionedType, schema)
 
    override val stream: Flux<InstanceAttributeSet>
       get() {

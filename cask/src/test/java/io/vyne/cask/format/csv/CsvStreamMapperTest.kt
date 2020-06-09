@@ -1,6 +1,7 @@
 package io.vyne.cask.format.csv
 
 import com.google.common.io.Resources
+import io.vyne.schemas.fqn
 import io.vyne.utils.Benchmark
 import io.vyne.utils.log
 import org.junit.Rule
@@ -17,7 +18,8 @@ class CsvStreamMapperTest {
     @Test
     fun can_ingestAndMapToTypedInstance() {
         val schema = CoinbaseOrderSchema.schemaV1
-        val mapper = CsvStreamMapper(schema.type("OrderWindowSummary"), schema)
+        val versionedType = schema.versionedType("OrderWindowSummary".fqn())
+        val mapper = CsvStreamMapper(versionedType, schema)
 
         val resource = Resources.getResource("Coinbase_BTCUSD_1h.csv").toURI()
         // Ingest it a few times to get an average performance
@@ -36,7 +38,8 @@ class CsvStreamMapperTest {
     @Test
     fun canReadDelta() {
         val schema = CoinbaseOrderSchema.schemaV1
-        val mapper = CsvStreamMapper(schema.type("OrderWindowSummary"), schema)
+        val versionedType = schema.versionedType("OrderWindowSummary".fqn())
+        val mapper = CsvStreamMapper(versionedType, schema)
 
         val resource = Resources.getResource("Coinbase_BTCUSD_1h.csv").toURI()
         // Ingest it a few times to get an average performance

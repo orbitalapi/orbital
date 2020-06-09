@@ -24,7 +24,7 @@ type Person {
 }""".trim())
         val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
         statement.ddlStatement.should.equal("""
-CREATE TABLE IF NOT EXISTS Person_c99239 (
+CREATE TABLE IF NOT EXISTS Person_d4d1ee (
 "firstName" VARCHAR(255),
 "age" INTEGER,
 "alive" BOOLEAN,
