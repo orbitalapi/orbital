@@ -28,6 +28,7 @@
       <spring.cloud.version>Hoxton.SR4</spring.cloud.version>
       <spring.cloud.netflix.version>2.2.2.RELEASE</spring.cloud.netflix.version>
       <arrow.version>0.10.4</arrow.version>
+      <logstash.logback.version>6.4</logstash.logback.version>
    </properties>
 
    <modules>
@@ -246,6 +247,11 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>28.0-jre</version>
+         </dependency>
+         <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash.logback.version}</version>
          </dependency>
       </dependencies>
    </dependencyManagement>
