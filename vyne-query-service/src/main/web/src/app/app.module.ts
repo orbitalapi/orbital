@@ -68,6 +68,7 @@ import {InstructionSelectorComponent} from './policy-manager/instruction-selecto
 import {StatementDisplayComponent} from './policy-manager/statement-display.component';
 import {TypeViewerComponent} from './type-viewer/type-viewer.component';
 import {AttributeTableComponent} from './type-viewer/attribute-table/attribute-table.component';
+import {EnumTableComponent} from './type-viewer/enums-table/enum-table.component';
 import {TypeViewerContainerComponent} from './type-viewer/type-viewer-container.component';
 import {TocHostDirective} from './type-viewer/toc-host.directive';
 import {ContentsTableComponent} from './type-viewer/contents-table/contents-table.component';
@@ -138,6 +139,7 @@ export const routerModule = RouterModule.forRoot(
     TypeViewerComponent,
     TypeViewerContainerComponent,
     AttributeTableComponent,
+    EnumTableComponent,
     DescriptionEditorComponent,
     DescriptionEditorContainerComponent,
     TocHostDirective,

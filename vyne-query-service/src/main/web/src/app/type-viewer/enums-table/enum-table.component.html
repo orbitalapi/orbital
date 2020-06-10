@@ -1,0 +1,24 @@
+<table>
+  <thead>
+  <tr>
+    <th>Name</th>
+    <th>Value</th>
+    <th>Synonyms</th>
+    <th>Description</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let enumValue of enums; let i = index">
+    <td>{{enumValues()[i].name}}</td>
+    <td>{{enumValues()[i].value}}</td>
+    <td>
+        <div *ngFor ="let synonym of synonyms(i).synonyms; let index= index">
+          <span class="mono-badge"><a [routerLink]="routerLinkFor(i, index)">{{ shortDisplayName(i, index) }}</a></span>
+        </div>
+    </td>
+    <td>
+      <div *ngIf="typeDoc(i).length>0">{{ typeDoc(i) }}</div>
+    </td>
+  </tr>
+  </tbody>
+</table>

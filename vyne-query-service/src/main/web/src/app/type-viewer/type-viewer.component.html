@@ -29,7 +29,10 @@
       <h2>Attributes</h2>
       <app-attribute-table [type]="type"></app-attribute-table>
     </section>
-
+    <section *ngIf="hasEnumValues">
+      <h2>Enum Values</h2>
+      <app-enum-table [type]="type"></app-enum-table>
+    </section>
     <section>
       <h2>Links</h2>
       <app-type-link-graph-container [member]="schemaMember"></app-type-link-graph-container>
