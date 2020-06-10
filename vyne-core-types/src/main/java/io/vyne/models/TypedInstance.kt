@@ -76,9 +76,10 @@ interface TypedInstance {
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions)
             }
+            isJson(value) -> JsonModelParser(schema).parse(type,value as String)
+
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
             // Must be a CSV ish type value.
-            isJson(value) -> JsonModelParser(schema).parse(type,value as String)
             type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema)
             else -> TypedObject.fromValue(type, value, schema, nullValues)
          }

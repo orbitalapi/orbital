@@ -21,7 +21,14 @@ interface ConversionService {
    fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: String?): T
 
    companion object {
-      fun default(): ConversionService {
+      val DEFAULT_CONVERTER by lazy { newDefaultConverter() }
+
+      /**
+       * Creates a default converter.
+       * Use this if you wish to have a new instance that you further customize.
+       * If you're not planning on customizing, use DEFAULT_CONVERTER
+       */
+      fun newDefaultConverter(): ConversionService {
          return StringToIntegerConverter(
             FormattedInstantConverter(
                VyneDefaultConversionService
@@ -119,7 +126,7 @@ class StringToIntegerConverter(override val next: ConversionService = NoOpConver
 data class TypedValue private constructor(override val type: Type, override val value: Any) : TypedInstance {
    companion object {
       private val conversionService by lazy {
-         ConversionService.default()
+         ConversionService.newDefaultConverter()
       }
 
       fun from(type: Type, value: Any, converter: ConversionService): TypedValue {

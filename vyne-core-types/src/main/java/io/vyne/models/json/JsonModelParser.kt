@@ -8,18 +8,21 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 
-class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jacksonObjectMapper()) {
-   fun parse(type: Type, json: String): TypedInstance {
+class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = DEFAULT_MAPPER) {
+   companion object {
+      val DEFAULT_MAPPER = jacksonObjectMapper()
+   }
+   fun parse(type: Type, json: String, conversionService: ConversionService = ConversionService.DEFAULT_CONVERTER): TypedInstance {
       return if (type.isCollection) {
          val map = mapper.readValue<List<Map<String, Any>>>(json)
-         parseCollection(map, type)
+         parseCollection(map, type, conversionService)
       } else {
          val map = mapper.readValue<Map<String, Any>>(json)
-         doParse(type, map)
+         doParse(type, map, conversionService = conversionService)
       }
    }
 
-   fun doParse(type: Type, valueMap: Map<String, Any>, isCollection: Boolean = false): TypedInstance {
+   fun doParse(type: Type, valueMap: Map<String, Any>, isCollection: Boolean = false, conversionService: ConversionService = ConversionService.DEFAULT_CONVERTER): TypedInstance {
       if (type.isTypeAlias) {
          val aliasedType = type.aliasForType!!
          val parsedAliasType = doParse(aliasedType, valueMap, isCollection)
@@ -33,19 +36,19 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jac
 
       }
 
-      if (type.isScalar && !isCollection) {
-         return parseScalarValue(valueMap, type)
+      if (type.isScalar) {
+         return parseScalarValue(valueMap, type, conversionService)
       } else if (isCollection) {
-         return parseCollection(valueMap, type)
+         return parseCollection(valueMap, type, conversionService)
       } else if (isSingleObject(valueMap)) {
-         return doParse(type, valueMap.values.first() as Map<String, Any>, isCollection = false)
+         return doParse(type, valueMap.values.first() as Map<String, Any>, isCollection = false, conversionService = conversionService)
       } else {
          val attributeInstances = type.attributes
             .filterKeys { attributeName -> valueMap.containsKey(attributeName) }
             .map { (attributeName, field: Field) ->
                val attributeType = schema.type(field.type.parameterizedName)
                if (valueMap.containsKey(attributeName) && valueMap[attributeName] != null) {
-                  attributeName to doParse(attributeType, mapOf(attributeName to valueMap.getValue(attributeName)), schema.type(field.type).isCollection)
+                  attributeName to doParse(attributeType, mapOf(attributeName to valueMap.getValue(attributeName)), schema.type(field.type).isCollection, conversionService)
                } else {
                   attributeName to TypedNull(attributeType)
                }
@@ -58,7 +61,7 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jac
       return valueMap.size == 1 && valueMap.values.first() is Map<*, *>
    }
 
-   private fun parseCollection(valueMap: Map<String, Any>, type: Type): TypedCollection {
+   private fun parseCollection(valueMap: Map<String, Any>, type: Type, conversionService: ConversionService): TypedCollection {
       assert(valueMap.size == 1) { "Received a map with ${valueMap.size} entries, expecting only a single entry for a collection type!" }
       val key = valueMap.entries.first().key
       val value = valueMap.entries.first().value
@@ -66,25 +69,25 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = jac
          "Received a collection when expecting a scalar type"
       }
       val collection = value as Collection<*>
-      val values = collection.filterNotNull().map { doParse(type.typeParameters[0], mapOf(key to it), isCollection = false) }
+      val values = collection.filterNotNull().map { doParse(type.typeParameters[0], mapOf(key to it), isCollection = false, conversionService = conversionService) }
       return TypedCollection(type, values)
    }
 
-   private fun parseCollection(collection: Collection<Map<String, Any>>, type: Type): TypedCollection {
+   private fun parseCollection(collection: Collection<Map<String, Any>>, type: Type, conversionService: ConversionService): TypedCollection {
       if (!type.isCollection) {
          // TODO : Could just wrap this in an array..
          error("${type.name} is not a collection type")
       }
-      val values = collection.map { doParse(type.collectionType!!, it, isCollection = false) }
+      val values = collection.map { doParse(type.collectionType!!, it, isCollection = false, conversionService = conversionService) }
       return TypedCollection(type, values)
    }
 
-   private fun parseScalarValue(valueMap: Map<String, Any>, type: Type): TypedValue {
+   private fun parseScalarValue(valueMap: Map<String, Any>, type: Type, conversionService: ConversionService): TypedValue {
       assert(valueMap.size == 1) { "Received a map with ${valueMap.size} entries, expecting only a single entry for a scalar type!" }
       val value = valueMap.entries.first().value
       assert(value !is Collection<*>) {
          "Received a collection when expecting a scalar type"
       }
-      return TypedValue.from(type, value, performTypeConversions = true)
+      return TypedValue.from(type, value, conversionService)
    }
 }

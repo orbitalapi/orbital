@@ -9,7 +9,7 @@ import lang.taxi.types.EnumType
  *
  * Used when Parsing some non type-safe wire format (eg., xpath returning a number as a string)
  */
-class PrimitiveParser(private val conversionService: ConversionService = ConversionService.default()) {
+class PrimitiveParser(private val conversionService: ConversionService = ConversionService.DEFAULT_CONVERTER) {
    fun parse(value: Any, targetType: Type): TypedInstance {
       if (targetType.isEnum) {
          return parseEnum(value, targetType)
