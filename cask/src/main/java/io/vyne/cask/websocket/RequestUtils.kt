@@ -1,6 +1,7 @@
 package io.vyne.cask.websocket
 
 import io.vyne.utils.orElse
+import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.util.UriComponentsBuilder
@@ -10,8 +11,8 @@ fun URI.queryParams(): MultiValueMap<String, String?>? {
    return UriComponentsBuilder.newInstance().query(this.query).build().queryParams
 }
 
-fun WebSocketSession.queryParams(): MultiValueMap<String, String?>? {
-   return this.handshakeInfo.uri.queryParams()
+fun WebSocketSession.queryParams(): MultiValueMap<String, String?> {
+   return this.handshakeInfo.uri.queryParams().orElse(LinkedMultiValueMap())
 }
 
 fun MultiValueMap<String, String?>.getParam(paramName: String): String? {

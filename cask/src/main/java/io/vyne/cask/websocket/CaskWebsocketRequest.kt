@@ -10,37 +10,34 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.orElse
 import org.apache.commons.csv.CSVFormat
+import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
-import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import java.io.InputStream
 import java.nio.file.Path
 
 abstract class CaskWebsocketRequest : CaskIngestionRequest {
-   abstract val session: WebSocketSession
-   val params: MultiValueMap<String, String?>?
-        get() = session.queryParams()
-
-   fun debug() : Boolean = params?.getParam("debug").orElse("false").toBoolean()
-   fun nullValues() : Set<String> = params?.getParams("nullValue").orElse(emptyList<String>())
+   abstract val params: MultiValueMap<String, String?>
+   fun debug() : Boolean = params.getParam("debug").orElse("false").toBoolean()
+   fun nullValues() : Set<String> = params.getParams("nullValue").orElse(emptyList<String>())
       .filterNotNull()
       .toSet()
 
    companion object {
       @JvmStatic
-      fun create(session: WebSocketSession,
-         contentType: CaskService.ContentType,
+      fun create(contentType: CaskService.ContentType,
                  versionedType: VersionedType,
-                 objectMapper: ObjectMapper): CaskWebsocketRequest {
+                 objectMapper: ObjectMapper,
+                 params: MultiValueMap<String, String?> = LinkedMultiValueMap()): CaskWebsocketRequest {
          return when (contentType) {
-            CaskService.ContentType.json -> JsonWebsocketRequest(session, versionedType, objectMapper)
-            CaskService.ContentType.csv -> CsvWebsocketRequest(session, versionedType)
+            CaskService.ContentType.json -> JsonWebsocketRequest(params, versionedType, objectMapper)
+            CaskService.ContentType.csv -> CsvWebsocketRequest(params, versionedType)
          }
                }
             }
       }
 
-data class JsonWebsocketRequest(override val session: WebSocketSession, override val versionedType: VersionedType, private val objectMapper: ObjectMapper) : CaskWebsocketRequest() {
+data class JsonWebsocketRequest(override val params: MultiValueMap<String, String?>, override val versionedType: VersionedType, private val objectMapper: ObjectMapper) : CaskWebsocketRequest() {
    override val contentType = CaskService.ContentType.json
    override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, readCacheDirectory: Path): StreamSource {
       return JsonStreamSource(
@@ -53,7 +50,7 @@ data class JsonWebsocketRequest(override val session: WebSocketSession, override
    }
 }
 
-data class CsvWebsocketRequest(override val session: WebSocketSession, override val versionedType: VersionedType) : CaskWebsocketRequest() {
+data class CsvWebsocketRequest(override val params: MultiValueMap<String, String?>, override val versionedType: VersionedType) : CaskWebsocketRequest() {
    override val contentType = CaskService.ContentType.csv
    fun csvFormat(): CSVFormat {
       val csvDelimiter: Char = params?.getParam("csvDelimiter").orElse(",").single()

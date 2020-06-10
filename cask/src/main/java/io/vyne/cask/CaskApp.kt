@@ -6,6 +6,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
 import io.vyne.cask.query.CaskApiHandler
+import io.vyne.cask.rest.CaskRestController
 import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPath
 import io.vyne.cask.websocket.CaskWebsocketHandler
 import io.vyne.spring.SchemaPublicationMethod
@@ -71,7 +72,7 @@ class CaskApp {
    fun websocketHandlerAdapter() = WebSocketHandlerAdapter()
 
    @Bean
-   fun caskRouter(caskApiHandler: CaskApiHandler) = router {
+   fun caskRouter(caskApiHandler: CaskApiHandler, caskRestController: CaskRestController) = router {
       CaskApiRootPath.nest {
          accept(APPLICATION_JSON).nest {
             GET("**", caskApiHandler::findBy)

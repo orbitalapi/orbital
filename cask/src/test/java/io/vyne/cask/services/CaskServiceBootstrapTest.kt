@@ -28,7 +28,7 @@ class CaskServiceBootstrapTest {
       whenever(caskDAO.findAllCaskConfigs()).thenReturn(mutableListOf(caskConfig))
 
       // act
-      serviceBootstrap = CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskDAO)
+      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskDAO).initializeCaskServices()
 
       // assert
       verify(caskServiceSchemaGenerator, times(1)).generateAndPublishService(versionedType)
