@@ -1,5 +1,6 @@
 package io.vyne.models
 
+import io.vyne.models.json.JsonModelParser
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
@@ -75,6 +76,8 @@ interface TypedInstance {
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions)
             }
+            isJson(value) -> JsonModelParser(schema).parse(type,value as String)
+
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
             // Must be a CSV ish type value.
             type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema)
@@ -92,6 +95,16 @@ interface TypedInstance {
          } else {
             log().warn("Collection type could not be determined - expected to find ${PrimitiveType.ARRAY.qualifiedName}, but found ${type.fullyQualifiedName}")
             type
+         }
+      }
+
+      private fun isJson(value: Any): Boolean {
+         if (value !is String) return false;
+         val trimmed = value.trim()
+         return when {
+            trimmed.startsWith("{") && trimmed.endsWith("}") -> true
+            trimmed.startsWith("[") && trimmed.endsWith("]") -> true
+            else -> false
          }
       }
    }
