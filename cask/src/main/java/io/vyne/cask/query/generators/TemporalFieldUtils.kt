@@ -6,6 +6,7 @@ import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.services.operations.constraints.RelativeValueExpression
 import lang.taxi.types.Annotation
+import lang.taxi.types.ArrayType
 import lang.taxi.types.AttributePath
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
@@ -48,7 +49,9 @@ object TemporalFieldUtils {
       name = name,
       constraints = listOf())
 
-   fun parameterType(field: Field) = if (field.type.inheritsFrom.isEmpty()) field.type else field.type.inheritsFrom.first()
+   fun parameterType(field: Field) = field.type.formattedInstanceOfType ?: field.type
+
+   fun collectionTypeOf(type: Type) = ArrayType(type = type, source = CompilationUnit.unspecified())
 
    const val Start = "start"
    const val End = "end"

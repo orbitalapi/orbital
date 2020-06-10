@@ -36,4 +36,63 @@ class CaskApiHandlerTest {
       "symbol".should.equal(columnNameCaptor.firstValue)
       "BTCUSD".should.equal(projectionValueCaptor.firstValue)
    }
+
+   @Test
+   fun `handler can map a between request`() {
+      // Given
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val request = mock<ServerRequest>() {
+         on { path() } doReturn "/api/cask/OrderWindowSummary/orderDate/Between/2020-12-01/2020-12-20"
+      }
+      val mockedVersionedType = mock<VersionedType>()
+      val columnNameCaptor = argumentCaptor<String>()
+      val startArgumentCaptor = argumentCaptor<String>()
+      val endArgumentCaptor = argumentCaptor<String>()
+      whenever(mockCaskService.resolveType(eq("OrderWindowSummary"))).thenReturn(Either.right(mockedVersionedType))
+      // When
+      caskApiHandler.findBy(request)
+      // Then
+      verify(mockCaskDao, times(1)).findBetween(any(), columnNameCaptor.capture(), startArgumentCaptor.capture(), endArgumentCaptor.capture())
+      "orderDate".should.equal(columnNameCaptor.firstValue)
+      "2020-12-01".should.equal(startArgumentCaptor.firstValue)
+      "2020-12-20".should.equal(endArgumentCaptor.firstValue)
+   }
+
+   @Test
+   fun `handler can map a after request`() {
+      // Given
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val request = mock<ServerRequest>() {
+         on { path() } doReturn "/api/cask/OrderWindowSummary/orderDate/After/2020-12-01"
+      }
+      val mockedVersionedType = mock<VersionedType>()
+      val columnNameCaptor = argumentCaptor<String>()
+      val afterArgumentCaptor = argumentCaptor<String>()
+      whenever(mockCaskService.resolveType(eq("OrderWindowSummary"))).thenReturn(Either.right(mockedVersionedType))
+      // When
+      caskApiHandler.findBy(request)
+      // Then
+      verify(mockCaskDao, times(1)).findAfter(any(), columnNameCaptor.capture(), afterArgumentCaptor.capture())
+      "orderDate".should.equal(columnNameCaptor.firstValue)
+      "2020-12-01".should.equal(afterArgumentCaptor.firstValue)
+   }
+
+   @Test
+   fun `handler can map a before request`() {
+      // Given
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val request = mock<ServerRequest>() {
+         on { path() } doReturn "/api/cask/OrderWindowSummary/orderDate/Before/2020-12-01"
+      }
+      val mockedVersionedType = mock<VersionedType>()
+      val columnNameCaptor = argumentCaptor<String>()
+      val beforeArgumentCaptor = argumentCaptor<String>()
+      whenever(mockCaskService.resolveType(eq("OrderWindowSummary"))).thenReturn(Either.right(mockedVersionedType))
+      // When
+      caskApiHandler.findBy(request)
+      // Then
+      verify(mockCaskDao, times(1)).findBefore(any(), columnNameCaptor.capture(), beforeArgumentCaptor.capture())
+      "orderDate".should.equal(columnNameCaptor.firstValue)
+      "2020-12-01".should.equal(beforeArgumentCaptor.firstValue)
+   }
 }

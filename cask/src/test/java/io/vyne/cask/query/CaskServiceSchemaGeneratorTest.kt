@@ -36,15 +36,18 @@ class CaskServiceSchemaGeneratorTest {
     high : Price by xpath("/High")
     close : Price by xpath("/Close")
     @Between
+    @After
+    @Before
     maturityDate: MaturityDate
     @Between
+    @After
+    @Before
     orderDateTime : TransactionEventDateTime( @format = "yyyy-MM-dd HH:mm:ss.SSSSSSS")
 }
 
    """.trimIndent()
 
    @Test
-   @Ignore("Instant based query generation is commented out for the demo!")
    fun `schemas with formatted date types generate valid schemas`() {
       val schema = """
          model Trade {
@@ -119,10 +122,18 @@ namespace vyne.casks {
       operation findByClose( @PathVariable(name = "close") close : Price ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/{MaturityDate}")
       operation findByMaturityDate( @PathVariable(name = "maturityDate") maturityDate : MaturityDate ) : OrderWindowSummary[]
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/After/{after}")
+      operation findByMaturityDateAfter( @PathVariable(name = "after") after : MaturityDate ) : OrderWindowSummary[]( MaturityDate > after )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/Before/{before}")
+      operation findByMaturityDateBefore( @PathVariable(name = "before") before : MaturityDate ) : OrderWindowSummary[]( MaturityDate < before )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/Between/{start}/{end}")
       operation findByMaturityDateBetween( @PathVariable(name = "start") start : MaturityDate, @PathVariable(name = "end") end : MaturityDate ) : OrderWindowSummary[]( MaturityDate >= start, MaturityDate < end )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/{TransactionEventDateTime}")
       operation findByOrderDateTime( @PathVariable(name = "orderDateTime") orderDateTime : TransactionEventDateTime ) : OrderWindowSummary[]
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/After/{after}")
+      operation findByOrderDateTimeAfter( @PathVariable(name = "after") after : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime > after )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/Before/{before}")
+      operation findByOrderDateTimeBefore( @PathVariable(name = "before") before : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime < before )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/Between/{start}/{end}")
       operation findByOrderDateTimeBetween( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime < end )
    }

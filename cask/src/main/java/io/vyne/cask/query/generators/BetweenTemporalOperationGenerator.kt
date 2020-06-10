@@ -2,35 +2,33 @@ package io.vyne.cask.query.generators
 
 import io.vyne.cask.query.CaskServiceSchemaGenerator
 import io.vyne.cask.query.OperationGenerator
+import io.vyne.cask.query.generators.TemporalFieldUtils.collectionTypeOf
 import io.vyne.cask.query.generators.TemporalFieldUtils.parameterType
-import io.vyne.schemas.asVyneTypeReference
 import lang.taxi.Operator
 import lang.taxi.services.Operation
 import lang.taxi.services.OperationContract
 import lang.taxi.types.Annotation
-import lang.taxi.types.ArrayType
 import lang.taxi.types.AttributePath
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.Type
-import lang.taxi.types.TypeAlias
 import org.springframework.stereotype.Component
 
 @Component
-class BetweenTemporalOperationGenerator: OperationGenerator {
+class BetweenTemporalOperationGenerator : OperationGenerator {
    override fun generate(field: Field, type: Type): Operation {
-      val inheritedType = parameterType(field)
+      val parameterType = parameterType(field)
       val startParameter = TemporalFieldUtils.parameterFor(
-         inheritedType,
+         parameterType,
          TemporalFieldUtils.Start,
          listOf(Annotation("PathVariable", mapOf("name" to TemporalFieldUtils.Start))))
       val endParameter = TemporalFieldUtils.parameterFor(
-         inheritedType,
+         parameterType,
          TemporalFieldUtils.End,
          listOf(Annotation("PathVariable", mapOf("name" to TemporalFieldUtils.End))))
       val greaterThanEqualConstraint = TemporalFieldUtils.constraintFor(field, Operator.GREATER_THAN_OR_EQUAL_TO, TemporalFieldUtils.Start)
       val lessThanEqualConstraint = TemporalFieldUtils.constraintFor(field, Operator.LESS_THAN, TemporalFieldUtils.End)
-      val returnType = ArrayType(type = type, source = CompilationUnit.unspecified())
+      val returnType = collectionTypeOf(type)
       return Operation(
          name = "findBy${field.name.capitalize()}$ExpectedAnnotationName",
          parameters = listOf(startParameter, endParameter),
