@@ -83,12 +83,13 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                   metadata = parseAnnotationsToMetadata(taxiOperation.annotations),
                   contract = constraintConverter.buildContract(returnType, taxiOperation.contract?.returnTypeConstraints
                      ?: emptyList()),
-                  sources = taxiOperation.compilationUnits.toVyneSources()
+                  sources = taxiOperation.compilationUnits.toVyneSources(),
+                  typeDoc = taxiOperation.typeDoc
                )
             },
             metadata = parseAnnotationsToMetadata(taxiService.annotations),
-            sourceCode = taxiService.compilationUnits.toVyneSources()
-         )
+            sourceCode = taxiService.compilationUnits.toVyneSources(),
+            typeDoc = taxiService.typeDoc)
       }.toSet()
    }
 

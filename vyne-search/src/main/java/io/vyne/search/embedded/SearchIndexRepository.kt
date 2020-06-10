@@ -57,15 +57,15 @@ class SearchIndexRepository(private val directory: BaseDirectory, private val co
    fun search(term: String): List<SearchResult> {
       val queryBuilder = BooleanQuery.Builder()
       SearchField.values().forEach { field ->
-         queryBuilder.add(FuzzyQuery(Term(field.fieldName, "${term.toLowerCase()}*"), 2), BooleanClause.Occur.SHOULD)
-         queryBuilder.add(PrefixQuery(Term(field.fieldName, term.toLowerCase())), BooleanClause.Occur.SHOULD)
+         // Decreasing the score of fuzzy search as it can produce a match for 'time' when we search for 'fixe'
+         queryBuilder.add(BoostQuery(FuzzyQuery(Term(field.fieldName, "${term.toLowerCase()}*"), 2),  field.boostFactor * 0.11F), BooleanClause.Occur.SHOULD)
+         queryBuilder.add(BoostQuery(PrefixQuery(Term(field.fieldName, term.toLowerCase())),  field.boostFactor), BooleanClause.Occur.SHOULD)
       }
       val query = queryBuilder.build()
       val indexReader = DirectoryReader.open(directory)
       val searcher = IndexSearcher(indexReader)
 
-
-      val result = searcher.search(query, 10)
+      val result = searcher.search(query, 1000)
       val highlighter = SearchHighlighter.newHighlighter(query)
       val searchResults = result.scoreDocs.map { hit ->
          val doc = searcher.doc(hit.doc)
@@ -81,7 +81,8 @@ class SearchIndexRepository(private val directory: BaseDirectory, private val co
             doc.getField(SearchField.QUALIFIED_NAME.fieldName).stringValue().fqn(),
             doc.getField(SearchField.TYPEDOC.fieldName)?.stringValue(),
             doc.getField(SearchField.FIELD_ON_TYPE.fieldName)?.stringValue(),
-            searchMatches
+            searchMatches,
+            hit.score
          )
       }
 
@@ -95,7 +96,7 @@ class SearchIndexRepository(private val directory: BaseDirectory, private val co
             }
          }
 
-      return distinctSearchResults
+      return distinctSearchResults.sortedByDescending { it.score }
 
    }
 
@@ -128,7 +129,7 @@ class SearchIndexRepository(private val directory: BaseDirectory, private val co
    }
 }
 
-data class SearchResult(val qualifiedName: QualifiedName, val typeDoc: String?, val matchedFieldName:String?, val matches: List<SearchMatch>)
+data class SearchResult(val qualifiedName: QualifiedName, val typeDoc: String?, val matchedFieldName:String?, val matches: List<SearchMatch>, val score: Float)
 
 data class SearchMatch(val field: SearchField, val highlightedMatch: String)
 
