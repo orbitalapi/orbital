@@ -1,7 +1,6 @@
-package io.vyne.cask.query
+package io.vyne.cask.services
 
-import io.vyne.cask.query.CaskServiceSchemaGenerator.Companion.CaskNamespacePrefix
-import lang.taxi.types.Type
+import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskNamespacePrefix
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log

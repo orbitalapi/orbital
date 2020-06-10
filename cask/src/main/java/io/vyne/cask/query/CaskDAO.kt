@@ -115,7 +115,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
    // ############################
 
    fun createCaskRecordTable(versionedType: VersionedType): String {
-      return timed("CaskDB.createCaskRecordTable", true, TimeUnit.MICROSECONDS) {
+      return timed("CaskDao.createCaskRecordTable", true, TimeUnit.MICROSECONDS) {
          val caskTable = postgresDdlGenerator.generateDdl(versionedType, schemaProvider.schema(), null, null)
          jdbcTemplate.execute(caskTable.ddlStatement)
          log().info("CaskRecord table=${caskTable.generatedTableName} created")
@@ -124,7 +124,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
    }
 
    fun dropCaskRecordTable(versionedType: VersionedType) {
-      timed("CaskDB.dropCaskRecordTable", true, TimeUnit.MICROSECONDS) {
+      timed("CaskDao.dropCaskRecordTable", true, TimeUnit.MICROSECONDS) {
          val tableName = versionedType.caskRecordTable()
          val dropCaskTableDdl = postgresDdlGenerator.generateDrop(versionedType)
          jdbcTemplate.execute(dropCaskTableDdl)
@@ -141,7 +141,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
    }
 
    fun createCaskMessage(versionedType: VersionedType, readCachePath: Path, id: String): CaskMessage {
-      return timed("CaskDB.createCaskMessage", true, TimeUnit.MILLISECONDS) {
+      return timed("CaskDao.createCaskMessage", true, TimeUnit.MILLISECONDS) {
          val type = schemaProvider.schema().toTaxiType(versionedType)
          val qualifiedTypeName = type.qualifiedName
          val insertedAt = Instant.now()
@@ -183,12 +183,12 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
    // ### ADD Cask Config
    // ############################
 
-   fun findCaskConfigByType(versionedType: VersionedType): MutableList<CaskConfig> {
-      return jdbcTemplate.query("""Select * from CASK_CONFIG WHERE qualifiedTypeName=?""", arrayOf(versionedType.fullyQualifiedName), caskConfigRowMapper)
+   fun findAllCaskConfigs(): MutableList<CaskConfig> {
+      return jdbcTemplate.query("Select * from CASK_CONFIG", caskConfigRowMapper)
    }
 
    fun createCaskConfig(versionedType: VersionedType, typeMigration: TypeMigration? = null) {
-      timed("CaskDB.addCaskConfig", true, TimeUnit.MILLISECONDS) {
+      timed("CaskDao.addCaskConfig", true, TimeUnit.MILLISECONDS) {
          val type = schemaProvider.schema().toTaxiType(versionedType)
          val deltaAgainstTableName = typeMigration?.predecessorType?.let { it.caskRecordTable() }
          val tableName = versionedType.caskRecordTable()

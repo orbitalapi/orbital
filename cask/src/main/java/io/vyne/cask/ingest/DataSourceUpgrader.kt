@@ -4,7 +4,6 @@ import com.google.common.annotations.VisibleForTesting
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.format.csv.CsvBinaryCacheStreamSource
-import io.vyne.cask.query.CaskServiceSchemaGenerator
 import io.vyne.cask.types.FieldAdded
 import io.vyne.cask.types.FieldChanged
 import io.vyne.cask.types.TypeDiffer

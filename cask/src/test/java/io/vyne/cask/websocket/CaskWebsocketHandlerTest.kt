@@ -1,4 +1,4 @@
-package io.vyne.cask
+package io.vyne.cask.websocket
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -8,6 +8,7 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
+import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.ingest.Ingester
@@ -15,8 +16,6 @@ import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.query.CaskDAO
-import io.vyne.cask.websocket.MockDataBuffer
-import io.vyne.cask.websocket.MockWebSocketSession
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType

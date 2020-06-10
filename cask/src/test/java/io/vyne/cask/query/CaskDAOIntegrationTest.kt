@@ -118,7 +118,7 @@ class CaskDAOIntegrationTest {
       caskDao.createCaskConfig(versionedType)
 
       // assert
-      val caskConfigs: MutableList<CaskDAO.CaskConfig> = caskDao.findCaskConfigByType(versionedType)
+      val caskConfigs: MutableList<CaskDAO.CaskConfig> = caskDao.findAllCaskConfigs()
       caskConfigs.size.should.be.equal(1)
       caskConfigs[0].tableName.should.equal("rderWindowSummary_f1b588_568054")
       caskConfigs[0].qualifiedTypeName.should.equal("OrderWindowSummary")

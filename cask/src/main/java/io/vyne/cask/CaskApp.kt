@@ -6,7 +6,8 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
 import io.vyne.cask.query.CaskApiHandler
-import io.vyne.cask.query.CaskServiceSchemaGenerator.Companion.CaskApiRootPath
+import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPath
+import io.vyne.cask.websocket.CaskWebsocketHandler
 import io.vyne.spring.SchemaPublicationMethod
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log

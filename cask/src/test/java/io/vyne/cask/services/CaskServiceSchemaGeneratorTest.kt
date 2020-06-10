@@ -1,4 +1,4 @@
-package io.vyne.cask.query
+package io.vyne.cask.services
 
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.argumentCaptor
@@ -96,7 +96,7 @@ class CaskServiceSchemaGeneratorTest {
       val schemaVersion = argumentCaptor<String>()
       val serviceSchema = argumentCaptor<String>()
       // When
-      serviceSchemaGenerator.generateAndPublishSchema(taxiSchema.versionedType("OrderWindowSummary".fqn()))
+      serviceSchemaGenerator.generateAndPublishService(taxiSchema.versionedType("OrderWindowSummary".fqn()))
       // Then
       verify(schemaStoreClient, times(1)).submitSchema(schemaName.capture(), schemaVersion.capture(), serviceSchema.capture())
       schemaName.firstValue.should.startWith("vyne.casks.OrderWindowSummary@")

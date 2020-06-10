@@ -1,16 +1,13 @@
-package io.vyne.cask
+package io.vyne.cask.websocket
 
 import arrow.core.*
-import arrow.core.extensions.either.applicativeError.handleError
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.ingest.IngestionInitialisedEvent
-import io.vyne.cask.websocket.CaskWebsocketRequest
-import io.vyne.cask.websocket.contentType
-import io.vyne.cask.websocket.typeReference
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import org.springframework.context.ApplicationEventPublisher
