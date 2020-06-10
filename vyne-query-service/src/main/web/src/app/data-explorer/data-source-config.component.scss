@@ -19,3 +19,10 @@ span {
 .clear-icon {
   width: 16px;
 }
+
+.config-menu {
+  mat-form-field {
+    width: 100%;
+  }
+  padding: 1rem;
+}

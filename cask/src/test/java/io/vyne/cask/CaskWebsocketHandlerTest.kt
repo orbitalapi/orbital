@@ -168,7 +168,7 @@ class CaskWebsocketHandlerTest {
 
       StepVerifier
          .create(session.textOutput.take(1))
-         .expectNextMatches { json -> json.rejectedWithReason("Failed to convert from type [java.lang.String] to type [java.math.BigDecimal] for value '6300USD'") }
+         .expectNextMatches { json -> json.rejectedWithReason("Failed to parse value 6300USD to type Price - Failed to convert from type [java.lang.String] to type [java.math.BigDecimal] for value '6300USD'") }
          .verifyComplete()
    }
 
@@ -196,7 +196,7 @@ class CaskWebsocketHandlerTest {
       StepVerifier
          .create(session.textOutput.take(3))
          .expectNextMatches { json -> json.rejectedWithReason("com.fasterxml.jackson.core.io.JsonEOFException: Unexpected end-of-input in VALUE_STRING") }
-         .expectNextMatches { json -> json.rejectedWithReason("Failed to convert from type [java.lang.String] to type [java.math.BigDecimal] for value '6300USD'") }
+         .expectNextMatches { json -> json.rejectedWithReason("Failed to parse value 6300USD to type Price - Failed to convert from type [java.lang.String] to type [java.math.BigDecimal] for value '6300USD'") }
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
          .verifyComplete()
    }

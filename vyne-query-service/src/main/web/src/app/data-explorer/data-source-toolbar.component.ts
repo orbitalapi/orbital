@@ -1,6 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {UploadEvent, UploadFile} from 'ngx-file-drop';
 import {Schema, Type} from '../services/schema';
+import {CsvOptions} from '../services/types.service';
 
 @Component({
   selector: 'app-data-source-toolbar',
@@ -11,7 +12,8 @@ import {Schema, Type} from '../services/schema';
       </div>
       <div class="data-source-configuration" *ngIf="fileDataSource">
         <app-data-source-config [fileDataSource]="fileDataSource"
-                                (clear)="fileDataSource = null"></app-data-source-config>
+                                (csvOptionsChanged)="csvOptionsChanged.emit($event)"
+                                (clear)="clearSelectedFile()"></app-data-source-config>
         <span>as</span>
         <app-type-autocomplete placeholder="Select type to apply to content" [schema]="schema"
                                (selectedTypeChange)="selectedTypeChanged.emit($event)"
@@ -30,12 +32,20 @@ export class DataSourceToolbarComponent {
   fileDataSource: UploadFile;
 
   @Output()
+  cleared = new EventEmitter<void>();
+
+  @Output()
   fileDataSourceChanged = new EventEmitter<UploadFile>();
 
   @Output()
   selectedTypeChanged = new EventEmitter<Type>();
 
-  constructor() {
+  @Output()
+  csvOptionsChanged = new EventEmitter<CsvOptions>();
+
+  clearSelectedFile() {
+    this.fileDataSource = null;
+    this.cleared.emit();
   }
 
   onFileSelected(event: UploadFile) {

@@ -71,6 +71,20 @@ export class TypesService {
     return this.http.post<ParsedTypeInstance>(`${environment.queryServiceUrl}/content/parse?type=${type.name.fullyQualifiedName}`, content);
   }
 
+  parseCsvToType(content: string, type: Type, csvOptions: CsvOptions): Observable<ParsedTypeInstance[]> {
+    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    return this.http.post<ParsedTypeInstance[]>(
+      // tslint:disable-next-line:max-line-length
+      `${environment.queryServiceUrl}/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${csvOptions.separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}${nullValueParam}`,
+      content);
+  }
+
+  parseCsv(content: string, csvOptions: CsvOptions): Observable<ParsedCsvContent> {
+    return this.http.post<ParsedCsvContent>(
+      `${environment.queryServiceUrl}/csv?delimiter=${csvOptions.separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}`,
+      content);
+  }
+
   getTypes = (): Observable<Schema> => {
     if (this.schema) {
       return of(this.schema);
@@ -136,4 +150,36 @@ export interface ParsedTypeInstance {
   instance: TypedInstance;
   typeNamedInstance: TypeNamedInstance;
   raw: any;
+}
+
+export interface VyneHttpServiceError {
+  timestamp: Date;
+  error: string;
+  message: string;
+  path: string;
+  status: number;
+}
+
+export interface ParsedCsvContent {
+  headers: string[];
+  records: string[][];
+}
+
+export class CsvOptions {
+  constructor(public firstRowAsHeader: boolean = true, public separator: string = ',', public nullValueTag: string | null = null) {
+  }
+
+  static isCsvContent(fileExtension: string): boolean {
+    if (!fileExtension) {
+      return false;
+    }
+    switch (fileExtension) {
+      case 'csv' :
+        return true;
+      case 'psv' :
+        return true;
+      default:
+        return false;
+    }
+  }
 }

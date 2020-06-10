@@ -3,17 +3,37 @@
   <span class="toolbar-spacer"></span>
   <app-search-bar-container></app-search-bar-container>
 </mat-toolbar>
-<div class="page-content">
-  <div class="header">
-    <app-data-source-toolbar [schema]="schema"
-                             (fileDataSourceChanged)="onFileSelected($event)"
-                             (selectedTypeChanged)="contentType = $event"
-    ></app-data-source-toolbar>
-  </div>
 
-  <div class="content">
-    <app-object-view *ngIf="parsedInstance" [schema]="schema"
-                     [instance]="parsedInstance.typeNamedInstance"></app-object-view>
+<div class="content">
+  <app-data-source-toolbar [schema]="schema"
+                           (cleared)="clearFile()"
+                           (fileDataSourceChanged)="onFileSelected($event)"
+                           (selectedTypeChanged)="contentType = $event"
+                           (csvOptionsChanged)="onCsvOptionsChanged($event)"
+  ></app-data-source-toolbar>
+
+  <div class="result-status error-display" *ngIf="parserErrorMessage">
+    <i class="material-icons">error_outline</i>
+    <span>{{ parserErrorMessage.message }}</span>
   </div>
+  <mat-tab-group animationDuration="250ms"
+                 *ngIf="fileContents"
+                 (selectedTabChange)="onSelectedTabChanged($event)">
+    <mat-tab label="Source" *ngIf="fileContents">
+      <app-csv-viewer [source]="csvContents" *ngIf="isCsvContent"
+        [firstRowAsHeaders]="csvOptions.firstRowAsHeader"
+      ></app-csv-viewer>
+      <td-highlight lang="json" [content]="fileContents" *ngIf="!isCsvContent">
+      </td-highlight>
+    </mat-tab>
+    <mat-tab label="Schema" *ngIf="contentType">
+      <app-code-viewer [sources]="contentType?.sources" #appCodeViewer></app-code-viewer>
+    </mat-tab>
+    <mat-tab label="Parsed Data" *ngIf="parsedInstance">
+      <div class="object-view-wrapper">
+        <app-object-view *ngIf="parsedInstance" [schema]="schema"
+                         [instance]="typeNamedInstance"></app-object-view>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
 </div>
-

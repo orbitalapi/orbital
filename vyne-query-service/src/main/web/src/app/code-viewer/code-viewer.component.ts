@@ -7,6 +7,8 @@ import {MonacoEditorComponent, MonacoEditorLoaderService} from '@materia-ui/ngx-
 import {filter, take} from 'rxjs/operators';
 import IMarkerData = editor.IMarkerData;
 import ITextModel = editor.ITextModel;
+import IEditor = editor.IEditor;
+import ICodeEditor = editor.ICodeEditor;
 
 declare const require: any;
 declare const monaco: any; // monaco
@@ -44,8 +46,10 @@ export class CodeViewerComponent {
   @ViewChild(MonacoEditorComponent)
   editor: MonacoEditorComponent;
 
+  monacoEditor: ICodeEditor;
+
   selectedIndex = 0;
-  editorOptions: { theme: 'vs-dark', language: 'taxi'};
+  editorOptions: { theme: 'vs-dark', language: 'taxi' };
 
   monacoModel: ITextModel;
 
@@ -71,22 +75,10 @@ export class CodeViewerComponent {
       take(1),
     ).subscribe(() => {
       monaco.editor.onDidCreateEditor(editorInstance => {
-        editorInstance.updateOptions({readOnly: true})
-
+        editorInstance.updateOptions({readOnly: true});
+        this.monacoEditor = editorInstance;
         editorInstance.onDidChangeModelDecorations(() => {
-          setTimeout(()=> {
-            const editorDomNode = editorInstance.getDomNode();
-            if (editorDomNode) {
-              const codeContainer = editorInstance.getDomNode().getElementsByClassName('view-lines')[0];
-              const calculatedHeight = codeContainer.offsetHeight + 'px';
-              editorDomNode.style.height = calculatedHeight;
-              const firstParent = editorDomNode.parentElement;
-              firstParent.style.height = calculatedHeight;
-              const secondParent = firstParent.parentElement;
-              secondParent.style.height = calculatedHeight
-              editorInstance.layout();
-            }
-          },10);
+          this.remeasure();
         });
       });
       monaco.editor.onDidCreateModel(model => {
@@ -110,6 +102,26 @@ export class CodeViewerComponent {
       // here, we retrieve monaco-editor instance
 
     });
+  }
+
+  remeasure() {
+    setTimeout(() => {
+      if (!this.monacoEditor) {
+        return;
+      }
+      const editorDomNode = this.monacoEditor.getDomNode();
+      if (editorDomNode) {
+        const codeContainer = this.monacoEditor.getDomNode().getElementsByClassName('view-lines')[0] as HTMLElement;
+        const calculatedHeight = codeContainer.offsetHeight + 'px';
+        editorDomNode.style.height = calculatedHeight;
+        const firstParent = editorDomNode.parentElement;
+        firstParent.style.height = calculatedHeight;
+        const secondParent = firstParent.parentElement;
+        secondParent.style.height = calculatedHeight;
+        console.log('Resizing Monaco editor to ' + calculatedHeight);
+        this.monacoEditor.layout();
+      }
+    }, 10);
   }
 
   // editorModel: NgxEditorModel;

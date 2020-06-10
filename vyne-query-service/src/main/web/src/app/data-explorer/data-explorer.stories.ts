@@ -37,10 +37,22 @@ storiesOf('Data Explorer', module)
       }
     };
   })
+  .add('csv viewer', () => {
+    return {
+      template: `<div style="margin: 20px"><app-csv-viewer [source]="data" [firstRowAsHeaders]="true"></app-csv-viewer></div>`,
+      props: {
+        data: [
+          ['Column A', 'Column B', 'Column C'],
+          ['The quick', 'brown fox', 'jumps over'],
+          ['the lazy', 'but very cute', 'pupppppppy!']
+        ]
+      }
+    }
+  })
   .add('file icon', () => {
-  return {
-    template: `<div style="margin: 20px"><app-file-extension-icon extension="json"></app-file-extension-icon> </div>`,
-    props: {}
-  };
-})
+    return {
+      template: `<div style="margin: 20px"><app-file-extension-icon extension="json"></app-file-extension-icon> </div>`,
+      props: {}
+    };
+  })
 

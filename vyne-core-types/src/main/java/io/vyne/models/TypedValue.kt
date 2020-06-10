@@ -126,8 +126,12 @@ data class TypedValue private constructor(override val type: Type, override val 
          if (!type.taxiType.inheritsFromPrimitive) {
             error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
          } else {
-            val valueToUse = converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
-            return TypedValue(type, valueToUse)
+            try {
+               val valueToUse = converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
+               return TypedValue(type, valueToUse)
+            } catch (exception: Exception) {
+               throw DataParsingException("Failed to parse value $value to type ${type.fullyQualifiedName} - ${exception.message}", exception)
+            }
          }
 
       }
@@ -158,5 +162,6 @@ data class TypedValue private constructor(override val type: Type, override val 
       if (!(this.type.resolvesSameAs(valueToCompare.type) || valueToCompare.type.inheritsFrom(this.type))) return false;
       return this.value == valueToCompare.value
    }
-
 }
+
+class DataParsingException(message: String, exception: Exception) : RuntimeException(message)
