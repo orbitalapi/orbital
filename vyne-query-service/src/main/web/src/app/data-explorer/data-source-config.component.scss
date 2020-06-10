@@ -1,0 +1,28 @@
+:host {
+  display: flex;
+  align-items: center;
+}
+
+
+span {
+  margin-right: 2rem
+}
+
+.configure-icon {
+  width: 24px;
+}
+
+.configure-button {
+  width: fit-content;
+}
+
+.clear-icon {
+  width: 16px;
+}
+
+.config-menu {
+  mat-form-field {
+    width: 100%;
+  }
+  padding: 1rem;
+}

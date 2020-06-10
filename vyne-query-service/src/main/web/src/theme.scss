@@ -15,11 +15,13 @@ $toolbar-height: 5rem;
   top: 0;
   height: $toolbar-height;
   font-size: 1rem;
+
   &.mat-logo {
     background-color: $dark-blue-1;
     color: #fafafa;
-    border-bottom: 1px solid rgba(0,0,0,0.15);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
   }
+
   &.mat-primary {
     background-color: $whiteish;
     box-shadow: 0 2px 5px #dcdcdc;

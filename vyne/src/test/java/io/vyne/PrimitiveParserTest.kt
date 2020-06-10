@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.winterbe.expekt.should
+import io.vyne.models.DataParsingException
 import io.vyne.models.PrimitiveParser
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Rule
@@ -100,7 +101,7 @@ type alias OrderNumber as String
 
    @Test
    fun primitiveTypeParsingFailure() {
-      exception.expect(NumberFormatException::class.java)
+      exception.expect(DataParsingException::class.java)
 
       val src = """
 type alias OrderNumber as Int
@@ -121,7 +122,7 @@ type alias OrderDate as Instant
 
    @Test
    fun reportMeaningfulException() {
-      exception.expect(IllegalArgumentException::class.java)
+      exception.expect(DataParsingException::class.java)
       exception.expectMessage("""Unable to convert value=389279798 to type=class java.time.Instant Error: No converter found capable of converting from type [java.lang.Integer] to type [java.time.Instant]""")
 
       val src = """

@@ -42,6 +42,7 @@
     "mermaid": "^8.0.0-rc.8",
     "moment": "^2.24.0",
     "monaco-editor": "^0.15.6",
+    "ngx-file-drop": "^6.0.1",
     "ngx-highlightjs": "^4.0.0",
     "ngx-markdown": "^8.2.2",
     "ngx-moment": "^3.4.0",

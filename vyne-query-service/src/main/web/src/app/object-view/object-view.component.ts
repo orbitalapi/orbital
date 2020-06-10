@@ -17,7 +17,7 @@ import {Field, findType, getCollectionMemberType, Schema, Type, TypedInstance} f
   styleUrls: ['./object-view.component.scss']
 })
 export class ObjectViewComponent {
-
+  NOT_PROVIDED = 'Value not provided';
   @Input()
   instance: InstanceLikeOrCollection;
 
@@ -69,11 +69,14 @@ export class ObjectViewComponent {
   }
 
   getTypedObjectAttributeValue(name: string): any {
-    if (!this.instance) {
+    if (this.instance === undefined || this.instance === null) {
       return null;
     }
     const isScalar = this.getTypeForAttribute(name).isScalar;
     const attributeValue = this.getTypedObjectAttribute(name);
+    if (attributeValue === undefined) {
+      return null;
+    }
     if (isTypedInstance(this.instance)) {
       if (isScalar) {
         return attributeValue;

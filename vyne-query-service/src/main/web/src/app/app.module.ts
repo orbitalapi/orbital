@@ -92,6 +92,8 @@ import {PipelinesModule} from './pipelines/pipelines.module';
 import {MonacoEditorModule} from '@materia-ui/ngx-monaco-editor';
 import {MarkdownModule} from 'ngx-markdown';
 import {ErrorListComponent} from './code-viewer/error-list.component';
+import {DataExplorerComponent} from './data-explorer/data-explorer.component';
+import {DataExplorerModule} from './data-explorer/data-explorer.module';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -99,6 +101,7 @@ export const routerModule = RouterModule.forRoot(
     {path: 'types', component: TypeListComponent},
     {path: 'types/:typeName', component: TypeViewerContainerComponent},
     {path: 'query-wizard', component: QueryWizardComponent},
+    {path: 'data-explorer', component: DataExplorerComponent},
     {path: 'schema-explorer', component: SchemaExplorerComponent},
     {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
     {path: 'result-explorer', component: ProfileGraphComponent},
@@ -154,7 +157,8 @@ export const routerModule = RouterModule.forRoot(
     SearchBarContainerComponent,
     ObjectViewComponent,
     FileFactSelectorComponent,
-    ErrorListComponent
+    ErrorListComponent,
+    DataExplorerComponent
   ],
   imports: [
     routerModule,
@@ -206,8 +210,8 @@ export const routerModule = RouterModule.forRoot(
     TaxiViewerModule,
     NgSelectModule,
     TypeAutocompleteModule,
-    PipelinesModule
-
+    PipelinesModule,
+    DataExplorerModule
 
   ],
   // Not sure why I'm having to do this -- but here we are
