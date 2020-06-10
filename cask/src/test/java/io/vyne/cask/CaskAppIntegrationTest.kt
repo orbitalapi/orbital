@@ -1,6 +1,7 @@
 package io.vyne.cask
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres
+import com.winterbe.expekt.should
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.schemaStore.SchemaStoreClient
@@ -21,6 +22,7 @@ import org.springframework.context.annotation.Primary
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import org.springframework.web.reactive.socket.client.WebSocketClient
@@ -88,6 +90,13 @@ class CaskAppIntegrationTest {
       }
    }
 
+   val caskRequest = """
+Date,Symbol,Open,High,Low,Close
+2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
+2020-03-19,NULL,6300,6330,6186.08,6235.2
+2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
+2020-03-19,BTCUSD,6300,6330,6186.08,6235.2""".trimIndent()
+
    @Test
    fun canIngestContentViaWebsocketConnection() {
       // mock schema
@@ -96,12 +105,6 @@ class CaskAppIntegrationTest {
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
       val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
-      val caskRequest = """
-Date,Symbol,Open,High,Low,Close
-2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
-2020-03-19,NULL,6300,6330,6186.08,6235.2
-2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
-2020-03-19,BTCUSD,6300,6330,6186.08,6235.2""".trimIndent()
 
       val wsConnection = client.execute(uri)
       { session ->
@@ -118,5 +121,26 @@ Date,Symbol,Open,High,Low,Close
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
          .verifyComplete()
          .run { wsConnection.dispose() }
+   }
+
+   @Test
+   fun canIngestContentViaRestEndpoint() {
+      // mock schema
+      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      val response = client
+         .post()
+         .uri("/api/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+
+         response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
    }
 }

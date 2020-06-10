@@ -33,28 +33,27 @@ class CaskWebsocketHandler(
       val requestOrError = caskService.resolveContentType(session.contentType())
          .flatMap { contentType ->
             caskService.resolveType(session.typeReference()).map { versionedType ->
-               CaskWebsocketRequest.create(session, contentType, versionedType, mapper)
+               CaskWebsocketRequest.create(contentType, versionedType, mapper, session.queryParams())
             }
          }
 
       return requestOrError
          .map { request ->
             applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, request.versionedType))
-            ingestMessages(request)
+            ingestMessages(session, request)
          }.getOrHandle { error ->
             log().info("Closing sessionId=${session.id}.  Error: ${error.message}")
             session.close(CloseStatus(NOT_ACCEPTABLE.code, error.message)).then()
          }
    }
 
-   private fun ingestMessages(request: CaskWebsocketRequest): Mono<Void> {
+   private fun ingestMessages(session: WebSocketSession, request: CaskWebsocketRequest): Mono<Void> {
       val output: EmitterProcessor<WebSocketMessage> = EmitterProcessor.create()
       val outputSink = output.sink()
 
       // i don't like this, it's pretty ugly
       // partially because exceptions are thrown outside flux pipelines
       // we have to refactor code behind ingestion to fix this problem
-      val session = request.session
       session.receive()
          .name("cask_ingestion_request")
          // This will register timer with the above name
@@ -62,7 +61,7 @@ class CaskWebsocketHandler(
          // Percentiles are configured globally for all the timers, see CaskApp
          .metrics()
          .map {
-            log().info("Ingesting message from sessionId=${request.session.id}")
+            log().info("Ingesting message from sessionId=${session.id}")
             try {
                caskService
                   .ingestRequest(request, Flux.just(it.payload.asInputStream()))
