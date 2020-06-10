@@ -16,7 +16,7 @@
    <div class="row " style="min-height: 250px">
 
       <!-- RUNNER INSTANCES -->
-      <div class="col-3">
+      <div class="col-4">
 
          <div class="row">
             <div class="col text-center m-3">
@@ -72,17 +72,17 @@
 
    <div class="row">
 
-      <div class="col-3">
+      <div class="col-4">
          <h3><span class="fa fa-cogs">  <b>Orchestrator</b></span></h3>
 
          <div class="row">
             <div class=" text-center">
 
-               <!-- CREATE PIPELINES 1-->
+               <!-- HPC PIPELINE -->
                <div class="form-group">
-                  <textarea class="form-control" id="pipelineDefinition-left" rows="10"></textarea>
+                  <textarea class="form-control" id="pipelineDefinitionHpc" rows="10"></textarea>
                </div>
-               <button type="submit" class="btn btn-primary" id="deployToPipelineOrchestratorButtonLeft">Deploy HPC
+               <button type="submit" class="btn btn-primary" id="deployToPipelineHpc">Deploy HPC
                   pipeline
                </button>
 
@@ -90,11 +90,23 @@
 
             <div class="col text-center">
 
-               <!-- CREATE PIPELINES 2-->
+               <!-- CEMA4 PIPELINE -->
                <div class="form-group">
-                  <textarea class="form-control" id="pipelineDefinition-right" rows="10"></textarea>
+                  <textarea class="form-control" id="pipelineDefinitionCema4" rows="10"></textarea>
                </div>
-               <button type="submit" class="btn btn-primary" id="deployToPipelineOrchestratorButtonRight">Deploy CEMA4
+               <button type="submit" class="btn btn-primary" id="deployToPipelineCema4">Deploy CEMA4
+                  pipeline
+               </button>
+
+            </div>
+
+            <div class="col text-center">
+
+               <!-- ION PIPELINE -->
+               <div class="form-group">
+                  <textarea class="form-control" id="pipelineDefinitionIon" rows="10"></textarea>
+               </div>
+               <button type="submit" class="btn btn-primary" id="deployToPipelineIon">Deploy Ion
                   pipeline
                </button>
 
@@ -102,13 +114,25 @@
          </div>
       </div>
 
-      <div class="col-3 offset-1">
+      <div class="col-3">
          <h3><span class="fa fa-paper">  <b>Responses</b></span></h3>
          <textarea class="form-control" id="debugConsole" rows="20" style="font-size:10px"></textarea>
       </div>
 
-      <div class="col-4 offset-1">
-         <h3><span class="fa fa-cogs"><b> Messages</b></span></h3>
+      <div class="col">
+         <div class="row">
+            <div class="col">
+               <h3><span class="fa fa-envelope"><b> Messages</b></span></h3>
+            </div>
+            <div class="col text-right">
+               <span>
+                  <button class="btn btn-light btn-small" id="msgHpc">HPC</button>
+                  <button class="btn btn-light btn-small" id="msgCem4">CEM4</button>
+                  <button class="btn btn-light btn-small" id="msgIon">ION</button>
+               </span>
+            </div>
+         </div>
+
          <div class="form-row">
             <div class="form-group col-md-6">
                <label for="kafkaHost">Kafka host</label>
@@ -184,15 +208,288 @@
         })
     }
 
-
-    var kafkaTopic = "hpc-csv-avro-input";
     var kafkaHost = "kafka:9092";
-    var kafkaMessage = "securityClassification;entryType;entitySubmittingOrder;directElectronicAccess;clientIdentificationCode;investmentDecisionWithinFirm;executionWithinFirm;nonExecutingBroker;tradingCapacity;liquidityProvisionActivity;orderDateTime;validityPeriod;orderRestriction;validityPeriodAndTime;validityPeriodAndTime;priorityTimeStamp;prioritySize;sequenceNumber;segmentMicCode;orderBookCode;financialInstrumentIdentificationCode;dateOfReceipt;orderIdentificationCode;orderEventStatus;orderType;orderTypeClassification;limitPrice;additionalLimitPrice;stopPrice;peggedLimitPrice;tradeType;counterpartyLeiNonRts24Field;transactionPrice;priceCurrency;currencyOfLeg2;priceNotation;buySellIndicator;orderStatus;quantityNotation;quantityCurrency;initialQuantity;remainingQuantityIncludingHidden;displayedQuantity;tradedQuantity;minimumAcceptableQuantity;minimumExecutableSize;minimumExecutableSizeFirstExecutionOnly;passiveOnlyIndicator;passiveAggresiveIndicator;selfExecutionPrevention;strategyLinkedOrderIdentification;routingStrategy;tradingVenueTransactionIdentificationCode;tradingPhases;indicativeAuctionPrice;indicativeAuctionVolume;floatingReferenceIndexNonRts24Field;id;book;yield;leg1Currency;leg1DayCountMethodInd;leg1NotionalCurrencyCd;leg1NotionalValue;leg1OrigCurrNotionalAmount;leg1PaymentFrequency;leg1Rate;leg1RateSpread;leg1ResetFrequency1;leg2Currency;leg2DayCountMethodInd;leg2NotionalCurrencyCd;leg2NotionalValue2;leg2OrigCurrNotionalAmount;leg2PaymentFrequency2;leg2Rate;leg2RateSpread;leg2ResetFrequency2;leg2SwapRate\n\
+
+        var messageSets = {
+           hpc: {
+            topic: "hpc-csv-avro-input",
+            message: "securityClassification;entryType;entitySubmittingOrder;directElectronicAccess;clientIdentificationCode;investmentDecisionWithinFirm;executionWithinFirm;nonExecutingBroker;tradingCapacity;liquidityProvisionActivity;orderDateTime;validityPeriod;orderRestriction;validityPeriodAndTime;validityPeriodAndTime;priorityTimeStamp;prioritySize;sequenceNumber;segmentMicCode;orderBookCode;financialInstrumentIdentificationCode;dateOfReceipt;orderIdentificationCode;orderEventStatus;orderType;orderTypeClassification;limitPrice;additionalLimitPrice;stopPrice;peggedLimitPrice;tradeType;counterpartyLeiNonRts24Field;transactionPrice;priceCurrency;currencyOfLeg2;priceNotation;buySellIndicator;orderStatus;quantityNotation;quantityCurrency;initialQuantity;remainingQuantityIncludingHidden;displayedQuantity;tradedQuantity;minimumAcceptableQuantity;minimumExecutableSize;minimumExecutableSizeFirstExecutionOnly;passiveOnlyIndicator;passiveAggresiveIndicator;selfExecutionPrevention;strategyLinkedOrderIdentification;routingStrategy;tradingVenueTransactionIdentificationCode;tradingPhases;indicativeAuctionPrice;indicativeAuctionVolume;floatingReferenceIndexNonRts24Field;id;book;yield;leg1Currency;leg1DayCountMethodInd;leg1NotionalCurrencyCd;leg1NotionalValue;leg1OrigCurrNotionalAmount;leg1PaymentFrequency;leg1Rate;leg1RateSpread;leg1ResetFrequency1;leg2Currency;leg2DayCountMethodInd;leg2NotionalCurrencyCd;leg2NotionalValue2;leg2OrigCurrNotionalAmount;leg2PaymentFrequency2;leg2Rate;leg2RateSpread;leg2ResetFrequency2;leg2SwapRate\n\
 ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;ELECTRONICPLATFORM;NULL;AOTC;NULL;2019-12-03 16:07:59.7980000;GTCV;NULL;2019-12-03 23:59:59.000;2019-09-05 00:50:08.0000000;2019-12-03 16:07:59.7980000;25000000.0000000000;1;HPCO;NULL;NA;2019-12-03 16:07:59.7980000;18591_18592_1;NEWO;Limit;LMTO;99.5000000000;NULL;NULL;NULL;Name Give Up;KX1WK48MPD4Y2NCUIZ63;0.0099500000;NULL;NULL;BAPO;BUY;NULL;NOML;EUR;25000000.0000000000;0.0000000000;25000000.0000000000;25000000.0000000000;NULL;NULL;NULL;0;PASV;1;18591;NULL;EURINFLA-2019-12-03T16:08:38.9789292Z;NULL;NULL;NULL;EUR-EXT-CPI;10204;33;NULL;EUR;1/1;EUR;25000000.0000000000;25000000.0000000000;Zero Coupon;0.0099500000;NULL;NULL;EUR;30/360;EUR;25000000.0000000000;25000000.0000000000;Zero Coupon;NULL;NULL;Zero Coupon;NULL\n\
-ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;ELECTRONICPLATFORM;NULL;AOTC;NULL;2019-12-03 16:07:59.7980000;GTCV;NULL;2019-12-03 23:59:59.000;2019-09-05 00:50:08.0000000;2019-12-03 16:07:59.7980000;25000000.0000000000;1;HPCO;NULL;NA;2019-12-03 16:07:59.7980000;18591_18592_1;NEWO;Limit;LMTO;99.5000000000;NULL;NULL;NULL;Name Give Up;KX1WK48MPD4Y2NCUIZ63;0.0099500000;NULL;NULL;BAPO;BUY;NULL;NOML;EUR;25000000.0000000000;0.0000000000;25000000.0000000000;25000000.0000000000;NULL;NULL;NULL;0;PASV;1;18591;NULL;EURINFLA-2019-12-03T16:08:38.9789292Z;NULL;NULL;NULL;EUR-EXT-CPI;10204;33;NULL;EUR;1/1;EUR;25000000.0000000000;25000000.0000000000;Zero Coupon;0.0099500000;NULL;NULL;EUR;30/360;EUR;25000000.0000000000;25000000.0000000000;Zero Coupon;NULL;NULL;Zero Coupon;NULL";
-      $("#kafkaMessage").append(kafkaMessage);
-        $("#kafkaTopic").val(kafkaTopic);
-        $("#kafkaHost").val(kafkaHost);
+ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;ELECTRONICPLATFORM;NULL;AOTC;NULL;2019-12-03 16:07:59.7980000;GTCV;NULL;2019-12-03 23:59:59.000;2019-09-05 00:50:08.0000000;2019-12-03 16:07:59.7980000;25000000.0000000000;1;HPCO;NULL;NA;2019-12-03 16:07:59.7980000;18591_18592_1;NEWO;Limit;LMTO;99.5000000000;NULL;NULL;NULL;Name Give Up;KX1WK48MPD4Y2NCUIZ63;0.0099500000;NULL;NULL;BAPO;BUY;NULL;NOML;EUR;25000000.0000000000;0.0000000000;25000000.0000000000;25000000.0000000000;NULL;NULL;NULL;0;PASV;1;18591;NULL;EURINFLA-2019-12-03T16:08:38.9789292Z;NULL;NULL;NULL;EUR-EXT-CPI;10204;33;NULL;EUR;1/1;EUR;25000000.0000000000;25000000.0000000000;Zero Coupon;0.0099500000;NULL;NULL;EUR;30/360;EUR;25000000.0000000000;25000000.0000000000;Zero Coupon;NULL;NULL;Zero Coupon;NULL"
+           },
+           cem4: {
+            topic: "cemafor-json-avro-input",
+            message: JSON.stringify({
+  "tradeNumber":"USDINFLA-2020-05-05T09:10:54.1826197Z",
+  "eventType":"Open",
+  "tradeVersion":1,
+  "rfqId":"RfqId",
+  "entryType":"WithHeld",
+  "eventDate" : "03/Mar/2019 16:07:59.7980Z",
+  "securityType":"Bond",
+  "subSecurityType":"??",
+  "identifierCode":"Identifier Code",
+  "identifierValue":"???",
+  "securityDescription":"Security Description",
+  "price":{
+    "currency":"EUR",
+    "amount":10.7
+
+  },
+  "buySellFlag":"Buy",
+  "exchange":"CEM0",
+  "trader":"Trader 001",
+  "maturityDate":"03-12-2019 16:11:40",
+  "startDate":"2019-12-03",
+  "counterParty1":"PlacingCounterpartyName",
+  "counterParty2":"CounterpartyName",
+  "sourceSystem":"SourceSystemName",
+  "brokerFee":1.07,
+  "leg1Currency":"USD",
+  "leg1DayCountFraction":"ThirtyOverThreeSixty",
+  "leg1NotionalValue":1700000,
+  "leg1PaymentFrequency":0.78,
+  "leg1Rate":0.00995,
+  "leg1RateSpread": 1,
+  "leg1ResetFrequency": 1,
+  "leg2Currency":"USD",
+  "leg2DayCountFraction":"ActOverThreeSixFixFiveL",
+  "leg2NotionalValue":1800000,
+  "leg2PaymentFrequency":0.55,
+  "leg2Rate": 0.95,
+  "leg2RateSpread": 2,
+  "leg2ResetFrequency": 2,
+  "tenorMultiplier":2,
+  "tenorPeriod":"W",
+  "fixedLegMultiplier":2,
+  "fixedLegPeriod":"W",
+  "floatingRateIndex":"Libor",
+  "notionalExchange": 10
+},null, 4)
+
+           },
+           ion: {
+            topic: "ion-json-avro-input",
+            message: JSON.stringify({
+  "Id": "10385_20200505_0",
+  "InstrumentId": "A_EUR_5Y_spot_BoblM_sofc_EURA",
+  "Date": "20200505",
+  "Time": "124543",
+  "Verb": "2",
+  "Price": "48.200000000",
+  "QtyTot": "-0.0",
+  "QtyShown": "-0.0",
+  "Trader": "O_Fonte_Ion",
+  "Text": "",
+  "Type": "2",
+  "TimeInForce": "8",
+  "ExpireDate": "0",
+  "ExpireTime": "0",
+  "OrderNo": "10385",
+  "Status": "20",
+  "Active": "0",
+  "DateSettl": "2019-12-03 16:07:59.7980000",
+  "QtyTotReq": "50",
+  "StopInstrumentId": "",
+  "StopPrice": "-0.0",
+  "StopCond": "0",
+  "PriceInt": "48200000",
+  "TimeUpdEx": "-0.0",
+  "DateUTC": "20200505",
+  "Desc": "A-EUR 5Y spot BoblM.sofc",
+  "TypeStr": "Limit",
+  "TimeInForceStr": "FAS",
+  "VerbStr": "Sell",
+  "StatusStr": "Cf",
+  "ActiveStr": "No",
+  "Code": "A-EUR 5Y spot BoblM.sofc",
+  "spot": "BoblM.sofc",
+  "CurrencyStr": "EUR",
+  "QtyHit": "50",
+  "QtyGoal": "50",
+  "IsOvertrading": "0",
+  "QtyOvertraded": "-0.0",
+  "QGConsistent": "0",
+  "QGConsistentStr": "",
+  "Attribute": "0",
+  "QGStatus": "1",
+  "QGFSMString": "St: QG_ST_IDLE Evt: QG_EVT_UPDATE_DELETED NexSt: QG_ST_IDLE Actions: ",
+  "InternalFcId": "9",
+  "AutoInternalFcId": "0",
+  "FcId": "0",
+  "QGQReq": "-0.0",
+  "QtyGoalPrev": "50",
+  "QGFcErr": "0",
+  "QGFcErrStr": "",
+  "Component": "",
+  "RwtPrice": "-0.0",
+  "QGFCClosurePending": "0",
+  "ValueType": "8",
+  "ValueTypeStr": "Basis",
+  "Value": "48.200000000",
+  "ValueFmt": "2",
+  "ValueDec": "2",
+  "ValueTick": "0.050000000",
+  "StopCondStr": "No",
+  "TimeStamp": "134543557",
+  "Key": "CM4",
+  "CustomerInfo": "",
+  "FreeText": "",
+  "QtyStatus": "3",
+  "QtyStatusStr": "Cf",
+  "TradingStatus": "5",
+  "TradingStatusStr": "Deleted",
+  "CurrentAction": "1",
+  "CurrentActionStr": "None",
+  "MarketStatus": "Matched",
+  "QtyFill": "50",
+  "TrdCount": "1",
+  "TrdQtyLast": "50",
+  "TrdValueLast": "48.200000000",
+  "TrdValueAvg": "48.200000000",
+  "RejectReasonStr": "",
+  "RejectReason": "0",
+  "WFDTimeStamp": "0",
+  "CompNameOrigin": "ut2kke_IRS@WS7PAR01030074",
+  "CompTypeOrigin": "MMI_NET",
+  "UserData": "IFCAPI_13454242",
+  "QGWorking": "0",
+  "OrderTmpId": "MKV_A_EUR_5Y_spot_BoblM_sofc_EURA_1588673541002",
+  "AccountId": "CALYON.LCH",
+  "TrdDateLast": "20200505",
+  "TrdTimeLast": "124543",
+  "DateCreation": "20200505",
+  "TimeCreation": "124543",
+  "Completed": "1",
+  "TimeUpd": "0",
+  "QGFunErrRetryCounter": "0",
+  "BidGTAsk": "2",
+  "QtyTick": "1",
+  "QGMode": "0",
+  "TraderChain": "O_Fonte_Ion",
+  "UserTag": "",
+  "Strategy": "",
+  "UserText": "",
+  "WFSTimeStamp": "0",
+  "CMAttribute": "0",
+  "CMAttributeStatus": "0",
+  "OwnershipPolicy": "0",
+  "Interference": "",
+  "AuthorizedBy": "",
+  "OnlyBest": "0",
+  "RwtTag": "",
+  "ParentId": "",
+  "InDepth": "0",
+  "Warning": "0",
+  "FlyingQGRwts": "0",
+  "OrderTags": "0",
+  "RequestRef": "",
+  "Desk": "",
+  "InvestmentId": "",
+  "InvestmentIdType": "0",
+  "ExecutionId": "",
+  "ExecutionIdType": "0",
+  "ClientId": "",
+  "ClientIdType": "0",
+  "InvestmentMktId": "104023",
+  "InvestmentMktIdType": "1",
+  "ExecutionMktId": "104023",
+  "ExecutionMktIdType": "1",
+  "ClientMktId": "",
+  "ClientMktIdType": "0",
+  "TimeStampEx": "114543557.469970703",
+  "TradingCapacity": "",
+  "ShortSelling": "",
+  "LiquidityProvider": "0",
+  "CommodityDerInd": "0",
+  "DEA": "0",
+  "ExemptionFlag": "",
+  "CMDummySepPRICE": "-0.0",
+  "PriceFmtStatic": "0",
+  "PriceDecStatic": "0",
+  "PriceTickStatic": "-0.0",
+  "CMDummySepYIELD": "-0.0",
+  "Yield": "-0.0",
+  "YieldFmtStatic": "0",
+  "YieldDecStatic": "0",
+  "YieldTickStatic": "-0.0",
+  "CMDummySepYDIFF": "-0.0",
+  "YDiff": "-0.0",
+  "YDiffFmtStatic": "0",
+  "YDiffDecStatic": "0",
+  "YDiffTickStatic": "-0.0",
+  "CMDummySepBASIS": "-0.0",
+  "Basis": "48.200000000",
+  "BasisFmtStatic": "2",
+  "BasisDecStatic": "2",
+  "BasisTickStatic": "0.050000000",
+  "CMDummySepDISCOUNT": "-0.0",
+  "Discount": "-0.0",
+  "DiscountFmtStatic": "0",
+  "DiscountDecStatic": "0",
+  "DiscountTickStatic": "-0.0",
+  "CMDummySepSPREAD": "-0.0",
+  "Spread": "-0.0",
+  "SpreadFmtStatic": "0",
+  "SpreadDecStatic": "0",
+  "SpreadTickStatic": "-0.0",
+  "MktQtyShown": "-0.0",
+  "ActionOnLogOffInt": "2",
+  "ActionOnLogOff": "Withdraw",
+  "OnLogoff": "Delete",
+  "IsAnonymous": "0",
+  "IsShared": "1",
+  "MinFillQty": "-0.0",
+  "OrderNoSuffix": "0",
+  "IsOCO": "0",
+  "DepthPrice": "-0.0",
+  "SwapPrice": "-0.0",
+  "FuturePrice": "-0.0",
+  "SwapPriceActual": "-0.0",
+  "FuturePriceActual": "-0.0",
+  "Scaled": "0",
+  "LegPrice": "0",
+  "DarkOrder": "0",
+  "TrdQty": "50",
+  "QtyHitTransaction": "-0.0",
+  "QtyHitBroadcast": "-0.0",
+  "TransactionIDProcessed": "6",
+  "ClearingStatus": "NotClearing",
+  "BrokerRef": "O_NORMAL.6",
+  "LinkId": "",
+  "SecOrderId": "10385_20200505_0",
+  "Balance": "-0.0",
+  "QtyHitImplied": "-0.0",
+  "VisibleBalance": "-0.0",
+  "MktQtyTot": "50",
+  "QtyMin": "-0.0",
+  "ClientTrader": "",
+  "IsAgencyTrading": "0",
+  "BrokerTrader": "",
+  "MktClientId": "",
+  "MktClientTrader": "",
+  "ClearingMember": "",
+  "MktClearingMember": "CALYON.CLR",
+  "DelReqId": "0",
+  "DateUpdated": "20200505",
+  "MktDate": "20200505"
+}, null, 4)
+
+           },
+         }
+
+
+       function messageSet(buttonSelector, values){
+         $(buttonSelector).click(function () {
+              $("#kafkaHost").val(kafkaHost);
+              $("#kafkaTopic").val(values.topic);
+              $("#kafkaMessage").val(values.message);
+         })
+       }
+
+       messageSet("#msgHpc", messageSets.hpc)
+       messageSet("#msgCem4", messageSets.cem4)
+       messageSet("#msgIon", messageSets.ion)
 
         $("#kafkaMessageSubmitButton").click(function () {
 
@@ -256,15 +553,21 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
 
    // ACTIONS
     var pipelineOrchestratorUrl = "/runner/pipelines";
-    var pipelineDefinitionHpc = {
-        "name": "hpc-csv-avro-pipeline",
+
+    var pipelineDefinitionHpc = createPipelineDescription("hpc", "hpc-csv-avro-input", "hpc-csv-avro-pipeline", "hpc.orders.Order", "csv")
+    var pipelineDefinitionCemafor = createPipelineDescription("cemafor", "cemafor-json-avro-input", "cemafor-json-avro-pipeline", "cacib.cemafor.orders.Order", "json")
+    var pipelineDefinitionIon = createPipelineDescription("ion", "ion-json-avro-input", "ion-json-avro-pipeline", "ion.orders.Order", "json")
+
+    function createPipelineDescription(entityName, topic, name, type, contentType) {
+      return {
+        "name": name,
         "input": {
-            "type": "hpc.orders.Order",
+            "type": type,
             "transport": {
-                "topic": "hpc-csv-avro-input",
-                "targetType": "hpc.orders.Order",
+                "topic": topic,
+                "targetType": type,
                 "props": {
-                    "group.id": "vyne-hpc-pipeline-group",
+                    "group.id": "vyne-" + entityName + "-pipeline-group",
                     "bootstrap.servers": "kafka:9092,",
                     "heartbeat.interval.ms": "3000",
                     "session.timeout.ms": "10000",
@@ -275,51 +578,22 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
             }
         },
         "output": {
-            "type": "hpc.orders.Order",
+            "type": type,
             "transport": {
                 "props": {
-                    "content-type": "csv",
+                    "content-type": contentType,
                     "csv.csvDelimiter": ";",
                     "csv.nullValue": "NULL,N/A",
                     "csv.csvFirstRecordAsHeader": "true"
                 },
-                "targetType": "hpc.orders.Order",
+                "targetType": type,
                 "type": "cask",
                 "direction": "OUTPUT"
             }
         }
       }
+    }
 
-       var pipelineDefinitionCemafor = {
-        "name": "cemafor-json-avro-pipeline",
-        "input": {
-            "type": "cacib.cemafor.orders.Order",
-            "transport": {
-                "topic": "cemafor-json-avro-input",
-                "targetType": "cacib.cemafor.orders.Order",
-                "props": {
-                    "group.id": "vyne-cemafor-pipeline-group",
-                    "bootstrap.servers": "kafka:9092,",
-                    "heartbeat.interval.ms": "3000",
-                    "session.timeout.ms": "10000",
-                    "auto.offset.reset": "earliest"
-                },
-                "type": "kafka-cacib",
-                "direction": "INPUT"
-            }
-        },
-        "output": {
-            "type": "cacib.cemafor.orders.Order",
-            "transport": {
-                "props": {
-                    "content-type": "json"
-                },
-                "targetType": "cacib.cemafor.orders.Order",
-                "type": "cask",
-                "direction": "OUTPUT"
-            }
-        }
-      }
 
     function logMessage(responseEvent) {
         console.log("Message");
@@ -331,17 +605,13 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
         }
     }
 
-    $(document).ready(function () {
-
-        $("#pipelineDefinition-left").append(JSON.stringify(pipelineDefinitionHpc, null, 4));
-        $("#pipelineDefinition-right").append(JSON.stringify(pipelineDefinitionCemafor, null, 4));
-        $("#pipelineOrchestratorUrl").val(pipelineOrchestratorUrl);
-        $("#deployToPipelineOrchestratorButtonLeft").click(function () {
+   function bindPipeline(buttonSelector, pipelineValueSelector) {
+           $(buttonSelector).click(function () {
             $.ajax({
                 url: '/runner/pipelines',
                 type: 'POST',
                 contentType: 'application/json',
-                data: $("#pipelineDefinition-left").val(),
+                data: $(pipelineValueSelector).val(),
                 dataType: 'json',
                 success: function (data) {
                     logMessage('Pipeline sent to orchestrator OK');
@@ -351,21 +621,18 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
                 }
             });
         });
-          $("#deployToPipelineOrchestratorButtonRight").click(function () {
-            $.ajax({
-                url: '/runner/pipelines',
-                type: 'POST',
-                contentType: 'application/json',
-                data: $("#pipelineDefinition-right").val(),
-                dataType: 'json',
-                success: function (data) {
-                    logMessage('Pipeline sent to orchestrator OK');
-                },
-                 error: function (xhr) {
-                   logMessage(xhr.responseText);
-                }
-            });
-        });
+   }
+
+
+    $(document).ready(function () {
+
+        $("#pipelineDefinitionHpc").append(JSON.stringify(pipelineDefinitionHpc, null, 4));
+        $("#pipelineDefinitionCema4").append(JSON.stringify(pipelineDefinitionCemafor, null, 4));
+        $("#pipelineDefinitionIon").append(JSON.stringify(pipelineDefinitionIon, null, 4));
+        $("#pipelineOrchestratorUrl").val(pipelineOrchestratorUrl);
+        bindPipeline('#deployToPipelineHpc', '#pipelineDefinitionHpc')
+        bindPipeline('#deployToPipelineCema4', '#pipelineDefinitionCema4')
+        bindPipeline('#deployToPipelineIon', '#pipelineDefinitionIon')
 
 
          fetchPipelines();
@@ -374,7 +641,7 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
           window.setInterval(function(){
            fetchPipelines();
            fetchRunners();
-         }, 5000)
+         }, 3000)
 
     });
 
