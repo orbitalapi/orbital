@@ -3,7 +3,6 @@ package io.vyne.cask.query
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ddl.caskRecordTable
-import io.vyne.cask.ingest.QueryView
 import io.vyne.cask.timed
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
@@ -22,9 +21,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
-import java.util.*
 import java.util.concurrent.TimeUnit
-import javax.annotation.Nonnull
 
 fun String.toLocalDate(): LocalDate {
    return LocalDate.parse(this)
@@ -57,17 +54,37 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
    }
 
    fun findBetween(versionedType: VersionedType, columnName: String, start: String, end: String): List<Map<String, Any>> {
-      // TODO - make it DRY
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
-         val tableName = versionedType.caskRecordTable()
-         val originalTypeSchema = schemaProvider.schema()
-         val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
-         val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
+         val field = fieldForColumnName(versionedType, columnName)
          jdbcTemplate.queryForList(
-            findBetweenQuery(tableName, columnName),
-            jdbcQueryArgumentType(fieldType, start),
-            jdbcQueryArgumentType(fieldType, end))
+            findBetweenQuery(versionedType.caskRecordTable(), columnName),
+            jdbcQueryArgumentType(field, start),
+            jdbcQueryArgumentType(field, end))
       }
+   }
+
+   fun findAfter(versionedType: VersionedType, columnName: String, after: String): List<Map<String, Any>> {
+      return timed("${versionedType.versionedName}.findBy${columnName}.after") {
+         val field = fieldForColumnName(versionedType, columnName)
+         jdbcTemplate.queryForList(
+            findAfterQuery(versionedType.caskRecordTable(), columnName),
+            jdbcQueryArgumentType(field, after))
+      }
+   }
+
+   fun findBefore(versionedType: VersionedType, columnName: String, before: String): List<Map<String, Any>> {
+      return timed("${versionedType.versionedName}.findBy${columnName}.before") {
+         val field = fieldForColumnName(versionedType, columnName)
+         jdbcTemplate.queryForList(
+            findBeforeQuery(versionedType.caskRecordTable(), columnName),
+            jdbcQueryArgumentType(field, before))
+      }
+   }
+
+   private fun fieldForColumnName(versionedType: VersionedType, columnName: String): Field {
+      val originalTypeSchema = schemaProvider.schema()
+      val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
+      return (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
    }
 
    private fun jdbcQueryArgumentType(field: Field, arg: String) = when (field.type.basePrimitive) {
@@ -89,6 +106,8 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       // TODO change to prepared statement, unlikely but potential for SQL injection via columnName
       fun findByQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" = ?"""
       fun findBetweenQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" < ?"""
+      fun findAfterQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ?"""
+      fun findBeforeQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" < ?"""
    }
 
    // ############################
