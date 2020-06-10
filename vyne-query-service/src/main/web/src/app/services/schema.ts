@@ -40,13 +40,20 @@ export interface Type extends Documented {
   modifiers: Array<Modifier>;
   isScalar: boolean;
   aliasForType: QualifiedName;
-  enumValues: Array<string>;
+  enumValues: Array<EnumValues>;
   sources: Array<VersionedSource>;
   isClosed: boolean;
   isCollection: boolean;
   isParameterType: boolean;
   typeParameters: QualifiedName[];
   inheritsFrom: QualifiedName[];
+}
+
+export interface EnumValues{
+  name: string;
+  value: any;
+  synonyms: Array<string>;
+  typeDoc: string | null;
 }
 
 export interface Field extends Documented {

@@ -44,5 +44,10 @@ export class TypeViewerComponent {
     }
     return this._type.attributes && Object.keys(this._type.attributes).length > 0;
   }
-
+  get hasEnumValues() {
+    if (!this._type) {
+      return false;
+    }
+    return this._type.enumValues && Object.keys(this._type.enumValues).length > 0;
+  }
 }

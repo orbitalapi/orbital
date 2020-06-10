@@ -2,10 +2,8 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.json.addJsonModel
 import io.vyne.query.QueryEngineFactory
-import io.vyne.schemas.AttributeConstantValueConstraint
-import io.vyne.schemas.AttributeValueFromParameterConstraint
+import io.vyne.schemas.EnumValue
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.PropertyToParameterConstraint
 import io.vyne.schemas.taxi.TaxiSchema
@@ -40,6 +38,19 @@ class VyneSchemaTest {
             INDIVIDUAL,
             COMPANY
          }
+
+         enum BankDirection {
+            BankBuys,
+            BankSell
+         }
+
+         enum BankXDirection {
+         [[Dummy TypeDoc]]
+            BUY(0) synonym of BankDirection.BankBuys,
+            SELL(1) synonym of BankDirection.BankSell
+         }
+
+
 
          // Entirely unrelated type
          type Website {}
@@ -179,11 +190,11 @@ class VyneSchemaTest {
 
    @Test
    fun shouldParseEnumTypes() {
-      val type = vyne.getType("vyne.example.ClientType")
+      val type = vyne.getType("vyne.example.BankXDirection")
       expect(type.modifiers).to.contain(Modifier.ENUM)
 
       expect(type.enumValues).to.have.size(2)
-      expect(type.enumValues).to.contain("COMPANY")
+      expect(type.enumValues).to.contain(EnumValue("BUY", 0, listOf("vyne.example.BankDirection.BankBuys"), "Dummy TypeDoc"))
    }
 
    @Test

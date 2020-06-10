@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
 import io.vyne.VersionedSource.Companion.UNNAMED
 import io.vyne.schemas.*
+import io.vyne.schemas.EnumValue
 import io.vyne.schemas.Field
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
@@ -144,7 +145,7 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                ))
             }
             is EnumType -> {
-               val enumValues = taxiType.values.map { it.name }
+               val enumValues = taxiType.values.map { EnumValue(it.name, it.value, it.synonyms, it.typeDoc) }
                typeCache.add(Type(
                   QualifiedName(taxiType.qualifiedName),
                   modifiers = parseModifiers(taxiType),

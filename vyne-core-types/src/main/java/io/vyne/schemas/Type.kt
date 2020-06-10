@@ -51,7 +51,7 @@ data class Type(
    val inheritsFromTypeNames: List<QualifiedName> = emptyList(),
 
    @JsonView(TypeFullView::class)
-   val enumValues: List<String> = emptyList(),
+   val enumValues: List<EnumValue> = emptyList(),
 
    @JsonView(TypeFullView::class)
    val sources: List<VersionedSource>,
@@ -67,7 +67,17 @@ data class Type(
    private val typeCache: TypeCache = EmptyTypeCache
 
 ) : SchemaMember {
-   constructor(name: String, attributes: Map<AttributeName, Field> = emptyMap(), modifiers: List<Modifier> = emptyList(), metadata: List<Metadata> = emptyList(), aliasForTypeName: QualifiedName? = null, inheritsFromTypeNames: List<QualifiedName>, enumValues: List<String> = emptyList(), sources: List<VersionedSource>, taxiType: lang.taxi.types.Type, typeDoc: String? = null, typeCache: TypeCache) :
+   constructor(name: String,
+               attributes: Map<AttributeName, Field> = emptyMap(),
+               modifiers: List<Modifier> = emptyList(),
+               metadata: List<Metadata> = emptyList(),
+               aliasForTypeName: QualifiedName? = null,
+               inheritsFromTypeNames: List<QualifiedName>,
+               enumValues: List<EnumValue> = emptyList(),
+               sources: List<VersionedSource>,
+               taxiType: lang.taxi.types.Type,
+               typeDoc: String? = null,
+               typeCache: TypeCache) :
       this(
          name.fqn(),
          attributes,
