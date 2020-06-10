@@ -2,6 +2,7 @@ package io.vyne.cask.query
 
 import arrow.core.Either
 import io.vyne.cask.CaskService
+import io.vyne.cask.services.CaskServiceSchemaGenerator
 import io.vyne.cask.query.generators.AfterTemporalOperationGenerator
 import io.vyne.cask.query.generators.BeforeTemporalOperationGenerator
 import io.vyne.cask.query.generators.BetweenTemporalOperationGenerator

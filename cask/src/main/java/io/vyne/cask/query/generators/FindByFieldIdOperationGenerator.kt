@@ -1,6 +1,6 @@
 package io.vyne.cask.query.generators
 
-import io.vyne.cask.query.CaskServiceSchemaGenerator
+import io.vyne.cask.services.CaskServiceSchemaGenerator
 import io.vyne.cask.query.OperationGenerator
 import io.vyne.cask.query.generators.TemporalFieldUtils.collectionTypeOf
 import io.vyne.cask.query.generators.TemporalFieldUtils.parameterType
