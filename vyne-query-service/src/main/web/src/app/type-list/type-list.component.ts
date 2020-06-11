@@ -25,11 +25,8 @@ export class TypeListComponent implements OnInit {
 
   ngOnInit() {
     this.loadTypes();
-    this.filteredMembers = this.searchInput.valueChanges.pipe(
-      startWith(''),
-      map(value => this._filter(value))
-    );
   }
+
 
   type(schemaMember: SchemaMember): Type {
     return this.schema.types.find((t) => t.name.fullyQualifiedName === schemaMember.name.fullyQualifiedName);
@@ -50,15 +47,25 @@ export class TypeListComponent implements OnInit {
 
         // Reset the search input - ensures that initial state is populated
         this.searchInput.setValue('');
+        this.filteredMembers = this.searchInput.valueChanges.pipe(
+          startWith(''),
+          map(value => this._filter(value))
+        );
       },
       error => console.log('error : ' + error)
     );
   }
 
   memberType(member: SchemaMember): string {
-    if (member.kind === SchemaMemberType.OPERATION) { return 'Operation'; }
-    if (member.kind === SchemaMemberType.TYPE) { return 'Type'; }
-    if (member.kind === SchemaMemberType.SERVICE) { return 'Service'; }
+    if (member.kind === SchemaMemberType.OPERATION) {
+      return 'Operation';
+    }
+    if (member.kind === SchemaMemberType.TYPE) {
+      return 'Type';
+    }
+    if (member.kind === SchemaMemberType.SERVICE) {
+      return 'Service';
+    }
     return '?';
   }
 
@@ -69,8 +76,12 @@ export class TypeListComponent implements OnInit {
   }
 
   private _filter(value: string): SchemaMember[] {
-    if (!this.schema) { return []; }
-    if (value === '') { return this.members; }
+    if (!this.schema) {
+      return [];
+    }
+    if (value === '') {
+      return this.members;
+    }
 
     // Split by CamelCase:
     const searchWords = value.match(/([A-Z]?[^A-Z]*)/g);
@@ -78,7 +89,9 @@ export class TypeListComponent implements OnInit {
     const filterValue = value.toLowerCase();
     return this.members.filter(member => {
       // Accept exact matches
-      if (member.name.name.indexOf(filterValue) !== -1) { return true; }
+      if (member.name.name.indexOf(filterValue) !== -1) {
+        return true;
+      }
 
       // Search for CamelHumps
       // We only look at words in the name - ie., exclude the package
@@ -98,5 +111,9 @@ export class TypeListComponent implements OnInit {
 
   navigateToMember(member: SchemaMember) {
     this.router.navigate(['/types', member.name.fullyQualifiedName]);
+  }
+
+  refresh() {
+    this.typeService.getTypes(true);
   }
 }
