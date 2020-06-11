@@ -19,8 +19,11 @@ import {
   VersionedSource
 } from './schema';
 import {TypeNamedInstance} from './query.service';
+import {VyneServicesModule} from './vyne-services.module';
 
-@Injectable()
+@Injectable({
+  providedIn: VyneServicesModule
+})
 export class TypesService {
 
   private schema: Schema;

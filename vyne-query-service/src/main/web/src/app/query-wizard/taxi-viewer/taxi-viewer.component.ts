@@ -1,6 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {Fact, Query, QueryMode, QueryResult, QueryService} from "./query.service";
-import {SchemaWithTaxi, TypesService} from "./types.service";
+import {Fact, Query, QueryMode, QueryResult, QueryService} from './query.service';
+import {SchemaWithTaxi, TypesService} from './types.service';
 
 @Component({
   selector: 'app-taxi-viewer',
@@ -22,21 +22,21 @@ export class TaxiViewerComponent implements OnInit {
   @Input()
   queryMode: QueryMode;
 
-  expanded: boolean = true;
+  expanded = true;
 
-  loading:boolean = false;
+  loading = false;
 
-  taxiComponentExpanded:boolean = true;
-  vyneQueryExpanded:boolean = true;
+  taxiComponentExpanded = true;
+  vyneQueryExpanded = true;
 
   constructor(private schemaService: TypesService, private queryService: QueryService) {
   }
 
   get taxi(): string {
     if (this.schemaWithTaxi) {
-      return this.schemaWithTaxi.taxi
+      return this.schemaWithTaxi.taxi;
     } else {
-      return ""
+      return '';
     }
   }
 
@@ -44,7 +44,7 @@ export class TaxiViewerComponent implements OnInit {
   queryResult: QueryResult;
 
   get result(): string {
-    if (!this.queryResult || !this.queryResult.results) return "";
+    if (!this.queryResult || !this.queryResult.results) { return ''; }
     return JSON.stringify(this.queryResult.results, null, 2);
   }
 
@@ -55,13 +55,13 @@ export class TaxiViewerComponent implements OnInit {
 
   private loadSchema() {
     if (!this.membersToInclude) {
-      console.error("You must specify the members to include for this component");
+      console.error('You must specify the members to include for this component');
       return;
     }
     this.schemaService.getTaxiForMembers(this.membersToInclude)
       .subscribe(result => {
-        this.schemaWithTaxi = result
-      })
+        this.schemaWithTaxi = result;
+      });
   }
 
   submitQuery(event) {
@@ -77,7 +77,7 @@ export class TaxiViewerComponent implements OnInit {
         this.loading = false;
         this.vyneQueryExpanded = false;
         this.taxiComponentExpanded = false;
-      })
+      });
 
   }
 }

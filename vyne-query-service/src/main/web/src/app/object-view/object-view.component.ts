@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {TypeNamedInstance} from '../services/query.service';
 import {Field, findType, getCollectionMemberType, Schema, Type, TypedInstance} from '../services/schema';
 
@@ -21,11 +21,18 @@ export class ObjectViewComponent {
   @Input()
   instance: InstanceLikeOrCollection;
 
+  @Output()
+  instanceClicked = new EventEmitter<InstanceLike>();
+
   @Input()
   schema: Schema;
 
   @Input()
   topLevel = true;
+
+  @Input()
+    // tslint:disable-next-line:no-inferrable-types
+  selectable: boolean = false;
 
   private fieldTypes = new Map<Field, Type>();
   private _type: Type;
@@ -155,6 +162,21 @@ export class ObjectViewComponent {
     }
     return getCollectionMemberType(this.type, this.schema);
   }
+
+  onAttributeClicked(attributeName: string) {
+    if (this.selectable) {
+      const instance = this.getTypedObjectAttribute(attributeName);
+      this.instanceClicked.emit(instance);
+
+    }
+  }
+
+  onTopLevelPrimitiveClicked() {
+    if (this.selectable) {
+      this.instanceClicked.emit(this.typedObject);
+    }
+
+  }
 }
 
 export type InstanceLike = TypedInstance | TypedObjectAttributes | TypeNamedInstance;
@@ -163,6 +185,18 @@ export type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;
 
 export interface TypedObjectAttributes {
   [key: string]: TypeInstanceOrAttributeSet;
+}
+
+export function typeName(instance: InstanceLike): string {
+  if (isTypedInstance(instance)) {
+    return instance.type.name.fullyQualifiedName;
+  } else if (isTypeNamedInstance(instance)) {
+    return instance.typeName;
+  } else {
+    // No good reason for not supporting this, just haven't hit the usecase yet, and it's not
+    // obvious how we should support it.
+    throw new Error('Looks like the instance is a TypedObjectAttributes, which isn\'t yet supported');
+  }
 }
 
 function isTypedInstance(instance: InstanceLikeOrCollection): instance is TypedInstance {
