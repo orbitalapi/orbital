@@ -170,9 +170,12 @@
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-surefire-plugin</artifactId>
               <configuration>
-                 <!-- TODO Uncomment once we mock SchemaProvider in unit tests -->
+                 <!--
+                  This runs only unit/basic integration tests
+                  Benchmark tests double the build time and are run only on the build server
+                 -->
                  <excludes>
-                    <exclude>**/CaskAppIntegrationTest.*</exclude>
+                    <exclude>**/**BenchmarkTest.*</exclude>
                  </excludes>
               </configuration>
            </plugin>
@@ -220,4 +223,27 @@
 
         </plugins>
     </build>
+
+   <profiles>
+      <profile>
+         <id>runBenchmarkTests</id>
+         <build>
+            <plugins>
+               <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-surefire-plugin</artifactId>
+                  <configuration>
+                     <includes>
+                        <include>**/**Test.*</include>
+                     </includes>
+                     <excludes>
+                        <exclude>none</exclude>
+                     </excludes>
+                  </configuration>
+               </plugin>
+
+            </plugins>
+         </build>
+      </profile>
+   </profiles>
 </project>
