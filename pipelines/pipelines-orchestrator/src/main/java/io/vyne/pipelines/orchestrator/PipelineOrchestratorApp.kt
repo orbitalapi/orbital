@@ -18,7 +18,7 @@ import org.springframework.web.client.RestTemplate
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableFeignClients(basePackageClasses = [PipelineRunnerApi::class])
+@EnableFeignClients(basePackageClasses = [PipelineOrchestratorController::class])
 @EnableScheduling
 class PipelineOrchestratorApp {
    companion object {
