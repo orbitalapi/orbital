@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {Observable, of} from 'rxjs/index';
+import {Observable, ReplaySubject, Subject} from 'rxjs/index';
 
 import * as _ from 'lodash';
 import {HttpClient} from '@angular/common/http';
@@ -24,8 +24,11 @@ import {TypeNamedInstance} from './query.service';
 export class TypesService {
 
   private schema: Schema;
+  private schemaSubject: Subject<Schema>;
+  private schemaRequest: Observable<Schema>;
 
   constructor(private http: HttpClient) {
+    this.schemaSubject = new ReplaySubject(1);
     this.getTypes().subscribe(schema => {
       this.schema = schema;
     });
@@ -85,21 +88,25 @@ export class TypesService {
       content);
   }
 
-  getTypes = (): Observable<Schema> => {
-    if (this.schema) {
-      return of(this.schema);
-    }
-    return this.http
-      .get<Schema>(`${environment.queryServiceUrl}/types`)
-      .pipe(
-        map(schema => {
-            schema.types = _.sortBy(schema.types, [(t) => {
-              return t.name.fullyQualifiedName;
-            }]);
-            return schema;
-          }
-        )
+  getTypes = (refresh: boolean = false): Observable<Schema> => {
+    if (refresh || !this.schemaRequest) {
+      this.schemaRequest = this.http
+        .get<Schema>(`${environment.queryServiceUrl}/types`)
+        .pipe(
+          map(schema => {
+              schema.types = _.sortBy(schema.types, [(t) => {
+                return t.name.fullyQualifiedName;
+              }]);
+              return schema;
+            }
+          )
+        );
+      this.schemaRequest.subscribe(
+        result => this.schemaSubject.next(result),
+        err => this.schemaSubject.next(err)
       );
+    }
+    return this.schemaSubject.asObservable();
   }
 
   createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
