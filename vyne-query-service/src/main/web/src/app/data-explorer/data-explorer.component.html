@@ -7,10 +7,10 @@
 <mat-sidenav-container [hasBackdrop]="false">
   <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel">
     <div class="drawer-content">
-      <app-typed-instance-panel
+      <app-typed-instance-panel-container
         [instance]="selectedTypeInstance"
         [type]="selectedTypeInstanceType"
-      ></app-typed-instance-panel>
+      ></app-typed-instance-panel-container>
     </div>
   </mat-drawer>
   <div class="content">

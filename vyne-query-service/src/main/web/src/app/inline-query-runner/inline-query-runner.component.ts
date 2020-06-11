@@ -12,11 +12,13 @@ import {Fact, Query, QueryMode, QueryResult, QueryService, ResultMode} from '../
         <mat-expansion-panel-header>
           <mat-panel-title>{{ targetType }}</mat-panel-title>
           <mat-panel-description>
-            <button mat-stroked-button (click)="executeQueryClicked($event)">CLick?</button>
+            <button mat-stroked-button (click)="executeQueryClicked($event)">Run</button>
           </mat-panel-description>
         </mat-expansion-panel-header>
 
-        <div>Query result stuff?</div>
+        <div *ngIf="queryResult">
+          <query-result-container [result]="queryResult"></query-result-container>
+        </div>
       </mat-expansion-panel>
     </div>
 

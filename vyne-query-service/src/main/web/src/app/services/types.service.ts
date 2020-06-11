@@ -67,6 +67,10 @@ export class TypesService {
       }));
   }
 
+  getDiscoverableTypes(typeName: string): Observable<QualifiedName[]> {
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/types/${typeName}/discoverable-types`)
+  }
+
   getType(qualifiedName: string): Observable<Type> {
     return this.getTypes().pipe(
       map(schema => schema.types.find(t => t.name.fullyQualifiedName === qualifiedName))

@@ -1,3 +1,11 @@
 ::ng-deep .mat-expansion-panel-header-title {
   align-items: center;
 }
+
+::ng-deep .mat-expansion-panel-header-description {
+  flex-direction: column;
+
+  button {
+    align-self: flex-end;
+  }
+}

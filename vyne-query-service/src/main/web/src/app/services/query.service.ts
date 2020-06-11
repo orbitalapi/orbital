@@ -5,8 +5,11 @@ import {Observable} from 'rxjs/internal/Observable';
 import {environment} from 'src/environments/environment';
 import {QualifiedName, TypedInstance} from './schema';
 import {InstanceLikeOrCollection} from '../object-view/object-view.component';
+import {VyneServicesModule} from './vyne-services.module';
 
-@Injectable()
+@Injectable({
+  providedIn: VyneServicesModule
+})
 export class QueryService {
   constructor(private http: HttpClient) {
   }
@@ -52,14 +55,18 @@ export interface QueryResult {
   resultMode: ResultMode;
 }
 
+
 export interface RemoteCall {
   service: QualifiedName;
+  address: string;
   operation: string;
+  responseTypeName: QualifiedName;
   method: string;
   requestBody: any;
   resultCode: number;
   durationMs: number;
   response: any;
+  operationQualifiedName: QualifiedName;
 }
 
 export interface ProfilerOperation {

@@ -1,5 +1,5 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {Type, TypedInstance} from '../services/schema';
+import {Component, Input} from '@angular/core';
+import {QualifiedName, Type} from '../services/schema';
 import {InstanceLike} from '../object-view/object-view.component';
 
 @Component({
@@ -13,6 +13,12 @@ import {InstanceLike} from '../object-view/object-view.component';
       </div>
       <section>
         <app-description-editor-container [type]="type"></app-description-editor-container>
+      </section>
+      <section *ngIf="hasDiscoverableTypes">
+        <h3>Discoverable data</h3>
+        <p>Quick link queries to discover relevant data</p>
+        <app-inline-query-runner *ngFor="let type of discoverableTypes" [facts]="facts"
+                                 [targetType]="type.fullyQualifiedName"></app-inline-query-runner>
       </section>
       <section *ngIf="hasAttributes">
         <h3>Attributes</h3>
@@ -34,6 +40,13 @@ export class TypedInstancePanelComponent {
   @Input()
   type: Type;
 
+  @Input()
+  discoverableTypes: QualifiedName[];
+
+  get hasDiscoverableTypes() {
+    return this.discoverableTypes && this.discoverableTypes.length > 0;
+  }
+
   get hasAttributes() {
     if (!this.type) {
       return false;
@@ -46,6 +59,11 @@ export class TypedInstancePanelComponent {
       return false;
     }
     return this.type.enumValues && Object.keys(this.type.enumValues).length > 0;
+  }
+
+  @Input()
+  get facts(): InstanceLike[] {
+    return [this.instance];
   }
 
 }

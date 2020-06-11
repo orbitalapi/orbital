@@ -12,6 +12,8 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {SearchModule} from '../search/search.module';
 import {CodeViewerModule} from '../code-viewer/code-viewer.module';
 import {PolicyManagerModule} from '../policy-manager/policy-manager.module';
+import {TocHostDirective} from './toc-host.directive';
+import {TypeViewerContainerComponent} from './type-viewer-container.component';
 
 
 @NgModule({
@@ -30,7 +32,9 @@ import {PolicyManagerModule} from '../policy-manager/policy-manager.module';
     PolicyManagerModule
   ],
   declarations: [
-    TypeViewerComponent
+    TocHostDirective,
+    TypeViewerComponent,
+    TypeViewerContainerComponent
   ],
   exports: [
     TypeViewerComponent

@@ -1,6 +1,6 @@
 import {Component} from '@angular/core';
-import {TypesService} from "./services/types.service";
-import {AppInfo, AppInfoService} from "./services/app-info.service";
+import {TypesService} from './services/types.service';
+import {AppInfo, AppInfoService} from './services/app-info.service';
 
 @Component({
   selector: 'app-root',

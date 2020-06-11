@@ -7,11 +7,12 @@ import {CommonModule} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {VyneServicesModule} from '../services/vyne-services.module';
+import {ResultViewerModule} from '../query-wizard/result-display/result-viewer.module';
 
 @NgModule({
   imports: [BrowserModule, BrowserAnimationsModule,
     CommonModule, MatProgressBarModule, MatExpansionModule, MatButtonModule,
-    VyneServicesModule
+    VyneServicesModule, ResultViewerModule
   ],
   exports: [InlineQueryRunnerComponent],
   declarations: [InlineQueryRunnerComponent],

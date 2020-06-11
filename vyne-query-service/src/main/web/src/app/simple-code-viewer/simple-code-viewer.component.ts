@@ -1,8 +1,8 @@
 import {Component, Input} from '@angular/core';
 
 @Component({
-  selector: 'app-code-container',
-  styleUrls: ['./code-container.component.scss'],
+  selector: 'app-simple-code-viewer',
+  styleUrls: ['./simple-code-viewer.component.scss'],
   preserveWhitespaces: true,
   template: `
     <div class="code-container">
@@ -18,7 +18,7 @@ import {Component, Input} from '@angular/core';
     </div>
   `
 })
-export class CodeContainerComponent {
+export class SimpleCodeViewerComponent {
 
   _content: string;
 
@@ -31,29 +31,29 @@ export class CodeContainerComponent {
 
   @Input()
   set content(value: any) {
-    if (typeof value === "string") {
-      this._content = value
+    if (typeof value === 'string') {
+      this._content = value;
     } else {
       this._content = JSON.stringify(value, null, 2);
     }
   }
 
   @Input()
-  lang: string = "";
+  lang = '';
 
   @Input()
-  expanded: boolean = true;
+  expanded = true;
 
   get expansionIcon(): string {
-    return (this.expanded) ? "expand_less" : "expand_more"
+    return (this.expanded) ? 'expand_less' : 'expand_more';
   }
 
   get hasContent(): boolean {
-    return this.content !== "" && this.lang !== "";
+    return this.content !== '' && this.lang !== '';
   }
 
   get expandWrapperClass(): string {
-    return (this.expanded) ? "panel-visible" : "panel-hidden";
+    return (this.expanded) ? 'panel-visible' : 'panel-hidden';
   }
 
   toggleVisibility() {
