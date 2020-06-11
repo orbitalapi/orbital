@@ -15,7 +15,10 @@ import io.vyne.utils.Benchmark
 import io.vyne.utils.log
 import org.apache.commons.io.FileUtils
 import org.flywaydb.core.Flyway
-import org.junit.*
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
@@ -24,7 +27,7 @@ import java.io.File
 import java.time.Duration
 
 
-class JsonIngesterIntegrationTest {
+class JsonIngesterDbBenchmarkTest {
 
    @Rule
    @JvmField
@@ -59,7 +62,6 @@ class JsonIngesterIntegrationTest {
    }
 
    @Test
-   @Ignore
    fun canStreamDataToPostgresOnStart() {
       val taxiSchema = CoinbaseJsonOrderSchema.schemaV1
       val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())
