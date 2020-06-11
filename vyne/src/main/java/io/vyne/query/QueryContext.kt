@@ -256,11 +256,15 @@ data class QueryContext(
       return this
    }
 
+   fun projectResultsTo(name: QualifiedName): QueryContext {
+      return projectResultsTo(schema.type(name))
+   }
+
    fun projectResultsTo(targetType: String): QueryContext {
       return projectResultsTo(schema.type(targetType))
    }
 
-   fun projectResultsTo(targetType: Type): QueryContext {
+   private fun projectResultsTo(targetType: Type): QueryContext {
       projectResultsTo = targetType
       return this
    }

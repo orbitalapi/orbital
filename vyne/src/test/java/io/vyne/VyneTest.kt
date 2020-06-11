@@ -696,6 +696,35 @@ service IonService {
    }
 
    @Test
+   fun canProjectDifferentOrderTypesToSingleTypeFromUsingVyneQLQuery() {
+      // prepare
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+         [
+            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+         [
+            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"}
+         ]
+         """.trimIndent()))
+
+      // act
+      val result = vyne.query("""
+         findAll { Order[] } as IMadOrder[]
+      """.trimIndent())
+
+      // assert
+      expect(result.isFullyResolved).to.be.`true`
+      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
+      resultList.should.contain.all.elements(
+         mapOf(Pair("id", "hpcOrder1"), Pair("date", "2020-01-01")),
+         mapOf(Pair("id", "ionOrder1"), Pair("date", "2020-01-01"))
+      )
+   }
+
+   @Test
    fun canProjectDifferentOrderTypesToSingleType_whenSomeValuesAreMissing() {
       // prepare
       val (vyne, stubService) = testVyne(schema)
