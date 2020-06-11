@@ -39,6 +39,13 @@ interface Schema {
       }.toSet()
    }
 
+   fun operationsWithSingleArgument(): Set<Pair<Service, Operation>> {
+      return services.flatMap { service ->
+         service.operations.filter { operation ->  operation.parameters.size == 1  }
+            .map { service to it }
+      }.toSet()
+   }
+
    fun type(name: String): Type {
       val type = typeCache.type(name)
       return type

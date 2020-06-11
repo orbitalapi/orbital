@@ -2,6 +2,8 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import es.usc.citius.hipster.algorithm.Hipster
+import es.usc.citius.hipster.graph.GraphSearchProblem
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
@@ -13,6 +15,7 @@ import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDeco
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.PropertyToParameterConstraint
+import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.Operator
@@ -21,6 +24,7 @@ import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.QualifiedName
 import org.junit.Ignore
 import org.junit.Test
+import java.lang.StringBuilder
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.test.fail
@@ -868,6 +872,71 @@ service IonService {
    }
 
    @Test
+   fun `retrieve all types that can discovered through single argument function invocations`() {
+     val testSchema =  """
+namespace vyne.example
+type Invoice {
+   clientId : ClientId
+   invoiceValue : InvoiceValue as Decimal
+}
+type Client {
+   clientId : ClientId as String
+   name : ClientName as String
+   isicCode : IsicCode as String
+}
+type alias TaxFileNumber as String
+type alias CreditRisk as Int
+type alias NaicsCode as Int
+
+service ClientService {
+   @StubResponse("mockClient")
+   operation getClient(TaxFileNumber):Client
+
+   @StubResponse("creditRisk")
+   operation getCreditRisk(ClientId,InvoiceValue):CreditRisk
+
+   @StubResponse("mockClients")
+   operation getClients(NaicsCode):Client[]
+
+   operation getClients(Client):Invoice
+}
+""".trimIndent()
+      val stubInvocationService = StubService()
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubInvocationService)
+      val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
+      val fqn = "vyne.example.TaxFileNumber"
+      val accessibleTypes = vyne.accessibleFrom(fqn)
+      accessibleTypes.should.have.size(2)
+   }
+
+   @Test
+   fun `retrieve all types that can discovered through single argument function invocations in a large graph`() {
+      val schemaBuilder = StringBuilder()
+         .appendln("namespace vyne.example")
+
+      val end = 1000
+      val range = 0..end
+
+      for (index in range) {
+         schemaBuilder.appendln("type alias Type$index as String")
+      }
+
+      schemaBuilder.appendln("service serviceWithTooManyOperations {")
+      for (index in 0 until range.last) {
+         schemaBuilder.appendln("operation getType$index(Type$index): Type${index + 1}")
+      }
+      schemaBuilder.appendln("}")
+
+      val stubInvocationService = StubService()
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubInvocationService)
+      val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(schemaBuilder.toString()))
+
+      val fqn = "vyne.example.Type0"
+      val accessibleTypes = vyne.accessibleFrom(fqn)
+      accessibleTypes.should.have.size(end)
+   }
+
+   @Test
    fun `vyne should accept Instant parameters that are in ISO format`() {
       val testSchema = """
          type alias Symbol as String
@@ -920,3 +989,5 @@ fun Vyne.typedValue(typeName: String, value: Any): TypedInstance {
 }
 
 
+data class Edge(val operation: Operation)
+data class Vertex(val type: Type)
