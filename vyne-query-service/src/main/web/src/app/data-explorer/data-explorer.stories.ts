@@ -14,11 +14,14 @@ import {MatIconModule} from '@angular/material/icon';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {DataExplorerModule} from './data-explorer.module';
 import {UploadFile} from 'ngx-file-drop';
+import {sampleOrderEventType} from './sample-type';
+import {RouterTestingModule} from '@angular/router/testing';
+
 
 storiesOf('Data Explorer', module)
   .addDecorator(
     moduleMetadata({
-      imports: [DataExplorerModule],
+      imports: [DataExplorerModule, RouterTestingModule],
     })
   ).add('data source toolbar', () => {
   return {
@@ -47,7 +50,7 @@ storiesOf('Data Explorer', module)
           ['the lazy', 'but very cute', 'pupppppppy!']
         ]
       }
-    }
+    };
   })
   .add('file icon', () => {
     return {
@@ -55,4 +58,20 @@ storiesOf('Data Explorer', module)
       props: {}
     };
   })
+  .add('typed instance panel', () => {
+    return {
+      template: `<div style="margin: 20px">
+        <app-typed-instance-panel [instance]="value" [type]="testType"></app-typed-instance-panel>
+    </div>`,
+      props: {
+        testType: sampleOrderEventType,
+        value: {
+          'typeName': 'cacib.orders.OrderEventType',
+          'value': 'Open'
+        }
+      }
+    };
+  })
+
+;
 

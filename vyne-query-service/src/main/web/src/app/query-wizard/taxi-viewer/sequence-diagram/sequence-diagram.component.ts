@@ -1,12 +1,14 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {QueryResult} from "../query.service";
+import {QueryResult} from '../../../services/query.service';
 
 @Component({
   selector: 'app-sequence-diagram',
   templateUrl: './sequence-diagram.component.html',
   styleUrls: ['./sequence-diagram.component.scss']
 })
-export class SequenceDiagramComponent implements OnInit {
+export class SequenceDiagramComponent {
+  remoteCallMermaid: string;
+
   private _result: QueryResult;
 
   @Input()
@@ -14,36 +16,29 @@ export class SequenceDiagramComponent implements OnInit {
     this._result = value;
     this.generateRemoteCallMermaid();
   }
+
   get result(): QueryResult {
     return this._result;
   }
 
-  constructor() {
-  }
-
-  ngOnInit() {
-  }
-
-  remoteCallMermaid: string;
-
   private generateRemoteCallMermaid() {
-    if (!this._result || this._result.remoteCalls.length == 0) {
-      this.remoteCallMermaid = "";
+    if (!this._result || this._result.remoteCalls.length === 0) {
+      this.remoteCallMermaid = '';
     }
 
-    let remoteCallLines = this._result.remoteCalls.map(remoteCall => {
-      let wasSuccessful = remoteCall.resultCode >= 200 && remoteCall.resultCode <= 299;
-      let resultMessage = wasSuccessful ? "Success " : "Error ";
+    const remoteCallLines = this._result.remoteCalls.map(remoteCall => {
+      const wasSuccessful = remoteCall.resultCode >= 200 && remoteCall.resultCode <= 299;
+      let resultMessage = wasSuccessful ? 'Success ' : 'Error ';
       resultMessage += remoteCall.resultCode;
-      let indent = "    ";
-      let lines = [indent + `Vyne ->> ${remoteCall.service.name}: ${remoteCall.operation} (${remoteCall.method})`,
+      const indent = '    ';
+      const lines = [indent + `Vyne ->> ${remoteCall.service.name}: ${remoteCall.operation} (${remoteCall.method})`,
         indent + `${remoteCall.service.name} ->> Vyne: ${remoteCall.responseTypeName.name} (${remoteCall.durationMs}ms)`
-      ].join("\n");
+      ].join('\n');
       return lines;
 
-    }).join("\n");
+    }).join('\n');
 
-    this.remoteCallMermaid = "sequenceDiagram\n" + remoteCallLines
+    this.remoteCallMermaid = 'sequenceDiagram\n' + remoteCallLines;
   }
 
 

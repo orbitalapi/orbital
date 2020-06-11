@@ -1,5 +1,5 @@
 import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
-import {Schema, Type} from '../services/schema';
+import {findType, Schema, Type} from '../services/schema';
 import {
   VyneHttpServiceError,
   ParsedTypeInstance,
@@ -12,6 +12,7 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {CodeViewerComponent} from '../code-viewer/code-viewer.component';
 import {TypeNamedInstance} from '../services/query.service';
+import {InstanceLike, typeName} from '../object-view/object-view.component';
 
 @Component({
   selector: 'app-data-explorer',
@@ -25,6 +26,20 @@ export class DataExplorerComponent {
   csvContents: ParsedCsvContent;
   fileContents: string;
   fileExtension: string;
+
+  selectedTypeInstance: InstanceLike;
+  selectedTypeInstanceType: Type;
+
+  get showSidePanel(): boolean {
+    return this.selectedTypeInstanceType !== undefined && this.selectedTypeInstance !== null;
+  }
+
+  set showSidePanel(value: boolean) {
+    if (!value) {
+      this.selectedTypeInstance = null;
+    }
+  }
+
 
   private _contentType: Type;
   parsedInstance: ParsedTypeInstance | ParsedTypeInstance[];
@@ -168,4 +183,10 @@ export class DataExplorerComponent {
     this.parseCsvContentIfPossible();
   }
 
+  onInstanceClicked(event: InstanceLike) {
+    this.selectedTypeInstance = event;
+    const instanceTypeName = typeName(event);
+    this.selectedTypeInstanceType = findType(this.schema, instanceTypeName);
+    console.log('clicked: ' + JSON.stringify(event));
+  }
 }

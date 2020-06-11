@@ -1,7 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {SchemaMember, SourceCode, Type, VersionedSource} from '../services/schema';
 import {Contents} from './toc-host.directive';
-import {environment} from "../../environments/environment";
+import {environment} from '../../environments/environment';
 
 @Component({
   selector: 'app-type-viewer',
@@ -9,7 +9,7 @@ import {environment} from "../../environments/environment";
   styleUrls: ['./type-viewer.component.scss']
 })
 export class TypeViewerComponent {
-  showPolicyManager
+  showPolicyManager: boolean;
   schemaMember: SchemaMember;
 
   private _type: Type;
@@ -17,7 +17,7 @@ export class TypeViewerComponent {
   sources: VersionedSource[];
 
   constructor() {
-    this.showPolicyManager = environment.showPolicyManager
+    this.showPolicyManager = environment.showPolicyManager;
   }
 
   @Input()
@@ -33,9 +33,6 @@ export class TypeViewerComponent {
     }
   }
 
-
-  description = ''; //'A person who buys coffee, hopefully lots of it, and collects points like gollum collects shiney rings.  Filth';
-
   contents: Contents;
 
   get hasAttributes() {
@@ -44,6 +41,7 @@ export class TypeViewerComponent {
     }
     return this._type.attributes && Object.keys(this._type.attributes).length > 0;
   }
+
   get hasEnumValues() {
     if (!this._type) {
       return false;

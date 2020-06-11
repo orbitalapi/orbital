@@ -19,8 +19,11 @@ import {
   VersionedSource
 } from './schema';
 import {TypeNamedInstance} from './query.service';
+import {VyneServicesModule} from './vyne-services.module';
 
-@Injectable()
+@Injectable({
+  providedIn: VyneServicesModule
+})
 export class TypesService {
 
   private schema: Schema;
@@ -62,6 +65,10 @@ export class TypesService {
       .pipe(map((policyDto: any[]) => {
         return Policy.parseDtoArray(policyDto);
       }));
+  }
+
+  getDiscoverableTypes(typeName: string): Observable<QualifiedName[]> {
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/types/${typeName}/discoverable-types`)
   }
 
   getType(qualifiedName: string): Observable<Type> {

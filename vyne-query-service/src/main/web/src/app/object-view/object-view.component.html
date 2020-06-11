@@ -1,5 +1,7 @@
 <div class="type-name top-level" *ngIf="topLevel">{{ type?.name.name }}</div>
-<div class="typed-value-container" *ngIf="isPrimitive">
+<div class="typed-value-container" *ngIf="isPrimitive" (click)="onTopLevelPrimitiveClicked()"
+  [class.selectable]="selectable"
+>
   <!--  <div class="type-name">{{ typedObject.typeName }}</div>-->
   <div class="type-value">{{ typedObject.value }}</div>
 </div>
@@ -13,12 +15,16 @@
       <div class="type-name">{{ getTypeForAttribute(attributeName).name.name }}</div>
     </div>
     <div class="attribute-value table-cell"
+         (click)="onAttributeClicked(attributeName)"
+         [class.selectable]="selectable"
          *ngIf="getTypeForAttribute(attributeName).isScalar">{{ getTypedObjectAttributeValue(attributeName) }}</div>
     <app-object-view *ngIf="!getTypeForAttribute(attributeName).isScalar"
                      [instance]="getTypedObjectAttribute(attributeName)"
                      [type]="getTypeForAttribute(attributeName)"
                      [schema]="schema"
                      [topLevel]="false"
+                     [selectable]="selectable"
+                     (instanceClicked)="instanceClicked.emit($event)"
     ></app-object-view>
   </div>
 </div>
@@ -30,6 +36,8 @@
                        [schema]="schema"
                        [type]="collectionMemberType"
                        [topLevel]="false"
+                       [selectable]="selectable"
+                       (instanceClicked)="instanceClicked.emit($event)"
       ></app-object-view>
 
     </div>

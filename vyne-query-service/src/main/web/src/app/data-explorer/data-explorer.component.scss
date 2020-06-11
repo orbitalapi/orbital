@@ -17,6 +17,11 @@ app-data-source-toolbar {
   margin-bottom: 2rem;
 }
 
+.drawer-content {
+  margin: 2rem 3rem;
+  width: 40vw;
+}
+
 .object-view-wrapper {
   margin: 1rem 0;
 }
@@ -35,6 +40,10 @@ td-highlight {
   padding: 1rem;
 }
 
+::ng-deep .mat-drawer-content {
+  // Was getting unnessary horizontal scrollbars in the drawer area.
+  overflow-x: hidden;
+}
 .result-status {
   display: flex;
   align-items: center;

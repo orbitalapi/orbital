@@ -3,6 +3,7 @@ import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
 import {environment} from '../../environments/environment';
+import {SearchModule} from './search.module';
 
 
 export interface SearchResult {
@@ -18,7 +19,9 @@ export interface SearchMatch {
 
 export type SearchField = 'QUALIFIED_NAME' | 'NAME' | 'TYPEDOC';
 
-@Injectable()
+@Injectable({
+  providedIn: SearchModule
+})
 export class SearchService {
 
   constructor(private httpClient: HttpClient) {

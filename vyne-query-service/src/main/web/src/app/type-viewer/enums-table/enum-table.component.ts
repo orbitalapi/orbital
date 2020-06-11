@@ -32,7 +32,7 @@ export class EnumTableComponent {
   }
 
   typeDoc(index: number): string {
-    return this.type.enumValues[index].typeDoc || "";
+    return this.type.enumValues[index].typeDoc || '';
   }
 
   enumValues(): EnumValues[] {
@@ -40,8 +40,8 @@ export class EnumTableComponent {
   }
 
   shortDisplayName(i: number, index: number): string {
-    const synonym = this.type.enumValues[i].synonyms[index] || "";
-    return synonym || "";
+    const synonym = this.type.enumValues[i].synonyms[index] || '';
+    return synonym || '';
   }
 
   longDisplayName(): string {
@@ -49,7 +49,7 @@ export class EnumTableComponent {
   }
 
   synonyms(index?: number): EnumValues {
-    return this.type.enumValues[index]
+    return this.type.enumValues[index];
   }
 
   routerLinkFor(i: number, index: number): string[] {
@@ -58,6 +58,6 @@ export class EnumTableComponent {
     if (synonym) {
       route = QualifiedName.from(synonym).namespace;
     }
-    return ['/types', route || ""];
+    return ['/types', route || ''];
   }
 }

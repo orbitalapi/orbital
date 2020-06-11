@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
 
 import * as mermaid from 'mermaid';
-import {DatePipe} from "@angular/common";
+import {DatePipe} from '@angular/common';
 
 @Component({
   selector: 'mermaid',
@@ -15,18 +15,18 @@ export class MermaidComponent implements OnInit, AfterViewInit {
     return this._chartDef;
   }
 
-  private counter: number = 0;
+  private counter = 0;
 
   @Input()
   set chartDef(value: string) {
-    if (this._chartDef == value) {
-      return
+    if (this._chartDef === value) {
+      return;
     }
     this._chartDef = value;
-    this.renderMermaid()
+    this.renderMermaid();
   }
 
-  @ViewChild("mermaidContainer")
+  @ViewChild('mermaidContainer')
   mermaidContainer: ElementRef;
 
   ngOnInit() {
@@ -38,7 +38,7 @@ export class MermaidComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     if (this._chartDef) {
-      this.renderMermaid()
+      this.renderMermaid();
     }
   }
 
@@ -48,7 +48,7 @@ export class MermaidComponent implements OnInit, AfterViewInit {
       // theme: "dark"
     });
     if (!this.mermaidContainer) {
-      console.log("Not rendering mermaid - container not present yet");
+      console.log('Not rendering mermaid - container not present yet');
       return;
     }
 
@@ -56,21 +56,21 @@ export class MermaidComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    let element = this.mermaidContainer.nativeElement;
-    var insertSvg = function (svgCode, bindFunctions) {
+    const element = this.mermaidContainer.nativeElement;
+    const insertSvg = function (svgCode, bindFunctions) {
       element.innerHTML = svgCode;
     };
 
     this.counter++;
 
-    console.log("Generating mermaid for spec:");
+    console.log('Generating mermaid for spec:');
     console.log(this.chartDef);
-    var graph = mermaid.render('graphDiv' + Date.now(), this._chartDef, insertSvg);
+    const graph = mermaid.render('graphDiv' + Date.now(), this._chartDef, insertSvg);
   }
 
 }
 
-const color2 = "#274060";
+const color2 = '#274060';
 const themeCSS = `
 text.actor {
   font-size: 13px
@@ -112,4 +112,4 @@ text.actor {
     font-family: 'Nunito', verdana, arial;
 }
 
-`
+`;

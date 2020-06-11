@@ -18,6 +18,6 @@
       <mat-icon>close</mat-icon>
     </button>
   </div>
-  <app-code-container lang="json" *ngIf="operation.requestBody" [content]="operation.requestBody" name="Request"></app-code-container>
-  <app-code-container lang="json" *ngIf="operation.response" [content]="operation.response" name="Response"></app-code-container>
+  <app-simple-code-viewer lang="json" *ngIf="operation.requestBody" [content]="operation.requestBody" name="Request"></app-simple-code-viewer>
+  <app-simple-code-viewer lang="json" *ngIf="operation.response" [content]="operation.response" name="Response"></app-simple-code-viewer>
 </div>

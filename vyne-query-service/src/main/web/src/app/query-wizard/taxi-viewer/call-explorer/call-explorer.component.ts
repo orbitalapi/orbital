@@ -19,8 +19,8 @@ export class CallExplorerComponent {
 
   getPathOnly(address: string) {
     // Hack - there's proabably a better way
-    let parts: string[] = address.split("/");
-    return "/" + parts.slice(3).join("/")
+    const parts: string[] = address.split('/');
+    return '/' + parts.slice(3).join('/');
   }
 
   selectOperation(operation) {

@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, ElementRef, Input, ViewChild} from '@angular/core';
-import {QueryResult} from "../query.service";
-import {QualifiedName, SchemaGraphLink, SchemaGraphNode, SchemaNodeSet} from "../../../services/schema";
+import {QualifiedName, SchemaGraphLink, SchemaGraphNode, SchemaNodeSet} from '../../../services/schema';
 import * as shape from 'd3-shape';
+import {QueryResult} from '../../../services/query.service';
 
 @Component({
   selector: 'app-service-graph',
@@ -13,21 +13,13 @@ export class ServiceGraphComponent implements AfterViewInit {
   @ViewChild('chartOuterContianer')
   chartContainer: ElementRef;
 
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      this.chartDimensions = [this.chartContainer.nativeElement.offsetWidth, this.chartContainer.nativeElement.offsetHeight];
-      console.log("Sized chart to " + this.chartDimensions);
-    })
-
-  }
-
   private _queryResult: QueryResult;
 
   typeLinks: SchemaNodeSet;
   showLegend = false;
   curve = shape.curveBundle.beta(1);
   chartDimensions = [50, 50];
-  autoZoom: boolean = true;
+  autoZoom = true;
 
   colors = {
     'vyne': '#FAC51D',
@@ -51,7 +43,14 @@ export class ServiceGraphComponent implements AfterViewInit {
       '#aebfc9'
     ]
   };
-  orientation = "LR";
+  orientation = 'LR';
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      this.chartDimensions = [this.chartContainer.nativeElement.offsetWidth, this.chartContainer.nativeElement.offsetHeight];
+      console.log('Sized chart to ' + this.chartDimensions);
+    });
+  }
 
 
   get result(): QueryResult {
@@ -61,7 +60,7 @@ export class ServiceGraphComponent implements AfterViewInit {
   @Input()
   set result(value: QueryResult) {
     this._queryResult = value;
-    this.typeLinks = this.generateNodes()
+    this.typeLinks = this.generateNodes();
   }
 
   getStroke(node) {
@@ -95,7 +94,7 @@ export class ServiceGraphComponent implements AfterViewInit {
         source: 'caller'
       },
       {
-        label: resultTypes.length > 0 ? QualifiedName.nameOnly(resultTypes[0]) : "Nothing",
+        label: resultTypes.length > 0 ? QualifiedName.nameOnly(resultTypes[0]) : 'Nothing',
         source: 'vyne',
         target: 'caller'
       }
@@ -105,22 +104,22 @@ export class ServiceGraphComponent implements AfterViewInit {
       return {
         node: {
           id: index.toString(),
-          label: QualifiedName.nameOnly(remoteCall.service.fullyQualifiedName) + "." + remoteCall.operation,
+          label: QualifiedName.nameOnly(remoteCall.service.fullyQualifiedName) + '.' + remoteCall.operation,
           returnType: `${remoteCall.responseTypeName.name}`,
           nodeId: index.toString(),
           type: 'operation'
         },
         link: {
           label: `${remoteCall.method} (${remoteCall.durationMs}ms)`,
-          source: "vyne",
+          source: 'vyne',
           target: index.toString()
         }
-      } as NodePair
+      } as NodePair;
     });
     return {
       links: queryLinks.concat(nodePairs.map(p => p.link)),
       nodes: [callerNode, vyneNode].concat(nodePairs.map(p => p.node))
-    }
+    };
   }
 
 

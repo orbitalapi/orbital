@@ -1,7 +1,7 @@
 <div>
   <!--<div class="result-status success-display" *ngIf="isSuccess">-->
-    <!--<i class="material-icons">check_circle_outline</i>-->
-    <!--<span>Success!</span>-->
+  <!--<i class="material-icons">check_circle_outline</i>-->
+  <!--<span>Success!</span>-->
   <!--</div>-->
   <div class="result-status error-display" *ngIf="isError">
     <i class="material-icons">error_outline</i>
@@ -25,57 +25,13 @@
       <mat-tab label="Json">
         <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-card">
 
-          <app-code-container name="Json" [content]="getResultForTypeName(resultTypeName)"
-                              lang="json"></app-code-container>
-        </div>
-      </mat-tab>
+          <app-simple-code-viewer name="Json" [content]="getResultForTypeName(resultTypeName)"
+                                  lang="json"></app-simple-code-viewer>
+        </div>      </mat-tab>
 
     </mat-tab-group>
 
 
     <app-call-explorer *ngIf="showMermaid" [queryResult]="result"></app-call-explorer>
   </div>
-
-
-  <!-- Commenting out the Profiler, as we're not currently returning profile objects from the server, given the verbosity.
-  Will add this back if/when we have a better solution -->
-
-  <!--<mat-card *ngIf="result">-->
-  <!--<mat-card-header>-->
-  <!--<mat-card-title>Profiler</mat-card-title>-->
-  <!--</mat-card-header>-->
-  <!--<mat-card-content>-->
-  <!--<mat-tree [dataSource]="nestedDataSource" [treeControl]="nestedTreeControl" class="results-tree">-->
-  <!--<mat-nested-tree-node *matTreeNodeDef="let node;">-->
-  <!--<div class="operation-container">-->
-  <!--<div class="description">{{ node.operationName }}</div>-->
-  <!--<div class="duration">{{ node.duration}}ms</div>-->
-  <!--<div class="profile-step-results-container">-->
-
-  <!--</div>-->
-  <!--<div class="context-container">-->
-  <!--<button mat-button *ngFor="let contextKey of objectKeys(node.context)">{{contextKey}}</button>-->
-
-  <!--</div>-->
-  <!--<div class="expand-button" *ngIf="hasChildren(node)" matTreeNodeToggle>-->
-  <!--<div><span>{{ node.children.length }} more</span>-->
-  <!--<button mat-icon-button>-->
-  <!--<mat-icon class="mat-icon-rtl-mirror">-->
-  <!--{{nestedTreeControl.isExpanded(node) ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}}-->
-  <!--</mat-icon>-->
-  <!--</button>-->
-  <!--</div>-->
-
-  <!--</div>-->
-  <!--<div [class.results-tree-invisible]="!nestedTreeControl.isExpanded(node)">-->
-  <!--<ng-container matTreeNodeOutlet></ng-container>-->
-  <!--</div>-->
-  <!--</div>-->
-  <!--</mat-nested-tree-node>-->
-  <!--</mat-tree>-->
-  <!--</mat-card-content>-->
-
-  <!--</mat-card>-->
-
-
 </div>
