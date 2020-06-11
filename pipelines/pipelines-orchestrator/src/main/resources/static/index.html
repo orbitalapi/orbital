@@ -282,7 +282,7 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
   "Trader": "O_Fonte_Ion",
   "Text": "",
   "Type": "2",
-  "TimeInForce": "8",
+  "TimeInForce": 8,
   "ExpireDate": "0",
   "ExpireTime": "0",
   "OrderNo": "10385",
@@ -499,7 +499,7 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
                var runner = runners[0]
                console.log(runner)
                $.ajax({
-                   url: runner.uri+ '/testharness/send2kafka/' + $("#kafkaTopic").val() + '?kafkaHost=' + $("#kafkaHost").val(),
+                   url: '/testharness/send2kafka/' + $("#kafkaTopic").val() + '?kafkaHost=' + $("#kafkaHost").val(),
                    type: 'POST',
                    contentType: 'application/json',
                    data: $("#kafkaMessage").val(),

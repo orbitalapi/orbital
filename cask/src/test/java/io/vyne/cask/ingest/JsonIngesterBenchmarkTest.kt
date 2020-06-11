@@ -7,7 +7,6 @@ import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.schemas.fqn
 import io.vyne.utils.Benchmark
 import org.apache.commons.io.FileUtils
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -22,7 +21,6 @@ class JsonIngesterBenchmarkTest {
    val folder = TemporaryFolder()
 
    @Test
-   @Ignore
    fun canStreamJsonData() {
       val taxiSchema = CoinbaseJsonOrderSchema.schemaV1
       val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())

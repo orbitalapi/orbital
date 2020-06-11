@@ -77,9 +77,7 @@ export class CodeViewerComponent {
       monaco.editor.onDidCreateEditor(editorInstance => {
         editorInstance.updateOptions({readOnly: true});
         this.monacoEditor = editorInstance;
-        editorInstance.onDidChangeModelDecorations(() => {
           this.remeasure();
-        });
       });
       monaco.editor.onDidCreateModel(model => {
         this.monacoModel = model;
@@ -110,9 +108,10 @@ export class CodeViewerComponent {
         return;
       }
       const editorDomNode = this.monacoEditor.getDomNode();
+      const offsetHeightFixer = 20;
       if (editorDomNode) {
         const codeContainer = this.monacoEditor.getDomNode().getElementsByClassName('view-lines')[0] as HTMLElement;
-        const calculatedHeight = codeContainer.offsetHeight + 'px';
+        const calculatedHeight = codeContainer.offsetHeight + offsetHeightFixer + 'px';
         editorDomNode.style.height = calculatedHeight;
         const firstParent = editorDomNode.parentElement;
         firstParent.style.height = calculatedHeight;

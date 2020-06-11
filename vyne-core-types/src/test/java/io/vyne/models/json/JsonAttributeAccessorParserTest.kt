@@ -37,7 +37,19 @@ class JsonAttributeAccessorParserTest() {
 
       parser.parseToType(mock(), accessor, node, mock())
 
-      verify(primitiveParser).parse(eq("1"), any())
+      verify(primitiveParser).parse(eq(1), any())
+   }
+
+   @Test
+   fun parseDouble() {
+      val accessor = XpathAccessor("/age")
+
+      var node = jacksonObjectMapper().readTree(""" {  "age": 1.609 } """) as ObjectNode
+
+
+      parser.parseToType(mock(), accessor, node, mock())
+
+      verify(primitiveParser).parse(eq(1.609), any())
    }
 
    @Test
