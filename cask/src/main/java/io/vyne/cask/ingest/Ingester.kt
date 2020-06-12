@@ -21,59 +21,66 @@ class Ingester(
    private val jdbcTemplate: JdbcTemplate,
    private val ingestionStream: IngestionStream) {
 
-   @Deprecated("Remove this in faver of CaskDao")
-    fun destroy() {
-        jdbcTemplate.execute(ingestionStream.dbWrapper.dropTableStatement)
-        TableMetadata.deleteEntry(ingestionStream.type, jdbcTemplate)
-    }
+   @Deprecated("Remove this in favor of CaskDao")
+   fun destroy() {
+      jdbcTemplate.execute(ingestionStream.dbWrapper.dropTableStatement)
+      TableMetadata.deleteEntry(ingestionStream.type, jdbcTemplate)
+   }
 
-   @Deprecated("Remove this in faver of CaskDao")
-    fun initialize() {
-       timed("Ingester.initialize", true, TimeUnit.MILLISECONDS) {
-        jdbcTemplate.execute(TableMetadata.CREATE_TABLE)
-        val createTableStatement = ingestionStream.dbWrapper.createTableStatement
-        val generatedTableName = createTableStatement.generatedTableName
-        log().info("Initializing table $generatedTableName for pipeline for type ${ingestionStream.type.versionedName}")
-        jdbcTemplate.execute(createTableStatement.ddlStatement)
-        log().info("Table $generatedTableName created")
+   @Deprecated("Remove this in favor of CaskDao")
+   fun initialize() {
+      timed("Ingester.initialize", true, TimeUnit.MILLISECONDS) {
+         jdbcTemplate.execute(TableMetadata.CREATE_TABLE)
+         val createTableStatement = ingestionStream.dbWrapper.createTableStatement
+         val generatedTableName = createTableStatement.generatedTableName
+         log().info("Initializing table $generatedTableName for pipeline for type ${ingestionStream.type.versionedName}")
+         jdbcTemplate.execute(createTableStatement.ddlStatement)
+         log().info("Table $generatedTableName created")
 
-        log().info("Creating TableMetadata entry for $generatedTableName")
-        createTableStatement.metadata.executeInsert(jdbcTemplate)
+         log().info("Creating TableMetadata entry for $generatedTableName")
+         createTableStatement.metadata.executeInsert(jdbcTemplate)
       }
-    }
+   }
 
-    // TODO refactor so that we open/close transaction based on types of messages
-    //   1. Message StartTransaction
-    //   2. receive InstanceAttributeSet
-    //   3. receive InstanceAttributeSet
-    //   4. receive InstanceAttributeSet
-    //   ...
-    //   N receive CommitTransaction
+   // TODO refactor so that we open/close transaction based on types of messages
+   //   1. Message StartTransaction
+   //   2. receive InstanceAttributeSet
+   //   3. receive InstanceAttributeSet
+   //   4. receive InstanceAttributeSet
+   //   ...
+   //   N receive CommitTransaction
 
-    fun ingest(): Flux<InstanceAttributeSet> {
-        val connection = jdbcTemplate.dataSource!!.connection
-        val pgConnection = connection.unwrap(PGConnection::class.java)
-        val table = ingestionStream.dbWrapper.rowWriterTable
-        val writer = SimpleRowWriter(table)
-        writer.open(pgConnection)
-        return ingestionStream.feed.stream
-                .doOnComplete {
-                    writer.close()
-                    connection.close()
-                }
-                .doOnEach { signal ->
-                    signal.get()?.let { instance ->
-                        writer.startRow { rowWriter ->
-                            ingestionStream.dbWrapper.write(rowWriter, instance)
-                        }
-                    }
+   fun ingest(): Flux<InstanceAttributeSet> {
+      val connection = jdbcTemplate.dataSource!!.connection
+      val pgConnection = connection.unwrap(PGConnection::class.java)
+      val table = ingestionStream.dbWrapper.rowWriterTable
+      val writer = SimpleRowWriter(table)
+      log().debug("Opening DB connection for ${table.table}")
+      writer.open(pgConnection)
+      return ingestionStream.feed.stream
+         .doOnError {
+            log().debug("Closing DB connection for ${table.table}")
+            writer.close()
+            connection.close()
+         }
+         .doOnComplete {
+            log().debug("Closing DB connection for ${table.table}")
+            writer.close()
+            connection.close()
+         }
+         .doOnEach { signal ->
+            signal.get()?.let { instance ->
+               writer.startRow { rowWriter ->
+                  ingestionStream.dbWrapper.write(rowWriter, instance)
+               }
+            }
 
-                }
+         }
 
-    }
+   }
 
-    fun getRowCount(): Int {
-        val count = jdbcTemplate.queryForObject("SELECT COUNT(*) AS rowcount FROM ${ingestionStream.dbWrapper.tableName}", Int::class.java)!!
-        return count
-    }
+   fun getRowCount(): Int {
+      val count = jdbcTemplate.queryForObject("SELECT COUNT(*) AS rowcount FROM ${ingestionStream.dbWrapper.tableName}", Int::class.java)!!
+      return count
+   }
 }
