@@ -32,6 +32,9 @@ import {CodeViewerModule} from '../code-viewer/code-viewer.module';
 import {CovalentHighlightModule} from '@covalent/highlight';
 import {TypedInstancePanelContainerComponent} from './typed-instance-panel-container.component';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
+import { CaskPanelComponent } from './cask-panel.component';
+import {MatExpansionModule} from '@angular/material/expansion';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
 
 
 @NgModule({
@@ -53,6 +56,7 @@ import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.mod
     MatToolbarModule,
     SearchModule,
     MatSelectModule,
+    MatExpansionModule,
     MatTabsModule,
     MatMenuModule,
     MatTableModule,
@@ -62,7 +66,8 @@ import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.mod
     // Note to future self:  This is named NgxFileDropModule in later versions
     FileDropModule,
     DescriptionEditorModule,
-    InheritanceGraphModule
+    InheritanceGraphModule,
+    MatProgressBarModule
   ],
   declarations: [
     DataSourceToolbarComponent,
@@ -72,14 +77,16 @@ import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.mod
     CsvViewerComponent,
     TypedInstancePanelContainerComponent,
     TypedInstancePanelComponent,
-    DataExplorerComponent
+    DataExplorerComponent,
+    CaskPanelComponent
   ],
   exports: [
     DataSourceToolbarComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
     TypedInstancePanelComponent,
-    TypedInstancePanelContainerComponent
+    TypedInstancePanelContainerComponent,
+    CaskPanelComponent
   ]
 })
 export class DataExplorerModule {

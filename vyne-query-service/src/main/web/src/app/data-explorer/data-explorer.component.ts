@@ -13,6 +13,8 @@ import {MatTabChangeEvent} from '@angular/material/tabs';
 import {CodeViewerComponent} from '../code-viewer/code-viewer.component';
 import {TypeNamedInstance} from '../services/query.service';
 import {InstanceLike, typeName} from '../object-view/object-view.component';
+import {environment} from '../../environments/environment';
+import {CaskService} from '../services/cask.service';
 
 @Component({
   selector: 'app-data-explorer',
@@ -51,13 +53,15 @@ export class DataExplorerComponent {
   parsedInstanceChanged = new EventEmitter<ParsedTypeInstance | ParsedTypeInstance[]>();
   csvOptions: CsvOptions = new CsvOptions();
 
-  constructor(private typesService: TypesService) {
+  constructor(private typesService: TypesService, private caskService: CaskService) {
     this.typesService.getTypes()
       .subscribe(next => this.schema = next);
+    this.caskServiceUrl = environment.queryServiceUrl;
   }
 
   @ViewChild('appCodeViewer', {read: CodeViewerComponent})
   appCodeViewer: CodeViewerComponent;
+  caskServiceUrl: string;
 
   get isCsvContent(): boolean {
     if (!this.fileExtension) {

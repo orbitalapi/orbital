@@ -406,7 +406,7 @@ export function getCollectionMemberType(type: Type, schema: Schema, defaultIfUnk
   } else if (type.aliasForType && type.aliasForType.fullyQualifiedName === PrimitiveTypeNames.ARRAY) {
     return collectionMemberTypeFromArray(type.aliasForType, schema, resolveDefaultType);
   } else {
-    console.warn('Cannot determine collection type from a Non-Array type.  Returning default value');
+    // console.warn('Cannot determine collection type from a Non-Array type.  Returning default value');
     return resolveDefaultType();
   }
 }

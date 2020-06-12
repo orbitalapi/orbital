@@ -16,6 +16,7 @@ import {DataExplorerModule} from './data-explorer.module';
 import {UploadFile} from 'ngx-file-drop';
 import {sampleOrderEventType} from './sample-type';
 import {RouterTestingModule} from '@angular/router/testing';
+import {CsvOptions} from '../services/types.service';
 
 
 storiesOf('Data Explorer', module)
@@ -69,6 +70,17 @@ storiesOf('Data Explorer', module)
           'typeName': 'cacib.orders.OrderEventType',
           'value': 'Open'
         }
+      }
+    };
+  })
+  .add('cask panel', () => {
+    return {
+      template: `<div style="margin: 20px">
+       <app-cask-panel format="json" targetTypeName="demo.Customer"></app-cask-panel>
+       <app-cask-panel format="csv" targetTypeName="demo.Customer" [csvOptions]="csvOptions"></app-cask-panel>
+    </div>`,
+      props: {
+        csvOptions: new CsvOptions(true, ';', 'NULL')
       }
     };
   })

@@ -1,6 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {InstanceLike, typeName} from '../object-view/object-view.component';
 import {Fact, Query, QueryMode, QueryResult, QueryService, ResultMode} from '../services/query.service';
+import {QualifiedName} from '../services/schema';
 
 @Component({
   selector: 'app-inline-query-runner',
@@ -10,7 +11,7 @@ import {Fact, Query, QueryMode, QueryResult, QueryService, ResultMode} from '../
       <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
       <mat-expansion-panel [(expanded)]="expanded">
         <mat-expansion-panel-header>
-          <mat-panel-title>{{ targetType }}</mat-panel-title>
+          <mat-panel-title>{{ targetType.longDisplayName }}</mat-panel-title>
           <mat-panel-description>
             <button mat-stroked-button (click)="executeQueryClicked($event)">Run</button>
           </mat-panel-description>
@@ -34,7 +35,7 @@ export class InlineQueryRunnerComponent {
   facts: InstanceLike[];
 
   @Input()
-  targetType: string;
+  targetType: QualifiedName;
 
   expanded = false;
 
@@ -48,7 +49,7 @@ export class InlineQueryRunnerComponent {
     this.loading = true;
 
     const query = new Query(
-      [this.targetType],
+      [this.targetType.parameterizedName],
       this.facts.map(fact => {
         return new Fact(typeName(fact), fact.value);
       }),
