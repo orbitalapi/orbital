@@ -5,10 +5,14 @@ import com.winterbe.expekt.should
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
+import org.apache.lucene.index.IndexWriter
+import org.apache.lucene.index.IndexWriterConfig
+import org.apache.lucene.store.FSDirectory
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.nio.file.Paths
 
 class LuceneSearchIndexerTest {
    @Rule
@@ -19,7 +23,10 @@ class LuceneSearchIndexerTest {
    lateinit var repository: SearchIndexRepository
    @Before
    fun setup() {
-      repository = VyneEmbeddedSearchConfiguration().searchRepository(tempDir.root.canonicalPath)
+      val directory = FSDirectory.open(Paths.get(tempDir.root.canonicalPath))
+      val indexWriterConfig = IndexWriterConfig(DefaultConfigFactory().config().analyzer)
+      val indexWriter = IndexWriter(directory, indexWriterConfig)
+      repository = SearchIndexRepository(indexWriter, VyneEmbeddedSearchConfiguration().searcherManager(indexWriter), DefaultConfigFactory())
       indexer = SearchIndexer(repository)
       log().info("Search index at ${tempDir.root.canonicalPath}")
 

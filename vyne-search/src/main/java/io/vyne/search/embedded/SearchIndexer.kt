@@ -41,7 +41,7 @@ class SearchIndexer(private val searchIndexRepository: SearchIndexRepository) {
    @EventListener
    fun onSchemaSetChanged(event: SchemaSetChangedEvent) {
       log().info("Schema set changed, re-indexing")
-      createNewIndex(event.newSchemaSet)
+      deleteAndRebuildIndex(event.newSchemaSet)
    }
 
    internal fun deleteAndRebuildIndex(schemaSet: SchemaSet) {
