@@ -33,6 +33,7 @@
 
    <modules>
       <module>cask</module>
+      <module>eureka</module>
       <module>vyne-core-types</module>
       <module>events-api</module>
       <module>vyne-search</module>
@@ -49,9 +50,9 @@
       <module>vyne-client-spring</module>
       <module>file-schema-server</module>
       <module>pipelines</module>
-       <module>cask-api</module>
+      <module>cask-api</module>
       <module>vyne-ql</module>
-       <module>vyne-taxi</module>
+      <module>vyne-taxi</module>
    </modules>
 
    <scm>
