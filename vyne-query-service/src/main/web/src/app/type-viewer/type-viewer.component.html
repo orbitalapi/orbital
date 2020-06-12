@@ -3,7 +3,7 @@
   <span class="toolbar-spacer"></span>
   <app-search-bar-container></app-search-bar-container>
 
-<!--  <button mat-button>Create</button>-->
+  <!--  <button mat-button>Create</button>-->
   <!--<mat-form-field class="search-bar" floatLabel="never">-->
   <!--<mat-icon matPrefix>search</mat-icon>-->
   <!--<mat-label>Search</mat-label>-->
@@ -25,6 +25,7 @@
     <section>
       <app-description-editor-container [type]="type"></app-description-editor-container>
     </section>
+    <app-inheritance-graph *ngIf="inheritanceView" [inheritable]="inheritanceView"></app-inheritance-graph>
     <section *ngIf="hasAttributes">
       <h2>Attributes</h2>
       <app-attribute-table [type]="type"></app-attribute-table>

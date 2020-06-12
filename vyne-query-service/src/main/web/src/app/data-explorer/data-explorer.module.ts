@@ -31,6 +31,7 @@ import {SearchModule} from '../search/search.module';
 import {CodeViewerModule} from '../code-viewer/code-viewer.module';
 import {CovalentHighlightModule} from '@covalent/highlight';
 import {TypedInstancePanelContainerComponent} from './typed-instance-panel-container.component';
+import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
 
 
 @NgModule({
@@ -60,7 +61,8 @@ import {TypedInstancePanelContainerComponent} from './typed-instance-panel-conta
     MatSidenavModule,
     // Note to future self:  This is named NgxFileDropModule in later versions
     FileDropModule,
-    DescriptionEditorModule
+    DescriptionEditorModule,
+    InheritanceGraphModule
   ],
   declarations: [
     DataSourceToolbarComponent,

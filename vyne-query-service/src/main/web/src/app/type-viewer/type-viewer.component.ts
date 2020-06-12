@@ -1,7 +1,8 @@
 import {Component, Input} from '@angular/core';
-import {SchemaMember, SourceCode, Type, VersionedSource} from '../services/schema';
+import {Schema, SchemaMember, SourceCode, Type, VersionedSource} from '../services/schema';
 import {Contents} from './toc-host.directive';
 import {environment} from '../../environments/environment';
+import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
 
 @Component({
   selector: 'app-type-viewer',
@@ -14,11 +15,18 @@ export class TypeViewerComponent {
 
   private _type: Type;
 
+  @Input()
+  schema: Schema;
+
   sources: VersionedSource[];
+
+  @Input()
+  inheritanceView: Inheritable;
 
   constructor() {
     this.showPolicyManager = environment.showPolicyManager;
   }
+
 
   @Input()
   get type(): Type {

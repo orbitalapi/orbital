@@ -49,7 +49,7 @@ export interface Type extends Documented {
   inheritsFrom: QualifiedName[];
 }
 
-export interface EnumValues{
+export interface EnumValues {
   name: string;
   value: any;
   synonyms: Array<string>;
@@ -219,6 +219,7 @@ export interface SchemaGraphNode {
   label: string;
   type: string; // Consider adding the enum ElementType here
   nodeId: string;
+  subHeader?: string | null;
 }
 
 export interface SchemaGraphLink {
