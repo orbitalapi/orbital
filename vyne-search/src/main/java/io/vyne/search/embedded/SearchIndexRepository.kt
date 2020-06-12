@@ -1,60 +1,35 @@
 package io.vyne.search.embedded
 
-import com.google.common.base.MoreObjects
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
-import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.document.Document
-import org.apache.lucene.index.*
-import org.apache.lucene.search.*
+import org.apache.lucene.index.IndexWriter
+import org.apache.lucene.index.Term
+import org.apache.lucene.search.BooleanClause
+import org.apache.lucene.search.BooleanQuery
+import org.apache.lucene.search.BoostQuery
+import org.apache.lucene.search.FuzzyQuery
+import org.apache.lucene.search.PrefixQuery
+import org.apache.lucene.search.SearcherManager
 import org.apache.lucene.search.highlight.Highlighter
-import org.apache.lucene.store.BaseDirectory
+import org.springframework.stereotype.Component
 
-
-class SearchIndexRepository(private val directory: BaseDirectory, private val configFactory: ConfigFactory) {
-//   private val indexReader: IndexReader
-//   private val searcher: IndexSearcher
-
-   private val analyzer: Analyzer
-
-   init {
-      // create the writer first, to ensure the index exists before reading
-      initialize()
-
-      analyzer = configFactory.config().analyzer
-
-//      indexReader = DirectoryReader.open(directory)
-//      searcher = IndexSearcher(indexReader)
-   }
-
-   private fun initialize() {
-      log().info("Initializing search index")
-      val initWriter = newWriter()
-      initWriter.commit()
-      initWriter.close()
-   }
-
+@Component
+class SearchIndexRepository(private val indexWriter:IndexWriter, private val searchManager: SearcherManager, private val configFactory: ConfigFactory) {
    fun destroyAndInitialize() {
       log().info("Destroying existing search indices")
-      directory.listAll().forEach { file -> directory.deleteFile(file) }
-      initialize()
-   }
-
-   private fun newWriter(): IndexWriter {
-      return IndexWriter(directory, configFactory.config())
+      indexWriter.deleteAll()
+      indexWriter.commit()
    }
 
    fun writeAll(documents: List<Document>) {
-      val writer = newWriter()
-      writer.use { theWriter ->
-         theWriter.addDocuments(documents)
-         writer.commit()
-      }
-
+      indexWriter.addDocuments(documents)
+      indexWriter.commit()
    }
 
    fun search(term: String): List<SearchResult> {
+      searchManager.maybeRefresh()
       val queryBuilder = BooleanQuery.Builder()
       SearchField.values().forEach { field ->
          // Decreasing the score of fuzzy search as it can produce a match for 'time' when we search for 'fixe'
@@ -62,8 +37,7 @@ class SearchIndexRepository(private val directory: BaseDirectory, private val co
          queryBuilder.add(BoostQuery(PrefixQuery(Term(field.fieldName, term.toLowerCase())),  field.boostFactor), BooleanClause.Occur.SHOULD)
       }
       val query = queryBuilder.build()
-      val indexReader = DirectoryReader.open(directory)
-      val searcher = IndexSearcher(indexReader)
+      val searcher = searchManager.acquire()
 
       val result = searcher.search(query, 1000)
       val highlighter = SearchHighlighter.newHighlighter(query)
@@ -122,7 +96,7 @@ class SearchIndexRepository(private val directory: BaseDirectory, private val co
    }
 
    private fun highlightResult(highlighter: Highlighter, searchField: SearchField, fieldContents: String): SearchMatch? {
-      return highlighter.getBestFragment(analyzer, searchField.fieldName, fieldContents)
+      return highlighter.getBestFragment(configFactory.config().analyzer, searchField.fieldName, fieldContents)
          ?.let { highlight ->
             SearchMatch(searchField, highlight)
          }
