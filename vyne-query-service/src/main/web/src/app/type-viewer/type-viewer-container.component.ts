@@ -2,20 +2,22 @@ import {Component, OnInit} from '@angular/core';
 import {TypesService} from '../services/types.service';
 import {ActivatedRoute, ParamMap} from '@angular/router';
 import {map} from 'rxjs/operators';
-import {Type} from '../services/schema';
+import {Schema, Type} from '../services/schema';
+import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
 
 @Component({
   selector: 'app-type-viewer-container',
   template: `
-    <app-type-viewer [type]="type"></app-type-viewer>`
+    <app-type-viewer [type]="type" [inheritanceView]="inheritenceView"></app-type-viewer>`
 })
 export class TypeViewerContainerComponent implements OnInit {
-
   constructor(private typeService: TypesService, private activeRoute: ActivatedRoute) {
   }
 
   private typeName: string;
   type: Type;
+  inheritenceView: Inheritable;
+
 
   ngOnInit() {
     this.activeRoute.paramMap.pipe(
@@ -23,6 +25,9 @@ export class TypeViewerContainerComponent implements OnInit {
     ).subscribe(typeName => {
       this.typeName = typeName;
       this.typeService.getType(this.typeName).subscribe(type => this.type = type);
+      this.typeService.getTypes().subscribe(schema => {
+        this.inheritenceView = buildInheritable(this.type, schema);
+      });
     });
   }
 }

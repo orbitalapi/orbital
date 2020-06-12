@@ -1,6 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {QualifiedName, Type} from '../services/schema';
 import {InstanceLike} from '../object-view/object-view.component';
+import {Inheritable} from '../inheritence-graph/inheritance-graph.component';
 
 @Component({
   selector: 'app-typed-instance-panel',
@@ -14,6 +15,10 @@ import {InstanceLike} from '../object-view/object-view.component';
       <section>
         <app-description-editor-container [type]="type"></app-description-editor-container>
       </section>
+      <section *ngIf="inheritanceView">
+        <app-inheritance-graph [inheritable]="inheritanceView"></app-inheritance-graph>
+      </section>
+
       <section *ngIf="hasDiscoverableTypes">
         <h3>Discoverable data</h3>
         <p>Quick link queries to discover relevant data</p>
@@ -42,6 +47,9 @@ export class TypedInstancePanelComponent {
 
   @Input()
   discoverableTypes: QualifiedName[];
+
+  @Input()
+  inheritanceView: Inheritable;
 
   get hasDiscoverableTypes() {
     return this.discoverableTypes && this.discoverableTypes.length > 0;

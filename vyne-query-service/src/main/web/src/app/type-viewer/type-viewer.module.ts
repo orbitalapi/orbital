@@ -14,6 +14,7 @@ import {CodeViewerModule} from '../code-viewer/code-viewer.module';
 import {PolicyManagerModule} from '../policy-manager/policy-manager.module';
 import {TocHostDirective} from './toc-host.directive';
 import {TypeViewerContainerComponent} from './type-viewer-container.component';
+import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
 
 
 @NgModule({
@@ -29,7 +30,8 @@ import {TypeViewerContainerComponent} from './type-viewer-container.component';
     EnumTableModule,
     TypeLinkGraphModule,
     CodeViewerModule,
-    PolicyManagerModule
+    PolicyManagerModule,
+    InheritanceGraphModule
   ],
   declarations: [
     TocHostDirective,
