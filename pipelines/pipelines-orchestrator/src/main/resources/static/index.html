@@ -111,6 +111,18 @@
                </button>
 
             </div>
+
+            <div class="col text-center">
+
+               <!-- ION Trade PIPELINE -->
+               <div class="form-group">
+                  <textarea class="form-control" id="pipelineDefinitionIonTrade" rows="10"></textarea>
+               </div>
+               <button type="submit" class="btn btn-primary" id="deployToPipelineIonTrade">Deploy Ion Trade
+                  pipeline
+               </button>
+
+            </div>
          </div>
       </div>
 
@@ -276,9 +288,13 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
          "ion-trade": {
             topic: "ion-trade-json-avro-input",
             message: JSON.stringify({
-               "OrderID": "10385_20200505_0",
-               "TradeID": "99999_99999999_999",
-               "CpMember": "JP MORGAN LONDON"
+              "OrderId": "10385_20200505_0",
+              "OrderNo": "10385_20200505_0",
+              "TradeId": "99999_99999999_999",
+              "TradeNo": "99999_99999999_999",
+              "CpMember": "JP MORGAN LONDON",
+              "CounterpartyName": "CounterpartyName",
+              "SubRicosID": "SubRicosID"
             }
             ,null, 4)
          },
@@ -572,7 +588,7 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
     var pipelineDefinitionHpc = createPipelineDescription("hpc", "hpc-csv-avro-input", "hpc-csv-avro-pipeline", "hpc.orders.Order", "csv")
     var pipelineDefinitionCemafor = createPipelineDescription("cemafor", "cemafor-json-avro-input", "cemafor-json-avro-pipeline", "cacib.cemafor.orders.Order", "json")
     var pipelineDefinitionIon = createPipelineDescription("ion", "ion-json-avro-input", "ion-json-avro-pipeline", "ion.orders.Order", "json")
-    var pipelineDefinitionIon = createPipelineDescription("ion-trade", "ion-trade-json-avro-input", "ion-trade-json-avro-pipeline", "ion.trade.Trade", "json")
+    var pipelineDefinitionIonTrade = createPipelineDescription("ion-trade", "ion-trade-json-avro-input", "ion-trade-json-avro-pipeline", "ion.trade.Trade", "json")
 
     function createPipelineDescription(entityName, topic, name, type, contentType) {
       return {
@@ -645,10 +661,12 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
         $("#pipelineDefinitionHpc").append(JSON.stringify(pipelineDefinitionHpc, null, 4));
         $("#pipelineDefinitionCema4").append(JSON.stringify(pipelineDefinitionCemafor, null, 4));
         $("#pipelineDefinitionIon").append(JSON.stringify(pipelineDefinitionIon, null, 4));
+        $("#pipelineDefinitionIonTrade").append(JSON.stringify(pipelineDefinitionIonTrade, null, 4));
         $("#pipelineOrchestratorUrl").val(pipelineOrchestratorUrl);
         bindPipeline('#deployToPipelineHpc', '#pipelineDefinitionHpc')
         bindPipeline('#deployToPipelineCema4', '#pipelineDefinitionCema4')
         bindPipeline('#deployToPipelineIon', '#pipelineDefinitionIon')
+        bindPipeline('#deployToPipelineIonTrade', '#pipelineDefinitionIonTrade')
 
          fetchPipelines();
          fetchRunners();
