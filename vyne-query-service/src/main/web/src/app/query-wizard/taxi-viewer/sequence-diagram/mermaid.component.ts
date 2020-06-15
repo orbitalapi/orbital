@@ -26,7 +26,7 @@ export class MermaidComponent implements OnInit, AfterViewInit {
     this.renderMermaid();
   }
 
-  @ViewChild('mermaidContainer')
+  @ViewChild('mermaidContainer', {static:true})
   mermaidContainer: ElementRef;
 
   ngOnInit() {

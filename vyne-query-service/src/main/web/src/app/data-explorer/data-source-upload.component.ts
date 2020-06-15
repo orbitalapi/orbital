@@ -32,7 +32,7 @@ export class DataSourceUploadComponent {
   @Output()
   fileSelected = new EventEmitter<UploadFile>();
 
-  @ViewChild('dropContainerInner', {read: ElementRef}) tref: ElementRef;
+  @ViewChild('dropContainerInner', {read: ElementRef, static: true}) tref: ElementRef;
 
   dropped(event: UploadEvent) {
     if (event.files.length === 1) {

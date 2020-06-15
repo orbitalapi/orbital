@@ -59,7 +59,7 @@ export class DataExplorerComponent {
     this.caskServiceUrl = environment.queryServiceUrl;
   }
 
-  @ViewChild('appCodeViewer', {read: CodeViewerComponent})
+  @ViewChild('appCodeViewer', {read: CodeViewerComponent, static: true})
   appCodeViewer: CodeViewerComponent;
   caskServiceUrl: string;
 

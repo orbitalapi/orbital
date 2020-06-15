@@ -10,7 +10,7 @@ import {QueryResult} from '../../../services/query.service';
 })
 export class ServiceGraphComponent implements AfterViewInit {
 
-  @ViewChild('chartOuterContianer')
+  @ViewChild('chartOuterContianer', {static:true})
   chartContainer: ElementRef;
 
   private _queryResult: QueryResult;

@@ -43,7 +43,7 @@ export class CodeViewerComponent {
   selectedSource: VersionedSource;
   selectedSourceErrors: SourceCompilationError[];
 
-  @ViewChild(MonacoEditorComponent)
+  @ViewChild(MonacoEditorComponent , {static: true})
   editor: MonacoEditorComponent;
 
   monacoEditor: ICodeEditor;
