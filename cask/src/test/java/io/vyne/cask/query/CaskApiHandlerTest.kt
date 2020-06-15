@@ -95,4 +95,23 @@ class CaskApiHandlerTest {
       "orderDate".should.equal(columnNameCaptor.firstValue)
       "2020-12-01".should.equal(beforeArgumentCaptor.firstValue)
    }
+
+   @Test
+   fun `handler can map findOne Request`() {
+      // Given  findOneBy/OrderWindowSummary/symbol/BTCUSD
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val request = mock<ServerRequest>() {
+         on { path() } doReturn "/api/cask/findOneBy/OrderWindowSummary/symbol/BTCUSD"
+      }
+      val mockedVersionedType = mock<VersionedType>()
+      val columnNameCaptor = argumentCaptor<String>()
+      val projectionValueCaptor = argumentCaptor<String>()
+      whenever(mockCaskService.resolveType(eq("OrderWindowSummary"))).thenReturn(Either.right(mockedVersionedType))
+      // When
+      caskApiHandler.findBy(request)
+      // Then
+      verify(mockCaskDao, times(1)).findOne(any(), columnNameCaptor.capture(), projectionValueCaptor.capture())
+      "symbol".should.equal(columnNameCaptor.firstValue)
+      "BTCUSD".should.equal(projectionValueCaptor.firstValue)
+   }
 }
