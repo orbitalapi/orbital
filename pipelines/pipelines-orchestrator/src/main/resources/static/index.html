@@ -572,7 +572,7 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
     var pipelineDefinitionHpc = createPipelineDescription("hpc", "hpc-csv-avro-input", "hpc-csv-avro-pipeline", "hpc.orders.Order", "csv")
     var pipelineDefinitionCemafor = createPipelineDescription("cemafor", "cemafor-json-avro-input", "cemafor-json-avro-pipeline", "cacib.cemafor.orders.Order", "json")
     var pipelineDefinitionIon = createPipelineDescription("ion", "ion-json-avro-input", "ion-json-avro-pipeline", "ion.orders.Order", "json")
-    var pipelineDefinitionIon = createPipelineDescription("ion-trade", "ion-trade-json-avro-input", "ion-trade-json-avro-pipeline", "ion.trades.Trade", "json")
+    var pipelineDefinitionIon = createPipelineDescription("ion-trade", "ion-trade-json-avro-input", "ion-trade-json-avro-pipeline", "ion.trade.Trade", "json")
 
     function createPipelineDescription(entityName, topic, name, type, contentType) {
       return {
