@@ -53,6 +53,17 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       }
    }
 
+   fun findOne(versionedType: VersionedType, columnName: String, arg: String): Map<String, Any> {
+      return timed("${versionedType.versionedName}.findOne${columnName}") {
+         val tableName = versionedType.caskRecordTable()
+         val originalTypeSchema = schemaProvider.schema()
+         val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
+         val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
+         val findOneArg = jdbcQueryArgumentType(fieldType, arg)
+         jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg).first()
+      }
+   }
+
    fun findBetween(versionedType: VersionedType, columnName: String, start: String, end: String): List<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
          val field = fieldForColumnName(versionedType, columnName)

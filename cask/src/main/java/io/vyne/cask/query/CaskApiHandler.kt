@@ -27,6 +27,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          uriComponents.pathSegments.contains(BetweenTemporalOperationGenerator.ExpectedAnnotationName) -> findByBetween(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains(AfterTemporalOperationGenerator.ExpectedAnnotationName) -> findByAfter(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains(BeforeTemporalOperationGenerator.ExpectedAnnotationName) -> findByBefore(request, requestPath, uriComponents)
+         uriComponents.pathSegments.contains("findOneBy") -> findOne(request, requestPath, uriComponents)
          else -> findByField(request, requestPath, uriComponents)
       }
    }
@@ -45,6 +46,26 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             ok()
                .contentType(MediaType.APPLICATION_JSON)
                .body(BodyInserters.fromValue(caskDAO.findBy(versionedType.b, fieldName, findByValue)))
+         }
+      }
+   }
+
+
+   fun findOne(request: ServerRequest, requestPathOriginal: String, uriComponents: UriComponents): Mono<ServerResponse> {
+      val requestPath = requestPathOriginal.replace("findOneBy/", "")
+      val fieldNameAndValue = fieldNameAndArgs(uriComponents, 2)
+      val fieldName = fieldNameAndValue.first()
+      val findByValue = fieldNameAndValue.last()
+      val caskType = uriComponents.pathSegments.dropLast(2).drop(1).joinToString(".")
+      return when (val versionedType = caskService.resolveType(caskType)) {
+         is Either.Left -> {
+            log().info("The type failed to resolve for request $requestPath Error: ${versionedType.a.message}")
+            badRequest().build()
+         }
+         is Either.Right -> {
+            ok()
+               .contentType(MediaType.APPLICATION_JSON)
+               .body(BodyInserters.fromValue(caskDAO.findOne(versionedType.b, fieldName, findByValue)))
          }
       }
    }
