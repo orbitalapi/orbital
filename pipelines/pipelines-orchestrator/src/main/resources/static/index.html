@@ -121,14 +121,18 @@
 
       <div class="col">
          <div class="row">
-            <div class="col">
+            <div class="col-4">
                <h3><span class="fa fa-envelope"><b> Messages</b></span></h3>
             </div>
             <div class="col text-right">
                <span>
+                  <span><b>Orders:</b> </span>
                   <button class="btn btn-light btn-small" id="msgHpc">HPC</button>
                   <button class="btn btn-light btn-small" id="msgCem4">CEM4</button>
                   <button class="btn btn-light btn-small" id="msgIon">ION</button>
+
+                  <span class="border-left"><b>Trades:</b> </span>
+                  <button class="btn btn-light btn-small" id="msgIonTrade">ION trade</button>
                </span>
             </div>
          </div>
@@ -268,6 +272,15 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
 },null, 4)
 
            },
+
+         "ion-trade": {
+            topic: "ion-trade-json-avro-input",
+            message: JSON.stringify({
+               "OrderId": "10385_20200505_0",
+               "CPMember":	"MILLENIUM2"
+            },null, 4)
+         },
+
            ion: {
             topic: "ion-json-avro-input",
             message: JSON.stringify({
@@ -478,7 +491,6 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
            },
          }
 
-
        function messageSet(buttonSelector, values){
          $(buttonSelector).click(function () {
               $("#kafkaHost").val(kafkaHost);
@@ -490,6 +502,7 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
        messageSet("#msgHpc", messageSets.hpc)
        messageSet("#msgCem4", messageSets.cem4)
        messageSet("#msgIon", messageSets.ion)
+       messageSet("#msgIonTrade", messageSets["ion-trade"])
 
         $("#kafkaMessageSubmitButton").click(function () {
 
@@ -557,6 +570,7 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
     var pipelineDefinitionHpc = createPipelineDescription("hpc", "hpc-csv-avro-input", "hpc-csv-avro-pipeline", "hpc.orders.Order", "csv")
     var pipelineDefinitionCemafor = createPipelineDescription("cemafor", "cemafor-json-avro-input", "cemafor-json-avro-pipeline", "cacib.cemafor.orders.Order", "json")
     var pipelineDefinitionIon = createPipelineDescription("ion", "ion-json-avro-input", "ion-json-avro-pipeline", "ion.orders.Order", "json")
+    var pipelineDefinitionIon = createPipelineDescription("ion-trade", "ion-trade-json-avro-input", "ion-trade-json-avro-pipeline", "ion.trades.Trade", "json")
 
     function createPipelineDescription(entityName, topic, name, type, contentType) {
       return {
@@ -633,7 +647,6 @@ ZC Inflation Swap;Opened;969500AMLHB21RACL168;1;1VUV7VQFKUOQSJ21A208;11111111;EL
         bindPipeline('#deployToPipelineHpc', '#pipelineDefinitionHpc')
         bindPipeline('#deployToPipelineCema4', '#pipelineDefinitionCema4')
         bindPipeline('#deployToPipelineIon', '#pipelineDefinitionIon')
-
 
          fetchPipelines();
          fetchRunners();
