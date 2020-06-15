@@ -17,14 +17,18 @@ import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpRequest
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.ClientHttpResponse
+import org.springframework.http.converter.StringHttpMessageConverter
 import org.springframework.web.client.ResponseErrorHandler
 import org.springframework.web.client.RestTemplate
+
 
 class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                           val restTemplate: RestTemplate,
@@ -37,7 +41,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       : this(schemaProvider, restTemplateBuilder
       .errorHandler(CatchingErrorHandler())
       .additionalInterceptors(LoggingRequestInterceptor())
-      .build(), serviceUrlResolvers)
+   .build(), serviceUrlResolvers)
 
    private val uriVariableProvider = UriVariableProvider()
 
@@ -69,7 +73,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          httpInvokeOperation.addContext("Service", service)
          httpInvokeOperation.addContext("Operation", operation)
 
-         val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody, Any::class.java, uriVariables)
+         val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody.first, requestBody.second, uriVariables)
 //         httpInvokeOperation.stop(result)
 
          val expandedUri = restTemplate.uriTemplateHandler.expand(absoluteUrl, uriVariables)
@@ -77,7 +81,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
             service.name, expandedUri.toASCIIString(),
             operation.name,
             operation.returnType.name,
-            httpMethod.name, requestBody.body, result.statusCodeValue, httpInvokeOperation.duration, result.body
+            httpMethod.name, requestBody.first.body, result.statusCodeValue, httpInvokeOperation.duration, result.body
          ))
          if (result.statusCode.is2xxSuccessful) {
             handleSuccessfulHttpResponse(result, operation)
@@ -90,13 +94,13 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
    }
 
-   private fun handleFailedHttpResponse(result: ResponseEntity<Any>, operation: Operation, absoluteUrl: Any, httpMethod: HttpMethod, requestBody: Any) {
+   private fun handleFailedHttpResponse(result: ResponseEntity<out Any>, operation: Operation, absoluteUrl: Any, httpMethod: HttpMethod, requestBody: Any) {
       val message = "Failed load invoke $httpMethod to $absoluteUrl - received $result"
       log().error(message)
       throw OperationInvocationException(message)
    }
 
-   private fun handleSuccessfulHttpResponse(result: ResponseEntity<Any>, operation: Operation): TypedInstance {
+   private fun handleSuccessfulHttpResponse(result: ResponseEntity<out Any>, operation: Operation): TypedInstance {
       // TODO : Handle scenario where we get a 2xx response, but no body
       log().debug("Result of ${operation.name} was $result")
       val resultBody = result.body
@@ -115,17 +119,24 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       return this.serviceUrlResolvers.first { it.canResolve(service, operation) }.makeAbsolute(url, service, operation)
    }
 
-   private fun buildRequestBody(operation: Operation, parameters: List<TypedInstance>): HttpEntity<*> {
+   private fun buildRequestBody(operation: Operation, parameters: List<TypedInstance>): Pair<HttpEntity<*>, Class<*>> {
+     if (operation.hasMetadata("HttpOperation")) {
+        // TODO Revisit as this is a quick hack to invoke services that returns simple/text
+        val httpOperation = operation.metadata("HttpOperation")
+        httpOperation.params["consumes"]?.let {
+           val httpHeaders =  HttpHeaders()
+           httpHeaders.accept = mutableListOf(MediaType.parseMediaType(it as String))
+           return HttpEntity<String>(httpHeaders) to String::class.java
+        }
+     }
       val requestBodyParamIdx = operation.parameters.indexOfFirst { it.hasMetadata("RequestBody") }
-      if (requestBodyParamIdx == -1) return HttpEntity.EMPTY
-
-
+      if (requestBodyParamIdx == -1) return HttpEntity.EMPTY to Any::class.java
       // TODO : For now, only looking up param based on type.  This is obviously naieve, and should
       // be improved, using name / position?  (note that parameters don't appear to be ordered in the list).
 
       val requestBodyParamType = operation.parameters[requestBodyParamIdx].type
       val requestBodyTypedInstance = parameters.first { it.type.name == requestBodyParamType.name }
-      return HttpEntity(requestBodyTypedInstance.toRawObject())
+      return HttpEntity(requestBodyTypedInstance.toRawObject()) to Any::class.java
 
    }
 
