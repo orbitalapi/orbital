@@ -47,7 +47,7 @@ import {COMMA, ENTER} from '@angular/cdk/keycodes';
 export class TypeAutocompleteComponent implements OnInit {
   separatorKeysCodes: number[] = [ENTER, COMMA];
 
-  @ViewChild('chipInput') chipInput: ElementRef<HTMLInputElement>;
+  @ViewChild('chipInput' , {static: true}) chipInput: ElementRef<HTMLInputElement>;
 
   @Input()
   multiSelect = false;

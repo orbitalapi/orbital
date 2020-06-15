@@ -97,7 +97,7 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   constructor() {
   }
 
-  @ViewChild('container') containerRef: ElementRef;
+  @ViewChild('container', {static: true}) containerRef: ElementRef;
 
   ngOnInit() {
 

@@ -65,7 +65,7 @@ export class TypeLinkGraphComponent {
   nodeClicked: EventEmitter<SchemaGraphNode> = new EventEmitter<SchemaGraphNode>();
 
 
-  @ViewChild('chartOuterContianer')
+  @ViewChild('chartOuterContianer' , {static: true})
   chartContainer: ElementRef;
 
 

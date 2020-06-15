@@ -56,7 +56,7 @@ export class DataExplorerComponent {
       .subscribe(next => this.schema = next);
   }
 
-  @ViewChild('appCodeViewer', {read: CodeViewerComponent})
+  @ViewChild('appCodeViewer', {read: CodeViewerComponent, static: true})
   appCodeViewer: CodeViewerComponent;
 
   get isCsvContent(): boolean {
