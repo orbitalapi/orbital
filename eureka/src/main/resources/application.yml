@@ -1,0 +1,14 @@
+server:
+   port: 8761
+
+eureka:
+   client:
+      register-with-eureka: false
+      fetch-registry: false
+
+# Logs disabled as Eureka tries to find peer and logs periodic exceptions
+# https://spring.io/guides/gs/service-registration-and-discovery/#initial
+logging:
+   level:
+     com.netflix.eureka: OFF
+     com.netflix.discovery: OFF
