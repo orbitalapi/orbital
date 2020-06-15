@@ -25,6 +25,15 @@
       <i class="material-icons">error_outline</i>
       <span>{{ parserErrorMessage.message }}</span>
     </div>
+
+    <div class="cask-container" *ngIf="fileContents && contentType">
+      <app-cask-panel [csvOptions]="csvOptions"
+                      [format]="fileExtension"
+                      [caskServiceUrl]="caskServiceUrl"
+                      [contents]="fileContents"
+                      [targetTypeName]="contentType.name.fullyQualifiedName"
+      ></app-cask-panel>
+    </div>
     <mat-tab-group animationDuration="250ms"
                    *ngIf="fileContents"
                    (selectedTabChange)="onSelectedTabChanged($event)">

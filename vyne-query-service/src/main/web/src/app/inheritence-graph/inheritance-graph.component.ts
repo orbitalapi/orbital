@@ -112,6 +112,14 @@ export class InheritanceGraphComponent {
       nodes,
       links
     };
+
+    function appendToNodeSet(inheritableTarget: Inheritable | null, label: string) {
+      if (inheritable === null) {
+        return;
+      }
+
+    }
+
     if (inheritable.inheritsFrom) {
       const inheritedNode = nameToNode(inheritable.inheritsFrom.name);
       nodes.push(inheritedNode);
@@ -124,6 +132,20 @@ export class InheritanceGraphComponent {
       nodeSet.nodes.push.apply(nodeSet.nodes, inheritedGraph.nodes);
       nodeSet.links.push.apply(nodeSet.links, inheritedGraph.links);
     }
+
+    if (inheritable.aliasFor) {
+      const inheritedNode = nameToNode(inheritable.aliasFor.name);
+      nodes.push(inheritedNode);
+      links.push({
+        source: node.nodeId,
+        target: inheritedNode.nodeId,
+        label: 'alias'
+      });
+      const inheritedGraph = this.getGraph(inheritable.aliasFor, false);
+      nodeSet.nodes.push.apply(nodeSet.nodes, inheritedGraph.nodes);
+      nodeSet.links.push.apply(nodeSet.links, inheritedGraph.links);
+    }
+
 
     return nodeSet;
   }
@@ -142,13 +164,19 @@ export function buildInheritable(type: Type, schema: Schema): Inheritable {
   if (type.inheritsFrom && type.inheritsFrom.length === 1) {
     inheritsFrom = buildInheritable(findType(schema, type.inheritsFrom[0].fullyQualifiedName), schema);
   }
+  let aliasFor: Inheritable = null;
+  if (type.aliasForType) {
+    aliasFor = buildInheritable(findType(schema, type.aliasForType.fullyQualifiedName), schema);
+  }
   return {
     name: type.name,
-    inheritsFrom
+    inheritsFrom,
+    aliasFor
   };
 }
 
 export interface Inheritable {
   name: QualifiedName;
   inheritsFrom: Inheritable | null;
+  aliasFor: Inheritable | null;
 }

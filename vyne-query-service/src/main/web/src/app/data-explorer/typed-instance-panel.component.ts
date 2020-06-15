@@ -23,7 +23,7 @@ import {Inheritable} from '../inheritence-graph/inheritance-graph.component';
         <h3>Discoverable data</h3>
         <p>Quick link queries to discover relevant data</p>
         <app-inline-query-runner *ngFor="let type of discoverableTypes" [facts]="facts"
-                                 [targetType]="type.fullyQualifiedName"></app-inline-query-runner>
+                                 [targetType]="type"></app-inline-query-runner>
       </section>
       <section *ngIf="hasAttributes">
         <h3>Attributes</h3>

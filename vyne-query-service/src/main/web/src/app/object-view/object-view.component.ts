@@ -17,9 +17,8 @@ import {Field, findType, getCollectionMemberType, Schema, Type, TypedInstance} f
   styleUrls: ['./object-view.component.scss']
 })
 export class ObjectViewComponent {
+  private _instance: InstanceLikeOrCollection;
   NOT_PROVIDED = 'Value not provided';
-  @Input()
-  instance: InstanceLikeOrCollection;
 
   @Output()
   instanceClicked = new EventEmitter<InstanceLike>();
@@ -36,13 +35,29 @@ export class ObjectViewComponent {
 
   private fieldTypes = new Map<Field, Type>();
   private _type: Type;
+  private _derivedType: Type;
+  private _collectionMemberType: Type;
+
+  @Input()
+  get instance(): InstanceLikeOrCollection {
+    return this._instance;
+  }
+
+  set instance(value: InstanceLikeOrCollection) {
+    this._instance = value;
+    // When the instance changes, any assumptions we've made about
+    // types based on the old instance are invalid, so null out to recompute
+    this._derivedType = null;
+    this._collectionMemberType = null;
+  }
 
   @Input()
   get type(): Type {
     if (this._type) {
       return this._type;
     }
-    return this.selectType(this.instance);
+    this._derivedType = this.selectType(this._instance);
+    return this._derivedType;
   }
 
   private selectType(instance: InstanceLikeOrCollection): Type {
@@ -61,11 +76,13 @@ export class ObjectViewComponent {
 
   set type(value: Type) {
     this._type = value;
+    this._collectionMemberType = null;
+    this._derivedType = null;
   }
 
 
   get typedObject(): TypeNamedInstance {
-    return <TypeNamedInstance>this.instance;
+    return <TypeNamedInstance>this._instance;
   }
 
   get typedObjectAttributeNames(): string[] {
@@ -76,7 +93,7 @@ export class ObjectViewComponent {
   }
 
   getTypedObjectAttributeValue(name: string): any {
-    if (this.instance === undefined || this.instance === null) {
+    if (this._instance === undefined || this._instance === null) {
       return null;
     }
     const isScalar = this.getTypeForAttribute(name).isScalar;
@@ -84,22 +101,22 @@ export class ObjectViewComponent {
     if (attributeValue === undefined) {
       return null;
     }
-    if (isTypedInstance(this.instance)) {
+    if (isTypedInstance(this._instance)) {
       if (isScalar) {
         return attributeValue;
       } else {
         // NO particular reason for this, just haven't hit this code path yet
         throw new Error('This is unhandled - non scalar TypedInstance');
       }
-    } else if (isTypeNamedInstance(this.instance)) {
+    } else if (isTypeNamedInstance(this._instance)) {
       if (isScalar) {
         return (attributeValue as TypeNamedInstance).value;
       } else {
         // NO particular reason for this, just haven't hit this code path yet
         throw new Error('This is unhandled - non scalar TypeNamedInstance');
       }
-    } else if (typeof this.instance === 'object' && isScalar) {
-      return this.instance[name];
+    } else if (typeof this._instance === 'object' && isScalar) {
+      return this._instance[name];
     }
 
 
@@ -109,7 +126,7 @@ export class ObjectViewComponent {
     if (this.isArray) {
       return null;
     }
-    const instance = this.instance as InstanceLike;
+    const instance = this._instance as InstanceLike;
     if (!instance) {
       return null;
     }
@@ -139,7 +156,7 @@ export class ObjectViewComponent {
   // or a typed object, which is indexed with property names
 
   get isPrimitive(): boolean {
-    return this.instance != null && this.typedObject.value != null && !this.isTypedObject && !this.isArray;
+    return this._instance != null && this.typedObject.value != null && !this.isTypedObject && !this.isArray;
   }
 
   get isTypedObject(): boolean {
@@ -152,15 +169,18 @@ export class ObjectViewComponent {
   }
 
   get isArray(): boolean {
-    return this.instance != null &&
-      this.instance.constructor === Array;
+    return this._instance != null &&
+      this._instance.constructor === Array;
   }
 
   get collectionMemberType(): Type {
     if (!this.isArray) {
       return null;
     }
-    return getCollectionMemberType(this.type, this.schema);
+    if (this._collectionMemberType === null || this._collectionMemberType === undefined) {
+      this._collectionMemberType = getCollectionMemberType(this.type, this.schema);
+    }
+    return this._collectionMemberType;
   }
 
   onAttributeClicked(attributeName: string) {
