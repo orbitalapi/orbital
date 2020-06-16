@@ -3,7 +3,8 @@ import {QualifiedName, Schema, Type} from '../services/schema';
 import {FormControl} from '@angular/forms';
 import {map, startWith} from 'rxjs/operators';
 import {Observable} from 'rxjs';
-import {FloatLabelType, MatAutocompleteSelectedEvent} from '@angular/material';
+import {FloatLabelType} from '@angular/material/esm2015';
+import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 
 @Component({

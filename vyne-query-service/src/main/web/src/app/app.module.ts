@@ -8,31 +8,29 @@ import {AppComponent} from './app.component';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {VyneComponent} from './vyne/vyne.component';
 import {LayoutModule} from '@angular/cdk/layout';
-import {
-  MatAutocompleteModule,
-  MatButtonModule,
-  MatButtonToggleModule,
-  MatCardModule,
-  MatCheckboxModule,
-  MatChipsModule,
-  MatExpansionModule,
-  MatFormFieldModule,
-  MatIconModule,
-  MatInputModule,
-  MatListModule,
-  MatMenuModule,
-  MatProgressBarModule,
-  MatSelectModule,
-  MatSidenavModule,
-  MatSlideToggleModule,
-  MatSnackBarModule,
-  MatStepperModule,
-  MatTableModule,
-  MatTabsModule,
-  MatToolbarModule,
-  MatTooltipModule,
-  MatTreeModule
-} from '@angular/material';
+import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {MatButtonModule} from '@angular/material/button';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
+import {MatCheckboxModule} from '@angular/material/checkbox';
+import {MatChipsModule} from '@angular/material/chips';
+import {MatExpansionModule} from '@angular/material/expansion';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
+import {MatListModule} from '@angular/material/list';
+import {MatMenuModule} from '@angular/material/menu';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {MatSelectModule} from '@angular/material/select';
+import {MatSidenavModule} from '@angular/material/sidenav';
+import {MatIconModule} from '@angular/material/icon';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
+import {MatSnackBarModule} from '@angular/material/snack-bar';
+import {MatStepperModule} from '@angular/material/stepper';
+import {MatTableModule} from '@angular/material/table';
+import {MatTabsModule} from '@angular/material/tabs';
+import {MatToolbarModule} from '@angular/material/toolbar';
+import {MatTooltipModule} from '@angular/material/tooltip';
+import {MatTreeModule} from '@angular/material/tree';
+
 import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {HttpClientModule} from '@angular/common/http';
@@ -49,7 +47,7 @@ import {NewSchemaWizardComponent} from './schema-explorer/new-schema-wizard/new-
 import {TypeViewerContainerComponent} from './type-viewer/type-viewer-container.component';
 import {TocHostDirective} from './type-viewer/toc-host.directive';
 import {NgSelectModule} from '@ng-select/ng-select';
-import {CovalentFileModule} from '@covalent/core';
+import {CovalentFileModule} from '@covalent/core/esm2015';
 import {TypeAutocompleteModule} from './type-autocomplete/type-autocomplete.module';
 import {PipelinesModule} from './pipelines/pipelines.module';
 import {MarkdownModule} from 'ngx-markdown';

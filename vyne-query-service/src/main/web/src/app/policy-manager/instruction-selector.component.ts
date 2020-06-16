@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {FilterInstruction, Instruction, InstructionType, PermitInstruction, PolicyStatement} from './policies';
-import {MatSelectChange} from '@angular/material';
+import {MatSelectChange} from '@angular/material/select';
 import {Type} from '../services/schema';
 
 @Component({

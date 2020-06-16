@@ -73,11 +73,10 @@ export class CodeViewerComponent {
     this.monacoLoaderService.isMonacoLoaded.pipe(
       filter(isLoaded => isLoaded),
       take(1),
-    ).subscribe(() => {
+    ).subscribe(
       monaco.editor.onDidCreateEditor(editorInstance => {
         editorInstance.updateOptions({readOnly: true});
         this.monacoEditor = editorInstance;
-          this.remeasure();
       });
       monaco.editor.onDidCreateModel(model => {
         this.monacoModel = model;
@@ -99,7 +98,7 @@ export class CodeViewerComponent {
       monaco.languages.setMonarchTokensProvider('taxi', taxiLanguageTokenProvider);
       // here, we retrieve monaco-editor instance
 
-    });
+    );
   }
 
   remeasure() {

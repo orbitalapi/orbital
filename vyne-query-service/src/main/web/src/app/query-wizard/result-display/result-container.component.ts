@@ -1,7 +1,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {ProfilerOperation, QueryResult, ResultMode} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard.component';
-import {MatTreeNestedDataSource} from '@angular/material';
+import {MatTreeNestedDataSource} from '@angular/material/tree';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {TypesService} from '../../services/types.service';
 import {findType, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';

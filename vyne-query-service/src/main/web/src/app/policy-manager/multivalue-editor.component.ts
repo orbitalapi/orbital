@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {MatChipInputEvent} from '@angular/material';
+import {MatChipInputEvent} from '@angular/material/chips';
 import {CaseCondition, LiteralArraySubject} from './policies';
 import {Schema} from '../services/schema';
 

@@ -34,6 +34,7 @@ import 'zone.js/dist/zone';  // Included with Angular CLI.
 // If we migrate from Slate, or these become unrequired by slate, then remove them here.
 import * as process from 'process';
 window['process'] = process;
+// @ts-ignore
 window['global'] = window;
 /***************************************************************************************************
  * APPLICATION IMPORTS

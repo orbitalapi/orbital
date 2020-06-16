@@ -20,5 +20,9 @@
       "dom",
       "esnext"
     ]
+  },
+  "angularCompilerOptions": {
+    "enableIvy": false,
+    "allowEmptyCodegenFiles": true
   }
 }

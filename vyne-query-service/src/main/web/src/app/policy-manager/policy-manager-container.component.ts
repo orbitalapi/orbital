@@ -2,7 +2,7 @@ import {Component, Input, OnInit} from '@angular/core';
 import {Policy} from './policies';
 import {SchemaImportRequest, TypesService} from '../services/types.service';
 import {Schema, SchemaSpec, Type} from '../services/schema';
-import {MatSnackBar} from '@angular/material';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {Observable} from 'rxjs';
 
 @Component({

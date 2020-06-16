@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {SchemaImportRequest, SchemaPreview, SchemaPreviewRequest, TypesService,} from "../../services/types.service";
-import {MatStepper} from "@angular/material";
+import {MatStepper} from "@angular/material/stepper";
 import {Router} from "@angular/router";
 import {Level, Message, VersionedSource} from "../../services/schema";
 

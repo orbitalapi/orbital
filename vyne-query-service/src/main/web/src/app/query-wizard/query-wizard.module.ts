@@ -15,7 +15,7 @@ import {VyneQueryViewerComponent} from './taxi-viewer/vyne-query-viewer/vyne-que
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatIconModule} from '@angular/material/icon';
 import {CovalentDynamicFormsModule} from '@covalent/dynamic-forms';
-import {CovalentFileModule} from '@covalent/core';
+import {CovalentFileModule} from '@covalent/core/file';
 import {ObjectViewModule} from '../object-view/object-view.module';
 import {CovalentHighlightModule} from '@covalent/highlight';
 import {MatButtonModule} from '@angular/material/button';
