@@ -161,12 +161,8 @@
       }
     }
   },
-<<<<<<< Updated upstream
-  "defaultProject": "vyne-app"
-=======
   "defaultProject": "vyne-app",
   "cli": {
     "analytics": false
   }
->>>>>>> Stashed changes
 }
