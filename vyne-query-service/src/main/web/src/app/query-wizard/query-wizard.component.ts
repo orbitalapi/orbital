@@ -239,12 +239,19 @@ export class QueryWizardComponent implements OnInit {
       throw new Error('Can only get inputs for scalar types');
     }
     // TODO : Aliases could be nested ... follow the chain
-    const targetType = (type.aliasForType) ? type.aliasForType.fullyQualifiedName : type.name.fullyQualifiedName;
+    let targetType = (type.aliasForType) ? type.aliasForType.fullyQualifiedName : type.name.fullyQualifiedName;
     if (type.modifiers.indexOf(Modifier.ENUM) !== -1) {
       return {
         type: TdDynamicElement.Select,
         selections: type.enumValues
       };
+    }
+
+    // TODO : Quick Fix for the Demo.
+    if (type.inheritsFrom && type.inheritsFrom.length > 0) {
+      // Example:
+      // type OrderId inherits String
+      targetType = type.inheritsFrom[0].fullyQualifiedName;
     }
 
     let control: any;
