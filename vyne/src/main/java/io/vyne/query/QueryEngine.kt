@@ -8,6 +8,7 @@ import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import io.vyne.utils.timed
 
 
 open class SearchFailedException(message: String, val evaluatedPath: List<EvaluatedEdge>, val profilerOperation: ProfilerOperation) : RuntimeException(message)
@@ -82,7 +83,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // Thinking here is that if I can add a new Hipster strategy that discovers all the
       // endpoints, then I can compose a result of gather() from multiple finds()
       val findAllQuery = queryParser.parse(queryString).map { it.copy(mode = QueryMode.GATHER) }.toSet()
-      return find(findAllQuery, context)
+      return timed("BaseQueryEngine.findAll") { find(findAllQuery, context) }
    }
 
    // Experimental.
@@ -145,8 +146,10 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
    }
 
+   // TODO investigate why in tests got throught this method (there are two facts of TypedCollection), looks like this is only in tests
    private fun mapCollectionsToCollection(targetType: Type, context: QueryContext): TypedInstance? {
       val targetCollectionType = targetType.resolveAliases().typeParameters[0]
+      log().info("Mapping collections to collection of type ${targetCollectionType.qualifiedName} ")
       val transformed = context.facts
          .map { it as TypedCollection }
          .flatMap {it}
@@ -155,15 +158,18 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return TypedCollection.from(transformed);
    }
 
+   // This logic executes currently as part of projection from one collection to another
    private fun mapCollectionToCollection(targetType: Type, context: QueryContext): TypedInstance? {
       require(targetType.resolveAliases().typeParameters.size == 1) { "Expected collection type to contain exactly 1 parameter" }
       val targetCollectionType = targetType.resolveAliases().typeParameters[0]
-
-      val inboundFactList = (context.facts.first() as TypedCollection).value
-      val transformed = inboundFactList.mapNotNull {
-         mapTo(targetCollectionType, it, context)
+      return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
+         val inboundFactList = (context.facts.first() as TypedCollection).value
+         log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
+         val transformed = inboundFactList.mapNotNull {
+            mapTo(targetCollectionType, it, context)
+         }
+         TypedCollection.from(transformed);
       }
-      return TypedCollection.from(transformed);
    }
 
    private fun mapTo(targetType: Type, typedInstance: TypedInstance, context: QueryContext): TypedInstance? {
@@ -259,7 +265,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          }
       }
       if (unresolvedNodes().isNotEmpty()) {
-         log().error("The following nodes weren't matched: ${unresolvedNodes().joinToString(", ")}")
+         // Commenting out, creates noise and even with debug off it creates the underlying string from unresolved nodes
+         // log().debug("The following nodes weren't matched: ${unresolvedNodes().joinToString(", ")}")
       }
 
       // isProjecting is a (maybe) temporary little fix to allow projection

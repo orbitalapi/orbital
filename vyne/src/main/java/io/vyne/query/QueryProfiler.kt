@@ -6,8 +6,43 @@ import io.vyne.utils.log
 import java.time.Clock
 import java.util.*
 
+// TODO Make it configurable https://projects.notional.uk/youtrack/issue/LENS-164
+// Disabling atm as the data is needed by the UI
+class NoOpQueryProfiler(clock: Clock = Clock.systemDefaultZone(), root: ProfilerOperation = DefaultProfilerOperation.root(clock)) : QueryProfiler(clock, root) {
+   override fun startChild(componentName: String, operationName: String, type: OperationType): ProfilerOperation {
+      return this
+   }
 
-class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), val root: ProfilerOperation = DefaultProfilerOperation.root(clock)) : ProfilerOperation by root {
+   override fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R {
+      val start = System.currentTimeMillis()
+      val result = closure.invoke(this)
+      val executionTime = System.currentTimeMillis() - start
+      if (executionTime > 500/*milliseconds*/) {
+         log().info("startChild $componentName/$operationName/$type took ${executionTime}[ms] to complete")
+      }
+      return result
+   }
+
+   override fun stop(result: Any?) {
+   }
+
+   override val componentName: String = ""
+   override val operationName: String = ""
+   override val children: List<ProfilerOperation> = emptyList()
+   override val result: Result? = null
+   override val type: OperationType = OperationType.ROOT
+   override val duration: Long = 0
+   override val context: Map<String, Any?> = emptyMap()
+   override val remoteCalls: List<RemoteCall> = emptyList()
+
+   override fun addContext(key: String, value: Any?) {
+   }
+
+   override fun addRemoteCall(remoteCall: RemoteCall) {
+   }
+}
+
+open class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), val root: ProfilerOperation = DefaultProfilerOperation.root(clock)) : ProfilerOperation by root {
    private val operationStack: Deque<ProfilerOperation> = ArrayDeque(listOf(root))
    override fun startChild(ownerInstance: Any, name: String, type: OperationType): ProfilerOperation = startChild(ownerInstance::class.java.simpleName, name, type)
    override fun startChild(clazz: Class<Any>, name: String, type: OperationType): ProfilerOperation = startChild(clazz.simpleName, name, type)
@@ -23,11 +58,11 @@ class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), val ro
    }
 
    override fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R {
-      log().debug("Profiler start: $componentName / $operationName")
+      log().debug("Profiler start: {} / {}", componentName, operationName)
       val recorder = startChild(componentName, operationName, type)
       val result = closure.invoke(recorder)
       recorder.stop(result)
-      log().debug("Profiler stop: $componentName / $operationName (${recorder.duration}ms)")
+      log().debug("Profiler stop: {} / {} ({}ms)", componentName, operationName, recorder.duration)
       return result
    }
 

@@ -11,6 +11,7 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
+import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.schemas.OutputConstraint
 import io.vyne.schemas.Path
@@ -23,9 +24,9 @@ import io.vyne.schemas.fqn
 import io.vyne.schemas.synonymFullQualifiedName
 import io.vyne.schemas.synonymValue
 import io.vyne.utils.log
+import io.vyne.utils.timed
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
-import lang.taxi.types.EnumValue
 import lang.taxi.types.PrimitiveType
 import java.util.UUID
 import java.util.stream.Stream
@@ -170,7 +171,8 @@ data class QueryContext(
    val facts: MutableSet<TypedInstance>,
    val queryEngine: QueryEngine,
    val profiler: QueryProfiler,
-   val resultMode: ResultMode) : ProfilerOperation by profiler {
+   val resultMode: ResultMode,
+   val parent: QueryContext? = null) : ProfilerOperation by profiler {
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
@@ -184,7 +186,7 @@ data class QueryContext(
 
    fun build(typeName: QualifiedName): QueryResult = build(typeName.fullyQualifiedName)
    fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
-   fun build(expression: QueryExpression): QueryResult = queryEngine.build(expression, this)
+   fun build(expression: QueryExpression): QueryResult = timed("QueryContext.build") { queryEngine.build(expression, this)}
 
    fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
    fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
@@ -238,11 +240,11 @@ data class QueryContext(
     * All other parameters (queryEngine, schema, etc) are retained
     */
    fun only(fact: TypedInstance): QueryContext {
-      return this.copy(facts = mutableSetOf(fact))
+      return this.copy(facts = mutableSetOf(fact), parent = this)
    }
 
    fun addFact(fact: TypedInstance): QueryContext {
-      log().debug("Added fact to queryContext: ${fact.type.fullyQualifiedName}")
+      log().debug("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
       if (fact.type.isEnum) {
          this.facts.addAll(resolveSynonyms(fact, schema))
       } else {
@@ -284,10 +286,6 @@ data class QueryContext(
       return TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot())
    }
 
-   fun hasFactOfType(name: String, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
-      return hasFactOfType(schema.type(name), strategy)
-   }
-
    fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
       // This could be optimized, as we're searching twice for everything, and not caching anything
       return strategy.getFact(this, type) != null
@@ -318,6 +316,28 @@ data class QueryContext(
    fun addAppliedInstruction(policy: Policy, instruction: Instruction) {
       policyInstructionCounts.compute(policy.name to instruction) { _, atomicInteger -> if (atomicInteger != null) atomicInteger + 1 else 1 }
    }
+
+
+   private val operationCache: MutableMap<EvaluatableEdge, TypedInstance> = mutableMapOf()
+
+   private fun getTopLevelContext(): QueryContext {
+      return parent?.let {it.getTopLevelContext()} ?: this
+   }
+
+   fun addOperationResult(operation: EvaluatableEdge, result: TypedInstance): TypedInstance {
+      getTopLevelContext().operationCache[operation] = result
+      log().info("Caching {} [{} -> {}]", operation, operation.previousValue?.value, result.value)
+      return result
+   }
+
+   fun getOperationResult(operation: EvaluatableEdge): TypedInstance? {
+      return getTopLevelContext().operationCache[operation]
+   }
+
+   fun hasOperationResult(operation: EvaluatableEdge): Boolean {
+      return getTopLevelContext().operationCache[operation] != null
+   }
+
 }
 
 
@@ -339,7 +359,7 @@ enum class FactDiscoveryStrategy {
             matches.isEmpty() -> null
             matches.size == 1 -> matches.first()
             else -> {
-               log().debug("ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of type ${type.name}, so returning null")
+               log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
                null
             }
 
@@ -361,7 +381,7 @@ enum class FactDiscoveryStrategy {
             matches.isEmpty() -> null
             matches.size == 1 -> matches.first()
             else -> {
-               log().debug("ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of type ${type.name}, so returning null")
+               log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
                null
             }
          }

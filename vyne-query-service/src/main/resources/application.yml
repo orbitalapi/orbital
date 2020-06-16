@@ -19,7 +19,7 @@ logging:
 
       com.netflix: WARN
       com.hazelcast: WARN
-      io.vyne: DEBUG
+      io.vyne: INFO
       org.apache.catalina: WARN
 eureka:
    client:

@@ -2,9 +2,6 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import es.usc.citius.hipster.algorithm.Hipster
-import es.usc.citius.hipster.graph.GraphSearchProblem
-import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedValue
 import io.vyne.models.json.addJsonModel

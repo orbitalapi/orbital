@@ -76,12 +76,10 @@ class HipsterGraphBuilder<V, E> private constructor() {
 
    fun createDirectedGraph(): HipsterDirectedGraph<V, E> {
       val graph = HashBasedHipsterDirectedGraph.create<V, E>()
-      timed("createDirectedGraph") {
-         for (c in connections) {
-            graph.add(c.vertex1)
-            graph.add(c.vertex2)
-            graph.connect(c.vertex1!!, c.vertex2!!, c.edge)
-         }
+      for (c in connections) {
+         graph.add(c.vertex1)
+         graph.add(c.vertex2)
+         graph.connect(c.vertex1!!, c.vertex2!!, c.edge)
       }
       return graph
    }

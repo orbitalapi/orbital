@@ -69,9 +69,10 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
       return getAttributeIdentifiedByType(schema.type(typeName))
    }
 
-   fun getAttributeIdentifiedByType(type: Type): TypedInstance {
+   fun getAttributeIdentifiedByType(type: Type, returnNull: Boolean = false): TypedInstance {
       val candidates = this.value.filter { (name, value) -> value.type.isAssignableTo(type) }
       return when {
+         candidates.isEmpty() && returnNull -> TypedNull(type) // sometimes i want to allow null values
          candidates.isEmpty() -> error("No properties on type ${this.type.name.parameterizedName} have type ${type.name.parameterizedName}")
          candidates.size > 1 -> {
             val candidateDescription = candidates.entries.joinToString { "${it.key} : ${it.value.type.name.parameterizedName}" }

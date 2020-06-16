@@ -105,6 +105,11 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
 @Component
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+      if (context.hasOperationResult(edge)) {
+         val cachedResult = context.getOperationResult(edge)
+         return edge.success(cachedResult)
+      }
+
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
       val (service, operation) = context.schema.operation(operationName)
 
@@ -123,7 +128,9 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
 
 
       val result: TypedInstance = invocationService.invokeOperation(service, operation, visitedInstanceNodes, context)
+      // Consider enhancing facts with the information how we derived them, e.g. via Operation so that can be used as cache?
       context.addFact(result)
+      context.addOperationResult(edge, result)
       return edge.success(result)
    }
 
