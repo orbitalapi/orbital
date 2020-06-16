@@ -1,4 +1,6 @@
 @import "src/theme";
+@import '~@angular/material/theming';
+
 
 :host {
   background-color: rgba($purple-white,0.8);
@@ -34,16 +36,21 @@ ng-select {
       display: none;
     }
   }
+  $dropdown-position-fixer: 2rem;
+  $dropdown-panel-items-height-fixer: 10vh;
 
   .ng-dropdown-panel {
+    @include mat-elevation(5);
     background-color: $light-purple-grey-100;
-    box-shadow: 0 2px 64px 0 rgba(0,0,0,.15);
-    max-height: 400px;
+    max-height: 100vh;
+    top: #{$toolbar-height - $dropdown-position-fixer};
+    width:109% !important;
+    right: 0.2em;
     .scroll-host {
       padding: 10px 0;
     }
     .ng-dropdown-panel-items {
-      max-height: 400px !important;
+      max-height: 100vh - $dropdown-panel-items-height-fixer !important;
     }
     .ng-option {
       padding: 10px 20px;
