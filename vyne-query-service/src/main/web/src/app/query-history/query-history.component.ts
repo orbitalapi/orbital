@@ -1,5 +1,13 @@
 import {Component, OnInit} from '@angular/core';
-import {ProfilerOperation, QueryHistoryRecord, QueryService} from '../services/query.service';
+import {
+  isRestQueryHistoryRecord,
+  isVyneQlQueryHistoryRecord,
+  ProfilerOperation,
+  QueryHistoryRecord,
+  QueryService,
+  RestfulQueryHistoryRecord
+} from '../services/query.service';
+import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
 
 @Component({
   selector: 'app-query-history',
@@ -39,8 +47,21 @@ export class QueryHistoryComponent implements OnInit {
     }
   }
 
+  isVyneQlQuery(record: QueryHistoryRecord): boolean {
+    return isVyneQlQueryHistoryRecord(record);
+  }
+
+  isRestQuery(record: QueryHistoryRecord): boolean {
+    return isRestQueryHistoryRecord(record);
+  }
+
   getFactTypeNames(record: QueryHistoryRecord): string[] {
-    return record.query.facts.map(fact => this.typeName(fact.typeName));
+    if (isRestQueryHistoryRecord(record)) {
+      return record.query.facts.map(fact => this.typeName(fact.typeName));
+    } else {
+      return [];
+    }
+
   }
 
   setActiveRecord(historyRecord: QueryHistoryRecord) {
@@ -55,7 +76,24 @@ export class QueryHistoryComponent implements OnInit {
     );
   }
 
-  expressionTypeName(expression: string[]) {
-    return expression.map(t => this.typeName(t)).join(', ');
+  expressionTypeName(historyRecord: QueryHistoryRecord): string {
+    if (isRestQueryHistoryRecord(historyRecord)) {
+      return historyRecord.query.expression.map(t => this.typeName(t)).join(', ');
+    } else {
+      return '';
+    }
+  }
+
+
+  queryType(historyRecord: QueryHistoryRecord): QueryType {
+    if (isVyneQlQueryHistoryRecord(historyRecord)) {
+      return 'VyneQlQuery';
+    } else if (isRestQueryHistoryRecord(historyRecord)) {
+      return 'RestfulQuery';
+    } else {
+      throw new Error('Unknown type of query history record: ' + JSON.stringify(historyRecord));
+    }
   }
 }
+
+type QueryType = 'VyneQlQuery' | 'RestfulQuery';

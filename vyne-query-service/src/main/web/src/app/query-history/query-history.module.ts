@@ -7,6 +7,8 @@ import {MatButtonModule} from '@angular/material/button';
 import {ResultViewerModule} from '../query-wizard/result-display/result-viewer.module';
 import {MomentModule} from 'ngx-moment';
 import {MatToolbarModule} from '@angular/material/toolbar';
+import { VyneqlRecordComponent } from './vyneql-record.component';
+import { RestfulRecordComponent } from './restful-record.component';
 
 @NgModule({
   imports: [
@@ -19,7 +21,7 @@ import {MatToolbarModule} from '@angular/material/toolbar';
     MatToolbarModule
   ],
   exports: [QueryHistoryComponent],
-  declarations: [QueryHistoryComponent],
+  declarations: [QueryHistoryComponent, VyneqlRecordComponent, RestfulRecordComponent],
   providers: [],
 })
 export class QueryHistoryModule {
