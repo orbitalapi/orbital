@@ -59,7 +59,7 @@ export class DataExplorerComponent {
     this.caskServiceUrl = environment.queryServiceUrl;
   }
 
-  @ViewChild('appCodeViewer', {read: CodeViewerComponent, static: true})
+  @ViewChild('appCodeViewer', {read: CodeViewerComponent, static: false})
   appCodeViewer: CodeViewerComponent;
   caskServiceUrl: string;
 
@@ -172,7 +172,7 @@ export class DataExplorerComponent {
   }
 
   onSelectedTabChanged(event: MatTabChangeEvent) {
-    if (event.tab.textLabel === this.schemaLabel && this.appCodeViewer !== null) {
+    if (event.tab.textLabel === this.schemaLabel && this.appCodeViewer) {
       this.appCodeViewer.remeasure();
     }
   }
