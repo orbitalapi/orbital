@@ -8,6 +8,8 @@ import io.vyne.query.*
 import io.vyne.schemas.Schema
 import io.vyne.schemas.TypeLightView
 import io.vyne.spring.VyneFactory
+import io.vyne.utils.log
+import io.vyne.utils.timed
 import io.vyne.vyneql.VyneQLQueryString
 import lang.taxi.CompilationException
 import org.springframework.http.HttpStatus
@@ -50,20 +52,22 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
 
    @PostMapping("/vyneql")
    fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString): QueryResponse {
-      val vyne = vyneFactory.createVyne()
-      val response: QueryResponse = try {
-         vyne.query(query)
-      } catch (e: CompilationException) {
-         FailedSearchResponse(
-            message = e.message!!, // Message contains the error messages from the compiler
-            profilerOperation = null,
-            resultMode = ResultMode.SIMPLE
-         )
+      log().info("VyneQL query=$query")
+
+      return timed("QueryService.submitVyneQlQuery") {
+         val vyne = vyneFactory.createVyne()
+         val response: QueryResponse = try {
+            vyne.query(query)
+         } catch (e: CompilationException) {
+            FailedSearchResponse(
+               message = e.message!!, // Message contains the error messages from the compiler
+               profilerOperation = null,
+               resultMode = ResultMode.SIMPLE
+            )
+         }
+         history.add(VyneQlQueryHistoryRecord(query, response))
+         response
       }
-      history.add(VyneQlQueryHistoryRecord(query, response))
-      return response
-
-
    }
 
    private fun executeQuery(query: Query): QueryResponse {

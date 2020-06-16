@@ -142,9 +142,9 @@ class ParameterFactory {
             } else {
                // ... finally, try constructing the value...
                if (!attributeType.isScalar && !typesCurrentlyUnderConstruction.contains(attributeType)) {
-                  log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} not present within the context.  Attempting to construct one.")
+                  log().debug("Parameter of type {} not present within the context.  Attempting to construct one.", attributeType.name.fullyQualifiedName)
                   val constructedType = attemptToConstruct(attributeType, context, typesCurrentlyUnderConstruction = typesCurrentlyUnderConstruction + attributeType)
-                  log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} constructed: $constructedType")
+                  log().debug("Parameter of type {} constructed: {}",constructedType, attributeType.name.fullyQualifiedName)
                   attributeValue = constructedType
                }
             }

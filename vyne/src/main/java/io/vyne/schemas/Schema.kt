@@ -58,6 +58,7 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
    fun add(type: Type): Type {
       val withReference = type.copy(typeCache = this)
       cache[type.name] = withReference
+      // TODO caching for parametrised types e.g. lang.taxi.Array<Order> (for each Type)
       recalculateShortNames()
       return withReference
    }
@@ -81,6 +82,7 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
 //      return type(name.fullyQualifiedName)
    }
 
+   // TODO implement some caching
    private fun parameterisedType(name: QualifiedName): Type? {
       if (name.parameters.isEmpty()) return null
 

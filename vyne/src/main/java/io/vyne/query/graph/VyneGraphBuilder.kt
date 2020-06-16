@@ -5,9 +5,7 @@ import com.google.common.collect.Multimap
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.vyne.DisplayGraphBuilder
 import io.vyne.HipsterGraphBuilder
-import io.vyne.models.TypedInstance
 import io.vyne.schemas.*
-import io.vyne.utils.timed
 
 enum class ElementType {
    TYPE,
@@ -100,19 +98,16 @@ typealias MemberElement = Element
 class VyneGraphBuilder(private val schema: Schema) {
 
    private val baseSchemaGraph: HipsterGraphBuilder<Element, Relationship> by lazy {
-      timed("VyneGraphBuilder.buildBaseSchemaGraph") {
-         val builder = HipsterGraphBuilder.create<Element, Relationship>()
-         appendTypes(builder, schema)
-         appendServices(builder, schema)
-         builder
-      }
-
+      val builder = HipsterGraphBuilder.create<Element, Relationship>()
+      appendTypes(builder, schema)
+      appendServices(builder, schema)
+      builder
    }
 
-   fun build(facts: Set<TypedInstance> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
+   fun build(types: Set<Type> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
       val builder = baseSchemaGraph
       val thisBuilder = builder.copy()
-      appendInstances(thisBuilder, facts, schema)
+      appendInstances(thisBuilder, types, schema)
       return thisBuilder.createDirectedGraph()
    }
 
@@ -121,17 +116,14 @@ class VyneGraphBuilder(private val schema: Schema) {
       return DisplayGraphBuilder().convertToDisplayGraph(graph)
    }
 
-   private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, facts: Set<TypedInstance>, schema: Schema) {
-      timed("VyneGraphBuilder.appendInstances") {
-         facts.forEach { typedInstance ->
-            val typeFqn = typedInstance.type.qualifiedName.parameterizedName
-            appendProvidedInstances(builder, typeFqn, schema)
-            // Note: An old implementation has been removed from here.  Check the git history
-            // if we think stuff has broken.
+   private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, types: Set<Type>, schema: Schema) {
+      types.forEach {
+         val typeFqn = it.qualifiedName.parameterizedName
+         appendProvidedInstances(builder, typeFqn, schema)
+         // Note: An old implementation has been removed from here.  Check the git history
+         // if we think stuff has broken.
 
-         }
       }
-
    }
 
    private fun appendTypes(builder: HipsterGraphBuilder<Element, Relationship>, schema: Schema): Multimap<TypeElement, MemberElement> {
@@ -226,15 +218,11 @@ class VyneGraphBuilder(private val schema: Schema) {
       builder.connect(providedInstance).to(parameter(instanceFqn)).withEdge(Relationship.CAN_POPULATE)
 
       // This instance can also populate any types that it inherits from.
-      timed("appendProvidedInstances.inheritenceGraph") {
-         type.inheritanceGraph.forEach { inheritedType ->
-            builder.connect(providedInstance).to(parameter(inheritedType.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
-         }
+      type.inheritanceGraph.forEach { inheritedType ->
+         builder.connect(providedInstance).to(parameter(inheritedType.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
       }
       if (!type.isClosed) {
-         timed("appendProvidedInstances.appendInstanceAttributes") {
-            appendInstanceAttributes(schema, instanceFqn, builder, providedInstance)
-         }
+         appendInstanceAttributes(schema, instanceFqn, builder, providedInstance)
       }
    }
 

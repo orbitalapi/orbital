@@ -5,6 +5,7 @@ import arrow.core.getOrHandle
 import io.vyne.VyneQLLexer
 import io.vyne.VyneQLParser
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.utils.timed
 import io.vyne.vyneql.compiler.TokenProcessor
 import lang.taxi.*
 import org.antlr.v4.runtime.CharStream
@@ -19,7 +20,7 @@ class VyneQlCompiler(val query: CharStream, val schema: TaxiDocument) {
     * Returns the query, or throws a CompilationException
     */
    fun query(): VyneQlQuery {
-      return compile().getOrHandle { errors -> throw CompilationException(errors) }
+      return timed("VyneQLCompiler.query") { compile() }.getOrHandle { errors -> throw CompilationException(errors) }
    }
 
    fun compile(): Either<List<CompilationError>, VyneQlQuery> {

@@ -9,7 +9,7 @@ import java.time.Instant
 
 @Component
 class QueryHistory {
-   private val queries = EvictingQueue.create<QueryHistoryRecord<out Any>>(50);
+   private val queries = EvictingQueue.create<QueryHistoryRecord<out Any>>(20);
 
    fun add(record: QueryHistoryRecord<out Any>) {
       this.queries.add(record);

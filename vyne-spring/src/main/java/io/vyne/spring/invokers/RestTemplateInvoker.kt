@@ -13,6 +13,7 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
+import io.vyne.utils.timed
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -73,8 +74,9 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          httpInvokeOperation.addContext("Service", service)
          httpInvokeOperation.addContext("Operation", operation)
 
-         val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody.first, requestBody.second, uriVariables)
-//         httpInvokeOperation.stop(result)
+         val result = timed("$httpMethod $absoluteUrl") {
+            restTemplate.exchange(absoluteUrl, httpMethod, requestBody.first, requestBody.second, uriVariables)
+         }
 
          val expandedUri = restTemplate.uriTemplateHandler.expand(absoluteUrl, uriVariables)
          httpInvokeOperation.addRemoteCall(RemoteCall(

@@ -432,7 +432,7 @@ data class Type(
    }
 
    fun asArrayType(): Type {
-      return this.typeCache.type("lang.taxi.Array<${this.name.parameterizedName}>")
+      return this.typeCache.type(QualifiedName("lang.taxi.Array", listOf(this.name.parameterizedName.fqn())))
    }
 
    /**

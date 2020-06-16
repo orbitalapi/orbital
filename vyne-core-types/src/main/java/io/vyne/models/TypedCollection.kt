@@ -11,8 +11,6 @@ data class TypedCollection(override val type: Type, override val value: List<Typ
       }
    }
 
-   val collectionType: Type = type.collectionType!!
-
    companion object {
       fun arrayOf(collectionType: Type, value: List<TypedInstance>): TypedCollection {
          return TypedCollection(collectionType.asArrayType(), value)
