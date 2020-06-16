@@ -105,12 +105,25 @@ export enum ResultMode {
   VERBOSE = 'VERBOSE'
 }
 
+export interface VyneQlQueryHistoryRecord extends QueryHistoryRecord {
+  query: string;
+}
+
+export interface RestfulQueryHistoryRecord extends QueryHistoryRecord {
+  query: Query;
+}
 
 export interface QueryHistoryRecord {
-  query: Query;
   response: QueryResult;
   timestamp: Date;
   id: string;
 }
 
+export function isVyneQlQueryHistoryRecord(value: QueryHistoryRecord): value is VyneQlQueryHistoryRecord {
+  return typeof value['query'] === 'string';
+}
+
+export function isRestQueryHistoryRecord(value: QueryHistoryRecord): value is RestfulQueryHistoryRecord {
+  return (value as RestfulQueryHistoryRecord).query.queryMode !== undefined;
+}
 

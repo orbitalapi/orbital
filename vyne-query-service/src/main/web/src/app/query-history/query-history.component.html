@@ -14,24 +14,19 @@
       </button>
     </div>
     <div class="history-item" *ngFor="let historyRecord of history" (click)="setActiveRecord(historyRecord)">
-      <div class="query-description">
-        <div class="given-line">
-          Given (<span class="type-name"
-                       *ngFor="let factName of getFactTypeNames(historyRecord); last as isLast">{{ factName }}<span
-          *ngIf="!isLast">, </span> </span>)
+      <div [ngSwitch]="queryType(historyRecord)">
+        <div *ngSwitchCase="'RestfulQuery'">
+          <app-restful-record [expressionTypeName]="expressionTypeName(historyRecord)"
+                              [historyRecord]="historyRecord"
+                              [factTypeNames]="getFactTypeNames(historyRecord)"></app-restful-record>
         </div>
-        <div class="discover-line">
-          <span class="verb">{{ historyRecord.query.queryMode.toLowerCase() }} </span>
-          <span class="type-name">{{ expressionTypeName(historyRecord.query.expression) }}</span>
+        <div *ngSwitchCase="'VyneQlQuery'">
+          <app-vyneql-record [historyRecord]="historyRecord">
+
+          </app-vyneql-record>
         </div>
-      </div>
-      <div class="state-row">
 
       </div>
-      <div class="timestamp-row">
-        <span>{{historyRecord.timestamp | amTimeAgo}}</span>
-      </div>
-
     </div>
   </div>
   <div class="results-section">

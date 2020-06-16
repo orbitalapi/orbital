@@ -45,20 +45,3 @@
   }
 }
 
-.query-description {
-  font-family: $mono;
-  line-height: 1.5rem;
-  font-size: 1rem;
-
-  .type-name {
-    border: 1px solid $light-purple-grey-300;
-    background-color: $light-purple-grey;
-    padding: 2px;
-    border-radius: 4px;
-  }
-}
-
-.timestamp-row {
-  font-size: 0.8rem;
-  color: $dark-grey-1;
-}

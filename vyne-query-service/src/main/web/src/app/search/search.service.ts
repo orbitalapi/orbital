@@ -20,7 +20,7 @@ export interface SearchMatch {
 export type SearchField = 'QUALIFIED_NAME' | 'NAME' | 'TYPEDOC';
 
 @Injectable({
-  providedIn: SearchModule
+  providedIn: 'root'
 })
 export class SearchService {
 
