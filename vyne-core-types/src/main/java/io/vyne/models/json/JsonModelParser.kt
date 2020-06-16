@@ -4,14 +4,17 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.*
+import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import lang.taxi.types.XpathAccessor
 
 class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = DEFAULT_MAPPER) {
    companion object {
       val DEFAULT_MAPPER = jacksonObjectMapper()
    }
+
    fun parse(type: Type, json: String, conversionService: ConversionService = ConversionService.DEFAULT_CONVERTER): TypedInstance {
       return if (type.isCollection) {
          val map = mapper.readValue<List<Map<String, Any>>>(json)
@@ -29,7 +32,7 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = DEF
          return if (isCollection) {
             val collection = parsedAliasType as TypedCollection
             val collectionMembersAsAliasedType = collection.map { it.withTypeAlias(type) }
-            TypedCollection(type,collectionMembersAsAliasedType)
+            TypedCollection(type, collectionMembersAsAliasedType)
          } else {
             parsedAliasType.withTypeAlias(type)
          }
@@ -44,16 +47,35 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = DEF
          return doParse(type, valueMap.values.first() as Map<String, Any>, isCollection = false, conversionService = conversionService)
       } else {
          val attributeInstances = type.attributes
-            .filterKeys { attributeName -> valueMap.containsKey(attributeName) }
+            .filter { (attributeName, field) ->
+               getValuePath(field, valueMap, attributeName) != null
+            }
             .map { (attributeName, field: Field) ->
+               val attributePath = getValuePath(field, valueMap, attributeName)!!
+               val valueFromMap = valueMap[attributePath]
                val attributeType = schema.type(field.type.parameterizedName)
-               if (valueMap.containsKey(attributeName) && valueMap[attributeName] != null) {
-                  attributeName to doParse(attributeType, mapOf(attributeName to valueMap.getValue(attributeName)), schema.type(field.type).isCollection, conversionService)
+               if (valueFromMap != null) {
+                  attributeName to doParse(attributeType, mapOf(attributeName to valueFromMap), schema.type(field.type).isCollection, conversionService)
                } else {
                   attributeName to TypedNull(attributeType)
                }
             }.toMap()
          return TypedObject(type, attributeInstances)
+      }
+   }
+
+   private fun getValuePath(field: Field, valueMap: Map<String, Any>, attributeName: AttributeName): String? {
+      return if (field.accessor != null && field.accessor is XpathAccessor) {
+         val path = field.accessor.expression.removePrefix("/")
+         if (valueMap.containsKey(path)) {
+            return path
+         } else {
+            return null
+         }
+      } else if (valueMap.containsKey(attributeName)) {
+         return attributeName
+      } else {
+         null
       }
    }
 
