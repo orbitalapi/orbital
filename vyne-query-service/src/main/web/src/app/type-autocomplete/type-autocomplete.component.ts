@@ -47,7 +47,7 @@ import {COMMA, ENTER} from '@angular/cdk/keycodes';
 export class TypeAutocompleteComponent implements OnInit {
   separatorKeysCodes: number[] = [ENTER, COMMA];
 
-  @ViewChild('chipInput' , {static: true}) chipInput: ElementRef<HTMLInputElement>;
+  @ViewChild('chipInput' , {static: false}) chipInput: ElementRef<HTMLInputElement>;
 
   @Input()
   multiSelect = false;
@@ -133,7 +133,9 @@ export class TypeAutocompleteComponent implements OnInit {
     const eventType = this.getTypeByName(QualifiedName.from(event.option.value));
     if (this.multiSelect) {
       this.selectedTypes.push(eventType);
-      this.chipInput.nativeElement.value = '';
+      if (this.chipInput) {
+        this.chipInput.nativeElement.value = '';
+      }
       this.filterInput.setValue('');
       this.selectedTypesChange.emit(this.selectedTypes);
     } else {
@@ -153,7 +155,7 @@ export class TypeAutocompleteComponent implements OnInit {
   }
 
   private _filter(value: string): Type[] {
-    if (!this.schema) { return []; }
+    if (!this.schema || !value) { return []; }
     const filterValue = value.toLowerCase();
     return this.schema.types.filter(option => option.name.fullyQualifiedName.toLowerCase().indexOf(filterValue) !== -1);
   }
