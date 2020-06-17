@@ -79,7 +79,7 @@ export const routerModule = RouterModule.forRoot(
     {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
     {path: 'query-history', component: QueryHistoryComponent}
   ],
-  {useHash: true, anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled'}
+  {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled'}
 );
 
 

@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class QueryHistoryService(val history: QueryHistory) {
 
-   @GetMapping("/query/history")
+   @GetMapping("/api/query/history")
    fun listHistory(): List<QueryHistoryRecord<out Any>> {
       return history.list()
    }
 
-   @GetMapping("/query/history/{id}/profile")
+   @GetMapping("/api/query/history/{id}/profile")
    fun getQueryProfile(@PathVariable("id") queryId: String): ProfilerOperation? {
       return history.get(queryId).response.profilerOperation
    }

@@ -12,11 +12,14 @@ import io.vyne.utils.log
 import io.vyne.utils.timed
 import io.vyne.vyneql.VyneQLQueryString
 import lang.taxi.CompilationException
+import org.springframework.boot.autoconfigure.web.servlet.error.ErrorViewResolver
+import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.servlet.ModelAndView
 import java.util.*
 
 
@@ -43,14 +46,14 @@ interface SchemaLightView : TypeLightView
 @RestController
 class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
 
-   @PostMapping("/query")
+   @PostMapping("/api/query")
    fun submitQuery(@RequestBody query: Query): QueryResponse {
       val response = executeQuery(query)
       history.add(RestfulQueryHistoryRecord(query, response))
       return response
    }
 
-   @PostMapping("/vyneql")
+   @PostMapping("/api/vyneql")
    fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString): QueryResponse {
       log().info("VyneQL query=$query")
 
