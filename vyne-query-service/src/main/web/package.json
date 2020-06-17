@@ -32,7 +32,7 @@
     "@covalent/dynamic-forms": "^2.0.1",
     "@covalent/highlight": "^2.1.1",
     "@materia-ui/ngx-monaco-editor": "^2.0.7",
-    "@ng-select/ng-select": "^2.20.5",
+    "@ng-select/ng-select": "^4.0.0",
     "@swimlane/ngx-charts": "^14.0.0",
     "@swimlane/ngx-graph": "^7.0.0",
     "@types/angular": "^1.7.0",
