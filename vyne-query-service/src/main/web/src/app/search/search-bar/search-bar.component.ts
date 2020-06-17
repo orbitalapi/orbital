@@ -15,6 +15,8 @@ import {QualifiedName} from '../../services/schema';
       [trackByFn]="trackByFn"
       [searchFn]="searchFn"
       [multiple]="false"
+      [minTermLength] = 3
+      [typeahead]="search"
       closeOnSelect="true"
       bindLabel="qualifiedName.fullyQualifiedName"
       (change)="onSelect($event)"
@@ -47,7 +49,6 @@ export class SearchBarComponent {
   trackByFn(item: SearchResult) {
     return item.qualifiedName.fullyQualifiedName;
   }
-
 
   onSearch($event: {
     term: string;
