@@ -40,7 +40,7 @@ build-ui:
    stage: build
    script:
       # IMPROVE: generate-resources will do a bunch of other stuff we don't need, but that's the phase the frontend plugin is bound to
-      - 'mvn $MAVEN_CLI_OPTS DskipTests generate-resources -f vyne-query-service/pom.xml -'
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests generate-resources -f vyne-query-service/pom.xml -'
    artifacts:
       paths:
          - "vyne-query-service/target/classes/static"
