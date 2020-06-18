@@ -29,8 +29,8 @@ build-jvm:
     - 'mvn $MAVEN_CLI_OPTS clean install -Dskip.npm -PrunBenchmarkTests'
   artifacts:
     paths:
-       - "vyne-query-service/target/classes/static"
-    expire_in: 1 day
+       - "*/target"
+    expire_in: 1 hours
     reports:
       junit:
       # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
@@ -48,7 +48,7 @@ build-ui:
    artifacts:
       paths:
          - "vyne-query-service/target/classes/static"
-      expire_in: 1 day
+      expire_in: 1 hours
 
 publish-snapshot:
 #  image: maven:3.6.3-jdk-8
