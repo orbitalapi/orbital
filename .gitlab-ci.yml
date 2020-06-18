@@ -39,7 +39,8 @@ build-jvm:
 build-ui:
    stage: build
    script:
-      - 'mvn $MAVEN_CLI_OPTS generate-resources -f vyne-query-service/pom.xml -DskipTests '
+      # IMPROVE: generate-resources will do a bunch of other stuff we don't need, but that's the phase the frontend plugin is bound to
+      - 'mvn $MAVEN_CLI_OPTS DskipTests generate-resources -f vyne-query-service/pom.xml -'
    artifacts:
       paths:
          - "vyne-query-service/target/classes/static"
@@ -49,8 +50,7 @@ publish-snapshot:
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-    - 'ls -al */target/'
-    - 'ls -al */target/classes/static'
+
      # don't need to run tests as they were run in the previous stage, but still compile the test-jars for deployment
     - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm test-compile jar:test-jar package docker:build ' # FIXME docker:build -> deploy -P snapshot-releases
   artifacts:
@@ -65,12 +65,6 @@ publish-release:
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
     - 'mvn $MAVEN_CLI_OPTS -Dmaven.test.skip=true release:prepare release:perform'
-  artifacts:
-    reports:
-      junit:
-      # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
-      # However, leaving this here to pick up later
-        - "*/target/surefire-reports/TEST-*.xml"
   only:
     - master
 
