@@ -26,8 +26,12 @@ build-jvm:
 #  image: maven:3.6.3-jdk-8
   stage: build
   script:
+    - 'echo $CI_JOB_REF_NAME'
     - 'mvn $MAVEN_CLI_OPTS clean install -PrunBenchmarkTests'
   artifacts:
+    paths:
+       - "*/vyne-query-service/target/classes/static"
+    expire_in: 1 week
     reports:
       junit:
       # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
