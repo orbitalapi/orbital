@@ -152,13 +152,10 @@ export class InheritanceGraphComponent {
 
 
   select($event: any) {
-  const name = $event.subHeader + $event.label;
 
     console.log('Node selected', $event);
   }
-  asLink(slug: string): string {
-    return '#' + slug;
-  }
+
 }
 
 export function buildInheritable(type: Type, schema: Schema): Inheritable {

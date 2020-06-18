@@ -75,8 +75,8 @@
               "namedChunks": false,
               "aot": true,
               "extractLicenses": true,
-              "vendorChunk": true,
-              "buildOptimizer": false
+              "vendorChunk": false,
+              "buildOptimizer": true
             }
           }
         },
