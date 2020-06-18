@@ -16,7 +16,7 @@ cache:
     - vyne-query-service/src/main/web/node_modules
     - vyne-query-service/node
     - vyne-query-service/src/main/web/.npm
-  key: "$CI_JOB_REF_NAME"
+  key: "$CI_COMMIT_REF_SLUG"
 
 stages:
    - build
