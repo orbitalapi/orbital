@@ -54,7 +54,6 @@ build-ui:
 publish-snapshot:
 #  image: maven:3.6.3-jdk-8
   stage: deploy
-  depends_on: build
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
 #    -don't need to run tests as they were run in the previous stage, but still compile the test-jars for deployment
