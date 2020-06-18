@@ -21,7 +21,7 @@ cache:
 stages:
    - build
    - testGitlab
-#   - deploy
+   - deploy
 
 testing-gitlab:
    #  image: maven:3.6.3-jdk-8
