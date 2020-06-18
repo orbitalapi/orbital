@@ -30,3 +30,9 @@ eureka:
    instance:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
+
+hibernate:
+   types:
+      jackson:
+         object:
+            mapper: io.vyne.queryService.persistency.VyneHibernateJsonObjectMapperSupplier

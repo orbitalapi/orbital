@@ -13,7 +13,10 @@
 
 ## Server
 
-* Run 'QueryServiceApp' with embedded-discovery and local  spring profiles
+* Run 'QueryServiceApp' with:
+    * embedded-discovery, local and inmemory-query-history spring profiles (-Dspring.profiles.active=embedded-discovery,inmemory-query-history,local) if you want keep query histories in memory.
+    * embedded-discovery, local and persist-query-history spring profiles (-Dspring.profiles.active=embedded-discovery,persist-query-history,local) if you want keep query histories in a postgres database.
+      see application-persist-query-history.yml for database details.
 * embedded-discovery provides and embedded Eureka server so that client app can register against it.
 * local profile enables REST request coming from localhost:4200 by modifying the CORS settings accordingly. This profile
 requires only if you're planning run client app on localhost:4200 (see below). If that is not the case, build the client app by running

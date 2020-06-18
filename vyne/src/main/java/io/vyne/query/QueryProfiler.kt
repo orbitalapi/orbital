@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import arrow.core.MapKOf
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.utils.log
@@ -141,6 +142,34 @@ interface ProfilerOperation {
 
    fun addRemoteCall(remoteCall: RemoteCall)
 
+   val description: String
+      get() {
+         return "$componentName.$operationName"
+      }
+
+   fun toDto(): ProfilerOperationDTO {
+      return ProfilerOperationDTO(
+         componentName,
+         operationName,
+         children.map { it.toDto() },
+         result,
+         type,
+         duration,
+         remoteCalls,
+         context,
+         timings)
+   }
+}
+
+class ProfilerOperationDTO(val componentName: String,
+                           val operationName: String,
+                           val children: List<ProfilerOperationDTO> = listOf(),
+                           val result: Result?,
+                           val type: OperationType,
+                           val duration: Long,
+                           val remoteCalls: List<RemoteCall> = listOf(),
+                           val context: Map<String, Any?> = mapOf(),
+                           val timings: Map<OperationType, Long> = mapOf()) {
    val description: String
       get() {
          return "$componentName.$operationName"
