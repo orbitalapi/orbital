@@ -4,6 +4,11 @@ import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.KeyDeserializer
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.common.collect.HashMultimap
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -55,6 +60,13 @@ data class QuerySpecTypeNode(
    val dataConstraints: List<OutputConstraint> = emptyList()
 )
 
+class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
+   override fun deserializeKey(p0: String?, p1: DeserializationContext?): Any? {
+      return null
+   }
+
+}
+
 data class QueryResult(
    @field:JsonIgnore // we send a lightweight version below
    val results: Map<QuerySpecTypeNode, TypedInstance?>,
@@ -104,7 +116,28 @@ data class QueryResult(
             .map { (key, value) -> key.type.name.parameterizedName to value?.toRawObject() }
             .toMap()
       }
+
+   override fun historyRecord(): HistoryQueryResponse {
+      return HistoryQueryResponse(
+         resultMap,
+         unmatchedNodeNames,
+         path,
+         queryResponseId,
+         resultMode,
+         profilerOperation?.toDto(),
+         remoteCalls,
+         timings)
+   }
 }
+
+data class HistoryQueryResponse(val results: Map<String, Any?>,
+                                val unmatchedNodes: List<QualifiedName>,
+                                val path: Path? = null,
+                                val queryResponseId: String = UUID.randomUUID().toString(),
+                                val resultMode: ResultMode,
+                                val profilerOperation: ProfilerOperationDTO?,
+                                val remoteCalls: List<RemoteCall>,
+                                val timings: Map<OperationType, Long>)
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
@@ -125,6 +158,8 @@ interface QueryResponse {
       get() = profilerOperation?.vyneCost ?: 0L
 
    val resultMode: ResultMode
+
+   fun historyRecord(): HistoryQueryResponse
 }
 
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
@@ -219,7 +254,7 @@ data class QueryContext(
                   val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
 
                   // Instantiate with either name or value depending on what we have as input
-                  val value = if(underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
+                  val value = if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
 
                   TypedValue.from(synonymType, value, false)
                }.toSet()
