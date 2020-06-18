@@ -53,9 +53,6 @@ publish-snapshot:
 
      # don't need to run tests as they were run in the previous stage, but still compile the test-jars for deployment
     - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm test-compile jar:test-jar package deploy -P snapshot-releases ' 
-  artifacts:
-     paths:
-        - "vyne-query-service/target/"
   only:
     - develop
 
