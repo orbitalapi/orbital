@@ -56,10 +56,13 @@ publish-snapshot:
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
 #    -don't need to run tests as they were run in the previous stage, but still compile the test-jars for deployment
-    - 'mvn $MAVEN_CLI_OPTS -DskipTests test-compile jar:test-jar deploy -P snapshot-release'
-
-  only:
-    - develop
+    # FIXME docker:build -> deploy -P snapshot-releases
+    - 'mvn $MAVEN_CLI_OPTS -DskipTests test-compile jar:test-jar docker:build '
+  artifacts:
+     paths:
+        - "vyne-query-service/target/"
+ # only:
+ #   - develop
 
 publish-release:
 #  image: maven:3.6.3-jdk-8
