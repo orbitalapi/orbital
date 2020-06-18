@@ -23,7 +23,6 @@ stages:
    - deploy
 
 build-jvm:
-#  image: maven:3.6.3-jdk-8
   stage: build
   script:
     - 'mvn $MAVEN_CLI_OPTS clean install -Dskip.npm -PrunBenchmarkTests'
@@ -36,12 +35,8 @@ build-jvm:
       # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
       # However, leaving this here to pick up later
         - "*/target/surefire-reports/TEST-*.xml"
-#  except:
-#    - develop
-#    - master
 
 build-ui:
-   #  image: maven:3.6.3-jdk-8
    stage: build
    script:
       - 'mvn $MAVEN_CLI_OPTS generate-resources -f vyne-query-service/pom.xml -DskipTests '
@@ -51,13 +46,13 @@ build-ui:
       expire_in: 1 hours
 
 publish-snapshot:
-#  image: maven:3.6.3-jdk-8
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-#    -don't need to run tests as they were run in the previous stage, but still compile the test-jars for deployment
-    # FIXME docker:build -> deploy -P snapshot-releases
-    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm test-compile jar:test-jar docker:build '
+    - 'ls -al */target/'
+    - 'ls -al */target/classes/static'
+     # don't need to run tests as they were run in the previous stage, but still compile the test-jars for deployment
+    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm test-compile jar:test-jar package docker:build ' # FIXME docker:build -> deploy -P snapshot-releases
   artifacts:
      paths:
         - "vyne-query-service/target/"
