@@ -20,7 +20,16 @@ cache:
 
 stages:
    - build
-   - deploy
+   - testGitlab
+#   - deploy
+
+testing-gitlab:
+   #  image: maven:3.6.3-jdk-8
+   stage: testGitlab
+   script:
+      - 'ls .m2'
+      - 'ls -al vyne-query-service/src/main/web/node_modules'
+      - 'ls -al vyne-query-service/target/classes/static'
 
 build-jvm:
 #  image: maven:3.6.3-jdk-8
