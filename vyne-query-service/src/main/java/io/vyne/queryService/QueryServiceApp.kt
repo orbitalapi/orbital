@@ -74,12 +74,6 @@ class QueryServiceApp {
       //            registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
       //         }
       //      }
-      @Bean
-       fun supportPathBasedLocationStrategyWithoutHashes(): ErrorViewResolver? {
-         return ErrorViewResolver { request,
-                                    status,
-                                    model ->if (request.requestURI.contains("api")) ModelAndView("forward:http://localhost:9022",  emptyMap<String, Any>(), HttpStatus.OK) else ModelAndView("forward: index.html",  emptyMap<String, Any>(), HttpStatus.OK) }
-      }
    }
 }
 
