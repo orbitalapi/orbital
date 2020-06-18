@@ -20,7 +20,6 @@ cache:
 
 stages:
    - build
-   - testGitlab
    - deploy
 
 build-jvm:
