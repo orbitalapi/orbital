@@ -26,7 +26,7 @@ build-jvm:
 #  image: maven:3.6.3-jdk-8
   stage: build
   script:
-    - 'echo $CI_JOB_REF_NAME'
+    - 'echo $CI_COMMIT_REF_SLUG'
     - 'mvn $MAVEN_CLI_OPTS clean install -PrunBenchmarkTests'
   artifacts:
     paths:
