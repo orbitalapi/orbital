@@ -1,4 +1,5 @@
 <div #chartOuterContianer class="chart-outer-container">
+
   <ngx-graph class="chart-container" [links]="schemaGraph.links"
              [nodes]="schemaGraph.nodes"
              [autoZoom]="true"
@@ -39,7 +40,7 @@
         <svg:text class="edge-label" text-anchor="middle">
           <textPath class="text-path" [attr.href]="'#' + link.id" [style.dominant-baseline]="link.dominantBaseline"
                     startOffset="50%">
-            {{link.label}}
+            {{link.label }}
           </textPath>
         </svg:text>
       </svg:g>

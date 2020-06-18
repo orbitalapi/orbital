@@ -10,13 +10,18 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.web.servlet.error.ErrorViewResolver
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpStatus
+import org.springframework.web.servlet.ModelAndView
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+import java.util.*
+
 
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class)
@@ -69,8 +74,12 @@ class QueryServiceApp {
       //            registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
       //         }
       //      }
-
-
+      @Bean
+       fun supportPathBasedLocationStrategyWithoutHashes(): ErrorViewResolver? {
+         return ErrorViewResolver { request,
+                                    status,
+                                    model ->if (request.requestURI.contains("api")) ModelAndView("forward:http://localhost:9022",  emptyMap<String, Any>(), HttpStatus.OK) else ModelAndView("forward: index.html",  emptyMap<String, Any>(), HttpStatus.OK) }
+      }
    }
 }
 
