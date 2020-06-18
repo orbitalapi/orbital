@@ -27,11 +27,11 @@ build-jvm:
   stage: build
   script:
     - 'echo $CI_COMMIT_REF_SLUG'
-    - 'mvn $MAVEN_CLI_OPTS clean install -PrunBenchmarkTests'
+    - 'mvn $MAVEN_CLI_OPTS clean install -DskipTests -PrunBenchmarkTests'
   artifacts:
     paths:
-       - "*/vyne-query-service/target/classes/static"
-    expire_in: 1 week
+       - "vyne-query-service/target/classes/static"
+    expire_in: 1 day
     reports:
       junit:
       # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620

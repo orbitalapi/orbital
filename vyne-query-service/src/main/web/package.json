@@ -6,7 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "start-dev": "node --max_old_space_size=8192 node_modules/@angular/cli/bin/ng serve --configuration dev",
-    "build-prod": "ng build --prod",
+    "build-prod": "ng build",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
