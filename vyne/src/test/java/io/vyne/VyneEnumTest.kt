@@ -75,6 +75,45 @@ class VyneEnumTest {
    }
 
    @Test
+   fun `should build by using synonyms value and name different than String`() {
+
+      val enumSchema = TaxiSchema.from("""
+                namespace common {
+                   enum BankDirection {
+                     BankBuys(1),
+                     BankSell(2)
+                   }
+
+                   model CommonOrder {
+                      direction: BankDirection
+                   }
+                }
+                namespace BankX {
+                   enum BankXDirection {
+                        BUY(3) synonym of common.BankDirection.BankBuys,
+                        SELL(4) synonym of common.BankDirection.BankSell
+                   }
+                   model BankOrder {
+                      buySellIndicator: BankXDirection
+                   }
+                }
+
+      """.trimIndent())
+
+      val (vyne, stubService) = testVyne(enumSchema)
+      vyne.addJsonModel(
+         "BankX.BankOrder", """ { "buySellIndicator" : 3 } """)
+
+      // When
+      val queryResult = vyne.query().build("common.CommonOrder")
+
+      // Then
+      queryResult.shouldHaveResults(
+         mapOf("direction" to 1)
+      )
+   }
+
+   @Test
    fun `should build by using synonyms with vyneql`() {
 
       // Given
@@ -88,10 +127,11 @@ class VyneEnumTest {
       // Then
       queryResult.shouldHaveResults(
          listOf(
-            mapOf("direction" to "BankBuys"),
-            mapOf("direction" to "BankSells"),
             mapOf("direction" to "bankbuys"),
-            mapOf("direction" to "banksells")
+            mapOf("direction" to "banksells"),
+            mapOf("direction" to "BankBuys"),
+            mapOf("direction" to "BankSells")
+
          )
       )
    }
