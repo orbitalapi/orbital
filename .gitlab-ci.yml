@@ -39,8 +39,8 @@ build-jvm:
 build-ui:
    stage: build
    script:
-      # IMPROVE: generate-resources will do a bunch of other stuff we don't need, but that's the phase the frontend plugin is bound to
-      - 'mvn $MAVEN_CLI_OPTS -DskipTests generate-resources -f vyne-query-service/pom.xml'
+      # Only build the frontend. Nothing JVM related
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests frontend:npm@run-npm-install frontend:npm@ng-build -f vyne-query-service/pom.xml'
    artifacts:
       paths:
          - "vyne-query-service/target/classes/static"
@@ -61,7 +61,6 @@ publish-snapshot:
 
 
 publish-release:
-#  image: maven:3.6.3-jdk-8
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
