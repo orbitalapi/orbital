@@ -2,9 +2,9 @@
 
   <ngx-graph class="chart-container" [links]="schemaGraph.links"
              [nodes]="schemaGraph.nodes"
-             [autoZoom]="true"
+             [enableZoom]="false"
              [panningEnabled]="false"
-             [autoCenter]="true"
+             [autoCenter]="false"
              [draggingEnabled]="false"
              [scheme]="colorScheme" [orientation]="orientation"
              [curve]="curve" (select)="select($event)">
@@ -26,7 +26,7 @@
         <!--                    stoke-width="2"-->
         <!--                    [attr.fill]="getStroke(node)" stroke="#000000" rx="6" ry="6"/>-->
 
-        <svg:text alignment-baseline="central" x="15" y="15" fill="#7592a2" font-size="12">{{node.subHeader}}</svg:text>
+        <svg:text  alignment-baseline="central" x="15" y="15" fill="#7592a2" font-size="12">{{node.subHeader}}</svg:text>
         <svg:text alignment-baseline="central" x="15" y="40" fill="#4e8dc0"
                   font-size="18">{{node.label}}
         </svg:text>
