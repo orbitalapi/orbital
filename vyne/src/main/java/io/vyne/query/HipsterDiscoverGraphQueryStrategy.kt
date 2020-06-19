@@ -41,7 +41,11 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
       val relationship = edge.relationship
       val evaluator = evaluators[relationship]
          ?: error("No LinkEvaluator provided for relationship ${relationship.name}")
-      val evaluationResult = queryContext.startChild(this, "Evaluating ${edge.description} with evaluator ${evaluator.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) {
+      val evaluationResult = if (queryContext.debugProfiling) {
+         queryContext.startChild(this, "Evaluating ${edge.description} with evaluator ${evaluator.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) {
+            evaluator.evaluate(edge, queryContext)
+         }
+      } else {
          evaluator.evaluate(edge, queryContext)
       }
       //log().debug("Evaluated ${evaluationResult.description()}")
@@ -167,26 +171,30 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
 
    internal fun search(start: Element, target: Element, queryContext: QueryContext): Pair<TypedInstance, Path>? {
       // TODO : This is expensive.  We should cache against the schema.
-      val graph = queryContext.startChild(this, "Building graph", OperationType.GRAPH_BUILDING) {
-
-         val result = schemaGraphFactSetCache.get(SchemaFactSetCacheKey(queryContext.schema, queryContext.facts.map { it.type }.toSet()))
-         val stats = schemaGraphFactSetCache.stats()
-         //log().debug("Built graph.  Stats: $stats")
-         result
+      val graph = if (queryContext.debugProfiling) {
+         queryContext.startChild(this, "Building graph", OperationType.GRAPH_BUILDING) {
+            buildGraph(queryContext)
+         }
+      } else {
+         buildGraph(queryContext)
       }
-      val searchDescription = "$start -> $target"
-      //log().debug("Searching for path from {$searchDescription}")
-//      log().debug("Current graph state: \n ${graph.description()}")
 
-      return queryContext.startChild(this, "Searching for path ${start.valueAsQualifiedName().name} -> ${target.valueAsQualifiedName().name}", OperationType.GRAPH_TRAVERSAL) { op ->
-         // Note: The below call is very expensive.  If it turns out we need it, we should
-         // do some work to optimize it.
-//         op.addContext("Current graph", graph.edgeDescriptions())
-         doSearch(start, target, graph, searchDescription, queryContext, op)
+      return if (queryContext.debugProfiling) {
+         queryContext.startChild(this, "Searching for path ${start.valueAsQualifiedName().name} -> ${target.valueAsQualifiedName().name}", OperationType.GRAPH_TRAVERSAL) { op ->
+            doSearch(start, target, graph, queryContext, op)
+         }
+      } else {
+         doSearch(start, target, graph, queryContext)
       }
    }
 
-   private fun doSearch(start: Element, target: Element, graph: HipsterDirectedGraph<Element, Relationship>, searchDescription: String, queryContext: QueryContext, op: ProfilerOperation): Pair<TypedInstance, Path>? {
+   private fun buildGraph(queryContext: QueryContext): HipsterDirectedGraph<Element, Relationship> {
+      val result = schemaGraphFactSetCache.get(SchemaFactSetCacheKey(queryContext.schema, queryContext.facts.map { it.type }.toSet()))
+      log().debug("Built graph. Stats: ", schemaGraphFactSetCache.stats())
+      return result
+   }
+
+   private fun doSearch(start: Element, target: Element, graph: HipsterDirectedGraph<Element, Relationship>, queryContext: QueryContext, op: ProfilerOperation? = null): Pair<TypedInstance, Path>? {
       val searchResult = graphSearch(start, target, graph)
 
       if (searchResult.state() != target) {
@@ -198,8 +206,15 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       }
 
       // TODO : validate this is a valid path
-      //log().debug("Search $searchDescription found path: \n ${searchResult.path().describe()}")
-      op.addContext("Discovered path", lazy { searchResult.path().describeLinks() })
+      op?.let {
+         // Note: The below call is very expensive.  If it turns out we need it, we should
+         // do some work to optimize it.
+         //it.addContext("Current graph", graph.edgeDescriptions())
+         val searchDescription = "$start -> $target"
+         log().debug("Search {} found path: \n {}", searchDescription, searchResult.path().describe())
+         it.addContext("Discovered path", searchResult.path().describeLinks() )
+      }
+
       val evaluatedPath = evaluatePath(searchResult, queryContext)
       val resultValue = selectResultValue(evaluatedPath, queryContext, target)
       val path = searchResult.path().convertToVynePath(start, target)

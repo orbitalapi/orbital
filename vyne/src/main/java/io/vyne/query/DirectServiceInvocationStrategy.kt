@@ -18,46 +18,53 @@ import org.springframework.stereotype.Component
 @Component
 class DirectServiceInvocationStrategy(private val invocationService: OperationInvocationService) : QueryStrategy {
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
-
-      return context.startChild(this, "look for candidate services", OperationType.LOOKUP) { profilerOperation ->
-         val matchedNodes = getCandidateOperations(context.schema, target)
-            .filter { (_,operationToParameters) -> operationToParameters.isNotEmpty() }
-            .map { (queryNode, operationToParameters) ->
-               val operationsToInvoke = when {
-                  operationToParameters.size > 1 && queryNode.mode != QueryMode.GATHER -> {
-                     log().warn("Running in query mode ${queryNode.mode} and multiple candidate operations detected - ${operationToParameters.keys.joinToString { it.name }} - this isn't supported yet, will just pick the first one")
-                     listOf(operationToParameters.keys.first())
-                  }
-                  queryNode.mode == QueryMode.GATHER -> operationToParameters.keys.toList()
-                  else -> listOf(operationToParameters.keys.first())
-               }
-
-
-               val serviceResults = operationsToInvoke.map { operation ->
-                  val parameters = operationToParameters.getValue(operation)
-                  val (service, _) = context.schema.operation(operation.qualifiedName)
-                  val serviceResult = invocationService.invokeOperation(
-                     service,
-                     operation,
-                     context = context,
-                     preferredParams = emptySet(),
-                     providedParamValues = parameters.toList()
-                  )
-                  serviceResult
-               }.flattenNestedTypedCollections(flattenedType = queryNode.type)
-
-               val strategyResult = when {
-                  serviceResults.isEmpty() -> null
-                  serviceResults is TypedCollection -> serviceResults
-                  serviceResults.size == 1 -> serviceResults.first()
-                  else -> TypedCollection(queryNode.type,serviceResults) // Not sure this is a valid
-               }
-               queryNode to strategyResult
-            }.toMap()
-
-         QueryStrategyResult(matchedNodes)
+      return if(context.debugProfiling) {
+         context.startChild(this, "look for candidate services", OperationType.LOOKUP) { profilerOperation ->
+            lookForCandidateServices(context, target)
+         }
+      } else {
+         lookForCandidateServices(context, target)
       }
+   }
 
+   private fun lookForCandidateServices(context: QueryContext, target: Set<QuerySpecTypeNode>): QueryStrategyResult {
+      // TODO try caching candidate operations on the context
+      val matchedNodes = getCandidateOperations(context.schema, target)
+         .filter { (_, operationToParameters) -> operationToParameters.isNotEmpty() }
+         .map { (queryNode, operationToParameters) ->
+            val operationsToInvoke = when {
+               operationToParameters.size > 1 && queryNode.mode != QueryMode.GATHER -> {
+                  log().warn("Running in query mode ${queryNode.mode} and multiple candidate operations detected - ${operationToParameters.keys.joinToString { it.name }} - this isn't supported yet, will just pick the first one")
+                  listOf(operationToParameters.keys.first())
+               }
+               queryNode.mode == QueryMode.GATHER -> operationToParameters.keys.toList()
+               else -> listOf(operationToParameters.keys.first())
+            }
+
+
+            val serviceResults = operationsToInvoke.map { operation ->
+               val parameters = operationToParameters.getValue(operation)
+               val (service, _) = context.schema.operation(operation.qualifiedName)
+               val serviceResult = invocationService.invokeOperation(
+                  service,
+                  operation,
+                  context = context,
+                  preferredParams = emptySet(),
+                  providedParamValues = parameters.toList()
+               )
+               serviceResult
+            }.flattenNestedTypedCollections(flattenedType = queryNode.type)
+
+            val strategyResult = when {
+               serviceResults.isEmpty() -> null
+               serviceResults is TypedCollection -> serviceResults
+               serviceResults.size == 1 -> serviceResults.first()
+               else -> TypedCollection(queryNode.type, serviceResults) // Not sure this is a valid
+            }
+            queryNode to strategyResult
+         }.toMap()
+
+      return QueryStrategyResult(matchedNodes)
    }
 
    /**

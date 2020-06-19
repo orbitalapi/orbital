@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.google.common.collect.EvictingQueue
 import io.vyne.query.HistoryQueryResponse
 import io.vyne.query.Query
+import io.vyne.utils.log
 import io.vyne.vyneql.VyneQLQueryString
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
@@ -17,7 +18,6 @@ interface QueryHistory {
    fun get(id: String): Mono<QueryHistoryRecord<out Any>>
 }
 
-
 @Component
 @ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}')")
 class InMemoryQueryHistory: QueryHistory {
@@ -25,6 +25,7 @@ class InMemoryQueryHistory: QueryHistory {
 
    override fun add(record: QueryHistoryRecord<out Any>) {
       this.queries.add(record);
+      log().info("Saving to query history /query/history/${record.id}/profile")
    }
 
    override fun list(): Flux<QueryHistoryRecord<out Any>> {
