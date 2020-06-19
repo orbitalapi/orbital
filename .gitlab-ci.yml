@@ -8,23 +8,18 @@ variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U"
 #  MAVEN_CLI_OPTS: "--show-version"
 
-# Cache downloaded dependencies and plugins between builds.
-# To keep cache across branches add 'key: "$CI_JOB_REF_NAME"'
-cache:
-  paths:
-    - .m2/repository
-    - vyne-query-service/node
-    - vyne-query-service/src/main/web/.npm
-  key: "$CI_COMMIT_REF_SLUG"
-
 stages:
    - build
    - deploy
 
 build-jvm:
   stage: build
+  cache:
+     paths:
+        - .m2/repository
+     key: "maven-$CI_COMMIT_REF_SLUG"
   script:
-    - 'mvn $MAVEN_CLI_OPTS clean install -Dskip.npm -PrunBenchmarkTests'
+    - 'mvn $MAVEN_CLI_OPTS clean test-compile jar:test-jar install -Dskip.npm -PrunBenchmarkTests'
   artifacts:
     paths:
        - "*/target"
@@ -37,6 +32,10 @@ build-jvm:
 
 build-ui:
    stage: build
+   cache:
+      paths:
+         - vyne-query-service/src/main/web/node
+      key: "node-$CI_COMMIT_REF_SLUG"
    script:
       # Only build the frontend. Nothing JVM related
       - 'mvn $MAVEN_CLI_OPTS -DskipTests frontend:install-node-and-npm frontend:npm@run-npm-install frontend:npm@ng-build -f vyne-query-service/pom.xml'
@@ -50,8 +49,8 @@ publish-snapshot:
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
 
-     # don't need to run tests as they were run in the previous stage, but still compile the test-jars for deployment
-    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm test-compile jar:test-jar package docker:build ' # FIXME docker:build -> deploy -P snapshot-releases
+     # Don't need to run tests or build UI as they were run in the previous stage
+    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm package docker:build ' # FIXME docker:build -> deploy -P snapshot-releases
   artifacts:
     paths:
        - "vyne-query-service/target"
