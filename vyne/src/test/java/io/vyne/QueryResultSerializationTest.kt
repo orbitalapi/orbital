@@ -45,14 +45,13 @@ class QueryResultSerializationTest {
     }
   },
   "unmatchedNodes": [],
-  "path": null,
   "queryResponseId": "${result.queryResponseId}",
   "resultMode": "SIMPLE",
-  "duration": null,
   "fullyResolved": true,
   "remoteCalls": [],
   "timings": {},
-  "vyneCost": 0
+  "vyneCost": 0,
+  "truncated": false
 }"""
       val json = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(result)
       JSONAssert.assertEquals(expectedJson, json, true)
@@ -84,14 +83,13 @@ class QueryResultSerializationTest {
     } ]
   },
   "unmatchedNodes" : [ ],
-  "path" : null,
   "queryResponseId" : "${result.queryResponseId}",
   "resultMode" : "SIMPLE",
-  "duration" : null,
   "fullyResolved" : true,
   "remoteCalls" : [ ],
   "timings" : { },
-  "vyneCost" : 0
+  "vyneCost" : 0,
+  "truncated": false
 }
       """.trimIndent()
 

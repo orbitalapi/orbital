@@ -155,7 +155,11 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          .flatMap {it}
          .map { typedInstance -> mapTo(targetCollectionType, typedInstance, context) }
          .mapNotNull { it }
-      return TypedCollection.from(transformed);
+      return if (transformed.isEmpty()) {
+         null
+      } else {
+         TypedCollection.from(transformed)
+      }
    }
 
    // This logic executes currently as part of projection from one collection to another
@@ -248,10 +252,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val strategyIterator: Iterator<QueryStrategy> = strategies.iterator()
       while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
          val queryStrategy = strategyIterator.next()
-         val strategyResult = context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) { op ->
-            op.addContext("Search target", querySet.map { it.type.fullyQualifiedName })
-            queryStrategy.invoke(setOf(target), context)
-         }
+         val strategyResult = invokeStrategy(context, queryStrategy, querySet, target)
          // Note : We should add this additional data to the context too,
          // so that it's available for future query strategies to use.
          context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
@@ -282,6 +283,17 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          profilerOperation = context.profiler.root,
          resultMode = context.resultMode
       )
+   }
+
+   private fun invokeStrategy(context: QueryContext, queryStrategy: QueryStrategy, querySet: Set<QuerySpecTypeNode>, target: QuerySpecTypeNode): QueryStrategyResult {
+      return if (context.debugProfiling) {
+         context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) { op ->
+            op.addContext("Search target", querySet.map { it.type.fullyQualifiedName })
+            queryStrategy.invoke(setOf(target), context)
+         }
+      } else {
+         return queryStrategy.invoke(setOf(target), context)
+      }
    }
 }
 

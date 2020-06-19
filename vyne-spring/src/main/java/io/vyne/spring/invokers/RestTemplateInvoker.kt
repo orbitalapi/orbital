@@ -68,15 +68,16 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
 
          log().debug("Operation ${operation.name} resolves to $absoluteUrl")
-         httpInvokeOperation.addContext("Absolute Url", absoluteUrl)
+         httpInvokeOperation.addContext("AbsoluteUrl", absoluteUrl)
 
          val requestBody = buildRequestBody(operation, parameters.map { it.second })
          httpInvokeOperation.addContext("Service", service)
          httpInvokeOperation.addContext("Operation", operation)
 
-         val result = timed("$httpMethod $absoluteUrl") {
-            restTemplate.exchange(absoluteUrl, httpMethod, requestBody.first, requestBody.second, uriVariables)
-         }
+         val start = System.currentTimeMillis()
+         val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody.first, requestBody.second, uriVariables)
+         val executionTime = System.currentTimeMillis() - start
+         log().info("{} {} took {}ms", httpMethod, absoluteUrl, executionTime)
 
          val expandedUri = restTemplate.uriTemplateHandler.expand(absoluteUrl, uriVariables)
          httpInvokeOperation.addRemoteCall(RemoteCall(

@@ -1,5 +1,6 @@
 package io.vyne.schemas
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
 
 
@@ -78,6 +79,7 @@ data class Operation(val qualifiedName: QualifiedName, val parameters: List<Para
                      val operationType:String? = null,
                      override val metadata: List<Metadata> = emptyList(),
                      val contract: OperationContract = OperationContract(returnType),
+                     @get:JsonIgnore
                      val sources: List<VersionedSource>,
                      val typeDoc: String? = null) : MetadataTarget, SchemaMember {
    val name: String = OperationNames.operationName(qualifiedName)
@@ -90,6 +92,7 @@ data class Operation(val qualifiedName: QualifiedName, val parameters: List<Para
 data class Service(val name: QualifiedName,
                    val operations: List<Operation>,
                    override val metadata: List<Metadata> = emptyList(),
+                   @get:JsonIgnore
                    val sourceCode: List<VersionedSource>,
                    val typeDoc: String? = null) : MetadataTarget, SchemaMember {
    fun operation(name: String): Operation {

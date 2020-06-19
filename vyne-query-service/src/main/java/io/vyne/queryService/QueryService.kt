@@ -30,7 +30,7 @@ data class FailedSearchResponse(val message: String,
 ) : QueryResponse {
    override val isFullyResolved: Boolean = false
    override fun historyRecord(): HistoryQueryResponse {
-      return HistoryQueryResponse(mapOf(), listOf(), null, queryResponseId, resultMode, profilerOperation?.toDto(), listOf(), mapOf())
+      return HistoryQueryResponse(mapOf(), listOf(), null, queryResponseId, resultMode, profilerOperation?.toDto(), listOf(), mapOf(), false)
    }
 }
 
@@ -65,6 +65,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
                resultMode = ResultMode.SIMPLE
             )
          }
+
          history.add(VyneQlQueryHistoryRecord(query, response.historyRecord()))
          response
       }

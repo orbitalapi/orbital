@@ -1,11 +1,13 @@
 package io.vyne.query
 
+import io.vyne.models.TypedCollection
 import arrow.core.MapKOf
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.utils.log
 import java.time.Clock
 import java.util.*
+import kotlin.collections.HashMap
 
 // TODO Make it configurable https://projects.notional.uk/youtrack/issue/LENS-164
 // Disabling atm as the data is needed by the UI
@@ -217,6 +219,7 @@ data class Result(
       }
    }
 }
+
 
 class DefaultProfilerOperation(override val componentName: String,
                                override val operationName: String,
