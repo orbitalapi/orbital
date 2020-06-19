@@ -283,6 +283,30 @@
             </configuration>
          </plugin>
          <plugin>
+            <groupId>com.amashchenko.maven.plugin</groupId>
+            <artifactId>gitflow-maven-plugin</artifactId>
+            <version>1.14.0</version>
+            <configuration>
+               <!-- whether to push to the git remote. Very useful for testing locally -->
+               <pushRemote>false</pushRemote>
+               <!-- Set to true to immediately bump the development version when creating a release branch -->
+               <commitDevelopmentVersionAtStart>false</commitDevelopmentVersionAtStart>
+               <!-- Execute mvn compile before release -->
+               <preReleaseGoals>compile</preReleaseGoals>
+               <commitMessages>
+                  <releaseStartMessage>Update versions for release @{version}</releaseStartMessage>
+                  <releaseFinishMessage>Update for next development version @{version}</releaseFinishMessage>
+                  <releaseVersionUpdateMessage>Update for next development version @{version}</releaseVersionUpdateMessage>
+               </commitMessages>
+               <!-- Configure branches -->
+               <gitFlowConfig>
+                  <productionBranch>master</productionBranch>
+                  <!-- default is develop, but we use development -->
+                  <developmentBranch>develop</developmentBranch>
+               </gitFlowConfig>
+            </configuration>
+         </plugin>
+         <plugin>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-maven-plugin</artifactId>
             <version>${kotlin.version}</version>

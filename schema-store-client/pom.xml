@@ -8,19 +8,17 @@
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>schema-store-client</artifactId>
-   <version>0.3.0-SNAPSHOT</version>
-
 
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>events-api</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>io.arrow-kt</groupId>
@@ -30,12 +28,12 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>schema-store-api</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>io.projectreactor</groupId>
