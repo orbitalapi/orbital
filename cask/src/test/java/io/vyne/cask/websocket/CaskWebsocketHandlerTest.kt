@@ -22,6 +22,7 @@ import io.vyne.schemas.VersionedType
 import org.junit.Before
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.core.io.buffer.DefaultDataBufferFactory
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketMessage
 import reactor.core.publisher.Flux
@@ -81,7 +82,8 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun successfulIngestionResponseWhenDebugEnabled() {
-      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage())))
+      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT,
+         DefaultDataBufferFactory().wrap(validIngestionMessage().readBytes())))
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
       val captor = argumentCaptor<IngestionInitialisedEvent>()
       val versionedType = argumentCaptor<VersionedType>()
@@ -104,7 +106,9 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun successfulJsonMessageIngestion() {
-      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage()))
+      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT,
+         DefaultDataBufferFactory().wrap(validIngestionMessage().readBytes()))
+
       val sessionInput = Flux.just(validMessage)
       val session = MockWebSocketSession(uri = "/cask/json/OrderWindowSummary?debug=true", input = sessionInput)
       wsHandler.handle(session).block()
@@ -117,7 +121,8 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun noIngestionResponseWhenDebugDisabled() {
-      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage())))
+      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT,
+         DefaultDataBufferFactory().wrap(validIngestionMessage().readBytes())))
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary?debug=true", input = sessionInput)
       val captor = argumentCaptor<IngestionInitialisedEvent>()
 
@@ -133,7 +138,8 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun unexpectedIngestionError() {
-      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage())))
+      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT,
+         DefaultDataBufferFactory().wrap(validIngestionMessage().readBytes())))
       val session = MockWebSocketSession(uri = "/cask/json/OrderWindowSummary", input = sessionInput)
       whenever(ingester.ingest()).thenThrow(RuntimeException("No database connection"))
 
@@ -147,7 +153,7 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun illegalArgumentExceptionError() {
-      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage())))
+      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(validIngestionMessage().readBytes())))
       val session = MockWebSocketSession(uri = "/cask/json/OrderWindowSummary", input = sessionInput)
       whenever(ingester.ingest()).thenThrow(RuntimeException(null, IllegalArgumentException()))
 
@@ -161,7 +167,7 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun ingestionErrorCausedByInvalidType() {
-      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(invalidIngestionMessage())))
+      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(invalidIngestionMessage().readBytes())))
       val session = MockWebSocketSession(uri = "/cask/json/OrderWindowSummary", input = sessionInput)
       wsHandler.handle(session).block()
 
@@ -173,7 +179,8 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun ingestionErrorCausedByMissingValue() {
-      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(ingestionMessageWithMissingValue())))
+      val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT,
+         DefaultDataBufferFactory().wrap(ingestionMessageWithMissingValue().readBytes())))
       val session = MockWebSocketSession(uri = "/cask/json/OrderWindowSummary", input = sessionInput)
       wsHandler.handle(session).block()
 
@@ -185,9 +192,10 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun continueProcessingMessagesAfterError() {
-      val malformedJson = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(malformedJsonMessage()))
-      val invalidType = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(invalidIngestionMessage()))
-      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validIngestionMessage()))
+
+      val malformedJson = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(malformedJsonMessage().readBytes()))
+      val invalidType = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(invalidIngestionMessage().readBytes()))
+      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(validIngestionMessage().readBytes()))
       val sessionInput = Flux.just(malformedJson, invalidType, validMessage)
       val session = MockWebSocketSession(uri = "/cask/json/OrderWindowSummary?debug=true", input = sessionInput)
       wsHandler.handle(session).block()
@@ -202,7 +210,7 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun csvMessageIngestion() {
-      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validCsvMessage()))
+      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(validCsvMessage().readBytes()))
       val sessionInput = Flux.just(validMessage)
       val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true", input = sessionInput)
       wsHandler.handle(session).block()
@@ -215,7 +223,7 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun csvMessageIngestionWithSemicolonDelimiter() {
-      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validCsvMessage(";")))
+      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(validCsvMessage(";").readBytes()))
       val sessionInput = Flux.just(validMessage)
       val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=;", input = sessionInput)
       wsHandler.handle(session).block()
@@ -228,7 +236,7 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun csvMessageIngestionWithSemicolonDelimiterUrlEncoded() {
-      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validCsvMessage(";")))
+      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(validCsvMessage(";").readBytes()))
       val sessionInput = Flux.just(validMessage)
       val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=%3B", input = sessionInput) // %3B = ;
       wsHandler.handle(session).block()
@@ -241,7 +249,8 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun csvMessageIngestionWithoutColumnNameHeader() {
-      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(validCsvMessage(",", false)))
+      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT,
+         DefaultDataBufferFactory().wrap(validCsvMessage(",", false).readBytes()))
       val sessionInput = Flux.just(validMessage)
       val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&csvFirstRecordAsHeader=false", input = sessionInput)
       wsHandler.handle(session).block()
@@ -254,7 +263,7 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun csvMessageIngestionError() {
-      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(invalidCsvMessage()))
+      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(invalidCsvMessage().readBytes()))
       val sessionInput = Flux.just(validMessage)
       val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true", input = sessionInput)
       wsHandler.handle(session).block()
@@ -276,7 +285,7 @@ class CaskWebsocketHandlerTest {
 
    @Test
    fun csvMessageIngestionWithNullValues() {
-      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(csvMessageWithNullValues()))
+      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(csvMessageWithNullValues().readBytes()))
       val sessionInput = Flux.just(validMessage)
       val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&nullValue=NULL&nullValue=UNKNOWN&nullValue=N%2FA", input = sessionInput) // N%2FA = N/A
       wsHandler.handle(session).block()

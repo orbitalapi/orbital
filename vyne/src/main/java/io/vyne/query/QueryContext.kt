@@ -3,7 +3,13 @@ package io.vyne.query
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.KeyDeserializer
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.common.collect.HashMultimap
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -45,7 +51,7 @@ import kotlin.streams.toList
  *
  */
 // TODO : Why isn't the type enough, given that has children?  Why do I need to explicitly list the children I want?
-
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class QuerySpecTypeNode(
    val type: Type,
    val children: Set<QuerySpecTypeNode> = emptySet(),
@@ -55,6 +61,14 @@ data class QuerySpecTypeNode(
    val dataConstraints: List<OutputConstraint> = emptyList()
 )
 
+class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
+   override fun deserializeKey(p0: String?, p1: DeserializationContext?): Any? {
+      return null
+   }
+
+}
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class QueryResult(
    @field:JsonIgnore // we send a lightweight version below
    val results: Map<QuerySpecTypeNode, TypedInstance?>,
@@ -64,7 +78,8 @@ data class QueryResult(
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
    override val queryResponseId: String = UUID.randomUUID().toString(),
-   override val resultMode: ResultMode
+   override val resultMode: ResultMode,
+   val truncated: Boolean = false
 ) : QueryResponse {
 
    val duration = profilerOperation?.duration
@@ -104,6 +119,32 @@ data class QueryResult(
             .map { (key, value) -> key.type.name.parameterizedName to value?.toRawObject() }
             .toMap()
       }
+
+   override fun historyRecord(): HistoryQueryResponse {
+      return HistoryQueryResponse(
+         resultMap,
+         unmatchedNodeNames,
+         path,
+         queryResponseId,
+         resultMode,
+         profilerOperation?.toDto(),
+         remoteCalls,
+         timings,
+         unmatchedNodeNames.isEmpty())
+   }
+}
+
+data class HistoryQueryResponse(val results: Map<String, Any?>,
+                                val unmatchedNodes: List<QualifiedName>,
+                                val path: Path? = null,
+                                val queryResponseId: String = UUID.randomUUID().toString(),
+                                val resultMode: ResultMode,
+                                val profilerOperation: ProfilerOperationDTO?,
+                                val remoteCalls: List<RemoteCall>,
+                                val timings: Map<OperationType, Long>,
+                                @get:JsonProperty("fullyResolved")
+                                val isFullyResolved: Boolean,
+                                val truncated: Boolean? = false) {
 }
 
 // Note : Also models failures, so is fairly generic
@@ -125,6 +166,8 @@ interface QueryResponse {
       get() = profilerOperation?.vyneCost ?: 0L
 
    val resultMode: ResultMode
+
+   fun historyRecord(): HistoryQueryResponse
 }
 
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
@@ -172,6 +215,7 @@ data class QueryContext(
    val queryEngine: QueryEngine,
    val profiler: QueryProfiler,
    val resultMode: ResultMode,
+   val debugProfiling: Boolean = false,
    val parent: QueryContext? = null) : ProfilerOperation by profiler {
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
@@ -219,7 +263,7 @@ data class QueryContext(
                   val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
 
                   // Instantiate with either name or value depending on what we have as input
-                  val value = if(underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
+                  val value = if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
 
                   TypedValue.from(synonymType, value, false)
                }.toSet()
@@ -275,8 +319,12 @@ data class QueryContext(
 
    fun addEvaluatedEdge(evaluatedEdge: EvaluatedEdge) = this.evaluatedEdges.add(evaluatedEdge)
 
+   private val anyArrayType by lazy { schema.type(PrimitiveType.ANY) }
+
    // Wraps all the known facts under a root node, turning it into a tree
-   private fun dataTreeRoot(): TypedInstance = TypedCollection.arrayOf(schema.type(PrimitiveType.ANY), facts.toList())
+   private fun dataTreeRoot(): TypedInstance {
+      return TypedCollection.arrayOf(anyArrayType, facts.toList())
+   }
 
    /**
     * A breadth-first stream of data facts currently held in the collection.
@@ -328,7 +376,7 @@ data class QueryContext(
 
    fun addOperationResult(operation: EvaluatableEdge, result: TypedInstance): TypedInstance {
       getTopLevelContext().operationCache[operation] = result
-      log().info("Caching {} [{} -> {}]", operation, operation.previousValue?.value, result.value)
+      log().info("Caching {} [{} -> {}]", operation, operation.previousValue?.value, result.type.qualifiedName)
       return result
    }
 

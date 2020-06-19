@@ -58,24 +58,43 @@
          <groupId>com.google.guava</groupId>
          <artifactId>guava</artifactId>
       </dependency>
-
       <dependency>
          <groupId>net.logstash.logback</groupId>
          <artifactId>logstash-logback-encoder</artifactId>
       </dependency>
-
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-data-jpa</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-data-r2dbc</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.data</groupId>
+         <artifactId>spring-data-r2dbc</artifactId>
+         <version>1.1.1.RELEASE</version>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.data</groupId>
+         <artifactId>spring-data-commons</artifactId>
+         <version>2.3.1.RELEASE</version>
+      </dependency>
+      <dependency>
+         <groupId>io.r2dbc</groupId>
+         <artifactId>r2dbc-postgresql</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.flywaydb</groupId>
+         <artifactId>flyway-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.postgresql</groupId>
+         <artifactId>postgresql</artifactId>
+      </dependency>
    </dependencies>
 
    <build>
-      <resources>
-         <resource>
-            <filtering>true</filtering>
-            <directory>src/main/resources</directory>
-            <includes>
-               <include>application*.yml</include>
-            </includes>
-         </resource>
-      </resources>
       <plugins>
          <plugin>
             <groupId>pl.project13.maven</groupId>

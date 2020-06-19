@@ -4,6 +4,7 @@ import io.vyne.utils.log
 import org.reactivestreams.Publisher
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferFactory
+import org.springframework.core.io.buffer.DefaultDataBufferFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.HandshakeInfo
@@ -74,7 +75,8 @@ class MockWebSocketSession(val uri: String,
    }
 
    override fun textMessage(payload: String): WebSocketMessage {
-      return WebSocketMessage(WebSocketMessage.Type.TEXT, MockDataBuffer(payload.byteInputStream()))
+      return WebSocketMessage(WebSocketMessage.Type.TEXT,
+         DefaultDataBufferFactory().wrap(payload.byteInputStream().readBytes()))
    }
 
 }
