@@ -14,12 +14,51 @@
 <body>
 <div class="container">
    <h1>Cask testharness page</h1>
+
+   <div class="accordion" id="accordionExample">
+      <div class="card">
+         <div class="card-header" id="headingOne">
+            <h2 class="mb-0">
+               <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                  Quick help
+               </button>
+            </h2>
+         </div>
+
+         <div id="collapseOne" class="collapse hide" aria-labelledby="headingOne" data-parent="#accordionExample">
+            <div class="card-body">
+               Url structure:
+               <pre>ws://localhost:8800/cask/[contentType]/[typeReference]?debug=true[specificIngesterTypeParams]</pre>
+
+               Content Types:
+               <li>json</li>
+               <li>csv</li>
+
+               <br/>
+
+               General parameters:
+               <li>debug - enables ingester response (default debug=false)</li>
+               <li>nullValue - any number of parameter & separated. e.g. nullValue=EMPTY will result in ingester not mapping those values</li>
+
+               <br/>
+               Json ingester parameters:
+               <li>csvDelimiter - csv file column separator (default value ",")</li>
+               <li>csvFirstRecordAsHeader - treat first csv row as list of column names (default value true)</li>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <br/>
+
    <div class="form-group">
       <label for="caskUrl">Cask URL</label>
       <input class="form-control" id="caskUrl" rows="3"></input>
    </div>
    <button type="submit" class="btn btn-primary" id="connectToCaskButton">Connect</button>
    <br/><br/>
+
+
 
    <div class="form-group">
       <label for="inputMessage">Input message</label>
@@ -44,56 +83,9 @@
         integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
         crossorigin="anonymous"></script>
 <script>
-   var caskUrl = "ws://localhost:8800/cask/json/cacib.cemafor.orders.Order";
+   var caskUrl = "ws://localhost:8800/cask/csv/OrderWindowSummaryCsv?debug=true&nullValue=NULL&csvDelimiter=;&csvFirstRecordAsHeader=false";
    var clientWebSocket;
-   var message = JSON.stringify({
-   "tradeNumber":"USDINFLA-2020-05-05T09:10:54.1826197Z",
-   "eventType":"Open",
-   "tradeVersion":1,
-   "rfqId":"RfqId",
-   "entryType":"WithHeld",
-   "time":"2019-12-03 16:07:59.7980000",
-   "securityType":"Bond",
-   "subSecurityType":"??",
-   "identifierCode":"Identifier Code",
-   "identifierValue":"???",
-   "securityDescription":"Security Description",
-   "price":{
-      "currency":"EUR",
-      "amount":10.7
-
-},
-   "buySellFlag":"Buys",
-   "exchange":"CEM0",
-   "trader":"Trader 001",
-   "maturityDate":"2019-12-03",
-   "startDate":"2019-12-03",
-   "counterParty1":"PlacingCounterpartyName",
-   "counterParty2":"CounterpartyName",
-   "sourceSystem":"SourceSystemName",
-   "brokerFee":1.07,
-   "leg1Currency":"USD",
-   "leg1DayCountFraction":"ThirtyOverThreeSixty",
-   "leg1NotionalValue":1700000,
-   "leg1PaymentFrequency":0.78,
-   "leg1Rate":0.00995,
-   "leg1RateSpread": 1,
-   "leg1ResetFrequency": 1,
-   "leg2Currency":"USD",
-   "leg2DayCountFraction":"ActOverThreeSixFixFiveL",
-   "leg2NotionalValue":1700000,
-   "leg2PaymentFrequency":0.55,
-   "leg2Rate": 0.95,
-   "leg2RateSpread": 1,
-   "leg2ResetFrequency": 2,
-   "tenorMultiplier":2,
-   "tenorPeriod":"W",
-   "fixedLegMultiplier":2,
-   "fixedLegPeriod":"W",
-   "floatingRateIndex":"Libor",
-   "notionalExchange": 10
-})
-;
+   var message = "Body of the message - paste here JSON or CSV message to ingest";
 
    function connectToCask(url) {
       clientWebSocket = new WebSocket(url);
@@ -130,7 +122,7 @@
    }
 
    $(document).ready(function () {
-      $("#inputMessage").append(JSON.stringify(message));
+      $("#inputMessage").append(message );
       $("#caskUrl").val(caskUrl);
       $("#sendToCaskButton").click(function () {
          clientWebSocket.send($("#inputMessage").val());
