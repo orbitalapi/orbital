@@ -56,8 +56,8 @@ publish-snapshot:
   artifacts:
     paths:
        - "vyne-query-service/target"
-  only:
-    - develop
+ # only:
+  #  - develop
 
 
 publish-release:
