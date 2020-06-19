@@ -126,7 +126,8 @@ data class QueryResult(
          resultMode,
          profilerOperation?.toDto(),
          remoteCalls,
-         timings)
+         timings,
+         isFullyResolved)
    }
 }
 
@@ -137,7 +138,8 @@ data class HistoryQueryResponse(val results: Map<String, Any?>,
                                 val resultMode: ResultMode,
                                 val profilerOperation: ProfilerOperationDTO?,
                                 val remoteCalls: List<RemoteCall>,
-                                val timings: Map<OperationType, Long>)
+                                val timings: Map<OperationType, Long>,
+                                val fullyResolved: Boolean = false)
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
