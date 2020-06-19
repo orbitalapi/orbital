@@ -9,7 +9,6 @@
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>vyne</artifactId>
-   <version>0.3.0-SNAPSHOT</version>
 
    <properties>
    </properties>
@@ -18,17 +17,17 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-taxi</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-ql-compiler</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>lang.taxi</groupId>
@@ -38,7 +37,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-query-api</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>com.fasterxml.jackson.datatype</groupId>

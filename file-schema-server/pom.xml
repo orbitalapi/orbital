@@ -20,17 +20,17 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-spring</artifactId>
-         <version>0.3.0-SNAPSHOT</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
