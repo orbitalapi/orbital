@@ -157,6 +157,9 @@ data class LightweightQueryResult(
 
 ) : QueryResponse {
    override val profilerOperation: ProfilerOperation? = null
+   override fun historyRecord(): HistoryQueryResponse {
+      return HistoryQueryResponse(mapOf(), listOf(), null, queryResponseId, resultMode, null, listOf(), mapOf(), isFullyResolved)
+   }
 }
 
 

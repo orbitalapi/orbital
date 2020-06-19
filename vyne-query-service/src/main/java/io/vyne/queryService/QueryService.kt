@@ -29,9 +29,10 @@ data class FailedSearchResponse(val message: String,
 
 ) : QueryResponse {
    override val isFullyResolved: Boolean = false
+   override fun historyRecord(): HistoryQueryResponse {
+      return HistoryQueryResponse(mapOf(), listOf(), null, queryResponseId, resultMode, profilerOperation?.toDto(), listOf(), mapOf(), false)
+   }
 }
-
-interface SchemaLightView : TypeLightView
 
 /**
  * QueryService provides a simple way to submit queries to vyne, and
@@ -46,14 +47,13 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
    @PostMapping("/query")
    fun submitQuery(@RequestBody query: Query): QueryResponse {
       val response = executeQuery(query)
-      history.add(RestfulQueryHistoryRecord(query, response))
+      history.add(RestfulQueryHistoryRecord(query, response.historyRecord()))
       return response
    }
 
    @PostMapping("/vyneql")
    fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString): QueryResponse {
-      log().info("VyneQL query=$query")
-
+      log().info("VyneQL query => $query")
       return timed("QueryService.submitVyneQlQuery") {
          val vyne = vyneFactory.createVyne()
          val response: QueryResponse = try {
@@ -65,7 +65,8 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
                resultMode = ResultMode.SIMPLE
             )
          }
-         history.add(VyneQlQueryHistoryRecord(query, response))
+
+         history.add(VyneQlQueryHistoryRecord(query, response.historyRecord()))
          response
       }
    }

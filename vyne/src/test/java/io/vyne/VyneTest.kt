@@ -854,6 +854,48 @@ service IonService {
 
       """.trimIndent())
 
+   @Test
+   fun `should build by using synonyms`() {
+
+      // Given
+      val (vyne, stubService) = testVyne(enumSchema)
+      vyne.addJsonModel(
+         "BankX.BankOrder", """ { "buySellIndicator" : 3 } """)
+
+      // When
+      val result = vyne.query().build("common.CommonOrder")
+
+      // Then
+      val rawResult = result.results.values.first()!!.toRawObject()
+      rawResult.should.equal(mapOf("direction" to 1))
+   }
+
+   @Test
+   fun `should build by using synonyms value and name different than String`() {
+
+      val enumSchema = TaxiSchema.from("""
+                namespace common {
+                   enum BankDirection {
+                     BankBuys(1),
+                     BankSell(2)
+                   }
+
+                   model CommonOrder {
+                      direction: BankDirection
+                   }
+                }
+                namespace BankX {
+                   enum BankXDirection {
+                        BUY(3) synonym of common.BankDirection.BankBuys,
+                        SELL(4) synonym of common.BankDirection.BankSell
+                   }
+                   model BankOrder {
+                      buySellIndicator: BankXDirection
+                   }
+                }
+
+      """.trimIndent())
+
       val (vyne, stubService) = testVyne(enumSchema)
       vyne.addJsonModel(
          "BankX.BankOrder", """ { "buySellIndicator" : 3 } """)
