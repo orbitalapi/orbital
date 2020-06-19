@@ -550,28 +550,28 @@ type LegacyTradeNotification {
 type alias OrderDate as Date
 type alias OrderId as String
 
-model IMadOrder {
+model CommonOrder {
    id: OrderId
    date: OrderDate
 }
 
 model Order {
 }
-type HpcOrder inherits Order {
-   hpcID: OrderId
-   hpcDate: OrderDate
+type Broker1Order inherits Order {
+   broker1ID: OrderId
+   broker1Date: OrderDate
 }
-type IonOrder inherits Order {
-   ionID: OrderId
-   ionDate: OrderDate
+type Broker2Order inherits Order {
+   broker2ID: OrderId
+   broker2Date: OrderDate
 }
 
 // operations
-service HpcService {
-   operation getHpcOrders( start : OrderDate, end : OrderDate) : HpcOrder[] (OrderDate >= start, OrderDate < end)
+service Broker1Service {
+   operation getBroker1Orders( start : OrderDate, end : OrderDate) : Broker1Order[] (OrderDate >= start, OrderDate < end)
 }
-service IonService {
-   operation getIonOrders( start : OrderDate, end : OrderDate) : IonOrder[] (OrderDate >= start, OrderDate < end)
+service Broker2Service {
+   operation getBroker2Orders( start : OrderDate, end : OrderDate) : Broker2Order[] (OrderDate >= start, OrderDate < end)
 }
 
 """.trimIndent()
@@ -581,14 +581,14 @@ service IonService {
    fun canGatherOrdersFromTwoDifferentServices() {
       // prepare
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("getHpcOrders", vyne.parseJsonModel("HpcOrder[]", """
+      stubService.addResponse("getBroker1Orders", vyne.parseJsonModel("Broker1Order[]", """
          [
-            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"}
+            { "broker1ID" : "Broker1Order1", "broker1Date" : "2020-01-01"}
          ]
          """.trimIndent()))
-      stubService.addResponse("getIonOrders", vyne.parseJsonModel("IonOrder[]", """
+      stubService.addResponse("getBroker2Orders", vyne.parseJsonModel("Broker2Order[]", """
          [
-            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"}
+            { "broker2ID" : "Broker2Order1", "broker2Date" : "2020-01-01"}
          ]
          """.trimIndent()))
 
@@ -599,8 +599,8 @@ service IonService {
       expect(result.isFullyResolved).to.be.`true`
       val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }.flatMap { it as ArrayList<*> }
       resultList.should.contain.all.elements(
-         mapOf(Pair("hpcID", "hpcOrder1"), Pair("hpcDate", LocalDate.parse("2020-01-01"))),
-         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate", LocalDate.parse("2020-01-01")))
+         mapOf(Pair("broker1ID", "Broker1Order1"), Pair("broker1Date", LocalDate.parse("2020-01-01"))),
+         mapOf(Pair("broker2ID", "Broker2Order1"), Pair("broker2Date", LocalDate.parse("2020-01-01")))
       )
    }
 
@@ -608,16 +608,16 @@ service IonService {
    fun canGatherOrdersFromTwoDifferentServices_AndFilterByDateRange() {
       // prepare
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("getHpcOrders", vyne.parseJsonModel("HpcOrder[]", """
+      stubService.addResponse("getBroker1Orders", vyne.parseJsonModel("Broker1Order[]", """
          [
-            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"},
-            { "hpcID" : "hpcOrder2", "hpcDate" : "2020-01-02"}
+            { "broker1ID" : "Broker1Order1", "broker1Date" : "2020-01-01"},
+            { "broker1ID" : "Broker1Order2", "broker1Date" : "2020-01-02"}
          ]
          """.trimIndent()))
-      stubService.addResponse("getIonOrders", vyne.parseJsonModel("IonOrder[]", """
+      stubService.addResponse("getBroker2Orders", vyne.parseJsonModel("Broker2Order[]", """
          [
-            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"},
-            { "ionID" : "ionOrder2", "ionDate" : "2020-01-02"}
+            { "broker2ID" : "Broker2Order1", "broker2Date" : "2020-01-01"},
+            { "broker2ID" : "Broker2Order2", "broker2Date" : "2020-01-02"}
          ]
          """.trimIndent()))
 
@@ -647,16 +647,16 @@ service IonService {
    @Test
    fun canDoFindAllUsingVyneQlQuery() {
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("getHpcOrders", vyne.parseJsonModel("HpcOrder[]", """
+      stubService.addResponse("getBroker1Orders", vyne.parseJsonModel("Broker1Order[]", """
          [
-            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"},
-            { "hpcID" : "hpcOrder2", "hpcDate" : "2020-01-02"}
+            { "broker1ID" : "Broker1Order1", "broker1Date" : "2020-01-01"},
+            { "broker1ID" : "Broker1Order2", "broker1Date" : "2020-01-02"}
          ]
          """.trimIndent()))
-      stubService.addResponse("getIonOrders", vyne.parseJsonModel("IonOrder[]", """
+      stubService.addResponse("getBroker2Orders", vyne.parseJsonModel("Broker2Order[]", """
          [
-            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"},
-            { "ionID" : "ionOrder2", "ionDate" : "2020-01-02"}
+            { "broker2ID" : "Broker2Order1", "broker2Date" : "2020-01-01"},
+            { "broker2ID" : "Broker2Order2", "broker2Date" : "2020-01-02"}
          ]
          """.trimIndent()))
       val result = vyne.query("""
@@ -674,26 +674,26 @@ service IonService {
    fun canProjectDifferentOrderTypesToSingleType() {
       // prepare
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+      stubService.addResponse("getBroker1Orders", vyne.addJsonModel("Broker1Order[]", """
          [
-            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"}
+            { "broker1ID" : "Broker1Order1", "broker1Date" : "2020-01-01"}
          ]
          """.trimIndent()))
-      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+      stubService.addResponse("getBroker2Orders", vyne.addJsonModel("Broker2Order[]", """
          [
-            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"}
+            { "broker2ID" : "Broker2Order1", "broker2Date" : "2020-01-01"}
          ]
          """.trimIndent()))
 
       // act
-      val result = vyne.query().projectResultsTo("IMadOrder[]").findAll("Order[]")
+      val result = vyne.query().projectResultsTo("CommonOrder[]").findAll("Order[]")
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
       val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
       resultList.should.contain.all.elements(
-         mapOf(Pair("id", "hpcOrder1"), Pair("date", "2020-01-01")),
-         mapOf(Pair("id", "ionOrder1"), Pair("date", "2020-01-01"))
+         mapOf(Pair("id", "Broker1Order1"), Pair("date", "2020-01-01")),
+         mapOf(Pair("id", "Broker2Order1"), Pair("date", "2020-01-01"))
       )
    }
 
@@ -701,28 +701,28 @@ service IonService {
    fun canProjectDifferentOrderTypesToSingleTypeFromUsingVyneQLQuery() {
       // prepare
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+      stubService.addResponse("getBroker1Orders", vyne.addJsonModel("Broker1Order[]", """
          [
-            { "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01"}
+            { "broker1ID" : "Broker1Order1", "broker1Date" : "2020-01-01"}
          ]
          """.trimIndent()))
-      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+      stubService.addResponse("getBroker2Orders", vyne.addJsonModel("Broker2Order[]", """
          [
-            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"}
+            { "broker2ID" : "Broker2Order1", "broker2Date" : "2020-01-01"}
          ]
          """.trimIndent()))
 
       // act
       val result = vyne.query("""
-         findAll { Order[] } as IMadOrder[]
+         findAll { Order[] } as CommonOrder[]
       """.trimIndent())
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
       val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
       resultList.should.contain.all.elements(
-         mapOf(Pair("id", "hpcOrder1"), Pair("date", "2020-01-01")),
-         mapOf(Pair("id", "ionOrder1"), Pair("date", "2020-01-01"))
+         mapOf(Pair("id", "Broker1Order1"), Pair("date", "2020-01-01")),
+         mapOf(Pair("id", "Broker2Order1"), Pair("date", "2020-01-01"))
       )
    }
 
@@ -730,14 +730,14 @@ service IonService {
    fun canProjectDifferentOrderTypesToSingleType_whenSomeValuesAreMissing() {
       // prepare
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("getHpcOrders", vyne.addJsonModel("HpcOrder[]", """
+      stubService.addResponse("getBroker1Orders", vyne.addJsonModel("Broker1Order[]", """
          [
-            { "hpcID" : "hpcOrder1"}
+            { "broker1ID" : "Broker1Order1"}
          ]
          """.trimIndent()))
-      stubService.addResponse("getIonOrders", vyne.addJsonModel("IonOrder[]", """
+      stubService.addResponse("getBroker2Orders", vyne.addJsonModel("Broker2Order[]", """
          [
-            { "ionID" : "ionOrder1", "ionDate" : "2020-01-01"}
+            { "broker2ID" : "Broker2Order1", "broker2Date" : "2020-01-01"}
          ]
          """.trimIndent()))
 
@@ -748,8 +748,8 @@ service IonService {
       expect(result.isFullyResolved).to.be.`true`
       val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }.flatMap { it as ArrayList<*> }
       resultList.should.contain.all.elements(
-         mapOf(Pair("hpcID", "hpcOrder1")),
-         mapOf(Pair("ionID", "ionOrder1"), Pair("ionDate", "2020-01-01"))
+         mapOf(Pair("broker1ID", "Broker1Order1")),
+         mapOf(Pair("broker2ID", "Broker2Order1"), Pair("broker2Date", "2020-01-01"))
       )
    }
 
