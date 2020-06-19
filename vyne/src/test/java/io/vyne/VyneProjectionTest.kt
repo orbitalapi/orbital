@@ -23,7 +23,7 @@ type alias OrderId as String
 type UserId inherits String
 type UserName inherits String
 
-model IMadOrder {
+model CommonOrder {
    id: OrderId
    date: OrderDate
    traderId: UserId
@@ -32,22 +32,22 @@ model IMadOrder {
 
 model Order {
 }
-type HpcOrder inherits Order {
-   hpcID: OrderId
-   hpcDate: OrderDate
+type Broker1Order inherits Order {
+   broker1ID: OrderId
+   broker1Date: OrderDate
    traderId: UserId
 }
-type IonOrder inherits Order {
-   ionID: OrderId
-   ionDate: OrderDate
+type Broker2Order inherits Order {
+   broker2ID: OrderId
+   broker2Date: OrderDate
 }
 
 // operations
-service HpcService {
-   operation getHpcOrders( start : OrderDate, end : OrderDate) : HpcOrder[] (OrderDate >= start, OrderDate < end)
+service Broker1Service {
+   operation getBroker1Orders( start : OrderDate, end : OrderDate) : Broker1Order[] (OrderDate >= start, OrderDate < end)
 }
-service IonService {
-   operation getIonOrders( start : OrderDate, end : OrderDate) : IonOrder[] (OrderDate >= start, OrderDate < end)
+service Broker2Service {
+   operation getBroker2Orders( start : OrderDate, end : OrderDate) : Broker2Order[] (OrderDate >= start, OrderDate < end)
 }
 
 service UserService {
@@ -58,16 +58,16 @@ service UserService {
       val noOfRecords = 10_000
 
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("getHpcOrders", object : StubResponseHandler {
+      stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
          override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
-            return vyne.addJsonModel("HpcOrder[]", generateHpcOrders(noOfRecords))
+            return vyne.addJsonModel("Broker1Order[]", generateBroker1Orders(noOfRecords))
          }
       })
-      stubService.addResponse("getIonOrders", object : StubResponseHandler {
+      stubService.addResponse("getBroker2Orders", object : StubResponseHandler {
          override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
-            return vyne.addJsonModel("IonOrder[]", "[]")
+            return vyne.addJsonModel("Broker2Order[]", "[]")
          }
       })
       stubService.addResponse("getUserNameFromId", object : StubResponseHandler {
@@ -87,7 +87,7 @@ service UserService {
       val result = vyne.query("""
          findAll {
             Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30")
-         } as IMadOrder[]""".trimIndent())
+         } as CommonOrder[]""".trimIndent())
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -95,25 +95,25 @@ service UserService {
       resultList.size.should.be.equal(noOfRecords)
       resultList[0].should.equal(
          mapOf(
-            Pair("id", "hpcOrder1"),
+            Pair("id", "broker1Order1"),
             Pair("date", "2020-01-01"),
             Pair("traderId", "trader1"),
             Pair("traderName", "Mike Brown"))
       )
       resultList[1].should.equal(
          mapOf(
-            Pair("id", "hpcOrder1"),
+            Pair("id", "broker1Order1"),
             Pair("date", "2020-01-01"),
             Pair("traderId", "trader0"),
             Pair("traderName", "John Smith"))
       )
    }
 
-   private fun generateHpcOrders(noOfRecords: Int): String {
+   private fun generateBroker1Orders(noOfRecords: Int): String {
       val buf = StringBuilder()
       buf.append("[")
       for (i in 1..noOfRecords) {
-         buf.append("""{ "hpcID" : "hpcOrder1", "hpcDate" : "2020-01-01", "traderId" : "trader${i%2}"}""")
+         buf.append("""{ "broker1ID" : "broker1Order1", "broker1Date" : "2020-01-01", "traderId" : "trader${i%2}"}""")
          if (i < noOfRecords) {
             buf.append(",")
          }
