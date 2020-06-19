@@ -54,10 +54,11 @@ publish-snapshot:
      # don't need to run tests as they were run in the previous stage, but still compile the test-jars for deployment
     - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm test-compile jar:test-jar package docker:build ' # FIXME docker:build -> deploy -P snapshot-releases
   artifacts:
-     paths:
-        - "vyne-query-service/target/"
+    paths:
+       - "vyne-query-service/target"
   only:
     - develop
+
 
 publish-release:
 #  image: maven:3.6.3-jdk-8
