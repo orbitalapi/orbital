@@ -13,6 +13,7 @@ variables:
 cache:
   paths:
     - .m2/repository
+    - vyne-query-service/node
     - vyne-query-service/src/main/web/.npm
   key: "$CI_COMMIT_REF_SLUG"
 
@@ -38,7 +39,7 @@ build-ui:
    stage: build
    script:
       # Only build the frontend. Nothing JVM related
-      - 'mvn $MAVEN_CLI_OPTS -DskipTests frontend:npm@install-npm frontend:npm@run-npm-install frontend:npm@ng-build -f vyne-query-service/pom.xml'
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests frontend:install-node-and-npm frontend:npm@run-npm-install frontend:npm@ng-build -f vyne-query-service/pom.xml'
    artifacts:
       paths:
          - "vyne-query-service/target/classes/static"
