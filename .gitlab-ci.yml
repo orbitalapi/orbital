@@ -6,11 +6,20 @@ variables:
   # when running from the command line.
   # `installAtEnd` and `deployAtEnd` are only effective with recent version of the corresponding plugins.
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U"
-#  MAVEN_CLI_OPTS: "--show-version"
+  # Used during gitflow interaction.
+  MAJOR_RELEASE_DIGIT: 0
+  MINOR_RELEASE_DIGIT: 1
+  PATCH_RELEASE_DIGIT: 2
+
+.git_template: &git_setup |
+   git remote set-url --push origin "https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+   git config user.name "vyne-cd"
+   git config user.email vyne-cd@vyne.co
 
 stages:
    - build
    - deploy
+   - release
 
 build-jvm:
   stage: build
@@ -51,6 +60,43 @@ publish-snapshot:
     - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm deploy -P snapshot-releases ' # Skip UI and tests. Already there from previous stages and artifacts
   only:
     - develop
+
+
+release-major:
+   variables:
+      GIT_STRATEGY: none
+   image: maven:3.3.9-jdk-8
+   stage: release
+   script:
+      - *git_setup
+      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MAJOR_RELEASE_DIGIT'
+   only:
+      - develop
+   when: manual
+
+release-minor:
+   variables:
+      GIT_STRATEGY: none
+   image: maven:3.3.9-jdk-8
+   stage: release
+   script:
+      - *git_setup
+      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MINOR_RELEASE_DIGIT'
+   only:
+      - develop
+   when: manual
+
+release-patch:
+   variables:
+      GIT_STRATEGY: none
+   image: maven:3.3.9-jdk-8
+   stage: release
+   script:
+      - *git_setup
+      - 'mvn gitflow:release -B -DversionDigitToIncrement=$PATCH_RELEASE_DIGIT'
+   only:
+      - develop
+   when: manual
 
 
 publish-release:
