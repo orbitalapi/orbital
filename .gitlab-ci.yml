@@ -51,9 +51,6 @@ publish-snapshot:
 
      # Don't need to run tests or build UI as they were run in the previous stage
     - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm package docker:build ' # FIXME docker:build -> deploy -P snapshot-releases
-  artifacts:
-    paths:
-       - "vyne-query-service/target"
  # only:
   #  - develop
 
