@@ -825,79 +825,8 @@ service IonService {
 //      """.trimIndent())
    }
 
-   val enumSchema = TaxiSchema.from("""
-                namespace common {
-                   enum BankDirection {
-                     BankBuys("bankbuys"),
-                     BankSell("banksell")
-                   }
 
-                   model CommonOrder {
-                      direction: BankDirection
-                   }
-                }
-                namespace BankX {
-                   enum BankXDirection {
-                        BUY("buy") synonym of common.BankDirection.BankBuys,
-                        SELL("sell") synonym of common.BankDirection.BankSell
-                   }
-                   model BankOrder {
-                      buySellIndicator: BankXDirection
-                   }
-                }
 
-      """.trimIndent())
-
-   @Test
-   fun `should build by using synonyms`() {
-
-      // Given
-      val (vyne, stubService) = testVyne(enumSchema)
-      vyne.addJsonModel(
-         "BankX.BankOrder", """ { "buySellIndicator" : "BUY" } """)
-
-      // When
-      val result = vyne.query().build("common.CommonOrder")
-
-      // Then
-      val rawResult = result.results.values.first()!!.toRawObject()
-      rawResult.should.equal(mapOf("direction" to "BankBuys"))
-
-   }
-
-   @Test
-   fun `should build by using synonyms with vyneql`() {
-
-      // Given
-      val (vyne, stubService) = testVyne(enumSchema)
-      vyne.addJsonModel("BankX.BankOrder[]", """ [ { "buySellIndicator" : "BUY" }, { "buySellIndicator" : "SELL" } ] """.trimIndent())
-
-      // When
-      val result = vyne.query(""" findOne { BankOrder[] } as  CommonOrder[] """)
-
-      // Then
-      val results = result.results.values.first()!! as TypedCollection
-      results.size.should.equal(2)
-      results.map { it.value }.should.equals(mapOf("direction" to "BankBuys", "direction" to "BankSells"))
-   }
-
-   @Test
-   fun `should build by using synonyms value and name`() {
-
-      val (vyne, stubService) = testVyne(enumSchema)
-
-      // Query by enum value
-      val factValue = vyne.parseJsonModel("BankDirection", """ { "name": "bankbuys" } """)
-      val resultValue = vyne.query(additionalFacts = setOf(factValue)).build("BankOrder")
-      val rawResultValue = resultValue.results.values.first()!!.toRawObject()
-      rawResultValue.should.equal(mapOf("buySellIndicator" to "buy"))
-
-      // Query by enum name
-      val factName = vyne.parseJsonModel("BankDirection", """ { "name": "BankSell" } """)
-      val resultName = vyne.query(additionalFacts = setOf(factName)).build("BankOrder")
-      val rawResultName = resultName.results.values.first()!!.toRawObject()
-      rawResultName.should.equal(mapOf("buySellIndicator" to "SELL"))
-   }
 
    @Test
    fun `should build by using synonyms value and name different than String`() {
