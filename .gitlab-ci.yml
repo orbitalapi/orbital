@@ -48,9 +48,7 @@ publish-snapshot:
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-
-     # Don't need to run tests or build UI as they were run in the previous stage and are inluded via artifacts
-    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm deploy -P snapshot-releases '
+    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm deploy -P snapshot-releases ' # Skip UI and tests. Already there from previous stages and artifacts
   only:
     - develop
 
@@ -59,7 +57,7 @@ publish-release:
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-    - 'mvn $MAVEN_CLI_OPTS -Dmaven.test.skip=true release:prepare release:perform'
+    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm release:prepare release:perform'
   only:
     - master
 
