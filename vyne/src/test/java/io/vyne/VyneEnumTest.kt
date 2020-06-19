@@ -80,17 +80,24 @@ class VyneEnumTest {
       // Given
       val (vyne, stubService) = testVyne(enumSchema)
       vyne.addJsonModel("BankX.BankOrder[]", """ [ { "buySellIndicator" : "BUY" }, { "buySellIndicator" : "SELL" } ] """.trimIndent())
+      vyne.addJsonModel("BankX.BankOrder[]", """ [ { "buySellIndicator" : "buy" }, { "buySellIndicator" : "sell" } ] """.trimIndent())
 
       // When
       val queryResult = vyne.query(""" findOne { BankOrder[] } as CommonOrder[] """)
 
       // Then
-      queryResult.shouldHaveResults(listOf(mapOf("direction" to "BankBuys"), mapOf("direction" to "BankSells")))
-
+      queryResult.shouldHaveResults(
+         listOf(
+            mapOf("direction" to "BankBuys"),
+            mapOf("direction" to "BankSells"),
+            mapOf("direction" to "bankbuys"),
+            mapOf("direction" to "banksells")
+         )
+      )
    }
 
    @Test
-   fun `should build by using synonyms and inheritance`() {
+   fun `should project by using synonyms and inheritance`() {
 
       val enumSchema = TaxiSchema.from("""
 enum EnumA {
@@ -129,7 +136,7 @@ type typeB {
    }
 
    @Test
-   fun `should build by using synonyms and multiple inheritance`() {
+   fun `should project by using synonyms and multiple inheritance`() {
 
       val enumSchema = TaxiSchema.from("""
 enum EnumA {
