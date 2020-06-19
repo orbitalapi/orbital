@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>0.5.0</taxi.version> <!-- FIXME -->
+      <taxi.version>0.5.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -270,27 +270,16 @@
       <finalName>${project.artifactId}</finalName>
       <plugins>
          <plugin>
-            <groupId>com.amashchenko.maven.plugin</groupId>
-            <artifactId>gitflow-maven-plugin</artifactId>
-            <version>1.14.0</version>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-release-plugin</artifactId>
+            <version>2.5.3</version>
             <configuration>
-               <!-- whether to push to the git remote. Very useful for testing locally -->
-               <pushRemote>false</pushRemote>
-               <!-- Set to true to immediately bump the development version when creating a release branch -->
-               <commitDevelopmentVersionAtStart>false</commitDevelopmentVersionAtStart>
-               <!-- Execute mvn compile before release -->
-               <preReleaseGoals>compile</preReleaseGoals>
-               <commitMessages>
-                  <releaseStartMessage>Update versions for release @{version}</releaseStartMessage>
-                  <releaseFinishMessage>Update for next development version @{version}</releaseFinishMessage>
-                  <releaseVersionUpdateMessage>Update for next development version @{version}</releaseVersionUpdateMessage>
-               </commitMessages>
-               <!-- Configure branches -->
-               <gitFlowConfig>
-                  <productionBranch>master</productionBranch>
-                  <!-- default is develop, but we use development -->
-                  <developmentBranch>develop</developmentBranch>
-               </gitFlowConfig>
+               <tagNameFormat>v@{project.version}</tagNameFormat>
+               <releaseProfiles>release</releaseProfiles>
+               <!-- Currently skipping tests when deploying.
+               There isn't a good reason for this, just in a hurry.
+               Judge away -->
+               <arguments>-Dmaven.javadoc.skip=true -Dmaven.test.skipTests=true -Dmaven.test.skip=true</arguments>
             </configuration>
          </plugin>
          <plugin>
