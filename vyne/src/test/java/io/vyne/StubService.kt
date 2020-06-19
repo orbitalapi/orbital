@@ -8,6 +8,7 @@ import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
+import io.vyne.utils.log
 import io.vyne.utils.orElse
 
 typealias StubResponseHandler = (Operation, List<Pair<Parameter, TypedInstance>>) -> TypedInstance
@@ -23,6 +24,7 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
    val invocations = mutableMapOf<String, List<TypedInstance>>()
 
    override fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profiler: ProfilerOperation): TypedInstance {
+      log().info("Invoking ${service.name} -> ${operation.name}(${parameters.map { it.second.value }})")
       val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
          val metadata = operation.metadata("StubResponse")
          (metadata.params["value"] as String?).orElse(operation.name)
