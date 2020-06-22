@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import io.vyne.models.DefinedInSchema
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
@@ -108,7 +109,7 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
          is ConstantValueExpression -> {
             // We expected a constant value.  Convert the value we were given into the appropriate type
             val type = schema.type(argumentType.attribute(propertyIdentifier).type)
-            TypedInstance.from(type, expectedValue.value, schema)
+            TypedInstance.from(type, expectedValue.value, schema, source = DefinedInSchema)
          }
          is RelativeValueExpression -> {
             when (value) {

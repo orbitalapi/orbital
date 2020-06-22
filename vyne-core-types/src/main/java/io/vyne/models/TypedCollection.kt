@@ -4,7 +4,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 
 
-data class TypedCollection(override val type: Type, override val value: List<TypedInstance>) : List<TypedInstance> by value, TypedInstance {
+data class TypedCollection(override val type: Type, override val value: List<TypedInstance>, override val source: DataSource = MixedSources) : List<TypedInstance> by value, TypedInstance {
    init {
       require(type.isCollection) {
          "Type ${type.name} was passed to TypedCollection, but it is not a collection type.  Call TypedCollection.arrayOf(...) instead"

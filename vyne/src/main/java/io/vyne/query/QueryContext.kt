@@ -191,6 +191,7 @@ object TypedInstanceTree {
       if (instance.type.isClosed) {
          return@of emptyList<TypedInstance>()
       }
+
       when (instance) {
          is TypedObject -> instance.values.toList()
          is TypedValue -> emptyList()
@@ -265,7 +266,7 @@ data class QueryContext(
                   // Instantiate with either name or value depending on what we have as input
                   val value = if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
 
-                  TypedValue.from(synonymType, value, false)
+                  TypedValue.from(synonymType, value, false, fact.source)
                }.toSet()
          } else {
             setOf()

@@ -2,6 +2,7 @@ package io.vyne.spring.invokers
 
 import com.jayway.jsonpath.JsonPath
 import com.winterbe.expekt.expect
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.QueryProfiler
@@ -91,7 +92,7 @@ namespace vyne {
 
    private fun paramAndType(typeName: String, value: Any, schema: TaxiSchema, paramName:String? = null): Pair<Parameter, TypedInstance> {
       val type = schema.type(typeName)
-      return Parameter(type,paramName) to TypedInstance.from(type, value, schema)
+      return Parameter(type,paramName) to TypedInstance.from(type, value, schema, source = Provided)
    }
 
    @Test

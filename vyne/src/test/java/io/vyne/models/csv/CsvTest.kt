@@ -2,6 +2,7 @@ package io.vyne.models.csv
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
@@ -22,7 +23,7 @@ type Person {
       val (vyne, _) = testVyne(src)
       val csv = "firstName,lastName\n" +
          "jimmy,parsons"
-      val parsedResult = TypedInstance.from(vyne.schema.type("Person"), csv, vyne.schema) as TypedObject
+      val parsedResult = TypedInstance.from(vyne.schema.type("Person"), csv, vyne.schema, source = Provided) as TypedObject
       expect(parsedResult.type.fullyQualifiedName).to.equal("Person")
       parsedResult["firstName"].value.should.equal("jimmy")
    }
@@ -43,7 +44,7 @@ type alias PersonList as Person[]
       val csv = "firstName,lastName\n" +
          "jimmy,parsons\n" +
          "olly,spurrs"
-      val parsedResult = TypedInstance.from(vyne.schema.type("PersonList"), csv, vyne.schema)
+      val parsedResult = TypedInstance.from(vyne.schema.type("PersonList"), csv, vyne.schema, source = Provided)
       parsedResult.should.be.instanceof(TypedCollection::class.java)
       val collection = parsedResult as TypedCollection
       collection.should.have.size(2)
@@ -72,7 +73,7 @@ type alias FirstNames as FirstName[]
       val csv = "firstName,lastName\n" +
          "jimmy,parsons\n" +
          "olly,spurrs"
-      val parsedResult = TypedInstance.from(vyne.schema.type("PersonList"), csv, vyne.schema)
+      val parsedResult = TypedInstance.from(vyne.schema.type("PersonList"), csv, vyne.schema, source = Provided)
       val buildResult = vyne.query()
          .addFact(parsedResult)
          .build("FirstNames")

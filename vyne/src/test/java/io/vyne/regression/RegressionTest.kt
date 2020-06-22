@@ -8,6 +8,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
 import io.vyne.VersionedSource
 import io.vyne.Vyne
+import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -100,10 +101,10 @@ class RegressionTest {
                // returned (the typeName will be UnknownCollectionType)
                // Therefore, map the collection values to a TypedCollection
                // using the type we've just been given from the response payload.
-               val collectionMembers = (typeNamedInstance.value as List<*>).map { TypedInstance.fromNamedType(it as TypeNamedInstance, vyne.schema) }
+               val collectionMembers = (typeNamedInstance.value as List<*>).map { TypedInstance.fromNamedType(it as TypeNamedInstance, vyne.schema, source = Provided) }
                TypedCollection(type, collectionMembers)
             }
-            else -> TypedInstance.fromNamedType(typeNamedInstance, vyne.schema)
+            else -> TypedInstance.fromNamedType(typeNamedInstance, vyne.schema, source = Provided)
          }
 
          type to typedInstance

@@ -28,6 +28,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
       val result: TypedInstance = invoker.invoke(service, operation, resolvedParams, context)
+
       return result
    }
 

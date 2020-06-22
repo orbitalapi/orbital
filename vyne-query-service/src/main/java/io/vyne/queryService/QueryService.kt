@@ -3,6 +3,7 @@ package io.vyne.queryService
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.FactSetId
 import io.vyne.FactSets
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
 import io.vyne.schemas.Schema
@@ -97,7 +98,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
    private fun parseFacts(facts: List<Fact>, schema: Schema): List<Pair<TypedInstance, FactSetId>> {
 
       return facts.map { (typeName, value, factSetId) ->
-         TypedInstance.from(schema.type(typeName), value, schema) to factSetId
+         TypedInstance.from(schema.type(typeName), value, schema, source = Provided) to factSetId
       }
    }
 }

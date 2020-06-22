@@ -8,6 +8,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.winterbe.expekt.should
 import io.vyne.models.PrimitiveParser
+import io.vyne.models.Provided
 import junit.framework.Assert.fail
 import lang.taxi.types.XpathAccessor
 import org.junit.Before
@@ -35,9 +36,9 @@ class JsonAttributeAccessorParserTest() {
       var node = jacksonObjectMapper().readTree(""" {  "age": 1 } """) as ObjectNode
 
 
-      parser.parseToType(mock(), accessor, node, mock())
+      parser.parseToType(mock(), accessor, node, mock(), Provided)
 
-      verify(primitiveParser).parse(eq(1), any())
+      verify(primitiveParser).parse(eq(1), any(), eq(Provided))
    }
 
    @Test
@@ -47,9 +48,9 @@ class JsonAttributeAccessorParserTest() {
       var node = jacksonObjectMapper().readTree(""" {  "age": 1.609 } """) as ObjectNode
 
 
-      parser.parseToType(mock(), accessor, node, mock())
+      parser.parseToType(mock(), accessor, node, mock(), Provided)
 
-      verify(primitiveParser).parse(eq(1.609), any())
+      verify(primitiveParser).parse(eq(1.609), any(), eq(Provided))
    }
 
    @Test
@@ -58,9 +59,9 @@ class JsonAttributeAccessorParserTest() {
 
       var node = jacksonObjectMapper().readTree(""" {  "age": "1" } """) as ObjectNode
 
-      parser.parseToType(mock(), accessor, node, mock())
+      parser.parseToType(mock(), accessor, node, mock(), Provided)
 
-      verify(primitiveParser).parse(eq("1"), any())
+      verify(primitiveParser).parse(eq("1"), any(), eq(Provided))
 
    }
 
@@ -71,7 +72,7 @@ class JsonAttributeAccessorParserTest() {
       var node = jacksonObjectMapper().readTree(""" {  "age": "1" } """) as ObjectNode
 
       try{
-         parser.parseToType(mock(), accessor, node, mock())
+         parser.parseToType(mock(), accessor, node, mock(), Provided)
          fail()
       }catch(e: IllegalStateException) {
          e.message.should.be.equal("Could not find xpath /year in record")

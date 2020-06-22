@@ -23,11 +23,11 @@ class RawObjectMapper : TypedInstanceMapper {
 }
 
 class TypeNamedInstanceMapper : TypedInstanceMapper {
-   override fun map(typedInstance: TypedInstance): Any? = TypeNamedInstance(typedInstance.type.name, typedInstance.value)
+   override fun map(typedInstance: TypedInstance): Any? = TypeNamedInstance(typedInstance.type.name, typedInstance.value, typedInstance.source)
    override fun handleUnwrapped(original: TypedInstance, value: Any?): Any? {
       return when (value) {
          is TypeNamedInstance -> value
-         else -> TypeNamedInstance(original.type.name, value)
+         else -> TypeNamedInstance(original.type.name, value, original.source)
       }
    }
 }

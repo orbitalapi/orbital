@@ -3,7 +3,7 @@ package io.vyne.models
 import io.vyne.schemas.Type
 
 
-data class TypedNull(override val type: Type) : TypedInstance {
+data class TypedNull(override val type: Type, override val source: DataSource = UndefinedSource) : TypedInstance {
    override val value: Any? = null
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
       return TypedNull(typeAlias)

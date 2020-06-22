@@ -4,6 +4,7 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.google.common.io.CharSource
+import io.vyne.models.DataSource
 import io.vyne.models.PrimitiveParser
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.Schema
@@ -39,9 +40,9 @@ internal object CsvDocumentCacheBuilder {
  * Parses a single attribute, defined by a ColumnAccessor
  */
 class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = PrimitiveParser(), private val documentCache: LoadingCache<String, List<CSVRecord>> = CsvDocumentCacheBuilder.sharedDocumentCache) {
-   fun parse(content: String, type: Type, accessor: ColumnAccessor, schema: Schema): TypedInstance {
-      val source = documentCache.get(content)
-      val instances = source.map { record -> parseToType(type, accessor, record, schema) }
+   fun parse(content: String, type: Type, accessor: ColumnAccessor, schema: Schema, source:DataSource): TypedInstance {
+      val csvRecords = documentCache.get(content)
+      val instances = csvRecords.map { record -> parseToType(type, accessor, record, schema, source = source) }
       if (instances.size == 1) {
          return instances.first()
       } else {
@@ -50,14 +51,14 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
 
    }
 
-   fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord, schema: Schema, nullValues: Set<String> = emptySet()): TypedInstance {
+   fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
       val index = accessor.index - 1
       val value = record.get(index)
       if (!nullValues.isEmpty() && nullValues.contains(value)) {
-         return TypedInstance.from(type, null, schema);
+         return TypedInstance.from(type, null, schema, source = source);
       }
       try {
-         return primitiveParser.parse(value, type)
+         return primitiveParser.parse(value, type, source)
       } catch (e: Exception) {
          val message = "Failed to parse value $value from column ${accessor.index} to type ${type.name.fullyQualifiedName} - ${e.message}"
          throw ParsingException(message, e)

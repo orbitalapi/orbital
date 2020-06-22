@@ -178,20 +178,6 @@ class ProfilerOperationDTO(val componentName: String,
       }
 }
 
-data class RemoteCall(
-   val service: QualifiedName,
-   val addresss: String,
-   val operation: String,
-   val responseTypeName: QualifiedName,
-   val method: String,
-   val requestBody: Any?,
-   val resultCode: Int,
-   val durationMs: Long,
-   val response: Any?
-) {
-   val operationQualifiedName: QualifiedName = OperationNames.qualifiedName(service.fullyQualifiedName, operation)
-}
-
 data class Result(
    val startTime: Long,
    val endTime: Long,
