@@ -3,7 +3,10 @@ package io.vyne.pipelines.orchestrator
 import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.orchestrator.pipelines.InvalidPipelineDescriptionException
 import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
+import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
+import io.vyne.pipelines.runner.PipelineInstanceReference
 import io.vyne.utils.log
+import org.springframework.cloud.client.ServiceInstance
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.ResponseEntity.ok
@@ -12,7 +15,7 @@ import java.lang.RuntimeException
 
 
 @RestController
-class PipelineOrchestratorController(val pipelineManager: PipelinesManager, val pipelineDeserialiser: PipelineDeserialiser) {
+class PipelineOrchestratorController(val pipelineManager: PipelinesManager, val pipelineDeserialiser: PipelineDeserialiser, val pipelineRUnnerApi: PipelineRunnerApi) {
 
    @PostMapping("/runner/pipelines")
    fun submitPipeline(@RequestBody pipelineDescription: String): ResponseEntity<Pipeline> {
@@ -26,11 +29,15 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager, val 
          ok(pipeline)
       } catch (e: InvalidPipelineDescriptionException) {
          throw BadRequestException("Invalid pipeline description", e)
+      }catch (e: PipelineAlreadyExistsException) {
+         throw BadRequestException("Pipeline is already registered", e)
+      }catch(e: Exception) {
+         throw BadRequestException("Error while submitting pipeline", e)
       }
    }
 
    @GetMapping("/runners")
-   fun getInstances(): ResponseEntity<Any> {
+   fun getRunners(): ResponseEntity<List<ServiceInstance>> {
 
       return try {
          val instances = pipelineManager.runnerInstances
@@ -41,7 +48,7 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager, val 
    }
 
    @GetMapping("/pipelines")
-   fun getPipelines(): ResponseEntity<Any> {
+   fun getPipelines(): ResponseEntity<List<PipelineStateSnapshot>> {
 
       return try {
          val pipelines = pipelineManager.pipelines.map { it.value }
@@ -49,6 +56,11 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager, val 
       } catch (e: Exception) {
          throw BadRequestException("Error while getting pipelines", e)
       }
+   }
+
+   @GetMapping("/runner/pipelines/{pipelineName}")
+   fun getPipeline(@PathVariable pipelineName: String): ResponseEntity<PipelineInstanceReference> {
+      return pipelineRUnnerApi.getPipeline(pipelineName)
    }
 }
 

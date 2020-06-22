@@ -122,22 +122,23 @@ class PipelinesManagerTest {
          freeRunner("instance-3")
       )
 
-      // pipeline-2 get re-assigned to instance-3
+      // pipeline-2 get re-assigned
       manager.runnerInstances.size.should.be.equal(2)
       manager.pipelines.size.should.be.equal(2)
       manager.pipelines["pipeline-1"]!!.state.should.be.equal(RUNNING)
       manager.pipelines["pipeline-1"]!!.instance!!.instanceId.should.be.equal("instance-1")
       manager.pipelines["pipeline-2"]!!.state.should.be.equal(STARTING)
-      manager.pipelines["pipeline-2"]!!.instance!!.instanceId.should.be.equal("instance-3")
+      manager.pipelines["pipeline-2"]!!.instance.should.be.`null`
 
       // instance-1 is down
       mockRunners(
          busyRunner("instance-3", "pipeline-2")
       )
 
+      // Pipeline 1 get re-assigned
       manager.runnerInstances.size.should.be.equal(1)
       manager.pipelines.size.should.be.equal(2)
-      manager.pipelines["pipeline-1"]!!.state.should.be.equal(SCHEDULED)
+      manager.pipelines["pipeline-1"]!!.state.should.be.equal(STARTING)
       manager.pipelines["pipeline-1"]!!.instance.should.be.`null`
       manager.pipelines["pipeline-2"]!!.state.should.be.equal(RUNNING)
       manager.pipelines["pipeline-2"]!!.instance!!.instanceId.should.be.equal("instance-3")
@@ -178,7 +179,7 @@ class PipelinesManagerTest {
    }
 
    @Test
-   fun testAddPipelineNoFreeRunner() {
+   fun testAddPipelineOneBusyRunner() {
       mockRunners(
          busyRunner("runner-1", "pipeline-1")
       )
@@ -186,10 +187,11 @@ class PipelinesManagerTest {
       var pipelineReference = PipelineReference("pipeline-2", """ { "name": "pipeline-2" } """)
       manager.addPipeline(pipelineReference)
 
+      // pipeline-2 is assigned
       manager.runnerInstances.size.should.be.equal(1)
       manager.pipelines.size.should.be.equal(2)
       manager.pipelines["pipeline-1"]!!.state.should.be.equal(RUNNING)
-      manager.pipelines["pipeline-2"]!!.state.should.be.equal(SCHEDULED)
+      manager.pipelines["pipeline-2"]!!.state.should.be.equal(STARTING)
    }
 
    @Test
@@ -206,7 +208,7 @@ class PipelinesManagerTest {
       manager.pipelines.size.should.be.equal(2)
       manager.pipelines["pipeline-1"]!!.state.should.be.equal(RUNNING)
       manager.pipelines["pipeline-2"]!!.state.should.be.equal(STARTING)
-      manager.pipelines["pipeline-2"]!!.instance!!.instanceId.should.be.equal("runner-2")
+      manager.pipelines["pipeline-2"]!!.instance.should.be.`null`
    }
 
    private fun mockRunners(vararg runners: ServiceInstance) {

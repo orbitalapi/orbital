@@ -1,18 +1,25 @@
 package io.vyne.pipelines.orchestrator.runners
 
+import io.vyne.pipelines.orchestrator.OperationResult
 import io.vyne.pipelines.runner.PipelineInstanceReference
-import org.springframework.stereotype.Component
-import org.springframework.web.client.RestTemplate
+import org.springframework.cloud.openfeign.FeignClient
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.*
 
-@Component
-class PipelineRunnerApi(private val restTemplate: RestTemplate) {
+@FeignClient("pipeline-runner")
+interface PipelineRunnerApi {
 
-   /**
-    * This methods takes a pipelineDescription String and not a Pipeline as input. Explanation:
-    * As soon as we cast the input string to anything more concrete, we lose the raw input which is what the downstream consumer requires.
-    * If we use Pipeline, we might not send the full pipeline description to the runner.
-    */
-   fun submitPipeline(endpoint: String, pipelineDescription: String): PipelineInstanceReference {
-      return restTemplate.postForObject(endpoint, pipelineDescription, PipelineInstanceReference::class.java)
-   }
+
+   @PostMapping("/runner/pipelines", consumes = ["application/json"])
+   fun submitPipeline(@RequestBody pipeline: String): PipelineInstanceReference
+
+   @GetMapping("/runner/pipelines/{pipelineName}")
+   fun getPipeline(@PathVariable pipelineName: String): ResponseEntity<PipelineInstanceReference>
+
+   // TODO might be removed as part of https://projects.notional.uk/youtrack/issue/LENS-159
+   // See TestharnessController.kt for details
+   @PostMapping("/testharness/send2kafka/{kafkaTopic}")
+   fun submitMessage(@PathVariable("kafkaTopic") kafkaTopic: String,
+                     @RequestParam("kafkaHost", defaultValue = "kafka:9092") kafkaHost: String,
+                     @RequestBody kafkaJsonMessage: String): OperationResult
 }

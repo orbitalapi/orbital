@@ -61,23 +61,18 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
       val pipelineSnapshot = pipelines[pipelineName]!!
       try {
 
-         val availableServers = runnerInstances.filter { it.metadata[PIPELINE_METADATA_KEY] == null }
-
-         when (availableServers.size) {
+         when (runnerInstances.size) {
             0 -> {
                log().info("No runners available")
                pipelineSnapshot.info = "No Pipeline Runner available"
             }
 
-            // For now, pick a server at random
-            // In the future, the selection will be more elaborated and can involve tagging and capacity
             else -> {
-               val runner = availableServers.random()
-               val endpoint = with(runner) { "http://$host:$port/runner/pipelines" }
-               pipelineRunnerApi.submitPipeline(endpoint, pipelineSnapshot.pipelineDescription)
+               // For now, pick a runner at using load balancing
+               // In the future, the selection will be more elaborated and can involve tagging and capacity
+               pipelineRunnerApi.submitPipeline(pipelineSnapshot.pipelineDescription)
                pipelineSnapshot.state = STARTING
-               pipelineSnapshot.instance = runner
-               pipelineSnapshot.info = "Assigning to ${runner.instanceId}"
+               pipelineSnapshot.info = "Pipeline sent to runner"
             }
          }
 
@@ -90,7 +85,7 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
    /**
     * Periodically refresh the state
     */
-   @Scheduled(fixedRate = 15000)
+   @Scheduled(fixedRate = 5000)
    fun getServers() = reloadState()
 
    /**
@@ -113,8 +108,7 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
 
          // 3. Overwrite the running pipelines
          val runningPipelines = pipelineInstances.map {
-            val pipelineRef = it.key
-            pipelineRef.name to PipelineStateSnapshot(pipelineRef.name, pipelineRef.description, it.value, RUNNING)
+            it.key.name to PipelineStateSnapshot(it.key.name, it.key.description, it.value, RUNNING)
          }.toMap()
 
          pipelines.putAll(runningPipelines)
@@ -151,21 +145,27 @@ class RunningPipelineDiscoverer(val pipelineDeserialiser: PipelineDeserialiser) 
     */
    fun discoverPipelines(runnerInstances: List<ServiceInstance>): Map<PipelineReference, ServiceInstance> {
       return runnerInstances.mapNotNull { extractRunnerMetadata(it) }
-         .map {
-            val pipeline = pipelineDeserialiser.deserialise(it.first)
-            PipelineReference(pipeline.name, it.first) to it.second
+         .flatMap {
+            it.second.map { ref -> ref to it.first }
          }.toMap()
    }
 
    /**
     * Extract the pipeline information from a service instance
     */
-   fun extractRunnerMetadata(runnerInstance: ServiceInstance): Pair<String, ServiceInstance>? {
-      return when (val metadata = runnerInstance.metadata[PIPELINE_METADATA_KEY]) {
-         null -> null
-         else -> metadata to runnerInstance
+   private fun extractRunnerMetadata(runnerInstance: ServiceInstance): Pair<ServiceInstance, List<PipelineReference>>? {
+      val metadatas = runnerInstance.metadata.filter { it.key.startsWith(PIPELINE_METADATA_KEY) }
+      return when (metadatas.size) {
+         0 -> null
+         else -> runnerInstance to metadatas.values.map { toPipelineReference(it) }
       }
    }
+
+   private fun toPipelineReference(pipelineDescription: String): PipelineReference {
+      val pipeline = pipelineDeserialiser.deserialise(pipelineDescription)
+      return PipelineReference(pipeline.name, pipelineDescription)
+   }
+
 }
 
 data class PipelineStateSnapshot(val name: String,

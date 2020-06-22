@@ -7,7 +7,6 @@ import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineChannel
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
-import io.vyne.pipelines.runner.PipelineInstanceReference
 import io.vyne.pipelines.runner.SimplePipelineInstance
 import io.vyne.pipelines.runner.transport.cask.CaskTransportOutputSpec
 import io.vyne.pipelines.runner.transport.kafka.KafkaTransportInputSpec
@@ -64,7 +63,7 @@ class PipelineOrchestratorAppIntegrationTest {
       )
       var pipelineReference = SimplePipelineInstance(pipeline, Instant.now())
 
-      given(runner.submitPipeline(any(), any())).willReturn(pipelineReference);
+      given(runner.submitPipeline(any())).willReturn(pipelineReference);
    }
 
    @Test
