@@ -366,7 +366,7 @@ type Sample {
          }.collect(Collectors.toList())
       val schema = TaxiSchema.from(schemaContentList)
 
-      val versionedType = schema.versionedType("hpc.orders.Order".fqn())
+      val versionedType = schema.versionedType("<type-name-to-lookup>".fqn())
       log().info("Hash: ${versionedType.versionHash}")
       log().info("VersionedName: ${versionedType.versionedName}")
    }

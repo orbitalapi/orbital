@@ -17,6 +17,7 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
+import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.schemas.OutputConstraint
@@ -368,24 +369,31 @@ data class QueryContext(
    }
 
 
-   private val operationCache: MutableMap<EvaluatableEdge, TypedInstance> = mutableMapOf()
+   data class ServiceInvocationCacheKey(
+      private val vertex1: Element,
+      private val vertex2: Element,
+      private val invocationParameter: TypedInstance?)
+   private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
 
    private fun getTopLevelContext(): QueryContext {
       return parent?.let {it.getTopLevelContext()} ?: this
    }
 
    fun addOperationResult(operation: EvaluatableEdge, result: TypedInstance): TypedInstance {
-      getTopLevelContext().operationCache[operation] = result
+      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, operation.previousValue)
+      getTopLevelContext().operationCache[key] = result
       log().info("Caching {} [{} -> {}]", operation, operation.previousValue?.value, result.type.qualifiedName)
       return result
    }
 
    fun getOperationResult(operation: EvaluatableEdge): TypedInstance? {
-      return getTopLevelContext().operationCache[operation]
+      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, operation.previousValue)
+      return getTopLevelContext().operationCache[key]
    }
 
    fun hasOperationResult(operation: EvaluatableEdge): Boolean {
-      return getTopLevelContext().operationCache[operation] != null
+      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, operation.previousValue)
+      return getTopLevelContext().operationCache[key] != null
    }
 
 }
