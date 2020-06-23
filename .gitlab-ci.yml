@@ -61,6 +61,13 @@ publish-snapshot:
   only:
     - develop
 
+publish-release:
+   stage: deploy
+   script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm deploy -P release' # Skip UI and tests. Already there from previous stages and artifacts
+   only:
+      - master
 
 release-major:
    variables:
@@ -99,11 +106,5 @@ release-patch:
    when: manual
 
 
-publish-release:
-  stage: deploy
-  script:
-    - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm release:prepare release:perform'
-  only:
-    - master
+
 

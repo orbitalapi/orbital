@@ -1,13 +1,13 @@
 
 export const sampleOrderEventType = {
   'name': {
-    'fullyQualifiedName': 'cacib.orders.OrderEventType',
+    'fullyQualifiedName': 'bank.orders.OrderEventType',
     'parameters': [],
     'name': 'OrderEventType',
-    'namespace': 'cacib.orders',
-    'parameterizedName': 'cacib.orders.OrderEventType',
+    'namespace': 'bank.orders',
+    'parameterizedName': 'bank.orders.OrderEventType',
     'shortDisplayName': 'OrderEventType',
-    'longDisplayName': 'cacib.orders.OrderEventType'
+    'longDisplayName': 'bank.orders.OrderEventType'
   },
   'attributes': {},
   'modifiers': [
@@ -21,8 +21,8 @@ export const sampleOrderEventType = {
       'name': 'Open',
       'value': 'Open',
       'synonyms': [
-        'hpc.orders.EntryType.Opened',
-        'cacib.cemafor.orders.EntryType.Opened'
+        'bankY.orders.EntryType.Opened',
+        'bankX.orders.EntryType.Opened'
       ],
       'typeDoc': ''
     },
@@ -36,24 +36,24 @@ export const sampleOrderEventType = {
       'name': 'Withheld',
       'value': 'Withheld',
       'synonyms': [
-        'hpc.orders.EntryType.WithHeld',
-        'cacib.cemafor.orders.EntryType.WithHeld'
+        'bankX.orders.EntryType.WithHeld',
+        'bankY.orders.EntryType.WithHeld'
       ],
       'typeDoc': ''
     }
   ],
   'sources': [
     {
-      'name': 'hpc/Order.taxi',
+      'name': 'bankY/Order.taxi',
       'version': '0.0.0',
       'content': 'Opened synonym of OrderEventType.Open',
-      'id': 'hpc/Order.taxi:0.0.0'
+      'id': 'bankY/Order.taxi:0.0.0'
     },
     {
-      'name': 'cacib/orders/Order.taxi',
+      'name': 'bankX/orders/Order.taxi',
       'version': '0.0.0',
       'content': 'enum OrderEventType {\n   Open,\n   Filled,\n   Withheld\n}',
-      'id': 'cacib/orders/Order.taxi:0.0.0'
+      'id': 'bankX/orders/Order.taxi:0.0.0'
     }
   ],
   'typeParameters': [],
@@ -64,15 +64,15 @@ export const sampleOrderEventType = {
   'isParameterType': false,
   'isClosed': false,
   'isPrimitive': false,
-  'fullyQualifiedName': 'cacib.orders.OrderEventType',
+  'fullyQualifiedName': 'bankX.orders.OrderEventType',
   'memberQualifiedName': {
-    'fullyQualifiedName': 'cacib.orders.OrderEventType',
+    'fullyQualifiedName': 'bankX.orders.OrderEventType',
     'parameters': [],
     'name': 'OrderEventType',
-    'namespace': 'cacib.orders',
-    'parameterizedName': 'cacib.orders.OrderEventType',
+    'namespace': 'bankX.orders',
+    'parameterizedName': 'bankX.orders.OrderEventType',
     'shortDisplayName': 'OrderEventType',
-    'longDisplayName': 'cacib.orders.OrderEventType'
+    'longDisplayName': 'bankX.orders.OrderEventType'
   },
   'isCollection': false,
   'underlyingTypeParameters': [],
