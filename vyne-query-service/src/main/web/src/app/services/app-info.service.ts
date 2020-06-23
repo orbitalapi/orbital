@@ -22,7 +22,7 @@ export class AppInfoService {
     if (this.config) {
       return of(this.config)
     } else {
-      const observable = this.httpClient.get<QueryServiceConfig>(`${environment.queryServiceUrl}/config`)
+      const observable = this.httpClient.get<QueryServiceConfig>(`${environment.queryServiceUrl}/api/config`)
       observable.subscribe(result => {
         this.config = result
       });

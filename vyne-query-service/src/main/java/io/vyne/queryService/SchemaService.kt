@@ -17,12 +17,12 @@ import reactor.core.publisher.Mono
 @RestController
 class SchemaService(private val schemaProvider: SchemaSourceProvider, private val importer: SchemaImportService,
                     private val config: QueryServerConfig) {
-   @GetMapping(path = ["/schemas/raw"])
+   @GetMapping(path = ["/api/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")
    }
 
-   @GetMapping(path = ["/parsedSources"])
+   @GetMapping(path = ["/api/parsedSources"])
    fun getParsedSources(): List<ParsedSource> {
       return if (schemaProvider is VersionedSourceProvider) {
          schemaProvider.parsedSources.sortedBy { it.source.name }
@@ -31,7 +31,7 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
       }
    }
 
-   @GetMapping(path = ["/schemas"])
+   @GetMapping(path = ["/api/schemas"])
    fun getVersionedSchemas(): List<VersionedSource> {
       return if (schemaProvider is VersionedSourceProvider) {
          schemaProvider.versionedSources.sortedBy { it.name }
@@ -40,12 +40,12 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
       }
    }
 
-   @GetMapping(path = ["/types"])
+   @GetMapping(path = ["/api/types"])
    fun getTypes(): Schema {
       return schemaProvider.schema()
    }
 
-   @GetMapping(path = ["/types/{typeName}/policies"])
+   @GetMapping(path = ["/api/types/{typeName}/policies"])
    fun getPolicies(@PathVariable("typeName") typeName: String): List<PolicyDto> {
       val schema = schemaProvider.schema()
       if (!schema.hasType(typeName)) {
@@ -60,7 +60,7 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
     * Returns a schema comprised of types, and the types they reference.
     * Optionally, also includes Taxi primitives
     */
-   @GetMapping(path = ["/schema"], params = ["members"])
+   @GetMapping(path = ["/api/schema"], params = ["members"])
    fun getTypes(
       @RequestParam("members") memberNames: List<String>,
       @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false): Schema {
@@ -69,7 +69,7 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
       return result;
    }
 
-   @GetMapping(path = ["/schema"], params = ["members", "includeTaxi"])
+   @GetMapping(path = ["/api/schema"], params = ["members", "includeTaxi"])
    fun getTaxi(
       @RequestParam("members") memberNames: List<String>,
       @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false): SchemaWithTaxi {
@@ -95,7 +95,7 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
    // TODO : What's the relationship between this and the schema-store-api?
    // SHould probably either align the two api's or remove one.
    // Looks like schema-store-api isn't used anywhere.
-   @PostMapping(path = ["/schemas"])
+   @PostMapping(path = ["/api/schemas"])
    fun submitSchema(@RequestBody request: SchemaImportRequest): Mono<VersionedSource> {
       if (!config.newSchemaSubmissionEnabled) {
          throw OperationNotPermittedException()
@@ -103,7 +103,7 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
       return importer.import(request)
    }
 
-   @PostMapping(path = ["/schemas/preview"])
+   @PostMapping(path = ["/api/schemas/preview"])
    fun previewSchema(@RequestBody request: SchemaPreviewRequest): Mono<SchemaPreview> {
       return importer.preview(request)
    }
