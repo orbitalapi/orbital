@@ -17,7 +17,7 @@ object CoinbaseOrderSchema {
 type alias Price as Decimal
 type alias Symbol as String
 type OrderWindowSummary {
-    symbol : Symbol by column(2)
+    symbol : Symbol by column("Symbol")
     open : Price by column(3)
     // Note, this is intentionally wrong, so we can redefine it in v2
     close : Price by column(4)
@@ -27,7 +27,7 @@ type OrderWindowSummary {
 type alias Price as Decimal
 type alias Symbol as String
 type OrderWindowSummary {
-    symbol : Symbol by column(2)
+    symbol : Symbol by column("Symbol")
     open : Price by column(3)
     // Added column
     high : Price by column(4)
