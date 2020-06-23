@@ -24,8 +24,8 @@ stages:
 build-jvm:
   stage: build
   cache:
-     paths
-     - .m2/repository
+     paths:
+        - .m2/repository
      key: "maven-$CI_COMMIT_REF_SLUG"
   script:
     - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
