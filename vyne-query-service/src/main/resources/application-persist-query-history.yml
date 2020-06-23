@@ -9,3 +9,7 @@ spring:
       url: r2dbc:postgresql://localhost/vyne-query
       username: ${spring.flyway.user}
       password: ${spring.flyway.password}
+
+app:
+   query-history:
+      enabled: true

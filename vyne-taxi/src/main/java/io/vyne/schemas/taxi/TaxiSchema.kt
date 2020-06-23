@@ -70,7 +70,8 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                val returnType = this.type(taxiOperation.returnType.toVyneQualifiedName())
                Operation(OperationNames.qualifiedName(taxiService.qualifiedName, taxiOperation.name),
                   taxiOperation.parameters.map { taxiParam ->
-                     val type = this.type(taxiParam.type.qualifiedName)
+                     val vyneQualifiedName = taxiParam.type.toVyneQualifiedName()
+                     val type = this.type(vyneQualifiedName)
                      Parameter(
                         type = type,
                         name = taxiParam.name,

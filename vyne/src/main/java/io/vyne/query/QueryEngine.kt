@@ -1,13 +1,20 @@
 package io.vyne.query
 
-import io.vyne.*
-import io.vyne.models.*
+import io.vyne.FactSetId
+import io.vyne.FactSetMap
+import io.vyne.FactSets
+import io.vyne.ModelContainer
+import io.vyne.filterFactSets
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import io.vyne.utils.timed
+import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 
 
 open class SearchFailedException(message: String, val evaluatedPath: List<EvaluatedEdge>, val profilerOperation: ProfilerOperation) : RuntimeException(message)
@@ -119,13 +126,17 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             && targetType.isCollection
 
       val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
-      val result: TypedInstance? = if (isCollectionToCollectionTransformation) {
-         mapCollectionToCollection(targetType, context)
-      } else if (isCollectionsToCollectionTransformation) {
-         mapCollectionsToCollection(targetType, context)
-      } else {
-         context.isProjecting = true
-         ObjectBuilder(this, context).build(targetType)
+      val result: TypedInstance? = when {
+          isCollectionToCollectionTransformation -> {
+             mapCollectionToCollection(targetType, context)
+          }
+          isCollectionsToCollectionTransformation -> {
+             mapCollectionsToCollection(targetType, context)
+          }
+          else -> {
+             context.isProjecting = true
+             ObjectBuilder(this, context).build(targetType)
+          }
       }
 
       return if (result != null) {
@@ -151,7 +162,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       log().info("Mapping collections to collection of type ${targetCollectionType.qualifiedName} ")
       val transformed = context.facts
          .map { it as TypedCollection }
-         .flatMap { it }
+         .flatten()
          .map { typedInstance -> mapTo(targetCollectionType, typedInstance, context) }
          .mapNotNull { it }
       return if (transformed.isEmpty()) {
@@ -168,10 +179,11 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
          val inboundFactList = (context.facts.first() as TypedCollection).value
          log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
-         val transformed = inboundFactList.mapNotNull {
-            mapTo(targetCollectionType, it, context)
-         }
-         TypedCollection.from(transformed);
+         val transformed =  inboundFactList
+            .parallelStream()
+            .map {  mapTo(targetCollectionType, it, context) }
+            .filter { it != null}.collect(Collectors.toList())
+         TypedCollection.from(transformed.toList() as List<TypedInstance>)
       }
    }
 
@@ -252,17 +264,19 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val strategyIterator: Iterator<QueryStrategy> = strategies.iterator()
       while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
          val queryStrategy = strategyIterator.next()
-         val strategyResult = invokeStrategy(context, queryStrategy, querySet, target)
-         // Note : We should add this additional data to the context too,
-         // so that it's available for future query strategies to use.
-         context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
+         timed(name = "Strategy ${queryStrategy::class.java.name} ${target.type.name}", timeUnit = TimeUnit.MICROSECONDS, log = false) {
+            val strategyResult = invokeStrategy(context, queryStrategy, querySet, target)
+            // Note : We should add this additional data to the context too,
+            // so that it's available for future query strategies to use.
+            context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
 
-         matchedNodes.putAll(strategyResult.matchedNodes)
+            matchedNodes.putAll(strategyResult.matchedNodes)
 
-         if (strategyResult.additionalData.isNotEmpty()) {
-            // Note: Maybe we should only start re-querying if unresolvedNodes() has content
-            log().debug("Discovered additional facts, adding to the context")
-            context.addFacts(strategyResult.additionalData)
+            if (strategyResult.additionalData.isNotEmpty()) {
+               // Note: Maybe we should only start re-querying if unresolvedNodes() has content
+               log().debug("Discovered additional facts, adding to the context")
+               context.addFacts(strategyResult.additionalData)
+            }
          }
       }
       if (unresolvedNodes().isNotEmpty()) {

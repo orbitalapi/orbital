@@ -32,8 +32,9 @@ class ModelsScanStrategy : QueryStrategy {
       // We need more context in order to be able to search
       // Eg., given an instance of Money, it's concievable that there would be multiple instances
       // within the graph
-      val matches = targetTypes.filter { (type, querySpec) -> context.hasFactOfType(type, querySpec.mode.discoveryStrategy()) }
-         .map { (type, querySpec) -> querySpec to context.getFact(type, querySpec.mode.discoveryStrategy()) }
+      val matches = targetTypes
+         .map { (type, querySpec) -> querySpec to context.getFactOrNull(type, querySpec.mode.discoveryStrategy()) }
+         .filter { it.second != null }
          .toMap()
       return QueryStrategyResult(matches)
    }

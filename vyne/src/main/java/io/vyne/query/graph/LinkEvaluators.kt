@@ -32,8 +32,9 @@ class RequiresParameterEvaluator : LinkEvaluator {
 
    override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
       val paramType = context.schema.type(link.end)
-      if (context.hasFactOfType(paramType)) {
-         return EvaluatedLink.success(link, startingPoint, context.getFact(paramType))
+      val paramValue = context.getFactOrNull(paramType)
+      if (paramValue != null) {
+         return EvaluatedLink.success(link, startingPoint, paramValue)
       }
       if (startingPoint.type == paramType) {
          return EvaluatedLink.success(link, startingPoint, startingPoint)
@@ -50,8 +51,9 @@ class RequiresParameterEvaluator : LinkEvaluator {
    private fun attemptToConstruct(paramType: Type, context: QueryContext, typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
       val fields = paramType.attributes.map { (attributeName, field) ->
          val attributeType = context.schema.type(field.type.name)
-         if (context.hasFactOfType(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)) {
-            attributeName to context.getFact(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
+         val anyDepthExpectOne = context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
+         if (anyDepthExpectOne != null) {
+            attributeName to anyDepthExpectOne
          } else if (!attributeType.isScalar && !typesCurrentlyUnderConstruction.contains(attributeType)) {
             // TODO : This could be a bad idea.
             // This is ignoring the concept of Parameter types -- so maybe they're not a good idea?

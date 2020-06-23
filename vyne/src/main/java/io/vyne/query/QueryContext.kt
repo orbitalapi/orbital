@@ -181,7 +181,9 @@ data class QueryContext(
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
    private var projectResultsTo: Type? = null
+   private var inMemoryStream: List<TypedInstance>? = null
 
+   override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
    fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
 
    fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
@@ -251,8 +253,10 @@ data class QueryContext(
 
    fun addFact(fact: TypedInstance): QueryContext {
       log().debug("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
+      inMemoryStream = null
       if (fact.type.isEnum) {
-         this.facts.addAll(resolveSynonyms(fact, schema))
+         val synonymSet = resolveSynonyms(fact, schema)
+         this.facts.addAll(synonymSet)
       } else {
          this.facts.add(fact)
       }
@@ -292,20 +296,24 @@ data class QueryContext(
     * Deeply nested children are less likely to be relevant matches.
     */
    fun modelTree(): Stream<TypedInstance> {
-      // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-      return TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot())
+      inMemoryStream = inMemoryStream ?:  TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot()).toList()
+     return inMemoryStream!!.stream()
    }
 
    fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
       // This could be optimized, as we're searching twice for everything, and not caching anything
-      return strategy.getFact(this, type) != null
+      return getFactOrNull(type, strategy) != null
    }
 
    fun getFact(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): TypedInstance {
       // This could be optimized, as we're searching twice for everything, and not caching anything
-      return strategy.getFact(this, type)!!
+      return getFactOrNull(type, strategy)!!
    }
 
+   fun getFactOrNull(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): TypedInstance? {
+      return strategy.getFact(this, type)
+      //return factCache.get(FactCacheKey(type.fullyQualifiedName, strategy)).orElse(null)
+   }
    fun evaluatedPath(): List<EvaluatedEdge> {
       return evaluatedEdges.toList()
    }
@@ -328,6 +336,7 @@ data class QueryContext(
    }
 
 
+   data class FactCacheKey(val fqn: String,  val discoveryStrategy: FactDiscoveryStrategy)
    data class ServiceInvocationCacheKey(
       private val vertex1: Element,
       private val vertex2: Element,
@@ -335,7 +344,7 @@ data class QueryContext(
    private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
 
    private fun getTopLevelContext(): QueryContext {
-      return parent?.let {it.getTopLevelContext()} ?: this
+      return parent?.getTopLevelContext() ?: this
    }
 
    fun addOperationResult(operation: EvaluatableEdge, result: TypedInstance): TypedInstance {
@@ -413,6 +422,19 @@ enum class FactDiscoveryStrategy {
       override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedCollection? {
          val matches = context.modelTree()
             .filter { matcher.matches(type, it.type) }
+            .distinct()
+            .toList()
+         return when {
+            matches.isEmpty() -> null
+            else -> TypedCollection.from(matches)
+         }
+      }
+   },
+
+   ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedCollection? {
+         val matches = context.modelTree()
+            .filter { matcher.matches(if(type.isCollection) type.typeParameters.first() else type, it.type) }
             .distinct()
             .toList()
          return when {

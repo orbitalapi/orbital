@@ -3,6 +3,7 @@
 package io.vyne.models
 
 import io.vyne.schemas.Type
+import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
 import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
@@ -124,6 +125,7 @@ class StringToIntegerConverter(override val next: ConversionService = NoOpConver
 }
 
 data class TypedValue private constructor(override val type: Type, override val value: Any, override val source: DataSource) : TypedInstance {
+   private val equality = Equality(this, TypedValue::type, TypedValue::value)
    companion object {
       private val conversionService by lazy {
          ConversionService.newDefaultConverter()
@@ -157,6 +159,9 @@ data class TypedValue private constructor(override val type: Type, override val 
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
       return TypedValue(typeAlias, value, source)
    }
+
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
 
    /**
     * Returns true if the two are equal, where the values are the same, and the underlying

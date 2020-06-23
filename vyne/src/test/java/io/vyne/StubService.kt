@@ -24,7 +24,7 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
    val invocations = mutableMapOf<String, List<TypedInstance>>()
 
    override fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profiler: ProfilerOperation): TypedInstance {
-      log().info("Invoking ${service.name} -> ${operation.name}(${parameters.map { it.second.value }})")
+      log().info("Invoking ${service.name} -> ${operation.name}(${parameters.map { it.first.name }})")
       val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
          val metadata = operation.metadata("StubResponse")
          (metadata.params["value"] as String?).orElse(operation.name)

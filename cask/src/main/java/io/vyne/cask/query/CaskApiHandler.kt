@@ -2,13 +2,16 @@ package io.vyne.cask.query
 
 import arrow.core.Either
 import io.vyne.cask.CaskService
-import io.vyne.cask.services.CaskServiceSchemaGenerator
 import io.vyne.cask.query.generators.AfterTemporalOperationGenerator
 import io.vyne.cask.query.generators.BeforeTemporalOperationGenerator
 import io.vyne.cask.query.generators.BetweenTemporalOperationGenerator
+import io.vyne.cask.services.CaskServiceSchemaGenerator
 import io.vyne.utils.log
+import org.codehaus.jettison.json.JSONObject
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
+import org.springframework.web.reactive.function.BodyExtractors
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
@@ -28,7 +31,30 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          uriComponents.pathSegments.contains(AfterTemporalOperationGenerator.ExpectedAnnotationName) -> findByAfter(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains(BeforeTemporalOperationGenerator.ExpectedAnnotationName) -> findByBefore(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains("findOneBy") -> findOne(request, requestPath, uriComponents)
+         uriComponents.pathSegments.contains("findMultipleBy") -> findMultipleBy(request, requestPath, uriComponents)
          else -> findByField(request, requestPath, uriComponents)
+      }
+   }
+
+   private fun findMultipleBy(request: ServerRequest, requestPathOriginal: String, uriComponents: UriComponents): Mono<ServerResponse> {
+      // Example request url => http://192.168.1.114:8800/api/cask/findMultipleBy/ion/trade/Trade/orderId
+      val extractor = BodyExtractors.toMono(object: ParameterizedTypeReference<List<String>> () {})
+      return request.body(extractor).flatMap {
+         inputArray ->
+         val requestPath = requestPathOriginal.replace("findMultipleBy/", "")
+         val fieldName = uriComponents.pathSegments.takeLast(1).first()
+         val caskType = uriComponents.pathSegments.dropLast(1).drop(1).joinToString(".")
+         when (val versionedType = caskService.resolveType(caskType)) {
+            is Either.Left -> {
+               log().info("The type failed to resolve for request $requestPath Error: ${versionedType.a.message}")
+               badRequest().build()
+            }
+            is Either.Right -> {
+               ok()
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .body(BodyInserters.fromValue(caskDAO.findMultiple(versionedType.b, fieldName, inputArray)))
+            }
+         }
       }
    }
 

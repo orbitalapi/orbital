@@ -9,6 +9,14 @@ server:
 spring:
    application:
       name: query-service
+   autoconfigure:
+      exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+app:
+   query-history:
+      enabled: false
+   data-lineage:
+      remoteCalls: false
+
 logging:
    level:
       org.springframework: WARN
@@ -33,8 +41,4 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
 
-hibernate:
-   types:
-      jackson:
-         object:
-            mapper: io.vyne.queryService.persistency.VyneHibernateJsonObjectMapperSupplier
+

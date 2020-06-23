@@ -92,19 +92,21 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
 class ParameterFactory {
    fun discover(paramType: Type, context: QueryContext): TypedInstance {
       // First, search only the top level for facts
-      if (context.hasFactOfType(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)) {
+      val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
+      if (firstLevelDiscovery != null) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
          // TODO (2) : Fail if there are multiple instances
-         return context.getFact(paramType)
+         return firstLevelDiscovery
       }
 
       // Check to see if there's exactly one instance somewhere within the context
       // Note : I'm cheating here, I really should find the value required by retracing steps
       // walked in the path.  But, it's unclear if this is possible, given the scattered way that
       // the algorithims are evaluated
-      if (context.hasFactOfType(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
+      val anyDepthOneDistinct = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+      if (anyDepthOneDistinct != null) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
-         return context.getFact(paramType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+         return anyDepthOneDistinct
       }
 
 //      if (startingPoint.type == paramType) {
@@ -127,13 +129,11 @@ class ParameterFactory {
          // Try restructing this to a strategy approach.
          // Can we try searching within the context before we try constructing?
          // what are the impacts?
-         var attributeValue: TypedInstance? = null
+         var attributeValue: TypedInstance? = context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
 
          // First, look in the context to see if it's there.
-         if (context.hasFactOfType(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
-            attributeValue = context.getFact(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
-         } else {
-
+         if (attributeValue == null)
+         {
             // ... if not, try and find the value in the graph
             val queryResult = context.find(QuerySpecTypeNode(attributeType))
             if (queryResult.isFullyResolved) {
