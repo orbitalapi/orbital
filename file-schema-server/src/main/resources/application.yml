@@ -1,5 +1,5 @@
 taxi:
-   schema-local-storage: /home/marty/dev/cacib/taxonomy
+   schema-local-storage: /path/to/taxonomy
 spring:
    application:
       name: file-schema-server

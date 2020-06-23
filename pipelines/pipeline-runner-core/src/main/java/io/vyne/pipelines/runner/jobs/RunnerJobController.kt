@@ -22,8 +22,7 @@ class RunnerJobController(val pipelineStateManager: PipelineStateManager) : Pipe
 
    override fun getPipeline(@PathVariable pipelineName: String): ResponseEntity<PipelineInstanceReference> {
 
-      val pipeline = pipelineStateManager.pipelines[pipelineName]
-      return when (pipeline) {
+      return when (val pipeline = pipelineStateManager.pipelines[pipelineName]) {
          null -> ResponseEntity.notFound().build()
          else -> ResponseEntity.ok(pipeline)
       }

@@ -67,7 +67,7 @@ storiesOf('Data Explorer', module)
       props: {
         testType: sampleOrderEventType,
         value: {
-          'typeName': 'cacib.orders.OrderEventType',
+          'typeName': 'bank.orders.OrderEventType',
           'value': 'Open'
         }
       }

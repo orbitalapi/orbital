@@ -77,8 +77,8 @@ Therefore, we likely need to flesh out import syntax to support resolution
 import test.FirstName
 
 // Proposed syntax
-import test.FirstName from @cacib/orders // Takes latest, or if a dependency is defined in taxi.conf, uses that
-import test.FirstName from @cacib/orders/2.3.0 // Takes a specific version, regardless of what is defined in taxi.conf
+import test.FirstName from @folder/orders // Takes latest, or if a dependency is defined in taxi.conf, uses that
+import test.FirstName from @folder/orders/2.3.0 // Takes a specific version, regardless of what is defined in taxi.conf
 ```
 
 In the above, when trying to resolve, we'll need to apply a resolution algo, that uses the heirachy of taxi.conf
