@@ -15,15 +15,15 @@ export class QueryService {
   }
 
   submitQuery(query: Query): Observable<QueryResult> {
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/query`, query);
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query);
   }
 
   getHistory(): Observable<QueryHistoryRecord[]> {
-    return this.http.get<QueryHistoryRecord[]>(`${environment.queryServiceUrl}/query/history`);
+    return this.http.get<QueryHistoryRecord[]>(`${environment.queryServiceUrl}/api/query/history`);
   }
 
   getQueryProfile(queryId: string): Observable<ProfilerOperation> {
-    return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/query/history/${queryId}/profile`);
+    return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`);
   }
 }
 

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 class InvocableFunctionsService(val vyneFactory: VyneFactory) {
-   @GetMapping("/types/{qualifiedName}/discoverable-types")
+   @GetMapping("/api/types/{qualifiedName}/discoverable-types")
    fun invocableFunctionsForType(@PathVariable("qualifiedName") fqn: String): List<QualifiedName> {
       val vyne = vyneFactory.createVyne()
       return vyne.accessibleFrom(fqn).map { it.qualifiedName }

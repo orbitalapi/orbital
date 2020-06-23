@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class ConfigService(private val config: QueryServerConfig) {
 
-   @GetMapping("/config")
+   @GetMapping("/api/config")
    fun getConfig(): QueryServerConfig {
       return config
    }

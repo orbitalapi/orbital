@@ -14,12 +14,12 @@ import java.time.Instant
 class QueryHistoryService(private val history: QueryHistory) {
    private val truncationThreshold = 10
 
-   @GetMapping("/query/history")
+   @GetMapping("/api/query/history")
    fun listHistory(): Flux<QueryHistoryRecordUiWrapper> {
       return history.list().map {record -> QueryHistoryRecordUiWrapper(record, truncationThreshold) }
    }
 
-   @GetMapping("/query/history/{id}/profile")
+   @GetMapping("/api/query/history/{id}/profile")
    fun getQueryProfile(@PathVariable("id") queryId: String): Mono<ProfilerOperationUIWrapper?> {
       return history.get(queryId).map { record -> record.response.profilerOperation?.let { ProfilerOperationUIWrapper(it, truncationThreshold)} }
    }

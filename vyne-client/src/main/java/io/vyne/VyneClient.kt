@@ -125,7 +125,7 @@ interface VyneQueryService {
 class HttpVyneQueryService(private val queryServiceUrl: String, private val restTemplate: RestTemplate = RestTemplate()) : VyneQueryService {
    override fun submitQuery(query: Query): QueryClientResponse {
       val queryResult = restTemplate.postForObject(
-         "$queryServiceUrl/query",
+         "$queryServiceUrl/api/query",
          query,
          QueryClientResponse::class.java
       )
@@ -134,7 +134,7 @@ class HttpVyneQueryService(private val queryServiceUrl: String, private val rest
 
    override fun submitVyneQl(vyneQL: String): QueryClientResponse {
       val queryResult = restTemplate.postForObject(
-         "$queryServiceUrl/vyneql",
+         "$queryServiceUrl/api/vyneql",
          vyneQL,
          QueryClientResponse::class.java
       )

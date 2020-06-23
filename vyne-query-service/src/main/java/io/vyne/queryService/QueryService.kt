@@ -44,14 +44,14 @@ data class FailedSearchResponse(val message: String,
 @RestController
 class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
 
-   @PostMapping("/query")
+   @PostMapping("/api/query")
    fun submitQuery(@RequestBody query: Query): QueryResponse {
       val response = executeQuery(query)
       history.add(RestfulQueryHistoryRecord(query, response.historyRecord()))
       return response
    }
 
-   @PostMapping("/vyneql")
+   @PostMapping("/api/vyneql")
    fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString): QueryResponse {
       log().info("VyneQL query => $query")
       return timed("QueryService.submitVyneQlQuery") {
