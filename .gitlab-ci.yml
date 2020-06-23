@@ -24,10 +24,13 @@ stages:
 build-jvm:
   stage: build
   cache:
-     paths:
-        - .m2/repository
+     paths
+     - .m2/repository
      key: "maven-$CI_COMMIT_REF_SLUG"
   script:
+    - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
+    - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
+    - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
     - 'mvn $MAVEN_CLI_OPTS clean test-compile jar:test-jar install -Dskip.npm -PrunBenchmarkTests'
   artifacts:
     paths:
