@@ -112,8 +112,12 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
          .addAssignListener { partitions ->
             log().debug("Partitions assigned to KafkaInput: $partitions")
             topicPartitions = partitions.map { it.topicPartition() }
+
+
          }
-         .addRevokeListener { partitions -> log().debug("Partitions revoked to KafkaInput: $partitions") }
+         .addRevokeListener { partitions -> log().debug("Partitions revoked to KafkaInput: $partitions")
+            // ENHANCE: there might be a way to hook on some events from the flux below to know when we are actually connected to kafka
+            healthMonitor.reportStatus(DOWN)}
    }
 
    override fun pause() {

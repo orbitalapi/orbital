@@ -1,5 +1,6 @@
 package io.vyne.pipelines.orchestrator
 
+import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
 import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.*
 
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.*
 data class OperationResult(val success: Boolean, val message: String)
 
 @RestController
-class TestharnessController(val pipelineRunnerApi: PipelineRunnerApiFeign) {
+class TestharnessController(val pipelineRunnerApi: PipelineRunnerApi) {
 
     @PostMapping("/testharness/send2kafka/{kafkaTopic}")
     @CrossOrigin
@@ -27,12 +28,5 @@ class TestharnessController(val pipelineRunnerApi: PipelineRunnerApiFeign) {
 
 }
 
-@FeignClient("pipeline-runner")
-interface PipelineRunnerApiFeign {
 
-   @PostMapping("/testharness/send2kafka/{kafkaTopic}")
-   fun submitMessage(@PathVariable("kafkaTopic") kafkaTopic: String,
-                     @RequestParam("kafkaHost", defaultValue = "kafka:9092") kafkaHost: String,
-                     @RequestBody kafkaJsonMessage: String): OperationResult
-}
 

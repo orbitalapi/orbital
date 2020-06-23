@@ -1,9 +1,9 @@
 <div #chartOuterContianer class="chart-outer-container">
   <ngx-graph class="chart-container" [links]="schemaGraph.links"
              [nodes]="schemaGraph.nodes"
-             [autoZoom]="true"
+             [enableZoom]="false"
              [panningEnabled]="false"
-             [autoCenter]="true"
+             [autoCenter]="false"
              [draggingEnabled]="false"
              [scheme]="colorScheme" [orientation]="orientation"
              [curve]="curve" (select)="select($event)">

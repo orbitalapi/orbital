@@ -153,6 +153,8 @@ export class InheritanceGraphComponent {
 
   select($event: any) {
     console.log('Node selected');
+    const href = "/types/" +  $event.subHeader + "." + $event.label;
+    window.location.href = href;
   }
 }
 

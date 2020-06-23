@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.*
-import java.lang.RuntimeException
 
 @RestController
 class RunnerJobController(val pipelineStateManager: PipelineStateManager) : PipelineRunnerApi {
@@ -21,12 +20,12 @@ class RunnerJobController(val pipelineStateManager: PipelineStateManager) : Pipe
       return pipelineStateManager.registerPipeline(pipeline)
    }
 
-   @GetMapping("/runner/pipelines/{id}")
-   fun getPipeline(@PathVariable id: String): ResponseEntity<PipelineInstance> {
+   override fun getPipeline(@PathVariable pipelineName: String): ResponseEntity<PipelineInstanceReference> {
 
-      return when (pipelineStateManager.pipelineInstance) {
+      val pipeline = pipelineStateManager.pipelines[pipelineName]
+      return when (pipeline) {
          null -> ResponseEntity.notFound().build()
-         else -> ResponseEntity.ok(pipelineStateManager.pipelineInstance)
+         else -> ResponseEntity.ok(pipeline)
       }
 
    }
@@ -35,22 +34,23 @@ class RunnerJobController(val pipelineStateManager: PipelineStateManager) : Pipe
 @Component
 class PipelineStateManager(val appInfoManager: ApplicationInfoManager, val objectMapper: ObjectMapper, private val pipelineBuilder: PipelineBuilder) {
 
-   var pipelineInstance: PipelineInstance? = null
+   var pipelines: MutableMap<String, PipelineInstance> = mutableMapOf()
 
+   @Synchronized
    fun registerPipeline(pipeline: Pipeline): PipelineInstance {
 
-      BadRequestException.throwIf(pipelineInstance != null, "Runner unavailable.")
+      BadRequestException.throwIf(pipelines.filter { it.value.spec.name == pipeline.name }.isNotEmpty(), "Pipeline ${pipeline.name} already running")
 
       // Build the pipeline
       val instance = pipelineBuilder.build(pipeline)
 
       // Store it
-      pipelineInstance = instance
+      pipelines[pipeline.name] = instance
 
       // Register metadata
       appInfoManager.registerAppMetadata(
          mapOf(
-            PIPELINE_METADATA_KEY to objectMapper.writeValueAsString(instance.spec)
+            "$PIPELINE_METADATA_KEY-${pipeline.name}" to objectMapper.writeValueAsString(instance.spec)
          )
       )
 

@@ -15,7 +15,7 @@ import org.springframework.web.server.ResponseStatusException
 @RestController
 class FileToTypeParserService(val schemaProvider: SchemaProvider) {
 
-   @PostMapping("/content/parse")
+   @PostMapping("/api/content/parse")
    fun parseFileToType(@RequestBody rawContent: String, @RequestParam("type") typeName: String): ParsedTypeInstance {
       val schema = schemaProvider.schema()
       val targetType = schema.type(typeName)
@@ -27,7 +27,7 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider) {
 
    }
 
-   @PostMapping("/csv/parse")
+   @PostMapping("/api/csv/parse")
    fun parseCsvToType(@RequestBody rawContent: String,
                       @RequestParam("type") typeName: String,
                       @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
@@ -48,7 +48,7 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider) {
       return records
    }
 
-   @PostMapping("/csv")
+   @PostMapping("/api/csv")
    fun parseCsvToRaw(@RequestBody rawContent: String,
                      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
                      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean
