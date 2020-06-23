@@ -51,14 +51,13 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
    }
 
    fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord, schema: Schema, nullValues: Set<String> = emptySet()): TypedInstance {
-      var value = Any()
-      if(accessor.index is Int) {
-         value = record.get(accessor.index as Int - 1)
+      val value = if(accessor.index is Int) {
+         record.get(accessor.index as Int - 1)
       } else {
-         value = record.get((accessor.index as String).trim('\"'))
+         record.get((accessor.index as String).trim('\"'))
       }
-      if (!nullValues.isEmpty() && nullValues.contains(value)) {
-         return TypedInstance.from(type, null, schema);
+      if (nullValues.isNotEmpty() && nullValues.contains(value)) {
+         return TypedInstance.from(type, null, schema)
       }
       try {
          return primitiveParser.parse(value, type)

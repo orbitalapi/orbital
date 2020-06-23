@@ -3,6 +3,8 @@ package io.vyne.cask.ingest
 import arrow.core.getOrElse
 import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import io.vyne.cask.CaskService
@@ -84,7 +86,7 @@ class CsvIngesterBenchmarkTest {
          val rowCount = ingester.getRowCount()
          rowCount.should.equal(23695)
          ingester.destroy()
-         FileUtils.cleanDirectory(folder.root);
+         FileUtils.cleanDirectory(folder.root)
       }
    }
 
@@ -107,6 +109,31 @@ class CsvIngesterBenchmarkTest {
          CsvIngestionRequest(CSVFormat.DEFAULT.withFirstRecordAsHeader(), type, emptySet()),
          input
       ).blockFirst()
+   }
+
+   @Test
+   fun canIngestCsvWithColumnNames() {
+      val schemaV3 = CoinbaseOrderSchema.schemaV3
+      val typeV3 = schemaV3.versionedType("OrderWindowSummary".fqn())
+      val resource = Resources.getResource("Coinbase_BTCUSD_single.csv").toURI()
+      val input: Flux<InputStream> = Flux.just(File(resource).inputStream())
+      val pipelineSource = CsvStreamSource(input, typeV3, schemaV3, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(typeV3, TypeDbWrapper(typeV3, schemaV3, pipelineSource.cachePath, null), pipelineSource)
+      val queryView = QueryView(jdbcTemplate)
+
+      ingester = Ingester(jdbcTemplate, pipeline)
+      ingester.destroy()
+      ingester.initialize()
+      ingester.ingest().collectList().block()
+
+      val v3QueryStrategy = queryView.getQueryStrategy(typeV3)
+      v3QueryStrategy.should.be.instanceof(TableQuerySpec::class.java)
+
+      val rowCount = ingester.getRowCount()
+      rowCount.should.equal(1)
+
+      ingester.destroy()
+      FileUtils.cleanDirectory(folder.root)
    }
 
    @Test

@@ -1,0 +1,9 @@
+type alias Price as Decimal
+type alias Symbol as String
+
+type OrderWindowSummaryCsv {
+    orderDate : DateTime( @format = 'yyyy-MM-dd hh-a' ) by column(1)
+    symbol : Symbol by column("Symbol")
+    open : Price by column("Open")
+    close : Price by column("Close")
+}
