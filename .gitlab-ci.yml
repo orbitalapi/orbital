@@ -99,10 +99,14 @@ release-minor:
 release-patch:
    variables:
       GIT_STRATEGY: none
+
    dependencies: []
    image: maven:3.3.9-jdk-8
    stage: release
    script:
+      - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
+      - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
+      - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - *git_setup
       - 'mvn gitflow:release -B -DversionDigitToIncrement=$PATCH_RELEASE_DIGIT'
    only:
