@@ -1,0 +1,340 @@
+{
+   "test": "Given a customer email address, gather promotions",
+   "background": "Explores gathering - ie., invoking services based on their response type being a subclass of a given base type.",
+   "scenario": {
+      "query": {
+         "expression": [
+            "demos.Promotion"
+         ],
+         "facts": [
+            {
+               "typeName": "demo.CustomerEmailAddress",
+               "value": "jimmy@demo.com",
+               "factSetId": "DEFAULT"
+            }
+         ],
+         "queryMode": "GATHER"
+      },
+      "response": {
+         "results": {
+            "demos.Promotion": [
+               {
+                  "typeName": "demos.DiscountPromotion",
+                  "value": {
+                     "message": {
+                        "typeName": "lang.taxi.String",
+                        "value": "Hey, Jimmy, get 20% off today!  Hurry, offer ends soon"
+                     },
+                     "title": {
+                        "typeName": "lang.taxi.String",
+                        "value": "AwesomeDiscount"
+                     },
+                     "availableUntil": {
+                        "typeName": "lang.taxi.Date",
+                        "value": "2019-07-08"
+                     }
+                  }
+               },
+               {
+                  "typeName": "demo.DoublePointsPromotion",
+                  "value": {
+                     "message": {
+                        "typeName": "lang.taxi.String",
+                        "value": "Hey, Jimmy, you could double your points - that's an extra 2300 points, just by shopping at one of these stores:"
+                     },
+                     "shops": [
+                        {
+                           "typeName": "lang.taxi.String",
+                           "value": "Twin Pines"
+                        },
+                        {
+                           "typeName": "lang.taxi.String",
+                           "value": "Lone Pines"
+                        },
+                        {
+                           "typeName": "lang.taxi.String",
+                           "value": "Twin Peaks"
+                        }
+                     ],
+                     "title": {
+                        "typeName": "lang.taxi.String",
+                        "value": "EarnDoublePoints"
+                     },
+                     "availableUntil": {
+                        "typeName": "lang.taxi.Date",
+                        "value": "2019-07-12"
+                     }
+                  }
+               }
+            ]
+         },
+         "unmatchedNodes": [],
+         "path": null,
+         "queryResponseId": "8427c70f-46d2-4381-a7d9-106c6e88993d",
+         "duration": 91,
+         "fullyResolved": true,
+         "remoteCalls": [
+            {
+               "service": {
+                  "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.rewards",
+                  "parameterizedName": "io.vyne.demos.rewards.CustomerService",
+                  "name": "CustomerService"
+               },
+               "addresss": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
+               "operation": "getCustomerByEmail",
+               "responseTypeName": {
+                  "fullyQualifiedName": "demo.Customer",
+                  "parameters": [],
+                  "namespace": "demo",
+                  "parameterizedName": "demo.Customer",
+                  "name": "Customer"
+               },
+               "method": "GET",
+               "requestBody": null,
+               "resultCode": 200,
+               "durationMs": 9,
+               "response": {
+                  "id": 1,
+                  "name": "Jimmy",
+                  "email": "jimmy@demo.com",
+                  "postcode": "SW11"
+               },
+               "operationQualifiedName": {
+                  "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService@@getCustomerByEmail",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.rewards",
+                  "parameterizedName": "io.vyne.demos.rewards.CustomerService@@getCustomerByEmail",
+                  "name": "CustomerService@@getCustomerByEmail"
+               }
+            },
+            {
+               "service": {
+                  "fullyQualifiedName": "io.vyne.demos.marketing.promotions.DiscountPromotionService",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.marketing.promotions",
+                  "parameterizedName": "io.vyne.demos.marketing.promotions.DiscountPromotionService",
+                  "name": "DiscountPromotionService"
+               },
+               "addresss": "http://martypitt-XPS-15-9560:9206/discounts",
+               "operation": "getDiscountPromotion",
+               "responseTypeName": {
+                  "fullyQualifiedName": "demos.DiscountPromotion",
+                  "parameters": [],
+                  "namespace": "demos",
+                  "parameterizedName": "demos.DiscountPromotion",
+                  "name": "DiscountPromotion"
+               },
+               "method": "POST",
+               "requestBody": {
+                  "clientName": "Jimmy"
+               },
+               "resultCode": 200,
+               "durationMs": 10,
+               "response": {
+                  "message": "Hey, Jimmy, get 20% off today!  Hurry, offer ends soon",
+                  "title": "AwesomeDiscount",
+                  "availableUntil": "2019-07-08"
+               },
+               "operationQualifiedName": {
+                  "fullyQualifiedName": "io.vyne.demos.marketing.promotions.DiscountPromotionService@@getDiscountPromotion",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.marketing.promotions",
+                  "parameterizedName": "io.vyne.demos.marketing.promotions.DiscountPromotionService@@getDiscountPromotion",
+                  "name": "DiscountPromotionService@@getDiscountPromotion"
+               }
+            },
+            {
+               "service": {
+                  "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.rewards",
+                  "parameterizedName": "io.vyne.demos.rewards.CustomerService",
+                  "name": "CustomerService"
+               },
+               "addresss": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
+               "operation": "getCustomerByEmail",
+               "responseTypeName": {
+                  "fullyQualifiedName": "demo.Customer",
+                  "parameters": [],
+                  "namespace": "demo",
+                  "parameterizedName": "demo.Customer",
+                  "name": "Customer"
+               },
+               "method": "GET",
+               "requestBody": null,
+               "resultCode": 200,
+               "durationMs": 8,
+               "response": {
+                  "id": 1,
+                  "name": "Jimmy",
+                  "email": "jimmy@demo.com",
+                  "postcode": "SW11"
+               },
+               "operationQualifiedName": {
+                  "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService@@getCustomerByEmail",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.rewards",
+                  "parameterizedName": "io.vyne.demos.rewards.CustomerService@@getCustomerByEmail",
+                  "name": "CustomerService@@getCustomerByEmail"
+               }
+            },
+            {
+               "service": {
+                  "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.rewards",
+                  "parameterizedName": "io.vyne.demos.rewards.CustomerService",
+                  "name": "CustomerService"
+               },
+               "addresss": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
+               "operation": "getCustomerByEmail",
+               "responseTypeName": {
+                  "fullyQualifiedName": "demo.Customer",
+                  "parameters": [],
+                  "namespace": "demo",
+                  "parameterizedName": "demo.Customer",
+                  "name": "Customer"
+               },
+               "method": "GET",
+               "requestBody": null,
+               "resultCode": 200,
+               "durationMs": 6,
+               "response": {
+                  "id": 1,
+                  "name": "Jimmy",
+                  "email": "jimmy@demo.com",
+                  "postcode": "SW11"
+               },
+               "operationQualifiedName": {
+                  "fullyQualifiedName": "io.vyne.demos.rewards.CustomerService@@getCustomerByEmail",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.rewards",
+                  "parameterizedName": "io.vyne.demos.rewards.CustomerService@@getCustomerByEmail",
+                  "name": "CustomerService@@getCustomerByEmail"
+               }
+            },
+            {
+               "service": {
+                  "fullyQualifiedName": "io.vyne.demos.marketing.MarketingService",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.marketing",
+                  "parameterizedName": "io.vyne.demos.marketing.MarketingService",
+                  "name": "MarketingService"
+               },
+               "addresss": "http://martypitt-XPS-15-9560:9201/marketing/1",
+               "operation": "getMarketingDetailsForCustomer",
+               "responseTypeName": {
+                  "fullyQualifiedName": "io.vyne.demos.marketing.CustomerMarketingRecord",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.marketing",
+                  "parameterizedName": "io.vyne.demos.marketing.CustomerMarketingRecord",
+                  "name": "CustomerMarketingRecord"
+               },
+               "method": "GET",
+               "requestBody": null,
+               "resultCode": 200,
+               "durationMs": 9,
+               "response": {
+                  "id": 1,
+                  "rewardsCardNumber": "4005-2003-2330-1002"
+               },
+               "operationQualifiedName": {
+                  "fullyQualifiedName": "io.vyne.demos.marketing.MarketingService@@getMarketingDetailsForCustomer",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.marketing",
+                  "parameterizedName": "io.vyne.demos.marketing.MarketingService@@getMarketingDetailsForCustomer",
+                  "name": "MarketingService@@getMarketingDetailsForCustomer"
+               }
+            },
+            {
+               "service": {
+                  "fullyQualifiedName": "io.vyne.demos.rewards.balances.RewardsBalanceService",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.rewards.balances",
+                  "parameterizedName": "io.vyne.demos.rewards.balances.RewardsBalanceService",
+                  "name": "RewardsBalanceService"
+               },
+               "addresss": "http://martypitt-XPS-15-9560:9202/balances/4005-2003-2330-1002",
+               "operation": "getRewardsBalance",
+               "responseTypeName": {
+                  "fullyQualifiedName": "demo.RewardsAccountBalance",
+                  "parameters": [],
+                  "namespace": "demo",
+                  "parameterizedName": "demo.RewardsAccountBalance",
+                  "name": "RewardsAccountBalance"
+               },
+               "method": "GET",
+               "requestBody": null,
+               "resultCode": 200,
+               "durationMs": 9,
+               "response": {
+                  "cardNumber": "4005-2003-2330-1002",
+                  "balance": 2300,
+                  "currencyUnit": "POINTS"
+               },
+               "operationQualifiedName": {
+                  "fullyQualifiedName": "io.vyne.demos.rewards.balances.RewardsBalanceService@@getRewardsBalance",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.rewards.balances",
+                  "parameterizedName": "io.vyne.demos.rewards.balances.RewardsBalanceService@@getRewardsBalance",
+                  "name": "RewardsBalanceService@@getRewardsBalance"
+               }
+            },
+            {
+               "service": {
+                  "fullyQualifiedName": "io.vyne.demos.marketing.promotions.DiscountPromotionService",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.marketing.promotions",
+                  "parameterizedName": "io.vyne.demos.marketing.promotions.DiscountPromotionService",
+                  "name": "DiscountPromotionService"
+               },
+               "addresss": "http://martypitt-XPS-15-9560:9206/gift",
+               "operation": "getDoublePointsPromotion",
+               "responseTypeName": {
+                  "fullyQualifiedName": "demo.DoublePointsPromotion",
+                  "parameters": [],
+                  "namespace": "demo",
+                  "parameterizedName": "demo.DoublePointsPromotion",
+                  "name": "DoublePointsPromotion"
+               },
+               "method": "POST",
+               "requestBody": {
+                  "clientName": "Jimmy",
+                  "rewardsBalance": 2300
+               },
+               "resultCode": 200,
+               "durationMs": 5,
+               "response": {
+                  "message": "Hey, Jimmy, you could double your points - that's an extra 2300 points, just by shopping at one of these stores:",
+                  "shops": [
+                     "Twin Pines",
+                     "Lone Pines",
+                     "Twin Peaks"
+                  ],
+                  "title": "EarnDoublePoints",
+                  "availableUntil": "2019-07-12"
+               },
+               "operationQualifiedName": {
+                  "fullyQualifiedName": "io.vyne.demos.marketing.promotions.DiscountPromotionService@@getDoublePointsPromotion",
+                  "parameters": [],
+                  "namespace": "io.vyne.demos.marketing.promotions",
+                  "parameterizedName": "io.vyne.demos.marketing.promotions.DiscountPromotionService@@getDoublePointsPromotion",
+                  "name": "DiscountPromotionService@@getDoublePointsPromotion"
+               }
+            }
+         ],
+         "timings": {
+            "LOOKUP": 0,
+            "GRAPH_TRAVERSAL": 21,
+            "GRAPH_BUILDING": 9,
+            "REMOTE_CALL": 58,
+            "ROOT": 67497
+         },
+         "vyneCost": 30
+      },
+      "timestamp": "2019-07-06T15:01:14.911Z",
+      "id": "8427c70f-46d2-4381-a7d9-106c6e88993d"
+   }
+}

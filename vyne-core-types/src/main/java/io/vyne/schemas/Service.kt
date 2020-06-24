@@ -1,0 +1,127 @@
+package io.vyne.schemas
+
+import com.fasterxml.jackson.annotation.JsonIgnore
+import io.vyne.VersionedSource
+
+
+typealias OperationName = String
+typealias ServiceName = String
+
+object ParamNames {
+   fun isParamName(input: String): Boolean {
+      return input.startsWith("param/")
+   }
+
+   fun typeNameInParamName(paramName: String): String {
+      return paramName.removePrefix("param/")
+   }
+
+   fun toParamName(typeName: String): String {
+      return "param/$typeName"
+   }
+}
+
+object OperationNames {
+   private const val DELIMITER: String = "@@"
+   fun name(serviceName: String, operationName: String): String {
+      return listOf(serviceName, operationName).joinToString(DELIMITER)
+   }
+
+   fun displayName(serviceName: String, operationName: OperationName): String {
+      return "$serviceName.$operationName()"
+   }
+
+   fun qualifiedName(serviceName: ServiceName, operationName: OperationName): QualifiedName {
+      return name(serviceName, operationName).fqn()
+   }
+
+   fun serviceAndOperation(qualifiedOperationName: QualifiedName): Pair<ServiceName, OperationName> {
+      val parts = qualifiedOperationName.fullyQualifiedName.split(DELIMITER)
+      require(parts.size == 2) { "${qualifiedOperationName.fullyQualifiedName} is not a valid operation name." }
+      return parts[0] to parts[1]
+   }
+
+   fun operationName(qualifiedOperationName: QualifiedName): OperationName {
+      return serviceAndOperation(qualifiedOperationName).second
+   }
+
+   fun serviceName(qualifiedOperationName: QualifiedName): ServiceName {
+      return serviceAndOperation(qualifiedOperationName).first
+   }
+
+   fun isName(memberName: String): Boolean {
+      return memberName.contains(DELIMITER)
+   }
+
+   fun isName(memberName: QualifiedName): Boolean {
+      return memberName.fullyQualifiedName.contains(DELIMITER)
+   }
+
+   fun displayNameFromOperationName(operationName: QualifiedName): String {
+      val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
+      return displayName(serviceName, operationName)
+   }
+}
+
+
+data class Parameter(val type: Type,
+                     val name: String? = null,
+                     override val metadata: List<Metadata> = emptyList(),
+                     val constraints: List<InputConstraint> = emptyList()) : MetadataTarget {
+   fun isNamed(name: String): Boolean {
+      return this.name != null && this.name == name
+   }
+}
+
+data class Operation(val qualifiedName: QualifiedName, val parameters: List<Parameter>,
+                     val returnType: Type,
+   // similar to scope in taxi - ie., read / write
+                     val operationType:String? = null,
+                     override val metadata: List<Metadata> = emptyList(),
+                     val contract: OperationContract = OperationContract(returnType),
+                     @get:JsonIgnore
+                     val sources: List<VersionedSource>,
+                     val typeDoc: String? = null) : MetadataTarget, SchemaMember {
+   val name: String = OperationNames.operationName(qualifiedName)
+
+   fun parameter(name:String):Parameter? {
+      return this.parameters.firstOrNull { it.name == name }
+   }
+}
+
+data class Service(val name: QualifiedName,
+                   val operations: List<Operation>,
+                   override val metadata: List<Metadata> = emptyList(),
+                   @get:JsonIgnore
+                   val sourceCode: List<VersionedSource>,
+                   val typeDoc: String? = null) : MetadataTarget, SchemaMember {
+   fun operation(name: String): Operation {
+      return this.operations.first { it.name == name }
+   }
+
+   fun hasOperation(name: String): Boolean {
+      return this.operations.any { it.name == name }
+   }
+
+   val qualifiedName = name.fullyQualifiedName
+}
+
+
+data class OperationContract(val returnType: Type, val constraints: List<OutputConstraint> = emptyList()) {
+   fun containsConstraint(clazz: Class<out OutputConstraint>): Boolean {
+      return constraints.filterIsInstance(clazz)
+         .isNotEmpty()
+   }
+
+   fun <T : OutputConstraint> containsConstraint(clazz: Class<T>, predicate: (T) -> Boolean): Boolean {
+      return constraints.filterIsInstance(clazz).any(predicate)
+   }
+
+   fun <T : OutputConstraint> constraint(clazz: Class<T>, predicate: (T) -> Boolean): T {
+      return constraints.filterIsInstance(clazz).first(predicate)
+   }
+
+   fun <T : OutputConstraint> constraint(clazz: Class<T>): T {
+      return constraints.filterIsInstance(clazz).first()
+   }
+}

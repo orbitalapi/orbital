@@ -1,0 +1,23 @@
+<div class="operation-view">
+  <div class="summary-container">
+    <div class="name-and-status">
+      <h3 class="operation-name">{{ operation.service.name}}.{{ operation.operation }}()</h3>
+      <div class="response-code-line">
+        <span class="result" [ngClass]="statusTextClass">{{statusText}} {{ operation.resultCode }}</span>
+        <span class="duration">Time {{ operation.durationMs }}ms</span>
+      </div>
+    </div>
+    <div>
+      <span class="verb">{{ operation.method }}</span>
+      <span class="address">{{ operation.addresss }}</span>
+    </div>
+
+  </div>
+  <div class="close-container">
+    <button mat-icon-button (click)="closeClicked()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <app-simple-code-viewer lang="json" *ngIf="operation.requestBody" [content]="operation.requestBody" name="Request"></app-simple-code-viewer>
+  <app-simple-code-viewer lang="json" *ngIf="operation.response" [content]="operation.response" name="Response"></app-simple-code-viewer>
+</div>

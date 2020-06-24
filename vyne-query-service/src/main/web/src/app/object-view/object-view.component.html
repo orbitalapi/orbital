@@ -1,0 +1,47 @@
+<div class="type-name top-level" *ngIf="topLevel">{{ type?.name.name }}</div>
+<div class="typed-value-container" *ngIf="isPrimitive" (click)="onTopLevelPrimitiveClicked()"
+  [class.selectable]="selectable"
+>
+  <!--  <div class="type-name">{{ typedObject.typeName }}</div>-->
+  <div class="type-value">{{ typedObject.value }}</div>
+</div>
+<div class="typed-object-container" *ngIf="isTypedObject">
+  <div *ngFor="let attributeName of typedObjectAttributeNames" class="attribute-row"
+       [class.object-row]="!getTypeForAttribute(attributeName).isScalar">
+    <div class="attribute-name">
+      {{ attributeName }}
+    </div>
+    <div class="type-name-container table-cell">
+      <div class="type-name">{{ getTypeForAttribute(attributeName).name.name }}</div>
+    </div>
+    <div class="attribute-value table-cell"
+         (click)="onAttributeClicked(attributeName)"
+         [class.selectable]="selectable"
+         *ngIf="getTypeForAttribute(attributeName).isScalar">{{ getTypedObjectAttributeValue(attributeName) }}</div>
+    <app-object-view *ngIf="!getTypeForAttribute(attributeName).isScalar"
+                     [instance]="getTypedObjectAttribute(attributeName)"
+                     [type]="getTypeForAttribute(attributeName)"
+                     [schema]="schema"
+                     [topLevel]="false"
+                     [selectable]="selectable"
+                     (instanceClicked)="instanceClicked.emit($event)"
+    ></app-object-view>
+  </div>
+</div>
+<div class="typed-object-container" *ngIf="isArray">
+  <div *ngFor="let collectionMember of instance; let i = index; let odd = odd" class="result-collection-member">
+    <div class="collection-index" [class.odd]="odd">#{{i + 1}}</div>
+    <div class="collection-member">
+      <app-object-view [instance]="collectionMember"
+                       [schema]="schema"
+                       [type]="collectionMemberType"
+                       [topLevel]="false"
+                       [selectable]="selectable"
+                       (instanceClicked)="instanceClicked.emit($event)"
+      ></app-object-view>
+
+    </div>
+  </div>
+
+</div>
+

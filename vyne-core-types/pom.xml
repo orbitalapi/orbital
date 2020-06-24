@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>platform</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.3.0</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>vyne-core-types</artifactId>
+
+
+   <dependencies>
+      <dependency>
+         <groupId>com.fasterxml.jackson.core</groupId>
+         <artifactId>jackson-annotations</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.datatype</groupId>
+         <artifactId>jackson-datatype-jsr310</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.github.zafarkhaja</groupId>
+         <artifactId>java-semver</artifactId>
+         <version>0.9.0</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.commons</groupId>
+         <artifactId>commons-csv</artifactId>
+         <version>1.4</version>
+      </dependency>
+      <!-- Adding this being lazy - we need access to the ConversionService
+      in TypedValue, that's the only reason.  Have added it in the weakest way
+      possible, but really, this is nuts, and having spring in the core-types
+      lib is insane. -->
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-core</artifactId>
+         <optional>true</optional>
+         <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>core-types</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>taxi-jvm-common</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>taxi-annotations</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.core</groupId>
+         <artifactId>jackson-databind</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.module</groupId>
+         <artifactId>jackson-module-kotlin</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>package-repository-api</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>com.nhaarman.mockitokotlin2</groupId>
+         <artifactId>mockito-kotlin</artifactId>
+         <version>2.2.0</version>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+</project>

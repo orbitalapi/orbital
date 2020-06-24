@@ -1,0 +1,94 @@
+@import "src/theme";
+@import "src/toolbar";
+
+.container {
+  flex: 1;
+
+  &:not(:last-child) {
+    padding-right: 45px;
+  }
+
+}
+
+.button-bar {
+  display: flex;
+  margin-top: 1rem;
+  button {
+    margin-right: 1.5rem;
+  }
+}
+
+app-vyne-query-viewer {
+  width: 100%;
+}
+
+.fact-form-list {
+  display: table;
+  width: 100%;
+
+  .fact-form-container {
+    display: table-row;
+    width: 100%;
+
+    .delete-icon {
+      display: table-cell;
+      vertical-align: middle;
+      padding-bottom: 8px;
+
+      color: $blue-grey-2;
+      cursor: pointer;
+
+      &:hover {
+        color: $dark-grey-2;
+      }
+    }
+
+    .type-name {
+      display: table-cell;
+    }
+
+    .fact-editor {
+      display: table-cell;
+    }
+  }
+
+}
+
+.results-container {
+  width: 100%
+}
+
+.target-type-container {
+  .mat-form-field {
+    width: 100%;
+  }
+
+  ::ng-deep .mat-checkbox-layout {
+    margin-bottom: 10px;
+  }
+
+  .target-type-input {
+
+  }
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  margin-bottom: 35px;
+}
+
+.new-fact-editor {
+  width: 100%;
+
+  app-type-autocomplete {
+    width: 100%;
+  }
+
+  .mat-form-field {
+    width: 100%;
+  }
+
+}
+
+

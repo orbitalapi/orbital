@@ -1,0 +1,45 @@
+@import "src/theme";
+@import "src/app/expand-panel/expand-panel";
+
+.title-bar {
+  background-color: white;
+}
+
+.highlight-container {
+  background-color: $code-background;
+}
+
+td-highlight {
+  background-color: $code-background;
+}
+
+
+
+.language-selector {
+  display: flex;
+  transition: opacity 0.3s;
+  opacity: 1;
+  &.panel-hidden {
+    opacity: 0;
+  }
+
+  .snippet-lang {
+    padding: 4px 10px;
+    margin: 0 5px;
+    text-transform: uppercase;
+    font-weight: 400;
+    opacity: 0.9;
+    cursor: pointer;
+
+    &:hover {
+      background-color: rgba(black, 0.2);
+    }
+    &.active {
+      font-weight: 600;
+      color: black;
+      //color: white;
+      opacity: 1;
+      border-bottom: 2px solid $vyne-green;
+    }
+  }
+}

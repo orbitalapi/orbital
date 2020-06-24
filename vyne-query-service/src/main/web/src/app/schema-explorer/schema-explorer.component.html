@@ -1,0 +1,39 @@
+<div class="component-container">
+  <mat-toolbar color="primary">
+    <span>Schema Explorer</span>
+    <div class="toolbar-spacer"></div>
+    <div class="add-new" *ngIf="config?.newSchemaSubmissionEnabled">
+      <button mat-raised-button color="primary" [matMenuTriggerFor]="appMenu">Add new...</button>
+      <!--<mat-icon svgIcon="add_box"></mat-icon>-->
+      <!--Add a new one-->
+      <mat-menu #appMenu="matMenu">
+        <button mat-menu-item (click)="importSchemaFromUrl()">Add schema from url</button>
+        <!--<button mat-menu-item (click)="createNewSchema()">Add schema directly</button>-->
+      </mat-menu>
+    </div>
+    <app-search-bar-container></app-search-bar-container>
+  </mat-toolbar>
+  <div class="page-content">
+    <app-code-viewer [sources]="schemas | async" sidebarMode="Visible" *ngIf="(schemas | async)?.length>0" ></app-code-viewer>
+
+<!--    <div class="endpoint-list">-->
+<!--      <div *ngFor="let schema of schemas | async" class="schema-list-member"-->
+<!--           [ngClass]="selectedSchema == schema ? 'selected' : ''"-->
+<!--           (click)="selectSchema(schema)">-->
+<!--        <div class="schema-name" [matTooltip]="schema.name">{{ schema.name }}</div>-->
+<!--        <div class="schema-version">{{ schema.version }}</div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--    <div class="source-viewer">-->
+<!--      <td-highlight lang="taxi" *ngIf="selectedSchema" [content]="selectedSchema.content">-->
+<!--      </td-highlight>-->
+
+<!--    </div>-->
+    <div *ngIf="(schemas | async)?.length==0" class="empty-state">
+      <img src="assets/img/getting-started.svg">
+      <div>There's nothing registered yet. Schemas will appear here as services register, or you can add
+        a new schema manually from the toolbar above.
+      </div>
+    </div>
+  </div>
+</div>

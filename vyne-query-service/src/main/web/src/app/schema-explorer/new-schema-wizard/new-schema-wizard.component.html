@@ -1,0 +1,75 @@
+<div class="component-container">
+  <mat-toolbar color="primary">
+    <span>Import a new Schema</span>
+  </mat-toolbar>
+  <div class="page-content">
+    <div class="content-container">
+      <mat-progress-bar *ngIf="working" mode="indeterminate" color="accent"></mat-progress-bar>
+      <mat-horizontal-stepper [linear]="true" #stepper>
+        <div class="stepper-content">
+          <mat-step [stepControl]="importOptionsFormGroup" label="Import">
+            <form [formGroup]="importOptionsFormGroup">
+              <div formGroupName="schema">
+                <mat-form-field class="url">
+                  <input matInput placeholder="Schema url" formControlName="url" required>
+                </mat-form-field>
+                <mat-form-field class="schema-type">
+                  <mat-select placeholder="Type" formControlName="schemaType" required>
+                    <mat-option *ngFor="let schemaType of schemaTypes" [value]="schemaType">
+                      {{schemaType}}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="error-container" *ngIf="errorMessage">
+                {{ errorMessage }}
+              </div>
+              <div class="button-row">
+                <div class="spacer"></div>
+
+                <button mat-button (click)="generatePreview(stepper)"
+                        [disabled]="working || !importOptionsFormGroup.valid">Next
+                </button>
+              </div>
+            </form>
+          </mat-step>
+          <mat-step label="Review">
+            <div class="review-container">
+              <td-highlight lang="typescript" *ngIf="schemaPreview">
+                {{ schemaPreview.content }}
+              </td-highlight>
+              <div class="messages-container">
+                <mat-list dense>
+                  <mat-list-item *ngFor="let message of schemaPreview?.messages">
+                    <mat-icon matListIcon>{{ getIcon(message) }}</mat-icon>
+                    <div>
+                      <span>{{ message.message }}</span>
+                      <span *ngIf="message.link">&nbsp;<a [href]="message.link">More details</a> </span>
+                    </div>
+                  </mat-list-item>
+                </mat-list>
+                <div class="error-container" *ngIf="errorMessage">
+                  {{ errorMessage }}
+                </div>
+              </div>
+              <div class="button-row">
+                <button mat-button matStepperPrevious>Back</button>
+                <div class="spacer"></div>
+                <button mat-button (click)="submitSchema(stepper)">Next</button>
+              </div>
+            </div>
+          </mat-step>
+          <mat-step label="Done">
+            <div>
+              All finished. Schema {{versionedSchema?.name}} v{{versionedSchema?.version}} is now live.
+            </div>
+            <div class="button-row">
+              <div class="spacer"></div>
+              <button mat-button (click)="returnToExplorer()">Finish</button>
+            </div>
+          </mat-step>
+        </div>
+      </mat-horizontal-stepper>
+    </div>
+  </div>
+</div>

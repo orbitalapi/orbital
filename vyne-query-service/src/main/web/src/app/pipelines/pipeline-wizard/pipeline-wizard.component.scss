@@ -1,0 +1,68 @@
+@import "src/theme";
+@import '~@angular/material/theming';
+
+:host {
+  background-color: $body-bg;
+  display: block;
+}
+
+app-type-autocomplete {
+  display: block;
+}
+
+.page-content {
+  font-family: $font-sans-docs;
+  display: flex;
+}
+
+h1 {
+  margin-bottom: 2rem;
+  font-weight: 700;
+}
+
+.pipeline-view {
+  display: flex;
+}
+
+.pipeline-card {
+  .header {
+    display: flex;
+    align-items: center;
+    img {
+      width: 1.25rem;
+      opacity: 70%;
+      margin-right: 1rem;
+    }
+  }
+
+  width: 30rem;
+  padding: 0.5rem 1.5rem 1.5rem 1.5rem;
+  @include mat-elevation(3);
+
+  form {
+    > * {
+      margin-top: 1.5rem;
+    }
+  }
+}
+
+.channel-selector {
+  display: flex;
+  align-items: center;
+
+  app-type-autocomplete {
+    margin-right: 2rem;
+    flex-grow: 1;
+  }
+}
+
+.arrow {
+  display: flex;
+  align-items: center;
+  margin: 0 30px;
+
+  img {
+    width: 50px;
+    opacity: 0.6;
+  }
+}

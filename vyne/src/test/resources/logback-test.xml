@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+		    <!-- Don't use %L or %M for Production or Perf test -->
+			<pattern>%d{HH:mm:ss.SSS} %5p %70(%c{50}.%M\(%L\)) - %m%n</pattern>
+		</encoder>
+	</appender>
+
+    <!--<logger level="error" name="com.hazelcast" />-->
+    <!--<logger level="info"  name="org.springframework.data" />-->
+    <!--<logger level="trace" name="org.springframework.data.hazelcast" />-->
+    <!--<logger level="trace" name="com" />-->
+
+   <logger level="INFO" name="io" />
+	<root level="debug">
+		<appender-ref ref="console" />
+	</root>
+
+</configuration>

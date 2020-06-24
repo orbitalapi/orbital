@@ -1,0 +1,47 @@
+@import "src/theme";
+
+.title-bar {
+  background-color: $light-purple-grey;
+  display: flex;
+  h4 {
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+  }
+  button {
+    width: unset !important;
+    height: unset !important;
+    line-height: unset !important;
+  }
+  padding: 10px;
+}
+
+.container {
+  height: 100%;
+  display: flex;
+
+  .results-section {
+    flex-grow: 1;
+    .results-container {
+      margin: 10px;
+    }
+  }
+}
+
+.list-container {
+  width: 400px;
+  height: 100%;
+  background-color: $light-purple-grey;
+  border-right: 1px solid $light-purple-grey-300;
+}
+
+.history-item {
+  cursor: pointer;
+  background-color: $grey-1;
+  padding: 10px 20px;
+  border-bottom: 1px solid $light-purple-grey-300;
+  &:hover {
+    background-color: rgba($dark-grey-2,0.1);
+  }
+}
+

@@ -1,31 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <modelVersion>4.0.0</modelVersion>
 
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.1.6-SNAPSHOT</version>
-   <modules>
-      <!--<module>demos</module>-->
-      <module>vyne-parent</module>
-   </modules>
+   <version>0.3.0</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>2.0.5.RELEASE</version>
+      <version>2.3.1.RELEASE</version>
    </parent>
 
+
    <properties>
+      <taxi.version>0.5.0</taxi.version>
+
+      <!-- Used in QueryService -->
+      <elasticsearch.version>7.5.2</elasticsearch.version>
+
       <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-      <kotlin.version>1.2.71</kotlin.version>
+      <kotlin.version>1.3.50</kotlin.version>
       <java.version>1.8</java.version>
       <logback.version>1.1.10</logback.version>
-      <spring.cloud.version>Finchley.SR1</spring.cloud.version>
-      <spring.cloud.netflix.version>2.0.1.RELEASE</spring.cloud.netflix.version>
-      <jackson.version>2.9.3</jackson.version>
+      <spring.cloud.version>Hoxton.SR5</spring.cloud.version>
+      <spring.cloud.netflix.version>2.2.3.RELEASE</spring.cloud.netflix.version>
+      <arrow.version>0.10.4</arrow.version>
+      <logstash.logback.version>6.4</logstash.logback.version>
    </properties>
+
+   <modules>
+      <module>cask</module>
+      <module>eureka</module>
+      <module>vyne-core-types</module>
+      <module>events-api</module>
+      <module>vyne-search</module>
+      <module>utils</module>
+      <module>vyne</module>
+      <module>vyne-spring</module>
+      <module>schema-store</module>
+      <module>schema-store-client</module>
+      <module>schema-store-api</module>
+      <module>vyne-spring-schemaStore</module>
+      <module>vyne-query-service</module>
+      <module>vyne-client</module>
+      <module>vyne-query-api</module>
+      <module>vyne-client-spring</module>
+      <module>file-schema-server</module>
+      <module>pipelines</module>
+      <module>cask-api</module>
+      <module>vyne-ql</module>
+      <module>vyne-taxi</module>
+   </modules>
 
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>
@@ -44,24 +72,11 @@
          <version>${kotlin.version}</version>
       </dependency>
       <dependency>
-         <groupId>org.jetbrains.kotlin</groupId>
-         <artifactId>kotlin-runtime</artifactId>
-         <version>${kotlin.version}</version>
-      </dependency>
-      <dependency>
          <groupId>org.apache.commons</groupId>
          <artifactId>commons-lang3</artifactId>
          <version>3.3.2</version>
       </dependency>
-      <dependency>
-         <groupId>com.google.guava</groupId>
-         <artifactId>guava</artifactId>
-         <version>19.0</version>
-      </dependency>
-      <dependency>
-         <groupId>org.slf4j</groupId>
-         <artifactId>slf4j-api</artifactId>
-      </dependency>
+
       <dependency>
          <groupId>ch.qos.logback</groupId>
          <artifactId>logback-classic</artifactId>
@@ -86,8 +101,15 @@
       <dependency>
          <groupId>org.mockito</groupId>
          <artifactId>mockito-core</artifactId>
+         <!--         <version>2.28.2</version>-->
          <scope>test</scope>
       </dependency>
+      <!--      <dependency>-->
+      <!--         <groupId>net.bytebuddy</groupId>-->
+      <!--         <artifactId>byte-buddy-dep</artifactId>-->
+      <!--         <version>1.9.12</version>-->
+      <!--         <scope>test</scope>-->
+      <!--      </dependency>-->
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-test</artifactId>
@@ -156,8 +178,10 @@
       <dependencies>
          <dependency>
             <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-core</artifactId>
-            <version>3.0.7.RELEASE</version>
+            <artifactId>reactor-bom</artifactId>
+            <version>Dysprosium-SR6</version>
+            <type>pom</type>
+            <scope>import</scope>
          </dependency>
          <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -180,25 +204,57 @@
             <type>pom</type>
             <scope>import</scope>
          </dependency>
+         <!-- https://mvnrepository.com/artifact/io.r2dbc/r2dbc-bom -->
          <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-kotlin</artifactId>
-            <version>${jackson.version}</version>
+            <groupId>io.r2dbc</groupId>
+            <artifactId>r2dbc-bom</artifactId>
+            <version>Arabba-SR5</version>
+            <type>pom</type>
+            <scope>import</scope>
          </dependency>
          <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-bom</artifactId>
+            <version>${micrometer.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
          </dependency>
          <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.version}</version>
+            <groupId>com.fasterxml.jackson</groupId>
+            <artifactId>jackson-bom</artifactId>
+            <version>${jackson-bom.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
          </dependency>
          <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
+            <groupId>lang.taxi</groupId>
+            <artifactId>compiler</artifactId>
+            <version>${taxi.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>lang.taxi</groupId>
+            <artifactId>core-types</artifactId>
+            <version>${taxi.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>lang.taxi</groupId>
+            <artifactId>taxi-annotations</artifactId>
+            <version>${taxi.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>lang.taxi</groupId>
+            <artifactId>java2taxi</artifactId>
+            <version>${taxi.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>28.0-jre</version>
+         </dependency>
+         <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash.logback.version}</version>
          </dependency>
       </dependencies>
    </dependencyManagement>
@@ -235,18 +291,6 @@
                   <!-- default is develop, but we use development -->
                   <developmentBranch>develop</developmentBranch>
                </gitFlowConfig>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-release-plugin</artifactId>
-            <version>2.5.3</version>
-            <configuration>
-               <tagNameFormat>v@{project.version}</tagNameFormat>
-               <!-- Currently skipping tests when deploying.
-               There isn't a good reason for this, just in a hurry.
-               Judge away -->
-               <arguments>-Dmaven.javadoc.skip=true -Dmaven.test.skipTests=true -Dmaven.test.skip=true</arguments>
             </configuration>
          </plugin>
          <plugin>
@@ -323,6 +367,11 @@
                   </execution>
                </executions>
             </plugin>
+            <plugin>
+               <groupId>io.fabric8</groupId>
+               <artifactId>docker-maven-plugin</artifactId>
+               <version>0.27.2</version>
+            </plugin>
          </plugins>
       </pluginManagement>
    </build>
@@ -337,4 +386,44 @@
          <url>s3://repo.vyne.co/snapshot</url>
       </snapshotRepository>
    </distributionManagement>
+
+   <repositories>
+      <!-- for taxi snapshots -->
+      <repository>
+         <id>vyne-snapshots</id>
+         <url>http://repo.vyne.co/snapshot</url>
+         <snapshots>
+            <enabled>true</enabled>
+         </snapshots>
+      </repository>
+      <repository>
+         <snapshots>
+            <enabled>false</enabled>
+         </snapshots>
+         <id>bintray-taxi-lang-releases</id>
+         <name>bintray</name>
+         <url>https://dl.bintray.com/taxi-lang/releases</url>
+      </repository>
+   </repositories>
+
+   <profiles>
+      <profile>
+         <id>snapshot-release</id>
+         <activation>
+            <activeByDefault>false</activeByDefault>
+         </activation>
+         <properties>
+            <docker.tag>latest-snapshot</docker.tag>
+         </properties>
+      </profile>
+      <profile>
+         <id>release</id>
+         <activation>
+            <activeByDefault>false</activeByDefault>
+         </activation>
+         <properties>
+            <docker.tag>latest</docker.tag>
+         </properties>
+      </profile>
+   </profiles>
 </project>

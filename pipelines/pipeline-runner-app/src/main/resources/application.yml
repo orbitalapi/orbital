@@ -1,0 +1,17 @@
+spring:
+   application:
+      name: pipeline-runner
+
+server:
+   port: 9610
+
+service:
+   cask:
+      name: cask
+
+feign:
+   client:
+      config:
+         default:
+            connectTimeout: 5000
+            readTimeout: 5000

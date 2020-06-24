@@ -64,7 +64,6 @@ type IsoDateTime : Instant( format : 'yyyy-mm-ddTHH:MM:SS.LLLLZ' ) // Should mat
 type OddDateTime : Instant( format : 'mon/dd/yy hh:MM:ss p' )  // Should match Apr/23/20 11:40:23 PM
 ```
 
-## Flat file ingestion
 
 ## Versioning Taxi schemas
 Ingestion and transformation is going to evolve over time, but we should be able to remain
@@ -78,14 +77,52 @@ Therefore, we likely need to flesh out import syntax to support resolution
 import test.FirstName
 
 // Proposed syntax
-import test.FirstName from @cacib/orders // Takes latest, or if a dependency is defined in taxi.conf, uses that
-import test.FirstName from @cacib/orders/2.3.0 // Takes a specific version, regardless of what is defined in taxi.conf
+import test.FirstName from @folder/orders // Takes latest, or if a dependency is defined in taxi.conf, uses that
+import test.FirstName from @folder/orders/2.3.0 // Takes a specific version, regardless of what is defined in taxi.conf
 ```
 
 In the above, when trying to resolve, we'll need to apply a resolution algo, that uses the heirachy of taxi.conf
 files to find both a local repo somewhere, and remote repos to call out to.
 
-## Additional providers
+## Flat file ingestion
+
+We can get significant mileage by supporting columnlar data.
+This should support *sv files (eg., psv, csv, tsv), an excel/google spreadsheet, or even a db.
+
+```
+type Person {
+    firstName : FirstName as String
+    lastName : LastName as String
+}
+
+// File access should use ant wildcard style matching to identify either a single file, or a 
+// list of files.
+
+source csv(`/some/localfile/location') provides rowsOf Person {
+    firstName by column(0) // column as a new accessor
+    lastName by column(1)
+}
+
+// Or, as an inline type:
+source csv(`/some/localfile/location') provides rowsOf Person {
+    firstName : FirstName as String by column(0)
+    lastName : LastName as String by column(1)
+}
+
+// support accessing an excel spreadsheet
+source excel('/some/file/location') provides rowsOf Person {
+}
+
+database('jdbc://some/db/access') {
+    source table('someTableName') provides rowOf Person {
+        firstName : FirstName by dbColumn('someColumnName')
+        lasttName : LastName by dbColumn('someColumnName')
+    }
+}
+```
+
+
+### Additional providers
 We should rethink the HTTP operatons we currently in the context of "providers", and - at some point -
 refactor towards them.
 

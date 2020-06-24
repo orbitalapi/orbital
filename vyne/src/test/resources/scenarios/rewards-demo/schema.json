@@ -1,0 +1,52 @@
+[
+   {
+      "name": "customer-service",
+      "version": "0.1.0",
+      "content": "namespace demo {\n   \n   type Customer {\n      email : CustomerEmailAddress\n      id : CustomerId\n      name : CustomerName\n      postcode : Postcode\n   }\n   \n   type alias CustomerEmailAddress as String\n   \n   type alias CustomerId as Int\n   \n   type alias CustomerName as String\n   \n   type alias Postcode as String\n   \n   \n   enum CurrencyUnit {\n      POINTS,\n      GBP\n   }\n   \n   \n   type RewardsAccountBalance {\n      balance : RewardsBalance\n      cardNumber : RewardsCardNumber\n      currencyUnit : CurrencyUnit\n   }\n   \n   type alias RewardsBalance as Decimal\n   \n   type alias RewardsCardNumber as String\n   \n   \n}\n\nnamespace io.vyne.demos.rewards {\n   \n   \n   \n   @ServiceDiscoveryClient(serviceName = \"customer-service\")\n   service CustomerService {\n      @HttpOperation(method = \"GET\" , url = \"/customers/email/{demo.CustomerEmailAddress}\")\n      operation getCustomerByEmail(  demo.CustomerEmailAddress ) : demo.Customer\n   }\n}\n",
+      "id": "customer-service:0.1.0",
+      "namedSource": {
+         "taxi": "namespace demo {\n   \n   type Customer {\n      email : CustomerEmailAddress\n      id : CustomerId\n      name : CustomerName\n      postcode : Postcode\n   }\n   \n   type alias CustomerEmailAddress as String\n   \n   type alias CustomerId as Int\n   \n   type alias CustomerName as String\n   \n   type alias Postcode as String\n   \n   \n   enum CurrencyUnit {\n      POINTS,\n      GBP\n   }\n   \n   \n   type RewardsAccountBalance {\n      balance : RewardsBalance\n      cardNumber : RewardsCardNumber\n      currencyUnit : CurrencyUnit\n   }\n   \n   type alias RewardsBalance as Decimal\n   \n   type alias RewardsCardNumber as String\n   \n   \n}\n\nnamespace io.vyne.demos.rewards {\n   \n   \n   \n   @ServiceDiscoveryClient(serviceName = \"customer-service\")\n   service CustomerService {\n      @HttpOperation(method = \"GET\" , url = \"/customers/email/{demo.CustomerEmailAddress}\")\n      operation getCustomerByEmail(  demo.CustomerEmailAddress ) : demo.Customer\n   }\n}\n",
+         "sourceName": "customer-service:0.1.0"
+      }
+   },
+   {
+      "name": "marketing-service",
+      "version": "0.1.0",
+      "content": "namespace io.vyne.demos.marketing {\n   \n   type CustomerMarketingRecord {\n      id : demo.CustomerId\n      rewardsCardNumber : demo.RewardsCardNumber\n   }\n   \n   @ServiceDiscoveryClient(serviceName = \"marketing-service\")\n   service MarketingService {\n      @HttpOperation(method = \"GET\" , url = \"/marketing/{demo.CustomerId}\")\n      operation getMarketingDetailsForCustomer(  demo.CustomerId ) : CustomerMarketingRecord\n   }\n}\n\nnamespace demo {\n   \n   type alias CustomerId as Int\n   \n   type alias RewardsCardNumber as String\n   \n   \n}\n",
+      "id": "marketing-service:0.1.0",
+      "namedSource": {
+         "taxi": "namespace io.vyne.demos.marketing {\n   \n   type CustomerMarketingRecord {\n      id : demo.CustomerId\n      rewardsCardNumber : demo.RewardsCardNumber\n   }\n   \n   @ServiceDiscoveryClient(serviceName = \"marketing-service\")\n   service MarketingService {\n      @HttpOperation(method = \"GET\" , url = \"/marketing/{demo.CustomerId}\")\n      operation getMarketingDetailsForCustomer(  demo.CustomerId ) : CustomerMarketingRecord\n   }\n}\n\nnamespace demo {\n   \n   type alias CustomerId as Int\n   \n   type alias RewardsCardNumber as String\n   \n   \n}\n",
+         "sourceName": "marketing-service:0.1.0"
+      }
+   },
+   {
+      "name": "promotions",
+      "version": "0.1.0",
+      "content": "namespace demo {\n   \n   parameter type ClientRewardsInfo {\n      clientName : CustomerName\n      rewardsBalance : RewardsBalance\n   }\n   \n   type alias CustomerName as String\n   \n   type alias RewardsBalance as Decimal\n   \n   type DoublePointsPromotion inherits demos.Promotion {\n      message : String\n      shops : String[]\n   }\n   \n   parameter type PromotionClientDetails {\n      clientName : CustomerName\n   }\n   \n   \n}\n\nnamespace demos {\n   \n   type Promotion {\n      availableUntil : Date\n      title : String\n   }\n   \n   type DiscountPromotion inherits demos.Promotion {\n      message : String\n   }\n   \n   \n}\n\nnamespace io.vyne.demos.marketing.promotions {\n   \n   \n   \n   @ServiceDiscoveryClient(serviceName = \"promotions\")\n   service DiscountPromotionService {\n      @HttpOperation(method = \"POST\" , url = \"/discounts\")\n      operation getDiscountPromotion( @RequestBody demo.PromotionClientDetails ) : demos.DiscountPromotion\n      @HttpOperation(method = \"POST\" , url = \"/gift\")\n      operation getDoublePointsPromotion( @RequestBody demo.ClientRewardsInfo ) : demo.DoublePointsPromotion\n   }\n}\n",
+      "id": "promotions:0.1.0",
+      "namedSource": {
+         "taxi": "namespace demo {\n   \n   parameter type ClientRewardsInfo {\n      clientName : CustomerName\n      rewardsBalance : RewardsBalance\n   }\n   \n   type alias CustomerName as String\n   \n   type alias RewardsBalance as Decimal\n   \n   type DoublePointsPromotion inherits demos.Promotion {\n      message : String\n      shops : String[]\n   }\n   \n   parameter type PromotionClientDetails {\n      clientName : CustomerName\n   }\n   \n   \n}\n\nnamespace demos {\n   \n   type Promotion {\n      availableUntil : Date\n      title : String\n   }\n   \n   type DiscountPromotion inherits demos.Promotion {\n      message : String\n   }\n   \n   \n}\n\nnamespace io.vyne.demos.marketing.promotions {\n   \n   \n   \n   @ServiceDiscoveryClient(serviceName = \"promotions\")\n   service DiscountPromotionService {\n      @HttpOperation(method = \"POST\" , url = \"/discounts\")\n      operation getDiscountPromotion( @RequestBody demo.PromotionClientDetails ) : demos.DiscountPromotion\n      @HttpOperation(method = \"POST\" , url = \"/gift\")\n      operation getDoublePointsPromotion( @RequestBody demo.ClientRewardsInfo ) : demo.DoublePointsPromotion\n   }\n}\n",
+         "sourceName": "promotions:0.1.0"
+      }
+   },
+   {
+      "name": "rewards-balance-service",
+      "version": "0.1.0",
+      "content": "namespace demo {\n   \n   enum CurrencyUnit {\n      POINTS,\n      GBP\n   }\n   \n   \n   type RewardsAccountBalance {\n      balance : RewardsBalance\n      cardNumber : RewardsCardNumber\n      currencyUnit : CurrencyUnit\n   }\n   \n   type alias RewardsBalance as Decimal\n   \n   type alias RewardsCardNumber as String\n   \n   \n}\n\nnamespace io.vyne.demos.rewards.balances {\n   \n   \n   \n   @ServiceDiscoveryClient(serviceName = \"rewards-balance-service\")\n   service RewardsBalanceService {\n      @HttpOperation(method = \"POST\" , url = \"/balances/{demo.CurrencyUnit}\")\n      operation convert(  target: demo.CurrencyUnit, @RequestBody demo.RewardsAccountBalance ) : demo.RewardsAccountBalance( from source, this.currencyUnit = target )\n      @HttpOperation(method = \"GET\" , url = \"/balances/{demo.RewardsCardNumber}\")\n      operation getRewardsBalance(  demo.RewardsCardNumber ) : demo.RewardsAccountBalance\n   }\n}\n",
+      "id": "rewards-balance-service:0.1.0",
+      "namedSource": {
+         "taxi": "namespace demo {\n   \n   enum CurrencyUnit {\n      POINTS,\n      GBP\n   }\n   \n   \n   type RewardsAccountBalance {\n      balance : RewardsBalance\n      cardNumber : RewardsCardNumber\n      currencyUnit : CurrencyUnit\n   }\n   \n   type alias RewardsBalance as Decimal\n   \n   type alias RewardsCardNumber as String\n   \n   \n}\n\nnamespace io.vyne.demos.rewards.balances {\n   \n   \n   \n   @ServiceDiscoveryClient(serviceName = \"rewards-balance-service\")\n   service RewardsBalanceService {\n      @HttpOperation(method = \"POST\" , url = \"/balances/{demo.CurrencyUnit}\")\n      operation convert(  target: demo.CurrencyUnit, @RequestBody demo.RewardsAccountBalance ) : demo.RewardsAccountBalance( from source, this.currencyUnit = target )\n      @HttpOperation(method = \"GET\" , url = \"/balances/{demo.RewardsCardNumber}\")\n      operation getRewardsBalance(  demo.RewardsCardNumber ) : demo.RewardsAccountBalance\n   }\n}\n",
+         "sourceName": "rewards-balance-service:0.1.0"
+      }
+   },
+   {
+      "name": "rewards-shop",
+      "version": "0.1.0",
+      "content": "namespace demo {\n   \n   type RewardsAccountBalance {\n      balance : RewardsBalance\n      cardNumber : RewardsCardNumber\n      currencyUnit : CurrencyUnit\n   }\n   \n   type alias RewardsBalance as Decimal\n   \n   type alias RewardsCardNumber as String\n   \n   \n   enum CurrencyUnit {\n      POINTS,\n      GBP\n   }\n   \n   \n}\n\nnamespace io.vyne.demos.marketing.shop {\n   \n   type AvailableRewards {\n      rewards : Reward[]\n   }\n   \n   type Reward {\n      name : String\n      priceInGbp : Int\n   }\n   \n   @ServiceDiscoveryClient(serviceName = \"rewards-shop\")\n   service RewardsShopService {\n      @HttpOperation(method = \"POST\" , url = \"/shop\")\n      operation getAvailableRewards( @RequestBody demo.RewardsAccountBalance( this.currencyUnit = \"GBP\" ) ) : AvailableRewards\n   }\n}\n",
+      "id": "rewards-shop:0.1.0",
+      "namedSource": {
+         "taxi": "namespace demo {\n   \n   type RewardsAccountBalance {\n      balance : RewardsBalance\n      cardNumber : RewardsCardNumber\n      currencyUnit : CurrencyUnit\n   }\n   \n   type alias RewardsBalance as Decimal\n   \n   type alias RewardsCardNumber as String\n   \n   \n   enum CurrencyUnit {\n      POINTS,\n      GBP\n   }\n   \n   \n}\n\nnamespace io.vyne.demos.marketing.shop {\n   \n   type AvailableRewards {\n      rewards : Reward[]\n   }\n   \n   type Reward {\n      name : String\n      priceInGbp : Int\n   }\n   \n   @ServiceDiscoveryClient(serviceName = \"rewards-shop\")\n   service RewardsShopService {\n      @HttpOperation(method = \"POST\" , url = \"/shop\")\n      operation getAvailableRewards( @RequestBody demo.RewardsAccountBalance( this.currencyUnit = \"GBP\" ) ) : AvailableRewards\n   }\n}\n",
+         "sourceName": "rewards-shop:0.1.0"
+      }
+   }
+]

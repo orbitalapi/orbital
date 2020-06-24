@@ -1,0 +1,62 @@
+@import "src/theme";
+@import '~@angular/material/theming';
+
+
+:host {
+  background-color: rgba($purple-white,0.8);
+  border-radius: 4px;
+  min-width: 30rem;
+  padding: 0.8rem;
+
+  display: flex;
+  align-items: center;
+}
+
+ng-select {
+  background-color: transparent;
+  border: none;
+  flex-grow: 1;
+  cursor: text;
+}
+
+.search-icon {
+  height: 1rem;
+  opacity: 0.6;
+  margin-right: 1rem;
+}
+
+.clear-icon {
+  height: 1rem;
+  cursor: pointer;
+}
+
+::ng-deep {
+  .ng-select-container.ng-has-value {
+    .ng-placeholder {
+      display: none;
+    }
+  }
+  $dropdown-position-fixer: 2rem;
+  $dropdown-panel-items-height-fixer: 10vh;
+
+  .ng-dropdown-panel {
+    @include mat-elevation(5);
+    background-color: $light-purple-grey-100;
+    max-height: 100vh;
+    top: #{$toolbar-height - $dropdown-position-fixer};
+    width:109% !important;
+    right: 0.2em;
+    .scroll-host {
+      padding: 10px 0;
+    }
+    .ng-dropdown-panel-items {
+      max-height: 100vh - $dropdown-panel-items-height-fixer !important;
+    }
+    .ng-option {
+      padding: 10px 20px;
+      &:hover {
+        background-color: $light-purple-grey-300;
+      }
+    }
+  }
+}

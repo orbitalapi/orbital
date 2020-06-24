@@ -1,0 +1,24 @@
+spring:
+   main:
+      web-application-type: reactive
+   application:
+      name: cask
+
+server:
+  port: 8800
+
+# Actuators + prometheus metrics configuration
+management:
+   endpoint:
+      metrics:
+         enabled: true
+      prometheus:
+         enabled: true
+   endpoints:
+      web:
+         exposure:
+            include: prometheus,metrics,info,health
+   metrics:
+      export:
+         prometheus:
+            enabled: true

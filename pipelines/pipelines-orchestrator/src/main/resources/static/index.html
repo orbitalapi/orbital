@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+   <title>Pipeline Orchestator</title>
+   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+</head>
+<body>
+<div class="container-fluid">
+
+   <div class="row " style="min-height: 250px">
+
+      <!-- RUNNER INSTANCES -->
+      <div class="col-4">
+
+         <div class="row">
+            <div class="col text-center m-3">
+               <h3><span class="fa fa-server">  <b>Runners</b></span></h3>
+            </div>
+         </div>
+
+         <div id="runners">
+
+         </div>
+
+      </div>
+
+      <!-- PIPELINES INSTANCES -->
+      <div class="col">
+
+         <div class="row">
+            <div class="col text-center m-3">
+               <h3><span class="fa fa-exchange">  <b>Pipelines</b></span></h3>
+            </div>
+         </div>
+
+         <table class="table">
+            <thead class="thead-dark">
+            <tr>
+               <th scope="col">Running on</th>
+               <th scope="col">State</th>
+               <th scope="col">Name</th>
+               <th scope="col">Input</th>
+               <th scope="col">Output</th>
+               <th scope="col">Info</th>
+            </tr>
+            </thead>
+            <tbody id="pipelines">
+
+            </tbody>
+         </table>
+
+      </div>
+
+   </div>
+
+   <hr class="m-5"/>
+   <!--
+      PIPELINES ACTIONS
+   -->
+
+   <div class="row">
+
+      <div class="col-4">
+         <h3><span class="fa fa-cogs">  <b>Orchestrator</b></span></h3>
+
+         <div class="row">
+            <div class="col">
+               <div class="text-center">
+
+                  <!--  PIPELINE -->
+                  <div class="form-group">
+                     <textarea class="form-control" id="pipelineDefinition" rows="13"></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary" id="deployToPipeline">Deploy pipeline </button>
+
+               </div>
+
+            </div>
+         </div>
+      </div>
+
+      <div class="col-4">
+         <div class="row">
+               <h3><span class="fa fa-envelope"><b> Messages</b></span></h3>
+         </div>
+
+         <div class="form-row">
+            <div class="form-group col-md-6">
+               <label for="kafkaHost">Kafka host</label>
+               <input class="form-control" id="kafkaHost"></input>
+            </div>
+            <div class="form-group col-md-6">
+               <label for="kafkaTopic">Kafka topic name</label>
+               <input class="form-control" id="kafkaTopic"></input>
+            </div>
+         </div>
+         <div class="form-group">
+            <textarea class="form-control" id="kafkaMessage" rows="10"></textarea>
+         </div>
+         <button type="submit" class="btn btn-primary" id="kafkaMessageSubmitButton">Send message</button>
+      </div>
+      <div class="col-4">
+         <h3><span class="fa fa-paper">  <b>Responses</b></span></h3>
+         <textarea class="form-control" id="debugConsole" rows="20" style="font-size:10px"></textarea>
+      </div>
+   </div>
+
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+
+<script>
+    function addPipelines(responseEvent) {
+
+        $("#pipelines").empty()
+
+        responseEvent.sort((a, b) => {
+           if(a.instanceId == b.instanceId) {
+               return a.name > b.name ? 1 : -1
+           } else {
+             return a.instanceId > b.instanceId ? 1 : -1
+           }
+        }).forEach(i => {
+
+          $("#pipelines").append( `
+                <tr onclick="fetchPipelineDynamicInfo('${i.instance ? i.instance.uri: null}', '1')">
+                  <td>${i.instance? i.instance.instanceId : ' '}</th>
+                  <td>${i.state}</td>
+                  <td>${i.name}</th>
+                  <td>${JSON.parse(i.pipelineDescription).input.transport.type}</td>
+                  <td>${JSON.parse(i.pipelineDescription).output.transport.type}</td>
+                  <td style="font-size:12px">${i.info}</td>
+               </tr>
+          `)
+        })
+
+    }
+
+     var runners = null
+     function addRunners(responseEvent) {
+        runners = responseEvent
+        $("#runners").empty()
+
+        responseEvent.sort((a, b) =>  a.instanceId > b.instanceId ? 1 : -1).forEach(i => {
+          $("#runners").append( `
+             <div class="row">
+                <div class="col-8 offset-2 text-center">
+                   <div class="card">
+                    <div class="card-body">
+                      ${i.instanceId}
+                    </div>
+                 </div>
+               </div>
+            </div>
+          `)
+        })
+    }
+
+    var kafkaHost = "kafka:9092";
+
+        $("#kafkaMessageSubmitButton").click(function () {
+
+            if(!runners || runners.length == 0) {
+               logMessage('ERROR: No runners available to send message')
+            }else {
+               var runner = runners[0]
+               console.log(runner)
+               $.ajax({
+                   url: '/testharness/send2kafka/' + $("#kafkaTopic").val() + '?kafkaHost=' + $("#kafkaHost").val(),
+                   type: 'POST',
+                   contentType: 'application/json',
+                   data: $("#kafkaMessage").val(),
+                   dataType: 'json',
+                   success: function (data) {
+                       logMessage(data);
+                   },
+                   error: function (xhr, textStatus, errorThrown) {
+                     logMessage(xhr.responseJson || 'Error');
+                   }
+               });
+            }
+
+      })
+
+    function fetchPipelines() {
+         $.ajax({
+             url: '/pipelines',
+             type: 'GET',
+             contentType: 'application/json',
+             success: function (data) {
+                 addPipelines(data);
+             },
+         });
+    }
+
+     function fetchPipelineDynamicInfo(instance, id) {
+      if(instance) {
+            $.ajax({
+                url: instance+'/runner/pipelines/' + id,
+                type: 'GET',
+                contentType: 'application/json',
+                success: function (data) {
+                },
+            });
+        }
+
+    }
+
+    function fetchRunners() {
+         $.ajax({
+             url: '/runners',
+             type: 'GET',
+             contentType: 'application/json',
+             success: function (data) {
+                 addRunners(data);
+             },
+         });
+   }
+
+
+   // ACTIONS
+    var pipelineOrchestratorUrl = "/runner/pipelines";
+
+    function logMessage(responseEvent) {
+        console.log("Message");
+        console.log(responseEvent);
+        if (typeof responseEvent === 'object' && responseEvent !== null) {
+            document.getElementById("debugConsole").innerHTML = JSON.stringify(responseEvent) + '\n---\n' + document.getElementById("debugConsole").innerHTML;
+        } else {
+            document.getElementById("debugConsole").innerHTML = responseEvent + '\n---\n' + document.getElementById("debugConsole").innerHTML;
+        }
+    }
+
+   function bindPipeline(buttonSelector, pipelineValueSelector) {
+           $(buttonSelector).click(function () {
+            $.ajax({
+                url: '/runner/pipelines',
+                type: 'POST',
+                contentType: 'application/json',
+                data: $(pipelineValueSelector).val(),
+                dataType: 'json',
+                success: function (data) {
+                    logMessage('Pipeline sent to orchestrator OK');
+                },
+                 error: function (xhr, textStatus, errorThrown) {
+                   logMessage(xhr.responseText);
+                }
+            });
+        });
+   }
+
+
+    $(document).ready(function () {
+        bindPipeline('#deployToPipeline', '#pipelineDefinition')
+
+         fetchPipelines();
+         fetchRunners();
+
+          window.setInterval(function(){
+           fetchPipelines();
+           fetchRunners();
+         }, 3000)
+
+    });
+
+</script>
+</body>
+</html>

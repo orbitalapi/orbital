@@ -1,0 +1,3 @@
+counterpartyId,ccy1,ccy1Amount,ccy2,ccy2Amount,rate,quotedCcy
+steve@demo.com,GBP,1000000,USD,800000,0.8000,GBP
+jimmy@demo.com,GBP,1000000,USD,800000,0.8000,GBP

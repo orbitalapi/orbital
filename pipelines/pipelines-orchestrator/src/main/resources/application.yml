@@ -1,0 +1,15 @@
+spring:
+   application:
+      name: pipeline-orchestrator
+
+server:
+   port: 9600
+   error:
+      include-message: always
+
+feign:
+   client:
+      config:
+         default:
+            connectTimeout: 5000
+            readTimeout: 5000

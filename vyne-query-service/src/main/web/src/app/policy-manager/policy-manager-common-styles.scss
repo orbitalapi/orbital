@@ -1,0 +1,23 @@
+@import "src/theme";
+
+.editable-container {
+  .edit-button-container {
+    opacity: 0;
+
+    mat-icon {
+      padding: 6px;
+      margin: 4px;
+      border: 1px solid $light-purple-grey;
+      cursor: pointer;
+
+      &:hover {
+        border: 1px solid $light-purple-grey-300;
+      }
+    }
+  }
+  &:hover {
+    .edit-button-container {
+      opacity: 1;
+    }
+  }
+}

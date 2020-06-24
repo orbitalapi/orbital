@@ -1,0 +1,39 @@
+@import "src/theme";
+@import "src/toolbar";
+:host {
+  background-color: $body-bg;
+  display: block;
+}
+.page-content {
+  font-family: $font-sans-docs;
+  display: flex;
+}
+
+.documentation {
+  flex-grow: 1;
+  table {
+    width: 100%;
+  }
+}
+
+
+
+.spacer {
+  flex-grow: 1;
+}
+
+.spacer-gap {
+  width: 4rem;
+}
+.type-name {
+  h1 {
+    margin-bottom: 0;
+    font-weight: 700;
+  }
+  margin-bottom: 2rem;
+}
+
+app-type-link-graph-container {
+  display: block;
+  width: 100%;
+}

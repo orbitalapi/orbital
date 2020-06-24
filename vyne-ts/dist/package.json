@@ -1,0 +1,25 @@
+{
+  "name": "@vyne/vyne-ts",
+  "version": "0.1.0",
+  "description": "Typescript SDK for interacting with vyne",
+  "main": "dist/index.js",
+  "scripts": {
+    "link": "npm run build && cd dist && npm link",
+    "build": "rm dist/** -rf && tsc -p tsconfig.app.json && cp package.json dist/",
+    "test": "mocha --reporter spec --compilers ts:ts-node/register 'test/**/*.spec.ts'"
+  },
+  "keywords": [
+    "vyne"
+  ],
+  "author": "Marty Pitt",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "typescript": "^3.3.3"
+  },
+  "dependencies": {
+    "@types/request": "^2.48.1",
+    "@types/request-promise-native": "^1.0.15",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.5"
+  }
+}

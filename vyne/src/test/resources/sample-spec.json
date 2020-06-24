@@ -1,0 +1,5 @@
+{
+   "test": "Given a customer email address, discover attributes from their customer record",
+   "background": "Simple test, given an attribute, return an object from a service, and then pluck values from that object",
+   "scenario":   // This is where you paste the entry from query histroy
+}

@@ -1,0 +1,131 @@
+@import "theme-colors";
+
+$code-background: #333f54;
+//$code-background: #002b36;
+$code-base: rgba(255,255,255,0.85);
+$code-viewer-tooling-background: #1d2539;
+$code-highlight: $vyne-primary;
+
+$dark-list-item: rgba($code-base,0.7);
+$dark-list-item-hover: rgba($code-base,0.85);
+$dark-list-item-active: $code-base;
+
+.code-viewer {
+  mat-ink-bar {
+    background-color: $code-highlight !important;
+    height: 3px !important;
+  }
+  .mat-tab-header {
+    border-bottom: 0px;
+  }
+  .mat-tab-label {
+    opacity: 1;
+    color: $dark-list-item;
+    background-color: $code-viewer-tooling-background;
+
+    &:hover {
+      color: $dark-list-item-hover;
+    }
+
+    &.mat-tab-label-active {
+      color: $code-base;
+      background-color: $code-background;
+    }
+  }
+}
+/*
+
+Atom One Dark by Daniel Gamage
+Original One Dark Syntax theme from https://github.com/atom/one-dark-syntax
+
+base:    #282c34
+mono-1:  #abb2bf
+mono-2:  #818896
+mono-3:  #5c6370
+hue-1:   #56b6c2
+hue-2:   #61aeee
+hue-3:   #c678dd
+hue-4:   #98c379
+hue-5:   #e06c75
+hue-5-2: #be5046
+hue-6:   #d19a66
+hue-6-2: #e6c07b
+
+*/
+
+.hljs, .highlight {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  color: rgba(255,255,255,0.85);
+  background: $code-background;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #5c6370;
+  font-style: italic;
+}
+
+.hljs-doctag,
+.hljs-keyword,
+.hljs-formula {
+  color: #c678dd;
+}
+
+.hljs-section,
+.hljs-name,
+.hljs-selector-tag,
+.hljs-deletion,
+.hljs-subst {
+  color: #e06c75;
+}
+
+.hljs-literal {
+  color: #56b6c2;
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-attribute,
+.hljs-meta-string {
+  color: #98c379;
+}
+
+.hljs-built_in,
+.hljs-class .hljs-title {
+  color: #e6c07b;
+}
+
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-type,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-number {
+  color: #d19a66;
+}
+
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link,
+.hljs-meta,
+.hljs-selector-id,
+.hljs-title {
+  color: #61aeee;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+.hljs-link {
+  text-decoration: underline;
+}

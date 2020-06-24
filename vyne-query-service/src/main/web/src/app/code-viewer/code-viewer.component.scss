@@ -1,0 +1,97 @@
+@import "src/theme";
+
+:host {
+  background-color: $code-viewer-tooling-background;
+  display: flex;
+  //font-family: $font-sans-alt;
+}
+
+ngx-monaco-editor {
+  height: 100%;
+}
+
+.file-list {
+  min-width: 20rem;
+  //margin-top: 48px; // to match height of the tab bar
+  margin-left: 1rem;
+  font-size: 0.9rem;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.file-list-entry {
+  display: flex;
+  align-items: center;
+  color: $dark-list-item;
+  padding: 0.5rem 1rem;
+
+  img {
+    width: 16px;
+    margin-right: 0.5rem;
+  }
+
+  &:hover {
+    color: $dark-list-item-hover;
+    background-color: rgba($code-background,0.5);
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    cursor: pointer;
+  }
+
+  .file-name {
+    flex-grow: 1;
+    margin-right: 2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .version {
+    background-color: rgba(0, 0, 0, 0.2);
+    display: block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    width: fit-content;
+    font-size: 0.6rem;
+  }
+
+
+  .error-count {
+    background-color: rgba($red-light, 0.5);
+    color: $purple-white;
+    display: block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    margin-right: 0.6rem;
+    font-size: 0.6rem;
+  }
+
+}
+
+.highlight-container {
+  background-color: $code-background;
+}
+
+.code-viewer-container {
+  margin-top: 0.5rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+
+  app-error-list {
+    max-height: 200px;
+    flex-grow: 1;
+  }
+}
+.code-editor {
+  //display: block;
+  //width: 600px;
+  //height: 600px;
+  //margin: 1rem 0;
+  width: 100%;
+  height: 100%;
+
+  //.editor-container {
+  //  height: calc(100vh - 100px);
+  //}
+}

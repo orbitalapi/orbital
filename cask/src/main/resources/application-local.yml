@@ -1,0 +1,26 @@
+eureka:
+   uri: http://127.0.0.1:9022
+   client:
+      registryFetchIntervalSeconds: 1
+      initialInstanceInfoReplicationIntervalSeconds: 5
+      serviceUrl:
+         defaultZone: ${eureka.uri}/eureka/
+   instance:
+      leaseRenewalIntervalInSeconds: 2
+      leaseExpirationDurationInSeconds: 5
+
+vyne:
+   queryServiceUrl: http://query-service
+
+spring.datasource:
+  url: "jdbc:postgresql://localhost:5432/vynedb"
+  username: "vynedb"
+  password: "vynedb"
+
+spring:
+   flyway:
+      url: ${spring.datasource.url}
+      user: ${spring.datasource.username}
+      password: ${spring.datasource.password}
+      enabled: true
+      locations: classpath:db/migration
