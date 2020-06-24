@@ -275,7 +275,7 @@
             <version>1.14.0</version>
             <configuration>
                <!-- whether to push to the git remote. Very useful for testing locally -->
-               <pushRemote>true</pushRemote>
+               <pushRemote>false</pushRemote>
                <!-- Set to true to immediately bump the development version when creating a release branch -->
                <commitDevelopmentVersionAtStart>false</commitDevelopmentVersionAtStart>
                <!-- Execute mvn compile before release -->
