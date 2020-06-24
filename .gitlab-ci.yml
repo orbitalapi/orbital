@@ -74,8 +74,8 @@ publish-release:
 
 release-major:
    variables:
-      GIT_STRATEGY: none
-   image: maven:3.3.9-jdk-8
+      GIT_STRATEGY: clone
+   dependencies: []
    stage: release
    script:
       - *git_setup
@@ -86,8 +86,8 @@ release-major:
 
 release-minor:
    variables:
-      GIT_STRATEGY: none
-   image: maven:3.3.9-jdk-8
+      GIT_STRATEGY: clone
+   dependencies: []
    stage: release
    script:
       - *git_setup
@@ -100,12 +100,8 @@ release-patch:
    variables:
       GIT_STRATEGY: clone
    dependencies: []
-   image: maven:3.3.9-jdk-8
    stage: release
    script:
-      - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
-      - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
-      - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - *git_setup
       - 'mvn gitflow:release -B -DversionDigitToIncrement=$PATCH_RELEASE_DIGIT'
    only:
