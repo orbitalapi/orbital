@@ -154,6 +154,7 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                   enumValues = enumValues,
                   sources = taxiType.compilationUnits.toVyneSources(),
                   typeDoc = taxiType.typeDoc,
+                  inheritsFromTypeNames = taxiType.inheritsFromNames.map { it.fqn() },
                   taxiType = taxiType
                ))
             }
