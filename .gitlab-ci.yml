@@ -99,6 +99,7 @@ release-minor:
 release-patch:
    variables:
       GIT_STRATEGY: none
+   dependencies: []
    image: maven:3.3.9-jdk-8
    stage: release
    script:
