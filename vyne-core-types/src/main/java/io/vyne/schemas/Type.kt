@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
 import io.vyne.VersionedSource
+import io.vyne.models.TypedEnumValue
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedValue
 import io.vyne.utils.log
 import lang.taxi.Equality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
@@ -143,6 +146,17 @@ data class Type(
       this.underlyingTypeParameters.map { it.name }
    }
 
+   @get:JsonIgnore
+   val enumTypedInstances: List<TypedEnumValue> by lazy {
+      this.enumValues.map { enumValue ->
+         TypedEnumValue(this, enumValue, this.typeCache)
+      }
+   }
+
+   fun enumTypedInstance(value: Any): TypedEnumValue {
+      return this.enumTypedInstances.firstOrNull { it.value == value || it.name == value }
+         ?: error("No typed instance found for value $value on ${this.fullyQualifiedName}")
+   }
 
    // TODO : I suspect all of these isXxxx vars need to defer to the underlying aliased type.
    @JsonView(TypeFullView::class)
@@ -309,7 +323,17 @@ data class Type(
          }
          return true
       } else {
-         return thisWithoutAliases.inheritsFrom(otherWithoutAliases, considerTypeParameters)
+         return if (thisWithoutAliases.isEnum && otherWithoutAliases.isEnum) {
+            // When considering assignment, enums can be assigned to one another up & down the
+            // inheritance tree.  We permit this because
+            // subtypes of enums aren't allowed to change the set of enum values.
+            // Therefore A.SomeValue is assignable to A1 and vice versa, since they are the same
+            // underlying value.
+            thisWithoutAliases.inheritsFrom(otherWithoutAliases, considerTypeParameters) || otherWithoutAliases.inheritsFrom(thisWithoutAliases, considerTypeParameters)
+         } else {
+            thisWithoutAliases.inheritsFrom(otherWithoutAliases, considerTypeParameters)
+         }
+
       }
 
 
@@ -450,6 +474,11 @@ data class Type(
       } else {
          resolvedTypes.values.first()
       }
+   }
+
+   fun enumValue(value: Any): EnumValue {
+      return this.enumValues.firstOrNull { it.value == value }
+         ?: error("Value $value is not defined on enum ${this.fullyQualifiedName}")
    }
 }
 

@@ -73,6 +73,7 @@ interface TypedInstance {
                val collectionMemberType = getCollectionType(type)
                TypedCollection.arrayOf(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema, performTypeConversions) })
             }
+            type.isEnum -> type.enumTypedInstance(value)
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions)
             }

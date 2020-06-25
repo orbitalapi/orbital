@@ -5,17 +5,10 @@ import com.diffplug.common.base.TreeStream
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.common.collect.HashMultimap
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
@@ -176,30 +169,34 @@ fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> 
    return profilerOperation.remoteCalls + profilerOperation.children.flatMap { collateRemoteCalls(it) }
 }
 
-data class TypeNameAndValue(
-   val typeName: String,
-   val value: Any?
-)
-
 object TypedInstanceTree {
    /**
     * Function which defines how to convert a TypedInstance into a tree, for traversal
     */
-   val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance: TypedInstance ->
-
+   fun visit(instance: TypedInstance):List<TypedInstance> {
       // This is a naieve first pass, and I doubt this wil work.
       // For example, how will we ever use the values within?
       if (instance.type.isClosed) {
-         return@of emptyList<TypedInstance>()
+         return emptyList()
       }
-      when (instance) {
+      return when (instance) {
          is TypedObject -> instance.values.toList()
-         is TypedValue -> emptyList()
+         is TypedEnumValue -> instance.synonyms
+         is TypedValue -> {
+            if (instance.type.isEnum) {
+               instance.type.enumTypedInstance(instance.value).synonyms
+            } else {
+               emptyList()
+            }
+
+         }
          is TypedCollection -> instance.value
          else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
-      }
-      // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-   }.filter { it -> it !is TypedNull }
+         // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
+      }.filter { it -> it !is TypedNull }
+   }
+
+
 }
 
 // Design choice:
@@ -241,42 +238,7 @@ data class QueryContext(
 
    companion object {
       fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler, resultMode: ResultMode): QueryContext {
-         val mutableFacts = facts.flatMap { fact -> resolveSynonyms(fact, schema) }.toMutableSet()
-         return QueryContext(schema, mutableFacts, queryEngine, profiler, resultMode)
-      }
-
-      private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
-         return if (fact is TypedObject) {
-            fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
-         } else {
-            resolveSynonym(fact, schema, true)
-         }
-      }
-
-      private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
-         val derivedFacts = if (fact.type.isEnum) {
-            val underlyingEnumType = fact.type.taxiType as EnumType
-            underlyingEnumType.of(fact.value)
-               .synonyms
-               .map { synonym ->
-                  val synonymType = schema.type(synonym.synonymFullQualifiedName())
-                  val synonymTypeTaxiType = synonymType.taxiType as EnumType
-                  val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
-
-                  // Instantiate with either name or value depending on what we have as input
-                  val value = if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
-
-                  TypedValue.from(synonymType, value, false)
-               }.toSet()
-         } else {
-            setOf()
-         }
-
-         return if (includeGivenFact) {
-            derivedFacts.plus(fact)
-         } else {
-            derivedFacts
-         }
+         return QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, resultMode)
       }
    }
 
@@ -285,18 +247,12 @@ data class QueryContext(
     * All other parameters (queryEngine, schema, etc) are retained
     */
    fun only(fact: TypedInstance): QueryContext {
-      val mutableFacts = resolveSynonyms(fact, schema).toMutableSet()
-      mutableFacts.add(fact)
-      return this.copy(facts = mutableFacts, parent = this)
+      return this.copy(facts = mutableSetOf(fact), parent = this)
    }
 
    fun addFact(fact: TypedInstance): QueryContext {
       log().debug("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
-      if (fact.type.isEnum) {
-         this.facts.addAll(resolveSynonyms(fact, schema))
-      } else {
-         this.facts.add(fact)
-      }
+      this.facts.add(fact)
       return this
    }
 
@@ -333,8 +289,22 @@ data class QueryContext(
     * Deeply nested children are less likely to be relevant matches.
     */
    fun modelTree(): Stream<TypedInstance> {
+      class TreeNavigator {
+         private val visitedNodes = mutableSetOf<TypedInstance>()
+
+         fun visit(instance:TypedInstance):List<TypedInstance> {
+            return if (visitedNodes.contains(instance)) {
+               return emptyList()
+            } else {
+               visitedNodes.add(instance)
+               TypedInstanceTree.visit(instance)
+            }
+         }
+      }
       // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-      return TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot())
+      val navigator = TreeNavigator()
+      val treeDef:TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
+      return TreeStream.breadthFirst(treeDef, dataTreeRoot())
    }
 
    fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {

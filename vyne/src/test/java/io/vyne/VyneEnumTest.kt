@@ -145,13 +145,13 @@ enum EnumA {
    AAA2
 }
 
-type EnumA1 inherits EnumA
+enum EnumA1 inherits EnumA
 
 enum EnumB {
    BBB1 synonym of EnumA.AAA1,
    BBB2 synonym of EnumA.AAA2
 }
-type EnumB1 inherits EnumB
+enum EnumB1 inherits EnumB
 
 type typeA {
    fieldA1: EnumA1
