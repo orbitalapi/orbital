@@ -2,8 +2,6 @@ package io.vyne.schemaServer
 
 import com.nhaarman.mockitokotlin2.*
 import com.winterbe.expekt.should
-import org.eclipse.jgit.lib.Repository
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.junit.After
 import org.junit.Test
 import java.io.File
@@ -12,6 +10,8 @@ class GitSynchTest {
    private val repoRoot = "${System.getProperty("user.dir")}${File.separator}repoRoot"
    private val mockGitRepoProvider = mock<GitRepoProvider>()
    private val mockGitRepo = mock<GitRepo>()
+   private val mockFileWatcher = mock<FileWatcher>()
+   private val mockCompilerService = mock<CompilerService>()
    private val gitConfigs = listOf(GitSchemaRepoConfig.GitRemoteRepo(
       name = "config1",
       branch = "branch1",
@@ -23,7 +23,7 @@ class GitSynchTest {
       schemaLocalStorage = repoRoot,
       gitSchemaRepos = gitConfigs
    )
-   private val gitSynch = GitSynch(gitSchemaRepoConfig, mockGitRepoProvider)
+   private val gitSynch = GitSynch(gitSchemaRepoConfig, mockGitRepoProvider, mockFileWatcher, mockCompilerService)
 
    private val repoRootCaptor = argumentCaptor<String>()
    private val repoConfigCaptor = argumentCaptor<GitSchemaRepoConfig.GitRemoteRepo>()
