@@ -11,14 +11,14 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.ResponseEntity.ok
 import org.springframework.web.bind.annotation.*
-import java.lang.RuntimeException
+import org.springframework.web.server.ResponseStatusException
 
 
 @RestController
-class PipelineOrchestratorController(val pipelineManager: PipelinesManager, val pipelineDeserialiser: PipelineDeserialiser, val pipelineRUnnerApi: PipelineRunnerApi) {
+class PipelineOrchestratorController(val pipelineManager: PipelinesManager, val pipelineDeserialiser: PipelineDeserialiser, val pipelineRunnerApi: PipelineRunnerApi) {
 
    @PostMapping("/runner/pipelines")
-   fun submitPipeline(@RequestBody pipelineDescription: String): ResponseEntity<Pipeline> {
+   fun submitPipeline(@RequestBody pipelineDescription: String): Pipeline {
       log().info("Received submitted pipeline: \n$pipelineDescription")
 
       return try {
@@ -26,7 +26,7 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager, val 
          val pipeline = pipelineDeserialiser.deserialise(pipelineDescription)
 
          pipelineManager.addPipeline(PipelineReference(pipeline.name, pipelineDescription))
-         ok(pipeline)
+         pipeline
       } catch (e: InvalidPipelineDescriptionException) {
          throw BadRequestException("Invalid pipeline description", e)
       }catch (e: PipelineAlreadyExistsException) {
@@ -60,12 +60,11 @@ class PipelineOrchestratorController(val pipelineManager: PipelinesManager, val 
 
    @GetMapping("/runner/pipelines/{pipelineName}")
    fun getPipeline(@PathVariable pipelineName: String): ResponseEntity<PipelineInstanceReference> {
-      return pipelineRUnnerApi.getPipeline(pipelineName)
+      return pipelineRunnerApi.getPipeline(pipelineName)
    }
 }
 
-@ResponseStatus(HttpStatus.BAD_REQUEST)
-class BadRequestException(message: String, e: Exception? = null) : RuntimeException(message, e) {
+class BadRequestException(message: String, e: Exception? = null) : ResponseStatusException(HttpStatus.BAD_REQUEST, message, e) {
 
    companion object {
 

@@ -28,6 +28,9 @@ build-jvm:
         - .m2/repository
      key: "maven-$CI_COMMIT_REF_SLUG"
   script:
+    - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
+    - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
+    - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
     - 'mvn $MAVEN_CLI_OPTS clean test-compile jar:test-jar install -Dskip.npm -PrunBenchmarkTests'
   artifacts:
     paths:
@@ -61,11 +64,18 @@ publish-snapshot:
   only:
     - develop
 
+publish-release:
+   stage: deploy
+   script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm deploy -P release' # Skip UI and tests. Already there from previous stages and artifacts
+   only:
+      - master
 
 release-major:
    variables:
-      GIT_STRATEGY: none
-   image: maven:3.3.9-jdk-8
+      GIT_STRATEGY: clone
+   dependencies: []
    stage: release
    script:
       - *git_setup
@@ -76,8 +86,8 @@ release-major:
 
 release-minor:
    variables:
-      GIT_STRATEGY: none
-   image: maven:3.3.9-jdk-8
+      GIT_STRATEGY: clone
+   dependencies: []
    stage: release
    script:
       - *git_setup
@@ -88,8 +98,8 @@ release-minor:
 
 release-patch:
    variables:
-      GIT_STRATEGY: none
-   image: maven:3.3.9-jdk-8
+      GIT_STRATEGY: clone
+   dependencies: []
    stage: release
    script:
       - *git_setup
@@ -99,11 +109,5 @@ release-patch:
    when: manual
 
 
-publish-release:
-  stage: deploy
-  script:
-    - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm release:prepare release:perform'
-  only:
-    - master
+
 

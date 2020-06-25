@@ -4,6 +4,8 @@ spring:
 
 server:
    port: 9600
+   error:
+      include-message: always
 
 feign:
    client:
