@@ -30,7 +30,7 @@ class CaskService(private val discoveryClient: DiscoveryClient, private val rest
       val caskServiceUri = caskInstance.uri
 
       log().info("Resolved cask to instance at $caskServiceUri")
-      val caskRequestUri = "$caskServiceUri/api$requestUri?$queryString"
+      val caskRequestUri = "$caskServiceUri$requestUri?$queryString"
 
       val response = restTemplate.postForEntity<Any>(caskRequestUri, payload)
       log().info("Received response from cask : ${response.statusCodeValue} ${response.body}")
