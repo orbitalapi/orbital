@@ -43,6 +43,21 @@ export class Fact {
 export interface TypeNamedInstance {
   typeName: string;
   value: any;
+  source?: DataSource;
+}
+
+export interface DataSource {
+  dataSourceName: string;
+}
+
+export interface OperationResultDataSource extends DataSource {
+  remoteCall: RemoteCall;
+  inputs: OperationParam[];
+}
+
+export interface OperationParam {
+  parameterName: String;
+  value: TypeNamedInstance;
 }
 
 
@@ -57,16 +72,16 @@ export interface QueryResult {
 
 
 export interface RemoteCall {
-  service: QualifiedName;
+  service: string;
   address: string;
   operation: string;
-  responseTypeName: QualifiedName;
+  responseTypeName: string;
   method: string;
   requestBody: any;
   resultCode: number;
   durationMs: number;
   response: any;
-  operationQualifiedName: QualifiedName;
+  operationQualifiedName: string;
 }
 
 export interface ProfilerOperation {

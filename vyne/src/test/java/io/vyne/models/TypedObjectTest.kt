@@ -47,7 +47,7 @@ class TypedObjectTest {
 
    @Test
    fun canUnwrapTypedObject() {
-      val trader = JsonModelParser(schema).parse(schema.type("Trader"), traderJson)
+      val trader = JsonModelParser(schema).parse(schema.type("Trader"), traderJson, source = Provided)
       val raw = trader.toRawObject()
       val rawJson = jacksonObjectMapper().writeValueAsString(raw)
       JSONAssert.assertEquals(traderJson, rawJson, false);
@@ -56,7 +56,7 @@ class TypedObjectTest {
 
    @Test
    fun canParseJsonUsingTypedInstanceFrom() {
-      val trader = TypedInstance.from(schema.type("Trader"),traderJson, schema)
+      val trader = TypedInstance.from(schema.type("Trader"),traderJson, schema, source = Provided)
       val raw = trader.toRawObject()
       val rawJson = jacksonObjectMapper().writeValueAsString(raw)
       JSONAssert.assertEquals(traderJson, rawJson, false);
@@ -65,24 +65,24 @@ class TypedObjectTest {
 
    @Test
    fun canConvertTypedInstanceToTypeNamedObject() {
-      val trader = JsonModelParser(schema).parse(schema.type("Trader"), traderJson)
+      val trader = JsonModelParser(schema).parse(schema.type("Trader"), traderJson, source = Provided)
       val raw = trader.toTypeNamedInstance()
       val stringType = "lang.taxi.String".fqn()
       val decimalType = "lang.taxi.Decimal".fqn()
       val expected = TypeNamedInstance(typeName = "Trader".fqn(), value = mapOf(
-         "username" to TypeNamedInstance(stringType, "EUR_Trader"),
-         "jurisdiction" to TypeNamedInstance(stringType, "EUR"),
+         "username" to TypeNamedInstance(stringType, "EUR_Trader", Provided),
+         "jurisdiction" to TypeNamedInstance(stringType, "EUR", Provided),
          "limit" to TypeNamedInstance("Money".fqn(), mapOf(
-            "currency" to TypeNamedInstance(stringType, "USD"),
-            "value" to TypeNamedInstance(decimalType, 100.toBigDecimal())
-         ))
-      ))
+            "currency" to TypeNamedInstance(stringType, "USD", Provided),
+            "value" to TypeNamedInstance(decimalType, 100.toBigDecimal(), Provided)
+         ), Provided)
+      ), source = Provided)
       expect(raw).to.equal(expected)
    }
 
    @Test
    fun canConvertTypedCollectionToTypeNamedObject() {
-      val trader = JsonModelParser(schema).parse(schema.type("Trader"), traderJson)
+      val trader = JsonModelParser(schema).parse(schema.type("Trader"), traderJson, source = Provided)
       val collection = TypedCollection.arrayOf(schema.type("Trader"), listOf(trader))
       val raw = collection.toTypeNamedInstance() as List<TypeNamedInstance>
       expect(raw).to.have.size(1)
@@ -109,7 +109,7 @@ class TypedObjectTest {
             "tradeDateDateTime" : "15/07/2020 21:33:22"
          }
       """.trimIndent()
-      val trade = JsonModelParser(schema).parse(schema.type("Trade"), tradeJson) as TypedObject
+      val trade = JsonModelParser(schema).parse(schema.type("Trade"), tradeJson, source = Provided) as TypedObject
 
       // tradeDateInstant should be an instant
       val tradeDateInstant = trade["tradeDateInstant"].value as Instant

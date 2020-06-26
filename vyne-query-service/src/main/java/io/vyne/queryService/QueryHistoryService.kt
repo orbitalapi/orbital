@@ -1,5 +1,7 @@
 package io.vyne.queryService
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import io.vyne.models.DataSource
 import io.vyne.models.TypedCollection
 import io.vyne.query.*
 import io.vyne.utils.log
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Instant
+import kotlin.collections.HashMap
 
 @RestController
 class QueryHistoryService(private val history: QueryHistory) {
@@ -16,7 +19,7 @@ class QueryHistoryService(private val history: QueryHistory) {
 
    @GetMapping("/api/query/history")
    fun listHistory(): Flux<QueryHistoryRecordUiWrapper> {
-      return history.list().map {record -> QueryHistoryRecordUiWrapper(record, truncationThreshold) }
+      return history.list().map { record -> QueryHistoryRecordUiWrapper(record, truncationThreshold) }
    }
 
    @GetMapping("/api/query/history/{id}/profile")
@@ -47,6 +50,8 @@ class QueryHistoryService(private val history: QueryHistory) {
                }.toMap()
             val truncated = true
             return HistoryQueryResponse(results,
+               emptyMap(),
+               emptyList(),
                response.unmatchedNodes,
                response.path,
                response.queryResponseId,
@@ -54,10 +59,21 @@ class QueryHistoryService(private val history: QueryHistory) {
                response.profilerOperation,
                response.remoteCalls,
                response.timings,
-               response.isFullyResolved,
+               response.fullyResolved,
                truncated)
          }
-         return response
+         return HistoryQueryResponse(
+            response.results,
+            emptyMap(),
+            emptyList(),
+            response.unmatchedNodes,
+            response.path,
+            response.queryResponseId,
+            response.resultMode,
+            null,
+            response.remoteCalls,
+            response.timings,
+            response.fullyResolved)
       }
 
       private fun responseAboveThreshold(response: HistoryQueryResponse, truncationThreshold: Int): Boolean {
@@ -109,7 +125,7 @@ class QueryHistoryService(private val history: QueryHistory) {
       private fun truncateResult(value: Any?): Any? {
          return when(value) {
             is TypedCollection -> {
-               log().info("Truncating TypedCollection from {} to {}", value.type.fullyQualifiedName, value.value.size, truncationThreshold)
+               log().info("Truncating TypedCollection from {} to {}", value.value.size, truncationThreshold)
                return if (value.size > truncationThreshold) {
                   context["ResultTruncated"] = true
                   context["ResultOriginalSize"] = value.size
@@ -123,4 +139,24 @@ class QueryHistoryService(private val history: QueryHistory) {
       }
    }
 
+   @GetMapping("/api/query/history/v2")
+   fun listHistoryV2(): Flux<QueryHistoryRecordUI> {
+      return history.list().map {record -> QueryHistoryRecordUI(record) }
+   }
+
+   @JsonInclude(JsonInclude.Include.NON_NULL)
+   data class QueryHistoryRecordUI(private val record: QueryHistoryRecord<out Any>) {
+      val queryResponseId = record.response.queryResponseId
+      val timestamp = record.timestamp
+      val fullyResolved: Boolean = record.response.fullyResolved
+      val query = record.query
+      val resultMode = record.response.resultMode
+      val results: Map<String, Any?> by lazy {
+         when(record.response.resultMode) {
+            ResultMode.SIMPLE -> record.response.results
+            else -> record.response.resultsVerbose
+         }
+      }
+      val sources: List<DataSource> = record.response.sources
+   }
 }

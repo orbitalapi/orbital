@@ -5,37 +5,21 @@ import com.diffplug.common.base.TreeStream
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.common.collect.HashMultimap
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.schemas.OutputConstraint
-import io.vyne.schemas.Path
-import io.vyne.schemas.Policy
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
-import io.vyne.schemas.TypeMatchingStrategy
-import io.vyne.schemas.fqn
-import io.vyne.schemas.synonymFullQualifiedName
-import io.vyne.schemas.synonymValue
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import io.vyne.utils.timed
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
-import java.util.UUID
+import java.util.*
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -111,6 +95,7 @@ data class QueryResult(
    @JsonProperty("results")
    val resultMap: Map<String, Any?> =
       when (resultMode) {
+         // TODO remove dependency on ResultMode
          ResultMode.VERBOSE -> this.results.map { (key, value) ->
             val mapped = value?.toTypeNamedInstance()
             key.type.name.parameterizedName to mapped
@@ -120,32 +105,6 @@ data class QueryResult(
             .map { (key, value) -> key.type.name.parameterizedName to value?.toRawObject() }
             .toMap()
       }
-
-   override fun historyRecord(): HistoryQueryResponse {
-      return HistoryQueryResponse(
-         resultMap,
-         unmatchedNodeNames,
-         path,
-         queryResponseId,
-         resultMode,
-         profilerOperation?.toDto(),
-         remoteCalls,
-         timings,
-         unmatchedNodeNames.isEmpty())
-   }
-}
-
-data class HistoryQueryResponse(val results: Map<String, Any?>,
-                                val unmatchedNodes: List<QualifiedName>,
-                                val path: Path? = null,
-                                val queryResponseId: String = UUID.randomUUID().toString(),
-                                val resultMode: ResultMode,
-                                val profilerOperation: ProfilerOperationDTO?,
-                                val remoteCalls: List<RemoteCall>,
-                                val timings: Map<OperationType, Long>,
-                                @get:JsonProperty("fullyResolved")
-                                val isFullyResolved: Boolean,
-                                val truncated: Boolean? = false) {
 }
 
 // Note : Also models failures, so is fairly generic
@@ -167,19 +126,12 @@ interface QueryResponse {
       get() = profilerOperation?.vyneCost ?: 0L
 
    val resultMode: ResultMode
-
-   fun historyRecord(): HistoryQueryResponse
 }
 
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
    if (profilerOperation == null) return emptyList()
    return profilerOperation.remoteCalls + profilerOperation.children.flatMap { collateRemoteCalls(it) }
 }
-
-data class TypeNameAndValue(
-   val typeName: String,
-   val value: Any?
-)
 
 object TypedInstanceTree {
    /**
@@ -192,6 +144,7 @@ object TypedInstanceTree {
       if (instance.type.isClosed) {
          return@of emptyList<TypedInstance>()
       }
+
       when (instance) {
          is TypedObject -> instance.values.toList()
          is TypedValue -> emptyList()
@@ -266,7 +219,7 @@ data class QueryContext(
                   // Instantiate with either name or value depending on what we have as input
                   val value = if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
 
-                  TypedValue.from(synonymType, value, false)
+                  TypedValue.from(synonymType, value, false, MappedSynonym)
                }.toSet()
          } else {
             setOf()

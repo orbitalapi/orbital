@@ -123,19 +123,19 @@ class StringToIntegerConverter(override val next: ConversionService = NoOpConver
    }
 }
 
-data class TypedValue private constructor(override val type: Type, override val value: Any) : TypedInstance {
+data class TypedValue private constructor(override val type: Type, override val value: Any, override val source: DataSource) : TypedInstance {
    companion object {
       private val conversionService by lazy {
          ConversionService.newDefaultConverter()
       }
 
-      fun from(type: Type, value: Any, converter: ConversionService): TypedValue {
+      fun from(type: Type, value: Any, converter: ConversionService, source:DataSource): TypedValue {
          if (!type.taxiType.inheritsFromPrimitive) {
             error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
          } else {
             try {
                val valueToUse = converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
-               return TypedValue(type, valueToUse)
+               return TypedValue(type, valueToUse, source)
             } catch (exception: Exception) {
                throw DataParsingException("Failed to parse value $value to type ${type.fullyQualifiedName} - ${exception.message}", exception)
             }
@@ -144,18 +144,18 @@ data class TypedValue private constructor(override val type: Type, override val 
       }
 
       @Deprecated("Use conversionService approach")
-      fun from(type: Type, value: Any, performTypeConversions: Boolean = true): TypedValue {
+      fun from(type: Type, value: Any, performTypeConversions: Boolean = true, source:DataSource): TypedValue {
          val conversionServiceToUse = if (performTypeConversions) {
             conversionService
          } else {
             NoOpConversionService
          }
-         return from(type, value, conversionServiceToUse)
+         return from(type, value, conversionServiceToUse, source)
       }
    }
 
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
-      return TypedValue(typeAlias, value)
+      return TypedValue(typeAlias, value, source)
    }
 
    /**

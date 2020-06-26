@@ -92,6 +92,19 @@
          <groupId>org.postgresql</groupId>
          <artifactId>postgresql</artifactId>
       </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.skyscreamer</groupId>
+         <artifactId>jsonassert</artifactId>
+         <version>1.5.0</version>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
 
    <build>

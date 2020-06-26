@@ -5,6 +5,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.ingest.StreamSource
+import io.vyne.models.Provided
 import io.vyne.utils.log
 import lang.taxi.types.ColumnAccessor
 import lang.taxi.types.Field
@@ -36,7 +37,7 @@ class CsvBinaryCacheStreamSource(private val readCachePath: Path, private val mi
                             // those with read conditions etc.
                             val columnField = columnIndexesToRead.getValue(index)
                             val vyneType = schema.type(columnField.type.qualifiedName)
-                            columnField.name to TypedInstance.from(vyneType, value, schema)
+                            columnField.name to TypedInstance.from(vyneType, value, schema, source = Provided)
                         }.toMap()
                        InstanceAttributeSet(migration.targetType, fieldValues)
                     }

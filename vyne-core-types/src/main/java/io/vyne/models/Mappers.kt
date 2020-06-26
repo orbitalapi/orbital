@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAccessor
 
 
-class RawObjectMapper : TypedInstanceMapper {
+object RawObjectMapper : TypedInstanceMapper {
    override fun map(typedInstance: TypedInstance): Any?  {
       return if (typedInstance.type.format != null) {
          require(typedInstance.value is TemporalAccessor) { "Formatted types only supported on TemporalAccessors currently.  If you're seeing this error, time to do some work!"}
@@ -22,12 +22,12 @@ class RawObjectMapper : TypedInstanceMapper {
    }
 }
 
-class TypeNamedInstanceMapper : TypedInstanceMapper {
-   override fun map(typedInstance: TypedInstance): Any? = TypeNamedInstance(typedInstance.type.name, typedInstance.value)
+object TypeNamedInstanceMapper : TypedInstanceMapper {
+   override fun map(typedInstance: TypedInstance): Any? = TypeNamedInstance(typedInstance.type.name, typedInstance.value, typedInstance.source)
    override fun handleUnwrapped(original: TypedInstance, value: Any?): Any? {
       return when (value) {
          is TypeNamedInstance -> value
-         else -> TypeNamedInstance(original.type.name, value)
+         else -> TypeNamedInstance(original.type.name, value, original.source)
       }
    }
 }

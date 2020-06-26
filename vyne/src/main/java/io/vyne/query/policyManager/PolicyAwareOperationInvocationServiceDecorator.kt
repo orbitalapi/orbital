@@ -52,7 +52,7 @@ class PolicyAwareOperationInvocationServiceDecorator(private val operationServic
       val processedAttributes = typedObject.value.map { (propertyName, value) ->
          propertyName to process(value, context, executionScope)
       }.toMap()
-      return TypedObject(typedObject.type, processedAttributes)
+      return TypedObject(typedObject.type, processedAttributes, typedObject.source)
    }
 
    private fun applyPolicyInstruction(value: TypedInstance, context: QueryContext, executionScope: ExecutionScope): TypedInstance {

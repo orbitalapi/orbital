@@ -1,6 +1,7 @@
 package io.vyne.queryService.persistency
 
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule
@@ -26,7 +27,7 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
 @ConditionalOnExpression("!T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}')")
 @EnableR2dbcRepositories("io.vyne.queryService.persistency.entity.QueryHistoryRecordEntity")
 class ReactiveDatabaseSupport {
-   private val objectMapper = jacksonObjectMapper()
+   val objectMapper: ObjectMapper = jacksonObjectMapper()
       .registerModule(JavaTimeModule())
       .registerModule(Jdk8Module())
       .registerModule(ParameterNamesModule())

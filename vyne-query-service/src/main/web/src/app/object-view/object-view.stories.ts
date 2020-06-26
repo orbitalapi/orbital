@@ -24,6 +24,23 @@ const typeNamedInstance: TypeNamedInstance = {
   }
 };
 
+const typeWithLineage: TypeNamedInstance = {
+  'typeName': 'demo.Customer',
+  'value': {
+    'id': {'typeName': 'demo.CustomerId', 'value': 1},
+    'name': {'typeName': 'demo.CustomerName', 'value': 'Jimmy'},
+    'email': {'typeName': 'demo.CustomerEmailAddress', 'value': 'jimmy@demo.com'},
+    'postcode': {'typeName': 'demo.Postcode', 'value': 'SW11'},
+    'balance': {
+      'typeName': 'demo.RewardsAccountBalance', value: {
+        'balance': {'typeName': 'demo.RewardsBalance', value: 300},
+        'cardNumber': {'typeName': 'demo.RewardsCardNumber', value: '1234-5678-3002-2003'},
+        'currencyUnit': {'typeName': 'demo.CurrencyUnit', value: 'GBP'}
+      }
+    }
+  }
+};
+
 const typedInstance: TypedInstance = {
   type: findType(schema as TypeCollection, 'demo.Customer'),
   value: {

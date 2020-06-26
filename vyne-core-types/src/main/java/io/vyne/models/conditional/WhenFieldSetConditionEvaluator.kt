@@ -1,8 +1,6 @@
 package io.vyne.models.conditional
 
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedObjectFactory
+import io.vyne.models.*
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Type
 import io.vyne.schemas.asVyneTypeReference
@@ -23,13 +21,13 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
       return when(assignment) {
          is ScalarAccessorValueAssignment -> factory.readAccessor(type,assignment.accessor) // WTF? Why isn't the compiler working this out?
          is ReferenceAssignment -> factory.getValue(assignment.reference)
-         is LiteralAssignment -> TypedInstance.from(type,assignment.value,factory.schema, true)
+         is LiteralAssignment -> TypedInstance.from(type,assignment.value,factory.schema, true, source = DefinedInSchema)
          is DestructuredAssignment -> {
             val resolvedAttributes = assignment.assignments.map { nestedAssignment ->
                val attributeType = factory.schema.type(type.attribute(nestedAssignment.fieldName).type)
                nestedAssignment.fieldName to evaluateExpression(nestedAssignment, attributeType)
             }.toMap()
-            TypedObject.fromAttributes(type,resolvedAttributes,factory.schema, true)
+            TypedObject.fromAttributes(type,resolvedAttributes,factory.schema, true, source = MixedSources)
          }
          else -> TODO()
       }
@@ -49,7 +47,7 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
          is ReferenceCaseMatchExpression -> factory.getValue(matchExpression.reference)
          // Note - I'm assuming the literal value is the same type as what we're comparing to.
          // Reasonable for now, but suspect subtypes etc may cause complexity here I haven't considered
-         is LiteralCaseMatchExpression -> TypedInstance.from(type,matchExpression.value,factory.schema)
+         is LiteralCaseMatchExpression -> TypedInstance.from(type,matchExpression.value,factory.schema, source = DefinedInSchema)
          else -> TODO()
       }
    }

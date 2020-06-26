@@ -8,26 +8,26 @@ import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.AttributePath
 
 
-data class TypedObject(override val type: Type, override val value: Map<String, TypedInstance>) : TypedInstance, Map<String, TypedInstance> by value {
+data class TypedObject(override val type: Type, override val value: Map<String, TypedInstance>, override val source: DataSource) : TypedInstance, Map<String, TypedInstance> by value {
    companion object {
-      fun fromValue(typeName: String, value: Any, schema: Schema): TypedObject {
-         return fromValue(schema.type(typeName), value, schema)
+      fun fromValue(typeName: String, value: Any, schema: Schema, source:DataSource): TypedObject {
+         return fromValue(schema.type(typeName), value, schema, source = source)
       }
 
-      fun fromAttributes(typeName: String, attributes: Map<String, Any>, schema: Schema, performTypeConversions: Boolean = true): TypedObject {
-         return fromAttributes(schema.type(typeName), attributes, schema, performTypeConversions)
+      fun fromAttributes(typeName: String, attributes: Map<String, Any>, schema: Schema, performTypeConversions: Boolean = true, source:DataSource): TypedObject {
+         return fromAttributes(schema.type(typeName), attributes, schema, performTypeConversions, source)
       }
 
-      fun fromAttributes(type: Type, attributes: Map<String, Any>, schema: Schema, performTypeConversions: Boolean = true): TypedObject {
+      fun fromAttributes(type: Type, attributes: Map<String, Any>, schema: Schema, performTypeConversions: Boolean = true, source:DataSource): TypedObject {
          val typedAttributes: Map<String, TypedInstance> = attributes.map { (attributeName, value) ->
             val attributeType = schema.type(type.attributes.getValue(attributeName).type)
-            attributeName to TypedInstance.from(attributeType, value, schema, performTypeConversions)
+            attributeName to TypedInstance.from(attributeType, value, schema, performTypeConversions, source = source)
          }.toMap()
-         return TypedObject(type, typedAttributes)
+         return TypedObject(type, typedAttributes, source)
       }
 
-      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet()): TypedObject {
-         return TypedObjectFactory(type, value, schema, nullValues).build()
+      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource): TypedObject {
+         return TypedObjectFactory(type, value, schema, nullValues, source).build()
       }
    }
 
@@ -40,7 +40,7 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
    }
 
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
-      return TypedObject(typeAlias, value)
+      return TypedObject(typeAlias, value, source)
    }
 
    override fun valueEquals(valueToCompare: TypedInstance): Boolean {
@@ -106,6 +106,6 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
    }
 
    fun copy(replacingArgs: Map<AttributeName, TypedInstance>): TypedObject {
-      return TypedObject(this.type, this.value + replacingArgs)
+      return TypedObject(this.type, this.value + replacingArgs, source)
    }
 }
