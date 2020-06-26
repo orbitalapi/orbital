@@ -61,7 +61,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext) {
                }
 
             }.toMap()
-            return TypedObject(targetType, mappedValues)
+            return TypedObject(targetType, mappedValues, MixedSources)
          }
       }
       // =============================================================
@@ -86,7 +86,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext) {
          // Commenting out as printing 1000 entries for simple projection will create unwanted noise!
          // log().warn("Couldn't build instance of ${targetType.fullyQualifiedName} as the following attributes weren't found: \n ${missingAttributes.map { (name, field) -> "$name : ${field.type.fullyQualifiedName}" }.joinToString("\n")}")
       }
-      return TypedObject.fromAttributes(targetType, mappedValues, context.schema)
+      return TypedObject.fromAttributes(targetType, mappedValues, context.schema, source = MixedSources)
    }
 
    private fun findScalarInstance(targetType: Type): TypedInstance? {

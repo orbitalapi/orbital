@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import io.vyne.models.DefinedInSchema
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
@@ -152,7 +153,8 @@ val result = grouped.mapValues { (_, operationParameterMaps) ->
                      ?: error("Operation ${operation.name} does not expose a parameter called ${path.path}")
                   val value = (requiredConstraint.expectedValue as ConstantValueExpression).value
 
-                  val typedInstance = TypedInstance.from(parameter.type, value, schema)
+                  // TODO: Confirm that DefinedInSchema is appropriate here, but pretty sure these are constants.
+                  val typedInstance = TypedInstance.from(parameter.type, value, schema, source = DefinedInSchema)
                   parameter to typedInstance
                }
          }.toMap()

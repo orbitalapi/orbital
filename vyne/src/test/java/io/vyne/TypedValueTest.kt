@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.winterbe.expekt.should
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.Schema
@@ -16,7 +17,7 @@ class TypedValueTest {
    @Test
    fun testStringInstantConversion() {
       val schema = TaxiSchema.from("")
-      val instance = TypedInstance.from(schema.type(PrimitiveType.INSTANT), "2020-05-14T22:00:00Z", schema)
+      val instance = TypedInstance.from(schema.type(PrimitiveType.INSTANT), "2020-05-14T22:00:00Z", schema, source = Provided)
 
       instance.value.should.equal(Instant.parse("2020-05-14T22:00:00Z"))
    }
@@ -26,7 +27,7 @@ class TypedValueTest {
       val schema = TaxiSchema.from("""
          type KiwiDate inherits Instant( @format = "dd/MM/yy'T'HH:mm:ss" )
       """.trimIndent())
-      val instance = TypedInstance.from(schema.type("KiwiDate"), "28/04/19T22:00:00", schema)
+      val instance = TypedInstance.from(schema.type("KiwiDate"), "28/04/19T22:00:00", schema, source = Provided)
       val instant = instance.value as Instant
       instant.should.equal(Instant.parse("2019-04-28T22:00:00Z"))
 
@@ -35,7 +36,7 @@ class TypedValueTest {
    @Test
    fun shouldParseIntsWithTrailingZerosAsInts() {
       val schema = TaxiSchema.from("")
-      val instance = TypedInstance.from(schema.type(PrimitiveType.INTEGER), "10.00", schema)
+      val instance = TypedInstance.from(schema.type(PrimitiveType.INTEGER), "10.00", schema, source = Provided)
 
       instance.value.should.equal(10)
    }

@@ -8,9 +8,9 @@ import io.vyne.schemas.fqn
 
 object CollectionReader {
    private val csvReader = CsvAttributeAccessorParser()
-   fun readCollectionFromNonTypedCollectionValue(type: Type, value: Any, schema: Schema): TypedInstance {
+   fun readCollectionFromNonTypedCollectionValue(type: Type, value: Any, schema: Schema, source:DataSource): TypedInstance {
       return when {
-         type.hasMetadata("CsvList".fqn()) -> CsvCollectionParser(value as String, type, schema).parse()
+         type.hasMetadata("CsvList".fqn()) -> CsvCollectionParser(value as String, type, schema, source).parse()
          else -> error("No reader strategy defined for collection type")
       }
    }

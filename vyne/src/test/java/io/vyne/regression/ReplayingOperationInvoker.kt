@@ -1,5 +1,6 @@
 package io.vyne.regression
 
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
@@ -19,7 +20,7 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
       val recordedCall = findRecordedCall(operation) ?: error("Expected a matching recorded call")
       // TODO : Handle mulitple calls to the same operation with different params
       val responseType = schema.type(recordedCall.responseTypeName)
-      return TypedInstance.from(responseType,recordedCall.response, schema)
+      return TypedInstance.from(responseType,recordedCall.response, schema, source = Provided)
    }
 
    private fun findRecordedCall(operation:Operation):RemoteCall? {

@@ -2,6 +2,7 @@ package io.vyne.query.graph
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import es.usc.citius.hipster.graph.GraphEdge
+import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.FactDiscoveryStrategy
@@ -157,7 +158,7 @@ class ParameterFactory {
          // else ... attributeValue != null -- we found it.  Good work team, move on.
          attributeName to attributeValue
       }.toMap()
-      return TypedObject(paramType, fields)
+      return TypedObject(paramType, fields, MixedSources)
    }
 
 }

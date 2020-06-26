@@ -1,8 +1,7 @@
 package io.vyne.query
 
 import io.vyne.*
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
+import io.vyne.models.*
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.schemas.Schema
@@ -152,7 +151,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       log().info("Mapping collections to collection of type ${targetCollectionType.qualifiedName} ")
       val transformed = context.facts
          .map { it as TypedCollection }
-         .flatMap {it}
+         .flatMap { it }
          .map { typedInstance -> mapTo(targetCollectionType, typedInstance, context) }
          .mapNotNull { it }
       return if (transformed.isEmpty()) {
@@ -191,9 +190,10 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
    }
 
-   override fun parse(queryExpression: QueryExpression):Set<QuerySpecTypeNode> {
+   override fun parse(queryExpression: QueryExpression): Set<QuerySpecTypeNode> {
       return queryParser.parse(queryExpression)
    }
+
    override fun find(queryString: QueryExpression, context: QueryContext): QueryResult {
       val target = queryParser.parse(queryString)
       return find(target, context)
@@ -274,7 +274,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // Without it, there's a stack overflow error as projectTo seems to call ObjectBuilder.build which calls projectTo again.
       // ... Investigate
 
-      return if( !context.isProjecting && context.projectResultsTo() != null) {
+      return if (!context.isProjecting && context.projectResultsTo() != null) {
          projectTo(context.projectResultsTo()!!, context)
       } else QueryResult(
          matchedNodes,

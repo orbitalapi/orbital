@@ -1,5 +1,6 @@
 package io.vyne.query.graph
 
+import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.FactDiscoveryStrategy
@@ -71,7 +72,7 @@ class RequiresParameterEvaluator : LinkEvaluator {
             }
          }
       }.toMap()
-      return TypedObject(paramType, fields)
+      return TypedObject(paramType, fields, MixedSources)
    }
 
 

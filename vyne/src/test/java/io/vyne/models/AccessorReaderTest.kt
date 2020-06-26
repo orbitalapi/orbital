@@ -1,9 +1,7 @@
 package io.vyne.models
 
 import com.winterbe.expekt.expect
-import com.winterbe.expekt.should
 import io.vyne.testVyne
-import org.junit.Assert.*
 import org.junit.Test
 
 class AccessorReaderTest {
@@ -49,7 +47,7 @@ type LegacyTradeNotification {
     </legs>
 </tradeNotification>
       """.trimIndent()
-      val parsedResult = TypedInstance.from(vyne.schema.type("LegacyTradeNotification"), xml, vyne.schema) as TypedObject
+      val parsedResult = TypedInstance.from(vyne.schema.type("LegacyTradeNotification"), xml, vyne.schema, source = Provided) as TypedObject
       expect(parsedResult.type.fullyQualifiedName).to.equal("LegacyTradeNotification")
       expect(parsedResult["nearLegNotional"].type.fullyQualifiedName).to.equal("NearLegNotional")
 

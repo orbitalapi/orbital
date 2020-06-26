@@ -64,7 +64,7 @@ type TransformedTradeRecord {
     <rate ccy="GBP">0.8000</rate>
 </tradeRecord>
       """.trimIndent()
-      val tradeRecord = TypedInstance.from(vyne.schema.type("TradeRecord"), xml, vyne.schema) as TypedObject
+      val tradeRecord = TypedInstance.from(vyne.schema.type("TradeRecord"), xml, vyne.schema, source = Provided) as TypedObject
       tradeRecord.type.fullyQualifiedName.should.equal("TradeRecord")
       tradeRecord["ccy1"].value.should.equal("GBP")
       tradeRecord["ccy2"].value.should.equal("USD")
@@ -94,7 +94,7 @@ type TransformedTradeRecord {
     <rate ccy="GBP">0.8000</rate>
 </tradeRecord>
       """.trimIndent()
-      val tradeRecord = TypedInstance.from(vyne.schema.type("TradeRecord"), xml, vyne.schema) as TypedObject
+      val tradeRecord = TypedInstance.from(vyne.schema.type("TradeRecord"), xml, vyne.schema, source = Provided) as TypedObject
       val queryContext = vyne.query()
       queryContext.addFact(tradeRecord)
       val result = queryContext.build("TransformedTradeRecord")

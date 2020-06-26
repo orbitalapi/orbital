@@ -1,13 +1,8 @@
 package io.vyne.query
 
-import io.vyne.models.TypedCollection
-import arrow.core.MapKOf
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.QualifiedName
 import io.vyne.utils.log
 import java.time.Clock
 import java.util.*
-import kotlin.collections.HashMap
 
 // TODO Make it configurable https://projects.notional.uk/youtrack/issue/LENS-164
 // Disabling atm as the data is needed by the UI
@@ -163,7 +158,7 @@ interface ProfilerOperation {
    }
 }
 
-class ProfilerOperationDTO(val componentName: String,
+data class ProfilerOperationDTO(val componentName: String,
                            val operationName: String,
                            val children: List<ProfilerOperationDTO> = listOf(),
                            val result: Result?,
@@ -176,20 +171,6 @@ class ProfilerOperationDTO(val componentName: String,
       get() {
          return "$componentName.$operationName"
       }
-}
-
-data class RemoteCall(
-   val service: QualifiedName,
-   val addresss: String,
-   val operation: String,
-   val responseTypeName: QualifiedName,
-   val method: String,
-   val requestBody: Any?,
-   val resultCode: Int,
-   val durationMs: Long,
-   val response: Any?
-) {
-   val operationQualifiedName: QualifiedName = OperationNames.qualifiedName(service.fullyQualifiedName, operation)
 }
 
 data class Result(
@@ -227,20 +208,6 @@ class DefaultProfilerOperation(override val componentName: String,
                                private val clock: Clock,
                                val path: String = "/") : ProfilerOperation {
    companion object {
-      fun mergeChildren(operationA: ProfilerOperation?, operationB: ProfilerOperation?): ProfilerOperation? {
-         if (operationA == null && operationB == null) return null
-         if (operationA != null && operationB == null) return operationA
-         if (operationA == null && operationB != null) return operationB;
-
-         val root = DefaultProfilerOperation.root()
-
-
-         root.children.addAll(operationA!!.children + operationB!!.children)
-         root.context.putAll(operationA.context + operationB.context)
-         root.remoteCalls.addAll(operationA.remoteCalls + operationB.remoteCalls)
-         root.result = Result.merge(operationA.result, operationB.result)
-         return root
-      }
 
       fun root(clock: Clock = Clock.systemDefaultZone()): DefaultProfilerOperation {
          return DefaultProfilerOperation(QueryProfiler::class.java.name, "Root", OperationType.ROOT, clock, path = "/")

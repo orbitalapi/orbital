@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.expect
 import io.vyne.Vyne
+import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedObject
 import io.vyne.query.QueryEngineFactory
@@ -43,7 +44,7 @@ type Client {
       // Looks like a bug in the IntelliJ kotlin plugin, and handling
       // inline operations.  Possibly fixed by the time anyone WTF's this.
       // Ideally, pass the json, not the map.
-      val result = parser.doParse(schema.type("Client"), map)
+      val result = parser.doParse(schema.type("Client"), map, source = Provided)
 
       expect(result).instanceof(TypedObject::class.java)
       val client = result as TypedObject

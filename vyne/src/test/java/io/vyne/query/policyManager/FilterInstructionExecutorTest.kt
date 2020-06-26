@@ -1,6 +1,7 @@
 package io.vyne.query.policyManager
 
 import com.winterbe.expekt.expect
+import io.vyne.models.Provided
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.schemas.taxi.TaxiSchema
@@ -20,7 +21,7 @@ type Person {
    age : Int
 } """.trimIndent()
       val schema = TaxiSchema.from(taxi)
-      person = TypedObject.fromAttributes("Person", mapOf("firstName" to "Jimmy", "lastName" to "Spitts", "age" to 25), schema)
+      person = TypedObject.fromAttributes("Person", mapOf("firstName" to "Jimmy", "lastName" to "Spitts", "age" to 25), schema, source = Provided)
    }
 
    @Test
