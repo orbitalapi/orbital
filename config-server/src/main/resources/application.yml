@@ -1,0 +1,34 @@
+server.port: 8888
+
+spring:
+   application:
+      name: config-server
+   profiles:
+      active: native
+   cloud:
+      config:
+         server:
+            native:
+               searchLocations: classpath:/, classpath:/config, file:./, file:./config, file:/config-repo
+               default-label: master
+
+logging:
+   level:
+      org.springframework.boot.context.config: DEBUG
+
+# ===========================================================
+# How to automatically refresh config in client application
+# ===========================================================
+
+# 1. Enable /refresh endpoint by adding this to the config
+#management.endpoints.web.exposure.include: info,health,refresh
+
+# 2. Change io.vyne logging level from INFO to DEBUG on the config server, e.g. add to query-servive.yml
+#logging.level.io.vyne: DEBUG
+
+# 3. Post to http://localhost:9022/actuator/refresh endpoint
+# Response from that endpoint shows a list of properties that were changed, e.g.
+#  [
+#     "logging.level.io.vyne"
+#  ]
+

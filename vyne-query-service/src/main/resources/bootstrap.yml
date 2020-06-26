@@ -1,0 +1,19 @@
+# Logging for client configuraiton
+logging.level.org.springframework.cloud.config.client: DEBUG
+
+# Default value for config server
+spring.cloud.config.uri: http://localhost:8888
+
+# Label, this should be replaced by vyne pom.version
+# For GIT based spring config server the label=tag/branch-name/commit-id
+spring.cloud.config.label: master
+
+# Disabled by default as vyne does not need it
+# Enable via system properties add -Dspring.cloud.config.enabled=true
+# Enable via spring boot app parameters --spring.cloud.config.enabled=true
+spring.cloud.config.enabled: false
+
+# Options for enabling cloud config server discovery
+#spring.cloud.config.discovery.enabled: true
+#spring.cloud.config.discovery.server-id: config-server
+

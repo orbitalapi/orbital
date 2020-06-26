@@ -25,6 +25,10 @@
          <artifactId>spring-boot-starter-web</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-config</artifactId>
+      </dependency>
+      <dependency>
          <groupId>com.github.zafarkhaja</groupId>
          <artifactId>java-semver</artifactId>
          <version>0.9.0</version>
