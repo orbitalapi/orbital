@@ -96,14 +96,20 @@ data class QueryResult(
    val resultMap: Map<String, Any?> =
       when (resultMode) {
          // TODO remove dependency on ResultMode
-         ResultMode.VERBOSE -> this.results.map { (key, value) ->
-            val mapped = value?.toTypeNamedInstance()
-            key.type.name.parameterizedName to mapped
-         }.toMap()
+         ResultMode.VERBOSE -> {
+            val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+            this.results.map { (key, value) ->
+               key.type.name.parameterizedName to value?.let { converter.convert(it) }
+            }.toMap()
+         }
 
-         ResultMode.SIMPLE -> this.results
-            .map { (key, value) -> key.type.name.parameterizedName to value?.toRawObject() }
-            .toMap()
+         ResultMode.SIMPLE ->  {
+            val converter = TypedInstanceConverter(RawObjectMapper)
+            this.results
+               .map { (key, value) -> key.type.name.parameterizedName to value?.let { converter.convert(it) } }
+               .toMap()
+
+         }
       }
 }
 
