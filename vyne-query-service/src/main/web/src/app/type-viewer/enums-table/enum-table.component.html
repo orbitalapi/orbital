@@ -8,16 +8,16 @@
   </tr>
   </thead>
   <tbody>
-  <tr *ngFor="let enumValue of enums; let i = index">
-    <td>{{enumValues()[i].name}}</td>
-    <td>{{enumValues()[i].value}}</td>
+  <tr *ngFor="let enumValue of type.enumValues">
+    <td>{{enumValue.name}}</td>
+    <td>{{enumValue.value}}</td>
     <td>
-        <div *ngFor ="let synonym of synonyms(i).synonyms; let index= index">
-          <span class="mono-badge"><a [routerLink]="routerLinkFor(i, index)">{{ shortDisplayName(i, index) }}</a></span>
-        </div>
+      <div *ngFor="let synonym of enumValue.synonyms">
+        <span class="mono-badge"><a [routerLink]="routerLinkFor(synonym)">{{ synonym }}</a></span>
+      </div>
     </td>
     <td>
-      <div *ngIf="typeDoc(i).length>0">{{ typeDoc(i) }}</div>
+      <div>{{ enumValue.typeDoc }}</div>
     </td>
   </tr>
   </tbody>
