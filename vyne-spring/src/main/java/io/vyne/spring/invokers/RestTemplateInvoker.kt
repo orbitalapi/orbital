@@ -43,7 +43,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    constructor(schemaProvider: SchemaProvider,
                restTemplateBuilder: RestTemplateBuilder,
                serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
-               @Value("\${app.data-lineage.remoteCalls:false}") enableDataLineageForRemoteCalls: Boolean)
+               @Value("\${vyne.data-lineage.remoteCalls.enabled:false}") enableDataLineageForRemoteCalls: Boolean)
       : this(schemaProvider, restTemplateBuilder
       .errorHandler(CatchingErrorHandler())
       .additionalInterceptors(LoggingRequestInterceptor())

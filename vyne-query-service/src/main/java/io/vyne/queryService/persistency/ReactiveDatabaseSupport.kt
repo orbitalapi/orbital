@@ -28,7 +28,7 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
 @Configuration
 @EnableConfigurationProperties(FlywayProperties::class)
 @Import(value = [R2dbcAutoConfiguration::class, DataSourceAutoConfiguration::class])
-@ConditionalOnExpression("!T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}') and \${app.query-history.enabled:true}")
+@ConditionalOnExpression("!T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}') and \${vyne.query-history.enabled:true}")
 @EnableR2dbcRepositories("io.vyne.queryService.persistency.entity.QueryHistoryRecordEntity")
 class ReactiveDatabaseSupport {
    val objectMapper: ObjectMapper = jacksonObjectMapper()
