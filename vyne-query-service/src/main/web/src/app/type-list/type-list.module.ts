@@ -5,6 +5,15 @@ import {SearchModule} from '../search/search.module';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {MatButtonModule} from '@angular/material/button';
+import { FilterTypesComponent } from './filter-types/filter-types.component';
+import {CovalentHighlightModule} from "@covalent/highlight";
+import {ReactiveFormsModule} from "@angular/forms";
+import {MatFormFieldModule} from "@angular/material/form-field";
+import {MatSelectModule} from "@angular/material/select";
+import {MatCardModule} from "@angular/material/card";
+import {MatInputModule} from "@angular/material/input";
+import {TypeAutocompleteModule} from "../type-autocomplete/type-autocomplete.module";
+import {MatIconModule} from "@angular/material/icon";
 
 @NgModule({
   imports: [
@@ -12,10 +21,18 @@ import {MatButtonModule} from '@angular/material/button';
     MatButtonModule,
     SearchModule,
     CommonModule,
-    BrowserModule
+    BrowserModule,
+    CovalentHighlightModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatCardModule,
+    MatInputModule,
+    TypeAutocompleteModule,
+    MatIconModule
   ],
   exports: [TypeListComponent],
-  declarations: [TypeListComponent],
+  declarations: [TypeListComponent, FilterTypesComponent],
   providers: [],
 })
 export class TypeListModule {

@@ -2,7 +2,7 @@
   <span>Type Explorer</span>
   <div class="toolbar-spacer"></div>
   <span>
-    <button mat-stroked-button (click)="refresh()" >Refresh</button>
+    <button mat-stroked-button (click)="refresh()">Refresh</button>
   </span>
   <app-search-bar-container></app-search-bar-container>
   <!-- TODO : Experimenting with using the global search here, rather than
@@ -12,8 +12,9 @@
   <!--    <input matInput placeholder="Search" [formControl]="searchInput">-->
   <!--  </div>-->
 </mat-toolbar>
+<app-filter-types (filterChanged)="updateFilter($event)"></app-filter-types>
 <div class="page-content">
-  <div *ngFor="let member of filteredMembers | async" class="search-result" (click)="navigateToMember(member)">
+  <div *ngFor="let member of filteredMembers" class="search-result" (click)="navigateToMember(member)">
     <div class="schema-member-container">
       <div class="name-row">
         <div class="member-qualified-name">
