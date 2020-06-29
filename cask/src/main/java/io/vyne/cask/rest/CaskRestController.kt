@@ -11,7 +11,11 @@ import io.vyne.cask.websocket.CaskWebsocketRequest
 import io.vyne.utils.log
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.util.MultiValueMap
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.io.InputStream
@@ -21,7 +25,7 @@ class CaskRestController(private val caskService: CaskService,
                          private val applicationEventPublisher: ApplicationEventPublisher,
                          private val objectMapper: ObjectMapper = jacksonObjectMapper()) {
 
-   @PostMapping("/api/cask/{contentType}/{typeReference}")
+   @PostMapping("/api/ingest/{contentType}/{typeReference}")
    fun ingestMessage(
       @PathVariable("contentType") contentType: String,
       @PathVariable("typeReference") typeReference: String,

@@ -95,15 +95,7 @@ data class Type(
    // taxiType - the antlr classes make equailty hard, and not meaningful in this context
    // typeCache - screws with equality, and not meaningful
    private val equality = Equality(this,
-      Type::name,
-      Type::attributes,
-      Type::modifiers,
-      Type::metadata,
-      Type::aliasForTypeName,
-      Type::inheritsFromTypeNames,
-      Type::enumValues,
-      Type::typeParametersTypeNames,
-      Type::typeDoc)
+      Type::name)
 
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()

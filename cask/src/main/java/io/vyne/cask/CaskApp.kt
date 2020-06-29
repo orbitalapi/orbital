@@ -76,6 +76,7 @@ class CaskApp {
       CaskApiRootPath.nest {
          accept(APPLICATION_JSON).nest {
             GET("**", caskApiHandler::findBy)
+            POST("**", caskApiHandler::findBy)
          }
       }
       resources("/static/**", ClassPathResource("static/"))

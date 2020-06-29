@@ -12,9 +12,12 @@ import io.vyne.queryService.persistency.entity.QueryHistoryRecordRepository
 import org.flywaydb.core.Flyway
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.flyway.FlywayProperties
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+import org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.core.convert.converter.Converter
 import org.springframework.data.convert.CustomConversions.StoreConversions
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
@@ -24,7 +27,8 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
 
 @Configuration
 @EnableConfigurationProperties(FlywayProperties::class)
-@ConditionalOnExpression("!T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}')")
+@Import(value = [R2dbcAutoConfiguration::class, DataSourceAutoConfiguration::class])
+@ConditionalOnExpression("!T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}') and \${app.query-history.enabled:true}")
 @EnableR2dbcRepositories("io.vyne.queryService.persistency.entity.QueryHistoryRecordEntity")
 class ReactiveDatabaseSupport {
    val objectMapper: ObjectMapper = jacksonObjectMapper()

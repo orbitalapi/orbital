@@ -56,7 +56,7 @@ export class CaskPanelComponent {
   resultMessage: string;
 
   get url() {
-    let caskUrl = `${this.caskServiceUrl}/api/cask/${this.format}/${this.targetTypeName}`;
+    let caskUrl = `${this.caskServiceUrl}/api/ingest/${this.format}/${this.targetTypeName}`;
     if (this.format === 'csv') {
       let csvOptionsQueryString = `?csvDelimiter=${this.csvOptions.separator}&csvFirstRecordAsHeader=${this.csvOptions.firstRowAsHeader}`;
       if (this.csvOptions.nullValueTag) {

@@ -13,7 +13,11 @@ import com.winterbe.expekt.should
 import io.vyne.cask.CaskService
 import io.vyne.schemas.VersionedType
 import org.junit.Test
+import org.springframework.http.HttpMethod
+import org.springframework.http.ReactiveHttpInputMessage
+import org.springframework.web.reactive.function.BodyExtractor
 import org.springframework.web.reactive.function.server.ServerRequest
+import reactor.core.publisher.Mono
 
 class CaskApiHandlerTest {
    private val mockCaskService = mock<CaskService>()
@@ -113,5 +117,27 @@ class CaskApiHandlerTest {
       verify(mockCaskDao, times(1)).findOne(any(), columnNameCaptor.capture(), projectionValueCaptor.capture())
       "symbol".should.equal(columnNameCaptor.firstValue)
       "BTCUSD".should.equal(projectionValueCaptor.firstValue)
+   }
+
+   @Test
+   fun `handler can map findMany Request`() {
+      // Given  findMultipleBy/OrderWindowSummary/symbol
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val request = mock<ServerRequest>() {
+         on { path() } doReturn "/api/cask/findMultipleBy/OrderWindowSummary/symbol"
+         on { method() } doReturn HttpMethod.POST
+         on {body(any<BodyExtractor<Mono<List<String>>, ReactiveHttpInputMessage>>())} doReturn Mono.just(listOf("id"))
+      }
+      val mockedVersionedType = mock<VersionedType>()
+      val columnNameCaptor = argumentCaptor<String>()
+      val projectionValueCaptor = argumentCaptor<List<String>>()
+      whenever(mockCaskService.resolveType(eq("OrderWindowSummary"))).thenReturn(Either.right(mockedVersionedType))
+      // When
+      caskApiHandler.findBy(request).subscribe {
+         // Then
+         verify(mockCaskDao, times(1)).findMultiple(any(), columnNameCaptor.capture(), projectionValueCaptor.capture())
+         "symbol".should.equal(columnNameCaptor.firstValue)
+         listOf("id").should.equal(projectionValueCaptor.firstValue)
+      }
    }
 }

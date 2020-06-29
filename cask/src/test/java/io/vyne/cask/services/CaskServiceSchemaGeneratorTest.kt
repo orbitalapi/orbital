@@ -12,6 +12,7 @@ import io.vyne.cask.query.generators.AfterTemporalOperationGenerator
 import io.vyne.cask.query.generators.BeforeTemporalOperationGenerator
 import io.vyne.cask.query.generators.BetweenTemporalOperationGenerator
 import io.vyne.cask.query.generators.FindByFieldIdOperationGenerator
+import io.vyne.cask.query.generators.FindByMultipleGenerator
 import io.vyne.cask.query.generators.FindBySingleResultGenerator
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaStoreClient
@@ -76,7 +77,8 @@ class CaskServiceSchemaGeneratorTest {
             AfterTemporalOperationGenerator(),
             BeforeTemporalOperationGenerator(),
             BetweenTemporalOperationGenerator(),
-            FindBySingleResultGenerator())) to taxiSchema
+            FindBySingleResultGenerator(),
+            FindByMultipleGenerator())) to taxiSchema
 
    }
 
@@ -164,7 +166,8 @@ namespace vyne.casks {
             AfterTemporalOperationGenerator(),
             BeforeTemporalOperationGenerator(),
             BetweenTemporalOperationGenerator(),
-            FindBySingleResultGenerator()))
+            FindBySingleResultGenerator(),
+            FindByMultipleGenerator()))
       val schemaName = argumentCaptor<String>()
       val schemaVersion = argumentCaptor<String>()
       val serviceSchema = argumentCaptor<String>()
@@ -190,6 +193,8 @@ namespace vyne.casks {
       operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/symbol/{Symbol}")
       operation findOneBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary
+      @HttpOperation(method = "POST" , url = "/api/cask/findMultipleBy/OrderWindowSummary/symbol")
+      operation findMultipleBySymbol( @RequestBody symbol : Symbol[] ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/open/{Price}")
       operation findByOpen( @PathVariable(name = "open") open : Price ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/high/{Price}")

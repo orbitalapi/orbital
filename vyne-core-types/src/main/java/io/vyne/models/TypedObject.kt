@@ -1,7 +1,11 @@
 package io.vyne.models
 
-import io.vyne.models.json.JsonModelParser
-import io.vyne.schemas.*
+import io.vyne.schemas.AttributeName
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
+import io.vyne.schemas.toVyneQualifiedName
+import lang.taxi.Equality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
@@ -9,6 +13,7 @@ import lang.taxi.types.AttributePath
 
 
 data class TypedObject(override val type: Type, override val value: Map<String, TypedInstance>, override val source: DataSource) : TypedInstance, Map<String, TypedInstance> by value {
+   private val equality = Equality(this, TypedObject::type, TypedObject::value)
    companion object {
       fun fromValue(typeName: String, value: Any, schema: Schema, source:DataSource): TypedObject {
          return fromValue(schema.type(typeName), value, schema, source = source)
@@ -30,6 +35,9 @@ data class TypedObject(override val type: Type, override val value: Map<String, 
          return TypedObjectFactory(type, value, schema, nullValues, source).build()
       }
    }
+
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
 
    fun hasAttribute(name: String): Boolean {
       return this.value.containsKey(name)

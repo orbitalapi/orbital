@@ -1,8 +1,10 @@
 package io.vyne.spring.invokers
 
+import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
+import io.vyne.models.UndefinedSource
 import io.vyne.query.OperationType
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
@@ -17,6 +19,7 @@ import io.vyne.spring.isServiceDiscoveryClient
 import io.vyne.utils.orElse
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -33,16 +36,18 @@ import org.springframework.web.client.RestTemplate
 
 class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                           val restTemplate: RestTemplate,
-                          private val serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver())) : OperationInvoker {
+                          private val serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
+                          private val enableDataLineageForRemoteCalls: Boolean) : OperationInvoker {
 
    @Autowired
    constructor(schemaProvider: SchemaProvider,
                restTemplateBuilder: RestTemplateBuilder,
-               serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()))
+               serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
+               @Value("\${app.data-lineage.remoteCalls:false}") enableDataLineageForRemoteCalls: Boolean)
       : this(schemaProvider, restTemplateBuilder
       .errorHandler(CatchingErrorHandler())
       .additionalInterceptors(LoggingRequestInterceptor())
-      .build(), serviceUrlResolvers)
+      .build(), serviceUrlResolvers, enableDataLineageForRemoteCalls)
 
    private val uriVariableProvider = UriVariableProvider()
 
@@ -108,17 +113,23 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       // TODO : Handle scenario where we get a 2xx response, but no body
       log().debug("Result of ${operation.name} was $result")
       val resultBody = result.body
-
-      // TODO: WE should be validating that the response we received conforms with the expected schema,
-      // and doing...something? if it doesn't.
-      // See https://gitlab.com/vyne/vyne/issues/54
-      val dataSource = OperationResult(remoteCall, parameters.map { (param, instance) ->
-         OperationResult.OperationParam(param.name.orElse("Unnamed"), instance)
-      })
-
+      val dataSource = remoteCallDataLineage(parameters, remoteCall)
       return when (resultBody) {
          is Map<*, *> -> TypedObject.fromAttributes(operation.returnType, resultBody as Map<String, Any>, schemaProvider.schema(), source = dataSource)
          else -> TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema(), source = dataSource)
+      }
+   }
+
+   private fun remoteCallDataLineage(parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall): DataSource {
+      return if (enableDataLineageForRemoteCalls) {
+         // TODO: WE should be validating that the response we received conforms with the expected schema,
+         // and doing...something? if it doesn't.
+         // See https://gitlab.com/vyne/vyne/issues/54
+         OperationResult(remoteCall, parameters.map { (param, instance) ->
+            OperationResult.OperationParam(param.name.orElse("Unnamed"), instance)
+         })
+      } else {
+         UndefinedSource
       }
    }
 

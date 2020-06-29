@@ -8,13 +8,22 @@ import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
+import io.vyne.models.TypedInstance
+import io.vyne.query.graph.EdgeEvaluator
 import io.vyne.query.graph.Element
+import io.vyne.query.graph.EvaluatableEdge
+import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.PathEvaluation
+import io.vyne.query.graph.StartingEdge
 import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.query.graph.instanceOfType
-import io.vyne.models.TypedInstance
-import io.vyne.query.graph.*
 import io.vyne.query.graph.type
-import io.vyne.schemas.*
+import io.vyne.schemas.Link
+import io.vyne.schemas.Path
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
+import io.vyne.schemas.describe
 import io.vyne.utils.log
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
@@ -63,7 +72,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
    private data class SchemaFactSetCacheKey(val schema: Schema, val types: Set<Type>)
 
    private val schemaGraphCache = CacheBuilder.newBuilder()
-      .maximumSize(10) // arbitary cache size, we can explore tuning this later
+      .maximumSize(5) // arbitary cache size, we can explore tuning this later
       .weakKeys()
       .build(object : CacheLoader<Schema, VyneGraphBuilder>() {
          override fun load(schema: Schema): VyneGraphBuilder {
@@ -75,26 +84,15 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
    private val schemaGraphFactSetCache = CacheBuilder.newBuilder()
       .maximumSize(10)  // arbitary cache size, we can explore tuning this later
       // I tried using weak keys here, and is caused frequent cache misses.
-      .recordStats()
-      .build(object : CacheLoader<SchemaFactSetCacheKey, HipsterDirectedGraph<Element, Relationship>>() {
-         override fun load(key: SchemaFactSetCacheKey): HipsterDirectedGraph<Element, Relationship> {
+      //.recordStats()
+      .build<Set<Type>, HipsterDirectedGraph<Element, Relationship>>()
 
-            return schemaGraphCache[key.schema].build(key.types)
-         }
-      })
-
-   private data class SearchCacheKey(val from: Element, val to: Element, val graph: HipsterDirectedGraph<Element, Relationship>)
+   private data class SearchCacheKey(val from: Element, val to: Element)
 
    private val graphSearchResultCache = CacheBuilder.newBuilder()
-      .recordStats()
-      .maximumSize(100)
-      .build(object : CacheLoader<SearchCacheKey, WeightedNode<Relationship, Element, Double>>() {
-         override fun load(key: SearchCacheKey): WeightedNode<Relationship, Element, Double> {
-            val (from, to, graph) = key
-            val problem = GraphSearchProblem.startingFrom(from).`in`(graph).takeCostsFromEdges().build()
-            return Hipster.createAStar(problem).search(to).goalNode
-         }
-      })
+      //.recordStats()
+      .maximumSize(500)
+      .build<SearchCacheKey, WeightedNode<Relationship, Element, Double>>()
 
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
 
@@ -127,58 +125,25 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
    }
 
    internal fun find(targetElement: Element, context: QueryContext): Pair<TypedInstance, Path>? {
-//      val factItr = context.facts.iterator()
-//      var lastResult: Pair<TypedInstance, Path>?
-//      do {
-//         val start = instanceOfType(factItr.next().type)
-//         lastResult = search(start, targetElement, context)
-//      } while (factItr.hasNext() && lastResult == null)
-//      return lastResult
-
       // Take a copy, as the set is mutable, and performing a search is a
       // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
       val currentFacts = context.facts.toSet()
+      val graphBuilder = schemaGraphCache[context.schema]
+      val factSet = context.facts.map { it.type }.toSet()
+      val directedGraph =    schemaGraphFactSetCache.get(factSet) {
+            graphBuilder.build(factSet)
+         }
 
-      val firstMatch = currentFacts.asSequence()
-         .mapNotNull { fact ->
-            val searchStart = instanceOfType(fact.type)
-            search(searchStart, targetElement, context)
-         }.firstOrNull()
-      return firstMatch
+      return currentFacts
+            .asSequence()
+            .mapNotNull { fact ->
+               val searchStart = instanceOfType(fact.type)
+               search(searchStart, targetElement, context, directedGraph)
+            }.firstOrNull()
+
    }
 
-//   override fun queryContext(factSet: Set<TypedInstance>): QueryContext {
-//      return QueryContext(schema, (this.models + factSet).toMutableSet(), this)
-//   }
-//
-//   override fun findPath(start: QualifiedName, target: QualifiedName): Path {
-//      return search(type(start.fullyQualifiedName), type(target.fullyQualifiedName), queryContext()).path
-//   }
-//
-//   override fun findPath(start: String, target: String): Path {
-//      return search(type(start), type(target), queryContext()).path
-//   }
-//
-//   override fun findPath(start: Type, target: Type): Path {
-//      return search(type(start.fullyQualifiedName), type(target.fullyQualifiedName), queryContext()).path
-//   }
-//
-//   fun findPath(start: Element, target: Element) {
-//      search(start, target, queryContext())
-//   }
-
-   data class EvaluateRelationshipAction(val relationship: Relationship, val target: Element)
-
-   internal fun search(start: Element, target: Element, queryContext: QueryContext): Pair<TypedInstance, Path>? {
-      // TODO : This is expensive.  We should cache against the schema.
-      val graph = if (queryContext.debugProfiling) {
-         queryContext.startChild(this, "Building graph", OperationType.GRAPH_BUILDING) {
-            buildGraph(queryContext)
-         }
-      } else {
-         buildGraph(queryContext)
-      }
-
+   internal fun search(start: Element, target: Element, queryContext: QueryContext, graph: HipsterDirectedGraph<Element, Relationship>): Pair<TypedInstance, Path>? {
       return if (queryContext.debugProfiling) {
          queryContext.startChild(this, "Searching for path ${start.valueAsQualifiedName().name} -> ${target.valueAsQualifiedName().name}", OperationType.GRAPH_TRAVERSAL) { op ->
             doSearch(start, target, graph, queryContext, op)
@@ -187,13 +152,6 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
          doSearch(start, target, graph, queryContext)
       }
    }
-
-   private fun buildGraph(queryContext: QueryContext): HipsterDirectedGraph<Element, Relationship> {
-      val result = schemaGraphFactSetCache.get(SchemaFactSetCacheKey(queryContext.schema, queryContext.facts.map { it.type }.toSet()))
-      log().debug("Built graph. Stats: ", schemaGraphFactSetCache.stats())
-      return result
-   }
-
    private fun doSearch(start: Element, target: Element, graph: HipsterDirectedGraph<Element, Relationship>, queryContext: QueryContext, op: ProfilerOperation? = null): Pair<TypedInstance, Path>? {
       val searchResult = graphSearch(start, target, graph)
 
@@ -225,10 +183,11 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       }
    }
 
-
-
    private fun graphSearch(from: Element, to: Element, graph: HipsterDirectedGraph<Element, Relationship>): WeightedNode<Relationship, Element, Double> {
-      val result = graphSearchResultCache.get(SearchCacheKey(from, to, graph))
+      val result = graphSearchResultCache.get(SearchCacheKey(from, to)) {
+         val problem = GraphSearchProblem.startingFrom(from).`in`(graph).takeCostsFromEdges().build()
+         Hipster.createAStar(problem).search(to).goalNode
+      }
       //log().debug("Graph search completed.  Cache results: ${graphSearchResultCache.stats()}")
       return result
    }
@@ -251,13 +210,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
          return lastEdgeResult
       }
 
-
-      if (queryContext.hasFactOfType(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
-         return queryContext.getFact(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
-      }
-
-      // The search probably failed
-      return null
+      return queryContext.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
    }
 
    private fun evaluatePath(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): List<PathEvaluation> {
@@ -283,8 +236,8 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
    fun getStartingEdge(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): StartingEdge {
       val firstNode = searchResult.path().first()
       val firstType = queryContext.schema.type(firstNode.state().valueAsQualifiedName())
-      require(queryContext.hasFactOfType(firstType)) { "The queryContext doesn't have a fact present of type ${firstType.fullyQualifiedName}, but this is the starting point of the discovered solution." }
-      val firstFact = queryContext.getFact(firstType)
+      val firstFact = queryContext.getFactOrNull(firstType)
+      require(firstFact != null) { "The queryContext doesn't have a fact present of type ${firstType.fullyQualifiedName}, but this is the starting point of the discovered solution." }
       val startingEdge = StartingEdge(firstFact, firstNode.state())
       return startingEdge
    }
@@ -387,10 +340,6 @@ private fun <V, E> HipsterDirectedGraph<V, E>.edgeDescriptions(): List<String> {
          "${edge.vertex1} -[${edge.edgeValue}]-> ${edge.vertex2}"
       }
    }
-}
-
-private fun <V, E> HipsterDirectedGraph<V, E>.description(): String? {
-   return this.edgeDescriptions().joinToString("\n")
 }
 
 

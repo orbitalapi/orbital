@@ -135,7 +135,7 @@ Date,Symbol,Open,High,Low,Close
 
       val response = client
          .post()
-         .uri("/api/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
          .bodyValue(caskRequest)
          .retrieve()
          .bodyToMono(String::class.java)

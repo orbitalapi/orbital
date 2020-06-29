@@ -22,6 +22,7 @@ import lang.taxi.generators.java.TaxiGenerator
 import lang.taxi.generators.java.extensions.ServiceDiscoveryAddressProvider
 import lang.taxi.generators.java.extensions.SpringMvcHttpOperationExtension
 import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
@@ -81,9 +82,10 @@ class VyneAutoConfiguration {
    @Bean
    fun restTemplateOperationInvoker(schemaProvider: SchemaProvider,
                                     restTemplateBuilder: RestTemplateBuilder,
-                                    serviceUrlResolvers: List<ServiceUrlResolver>
+                                    serviceUrlResolvers: List<ServiceUrlResolver>,
+                                    @Value("\${app.data-lineage.remoteCalls:false}") enableDataLineageForRemoteCalls: Boolean
    ): RestTemplateInvoker {
-      return RestTemplateInvoker(schemaProvider, restTemplateBuilder, serviceUrlResolvers)
+      return RestTemplateInvoker(schemaProvider, restTemplateBuilder, serviceUrlResolvers, enableDataLineageForRemoteCalls)
    }
 
    @Bean

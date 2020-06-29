@@ -3,11 +3,12 @@ package io.vyne
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedValue
 import io.vyne.models.json.addJsonModel
+import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
-import org.junit.Ignore
 import org.junit.Test
 
 
@@ -111,7 +112,7 @@ service UserService {
       val buf = StringBuilder()
       buf.append("[")
       for (i in 1..noOfRecords) {
-         buf.append("""{ "broker1ID" : "broker1Order1", "broker1Date" : "2020-01-01", "traderId" : "trader${i%2}"}""")
+         buf.append("""{ "broker1ID" : "broker1Order1", "broker1Date" : "2020-01-01", "traderId" : "trader${i % 2}"}""")
          if (i < noOfRecords) {
             buf.append(",")
          }
@@ -170,7 +171,7 @@ service InstrumentService {
    operation getInstrument( instrument: InstrumentId ) : Instrument
 }
          """.trimIndent()
-      val noOfRecords = 100
+      val noOfRecords = 10000
 
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
@@ -228,42 +229,23 @@ service InstrumentService {
       )
    }
 
-   private fun generateBroker1Orders(noOfRecords: Int): String {
-      val buf = StringBuilder("[")
-      for (i in 0 until noOfRecords) {
-         buf.append("""
-         {
-            "broker1ID" : "broker1Order${i}",
-            "broker1Date" : "2020-01-01",
-            "broker1Direction" :
-            "bankbuys",
-            "instrumentId" : "instrument${i%2}"
-         }
-         """.trimMargin())
-         if (i < noOfRecords -1) {
-            buf.append(",")
-         }
-      }
-      buf.append("]")
-      return buf.toString()
-   }
 
    @Test
-   @Ignore("TODO Implement linking trades to order")
    fun `project to CommonOrder with Trades`() {
       // TODO confirm how the mappings should look like
-      val noOfRecords = 100
+      val noOfRecords = 1000
       val schema = """
 // Primitives
 type alias OrderId as String
 type alias TradeId as String
 type alias OrderDate as Date
-type alias Price as Double
+type alias Price as Decimal
+type alias TradeNo as String
 
 model CommonOrder {
    id: OrderId
    date: OrderDate
-   trades: CommonTrade[] // ??? Is this how we want to model this ???
+   tradeNo : TradeNo
 }
 
 model CommonTrade {
@@ -279,29 +261,33 @@ model Trade {}
 type Broker1Order inherits Order {
    broker1ID: OrderId
    broker1Date: OrderDate
-   broker1Trades: Broker1Trade[]
+   broker1TradeId: TradeId
 }
 
 type Broker1Trade inherits Trade {
    broker1TradeID: TradeId
    broker1OrderID: OrderId
    broker1Price: Price
+   broker1TradeNo: TradeNo
 }
 
 // services
 service Broker1Service {
    operation getBroker1Orders( start : OrderDate, end : OrderDate) : Broker1Order[] (OrderDate >= start, OrderDate < end)
    operation getBroker1Trades( orderId: OrderId) : Broker1Trade[]
-   //operation getBroker1Trades( orderId: OrderId[]) : Broker1Trade[]// this is more desired implementation
+   operation findOneByOrderId( orderId: OrderId ) : Broker1Trade
+   operation getBroker1TradesForOrderIds( orderIds: OrderId[]) : Broker1Trade[]
 }
 
 """.trimIndent()
 
       val (vyne, stubService) = testVyne(schema)
+      val orders = generateBroker1Orders(noOfRecords)
+      val trades = generateOneBroker1TradeForEachOrder(noOfRecords)
       stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
          override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
-            return vyne.addJsonModel("Broker1Order[]", generateBroker1Orders(noOfRecords))
+            return vyne.parseJsonModel("Broker1Order[]", orders)
          }
       })
 
@@ -309,7 +295,42 @@ service Broker1Service {
          override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val orderId = parameters[0].second.value as String
-            return vyne.addJsonModel("Broker1Trade[]", generateBroker1Trades(orderId))
+            return vyne.parseJsonModel("Broker1Trade[]", trades)
+         }
+      })
+
+      var getBroker1TradesForOrderIdsInvocationCount = 0
+      stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(1)
+            val orderIds = parameters[0].second.value as List<TypedValue>
+            val buf = StringBuilder("[")
+            orderIds.forEachIndexed { index, typedValue ->
+               generateBroker1Trades(typedValue.value as String, index, buf)
+               if (index < orderIds.size - 1) {
+                  buf.append(",")
+               }
+            }
+            buf.append("]")
+            getBroker1TradesForOrderIdsInvocationCount++
+            return vyne.parseJsonModel("Broker1Trade[]", buf.toString().trimIndent())
+         }
+      })
+
+      var findOneByOrderIdInvocationCount = 0
+      stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(1)
+            val orderId = parameters[0].second.value as String
+            findOneByOrderIdInvocationCount++
+            return vyne.parseJsonModel("Broker1Trade", """
+               {
+                  "broker1OrderID" : "broker1Order$orderId",
+                  "broker1TradeID" : "trade_id_$orderId",
+                  "broker1Price"   : 10.1,
+                  "broker1TradeNo": "trade_no_$orderId"
+               }
+            """.trimIndent())
          }
       })
 
@@ -320,24 +341,42 @@ service Broker1Service {
       expect(result.isFullyResolved).to.be.`true`
       val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
       resultList.size.should.be.equal(noOfRecords)
-      resultList[0].should.equal(
-         mapOf(
-            Pair("id", "broker1Order0"),
-            Pair("date", "2020-01-01"),
-            Pair("trades", "TODO")
+      resultList.forEachIndexed { index, result ->
+         result.should.equal(
+            mapOf(
+               Pair("id", "broker1Order$index"),
+               Pair("date", "2020-01-01"),
+               Pair("tradeNo", "trade_no_$index")
+            )
          )
-      )
+      }
+
+      findOneByOrderIdInvocationCount.should.equal(0)
+      getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
    }
 
-   private fun generateBroker1Trades(orderId: String): String {
-      val noOfRecords = 2
+   private fun generateBroker1Trades(orderId: String, index: Int, buf: StringBuilder): StringBuilder {
+      val noOfRecords = 1
+      buf.append("""
+         {
+            "broker1OrderID" : "$orderId",
+            "broker1TradeID" : "trade_id_$index",
+            "broker1Price"   : "10.1",
+            "broker1TradeNo": "trade_no_$index"
+         }
+         """.trimMargin())
+      return buf
+   }
+
+   private fun generateOneBroker1TradeForEachOrder(noOfRecords: Int): String {
       val buf = StringBuilder("[")
       for (i in 0 until noOfRecords) {
          buf.append("""
          {
-            "broker1OrderID" : "$orderId",
-            "broker1TradeID" : "${orderId}_$i",
-            "broker1Price"   : "10.1"
+            "broker1OrderID" : "broker1Order$i",
+            "broker1TradeID" : "trade_id_$i",
+            "broker1Price"   : "10.1",
+            "broker1TradeNo": "trade_no_$i"
          }
          """.trimMargin())
          if (i < noOfRecords - 1) {
@@ -347,5 +386,27 @@ service Broker1Service {
       buf.append("]")
       return buf.toString()
    }
+
+   private fun generateBroker1Orders(noOfRecords: Int): String {
+      val buf = StringBuilder("[")
+      for (i in 0 until noOfRecords) {
+         buf.append("""
+         {
+            "broker1ID" : "broker1Order${i}",
+            "broker1Date" : "2020-01-01",
+            "broker1Direction" :
+            "bankbuys",
+            "instrumentId" : "instrument${i % 2}",
+            "broker1TradeId": "trade_id_$i"
+         }
+         """.trimMargin())
+         if (i < noOfRecords - 1) {
+            buf.append(",")
+         }
+      }
+      buf.append("]")
+      return buf.toString()
+   }
+
 }
 

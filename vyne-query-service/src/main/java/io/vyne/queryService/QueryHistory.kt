@@ -24,7 +24,7 @@ interface QueryHistory {
 }
 
 @Component
-@ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}')")
+@ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}') and \${app.query-history.enabled:true}")
 class InMemoryQueryHistory: QueryHistory {
 
    private val queries = EvictingQueue.create<QueryHistoryRecord<out Any>>(10);

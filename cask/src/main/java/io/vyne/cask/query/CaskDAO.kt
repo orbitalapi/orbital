@@ -64,6 +64,21 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       }
    }
 
+   fun findMultiple(versionedType: VersionedType, columnName: String, arg: List<String>): List<Map<String, Any>> {
+      return timed("${versionedType.versionedName}.findMultiple${columnName}") {
+         val tableName = versionedType.caskRecordTable()
+         val originalTypeSchema = schemaProvider.schema()
+         val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
+         val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
+         val findMultipleArg = jdbcQueryArgumentsType(fieldType, arg)
+         val inPhrase = arg.joinToString(",") { "?" }
+         val argTypes = arg.map { Types.VARCHAR }.toTypedArray().toIntArray()
+         val argValues = findMultipleArg.toTypedArray()
+         val retVal = jdbcTemplate.queryForList(findInQuery(tableName, columnName, inPhrase), argValues, argTypes)
+         retVal
+      }
+   }
+
    fun findBetween(versionedType: VersionedType, columnName: String, start: String, end: String): List<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
          val field = fieldForColumnName(versionedType, columnName)
@@ -98,6 +113,8 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       return (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
    }
 
+   private fun jdbcQueryArgumentsType(field: Field, args: List<String>) = args.map { jdbcQueryArgumentType(field, it) }
+
    private fun jdbcQueryArgumentType(field: Field, arg: String) = when (field.type.basePrimitive) {
       PrimitiveType.STRING -> arg
       PrimitiveType.ANY -> arg
@@ -115,6 +132,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
 
    companion object {
       // TODO change to prepared statement, unlikely but potential for SQL injection via columnName
+      fun findInQuery(tableName: String, columnName: String, inPhrase: String) = """SELECT * FROM $tableName WHERE "$columnName" IN ($inPhrase)"""
       fun findByQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" = ?"""
       fun findBetweenQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" < ?"""
       fun findAfterQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ?"""
