@@ -28,11 +28,10 @@ import {VyneServicesModule} from './vyne-services.module';
 export class TypesService {
 
   private schema: Schema;
-  private schemaSubject: Subject<Schema>;
+  private schemaSubject: Subject<Schema> = new ReplaySubject(1);
   private schemaRequest: Observable<Schema>;
 
   constructor(private http: HttpClient) {
-    this.schemaSubject = new ReplaySubject(1);
     this.getTypes().subscribe(schema => {
       this.schema = schema;
     });
@@ -79,7 +78,9 @@ export class TypesService {
   }
 
   parse(content: string, type: Type): Observable<ParsedTypeInstance> {
-    return this.http.post<ParsedTypeInstance>(`${environment.queryServiceUrl}/api/content/parse?type=${type.name.fullyQualifiedName}`, content);
+    return this.http.post<ParsedTypeInstance>(
+      `${environment.queryServiceUrl}/api/content/parse?type=${type.name.fullyQualifiedName}`,
+      content);
   }
 
   parseCsvToType(content: string, type: Type, csvOptions: CsvOptions): Observable<ParsedTypeInstance[]> {
@@ -96,8 +97,8 @@ export class TypesService {
       content);
   }
 
-  getTypes = (refresh: boolean = false): Observable<Schema> => {
-    if ((refresh || !this.schemaRequest)) {
+  getTypes(refresh: boolean = false): Observable<Schema> {
+    if (refresh || !this.schemaRequest) {
       this.schemaRequest = this.http
         .get<Schema>(`${environment.queryServiceUrl}/api/types`)
         .pipe(
@@ -109,11 +110,11 @@ export class TypesService {
             }
           )
         );
+      this.schemaRequest.subscribe(
+        result => this.schemaSubject.next(result),
+        err => this.schemaSubject.next(err)
+      );
     }
-    this.schemaRequest.subscribe(
-      result => this.schemaSubject.next(result),
-      err => this.schemaSubject.next(err)
-    );
     return this.schemaSubject.asObservable();
   }
 
