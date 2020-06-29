@@ -112,7 +112,7 @@ class FileWatcher(@Value("\${taxi.schema-local-storage}") val schemaLocalStorage
             key.reset()
          }
       } catch (e: Exception) {
-         log().error("Error in watch service: ${e.message}")
+         log().error("Error in watch service", e)
       }
    }
 }
