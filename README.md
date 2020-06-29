@@ -22,8 +22,8 @@
 * local profile enables REST request coming from localhost:4200 by modifying the CORS settings accordingly. This profile
 requires only if you're planning run client app on localhost:4200 (see below). If that is not the case, build the client app by running
 'mvn clean install -DskipTests' or by running 'npm build' on vyne-query-service/src/main/web 
-* By default data lineage functionality is disabled for remote calls. If you want to enable it please set app.data-lineage.remoteCalls as true,
-(i.e. -Dapp.data-lineage.remoteCalls=true)
+* By default data lineage functionality is disabled for remote calls. If you want to enable it please set vyne.data-lineage.remoteCalls.enabled as true,
+(i.e. -Dvyne.data-lineage.remoteCalls.enabled=true)
 
 ## Client
 

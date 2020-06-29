@@ -11,11 +11,12 @@ spring:
       name: query-service
    autoconfigure:
       exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-app:
+vyne:
    query-history:
       enabled: false
    data-lineage:
-      remoteCalls: false
+      remoteCalls:
+         enabled: false
 
 logging:
    level:

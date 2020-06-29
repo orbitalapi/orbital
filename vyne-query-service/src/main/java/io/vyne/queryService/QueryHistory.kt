@@ -5,7 +5,13 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.google.common.collect.EvictingQueue
 import io.vyne.models.DataSource
 import io.vyne.models.TypeNamedInstance
-import io.vyne.query.*
+import io.vyne.query.OperationType
+import io.vyne.query.ProfilerOperationDTO
+import io.vyne.query.Query
+import io.vyne.query.QueryResponse
+import io.vyne.query.QueryResult
+import io.vyne.query.RemoteCall
+import io.vyne.query.ResultMode
 import io.vyne.schemas.Path
 import io.vyne.schemas.QualifiedName
 import io.vyne.utils.log
@@ -15,7 +21,7 @@ import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 interface QueryHistory {
    fun add(record: QueryHistoryRecord<out Any>)
@@ -24,7 +30,7 @@ interface QueryHistory {
 }
 
 @Component
-@ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}') and \${app.query-history.enabled:true}")
+@ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}') and \${vyne.query-history.enabled:true}")
 class InMemoryQueryHistory: QueryHistory {
 
    private val queries = EvictingQueue.create<QueryHistoryRecord<out Any>>(10);

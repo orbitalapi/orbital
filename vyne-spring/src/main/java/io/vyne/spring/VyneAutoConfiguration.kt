@@ -83,7 +83,7 @@ class VyneAutoConfiguration {
    fun restTemplateOperationInvoker(schemaProvider: SchemaProvider,
                                     restTemplateBuilder: RestTemplateBuilder,
                                     serviceUrlResolvers: List<ServiceUrlResolver>,
-                                    @Value("\${app.data-lineage.remoteCalls:false}") enableDataLineageForRemoteCalls: Boolean
+                                    @Value("\${vyne.data-lineage.remoteCalls.enabled:false}") enableDataLineageForRemoteCalls: Boolean
    ): RestTemplateInvoker {
       return RestTemplateInvoker(schemaProvider, restTemplateBuilder, serviceUrlResolvers, enableDataLineageForRemoteCalls)
    }

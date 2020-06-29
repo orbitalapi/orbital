@@ -6,7 +6,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @Component
-@ConditionalOnExpression("!\${app.query-history.enabled:true}")
+@ConditionalOnExpression("!\${vyne.query-history.enabled:true}")
 class NoopQueryHistory: QueryHistory {
    override fun add(record: QueryHistoryRecord<out Any>) {}
    override fun list(): Flux<QueryHistoryRecord<out Any>> = Flux.empty()
