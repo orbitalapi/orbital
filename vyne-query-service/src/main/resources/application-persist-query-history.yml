@@ -10,6 +10,6 @@ spring:
       username: ${spring.flyway.user}
       password: ${spring.flyway.password}
 
-app:
+vyne:
    query-history:
       enabled: true
