@@ -63,11 +63,11 @@ class GitSynch(
                   compilerService.recompile()
                }
             } catch (e: Exception) {
-               log().error("Synch error: ${repoConfig.name}\n${e.message}")
+               log().error("Synch error: ${repoConfig.name}\n${e.message}", e)
             }
          }
       } catch (e: Exception) {
-         log().error("Synch error: ${e.message}")
+         log().error("Synch error", e)
       } finally {
          fileWatcher.watch()
          inProgress.set(false)
