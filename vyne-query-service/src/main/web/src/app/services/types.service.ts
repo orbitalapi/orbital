@@ -8,14 +8,15 @@ import {environment} from 'src/environments/environment';
 import {map} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
-  Message, ParsedSource,
+  Message,
+  ParsedSource,
   QualifiedName,
   Schema,
   SchemaGraph,
   SchemaGraphNode,
-  SchemaMember,
   SchemaSpec,
-  Type, TypedInstance,
+  Type,
+  TypedInstance,
   VersionedSource
 } from './schema';
 import {TypeNamedInstance} from './query.service';
@@ -68,7 +69,7 @@ export class TypesService {
   }
 
   getDiscoverableTypes(typeName: string): Observable<QualifiedName[]> {
-    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${typeName}/discoverable-types`)
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${typeName}/discoverable-types`);
   }
 
   getType(qualifiedName: string): Observable<Type> {
@@ -96,7 +97,7 @@ export class TypesService {
   }
 
   getTypes = (refresh: boolean = false): Observable<Schema> => {
-    if (refresh || !this.schemaRequest) {
+    if ((refresh || !this.schemaRequest)) {
       this.schemaRequest = this.http
         .get<Schema>(`${environment.queryServiceUrl}/api/types`)
         .pipe(
@@ -108,13 +109,14 @@ export class TypesService {
             }
           )
         );
-      this.schemaRequest.subscribe(
-        result => this.schemaSubject.next(result),
-        err => this.schemaSubject.next(err)
-      );
     }
+    this.schemaRequest.subscribe(
+      result => this.schemaSubject.next(result),
+      err => this.schemaSubject.next(err)
+    );
     return this.schemaSubject.asObservable();
   }
+
 
   createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
     const spec: SchemaSpec = {
