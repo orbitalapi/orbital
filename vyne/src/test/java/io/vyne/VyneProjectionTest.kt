@@ -354,14 +354,130 @@ service Broker1Service {
       getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
    }
 
-   private fun generateBroker1Trades(orderId: String, index: Int, buf: StringBuilder): StringBuilder {
-      val noOfRecords = 1
+   @Test
+   fun `One to Many Mapping Projection works`() {
+      val schema = """
+// Primitives
+type alias OrderId as String
+type alias TradeId as String
+type alias OrderDate as Date
+type alias Price as Decimal
+type alias TradeNo as String
+
+model CommonOrder {
+   id: OrderId
+   date: OrderDate
+   tradeNo : TradeNo
+}
+
+model CommonTrade {
+   id: TradeId
+   orderId: OrderId
+   price: Price
+}
+
+model Order {}
+model Trade {}
+
+// Broker specific types
+type Broker1Order inherits Order {
+   broker1ID: OrderId
+   broker1Date: OrderDate
+   broker1TradeId: TradeId
+}
+
+type Broker1Trade inherits Trade {
+   broker1TradeID: TradeId
+   broker1OrderID: OrderId
+   broker1Price: Price
+   broker1TradeNo: TradeNo
+}
+
+// services
+service Broker1Service {
+   operation getBroker1Orders( start : OrderDate, end : OrderDate) : Broker1Order[] (OrderDate >= start, OrderDate < end)
+   operation getBroker1Trades( orderId: OrderId) : Broker1Trade[]
+   operation findOneByOrderId( orderId: OrderId ) : Broker1Trade
+   operation getBroker1TradesForOrderIds( orderIds: OrderId[]) : Broker1Trade[]
+}
+
+""".trimIndent()
+      val (vyne, stubService) = testVyne(schema)
+      // 1 order and 3 matching trades.
+      val numberOfOrders = 1
+      val numberOfCorrespondingTrades = 3
+      val orders = generateBroker1Orders(numberOfOrders)
+      stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(2)
+            return vyne.parseJsonModel("Broker1Order[]", orders)
+         }
+      })
+
+      var getBroker1TradesForOrderIdsInvocationCount = 0
+      stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(1)
+            val orderIds = parameters[0].second.value as List<TypedValue>
+            val buf = StringBuilder("[")
+            (0..(numberOfCorrespondingTrades - 1)).forEach { index ->
+               generateBroker1Trades(orderIds.first().value as String, 0, buf, index, "10.$index")
+               if (index < 2) {
+                  buf.append(",")
+               }
+            }
+            buf.append("]")
+            getBroker1TradesForOrderIdsInvocationCount++
+            return vyne.parseJsonModel("Broker1Trade[]", buf.toString().trimIndent())
+         }
+      })
+
+      var findOneByOrderIdInvocationCount = 0
+      stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(1)
+            val orderId = parameters[0].second.value as String
+            findOneByOrderIdInvocationCount++
+            return vyne.parseJsonModel("Broker1Trade", """
+               {
+                  "broker1OrderID" : "broker1Order$orderId",
+                  "broker1TradeID" : "trade_id_$orderId",
+                  "broker1Price"   : 10.1,
+                  "broker1TradeNo": "trade_no_$orderId"
+               }
+            """.trimIndent())
+         }
+      })
+
+      // act
+      val result = vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+
+      // assert
+      expect(result.isFullyResolved).to.be.`true`
+      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
+      resultList.size.should.be.equal(numberOfCorrespondingTrades)
+      resultList.forEachIndexed { index, result ->
+         result.should.equal(
+            mapOf(
+               Pair("id", "broker1Order0"),
+               Pair("date", "2020-01-01"),
+               Pair("tradeNo", "trade_no_$index")
+            )
+         )
+      }
+      findOneByOrderIdInvocationCount.should.equal(0)
+      getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
+   }
+   private fun generateBroker1Trades(orderId: String, index: Int, buf: StringBuilder, tradeId: Int? = null, price: String? = null): StringBuilder {
+      val brokerTraderId = tradeId?.let { "trade_id_$it" } ?: "trade_id_$index"
+      val brokerTradeNo = tradeId?.let { "trade_no_$it" } ?: "trade_no_$index"
+      val brokerPrice = price ?: "10.1"
       buf.append("""
          {
             "broker1OrderID" : "$orderId",
-            "broker1TradeID" : "trade_id_$index",
-            "broker1Price"   : "10.1",
-            "broker1TradeNo": "trade_no_$index"
+            "broker1TradeID" :  "$brokerTraderId",
+            "broker1Price"   : "$brokerPrice",
+            "broker1TradeNo": "$brokerTradeNo"
          }
          """.trimMargin())
       return buf
