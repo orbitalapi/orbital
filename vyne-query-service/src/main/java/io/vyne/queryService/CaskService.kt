@@ -18,7 +18,7 @@ import javax.servlet.http.HttpServletRequest
 @RestController
 class CaskService(private val discoveryClient: DiscoveryClient, private val restTemplate: RestTemplate = RestTemplate()) {
 
-   @PostMapping("/api/cask/**")
+   @PostMapping("/api/ingest/**")
    fun submitToCask(request: HttpServletRequest, @RequestBody payload: String): ResponseEntity<Any> {
       val requestUri = request.requestURI;
       val queryString = request.queryString
