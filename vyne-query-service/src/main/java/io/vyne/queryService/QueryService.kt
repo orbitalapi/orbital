@@ -1,18 +1,12 @@
 package io.vyne.queryService
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
-import io.vyne.query.Fact
-import io.vyne.query.QueryResult
-import io.vyne.query.ProfilerOperation
-import io.vyne.query.Query
-import io.vyne.query.QueryMode
-import io.vyne.query.QueryResponse
-import io.vyne.query.ResultMode
-import io.vyne.query.SearchFailedException
+import io.vyne.query.*
 import io.vyne.schemas.Schema
 import io.vyne.spring.VyneFactory
 import io.vyne.utils.log
@@ -50,10 +44,23 @@ data class FailedSearchResponse(val message: String,
 class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
 
    @PostMapping("/api/query")
-   fun submitQuery(@RequestBody query: Query): QueryResponse {
+   fun submitQuery(@RequestBody query: Query): String {
       val response = executeQuery(query) as QueryResult
-      history.add(RestfulQueryHistoryRecord(query, HistoryQueryResponse.from(response)))
-      return response
+
+      // We handle the serialization here, and return a string, rather than
+      // letting Spring handle it.
+      // This is because the LineageGraphSerializationModule() is stateful, and
+      // shares references during serialization.  Therefore, it's not threadsafe, so
+      // we create an instance per response.
+      val json = jacksonObjectMapper()
+         .registerModule(LineageGraphSerializationModule())
+         .writerWithDefaultPrettyPrinter()
+         .writeValueAsString(response)
+
+      // TODO  : Re-enable this.  It's currently throwing exceptions.  @Andrzej can you please
+      // investigate?
+//      history.add(RestfulQueryHistoryRecord(query, HistoryQueryResponse.from(response)))
+      return json
    }
 
    @PostMapping("/api/vyneql")

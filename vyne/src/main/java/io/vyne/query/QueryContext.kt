@@ -111,6 +111,10 @@ data class QueryResult(
 
          }
       }
+
+
+   // HACK : Put this last, so that other stuff is serialized first
+   val lineageGraph = LineageGraph
 }
 
 // Note : Also models failures, so is fairly generic

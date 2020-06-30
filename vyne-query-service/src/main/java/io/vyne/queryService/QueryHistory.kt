@@ -31,7 +31,7 @@ interface QueryHistory {
 
 @Component
 @ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}') and \${vyne.query-history.enabled:true}")
-class InMemoryQueryHistory: QueryHistory {
+class InMemoryQueryHistory : QueryHistory {
 
    private val queries = EvictingQueue.create<QueryHistoryRecord<out Any>>(10);
    override fun add(record: QueryHistoryRecord<out Any>) {
@@ -50,11 +50,12 @@ class InMemoryQueryHistory: QueryHistory {
    override fun get(id: String): Mono<QueryHistoryRecord<out Any>> {
       // There's only 50 at the moment, so indexing isn't worth it.
       // Address this later.
-     val match = queries.first { it.id == id }
+      val match = queries.first { it.id == id }
       return Mono.just(match)
    }
 
 }
+
 @JsonTypeInfo(
    use = JsonTypeInfo.Id.CLASS,
    include = JsonTypeInfo.As.PROPERTY,
@@ -68,6 +69,7 @@ interface QueryHistoryRecord<T> {
          return response.queryResponseId
       }
 }
+
 data class VyneQlQueryHistoryRecord(
    override val query: VyneQLQueryString,
    override val response: HistoryQueryResponse,
