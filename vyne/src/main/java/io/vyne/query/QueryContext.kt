@@ -103,7 +103,7 @@ data class QueryResult(
             }.toMap()
          }
 
-         ResultMode.SIMPLE ->  {
+         ResultMode.SIMPLE -> {
             val converter = TypedInstanceConverter(RawObjectMapper)
             this.results
                .map { (key, value) -> key.type.name.parameterizedName to value?.let { converter.convert(it) } }
@@ -177,6 +177,7 @@ data class QueryContext(
    val resultMode: ResultMode,
    val debugProfiling: Boolean = false,
    val parent: QueryContext? = null) : ProfilerOperation by profiler {
+
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
@@ -246,20 +247,26 @@ data class QueryContext(
     * All other parameters (queryEngine, schema, etc) are retained
     */
    fun only(fact: TypedInstance): QueryContext {
-      val mutableFacts = resolveSynonyms(fact, schema).toMutableSet()
-      mutableFacts.add(fact)
-      return this.copy(facts = mutableFacts, parent = this)
+      return this.copy(facts = mutableSetOf<TypedInstance>(fact), parent = this)
    }
 
    fun addFact(fact: TypedInstance): QueryContext {
       log().debug("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
       inMemoryStream = null
-      if (fact.type.isEnum) {
-         val synonymSet = resolveSynonyms(fact, schema)
-         this.facts.addAll(synonymSet)
-      } else {
-         this.facts.add(fact)
+      when {
+          fact.type.isEnum -> {
+             val synonymSet = resolveSynonyms(fact, schema)
+             this.facts.addAll(synonymSet)
+          }
+          fact is TypedObject -> {
+             fact.values.filter { it.type.isEnum }.flatMap { resolveSynonyms(fact, schema) }.forEach { synonymsSet -> this.facts.add(synonymsSet) }
+             this.facts.add(fact)
+          }
+          else -> {
+             this.facts.add(fact)
+          }
       }
+
       return this
    }
 
@@ -296,8 +303,8 @@ data class QueryContext(
     * Deeply nested children are less likely to be relevant matches.
     */
    fun modelTree(): Stream<TypedInstance> {
-      inMemoryStream = inMemoryStream ?:  TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot()).toList()
-     return inMemoryStream!!.stream()
+      inMemoryStream = inMemoryStream ?: TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot()).toList()
+      return inMemoryStream!!.stream()
    }
 
    fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
@@ -314,6 +321,7 @@ data class QueryContext(
       return strategy.getFact(this, type)
       //return factCache.get(FactCacheKey(type.fullyQualifiedName, strategy)).orElse(null)
    }
+
    fun evaluatedPath(): List<EvaluatedEdge> {
       return evaluatedEdges.toList()
    }
@@ -336,11 +344,12 @@ data class QueryContext(
    }
 
 
-   data class FactCacheKey(val fqn: String,  val discoveryStrategy: FactDiscoveryStrategy)
+   data class FactCacheKey(val fqn: String, val discoveryStrategy: FactDiscoveryStrategy)
    data class ServiceInvocationCacheKey(
       private val vertex1: Element,
       private val vertex2: Element,
       private val invocationParameter: TypedInstance?)
+
    private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
 
    private fun getTopLevelContext(): QueryContext {
@@ -434,7 +443,7 @@ enum class FactDiscoveryStrategy {
    ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION {
       override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedCollection? {
          val matches = context.modelTree()
-            .filter { matcher.matches(if(type.isCollection) type.typeParameters.first() else type, it.type) }
+            .filter { matcher.matches(if (type.isCollection) type.typeParameters.first() else type, it.type) }
             .distinct()
             .toList()
          return when {
