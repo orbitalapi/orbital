@@ -265,6 +265,7 @@ type Sample {
       "accessor" : null,
       "readCondition" : null,
       "typeDoc" : null,
+      "defaultValue" : null,
       "constraints" : [ ]
     },
     "id" : {
@@ -281,6 +282,7 @@ type Sample {
       "accessor" : null,
       "readCondition" : null,
       "typeDoc" : null,
+      "defaultValue" : null,
       "constraints" : [ ]
     },
     "name" : {
@@ -297,6 +299,7 @@ type Sample {
       "accessor" : null,
       "readCondition" : null,
       "typeDoc" : null,
+      "defaultValue" : null,
       "constraints" : [ ]
     },
     "postcode" : {
@@ -313,6 +316,7 @@ type Sample {
       "accessor" : null,
       "readCondition" : null,
       "typeDoc" : null,
+      "defaultValue" : null,
       "constraints" : [ ]
     }
   },

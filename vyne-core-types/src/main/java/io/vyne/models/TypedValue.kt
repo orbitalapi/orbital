@@ -5,6 +5,7 @@ package io.vyne.models
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
+import lang.taxi.types.EnumValue
 import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
 import org.springframework.lang.Nullable
@@ -57,6 +58,7 @@ object VyneDefaultConversionService : ConversionService {
       // TODO Check this as it is a quick addition for the demo!
       service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate(); }
       service.addConverter(java.lang.Long::class.java, LocalDateTime::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDateTime(); }
+      service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName}
       service
    }
 
