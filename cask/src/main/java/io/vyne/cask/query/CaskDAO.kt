@@ -53,14 +53,14 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       }
    }
 
-   fun findOne(versionedType: VersionedType, columnName: String, arg: String): Map<String, Any> {
+   fun findOne(versionedType: VersionedType, columnName: String, arg: String): Map<String, Any>? {
       return timed("${versionedType.versionedName}.findOne${columnName}") {
          val tableName = versionedType.caskRecordTable()
          val originalTypeSchema = schemaProvider.schema()
          val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
          val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
          val findOneArg = jdbcQueryArgumentType(fieldType, arg)
-         jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg).first()
+         jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg).firstOrNull()
       }
    }
 
