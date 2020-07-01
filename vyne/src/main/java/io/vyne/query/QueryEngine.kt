@@ -135,7 +135,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
           }
           else -> {
              context.isProjecting = true
-             ObjectBuilder(this, context).build(targetType)
+             ObjectBuilder(this, context, targetType).build()
           }
       }
 
@@ -183,7 +183,10 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             .parallelStream()
             .map {  mapTo(targetCollectionType, it, context) }
             .filter { it != null}.collect(Collectors.toList())
-         TypedCollection.from(transformed.toList() as List<TypedInstance>)
+         return@timed when {
+            transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
+            else -> TypedCollection.from(transformed.toList() as List<TypedInstance>)
+         }
       }
    }
 
