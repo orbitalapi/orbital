@@ -223,7 +223,8 @@ service InstrumentService {
             Pair("instrument",
                mapOf(
                   Pair("id", "instrument0"),
-                  Pair("description", "UST 2Y5Y10Y")
+                  Pair("description", "UST 2Y5Y10Y"),
+                  Pair("instrument_type", "Type1")
                )
             ),
             Pair("orderInstrumentType", "OrderInstrumentType1")
@@ -237,7 +238,8 @@ service InstrumentService {
             Pair("instrument",
                mapOf(
                   Pair("id", "instrument1"),
-                  Pair("description", "GBP/USD 1Year Swap")
+                  Pair("description", "GBP/USD 1Year Swap"),
+                  Pair("instrument_type", "Type2")
                )
             ),
             Pair("orderInstrumentType", "OrderInstrumentType2")
