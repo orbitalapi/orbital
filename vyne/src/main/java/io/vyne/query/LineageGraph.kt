@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.models.DataSource
 import java.util.concurrent.atomic.AtomicLong
@@ -17,12 +19,19 @@ import kotlin.reflect.full.memberProperties
  */
 object LineageGraph
 
+object Lineage {
+   fun newLineageAwareJsonMapper(dataSourceRegistry: DataSourceRegistry = DataSourceRegistry()):ObjectMapper = jacksonObjectMapper()
+      .registerModule(VyneJacksonModule())
+      .registerModule(TaxiJacksonModule())
+      .registerModule(JavaTimeModule())
+      .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+      .registerModule(LineageGraphSerializationModule(dataSourceRegistry))
+}
 class DataSourceRegistry {
    val counter = AtomicLong(0)
-   private val nestedMapper: ObjectMapper = jacksonObjectMapper()
-      .registerModule(LineageGraphSerializationModule(this))
+   private val nestedMapper: ObjectMapper = Lineage.newLineageAwareJsonMapper(this)
    private val sources = mutableMapOf<DataSource, Long>()
-   internal val sourceTrees = mutableMapOf<Long, Map<String, JsonNode?>>()
+   internal val sourceTrees = mutableMapOf<Long, Any>()
 
    fun register(datasource: DataSource): Long {
       // This is not threadsafe, but we shouldn't be sharing instances.
@@ -46,7 +55,7 @@ class DataSourceRegistry {
                // root jackson mapper), but which shares the data source registry,
                // this ensures that any nested data sources get captured
                // and their values stored.
-               nestedMapper.valueToTree<JsonNode>(propertyValue)
+               nestedMapper.convertValue<Any>(propertyValue)
             }
             val name = property.name
             name to value

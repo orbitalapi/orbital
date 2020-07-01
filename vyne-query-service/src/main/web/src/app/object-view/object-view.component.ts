@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {TypeNamedInstance} from '../services/query.service';
+import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../services/query.service';
 import {Field, findType, getCollectionMemberType, Schema, Type, TypedInstance} from '../services/schema';
 
 /**
@@ -219,12 +219,3 @@ export function typeName(instance: InstanceLike): string {
   }
 }
 
-function isTypedInstance(instance: InstanceLikeOrCollection): instance is TypedInstance {
-  const instanceAny = instance as any;
-  return instanceAny.type !== undefined && instanceAny.value !== undefined;
-}
-
-function isTypeNamedInstance(instance: InstanceLikeOrCollection): instance is TypeNamedInstance {
-  const instanceAny = instance as any;
-  return instanceAny.typeName !== undefined && instanceAny.value !== undefined;
-}

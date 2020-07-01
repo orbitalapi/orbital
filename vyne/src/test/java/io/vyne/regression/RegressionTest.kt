@@ -157,6 +157,10 @@ data class LightweightQueryResult(
 
 ) : QueryResponse {
    override val profilerOperation: ProfilerOperation? = null
+
+   override fun historyRecord(): HistoryQueryResponse {
+      TODO("Not yet implemented")
+   }
 }
 
 

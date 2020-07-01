@@ -31,6 +31,9 @@ data class FailedSearchResponse(val message: String,
 
 ) : QueryResponse {
    override val isFullyResolved: Boolean = false
+   override fun historyRecord(): HistoryQueryResponse {
+      return HistoryQueryResponse(mapOf(), listOf(), false, queryResponseId, resultMode, profilerOperation?.toDto(), listOf(), mapOf())
+   }
 }
 
 /**
@@ -57,9 +60,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
          .writerWithDefaultPrettyPrinter()
          .writeValueAsString(response)
 
-      // TODO  : Re-enable this.  It's currently throwing exceptions.  @Andrzej can you please
-      // investigate?
-//      history.add(RestfulQueryHistoryRecord(query, HistoryQueryResponse.from(response)))
+      history.add(RestfulQueryHistoryRecord(query, response.historyRecord()))
       return json
    }
 
@@ -79,7 +80,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
             )
          }
 
-         val record = VyneQlQueryHistoryRecord(query, HistoryQueryResponse.from(response))
+         val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
          history.add(record)
          response // consider returning record here
       }

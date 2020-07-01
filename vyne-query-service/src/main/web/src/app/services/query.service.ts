@@ -6,6 +6,7 @@ import {environment} from 'src/environments/environment';
 import {QualifiedName, TypedInstance} from './schema';
 import {InstanceLikeOrCollection} from '../object-view/object-view.component';
 import {VyneServicesModule} from './vyne-services.module';
+import {Data} from '@angular/router';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -43,11 +44,41 @@ export class Fact {
 export interface TypeNamedInstance {
   typeName: string;
   value: any;
-  source?: DataSource;
+  source?: DataSourceReference;
+}
+
+export function isTypedInstance(instance: InstanceLikeOrCollection): instance is TypedInstance {
+  const instanceAny = instance as any;
+  return instanceAny.type !== undefined && instanceAny.value !== undefined;
+}
+
+export function isTypeNamedInstance(instance: any): instance is TypeNamedInstance {
+  const instanceAny = instance as any;
+  return instanceAny.typeName !== undefined && instanceAny.value !== undefined;
+}
+
+export interface DataSourceReference {
+  dataSourceIndex: number;
+}
+
+export interface LineageGraph {
+  [index: number]: DataSource;
 }
 
 export interface DataSource {
-  dataSourceName: string;
+  name: DataSourceType;
+}
+
+export type DataSourceType =
+  'Provided'
+  | 'Mapped'
+  | 'Operation result'
+  | 'Defined in schema'
+  | 'Undefined source'
+  | 'Multiple sources';
+
+export function isOperationResult(source: DataSource): source is OperationResultDataSource {
+  return source.name === 'Operation result';
 }
 
 export interface OperationResultDataSource extends DataSource {
@@ -68,6 +99,7 @@ export interface QueryResult {
   profilerOperation: ProfilerOperation;
   remoteCalls: RemoteCall[];
   resultMode: ResultMode;
+  lineageGraph: LineageGraph;
 }
 
 

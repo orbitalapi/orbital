@@ -3,6 +3,7 @@ import {InstanceLike} from '../object-view/object-view.component';
 import {QualifiedName, Type} from '../services/schema';
 import {TypesService} from '../services/types.service';
 import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
+import {LineageGraph} from '../services/query.service';
 
 @Component({
   selector: 'app-typed-instance-panel-container',
@@ -10,6 +11,7 @@ import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-gr
     <app-typed-instance-panel [type]="type"
                               [instance]="instance"
                               [inheritanceView]="inheritanceView"
+                              [lineageGraph]="lineageGraph"
                               [discoverableTypes]="discoverableTypes"></app-typed-instance-panel>`
 })
 export class TypedInstancePanelContainerComponent {
@@ -18,6 +20,9 @@ export class TypedInstancePanelContainerComponent {
 
   @Input()
   instance: InstanceLike;
+
+  @Input()
+  lineageGraph: LineageGraph;
 
   inheritanceView: Inheritable;
 

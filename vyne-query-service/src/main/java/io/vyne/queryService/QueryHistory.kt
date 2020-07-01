@@ -5,13 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.google.common.collect.EvictingQueue
 import io.vyne.models.DataSource
 import io.vyne.models.TypeNamedInstance
-import io.vyne.query.OperationType
-import io.vyne.query.ProfilerOperationDTO
-import io.vyne.query.Query
-import io.vyne.query.QueryResponse
-import io.vyne.query.QueryResult
-import io.vyne.query.RemoteCall
-import io.vyne.query.ResultMode
+import io.vyne.query.*
 import io.vyne.schemas.Path
 import io.vyne.schemas.QualifiedName
 import io.vyne.utils.log
@@ -82,53 +76,4 @@ data class RestfulQueryHistoryRecord(
    override val timestamp: Instant = Instant.now()
 ) : QueryHistoryRecord<Query>
 
-data class HistoryQueryResponse(val results: Map<String, Any?>,
-                                val resultsVerbose: Map<String, List<TypeNamedInstance>>,
-                                val sources: List<DataSource>,
-                                val unmatchedNodes: List<QualifiedName>,
-                                val path: Path? = null,
-                                val queryResponseId: String = UUID.randomUUID().toString(),
-                                val resultMode: ResultMode,
-                                val profilerOperation: ProfilerOperationDTO?,
-                                val remoteCalls: List<RemoteCall>,
-                                val timings: Map<OperationType, Long>,
-                                @get:JsonProperty("fullyResolved")
-                                val fullyResolved: Boolean,
-                                val truncated: Boolean? = false) {
-   companion object {
-      fun from(response: QueryResponse): HistoryQueryResponse {
-         return when (response) {
-            is QueryResult -> {
-               val queryResultGraph = QueryResultGraph(response.results, response.resultMode)
-               return HistoryQueryResponse(
-                  response.resultMap,
-                  queryResultGraph.buildResultsVerbose(),
-                  queryResultGraph.resultSources,
-                  response.unmatchedNodeNames,
-                  response.path,
-                  response.queryResponseId,
-                  response.resultMode,
-                  response.profilerOperation?.toDto(),
-                  response.remoteCalls,
-                  response.timings,
-                  response.isFullyResolved)
-            }
-            else -> {
-               HistoryQueryResponse(
-                  emptyMap(),
-                  emptyMap(),
-                  listOf(),
-                  emptyList(),
-                  null,
-                  response.queryResponseId,
-                  response.resultMode,
-                  response.profilerOperation?.toDto(),
-                  emptyList(),
-                  emptyMap(),
-                  false)
-            }
-         }
-      }
-   }
-}
 

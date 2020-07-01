@@ -15,6 +15,10 @@
 
    <dependencies>
       <dependency>
+         <groupId>com.fasterxml.jackson.datatype</groupId>
+         <artifactId>jackson-datatype-jsr310</artifactId>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
@@ -38,11 +42,6 @@
          <groupId>io.vyne</groupId>
          <artifactId>vyne-query-api</artifactId>
          <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>com.fasterxml.jackson.datatype</groupId>
-         <artifactId>jackson-datatype-jsr310</artifactId>
-         <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>org.skyscreamer</groupId>

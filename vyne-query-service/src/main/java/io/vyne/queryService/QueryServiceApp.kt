@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.SchemaPublicationMethod
