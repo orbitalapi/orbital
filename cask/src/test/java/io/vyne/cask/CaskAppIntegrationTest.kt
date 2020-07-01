@@ -95,7 +95,7 @@ Date,Symbol,Open,High,Low,Close
 2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
 2020-03-19,NULL,6300,6330,6186.08,6235.2
 2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
-2020-03-19,BTCUSD,6300,6330,6186.08,6235.2""".trimIndent()
+2020-03-19,ETHUSD,6300,6330,6186.08,6235.2""".trimIndent()
 
    @Test
    fun canIngestContentViaWebsocketConnection() {
@@ -142,5 +142,43 @@ Date,Symbol,Open,High,Low,Close
          .block()
 
          response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+   }
+
+   @Test
+   fun canQueryForCaskData() {
+      // mock schema
+      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      client
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+
+      client
+         .post()
+         .uri("/api/cask/OrderWindowSummaryCsv/symbol/ETHBTC")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("[]")
+
+      client
+         .post()
+         .uri("/api/cask/OrderWindowSummaryCsv/symbol/ETHUSD")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("""[{"orderDate":1584572400000,"symbol":"ETHUSD","open":6300.000000000000000,"close":6330.000000000000000}]""")
    }
 }

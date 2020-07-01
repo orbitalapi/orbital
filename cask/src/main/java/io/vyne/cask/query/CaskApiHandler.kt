@@ -89,14 +89,9 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val record = caskDAO.findOne(versionedType.b, fieldName, findByValue)
-            val response = ok()
+            return ok()
                .contentType(MediaType.APPLICATION_JSON)
-
-            return if (record != null) {
-               response.body(BodyInserters.fromValue(record))
-            } else {
-               response.build()
-            }
+               .body(BodyInserters.fromValue(record))
          }
       }
    }
