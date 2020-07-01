@@ -31,6 +31,7 @@ import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
+import java.time.Instant
 import javax.annotation.PreDestroy
 
 @RunWith(SpringRunner::class)
@@ -95,7 +96,7 @@ Date,Symbol,Open,High,Low,Close
 2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
 2020-03-19,NULL,6300,6330,6186.08,6235.2
 2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
-2020-03-19,BTCUSD,6300,6330,6186.08,6235.2""".trimIndent()
+2020-03-19,ETHUSD,6300,6330,6186.08,6235.2""".trimIndent()
 
    @Test
    fun canIngestContentViaWebsocketConnection() {
@@ -143,4 +144,51 @@ Date,Symbol,Open,High,Low,Close
 
          response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
    }
+
+   @Test
+   fun canQueryForCaskData() {
+      // mock schema
+      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      client
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+
+      client
+         .post()
+         .uri("/api/cask/OrderWindowSummaryCsv/symbol/ETHBTC")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("[]")
+
+      val result = client
+         .post()
+         .uri("/api/cask/OrderWindowSummaryCsv/symbol/ETHUSD")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToFlux(OrderWindowSummaryDto::class.java)
+         .collectList()
+         .block()
+
+         result.should.not.be.empty
+   }
+
+   data class OrderWindowSummaryDto(
+      val orderDate: Instant,
+      val symbol: String,
+      val open: Double,
+      val close: Double
+   )
 }

@@ -226,9 +226,16 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
       require(previousValue is TypedObject) {
          "Cannot evaluate $relationship when the previous value isn't a TypedObject - got ${previousValue::class.simpleName}"
       }
+
+      // TypedObject has no attributes - service returned no value, returning failure response
+      if (previousValue.isEmpty()) {
+         return edge.failure(null)
+      }
+
       val previousObject = previousValue as TypedObject
       val pathToAttribute = edge.target.value as String// io.vyne.SomeType/someAttribute
       val attributeName = pathToAttribute.split("/").last()
+      // TODO Consider removing this check, i think returning null value here is better than throwing error
       require(previousObject.hasAttribute(attributeName)) {
          "Cannot evaluation $relationship as the previous object (of type ${previousObject.type.fullyQualifiedName}) does not have an attribute called $attributeName - received path of $pathToAttribute"
       }
