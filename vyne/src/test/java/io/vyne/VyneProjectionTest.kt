@@ -133,8 +133,20 @@ type InstrumentDescription inherits String
 // common types
 type Instrument {
    id: InstrumentId
+   instrument_type: InstrumentType
    description: InstrumentDescription
 }
+
+enum InstrumentType {
+    Type1,
+    Type2
+}
+
+enum OrderInstrumentType {
+    OrderInstrumentType1 synonym of InstrumentType.Type1,
+    OrderInstrumentType2 synonym of InstrumentType.Type2
+}
+
 enum BankDirection {
    BUY("sell"),
    SELL("buy")
@@ -145,6 +157,7 @@ model CommonOrder {
    date: OrderDate
    direction: BankDirection
    instrument: Instrument
+   orderInstrumentType: OrderInstrumentType
 }
 
 model Order {}
@@ -183,12 +196,13 @@ service InstrumentService {
          override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val instrumentId = parameters[0].second.value as String
-            val instrumentDescription = when (instrumentId) {
-               "instrument0" -> "UST 2Y5Y10Y"
-               "instrument1" -> "GBP/USD 1Year Swap"
+            val (instrumentDescription, instrumentType) = when (instrumentId) {
+               "instrument0" -> "UST 2Y5Y10Y" to "Type1"
+               "instrument1" -> "GBP/USD 1Year Swap" to "Type2"
                else -> TODO("Unknown userId=$instrumentId")
             }
-            val instrumentResponse = """{"id":"$instrumentId", "description": "$instrumentDescription"}"""
+
+            val instrumentResponse = """{"id":"$instrumentId", "description": "$instrumentDescription", "instrument_type": "$instrumentType"}"""
             return vyne.addJsonModel("Instrument", instrumentResponse)
          }
       })
@@ -208,9 +222,11 @@ service InstrumentService {
             Pair("instrument",
                mapOf(
                   Pair("id", "instrument0"),
-                  Pair("description", "UST 2Y5Y10Y")
+                  Pair("description", "UST 2Y5Y10Y"),
+                  Pair("instrument_type", "Type1")
                )
-            )
+            ),
+            Pair("orderInstrumentType", "OrderInstrumentType1")
          )
       )
       resultList[1].should.equal(
@@ -221,13 +237,14 @@ service InstrumentService {
             Pair("instrument",
                mapOf(
                   Pair("id", "instrument1"),
-                  Pair("description", "GBP/USD 1Year Swap")
+                  Pair("description", "GBP/USD 1Year Swap"),
+                  Pair("instrument_type", "Type2")
                )
-            )
+            ),
+            Pair("orderInstrumentType", "OrderInstrumentType2")
          )
       )
    }
-
 
    @Test
    fun `project to CommonOrder with Trades`() {
