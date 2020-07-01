@@ -52,6 +52,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
 
    private fun queryStrategyResult(matchedInstance: MutableList<TypedInstance>?, context: QueryContext, targetType: Type, target: Set<QuerySpecTypeNode>): QueryStrategyResult? {
       matchedInstance?.let { joinMatch ->
+         if (joinMatch.size == 0) return null
          if (joinMatch.size == 1) {
             // one to one mapping case.
             // Example: Whilst discovering 'TradeNo', we've invoked:

@@ -257,11 +257,19 @@ type alias TradeId as String
 type alias OrderDate as Date
 type alias Price as Decimal
 type alias TradeNo as String
+type alias IdentifierClass as String
+
+enum Direction {
+   BUY,
+   SELL
+}
 
 model CommonOrder {
    id: OrderId
    date: OrderDate
    tradeNo : TradeNo
+   identifierType: IdentifierClass
+   direction: Direction
 }
 
 model CommonTrade {
@@ -272,6 +280,11 @@ model CommonTrade {
 
 model Order {}
 model Trade {}
+
+type extension CommonOrder {
+   identifierType: IdentifierClass with default 'ISIN'
+   direction: Direction with default Direction.SELL
+}
 
 // Broker specific types
 type Broker1Order inherits Order {
@@ -362,7 +375,9 @@ service Broker1Service {
             mapOf(
                Pair("id", "broker1Order$index"),
                Pair("date", "2020-01-01"),
-               Pair("tradeNo", "trade_no_$index")
+               Pair("tradeNo", "trade_no_$index"),
+               Pair("identifierType", "ISIN"),
+               Pair("direction", "Direction.SELL")
             )
          )
       }
