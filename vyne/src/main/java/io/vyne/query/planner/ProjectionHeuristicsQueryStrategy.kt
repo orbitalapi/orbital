@@ -56,8 +56,8 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
    private fun fetchFromGraph(target: Set<QuerySpecTypeNode>, context: QueryContext): ProjectionHeuristicsGraphSearchResult {
       return timed("fetch from Graph") {
          val graph = VyneGraphBuilder(context.schema).build(context.facts.map { it.type }.toSet())
-         val firstMatch = timed("projection heuristics graph match") {
-            context.facts.asSequence()
+         //val firstMatch = timed("projection heuristics graph match") {
+            val firstMatch = context.facts.asSequence()
                .mapNotNull { fact ->
                   val searchStart = instanceOfType(fact.type)
                   val targetElement = Element(target.first().type.fullyQualifiedName, ElementType.TYPE)
@@ -65,7 +65,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
                   val result = Hipster.createAStar(problem).search(targetElement).goalNode
                   return@mapNotNull if (result.state() != targetElement) null else result
                }.firstOrNull()
-         }
+         //}
 
          firstMatch?.let { it ->
             it.path().firstOrNull { path -> path.action() == Relationship.PROVIDES }?.let { node ->

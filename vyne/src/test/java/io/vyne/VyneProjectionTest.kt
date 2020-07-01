@@ -2,8 +2,7 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
@@ -425,5 +424,58 @@ service Broker1Service {
       return buf.toString()
    }
 
+   @Test
+   fun `missing Country does not break Client projection`() {
+      // prepare
+      val testSchema = """
+         model Client {
+            name : PersonName as String
+            country : CountryCode as String
+         }
+         model Country {
+             countryCode : CountryCode
+             countryName : CountryName as String
+         }
+         model ClientAndCountry {
+            personName : PersonName
+            countryName : CountryName
+         }
+
+         service MultipleInvocationService {
+            operation getCustomers():Client[]
+            operation getCountry(CountryCode): Country
+         }
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(testSchema)
+      stubService.addResponse("getCustomers", vyne.parseJsonModel("Client[]", """
+         [
+            { name : "Jimmy", country : "UK" },
+            { name : "Devrim", country : "TR" }
+         ]
+         """.trimIndent()))
+
+      stubService.addResponse("getCountry", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            val countryCode = parameters.first().second.value!!.toString()
+            return if (countryCode == "UK") {
+               vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
+            } else {
+               TypedObject(vyne.schema.type("Country"), emptyMap(), Provided)
+            }
+         }
+      })
+
+      // act
+      val result =  vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+
+      // assert
+      result.resultMap.get("lang.taxi.Array<ClientAndCountry>").should.be.equal(
+         listOf(
+            mapOf("personName" to "Jimmy", "countryName" to "United Kingdom"),
+            mapOf("personName" to "Devrim")
+         )
+      )
+   }
 }
 
