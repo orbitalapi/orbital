@@ -31,6 +31,7 @@ import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
+import java.time.Instant
 import javax.annotation.PreDestroy
 
 @RunWith(SpringRunner::class)
@@ -172,13 +173,22 @@ Date,Symbol,Open,High,Low,Close
          .block()
          .should.be.equal("[]")
 
-      client
+      val result = client
          .post()
          .uri("/api/cask/OrderWindowSummaryCsv/symbol/ETHUSD")
          .bodyValue(caskRequest)
          .retrieve()
-         .bodyToMono(String::class.java)
+         .bodyToFlux(OrderWindowSummaryDto::class.java)
+         .collectList()
          .block()
-         .should.be.equal("""[{"orderDate":1584572400000,"symbol":"ETHUSD","open":6300.000000000000000,"close":6330.000000000000000}]""")
+
+         result.should.not.be.empty
    }
+
+   data class OrderWindowSummaryDto(
+      val orderDate: Instant,
+      val symbol: String,
+      val open: Double,
+      val close: Double
+   )
 }
