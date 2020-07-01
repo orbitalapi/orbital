@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import es.usc.citius.hipster.graph.GraphEdge
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
@@ -55,6 +56,12 @@ data class EvaluatableEdge(
       // TODO : Are we adding any value by having "target" here? -- isn't it always vertex2?
       // If so, just remove it - as it's inferrable from 'previous'
       return EvaluatedEdge.success(this, target, value)
+   }
+
+   fun failure(value: TypedInstance?): EvaluatedEdge {
+      // TODO : Are we adding any value by having "target" here? -- isn't it always vertex2?
+      // If so, just remove it - as it's inferrable from 'previous'
+      return EvaluatedEdge(this, target, value, "Error")
    }
 }
 
@@ -211,6 +218,11 @@ class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_T
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       val previousValue = requireNotNull(edge.previousValue) {"Cannot evaluate $relationship when previous value was null.  Work with me here!"}
+
+      if(previousValue is TypedNull){
+         return edge.failure(previousValue)
+      }
+
       require(previousValue is TypedObject) {
          "Cannot evaluate $relationship when the previous value isn't a TypedObject - got ${previousValue::class.simpleName}"
       }
