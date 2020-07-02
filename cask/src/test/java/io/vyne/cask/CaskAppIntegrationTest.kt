@@ -125,6 +125,38 @@ Date,Symbol,Open,High,Low,Close
    }
 
    @Test
+   fun canIngestLargeContentViaWebsocketConnection() {
+      var caskRequest = """Date,Symbol,Open,High,Low,Close"""
+      for(i in 1..10000){
+         caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
+      }
+      caskRequest.length.should.be.above(20000) // Default websocket buffer size is 8096
+
+      // mock schema
+      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val output: EmitterProcessor<String> = EmitterProcessor.create()
+      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+
+      val wsConnection = client.execute(uri)
+      { session ->
+         session.send(Mono.just(session.textMessage(caskRequest)))
+            .thenMany(session.receive()
+               .log()
+               .map(WebSocketMessage::getPayloadAsText)
+               .subscribeWith(output))
+            .then()
+      }.subscribe()
+
+      StepVerifier
+         .create(output.take(1).timeout(Duration.ofSeconds(10)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 10000 records"}""")
+         .verifyComplete()
+         .run { wsConnection.dispose() }
+   }
+
+   @Test
    fun canIngestContentViaRestEndpoint() {
       // mock schema
       schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
