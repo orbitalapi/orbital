@@ -2,6 +2,8 @@ package io.vyne.cask
 
 import arrow.core.Either
 import io.vyne.VersionedTypeReference
+import io.vyne.cask.api.CaskConfig
+import io.vyne.cask.api.CaskDetails
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionStream
@@ -31,7 +33,7 @@ class CaskService(private val schemaProvider: SchemaProvider,
    data class TypeError(override val message: String) : CaskServiceError
    data class ContentTypeError(override val message: String) : CaskServiceError
 
-   enum class ContentType { json, csv}
+   enum class ContentType { json, csv }
 
    val supportedContentTypes: List<ContentType> = listOf(ContentType.json, ContentType.csv)
 
@@ -102,6 +104,27 @@ class CaskService(private val schemaProvider: SchemaProvider,
       log().info("CaskMessage cachePath=$cachePath")
       Files.createDirectories(cachePath)
       return cachePath
+   }
+
+   fun getCasks(): List<CaskConfig> {
+      return caskDAO.findAllCaskConfigs()
+   }
+
+   fun getCaskDetails(tableName: String): CaskDetails {
+      val count =  caskDAO.countCaskRecords(tableName)
+      return CaskDetails(count)
+   }
+
+   fun deleteCask(tableName: String) {
+      if(caskDAO.exists(tableName)) {
+         caskDAO.deleteCask(tableName)
+      }
+   }
+
+   fun emptyCask(tableName: String) {
+      if(caskDAO.exists(tableName)) {
+         caskDAO.emptyCask(tableName)
+      }
    }
 }
 

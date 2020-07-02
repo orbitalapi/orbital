@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.io.Resources
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
+import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
@@ -118,7 +119,7 @@ class CaskDAOIntegrationTest {
       caskDao.createCaskConfig(versionedType)
 
       // assert
-      val caskConfigs: MutableList<CaskDAO.CaskConfig> = caskDao.findAllCaskConfigs()
+      val caskConfigs: MutableList<CaskConfig> = caskDao.findAllCaskConfigs()
       caskConfigs.size.should.be.equal(1)
       caskConfigs[0].tableName.should.equal("rderWindowSummary_f1b588_568054")
       caskConfigs[0].qualifiedTypeName.should.equal("OrderWindowSummary")

@@ -1,0 +1,15 @@
+<div *ngIf="sources" class="cask-source-container">
+
+    <mat-accordion multi>
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+            <button mat-button>View sources</button>
+        </mat-expansion-panel-header>
+  
+        <app-code-viewer  [sources]="sources"></app-code-viewer>
+  
+      </mat-expansion-panel>
+    </mat-accordion>
+  
+  </div>
+  
