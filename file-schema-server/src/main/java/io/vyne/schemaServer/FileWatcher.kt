@@ -111,8 +111,10 @@ class FileWatcher(@Value("\${taxi.schema-local-storage}") val schemaLocalStorage
             }
             key.reset()
          }
+      } catch (e: ClosedWatchServiceException) {
+         log().warn("Keys is closed. ${e.message}")
       } catch (e: Exception) {
-         log().error("Error in watch service", e)
+         log().error("Error in watch service: ${e.message}")
       }
    }
 }
