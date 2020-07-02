@@ -7,47 +7,6 @@ type Money {
    currency : CurrencySymbol as String
 }
 
-type ion.Order {
-   eventDate : TransactionEventDate
-   eventTime : TransactionEventTime
-}
-
-type CustomerName inherits String
-type CustomerAge inherits Int
-type CustomerDead inherits Boolean
-
-// Task: Support constant values through type extensions
-type extension ion.Order {
-
-   identifierType : IdentifierType with default IdentifierType.Isin
-   customerName : CustomerName with default 'Jimmy'
-   customerAge : CustomerName with default 42
-   deadyDeadyDeadDead : CustomerDead with default false
-
-   // Seperate task : This should be caught by the type checker, as 42 cannot be assigned to a string
-   customerLastName : CustomerName with default 42
-}
-
-
-// Task: Support type concatenation through type extensions
-type extension ion.Order {
-   transactionEventDateTime : TransactionEventDateTime by (TransactionEventDate + TrasnactionEventTime)
-}
-
-
-type TransactionEventDateTime inherits Instant with defaults (TransactionEventDate + TransactionEventTime,   '2020-06-23T22:30:00Z')
-
-
-type HpcOrder {
-   eventDateTime : TransactionEventDateTime
-}
-
-type ShittyOrder {}
-
-type imadOrder {
-   eventDateTime : TransactionEventDateTime( @format = "yyyy-MM-dd HH:mm:ss.SSSSSSS" )
-}
-
 type CsvTradeRecord {
     counterparty : CustomerId by column(1)
     ccy1 : CurrencySymbol by column(2)
