@@ -5,7 +5,6 @@ import {
   ProfilerOperation,
   QueryHistoryRecord,
   QueryService,
-  RestfulQueryHistoryRecord
 } from '../services/query.service';
 import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
 import {InstanceSelectedEvent} from '../query-wizard/result-display/result-container.component';

@@ -31,6 +31,7 @@ import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
+import java.time.Instant
 import javax.annotation.PreDestroy
 
 @RunWith(SpringRunner::class)
@@ -95,7 +96,7 @@ Date,Symbol,Open,High,Low,Close
 2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
 2020-03-19,NULL,6300,6330,6186.08,6235.2
 2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
-2020-03-19,BTCUSD,6300,6330,6186.08,6235.2""".trimIndent()
+2020-03-19,ETHUSD,6300,6330,6186.08,6235.2""".trimIndent()
 
    @Test
    fun canIngestContentViaWebsocketConnection() {
@@ -124,6 +125,38 @@ Date,Symbol,Open,High,Low,Close
    }
 
    @Test
+   fun canIngestLargeContentViaWebsocketConnection() {
+      var caskRequest = """Date,Symbol,Open,High,Low,Close"""
+      for(i in 1..10000){
+         caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
+      }
+      caskRequest.length.should.be.above(20000) // Default websocket buffer size is 8096
+
+      // mock schema
+      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val output: EmitterProcessor<String> = EmitterProcessor.create()
+      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+
+      val wsConnection = client.execute(uri)
+      { session ->
+         session.send(Mono.just(session.textMessage(caskRequest)))
+            .thenMany(session.receive()
+               .log()
+               .map(WebSocketMessage::getPayloadAsText)
+               .subscribeWith(output))
+            .then()
+      }.subscribe()
+
+      StepVerifier
+         .create(output.take(1).timeout(Duration.ofSeconds(10)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 10000 records"}""")
+         .verifyComplete()
+         .run { wsConnection.dispose() }
+   }
+
+   @Test
    fun canIngestContentViaRestEndpoint() {
       // mock schema
       schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
@@ -143,4 +176,51 @@ Date,Symbol,Open,High,Low,Close
 
          response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
    }
+
+   @Test
+   fun canQueryForCaskData() {
+      // mock schema
+      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      client
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+
+      client
+         .post()
+         .uri("/api/cask/OrderWindowSummaryCsv/symbol/ETHBTC")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("[]")
+
+      val result = client
+         .post()
+         .uri("/api/cask/OrderWindowSummaryCsv/symbol/ETHUSD")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToFlux(OrderWindowSummaryDto::class.java)
+         .collectList()
+         .block()
+
+         result.should.not.be.empty
+   }
+
+   data class OrderWindowSummaryDto(
+      val orderDate: Instant,
+      val symbol: String,
+      val open: Double,
+      val close: Double
+   )
 }

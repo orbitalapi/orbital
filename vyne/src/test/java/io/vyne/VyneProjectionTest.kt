@@ -2,8 +2,7 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
@@ -134,8 +133,20 @@ type InstrumentDescription inherits String
 // common types
 type Instrument {
    id: InstrumentId
+   instrument_type: InstrumentType
    description: InstrumentDescription
 }
+
+enum InstrumentType {
+    Type1,
+    Type2
+}
+
+enum OrderInstrumentType {
+    OrderInstrumentType1 synonym of InstrumentType.Type1,
+    OrderInstrumentType2 synonym of InstrumentType.Type2
+}
+
 enum BankDirection {
    BUY("sell"),
    SELL("buy")
@@ -146,6 +157,7 @@ model CommonOrder {
    date: OrderDate
    direction: BankDirection
    instrument: Instrument
+   orderInstrumentType: OrderInstrumentType
 }
 
 model Order {}
@@ -184,12 +196,13 @@ service InstrumentService {
          override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val instrumentId = parameters[0].second.value as String
-            val instrumentDescription = when (instrumentId) {
-               "instrument0" -> "UST 2Y5Y10Y"
-               "instrument1" -> "GBP/USD 1Year Swap"
+            val (instrumentDescription, instrumentType) = when (instrumentId) {
+               "instrument0" -> "UST 2Y5Y10Y" to "Type1"
+               "instrument1" -> "GBP/USD 1Year Swap" to "Type2"
                else -> TODO("Unknown userId=$instrumentId")
             }
-            val instrumentResponse = """{"id":"$instrumentId", "description": "$instrumentDescription"}"""
+
+            val instrumentResponse = """{"id":"$instrumentId", "description": "$instrumentDescription", "instrument_type": "$instrumentType"}"""
             return vyne.addJsonModel("Instrument", instrumentResponse)
          }
       })
@@ -209,9 +222,11 @@ service InstrumentService {
             Pair("instrument",
                mapOf(
                   Pair("id", "instrument0"),
-                  Pair("description", "UST 2Y5Y10Y")
+                  Pair("description", "UST 2Y5Y10Y"),
+                  Pair("instrument_type", "Type1")
                )
-            )
+            ),
+            Pair("orderInstrumentType", "OrderInstrumentType1")
          )
       )
       resultList[1].should.equal(
@@ -222,13 +237,14 @@ service InstrumentService {
             Pair("instrument",
                mapOf(
                   Pair("id", "instrument1"),
-                  Pair("description", "GBP/USD 1Year Swap")
+                  Pair("description", "GBP/USD 1Year Swap"),
+                  Pair("instrument_type", "Type2")
                )
-            )
+            ),
+            Pair("orderInstrumentType", "OrderInstrumentType2")
          )
       )
    }
-
 
    @Test
    fun `project to CommonOrder with Trades`() {
@@ -241,11 +257,19 @@ type alias TradeId as String
 type alias OrderDate as Date
 type alias Price as Decimal
 type alias TradeNo as String
+type alias IdentifierClass as String
+
+enum Direction {
+   BUY,
+   SELL
+}
 
 model CommonOrder {
    id: OrderId
    date: OrderDate
    tradeNo : TradeNo
+   identifierType: IdentifierClass
+   direction: Direction
 }
 
 model CommonTrade {
@@ -256,6 +280,11 @@ model CommonTrade {
 
 model Order {}
 model Trade {}
+
+type extension CommonOrder {
+   identifierType: IdentifierClass with default 'ISIN'
+   direction: Direction with default Direction.SELL
+}
 
 // Broker specific types
 type Broker1Order inherits Order {
@@ -346,7 +375,9 @@ service Broker1Service {
             mapOf(
                Pair("id", "broker1Order$index"),
                Pair("date", "2020-01-01"),
-               Pair("tradeNo", "trade_no_$index")
+               Pair("tradeNo", "trade_no_$index"),
+               Pair("identifierType", "ISIN"),
+               Pair("direction", "Direction.SELL")
             )
          )
       }
@@ -355,14 +386,130 @@ service Broker1Service {
       getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
    }
 
-   private fun generateBroker1Trades(orderId: String, index: Int, buf: StringBuilder): StringBuilder {
-      val noOfRecords = 1
+   @Test
+   fun `One to Many Mapping Projection works`() {
+      val schema = """
+// Primitives
+type alias OrderId as String
+type alias TradeId as String
+type alias OrderDate as Date
+type alias Price as Decimal
+type alias TradeNo as String
+
+model CommonOrder {
+   id: OrderId
+   date: OrderDate
+   tradeNo : TradeNo
+}
+
+model CommonTrade {
+   id: TradeId
+   orderId: OrderId
+   price: Price
+}
+
+model Order {}
+model Trade {}
+
+// Broker specific types
+type Broker1Order inherits Order {
+   broker1ID: OrderId
+   broker1Date: OrderDate
+   broker1TradeId: TradeId
+}
+
+type Broker1Trade inherits Trade {
+   broker1TradeID: TradeId
+   broker1OrderID: OrderId
+   broker1Price: Price
+   broker1TradeNo: TradeNo
+}
+
+// services
+service Broker1Service {
+   operation getBroker1Orders( start : OrderDate, end : OrderDate) : Broker1Order[] (OrderDate >= start, OrderDate < end)
+   operation getBroker1Trades( orderId: OrderId) : Broker1Trade[]
+   operation findOneByOrderId( orderId: OrderId ) : Broker1Trade
+   operation getBroker1TradesForOrderIds( orderIds: OrderId[]) : Broker1Trade[]
+}
+
+""".trimIndent()
+      val (vyne, stubService) = testVyne(schema)
+      // 1 order and 3 matching trades.
+      val numberOfOrders = 1
+      val numberOfCorrespondingTrades = 3
+      val orders = generateBroker1Orders(numberOfOrders)
+      stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(2)
+            return vyne.parseJsonModel("Broker1Order[]", orders)
+         }
+      })
+
+      var getBroker1TradesForOrderIdsInvocationCount = 0
+      stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(1)
+            val orderIds = parameters[0].second.value as List<TypedValue>
+            val buf = StringBuilder("[")
+            (0..(numberOfCorrespondingTrades - 1)).forEach { index ->
+               generateBroker1Trades(orderIds.first().value as String, 0, buf, index, "10.$index")
+               if (index < 2) {
+                  buf.append(",")
+               }
+            }
+            buf.append("]")
+            getBroker1TradesForOrderIdsInvocationCount++
+            return vyne.parseJsonModel("Broker1Trade[]", buf.toString().trimIndent())
+         }
+      })
+
+      var findOneByOrderIdInvocationCount = 0
+      stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(1)
+            val orderId = parameters[0].second.value as String
+            findOneByOrderIdInvocationCount++
+            return vyne.parseJsonModel("Broker1Trade", """
+               {
+                  "broker1OrderID" : "broker1Order$orderId",
+                  "broker1TradeID" : "trade_id_$orderId",
+                  "broker1Price"   : 10.1,
+                  "broker1TradeNo": "trade_no_$orderId"
+               }
+            """.trimIndent())
+         }
+      })
+
+      // act
+      val result = vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+
+      // assert
+      expect(result.isFullyResolved).to.be.`true`
+      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
+      resultList.size.should.be.equal(numberOfCorrespondingTrades)
+      resultList.forEachIndexed { index, result ->
+         result.should.equal(
+            mapOf(
+               Pair("id", "broker1Order0"),
+               Pair("date", "2020-01-01"),
+               Pair("tradeNo", "trade_no_$index")
+            )
+         )
+      }
+      findOneByOrderIdInvocationCount.should.equal(0)
+      getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
+   }
+   private fun generateBroker1Trades(orderId: String, index: Int, buf: StringBuilder, tradeId: Int? = null, price: String? = null): StringBuilder {
+      val brokerTraderId = tradeId?.let { "trade_id_$it" } ?: "trade_id_$index"
+      val brokerTradeNo = tradeId?.let { "trade_no_$it" } ?: "trade_no_$index"
+      val brokerPrice = price ?: "10.1"
       buf.append("""
          {
             "broker1OrderID" : "$orderId",
-            "broker1TradeID" : "trade_id_$index",
-            "broker1Price"   : "10.1",
-            "broker1TradeNo": "trade_no_$index"
+            "broker1TradeID" :  "$brokerTraderId",
+            "broker1Price"   : "$brokerPrice",
+            "broker1TradeNo": "$brokerTradeNo"
          }
          """.trimMargin())
       return buf
@@ -408,5 +555,58 @@ service Broker1Service {
       return buf.toString()
    }
 
+   @Test
+   fun `missing Country does not break Client projection`() {
+      // prepare
+      val testSchema = """
+         model Client {
+            name : PersonName as String
+            country : CountryCode as String
+         }
+         model Country {
+             countryCode : CountryCode
+             countryName : CountryName as String
+         }
+         model ClientAndCountry {
+            personName : PersonName
+            countryName : CountryName
+         }
+
+         service MultipleInvocationService {
+            operation getCustomers():Client[]
+            operation getCountry(CountryCode): Country
+         }
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(testSchema)
+      stubService.addResponse("getCustomers", vyne.parseJsonModel("Client[]", """
+         [
+            { name : "Jimmy", country : "UK" },
+            { name : "Devrim", country : "TR" }
+         ]
+         """.trimIndent()))
+
+      stubService.addResponse("getCountry", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            val countryCode = parameters.first().second.value!!.toString()
+            return if (countryCode == "UK") {
+               vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
+            } else {
+               TypedObject(vyne.schema.type("Country"), emptyMap(), Provided)
+            }
+         }
+      })
+
+      // act
+      val result =  vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+
+      // assert
+      result.resultMap.get("lang.taxi.Array<ClientAndCountry>").should.be.equal(
+         listOf(
+            mapOf("personName" to "Jimmy", "countryName" to "United Kingdom"),
+            mapOf("personName" to "Devrim")
+         )
+      )
+   }
 }
 
