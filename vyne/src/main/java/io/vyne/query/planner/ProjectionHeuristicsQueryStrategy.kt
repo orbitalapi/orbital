@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit
 
 class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator: OperationInvocationEvaluator) : QueryStrategy {
    private val cache = CacheBuilder.newBuilder()
-      .maximumSize(10) // arbitary cache size, we can explore tuning this later
       .weakKeys()
       .build<Type, ProjectionHeuristicsGraphSearchResult>()
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
