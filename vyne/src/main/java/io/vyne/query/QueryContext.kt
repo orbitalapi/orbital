@@ -111,6 +111,22 @@ data class QueryResult(
 
          }
       }
+
+   override fun historyRecord(): HistoryQueryResponse {
+      return HistoryQueryResponse(
+         resultMap,
+         unmatchedNodeNames,
+         this.isFullyResolved,
+         queryResponseId,
+         resultMode,
+         profilerOperation?.toDto(),
+         remoteCalls,
+         timings)
+   }
+
+
+   // HACK : Put this last, so that other stuff is serialized first
+   val lineageGraph = LineageGraph
 }
 
 // Note : Also models failures, so is fairly generic
@@ -132,6 +148,8 @@ interface QueryResponse {
       get() = profilerOperation?.vyneCost ?: 0L
 
    val resultMode: ResultMode
+
+   fun historyRecord(): HistoryQueryResponse
 }
 
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {

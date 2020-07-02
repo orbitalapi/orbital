@@ -39,7 +39,7 @@ class TypeNamedInstanceDeserializer : JsonDeserializer<TypeNamedInstance>() {
          val typeName = rawMap.getValue("typeName") as String
          val value = deserializeValue(rawMap.getValue("value"))
          val sourceReference = rawMap["sourceReference"] as Int?
-         return TypeNamedInstance(typeName, value, sourceReference = sourceReference)
+         return TypeNamedInstance(typeName, value)
       }
       return rawMap.map { (key, value) ->
          key to deserializeValue(value)

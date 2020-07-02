@@ -3,8 +3,8 @@
       class="chart-container" [links]="typeLinks.links"
                (legendLabelClick)="onLegendLabelClick($event)"
                [nodes]="typeLinks.nodes"
-               autoZoom="true"
-               autoCenter="true"
+               [autoZoom]="true"
+               [autoCenter]="true"
                [scheme]="colorScheme" [orientation]="orientation"
                [curve]="curve" (select)="select($event)">
 

@@ -1,8 +1,4 @@
 <div>
-  <!--<div class="result-status success-display" *ngIf="isSuccess">-->
-  <!--<i class="material-icons">check_circle_outline</i>-->
-  <!--<span>Success!</span>-->
-  <!--</div>-->
   <div class="result-status error-display" *ngIf="isError">
     <i class="material-icons">error_outline</i>
     <span>{{ result.message }}</span>
@@ -18,7 +14,9 @@
         <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-object-view">
           <app-object-view [instance]="getResultForTypeName(resultTypeName)"
                            [schema]="schema"
+                           [selectable]="true"
                            [type]="getTypeIfNotIncluded(resultTypeName)"
+                           (instanceClicked)="instanceClicked($event)"
           ></app-object-view>
         </div>
       </mat-tab>
@@ -27,7 +25,8 @@
 
           <app-simple-code-viewer name="Json" [content]="getResultForTypeName(resultTypeName)"
                                   lang="json"></app-simple-code-viewer>
-        </div>      </mat-tab>
+        </div>
+      </mat-tab>
 
     </mat-tab-group>
 

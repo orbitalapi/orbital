@@ -220,6 +220,7 @@ export interface SchemaGraphNode {
   type: string; // Consider adding the enum ElementType here
   nodeId: string;
   subHeader?: string | null;
+  value?: any | null;
 }
 
 export interface SchemaGraphLink {

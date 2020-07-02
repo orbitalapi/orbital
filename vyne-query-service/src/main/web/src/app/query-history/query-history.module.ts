@@ -9,6 +9,8 @@ import {MomentModule} from 'ngx-moment';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import { VyneqlRecordComponent } from './vyneql-record.component';
 import { RestfulRecordComponent } from './restful-record.component';
+import {MatSidenavModule} from '@angular/material/sidenav';
+import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
 
 @NgModule({
   imports: [
@@ -18,7 +20,9 @@ import { RestfulRecordComponent } from './restful-record.component';
     MatButtonModule,
     ResultViewerModule,
     MomentModule,
-    MatToolbarModule
+    MatToolbarModule,
+    MatSidenavModule,
+    TypedInstancePanelModule
   ],
   exports: [QueryHistoryComponent],
   declarations: [QueryHistoryComponent, VyneqlRecordComponent, RestfulRecordComponent],

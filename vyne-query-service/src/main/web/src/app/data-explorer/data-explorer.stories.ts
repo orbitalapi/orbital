@@ -59,20 +59,6 @@ storiesOf('Data Explorer', module)
       props: {}
     };
   })
-  .add('typed instance panel', () => {
-    return {
-      template: `<div style="margin: 20px">
-        <app-typed-instance-panel [instance]="value" [type]="testType"></app-typed-instance-panel>
-    </div>`,
-      props: {
-        testType: sampleOrderEventType,
-        value: {
-          'typeName': 'bank.orders.OrderEventType',
-          'value': 'Open'
-        }
-      }
-    };
-  })
   .add('cask panel', () => {
     return {
       template: `<div style="margin: 20px">

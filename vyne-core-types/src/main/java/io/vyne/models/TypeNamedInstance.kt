@@ -1,6 +1,5 @@
 package io.vyne.models
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.schemas.QualifiedName
@@ -12,9 +11,7 @@ import io.vyne.schemas.VersionedType
 data class TypeNamedInstance(
    val typeName: String,
    val value: Any?,
-   @get:JsonIgnore
-   val source: DataSource? = null,
-   val sourceReference: Int? = null
+   val source: DataSource? = null
 ) {
    constructor(typeName: QualifiedName, value: Any?, source:DataSource? = null) : this(typeName.fullyQualifiedName, value, source)
 }
