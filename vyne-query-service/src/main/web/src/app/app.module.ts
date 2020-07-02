@@ -30,6 +30,7 @@ import {TypeListModule} from './type-list/type-list.module';
 import {TypeListComponent} from './type-list/type-list.component';
 import {SchemaExplorerModule} from './schema-explorer/schema-explorer.module';
 import {VyneModule} from './vyne/vyne.module';
+import { ResultsTableComponent } from './results-table/results-table.component';
 
 export const routerModule = RouterModule.forRoot(
   [

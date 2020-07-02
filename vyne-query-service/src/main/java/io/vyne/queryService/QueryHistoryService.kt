@@ -23,6 +23,7 @@ class QueryHistoryService(private val history: QueryHistory) {
 
    @GetMapping("/api/query/history")
    fun listHistory(): String {
+
       val queries = history.list()
          .toStream().toList()
       val json = Lineage.newLineageAwareJsonMapper()
