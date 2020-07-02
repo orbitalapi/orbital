@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import io.vyne.cask.api.CaskApi
 import io.vyne.query.VyneJacksonModule
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
 import io.vyne.spring.SchemaPublicationMethod
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.servlet.config.annotation.CorsRegistry
@@ -22,6 +24,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 @EnableConfigurationProperties(QueryServerConfig::class)
 @EnableVyneEmbeddedSearch
 @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
+@EnableFeignClients(clients = [CaskApi::class])
 class QueryServiceApp {
 
    companion object {

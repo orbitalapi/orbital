@@ -1,0 +1,34 @@
+@import "src/theme";
+@import "src/toolbar";
+
+.title-bar {
+  background-color: $light-purple-grey;
+  display: flex;
+  h4 {
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+  }
+  button {
+    width: unset !important;
+    height: unset !important;
+    line-height: unset !important;
+  }
+  padding: 10px;
+}
+
+.list-container {
+  width: 400px;
+  height: 100%;
+  background-color: $light-purple-grey;
+  border-right: 1px solid $light-purple-grey-300;
+}
+
+.container {
+  height: 100%;
+  display: flex;
+
+  .results-section {
+    flex-grow: 1;
+  }
+}

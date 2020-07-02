@@ -5,9 +5,7 @@ import {
   ProfilerOperation,
   QueryHistoryRecord,
   QueryService,
-  RestfulQueryHistoryRecord
 } from '../services/query.service';
-import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
 
 @Component({
   selector: 'app-query-history',

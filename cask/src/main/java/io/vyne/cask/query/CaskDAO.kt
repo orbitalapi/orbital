@@ -1,5 +1,6 @@
 package io.vyne.cask.query
 
+import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ddl.caskRecordTable
@@ -229,9 +230,9 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
          val sources = versionedType.sources.map { it.content }
          val timestamp = Instant.now()
 
-         val count = jdbcTemplate.queryForObject("SELECT COUNT(*) from CASK_CONFIG WHERE tableName=?", arrayOf(tableName), Int::class.java)
+         val exists = exists(tableName)
 
-         if (count > 0) {
+         if (exists) {
             log().info("CaskConfig already exists for type=${versionedType.versionedName}, tableName=$tableName")
             return@timed
          }
@@ -251,6 +252,32 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       }
    }
 
+   fun countCasks(tableName : String): Int {
+      return jdbcTemplate.queryForObject("SELECT COUNT(*) from CASK_CONFIG WHERE tableName=?", arrayOf(tableName), Int::class.java)
+   }
+
+   fun exists(tableName: String) = countCasks(tableName) > 0
+
+   // ############################
+   // ### COUNT Cask
+   // ############################
+   fun countCaskRecords(tableName: String): Int {
+      return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM $tableName", Int::class.java)
+   }
+
+   // ############################
+   // ### DELETE/EMPTY Cask
+   // ############################
+
+   fun deleteCask(tableName: String) {
+         jdbcTemplate.update("DELETE FROM CASK_CONFIG WHERE tableName=?", tableName)
+         jdbcTemplate.update("DROP TABLE ${tableName}")
+   }
+
+   fun emptyCask(tableName: String) {
+      jdbcTemplate.update("TRUNCATE ${tableName}")
+   }
+
    private val ADD_CASK_CONFIG = """INSERT into CASK_CONFIG (
         | tableName,
         | qualifiedTypeName,
@@ -261,15 +288,6 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
         | deltaAgainstTableName)
         | values ( ? , ? , ?, ?, ?, ?, ?)""".trimMargin()
 
-   data class CaskConfig(
-      val tableName: String,
-      val qualifiedTypeName: String,
-      val versionHash: String,
-      val sourceSchemaIds: List<String>,
-      val sources: List<String>,
-      val deltaAgainstTableName: String?,
-      val insertedAt: Instant
-   )
 
    private val caskConfigRowMapper: (ResultSet, Int) -> CaskConfig = { rs: ResultSet, rowNum: Int ->
       CaskConfig(
