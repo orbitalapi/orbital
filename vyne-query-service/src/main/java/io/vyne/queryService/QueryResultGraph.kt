@@ -28,7 +28,7 @@ class QueryResultGraph(
          }
          is TypedInstance -> {
             val sourceReference = calculateSourceReference(value)
-            listOf(TypeNamedInstance(value.type.fullyQualifiedName, value.value, sourceReference = sourceReference))
+            listOf(TypeNamedInstance(value.type.fullyQualifiedName, value.value))
          }
          else -> TODO("Value type ${value?.javaClass} not supported")
       }
@@ -39,16 +39,16 @@ class QueryResultGraph(
          is TypedCollection -> {
             val sourceReference = calculateSourceReference(value)
             val values = value.value.map { mapToTypeNamedInstance(it) }
-            TypeNamedInstance(value.type.fullyQualifiedName, values, sourceReference = sourceReference)
+            TypeNamedInstance(value.type.fullyQualifiedName, values)
          }
          is TypedObject -> {
             val sourceReference = calculateSourceReference(value)
             val values = value.value.map { it.key to mapToTypeNamedInstance(it.value) }.toMap()
-            TypeNamedInstance(value.type.fullyQualifiedName, values, sourceReference = sourceReference)
+            TypeNamedInstance(value.type.fullyQualifiedName, values)
          }
          is TypedInstance -> {
             val sourceReference = calculateSourceReference(value)
-            TypeNamedInstance(value.type.fullyQualifiedName, value.value, sourceReference = sourceReference)
+            TypeNamedInstance(value.type.fullyQualifiedName, value.value)
          }
          else -> TODO("Value type ${value?.javaClass} not supported")
       }

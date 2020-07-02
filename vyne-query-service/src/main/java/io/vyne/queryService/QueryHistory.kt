@@ -5,13 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.google.common.collect.EvictingQueue
 import io.vyne.models.DataSource
 import io.vyne.models.TypeNamedInstance
-import io.vyne.query.OperationType
-import io.vyne.query.ProfilerOperationDTO
-import io.vyne.query.Query
-import io.vyne.query.QueryResponse
-import io.vyne.query.QueryResult
-import io.vyne.query.RemoteCall
-import io.vyne.query.ResultMode
+import io.vyne.query.*
 import io.vyne.schemas.Path
 import io.vyne.schemas.QualifiedName
 import io.vyne.utils.log
@@ -31,7 +25,7 @@ interface QueryHistory {
 
 @Component
 @ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}') and \${vyne.query-history.enabled:true}")
-class InMemoryQueryHistory: QueryHistory {
+class InMemoryQueryHistory : QueryHistory {
 
    private val queries = EvictingQueue.create<QueryHistoryRecord<out Any>>(10);
    override fun add(record: QueryHistoryRecord<out Any>) {
@@ -50,11 +44,12 @@ class InMemoryQueryHistory: QueryHistory {
    override fun get(id: String): Mono<QueryHistoryRecord<out Any>> {
       // There's only 50 at the moment, so indexing isn't worth it.
       // Address this later.
-     val match = queries.first { it.id == id }
+      val match = queries.first { it.id == id }
       return Mono.just(match)
    }
 
 }
+
 @JsonTypeInfo(
    use = JsonTypeInfo.Id.CLASS,
    include = JsonTypeInfo.As.PROPERTY,
@@ -68,6 +63,7 @@ interface QueryHistoryRecord<T> {
          return response.queryResponseId
       }
 }
+
 data class VyneQlQueryHistoryRecord(
    override val query: VyneQLQueryString,
    override val response: HistoryQueryResponse,
@@ -80,53 +76,4 @@ data class RestfulQueryHistoryRecord(
    override val timestamp: Instant = Instant.now()
 ) : QueryHistoryRecord<Query>
 
-data class HistoryQueryResponse(val results: Map<String, Any?>,
-                                val resultsVerbose: Map<String, List<TypeNamedInstance>>,
-                                val sources: List<DataSource>,
-                                val unmatchedNodes: List<QualifiedName>,
-                                val path: Path? = null,
-                                val queryResponseId: String = UUID.randomUUID().toString(),
-                                val resultMode: ResultMode,
-                                val profilerOperation: ProfilerOperationDTO?,
-                                val remoteCalls: List<RemoteCall>,
-                                val timings: Map<OperationType, Long>,
-                                @get:JsonProperty("fullyResolved")
-                                val fullyResolved: Boolean,
-                                val truncated: Boolean? = false) {
-   companion object {
-      fun from(response: QueryResponse): HistoryQueryResponse {
-         return when (response) {
-            is QueryResult -> {
-               val queryResultGraph = QueryResultGraph(response.results, response.resultMode)
-               return HistoryQueryResponse(
-                  response.resultMap,
-                  queryResultGraph.buildResultsVerbose(),
-                  queryResultGraph.resultSources,
-                  response.unmatchedNodeNames,
-                  response.path,
-                  response.queryResponseId,
-                  response.resultMode,
-                  response.profilerOperation?.toDto(),
-                  response.remoteCalls,
-                  response.timings,
-                  response.isFullyResolved)
-            }
-            else -> {
-               HistoryQueryResponse(
-                  emptyMap(),
-                  emptyMap(),
-                  listOf(),
-                  emptyList(),
-                  null,
-                  response.queryResponseId,
-                  response.resultMode,
-                  response.profilerOperation?.toDto(),
-                  emptyList(),
-                  emptyMap(),
-                  false)
-            }
-         }
-      }
-   }
-}
 

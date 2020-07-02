@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import io.vyne.query.TaxiJacksonModule
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.VyneJacksonModule
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch

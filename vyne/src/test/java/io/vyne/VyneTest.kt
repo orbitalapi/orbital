@@ -2,10 +2,7 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.Provided
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
@@ -940,7 +937,7 @@ service Broker2Service {
 
    @Test
    fun `retrieve all types that can discovered through single argument function invocations`() {
-     val testSchema =  """
+      val testSchema = """
 namespace vyne.example
 type Invoice {
    clientId : ClientId
@@ -1050,8 +1047,8 @@ service ClientService {
    }
 }
 
-fun Vyne.typedValue(typeName: String, value: Any): TypedInstance {
-   return TypedInstance.from(this.getType(typeName), value, this.schema, source = Provided)
+fun Vyne.typedValue(typeName: String, value: Any, source: DataSource = Provided): TypedInstance {
+   return TypedInstance.from(this.getType(typeName), value, this.schema, source = source)
 //   return TypedValue.from(this.getType(typeName), value)
 }
 

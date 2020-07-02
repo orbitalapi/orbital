@@ -7,6 +7,8 @@ import {ObjectViewModule} from '../../object-view/object-view.module';
 import {VyneServicesModule} from '../../services/vyne-services.module';
 import {SimpleCodeViewerModule} from '../../simple-code-viewer/simple-code-viewer.module';
 import {CallExplorerModule} from '../taxi-viewer/call-explorer/call-explorer.module';
+import {MatSidenavModule} from '@angular/material/sidenav';
+import {TypedInstancePanelModule} from '../../typed-instance-panel/typed-instance-panel.module';
 
 
 @NgModule({

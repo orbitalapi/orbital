@@ -16,6 +16,25 @@
   padding: 10px;
 }
 
+::ng-deep .mat-drawer-content {
+  // Was getting unnessary horizontal scrollbars in the drawer area.
+  overflow-x: hidden;
+}
+
+mat-sidenav-container {
+  height: 100%;
+}
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .container {
+    flex-grow: 1;
+  }
+}
+
 .container {
   height: 100%;
   display: flex;
@@ -45,3 +64,7 @@
   }
 }
 
+.drawer-content {
+  margin: 2rem 3rem;
+  width: 40vw;
+}
