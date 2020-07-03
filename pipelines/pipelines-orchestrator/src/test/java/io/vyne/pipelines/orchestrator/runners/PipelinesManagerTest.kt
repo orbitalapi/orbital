@@ -1,14 +1,14 @@
 package io.vyne.pipelines.orchestrator.runners
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
 import io.vyne.pipelines.PIPELINE_METADATA_KEY
-import io.vyne.pipelines.orchestrator.PipelineAlreadyExistsException
-import io.vyne.pipelines.orchestrator.PipelineReference
+import io.vyne.pipelines.orchestrator.*
 import io.vyne.pipelines.orchestrator.PipelineState.*
-import io.vyne.pipelines.orchestrator.PipelinesManager
-import io.vyne.pipelines.orchestrator.RunningPipelineDiscoverer
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,6 +16,7 @@ import org.mockito.Mock
 import org.mockito.junit.MockitoJUnitRunner
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
+import java.net.URI
 
 @RunWith(MockitoJUnitRunner::class)
 class PipelinesManagerTest {
@@ -31,10 +32,17 @@ class PipelinesManagerTest {
    @Mock
    lateinit var runningPipelineDiscoverer: RunningPipelineDiscoverer
 
+   @Mock
+   lateinit var objectMapper: ObjectMapper
+
    @Before
    fun setup() {
+     whenever(objectMapper.convertValue(any(), eq(PipelineRunnerInstance::class.java))).thenAnswer {
+        val instance = it.getArgument(0) as ServiceInstance
+        PipelineRunnerInstance(instance.instanceId, instance.uri.toString())
+     }
 
-      manager = PipelinesManager(discoveryClient, pipelineRunnerApi, runningPipelineDiscoverer)
+      manager = PipelinesManager(discoveryClient, pipelineRunnerApi, runningPipelineDiscoverer, objectMapper)
    }
 
    @Test
@@ -227,18 +235,23 @@ class PipelinesManagerTest {
    }
 
    private fun freeRunner(instanceName: String): ServiceInstance {
-      val instance = mock<ServiceInstance>()
-      whenever(instance.instanceId).thenReturn(instanceName)
-      return instance
+      return runner(instanceName)
    }
 
    private fun busyRunner(instanceName: String, pipelineName: String): ServiceInstance {
-      val instance = mock<ServiceInstance>()
+      val instance = runner(instanceName)
       whenever(instance.metadata).thenReturn(mapOf(
          PIPELINE_METADATA_KEY to """ {"name" : "$pipelineName"} """,
          "name" to pipelineName
       ))
+
+      return instance
+   }
+
+   private fun runner(instanceName: String): ServiceInstance {
+      val instance = mock<ServiceInstance>()
       whenever(instance.instanceId).thenReturn(instanceName)
+      whenever(instance.uri).thenReturn(URI("http://${instanceName}"))
       return instance
    }
 

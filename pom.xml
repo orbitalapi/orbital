@@ -29,6 +29,7 @@
       <spring.cloud.netflix.version>2.2.3.RELEASE</spring.cloud.netflix.version>
       <arrow.version>0.10.4</arrow.version>
       <logstash.logback.version>6.4</logstash.logback.version>
+      <swagger.springfox.version>2.9.2</swagger.springfox.version>
    </properties>
 
    <modules>
@@ -256,6 +257,16 @@
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash.logback.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+            <version>${swagger.springfox.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger-ui</artifactId>
+            <version>${swagger.springfox.version}</version>
          </dependency>
       </dependencies>
    </dependencyManagement>
