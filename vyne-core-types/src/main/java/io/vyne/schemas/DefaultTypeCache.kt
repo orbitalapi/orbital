@@ -14,6 +14,7 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
    init {
       types.forEach { add(it) }
       recalculateShortNames()
+      populateDefaultValuesCache()
    }
 
    val types: Set<Type>
@@ -40,6 +41,20 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
          }.toMap()
    }
 
+   fun populateDefaultValuesCache() {
+      cache.forEach {  (name: QualifiedName, type) ->
+         defaultValueCache[name] = (type.taxiType as? ObjectType)
+            ?.fields
+            ?.filter { field -> field.defaultValue != null }
+            ?.map { field -> Pair(field.name,
+            TypedValue.from(
+               type = type(field.type.qualifiedName.fqn()),
+               value = field.defaultValue!!,
+               converter = ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)) }
+            ?.toMap()
+      }
+   }
+
    /**
     * Adds the type to the cache, and returns a new copy, with the
     * type cache updated.
@@ -48,12 +63,6 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
       val withReference = type.copy(typeCache = this)
       cache[type.name] = withReference
       recalculateShortNames()
-      defaultValueCache[type.name] = (withReference.taxiType as? ObjectType)?.
-      fields?.filter { field -> field.defaultValue != null }?.map { field -> Pair(field.name,
-         TypedValue.from(
-            type = type(field.type.qualifiedName.fqn()),
-            value = field.defaultValue!!,
-            converter = ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)) }?.toMap()
       return withReference
    }
 

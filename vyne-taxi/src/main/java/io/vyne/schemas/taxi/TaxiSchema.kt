@@ -181,6 +181,7 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
             ))
          }
       }
+      typeCache.populateDefaultValuesCache()
       return typeCache.types
    }
 
