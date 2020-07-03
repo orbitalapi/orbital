@@ -93,7 +93,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
     * operation(orderIds: OrderId[]): Trade[]
     */
    private fun fetchFromGraph(target: Set<QuerySpecTypeNode>, context: QueryContext): ProjectionHeuristicsGraphSearchResult {
-      return timed("fetch from Graph") {
+      return timed("fetch from Graph", log = false) {
          graphSearchResult(target, context)?.let { firstMatch ->
             findFetchManyOperation(firstMatch, context)?.let { (candidateService, candidateOperation, joinType) ->
                return@timed processRemoteCallResults(candidateOperation, candidateService, context, joinType)
