@@ -24,40 +24,14 @@ export class EnumTableComponent {
     }
   }
 
-  get enums(): EnumValues[] {
-    if (!this.schemaMember) {
-      return [];
-    }
-    return this.type.enumValues;
-  }
 
   typeDoc(index: number): string {
     return this.type.enumValues[index].typeDoc || '';
   }
 
-  enumValues(): EnumValues[] {
-    return this.type.enumValues;
-  }
-
-  shortDisplayName(i: number, index: number): string {
-    const synonym = this.type.enumValues[i].synonyms[index] || '';
-    return synonym || '';
-  }
-
-  longDisplayName(): string {
-    return this.type.name.longDisplayName;
-  }
-
-  synonyms(index?: number): EnumValues {
-    return this.type.enumValues[index];
-  }
-
-  routerLinkFor(i: number, index: number): string[] {
-    const synonym = this.type.enumValues[i].synonyms[index];
-    let route;
-    if (synonym) {
-      route = QualifiedName.from(synonym).namespace;
-    }
-    return ['/types', route || ''];
+  routerLinkFor(synonym: string): string[] {
+    const parts = synonym.split('.');
+    const enumName = parts.slice(0, parts.length - 1).join('.');
+    return ['/types', enumName];
   }
 }

@@ -1,12 +1,13 @@
 package io.vyne.queryService
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
 import io.vyne.schemas.Schema
-import io.vyne.schemas.TypeLightView
 import io.vyne.spring.VyneFactory
 import io.vyne.utils.log
 import io.vyne.utils.timed
@@ -15,9 +16,10 @@ import lang.taxi.CompilationException
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import java.util.*
+import java.util.UUID
 
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -30,7 +32,7 @@ data class FailedSearchResponse(val message: String,
 ) : QueryResponse {
    override val isFullyResolved: Boolean = false
    override fun historyRecord(): HistoryQueryResponse {
-      return HistoryQueryResponse(mapOf(), listOf(), null, queryResponseId, resultMode, profilerOperation?.toDto(), listOf(), mapOf(), false)
+      return HistoryQueryResponse(mapOf(), listOf(), false, queryResponseId, resultMode, profilerOperation?.toDto(), listOf(), mapOf())
    }
 }
 
@@ -45,29 +47,42 @@ data class FailedSearchResponse(val message: String,
 class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
 
    @PostMapping("/api/query")
-   fun submitQuery(@RequestBody query: Query): QueryResponse {
-      val response = executeQuery(query)
+   fun submitQuery(@RequestBody query: Query): String {
+      val response = executeQuery(query) as QueryResult
+
+      // We handle the serialization here, and return a string, rather than
+      // letting Spring handle it.
+      // This is because the LineageGraphSerializationModule() is stateful, and
+      // shares references during serialization.  Therefore, it's not threadsafe, so
+      // we create an instance per response.
+      val json = jacksonObjectMapper()
+         .registerModule(LineageGraphSerializationModule())
+         .writerWithDefaultPrettyPrinter()
+         .writeValueAsString(response)
+
       history.add(RestfulQueryHistoryRecord(query, response.historyRecord()))
-      return response
+      return json
    }
 
    @PostMapping("/api/vyneql")
-   fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString): QueryResponse {
+   fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString,
+                         @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode): QueryResponse {
       log().info("VyneQL query => $query")
       return timed("QueryService.submitVyneQlQuery") {
          val vyne = vyneFactory.createVyne()
          val response: QueryResponse = try {
-            vyne.query(query)
+            vyne.query(query, resultMode)
          } catch (e: CompilationException) {
             FailedSearchResponse(
                message = e.message!!, // Message contains the error messages from the compiler
                profilerOperation = null,
-               resultMode = ResultMode.SIMPLE
+               resultMode = resultMode
             )
          }
 
-         history.add(VyneQlQueryHistoryRecord(query, response.historyRecord()))
-         response
+         val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
+         history.add(record)
+         response // consider returning record here
       }
    }
 
@@ -97,7 +112,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
    private fun parseFacts(facts: List<Fact>, schema: Schema): List<Pair<TypedInstance, FactSetId>> {
 
       return facts.map { (typeName, value, factSetId) ->
-         TypedInstance.from(schema.type(typeName), value, schema) to factSetId
+         TypedInstance.from(schema.type(typeName), value, schema, source = Provided) to factSetId
       }
    }
 }

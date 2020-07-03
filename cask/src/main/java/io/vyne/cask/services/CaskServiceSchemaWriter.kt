@@ -6,6 +6,7 @@ import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
+import lang.taxi.types.ArrayType
 import lang.taxi.types.PrimitiveType
 import org.springframework.stereotype.Component
 import java.lang.StringBuilder
@@ -32,9 +33,9 @@ class CaskServiceSchemaWriter(private val schemaStoreClient: SchemaStoreClient, 
       val serviceTypeNames = taxiDocument.types.map { type -> type.qualifiedName }
       taxiDocument.services.forEach { service ->
          service.operations.forEach { operation ->
-            val returnTypeName = operation.returnType.qualifiedName
+            val returnTypeName =  if (operation.returnType is ArrayType) (operation.returnType as ArrayType).type.qualifiedName else operation.returnType.qualifiedName
             if (!serviceTypeNames.contains(returnTypeName) && !PrimitiveType.isPrimitiveType(returnTypeName)) {
-               importStatements.add("import ${operation.returnType.qualifiedName}")
+               importStatements.add("import $returnTypeName")
             }
             operation.parameters.forEach { parameter ->
                val paramTypeName = parameter.type.qualifiedName

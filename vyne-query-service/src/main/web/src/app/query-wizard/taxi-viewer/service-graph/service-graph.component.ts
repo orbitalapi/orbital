@@ -104,8 +104,8 @@ export class ServiceGraphComponent implements AfterViewInit {
       return {
         node: {
           id: index.toString(),
-          label: QualifiedName.nameOnly(remoteCall.service.fullyQualifiedName) + '.' + remoteCall.operation,
-          returnType: `${remoteCall.responseTypeName.name}`,
+          label: QualifiedName.nameOnly(remoteCall.operationQualifiedName) + '.' + remoteCall.operation,
+          returnType: `${remoteCall.responseTypeName}`,
           nodeId: index.toString(),
           type: 'operation'
         },

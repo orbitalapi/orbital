@@ -2,7 +2,9 @@ package io.vyne.query.graph
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import es.usc.citius.hipster.graph.GraphEdge
+import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
@@ -55,6 +57,12 @@ data class EvaluatableEdge(
       // If so, just remove it - as it's inferrable from 'previous'
       return EvaluatedEdge.success(this, target, value)
    }
+
+   fun failure(value: TypedInstance?): EvaluatedEdge {
+      // TODO : Are we adding any value by having "target" here? -- isn't it always vertex2?
+      // If so, just remove it - as it's inferrable from 'previous'
+      return EvaluatedEdge(this, target, value, "Error")
+   }
 }
 
 interface EdgeEvaluator {
@@ -91,19 +99,21 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
 class ParameterFactory {
    fun discover(paramType: Type, context: QueryContext): TypedInstance {
       // First, search only the top level for facts
-      if (context.hasFactOfType(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)) {
+      val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
+      if (firstLevelDiscovery != null) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
          // TODO (2) : Fail if there are multiple instances
-         return context.getFact(paramType)
+         return firstLevelDiscovery
       }
 
       // Check to see if there's exactly one instance somewhere within the context
       // Note : I'm cheating here, I really should find the value required by retracing steps
       // walked in the path.  But, it's unclear if this is possible, given the scattered way that
       // the algorithims are evaluated
-      if (context.hasFactOfType(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
+      val anyDepthOneDistinct = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+      if (anyDepthOneDistinct != null) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
-         return context.getFact(paramType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+         return anyDepthOneDistinct
       }
 
 //      if (startingPoint.type == paramType) {
@@ -126,13 +136,11 @@ class ParameterFactory {
          // Try restructing this to a strategy approach.
          // Can we try searching within the context before we try constructing?
          // what are the impacts?
-         var attributeValue: TypedInstance? = null
+         var attributeValue: TypedInstance? = context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
 
          // First, look in the context to see if it's there.
-         if (context.hasFactOfType(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
-            attributeValue = context.getFact(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
-         } else {
-
+         if (attributeValue == null)
+         {
             // ... if not, try and find the value in the graph
             val queryResult = context.find(QuerySpecTypeNode(attributeType))
             if (queryResult.isFullyResolved) {
@@ -157,7 +165,7 @@ class ParameterFactory {
          // else ... attributeValue != null -- we found it.  Good work team, move on.
          attributeName to attributeValue
       }.toMap()
-      return TypedObject(paramType, fields)
+      return TypedObject(paramType, fields, MixedSources)
    }
 
 }
@@ -210,12 +218,24 @@ class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_T
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       val previousValue = requireNotNull(edge.previousValue) {"Cannot evaluate $relationship when previous value was null.  Work with me here!"}
+
+      if(previousValue is TypedNull){
+         return edge.failure(previousValue)
+      }
+
       require(previousValue is TypedObject) {
          "Cannot evaluate $relationship when the previous value isn't a TypedObject - got ${previousValue::class.simpleName}"
       }
+
+      // TypedObject has no attributes - service returned no value, returning failure response
+      if (previousValue.isEmpty()) {
+         return edge.failure(null)
+      }
+
       val previousObject = previousValue as TypedObject
       val pathToAttribute = edge.target.value as String// io.vyne.SomeType/someAttribute
       val attributeName = pathToAttribute.split("/").last()
+      // TODO Consider removing this check, i think returning null value here is better than throwing error
       require(previousObject.hasAttribute(attributeName)) {
          "Cannot evaluation $relationship as the previous object (of type ${previousObject.type.fullyQualifiedName}) does not have an attribute called $attributeName - received path of $pathToAttribute"
       }

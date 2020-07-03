@@ -5,7 +5,7 @@
     <parent>
         <artifactId>platform</artifactId>
         <groupId>io.vyne</groupId>
-        <version>0.3.0</version>
+        <version>0.3.1</version>
     </parent>
     <packaging>jar</packaging>
     <modelVersion>4.0.0</modelVersion>
@@ -25,5 +25,13 @@
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-kotlin</artifactId>
         </dependency>
+       <dependency>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-web</artifactId>
+       </dependency>
+       <dependency>
+          <groupId>org.springframework.cloud</groupId>
+          <artifactId>spring-cloud-openfeign-core</artifactId>
+       </dependency>
     </dependencies>
 </project>

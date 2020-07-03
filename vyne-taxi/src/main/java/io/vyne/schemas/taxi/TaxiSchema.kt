@@ -2,22 +2,34 @@ package io.vyne.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
-import io.vyne.VersionedSource.Companion.UNNAMED
-import io.vyne.schemas.*
+import io.vyne.schemas.DefaultTypeCache
+import io.vyne.schemas.DeferredConstraintProvider
 import io.vyne.schemas.EnumValue
 import io.vyne.schemas.Field
 import io.vyne.schemas.FieldModifier
+import io.vyne.schemas.Metadata
 import io.vyne.schemas.Modifier
+import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.Policy
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
 import io.vyne.schemas.Type
+import io.vyne.schemas.TypeCache
+import io.vyne.schemas.fqn
 import io.vyne.versionedSources
 import lang.taxi.Compiler
 import lang.taxi.Equality
 import lang.taxi.TaxiDocument
-import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiSourcesLoader
-import lang.taxi.types.*
 import lang.taxi.types.Annotation
+import lang.taxi.types.ArrayType
+import lang.taxi.types.EnumType
+import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
+import lang.taxi.types.TypeAlias
 import org.antlr.v4.runtime.CharStreams
 import java.nio.file.Path
 
@@ -70,7 +82,8 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                val returnType = this.type(taxiOperation.returnType.toVyneQualifiedName())
                Operation(OperationNames.qualifiedName(taxiService.qualifiedName, taxiOperation.name),
                   taxiOperation.parameters.map { taxiParam ->
-                     val type = this.type(taxiParam.type.qualifiedName)
+                     val vyneQualifiedName = taxiParam.type.toVyneQualifiedName()
+                     val type = this.type(vyneQualifiedName)
                      Parameter(
                         type = type,
                         name = taxiParam.name,
@@ -119,7 +132,8 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                         modifiers = field.modifiers.toVyneFieldModifiers(),
                         accessor = field.accessor,
                         readCondition = field.readCondition,
-                        typeDoc = field.typeDoc)
+                        typeDoc = field.typeDoc,
+                        defaultValue = field.defaultValue)
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType)
@@ -167,6 +181,7 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
             ))
          }
       }
+      typeCache.populateDefaultValuesCache()
       return typeCache.types
    }
 

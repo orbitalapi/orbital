@@ -47,7 +47,12 @@ export class VyneComponent {
       title: 'Query history',
       icon: 'assets/img/history.svg',
       route: 'query-history'
-    }
+    },
+     {
+       title: 'Cask',
+       icon: 'assets/img/cask.svg',
+       route: 'cask-viewer'
+     }
 
   ].map(value => {
     return {

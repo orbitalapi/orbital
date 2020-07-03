@@ -1,11 +1,18 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {ProfilerOperation, QueryResult, ResultMode} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard.component';
 import {MatTreeNestedDataSource} from '@angular/material';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {TypesService} from '../../services/types.service';
 import {findType, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
-import {InstanceLike, InstanceLikeOrCollection} from '../../object-view/object-view.component';
+import {InstanceLike, InstanceLikeOrCollection, typeName} from '../../object-view/object-view.component';
+
+export class InstanceSelectedEvent {
+  constructor(public readonly selectedTypeInstance: InstanceLike,
+              public readonly selectedTypeInstanceType: Type
+  ) {
+  }
+}
 
 @Component({
   selector: 'query-result-container',
@@ -26,9 +33,13 @@ export class ResultContainerComponent implements OnInit {
   objectKeys = Object.keys;
   objectValues = Object.values;
 
+  @Output()
+  instanceSelected = new EventEmitter<InstanceSelectedEvent>();
+
   schema: Schema;
 
   remoteCallMermaid = '';
+
 
   get showMermaid(): boolean {
     return this.remoteCallMermaid.length > 0;
@@ -52,18 +63,18 @@ export class ResultContainerComponent implements OnInit {
       return [];
     }
     const typeNames = Object.keys((<QueryResult>this.result).results)
-      .map(typeName => findType(this.schema, typeName).name);
+      .map(elementTypeName => findType(this.schema, elementTypeName).name);
     return typeNames;
   }
 
-  getResultForTypeName(typeName: QualifiedName): InstanceLikeOrCollection {
+  getResultForTypeName(qualifiedName: QualifiedName): InstanceLikeOrCollection {
     const queryResult = <QueryResult>this.result;
     if (queryResult.resultMode === ResultMode.VERBOSE) {
       const results = <{ [key: string]: InstanceLikeOrCollection }>queryResult.results;
-      return results[typeName.parameterizedName] as InstanceLikeOrCollection;
+      return results[qualifiedName.parameterizedName] as InstanceLikeOrCollection;
     } else {
       const results = <{ [key: string]: TypedInstance }>queryResult.results;
-      return results[typeName.parameterizedName];
+      return results[qualifiedName.parameterizedName];
     }
   }
 
@@ -122,8 +133,8 @@ export class ResultContainerComponent implements OnInit {
       let resultMessage = wasSuccessful ? 'Success ' : 'Error ';
       resultMessage += remoteCall.resultCode;
       const indent = '    ';
-      const lines = [indent + `Vyne ->> ${remoteCall.service.name}: ${remoteCall.operation} (${remoteCall.method})`,
-        indent + `${remoteCall.service.name} ->> Vyne: ${resultMessage} (${remoteCall.durationMs}ms)`
+      const lines = [indent + `Vyne ->> ${remoteCall.service}: ${remoteCall.operation} (${remoteCall.method})`,
+        indent + `${remoteCall.service} ->> Vyne: ${resultMessage} (${remoteCall.durationMs}ms)`
       ].join('\n');
       return lines;
 
@@ -165,5 +176,12 @@ export class ResultContainerComponent implements OnInit {
     // this._result = new QueryFailure("It's all gone horribly wrong", serverResponse.profilerOperation)
     // this.updateDataSources();
 
+  }
+
+  instanceClicked(instance: InstanceLike) {
+    const instanceTypeName = typeName(instance);
+    const selectedTypeInstanceType = findType(this.schema, instanceTypeName);
+
+    this.instanceSelected.emit(new InstanceSelectedEvent(instance, selectedTypeInstanceType));
   }
 }

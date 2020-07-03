@@ -3,7 +3,9 @@
 package io.vyne.models
 
 import io.vyne.schemas.Type
+import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
+import lang.taxi.types.EnumValue
 import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
 import org.springframework.lang.Nullable
@@ -56,6 +58,7 @@ object VyneDefaultConversionService : ConversionService {
       // TODO Check this as it is a quick addition for the demo!
       service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate(); }
       service.addConverter(java.lang.Long::class.java, LocalDateTime::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDateTime(); }
+      service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName}
       service
    }
 
@@ -123,19 +126,20 @@ class StringToIntegerConverter(override val next: ConversionService = NoOpConver
    }
 }
 
-data class TypedValue private constructor(override val type: Type, override val value: Any) : TypedInstance {
+data class TypedValue private constructor(override val type: Type, override val value: Any, override val source: DataSource) : TypedInstance {
+   private val equality = Equality(this, TypedValue::type, TypedValue::value)
    companion object {
       private val conversionService by lazy {
          ConversionService.newDefaultConverter()
       }
 
-      fun from(type: Type, value: Any, converter: ConversionService): TypedValue {
+      fun from(type: Type, value: Any, converter: ConversionService, source:DataSource): TypedValue {
          if (!type.taxiType.inheritsFromPrimitive) {
             error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
          } else {
             try {
                val valueToUse = converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
-               return TypedValue(type, valueToUse)
+               return TypedValue(type, valueToUse, source)
             } catch (exception: Exception) {
                throw DataParsingException("Failed to parse value $value to type ${type.fullyQualifiedName} - ${exception.message}", exception)
             }
@@ -144,19 +148,22 @@ data class TypedValue private constructor(override val type: Type, override val 
       }
 
       @Deprecated("Use conversionService approach")
-      fun from(type: Type, value: Any, performTypeConversions: Boolean = true): TypedValue {
+      fun from(type: Type, value: Any, performTypeConversions: Boolean = true, source:DataSource): TypedValue {
          val conversionServiceToUse = if (performTypeConversions) {
             conversionService
          } else {
             NoOpConversionService
          }
-         return from(type, value, conversionServiceToUse)
+         return from(type, value, conversionServiceToUse, source)
       }
    }
 
    override fun withTypeAlias(typeAlias: Type): TypedInstance {
-      return TypedValue(typeAlias, value)
+      return TypedValue(typeAlias, value, source)
    }
+
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
 
    /**
     * Returns true if the two are equal, where the values are the same, and the underlying

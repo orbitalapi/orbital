@@ -8,14 +8,15 @@ import {environment} from 'src/environments/environment';
 import {map} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
-  Message, ParsedSource,
+  Message,
+  ParsedSource,
   QualifiedName,
   Schema,
   SchemaGraph,
   SchemaGraphNode,
-  SchemaMember,
   SchemaSpec,
-  Type, TypedInstance,
+  Type,
+  TypedInstance,
   VersionedSource
 } from './schema';
 import {TypeNamedInstance} from './query.service';
@@ -27,11 +28,10 @@ import {VyneServicesModule} from './vyne-services.module';
 export class TypesService {
 
   private schema: Schema;
-  private schemaSubject: Subject<Schema>;
+  private schemaSubject: Subject<Schema> = new ReplaySubject(1);
   private schemaRequest: Observable<Schema>;
 
   constructor(private http: HttpClient) {
-    this.schemaSubject = new ReplaySubject(1);
     this.getTypes().subscribe(schema => {
       this.schema = schema;
     });
@@ -68,7 +68,7 @@ export class TypesService {
   }
 
   getDiscoverableTypes(typeName: string): Observable<QualifiedName[]> {
-    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${typeName}/discoverable-types`)
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${typeName}/discoverable-types`);
   }
 
   getType(qualifiedName: string): Observable<Type> {
@@ -78,7 +78,9 @@ export class TypesService {
   }
 
   parse(content: string, type: Type): Observable<ParsedTypeInstance> {
-    return this.http.post<ParsedTypeInstance>(`${environment.queryServiceUrl}/api/content/parse?type=${type.name.fullyQualifiedName}`, content);
+    return this.http.post<ParsedTypeInstance>(
+      `${environment.queryServiceUrl}/api/content/parse?type=${type.name.fullyQualifiedName}`,
+      content);
   }
 
   parseCsvToType(content: string, type: Type, csvOptions: CsvOptions): Observable<ParsedTypeInstance[]> {
@@ -95,7 +97,7 @@ export class TypesService {
       content);
   }
 
-  getTypes = (refresh: boolean = false): Observable<Schema> => {
+  getTypes(refresh: boolean = false): Observable<Schema> {
     if (refresh || !this.schemaRequest) {
       this.schemaRequest = this.http
         .get<Schema>(`${environment.queryServiceUrl}/api/types`)
@@ -115,6 +117,7 @@ export class TypesService {
     }
     return this.schemaSubject.asObservable();
   }
+
 
   createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
     const spec: SchemaSpec = {

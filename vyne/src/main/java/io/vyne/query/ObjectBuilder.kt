@@ -1,18 +1,44 @@
 package io.vyne.query
 
-import io.vyne.models.*
-import io.vyne.schemas.*
+import io.vyne.models.MixedSources
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
+import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Field
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Type
 import lang.taxi.types.ObjectType
 
-class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext) {
+class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
+   private val originalContext = if (context.isProjecting) context
+      .facts
+      .firstOrNull { it is TypedObject }
+      ?.let {
+         val ctx = context.only(it)
+         ctx.isProjecting = true
+         ctx
+      } else null
 
-   fun build(targetType: QualifiedName): TypedInstance? {
-      return build(context.schema.type(targetType))
+
+   private var manyBuilder: ObjectBuilder? = null
+
+   fun build(): TypedInstance? {
+      val returnValue = build(rootTargetType)
+      return manyBuilder?.build()?.let {
+         when (it) {
+            is TypedCollection -> TypedCollection.from(listOfNotNull(returnValue).plus(it.value))
+            else -> TypedCollection.from(listOfNotNull(returnValue, it))
+         }
+      } ?: returnValue
    }
 
-   fun build(targetType: Type): TypedInstance? {
-      if (context.hasFactOfType(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)) {
-         val instance = context.getFact(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+   private fun build(targetType: Type): TypedInstance? {
+      val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
+      if (nullableFact != null) {
+         val instance = nullableFact as TypedCollection
          when (instance.size) {
             0 -> error("Found 0 instances of ${targetType.fullyQualifiedName}, but hasFactOfType returned true")
             1 -> {
@@ -33,6 +59,10 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext) {
       }
    }
 
+   private fun build(targetType: QualifiedName): TypedInstance? {
+      return build(context.schema.type(targetType))
+   }
+
    private fun convertValue(discoveredValue: TypedInstance, targetType: Type): TypedInstance {
       return if (discoveredValue is TypedValue && targetType.hasFormat && targetType.format != discoveredValue.type.format) {
          discoveredValue.copy(targetType)
@@ -42,51 +72,50 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext) {
    }
 
    private fun buildObjectInstance(targetType: Type): TypedInstance? {
+      val populatedValues = mutableMapOf<String, TypedInstance>()
+      val missingAttributes = mutableMapOf<AttributeName, Field>()
       // =============================================================
       // TODO think how to fix it properly
       // Quick and dirty fix for projection of ObjectType to another ObjectType
       // If source and target types are ObjectTypes, just copy properties in one iteration
       // With this fix projection time of 1000 items was reduced from 37seconds to 650ms!
-      if (targetType.taxiType is ObjectType && context.facts.size == 1) {
-         val sourceObjectType = context.facts.iterator().next()
+      // Enum filtering will be removed once the updated enum processing logic branch is merged.
+      if (targetType.taxiType is ObjectType && context.facts.filter { !it.type.isEnum }.size == 1) {
+         val sourceObjectType = context.facts.filter { !it.type.isEnum }.iterator().next()
          if (sourceObjectType is TypedObject) {
-            val mappedValues: Map<String, TypedInstance> = targetType.attributes.mapNotNull { (attributeName, field) ->
+            targetType.attributes.forEach { (attributeName, field) ->
                val targetAttributeType = context.schema.type(field.type)
                val returnTypedNull = true
-               val value = sourceObjectType.getAttributeIdentifiedByType(targetAttributeType, returnTypedNull)
-               when (value) {
-                  is TypedNull -> build(field.type)?.let { attributeName to it } ?: null
-                  is TypedInstance -> attributeName to convertValue(value, targetAttributeType)
-                  else -> null
+               when (val value = sourceObjectType.getAttributeIdentifiedByType(targetAttributeType, returnTypedNull)) {
+                  is TypedNull -> missingAttributes[attributeName] = field
+                  else -> populatedValues[attributeName] = convertValue(value, targetAttributeType)
                }
-
-            }.toMap()
-            return TypedObject(targetType, mappedValues)
+            }
          }
-      }
-      // =============================================================
-
-      // This is expensive, for each item in result and for each attribute in the item it performs
-      // lots of deep recursive operations and creates lots of garbage objects!
-      val missingAttributes = mutableMapOf<AttributeName, Field>()
-      val mappedValues = targetType.attributes.mapNotNull { (attributeName, field) ->
-         val value = build(field.type)
-         if (value == null) {
+      } else {
+         targetType.attributes.forEach { (attributeName, field) ->
             missingAttributes[attributeName] = field
-            null
-         } else {
-            attributeName to value
          }
-         // TODO : We need to improve support for nullable types here.
-         // It's possible it's legit that the value wasn't found,
-         // but that we can still build an instance of the object
-
-      }.toMap()
-      if (missingAttributes.isNotEmpty()) {
-         // Commenting out as printing 1000 entries for simple projection will create unwanted noise!
-         // log().warn("Couldn't build instance of ${targetType.fullyQualifiedName} as the following attributes weren't found: \n ${missingAttributes.map { (name, field) -> "$name : ${field.type.fullyQualifiedName}" }.joinToString("\n")}")
       }
-      return TypedObject.fromAttributes(targetType, mappedValues, context.schema)
+
+      missingAttributes.forEach { (attributeName, field) ->
+         val value = build(field.type)
+         if (value != null) {
+            if (value.type.isCollection) {
+               val typedCollection = value as TypedCollection?
+               typedCollection?.let {
+                  populatedValues[attributeName] = it.first()
+                  this.originalContext?.let {
+                     manyBuilder = ObjectBuilder(queryEngine, originalContext, targetType)
+                  }
+               }
+            } else {
+               populatedValues[attributeName] = value
+            }
+         }
+      }
+
+      return TypedObject(targetType, populatedValues, MixedSources)
    }
 
    private fun findScalarInstance(targetType: Type): TypedInstance? {
@@ -96,7 +125,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext) {
       return if (result.isFullyResolved) {
          result[targetType] ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
       } else {
-         null;
+         null
       }
    }
 }

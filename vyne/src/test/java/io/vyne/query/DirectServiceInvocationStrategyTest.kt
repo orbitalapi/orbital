@@ -1,10 +1,10 @@
 package io.vyne.query
 
 import com.winterbe.expekt.should
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.Operation
 import io.vyne.schemas.PropertyToParameterConstraint
-import io.vyne.schemas.Type
 import io.vyne.testVyne
 import lang.taxi.Operator
 import lang.taxi.services.operations.constraints.ConstantValueExpression
@@ -79,7 +79,7 @@ class DirectServiceInvocationStrategyTest {
    @Test
    fun given_constraintsProvideValues_then_theseAreIncludedInServiceCalls() {
       val (vyne, stub) = testVyne(schema)
-      stub.addResponse("findTradesBetween", TypedInstance.from(vyne.type("Trade[]"), emptyList<Any>(), vyne.schema))
+      stub.addResponse("findTradesBetween", TypedInstance.from(vyne.type("Trade[]"), emptyList<Any>(), vyne.schema, source = Provided))
       vyne.query().find(ConstrainedTypeNameQueryExpression("Trade[]", listOf(
          PropertyToParameterConstraint(
             PropertyTypeIdentifier(QualifiedName.from("TradeDate")),

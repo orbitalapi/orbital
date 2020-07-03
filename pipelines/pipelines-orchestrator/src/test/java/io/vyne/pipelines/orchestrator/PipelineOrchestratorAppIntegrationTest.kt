@@ -71,12 +71,12 @@ class PipelineOrchestratorAppIntegrationTest {
 
       var pipelineDescription = pipelineDescription("kafka", "cask")
 
-      var response = postPipeline(pipelineDescription, Pipeline::class.java)
+      var response = postPipeline(pipelineDescription, PipelineStateSnapshot::class.java)
 
       response.statusCode.should.equal(HttpStatus.OK)
       response.body.name.should.be.equal("test-pipeline")
-      response.body.input.transport.type.should.be.equal("kafka")
-      response.body.output.transport.type.should.be.equal("cask")
+      response.body.instance.should.be.`null`
+      response.body.pipelineDescription.should.be.equal(pipelineDescription)
    }
 
    @Test
@@ -84,7 +84,7 @@ class PipelineOrchestratorAppIntegrationTest {
 
       var pipelineDescription = pipelineDescription("XXX", "YYY")
 
-      var response = postPipeline(pipelineDescription, Pipeline::class.java)
+      var response = postPipeline(pipelineDescription, PipelineStateSnapshot::class.java)
 
       response.statusCode.should.equal(HttpStatus.OK)
       response.body.name.should.be.equal("test-pipeline")
@@ -103,7 +103,7 @@ class PipelineOrchestratorAppIntegrationTest {
    /**
     * Convenient method to post a pipeline through the TestRestTemplate
     */
-   private fun <T> postPipeline(pipelineDescription: String, clazz: Class<T>) = restTemplate.postForEntity("/runner/pipelines", pipelineDescription, clazz)
+   private fun <T> postPipeline(pipelineDescription: String, clazz: Class<T>) = restTemplate.postForEntity("/api/pipelines", pipelineDescription, clazz)
 
    private fun pipelineDescription(inputType: String, outputType: String) = VALID_PIPELINE_DESCRIPTION.format(inputType, outputType)
 

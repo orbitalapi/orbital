@@ -1,55 +1,19 @@
 import {BrowserModule} from '@angular/platform-browser';
 import {NgModule} from '@angular/core';
 
-import {CovalentDynamicFormsModule} from '@covalent/dynamic-forms';
-import {CovalentHighlightModule} from '@covalent/highlight';
-
 import {AppComponent} from './app.component';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {VyneComponent} from './vyne/vyne.component';
 import {LayoutModule} from '@angular/cdk/layout';
-import {
-  MatAutocompleteModule,
-  MatButtonModule,
-  MatButtonToggleModule,
-  MatCardModule,
-  MatCheckboxModule,
-  MatChipsModule,
-  MatExpansionModule,
-  MatFormFieldModule,
-  MatIconModule,
-  MatInputModule,
-  MatListModule,
-  MatMenuModule,
-  MatProgressBarModule,
-  MatSelectModule,
-  MatSidenavModule,
-  MatSlideToggleModule,
-  MatSnackBarModule,
-  MatStepperModule,
-  MatTableModule,
-  MatTabsModule,
-  MatToolbarModule,
-  MatTooltipModule,
-  MatTreeModule
-} from '@angular/material';
 import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {HttpClientModule} from '@angular/common/http';
 import {TypesService} from './services/types.service';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {QueryService} from './services/query.service';
-import {NgxGraphModule} from '@swimlane/ngx-graph';
-import {CovalentJsonFormatterModule} from '@covalent/core/json-formatter';
-import {CdkTableModule} from '@angular/cdk/table';
 import {QueryHistoryComponent} from './query-history/query-history.component';
-import {MomentModule} from 'ngx-moment';
 import {SchemaExplorerComponent} from './schema-explorer/schema-explorer.component';
 import {NewSchemaWizardComponent} from './schema-explorer/new-schema-wizard/new-schema-wizard.component';
 import {TypeViewerContainerComponent} from './type-viewer/type-viewer-container.component';
-import {TocHostDirective} from './type-viewer/toc-host.directive';
 import {NgSelectModule} from '@ng-select/ng-select';
-import {CovalentFileModule} from '@covalent/core';
 import {TypeAutocompleteModule} from './type-autocomplete/type-autocomplete.module';
 import {PipelinesModule} from './pipelines/pipelines.module';
 import {MarkdownModule} from 'ngx-markdown';
@@ -66,7 +30,8 @@ import {TypeListModule} from './type-list/type-list.module';
 import {TypeListComponent} from './type-list/type-list.component';
 import {SchemaExplorerModule} from './schema-explorer/schema-explorer.module';
 import {VyneModule} from './vyne/vyne.module';
-import {InheritanceGraphComponent} from './inheritence-graph/inheritance-graph.component';
+import { CaskViewerModule } from './cask-viewer/cask-viewer.module';
+import {CaskViewerComponent} from './cask-viewer/cask-viewer.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -77,7 +42,8 @@ export const routerModule = RouterModule.forRoot(
     {path: 'data-explorer', component: DataExplorerComponent},
     {path: 'schema-explorer', component: SchemaExplorerComponent},
     {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
-    {path: 'query-history', component: QueryHistoryComponent}
+    {path: 'query-history', component: QueryHistoryComponent},
+    {path: 'cask-viewer', component: CaskViewerComponent}
   ],
   {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled' }
 );
@@ -85,7 +51,7 @@ export const routerModule = RouterModule.forRoot(
 
 @NgModule({
   declarations: [
-    AppComponent,
+    AppComponent
   ],
   imports: [
     routerModule,
@@ -99,6 +65,7 @@ export const routerModule = RouterModule.forRoot(
 
     MarkdownModule.forRoot(),
 
+    CaskViewerModule,
     TypeViewerModule,
     NgSelectModule,
     TypeAutocompleteModule,

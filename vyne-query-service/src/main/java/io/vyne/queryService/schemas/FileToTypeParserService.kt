@@ -1,5 +1,6 @@
 package io.vyne.queryService.schemas
 
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
 import io.vyne.schemaStore.SchemaProvider
@@ -20,7 +21,7 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider) {
       val schema = schemaProvider.schema()
       val targetType = schema.type(typeName)
       try {
-         return ParsedTypeInstance(TypedInstance.from(targetType, rawContent, schema))
+         return ParsedTypeInstance(TypedInstance.from(targetType, rawContent, schema, source = Provided))
       } catch (e: Exception) {
          throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
       }
@@ -43,7 +44,7 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider) {
       val targetType = schema.type(typeName)
       val nullValues = listOfNotNull(nullValue).toSet()
       val records = parsed.records.map { csvRecord ->
-         ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues).build())
+         ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided).build())
       }
       return records
    }

@@ -31,6 +31,7 @@ class GitRepo(rootDir: String, gitRepoConfig: GitSchemaRepoConfig.GitRemoteRepo)
    private val transportConfigCallback: TransportConfigCallback?
    private val repo: Repository
    private val gitRepo: Git
+   private var updated: Boolean
 
    init {
       transportConfigCallback = if (!gitRepoConfig.sshPrivateKeyPath.isNullOrEmpty()) {
@@ -43,11 +44,16 @@ class GitRepo(rootDir: String, gitRepoConfig: GitSchemaRepoConfig.GitRemoteRepo)
       repoBuilder.gitDir = gitDir
       repo = repoBuilder.build()
       gitRepo = Git.wrap(repo)
+      updated = false
    }
 
    override fun close() {
       repo.close()
       gitRepo.close()
+   }
+
+   fun isUpdated(): Boolean {
+      return updated
    }
 
    fun existsLocally(): Boolean {
@@ -71,6 +77,10 @@ class GitRepo(rootDir: String, gitRepoConfig: GitSchemaRepoConfig.GitRemoteRepo)
          .setRemoteBranchName(config.branch)
          .setTransportConfigCallback(transportConfigCallback)
          .call()
+
+      if(result.fetchResult.trackingRefUpdates.isNotEmpty()) {
+         updated = true
+      }
 
       return OperationResult.fromBoolean(result.isSuccessful)
    }

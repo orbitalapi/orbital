@@ -12,6 +12,7 @@ import io.vyne.cask.query.generators.AfterTemporalOperationGenerator
 import io.vyne.cask.query.generators.BeforeTemporalOperationGenerator
 import io.vyne.cask.query.generators.BetweenTemporalOperationGenerator
 import io.vyne.cask.query.generators.FindByFieldIdOperationGenerator
+import io.vyne.cask.query.generators.FindByMultipleGenerator
 import io.vyne.cask.query.generators.FindBySingleResultGenerator
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemaStore.SchemaStoreClient
@@ -19,7 +20,6 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.PrimitiveType
-import org.junit.Ignore
 import org.junit.Test
 
 class CaskServiceSchemaGeneratorTest {
@@ -77,8 +77,79 @@ class CaskServiceSchemaGeneratorTest {
             AfterTemporalOperationGenerator(),
             BeforeTemporalOperationGenerator(),
             BetweenTemporalOperationGenerator(),
-            FindBySingleResultGenerator())) to taxiSchema
+            FindBySingleResultGenerator(),
+            FindByMultipleGenerator())) to taxiSchema
 
+   }
+
+   @Test
+   fun `Cask generate service schema with correct imports`() {
+      val simpleSchema = """[[
+A price that a symbol was traded at
+]]
+type Price inherits Decimal
+[[
+The opening price at the beginning of a period
+]]
+type OpenPrice inherits Price
+[[
+The closing price at the end of a trading period
+]]
+type ClosePrice inherits Price
+[[
+The ticker for a tradable instrument
+]]
+type Symbol inherits String
+type OrderWindowSummaryCsv {
+    orderDate : DateTime( @format = 'yyyy-MM-dd hh-a' ) by column(1)
+    symbol : Symbol by column(2)
+    open : Price by column(3)
+    close : Price by column(4)
+}"""
+      // given
+      val typeSchema = lang.taxi.Compiler(simpleSchema).compile()
+      val taxiSchema = TaxiSchema(typeSchema, listOf())
+      whenever(schemaProvider.schema()).thenReturn(taxiSchema)
+      val serviceSchemaGenerator = CaskServiceSchemaGenerator(
+         schemaProvider,
+         caskServiceSchemaWriter,
+         listOf(
+            FindByFieldIdOperationGenerator(),
+            AfterTemporalOperationGenerator(),
+            BeforeTemporalOperationGenerator(),
+            BetweenTemporalOperationGenerator(),
+            FindBySingleResultGenerator()))
+      val schemaName = argumentCaptor<String>()
+      val schemaVersion = argumentCaptor<String>()
+      val serviceSchema = argumentCaptor<String>()
+      // When
+      serviceSchemaGenerator.generateAndPublishService(taxiSchema.versionedType("OrderWindowSummaryCsv".fqn()))
+      // Then
+      verify(schemaStoreClient, times(1)).submitSchema(schemaName.capture(), schemaVersion.capture(), serviceSchema.capture())
+      schemaName.firstValue.should.startWith("vyne.casks.OrderWindowSummaryCsv@")
+      "1.0.0".should.equal(schemaVersion.firstValue)
+      """import OrderWindowSummaryCsv
+import Symbol
+import Price
+
+namespace vyne.casks {
+
+
+
+   @ServiceDiscoveryClient(serviceName = "cask")
+   service OrderWindowSummaryCsvCaskService {
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummaryCsv/orderDate/{lang.taxi.DateTime}")
+      operation findByOrderDate( @PathVariable(name = "orderDate") orderDate : DateTime ) : OrderWindowSummaryCsv[]
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummaryCsv/symbol/{Symbol}")
+      operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummaryCsv[]
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummaryCsv/open/{Price}")
+      operation findByOpen( @PathVariable(name = "open") open : Price ) : OrderWindowSummaryCsv[]
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummaryCsv/close/{Price}")
+      operation findByClose( @PathVariable(name = "close") close : Price ) : OrderWindowSummaryCsv[]
+   }
+}
+
+""".replace("\\s".toRegex(), "").should.equal(serviceSchema.firstValue.replace("\\s".toRegex(), ""))
    }
 
    @Test
@@ -95,7 +166,8 @@ class CaskServiceSchemaGeneratorTest {
             AfterTemporalOperationGenerator(),
             BeforeTemporalOperationGenerator(),
             BetweenTemporalOperationGenerator(),
-            FindBySingleResultGenerator()))
+            FindBySingleResultGenerator(),
+            FindByMultipleGenerator()))
       val schemaName = argumentCaptor<String>()
       val schemaVersion = argumentCaptor<String>()
       val serviceSchema = argumentCaptor<String>()
@@ -105,8 +177,8 @@ class CaskServiceSchemaGeneratorTest {
       verify(schemaStoreClient, times(1)).submitSchema(schemaName.capture(), schemaVersion.capture(), serviceSchema.capture())
       schemaName.firstValue.should.startWith("vyne.casks.OrderWindowSummary@")
       "1.0.0".should.equal(schemaVersion.firstValue)
-      """import Symbol
-import OrderWindowSummary
+      """import OrderWindowSummary
+import Symbol
 import Price
 import MaturityDate
 import TransactionEventDateTime
@@ -121,6 +193,8 @@ namespace vyne.casks {
       operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/symbol/{Symbol}")
       operation findOneBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary
+      @HttpOperation(method = "POST" , url = "/api/cask/findMultipleBy/OrderWindowSummary/symbol")
+      operation findMultipleBySymbol( @RequestBody symbol : Symbol[] ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/open/{Price}")
       operation findByOpen( @PathVariable(name = "open") open : Price ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/high/{Price}")

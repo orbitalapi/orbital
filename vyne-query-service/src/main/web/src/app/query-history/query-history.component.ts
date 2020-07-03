@@ -5,9 +5,11 @@ import {
   ProfilerOperation,
   QueryHistoryRecord,
   QueryService,
-  RestfulQueryHistoryRecord
 } from '../services/query.service';
 import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
+import {InstanceSelectedEvent} from '../query-wizard/result-display/result-container.component';
+import {InstanceLike} from '../object-view/object-view.component';
+import {Type} from '../services/schema';
 
 @Component({
   selector: 'app-query-history',
@@ -23,6 +25,21 @@ export class QueryHistoryComponent implements OnInit {
 
   profileLoading = false;
   profilerOperation: ProfilerOperation;
+
+
+  selectedTypeInstance: InstanceLike;
+  selectedTypeInstanceType: Type;
+
+  get showSidePanel(): boolean {
+    return this.selectedTypeInstanceType !== undefined && this.selectedTypeInstance !== null;
+  }
+
+  set showSidePanel(value: boolean) {
+    if (!value) {
+      this.selectedTypeInstance = null;
+    }
+  }
+
 
   ngOnInit() {
     this.loadData();
@@ -93,6 +110,11 @@ export class QueryHistoryComponent implements OnInit {
     } else {
       throw new Error('Unknown type of query history record: ' + JSON.stringify(historyRecord));
     }
+  }
+
+  onInstanceSelected($event: InstanceSelectedEvent) {
+    this.selectedTypeInstance = $event.selectedTypeInstance;
+    this.selectedTypeInstanceType = $event.selectedTypeInstanceType;
   }
 }
 

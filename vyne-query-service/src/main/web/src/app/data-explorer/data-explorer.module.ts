@@ -17,7 +17,7 @@ import {MatCheckboxModule} from '@angular/material/checkbox';
 import {CsvViewerComponent} from './csv-viewer.component';
 import {MatTableModule} from '@angular/material/table';
 import {MatInputModule} from '@angular/material/input';
-import {TypedInstancePanelComponent} from './typed-instance-panel.component';
+import {TypedInstancePanelComponent} from '../typed-instance-panel/typed-instance-panel.component';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {DescriptionEditorModule} from '../type-viewer/description-editor/description-editor.module';
 import {AttributeTableModule} from '../type-viewer/attribute-table/attribute-table.module';
@@ -30,11 +30,12 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {SearchModule} from '../search/search.module';
 import {CodeViewerModule} from '../code-viewer/code-viewer.module';
 import {CovalentHighlightModule} from '@covalent/highlight';
-import {TypedInstancePanelContainerComponent} from './typed-instance-panel-container.component';
+import {TypedInstancePanelContainerComponent} from '../typed-instance-panel/typed-instance-panel-container.component';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
-import { CaskPanelComponent } from './cask-panel.component';
+import {CaskPanelComponent} from './cask-panel.component';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
 
 
 @NgModule({
@@ -67,7 +68,9 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
     FileDropModule,
     DescriptionEditorModule,
     InheritanceGraphModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    TypedInstancePanelModule
+
   ],
   declarations: [
     DataSourceToolbarComponent,
@@ -75,8 +78,6 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
     DataSourceConfigComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
-    TypedInstancePanelContainerComponent,
-    TypedInstancePanelComponent,
     DataExplorerComponent,
     CaskPanelComponent
   ],
@@ -84,8 +85,6 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
     DataSourceToolbarComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
-    TypedInstancePanelComponent,
-    TypedInstancePanelContainerComponent,
     CaskPanelComponent
   ]
 })

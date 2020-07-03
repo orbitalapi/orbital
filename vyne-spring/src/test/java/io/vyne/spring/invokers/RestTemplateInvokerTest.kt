@@ -2,6 +2,7 @@ package io.vyne.spring.invokers
 
 import com.jayway.jsonpath.JsonPath
 import com.winterbe.expekt.expect
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.QueryProfiler
@@ -16,7 +17,9 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.ExpectedCount
 import org.springframework.test.web.client.MockRestServiceServer
-import org.springframework.test.web.client.match.MockRestRequestMatchers.*
+import org.springframework.test.web.client.match.MockRestRequestMatchers.content
+import org.springframework.test.web.client.match.MockRestRequestMatchers.method
+import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators
 import org.springframework.web.client.RestTemplate
 
@@ -81,7 +84,7 @@ namespace vyne {
       val service = schema.service("vyne.CreditCostService")
       val operation = service.operation("calculateCreditCosts")
 
-      val response = RestTemplateInvoker(restTemplate = restTemplate, schemaProvider = SchemaProvider.from(schema)).invoke(service, operation, listOf(
+      val response = RestTemplateInvoker(restTemplate = restTemplate, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true).invoke(service, operation, listOf(
          paramAndType("vyne.ClientId", "myClientId", schema),
          paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
       ), QueryProfiler()) as TypedObject
@@ -91,7 +94,7 @@ namespace vyne {
 
    private fun paramAndType(typeName: String, value: Any, schema: TaxiSchema, paramName:String? = null): Pair<Parameter, TypedInstance> {
       val type = schema.type(typeName)
-      return Parameter(type,paramName) to TypedInstance.from(type, value, schema)
+      return Parameter(type,paramName) to TypedInstance.from(type, value, schema, source = Provided)
    }
 
    @Test
@@ -113,6 +116,7 @@ namespace vyne {
       val response = RestTemplateInvoker(
          restTemplate = restTemplate,
          serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
+         enableDataLineageForRemoteCalls = true,
          schemaProvider = SchemaProvider.from(schema)).invoke(service, operation, listOf(
          paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
       ), QueryProfiler()) as TypedObject

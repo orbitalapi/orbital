@@ -15,7 +15,7 @@ object DirectTransport {
    const val TYPE: PipelineTransportType = "direct"
 }
 
-data class DirectTransportInputSpec(val source: Flux<PipelineInputMessage>) : PipelineTransportSpec {
+data class DirectTransportInputSpec(val source: Flux<PipelineInputMessage>, override val props: Map<String, String>? = null) : PipelineTransportSpec {
    override val type: PipelineTransportType = DirectTransport.TYPE
    override val direction: PipelineDirection = PipelineDirection.INPUT
    override val targetType: VersionedTypeReference
@@ -41,6 +41,7 @@ object DirectOutputSpec : PipelineTransportSpec {
    override val direction: PipelineDirection = PipelineDirection.OUTPUT
    override val targetType: VersionedTypeReference
       get() = TODO("Not yet implemented")
+   override val props = emptyMap<String, String>()
 }
 
 class DirectOutputBuilder : PipelineOutputTransportBuilder<DirectOutputSpec> {

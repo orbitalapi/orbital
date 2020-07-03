@@ -4,9 +4,20 @@ server:
       enabled: true
       mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
       min-response-size: 1024
+   error:
+      include-message: always
 spring:
    application:
       name: query-service
+   autoconfigure:
+      exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+vyne:
+   query-history:
+      enabled: false
+   data-lineage:
+      remoteCalls:
+         enabled: false
+
 logging:
    level:
       org.springframework: WARN
@@ -31,8 +42,4 @@ eureka:
       leaseRenewalIntervalInSeconds: 2
       leaseExpirationDurationInSeconds: 5
 
-hibernate:
-   types:
-      jackson:
-         object:
-            mapper: io.vyne.queryService.persistency.VyneHibernateJsonObjectMapperSupplier
+

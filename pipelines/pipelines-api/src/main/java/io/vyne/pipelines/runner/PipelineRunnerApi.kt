@@ -12,11 +12,9 @@ import java.time.Instant
 
 @FeignClient("pipeline-runner")
 interface PipelineRunnerApi {
-   @PostMapping("/runner/pipelines")
+   @PostMapping("/api/pipelines")
    fun submitPipeline(@RequestBody pipeline: Pipeline): PipelineInstanceReference
 
-   @GetMapping("/runner/pipelines/{pipelineName}")
-   fun getPipeline(@PathVariable pipelineName: String): ResponseEntity<PipelineInstanceReference>
 }
 
 @JsonDeserialize(`as` = SimplePipelineInstance::class)

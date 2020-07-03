@@ -2,6 +2,7 @@ import {Component, Input} from '@angular/core';
 import {QualifiedName, Type} from '../services/schema';
 import {InstanceLike} from '../object-view/object-view.component';
 import {Inheritable} from '../inheritence-graph/inheritance-graph.component';
+import {LineageGraph} from '../services/query.service';
 
 @Component({
   selector: 'app-typed-instance-panel',
@@ -15,7 +16,13 @@ import {Inheritable} from '../inheritence-graph/inheritance-graph.component';
       <section>
         <app-description-editor-container [type]="type"></app-description-editor-container>
       </section>
+      <section *ngIf="lineageGraph">
+        <h3>Value lineage</h3>
+        <app-lineage-display [instance]="instance" [lineageGraph]="lineageGraph"></app-lineage-display>
+      </section>
+
       <section *ngIf="inheritanceView">
+        <h3>Type inheritance</h3>
         <app-inheritance-graph [inheritable]="inheritanceView"></app-inheritance-graph>
       </section>
 
@@ -50,6 +57,9 @@ export class TypedInstancePanelComponent {
 
   @Input()
   inheritanceView: Inheritable;
+
+  @Input()
+  lineageGraph: LineageGraph;
 
   get hasDiscoverableTypes() {
     return this.discoverableTypes && this.discoverableTypes.length > 0;

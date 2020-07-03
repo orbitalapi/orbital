@@ -1,0 +1,26 @@
+<mat-toolbar color="primary">
+  <span>Cask Viewer</span>
+  <span class="toolbar-spacer"></span>
+  <app-search-bar-container></app-search-bar-container>
+</mat-toolbar>
+
+<div class="container">
+
+  <div class="list-container">
+    <div class="title-bar">
+      <h4>Casks</h4>
+      <button (click)="loadCaskRecords()" mat-icon-button>
+        <i class="material-icons">refresh</i>
+      </button>
+    </div>
+
+    <div *ngFor="let configsPerType of caskConfigs | keyvalue" >
+      <app-cask-row [typeName]="configsPerType.key" [caskConfigs]="configsPerType.value" (onCaskConfigClick)="showCaskDetails($event)"></app-cask-row>
+    </div>
+  </div>
+
+  <div class="results-section">
+    <app-cask-details  *ngIf="caskConfig && caskConfig.details" [caskConfig]="caskConfig" (onDeleteCask)="promptDeleteCask()" (onClearCask)="promptClearCask()"></app-cask-details>
+  </div>
+
+</div>

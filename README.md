@@ -14,6 +14,7 @@
 ## Server
 
 * Run 'QueryServiceApp' with:
+    * embedded-discovery, local if you want to run the application without any query history functionality (-Dspring.profiles.active=embedded-discovery,local).
     * embedded-discovery, local and inmemory-query-history spring profiles (-Dspring.profiles.active=embedded-discovery,inmemory-query-history,local) if you want keep query histories in memory.
     * embedded-discovery, local and persist-query-history spring profiles (-Dspring.profiles.active=embedded-discovery,persist-query-history,local) if you want keep query histories in a postgres database.
       see application-persist-query-history.yml for database details.
@@ -21,6 +22,8 @@
 * local profile enables REST request coming from localhost:4200 by modifying the CORS settings accordingly. This profile
 requires only if you're planning run client app on localhost:4200 (see below). If that is not the case, build the client app by running
 'mvn clean install -DskipTests' or by running 'npm build' on vyne-query-service/src/main/web 
+* By default data lineage functionality is disabled for remote calls. If you want to enable it please set vyne.data-lineage.remoteCalls.enabled as true,
+(i.e. -Dvyne.data-lineage.remoteCalls.enabled=true)
 
 ## Client
 
@@ -73,3 +76,20 @@ docker-compose down
 
 # Unix/Ubuntu
 ...
+
+
+# Services
+
+| Service name | Port |
+| :---: | :---: |
+| vyne | 9022 |  
+| cask | 8800 |  
+| pipeline-orchestrator | 9600 |
+| file-schema-server | 9301 |  
+  
+Optional services
+
+| Service name | Port |
+| :---: | :---: |
+| eureka | 8761 |  
+| config-service | 8888 | 

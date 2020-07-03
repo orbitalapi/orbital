@@ -1,6 +1,7 @@
 package io.vyne.queryService.persistency
 
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule
@@ -11,9 +12,12 @@ import io.vyne.queryService.persistency.entity.QueryHistoryRecordRepository
 import org.flywaydb.core.Flyway
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.flyway.FlywayProperties
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+import org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.core.convert.converter.Converter
 import org.springframework.data.convert.CustomConversions.StoreConversions
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
@@ -23,10 +27,11 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
 
 @Configuration
 @EnableConfigurationProperties(FlywayProperties::class)
-@ConditionalOnExpression("!T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}')")
+@Import(value = [R2dbcAutoConfiguration::class, DataSourceAutoConfiguration::class])
+@ConditionalOnExpression("!T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}') and \${vyne.query-history.enabled:true}")
 @EnableR2dbcRepositories("io.vyne.queryService.persistency.entity.QueryHistoryRecordEntity")
 class ReactiveDatabaseSupport {
-   private val objectMapper = jacksonObjectMapper()
+   val objectMapper: ObjectMapper = jacksonObjectMapper()
       .registerModule(JavaTimeModule())
       .registerModule(Jdk8Module())
       .registerModule(ParameterNamesModule())

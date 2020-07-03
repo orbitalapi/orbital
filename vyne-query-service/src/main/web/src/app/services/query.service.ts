@@ -6,6 +6,7 @@ import {environment} from 'src/environments/environment';
 import {QualifiedName, TypedInstance} from './schema';
 import {InstanceLikeOrCollection} from '../object-view/object-view.component';
 import {VyneServicesModule} from './vyne-services.module';
+import {Data} from '@angular/router';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -43,6 +44,51 @@ export class Fact {
 export interface TypeNamedInstance {
   typeName: string;
   value: any;
+  source?: DataSourceReference;
+}
+
+export function isTypedInstance(instance: InstanceLikeOrCollection): instance is TypedInstance {
+  const instanceAny = instance as any;
+  return instanceAny.type !== undefined && instanceAny.value !== undefined;
+}
+
+export function isTypeNamedInstance(instance: any): instance is TypeNamedInstance {
+  const instanceAny = instance as any;
+  return instanceAny.typeName !== undefined && instanceAny.value !== undefined;
+}
+
+export interface DataSourceReference {
+  dataSourceIndex: number;
+}
+
+export interface LineageGraph {
+  [index: number]: DataSource;
+}
+
+export interface DataSource {
+  name: DataSourceType;
+}
+
+export type DataSourceType =
+  'Provided'
+  | 'Mapped'
+  | 'Operation result'
+  | 'Defined in schema'
+  | 'Undefined source'
+  | 'Multiple sources';
+
+export function isOperationResult(source: DataSource): source is OperationResultDataSource {
+  return source.name === 'Operation result';
+}
+
+export interface OperationResultDataSource extends DataSource {
+  remoteCall: RemoteCall;
+  inputs: OperationParam[];
+}
+
+export interface OperationParam {
+  parameterName: String;
+  value: TypeNamedInstance;
 }
 
 
@@ -53,20 +99,21 @@ export interface QueryResult {
   profilerOperation: ProfilerOperation;
   remoteCalls: RemoteCall[];
   resultMode: ResultMode;
+  lineageGraph: LineageGraph;
 }
 
 
 export interface RemoteCall {
-  service: QualifiedName;
+  service: string;
   address: string;
   operation: string;
-  responseTypeName: QualifiedName;
+  responseTypeName: string;
   method: string;
   requestBody: any;
   resultCode: number;
   durationMs: number;
   response: any;
-  operationQualifiedName: QualifiedName;
+  operationQualifiedName: string;
 }
 
 export interface ProfilerOperation {

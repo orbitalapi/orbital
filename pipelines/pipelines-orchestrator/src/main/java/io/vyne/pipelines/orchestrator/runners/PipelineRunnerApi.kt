@@ -9,12 +9,8 @@ import org.springframework.web.bind.annotation.*
 @FeignClient("pipeline-runner")
 interface PipelineRunnerApi {
 
-
-   @PostMapping("/runner/pipelines", consumes = ["application/json"])
+   @PostMapping("/api/pipelines", consumes = ["application/json"])
    fun submitPipeline(@RequestBody pipeline: String): PipelineInstanceReference
-
-   @GetMapping("/runner/pipelines/{pipelineName}")
-   fun getPipeline(@PathVariable pipelineName: String): ResponseEntity<PipelineInstanceReference>
 
    // TODO might be removed as part of https://projects.notional.uk/youtrack/issue/LENS-159
    // See TestharnessController.kt for details

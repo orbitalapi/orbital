@@ -4,6 +4,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
+import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.query.CaskDAO
 import io.vyne.schemas.fqn
@@ -27,7 +28,7 @@ class CaskServiceBootstrapTest {
       val versionedType = schemaProvider.schema().versionedType("common.order.Order".fqn())
       val caskTableName = versionedType.caskRecordTable()
       val typeHash = versionedType.versionHash
-      val caskConfig = CaskDAO.CaskConfig(caskTableName, "common.order.Order", typeHash, emptyList(), emptyList(), null, Instant.now())
+      val caskConfig = CaskConfig(caskTableName, "common.order.Order", typeHash, emptyList(), emptyList(), null, Instant.now())
       whenever(caskDAO.findAllCaskConfigs()).thenReturn(mutableListOf(caskConfig))
 
       // act

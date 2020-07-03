@@ -7,7 +7,7 @@ import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
 
 
-class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet()) {
+class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet(), val source:DataSource) {
    private val valueReader = ValueReader()
    private val accessorReader: AccessorReader by lazy { AccessorReader() }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
@@ -25,7 +25,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
          // field set evaluation block, prior to the iterator hitting the field
          getOrBuild(attributeName, field)
       }
-      return TypedObject(type, mappedAttributes)
+      return TypedObject(type, mappedAttributes, source)
    }
 
    private fun getOrBuild(attributeName: AttributeName, field: Field): TypedInstance {
@@ -39,11 +39,11 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
    }
 
    internal fun readAccessor(type: Type, accessor: Accessor): TypedInstance {
-      return accessorReader.read(value, type, accessor, schema)
+      return accessorReader.read(value, type, accessor, schema, source = source)
    }
 
    internal fun readAccessor(type: QualifiedName, accessor: Accessor): TypedInstance {
-      return accessorReader.read(value, type, accessor, schema, nullValues)
+      return accessorReader.read(value, type, accessor, schema, nullValues, source = source)
    }
 
 
@@ -83,9 +83,9 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
    private fun readWithValueReader(attributeName: AttributeName, field: Field): TypedInstance {
       val attributeValue = valueReader.read(value, attributeName)
       return if (attributeValue == null) {
-         TypedNull(schema.type(field.type))
+         TypedNull(schema.type(field.type), source)
       } else {
-         TypedInstance.from(schema.type(field.type.fullyQualifiedName), attributeValue, schema, true)
+         TypedInstance.from(schema.type(field.type.fullyQualifiedName), attributeValue, schema, true, source = source)
       }
    }
 

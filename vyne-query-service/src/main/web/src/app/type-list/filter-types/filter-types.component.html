@@ -1,0 +1,43 @@
+<div class="code-container">
+  <div class="title-bar" (click)="toggleVisibility()">
+    <img src="assets/img/filter.svg" class="filterIcon">
+    <span class="language-name">Filter</span>
+    <div class="spacer"></div>
+    <i class="material-icons" [ngClass]="expandWrapperClass">expand_less</i>
+  </div>
+  <div class="expand-wrapper highlight-container filterPanelContainer" [ngClass]="expandWrapperClass">
+    <div class="container target-type-container filterPanelContainer">
+      <mat-card class="filterPanelContainer">
+        <mat-card-content>
+          <mat-form-field class="inputField">
+            <mat-label>Entry Type</mat-label>
+            <mat-select [(value)]="filter.memberType" multiple (valueChange)="updateFilter()">
+              <mat-option value="TYPE">Type</mat-option>
+              <mat-option value="OPERATION">Operation</mat-option>
+              <mat-option value="SERVICE">Service</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="legacy" class="inputField">
+            <mat-label>Namespace</mat-label>
+            <input matInput placeholder="Namespace contains..." [formControl]="namespace"
+                   [(ngModel)]="filter.namespace" (ngModelChange)="updateFilter()">
+            <button type="button" mat-button *ngIf="filter.namespace" matSuffix mat-icon-button aria-label="Clear"
+                    (click)="filter.namespace = null; updateFilter()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-form-field>
+          <mat-form-field appearance="legacy" class="inputField">
+            <mat-label>Name</mat-label>
+            <input matInput placeholder="Name contains..." [formControl]="name" [(ngModel)]="filter.name"
+                   (ngModelChange)="updateFilter()">
+            <button type="button" mat-button *ngIf="filter.name" matSuffix mat-icon-button aria-label="Clear"
+                    (click)="filter.name=null; updateFilter()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-form-field>
+          <button mat-stroked-button class="filterButton" (click)="clearFilter()" *ngIf="isFiltered">Clear</button>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

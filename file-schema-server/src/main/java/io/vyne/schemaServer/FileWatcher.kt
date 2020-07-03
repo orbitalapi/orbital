@@ -3,9 +3,19 @@ package io.vyne.schemaServer
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
+import org.springframework.scheduling.annotation.AsyncResult
 import org.springframework.stereotype.Component
 import java.nio.file.*
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicReferenceArray
+import java.util.concurrent.locks.Lock
+import java.util.concurrent.locks.ReentrantLock
 import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
+import kotlin.concurrent.withLock
 
 
 @Component
@@ -23,24 +33,28 @@ class FileWatcher(@Value("\${taxi.schema-local-storage}") val schemaLocalStorage
                   val compilerService: CompilerService,
                   val excludedDirectoryNames: List<String> = FileWatcher.excludedDirectoryNames) {
 
+   @PreDestroy
+   fun destroy() {
+      unregisterKeys()
+   }
+
    companion object {
-      val excludedDirectoryNames = listOf(
+      private val excludedDirectoryNames = listOf(
          ".git",
          "node_modules",
          ".vscode"
       )
+      private val registeredKeys = ArrayList<WatchKey>()
+      private val watchServiceRef = AtomicReference<WatchService>()
    }
 
-   @Async
-   fun watch() {
-      if(schemaLocalStorage.isNullOrEmpty()) {
-         log().warn("schema-local-storage parameter in config file is empty, skipping.")
-         return
-      }
+   fun cancelWatch() {
+      watchServiceRef.get()?.close()
+   }
 
-      log().info("Starting to watch $schemaLocalStorage")
-      val watchService = FileSystems.getDefault().newWatchService()
+   private fun registerKeys(watchService: WatchService) {
       val path: Path = Paths.get(schemaLocalStorage!!)
+
       path.toFile().walkTopDown()
          .onEnter {
             val excluded = (it.isDirectory && excludedDirectoryNames.contains(it.name))
@@ -48,27 +62,59 @@ class FileWatcher(@Value("\${taxi.schema-local-storage}") val schemaLocalStorage
          }
          .filter { it.isDirectory }
          .forEach { directory ->
-            directory.toPath().register(
+            registeredKeys += directory.toPath().register(
                watchService,
                StandardWatchEventKinds.ENTRY_CREATE,
                StandardWatchEventKinds.ENTRY_DELETE,
-               StandardWatchEventKinds.ENTRY_MODIFY)
+               StandardWatchEventKinds.ENTRY_MODIFY,
+               StandardWatchEventKinds.OVERFLOW)
          }
+   }
 
+   private fun unregisterKeys() {
+      registeredKeys.apply {
+         forEach {
+            it.cancel()
+         }
+         clear()
+      }
+   }
+
+   @Async
+   fun watch() {
+      if (schemaLocalStorage.isNullOrEmpty()) {
+         log().warn("schema-local-storage parameter in config file is empty, skipping.")
+         return
+      }
+
+      log().info("Starting to watch $schemaLocalStorage")
+      val watchService = FileSystems.getDefault().newWatchService()
+
+      watchServiceRef.set(watchService)
+      registerKeys(watchService)
 
       var key: WatchKey
-      while (watchService.take().also { key = it } != null) {
-         val events = key.pollEvents()
-         if (events.isNotEmpty()) {
-            log().info("File change detected - ${events.joinToString { "${it.kind()} ${it.context()}" }}")
-            try {
-               compilerService.recompile()
-            } catch (exception: Exception) {
-               log().error("Exception in compiler service:", exception)
+      try {
+         while (watchService.take().also { key = it } != null) {
+            val events = key.pollEvents().filter {
+               !(it.context() as Path).fileName.toString().contains(".git") &&
+               (it.context() as Path).fileName.toString().contains(".taxi")
             }
 
+            if (events.isNotEmpty()) {
+               log().info("File change detected ${events.joinToString { "${it.kind()} ${it.context()}" }}")
+               try {
+                  compilerService.recompile()
+               } catch (exception: Exception) {
+                  log().error("Exception in compiler service:", exception)
+               }
+            }
+            key.reset()
          }
-         key.reset()
+      } catch (e: ClosedWatchServiceException) {
+         log().warn("Keys is closed. ${e.message}")
+      } catch (e: Exception) {
+         log().error("Error in watch service: ${e.message}")
       }
    }
 }

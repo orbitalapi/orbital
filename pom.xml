@@ -6,7 +6,7 @@
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.3.0</version>
+   <version>0.3.1</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>0.5.0</taxi.version>
+      <taxi.version>0.5.0.1</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -29,10 +29,12 @@
       <spring.cloud.netflix.version>2.2.3.RELEASE</spring.cloud.netflix.version>
       <arrow.version>0.10.4</arrow.version>
       <logstash.logback.version>6.4</logstash.logback.version>
+      <swagger.springfox.version>2.9.2</swagger.springfox.version>
    </properties>
 
    <modules>
       <module>cask</module>
+      <module>config-server</module>
       <module>eureka</module>
       <module>vyne-core-types</module>
       <module>events-api</module>
@@ -255,6 +257,16 @@
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash.logback.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+            <version>${swagger.springfox.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger-ui</artifactId>
+            <version>${swagger.springfox.version}</version>
          </dependency>
       </dependencies>
    </dependencyManagement>

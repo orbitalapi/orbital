@@ -12,6 +12,7 @@ import io.vyne.cask.websocket.CaskWebsocketHandler
 import io.vyne.spring.SchemaPublicationMethod
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -28,7 +29,10 @@ import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.function.server.router
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping
+import org.springframework.web.reactive.socket.server.WebSocketService
+import org.springframework.web.reactive.socket.server.support.HandshakeWebSocketService
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter
+import org.springframework.web.reactive.socket.server.upgrade.TomcatRequestUpgradeStrategy
 import java.time.Duration
 
 
@@ -69,13 +73,24 @@ class CaskApp {
    }
 
    @Bean
-   fun websocketHandlerAdapter() = WebSocketHandlerAdapter()
+   fun websocketHandlerAdapter(webSocketService: WebSocketService) = WebSocketHandlerAdapter(webSocketService)
+
+   @Bean
+   fun webSocketService(
+      @Value("\${cask.maxTextMessageBufferSize}")  maxTextMessageBufferSize: Int,
+      @Value("\${cask.maxBinaryMessageBufferSize}")  maxBinaryMessageBufferSize: Int): WebSocketService {
+      val strategy = TomcatRequestUpgradeStrategy()
+      strategy.maxTextMessageBufferSize = maxTextMessageBufferSize
+      strategy.maxBinaryMessageBufferSize = maxBinaryMessageBufferSize
+      return HandshakeWebSocketService(strategy)
+   }
 
    @Bean
    fun caskRouter(caskApiHandler: CaskApiHandler, caskRestController: CaskRestController) = router {
       CaskApiRootPath.nest {
          accept(APPLICATION_JSON).nest {
             GET("**", caskApiHandler::findBy)
+            POST("**", caskApiHandler::findBy)
          }
       }
       resources("/static/**", ClassPathResource("static/"))

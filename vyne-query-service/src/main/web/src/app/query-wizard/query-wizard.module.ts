@@ -19,6 +19,8 @@ import {CovalentFileModule} from '@covalent/core';
 import {ObjectViewModule} from '../object-view/object-view.module';
 import {CovalentHighlightModule} from '@covalent/highlight';
 import {MatButtonModule} from '@angular/material/button';
+import {MatSidenavModule} from '@angular/material/sidenav';
+import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
 
 @NgModule({
   imports: [
@@ -40,6 +42,8 @@ import {MatButtonModule} from '@angular/material/button';
     CovalentFileModule,
     ObjectViewModule,
     CovalentHighlightModule,
+    MatSidenavModule,
+    TypedInstancePanelModule
   ],
   exports: [QueryWizardComponent],
   declarations: [QueryWizardComponent, FileFactSelectorComponent, VyneQueryViewerComponent],
