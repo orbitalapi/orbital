@@ -128,10 +128,10 @@
         $("#pipelines").empty()
 
         responseEvent.sort((a, b) => {
-           if(a.instanceId == b.instanceId) {
+           if(a.instance && b.instance && a.instance.id == b.instance.id) {
                return a.name > b.name ? 1 : -1
            } else {
-             return a.instanceId > b.instanceId ? 1 : -1
+             return a.instance.id > b.instance.id ? 1 : -1
            }
         }).forEach(i => {
 
@@ -197,7 +197,7 @@
 
     function fetchPipelines() {
          $.ajax({
-             url: '/pipelines',
+             url: '/api/pipelines',
              type: 'GET',
              contentType: 'application/json',
              success: function (data) {
@@ -209,7 +209,7 @@
      function fetchPipelineDynamicInfo(instance, id) {
       if(instance) {
             $.ajax({
-                url: instance+'/runner/pipelines/' + id,
+                url: instance+'/api/pipelines/' + id,
                 type: 'GET',
                 contentType: 'application/json',
                 success: function (data) {
@@ -221,7 +221,7 @@
 
     function fetchRunners() {
          $.ajax({
-             url: '/runners',
+             url: '/api/runners',
              type: 'GET',
              contentType: 'application/json',
              success: function (data) {
@@ -232,7 +232,7 @@
 
 
    // ACTIONS
-    var pipelineOrchestratorUrl = "/runner/pipelines";
+    var pipelineOrchestratorUrl = "/api/pipelines";
 
     function logMessage(responseEvent) {
         console.log("Message");
@@ -247,7 +247,7 @@
    function bindPipeline(buttonSelector, pipelineValueSelector) {
            $(buttonSelector).click(function () {
             $.ajax({
-                url: '/runner/pipelines',
+                url: '/api/pipelines',
                 type: 'POST',
                 contentType: 'application/json',
                 data: $(pipelineValueSelector).val(),
