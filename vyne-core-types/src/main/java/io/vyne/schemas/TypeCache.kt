@@ -1,11 +1,14 @@
 package io.vyne.schemas
 
+import io.vyne.models.TypedInstance
+
 
 interface TypeCache {
    fun type(name: String): Type
    fun type(name: QualifiedName): Type
    fun hasType(name: String): Boolean
    fun hasType(name: QualifiedName): Boolean
+   fun defaultValues(name: QualifiedName): Map<AttributeName, TypedInstance>?
 }
 
 object EmptyTypeCache : TypeCache {
@@ -19,5 +22,8 @@ object EmptyTypeCache : TypeCache {
 
    override fun hasType(name: String): Boolean = false
    override fun hasType(name: QualifiedName): Boolean = false
+   override fun defaultValues(name: QualifiedName): Map<AttributeName, TypedInstance>? {
+      error("This is an empty cache")
+   }
 
 }
