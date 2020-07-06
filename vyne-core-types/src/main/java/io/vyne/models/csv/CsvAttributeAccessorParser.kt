@@ -12,6 +12,7 @@ import io.vyne.schemas.Type
 import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
+import java.lang.IllegalArgumentException
 import java.util.concurrent.TimeUnit
 
 internal object CsvDocumentCacheBuilder {
@@ -52,9 +53,13 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
    }
 
    fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
-      val index = accessor.index - 1
-      val value = record.get(index)
-      if (!nullValues.isEmpty() && nullValues.contains(value)) {
+      val value =
+         when(accessor.index) {
+            is Int -> record.get(accessor.index as Int - 1)
+            is String -> record.get((accessor.index as String).trim('"'))
+            else -> throw IllegalArgumentException("Index type must be either Int or String.")
+         }
+      if (nullValues.isNotEmpty() && nullValues.contains(value)) {
          return TypedInstance.from(type, null, schema, source = source);
       }
       try {

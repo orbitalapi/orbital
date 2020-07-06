@@ -43,7 +43,7 @@ enum Gender {
 enum GenderType {
    Male synonym of Gender.Male
 }
-type OriginalGender inherits Gender
+enum OriginalGender inherits Gender
 type Person {
     firstName : FirstName as String
     age : Int

@@ -8,9 +8,6 @@ import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
-import java.lang.IllegalArgumentException
-import java.lang.IllegalStateException
-import java.lang.NumberFormatException
 import java.time.Instant
 
 
@@ -70,7 +67,7 @@ enum Country {
    NZ("New Zealand"),
    AUS("Australia")
 }
-type CountryCode inherits Country
+enum CountryCode inherits Country
       """.trimIndent()
       val schema = TaxiSchema.from(src)
       val enum = PrimitiveParser().parse("NZ",schema.type("CountryCode"), Provided)
