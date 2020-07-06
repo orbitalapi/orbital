@@ -60,7 +60,7 @@ class GitSynch(
                }
 
                if(recompile) {
-                  compilerService.recompile()
+                  compilerService.recompile(false)
                }
             } catch (e: Exception) {
                log().error("Synch error: ${repoConfig.name}\n${e.message}", e)
