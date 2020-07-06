@@ -35,8 +35,21 @@ type OrderWindowSummary {
     close : Price by column(6)
 }""".trimIndent()
 
+   private val sourceV3 = """
+type alias Price as Decimal
+type alias Symbol as String
+type OrderWindowSummary {
+    symbol : Symbol by column("Symbol")
+    open : Price by column("Open")
+    // Added column
+    high : Price by column("High")
+    // Changed column
+    close : Price by column("Close")
+}""".trimIndent()
+
    val schemaV1 = TaxiSchema.from(sourceV1, "Coinbase", "0.1.0")
    val schemaV2 = TaxiSchema.from(sourceV2, "Coinbase", "0.2.0")
+   val schemaV3 = TaxiSchema.from(sourceV3, "Coinbase", "0.3.0")
    val schemaStoreClient = TestSchemaStoreClient(SchemaSet.fromParsed(listOf(ParsedSource(VersionedSource("Coinbase", "0.1.0", sourceV1))), 0))
 }
 
