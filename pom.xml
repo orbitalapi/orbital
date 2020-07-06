@@ -435,6 +435,14 @@
          <name>bintray</name>
          <url>https://dl.bintray.com/taxi-lang/releases</url>
       </repository>
+      <repository>
+         <snapshots>
+            <enabled>false</enabled>
+         </snapshots>
+         <id>bintray</id>
+         <name>bintray</name>
+         <url>https://jcenter.bintray.com</url>
+      </repository>
    </repositories>
 
    <profiles>

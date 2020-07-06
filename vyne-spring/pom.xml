@@ -67,7 +67,11 @@
       <dependency>
          <groupId>com.hazelcast</groupId>
          <artifactId>hazelcast</artifactId>
-         <!--<scope>optional</scope>-->
+      </dependency>
+      <dependency>
+         <groupId>org.bitsofinfo</groupId>
+         <artifactId>hazelcast-docker-swarm-discovery-spi</artifactId>
+         <version>1.0-RC14</version>
       </dependency>
       <dependency>
          <groupId>com.jayway.jsonpath</groupId>
