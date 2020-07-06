@@ -11,7 +11,13 @@
   <div class="results-container">
     <mat-tab-group>
       <mat-tab label="Result">
+        <button mat-stroked-button [matMenuTriggerFor]="menu" *ngIf="queryResultTypeNames.length>0" class="downloadFileButton">Download</button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item (click)="downloadQueryHistory(downloadFileType.JSON)">as JSON</button>
+          <button mat-menu-item (click)="downloadQueryHistory(downloadFileType.CSV)">as CSV</button>
+        </mat-menu>
         <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-object-view">
+
           <app-object-view [instance]="getResultForTypeName(resultTypeName)"
                            [schema]="schema"
                            [selectable]="true"
@@ -29,7 +35,6 @@
       </mat-tab>
 
     </mat-tab-group>
-
 
     <app-call-explorer *ngIf="showMermaid" [queryResult]="result"></app-call-explorer>
   </div>
