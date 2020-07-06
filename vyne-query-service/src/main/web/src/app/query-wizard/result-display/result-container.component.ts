@@ -1,11 +1,19 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {ProfilerOperation, QueryResult, ResultMode} from '../../services/query.service';
+import {
+  ProfilerOperation, QueryHistoryRecord,
+  QueryResult,
+  QueryService,
+  RestfulQueryHistoryRecord,
+  ResultMode
+} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard.component';
 import {MatTreeNestedDataSource} from '@angular/material';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {TypesService} from '../../services/types.service';
 import {findType, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
 import {InstanceLike, InstanceLikeOrCollection, typeName} from '../../object-view/object-view.component';
+import {ExportFileService} from '../../services/export.file.service';
+import * as fileSaver from 'file-saver';
 
 export class InstanceSelectedEvent {
   constructor(public readonly selectedTypeInstance: InstanceLike,
@@ -14,6 +22,9 @@ export class InstanceSelectedEvent {
   }
 }
 
+export enum DownloadFileType {JSON = 'JSON', CSV = 'CSV'}
+
+
 @Component({
   selector: 'query-result-container',
   templateUrl: './result-container.component.html',
@@ -21,12 +32,14 @@ export class InstanceSelectedEvent {
 })
 export class ResultContainerComponent implements OnInit {
 
-
-  constructor(private typeService: TypesService) {
+  constructor(private typeService: TypesService, private fileService: ExportFileService) {
     typeService.getTypes().subscribe(schema => this.schema = schema);
+
   }
 
   private _result: QueryResult | QueryFailure;
+  downloadFileType = DownloadFileType;
+
   nestedTreeControl: NestedTreeControl<ProfilerOperation>;
   nestedDataSource: MatTreeNestedDataSource<ProfilerOperation> = new MatTreeNestedDataSource<ProfilerOperation>();
 
@@ -52,7 +65,6 @@ export class ResultContainerComponent implements OnInit {
   get result(): QueryResult | QueryFailure {
     return this._result;
   }
-
   get unmatchedNodes(): string {
     const queryResult = <QueryResult>this.result;
     return queryResult.unmatchedNodes.map(qn => qn.name).join(', ');
@@ -169,7 +181,13 @@ export class ResultContainerComponent implements OnInit {
     }
     return (<QueryResult>result).results !== undefined;
   }
-
+  public downloadQueryHistory(fileType: DownloadFileType) {
+   const queryResponseId = (<QueryResult>this.result).queryResponseId;
+    this.fileService.exportQueryHistory(queryResponseId, fileType).subscribe(response => {
+      const blob: Blob = new Blob([response], {type: `text/${fileType}; charset=utf-8`});
+      fileSaver.saveAs(blob, `query-${new Date().getTime()}.${fileType}`);
+    });
+  }
 
   ngOnInit() {
     this.nestedTreeControl = new NestedTreeControl<ProfilerOperation>(this._getChildren);

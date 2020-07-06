@@ -64,5 +64,8 @@ class ReactiveDatabaseSupport {
    }
 
    @Bean
-   fun history(repository: QueryHistoryRecordRepository, connectionFactory: ConnectionFactory) = DatabaseBackedQueryHistory(repository, connectionFactory, QueryHistoryRecordReadingConverter(objectMapper))
+   fun history(
+      repository: QueryHistoryRecordRepository,
+      connectionFactory: ConnectionFactory) =
+      DatabaseBackedQueryHistory(repository, connectionFactory, QueryHistoryRecordReadingConverter(objectMapper))
 }

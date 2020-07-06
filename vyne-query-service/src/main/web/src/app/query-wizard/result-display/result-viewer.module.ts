@@ -9,13 +9,14 @@ import {SimpleCodeViewerModule} from '../../simple-code-viewer/simple-code-viewe
 import {CallExplorerModule} from '../taxi-viewer/call-explorer/call-explorer.module';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {TypedInstancePanelModule} from '../../typed-instance-panel/typed-instance-panel.module';
+import { MatMenuModule} from '@angular/material/menu';
 
 
 @NgModule({
   imports: [BrowserModule, CommonModule, MatTabsModule,
     ObjectViewModule, VyneServicesModule,
     SimpleCodeViewerModule,
-    CallExplorerModule
+    CallExplorerModule, MatMenuModule
   ],
   exports: [ResultContainerComponent],
   declarations: [ResultContainerComponent],

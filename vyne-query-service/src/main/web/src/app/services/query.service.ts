@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
 
 import {environment} from 'src/environments/environment';
@@ -100,6 +100,7 @@ export interface QueryResult {
   remoteCalls: RemoteCall[];
   resultMode: ResultMode;
   lineageGraph: LineageGraph;
+  queryResponseId: string;
 }
 
 
