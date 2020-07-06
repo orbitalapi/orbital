@@ -357,6 +357,25 @@
                <target>1.8</target>
             </configuration>
          </plugin>
+         <plugin>
+            <!-- build helper plug-in is used for de-composing the version and it gaining access to its sub parts.
+             We are doing for tagging docker images, we want to have a tag with BETA qualifier instead of SNAPSHOT and the build number from git will be the last part. -->
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+               <execution>
+                  <phase>validate</phase>
+                  <id>phase-version</id>
+                  <goals>
+                     <goal>parse-version</goal>
+                  </goals>
+                  <configuration>
+                     <propertyPrefix>parsedVersion</propertyPrefix>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
       </plugins>
       <pluginManagement>
          <plugins>
@@ -426,6 +445,7 @@
          </activation>
          <properties>
             <docker.tag>latest-snapshot</docker.tag>
+            <docker.tag>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag>
          </properties>
       </profile>
       <profile>
