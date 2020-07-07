@@ -6,6 +6,7 @@ import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
+import io.vyne.query.EnumSynonymResolutionStrategy
 import io.vyne.query.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
@@ -104,6 +105,13 @@ class ParameterFactory {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
          // TODO (2) : Fail if there are multiple instances
          return firstLevelDiscovery
+      }
+
+      if (paramType.isEnum) {
+         val synonymDiscovery = EnumSynonymResolutionStrategy().resolveThroughSynonyms(paramType, context)
+         if (synonymDiscovery != null) {
+            return synonymDiscovery
+         }
       }
 
       // Check to see if there's exactly one instance somewhere within the context

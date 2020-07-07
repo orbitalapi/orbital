@@ -127,9 +127,11 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
    internal fun find(targetElement: Element, context: QueryContext): Pair<TypedInstance, Path>? {
       // Take a copy, as the set is mutable, and performing a search is a
       // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
-      val currentFacts = context.facts.toSet()
+      val availableSynonyms = context.enumsWithSynonyms()
+      val currentFacts =  availableSynonyms?.let { context.facts.toSet().plus(it) } ?: context.facts.toSet()
       val graphBuilder = schemaGraphCache[context.schema]
-      val factSet = context.facts.map { it.type }.toSet()
+      val factSet = availableSynonyms?.let { context.facts.map { it.type }.toSet().plus(availableSynonyms.map { it.type }) }
+         ?: context.facts.map { it.type }.toSet()
       val directedGraph =    schemaGraphFactSetCache.get(factSet) {
             graphBuilder.build(factSet)
          }
@@ -241,7 +243,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
    fun getStartingEdge(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): StartingEdge {
       val firstNode = searchResult.path().first()
       val firstType = queryContext.schema.type(firstNode.state().valueAsQualifiedName())
-      val firstFact = queryContext.getFactOrNull(firstType)
+      val firstFact = queryContext.getFactOrNull(firstType) ?: EnumSynonymResolutionStrategy().resolveThroughSynonyms(firstType, queryContext)
       require(firstFact != null) { "The queryContext doesn't have a fact present of type ${firstType.fullyQualifiedName}, but this is the starting point of the discovered solution." }
       val startingEdge = StartingEdge(firstFact, firstNode.state())
       return startingEdge

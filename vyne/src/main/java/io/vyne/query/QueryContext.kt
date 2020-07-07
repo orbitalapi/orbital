@@ -37,6 +37,7 @@ import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import java.util.UUID
+import java.util.stream.Collectors
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -239,42 +240,7 @@ data class QueryContext(
 
    companion object {
       fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler, resultMode: ResultMode): QueryContext {
-         val mutableFacts = facts.flatMap { fact -> resolveSynonyms(fact, schema) }.toMutableSet()
-         return QueryContext(schema, mutableFacts, queryEngine, profiler, resultMode)
-      }
-
-      private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
-         return if (fact is TypedObject) {
-            fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
-         } else {
-            resolveSynonym(fact, schema, true)
-         }
-      }
-
-      private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
-         val derivedFacts = if (fact.type.isEnum && fact.value != null) {
-            val underlyingEnumType = fact.type.taxiType as EnumType
-            underlyingEnumType.of(fact.value)
-               .synonyms
-               .map { synonym ->
-                  val synonymType = schema.type(synonym.synonymFullQualifiedName())
-                  val synonymTypeTaxiType = synonymType.taxiType as EnumType
-                  val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
-
-                  // Instantiate with either name or value depending on what we have as input
-                  val value = if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
-
-                  TypedValue.from(synonymType, value, false, MappedSynonym)
-               }.toSet()
-         } else {
-            setOf()
-         }
-
-         return if (includeGivenFact) {
-            derivedFacts.plus(fact)
-         } else {
-            derivedFacts
-         }
+         return QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, resultMode)
       }
    }
 
@@ -283,28 +249,13 @@ data class QueryContext(
     * All other parameters (queryEngine, schema, etc) are retained
     */
    fun only(fact: TypedInstance): QueryContext {
-      val mutableFacts = resolveSynonyms(fact, schema).toMutableSet()
-      mutableFacts.add(fact)
-      return this.copy(facts = mutableFacts, parent = this)
+      return this.copy(facts = mutableSetOf(fact), parent = this)
    }
 
    fun addFact(fact: TypedInstance): QueryContext {
       log().debug("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
       inMemoryStream = null
-      when {
-          fact.type.isEnum -> {
-             val synonymSet = resolveSynonyms(fact, schema)
-             this.facts.addAll(synonymSet)
-          }
-          fact is TypedObject -> {
-             fact.values.filter { it.type.isEnum }.flatMap { resolveSynonyms(fact, schema) }.forEach { synonymsSet -> this.facts.add(synonymsSet) }
-             this.facts.add(fact)
-          }
-          else -> {
-             this.facts.add(fact)
-          }
-      }
-
+      this.facts.add(fact)
       return this
    }
 
@@ -343,6 +294,24 @@ data class QueryContext(
    fun modelTree(): Stream<TypedInstance> {
       inMemoryStream = inMemoryStream ?: TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot()).toList()
       return inMemoryStream!!.stream()
+   }
+
+   fun enumsWithSynonyms(): MutableSet<TypedValue>? {
+     val ret =  modelTree()
+         .filter { it.type.isEnum && it.value != null }
+         .map {
+            val underlyingEnumType = it.type.taxiType as EnumType
+            underlyingEnumType.of(it.value).synonyms.map {
+               synonym ->
+               val synonymType = schema.type(synonym.synonymFullQualifiedName())
+               val synonymTypeTaxiType = synonymType.taxiType as EnumType
+               val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
+               val value = if (underlyingEnumType.hasValue(it.value)) synonymEnumValue.value else synonymEnumValue.name
+               TypedValue.from(synonymType, value, false, MappedSynonym)
+            }
+         }
+
+      return ret.flatMap { synonymList -> synonymList.stream() }.collect(Collectors.toSet())
    }
 
    fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
