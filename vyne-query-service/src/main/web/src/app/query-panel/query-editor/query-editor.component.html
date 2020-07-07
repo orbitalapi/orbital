@@ -1,0 +1,41 @@
+<div class="row">
+  <div class="container">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Query</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+
+        <div class="code-viewer-container">
+          <ngx-monaco-editor [options]="editorOptions" class="code-editor" [(ngModel)]="content" #editor>
+          </ngx-monaco-editor>
+        </div>
+
+        <div class="buttons-container">
+          <button mat-raised-button color="primary" [disabled]="!monacoModel || !monacoModel.getValue() || loading"
+            (click)="submitQuery()">Submit</button>
+        </div>
+      </mat-card-content>
+
+    </mat-card>
+  </div>
+</div>
+
+<div class="row">
+  <div class="container">
+
+    <div class="results-container" >
+      <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
+
+
+      <mat-card *ngIf="lastQueryResult" style="width: 100%">
+        <mat-card-header>
+          <mat-card-title>Results</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <query-result-container [result]="lastQueryResult"></query-result-container>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

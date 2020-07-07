@@ -6,7 +6,7 @@ import {
   RestfulQueryHistoryRecord,
   ResultMode
 } from '../../services/query.service';
-import {QueryFailure} from '../query-wizard.component';
+import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {MatTreeNestedDataSource} from '@angular/material';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {TypesService} from '../../services/types.service';

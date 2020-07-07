@@ -1,0 +1,49 @@
+@import "src/theme";
+
+.container {
+  width: 100%;
+  flex: 1;
+
+  &:not(:last-child) {
+    padding-right: 45px;
+  }
+
+}
+
+.code-viewer-container {
+
+    margin-top: 0.5rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 200px;
+
+    .code-editor {
+
+      width: 100%;
+      height: 100%;
+    
+    }
+}
+
+.results-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+}
+
+.buttons-container {
+  width: 100%;
+  margin: 5px;
+
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  margin-top: 32px;
+  margin-bottom: 3px;
+}
+
+
