@@ -45,7 +45,14 @@ class QueryServiceApp {
 
    @Autowired
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {
-      val version = buildInfo?.version ?: "Dev version";
+      val baseVersion = buildInfo?.get("baseVersion")
+      val buildNumber = buildInfo?.get("buildNumber")
+      val version = if(!baseVersion.isNullOrEmpty() && buildNumber != "0" && buildInfo.version.contains("SNAPSHOT")) {
+         "$baseVersion-BETA-$buildNumber"
+      } else {
+         buildInfo?.version ?: "Dev version"
+      }
+
       log().info("Vyne query server $version")
    }
 

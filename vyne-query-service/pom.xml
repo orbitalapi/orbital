@@ -9,6 +9,10 @@
 
    <artifactId>vyne-query-service</artifactId>
 
+   <properties>
+      <buildNumber>0</buildNumber>
+   </properties>
+
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -153,6 +157,16 @@
                   </goals>
                </execution>
             </executions>
+            <configuration>
+               <additionalProperties>
+                  <baseVersion>
+                     ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}
+                  </baseVersion>
+                  <buildNumber>
+                     ${buildNumber}
+                  </buildNumber>
+               </additionalProperties>
+            </configuration>
          </plugin>
          <plugin>
             <groupId>com.github.eirslett</groupId>
