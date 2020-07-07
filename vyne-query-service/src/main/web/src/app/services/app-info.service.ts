@@ -46,7 +46,9 @@ export class AppInfo {
     }
   };
   build: {
+    baseVersion: string
     version: string
+    buildNumber: string
     time: string
   };
 }
