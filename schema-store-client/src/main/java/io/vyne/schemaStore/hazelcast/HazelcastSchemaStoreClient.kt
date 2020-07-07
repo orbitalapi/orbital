@@ -1,4 +1,4 @@
-package io.vyne.schemaStore
+package io.vyne.schemaStore.hazelcast
 
 import arrow.core.Either
 import com.hazelcast.core.*
@@ -10,6 +10,7 @@ import com.hazelcast.query.Predicate
 import io.vyne.ParsedSource
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
+import io.vyne.schemaStore.*
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import lang.taxi.CompilationException
@@ -59,7 +60,7 @@ interface SchemaSetInvalidatedListener {
 
 
 internal object SchemaSetCacheKey : Serializable
-class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, private val schemaValidator: SchemaValidator = TaxiSchemaValidator(), val eventPublisher: ApplicationEventPublisher) : SchemaStoreClient, SchemaSetInvalidatedListener {
+class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, private val schemaValidator: SchemaValidator = TaxiSchemaValidator(), val eventPublisher: ApplicationEventPublisher) : SchemaStore, SchemaPublisher, SchemaSetInvalidatedListener {
 
    private val generationCounter = hazelcast.getAtomicLong("schemaGenerationIndex")
    private val schemaSetHolder: IMap<SchemaSetCacheKey, SchemaSet> = hazelcast.getMap("schemaSet")

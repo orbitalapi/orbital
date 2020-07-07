@@ -28,11 +28,18 @@ class UnknownResourceException(message: String) : RuntimeException(message)
 
 @RestController
 @RequestMapping("/schemas/taxi")
-class TaxiSchemaService : SchemaService, SchemaProvider {
+class TaxiSchemaService(
+   private val schemaStore: SchemaStore
+) : SchemaService, SchemaProvider {
 
    // TODO : Persist these somewhere
    private val schemas = mutableMapOf<String, VersionedSource>()
    private val generation:AtomicInteger = AtomicInteger(0);
+
+   @PostMapping
+   override fun submitSources(@RequestBody source:List<VersionedSource>) {
+
+   }
 
    @RequestMapping(method = arrayOf(RequestMethod.POST), value = ["/{schemaId}/{version:.+}"])
    override fun submitSchema(@RequestBody schema: String, @PathVariable("schemaId") schemaId: String, @PathVariable("version") version: String): VersionedSource {

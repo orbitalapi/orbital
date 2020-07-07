@@ -1,7 +1,10 @@
-package io.vyne.schemaStore
+package io.vyne.schemaStore.http
 
 import arrow.core.Either
 import io.vyne.VersionedSource
+import io.vyne.schemaStore.SchemaPublisher
+import io.vyne.schemaStore.SchemaService
+import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemas.Schema
 import io.vyne.utils.log
 import lang.taxi.CompilationException
@@ -13,7 +16,6 @@ import org.springframework.retry.policy.SimpleRetryPolicy
 import org.springframework.retry.support.RetryTemplate
 import reactor.core.Disposable
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.PostConstruct
@@ -41,12 +43,7 @@ object RetryConfig {
    }
 }
 
-class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate: RetryTemplate = RetryConfig.simpleRetryWithBackoff(), val pollFrequency: Duration = Duration.ofSeconds(1L)) : SchemaStoreClient {
-   private var poller: Disposable? = null
-   private var schemaSet: SchemaSet = SchemaSet.EMPTY
-   private val generationCounter: AtomicInteger = AtomicInteger(0)
-
-   override fun schemaSet() = schemaSet
+class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate: RetryTemplate = RetryConfig.simpleRetryWithBackoff(), val pollFrequency: Duration = Duration.ofSeconds(1L)) : SchemaPublisher {
 
    override fun submitSchema(schemaName: String,
                              schemaVersion: String,
@@ -66,34 +63,6 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
       TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
    }
 
-   override val generation: Int
-      get() {
-         return generationCounter.get()
-      }
 
 
-   @PostConstruct
-   fun startPolling() {
-      poller = Flux.interval(pollFrequency)
-         .doOnNext { pollForSchemaUpdates() }
-         .subscribe()
-   }
-
-   @PreDestroy
-   fun stopPolling() {
-      poller?.dispose()
-   }
-
-   fun pollForSchemaUpdates() {
-      try {
-         val schemaSet = schemaService.listSchemas()
-         if (this.schemaSet.id != schemaSet.id) {
-            this.schemaSet = schemaSet
-            this.generationCounter.incrementAndGet()
-            log().info("Updated to schema set ${schemaSet.id}, generation $generation (contains ${schemaSet.size()} schemas)")
-         }
-      } catch (e: Exception) {
-         log().warn("Failed to fetch schemas: $e")
-      }
-   }
 }

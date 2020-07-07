@@ -1,7 +1,6 @@
 package io.vyne.cask.format.csv
 
 import arrow.core.Either
-import arrow.core.right
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaSet

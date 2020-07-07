@@ -24,7 +24,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class)
 @EnableVyneEmbeddedSearch
-@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
+@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.REMOTE)
 @EnableFeignClients(clients = [CaskApi::class])
 class QueryServiceApp {
 

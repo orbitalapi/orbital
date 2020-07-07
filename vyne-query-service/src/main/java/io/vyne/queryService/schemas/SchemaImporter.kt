@@ -3,8 +3,6 @@ package io.vyne.queryService.schemas
 import arrow.core.Either
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaStoreClient
-import io.vyne.schemas.Schema
-import lang.taxi.CompilationException
 import lang.taxi.generators.Message
 import org.apache.commons.io.IOUtils
 import org.springframework.stereotype.Component
