@@ -12,6 +12,7 @@ import {InstanceLike} from '../object-view/object-view.component';
 import {Type} from '../services/schema';
 import {ActivatedRoute, Router} from '@angular/router';
 
+
 @Component({
   selector: 'app-query-history',
   templateUrl: './query-history.component.html',

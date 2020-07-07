@@ -15,18 +15,18 @@ import {QueryHistoryContainerComponent} from './query-history-container.componen
 import {ScrollingModule} from '@angular/cdk/scrolling';
 
 @NgModule({
-    imports: [
-        BrowserModule,
-        CommonModule,
-        SearchModule,
-        MatButtonModule,
-        ResultViewerModule,
-        MomentModule,
-        MatToolbarModule,
-        MatSidenavModule,
-        TypedInstancePanelModule,
-        ScrollingModule
-    ],
+  imports: [
+    BrowserModule,
+    CommonModule,
+    SearchModule,
+    MatButtonModule,
+    ResultViewerModule,
+    MomentModule,
+    MatToolbarModule,
+    MatSidenavModule,
+    TypedInstancePanelModule,
+    ScrollingModule
+  ],
   exports: [QueryHistoryComponent],
   declarations: [QueryHistoryComponent, VyneqlRecordComponent, RestfulRecordComponent, QueryHistoryContainerComponent],
   providers: [],

@@ -8,6 +8,11 @@
   margin-top: 1rem;
 }
 
+app-results-table {
+  height: 300px;
+  display: block;
+}
+
 app-call-explorer {
   margin-top: 1rem;
   display: block;
@@ -25,6 +30,16 @@ app-call-explorer {
   //box-shadow: 0 1px 2px rgba(0, 0, 0, .6);
   margin-bottom: 8px;
   border-radius: 4px;
+}
+
+.results-summary {
+  display: flex;
+  .spacer {
+    flex-grow: 1;
+  }
+  padding: 0 1rem;
+  background-color: rgba($light-purple-grey, 0.5);
+  border: 1px solid $light-purple-grey-300;
 }
 
 .unsuccessful-search {
@@ -83,7 +98,7 @@ app-call-explorer {
   margin: 24px 0;
 }
 
-.downloadFileButton{
+.downloadFileButton {
   margin: 1rem 0;
 }
 

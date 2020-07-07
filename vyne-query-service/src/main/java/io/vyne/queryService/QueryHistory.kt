@@ -3,6 +3,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.google.common.collect.EvictingQueue
 import io.vyne.query.HistoryQueryResponse
 import io.vyne.query.Query
+import io.vyne.models.DataSource
+import io.vyne.models.TypeNamedInstance
+import io.vyne.query.*
+import io.vyne.schemas.Path
+import io.vyne.schemas.QualifiedName
 import io.vyne.utils.log
 import io.vyne.vyneql.VyneQLQueryString
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
@@ -38,6 +43,7 @@ class InMemoryQueryHistory : QueryHistory {
       return Mono.just(match)
    }
 }
+
 @JsonTypeInfo(
    use = JsonTypeInfo.Id.CLASS,
    include = JsonTypeInfo.As.PROPERTY,
@@ -51,6 +57,7 @@ interface QueryHistoryRecord<T> {
          return response.queryResponseId
       }
 }
+
 data class VyneQlQueryHistoryRecord(
    override val query: VyneQLQueryString,
    override val response: HistoryQueryResponse,
@@ -61,4 +68,5 @@ data class RestfulQueryHistoryRecord(
    override val response: HistoryQueryResponse,
    override val timestamp: Instant = Instant.now()
 ) : QueryHistoryRecord<Query>
+
 

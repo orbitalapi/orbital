@@ -12,6 +12,7 @@ class QueryHistoryService(private val history: QueryHistory, private val queryHi
    private val truncationThreshold = 10
    @GetMapping("/api/query/history")
    fun listHistory(): String {
+
       val queries = history.list()
          .toStream().toList()
       val json = Lineage.newLineageAwareJsonMapper()

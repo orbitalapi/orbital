@@ -34,6 +34,7 @@ import {InheritanceGraphComponent} from './inheritence-graph/inheritance-graph.c
 import {QueryHistoryContainerComponent} from './query-history/query-history-container.component';
 import { QueryPanelComponent } from './query-panel/query-panel.component';
 import { QueryPanelModule } from './query-panel/query-panel.module';
+import { ResultsTableComponent } from './results-table/results-table.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -48,7 +49,7 @@ export const routerModule = RouterModule.forRoot(
     {path: 'cask-viewer', component: CaskViewerComponent},
     {path: 'query-history/:queryResponseId', component: QueryHistoryContainerComponent},
   ],
-  {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled' }
+  {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );
 
 
