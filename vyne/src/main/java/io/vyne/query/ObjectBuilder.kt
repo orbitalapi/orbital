@@ -1,7 +1,5 @@
 package io.vyne.query
 
-import io.vyne.models.ConversionService
-import io.vyne.models.DefinedInSchema
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -113,13 +111,6 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                }
             } else {
                populatedValues[attributeName] = value
-            }
-         } else {
-            field.defaultValue?.let {
-               populatedValues[attributeName] = TypedValue.from(
-                  type = context.schema.type(field.type),
-                  value = it,
-                  converter = ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)
             }
          }
       }

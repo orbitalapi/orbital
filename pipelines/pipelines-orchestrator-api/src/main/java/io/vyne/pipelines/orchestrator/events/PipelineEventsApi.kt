@@ -8,6 +8,6 @@ import org.springframework.web.bind.annotation.RequestBody
 @FeignClient("pipeline-orchestrator")
 interface PipelineEventsApi {
 
-   @PostMapping("/pipelines/events")
+   @PostMapping("/api/pipelines/events")
    fun publish(@RequestBody event: PipelineEvent)
 }

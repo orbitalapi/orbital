@@ -3,6 +3,7 @@ package io.vyne.pipelines.orchestrator
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
 import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.*
+import springfox.documentation.annotations.ApiIgnore
 
 // Temporary Controller to send Kafka messages to runners.
 // This allows us to ignore any CORS related issues in the browser when showing the Orchestrator UI
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*
 data class OperationResult(val success: Boolean, val message: String)
 
 @RestController
+@ApiIgnore
 class TestharnessController(val pipelineRunnerApi: PipelineRunnerApi) {
 
     @PostMapping("/testharness/send2kafka/{kafkaTopic}")

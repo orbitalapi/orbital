@@ -7,6 +7,7 @@ import io.vyne.queryService.schemas.SchemaImportRequest
 import io.vyne.queryService.schemas.SchemaImportService
 import io.vyne.queryService.schemas.SchemaPreview
 import io.vyne.queryService.schemas.SchemaPreviewRequest
+import io.vyne.schemaStore.SchemaService
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.VersionedSourceProvider
 import io.vyne.schemas.Schema
@@ -15,8 +16,9 @@ import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 
 @RestController
-class SchemaService(private val schemaProvider: SchemaSourceProvider, private val importer: SchemaImportService,
-                    private val config: QueryServerConfig) {
+class SchemaService(private val schemaProvider: SchemaSourceProvider,
+                    private val importer: SchemaImportService,
+                    private val config: QueryServerConfig):SchemaService {
    @GetMapping(path = ["/api/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")

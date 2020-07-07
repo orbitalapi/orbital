@@ -5,8 +5,11 @@ import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
 import lang.taxi.CompilationException
 
-@Deprecated("Use either SchemaStore or SchemaPublisher")
 interface SchemaStoreClient : SchemaStore, SchemaPublisher
+
+class CompositeSchemaStoreClient(schemaStore: SchemaStore, schemaPublisher: SchemaPublisher) : SchemaStore by schemaStore,
+   SchemaPublisher by schemaPublisher,
+   SchemaStoreClient
 
 /**
  * Responsible for storing the retrieved schemas

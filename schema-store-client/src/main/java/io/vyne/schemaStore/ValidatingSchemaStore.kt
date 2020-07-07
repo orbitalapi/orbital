@@ -20,7 +20,7 @@ class ValidatingSchemaStore(private val schemaValidator: SchemaValidator = TaxiS
    private val schemaSourcesMap = mutableMapOf<SchemaId, ParsedSource>()
 
    override fun schemaSet(): SchemaSet {
-      TODO("Not yet implemented")
+      return schemaSetHolder.getValue(SchemaSetCacheKey)
    }
 
    override val generation: Int
@@ -28,10 +28,11 @@ class ValidatingSchemaStore(private val schemaValidator: SchemaValidator = TaxiS
          return generationCounter.get()
       }
 
-   private val sources:List<ParsedSource>
-   get() {
-      return schemaSourcesMap.values.toList()
-   }
+   private val sources: List<ParsedSource>
+      get() {
+         return schemaSourcesMap.values.toList()
+      }
+
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
       val validationResult = schemaValidator.validate(schemaSet(), versionedSources)
       val (parsedSources, returnValue) = when (validationResult) {

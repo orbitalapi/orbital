@@ -48,8 +48,7 @@ class StringMaskingProcessor : TypeInstancePolicyProcessor {
       require(propertiesToMaskArg is List<*>) { "The first param must be an array of property names to mask" }
       val propertiesToMask = args[0] as List<String>
       require(input is TypedObject) { "Can only use a StringMaskingProcessor on a TypedObject" }
-      val inputObject = input as TypedObject
-      val maskedProperties = inputObject.value.map { (propertyName, value) ->
+      val maskedProperties = input.value.map { (propertyName, value) ->
          if (propertiesToMask.contains(propertyName)) {
             val typedValue = value as TypedValue
             propertyName to typedValue.copy(value = MASKED_VALUE)
@@ -57,7 +56,7 @@ class StringMaskingProcessor : TypeInstancePolicyProcessor {
             propertyName to value
          }
       }.toMap()
-      return inputObject.copy(value = maskedProperties)
+      return input.copy(suppliedValue = maskedProperties)
    }
 
 }

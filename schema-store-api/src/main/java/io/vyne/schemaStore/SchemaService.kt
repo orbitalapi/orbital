@@ -13,7 +13,7 @@ import java.io.Serializable
 typealias SchemaSetId = Int
 
 
-@RequestMapping("/schemas/taxi")
+@RequestMapping("/api/schemas/taxi")
 @FeignClient(name = "\${vyne.schemaStore.name}")
 interface SchemaService {
 
@@ -32,10 +32,9 @@ interface SchemaService {
 }
 
 data class SourceSubmissionResponse(
-   val parsedInputs: List<ParsedSource>,
+   val errors: List<CompilationError>,
    val schemaSet: SchemaSet
 ) {
-   val isValid: Boolean = parsedInputs.all { it.isValid }
-   val errors:List<CompilationError> = parsedInputs.flatMap { it.errors }
+   val isValid: Boolean = errors.isEmpty()
 
 }
