@@ -74,10 +74,10 @@
                             <name>vyneco/${project.artifactId}:${project.version}</name>
                             <build>
                                 <dockerFile>${project.basedir}/Dockerfile</dockerFile>
-                                <tags>
-                                    <!-- defined in profiles.  see root pom.xml -->
-                                    <tag>${docker.tag}</tag>
-                                </tags>
+                               <tags>
+                                  <tag>${docker.tag.latest}</tag>
+                                  <tag>${docker.tag.numbered}</tag>
+                               </tags>
                             </build>
                         </image>
                     </images>

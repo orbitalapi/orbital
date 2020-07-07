@@ -452,8 +452,8 @@
             <activeByDefault>false</activeByDefault>
          </activation>
          <properties>
-            <docker.tag>latest-snapshot</docker.tag>
-            <docker.tag>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag>
+            <docker.tag.latest>latest-snapshot</docker.tag.latest>
+            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag.numbered>
          </properties>
       </profile>
       <profile>
@@ -462,7 +462,7 @@
             <activeByDefault>false</activeByDefault>
          </activation>
          <properties>
-            <docker.tag>latest</docker.tag>
+            <docker.tag.latest>latest</docker.tag.latest>
          </properties>
       </profile>
    </profiles>
