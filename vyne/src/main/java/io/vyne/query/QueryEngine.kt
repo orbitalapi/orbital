@@ -182,10 +182,23 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          val transformed =  inboundFactList
             .parallelStream()
             .map {  mapTo(targetCollectionType, it, context) }
-            .filter { it != null}.collect(Collectors.toList())
+            .filter { it != null}
+            .collect(Collectors.toList())
+
          return@timed when {
             transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
-            else -> TypedCollection.from(transformed.toList() as List<TypedInstance>)
+            else -> TypedCollection.from(flattenResult(transformed))
+         }
+      }
+   }
+
+   private fun flattenResult(result: List<TypedInstance?>): List<TypedInstance> {
+      return result
+         .filterNotNull()
+         .flatMap {
+         when(it) {
+            is TypedCollection -> it.value
+            else -> listOf(it)
          }
       }
    }

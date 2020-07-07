@@ -2,7 +2,11 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.*
+import io.vyne.models.Provided
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
@@ -438,7 +442,9 @@ service Broker1Service {
       // 1 order and 3 matching trades.
       val numberOfOrders = 1
       val numberOfCorrespondingTrades = 3
-      val orders = generateBroker1Orders(numberOfOrders)
+      // Generate 2 orders/
+      // 1 order will have 3 corresponding trades whereas the other order has none..
+      val orders = generateBroker1Orders(numberOfOrders + 1)
       stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
          override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
@@ -452,7 +458,7 @@ service Broker1Service {
             parameters.should.have.size(1)
             val orderIds = parameters[0].second.value as List<TypedValue>
             val buf = StringBuilder("[")
-            (0..(numberOfCorrespondingTrades - 1)).forEach { index ->
+            (0 until numberOfCorrespondingTrades).forEach { index ->
                generateBroker1Trades(orderIds.first().value as String, 0, buf, index, "10.$index")
                if (index < 2) {
                   buf.append(",")
@@ -470,14 +476,8 @@ service Broker1Service {
             parameters.should.have.size(1)
             val orderId = parameters[0].second.value as String
             findOneByOrderIdInvocationCount++
-            return vyne.parseJsonModel("Broker1Trade", """
-               {
-                  "broker1OrderID" : "broker1Order$orderId",
-                  "broker1TradeID" : "trade_id_$orderId",
-                  "broker1Price"   : 10.1,
-                  "broker1TradeNo": "trade_no_$orderId"
-               }
-            """.trimIndent())
+
+            return TypedNull(vyne.type("Broker1Trade"))
          }
       })
 
@@ -487,17 +487,28 @@ service Broker1Service {
       // assert
       expect(result.isFullyResolved).to.be.`true`
       val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
-      resultList.size.should.be.equal(numberOfCorrespondingTrades)
+      resultList.size.should.be.equal(numberOfCorrespondingTrades + 1)
       resultList.forEachIndexed { index, result ->
-         result.should.equal(
-            mapOf(
-               Pair("id", "broker1Order0"),
-               Pair("date", "2020-01-01"),
-               Pair("tradeNo", "trade_no_$index")
+         if (index < 3) {
+            // First three results corresponding to 1 order 3 trades setup
+            result.should.equal(
+               mapOf(
+                  Pair("id", "broker1Order0"),
+                  Pair("date", "2020-01-01"),
+                  Pair("tradeNo", "trade_no_$index")
+               )
             )
-         )
+         } else {
+            //last result, corresponding to an order without a trade and hence it doesn't contain a tradeNo.
+            result.should.equal(
+               mapOf(
+                  Pair("id", "broker1Order1"),
+                  Pair("date", "2020-01-01")
+               )
+            )
+         }
       }
-      findOneByOrderIdInvocationCount.should.equal(0)
+      findOneByOrderIdInvocationCount.should.equal(1) // 1 call for the order without a trade.
       getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
    }
    private fun generateBroker1Trades(orderId: String, index: Int, buf: StringBuilder, tradeId: Int? = null, price: String? = null): StringBuilder {
