@@ -50,7 +50,7 @@ export const vyneQueryLanguageTokenProvider = <IMonarchLanguage>{
   tokenPostfix: '.taxi',
 
   keywords: [
-
+    'findAll',  'findOne',
     'type', 'type alias', 'inherits', 'enum', 'namespace', 'as', 'service', 'operation', 'import',
     'policy', 'against', 'read', 'write', 'case', 'else', 'permit', 'filter', 'closed',
     'true', 'false', 'null',
