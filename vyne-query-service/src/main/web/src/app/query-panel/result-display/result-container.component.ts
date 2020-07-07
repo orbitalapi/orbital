@@ -53,6 +53,11 @@ export class ResultContainerComponent implements OnInit {
 
   remoteCallMermaid = '';
 
+  queryResultTypeNames: QualifiedName[] = [];
+
+  get duration(): number {
+    return this._result.profilerOperation.duration;
+  }
 
   get showMermaid(): boolean {
     return this.remoteCallMermaid.length > 0;
@@ -68,15 +73,6 @@ export class ResultContainerComponent implements OnInit {
   get unmatchedNodes(): string {
     const queryResult = <QueryResult>this.result;
     return queryResult.unmatchedNodes.map(qn => qn.name).join(', ');
-  }
-
-  get queryResultTypeNames(): QualifiedName[] {
-    if (!this.isSuccess) {
-      return [];
-    }
-    const typeNames = Object.keys((<QueryResult>this.result).results)
-      .map(elementTypeName => findType(this.schema, elementTypeName).name);
-    return typeNames;
   }
 
   getResultForTypeName(qualifiedName: QualifiedName): InstanceLikeOrCollection {
@@ -133,6 +129,17 @@ export class ResultContainerComponent implements OnInit {
     }
 
     this.generateRemoteCallMermaid();
+    this.queryResultTypeNames = this.buildQueryResultTypeNames();
+
+
+  }
+
+  private buildQueryResultTypeNames() {
+    if (!this.isSuccess) {
+      return [];
+    }
+    return Object.keys((<QueryResult>this.result).results)
+      .map(elementTypeName => findType(this.schema, elementTypeName).name);
   }
 
   private generateRemoteCallMermaid() {

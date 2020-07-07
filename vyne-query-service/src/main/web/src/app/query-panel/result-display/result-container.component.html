@@ -7,37 +7,52 @@
     <i class="material-icons">error_outline</i>
     <span>Couldn't find a path for the following types: {{ unmatchedNodes }}</span>
   </div>
+  <div class="result-status results-summary" *ngIf="isSuccess">
+    <span>Completed successfully</span>
+    <div class="spacer"></div>
+    <button mat-stroked-button [matMenuTriggerFor]="menu" *ngIf="queryResultTypeNames.length>0"
+            class="downloadFileButton">Download
+    </button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item (click)="downloadQueryHistory(downloadFileType.JSON)">as JSON</button>
+      <button mat-menu-item (click)="downloadQueryHistory(downloadFileType.CSV)">as CSV</button>
+    </mat-menu>
+  </div>
 
   <div class="results-container">
     <cdk-virtual-scroll-viewport itemSize="50" class="virtualScroll-viewport testM">
-    <mat-tab-group>
-      <mat-tab label="Result">
-        <button mat-stroked-button [matMenuTriggerFor]="menu" *ngIf="queryResultTypeNames.length>0" class="downloadFileButton">Download</button>
-        <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="downloadQueryHistory(downloadFileType.JSON)">as JSON</button>
-          <button mat-menu-item (click)="downloadQueryHistory(downloadFileType.CSV)">as CSV</button>
-        </mat-menu>
-        <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-object-view">
+      <mat-tab-group>
+        <mat-tab label="Table">
+          <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-object-view">
+            <app-results-table [instance]="getResultForTypeName(resultTypeName)"
+                               [schema]="schema"
+                               [selectable]="true"
+                               [type]="getTypeIfNotIncluded(resultTypeName)"
+                               (instanceClicked)="instanceClicked($event)"></app-results-table>
+          </div>
+        </mat-tab>
+        <mat-tab label="Result">
+          <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-object-view">
 
-          <app-object-view [instance]="getResultForTypeName(resultTypeName)"
-                           [schema]="schema"
-                           [selectable]="true"
-                           [type]="getTypeIfNotIncluded(resultTypeName)"
-                           (instanceClicked)="instanceClicked($event)"
-          ></app-object-view>
-        </div>
-      </mat-tab>
-      <mat-tab label="Json">
-        <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-card">
+            <app-object-view [instance]="getResultForTypeName(resultTypeName)"
+                             [schema]="schema"
+                             [selectable]="true"
+                             [type]="getTypeIfNotIncluded(resultTypeName)"
+                             (instanceClicked)="instanceClicked($event)"
+            ></app-object-view>
+          </div>
+        </mat-tab>
+        <mat-tab label="Json">
+          <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-card">
 
-          <app-simple-code-viewer name="Json" [content]="getResultForTypeName(resultTypeName)"
-                                  lang="json"></app-simple-code-viewer>
-        </div>
-      </mat-tab>
+            <app-simple-code-viewer name="Json" [content]="getResultForTypeName(resultTypeName)"
+                                    lang="json"></app-simple-code-viewer>
+          </div>
+        </mat-tab>
 
-    </mat-tab-group>
+      </mat-tab-group>
 
-    <app-call-explorer *ngIf="showMermaid" [queryResult]="result"></app-call-explorer>
+      <app-call-explorer *ngIf="showMermaid" [queryResult]="result"></app-call-explorer>
     </cdk-virtual-scroll-viewport>
   </div>
 </div>
