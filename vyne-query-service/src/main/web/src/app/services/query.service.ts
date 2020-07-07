@@ -19,6 +19,10 @@ export class QueryService {
     return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query);
   }
 
+  submitVyneQlQuery(query: String): Observable<QueryResult> {
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql`, query);
+  }
+
   getHistory(): Observable<QueryHistoryRecord[]> {
     return this.http.get<QueryHistoryRecord[]>(`${environment.queryServiceUrl}/api/query/history`);
   }

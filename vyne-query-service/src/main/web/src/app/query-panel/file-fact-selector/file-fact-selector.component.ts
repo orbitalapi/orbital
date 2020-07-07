@@ -2,7 +2,7 @@ import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Schema, Type, TypedInstance} from '../../services/schema';
 import {ParsedTypeInstance, TypesService} from '../../services/types.service';
 import {TypeNamedInstance} from '../../services/query.service';
-import {FactForm} from '../query-wizard.component';
+import {FactForm} from '../query-wizard/query-wizard.component';
 
 @Component({
   selector: 'app-file-fact-selector',

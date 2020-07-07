@@ -1,7 +1,7 @@
 import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {Modifier, Schema, Type, TypedInstance} from '../services/schema';
-import {ParsedTypeInstance, TypesService} from '../services/types.service';
+import {Modifier, Schema, Type, TypedInstance} from '../../services/schema';
+import {ParsedTypeInstance, TypesService} from '../../services/types.service';
 import {map} from 'rxjs/operators';
 import {
   ITdDynamicElementConfig,
@@ -18,8 +18,9 @@ import {
   QueryResult,
   QueryService,
   RemoteCall, ResultMode
-} from '../services/query.service';
+} from '../../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
+
 
 @Component({
   selector: 'query-wizard',
@@ -135,7 +136,6 @@ export class QueryWizardComponent implements OnInit {
       .map(fileFact => fileFact.asFact());
     return formFacts.concat(fileFacts);
   }
-
 
   submitQuery() {
     this.lastQueryResult = null;

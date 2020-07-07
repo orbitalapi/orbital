@@ -1,7 +1,7 @@
 import {NgModule} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 import {CommonModule} from '@angular/common';
-import {QueryWizardComponent} from './query-wizard.component';
+import {QueryPanelComponent} from './query-panel.component';
 import {FileFactSelectorComponent} from './file-fact-selector/file-fact-selector.component';
 import {ResultViewerModule} from './result-display/result-viewer.module';
 import {SearchModule} from '../search/search.module';
@@ -21,6 +21,12 @@ import {CovalentHighlightModule} from '@covalent/highlight';
 import {MatButtonModule} from '@angular/material/button';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
+import { QueryWizardComponent } from './query-wizard/query-wizard.component';
+import { QueryEditorComponent } from './query-editor/query-editor.component';
+import {MatTabsModule} from '@angular/material/tabs'; 
+import { CodeViewerModule } from '../code-viewer/code-viewer.module';
+import {MonacoEditorModule} from '@materia-ui/ngx-monaco-editor';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner'; 
 
 @NgModule({
   imports: [
@@ -43,11 +49,15 @@ import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-p
     ObjectViewModule,
     CovalentHighlightModule,
     MatSidenavModule,
-    TypedInstancePanelModule
+    TypedInstancePanelModule,
+    MatTabsModule,
+    CodeViewerModule,
+    MonacoEditorModule,
+    MatProgressSpinnerModule
   ],
-  exports: [QueryWizardComponent],
-  declarations: [QueryWizardComponent, FileFactSelectorComponent, VyneQueryViewerComponent],
+  exports: [QueryPanelComponent],
+  declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent, VyneQueryViewerComponent, QueryEditorComponent],
   providers: [],
 })
-export class QueryWizardModule {
+export class QueryPanelModule {
 }

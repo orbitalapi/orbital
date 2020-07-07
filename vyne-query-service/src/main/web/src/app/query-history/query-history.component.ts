@@ -7,7 +7,7 @@ import {
   QueryService,
 } from '../services/query.service';
 import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
-import {InstanceSelectedEvent} from '../query-wizard/result-display/result-container.component';
+import {InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
 import {InstanceLike} from '../object-view/object-view.component';
 import {Type} from '../services/schema';
 import {ActivatedRoute, Router} from '@angular/router';

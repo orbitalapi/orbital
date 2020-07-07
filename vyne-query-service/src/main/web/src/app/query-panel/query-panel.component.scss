@@ -1,0 +1,17 @@
+@import "src/theme";
+@import "src/toolbar";
+
+.container {
+  flex: 1;
+  height: 100%;
+
+  &:not(:last-child) {
+    padding-right: 45px;
+  }
+
+}
+
+:host ::ng-deep .mat-tab-body-wrapper {
+  flex-grow: 1;
+}
+

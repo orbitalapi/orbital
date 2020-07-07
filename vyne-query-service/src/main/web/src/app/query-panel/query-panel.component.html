@@ -1,0 +1,21 @@
+<mat-toolbar color="primary" style="z-index: 999">
+  <span>Query wizard</span>
+  <span class="toolbar-spacer"></span>
+  <app-search-bar-container></app-search-bar-container>
+</mat-toolbar>
+
+<div class="page-content" style="z-index: 0">
+    <div class="container">
+     
+      <mat-tab-group mat-align-tabs="start" style="height: 100%">
+        <mat-tab label="Query Builder">
+         <query-wizard></query-wizard>
+        </mat-tab>
+        <mat-tab label="Query Editor">
+          <query-editor></query-editor>
+        </mat-tab>
+      </mat-tab-group>
+
+    </div>
+</div>
+
