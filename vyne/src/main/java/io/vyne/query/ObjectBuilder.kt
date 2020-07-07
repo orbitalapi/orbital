@@ -12,13 +12,30 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
 import lang.taxi.types.ObjectType
 
-class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext) {
+class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
+   private val originalContext = if (context.isProjecting) context
+      .facts
+      .firstOrNull { it is TypedObject }
+      ?.let {
+         val ctx = context.only(it)
+         ctx.isProjecting = true
+         ctx
+      } else null
 
-   fun build(targetType: QualifiedName): TypedInstance? {
-      return build(context.schema.type(targetType))
+
+   private var manyBuilder: ObjectBuilder? = null
+
+   fun build(): TypedInstance? {
+      val returnValue = build(rootTargetType)
+      return manyBuilder?.build()?.let {
+         when (it) {
+            is TypedCollection -> TypedCollection.from(listOfNotNull(returnValue).plus(it.value))
+            else -> TypedCollection.from(listOfNotNull(returnValue, it))
+         }
+      } ?: returnValue
    }
 
-   fun build(targetType: Type): TypedInstance? {
+   private fun build(targetType: Type): TypedInstance? {
       val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
       if (nullableFact != null) {
          val instance = nullableFact as TypedCollection
@@ -40,6 +57,10 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext) {
       } else {
          buildObjectInstance(targetType)
       }
+   }
+
+   private fun build(targetType: QualifiedName): TypedInstance? {
+      return build(context.schema.type(targetType))
    }
 
    private fun convertValue(discoveredValue: TypedInstance, targetType: Type): TypedInstance {
@@ -80,12 +101,21 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext) {
       missingAttributes.forEach { (attributeName, field) ->
          val value = build(field.type)
          if (value != null) {
-            populatedValues[attributeName] = value
+            if (value.type.isCollection) {
+               val typedCollection = value as TypedCollection?
+               typedCollection?.let {
+                  populatedValues[attributeName] = it.first()
+                  this.originalContext?.let {
+                     manyBuilder = ObjectBuilder(queryEngine, originalContext, targetType)
+                  }
+               }
+            } else {
+               populatedValues[attributeName] = value
+            }
          }
       }
 
       return TypedObject(targetType, populatedValues, MixedSources)
-
    }
 
    private fun findScalarInstance(targetType: Type): TypedInstance? {

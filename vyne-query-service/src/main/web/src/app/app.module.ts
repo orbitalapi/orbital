@@ -30,7 +30,10 @@ import {TypeListModule} from './type-list/type-list.module';
 import {TypeListComponent} from './type-list/type-list.component';
 import {SchemaExplorerModule} from './schema-explorer/schema-explorer.module';
 import {VyneModule} from './vyne/vyne.module';
+import { CaskViewerModule } from './cask-viewer/cask-viewer.module';
+import {CaskViewerComponent} from './cask-viewer/cask-viewer.component';
 import { ResultsTableComponent } from './results-table/results-table.component';
+import {QueryHistoryContainerComponent} from './query-history/query-history-container.component';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -41,7 +44,9 @@ export const routerModule = RouterModule.forRoot(
     {path: 'data-explorer', component: DataExplorerComponent},
     {path: 'schema-explorer', component: SchemaExplorerComponent},
     {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
-    {path: 'query-history', component: QueryHistoryComponent}
+    {path: 'query-history', component: QueryHistoryComponent},
+    {path: 'cask-viewer', component: CaskViewerComponent},
+    {path: 'query-history/:queryResponseId', component: QueryHistoryContainerComponent},
   ],
   {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );
@@ -63,6 +68,7 @@ export const routerModule = RouterModule.forRoot(
 
     MarkdownModule.forRoot(),
 
+    CaskViewerModule,
     TypeViewerModule,
     NgSelectModule,
     TypeAutocompleteModule,

@@ -1,8 +1,12 @@
 package io.vyne.schemas
 
 import io.vyne.VersionedSource
-import lang.taxi.Equality
+import io.vyne.models.ConversionService
+import io.vyne.models.DefinedInSchema
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedValue
 import lang.taxi.TaxiDocument
+import lang.taxi.types.ObjectType
 import lang.taxi.utils.log
 
 class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>) : Schema {
@@ -19,12 +23,14 @@ class SimpleSchema(override val types: Set<Type>, override val services: Set<Ser
 
 class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
    private val cache: MutableMap<QualifiedName, Type> = mutableMapOf()
+   private val defaultValueCache: MutableMap<QualifiedName, Map<AttributeName, TypedInstance>?> = mutableMapOf()
    private var shortNames: Map<String, Type> = emptyMap()
 
    init {
       log().info("DefaultTypeCache initialized")
       types.forEach { add(it) }
       recalculateShortNames()
+      populateDefaultValuesCache()
    }
 
    val types: Set<Type>
@@ -49,6 +55,20 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
             val type = this.cache[countAndFqn.second!!] ?: error("Expected a type named ${countAndFqn.second!!}")
             shortName to type
          }.toMap()
+   }
+
+   fun populateDefaultValuesCache() {
+      cache.forEach {  (name: QualifiedName, type) ->
+         defaultValueCache[name] = (type.taxiType as? ObjectType)
+            ?.fields
+            ?.filter { field -> field.defaultValue != null }
+            ?.map { field -> Pair(field.name,
+               TypedValue.from(
+                  type = type(field.type.qualifiedName.fqn()),
+                  value = field.defaultValue!!,
+                  converter = ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)) }
+            ?.toMap()
+      }
    }
 
    /**
@@ -107,6 +127,10 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
             && name.parameters.all { hasType(it) }
       }
       return false
+   }
+
+   override fun defaultValues(name: QualifiedName): Map<AttributeName, TypedInstance>? {
+      return defaultValueCache[name]
    }
 
    override fun hasType(name: String): Boolean {

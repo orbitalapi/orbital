@@ -34,17 +34,17 @@ id,firstName,lastName,country
 
         reader.test()
                 .expectSubscription()
-                .expectNext(mapOf(0 to "1"))
-                .expectNext(mapOf(0 to "2"))
-                .expectNext(mapOf(0 to "3"))
+                .expectNext(mapOf(CsvColumnIndex(0, "id") to "1"))
+                .expectNext(mapOf(CsvColumnIndex(0, "id") to "2"))
+                .expectNext(mapOf(CsvColumnIndex(0, "id") to "3"))
                 .thenCancel()
                 .verify()
 
         val firstNames = CsvBinaryReader().readAllValuesAtColumn(file.toPath(), setOf(0, 1)).collectList().block()!!
         firstNames.should.equal(listOf(
-                mapOf(0 to "1", 1 to "Stephen"),
-                mapOf(0 to "2", 1 to "Jason"),
-                mapOf(0 to "3", 1 to "Stephen")))
+                mapOf(CsvColumnIndex(0, "id") to "1", CsvColumnIndex(1, "firstName") to "Stephen"),
+                mapOf(CsvColumnIndex(0, "id") to "2", CsvColumnIndex(1, "firstName") to "Jason"),
+                mapOf(CsvColumnIndex(0, "id") to "3", CsvColumnIndex(1, "firstName") to "Stephen")))
     }
 
     @Test

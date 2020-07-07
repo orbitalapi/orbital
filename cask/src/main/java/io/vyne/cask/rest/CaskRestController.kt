@@ -5,16 +5,13 @@ import arrow.core.getOrHandle
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.cask.CaskService
+import io.vyne.cask.api.CaskApi
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.websocket.CaskWebsocketRequest
 import io.vyne.utils.log
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.util.MultiValueMap
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -23,14 +20,13 @@ import java.io.InputStream
 @RestController
 class CaskRestController(private val caskService: CaskService,
                          private val applicationEventPublisher: ApplicationEventPublisher,
-                         private val objectMapper: ObjectMapper = jacksonObjectMapper()) {
+                         private val objectMapper: ObjectMapper = jacksonObjectMapper()) : CaskApi {
 
-   @PostMapping("/api/ingest/{contentType}/{typeReference}")
-   fun ingestMessage(
-      @PathVariable("contentType") contentType: String,
-      @PathVariable("typeReference") typeReference: String,
-      @RequestParam queryParams: MultiValueMap<String, String?>,
-      @RequestBody input: String): Mono<CaskIngestionResponse> {
+   override fun ingestMessage(
+      contentType: String,
+      typeReference: String,
+      queryParams: MultiValueMap<String, String?>,
+      input: String): CaskIngestionResponse {
 
       log().info("New ingestion request uri=/cask/${contentType}/${typeReference} queryParams=$queryParams")
 
@@ -44,16 +40,21 @@ class CaskRestController(private val caskService: CaskService,
       return requestOrError
          .map { request ->
             applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, request.versionedType))
-            val ingestionInput  = Flux.just(input.byteInputStream() as InputStream)
+            val ingestionInput = Flux.just(input.byteInputStream() as InputStream)
             caskService.ingestRequest(request, ingestionInput)
                .count()
                .map { CaskIngestionResponse.success("Successfully ingested $it records") }
                .onErrorResume {
                   log().error("Ingestion error", it)
                   Mono.just(CaskIngestionResponse.rejected(it.toString()))
-               }
+               }.block()
          }.getOrHandle { error ->
-            Mono.just(CaskIngestionResponse.rejected(error.message))
+           CaskIngestionResponse.rejected(error.message)
          }
    }
+
+   override fun getCasks() = caskService.getCasks()
+   override fun getCaskDetails(tableName: String) = caskService.getCaskDetails(tableName)
+   override fun deleteCask(tableName: String) =  caskService.deleteCask(tableName)
+   override fun emptyCask(tableName: String)  = caskService.emptyCask(tableName)
 }

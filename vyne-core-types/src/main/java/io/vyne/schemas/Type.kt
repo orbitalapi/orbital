@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
 import io.vyne.VersionedSource
+import io.vyne.models.TypedInstance
 import io.vyne.utils.log
 import lang.taxi.Equality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
@@ -211,6 +212,11 @@ data class Type(
          underlyingType.attributes.isEmpty() && !underlyingType.isCollection
       }
 
+   }
+
+   @get:JsonIgnore
+   val defaultValues: Map<AttributeName, TypedInstance>? by lazy {
+      this.typeCache.defaultValues(this.name)
    }
 
    fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {

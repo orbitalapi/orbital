@@ -9,7 +9,8 @@ import {SimpleCodeViewerModule} from '../../simple-code-viewer/simple-code-viewe
 import {CallExplorerModule} from '../taxi-viewer/call-explorer/call-explorer.module';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {TypedInstancePanelModule} from '../../typed-instance-panel/typed-instance-panel.module';
-import {AgGridModule} from 'ag-grid-angular';
+import { MatMenuModule} from '@angular/material/menu';
+import {ScrollingModule} from '@angular/cdk/scrolling';
 import {ResultsTableModule} from '../../results-table/results-table.module';
 
 
@@ -22,7 +23,8 @@ import {ResultsTableModule} from '../../results-table/results-table.module';
     VyneServicesModule,
     SimpleCodeViewerModule,
     CallExplorerModule,
-    ResultsTableModule
+    ResultsTableModule,
+    CallExplorerModule, MatMenuModule, ScrollingModule
   ],
   exports: [ResultContainerComponent],
   declarations: [ResultContainerComponent],

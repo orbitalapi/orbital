@@ -7,7 +7,6 @@ import io.vyne.cask.query.generators.BeforeTemporalOperationGenerator
 import io.vyne.cask.query.generators.BetweenTemporalOperationGenerator
 import io.vyne.cask.services.CaskServiceSchemaGenerator
 import io.vyne.utils.log
-import org.codehaus.jettison.json.JSONObject
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
@@ -89,9 +88,10 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             badRequest().build()
          }
          is Either.Right -> {
-            ok()
+            val record = caskDAO.findOne(versionedType.b, fieldName, findByValue)
+            return ok()
                .contentType(MediaType.APPLICATION_JSON)
-               .body(BodyInserters.fromValue(caskDAO.findOne(versionedType.b, fieldName, findByValue)))
+               .body(BodyInserters.fromValue(record))
          }
       }
    }

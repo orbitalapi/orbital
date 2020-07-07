@@ -8,18 +8,35 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
-import io.vyne.models.*
+import io.vyne.models.MappedSynonym
+import io.vyne.models.RawObjectMapper
+import io.vyne.models.TypeNamedInstanceMapper
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.schemas.*
+import io.vyne.schemas.OutputConstraint
+import io.vyne.schemas.Path
+import io.vyne.schemas.Policy
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
+import io.vyne.schemas.TypeMatchingStrategy
+import io.vyne.schemas.fqn
+import io.vyne.schemas.synonymFullQualifiedName
+import io.vyne.schemas.synonymValue
 import io.vyne.utils.log
 import io.vyne.utils.timed
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
-import java.util.*
+import java.util.UUID
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -103,7 +120,7 @@ data class QueryResult(
             }.toMap()
          }
 
-         ResultMode.SIMPLE ->  {
+         ResultMode.SIMPLE -> {
             val converter = TypedInstanceConverter(RawObjectMapper)
             this.results
                .map { (key, value) -> key.type.name.parameterizedName to value?.let { converter.convert(it) } }
@@ -173,10 +190,11 @@ object TypedInstanceTree {
          is TypedObject -> instance.values.toList()
          is TypedValue -> emptyList()
          is TypedCollection -> instance.value
+         is TypedNull -> emptyList()
          else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
       }
       // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-   }.filter { it -> it !is TypedNull }
+   }//.filter { it -> it !is TypedNull }
 }
 
 // Design choice:
@@ -195,6 +213,7 @@ data class QueryContext(
    val resultMode: ResultMode,
    val debugProfiling: Boolean = false,
    val parent: QueryContext? = null) : ProfilerOperation by profiler {
+
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
@@ -233,7 +252,7 @@ data class QueryContext(
       }
 
       private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
-         val derivedFacts = if (fact.type.isEnum) {
+         val derivedFacts = if (fact.type.isEnum && fact.value != null) {
             val underlyingEnumType = fact.type.taxiType as EnumType
             underlyingEnumType.of(fact.value)
                .synonyms
@@ -272,12 +291,20 @@ data class QueryContext(
    fun addFact(fact: TypedInstance): QueryContext {
       log().debug("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
       inMemoryStream = null
-      if (fact.type.isEnum) {
-         val synonymSet = resolveSynonyms(fact, schema)
-         this.facts.addAll(synonymSet)
-      } else {
-         this.facts.add(fact)
+      when {
+          fact.type.isEnum -> {
+             val synonymSet = resolveSynonyms(fact, schema)
+             this.facts.addAll(synonymSet)
+          }
+          fact is TypedObject -> {
+             fact.values.filter { it.type.isEnum }.flatMap { resolveSynonyms(fact, schema) }.forEach { synonymsSet -> this.facts.add(synonymsSet) }
+             this.facts.add(fact)
+          }
+          else -> {
+             this.facts.add(fact)
+          }
       }
+
       return this
    }
 
@@ -314,8 +341,8 @@ data class QueryContext(
     * Deeply nested children are less likely to be relevant matches.
     */
    fun modelTree(): Stream<TypedInstance> {
-      inMemoryStream = inMemoryStream ?:  TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot()).toList()
-     return inMemoryStream!!.stream()
+      inMemoryStream = inMemoryStream ?: TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot()).toList()
+      return inMemoryStream!!.stream()
    }
 
    fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
@@ -332,6 +359,7 @@ data class QueryContext(
       return strategy.getFact(this, type)
       //return factCache.get(FactCacheKey(type.fullyQualifiedName, strategy)).orElse(null)
    }
+
    fun evaluatedPath(): List<EvaluatedEdge> {
       return evaluatedEdges.toList()
    }
@@ -354,11 +382,12 @@ data class QueryContext(
    }
 
 
-   data class FactCacheKey(val fqn: String,  val discoveryStrategy: FactDiscoveryStrategy)
+   data class FactCacheKey(val fqn: String, val discoveryStrategy: FactDiscoveryStrategy)
    data class ServiceInvocationCacheKey(
       private val vertex1: Element,
       private val vertex2: Element,
       private val invocationParameter: TypedInstance?)
+
    private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
 
    private fun getTopLevelContext(): QueryContext {
@@ -452,7 +481,7 @@ enum class FactDiscoveryStrategy {
    ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION {
       override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedCollection? {
          val matches = context.modelTree()
-            .filter { matcher.matches(if(type.isCollection) type.typeParameters.first() else type, it.type) }
+            .filter { matcher.matches(if (type.isCollection) type.typeParameters.first() else type, it.type) }
             .distinct()
             .toList()
          return when {

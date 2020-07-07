@@ -135,7 +135,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
           }
           else -> {
              context.isProjecting = true
-             ObjectBuilder(this, context).build(targetType)
+             ObjectBuilder(this, context, targetType).build()
           }
       }
 
@@ -182,8 +182,24 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          val transformed =  inboundFactList
             .parallelStream()
             .map {  mapTo(targetCollectionType, it, context) }
-            .filter { it != null}.collect(Collectors.toList())
-         TypedCollection.from(transformed.toList() as List<TypedInstance>)
+            .filter { it != null}
+            .collect(Collectors.toList())
+
+         return@timed when {
+            transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
+            else -> TypedCollection.from(flattenResult(transformed))
+         }
+      }
+   }
+
+   private fun flattenResult(result: List<TypedInstance?>): List<TypedInstance> {
+      return result
+         .filterNotNull()
+         .flatMap {
+         when(it) {
+            is TypedCollection -> it.value
+            else -> listOf(it)
+         }
       }
    }
 

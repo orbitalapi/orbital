@@ -1,16 +1,16 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {
   isRestQueryHistoryRecord,
   isVyneQlQueryHistoryRecord,
   ProfilerOperation,
   QueryHistoryRecord,
   QueryService,
-  RestfulQueryHistoryRecord
 } from '../services/query.service';
 import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
 import {InstanceSelectedEvent} from '../query-wizard/result-display/result-container.component';
 import {InstanceLike} from '../object-view/object-view.component';
 import {Type} from '../services/schema';
+import {ActivatedRoute, Router} from '@angular/router';
 
 @Component({
   selector: 'app-query-history',
@@ -21,11 +21,37 @@ export class QueryHistoryComponent implements OnInit {
   history: QueryHistoryRecord[];
   activeRecord: QueryHistoryRecord;
 
-  constructor(private service: QueryService) {
+  constructor(private service: QueryService, private router: Router) {
   }
 
   profileLoading = false;
   profilerOperation: ProfilerOperation;
+  private _queryResponseId: string;
+
+
+  @Input()
+  get queryResponseId(): string {
+    return this._queryResponseId;
+  }
+
+  set queryResponseId(value: string) {
+    this._queryResponseId = value;
+  }
+
+
+  selectedTypeInstance: InstanceLike;
+  selectedTypeInstanceType: Type;
+
+  get showSidePanel(): boolean {
+    return this.selectedTypeInstanceType !== undefined && this.selectedTypeInstance !== null;
+  }
+
+  set showSidePanel(value: boolean) {
+    if (!value) {
+      this.selectedTypeInstance = null;
+    }
+  }
+
 
 
   selectedTypeInstance: InstanceLike;
@@ -44,6 +70,9 @@ export class QueryHistoryComponent implements OnInit {
 
   ngOnInit() {
     this.loadData();
+    if (this._queryResponseId && this._queryResponseId.length > 0) {
+      this.setActiveRecordFromRoute();
+    }
   }
 
   loadData() {
@@ -54,7 +83,7 @@ export class QueryHistoryComponent implements OnInit {
   typeName(qualifiedTypeName: string) {
     // TODO : There's a correct parser for type names on the server
     // which can handle generics.
-    // Consider usinng that, instead of this dirty hack
+    // Consider using that, instead of this dirty hack
 
     if (qualifiedTypeName.startsWith('lang.taxi.Array<')) {
       const collectionMemberName = qualifiedTypeName.replace('lang.taxi.Array<', '').slice(0, -1);
@@ -83,15 +112,26 @@ export class QueryHistoryComponent implements OnInit {
   }
 
   setActiveRecord(historyRecord: QueryHistoryRecord) {
-    this.activeRecord = historyRecord;
-    this.profilerOperation = null;
-    this.profileLoading = true;
-    this.service.getQueryProfile(historyRecord.id).subscribe(
-      result => {
-        this.profileLoading = false;
-        this.profilerOperation = result;
-      }
-    );
+      this.activeRecord = historyRecord;
+      this.profilerOperation = null;
+      this.profileLoading = true;
+      this.service.getQueryProfile(historyRecord.id).subscribe(
+        result => {
+          this.profileLoading = false;
+          this.profilerOperation = result;
+        }
+      );
+      this.setRouteFromActiveRecord();
+  }
+
+  setActiveRecordFromRoute() {
+    this.service.getHistory()
+      .subscribe(history => this.activeRecord = history.find(a => a.response.queryResponseId === this._queryResponseId));
+
+  }
+
+  setRouteFromActiveRecord() {
+    this.router.navigate(['/query-history', this.activeRecord.id]);
   }
 
   expressionTypeName(historyRecord: QueryHistoryRecord): string {

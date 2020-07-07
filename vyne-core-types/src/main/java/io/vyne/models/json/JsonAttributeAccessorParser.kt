@@ -21,7 +21,12 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
       } else {
          val value = when {
             node.isNumber -> node.numberValue()
+            node.isNull -> null
             else -> node.asText()
+         }
+
+         if(value === null) {
+            return TypedInstance.from(type,  null, schema, source = source);
          }
 
          return primitiveParser.parse(value, type, source)

@@ -3,7 +3,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.3.1-SNAPSHOT</version>
+      <version>0.4.2-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -67,7 +67,17 @@
       <dependency>
          <groupId>com.hazelcast</groupId>
          <artifactId>hazelcast</artifactId>
-         <!--<scope>optional</scope>-->
+      </dependency>
+      <dependency>
+         <groupId>org.bitsofinfo</groupId>
+         <artifactId>hazelcast-docker-swarm-discovery-spi</artifactId>
+         <version>1.0-RC14</version>
+         <exclusions>
+            <exclusion>
+               <artifactId>jakarta.ws.rs-api</artifactId>
+               <groupId>jakarta.ws.rs</groupId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>com.jayway.jsonpath</groupId>

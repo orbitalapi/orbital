@@ -88,5 +88,14 @@ app-call-explorer {
   margin: 24px 0;
 }
 
+.downloadFileButton{
+  margin: 1rem 0;
+}
+
+.virtualScroll-viewport {
+  height: 100vh - 15vh; // to match height of the tab bar;
+  overflow-x: hidden;
+}
+
 // Use these for border colors of nesting levels:
 // #7280d9, #fe8736, #06b8ff, #00bbaf, #ff3769, #40c14a, #fc6363, #ffd600

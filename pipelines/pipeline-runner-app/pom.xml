@@ -5,7 +5,7 @@
    <parent>
       <artifactId>pipelines</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.3.1-SNAPSHOT</version>
+      <version>0.4.2-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -61,7 +61,8 @@
                      <build>
                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                         <tags>
-                           <tag>${docker.tag}</tag>
+                           <tag>${docker.tag.latest}</tag>
+                           <tag>${docker.tag.numbered}</tag>
                         </tags>
                      </build>
                   </image>

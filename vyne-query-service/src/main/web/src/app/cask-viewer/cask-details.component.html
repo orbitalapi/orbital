@@ -1,0 +1,25 @@
+<div class="title-bar">
+  <h4>Details for {{caskConfig.tableName}}</h4>
+
+  <span  class="results-actions">
+    <button (click)="onClearCask.emit(caskConfig)" mat-icon-button matTooltip="Clear this cask">
+      <i class="material-icons">clear</i>
+    </button>
+    <button (click)="onDeleteCask.emit(caskConfig)" mat-icon-button matTooltip="Delete this cask">
+      <i class="material-icons">delete</i>
+    </button>
+  </span>
+</div>
+<div class="results-container">
+
+  <div class="results-details">
+    <mat-card class="detail"> <div><b>ID</b></div> {{caskConfig.tableName}}</mat-card>
+    <mat-card class="detail"> <div><b>Type</b></div> {{caskConfig.qualifiedTypeName}}</mat-card>
+    <mat-card class="detail"> <div><b>Created at</b></div> {{caskConfig.insertedAt | date: 'HH:mm:ss dd/MM/yyyy'}}</mat-card>
+    <mat-card class="detail"> <div><b>Number of records</b></div> {{caskConfig.details.recordsNumber}}</mat-card>
+  </div>
+
+  <app-cask-source-viewer [sources]="sources"></app-cask-source-viewer>
+</div>
+
+

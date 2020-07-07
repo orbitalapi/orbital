@@ -20,8 +20,7 @@ class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: S
    private var counter = 0
    private var lastVersion: Version? = null
 
-   @PostConstruct
-   fun recompile() {
+   fun recompile(incrementVersion: Boolean = true) {
       counter++
       log().info("Starting to recompile sources at $projectHome")
       val projectHomePath: Path = Paths.get(projectHome!!)
@@ -31,7 +30,9 @@ class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: S
          lastVersion = resolveVersion(taxiConf)
          log().info("Using version $lastVersion as base version")
       } else {
-         lastVersion = lastVersion!!.incrementPatchVersion()
+         if(incrementVersion) {
+            lastVersion = lastVersion!!.incrementPatchVersion()
+         }
       }
 
       val sources = sourceRoot.toFile().walkBottomUp()

@@ -1,7 +1,14 @@
 package io.vyne.spring
 
+import com.hazelcast.config.Config
+import com.hazelcast.config.DiscoveryStrategyConfig
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.instance.AddressPicker
+import com.hazelcast.instance.DefaultNodeContext
+import com.hazelcast.instance.HazelcastInstanceFactory
+import com.hazelcast.instance.Node
+import com.hazelcast.logging.Slf4jFactory
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.HazelcastSchemaStoreClient
 import io.vyne.schemaStore.HttpSchemaStoreClient
@@ -22,6 +29,15 @@ import lang.taxi.generators.java.TaxiGenerator
 import lang.taxi.generators.java.extensions.ServiceDiscoveryAddressProvider
 import lang.taxi.generators.java.extensions.SpringMvcHttpOperationExtension
 import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_NETWORK_NAMES
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_SERVICE_LABELS
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.DOCKER_SERVICE_NAMES
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryStrategyFactory
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_NETWORK_NAMES
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_SERVICE_LABELS
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_DOCKER_SERVICE_NAMES
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.PROP_HAZELCAST_PEER_PORT
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
@@ -38,6 +54,7 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
 import org.springframework.context.annotation.Primary
+import org.springframework.context.annotation.Profile
 import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
 import org.springframework.core.env.MapPropertySource
@@ -107,11 +124,38 @@ class VyneAutoConfiguration {
 
    @Bean("hazelcast")
    @ConditionalOnProperty("vyne.publicationMethod", havingValue = "DISTRIBUTED")
-   fun hazelcast(): HazelcastInstance {
+   @Profile("!swarm")
+   fun defaultHazelCastInstance(): HazelcastInstance {
       return Hazelcast.newHazelcastInstance()
    }
 
-
+   @Bean("hazelcast")
+   @ConditionalOnProperty("vyne.publicationMethod", havingValue = "DISTRIBUTED")
+   @Profile("swarm")
+   fun swarmHazelCastInstance(): HazelcastInstance {
+      val dockerNetworkName = System.getenv("DOCKER_NETWORK_NAME") ?: System.getProperty(PROP_DOCKER_NETWORK_NAMES)
+      val dockerServiceName = System.getenv("DOCKER_SERVICE_NAME") ?: System.getProperty(PROP_DOCKER_SERVICE_NAMES)
+      val dockerServiceLabel = System.getenv("DOCKER_SERVICE_LABELS") ?: System.getProperty(PROP_DOCKER_SERVICE_LABELS)
+      val hazelcastPeerPortString  = System.getenv("HAZELCAST_PEER_PORT") ?: System.getProperty(PROP_HAZELCAST_PEER_PORT)
+      val hazelcastPeerPort = hazelcastPeerPortString?.let { it.toInt() } ?: 5701
+      val swarmedConfig = Config().apply {
+         networkConfig.join.multicastConfig.isEnabled = false
+         networkConfig.memberAddressProviderConfig.isEnabled = true
+         networkConfig.join.discoveryConfig.addDiscoveryStrategyConfig(
+            DiscoveryStrategyConfig(DockerSwarmDiscoveryStrategyFactory(), mapOf(
+               DOCKER_NETWORK_NAMES.key() to dockerNetworkName,
+               DOCKER_SERVICE_NAMES.key() to dockerServiceName,
+               DOCKER_SERVICE_LABELS.key() to dockerServiceLabel
+            ).filterValues { it != null })
+         )
+      }
+      HazelcastInstanceFactory.newHazelcastInstance(swarmedConfig, null, object: DefaultNodeContext() {
+         override fun createAddressPicker(node: Node): AddressPicker {
+            return SwarmAddressPicker(Slf4jFactory().getLogger("SwarmAddressPicker"), dockerNetworkName, dockerServiceName, dockerServiceLabel, hazelcastPeerPort)
+         }
+      })
+      return Hazelcast.newHazelcastInstance(swarmedConfig)
+   }
 }
 
 class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
