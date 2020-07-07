@@ -43,9 +43,9 @@
     <div class="results-section">
       <div class="title-bar"><h4>Query Result</h4></div>
       <div class="results-container">
-        <query-result-container [result]="activeRecord?.response"
-          (instanceSelected)="onInstanceSelected($event)"
-        ></query-result-container>
+          <query-result-container [result]="activeRecord?.response"
+                                  (instanceSelected)="onInstanceSelected($event)"
+          ></query-result-container>
       </div>
     </div>
 
