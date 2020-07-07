@@ -61,7 +61,8 @@
                      <build>
                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                         <tags>
-                           <tag>${docker.tag}</tag>
+                           <tag>${docker.tag.latest}</tag>
+                           <tag>${docker.tag.numbered}</tag>
                         </tags>
                      </build>
                   </image>
