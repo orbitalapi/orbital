@@ -12,19 +12,21 @@ import { RestfulRecordComponent } from './restful-record.component';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
 import {QueryHistoryContainerComponent} from './query-history-container.component';
+import {ScrollingModule} from '@angular/cdk/scrolling';
 
 @NgModule({
-  imports: [
-    BrowserModule,
-    CommonModule,
-    SearchModule,
-    MatButtonModule,
-    ResultViewerModule,
-    MomentModule,
-    MatToolbarModule,
-    MatSidenavModule,
-    TypedInstancePanelModule
-  ],
+    imports: [
+        BrowserModule,
+        CommonModule,
+        SearchModule,
+        MatButtonModule,
+        ResultViewerModule,
+        MomentModule,
+        MatToolbarModule,
+        MatSidenavModule,
+        TypedInstancePanelModule,
+        ScrollingModule
+    ],
   exports: [QueryHistoryComponent],
   declarations: [QueryHistoryComponent, VyneqlRecordComponent, RestfulRecordComponent, QueryHistoryContainerComponent],
   providers: [],

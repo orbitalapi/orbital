@@ -21,7 +21,7 @@ export class QueryHistoryComponent implements OnInit {
   history: QueryHistoryRecord[];
   activeRecord: QueryHistoryRecord;
 
-  constructor(private service: QueryService, private router: Router, private activatedRoute: ActivatedRoute) {
+  constructor(private service: QueryService, private router: Router) {
   }
 
   profileLoading = false;
@@ -55,7 +55,7 @@ export class QueryHistoryComponent implements OnInit {
 
   ngOnInit() {
     this.loadData();
-    if (this._queryResponseId.length > 0) {
+    if (this._queryResponseId && this._queryResponseId.length > 0) {
       this.setActiveRecordFromRoute();
     }
   }

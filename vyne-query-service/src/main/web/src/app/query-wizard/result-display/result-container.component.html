@@ -9,6 +9,7 @@
   </div>
 
   <div class="results-container">
+    <cdk-virtual-scroll-viewport itemSize="50" class="virtualScroll-viewport testM">
     <mat-tab-group>
       <mat-tab label="Result">
         <button mat-stroked-button [matMenuTriggerFor]="menu" *ngIf="queryResultTypeNames.length>0" class="downloadFileButton">Download</button>
@@ -37,5 +38,6 @@
     </mat-tab-group>
 
     <app-call-explorer *ngIf="showMermaid" [queryResult]="result"></app-call-explorer>
+    </cdk-virtual-scroll-viewport>
   </div>
 </div>

@@ -10,13 +10,14 @@ import {CallExplorerModule} from '../taxi-viewer/call-explorer/call-explorer.mod
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {TypedInstancePanelModule} from '../../typed-instance-panel/typed-instance-panel.module';
 import { MatMenuModule} from '@angular/material/menu';
+import {ScrollingModule} from '@angular/cdk/scrolling';
 
 
 @NgModule({
   imports: [BrowserModule, CommonModule, MatTabsModule,
     ObjectViewModule, VyneServicesModule,
     SimpleCodeViewerModule,
-    CallExplorerModule, MatMenuModule
+    CallExplorerModule, MatMenuModule, ScrollingModule
   ],
   exports: [ResultContainerComponent],
   declarations: [ResultContainerComponent],
