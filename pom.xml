@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>0.5.3-SNAPSHOT</taxi.version>
+      <taxi.version>0.5.3</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -291,7 +291,7 @@
                <!-- Set to true to immediately bump the development version when creating a release branch -->
                <commitDevelopmentVersionAtStart>false</commitDevelopmentVersionAtStart>
                <!-- Execute mvn compile before release -->
-               <preReleaseGoals>compile</preReleaseGoals>
+               <!-- <preReleaseGoals>compile -DskipTests</preReleaseGoals>  -->
                <commitMessages>
                   <releaseStartMessage>Update versions for release @{version}</releaseStartMessage>
                   <releaseFinishMessage>Update for next development version @{version}</releaseFinishMessage>
