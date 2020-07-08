@@ -53,12 +53,12 @@ export interface TypeNamedInstance {
 
 export function isTypedInstance(instance: InstanceLikeOrCollection): instance is TypedInstance {
   const instanceAny = instance as any;
-  return instanceAny.type !== undefined && instanceAny.value !== undefined;
+  return instanceAny && instanceAny.type !== undefined && instanceAny.value !== undefined;
 }
 
 export function isTypeNamedInstance(instance: any): instance is TypeNamedInstance {
   const instanceAny = instance as any;
-  return instanceAny.typeName !== undefined && instanceAny.value !== undefined;
+  return instanceAny && instanceAny.typeName !== undefined && instanceAny.value !== undefined;
 }
 
 export interface DataSourceReference {
