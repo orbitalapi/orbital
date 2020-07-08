@@ -17,7 +17,6 @@ import lang.taxi.utils.log
 import org.springframework.context.ApplicationEventPublisher
 import java.io.Serializable
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 
 private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventPublisher, val invalidationListener: SchemaSetInvalidatedListener) : MembershipListener, Serializable, EntryAddedListener<SchemaSetCacheKey, SchemaSet>, EntryUpdatedListener<SchemaSetCacheKey, SchemaSet> {
@@ -59,7 +58,9 @@ interface SchemaSetInvalidatedListener {
 
 
 internal object SchemaSetCacheKey : Serializable
-class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, private val schemaValidator: SchemaValidator = TaxiSchemaValidator(), val eventPublisher: ApplicationEventPublisher) : SchemaStoreClient, SchemaSetInvalidatedListener {
+class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
+                                 private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
+                                 private val eventPublisher: ApplicationEventPublisher) : SchemaStoreClient, SchemaSetInvalidatedListener {
 
    private val generationCounter = hazelcast.getAtomicLong("schemaGenerationIndex")
    private val schemaSetHolder: IMap<SchemaSetCacheKey, SchemaSet> = hazelcast.getMap("schemaSet")

@@ -1,7 +1,7 @@
 package io.vyne.cask.services
 
 import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskNamespacePrefix
-import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
@@ -12,12 +12,12 @@ import org.springframework.stereotype.Component
 import java.lang.StringBuilder
 
 @Component
-class CaskServiceSchemaWriter(private val schemaStoreClient: SchemaStoreClient, private val schemaWriter: SchemaWriter = SchemaWriter()) {
+class CaskServiceSchemaWriter(private val schemaPublisher: SchemaPublisher, private val schemaWriter: SchemaWriter = SchemaWriter()) {
    fun write(taxiDocument: TaxiDocument, versionedType: VersionedType) {
       val serviceSchema = addRequiredImportsStatements(taxiDocument, schemaWriter.generateSchemas(listOf(taxiDocument)).first())
       log().info("injecting cask service schema for $versionedType: \n$serviceSchema")
       try {
-         schemaStoreClient.submitSchema(
+         schemaPublisher.submitSchema(
             caskServiceSchemaName(versionedType),
             CaskServiceSchemaVersion,
             serviceSchema)

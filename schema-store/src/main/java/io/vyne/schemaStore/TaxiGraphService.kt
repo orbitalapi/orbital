@@ -31,34 +31,4 @@ class CompilationExceptionControllerAdvice : ResponseEntityExceptionHandler() {
    }
 }
 
-@RestController
-@RequestMapping("/schemas/taxi-graph")
-class TaxiGraphService {
 
-   @CrossOrigin
-   @RequestMapping(method = arrayOf(RequestMethod.POST))
-   fun submitSchema(@RequestBody taxiDef: String): SchemaGraph {
-
-      val schema: TaxiSchema = TaxiSchema.from(taxiDef)
-      val graph = VyneGraphBuilder(schema).build()
-      val nodes = graph.vertices().map { element ->
-         SchemaGraphNode(id = element.browserSafeId(), label = element.toString(), type = element.elementType)
-      }
-      val links = graph.edges().map { edge ->
-         SchemaGraphLink(edge.vertex1.browserSafeId(), edge.vertex2.browserSafeId(), edge.edgeValue.description)
-      }
-      return SchemaGraph(nodes, links)
-   }
-
-   fun Element.browserSafeId(): String {
-      return this.toString()
-         .replace(".", "")
-         .replace("/", "")
-         .replace("(", "")
-         .replace(")", "")
-         .replace("_", "")
-         .replace("-", "")
-         .replace("@", "")
-   }
-
-}

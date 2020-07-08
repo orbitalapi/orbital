@@ -26,6 +26,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-spring-schemaStore</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>lang.taxi</groupId>
          <artifactId>taxi-annotations</artifactId>
       </dependency>

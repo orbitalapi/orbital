@@ -9,7 +9,6 @@ import io.vyne.cask.query.CaskApiHandler
 import io.vyne.cask.rest.CaskRestController
 import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPath
 import io.vyne.cask.websocket.CaskWebsocketHandler
-import io.vyne.spring.SchemaPublicationMethod
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
@@ -38,7 +37,7 @@ import java.time.Duration
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
+@VyneSchemaPublisher
 @EnableWebFlux
 @EnableAspectJAutoProxy
 class CaskApp {

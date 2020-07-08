@@ -1,10 +1,9 @@
 package io.vyne.queryService
 
-import io.vyne.query.TaxiJacksonModule
 import io.vyne.cask.api.CaskApi
+import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
-import io.vyne.spring.SchemaPublicationMethod
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,7 +23,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class)
 @EnableVyneEmbeddedSearch
-@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
+@VyneSchemaPublisher
 @EnableFeignClients(clients = [CaskApi::class])
 class QueryServiceApp {
 

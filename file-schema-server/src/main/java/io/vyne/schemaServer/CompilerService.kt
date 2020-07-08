@@ -2,7 +2,7 @@ package io.vyne.schemaServer
 
 import com.github.zafarkhaja.semver.Version
 import io.vyne.VersionedSource
-import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.log
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiPackageLoader
@@ -11,11 +11,10 @@ import org.springframework.stereotype.Component
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import javax.annotation.PostConstruct
 
 @Component
 class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: String,
-                      val schemaStoreClient: SchemaStoreClient) {
+                      val schemaPublisher: SchemaPublisher) {
 
    private var counter = 0
    private var lastVersion: Version? = null
@@ -45,7 +44,7 @@ class CompilerService(@Value("\${taxi.schema-local-storage}") val projectHome: S
 
       if (sources.isNotEmpty()) {
          log().info("Recompiling ${sources.size} files")
-         schemaStoreClient.submitSchemas(sources)
+         schemaPublisher.submitSchemas(sources)
       } else {
          log().warn("No sources were found at $projectHome. I'll just wait here.")
       }

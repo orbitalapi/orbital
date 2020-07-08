@@ -29,3 +29,7 @@ eureka:
 
 vyne:
    queryServiceUrl: http://query-service
+   schema:
+        publicationmethod: REMOTE
+        pollInterval: 5s
+        publishRetryInterval: 3s

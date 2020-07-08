@@ -1,18 +1,12 @@
 package io.vyne.schemaStore
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.schemas.CompositeSchema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
-import org.springframework.cloud.openfeign.FeignClient
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestMethod
 import java.io.Serializable
-
-typealias SchemaSetId = Int
 
 data class SchemaSet private constructor(val sources: List<ParsedSource>, val generation: Int) : Serializable {
    val id: Int = sources.hashCode()
@@ -31,9 +25,13 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
    @Transient
    private var _compositeSchema: CompositeSchema? = null
 
+   @get:JsonIgnore
    val validSources = sources.filter { it.isValid }.map { it.source }
+   @get:JsonIgnore
    val invalidSources = sources.filter { !it.isValid }.map { it.source }
+   @get:JsonIgnore
    val allSources = sources.map { it.source }
+   @get:JsonIgnore
    val taxiSchemas: List<TaxiSchema>
       get() {
          if (this._taxiSchemas == null) {
@@ -41,7 +39,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
          }
          return this._taxiSchemas ?: error("SchemaSet failed to initialize")
       }
-
+   @get:JsonIgnore
    val rawSchemaStrings: List<String>
       get() {
          if (this._rawSchemaStrings == null) {
@@ -50,6 +48,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
          return this._rawSchemaStrings ?: error("SchemaSet failed to initialize")
       }
 
+   @get:JsonIgnore
    val schema: CompositeSchema
       get() {
          if (this._compositeSchema == null) {
@@ -102,7 +101,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
       return this.sources.any { it.source.name == name && it.source.version == version }
    }
 
-   fun offerSource(source:VersionedSource): List<VersionedSource>  {
+   fun offerSource(source: VersionedSource): List<VersionedSource>  {
       return this.allSources.addIfNewer(source)
    }
 
@@ -124,7 +123,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
       return "SchemaSet on Generation $generation with id $id and ${this.size()} schemas$invalidSchemaSuffix"
    }
 
-   private fun List<VersionedSource>.addIfNewer(source:VersionedSource):List<VersionedSource> {
+   private fun List<VersionedSource>.addIfNewer(source: VersionedSource):List<VersionedSource> {
       val existingSource = this.firstOrNull { it.name == source.name }
       return if (existingSource != null) {
          if (existingSource.semver >= source.semver) {
@@ -138,19 +137,4 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
          this + source
       }
    }
-}
-
-@RequestMapping("/schemas/taxi")
-@FeignClient(name = "\${vyne.schemaStore.name}")
-interface SchemaService {
-
-   @RequestMapping(method = arrayOf(RequestMethod.POST), value = ["/{schemaId}/{version}"])
-   fun submitSchema(@RequestBody schema: String, @PathVariable("schemaId") schemaId: String, @PathVariable("version") version: String): VersionedSource
-
-   @RequestMapping(method = arrayOf(RequestMethod.DELETE), value = ["/{schemaId}/{version}"])
-   fun removeSchema(@PathVariable("schemaId") schemaId: String, @PathVariable("version") version: String)
-
-   @RequestMapping(method = arrayOf(RequestMethod.GET))
-   fun listSchemas(): SchemaSet
-
 }
