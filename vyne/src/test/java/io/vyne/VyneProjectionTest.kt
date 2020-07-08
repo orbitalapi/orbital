@@ -10,8 +10,10 @@ import io.vyne.models.TypedValue
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
+import io.vyne.query.QueryEngineFactory
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
 
@@ -327,7 +329,6 @@ service Broker1Service {
       stubService.addResponse("getBroker1Trades", object : StubResponseHandler {
          override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
-            val orderId = parameters[0].second.value as String
             return vyne.parseJsonModel("Broker1Trade[]", trades)
          }
       })
@@ -435,6 +436,8 @@ service Broker1Service {
    operation getBroker1Trades( orderId: OrderId) : Broker1Trade[]
    operation findOneByOrderId( orderId: OrderId ) : Broker1Trade
    operation getBroker1TradesForOrderIds( orderIds: OrderId[]) : Broker1Trade[]
+   operation findSingleByOrderID(  id : OrderId ) : Broker1Order( OrderId = id )
+
 }
 
 """.trimIndent()
@@ -510,6 +513,31 @@ service Broker1Service {
       }
       findOneByOrderIdInvocationCount.should.equal(1) // 1 call for the order without a trade.
       getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
+
+      //find by order Id and project
+      stubService.addResponse("findSingleByOrderID", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            parameters.should.have.size(1)
+            return if (parameters.first().second.value == "broker1Order0") {
+               vyne.parseJsonModel("Broker1Order", generateBroker1Order(0))
+            } else {
+               vyne.parseJsonModel("Broker1Order", "{}")
+            }
+         }
+      })
+
+      val vyne2 = Vyne(QueryEngineFactory.withOperationInvokers(stubService)).addSchema(TaxiSchema.from(schema))
+      val findByOrderIdResult = vyne2.query("""findAll { Order (OrderId = "broker1Order0") } as CommonOrder[]""".trimIndent())
+      expect(findByOrderIdResult.isFullyResolved).to.be.`true`
+      val findByOrderIdResultList = findByOrderIdResult.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
+      findByOrderIdResultList.size.should.be.equal(numberOfCorrespondingTrades)
+
+      // find by a non-existing order Id and project
+      val vyne3 = Vyne(QueryEngineFactory.withOperationInvokers(stubService)).addSchema(TaxiSchema.from(schema))
+      val noResult = vyne3.query("""findAll { Order (OrderId = "MY SPECIAL ORDER ID") } as CommonOrder[]""".trimIndent())
+      val noResultList = noResult.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
+      noResultList.first().should.equal(emptyMap<Any, Any>())
+
    }
    private fun generateBroker1Trades(orderId: String, index: Int, buf: StringBuilder, tradeId: Int? = null, price: String? = null): StringBuilder {
       val brokerTraderId = tradeId?.let { "trade_id_$it" } ?: "trade_id_$index"
@@ -545,19 +573,23 @@ service Broker1Service {
       return buf.toString()
    }
 
-   private fun generateBroker1Orders(noOfRecords: Int): String {
-      val buf = StringBuilder("[")
-      for (i in 0 until noOfRecords) {
-         buf.append("""
+   private fun generateBroker1Order(intSuffix: Int): String {
+      return """
          {
-            "broker1ID" : "broker1Order${i}",
+            "broker1ID" : "broker1Order${intSuffix}",
             "broker1Date" : "2020-01-01",
             "broker1Direction" :
             "bankbuys",
-            "instrumentId" : "instrument${i % 2}",
-            "broker1TradeId": "trade_id_$i"
+            "instrumentId" : "instrument${intSuffix % 2}",
+            "broker1TradeId": "trade_id_$intSuffix"
          }
-         """.trimMargin())
+         """.trimMargin()
+   }
+
+   private fun generateBroker1Orders(noOfRecords: Int): String {
+      val buf = StringBuilder("[")
+      for (i in 0 until noOfRecords) {
+         buf.append(generateBroker1Order(i))
          if (i < noOfRecords - 1) {
             buf.append(",")
          }

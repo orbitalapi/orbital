@@ -43,6 +43,6 @@ class FindBySingleResultGenerator: OperationGenerator {
    }
 
    companion object {
-      const val ExpectedAnnotationName = "UniqueId"
+      const val ExpectedAnnotationName = "Association"
    }
 }

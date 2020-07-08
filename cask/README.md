@@ -49,3 +49,7 @@ type OrderWindowSummary {
 * Enable local spring profile ```-Dspring.profiles.active=local``` (VM argument)
 * Right-click and run 
 * Open http://localhost:8800/static/index.html testharness page 
+
+### Cask Service Operation Generation
+
+see [How cask generates service operations?](cask_operations.md)
