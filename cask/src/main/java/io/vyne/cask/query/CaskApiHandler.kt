@@ -29,10 +29,16 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          uriComponents.pathSegments.contains(BetweenTemporalOperationGenerator.ExpectedAnnotationName) -> findByBetween(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains(AfterTemporalOperationGenerator.ExpectedAnnotationName) -> findByAfter(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains(BeforeTemporalOperationGenerator.ExpectedAnnotationName) -> findByBefore(request, requestPath, uriComponents)
-         uriComponents.pathSegments.contains("findOneBy") -> findOne(request, requestPath, uriComponents)
+         uriComponents.pathSegments.contains("findOneBy") -> findOneBy(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains("findMultipleBy") -> findMultipleBy(request, requestPath, uriComponents)
+         uriComponents.pathSegments.contains("findSingleBy") -> findSingleBy(request, requestPath, uriComponents)
          else -> findByField(request, requestPath, uriComponents)
       }
+   }
+
+   private fun findSingleBy(request: ServerRequest, requestPathOriginal: String, uriComponents: UriComponents): Mono<ServerResponse> {
+      val requestPath = requestPathOriginal.replace("findSingleBy/", "")
+      return findOne(request, requestPath, uriComponents)
    }
 
    private fun findMultipleBy(request: ServerRequest, requestPathOriginal: String, uriComponents: UriComponents): Mono<ServerResponse> {
@@ -76,24 +82,9 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
    }
 
 
-   fun findOne(request: ServerRequest, requestPathOriginal: String, uriComponents: UriComponents): Mono<ServerResponse> {
+   fun findOneBy(request: ServerRequest, requestPathOriginal: String, uriComponents: UriComponents): Mono<ServerResponse> {
       val requestPath = requestPathOriginal.replace("findOneBy/", "")
-      val fieldNameAndValue = fieldNameAndArgs(uriComponents, 2)
-      val fieldName = fieldNameAndValue.first()
-      val findByValue = fieldNameAndValue.last()
-      val caskType = uriComponents.pathSegments.dropLast(2).drop(1).joinToString(".")
-      return when (val versionedType = caskService.resolveType(caskType)) {
-         is Either.Left -> {
-            log().info("The type failed to resolve for request $requestPath Error: ${versionedType.a.message}")
-            badRequest().build()
-         }
-         is Either.Right -> {
-            val record = caskDAO.findOne(versionedType.b, fieldName, findByValue)
-            return ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .body(BodyInserters.fromValue(record))
-         }
-      }
+      return findOne(request, requestPath, uriComponents)
    }
 
    fun findByBefore(request: ServerRequest, requestPath: String, uriComponents: UriComponents): Mono<ServerResponse> {
@@ -151,5 +142,23 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       }
    }
 
+   private fun findOne(request: ServerRequest, requestPath: String, uriComponents: UriComponents): Mono<ServerResponse> {
+      val fieldNameAndValue = fieldNameAndArgs(uriComponents, 2)
+      val fieldName = fieldNameAndValue.first()
+      val findByValue = fieldNameAndValue.last()
+      val caskType = uriComponents.pathSegments.dropLast(2).drop(1).joinToString(".")
+      return when (val versionedType = caskService.resolveType(caskType)) {
+         is Either.Left -> {
+            log().info("The type failed to resolve for request $requestPath Error: ${versionedType.a.message}")
+            badRequest().build()
+         }
+         is Either.Right -> {
+            val record = caskDAO.findOne(versionedType.b, fieldName, findByValue)
+            return ok()
+               .contentType(MediaType.APPLICATION_JSON)
+               .body(BodyInserters.fromValue(record))
+         }
+      }
+   }
    private fun fieldNameAndArgs(uriComponents: UriComponents, takeLast: Int ) = uriComponents.pathSegments.takeLast(takeLast)
 }

@@ -33,17 +33,12 @@ class FindByMultipleGenerator: OperationGenerator {
    }
 
    override fun canGenerate(field: Field, type: Type): Boolean {
-      return PrimitiveType.isAssignableToPrimitiveType(field.type) && TemporalFieldUtils.annotationFor(field, ExpectedAnnotationName) != null
+      return PrimitiveType.isAssignableToPrimitiveType(field.type) && TemporalFieldUtils.annotationFor(field, FindBySingleResultGenerator.ExpectedAnnotationName) != null
    }
 
    private fun getfindMultipleByRestPath(type: Type, field: Field): String {
       val typeQualifiedName = type.toQualifiedName()
       val path = AttributePath.from(typeQualifiedName.toString())
       return "${CaskServiceSchemaGenerator.CaskApiRootPath}findMultipleBy/${path.parts.joinToString("/")}/${field.name}"
-   }
-
-
-   companion object {
-      const val ExpectedAnnotationName = "UniqueId"
    }
 }

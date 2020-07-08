@@ -7,6 +7,7 @@ import io.vyne.ModelContainer
 import io.vyne.filterFactSets
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.schemas.Schema
@@ -125,6 +126,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          context.facts.stream().allMatch { it is TypedCollection }
             && targetType.isCollection
 
+      val isSingleToCollectionTransform = onlyTypedObject(context) != null
+         && targetType.isCollection
+
       val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
       val result: TypedInstance? = when {
           isCollectionToCollectionTransformation -> {
@@ -133,6 +137,10 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
           isCollectionsToCollectionTransformation -> {
              mapCollectionsToCollection(targetType, context)
           }
+
+         isSingleToCollectionTransform -> {
+            mapSingleToCollection(targetType, context)
+         }
           else -> {
              context.isProjecting = true
              ObjectBuilder(this, context, targetType).build()
@@ -153,6 +161,15 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             resultMode = context.resultMode,
             profilerOperation = context.profiler.root
          )
+      }
+   }
+
+   private fun onlyTypedObject(context: QueryContext): TypedObject? {
+      val typedObjects = context.facts.stream().filter { fact -> fact is TypedObject }.collect(Collectors.toList())
+      return if (typedObjects.size == 1) {
+          typedObjects[0] as TypedObject
+      } else {
+         null
       }
    }
 
@@ -181,6 +198,25 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
          val transformed =  inboundFactList
             .parallelStream()
+            .map {  mapTo(targetCollectionType, it, context) }
+            .filter { it != null}
+            .collect(Collectors.toList())
+
+         return@timed when {
+            transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
+            else -> TypedCollection.from(flattenResult(transformed))
+         }
+      }
+   }
+
+   private fun mapSingleToCollection(targetType: Type, context: QueryContext): TypedInstance? {
+      require(targetType.resolveAliases().typeParameters.size == 1) { "Expected collection type to contain exactly 1 parameter" }
+      val targetCollectionType = targetType.resolveAliases().typeParameters[0]
+      return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
+         val inboundFactList = listOf(onlyTypedObject(context)!!)
+         log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
+         val transformed =  inboundFactList
+            .stream()
             .map {  mapTo(targetCollectionType, it, context) }
             .filter { it != null}
             .collect(Collectors.toList())

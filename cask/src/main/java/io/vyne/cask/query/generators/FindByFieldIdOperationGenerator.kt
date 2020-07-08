@@ -1,16 +1,15 @@
 package io.vyne.cask.query.generators
 
-import io.vyne.cask.services.CaskServiceSchemaGenerator
 import io.vyne.cask.query.OperationGenerator
 import io.vyne.cask.query.generators.TemporalFieldUtils.collectionTypeOf
 import io.vyne.cask.query.generators.TemporalFieldUtils.parameterType
+import io.vyne.cask.services.CaskServiceSchemaGenerator
 import lang.taxi.services.Operation
 import lang.taxi.services.Parameter
 import lang.taxi.types.Annotation
 import lang.taxi.types.AttributePath
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
-import lang.taxi.types.PrimitiveType
 import lang.taxi.types.Type
 import org.springframework.stereotype.Component
 
@@ -34,7 +33,10 @@ class FindByFieldIdOperationGenerator: OperationGenerator {
    }
 
    override fun canGenerate(field: Field, type: Type): Boolean {
-      return PrimitiveType.isAssignableToPrimitiveType(field.type)
+      //return PrimitiveType.isAssignableToPrimitiveType(field.type)
+      // Disable default generation for all simple fields for the moment.
+      // We might want to revisit this in the future.
+      return false
    }
 
    private fun getFindByIdRestPath(type: Type, field: Field): String {
