@@ -9,6 +9,7 @@ import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.*
 import org.springframework.jdbc.core.JdbcTemplate
+import java.lang.StringBuilder
 import java.math.BigDecimal
 import java.nio.file.Path
 import java.sql.Timestamp
@@ -166,7 +167,7 @@ class PostgresDdlGenerator {
    private fun generateObjectDdl(type: ObjectType, schema: Schema, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
       val columns = fields.map { generateColumnForField(it) }
       val tableName = tableName(versionedType)
-      val ddl = generateCaskTableDdl(versionedType, fields)
+      val ddl = generateCaskTableDdl(versionedType, fields) + generateTableIndexesDdl(tableName, fields)
       val metadata = TableMetadata(
          tableName,
          type.qualifiedName,
@@ -184,12 +185,21 @@ class PostgresDdlGenerator {
       return TableGenerationStatement(ddl, versionedType, tableName, columns, metadata)
    }
 
+   fun generateTableIndexesDdl(tableName: String, fields: List<Field>): String {
+      val result = StringBuilder()
+      val indexedColumns = fields.filter { col -> col.annotations.any { it.name == "Indexed" } }
+      indexedColumns.forEach {
+         result.append("\nCREATE INDEX IF NOT EXISTS idx_${tableName}_${it.name} ON ${tableName}(\"${it.name}\");")
+      }
+      return result.toString()
+   }
+
    fun generateCaskTableDdl(versionedType: VersionedType, fields: List<Field>): String {
       val tableName = tableName(versionedType)
       val columns = fields.map { generateColumnForField(it) }
       val fieldDef = columns.joinToString(",\n") { it.sql }
       return """CREATE TABLE IF NOT EXISTS $tableName (
-$fieldDef)""".trim()
+$fieldDef);""".trim()
    }
 
    fun generateColumnForField(field: Field): PostgresColumn {
