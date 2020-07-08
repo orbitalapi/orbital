@@ -30,6 +30,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-spring-schemaStore</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>lang.taxi</groupId>
          <artifactId>lang-to-taxi-api</artifactId>
          <version>${taxi.version}</version>
@@ -115,6 +120,11 @@
          <groupId>org.skyscreamer</groupId>
          <artifactId>jsonassert</artifactId>
          <version>1.5.0</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-webflux</artifactId>
          <scope>test</scope>
       </dependency>
    </dependencies>

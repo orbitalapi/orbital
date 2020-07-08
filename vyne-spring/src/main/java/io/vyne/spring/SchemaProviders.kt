@@ -3,10 +3,7 @@ package io.vyne.spring
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.asVersionedSource
-import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.schemaStore.SchemaStoreClient
-import io.vyne.schemaStore.VersionedSourceProvider
+import io.vyne.schemaStore.*
 import io.vyne.schemas.Schema
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
@@ -69,30 +66,30 @@ class LocalTaxiSchemaProvider(val models: List<Class<*>>,
    }
 }
 
-class RemoteTaxiSourceProvider(val storeClient: SchemaStoreClient) : SchemaSourceProvider, VersionedSourceProvider {
+class RemoteTaxiSourceProvider(val schemaStore: SchemaStore) : SchemaSourceProvider, VersionedSourceProvider {
    override fun schemaStrings(): List<String> {
-      return storeClient.schemaSet().rawSchemaStrings
+      return schemaStore.schemaSet().rawSchemaStrings
    }
 
    init {
-      log().info("Initialized RemoteTaxiSchemaProvider, using a store client of type ${storeClient.javaClass.simpleName}")
+      log().info("Initialized RemoteTaxiSchemaProvider, using a store client of type ${schemaStore.javaClass.simpleName}")
    }
 
    override val parsedSources: List<ParsedSource>
       get() {
-         return storeClient.schemaSet().sources
+         return schemaStore.schemaSet().sources
       }
    override val versionedSources: List<VersionedSource>
       get() {
-         return storeClient.schemaSet().allSources
+         return schemaStore.schemaSet().allSources
       }
 
    override fun schemas(): List<Schema> {
-      return storeClient.schemaSet().taxiSchemas
+      return schemaStore.schemaSet().taxiSchemas
    }
 
    override fun schema(): Schema {
-      val schemaSet = storeClient.schemaSet()
+      val schemaSet = schemaStore.schemaSet()
       return schemaSet.schema
    }
 

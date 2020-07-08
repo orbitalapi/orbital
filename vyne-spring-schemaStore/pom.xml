@@ -15,10 +15,5 @@
          <artifactId>schema-store</artifactId>
          <version>${project.version}</version>
       </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne-spring</artifactId>
-         <version>${project.version}</version>
-      </dependency>
    </dependencies>
 </project>

@@ -2,6 +2,7 @@ package io.vyne.cask.services
 
 import io.vyne.cask.query.CaskDAO
 import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
 import org.springframework.context.event.ContextRefreshedEvent
@@ -15,10 +16,10 @@ class CaskServiceBootstrap constructor(
    private val caskDAO: CaskDAO) {
 
    // TODO Update cask service when type changes (e.g. new attributes added)
-
+   // TODO Update schema in one batch so that it triggers schema update only once!
    // TODO This logic fails when we are not connected to eureka and we don't have schema populated
    // Possible solution is to wait for application start and schema populated/updated event
-   @EventListener(value = [ContextRefreshedEvent::class])
+   @EventListener(value = [ContextRefreshedEvent::class, SchemaSetChangedEvent::class])
    fun initializeCaskServices() {
       val caskConfigs = caskDAO.findAllCaskConfigs()
       log().info("Number of CaskConfig entries=${caskConfigs.size}")

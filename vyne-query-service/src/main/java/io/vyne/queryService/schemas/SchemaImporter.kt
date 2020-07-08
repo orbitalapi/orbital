@@ -2,9 +2,7 @@ package io.vyne.queryService.schemas
 
 import arrow.core.Either
 import io.vyne.VersionedSource
-import io.vyne.schemaStore.SchemaStoreClient
-import io.vyne.schemas.Schema
-import lang.taxi.CompilationException
+import io.vyne.schemaStore.SchemaPublisher
 import lang.taxi.generators.Message
 import org.apache.commons.io.IOUtils
 import org.springframework.stereotype.Component
@@ -12,7 +10,7 @@ import reactor.core.publisher.Mono
 import java.net.URL
 
 @Component
-class CompositeSchemaImporter(private val importers: List<SchemaImporter>, private val schemaStoreClient: SchemaStoreClient) : SchemaImportService {
+class CompositeSchemaImporter(private val importers: List<SchemaImporter>, private val schemaPublisher: SchemaPublisher) : SchemaImportService {
    override fun preview(request: SchemaPreviewRequest): Mono<SchemaPreview> {
       val importer = importer(request.format)
       val preview = importer.preview(request)
@@ -22,7 +20,7 @@ class CompositeSchemaImporter(private val importers: List<SchemaImporter>, priva
    override fun import(request: SchemaImportRequest): Mono<VersionedSource> {
       val importer = importer(request.format)
       val taxiSchema = importer.import(request)
-      val compilerResult = schemaStoreClient.submitSchema(taxiSchema)
+      val compilerResult = schemaPublisher.submitSchema(taxiSchema)
       return when (compilerResult) {
          is Either.Left -> throw compilerResult.a
          is Either.Right -> Mono.just(taxiSchema)
