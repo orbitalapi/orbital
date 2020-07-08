@@ -15,7 +15,7 @@
   <div class="results-details">
     <mat-card class="detail"> <div><b>ID</b></div> {{caskConfig.tableName}}</mat-card>
     <mat-card class="detail"> <div><b>Type</b></div> {{caskConfig.qualifiedTypeName}}</mat-card>
-    <mat-card class="detail"> <div><b>Created at</b></div> {{caskConfig.insertedAt | date: 'HH:mm:ss dd/MM/yyyy'}}</mat-card>
+    <mat-card class="detail"> <div><b>Created at</b></div> {{caskConfig.insertedAt | date: 'medium'}}</mat-card>
     <mat-card class="detail"> <div><b>Number of records</b></div> {{caskConfig.details.recordsNumber}}</mat-card>
   </div>
 
