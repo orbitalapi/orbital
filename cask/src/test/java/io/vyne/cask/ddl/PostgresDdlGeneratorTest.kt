@@ -15,22 +15,28 @@ class PostgresDdlGeneratorTest {
     fun generatesCreateTable() {
         val (schema, taxi) = schema("""
 type Person {
+    @Indexed
     firstName : FirstName as String
+    @Something
     age : Int
     alive: Boolean
     spouseName : Name? as String
+    @Indexed
+    @Something
     dateOfBirth: Date
     timestamp: Instant
 }""".trim())
         val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
         statement.ddlStatement.should.equal("""
-CREATE TABLE IF NOT EXISTS Person_d4d1ee (
+CREATE TABLE IF NOT EXISTS Person_3a9dde (
 "firstName" VARCHAR(255),
 "age" INTEGER,
 "alive" BOOLEAN,
 "spouseName" VARCHAR(255),
 "dateOfBirth" DATE,
-"timestamp" TIMESTAMP)""".trim())
+"timestamp" TIMESTAMP);
+CREATE INDEX IF NOT EXISTS idx_Person_3a9dde_firstName ON Person_3a9dde("firstName");
+CREATE INDEX IF NOT EXISTS idx_Person_3a9dde_dateOfBirth ON Person_3a9dde("dateOfBirth");""".trim())
     }
 
     @Test
