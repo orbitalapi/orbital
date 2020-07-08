@@ -103,8 +103,8 @@ app-call-explorer {
 }
 
 .virtualScroll-viewport {
-  height: 84vh; // to match height of the tab bar;
-  width: 144vh; // to match the width of results pane
+  height: 83vh; // to match height of the tab bar;
+  width: calc(100% - 100px); // to match the width of results pane
   overflow-x: hidden;
   position: absolute;
 }
