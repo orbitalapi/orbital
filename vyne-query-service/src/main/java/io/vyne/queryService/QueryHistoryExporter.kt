@@ -20,7 +20,6 @@ class QueryHistoryExporter(private val objectMapper: ObjectMapper) {
       val printer = CSVPrinter(writer, CSVFormat.DEFAULT.withFirstRecordAsHeader())
       results.keys.forEach {
          val values = (results[it] as List<*>)
-         printer.printRecord(it)
          printer.printRecord((values.first() as Map<*, *>).keys)
          values.forEach { fields ->
             printer.printRecord((fields as Map<*, *>).values)
