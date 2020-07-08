@@ -103,8 +103,10 @@ app-call-explorer {
 }
 
 .virtualScroll-viewport {
-  height: 100vh - 15vh; // to match height of the tab bar;
+  height: 83vh; // to match height of the tab bar;
+  width: calc(100% - 100px); // to match the width of results pane
   overflow-x: hidden;
+  position: absolute;
 }
 
 // Use these for border colors of nesting levels:

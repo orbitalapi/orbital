@@ -104,9 +104,9 @@ export class CodeViewerComponent {
   }
 
   remeasure() {
-    const shouldRemeasureHeight =  this.router.url.includes('types');
+    const shouldSkipRemeasure =  this.router.url.includes('schema-explorer');
     setTimeout(() => {
-      if (!this.monacoEditor || !shouldRemeasureHeight) {
+      if (!this.monacoEditor || shouldSkipRemeasure) {
         return;
       }
       const editorDomNode = this.monacoEditor.getDomNode();

@@ -54,8 +54,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   rowData = [
   ];
-
-
   private rebuildGridData() {
     if (!this.type || !this.instance) {
       this.columnDefs = [];
