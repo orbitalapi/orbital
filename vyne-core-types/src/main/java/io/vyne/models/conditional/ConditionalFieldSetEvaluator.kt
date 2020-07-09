@@ -10,7 +10,10 @@ import lang.taxi.types.WhenFieldSetCondition
 class ConditionalFieldSetEvaluator(private val factory: TypedObjectFactory) {
    private val whenEvaluator = WhenFieldSetConditionEvaluator(factory)
 
-   fun evaluate(readCondition: FieldSetCondition, attributeName: AttributeName, targetType: Type): TypedInstance {
+   fun evaluate(readCondition: FieldSetCondition, targetType: Type): TypedInstance {
+      return evaluate(readCondition, attributeName = null, targetType = targetType)
+   }
+   fun evaluate(readCondition: FieldSetCondition, attributeName: AttributeName?, targetType: Type): TypedInstance {
       return when (readCondition) {
          is WhenFieldSetCondition -> whenEvaluator.evaluate(readCondition, attributeName, targetType)
          else -> error("Unhandled type of readCondition: ${readCondition::class.simpleName}")

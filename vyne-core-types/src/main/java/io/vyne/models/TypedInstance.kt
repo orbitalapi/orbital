@@ -2,6 +2,7 @@ package io.vyne.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.models.json.JsonModelParser
+import io.vyne.models.json.isJson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
@@ -105,25 +106,6 @@ interface TypedInstance {
          } else {
             log().warn("Collection type could not be determined - expected to find ${PrimitiveType.ARRAY.qualifiedName}, but found ${type.fullyQualifiedName}")
             type
-         }
-      }
-
-      private fun isJson(value: Any): Boolean {
-         if (value !is String) return false
-         val trimmed = value.trim()
-         return when {
-            trimmed.startsWith("{") && trimmed.endsWith("}") -> true
-            isJsonArray(value) -> true
-            else -> false
-         }
-      }
-
-      fun isJsonArray(value: Any): Boolean {
-         if (value !is String) return false
-         val trimmed = value.trim()
-         return when {
-            trimmed.startsWith("[") && trimmed.endsWith("]") -> true
-            else -> false
          }
       }
    }

@@ -8,16 +8,20 @@ import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.types.*
 
 class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
-   fun evaluate(readCondition: WhenFieldSetCondition, attributeName: AttributeName, targetType:Type): TypedInstance {
+   fun evaluate(readCondition: WhenFieldSetCondition, attributeName: AttributeName?, targetType:Type): TypedInstance {
       val selectorValue = evaluateSelector(readCondition.selectorExpression)
       val caseBlock = selectCaseBlock(selectorValue,readCondition)
-      val assignmentExpression = caseBlock.getAssignmentFor(attributeName)
-      val typedValue = evaluateExpression(assignmentExpression, targetType)
+      val assignmentExpression = if (attributeName != null) {
+         caseBlock.getAssignmentFor(attributeName)
+      } else {
+         caseBlock.getSingleAssignment()
+      }
+      val typedValue = evaluateExpression(assignmentExpression.assignment, targetType)
       return typedValue
    }
 
-   private fun evaluateExpression(matchExpression: CaseFieldAssignmentExpression, type:Type): TypedInstance {
-      val assignment = matchExpression.assignment
+   private fun evaluateExpression(assignment:ValueAssignment, type:Type): TypedInstance {
+//      val assignment = matchExpression.assignment
       return when(assignment) {
          is ScalarAccessorValueAssignment -> factory.readAccessor(type,assignment.accessor) // WTF? Why isn't the compiler working this out?
          is ReferenceAssignment -> factory.getValue(assignment.reference)
@@ -25,7 +29,7 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
          is DestructuredAssignment -> {
             val resolvedAttributes = assignment.assignments.map { nestedAssignment ->
                val attributeType = factory.schema.type(type.attribute(nestedAssignment.fieldName).type)
-               nestedAssignment.fieldName to evaluateExpression(nestedAssignment, attributeType)
+               nestedAssignment.fieldName to evaluateExpression(nestedAssignment.assignment, attributeType)
             }.toMap()
             TypedObject.fromAttributes(type,resolvedAttributes,factory.schema, true, source = MixedSources)
          }

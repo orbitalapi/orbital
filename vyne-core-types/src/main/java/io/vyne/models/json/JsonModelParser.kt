@@ -17,7 +17,7 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = DEF
 
    fun parse(type: Type, json: String, conversionService: ConversionService = ConversionService.DEFAULT_CONVERTER, source:DataSource): TypedInstance {
       return when {
-         !type.isCollection && TypedInstance.isJsonArray(json) -> parseCollection(
+         !type.isCollection && isJsonArray(json) -> parseCollection(
             mapper.readValue<List<Map<String, Any>>>("${json}[]"),
             schema.type("${type.fullyQualifiedName}[]"),
             conversionService, source)

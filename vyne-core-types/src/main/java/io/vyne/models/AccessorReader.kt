@@ -1,6 +1,7 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.csv.CsvAttributeAccessorParser
 import io.vyne.models.json.JsonAttributeAccessorParser
 import io.vyne.models.xml.XmlTypedInstanceParser
@@ -8,10 +9,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeReference
-import lang.taxi.types.Accessor
-import lang.taxi.types.ColumnAccessor
-import lang.taxi.types.DestructuredAccessor
-import lang.taxi.types.XpathAccessor
+import lang.taxi.types.*
 import org.apache.commons.csv.CSVRecord
 
 object Parsers {
@@ -20,13 +18,13 @@ object Parsers {
    val jsonParser: JsonAttributeAccessorParser by lazy { JsonAttributeAccessorParser() }
 }
 
-class AccessorReader {
+class AccessorReader(private val objectFactory: TypedObjectFactory) {
    // There's a cost to building all the Xml junk - so defer if we don't need it,
    // and re-use inbetween readers
    private val xmlParser: XmlTypedInstanceParser by lazy { Parsers.xmlParser }
    private val csvParser: CsvAttributeAccessorParser by lazy { Parsers.csvParser }
    private val jsonParser: JsonAttributeAccessorParser by lazy { Parsers.jsonParser }
-
+   private val conditionalFieldSetEvaluator: ConditionalFieldSetEvaluator by lazy { ConditionalFieldSetEvaluator(objectFactory) }
    fun read(value: Any, targetTypeRef: QualifiedName, accessor: Accessor, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
       val targetType = schema.type(targetTypeRef)
       return read(value, targetType, accessor, schema, nullValues, source)
@@ -37,11 +35,16 @@ class AccessorReader {
          is XpathAccessor -> parseXml(value, targetType, schema, accessor, source)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source)
          is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source)
+         is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, nullValues, source)
          else -> TODO()
       }
    }
 
-   private fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor, nullValues: Set<String> = emptySet(), source:DataSource): TypedInstance {
+   private fun evaluateConditionalAccessor(value: Any, targetType: Type, schema: Schema, accessor: ConditionalAccessor, nullValues: Set<String>, source: DataSource): TypedInstance {
+      return conditionalFieldSetEvaluator.evaluate(accessor.condition, targetType)
+   }
+
+   private fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
          is String -> csvParser.parse(value, targetType, accessor, schema, source)
@@ -60,7 +63,7 @@ class AccessorReader {
       return TypedObject(targetType, values, source)
    }
 
-   private fun parseXml(value: Any, targetType: Type, schema: Schema, accessor: XpathAccessor, source:DataSource): TypedInstance {
+   private fun parseXml(value: Any, targetType: Type, schema: Schema, accessor: XpathAccessor, source: DataSource): TypedInstance {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
          is String -> xmlParser.parse(value, targetType, accessor, schema, source)
