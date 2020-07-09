@@ -60,7 +60,7 @@ class CsvBinaryWriter(
 
 data class Header(val recordsPerRow: Int, val bytesPerColumn: Int, val columnMap: Map<String, Int>? = null) {
    companion object {
-      const val HEADER_SIZE_BYTES = 100
+      const val HEADER_SIZE_BYTES = 10000
       fun parse(chars: CharArray): Header {
          return parse(String(chars))
       }
