@@ -11,6 +11,11 @@
 
 }
 
+.query-editor-container{
+  overflow: hidden;
+  height: 100%
+}
+
 :host ::ng-deep .mat-tab-body-wrapper {
   flex-grow: 1;
 }

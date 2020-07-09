@@ -6,13 +6,15 @@
 
 <div class="page-content" style="z-index: 0">
     <div class="container">
-     
+
       <mat-tab-group mat-align-tabs="start" style="height: 100%">
         <mat-tab label="Query Builder">
          <query-wizard></query-wizard>
         </mat-tab>
         <mat-tab label="Query Editor">
+          <div class = query-editor-container >
           <query-editor></query-editor>
+          </div>
         </mat-tab>
       </mat-tab-group>
 
