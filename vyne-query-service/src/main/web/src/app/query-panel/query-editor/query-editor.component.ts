@@ -5,10 +5,11 @@ import { filter, take } from 'rxjs/operators';
 import {editor} from 'monaco-editor';
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
-import { QueryService, QueryResult } from 'src/app/services/query.service';
+import { QueryService, QueryResult, VyneQlQueryHistoryRecord, QueryHistoryRecord } from 'src/app/services/query.service';
 import { QueryFailure } from '../query-wizard/query-wizard.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider } from './vyne-query-language.monaco';
+import { Input } from '@angular/core';
 
 
 declare const monaco: any; // monaco
@@ -18,12 +19,15 @@ declare const monaco: any; // monaco
   templateUrl: './query-editor.component.html',
   styleUrls: ['./query-editor.component.scss']
 })
-export class QueryEditorComponent {
+export class QueryEditorComponent implements OnInit {
+
+  @Input()
+  initialQuery: QueryHistoryRecord
 
   editorOptions: { theme: 'vs-dark', language: 'vyneQL' };
   monacoEditor: ICodeEditor;
   monacoModel: ITextModel;
-  content: 'test'
+  query: string
   lastQueryResult: QueryResult | QueryFailure;
   loading = false;
 
@@ -59,6 +63,9 @@ export class QueryEditorComponent {
 
     });
   }
+  ngOnInit(): void {
+    this.query = this.initialQuery ? (this.initialQuery as VyneQlQueryHistoryRecord).query : ""
+  }
 
   remeasure() {
     setTimeout(() => {
@@ -85,7 +92,7 @@ export class QueryEditorComponent {
     this.lastQueryResult = null;
     this.loading = true
 
-    this.queryService.submitVyneQlQuery(this.content).subscribe( 
+    this.queryService.submitVyneQlQuery(this.query).subscribe( 
       result =>  { this.loading = false; this.lastQueryResult = result },
       error => {
         this.loading = false
