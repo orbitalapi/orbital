@@ -3,6 +3,7 @@ package io.vyne.models.json
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import io.vyne.Vyne
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
@@ -31,6 +32,7 @@ type Client {
    address : Address
 }
 """
+
    @Test
    fun parsesJsonObjectToTypedObject() {
       val vyne = Vyne(QueryEngineFactory.noQueryEngine()).addSchema(TaxiSchema.from(taxiDef))
@@ -113,5 +115,42 @@ type Client {
       expect(client["address"]!!).to.be.instanceof(TypedObject::class.java)
       val address = client["address"] as TypedObject
       expect(address["houseNumber"]!!.value).to.equal(123)
+   }
+
+   @Test
+   fun `parse json arrays successfully`() {
+      val vyne = Vyne(QueryEngineFactory.noQueryEngine()).addSchema(TaxiSchema.from(taxiDef))
+      val json = """
+[{
+   "clientId" : "marty",
+   "name" : "Marty Pitt",
+   "emails" : ["martypitt@me.com","marty@marty.com"],
+   "buildingType" : "House",
+   "address" : { "houseNumber" : 123, "street" : "MyStreet" , "postCode" : "SW11 1DN" }
+},
+{
+   "clientId" : "mert",
+   "name" : "Marty Pitt",
+   "emails" : ["martypitt@me.com","marty@marty.com"],
+   "buildingType" : "House",
+   "address" : { "houseNumber" : 123, "street" : "MyStreet" , "postCode" : "SW11 1DN" }
+}
+]
+
+"""
+
+      val schema = vyne.schema
+      val parser = JsonModelParser(schema)
+      val result = parser.parse(schema.type("Client"), json, source = Provided)
+
+      expect(result).instanceof(TypedCollection::class.java)
+      val clients = result as TypedCollection
+      clients.size.should.equal(2)
+      val client1 = clients[0] as TypedObject
+      expect(client1["clientId"]!!.value).to.equal("marty")
+
+      val client2 = clients[1] as TypedObject
+      expect(client2["clientId"]!!.value).to.equal("mert")
+
    }
 }
