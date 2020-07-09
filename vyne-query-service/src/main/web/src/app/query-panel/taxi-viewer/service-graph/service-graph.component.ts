@@ -86,7 +86,7 @@ export class ServiceGraphComponent implements AfterViewInit {
       label: 'Query client'
     };
 
-    const resultTypes: string[] = Object.keys(this.result.results);
+    const resultTypes: string[] = Object.keys(this.result && this.result.results ? this.result.results : []);
     const queryLinks: SchemaGraphLink[] = [
       {
         label: 'Query',

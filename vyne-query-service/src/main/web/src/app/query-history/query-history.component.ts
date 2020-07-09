@@ -5,6 +5,7 @@ import {
   ProfilerOperation,
   QueryHistoryRecord,
   QueryService,
+  VyneQlQueryHistoryRecord,
 } from '../services/query.service';
 import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
 import {InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
@@ -143,6 +144,11 @@ export class QueryHistoryComponent implements OnInit {
     this.selectedTypeInstance = $event.selectedTypeInstance;
     this.selectedTypeInstanceType = $event.selectedTypeInstanceType;
   }
+
+  queryAgain() {
+    this.activeRecord && this.router.navigate(['/query-wizard'], { state: { query: this.activeRecord}})
+  }
+
 }
 
 type QueryType = 'VyneQlQuery' | 'RestfulQuery';
