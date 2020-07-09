@@ -107,7 +107,13 @@ app-call-explorer {
   width: calc(100% - 100px); // to match the width of results pane
   overflow-x: hidden;
   position: absolute;
+  &::-webkit-scrollbar {
+    width: 0px;
+    background: transparent; /* make scrollbar transparent */
+  }
+
 }
+
 
 // Use these for border colors of nesting levels:
 // #7280d9, #fe8736, #06b8ff, #00bbaf, #ff3769, #40c14a, #fc6363, #ffd600
