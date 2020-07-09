@@ -1,7 +1,9 @@
 package io.vyne.models
 
 import com.winterbe.expekt.should
+import io.vyne.models.json.addJsonModel
 import io.vyne.testVyne
+import org.junit.Ignore
 import org.junit.Test
 
 class ConditionalFieldReaderTest {
@@ -99,5 +101,52 @@ type TransformedTradeRecord {
       queryContext.addFact(tradeRecord)
       val result = queryContext.build("TransformedTradeRecord")
       result.isFullyResolved.should.be.`true`
+   }
+
+   @Test
+   fun conditionalFieldSelectedOnConstantLiteral() {
+
+      val (vyne, _) = testVyne( """
+      type Direction inherits String
+      type BankDirection inherits Direction
+      type ClientDirection inherits Direction
+      type Order {
+         bankDirection: BankDirection
+         clientDirection: ClientDirection by when (bankDirection) {
+            "Buy" -> "Sell"
+            "Sell" -> "Buy"
+         }
+      }
+      """)
+      val json = """{ "bankDirection" : "Buy" }"""
+      val order = TypedObjectFactory(vyne.schema.type("Order"), json, vyne.schema, source = Provided).build()
+
+      order["clientDirection"].value!!.should.equal("Sell")
+      order["bankDirection"].value!!.should.equal("Buy")
+   }
+
+
+   @Ignore("this feature isn't implemented yet")
+   @Test
+   fun conditionalFieldSelectedOnConstantEnum() {
+
+      val (vyne, _) = testVyne( """
+      type Direction inherits String
+      type BankDirection inherits Direction
+      type ClientDirection inherits Direction
+      type Order {
+         bankDirection: BankDirection
+         clientDirection: ClientDirection by when (BankDirection) {
+            "Buy" -> "Sell"
+            "Sell" -> "Buy"
+         }
+      }
+      """)
+      val order = TypedInstance.from(vyne.schema.type("Order"), """{ bankDirection : "Buy" }""", vyne.schema, source = Provided) as TypedObject
+      order["clientDirection"].value!!.should.equal("Sell")
+//      val queryContext = vyne.query()
+//      vyne.addJsonModel("Order", """{ bankDirection : "Buy" }""")
+
+
    }
 }
