@@ -113,6 +113,15 @@ interface TypedInstance {
          val trimmed = value.trim()
          return when {
             trimmed.startsWith("{") && trimmed.endsWith("}") -> true
+            isJsonArray(value) -> true
+            else -> false
+         }
+      }
+
+      fun isJsonArray(value: Any): Boolean {
+         if (value !is String) return false
+         val trimmed = value.trim()
+         return when {
             trimmed.startsWith("[") && trimmed.endsWith("]") -> true
             else -> false
          }
