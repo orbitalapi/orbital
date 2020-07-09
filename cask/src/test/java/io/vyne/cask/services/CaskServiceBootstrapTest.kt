@@ -37,4 +37,22 @@ class CaskServiceBootstrapTest {
       // assert
       verify(caskServiceSchemaGenerator, times(1)).generateAndPublishService(versionedType)
    }
+
+   @Test
+   fun `create new cask table for type that just changed`() {
+      // prepare
+      val versionedType = schemaProvider.schema().versionedType("common.order.Order".fqn())
+      val now = Instant.now()
+      val caskConfigV1 = CaskConfig("Order_hashv1", "common.order.Order", "hashv1", emptyList(), emptyList(), null, now.minusSeconds(100))
+      val caskConfigV2 = CaskConfig("Order_hashv2", "common.order.Order", "hashv2", emptyList(), emptyList(), null, now.minusSeconds(50))
+      whenever(caskDAO.findAllCaskConfigs()).thenReturn(mutableListOf(caskConfigV1, caskConfigV2))
+
+      // act
+      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskDAO).initializeCaskServices()
+
+      // assert
+      verify(caskDAO, times(1)).createCaskConfig(versionedType)
+      verify(caskDAO, times(1)).createCaskRecordTable(versionedType)
+      verify(caskServiceSchemaGenerator, times(1)).generateAndPublishService(versionedType)
+   }
 }
