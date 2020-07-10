@@ -19,6 +19,9 @@ services:
       environment:
          PROFILE: embedded-discovery
          OPTIONS: --vyne.schema.publicationMethod=DISTRIBUTED
+         # use the option below when running vyne with publicationMethod=LOCAL and other components publicationMethod=REMOTE
+         # It enables http communication between the clients and vyne possible
+         #OPTIONS: --eureka.instance.preferIpAddress=true
 
    file-schema-server:
       image: vyneco/file-schema-server:latest-snapshot
