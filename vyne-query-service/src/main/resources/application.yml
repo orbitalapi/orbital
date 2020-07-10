@@ -21,6 +21,13 @@ vyne:
       publicationMethod: LOCAL # this exposes in memory schema store via http API, use only in Vyne settings
       pollInterval: 5s
 
+feign:
+   client:
+      config:
+         default:
+            connectTimeout: 10000
+            readTimeout: 10000
+
 logging:
    level:
       org.springframework: WARN
