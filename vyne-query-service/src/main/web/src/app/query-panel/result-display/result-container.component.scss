@@ -6,6 +6,12 @@
 
 .result-object-view {
   margin-top: 1rem;
+  padding-right: 2rem;
+}
+
+.result-object-view-sml {
+  margin-top: 1rem;
+  //width: 67%; // to match the results pane width
 }
 
 app-results-table {
@@ -103,15 +109,15 @@ app-call-explorer {
 }
 
 .virtualScroll-viewport {
-  height: 83vh; // to match height of the tab bar;
-  width: calc(100% - 100px); // to match the width of results pane
-  overflow-x: hidden;
-  position: absolute;
+  height: 80vh; // to match height of the tab bar;
+  width: 100%; // to match the width of results pane
+  //overflow-x: hidden;
+  //position: absolute;
+  margin-top: 2rem;
   &::-webkit-scrollbar {
     width: 0px;
     background: transparent; /* make scrollbar transparent */
   }
-
 }
 
 

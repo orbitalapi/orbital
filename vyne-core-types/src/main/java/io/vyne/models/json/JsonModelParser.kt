@@ -10,6 +10,9 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.types.XpathAccessor
 
+// This is deprecated, as it doesn't respect more advanced
+// topics such as conditional field evaluation.
+@Deprecated("Use TypedObjectFactory instead")
 class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = DEFAULT_MAPPER) {
    companion object {
       val DEFAULT_MAPPER = jacksonObjectMapper()

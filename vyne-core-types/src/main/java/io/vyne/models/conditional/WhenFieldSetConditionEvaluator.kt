@@ -8,9 +8,9 @@ import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.types.*
 
 class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
-   fun evaluate(readCondition: WhenFieldSetCondition, attributeName: AttributeName?, targetType:Type): TypedInstance {
+   fun evaluate(readCondition: WhenFieldSetCondition, attributeName: AttributeName?, targetType: Type): TypedInstance {
       val selectorValue = evaluateSelector(readCondition.selectorExpression)
-      val caseBlock = selectCaseBlock(selectorValue,readCondition)
+      val caseBlock = selectCaseBlock(selectorValue, readCondition)
       val assignmentExpression = if (attributeName != null) {
          caseBlock.getAssignmentFor(attributeName)
       } else {
@@ -20,18 +20,27 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
       return typedValue
    }
 
-   private fun evaluateExpression(assignment:ValueAssignment, type:Type): TypedInstance {
+   private fun evaluateExpression(assignment: ValueAssignment, type: Type): TypedInstance {
 //      val assignment = matchExpression.assignment
-      return when(assignment) {
-         is ScalarAccessorValueAssignment -> factory.readAccessor(type,assignment.accessor) // WTF? Why isn't the compiler working this out?
+      return when (assignment) {
+         is ScalarAccessorValueAssignment -> factory.readAccessor(type, assignment.accessor) // WTF? Why isn't the compiler working this out?
          is ReferenceAssignment -> factory.getValue(assignment.reference)
-         is LiteralAssignment -> TypedInstance.from(type,assignment.value,factory.schema, true, source = DefinedInSchema)
+         is LiteralAssignment -> TypedInstance.from(type, assignment.value, factory.schema, true, source = DefinedInSchema)
          is DestructuredAssignment -> {
             val resolvedAttributes = assignment.assignments.map { nestedAssignment ->
                val attributeType = factory.schema.type(type.attribute(nestedAssignment.fieldName).type)
                nestedAssignment.fieldName to evaluateExpression(nestedAssignment.assignment, attributeType)
             }.toMap()
-            TypedObject.fromAttributes(type,resolvedAttributes,factory.schema, true, source = MixedSources)
+            TypedObject.fromAttributes(type, resolvedAttributes, factory.schema, true, source = MixedSources)
+         }
+         is EnumValueAssignment -> {
+            val enumType = factory.schema.type(assignment.enum.qualifiedName)
+            // TODO : SHouldn't the enumValue be the actual TypedInstance?
+            // TODO : Probably could use a better data source here.
+            TypedInstance.from(enumType, assignment.enumValue.value, factory.schema, source = DefinedInSchema)
+         }
+         is NullAssignment -> {
+            TypedNull(type, source = DefinedInSchema)
          }
          else -> TODO()
       }
@@ -39,10 +48,15 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
 
    private fun selectCaseBlock(selectorValue: TypedInstance, readCondition: WhenFieldSetCondition): WhenCaseBlock {
       return readCondition.cases.firstOrNull { caseBlock ->
-         val valueToCompare = evaluateExpression(caseBlock.matchExpression, selectorValue.type)
-         selectorValue.valueEquals(valueToCompare)
-      } ?:
-      error("No matching cases found")
+         if (caseBlock.matchExpression is ElseMatchExpression) {
+            true
+         } else {
+            val valueToCompare = evaluateExpression(caseBlock.matchExpression, selectorValue.type)
+            selectorValue.valueEquals(valueToCompare)
+         }
+
+
+      } ?: error("No matching cases found")
 
    }
 
@@ -51,7 +65,7 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
          is ReferenceCaseMatchExpression -> factory.getValue(matchExpression.reference)
          // Note - I'm assuming the literal value is the same type as what we're comparing to.
          // Reasonable for now, but suspect subtypes etc may cause complexity here I haven't considered
-         is LiteralCaseMatchExpression -> TypedInstance.from(type,matchExpression.value,factory.schema, source = DefinedInSchema)
+         is LiteralCaseMatchExpression -> TypedInstance.from(type, matchExpression.value, factory.schema, source = DefinedInSchema)
          else -> TODO()
       }
    }

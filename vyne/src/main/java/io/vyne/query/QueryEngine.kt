@@ -197,7 +197,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          val inboundFactList = (context.facts.first() as TypedCollection).value
          log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
          val transformed =  inboundFactList
-            .parallelStream()
+            .stream()
             .map {  mapTo(targetCollectionType, it, context) }
             .filter { it != null}
             .collect(Collectors.toList())

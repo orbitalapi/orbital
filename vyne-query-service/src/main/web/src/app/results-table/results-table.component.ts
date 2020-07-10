@@ -35,7 +35,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   @Input()
   get type(): Type {
-    return this._type;
+    return super['type'];
   }
 
   set type(value: Type) {

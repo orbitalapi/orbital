@@ -31,7 +31,7 @@ class DataSourceDeserializer : JsonDeserializer<DataSource>() {
       val isMappedValueDataSource = rawMap.size == 2 && rawMap.containsKey("mappingType")
       if (isMappedValueDataSource) {
          return when(val mappingType = rawMap["mappingType"]) {
-            MappedSynonym.mappingType.name -> MappedSynonym
+//            MappedSynonym.mappingType.name -> MappedSynonym
             else -> TODO("Unknown mappingType=${mappingType}")
          }
       }

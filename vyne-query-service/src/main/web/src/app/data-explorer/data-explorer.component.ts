@@ -185,6 +185,7 @@ export class DataExplorerComponent {
   onCsvOptionsChanged(csvOptions: CsvOptions) {
     this.csvOptions = csvOptions;
     this.parseCsvContentIfPossible();
+    this.parseToTypedInstanceIfPossible();
   }
 
   onInstanceClicked(event: InstanceLike) {

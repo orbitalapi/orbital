@@ -11,7 +11,7 @@
           </ngx-monaco-editor>
         </div>
 
-        <div class="buttons-container">
+        <div class="buttons-container query-submit-button">
           <button mat-raised-button color="primary" [disabled]="!monacoModel || !monacoModel.getValue() || loading"
             (click)="submitQuery()">Submit</button>
         </div>

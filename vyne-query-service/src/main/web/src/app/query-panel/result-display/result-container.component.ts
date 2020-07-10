@@ -14,6 +14,7 @@ import {findType, QualifiedName, Schema, Type, TypedInstance} from '../../servic
 import {InstanceLike, InstanceLikeOrCollection, typeName} from '../../object-view/object-view.component';
 import {ExportFileService} from '../../services/export.file.service';
 import * as fileSaver from 'file-saver';
+import {Router} from "@angular/router";
 
 export class InstanceSelectedEvent {
   constructor(public readonly selectedTypeInstance: InstanceLike,
@@ -32,7 +33,7 @@ export enum DownloadFileType {JSON = 'JSON', CSV = 'CSV'}
 })
 export class ResultContainerComponent implements OnInit {
 
-  constructor(private typeService: TypesService, private fileService: ExportFileService) {
+  constructor(private typeService: TypesService, private fileService: ExportFileService, private router: Router) {
     typeService.getTypes().subscribe(schema => this.schema = schema);
 
   }
@@ -167,6 +168,12 @@ export class ResultContainerComponent implements OnInit {
 
   get isSuccess(): Boolean {
     return this.result && this.isQueryResult(this.result) && this.result.fullyResolved;
+  }
+
+  get isQueryHistoryPage(): Boolean {
+    if (this.router.url.includes('query-history')) {
+      return true;
+    }
   }
 
   get isUnsuccessfulSearch(): Boolean {

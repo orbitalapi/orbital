@@ -66,7 +66,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
 
    @PostMapping("/api/vyneql")
    fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString,
-                         @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode): QueryResponse {
+                         @RequestParam("resultMode", defaultValue = "VERBOSE") resultMode: ResultMode): QueryResponse {
       log().info("VyneQL query => $query")
       return timed("QueryService.submitVyneQlQuery") {
          val vyne = vyneFactory.createVyne()

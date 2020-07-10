@@ -3,6 +3,8 @@ package io.vyne.models
 import com.winterbe.expekt.should
 import io.vyne.models.json.addJsonModel
 import io.vyne.testVyne
+import lang.taxi.Compiler
+import lang.taxi.types.*
 import org.junit.Ignore
 import org.junit.Test
 
@@ -148,5 +150,31 @@ type TransformedTradeRecord {
 //      vyne.addJsonModel("Order", """{ bankDirection : "Buy" }""")
 
 
+   }
+
+   @Test
+   fun canDeclareSingleFieldConditionalAssignmentsUsingEnumsInAssignment() {
+      val (vyne, _) = testVyne("""
+      type Direction inherits String
+      enum PayReceive {
+         Pay,
+         Receive
+      }
+      type BankDirection inherits Direction
+      type Order {
+         bankDirection: BankDirection
+         payReceive: PayReceive by when (bankDirection) {
+            "Buy" -> PayReceive.Pay
+            "Sell" -> PayReceive.Receive
+            else -> null
+         }
+      }
+      """)
+
+      val order = TypedInstance.from(vyne.schema.type("Order"), """{ "bankDirection" : "Buy" }""", vyne.schema, source = Provided) as TypedObject
+      order["payReceive"].value.should.equal("Pay")
+
+      val orderWithNull = TypedInstance.from(vyne.schema.type("Order"), """{ "bankDirection" : "xxxx" }""", vyne.schema, source = Provided) as TypedObject
+      orderWithNull["payReceive"].value.should.be.`null`
    }
 }

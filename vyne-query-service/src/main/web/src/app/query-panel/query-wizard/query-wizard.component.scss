@@ -3,6 +3,8 @@
 
 .container {
   flex: 1;
+  min-height:  auto;
+  overflow: hidden;
 
   &:not(:last-child) {
     padding-right: 45px;
