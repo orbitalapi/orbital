@@ -1,9 +1,6 @@
 package io.vyne.cask.services
 
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.times
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockito_kotlin.*
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.query.CaskDAO
@@ -36,5 +33,24 @@ class CaskServiceBootstrapTest {
 
       // assert
       verify(caskServiceSchemaGenerator, times(1)).generateAndPublishService(versionedType)
+   }
+
+   @Test
+   fun `error in schema does not prevent cask starting up`() {
+      // prepare
+      val schemaProvider = SimpleTaxiSchemaProvider("""
+         namespace common.order
+         type Order {
+            id: String2
+         }
+      """.trimIndent())
+      val caskConfig = CaskConfig("Order_hash1", "common.order.Order", "hash1", emptyList(), emptyList(), null, Instant.now())
+      whenever(caskDAO.findAllCaskConfigs()).thenReturn(mutableListOf(caskConfig))
+
+      // act
+      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskDAO).initializeCaskServices()
+
+      // assert
+      verify(caskServiceSchemaGenerator, times(0)).generateAndPublishService(any(), any())
    }
 }
