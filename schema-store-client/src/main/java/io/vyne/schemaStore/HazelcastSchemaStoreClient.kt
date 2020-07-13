@@ -109,7 +109,9 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
             validationResult.a.second to Either.left(validationResult.a.first)
          }
       }
-      parsedSources.forEach { parsedSource ->
+      parsedSources
+         .filter { versionedSources.contains(it.source) }
+         .forEach { parsedSource ->
          // TODO : We now allow storing schemas that have errors.
          // This is because if schemas depend on other schemas that go away, (ie., from a service
          // that goes down).
@@ -121,6 +123,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
          // overwrite a valid source with on that contains compilation errors.
          // Deal with that if the scenario arises.
          val cachedSource = CacheMemberSchema(hazelcast.cluster.localMember.uuid, parsedSource)
+         log().info("Member=${hazelcast.cluster.localMember.uuid} added new schema ${parsedSource.source.id} to it's cache")
          schemaSourcesMap[parsedSource.source.id] = cachedSource
       }
       rebuildSchemaAndWriteToCache()
@@ -236,7 +239,7 @@ class HazelcastSchemaPurger(private val hazelcastMap: IMap<SchemaId, CacheMember
       hazelcastMap.removeAll(object : Predicate<SchemaId, CacheMemberSchema> {
          override fun apply(mapEntry: MutableMap.MutableEntry<SchemaId, CacheMemberSchema>): Boolean {
             return if (currentClusterMembers.none { it == mapEntry.value.cacheMemberId }) {
-               log().info("Cluster member for schema ${mapEntry.key} has gone away, and it's schema is being removed")
+               log().info("Member=${mapEntry.value.cacheMemberId} disconnected, removing schema=${mapEntry.key} from cache")
                true
             } else {
                false
