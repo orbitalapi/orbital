@@ -30,6 +30,9 @@ import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.*
 import javax.annotation.PreDestroy
 
 @RunWith(SpringRunner::class)
@@ -212,11 +215,16 @@ Date,Symbol,Open,High,Low,Close
          .collectList()
          .block()
 
-         result.should.not.be.empty
+      result.should.not.be.empty
+
+      // assert date coming back from Postgresql is equal to what was sent to cask for ingestion
+      result[0].orderDate
+         .toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+         .should.be.equal(LocalDate.parse("2020-03-19"))
    }
 
    data class OrderWindowSummaryDto(
-      val orderDate: Instant,
+      val orderDate: Date,
       val symbol: String,
       val open: Double,
       val close: Double
