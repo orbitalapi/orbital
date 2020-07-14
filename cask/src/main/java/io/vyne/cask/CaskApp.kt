@@ -33,6 +33,8 @@ import org.springframework.web.reactive.socket.server.support.HandshakeWebSocket
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter
 import org.springframework.web.reactive.socket.server.upgrade.TomcatRequestUpgradeStrategy
 import java.time.Duration
+import java.util.*
+import javax.annotation.PostConstruct
 
 
 @SpringBootApplication
@@ -48,6 +50,17 @@ class CaskApp {
          app.webApplicationType = WebApplicationType.REACTIVE
          app.run(*args)
       }
+   }
+
+   @PostConstruct
+   fun setUtcTimezone() {
+      log().info("Setting default TimeZone to UTC")
+      TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+      // Date values are stored in Postgresql in UTC.
+      // However before sending dates to user a conversion happens (PgResultSet.getDate..) that includes default timezone
+      // E.g. date 2020.03.29:00:00:00 in DB can converted and returned to user as 2020.03.28:23:00:00
+      // This fix forces default timezone to be UTC
+      // Alternatively we could provide -Duser.timezone=UTC at startup
    }
 
    @Bean
