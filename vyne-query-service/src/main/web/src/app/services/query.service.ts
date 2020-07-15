@@ -20,7 +20,7 @@ export class QueryService {
   }
 
   submitVyneQlQuery(query: String): Observable<QueryResult> {
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql`, query);
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=VERBOSE`, query);
   }
 
   getHistory(): Observable<QueryHistoryRecord[]> {
@@ -59,6 +59,10 @@ export function isTypedInstance(instance: InstanceLikeOrCollection): instance is
 export function isTypeNamedInstance(instance: any): instance is TypeNamedInstance {
   const instanceAny = instance as any;
   return instanceAny && instanceAny.typeName !== undefined && instanceAny.value !== undefined;
+}
+
+export function isTypedCollection(instance: any): instance is TypeNamedInstance[] {
+  return instance && Array.isArray(instance) && instance[0] && isTypeNamedInstance(instance[0])
 }
 
 export interface DataSourceReference {

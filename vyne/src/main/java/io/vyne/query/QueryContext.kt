@@ -264,7 +264,7 @@ data class QueryContext(
                   // Instantiate with either name or value depending on what we have as input
                   val value = if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
 
-                  TypedValue.from(synonymType, value, false, MappedSynonym)
+                  TypedValue.from(synonymType, value, false, MappedSynonym(fact))
                }.toSet()
          } else {
             setOf()
@@ -454,8 +454,14 @@ enum class FactDiscoveryStrategy {
             matches.isEmpty() -> null
             matches.size == 1 -> matches.first()
             else -> {
-               log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
-               null
+               // last ditch attempt
+               val exactMatch = matches.filter { it.type == type }
+               if (exactMatch.size == 1) {
+                  exactMatch.first()
+               } else {
+                  log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
+                  null
+               }
             }
          }
       }

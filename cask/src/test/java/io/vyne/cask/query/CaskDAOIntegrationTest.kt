@@ -11,13 +11,14 @@ import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.Ingester
 import io.vyne.cask.ingest.IngestionStream
+import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.log
 import org.apache.commons.io.FileUtils
 import org.flywaydb.core.Flyway
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -25,12 +26,13 @@ import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
 import java.io.File
+import java.net.URI
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.util.*
 
-@Ignore
+//@Ignore
 class CaskDAOIntegrationTest {
 
    @Rule
@@ -65,32 +67,13 @@ class CaskDAOIntegrationTest {
       val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())
       val resource = Resources.getResource("Coinbase_BTCUSD.json").toURI()
 
-      val pipelineSource = JsonStreamSource(
-         Flux.just(File(resource).inputStream()),
-         versionedType,
-         taxiSchema,
-         folder.root.toPath(),
-         ObjectMapper())
-
-      val pipeline = IngestionStream(
-         versionedType,
-         TypeDbWrapper(versionedType, taxiSchema, pipelineSource.cachePath, null),
-         pipelineSource)
-
-      val ingester = Ingester(jdbcTemplate, pipeline)
-      caskDao.dropCaskRecordTable(versionedType)
-      caskDao.createCaskRecordTable(versionedType)
-
-      ingester.ingest().collectList()
-         .doOnError { error ->
-            log().error("Error ", error)
-         }
-         .block(Duration.ofMillis(500))
+      ingestData(resource, versionedType, taxiSchema)
 
       caskDao.findBy(versionedType, "symbol", "BTCUSD").size.should.equal(10061)
       caskDao.findBy(versionedType, "open", "6300").size.should.equal(7)
       caskDao.findBy(versionedType, "close", "6330").size.should.equal(9689)
       caskDao.findBy(versionedType, "orderDate", "2020-03-19").size.should.equal(10061)
+
       FileUtils.cleanDirectory(folder.root)
    }
 
@@ -148,5 +131,52 @@ class CaskDAOIntegrationTest {
       caskMessages[0].readCachePath.should.equal("OrderWindowSummary")
       caskMessages[0].qualifiedTypeName.should.equal(messagePath.toString())
       caskMessages[0].insertedAt.should.be.below(Instant.now())
+   }
+
+   @Test
+   fun `can ingest message against two versions of schema and query back`() {
+      val taxiSchema = CoinbaseJsonOrderSchema.schemaV1
+      val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())
+      val resource = Resources.getResource("Coinbase_BTCUSD_single_v1.json").toURI()
+
+      ingestData(resource, versionedType, taxiSchema)
+
+      val v2Schema = CoinbaseJsonOrderSchema.schemaV2
+      val v2Type = v2Schema.versionedType("OrderWindowSummary".fqn())
+      val v2Resource = Resources.getResource("Coinbase_BTCUSD_single_v2.json").toURI()
+
+      ingestData(v2Resource, v2Type, v2Schema)
+
+      // Let's query by a 3rd type with no data, just to be sure
+      val v3Type = CoinbaseJsonOrderSchema.schemaV3.versionedType("OrderWindowSummary".fqn())
+      val records = caskDao.findAll(v3Type)
+      records.should.have.size(2)
+
+      FileUtils.cleanDirectory(folder.root)
+   }
+
+   private fun ingestData(resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema) {
+      val pipelineSource = JsonStreamSource(
+         Flux.just(File(resource).inputStream()),
+         versionedType,
+         taxiSchema,
+         folder.root.toPath(),
+         ObjectMapper())
+
+      val pipeline = IngestionStream(
+         versionedType,
+         TypeDbWrapper(versionedType, taxiSchema, pipelineSource.cachePath, null),
+         pipelineSource)
+
+      val ingester = Ingester(jdbcTemplate, pipeline)
+      caskDao.dropCaskRecordTable(versionedType)
+      caskDao.createCaskRecordTable(versionedType)
+      caskDao.createCaskConfig(versionedType)
+
+      ingester.ingest().collectList()
+         .doOnError { error ->
+            log().error("Error ", error)
+         }
+         .block(Duration.ofMillis(500))
    }
 }

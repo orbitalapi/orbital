@@ -35,19 +35,21 @@ object DefinedInSchema : DataSource {
 
 data class OperationResult(val remoteCall: RemoteCall, val inputs: List<OperationParam>) : DataSource {
    data class OperationParam(val parameterName: String, val value: Any?)
+
    override val name: String = "Operation result"
 }
 
 
-abstract class MappedValue(type: MappingType) : DataSource {
+sealed class MappedValue(val mappingType: MappingType) : DataSource {
+   abstract val source: TypedInstance
    override val name = "Mapped"
-   val mappingType: MappingType = type
+
    enum class MappingType {
       SYNONYM
    }
 }
 
-object MappedSynonym : MappedValue(MappingType.SYNONYM)
+data class MappedSynonym(override val source: TypedInstance) : MappedValue(MappingType.SYNONYM)
 
 /**
  * Indicates that the data was provided - typically as an input to a query.
