@@ -10,19 +10,13 @@ import { VyneqlRecordComponent } from '../query-history/vyneql-record.component'
   styleUrls: ['./query-panel.component.scss'],
 })
 export class QueryPanelComponent  {
-
-  routeQuery: QueryHistoryRecord
+  routeQuery: QueryHistoryRecord;
+  selectedIndex: number;
 
   constructor(private router: Router) {
     // https://angular.io/api/router/NavigationExtras#state
-    const navigationState = this.router.getCurrentNavigation().extras.state
-    this.routeQuery =  navigationState ? navigationState.query : undefined
+    const navigationState = this.router.getCurrentNavigation().extras.state;
+    this.routeQuery =  navigationState ? navigationState.query : undefined;
+    this.selectedIndex =  this.routeQuery ? (isVyneQlQueryHistoryRecord(this.routeQuery) ? 1 : 0) : 0;
   }
-
-  activeTab() {
-    return this.routeQuery ? (isVyneQlQueryHistoryRecord(this.routeQuery) ? 1: 0) : 0
-  }
-
- 
-
 }

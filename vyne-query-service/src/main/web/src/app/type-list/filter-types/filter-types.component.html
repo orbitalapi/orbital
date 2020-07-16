@@ -3,9 +3,9 @@
     <img src="assets/img/filter.svg" class="filterIcon">
     <span class="language-name">Filter</span>
     <div class="spacer"></div>
-    <i class="material-icons" [ngClass]="expandWrapperClass">expand_less</i>
+    <i class="material-icons {{expanded ? '' : 'panel-hidden'}}">expand_less</i>
   </div>
-  <div class="expand-wrapper highlight-container filterPanelContainer" [ngClass]="expandWrapperClass">
+  <div class="expand-wrapper highlight-container filterPanelContainer {{expanded ? '' : 'panel-hidden'}}">
     <div class="container target-type-container filterPanelContainer">
       <mat-card class="filterPanelContainer">
         <mat-card-content>
