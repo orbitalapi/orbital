@@ -54,9 +54,8 @@ class Ingester(
       val connection = jdbcTemplate.dataSource!!.connection
       val pgConnection = connection.unwrap(PGConnection::class.java)
       val table = ingestionStream.dbWrapper.rowWriterTable
-      val writer = SimpleRowWriter(table)
+      val writer = SimpleRowWriter(table, pgConnection)
       log().debug("Opening DB connection for ${table.table}")
-      writer.open(pgConnection)
       return ingestionStream.feed.stream
          .doOnError {
             log().debug("Closing DB connection for ${table.table}")

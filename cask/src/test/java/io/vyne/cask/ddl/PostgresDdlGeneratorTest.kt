@@ -25,18 +25,20 @@ type Person {
     @Something
     dateOfBirth: Date
     timestamp: Instant
+    time: Time
 }""".trim())
         val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
         statement.ddlStatement.should.equal("""
-CREATE TABLE IF NOT EXISTS Person_3a9dde (
+CREATE TABLE IF NOT EXISTS Person_7c8107 (
 "firstName" VARCHAR(255),
 "age" INTEGER,
 "alive" BOOLEAN,
 "spouseName" VARCHAR(255),
 "dateOfBirth" DATE,
-"timestamp" TIMESTAMP);
-CREATE INDEX IF NOT EXISTS idx_Person_3a9dde_firstName ON Person_3a9dde("firstName");
-CREATE INDEX IF NOT EXISTS idx_Person_3a9dde_dateOfBirth ON Person_3a9dde("dateOfBirth");""".trim())
+"timestamp" TIMESTAMP,
+"time" TIME);
+CREATE INDEX IF NOT EXISTS idx_Person_7c8107_firstName ON Person_7c8107("firstName");
+CREATE INDEX IF NOT EXISTS idx_Person_7c8107_dateOfBirth ON Person_7c8107("dateOfBirth");""".trim())
     }
 
     @Test
@@ -59,6 +61,7 @@ type Person {
     timestamp: Instant
     gender : GenderType
     originalGender : OriginalGender
+    time: Time
 }""".trim())
         val person = taxi.objectType("Person")
         generator.generateColumnForField(person.field("firstName")).sql
@@ -85,6 +88,8 @@ type Person {
        generator.generateColumnForField(person.field("originalGender")).sql
           .should.equal(""""originalGender" VARCHAR(255)""")
 
+       generator.generateColumnForField(person.field("time")).sql
+          .should.equal(""""time" TIME""")
     }
 
     private fun schema(src: String): Pair<TaxiSchema, TaxiDocument> {
