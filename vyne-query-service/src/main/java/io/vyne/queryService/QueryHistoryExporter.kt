@@ -5,6 +5,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVPrinter
 import org.springframework.stereotype.Component
 import java.io.StringWriter
+import javax.activation.UnsupportedDataTypeException
 
 @Component
 class QueryHistoryExporter(private val objectMapper: ObjectMapper) {
@@ -19,18 +20,18 @@ class QueryHistoryExporter(private val objectMapper: ObjectMapper) {
       val writer = StringWriter()
       val printer = CSVPrinter(writer, CSVFormat.DEFAULT.withFirstRecordAsHeader())
       results.keys.forEach {
-         when(results[it]) {
+         when (results[it]) {
             is List<*> -> {
-               val values = results[it] as List<Map<*, *>>
-               printer.printRecord(values.first().keys)
-               values.forEach { fields ->
+               val listOfObj = results[it] as List<Map<*, *>>
+               printer.printRecord(listOfObj.first().keys)
+               listOfObj.forEach { fields ->
                   printer.printRecord(fields.values)
                }
             }
             is Map<*, *> -> {
-               val values = results[it] as Map<*, *>
-               printer.printRecord(values.keys)
-               printer.printRecord(values)
+               val singleObj = results[it] as Map<*, *>
+               printer.printRecord(singleObj.keys)
+               printer.printRecord(singleObj.values)
             }
          }
       }
@@ -38,7 +39,13 @@ class QueryHistoryExporter(private val objectMapper: ObjectMapper) {
    }
 
    private fun toJson(results: Map<String, Any?>): ByteArray {
-      return objectMapper.writeValueAsBytes(results)
+      val json = objectMapper.writeValueAsString(results)
+      return objectMapper.writeValueAsString(results)
+         .removeRange(
+            json.indexOfFirst { it == '{' },
+            json.indexOfFirst { it == ':' } + 1)
+         .removeSuffix("}")
+         .toByteArray()
    }
 }
 
