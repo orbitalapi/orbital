@@ -10,11 +10,7 @@ import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
 import org.springframework.lang.Nullable
 import java.math.BigDecimal
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZoneOffset
+import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.util.Locale
@@ -108,6 +104,9 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
          }
          source is String && targetType == LocalDate::class.java -> {
             toTemporalObject(source, format, LocalDate::parse, DateTimeFormatter.ISO_LOCAL_DATE) as T
+         }
+         source is String && targetType == LocalTime::class.java -> {
+            toTemporalObject(source, format, LocalTime::parse, DateTimeFormatter.ISO_TIME) as T
          }
          else -> {
             next.convert(source, targetType, format)

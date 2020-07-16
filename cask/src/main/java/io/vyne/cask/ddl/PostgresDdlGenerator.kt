@@ -1,5 +1,6 @@
 package io.vyne.cask.ddl
 
+import de.bytefish.pgbulkinsert.pgsql.constants.DataType
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.VersionedSource
 import io.vyne.cask.timed
@@ -14,10 +15,7 @@ import java.math.BigDecimal
 import java.nio.file.Path
 import java.sql.Timestamp
 import java.sql.Types
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
+import java.time.*
 import java.util.concurrent.TimeUnit
 
 data class TableMetadata(
@@ -233,14 +231,12 @@ $fieldDef);""".trim()
          PrimitiveType.DATE_TIME -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, v as LocalDateTime) }
          PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC")))}
          // TODO TIME db column type
-//         PrimitiveType.TIME -> ScalarTypes.timestamp() to { row, v ->
-//            run {
-//               val time = (v as LocalTime)
-//               val date = LocalDate.of(1970, 1, 1)
-//               // Postgres api does not accept LocalTime so have to map to LocalDateTime
-//               row.setTimeStamp(fieldName, LocalDateTime.of(date, time))
-//            }
-//         }
+         PrimitiveType.TIME -> ScalarTypes.time() to { row, v ->
+            run {
+               val time = (v as LocalTime)
+               row.setValue(columnName, DataType.Time, time)
+            }
+         }
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
       val (postgresType, writer) = p
@@ -256,6 +252,7 @@ private object ScalarTypes {
    fun integer() = "INTEGER"
    fun boolean() = "BOOLEAN"
    fun timestamp() = "TIMESTAMP"
+   fun time() = "TIME"
    fun date() = "DATE"
 }
 
