@@ -1,9 +1,9 @@
 import {Component, OnInit} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from "@angular/forms";
-import {SchemaImportRequest, SchemaPreview, SchemaPreviewRequest, TypesService,} from "../../services/types.service";
-import {MatStepper} from "@angular/material";
-import {Router} from "@angular/router";
-import {Level, Message, VersionedSource} from "../../services/schema";
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {SchemaImportRequest, SchemaPreview, SchemaPreviewRequest, TypesService, } from '../../services/types.service';
+import {MatStepper} from '@angular/material';
+import {Router} from '@angular/router';
+import {Level, Message, VersionedSource} from '../../services/schema';
 
 @Component({
   selector: 'app-new-schema-wizard',
@@ -12,10 +12,10 @@ import {Level, Message, VersionedSource} from "../../services/schema";
 })
 export class NewSchemaWizardComponent implements OnInit {
   importOptionsFormGroup: FormGroup;
-  schemaTypes = ["Swagger"];
+  schemaTypes = ['Swagger'];
 
   schemaPreview: SchemaPreview;
-  working: boolean = false;
+  working = false;
   errorMessage: string;
   versionedSchema: VersionedSource;
 
@@ -33,8 +33,8 @@ export class NewSchemaWizardComponent implements OnInit {
   }
 
   generatePreview(stepper: MatStepper) {
-    const url = this.importOptionsFormGroup.get("schema.url").value;
-    const schemaType: string = this.importOptionsFormGroup.get("schema.schemaType").value;
+    const url = this.importOptionsFormGroup.get('schema.url').value;
+    const schemaType: string = this.importOptionsFormGroup.get('schema.schemaType').value;
 
     this.working = true;
     this.errorMessage = null;
@@ -49,9 +49,9 @@ export class NewSchemaWizardComponent implements OnInit {
       stepper.next();
       this.working = false;
     }, error => {
-      this.errorMessage = "There was an error loading that schema - " + error.message;
+      this.errorMessage = 'There was an error loading that schema - ' + error.message;
       this.working = false;
-    })
+    });
   }
 
   submitSchema(stepper: MatStepper) {
@@ -59,7 +59,7 @@ export class NewSchemaWizardComponent implements OnInit {
     this.working = true;
     // Note - at this point, the schema is always taxi, as it was converted during the
     // preview process.
-    const schemaType: string = "taxi"; // this.importOptionsFormGroup.get("schema.schemaType").value.toLowerCase();
+    const schemaType = 'taxi'; // this.importOptionsFormGroup.get("schema.schemaType").value.toLowerCase();
     this.typeService.submitSchema(new SchemaImportRequest(
       this.schemaPreview.spec,
       schemaType,
@@ -71,22 +71,22 @@ export class NewSchemaWizardComponent implements OnInit {
     }, error => {
       this.working = false;
       this.errorMessage = error.message;
-    })
+    });
   }
 
 
   getIcon(message: Message) {
     switch (message.level) {
       case Level.INFO:
-        return "info";
+        return 'info';
       case Level.WARN:
-        return "warning";
+        return 'warning';
       case Level.ERROR:
-        return "error";
+        return 'error';
     }
   }
 
   returnToExplorer() {
-    this.router.navigate(["schema-explorer"])
+    this.router.navigate(['schema-explorer']);
   }
 }

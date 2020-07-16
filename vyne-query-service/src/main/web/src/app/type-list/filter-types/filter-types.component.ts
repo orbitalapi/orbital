@@ -1,9 +1,8 @@
-import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
 import {Schema, SchemaMember, SchemaMemberType} from '../../services/schema';
 import {TypesService} from '../../services/types.service';
 import {ActivatedRoute, Router} from '@angular/router';
-import {TypeListComponent} from '../type-list.component';
 
 export interface TypeFilterParams {
   name: string | null;
@@ -56,7 +55,7 @@ export class TypeFilter {
 
 export class FilterTypesComponent {
   @Input()
-  expanded = false;
+  expanded: boolean;
   filterTypesFormGroup: FormGroup;
   name = new FormControl();
   namespace = new FormControl();
@@ -88,6 +87,7 @@ export class FilterTypesComponent {
       namespace: this.namespace,
       filterType: this.filterType
     });
+    this.expanded = false;
   }
 
   updateFilter() {
@@ -116,11 +116,6 @@ export class FilterTypesComponent {
   toggleVisibility() {
     this.expanded = !this.expanded;
   }
-
-  get expandWrapperClass(): string {
-    return (this.expanded) ? 'panel-visible' : 'panel-hidden';
-  }
-
 
   private setRouteFromFilter(filter: TypeFilterParams) {
     this.router.navigate(

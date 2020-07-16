@@ -1,15 +1,15 @@
-import { Component, OnInit } from '@angular/core';
-import { MonacoEditorLoaderService } from '@materia-ui/ngx-monaco-editor';
-import { filter, take } from 'rxjs/operators';
+import {Component, OnInit} from '@angular/core';
+import {MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
+import {filter, take} from 'rxjs/operators';
 
 import {editor} from 'monaco-editor';
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
-import { QueryService, QueryResult, VyneQlQueryHistoryRecord, QueryHistoryRecord } from 'src/app/services/query.service';
-import { QueryFailure } from '../query-wizard/query-wizard.component';
-import { HttpErrorResponse } from '@angular/common/http';
-import { vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider } from './vyne-query-language.monaco';
-import { Input } from '@angular/core';
+import {QueryService, QueryResult, VyneQlQueryHistoryRecord, QueryHistoryRecord} from 'src/app/services/query.service';
+import {QueryFailure} from '../query-wizard/query-wizard.component';
+import {HttpErrorResponse} from '@angular/common/http';
+import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
+import {Input} from '@angular/core';
 
 
 declare const monaco: any; // monaco
@@ -22,12 +22,12 @@ declare const monaco: any; // monaco
 export class QueryEditorComponent implements OnInit {
 
   @Input()
-  initialQuery: QueryHistoryRecord
+  initialQuery: QueryHistoryRecord;
 
   editorOptions: { theme: 'vs-dark', language: 'vyneQL' };
   monacoEditor: ICodeEditor;
   monacoModel: ITextModel;
-  query: string
+  query: string;
   lastQueryResult: QueryResult | QueryFailure;
   loading = false;
 
@@ -37,9 +37,9 @@ export class QueryEditorComponent implements OnInit {
       take(1),
     ).subscribe(() => {
       monaco.editor.onDidCreateEditor(editorInstance => {
-        editorInstance.updateOptions({readOnly: false, minimap: { enabled: false}});
+        editorInstance.updateOptions({readOnly: false, minimap: {enabled: false}});
         this.monacoEditor = editorInstance;
-          this.remeasure();
+        this.remeasure();
       });
       monaco.editor.onDidCreateModel(model => {
         this.monacoModel = model;
@@ -63,6 +63,7 @@ export class QueryEditorComponent implements OnInit {
 
     });
   }
+
   ngOnInit(): void {
     this.query = this.initialQuery ? (this.initialQuery as VyneQlQueryHistoryRecord).query : ""
   }
@@ -85,17 +86,20 @@ export class QueryEditorComponent implements OnInit {
         console.log('Resizing Monaco editor to ' + calculatedHeight);
         this.monacoEditor.layout();
       }
-    }, 10); 
+    }, 10);
   }
 
   submitQuery() {
     this.lastQueryResult = null;
-    this.loading = true
+    this.loading = true;
 
-    this.queryService.submitVyneQlQuery(this.query).subscribe( 
-      result =>  { this.loading = false; this.lastQueryResult = result },
+    this.queryService.submitVyneQlQuery(this.query).subscribe(
+      result => {
+        this.loading = false;
+        this.lastQueryResult = result;
+      },
       error => {
-        this.loading = false
+        this.loading = false;
         const errorResponse = error as HttpErrorResponse;
         if (errorResponse.error && (errorResponse.error as any).hasOwnProperty('profilerOperation')) {
           this.lastQueryResult = new QueryFailure(
@@ -108,10 +112,7 @@ export class QueryEditorComponent implements OnInit {
           console.error(JSON.stringify(error));
 
         }
-
       }
-      )
+    );
   }
-
-
 }

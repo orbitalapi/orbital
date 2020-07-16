@@ -16,6 +16,9 @@ import {ReactiveFormsModule} from '@angular/forms';
 import {CovalentHighlightModule} from '@covalent/highlight';
 import {MatListModule} from '@angular/material/list';
 import {MatIconModule} from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+
+
 
 @NgModule({
   imports: [
@@ -34,7 +37,7 @@ import {MatIconModule} from '@angular/material/icon';
     CovalentHighlightModule,
     MatListModule,
     MatIconModule,
-
+    MatInputModule,
   ],
   exports: [SchemaExplorerComponent, NewSchemaWizardComponent],
   declarations: [SchemaExplorerComponent, NewSchemaWizardComponent],
