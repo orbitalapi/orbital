@@ -9,10 +9,6 @@
   padding-right: 2rem;
 }
 
-.result-object-view-sml {
-  margin-top: 1rem;
-  //width: 67%; // to match the results pane width
-}
 
 app-results-table {
   height: 300px;
@@ -105,21 +101,20 @@ app-call-explorer {
 }
 
 .downloadFileButton {
-  margin: 1rem 0;
+  margin: 1rem .4rem;
 }
 
 .virtualScroll-viewport {
-  height: 80vh; // to match height of the tab bar;
-  width: 100%; // to match the width of results pane
-  //overflow-x: hidden;
-  //position: absolute;
+  height: 100vh;
+  width: 100%;
+  contain: content;
   margin-top: 2rem;
-  &::-webkit-scrollbar {
-    width: 0px;
-    background: transparent; /* make scrollbar transparent */
-  }
+  display: block;
+  position: relative;
 }
-
+.virtualScroll-viewport::-webkit-scrollbar {
+  display: none;
+}
 
 // Use these for border colors of nesting levels:
 // #7280d9, #fe8736, #06b8ff, #00bbaf, #ff3769, #40c14a, #fc6363, #ffd600
