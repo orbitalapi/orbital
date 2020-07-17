@@ -109,6 +109,7 @@ export interface QueryResult {
   resultMode: ResultMode;
   lineageGraph: LineageGraph;
   queryResponseId: string;
+  error?: string
 }
 
 

@@ -651,5 +651,88 @@ service Broker1Service {
          )
       )
    }
+
+   @Test
+   fun `duplicate matches with same values in projection is resolved without any errors`() {
+      // prepare
+      val testSchema = """
+         type OrderId inherits String
+         type TraderName inherits String
+         type InstrumentId inherits String
+         type MaturityDate inherits Date
+         type TradeId inherits String
+         type InstrumentName inherits String
+         model Order {
+            orderId: OrderId
+            traderName : TraderName
+            instrumentId: InstrumentId
+         }
+         model Instrument {
+             instrumentId: InstrumentId
+             maturityDate: MaturityDate
+             name: InstrumentName
+         }
+         model Trade {
+            orderId: OrderId
+            maturityDate: MaturityDate
+            tradeId: TradeId
+         }
+
+         model Report {
+            orderId: OrderId
+            tradeId: TradeId
+            instrumentName: InstrumentName
+            maturityDate: MaturityDate
+            traderName : TraderName
+         }
+
+         service MultipleInvocationService {
+            operation getOrders(): Order[]
+            operation getTrades(orderIds: OrderId): Trade
+            operation getTrades(orderIds: OrderId[]): Trade[]
+            operation getInstrument(instrumentId: InstrumentId): Instrument
+         }
+      """.trimIndent()
+
+      val maturityDate = "2025-12-01"
+      val (vyne, stubService) = testVyne(testSchema)
+      stubService.addResponse("getOrders", vyne.parseJsonModel("Order[]", """
+         [
+            {
+               "orderId": "orderId_0",
+               "traderName": "john",
+               "instrumentId": "Instrument_0"
+            }
+         ]
+         """.trimIndent()))
+
+      stubService.addResponse("getInstrument", vyne.parseJsonModel("Instrument", """
+            {
+               "maturityDate": "$maturityDate",
+               "instrumentId": "Instrument_0",
+               "name": "2040-11-20 0.1 Bond"
+            }
+         """.trimIndent()))
+
+      stubService.addResponse("getTrades", vyne.parseJsonModel("Trade[]", """
+            [{
+               "maturityDate": "$maturityDate",
+               "orderId": "orderId_0",
+               "tradeId": "Trade_0"
+            }]
+         """.trimIndent()))
+      val result =  vyne.query("""findAll { Order[] } as Report[]""".trimIndent())
+      result.isFullyResolved.should.be.`true`
+      result.resultMap.get("lang.taxi.Array<Report>").should.be.equal(
+         listOf(
+            mapOf(
+               "orderId" to "orderId_0",
+               "traderName" to "john",
+               "tradeId" to "Trade_0",
+               "instrumentName" to "2040-11-20 0.1 Bond",
+               "maturityDate" to "$maturityDate")
+         )
+      )
+   }
 }
 

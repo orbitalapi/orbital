@@ -54,7 +54,12 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                if (exactMatches.size == 1) {
                   return exactMatches.first()
                }
-               error("Found ${instance.size} instances of ${targetType.fullyQualifiedName}.  We should handle this, but we don't.")
+
+               val nonNullMatches = instance.filter { it.value != null }
+               if (nonNullMatches.size == 1) {
+                  return nonNullMatches.first()
+               }
+               error("Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${instance.map { Pair(it.typeName, it.value)}.joinToString()}")
             }
          }
       }
