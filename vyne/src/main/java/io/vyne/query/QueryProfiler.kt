@@ -193,8 +193,8 @@ data class Result(
             else -> values
          }
          return Result(
-            Math.min(resultA.startTime, resultB.startTime),
-            Math.max(resultA.endTime, resultB.endTime),
+            resultA.startTime.coerceAtMost(resultB.startTime),
+            resultA.endTime.coerceAtLeast(resultB.endTime),
             resultValue
          )
       }

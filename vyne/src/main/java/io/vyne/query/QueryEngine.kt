@@ -19,7 +19,7 @@ import java.util.stream.Collectors
 
 
 open class SearchFailedException(message: String, val evaluatedPath: List<EvaluatedEdge>, val profilerOperation: ProfilerOperation) : RuntimeException(message)
-
+open class ProjectionFailedException(message: String): RuntimeException(message)
 interface QueryEngine {
 
    val schema: Schema
