@@ -5,14 +5,16 @@ import {
   isOperationResult,
   isTypeNamedInstance,
   LineageGraph, OperationResultDataSource, RemoteCall,
-  TypeNamedInstance
+  TypeNamedInstance,
+  isTypedCollection,
+  DataSourceReference
 } from '../services/query.service';
 
-import {SchemaGraphLink, SchemaGraphNode, SchemaNodeSet} from '../services/schema';
+import {SchemaGraphLink, SchemaGraphNode, SchemaNodeSet, TypedInstance} from '../services/schema';
 import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
 import {Subject} from 'rxjs';
 
-type LineageElement = TypeNamedInstance | DataSource;
+type LineageElement = TypeNamedInstance | TypeNamedInstance[] | DataSource;
 
 @Component({
   selector: 'app-lineage-display',
@@ -65,12 +67,27 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
 
     function instanceToNode(instance: TypeNamedInstance): SchemaGraphNode {
-      const instanceId = nodeId(instance, () => instance.typeName + new Date().getTime());
+      const instanceId = nodeId(instance, () => instance.typeName +  (Math.random() * 10000));
       return {
         id: instanceId,
         nodeId: instanceId,
         label: instance.value,
         subHeader: instance.typeName,
+        value: instance,
+        type: 'TYPE'
+      } as SchemaGraphNode;
+    }
+
+    function collectionToNode(instance:  TypeNamedInstance[]): SchemaGraphNode {
+      var typeName = instance[0] ? instance[0].typeName : 'asd'
+      var value = instance.map( instance => instance.value)
+
+      const instanceId = nodeId(instance, () => typeName + new Date().getTime());
+      return {
+        id: instanceId,
+        nodeId: instanceId,
+        label: value as any,
+        subHeader: typeName,
         value: instance,
         type: 'TYPE'
       } as SchemaGraphNode;
@@ -115,19 +132,36 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       links
     };
 
+    const buildDataSourceTo = (source: DataSourceReference, typedInstanceNode: SchemaGraphNode) =>  {
+      const dataSource = this.lineageGraph[source.dataSourceIndex];
+      if (!dataSource) {
+        throw new Error(`node declares data source with index ${source.dataSourceIndex} but no such index exists`);
+      }
+      const dataSourceNodes = this.buildGraph(dataSource, typedInstanceNode);
+      this.appendNodeSet(dataSourceNodes, nodeSet);
+    }
+
     if (isTypeNamedInstance(node)) {
       const typedInstanceNode = instanceToNode(node);
       nodes.push(typedInstanceNode);
 
       if (node.source) {
-        const dataSource = this.lineageGraph[node.source.dataSourceIndex];
-        if (!dataSource) {
-          throw new Error(`node declares data source with index ${node.source.dataSourceIndex} but no such index exists`);
-        }
-        const dataSourceNodes = this.buildGraph(dataSource, typedInstanceNode);
-        this.appendNodeSet(dataSourceNodes, nodeSet);
+        buildDataSourceTo(node.source, typedInstanceNode)
       }
-    } else if (isOperationResult(node)) {
+    }
+    else if(isTypedCollection(node)) {
+      const typedCollectionNode = collectionToNode(node);
+      nodes.push(typedCollectionNode);
+
+    // Take the datasource from the first node for now. THat's the best we can do
+    // IN the future, enrich the API response to include datasource for TypedCOllections
+      const source = node[0] ? node[0].source : null
+      if (source) {
+        buildDataSourceTo(source, typedCollectionNode)
+      }
+
+    }
+    else if (isOperationResult(node)) {
       const remoteCallNode = remoteCallToNode(node.remoteCall, node);
       if (remoteCallNode.nodeId !== linkTo.nodeId) {
         nodes.push(remoteCallNode);
@@ -137,7 +171,13 @@ export class LineageDisplayComponent extends BaseGraphComponent {
           label: 'provided'
         });
         node.inputs.forEach(param => {
-          const inputNode = instanceToNode(param.value);
+          var inputNode = undefined;
+          if(Array.isArray(param.value)) {
+            inputNode = collectionToNode(param.value);
+          } else {
+            inputNode = instanceToNode(param.value);
+          }
+
           nodes.push(inputNode);
           links.push({
             source: inputNode.nodeId,

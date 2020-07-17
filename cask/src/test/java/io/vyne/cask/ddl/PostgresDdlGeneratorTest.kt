@@ -15,22 +15,30 @@ class PostgresDdlGeneratorTest {
     fun generatesCreateTable() {
         val (schema, taxi) = schema("""
 type Person {
+    @Indexed
     firstName : FirstName as String
+    @Something
     age : Int
     alive: Boolean
     spouseName : Name? as String
+    @Indexed
+    @Something
     dateOfBirth: Date
     timestamp: Instant
+    time: Time
 }""".trim())
         val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
         statement.ddlStatement.should.equal("""
-CREATE TABLE IF NOT EXISTS Person_d4d1ee (
+CREATE TABLE IF NOT EXISTS Person_7c8107 (
 "firstName" VARCHAR(255),
 "age" INTEGER,
 "alive" BOOLEAN,
 "spouseName" VARCHAR(255),
 "dateOfBirth" DATE,
-"timestamp" TIMESTAMP)""".trim())
+"timestamp" TIMESTAMP,
+"time" TIME);
+CREATE INDEX IF NOT EXISTS idx_Person_7c8107_firstName ON Person_7c8107("firstName");
+CREATE INDEX IF NOT EXISTS idx_Person_7c8107_dateOfBirth ON Person_7c8107("dateOfBirth");""".trim())
     }
 
     @Test
@@ -43,7 +51,7 @@ enum Gender {
 enum GenderType {
    Male synonym of Gender.Male
 }
-type OriginalGender inherits Gender
+enum OriginalGender inherits Gender
 type Person {
     firstName : FirstName as String
     age : Int
@@ -53,6 +61,7 @@ type Person {
     timestamp: Instant
     gender : GenderType
     originalGender : OriginalGender
+    time: Time
 }""".trim())
         val person = taxi.objectType("Person")
         generator.generateColumnForField(person.field("firstName")).sql
@@ -79,6 +88,8 @@ type Person {
        generator.generateColumnForField(person.field("originalGender")).sql
           .should.equal(""""originalGender" VARCHAR(255)""")
 
+       generator.generateColumnForField(person.field("time")).sql
+          .should.equal(""""time" TIME""")
     }
 
     private fun schema(src: String): Pair<TaxiSchema, TaxiDocument> {

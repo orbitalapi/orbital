@@ -2,6 +2,7 @@ package io.vyne.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.models.json.JsonModelParser
+import io.vyne.models.json.isJson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
@@ -86,7 +87,8 @@ interface TypedInstance {
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions, source)
             }
-            isJson(value) -> JsonModelParser(schema).parse(type, value as String, source = source)
+            // This is here primarily for readability.  We could just let this fall through to below.
+            isJson(value) -> TypedObjectFactory(type, value, schema, nullValues, source).build()
 
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
             // Must be a CSV ish type value.
@@ -105,16 +107,6 @@ interface TypedInstance {
          } else {
             log().warn("Collection type could not be determined - expected to find ${PrimitiveType.ARRAY.qualifiedName}, but found ${type.fullyQualifiedName}")
             type
-         }
-      }
-
-      private fun isJson(value: Any): Boolean {
-         if (value !is String) return false
-         val trimmed = value.trim()
-         return when {
-            trimmed.startsWith("{") && trimmed.endsWith("}") -> true
-            trimmed.startsWith("[") && trimmed.endsWith("]") -> true
-            else -> false
          }
       }
    }

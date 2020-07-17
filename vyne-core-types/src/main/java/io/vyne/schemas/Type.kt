@@ -110,6 +110,13 @@ data class Type(
    @JsonView(TypeFullView::class)
    val hasFormat = format != null
 
+   @get:JsonView(TypeFullView::class)
+   val unformattedTypeName: QualifiedName? by lazy {
+      if (hasFormat) {
+         resolveUnderlyingFormattedType().qualifiedName
+      } else null
+   }
+
    @get:JsonIgnore
    val inherits: List<Type> by lazy {
       this.inheritsFromTypeNames.map { aliasName -> typeCache.type(aliasName) }

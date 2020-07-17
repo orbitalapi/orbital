@@ -34,17 +34,16 @@ export class CaskService {
 }
 
 export interface CaskConfigRecord {
-  tableName: string,
-  qualifiedTypeName: string,
-  versionHash: string,
-  sourceSchemaIds: string[],
-  sources: string[],
-  deltaAgainstTableName: string,
-  insertedAt: string
-
-  details: CaskConfigDetails
+  tableName: string;
+  qualifiedTypeName: string;
+  versionHash: string;
+  sourceSchemaIds: string[];
+  sources: string[];
+  deltaAgainstTableName: string;
+  insertedAt: string;
+  details: CaskConfigDetails;
 }
 
 export interface CaskConfigDetails {
-  recordsNumber: number
+  recordsNumber: number;
 }

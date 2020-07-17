@@ -7,7 +7,7 @@ import {CommonModule} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {VyneServicesModule} from '../services/vyne-services.module';
-import {ResultViewerModule} from '../query-wizard/result-display/result-viewer.module';
+import {ResultViewerModule} from '../query-panel/result-display/result-viewer.module';
 
 @NgModule({
   imports: [BrowserModule, BrowserAnimationsModule,

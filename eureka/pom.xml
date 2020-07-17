@@ -5,7 +5,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.4.1</version>
+      <version>0.5.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -74,10 +74,10 @@
                             <name>vyneco/${project.artifactId}:${project.version}</name>
                             <build>
                                 <dockerFile>${project.basedir}/Dockerfile</dockerFile>
-                                <tags>
-                                    <!-- defined in profiles.  see root pom.xml -->
-                                    <tag>${docker.tag}</tag>
-                                </tags>
+                               <tags>
+                                  <tag>${docker.tag.latest}</tag>
+                                  <tag>${docker.tag.numbered}</tag>
+                               </tags>
                             </build>
                         </image>
                     </images>

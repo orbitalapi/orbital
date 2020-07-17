@@ -22,8 +22,6 @@ import {TypeViewerModule} from './type-viewer/type-viewer.module';
 import {SearchModule} from './search/search.module';
 import {CodeViewerModule} from './code-viewer/code-viewer.module';
 import {SearchService} from './search/search.service';
-import {QueryWizardModule} from './query-wizard/query-wizard.module';
-import {QueryWizardComponent} from './query-wizard/query-wizard.component';
 import {QueryHistoryModule} from './query-history/query-history.module';
 import {DataExplorerComponent} from './data-explorer/data-explorer.component';
 import {TypeListModule} from './type-list/type-list.module';
@@ -32,20 +30,26 @@ import {SchemaExplorerModule} from './schema-explorer/schema-explorer.module';
 import {VyneModule} from './vyne/vyne.module';
 import { CaskViewerModule } from './cask-viewer/cask-viewer.module';
 import {CaskViewerComponent} from './cask-viewer/cask-viewer.component';
+import {InheritanceGraphComponent} from './inheritence-graph/inheritance-graph.component';
+import {QueryHistoryContainerComponent} from './query-history/query-history-container.component';
+import { QueryPanelComponent } from './query-panel/query-panel.component';
+import { QueryPanelModule } from './query-panel/query-panel.module';
+import { ResultsTableComponent } from './results-table/results-table.component';
 
 export const routerModule = RouterModule.forRoot(
   [
     {path: '', redirectTo: 'types', pathMatch: 'full'},
     {path: 'types', component: TypeListComponent},
     {path: 'types/:typeName', component: TypeViewerContainerComponent},
-    {path: 'query-wizard', component: QueryWizardComponent},
+    {path: 'query-wizard', component: QueryPanelComponent},
     {path: 'data-explorer', component: DataExplorerComponent},
     {path: 'schema-explorer', component: SchemaExplorerComponent},
     {path: 'schema-explorer/import', component: NewSchemaWizardComponent},
     {path: 'query-history', component: QueryHistoryComponent},
-    {path: 'cask-viewer', component: CaskViewerComponent}
+    {path: 'cask-viewer', component: CaskViewerComponent},
+    {path: 'query-history/:queryResponseId', component: QueryHistoryContainerComponent},
   ],
-  {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled' }
+  {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );
 
 
@@ -74,7 +78,7 @@ export const routerModule = RouterModule.forRoot(
     SearchModule,
     SchemaExplorerModule,
     CodeViewerModule,
-    QueryWizardModule,
+    QueryPanelModule,
     QueryHistoryModule,
     TypeListModule,
     VyneModule

@@ -19,8 +19,9 @@ class JsonStreamSource(private val input: Flux<InputStream>,
                        private val objectMapper: ObjectMapper) : StreamSource {
 
    // TODO LENS-47 save input stream to disk for replay
-   val cachePath: Path by lazy {
-      Files.createFile(readCacheDirectory.resolve(versionedType.fullyQualifiedName))
+   val cachePath: Path? by lazy {
+      null
+//      Files.createFile(readCacheDirectory.resolve(versionedType.fullyQualifiedName))
    }
    private val mapper = JsonStreamMapper(versionedType, schema)
 

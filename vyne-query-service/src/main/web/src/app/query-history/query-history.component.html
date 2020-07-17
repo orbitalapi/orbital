@@ -1,6 +1,9 @@
 <mat-toolbar color="primary" style="z-index: 999">
   <span>Query History</span>
-  <span style="flex: 1"></span>
+  <div class="toolbar-spacer"></div>
+  <span>
+    <button mat-stroked-button (click)="loadData()">Refresh</button>
+  </span>
   <app-search-bar-container></app-search-bar-container>
 </mat-toolbar>
 
@@ -16,14 +19,6 @@
   </mat-drawer>
   <div class="container">
     <div class="list-container">
-      <div class="title-bar">
-        <h4>Query History</h4>
-        <button (click)="loadData()" mat-icon-button>
-          <i class="material-icons">
-            refresh
-          </i>
-        </button>
-      </div>
       <div class="history-item" *ngFor="let historyRecord of history" (click)="setActiveRecord(historyRecord)">
         <div [ngSwitch]="queryType(historyRecord)">
           <div *ngSwitchCase="'RestfulQuery'">
@@ -41,11 +36,12 @@
       </div>
     </div>
     <div class="results-section">
-      <div class="title-bar"><h4>Query Result</h4></div>
       <div class="results-container">
-        <query-result-container [result]="activeRecord?.response"
-          (instanceSelected)="onInstanceSelected($event)"
-        ></query-result-container>
+
+          <query-result-container [result]="activeRecord?.response"
+                                  [activeRecord]="activeRecord"
+                                  (instanceSelected)="onInstanceSelected($event)"
+          ></query-result-container>
       </div>
     </div>
 

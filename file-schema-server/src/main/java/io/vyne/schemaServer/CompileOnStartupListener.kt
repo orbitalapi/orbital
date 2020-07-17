@@ -1,15 +1,21 @@
 package io.vyne.schemaServer
 
 import io.vyne.utils.log
-import org.springframework.context.event.ContextRefreshedEvent
-import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
+import javax.annotation.PostConstruct
 
 @Component
 class CompileOnStartupListener(private val compilerService:CompilerService) {
-   @EventListener
-   fun handleStartup(event:ContextRefreshedEvent) {
-      log().info("Context refreshed, triggering a compilation")
-      compilerService.recompile()
+   @PostConstruct
+   fun handleStartup() {
+      Mono.fromCallable {
+            log().info("Context refreshed, triggering a compilation")
+            compilerService.recompile()
+         }
+         .subscribeOn(Schedulers.parallel())
+         .doOnError { log().error("Could not recompile schemas", it) }
+         .subscribe()
    }
 }

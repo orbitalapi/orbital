@@ -1,5 +1,6 @@
 package io.vyne.cask.ddl
 
+import de.bytefish.pgbulkinsert.pgsql.constants.DataType
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.VersionedSource
 import io.vyne.cask.timed
@@ -9,14 +10,12 @@ import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.*
 import org.springframework.jdbc.core.JdbcTemplate
+import java.lang.StringBuilder
 import java.math.BigDecimal
 import java.nio.file.Path
 import java.sql.Timestamp
 import java.sql.Types
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
+import java.time.*
 import java.util.concurrent.TimeUnit
 
 data class TableMetadata(
@@ -166,7 +165,7 @@ class PostgresDdlGenerator {
    private fun generateObjectDdl(type: ObjectType, schema: Schema, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
       val columns = fields.map { generateColumnForField(it) }
       val tableName = tableName(versionedType)
-      val ddl = generateCaskTableDdl(versionedType, fields)
+      val ddl = generateCaskTableDdl(versionedType, fields) + generateTableIndexesDdl(tableName, fields)
       val metadata = TableMetadata(
          tableName,
          type.qualifiedName,
@@ -184,12 +183,21 @@ class PostgresDdlGenerator {
       return TableGenerationStatement(ddl, versionedType, tableName, columns, metadata)
    }
 
+   fun generateTableIndexesDdl(tableName: String, fields: List<Field>): String {
+      val result = StringBuilder()
+      val indexedColumns = fields.filter { col -> col.annotations.any { it.name == "Indexed" } }
+      indexedColumns.forEach {
+         result.append("\nCREATE INDEX IF NOT EXISTS idx_${tableName}_${it.name} ON ${tableName}(\"${it.name}\");")
+      }
+      return result.toString()
+   }
+
    fun generateCaskTableDdl(versionedType: VersionedType, fields: List<Field>): String {
       val tableName = tableName(versionedType)
       val columns = fields.map { generateColumnForField(it) }
       val fieldDef = columns.joinToString(",\n") { it.sql }
       return """CREATE TABLE IF NOT EXISTS $tableName (
-$fieldDef)""".trim()
+$fieldDef);""".trim()
    }
 
    fun generateColumnForField(field: Field): PostgresColumn {
@@ -217,20 +225,18 @@ $fieldDef)""".trim()
          PrimitiveType.ANY -> ScalarTypes.varchar() to { row, v -> row.setText(columnName, v.toString()) }
          PrimitiveType.DECIMAL -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, v as BigDecimal) }
          PrimitiveType.DOUBLE -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, v as BigDecimal) }
-         PrimitiveType.INTEGER -> ScalarTypes.integer() to { row, v -> row.setNumeric(columnName, v as BigDecimal) }
+         PrimitiveType.INTEGER -> ScalarTypes.integer() to { row, v -> row.setInteger(columnName, v as Int) }
          PrimitiveType.BOOLEAN -> ScalarTypes.boolean() to { row, v -> row.setBoolean(columnName, v as Boolean) }
          PrimitiveType.LOCAL_DATE -> ScalarTypes.date() to { row, v -> row.setDate(columnName, v as LocalDate) }
          PrimitiveType.DATE_TIME -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, v as LocalDateTime) }
          PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC")))}
          // TODO TIME db column type
-//         PrimitiveType.TIME -> ScalarTypes.timestamp() to { row, v ->
-//            run {
-//               val time = (v as LocalTime)
-//               val date = LocalDate.of(1970, 1, 1)
-//               // Postgres api does not accept LocalTime so have to map to LocalDateTime
-//               row.setTimeStamp(fieldName, LocalDateTime.of(date, time))
-//            }
-//         }
+         PrimitiveType.TIME -> ScalarTypes.time() to { row, v ->
+            run {
+               val time = (v as LocalTime)
+               row.setValue(columnName, DataType.Time, time)
+            }
+         }
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
       val (postgresType, writer) = p
@@ -246,6 +252,7 @@ private object ScalarTypes {
    fun integer() = "INTEGER"
    fun boolean() = "BOOLEAN"
    fun timestamp() = "TIMESTAMP"
+   fun time() = "TIME"
    fun date() = "DATE"
 }
 

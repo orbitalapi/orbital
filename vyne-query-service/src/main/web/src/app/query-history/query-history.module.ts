@@ -4,13 +4,15 @@ import {BrowserModule} from '@angular/platform-browser';
 import {CommonModule} from '@angular/common';
 import {SearchModule} from '../search/search.module';
 import {MatButtonModule} from '@angular/material/button';
-import {ResultViewerModule} from '../query-wizard/result-display/result-viewer.module';
+import {ResultViewerModule} from '../query-panel/result-display/result-viewer.module';
 import {MomentModule} from 'ngx-moment';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import { VyneqlRecordComponent } from './vyneql-record.component';
 import { RestfulRecordComponent } from './restful-record.component';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
+import {QueryHistoryContainerComponent} from './query-history-container.component';
+import {ScrollingModule} from '@angular/cdk/scrolling';
 
 @NgModule({
   imports: [
@@ -22,10 +24,11 @@ import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-p
     MomentModule,
     MatToolbarModule,
     MatSidenavModule,
-    TypedInstancePanelModule
+    TypedInstancePanelModule,
+    ScrollingModule
   ],
   exports: [QueryHistoryComponent],
-  declarations: [QueryHistoryComponent, VyneqlRecordComponent, RestfulRecordComponent],
+  declarations: [QueryHistoryComponent, VyneqlRecordComponent, RestfulRecordComponent, QueryHistoryContainerComponent],
   providers: [],
 })
 export class QueryHistoryModule {

@@ -10,18 +10,22 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.types.XpathAccessor
 
+// This is deprecated, as it doesn't respect more advanced
+// topics such as conditional field evaluation.
+@Deprecated("Use TypedObjectFactory instead")
 class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = DEFAULT_MAPPER) {
    companion object {
       val DEFAULT_MAPPER = jacksonObjectMapper()
    }
 
    fun parse(type: Type, json: String, conversionService: ConversionService = ConversionService.DEFAULT_CONVERTER, source:DataSource): TypedInstance {
-      return if (type.isCollection) {
-         val map = mapper.readValue<List<Map<String, Any>>>(json)
-         parseCollection(map, type, conversionService, source)
-      } else {
-         val map = mapper.readValue<Map<String, Any>>(json)
-         doParse(type, map, conversionService = conversionService, source = source)
+      return when {
+         !type.isCollection && isJsonArray(json) -> parseCollection(
+            mapper.readValue<List<Map<String, Any>>>("${json}[]"),
+            schema.type("${type.fullyQualifiedName}[]"),
+            conversionService, source)
+         type.isCollection -> parseCollection(mapper.readValue<List<Map<String, Any>>>(json), type, conversionService, source)
+         else -> doParse(type,  mapper.readValue(json), conversionService = conversionService, source = source)
       }
    }
 
@@ -45,7 +49,8 @@ class JsonModelParser(val schema: Schema, private val mapper: ObjectMapper = DEF
          return parseCollection(valueMap, type, conversionService, source)
       } else if (isSingleObject(valueMap)) {
          return doParse(type, valueMap.values.first() as Map<String, Any>, isCollection = false, conversionService = conversionService, source = source)
-      } else {
+      }
+      else {
          val attributeInstances = type.attributes
             .filter { (attributeName, field) ->
                getValuePath(field, valueMap, attributeName) != null

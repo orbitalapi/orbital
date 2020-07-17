@@ -1,4 +1,15 @@
-version: "3.3"
+# Local Vyne setup
+#
+# How to start
+# - docker-compose pull # to pull latest snapshot images
+# - docker-compose up   # to start the stack locally
+#
+# How to stop
+# - ctrl+c or
+# - docker-compose down
+#
+# Note: Remember to update your file-schema-server volume to point to your file system where you keep your *.taxi files
+version: "3.4"
 services:
    vyne:
       image: vyneco/vyne:latest-snapshot
@@ -7,15 +18,22 @@ services:
          - 9022:9022
       environment:
          PROFILE: embedded-discovery
+         OPTIONS: --vyne.schema.publicationMethod=DISTRIBUTED
+         # use the option below when running vyne with publicationMethod=LOCAL and other components publicationMethod=REMOTE
+         # It enables http communication between the clients and vyne possible
+         #OPTIONS: --eureka.instance.preferIpAddress=true
 
    file-schema-server:
       image: vyneco/file-schema-server:latest-snapshot
       ports:
          - 5701-5721
       volumes:
+         # Sample path in this project
          - ./schemas:/var/lib/vyne/schemas
+         # Sample path on windows machine
+         #- /C/dev/workspace/taxonomy:/var/lib/vyne/schemas
       environment:
-         OPTIONS: --taxi.project-home=/var/lib/vyne/schemas --eureka.uri=http://vyne:9022
+         OPTIONS: --taxi.schema-local-storage=/var/lib/vyne/schemas --eureka.uri=http://vyne:9022 --vyne.schema.publicationMethod=DISTRIBUTED
 
    cask:
       image: vyneco/cask:latest-snapshot
@@ -23,7 +41,7 @@ services:
          - vyne
       environment:
          PROFILE: local
-         OPTIONS: --eureka.uri=http://vyne:9022
+         OPTIONS: --eureka.uri=http://vyne:9022 --vyne.schema.publicationMethod=DISTRIBUTED
       ports:
          - 5701-5721
          - 5432:5432

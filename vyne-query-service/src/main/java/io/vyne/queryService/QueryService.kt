@@ -32,7 +32,12 @@ data class FailedSearchResponse(val message: String,
 ) : QueryResponse {
    override val isFullyResolved: Boolean = false
    override fun historyRecord(): HistoryQueryResponse {
-      return HistoryQueryResponse(mapOf(), listOf(), false, queryResponseId, resultMode, profilerOperation?.toDto(), listOf(), mapOf())
+      return HistoryQueryResponse(
+         fullyResolved = false,
+         queryResponseId = queryResponseId,
+         resultMode = resultMode,
+         profilerOperation = profilerOperation?.toDto(),
+         error = message)
    }
 }
 
@@ -48,7 +53,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
 
    @PostMapping("/api/query")
    fun submitQuery(@RequestBody query: Query): String {
-      val response = executeQuery(query) as QueryResult
+      val response = executeQuery(query)
 
       // We handle the serialization here, and return a string, rather than
       // letting Spring handle it.
@@ -66,7 +71,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
 
    @PostMapping("/api/vyneql")
    fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString,
-                         @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode): QueryResponse {
+                         @RequestParam("resultMode", defaultValue = "VERBOSE") resultMode: ResultMode): QueryResponse {
       log().info("VyneQL query => $query")
       return timed("QueryService.submitVyneQlQuery") {
          val vyne = vyneFactory.createVyne()
@@ -78,8 +83,9 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
                profilerOperation = null,
                resultMode = resultMode
             )
+         } catch (e: SearchFailedException) {
+            FailedSearchResponse(e.message!!, e.profilerOperation, resultMode)
          }
-
          val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
          history.add(record)
          response // consider returning record here

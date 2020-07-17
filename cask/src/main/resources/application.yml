@@ -31,6 +31,17 @@ eureka:
 
 vyne:
    queryServiceUrl: http://query-service
+   schema:
+      publicationMethod: REMOTE
+      pollInterval: 5s
+      publishRetryInterval: 3s
+
+feign:
+   client:
+      config:
+         default:
+            connectTimeout: 5000
+            readTimeout: 5000
 
 cask:
    maxTextMessageBufferSize: 1048576 # 1024 * 1024

@@ -26,11 +26,17 @@ import org.junit.rules.TemporaryFolder
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStream
+import java.math.BigDecimal
 import java.nio.file.Paths
+import java.sql.Time
+import java.text.DateFormat
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
-@Ignore
 class CsvIngesterBenchmarkTest {
 
    @Rule
@@ -58,6 +64,7 @@ class CsvIngesterBenchmarkTest {
       jdbcTemplate.execute(TableMetadata.DROP_TABLE)
    }
 
+   @Ignore
    @Test
    fun canStreamDataToPostgresOnStart() {
       val schema = CoinbaseOrderSchema.schemaV1
@@ -84,10 +91,11 @@ class CsvIngesterBenchmarkTest {
          val rowCount = ingester.getRowCount()
          rowCount.should.equal(23695)
          ingester.destroy()
-         FileUtils.cleanDirectory(folder.root);
+         FileUtils.cleanDirectory(folder.root)
       }
    }
 
+   @Ignore
    @Test
    fun canIngestCsvToCask() {
       val source = Resources.getResource("Coinbase_BTCUSD_single.csv").toURI()
@@ -107,6 +115,37 @@ class CsvIngesterBenchmarkTest {
          CsvIngestionRequest(CSVFormat.DEFAULT.withFirstRecordAsHeader(), type, emptySet()),
          input
       ).blockFirst()
+   }
+
+   @Test
+   fun canIngestCsvWithColumnNames() {
+      val schemaV3 = CoinbaseOrderSchema.schemaV3
+      val typeV3 = schemaV3.versionedType("OrderWindowSummary".fqn())
+      val resource = Resources.getResource("Coinbase_BTCUSD_single.csv").toURI()
+      val input: Flux<InputStream> = Flux.just(File(resource).inputStream())
+      val pipelineSource = CsvStreamSource(input, typeV3, schemaV3, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(typeV3, TypeDbWrapper(typeV3, schemaV3, pipelineSource.cachePath, null), pipelineSource)
+      val queryView = QueryView(jdbcTemplate)
+
+      ingester = Ingester(jdbcTemplate, pipeline)
+      ingester.destroy()
+      ingester.initialize()
+      ingester.ingest().collectList().block()
+
+      val v3QueryStrategy = queryView.getQueryStrategy(typeV3)
+      v3QueryStrategy.should.be.instanceof(TableQuerySpec::class.java)
+
+      val rowCount = ingester.getRowCount()
+      rowCount.should.equal(1)
+
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      result.first()["symbol"].should.equal("BTCUSD")
+      6300.compareTo((result.first()["open"] as BigDecimal).toDouble()).should.equal(0)
+      6330.0.compareTo((result.first()["high"] as BigDecimal).toDouble()).should.equal(0)
+      6235.2.compareTo((result.first()["close"] as BigDecimal).toDouble()).should.equal(0)
+
+      ingester.destroy()
+      FileUtils.cleanDirectory(folder.root)
    }
 
    @Test
@@ -147,5 +186,30 @@ class CsvIngesterBenchmarkTest {
 
       ingester.destroy()
       FileUtils.forceDeleteOnExit(folder.root)// this was failing on windows
+   }
+
+   @Test
+   fun canIngestWithTimeType() {
+      val source = """Entity,Time
+1,11:11:11
+2,23:11:44
+"""
+      val schema = CoinbaseOrderSchema.schemaTimeTest
+      val timeType = schema.versionedType("TimeTest".fqn())
+      val input: Flux<InputStream> = Flux.just(source.byteInputStream())
+      val pipelineSource = CsvStreamSource(input, timeType, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(timeType, TypeDbWrapper(timeType, schema, pipelineSource.cachePath, null), pipelineSource)
+
+      ingester = Ingester(jdbcTemplate, pipeline)
+      ingester.destroy()
+      ingester.initialize()
+      ingester.ingest().collectList().block()
+
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      result.first()["entry"].should.equal("1")
+      (result.first()["time"] as Time).toString().should.equal("11:11:11")
+
+      ingester.destroy()
+      FileUtils.cleanDirectory(folder.root)
    }
 }

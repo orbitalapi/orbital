@@ -9,6 +9,10 @@ enum class SchemaPublicationMethod {
     */
    DISABLED,
    /**
+    * Publish schema to local query server.
+    */
+   LOCAL,
+   /**
     * Publish schemas to a remote query server, and execute queries there
     */
    REMOTE,

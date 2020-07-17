@@ -1,4 +1,5 @@
 @import "src/theme";
+@import "src/toolbar";
 
 .title-bar {
   background-color: $light-purple-grey;
@@ -23,6 +24,14 @@
 
 mat-sidenav-container {
   height: 100%;
+}
+
+.actions-container {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  margin-top: 8px;
+  margin-bottom: 8px;
 }
 
 :host {

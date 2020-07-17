@@ -4,9 +4,7 @@ import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
-import io.vyne.schemaStore.SchemaStoreClient
-import io.vyne.spring.SchemaPublicationMethod
-import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.log
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -32,6 +30,9 @@ import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.*
 import javax.annotation.PreDestroy
 
 @RunWith(SpringRunner::class)
@@ -39,16 +40,16 @@ import javax.annotation.PreDestroy
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
       "spring.main.allow-bean-definition-overriding=true",
-      "eureka.client.enabled=false"
+      "eureka.client.enabled=false",
+      "vyne.schema.publicationMethod=LOCAL"
    ])
-@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED)
 @ActiveProfiles("test")
 class CaskAppIntegrationTest {
    @LocalServerPort
    val randomServerPort = 0
 
    @Autowired
-   lateinit var schemaStoreClient: SchemaStoreClient
+   lateinit var schemaPublisher: SchemaPublisher
 
 
    companion object {
@@ -101,7 +102,7 @@ Date,Symbol,Open,High,Low,Close
    @Test
    fun canIngestContentViaWebsocketConnection() {
       // mock schema
-      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
@@ -133,7 +134,7 @@ Date,Symbol,Open,High,Low,Close
       caskRequest.length.should.be.above(20000) // Default websocket buffer size is 8096
 
       // mock schema
-      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
@@ -159,7 +160,7 @@ Date,Symbol,Open,High,Low,Close
    @Test
    fun canIngestContentViaRestEndpoint() {
       // mock schema
-      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val client = WebClient
          .builder()
@@ -180,7 +181,7 @@ Date,Symbol,Open,High,Low,Close
    @Test
    fun canQueryForCaskData() {
       // mock schema
-      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val client = WebClient
          .builder()
@@ -214,11 +215,16 @@ Date,Symbol,Open,High,Low,Close
          .collectList()
          .block()
 
-         result.should.not.be.empty
+      result.should.not.be.empty
+
+      // assert date coming back from Postgresql is equal to what was sent to cask for ingestion
+      result[0].orderDate
+         .toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+         .should.be.equal(LocalDate.parse("2020-03-19"))
    }
 
    data class OrderWindowSummaryDto(
-      val orderDate: Instant,
+      val orderDate: Date,
       val symbol: String,
       val open: Double,
       val close: Double

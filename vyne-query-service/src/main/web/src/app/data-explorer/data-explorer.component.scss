@@ -19,7 +19,7 @@ app-data-source-toolbar {
 
 .drawer-content {
   margin: 2rem 3rem;
-  width: 40vw;
+  width: min-content;
 }
 
 .object-view-wrapper {
@@ -65,4 +65,8 @@ td-highlight {
 .error-display {
   background-color: $red-light;
   color: white;
+}
+
+.mat-drawer.mat-drawer-end{
+  height: fit-content;
 }

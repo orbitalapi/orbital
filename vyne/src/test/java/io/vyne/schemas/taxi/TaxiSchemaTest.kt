@@ -336,6 +336,7 @@ type Sample {
   "isTypeAlias" : false,
   "format" : null,
   "hasFormat" : false,
+  "unformattedTypeName" : null,
   "isParameterType" : false,
   "isClosed" : false,
   "isPrimitive" : false,

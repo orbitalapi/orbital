@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
 
 import {environment} from 'src/environments/environment';
@@ -17,6 +17,10 @@ export class QueryService {
 
   submitQuery(query: Query): Observable<QueryResult> {
     return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query);
+  }
+
+  submitVyneQlQuery(query: String): Observable<QueryResult> {
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=VERBOSE`, query);
   }
 
   getHistory(): Observable<QueryHistoryRecord[]> {
@@ -49,12 +53,16 @@ export interface TypeNamedInstance {
 
 export function isTypedInstance(instance: InstanceLikeOrCollection): instance is TypedInstance {
   const instanceAny = instance as any;
-  return instanceAny.type !== undefined && instanceAny.value !== undefined;
+  return instanceAny && instanceAny.type !== undefined && instanceAny.value !== undefined;
 }
 
 export function isTypeNamedInstance(instance: any): instance is TypeNamedInstance {
   const instanceAny = instance as any;
-  return instanceAny.typeName !== undefined && instanceAny.value !== undefined;
+  return instanceAny && instanceAny.typeName !== undefined && instanceAny.value !== undefined;
+}
+
+export function isTypedCollection(instance: any): instance is TypeNamedInstance[] {
+  return instance && Array.isArray(instance) && instance[0] && isTypeNamedInstance(instance[0])
 }
 
 export interface DataSourceReference {
@@ -100,6 +108,8 @@ export interface QueryResult {
   remoteCalls: RemoteCall[];
   resultMode: ResultMode;
   lineageGraph: LineageGraph;
+  queryResponseId: string;
+  error?: string
 }
 
 

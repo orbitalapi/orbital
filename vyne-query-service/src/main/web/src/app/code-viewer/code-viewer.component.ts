@@ -9,6 +9,7 @@ import IMarkerData = editor.IMarkerData;
 import ITextModel = editor.ITextModel;
 import IEditor = editor.IEditor;
 import ICodeEditor = editor.ICodeEditor;
+import {Router} from "@angular/router";
 
 declare const require: any;
 declare const monaco: any; // monaco
@@ -69,7 +70,7 @@ export class CodeViewerComponent {
     }
   }
 
-  constructor(private monacoLoaderService: MonacoEditorLoaderService) {
+  constructor(private monacoLoaderService: MonacoEditorLoaderService, private router: Router) {
     this.monacoLoaderService.isMonacoLoaded.pipe(
       filter(isLoaded => isLoaded),
       take(1),
@@ -103,8 +104,9 @@ export class CodeViewerComponent {
   }
 
   remeasure() {
+    const shouldSkipRemeasure =  this.router.url.includes('schema-explorer');
     setTimeout(() => {
-      if (!this.monacoEditor) {
+      if (!this.monacoEditor || shouldSkipRemeasure) {
         return;
       }
       const editorDomNode = this.monacoEditor.getDomNode();

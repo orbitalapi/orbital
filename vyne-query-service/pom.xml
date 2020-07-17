@@ -3,11 +3,15 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.4.1</version>
+      <version>0.5.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>vyne-query-service</artifactId>
+
+   <properties>
+      <buildNumber>0</buildNumber>
+   </properties>
 
    <dependencies>
       <dependency>
@@ -23,6 +27,11 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-query-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-spring-schemaStore</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -113,6 +122,11 @@
          <version>1.5.0</version>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-webflux</artifactId>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
 
    <build>
@@ -153,6 +167,16 @@
                   </goals>
                </execution>
             </executions>
+            <configuration>
+               <additionalProperties>
+                  <baseVersion>
+                     ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}
+                  </baseVersion>
+                  <buildNumber>
+                     ${buildNumber}
+                  </buildNumber>
+               </additionalProperties>
+            </configuration>
          </plugin>
          <plugin>
             <groupId>com.github.eirslett</groupId>
@@ -202,8 +226,8 @@
                      <build>
                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                         <tags>
-                           <!-- defined in profiles.  see root pom.xml -->
-                           <tag>${docker.tag}</tag>
+                           <tag>${docker.tag.latest}</tag>
+                           <tag>${docker.tag.numbered}</tag>
                         </tags>
                      </build>
                   </image>

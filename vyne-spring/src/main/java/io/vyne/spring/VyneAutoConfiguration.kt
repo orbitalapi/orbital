@@ -1,18 +1,17 @@
 package io.vyne.spring
 
+import com.hazelcast.config.Config
+import com.hazelcast.config.DiscoveryStrategyConfig
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.instance.AddressPicker
+import com.hazelcast.instance.DefaultNodeContext
+import com.hazelcast.instance.HazelcastInstanceFactory
+import com.hazelcast.instance.Node
+import com.hazelcast.logging.Slf4jFactory
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.schemaStore.HazelcastSchemaStoreClient
-import io.vyne.schemaStore.HttpSchemaStoreClient
-import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemaStore.SchemaSourceProvider
-import io.vyne.schemaStore.TaxiSchemaValidator
-import io.vyne.spring.invokers.AbsoluteUrlResolver
-import io.vyne.spring.invokers.RestTemplateInvoker
-import io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver
-import io.vyne.spring.invokers.ServiceUrlResolver
-import io.vyne.spring.invokers.SpringServiceDiscoveryClient
+import io.vyne.schemaStore.*
+import io.vyne.spring.invokers.*
 import io.vyne.utils.log
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Service
@@ -22,6 +21,10 @@ import lang.taxi.generators.java.TaxiGenerator
 import lang.taxi.generators.java.extensions.ServiceDiscoveryAddressProvider
 import lang.taxi.generators.java.extensions.SpringMvcHttpOperationExtension
 import lang.taxi.generators.java.extensions.SpringMvcHttpServiceExtension
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryConfiguration.*
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.DockerSwarmDiscoveryStrategyFactory
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker
+import org.bitsofinfo.hazelcast.discovery.docker.swarm.SwarmAddressPicker.*
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
@@ -33,18 +36,15 @@ import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration
 import org.springframework.context.EnvironmentAware
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
-import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
-import org.springframework.context.annotation.Primary
+import org.springframework.context.annotation.*
 import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
-import java.util.Optional
+import java.util.*
 
+const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
 
 @Configuration
 @AutoConfigureAfter(VyneConfigRegistrar::class, RibbonAutoConfiguration::class)
@@ -58,24 +58,10 @@ import java.util.Optional
 // If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
 class VyneAutoConfiguration {
-
-//   @Bean
-//   fun schemaStoreClient(schemaService: SchemaService): SchemaStoreClient {
-//      return SchemaStoreClient(schemaService)
-//   }
-
    @Bean
    fun vyneFactory(schemaProvider: SchemaSourceProvider, operationInvokers: List<OperationInvoker>): VyneFactory {
       return VyneFactory(schemaProvider, operationInvokers)
    }
-
-//   @Bean fun restTemplateCustomizer(ribbonRequestFactory:RibbonClientHttpRequestFactory):RestTemplateCustomizer {
-//      return object : RestTemplateCustomizer{
-//         override fun customize(restTemplate: RestTemplate) {
-//            restTemplate.requestFactory = ribbonRequestFactory
-//         }
-//      }
-//   }
 
    // TODO : This can't be left like this, as it would effect other rest templates within
    // the target application.
@@ -106,12 +92,39 @@ class VyneAutoConfiguration {
    }
 
    @Bean("hazelcast")
-   @ConditionalOnProperty("vyne.publicationMethod", havingValue = "DISTRIBUTED")
-   fun hazelcast(): HazelcastInstance {
+   @ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
+   @Profile("!swarm")
+   fun defaultHazelCastInstance(): HazelcastInstance {
       return Hazelcast.newHazelcastInstance()
    }
 
-
+   @Bean("hazelcast")
+   @ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "DISTRIBUTED")
+   @Profile("swarm")
+   fun swarmHazelCastInstance(): HazelcastInstance {
+      val dockerNetworkName = System.getenv("DOCKER_NETWORK_NAME") ?: System.getProperty(PROP_DOCKER_NETWORK_NAMES)
+      val dockerServiceName = System.getenv("DOCKER_SERVICE_NAME") ?: System.getProperty(PROP_DOCKER_SERVICE_NAMES)
+      val dockerServiceLabel = System.getenv("DOCKER_SERVICE_LABELS") ?: System.getProperty(PROP_DOCKER_SERVICE_LABELS)
+      val hazelcastPeerPortString  = System.getenv("HAZELCAST_PEER_PORT") ?: System.getProperty(PROP_HAZELCAST_PEER_PORT)
+      val hazelcastPeerPort = hazelcastPeerPortString?.let { it.toInt() } ?: 5701
+      val swarmedConfig = Config().apply {
+         networkConfig.join.multicastConfig.isEnabled = false
+         networkConfig.memberAddressProviderConfig.isEnabled = true
+         networkConfig.join.discoveryConfig.addDiscoveryStrategyConfig(
+            DiscoveryStrategyConfig(DockerSwarmDiscoveryStrategyFactory(), mapOf(
+               DOCKER_NETWORK_NAMES.key() to dockerNetworkName,
+               DOCKER_SERVICE_NAMES.key() to dockerServiceName,
+               DOCKER_SERVICE_LABELS.key() to dockerServiceLabel
+            ).filterValues { it != null })
+         )
+      }
+      HazelcastInstanceFactory.newHazelcastInstance(swarmedConfig, null, object: DefaultNodeContext() {
+         override fun createAddressPicker(node: Node): AddressPicker {
+            return SwarmAddressPicker(Slf4jFactory().getLogger("SwarmAddressPicker"), dockerNetworkName, dockerServiceName, dockerServiceLabel, hazelcastPeerPort)
+         }
+      })
+      return Hazelcast.newHazelcastInstance(swarmedConfig)
+   }
 }
 
 class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
@@ -147,9 +160,14 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
             .beanDefinition)
       }
 
+      val annotationPublicationMethod = attributes["publicationMethod"] as SchemaPublicationMethod
+      val publicationMethod = environment!!.getProperty(VYNE_SCHEMA_PUBLICATION_METHOD, annotationPublicationMethod.name)
 
-      when (attributes["publicationMethod"] as SchemaPublicationMethod) {
-//         SchemaPublicationMethod.NONE -> log().info("Not using a remote schema store")
+      log().info("${VYNE_SCHEMA_PUBLICATION_METHOD}=${publicationMethod}")
+
+      when (SchemaPublicationMethod.valueOf(publicationMethod)) {
+         //SchemaPublicationMethod.DISABLED -> log().info("Not using a remote schema store")
+         SchemaPublicationMethod.LOCAL -> configureLocalSchemaStore(registry)
          SchemaPublicationMethod.REMOTE -> configureHttpSchemaStore(registry)
          SchemaPublicationMethod.DISTRIBUTED -> configureHazelcastSchemaStore(registry)
       }
@@ -183,12 +201,19 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
       )
       registerRemoteSchemaProvider(registry, schemaStoreClientBeanName)
 
-//      registry.registerBeanDefinitionOfType(HazelcastSchemaStoreClient::class.java)
-      environment!!.propertySources.addLast(MapPropertySource("VyneHazelcastProperties", mapOf("vyne.publicationMethod" to SchemaPublicationMethod.DISTRIBUTED.name)))
+      environment!!.propertySources.addLast(MapPropertySource("VyneHazelcastProperties", mapOf(VYNE_SCHEMA_PUBLICATION_METHOD to SchemaPublicationMethod.DISTRIBUTED.name)))
+   }
+
+   private fun configureLocalSchemaStore(registry: BeanDefinitionRegistry) {
+      log().info("Using local schema store")
+      val schemaStoreClientBeanName = registry.registerBeanDefinitionOfType(LocalValidatingSchemaStore::class.java)
+      registry.registerBeanDefinitionOfType(TaxiSchemaStoreService::class.java)
+      registerRemoteSchemaProvider(registry, schemaStoreClientBeanName)
    }
 
    private fun configureHttpSchemaStore(registry: BeanDefinitionRegistry) {
       log().info("Using an Http based schema store")
+      registry.registerBeanDefinitionOfType(HttpSchemaStoreFeignConfig::class.java)
       val schemaStoreClientBeanName = registry.registerBeanDefinitionOfType(HttpSchemaStoreClient::class.java)
       registerRemoteSchemaProvider(registry, schemaStoreClientBeanName)
    }

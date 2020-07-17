@@ -3,8 +3,11 @@ package io.vyne.schemaStore
 import arrow.core.Either
 import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
+import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import lang.taxi.CompilationException
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.retry.RetryCallback
 import org.springframework.retry.RetryContext
 import org.springframework.retry.backoff.FixedBackOffPolicy
@@ -13,7 +16,7 @@ import org.springframework.retry.policy.SimpleRetryPolicy
 import org.springframework.retry.support.RetryTemplate
 import reactor.core.Disposable
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import javax.annotation.PostConstruct
@@ -22,12 +25,12 @@ import javax.annotation.PreDestroy
 
 object RetryConfig {
    const val RETRYABLE_PROCESS_NAME = "processName"
-   fun simpleRetryWithBackoff(): RetryTemplate {
+   fun simpleRetryWithBackoff(publishRetryInterval: Duration): RetryTemplate {
       val retryPolicy = SimpleRetryPolicy()
       retryPolicy.maxAttempts = Integer.MAX_VALUE
 
       val backOffPolicy = FixedBackOffPolicy()
-      backOffPolicy.backOffPeriod = 1500 // 1.5 seconds
+      backOffPolicy.backOffPeriod = publishRetryInterval.toMillis()
 
       val template = RetryTemplate()
       template.setRetryPolicy(retryPolicy)
@@ -41,29 +44,33 @@ object RetryConfig {
    }
 }
 
-class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate: RetryTemplate = RetryConfig.simpleRetryWithBackoff(), val pollFrequency: Duration = Duration.ofSeconds(1L)) : SchemaStoreClient {
+class HttpSchemaStoreClient(private val schemaStoreService: SchemaStoreService,
+                            private val eventPublisher: ApplicationEventPublisher,
+                            @Value("\${vyne.schema.publishRetryInterval:3s}") private val publishRetryInterval: Duration,
+                            @Value("\${vyne.schema.pollInterval:5s}") private val pollInterval: Duration) : SchemaStoreClient {
+
+   init {
+       log().info("Initializing client vyne.schema.pollInterval=${pollInterval}, vyne.schema.publishRetryInterval=${publishRetryInterval}")
+   }
+
+   private val retryTemplate: RetryTemplate = RetryConfig.simpleRetryWithBackoff(publishRetryInterval)
    private var poller: Disposable? = null
    private var schemaSet: SchemaSet = SchemaSet.EMPTY
    private val generationCounter: AtomicInteger = AtomicInteger(0)
 
    override fun schemaSet() = schemaSet
 
-   override fun submitSchema(schemaName: String,
-                             schemaVersion: String,
-                             schema: String): Either<CompilationException, Schema> {
-//      submitSchemas(listOf(VersionedSource(schemaName,schemaVersion,schema)))
-      TODO("This is currentyl disabled, as I'm upgrading to submit a list of schemas, and focussing on Hazelcast client")
-//      retryTemplate.execute<Any, Exception> { context: RetryContext ->
-//         context.setAttribute(RetryConfig.RETRYABLE_PROCESS_NAME, "Publish schemas")
-//         log().debug("Submitting schema $schemaName v$schemaVersion")
-//         schemaService.submitSchema(schema, schemaName, schemaVersion)
-//         log().debug("Schema $schemaName v$schemaVersion submitted successfully")
-//      }
-//      TODO("Migrate this to perform better schema validation, or defer to the schema service")
-   }
-
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+      val result:SourceSubmissionResponse = retryTemplate.execute<SourceSubmissionResponse, Exception> { context: RetryContext ->
+         log().info("Pushing ${versionedSources.size} schemas to store ${versionedSources.map { it.name }}")
+         schemaStoreService.submitSources(versionedSources)
+      }
+
+      if (result.isValid) {
+         return Either.right(result.schemaSet.schema)
+      }
+
+      return Either.left(CompilationException(result.errors))
    }
 
    override val generation: Int
@@ -74,7 +81,7 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
 
    @PostConstruct
    fun startPolling() {
-      poller = Flux.interval(pollFrequency)
+      poller = Flux.interval(pollInterval, Schedulers.newSingle("HttpSchemaStorePoller"))
          .doOnNext { pollForSchemaUpdates() }
          .subscribe()
    }
@@ -86,11 +93,13 @@ class HttpSchemaStoreClient(val schemaService: SchemaService, val retryTemplate:
 
    fun pollForSchemaUpdates() {
       try {
-         val schemaSet = schemaService.listSchemas()
+         val schemaSet = schemaStoreService.listSchemas()
          if (this.schemaSet.id != schemaSet.id) {
+            val event = SchemaSetChangedEvent(this.schemaSet, schemaSet)
             this.schemaSet = schemaSet
             this.generationCounter.incrementAndGet()
-            log().info("Updated to schema set ${schemaSet.id}, generation $generation (contains ${schemaSet.size()} schemas)")
+            log().info("Updated to SchemaSet ${schemaSet.id}, generation $generation, ${schemaSet.size()} schemas, ${schemaSet.sources.map { it.source.id }}")
+            eventPublisher.publishEvent(event)
          }
       } catch (e: Exception) {
          log().warn("Failed to fetch schemas: $e")

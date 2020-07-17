@@ -9,7 +9,6 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
-import io.vyne.utils.orElse
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
@@ -44,52 +43,106 @@ fun String.toLocalDateTime(): LocalDateTime {
 class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider: SchemaProvider) {
    val postgresDdlGenerator = PostgresDdlGenerator()
 
+   fun findAll(versionedType: VersionedType): List<Map<String, Any>> {
+      val name = "${versionedType.versionedName}.findAll"
+      return timed(name) {
+         doForAllTablesOfType(versionedType) { tableName ->
+            jdbcTemplate.queryForList(findAllQuery(tableName))
+         }
+      }
+   }
+
+   /**
+    * Finds all the tables that are present for a specific versioned type, executes the code block
+    * on each of them, and collates the responses.
+    *
+    * Note this is CLEARLY not the right way to do this long term.
+    * Tried but discounted approaches:
+    *  - UNION queries across the tables (requires tables to have the same set of columns)
+    *  - Full outer join across the tables (columns with the same name result in only one of the columns being returned)
+    *
+    *  Solutions to the above are possible, but require EITHER a dbtrip per table to determine the
+    *  column names, OR recompiling the schema for each versioned type, and attempting to recreate the
+    *  column name.  However, I don't have the time to implement either of these approaches right now, and
+    *  it's questionable how much more performant they'd be.
+    */
+   private fun doForAllTablesOfType(versionedType: VersionedType, function: (tableName: String) -> List<Map<String, Any>>): List<Map<String, Any>> {
+      val tableNames = findTablesForType(versionedType)
+      val results = tableNames.map { tableName -> function(tableName) }
+      return mergeResultSets(results)
+   }
+
+   private fun mergeResultSets(results: List<List<Map<String, Any>>>): List<Map<String, Any>> {
+      val allRecords = results.flatten()
+      // Note: Originally the plan was to inject null values in the sets for fields that aren't
+      // present in that record (because of the union of columns across multiple tables).
+      // However, turns out, the absense of the key is probably sufficient.
+      return allRecords
+   }
+
    fun findBy(versionedType: VersionedType, columnName: String, arg: String): List<Map<String, Any>> {
       val name = "${versionedType.versionedName}.findBy${columnName}"
       return timed(name) {
-         val tableName = versionedType.caskRecordTable()
-         val originalTypeSchema = schemaProvider.schema()
-         val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
-         val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-         val findByArg = jdbcQueryArgumentType(fieldType, arg)
-         jdbcTemplate.queryForList(findByQuery(tableName, columnName), findByArg)
+         doForAllTablesOfType(versionedType) { tableName ->
+            val originalTypeSchema = schemaProvider.schema()
+            val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
+            val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
+            val findByArg = jdbcQueryArgumentType(fieldType, arg)
+            jdbcTemplate.queryForList(findByQuery(tableName, columnName), findByArg)
+         }
       }
    }
 
    fun findOne(versionedType: VersionedType, columnName: String, arg: String): Map<String, Any>? {
       return timed("${versionedType.versionedName}.findOne${columnName}") {
-         val tableName = versionedType.caskRecordTable()
-         val originalTypeSchema = schemaProvider.schema()
-         val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
-         val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-         val findOneArg = jdbcQueryArgumentType(fieldType, arg)
-         jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg).firstOrNull().orElse(emptyMap())
+         val results = doForAllTablesOfType(versionedType) { tableName ->
+            val originalTypeSchema = schemaProvider.schema()
+            val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
+            val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
+            val findOneArg = jdbcQueryArgumentType(fieldType, arg)
+            jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg)
+         }
+         if (results.size > 1) {
+            log().error("Call to findOne() returned ${results.size} results.  Will pick the first")
+         }
+         results.firstOrNull() ?: emptyMap()
       }
    }
 
    fun findMultiple(versionedType: VersionedType, columnName: String, arg: List<String>): List<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findMultiple${columnName}") {
-         val tableName = versionedType.caskRecordTable()
-         val originalTypeSchema = schemaProvider.schema()
-         val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
-         val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-         val findMultipleArg = jdbcQueryArgumentsType(fieldType, arg)
-         val inPhrase = arg.joinToString(",") { "?" }
-         val argTypes = arg.map { Types.VARCHAR }.toTypedArray().toIntArray()
-         val argValues = findMultipleArg.toTypedArray()
-         val retVal = jdbcTemplate.queryForList(findInQuery(tableName, columnName, inPhrase), argValues, argTypes)
-         retVal
+         doForAllTablesOfType(versionedType) { tableName ->
+            val originalTypeSchema = schemaProvider.schema()
+            val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
+            val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
+            val findMultipleArg = jdbcQueryArgumentsType(fieldType, arg)
+            val inPhrase = arg.joinToString(",") { "?" }
+            val argTypes = arg.map { Types.VARCHAR }.toTypedArray().toIntArray()
+            val argValues = findMultipleArg.toTypedArray()
+            val retVal = jdbcTemplate.queryForList(findInQuery(tableName, columnName, inPhrase), argValues, argTypes)
+            retVal
+         }
       }
    }
 
    fun findBetween(versionedType: VersionedType, columnName: String, start: String, end: String): List<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
          val field = fieldForColumnName(versionedType, columnName)
-         jdbcTemplate.queryForList(
-            findBetweenQuery(versionedType.caskRecordTable(), columnName),
-            jdbcQueryArgumentType(field, start),
-            jdbcQueryArgumentType(field, end))
+         doForAllTablesOfType(versionedType) { tableName ->
+            jdbcTemplate.queryForList(
+               findBetweenQuery(tableName, columnName),
+               jdbcQueryArgumentType(field, start),
+               jdbcQueryArgumentType(field, end))
+         }
       }
+   }
+
+   private fun findTablesForType(versionedType: VersionedType): List<String> {
+      return jdbcTemplate.queryForList<String>(
+         "SELECT tablename from cask_config where qualifiedtypename = ?",
+         listOf(versionedType.fullyQualifiedName).toTypedArray(),
+         String::class.java
+      )
    }
 
    fun findAfter(versionedType: VersionedType, columnName: String, after: String): List<Map<String, Any>> {
@@ -123,7 +176,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       PrimitiveType.ANY -> arg
       PrimitiveType.DECIMAL -> arg.toBigDecimal()
       PrimitiveType.DOUBLE -> arg.toBigDecimal()
-      PrimitiveType.INTEGER ->arg.toBigDecimal()
+      PrimitiveType.INTEGER -> arg.toBigDecimal()
       PrimitiveType.BOOLEAN -> arg.toBoolean()
       PrimitiveType.LOCAL_DATE -> arg.toLocalDate()
       // TODO TIME db column type
@@ -135,11 +188,21 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
 
    companion object {
       // TODO change to prepared statement, unlikely but potential for SQL injection via columnName
+      fun findAllQuery(tableName: String) = """SELECT * FROM $tableName"""
       fun findInQuery(tableName: String, columnName: String, inPhrase: String) = """SELECT * FROM $tableName WHERE "$columnName" IN ($inPhrase)"""
       fun findByQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" = ?"""
       fun findBetweenQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" < ?"""
       fun findAfterQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ?"""
       fun findBeforeQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" < ?"""
+
+      internal fun selectTableList(tableNames: List<String>): String {
+         val indexTables = tableNames.mapIndexed { index, name -> "$name t$index" }
+         if (indexTables.size == 1) {
+            return indexTables[0]
+         }
+         return indexTables[0] + " " +
+            indexTables.drop(1).joinToString(separator = " ") { "full outer join $it on 0 = 1" }
+      }
    }
 
    // ############################
@@ -195,7 +258,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
          | readCachePath,
          | insertedAt) values ( ? , ?, ?, ? )""".trimMargin()
 
-   data class CaskMessage (
+   data class CaskMessage(
       val id: String,
       val qualifiedTypeName: String,
       val readCachePath: String,
@@ -252,7 +315,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       }
    }
 
-   fun countCasks(tableName : String): Int {
+   fun countCasks(tableName: String): Int {
       return jdbcTemplate.queryForObject("SELECT COUNT(*) from CASK_CONFIG WHERE tableName=?", arrayOf(tableName), Int::class.java)
    }
 
@@ -270,8 +333,8 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
    // ############################
 
    fun deleteCask(tableName: String) {
-         jdbcTemplate.update("DELETE FROM CASK_CONFIG WHERE tableName=?", tableName)
-         jdbcTemplate.update("DROP TABLE ${tableName}")
+      jdbcTemplate.update("DELETE FROM CASK_CONFIG WHERE tableName=?", tableName)
+      jdbcTemplate.update("DROP TABLE ${tableName}")
    }
 
    fun emptyCask(tableName: String) {

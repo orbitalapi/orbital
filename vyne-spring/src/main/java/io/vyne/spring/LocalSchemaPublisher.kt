@@ -1,15 +1,15 @@
 package io.vyne.spring
 
 import arrow.core.Either
+import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.log
-import io.vyne.schemaStore.SchemaStoreClient
 import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener
 
 class LocalSchemaPublisher(val schemaName: String,
                            val schemaVersion: String,
                            val localTaxiSchemaProvider: LocalTaxiSchemaProvider,
-                           val schemaStoreClient: SchemaStoreClient) {
+                           val schemaPublisher: SchemaPublisher) {
    private var startupPublishTriggered: Boolean = false
 
    @EventListener
@@ -38,7 +38,7 @@ class LocalSchemaPublisher(val schemaName: String,
          log().error("No schemas found to publish")
       } else {
          log().debug("Attempting to register schema: $schema")
-         val schemaValidationResult = schemaStoreClient.submitSchema(schemaName, schemaVersion, schema)
+         val schemaValidationResult = schemaPublisher.submitSchema(schemaName, schemaVersion, schema)
          when (schemaValidationResult) {
             is Either.Left -> log().error("Failed to register schema", schemaValidationResult.a.message)
             is Either.Right -> log().info("Schema registered successfully")

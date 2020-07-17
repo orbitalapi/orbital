@@ -2,7 +2,7 @@ package io.vyne.search.embedded
 
 import com.google.common.base.Stopwatch
 import io.vyne.schemaStore.SchemaSet
-import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Field
 import io.vyne.schemas.Operation
 import io.vyne.schemas.SchemaSetChangedEvent
@@ -18,16 +18,16 @@ import java.util.concurrent.TimeUnit
 import org.apache.lucene.document.Field as LuceneField
 
 @Component
-class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaStoreClient: SchemaStoreClient) {
+class IndexOnStartupTask(private val indexer: SearchIndexer, private val schemaStore: SchemaStore) {
    init {
       log().info("Initializing search, indexing current schema")
       try {
-         indexer.createNewIndex(schemaStoreClient.schemaSet())
+         indexer.createNewIndex(schemaStore.schemaSet())
       } catch (e: IllegalArgumentException) {
          // Thrown by lucene when an index has changed config
          // Lets trash the existing index, and retry
          log().warn("Exception thrown when updating index.  ( ${e.message} ) - will attempt to recover by deleting existing index, and rebuilding")
-         indexer.deleteAndRebuildIndex(schemaStoreClient.schemaSet())
+         indexer.deleteAndRebuildIndex(schemaStore.schemaSet())
       } catch (e:CompilationException) {
          log().warn("Compilation exception found when trying to create search indexes on startup - we'll just wait. \n ${e.message}")
       }

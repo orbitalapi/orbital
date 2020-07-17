@@ -82,7 +82,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          val start = System.currentTimeMillis()
          val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody.first, requestBody.second, uriVariables)
          val executionTime = System.currentTimeMillis() - start
-         log().info("{} {} took {}ms", httpMethod, absoluteUrl, executionTime)
+         log().info("{} {} took {}ms with {}", httpMethod, absoluteUrl, executionTime, uriVariables)
 
          val expandedUri = restTemplate.uriTemplateHandler.expand(absoluteUrl, uriVariables)
          val remoteCall = RemoteCall(

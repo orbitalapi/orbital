@@ -8,18 +8,35 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
-import io.vyne.models.*
+import io.vyne.models.MappedSynonym
+import io.vyne.models.RawObjectMapper
+import io.vyne.models.TypeNamedInstanceMapper
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.schemas.*
+import io.vyne.schemas.OutputConstraint
+import io.vyne.schemas.Path
+import io.vyne.schemas.Policy
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
+import io.vyne.schemas.TypeMatchingStrategy
+import io.vyne.schemas.fqn
+import io.vyne.schemas.synonymFullQualifiedName
+import io.vyne.schemas.synonymValue
 import io.vyne.utils.log
 import io.vyne.utils.timed
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
-import java.util.*
+import java.util.UUID
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -173,10 +190,11 @@ object TypedInstanceTree {
          is TypedObject -> instance.values.toList()
          is TypedValue -> emptyList()
          is TypedCollection -> instance.value
+         is TypedNull -> emptyList()
          else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
       }
       // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-   }.filter { it -> it !is TypedNull }
+   }//.filter { it -> it !is TypedNull }
 }
 
 // Design choice:
@@ -234,7 +252,7 @@ data class QueryContext(
       }
 
       private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
-         val derivedFacts = if (fact.type.isEnum) {
+         val derivedFacts = if (fact.type.isEnum && fact.value != null) {
             val underlyingEnumType = fact.type.taxiType as EnumType
             underlyingEnumType.of(fact.value)
                .synonyms
@@ -246,7 +264,7 @@ data class QueryContext(
                   // Instantiate with either name or value depending on what we have as input
                   val value = if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
 
-                  TypedValue.from(synonymType, value, false, MappedSynonym)
+                  TypedValue.from(synonymType, value, false, MappedSynonym(fact))
                }.toSet()
          } else {
             setOf()
@@ -436,8 +454,14 @@ enum class FactDiscoveryStrategy {
             matches.isEmpty() -> null
             matches.size == 1 -> matches.first()
             else -> {
-               log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
-               null
+               // last ditch attempt
+               val exactMatch = matches.filter { it.type == type }
+               if (exactMatch.size == 1) {
+                  exactMatch.first()
+               } else {
+                  log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
+                  null
+               }
             }
          }
       }

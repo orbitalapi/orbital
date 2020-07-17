@@ -48,7 +48,19 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                // the types are compatible.  However, this may prove to cause problems.
                return convertValue(discoveredValue, targetType)
             }
-            else -> error("Found ${instance.size} instances of ${targetType.fullyQualifiedName}.  We should handle this, but we don't.")
+            else -> {
+               // last attempt
+               val exactMatches = instance.filter { it.type == targetType }
+               if (exactMatches.size == 1) {
+                  return exactMatches.first()
+               }
+
+               val nonNullMatches = instance.filter { it.value != null }
+               if (nonNullMatches.size == 1) {
+                  return nonNullMatches.first()
+               }
+               error("Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${instance.map { Pair(it.typeName, it.value)}.joinToString()}")
+            }
          }
       }
 
