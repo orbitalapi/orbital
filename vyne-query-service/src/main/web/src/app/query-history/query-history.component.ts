@@ -145,10 +145,6 @@ export class QueryHistoryComponent implements OnInit {
     this.selectedTypeInstanceType = $event.selectedTypeInstanceType;
   }
 
-  queryAgain() {
-    this.activeRecord && this.router.navigate(['/query-wizard'], { state: { query: this.activeRecord}})
-  }
-
 }
 
 type QueryType = 'VyneQlQuery' | 'RestfulQuery';

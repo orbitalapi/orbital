@@ -13,6 +13,9 @@
     <button mat-stroked-button [matMenuTriggerFor]="menu" *ngIf="queryResultTypeNames.length>0"
             class="downloadFileButton">Download
     </button>
+    <div class="actions-container" >
+      <button mat-stroked-button (click)="queryAgain()" >Query again</button>
+    </div>
     <mat-menu #menu="matMenu">
       <button mat-menu-item (click)="downloadQueryHistory(downloadFileType.JSON)">as JSON</button>
       <button mat-menu-item (click)="downloadQueryHistory(downloadFileType.CSV)">as CSV</button>
@@ -23,7 +26,7 @@
     <cdk-virtual-scroll-viewport itemSize="50" class="virtualScroll-viewport">
       <mat-tab-group>
         <mat-tab label="Table">
-          <div *ngFor="let resultTypeName of queryResultTypeNames" [ngClass]="isQueryHistoryPage ? 'result-object-view-sml' : 'result-object-view'">
+          <div *ngFor="let resultTypeName of queryResultTypeNames">
             <app-results-table [instance]="getResultForTypeName(resultTypeName)"
                                [schema]="schema"
                                [selectable]="true"
@@ -32,7 +35,7 @@
           </div>
         </mat-tab>
         <mat-tab label="Result">
-          <div *ngFor="let resultTypeName of queryResultTypeNames"  [ngClass]="isQueryHistoryPage ? 'result-object-view-sml' : 'result-object-view'">
+          <div *ngFor="let resultTypeName of queryResultTypeNames" >
 
             <app-object-view [instance]="getResultForTypeName(resultTypeName)"
                              [schema]="schema"

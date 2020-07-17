@@ -14,7 +14,7 @@ import {findType, QualifiedName, Schema, Type, TypedInstance} from '../../servic
 import {InstanceLike, InstanceLikeOrCollection, typeName} from '../../object-view/object-view.component';
 import {ExportFileService} from '../../services/export.file.service';
 import * as fileSaver from 'file-saver';
-import {Router} from "@angular/router";
+import {Router} from '@angular/router';
 
 export class InstanceSelectedEvent {
   constructor(public readonly selectedTypeInstance: InstanceLike,
@@ -46,6 +46,8 @@ export class ResultContainerComponent implements OnInit {
 
   objectKeys = Object.keys;
   objectValues = Object.values;
+ @Input()
+  activeRecord: QueryHistoryRecord;
 
   @Output()
   instanceSelected = new EventEmitter<InstanceSelectedEvent>();
@@ -170,11 +172,6 @@ export class ResultContainerComponent implements OnInit {
     return this.result && this.isQueryResult(this.result) && this.result.fullyResolved;
   }
 
-  get isQueryHistoryPage(): Boolean {
-    if (this.router.url.includes('query-history')) {
-      return true;
-    }
-  }
 
   get isUnsuccessfulSearch(): Boolean {
     return this.result && this.isQueryResult(this.result) && !this.result.fullyResolved;
@@ -215,5 +212,9 @@ export class ResultContainerComponent implements OnInit {
     const selectedTypeInstanceType = findType(this.schema, instanceTypeName);
 
     this.instanceSelected.emit(new InstanceSelectedEvent(instance, selectedTypeInstanceType));
+  }
+
+  queryAgain() {
+    this.activeRecord && this.router.navigate(['/query-wizard'], { state: { query: this.activeRecord}});
   }
 }

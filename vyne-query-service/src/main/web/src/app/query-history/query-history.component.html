@@ -37,11 +37,9 @@
     </div>
     <div class="results-section">
       <div class="results-container">
-        <div class="actions-container" >
-          <button mat-stroked-button (click)="queryAgain()" >Query again</button>
-        </div>
 
           <query-result-container [result]="activeRecord?.response"
+                                  [activeRecord]="activeRecord"
                                   (instanceSelected)="onInstanceSelected($event)"
           ></query-result-container>
       </div>
