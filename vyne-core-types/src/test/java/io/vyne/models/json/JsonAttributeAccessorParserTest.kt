@@ -8,6 +8,7 @@ import io.vyne.models.PrimitiveParser
 import io.vyne.models.Provided
 import io.vyne.schemas.Type
 import junit.framework.Assert.fail
+import lang.taxi.types.JsonPathAccessor
 import lang.taxi.types.XpathAccessor
 import org.junit.Before
 import org.junit.Test
@@ -29,7 +30,7 @@ class JsonAttributeAccessorParserTest() {
 
    @Test
    fun parseInteger() {
-      val accessor = XpathAccessor("/age")
+      val accessor = JsonPathAccessor("/age")
 
       var node = jacksonObjectMapper().readTree(""" {  "age": 1 } """) as ObjectNode
 
@@ -41,7 +42,7 @@ class JsonAttributeAccessorParserTest() {
 
    @Test
    fun parseDouble() {
-      val accessor = XpathAccessor("/age")
+      val accessor = JsonPathAccessor("/age")
 
       var node = jacksonObjectMapper().readTree(""" {  "age": 1.609 } """) as ObjectNode
 
@@ -53,7 +54,7 @@ class JsonAttributeAccessorParserTest() {
 
    @Test
    fun parseIntegerAsString() {
-      val accessor = XpathAccessor("/age")
+      val accessor = JsonPathAccessor("/age")
 
       var node = jacksonObjectMapper().readTree(""" {  "age": "1" } """) as ObjectNode
 
@@ -65,7 +66,7 @@ class JsonAttributeAccessorParserTest() {
 
    @Test
    fun parseFieldDoesntExist() {
-      val accessor = XpathAccessor("/year")
+      val accessor = JsonPathAccessor("/year")
 
       var node = jacksonObjectMapper().readTree(""" {  "age": "1" } """) as ObjectNode
 
@@ -80,7 +81,7 @@ class JsonAttributeAccessorParserTest() {
 
    @Test
    fun parseEnum() {
-      val accessor = XpathAccessor("/country")
+      val accessor = JsonPathAccessor("/country")
 
       var node = jacksonObjectMapper().readTree(""" {  "country": "France" } """) as ObjectNode
 
@@ -94,7 +95,7 @@ class JsonAttributeAccessorParserTest() {
 
    @Test
    fun parseEmptyEnum() {
-      val accessor = XpathAccessor("/country")
+      val accessor = JsonPathAccessor("/country")
 
       var node = jacksonObjectMapper().readTree(""" {  "country": "" } """) as ObjectNode
 
