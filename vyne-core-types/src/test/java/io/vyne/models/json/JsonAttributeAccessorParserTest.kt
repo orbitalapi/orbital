@@ -74,7 +74,7 @@ class JsonAttributeAccessorParserTest() {
          parser.parseToType(mock(), accessor, node, mock(), Provided)
          fail()
       }catch(e: IllegalStateException) {
-         e.message.should.be.equal("Could not find xpath /year in record")
+         e.message.should.be.equal("Could not find json pointer /year in record")
       }
 
    }
