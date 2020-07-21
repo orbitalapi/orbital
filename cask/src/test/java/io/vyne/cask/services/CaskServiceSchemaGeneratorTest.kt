@@ -7,6 +7,8 @@ import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
+import io.vyne.ParsedSource
+import io.vyne.VersionedSource
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.query.generators.AfterTemporalOperationGenerator
 import io.vyne.cask.query.generators.BeforeTemporalOperationGenerator
@@ -15,16 +17,16 @@ import io.vyne.cask.query.generators.FindByFieldIdOperationGenerator
 import io.vyne.cask.query.generators.FindByIdGenerators
 import io.vyne.cask.query.generators.FindByMultipleGenerator
 import io.vyne.cask.query.generators.FindBySingleResultGenerator
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaStore.SchemaSet
+import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemaStore.SchemaStoreClient
-import io.vyne.schemas.Schema
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
 
 class CaskServiceSchemaGeneratorTest {
-   val schemaProvider = mock<SchemaProvider>()
+   val schemaProvider = mock<SchemaStore>()
    val schemaStoreClient = mock<SchemaStoreClient>()
    val caskServiceSchemaWriter = CaskServiceSchemaWriter(schemaStoreClient)
    private val schema = """
@@ -60,7 +62,7 @@ class CaskServiceSchemaGeneratorTest {
          }
       """.trimIndent()
       val (serviceSchemaGenerator,taxiSchema) = schemaGeneratorFor(schema)
-      val serviceSchema = argumentCaptor<String>()
+
       // When
       val generated = serviceSchemaGenerator.generateSchema(taxiSchema.versionedType("Trade".fqn()))
       val operation = generated.services.first().operation("findByTradeDateBefore")
@@ -70,7 +72,8 @@ class CaskServiceSchemaGeneratorTest {
    private fun schemaGeneratorFor(schema: String): Pair<CaskServiceSchemaGenerator,TaxiSchema> {
       val typeSchema = lang.taxi.Compiler(schema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf())
-      whenever(schemaProvider.schema()).thenReturn(taxiSchema)
+      val sources = taxiSchema.sources.map { ParsedSource(it) }
+      whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
       return CaskServiceSchemaGenerator(
          schemaProvider,
          caskServiceSchemaWriter,
@@ -113,17 +116,20 @@ type OrderWindowSummaryCsv {
       // given
       val typeSchema = lang.taxi.Compiler(simpleSchema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf())
-      whenever(schemaProvider.schema()).thenReturn(taxiSchema)
+      val sources = taxiSchema.sources.map { ParsedSource(it) }
+      whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
       val (serviceSchemaGenerator, _) = schemaGeneratorFor(simpleSchema)
-      val schemaName = argumentCaptor<String>()
-      val schemaVersion = argumentCaptor<String>()
-      val serviceSchema = argumentCaptor<String>()
+      val schemas = argumentCaptor<List<VersionedSource>>()
+
       // When
       serviceSchemaGenerator.generateAndPublishService(taxiSchema.versionedType("OrderWindowSummaryCsv".fqn()))
+
       // Then
-      verify(schemaStoreClient, times(1)).submitSchema(schemaName.capture(), schemaVersion.capture(), serviceSchema.capture())
-      schemaName.firstValue.should.startWith("vyne.casks.OrderWindowSummaryCsv@")
-      "1.0.0".should.equal(schemaVersion.firstValue)
+      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
+      val submittedSchemas = schemas.firstValue
+      submittedSchemas.size.should.equal(1)
+      submittedSchemas[0].name.should.equal("vyne.casks.OrderWindowSummaryCsv")
+      submittedSchemas[0].version.should.equal("1.0.1")
       """
 import OrderWindowSummaryCsv
 import Symbol
@@ -139,7 +145,7 @@ namespace vyne.casks {
    }
 }
 
-""".replace("\\s".toRegex(), "").should.equal(serviceSchema.firstValue.replace("\\s".toRegex(), ""))
+""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
    }
 
    @Test
@@ -147,17 +153,19 @@ namespace vyne.casks {
       // given
       val typeSchema = lang.taxi.Compiler(schema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf())
-      whenever(schemaProvider.schema()).thenReturn(taxiSchema)
+      val sources = taxiSchema.sources.map { ParsedSource(it) }
+      whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
       val (serviceSchemaGenerator, _) = schemaGeneratorFor(schema)
-      val schemaName = argumentCaptor<String>()
-      val schemaVersion = argumentCaptor<String>()
-      val serviceSchema = argumentCaptor<String>()
+      val schemas = argumentCaptor<List<VersionedSource>>()
+
       // When
       serviceSchemaGenerator.generateAndPublishService(taxiSchema.versionedType("OrderWindowSummary".fqn()))
       // Then
-      verify(schemaStoreClient, times(1)).submitSchema(schemaName.capture(), schemaVersion.capture(), serviceSchema.capture())
-      schemaName.firstValue.should.startWith("vyne.casks.OrderWindowSummary@")
-      "1.0.0".should.equal(schemaVersion.firstValue)
+      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
+      val submittedSchemas = schemas.firstValue
+      submittedSchemas.size.should.equal(1)
+      submittedSchemas[0].name.should.equal("vyne.casks.OrderWindowSummary")
+      submittedSchemas[0].version.should.equal("1.0.1")
       """
 import OrderWindowSummary
 import Symbol
@@ -190,35 +198,31 @@ namespace vyne.casks {
       operation findByOrderDateTimeBetween( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime < end )
    }
 }
-""".replace("\\s".toRegex(), "").should.equal(serviceSchema.firstValue.replace("\\s".toRegex(), ""))
+""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
    }
 
    @Test
    fun `Cask does not create service if one already exists`() {
       // given
       val typeSchema = lang.taxi.Compiler(schema).compile()
-      val versionedType = TaxiSchema(typeSchema, listOf()).versionedType("OrderWindowSummary".fqn())
+      val taxiSchema = TaxiSchema(typeSchema, listOf())
+      val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())
 
-      val schema: Schema = mock()
-      whenever(schemaProvider.schema()).thenReturn(schema)
-      whenever(schema.hasService("vyne.casks.OrderWindowSummaryCaskService")).thenReturn(true)
-      whenever(schema.versionedType("OrderWindowSummary".fqn())).thenReturn(versionedType)
-
-      val serviceSchemaGenerator = CaskServiceSchemaGenerator(
-         schemaProvider,
-         caskServiceSchemaWriter,
-         listOf(
-            FindByFieldIdOperationGenerator(),
-            AfterTemporalOperationGenerator(),
-            BeforeTemporalOperationGenerator(),
-            BetweenTemporalOperationGenerator()))
+      val (serviceSchemaGenerator, _) = schemaGeneratorFor(schema)
+      val caskServiceSource = ParsedSource(
+         VersionedSource(
+            CaskServiceSchemaGenerator.caskServiceSchemaName(versionedType),
+            "1.0.1",
+         "namespace vyne.casks\nservice OrderWindowSummaryCaskService {}"))
+      val sources = taxiSchema.sources.map { ParsedSource(it) } + caskServiceSource
+      whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
 
       // When
       serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
       serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
 
       // Then
-      verify(schemaStoreClient, times(0)).submitSchema(any(), any(), any())
+      verify(schemaStoreClient, times(0)).submitSchemas(any())
    }
 
 }
