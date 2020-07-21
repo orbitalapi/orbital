@@ -7,11 +7,11 @@ object CoinbaseJsonOrderSchema {
 type alias Price as Decimal
 type alias Symbol as String
 type OrderWindowSummary {
-    symbol : Symbol by xpath("/Symbol")
-    open : Price by xpath("/Open")
+    symbol : Symbol by jsonPath("/Symbol")
+    open : Price by jsonPath("/Open")
     // Note, this is intentionally wrong, so we can redefine it in v2
-    close : Price by xpath("/High")
-    orderDate: Date by xpath("/Date")
+    close : Price by jsonPath("/High")
+    orderDate: Date by jsonPath("/Date")
 }
 type OrderWindowSummaryCsv {
     orderDate : Date by column(1)
@@ -27,12 +27,12 @@ type OrderWindowSummaryCsv {
       type alias Symbol as String
       type alias OrderCount as Int
       type OrderWindowSummary {
-          symbol : Symbol by xpath("/Symbol")
-          open : Price by xpath("/Open")
+          symbol : Symbol
+          open : Price
           // Note, this is intentionally wrong, so we can redefine it in v2
-          close : Price by xpath("/High")
-          orderDate: Date by xpath("/Date")
-          orderCount : OrderCount by xpath("/orderCount")
+          close : Price by jsonPath("/High")
+          orderDate: Date by jsonPath("/Date")
+          orderCount : OrderCount
       }
    """.trimIndent()
    val schemaV2 = TaxiSchema.from(sourceV2, "Coinbase", "0.2.0")
