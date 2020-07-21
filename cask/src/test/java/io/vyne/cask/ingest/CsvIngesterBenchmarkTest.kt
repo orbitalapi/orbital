@@ -26,16 +26,10 @@ import org.junit.rules.TemporaryFolder
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
-import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStream
 import java.math.BigDecimal
 import java.nio.file.Paths
-import java.sql.Time
-import java.text.DateFormat
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 class CsvIngesterBenchmarkTest {
 
@@ -186,30 +180,5 @@ class CsvIngesterBenchmarkTest {
 
       ingester.destroy()
       FileUtils.forceDeleteOnExit(folder.root)// this was failing on windows
-   }
-
-   @Test
-   fun canIngestWithTimeType() {
-      val source = """Entity,Time
-1,11:11:11
-2,23:11:44
-"""
-      val schema = CoinbaseOrderSchema.schemaTimeTest
-      val timeType = schema.versionedType("TimeTest".fqn())
-      val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-      val pipelineSource = CsvStreamSource(input, timeType, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(timeType, TypeDbWrapper(timeType, schema, pipelineSource.cachePath, null), pipelineSource)
-
-      ingester = Ingester(jdbcTemplate, pipeline)
-      ingester.destroy()
-      ingester.initialize()
-      ingester.ingest().collectList().block()
-
-      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
-      result.first()["entry"].should.equal("1")
-      (result.first()["time"] as Time).toString().should.equal("11:11:11")
-
-      ingester.destroy()
-      FileUtils.cleanDirectory(folder.root)
    }
 }
