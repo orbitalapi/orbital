@@ -44,8 +44,8 @@ feign:
             readTimeout: 5000
 
 cask:
-   maxTextMessageBufferSize: 1048576 # 1024 * 1024
-   maxBinaryMessageBufferSize: 1048576 # 1024 * 1024
+   maxTextMessageBufferSize: 67108864 # 1024 * 1024 * 64
+   maxBinaryMessageBufferSize: 67108864 # 1024 * 1024 * 64
 
 # Actuators + prometheus metrics configuration
 management:
