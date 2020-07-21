@@ -27,12 +27,12 @@ type OrderWindowSummaryCsv {
       type alias Symbol as String
       type alias OrderCount as Int
       type OrderWindowSummary {
-          symbol : Symbol
-          open : Price
+          symbol : Symbol by jsonPath("/Symbol")
+          open : Price by jsonPath("/Open")
           // Note, this is intentionally wrong, so we can redefine it in v2
           close : Price by jsonPath("/High")
           orderDate: Date by jsonPath("/Date")
-          orderCount : OrderCount
+          orderCount : OrderCount by jsonPath("/orderCount")
       }
    """.trimIndent()
    val schemaV2 = TaxiSchema.from(sourceV2, "Coinbase", "0.2.0")
