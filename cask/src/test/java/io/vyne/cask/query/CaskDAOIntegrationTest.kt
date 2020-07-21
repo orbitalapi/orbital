@@ -104,9 +104,9 @@ class CaskDAOIntegrationTest {
       // assert
       val caskConfigs: MutableList<CaskConfig> = caskDao.findAllCaskConfigs()
       caskConfigs.size.should.be.equal(1)
-      caskConfigs[0].tableName.should.equal("rderWindowSummary_f1b588_568054")
+      caskConfigs[0].tableName.should.equal("rderWindowSummary_f1b588_6cc56e")
       caskConfigs[0].qualifiedTypeName.should.equal("OrderWindowSummary")
-      caskConfigs[0].versionHash.should.equal("568054")
+      caskConfigs[0].versionHash.should.equal("6cc56e")
       caskConfigs[0].sourceSchemaIds.should.contain.elements("Coinbase:0.1.0")
       caskConfigs[0].sources.should.contain.elements(CoinbaseJsonOrderSchema.sourceV1)
       caskConfigs[0].deltaAgainstTableName.should.be.`null`

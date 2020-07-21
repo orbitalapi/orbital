@@ -15,7 +15,7 @@ object PipelineTestUtils {
       val source = """
 
          type PersonLoggedOnEvent {
-            userId : UserId as String by xpath("/userId")
+            userId : UserId as String by jsonPath("/userId")
          }
          type alias Username as String
 
