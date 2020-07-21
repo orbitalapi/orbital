@@ -3,6 +3,7 @@ package io.vyne.cask.ddl
 import de.bytefish.pgbulkinsert.pgsql.constants.DataType
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.VersionedSource
+import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.timed
 import io.vyne.cask.types.allFields
 import io.vyne.schemas.Schema
@@ -91,7 +92,6 @@ data class TableMetadata(
         | values ( ? , ? , ?, ?, ?, ?, ?, ? )
     """.trimMargin()
 
-
    fun executeInsert(template: JdbcTemplate) {
       template.update { connection ->
          connection.prepareStatement(dml).apply {
@@ -121,6 +121,9 @@ fun VersionedType.caskRecordTable(): String {
 }
 
 class PostgresDdlGenerator {
+   private val _primaryKey = "PrimaryKey"
+   private val _indexed = "Indexed"
+
    companion object {
       private const val POSTGRES_MAX_NAME_LENGTH = 31
       fun tableName(versionedType: VersionedType): String {
@@ -138,6 +141,25 @@ class PostgresDdlGenerator {
 
    fun generateDrop(versionedType: VersionedType): String {
       return "DROP TABLE IF EXISTS ${tableName(versionedType)};"
+   }
+
+   fun generateUpsertDml(versionedType: VersionedType, instance: InstanceAttributeSet): String {
+      val tableName = tableName(versionedType)
+      val fields = versionedType.allFields().sortedBy { it.name }
+      val annotations = (versionedType.taxiType as ObjectType).definition?.fields
+         ?.filter { it.annotations.any { a -> a.name == _primaryKey } }
+      val diff = fields.minus(annotations ?: emptyList()).map { it }
+
+      return """INSERT INTO $tableName ( ${fields.joinToString(", ") { "\"${it.name}\"" }} )
+         | VALUES ( ${fields.joinToString(", ") { generateValueForField(it, instance) }} )
+         | ON CONFLICT ( ${annotations?.joinToString(", ") { "\"${it.name}\"" }} )
+         | ${
+      if (diff.isNotEmpty()) {
+         """DO UPDATE SET ${diff.joinToString(", ") { "\"${it.name}\" = ${generateValueForField(it, instance)}" }}"""
+      } else {
+         """DO NOTHING"""
+      }}
+      """.trimMargin()
    }
 
    fun generateDdl(versionedType: VersionedType, schema: Schema, cachePath: Path?, typeMigration: TypeMigration?): TableGenerationStatement {
@@ -165,7 +187,9 @@ class PostgresDdlGenerator {
    private fun generateObjectDdl(type: ObjectType, schema: Schema, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
       val columns = fields.map { generateColumnForField(it) }
       val tableName = tableName(versionedType)
-      val ddl = generateCaskTableDdl(versionedType, fields) + generateTableIndexesDdl(tableName, fields)
+      val ddl = """${generateCaskTableDdl(versionedType, fields)}
+         |${generateTableIndexesDdl(tableName, fields)}
+      """.trimMargin()
       val metadata = TableMetadata(
          tableName,
          type.qualifiedName,
@@ -185,9 +209,10 @@ class PostgresDdlGenerator {
 
    fun generateTableIndexesDdl(tableName: String, fields: List<Field>): String {
       val result = StringBuilder()
-      val indexedColumns = fields.filter { col -> col.annotations.any { it.name == "Indexed" } }
+      // TODO We can not have a field declared as both a PK and a unique constraint. Perhaps we should handle that on taxi side too.
+      val indexedColumns = fields.filter { col -> col.annotations.any { it.name == _indexed } && !col.annotations.any { it.name == _primaryKey} }
       indexedColumns.forEach {
-         result.append("\nCREATE INDEX IF NOT EXISTS idx_${tableName}_${it.name} ON ${tableName}(\"${it.name}\");")
+         result.append("""CREATE INDEX IF NOT EXISTS idx_${tableName}_${it.name} ON ${tableName}("${it.name}");""")
       }
       return result.toString()
    }
@@ -196,8 +221,9 @@ class PostgresDdlGenerator {
       val tableName = tableName(versionedType)
       val columns = fields.map { generateColumnForField(it) }
       val fieldDef = columns.joinToString(",\n") { it.sql }
+
       return """CREATE TABLE IF NOT EXISTS $tableName (
-$fieldDef);""".trim()
+         |$fieldDef${generatePrimaryKey(fields, tableName)});""".trimMargin()
    }
 
    fun generateColumnForField(field: Field): PostgresColumn {
@@ -217,6 +243,15 @@ $fieldDef);""".trim()
       }
    }
 
+   private fun generatePrimaryKey(fields: List<Field>, tableName: String): String {
+      val pks = fields.filter { it.annotations.any { a -> a.name == _primaryKey } }
+
+      if (pks.isNotEmpty()) {
+         return """,
+            |CONSTRAINT ${tableName}_pkey PRIMARY KEY ( ${pks.joinToString(", ") { """"${it.name}"""" }} )""".trimMargin()
+      }
+      return ""
+   }
 
    private fun generateColumnForField(field: Field, primitiveType: PrimitiveType): PostgresColumn {
       val columnName = toColumnName(field)
@@ -230,12 +265,7 @@ $fieldDef);""".trim()
          PrimitiveType.LOCAL_DATE -> ScalarTypes.date() to { row, v -> row.setDate(columnName, v as LocalDate) }
          PrimitiveType.DATE_TIME -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, v as LocalDateTime) }
          PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC")))}
-         // TODO TIME db column type
-         PrimitiveType.TIME -> ScalarTypes.time() to { row, v ->
-            run {
-               val time = (v as LocalTime)
-               row.setValue(columnName, DataType.Time, time)
-            }
+         PrimitiveType.TIME -> ScalarTypes.time() to { row, v -> row.setValue(columnName, DataType.Time, (v as LocalTime))
          }
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
@@ -243,6 +273,22 @@ $fieldDef);""".trim()
       val nullable = "" //if (field.nullable) "" else " NOT NULL"
 
       return PostgresColumn(columnName, field, "$columnName $postgresType$nullable", primitiveType, writer)
+   }
+
+   private fun generateValueForField(field: Field, instance: InstanceAttributeSet): String {
+      return when (val primitiveType = getPrimitiveType(field, field.type)) {
+         PrimitiveType.STRING,
+         PrimitiveType.BOOLEAN,
+         PrimitiveType.LOCAL_DATE,
+         PrimitiveType.DATE_TIME,
+         PrimitiveType.INSTANT,
+         PrimitiveType.TIME,
+         PrimitiveType.ANY -> "'${instance.attributes.getValue(field.name).value.toString()}'"
+         PrimitiveType.DECIMAL,
+         PrimitiveType.DOUBLE,
+         PrimitiveType.INTEGER -> instance.attributes.getValue(field.name).value.toString()
+         else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
+      }
    }
 }
 

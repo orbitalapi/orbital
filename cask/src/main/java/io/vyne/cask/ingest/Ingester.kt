@@ -6,6 +6,7 @@ import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.timed
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
+import lang.taxi.types.ObjectType
 import org.postgresql.PGConnection
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
@@ -69,13 +70,17 @@ class Ingester(
          }
          .doOnEach { signal ->
             signal.get()?.let { instance ->
-               writer.startRow { rowWriter ->
-                  ingestionStream.dbWrapper.write(rowWriter, instance)
+               if ((instance.type.taxiType as ObjectType).definition?.fields
+                     ?.flatMap { it -> it.annotations }
+                     ?.any { a -> a.name == "PrimaryKey" }!!) {
+                  ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+               } else {
+                  writer.startRow { rowWriter ->
+                     ingestionStream.dbWrapper.write(rowWriter, instance)
+                  }
                }
             }
-
          }
-
    }
 
    fun getRowCount(): Int {
