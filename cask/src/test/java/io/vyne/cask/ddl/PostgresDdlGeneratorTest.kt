@@ -15,6 +15,34 @@ class PostgresDdlGeneratorTest {
     fun generatesCreateTable() {
         val (schema, taxi) = schema("""
 type Person {
+    firstName : FirstName as String
+    @Something
+    age : Int
+    alive: Boolean
+    spouseName : Name? as String
+    @Something
+    dateOfBirth: Date
+    timestamp: Instant
+    time: Time
+}""".trim())
+        val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
+        statement.ddlStatement.trim().should.equal("""
+CREATE TABLE IF NOT EXISTS Person_201831 (
+"firstName" VARCHAR(255),
+"age" INTEGER,
+"alive" BOOLEAN,
+"spouseName" VARCHAR(255),
+"dateOfBirth" DATE,
+"timestamp" TIMESTAMP,
+"time" TIME);
+""".trim())
+    }
+
+   @Test
+   fun generatesCreateTableWithPk() {
+      val (schema, taxi) = schema("""
+type Person {
+    @PrimaryKey
     @Indexed
     firstName : FirstName as String
     @Something
@@ -27,19 +55,19 @@ type Person {
     timestamp: Instant
     time: Time
 }""".trim())
-        val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
-        statement.ddlStatement.should.equal("""
-CREATE TABLE IF NOT EXISTS Person_7c8107 (
+      val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
+      statement.ddlStatement.should.equal("""
+CREATE TABLE IF NOT EXISTS Person_47dd1f (
 "firstName" VARCHAR(255),
 "age" INTEGER,
 "alive" BOOLEAN,
 "spouseName" VARCHAR(255),
 "dateOfBirth" DATE,
 "timestamp" TIMESTAMP,
-"time" TIME);
-CREATE INDEX IF NOT EXISTS idx_Person_7c8107_firstName ON Person_7c8107("firstName");
-CREATE INDEX IF NOT EXISTS idx_Person_7c8107_dateOfBirth ON Person_7c8107("dateOfBirth");""".trim())
-    }
+"time" TIME,
+CONSTRAINT Person_47dd1f_pkey PRIMARY KEY ( "firstName" ));
+CREATE INDEX IF NOT EXISTS idx_Person_47dd1f_dateOfBirth ON Person_47dd1f("dateOfBirth");""".trim())
+   }
 
     @Test
     fun generatesPrimitivesAsColumns() {

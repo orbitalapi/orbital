@@ -6,6 +6,7 @@ import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import lang.taxi.types.Field
+import org.springframework.jdbc.core.JdbcTemplate
 import java.nio.file.Path
 
 data class TypeMigration(
@@ -22,6 +23,11 @@ class TypeDbWrapper(val type: VersionedType, schema: Schema, cachePath: Path?, t
         }
 
     }
+
+   fun upsert(template: JdbcTemplate, instance: InstanceAttributeSet) {
+      val upsertRowStatement: String = postgresDdlGenerator.generateUpsertDml(type, instance)
+      template.execute(upsertRowStatement)
+   }
 
     private val postgresDdlGenerator = PostgresDdlGenerator()
     val dropTableStatement: String = postgresDdlGenerator.generateDrop(type)
