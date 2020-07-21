@@ -1,0 +1,60 @@
+[
+   {
+      "name": "test-pipeline-3",
+      "input": {
+         "type": "imdb.Actor",
+         "transport": {
+            "topic": "pipeline-input-avro",
+            "targetType": "imdb.Actor",
+            "type": "%s",
+            "direction": "INPUT",
+            "props": {
+               "group.id": "vyne-pipeline-group",
+               "bootstrap.servers": "kafka:9092,",
+               "heartbeat.interval.ms": "3000",
+               "session.timeout.ms": "10000",
+               "auto.offset.reset": "earliest"
+            }
+         }
+      },
+      "output": {
+         "type": "imdb.Actor",
+         "transport": {
+            "props": {
+            },
+            "targetType": "imdb.Actor",
+            "type": "%s",
+            "direction": "OUTPUT"
+         }
+      }
+   },
+   {
+      "name": "test-pipeline-4",
+      "input": {
+         "type": "imdb.Actor",
+         "transport": {
+            "topic": "pipeline-input-avro",
+            "targetType": "imdb.Actor",
+            "type": "%s",
+            "direction": "INPUT",
+            "props": {
+               "group.id": "vyne-pipeline-group",
+               "bootstrap.servers": "kafka:9092,",
+               "heartbeat.interval.ms": "3000",
+               "session.timeout.ms": "10000",
+               "auto.offset.reset": "earliest"
+            }
+         }
+      },
+      "output": {
+         "type": "imdb.Actor",
+         "transport": {
+            "props": {
+            },
+            "targetType": "imdb.Actor",
+            "type": "%s",
+            "direction": "OUTPUT"
+         }
+      }
+   }
+]

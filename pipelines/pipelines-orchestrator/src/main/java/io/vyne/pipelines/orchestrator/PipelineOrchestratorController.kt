@@ -2,7 +2,7 @@ package io.vyne.pipelines.orchestrator
 
 import io.swagger.annotations.*
 import io.vyne.pipelines.orchestrator.pipelines.InvalidPipelineDescriptionException
-import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
+import io.vyne.pipelines.orchestrator.pipelines.PipelinesService
 import io.vyne.utils.log
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.RequestBody
@@ -14,8 +14,7 @@ import org.springframework.web.server.ResponseStatusException
 @Api(tags = ["Pipeline Orchestrator Controller"], description = "Manage pipelines and runners")
 
 class PipelineOrchestratorController(
-   val pipelineManager: PipelinesManager,
-   val pipelineDeserialiser: PipelineDeserialiser) : PipelinesOrchestratorApi {
+   val pipelinesService: PipelinesService) : PipelinesOrchestratorApi {
 
    @ApiOperation("Submit a pipeline")
    @ApiImplicitParams( ApiImplicitParam(value = "pipelineDescription", paramType = "body", dataType = "Pipeline"))
@@ -25,10 +24,7 @@ class PipelineOrchestratorController(
       log().info("Received submitted pipeline: \n$pipelineDescription")
 
       return try {
-         // Deserialise the full pipeline. We only need the name for now. But it allows us to validate the json and in the future, perform some validations
-         val pipeline = pipelineDeserialiser.deserialise(pipelineDescription)
-
-         pipelineManager.addPipeline(PipelineReference(pipeline.name, pipelineDescription))
+         pipelinesService.initialisePipeline(pipelineDescription)
       } catch (e: InvalidPipelineDescriptionException) {
          throw BadRequestException("Invalid pipeline description", e)
       } catch (e: PipelineAlreadyExistsException) {
@@ -42,7 +38,7 @@ class PipelineOrchestratorController(
    override fun getRunners(): List<PipelineRunnerInstance> {
 
       return try {
-         pipelineManager.runnerInstances.map { PipelineRunnerInstance(it.instanceId, it.uri.toString()) }
+         pipelinesService.runners()
       } catch (e: Exception) {
 
          throw BadRequestException("Error while getting instances", e)
@@ -53,7 +49,7 @@ class PipelineOrchestratorController(
    override fun getPipelines(): List<PipelineStateSnapshot> {
 
       return try {
-         pipelineManager.pipelines.map { it.value }
+         pipelinesService.pipelines()
       } catch (e: Exception) {
          throw BadRequestException("Error while getting pipelines", e)
       }
@@ -61,14 +57,4 @@ class PipelineOrchestratorController(
 
 }
 
-class BadRequestException(message: String, e: Exception? = null) : ResponseStatusException(HttpStatus.BAD_REQUEST, message, e) {
-
-   companion object {
-
-      fun throwIf(condition: Boolean, message: String) {
-         if (condition) {
-            throw BadRequestException(message)
-         }
-      }
-   }
-}
+class BadRequestException(message: String, e: Exception? = null) : ResponseStatusException(HttpStatus.BAD_REQUEST, message, e)

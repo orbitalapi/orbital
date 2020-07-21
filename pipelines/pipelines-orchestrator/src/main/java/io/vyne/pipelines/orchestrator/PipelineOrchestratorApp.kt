@@ -4,10 +4,12 @@ import com.fasterxml.classmate.TypeResolver
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.Pipeline
+import io.vyne.pipelines.orchestrator.configuration.PipelineConfigurationProperties
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.annotation.Bean
@@ -29,6 +31,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2
 @EnableFeignClients(basePackageClasses = [PipelineRunnerApi::class])
 @EnableScheduling
 @EnableSwagger2
+@EnableConfigurationProperties(PipelineConfigurationProperties::class)
 class PipelineOrchestratorApp {
    companion object {
       @JvmStatic
