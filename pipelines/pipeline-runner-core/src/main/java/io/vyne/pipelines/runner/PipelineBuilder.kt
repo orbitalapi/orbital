@@ -2,6 +2,7 @@ package io.vyne.pipelines.runner
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.Vyne
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
@@ -23,9 +24,10 @@ class PipelineBuilder(
    private val objectMapper: ObjectMapper = jacksonObjectMapper()
 ) {
 
-   private val vyne = vyneFactory.createVyne()
 
    fun build(pipeline: Pipeline): PipelineInstance {
+      val vyne = vyneFactory.createVyne()
+
       var observerProvider = observerProvider.pipelineObserver(pipeline, null)
       var observer = observerProvider("Preparing pipeline")
       observer.info { "Building pipeline ${pipeline.name} [Input = ${pipeline.input.transport.type}, output = ${pipeline.output.transport.type}]" }
@@ -43,8 +45,8 @@ class PipelineBuilder(
          .name("pipeline_ingestion_request")
          .tag("pipeline_name", pipeline.name)
          .metrics()
-         .flatMap { ingest(it, inputType, outputType, pipeline) }
-         .flatMap { transform(it) }
+         .flatMap { ingest(it, inputType, outputType, pipeline, vyne) }
+         .flatMap { transform(it, vyne) }
          .flatMap { publish(it, output) }
 
       return PipelineInstance(
@@ -56,7 +58,7 @@ class PipelineBuilder(
       )
    }
 
-   private fun ingest(message: PipelineInputMessage, inputType: Type, outputType: Type, pipeline: Pipeline): Mono<Pair<PipelineStageObserverProvider, PipelineMessage>> {
+   private fun ingest(message: PipelineInputMessage, inputType: Type, outputType: Type, pipeline: Pipeline, vyne: Vyne): Mono<Pair<PipelineStageObserverProvider, PipelineMessage>> {
       val stageObserverProvider: PipelineStageObserverProvider = observerProvider.pipelineObserver(
          pipeline,
          message
@@ -78,7 +80,7 @@ class PipelineBuilder(
       }
    }
 
-   private fun transform(pipelineInput: Pair<PipelineStageObserverProvider, PipelineMessage>): Mono<Pair<PipelineStageObserverProvider, PipelineMessage>> {
+   private fun transform(pipelineInput: Pair<PipelineStageObserverProvider, PipelineMessage>, vyne: Vyne): Mono<Pair<PipelineStageObserverProvider, PipelineMessage>> {
       val (observerProvider, message) = pipelineInput
       val logger = observerProvider("Transform")
 
@@ -88,7 +90,7 @@ class PipelineBuilder(
          // Transform if needed
          var pipelineMessage = pipelineInput.second
          when (pipelineMessage) {
-            is TransformablePipelineMessage -> pipelineMessage.transformedInstance = vyneTransformation(pipelineMessage, pipelineMessage.outputType)
+            is TransformablePipelineMessage -> pipelineMessage.transformedInstance = vyneTransformation(pipelineMessage, pipelineMessage.outputType, vyne)
             is RawPipelineMessage -> {
             }
          }
@@ -98,7 +100,7 @@ class PipelineBuilder(
       }
    }
 
-   private fun vyneTransformation(message: TransformablePipelineMessage, outputType: Type): TypedInstance {
+   private fun vyneTransformation(message: TransformablePipelineMessage, outputType: Type, vyne: Vyne): TypedInstance {
       // TODO : The idea here is that metadata may provide hints as to whether
       // or not we want to deserailize the message.
       // Note, as I type this, that may be redundant, as the input feed
