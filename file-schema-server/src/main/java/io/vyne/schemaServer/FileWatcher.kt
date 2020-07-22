@@ -3,19 +3,12 @@ package io.vyne.schemaServer
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
-import org.springframework.scheduling.annotation.AsyncResult
 import org.springframework.stereotype.Component
 import java.nio.file.*
-import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.atomic.AtomicReferenceArray
-import java.util.concurrent.locks.Lock
-import java.util.concurrent.locks.ReentrantLock
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
-import kotlin.concurrent.withLock
 
 
 @Component
@@ -29,13 +22,36 @@ class FileWatcherInitializer(val watcher: FileWatcher) {
 }
 
 @Component
-class FileWatcher(@Value("\${taxi.schema-local-storage}") val schemaLocalStorage: String?,
-                  val compilerService: CompilerService,
-                  val excludedDirectoryNames: List<String> = FileWatcher.excludedDirectoryNames) {
+class FileWatcher(@Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String?,
+                  @Value("\${taxi.schema-recompile-interval-seconds:3}") private val schemaRecompileIntervalSeconds: Long,
+                  private val compilerService: CompilerService,
+                  private val excludedDirectoryNames: List<String> = FileWatcher.excludedDirectoryNames) {
+
+   @Volatile
+   var recompile: Boolean = false
+   val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
+
+   @PostConstruct
+   fun init() {
+      log().info("taxi.schema-local-storage=${schemaLocalStorage} taxi.schema-recompile-interval-seconds=${schemaRecompileIntervalSeconds}")
+      // scheduling recompilations at fixed interval
+      // this is useful to batch multiple taxi file updates into a single update
+      scheduler.scheduleAtFixedRate({
+         if (recompile) {
+            recompile = false
+            try {
+               compilerService.recompile()
+            } catch (exception: Exception) {
+               log().error("Exception in compiler service:", exception)
+            }
+         }
+      }, 0, schemaRecompileIntervalSeconds, TimeUnit.SECONDS) // TODO move 3 sec to config
+   }
 
    @PreDestroy
    fun destroy() {
       unregisterKeys()
+      scheduler.shutdown()
    }
 
    companion object {
@@ -103,11 +119,7 @@ class FileWatcher(@Value("\${taxi.schema-local-storage}") val schemaLocalStorage
 
             if (events.isNotEmpty()) {
                log().info("File change detected ${events.joinToString { "${it.kind()} ${it.context()}" }}")
-               try {
-                  compilerService.recompile()
-               } catch (exception: Exception) {
-                  log().error("Exception in compiler service:", exception)
-               }
+               recompile = true
             }
             key.reset()
          }

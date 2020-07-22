@@ -175,7 +175,34 @@ Date,Symbol,Open,High,Low,Close
          .bodyToMono(String::class.java)
          .block()
 
-         response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+      response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+   }
+
+   @Test
+   fun canIngestLargeContentViaRestEndpoint() {
+      var caskRequest = """Date,Symbol,Open,High,Low,Close"""
+      for(i in 1..10000){
+         caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
+      }
+      caskRequest.length.should.be.above(20000)
+
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      val response = client
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+
+      response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 10000 records"}""")
    }
 
    @Test

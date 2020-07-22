@@ -37,14 +37,7 @@ type OrderWindowSummary {
     close : Price by column("Close")
 }""".trimIndent()
 
-   private val timeTypeTest = """
-type TimeTest {
-   entry: String by column(1)
-   time: Time by column(2)
-}""".trimIndent()
-
    val schemaV1 = TaxiSchema.from(sourceV1, "Coinbase", "0.1.0")
    val schemaV2 = TaxiSchema.from(sourceV2, "Coinbase", "0.2.0")
    val schemaV3 = TaxiSchema.from(sourceV3, "Coinbase", "0.3.0")
-   val schemaTimeTest = TaxiSchema.from(timeTypeTest, "Test", "0.1.0")
 }

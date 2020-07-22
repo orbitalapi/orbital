@@ -5,8 +5,13 @@ import com.hazelcast.config.Config
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.instance.HazelcastInstanceFactory
+import com.nhaarman.mockito_kotlin.isA
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.verify
 import com.winterbe.expekt.should
+import io.vyne.ParsedSource
+import io.vyne.VersionedSource
+import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.junit.After
 import org.junit.Before
@@ -81,20 +86,37 @@ class HazelcastSchemaStoreClientTest {
    @Test
    fun `when member schema is updated the cluster schema should update`() {
       // prepare
-      val eventPublisher: ApplicationEventPublisher = mock()
-      val client1 = HazelcastSchemaStoreClient(instance1, eventPublisher = eventPublisher)
-      val client2 = HazelcastSchemaStoreClient(instance2, eventPublisher = eventPublisher)
+      val eventPublisher1: ApplicationEventPublisher = mock()
+      val eventPublisher2: ApplicationEventPublisher = mock()
+      val client1 = HazelcastSchemaStoreClient(instance1, eventPublisher = eventPublisher1)
+      val client2 = HazelcastSchemaStoreClient(instance2, eventPublisher = eventPublisher2)
 
-      client1.submitSchema("order.taxi", "1.0.0", "type Order{}")
+      val source1 = VersionedSource("order.taxi", "1.0.0", "type Order{}")
+      client1.submitSchema(source1)
       waitForSchema(client2, "Client2", listOf("order.taxi:1.0.0"))
 
       // act
-      client1.submitSchema("order.taxi", "2.0.0", "type Order{id: String}")
+      val source2 = VersionedSource("order.taxi", "2.0.0", "type Order{id: String}")
+      client1.submitSchema(source2)
 
       // assert
       waitForSchema(client2, "Client2", listOf("order.taxi:2.0.0"))
-      client1.schemaSet().size().should.be.equal(1)
-      client1.schemaSet().sources[0].source.content.should.be.equal("type Order{id: String}")
+      val schemaSet = client1.schemaSet()
+      schemaSet.size().should.be.equal(1)
+      schemaSet.sources[0].source.content.should.be.equal("type Order{id: String}")
+
+      // assert local schemaSet changed events are pushed
+      verify(eventPublisher1).publishEvent(SchemaSetChangedEvent(
+         null, SchemaSet.fromParsed(listOf(), 1))
+      )
+      verify(eventPublisher1).publishEvent(SchemaSetChangedEvent(
+         SchemaSet.fromParsed(listOf(), 1),
+         SchemaSet.fromParsed(listOf(ParsedSource(source1)), 2))
+      )
+      verify(eventPublisher1).publishEvent(SchemaSetChangedEvent(
+         SchemaSet.fromParsed(listOf(ParsedSource(source1)), 2),
+         SchemaSet.fromParsed(listOf(ParsedSource(source2)), 3))
+      )
    }
 
 }

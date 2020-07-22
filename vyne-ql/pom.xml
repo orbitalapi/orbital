@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.5.0</version>
+      <version>0.5.1</version>
    </parent>
    <packaging>pom</packaging>
    <modules>

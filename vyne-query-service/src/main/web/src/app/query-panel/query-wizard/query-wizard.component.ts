@@ -43,6 +43,7 @@ export class QueryWizardComponent implements OnInit {
   fileFacts: FileFactForm[] = [];
   forms: FactForm[] = [];
   facts: Fact[] = [];
+  targetTypeNames = this.getTargetTypeNames();
 
   // fakeFacts:Fact[] = [];
   private subscribedDynamicForms: TdDynamicFormsComponent[] = [];
@@ -50,7 +51,7 @@ export class QueryWizardComponent implements OnInit {
   lastQueryResult: QueryResult | QueryFailure;
   addingNewFact = false;
 
-  get targetTypeNames(): string[] {
+  getTargetTypeNames(): string[] {
     if (!this.targetTypes) {
       return [];
     }

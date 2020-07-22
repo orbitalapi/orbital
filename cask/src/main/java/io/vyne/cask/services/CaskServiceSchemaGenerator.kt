@@ -5,7 +5,7 @@ import io.vyne.cask.ingest.DataSourceUpgradedEvent
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.query.OperationGenerator
 import io.vyne.cask.types.allFields
-import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class CaskServiceSchemaGenerator(
-   private val schemaProvider: SchemaProvider,
+   private val schemaStore: SchemaStore,
    private val caskServiceSchemaWriter: CaskServiceSchemaWriter,
    private val operationGenerators: List<OperationGenerator>,
    @Value("\${spring.application.name}") private val appName: String = "cask") {
@@ -32,6 +32,12 @@ class CaskServiceSchemaGenerator(
    @EventListener
    fun onIngesterInitialised(event: IngestionInitialisedEvent) {
       log().info("Received Ingestion Initialised event ${event.type}")
+
+      if (alreadyExists(event.type)) {
+         log().info("Cask service ${caskServiceSchemaName(event.type)} already exists ")
+         return
+      }
+
       generateAndPublishService(event.type)
    }
 
@@ -53,13 +59,21 @@ class CaskServiceSchemaGenerator(
    }
 
    fun generateAndPublishService(versionedType: VersionedType, typeMigration: TypeMigration? = null) {
-      val serviceName = fullyQualifiedCaskServiceName(versionedType.taxiType)
-      if (schemaProvider.schema().hasService(serviceName)) {
-         log().info("Service ${serviceName} already exists!")
-         return
-      }
-      val caskSchema = generateSchema(versionedType, typeMigration)
-      caskServiceSchemaWriter.write(caskSchema, versionedType)
+      generateAndPublishServices(listOf(versionedType))
+   }
+
+   fun alreadyExists(versionedType: VersionedType): Boolean {
+      val caskSchemaName = caskServiceSchemaName(versionedType)
+      return schemaStore.schemaSet().allSources.any { it.name == caskSchemaName }
+   }
+
+   fun generateAndPublishServices(versionedTypes: List<VersionedType>) {
+      val services = versionedTypes.map {
+         val schemaName = caskServiceSchemaName(it)
+         val taxiDocument = generateSchema(it, null)
+         schemaName to taxiDocument
+      }.toMap()
+      caskServiceSchemaWriter.write(services)
    }
 
    private fun generateCaskService(fields: List<Field>, type: Type) = Service(
@@ -77,7 +91,9 @@ class CaskServiceSchemaGenerator(
       const val CaskNamespacePrefix = "vyne.casks."
       private fun fullyQualifiedCaskServiceName(type: Type) = "$CaskNamespacePrefix${type.toQualifiedName()}CaskService"
       const val CaskApiRootPath = "/api/cask/"
-      private fun operationReturnTypeQualifiedName(type: Type) = "$CaskNamespacePrefix${type.toQualifiedName().typeName}List"
+      fun caskServiceSchemaName(versionedType: VersionedType):String {
+         return "$CaskNamespacePrefix${versionedType.fullyQualifiedName}"
+      }
    }
 }
 

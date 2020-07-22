@@ -52,6 +52,15 @@ class SimpleTaxiSchemaProvider(val source: String) : SchemaSourceProvider {
 
 }
 
+class VersionedSchemaProvider(private val sources: List<VersionedSource>) : SchemaSourceProvider {
+   override fun schemaStrings(): List<String> {
+      return sources.map { it.content }
+   }
+   override fun schemas(): List<Schema> {
+      return listOf(TaxiSchema.from(sources))
+   }
+}
+
 class LocalTaxiSchemaProvider(val models: List<Class<*>>,
                               val services: List<Class<*>>,
                               val taxiGenerator: TaxiGenerator = TaxiGenerator(),

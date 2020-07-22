@@ -46,7 +46,7 @@ private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventP
    }
 
    override fun entryUpdated(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
-      log().info("SchemaSet has changed: ${event.value.toString()} - dispatching event")
+      log().info("SchemaSet has changed: (${event.oldValue} ==> ${event.value}) - dispatching event")
       eventPublisher.publishEvent(SchemaSetChangedEvent(event.oldValue, event.value))
 
    }
@@ -184,7 +184,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
          // Note: This should very rarely get called,
          // as we're actively rebuilding the schemaSet on invalidation now (whereas previously
          // we deferred that)
-         log().warn("SchemaSet was not present, so computing, however this shouldn't happen")
+         log().warn("${hazelcast.cluster.localMember.uuid} SchemaSet was not present, so computing, however this shouldn't happen")
          rebuildSchemaAndWriteToCache()
       }
 
@@ -195,7 +195,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
          when {
             existingSchemaSet != null && existingSchemaSet.id == schemaSetFromHazelcast.id -> existingSchemaSet
             else -> {
-               log().warn("Initializing local copy of schema from Hazelcast.  This is expensive, let's not do this too much")
+               log().warn("${hazelcast.cluster.localMember.uuid} Initializing local copy of schema from Hazelcast.  This is expensive, let's not do this too much")
                schemaSetFromHazelcast
             }
          }

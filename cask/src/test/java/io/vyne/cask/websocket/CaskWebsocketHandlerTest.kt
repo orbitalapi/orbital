@@ -186,7 +186,7 @@ class CaskWebsocketHandlerTest {
 
       StepVerifier
          .create(session.textOutput.take(1))
-         .expectNextMatches { json -> json.rejectedWithReason("Could not find xpath /Symbol in record") }
+         .expectNextMatches { json -> json.rejectedWithReason("Could not find json pointer /Symbol in record") }
          .verifyComplete()
    }
 
