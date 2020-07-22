@@ -18,14 +18,17 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.core.io.ClassPathResource
 import org.springframework.http.HttpRequest
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
+import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
+import org.springframework.web.reactive.config.WebFluxConfigurer
 import org.springframework.web.reactive.function.server.router
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping
 import org.springframework.web.reactive.socket.server.WebSocketService
@@ -62,6 +65,7 @@ class CaskApp {
       // This fix forces default timezone to be UTC
       // Alternatively we could provide -Duser.timezone=UTC at startup
    }
+
 
    @Bean
    fun handlerMapping(caskWebsocketHandler: CaskWebsocketHandler): HandlerMapping {
@@ -132,3 +136,14 @@ class CaskApp {
          })
    }
 }
+
+@Configuration
+ class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}")  val maxTextMessageBufferSize: Int) : WebFluxConfigurer {
+
+   override fun configureHttpMessageCodecs( configurer: ServerCodecConfigurer) {
+      configurer.defaultCodecs().maxInMemorySize(maxTextMessageBufferSize)
+   }
+}
+
+
+
