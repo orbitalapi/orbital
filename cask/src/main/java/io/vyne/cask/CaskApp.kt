@@ -1,5 +1,8 @@
 package io.vyne.cask
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.micrometer.core.aop.TimedAspect
 import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry
@@ -11,6 +14,7 @@ import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPat
 import io.vyne.cask.websocket.CaskWebsocketHandler
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.WebApplicationType
@@ -134,6 +138,14 @@ class CaskApp {
                } else config
             }
          })
+   }
+
+   @Bean
+   @Qualifier("ingesterMapper")
+   fun ingesterMapper(): ObjectMapper {
+      val mapper: ObjectMapper = jacksonObjectMapper()
+      mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+      return mapper
    }
 }
 

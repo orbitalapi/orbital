@@ -10,6 +10,7 @@ import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.websocket.CaskWebsocketRequest
 import io.vyne.utils.log
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.RestController
@@ -20,7 +21,7 @@ import java.io.InputStream
 @RestController
 class CaskRestController(private val caskService: CaskService,
                          private val applicationEventPublisher: ApplicationEventPublisher,
-                         private val objectMapper: ObjectMapper = jacksonObjectMapper()) : CaskApi {
+                         @Qualifier("ingesterMapper") private val mapper: ObjectMapper) : CaskApi {
 
    override fun ingestMessage(
       contentType: String,
@@ -33,7 +34,7 @@ class CaskRestController(private val caskService: CaskService,
       val requestOrError = caskService.resolveContentType(contentType)
          .flatMap { contentType ->
             caskService.resolveType(typeReference).map { versionedType ->
-               CaskWebsocketRequest.create(contentType, versionedType, objectMapper, queryParams)
+               CaskWebsocketRequest.create(contentType, versionedType, mapper, queryParams)
             }
          }
 

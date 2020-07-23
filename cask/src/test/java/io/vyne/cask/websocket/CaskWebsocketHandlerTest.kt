@@ -1,5 +1,7 @@
 package io.vyne.cask.websocket
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.nhaarman.mockito_kotlin.argumentCaptor
@@ -53,16 +55,19 @@ class CaskWebsocketHandlerTest {
    }
 
    private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester), caskDao)
+   private val mapper: ObjectMapper = jacksonObjectMapper()
+
 
    @Before()
    fun setUp() {
-      wsHandler = CaskWebsocketHandler(caskService, applicationEventPublisher)
+      mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+      wsHandler = CaskWebsocketHandler(caskService, applicationEventPublisher, mapper)
    }
 
    @Test
    fun closeWebsocketForUnknownContentType() {
       val session = MockWebSocketSession("/cask/xxx/OrderWindowSummary")
-      val wsHandler = CaskWebsocketHandler(caskService, applicationEventPublisher)
+      val wsHandler = CaskWebsocketHandler(caskService, applicationEventPublisher, mapper)
 
       wsHandler.handle(session)
 

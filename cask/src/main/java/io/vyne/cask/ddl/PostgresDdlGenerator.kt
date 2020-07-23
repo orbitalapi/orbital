@@ -258,8 +258,8 @@ class PostgresDdlGenerator {
       val p: Pair<String, RowWriter> = when (primitiveType) {
          PrimitiveType.STRING -> ScalarTypes.varchar() to { row, v -> row.setText(columnName, v.toString()) }
          PrimitiveType.ANY -> ScalarTypes.varchar() to { row, v -> row.setText(columnName, v.toString()) }
-         PrimitiveType.DECIMAL -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, v as BigDecimal) }
-         PrimitiveType.DOUBLE -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, v as BigDecimal) }
+         PrimitiveType.DECIMAL -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, positiveScaledBigDecimal(v as BigDecimal)) }
+         PrimitiveType.DOUBLE -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, positiveScaledBigDecimal(v as BigDecimal)) }
          PrimitiveType.INTEGER -> ScalarTypes.integer() to { row, v -> row.setInteger(columnName, v as Int) }
          PrimitiveType.BOOLEAN -> ScalarTypes.boolean() to { row, v -> row.setBoolean(columnName, v as Boolean) }
          PrimitiveType.LOCAL_DATE -> ScalarTypes.date() to { row, v -> row.setDate(columnName, v as LocalDate) }
@@ -273,6 +273,16 @@ class PostgresDdlGenerator {
       val nullable = "" //if (field.nullable) "" else " NOT NULL"
 
       return PostgresColumn(columnName, field, "$columnName $postgresType$nullable", primitiveType, writer)
+   }
+
+   // pgbulkinsert library does not handle BigDecimal's with negative scale.
+   // so this is a workaround for the issue till the library fixes it in future releases.
+   private fun positiveScaledBigDecimal(bigDecimal: BigDecimal): BigDecimal {
+      return if (bigDecimal.scale() < 0) {
+         BigDecimal(bigDecimal.toPlainString())
+      } else {
+         bigDecimal
+      }
    }
 
    private fun generateValueForField(field: Field, instance: InstanceAttributeSet): String {
