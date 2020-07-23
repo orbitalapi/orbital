@@ -81,6 +81,26 @@ class IngesterTests {
          ingester.ingest().collectList().block()
       } catch(e: Exception) {}
       // then
+      verify(connection, times(2)).close()
+   }
+
+   @Test
+   fun `Ingester closes underlying DB connection properly when pgbulkinsert throws`() {
+      //given
+      val input: Flux<InputStream> = Flux.just(File( Resources.getResource("Coinbase_BTCUSD_1h.csv").toURI()).inputStream())
+      val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      whenever(copyIn.flushCopy()).thenThrow(ArithmeticException("Negative Exponent"))
+      val pipeline = IngestionStream(
+         type,
+         TypeDbWrapper(type, schema, pipelineSource.cachePath, null),
+         pipelineSource)
+      val ingester = Ingester(jdbcTemplate, pipeline)
+
+      // when
+      try {
+         ingester.ingest().collectList().block()
+      } catch(e: Exception) {}
+      // then
       verify(connection, times(1)).close()
    }
 }
