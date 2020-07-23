@@ -1,6 +1,6 @@
 import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {Modifier, Schema, Type, TypedInstance} from '../../services/schema';
+import {EnumValues, Modifier, Schema, Type, TypedInstance} from '../../services/schema';
 import {ParsedTypeInstance, TypesService} from '../../services/types.service';
 import {map} from 'rxjs/operators';
 import {
@@ -43,7 +43,6 @@ export class QueryWizardComponent implements OnInit {
   fileFacts: FileFactForm[] = [];
   forms: FactForm[] = [];
   facts: Fact[] = [];
-  targetTypeNames = this.getTargetTypeNames();
 
   // fakeFacts:Fact[] = [];
   private subscribedDynamicForms: TdDynamicFormsComponent[] = [];
@@ -51,7 +50,7 @@ export class QueryWizardComponent implements OnInit {
   lastQueryResult: QueryResult | QueryFailure;
   addingNewFact = false;
 
-  getTargetTypeNames(): string[] {
+  get targetTypeNames(): string[] {
     if (!this.targetTypes) {
       return [];
     }
@@ -210,6 +209,7 @@ export class QueryWizardComponent implements OnInit {
   }
 
   private getElementsForType(type: Type, schema: Schema, prefix: string[] = [], fieldName: string = null): ITdDynamicElementConfig[] {
+
     if (type.isScalar) {
       // suspect this is a smell I'm doing something wrong.
       // If the original root type was scalar, when we won't have a prefix, so
@@ -242,12 +242,17 @@ export class QueryWizardComponent implements OnInit {
     // TODO : Aliases could be nested ... follow the chain
     let targetType = (type.aliasForType) ? type.aliasForType.fullyQualifiedName : type.name.fullyQualifiedName;
     if (type.modifiers.indexOf(Modifier.ENUM) !== -1) {
+
       return {
         type: TdDynamicElement.Select,
-        selections: type.enumValues
+        selections:  type.enumValues.map((enumValue: EnumValues) => {
+          return  {
+            label: `${enumValue.name} (${enumValue.value})`,
+            value: enumValue.value ? enumValue.value : enumValue.name
+          };
+        })
       };
     }
-
     // TODO : Quick Fix for the Demo.
     if (type.inheritsFrom && type.inheritsFrom.length > 0) {
       // Example:

@@ -90,13 +90,15 @@ export class VyneQueryViewerComponent implements OnInit {
       selectedLang = this.activeSnippet.displayLang;
     }
 
-
-    this.snippets = this.generators.map(generator => {
-      const retTypes = this._findAsArray ?
-        this._targetTypes.map(tt => `${tt}[]`) : this._targetTypes;
-      return generator.generate(this._schema, this._facts, retTypes, this._queryMode);
+    const snippets = this.generators.map(generator => {
+        const retTypes = this._findAsArray ?
+          this._targetTypes.map(tt => `${tt}[]`) : this._targetTypes;
+        return generator.generate(this._schema, this._facts, retTypes, this._queryMode);
       }
     );
+    if (JSON.stringify(snippets) !== JSON.stringify(this.snippets)) {
+      this.snippets = snippets;
+    }
     if (selectedLang) {
       this.activeSnippet = this.snippets.find(s => s.displayLang === selectedLang);
     } else {
