@@ -2,6 +2,7 @@ package io.vyne.cask.websocket
 
 import arrow.core.*
 import com.fasterxml.jackson.core.JsonParseException
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -10,6 +11,7 @@ import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.utils.log
 import io.vyne.utils.orElse
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.CloseStatus
@@ -25,7 +27,7 @@ import reactor.core.publisher.Mono
 class CaskWebsocketHandler(
    val caskService: CaskService,
    val applicationEventPublisher: ApplicationEventPublisher,
-   val mapper: ObjectMapper = jacksonObjectMapper()) : WebSocketHandler {
+   @Qualifier("ingesterMapper") val mapper: ObjectMapper) : WebSocketHandler {
 
    override fun handle(session: WebSocketSession): Mono<Void> {
       log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri}")

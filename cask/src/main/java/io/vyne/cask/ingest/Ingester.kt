@@ -80,6 +80,12 @@ class Ingester(
                   }
                }
             }
+         }.doOnError {
+            //invoked when pgbulkinsert throws.
+            if (!connection.isClosed) {
+               log().debug("Closing DB connection for ${table.table}")
+               connection.close()
+            }
          }
    }
 
