@@ -4,7 +4,7 @@ import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.*
 
-@FeignClient("cask")
+@FeignClient("\${vyne.caskService.name:cask}")
 interface CaskApi {
 
    @PostMapping("/api/ingest/{contentType}/{typeReference}")
