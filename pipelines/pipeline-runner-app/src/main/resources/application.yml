@@ -28,7 +28,9 @@ eureka:
       leaseExpirationDurationInSeconds: 5
 
 vyne:
-   queryServiceUrl: http://query-service
+   queryService:
+      name: query-service
+   queryServiceUrl: http://${vyne.queryService.name}
    schema:
         publicationmethod: REMOTE
         pollInterval: 5s

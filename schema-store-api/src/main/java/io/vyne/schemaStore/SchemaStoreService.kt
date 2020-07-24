@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 
 @RequestMapping("/api/schemas/taxi")
-@FeignClient(name = "query-service")
+@FeignClient("\${vyne.queryService.name:query-service}")
 interface SchemaStoreService {
 
    @RequestMapping(method = arrayOf(RequestMethod.POST))

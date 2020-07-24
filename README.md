@@ -84,7 +84,7 @@ docker-compose down
 | :---: | :---: |
 | vyne | 9022 |  
 | cask | 8800 |  
-| pipeline-orchestrator | 9600 |
+| pipelines-orchestrator | 9600 |
 | file-schema-server | 9301 |  
   
 Optional services

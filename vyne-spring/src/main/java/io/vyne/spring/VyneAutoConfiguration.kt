@@ -221,7 +221,9 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
    private fun serviceMapper(env: Environment): ServiceMapper {
       val applicationName = env.getProperty("spring.application.name")
          ?: error("Currently, only service-discovery enabled services are supported.  Please define spring.application.name in properties")
-      val operationExtensions = listOf(SpringMvcHttpOperationExtension())
+
+      val contextPath = env.getProperty("server.servlet.context-path")?:""
+      val operationExtensions = listOf(SpringMvcHttpOperationExtension(contextPath))
       val serviceExtensions = listOf(SpringMvcHttpServiceExtension(
          ServiceDiscoveryAddressProvider(applicationName)))
       return DefaultServiceMapper(operationExtensions = operationExtensions, serviceExtensions = serviceExtensions)

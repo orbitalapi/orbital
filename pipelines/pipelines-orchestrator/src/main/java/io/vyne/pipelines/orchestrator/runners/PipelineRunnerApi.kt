@@ -3,10 +3,12 @@ package io.vyne.pipelines.orchestrator.runners
 import io.vyne.pipelines.orchestrator.OperationResult
 import io.vyne.pipelines.runner.PipelineInstanceReference
 import org.springframework.cloud.openfeign.FeignClient
-import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 
-@FeignClient("pipeline-runner")
+@FeignClient("\${vyne.pipelineRunnerService.name:pipeline-runner}")
 interface PipelineRunnerApi {
 
    @PostMapping("/api/pipelines", consumes = ["application/json"])
