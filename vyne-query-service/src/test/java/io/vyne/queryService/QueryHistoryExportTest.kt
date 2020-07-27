@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.models.TypeNamedInstance
 import io.vyne.queryService.persistency.ReactiveDatabaseSupport
 import org.junit.Before
 import org.junit.Test
@@ -70,6 +71,36 @@ class QueryHistoryExportTest {
          """.trimIndent()
 
       val order = objectMapper.readValue(personArrayStr, mutableMapOf<String, Any?>()::class.java)
+      val historyExporter = QueryHistoryExporter(objectMapper)
+
+      val actual = historyExporter.export(order, ExportType.CSV).toString(Charsets.UTF_8).trimIndent()
+
+      assertEquals(expected, actual)
+   }
+
+   @Test
+   fun exportListTypeNamedInstanceToCsv() {
+      val expected =
+         """id,firstName,lastName,birthday
+1,Joe,Pass,19991212 09:12:13
+2,Herb,Ellis,19991212 20:23:24
+         """.trimIndent()
+
+      val order = mapOf(
+         "lang.taxi.Array<demo.Person>" to listOf(
+            TypeNamedInstance("demo.Person",
+               mapOf("id" to TypeNamedInstance("id", 1),
+                  "firstName" to TypeNamedInstance("firstName", "Joe"),
+                  "lastName" to TypeNamedInstance("lastName", "Pass"),
+                  "birthday" to TypeNamedInstance("birthday", "19991212 09:12:13"))),
+            TypeNamedInstance("demo.Person",
+               mapOf("id" to TypeNamedInstance("age", 2),
+                  "firstName" to TypeNamedInstance("firstName", "Herb"),
+                  "lastName" to TypeNamedInstance("lastName", "Ellis"),
+                  "birthday" to TypeNamedInstance("birthday", "19991212 20:23:24")))
+         )
+      )
+
       val historyExporter = QueryHistoryExporter(objectMapper)
 
       val actual = historyExporter.export(order, ExportType.CSV).toString(Charsets.UTF_8).trimIndent()
