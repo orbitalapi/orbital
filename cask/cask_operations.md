@@ -236,9 +236,6 @@ import Symbol
 namespace vyne.casks {
    @ServiceDiscoveryClient(serviceName = "cask")
    service OrderWindowSummaryCaskService {
-        @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/symbol/{symbol}")
-        operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary[] ( Symbol = symbol )
-
         @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/symbol/{Symbol}")
         operation findOneBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary
         
