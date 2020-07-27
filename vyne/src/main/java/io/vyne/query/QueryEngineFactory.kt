@@ -1,6 +1,7 @@
 package io.vyne.query
 
 import io.vyne.FactSetMap
+import io.vyne.query.formulas.CalculatorRegistry
 import io.vyne.query.graph.*
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
@@ -50,6 +51,7 @@ interface QueryEngineFactory {
 
          return DefaultQueryEngineFactory(
             strategies = listOf(
+               CalculatedFieldScanStrategy(CalculatorRegistry()),
                ModelsScanStrategy(),
                ProjectionHeuristicsQueryStrategy(opInvocationEvaluator),
                //               PolicyAwareQueryStrategyDecorator(
