@@ -32,7 +32,7 @@ export class QueryEditorComponent implements OnInit {
   loading = false;
 
   constructor(private monacoLoaderService: MonacoEditorLoaderService, private queryService: QueryService) {
-    this.monacoLoaderService.isMonacoLoaded.pipe(
+    this.monacoLoaderService.isMonacoLoaded$.pipe(
       filter(isLoaded => isLoaded),
       take(1),
     ).subscribe(() => {
