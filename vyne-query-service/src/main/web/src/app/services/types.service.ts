@@ -85,16 +85,28 @@ export class TypesService {
 
   parseCsvToType(content: string, type: Type, csvOptions: CsvOptions): Observable<ParsedTypeInstance[]> {
     const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedTypeInstance[]>(
       // tslint:disable-next-line:max-line-length
-      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${csvOptions.separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}${nullValueParam}`,
+      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}${nullValueParam}`,
       content);
   }
 
   parseCsv(content: string, csvOptions: CsvOptions): Observable<ParsedCsvContent> {
+    const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedCsvContent>(
-      `${environment.queryServiceUrl}/api/csv?delimiter=${csvOptions.separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}`,
+      `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}`,
       content);
+  }
+
+  private detectCsvDelimiter = (input: string) => {
+    const separators = [',', ';', '|', '\t'];
+    const idx = separators
+      .map((separator) => input.indexOf(separator))
+      .reduce((prev, cur) =>
+        prev === -1 || (cur !== -1 && cur < prev) ? cur : prev
+      );
+    return (input[idx] || ',') ;
   }
 
   getTypes(refresh: boolean = false): Observable<Schema> {
