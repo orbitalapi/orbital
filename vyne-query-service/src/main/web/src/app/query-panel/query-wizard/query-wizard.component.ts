@@ -1,6 +1,6 @@
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {EnumValues, Modifier, Schema, Type, TypedInstance} from '../../services/schema';
+import {EnumValues, Modifier, Schema, Type} from '../../services/schema';
 import {ParsedTypeInstance, TypesService} from '../../services/types.service';
 import {map} from 'rxjs/operators';
 import {
@@ -17,7 +17,8 @@ import {
   QueryMode,
   QueryResult,
   QueryService,
-  RemoteCall, ResultMode
+  RemoteCall,
+  ResultMode
 } from '../../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
 
@@ -56,6 +57,7 @@ export class QueryWizardComponent implements OnInit {
     }
     return this.targetTypes.map(t => t.name.fullyQualifiedName);
   }
+
 
   ngOnInit() {
     this.typesService.getTypes()
@@ -124,6 +126,7 @@ export class QueryWizardComponent implements OnInit {
           const unwrappedValue = Object.values(formSpec.value)[0];
           return new Fact(fullyQualifiedName, unwrappedValue);
           // facts[fullyQualifiedName] = unwrappedValue;
+
         } else {
           const nestedValue = this.nest(formSpec.value);
           return new Fact(fullyQualifiedName, nestedValue);
@@ -209,7 +212,6 @@ export class QueryWizardComponent implements OnInit {
   }
 
   private getElementsForType(type: Type, schema: Schema, prefix: string[] = [], fieldName: string = null): ITdDynamicElementConfig[] {
-
     if (type.isScalar) {
       // suspect this is a smell I'm doing something wrong.
       // If the original root type was scalar, when we won't have a prefix, so
@@ -234,6 +236,19 @@ export class QueryWizardComponent implements OnInit {
       return elements;
     }
   }
+  private findRootTypeName(type: Type): string {
+    const targetType = (type.aliasForType) ? type.aliasForType.fullyQualifiedName : type.name.fullyQualifiedName;
+    if (type.inheritsFrom && type.inheritsFrom.length > 0) {
+      // Example:
+      // type OrderId inherits String
+      const parentTypeFullyQualifiedName = type.inheritsFrom[0].fullyQualifiedName;
+      const parentType = this.schema.types.find(schemaType => schemaType.name.fullyQualifiedName === parentTypeFullyQualifiedName);
+      if (parentType) {
+        return this.findRootTypeName(parentType);
+      }
+    }
+    return targetType;
+  }
 
   private getInputControlForType(type: Type): any {
     if (!type.isScalar) {
@@ -253,13 +268,8 @@ export class QueryWizardComponent implements OnInit {
         })
       };
     }
-    // TODO : Quick Fix for the Demo.
-    if (type.inheritsFrom && type.inheritsFrom.length > 0) {
-      // Example:
-      // type OrderId inherits String
-      targetType = type.inheritsFrom[0].fullyQualifiedName;
-    }
 
+    targetType = this.findRootTypeName(type);
     let control: any;
     switch (targetType) {
       case 'lang.taxi.String' :
