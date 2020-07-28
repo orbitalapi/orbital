@@ -23,6 +23,8 @@ stages:
 
 build-jvm:
   stage: build
+  except:
+     - tags
   cache:
      paths:
         - .m2/repository
@@ -44,6 +46,8 @@ build-jvm:
 
 build-ui:
    stage: build
+   except:
+      - tags
    cache:
       paths:
          - vyne-query-service/src/main/web/node
@@ -57,6 +61,7 @@ build-ui:
       expire_in: 1 hours
 
 publish-snapshot:
+  resource_group: docker_release
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
@@ -65,6 +70,7 @@ publish-snapshot:
     - develop
 
 publish-release:
+   resource_group: docker_release
    stage: deploy
    script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
