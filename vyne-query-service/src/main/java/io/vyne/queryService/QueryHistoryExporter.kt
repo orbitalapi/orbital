@@ -1,11 +1,11 @@
 package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.models.TypeNamedInstance
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVPrinter
 import org.springframework.stereotype.Component
 import java.io.StringWriter
-import javax.activation.UnsupportedDataTypeException
 
 @Component
 class QueryHistoryExporter(private val objectMapper: ObjectMapper) {
@@ -22,10 +22,28 @@ class QueryHistoryExporter(private val objectMapper: ObjectMapper) {
       results.keys.forEach {
          when (results[it]) {
             is List<*> -> {
-               val listOfObj = results[it] as List<Map<*, *>>
-               printer.printRecord(listOfObj.first().keys)
-               listOfObj.forEach { fields ->
-                  printer.printRecord(fields.values)
+               val listOfObj = results[it]  as List<*>
+
+               if(!listOfObj.isEmpty()){
+                  when(listOfObj[0]) {
+                     is TypeNamedInstance -> {
+                        val listOfObj = results[it]  as List<TypeNamedInstance>
+
+                        listOfObj.map { it.value as Map<*,TypeNamedInstance> }.forEachIndexed { index, fields ->
+                           if(index == 0) {
+                              printer.printRecord(fields.keys)
+                           }
+                           printer.printRecord( fields.values.map { it.value})
+                        }
+                     }
+                     is Map<*, *> -> {
+                        val listOfObj = results[it]  as List<Map<*, *>>
+                        printer.printRecord(listOfObj.first().keys)
+                        listOfObj.forEach { fields ->
+                           printer.printRecord(fields.values)
+                        }
+                     }
+                  }
                }
             }
             is Map<*, *> -> {
