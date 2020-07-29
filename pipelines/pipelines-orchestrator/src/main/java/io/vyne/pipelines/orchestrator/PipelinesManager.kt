@@ -7,6 +7,7 @@ import io.vyne.pipelines.orchestrator.PipelineState.STARTING
 import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
 import io.vyne.utils.log
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.discovery.event.InstanceRegisteredEvent
@@ -18,7 +19,9 @@ import org.springframework.stereotype.Component
 class PipelinesManager(private val discoveryClient: DiscoveryClient,
                        private val pipelineRunnerApi: PipelineRunnerApi,
                        private val runningPipelineDiscoverer: RunningPipelineDiscoverer,
-                       private val objectMapper: ObjectMapper) : ApplicationListener<InstanceRegisteredEvent<Any>> {
+                       private val objectMapper: ObjectMapper,
+                       @Value("\${vyne.pipelineRunnerService.name:pipeline-runner}") private val pipelineRunnerServiceName: String
+) : ApplicationListener<InstanceRegisteredEvent<Any>> {
 
 
    // All pipeline runners instances
@@ -105,7 +108,7 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
 
          // 1. Find all the runner instances
          runnerInstances.clear()
-         runnerInstances.addAll(discoveryClient.getInstances("pipeline-runner"))
+         runnerInstances.addAll(discoveryClient.getInstances(pipelineRunnerServiceName))
 
          // 2. See what pipelines are currently running
          val pipelineInstances = runningPipelineDiscoverer.discoverPipelines(runnerInstances)
@@ -113,7 +116,7 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
          // 3. Overwrite the running pipelines
          val runningPipelines = pipelineInstances.map {
             val runner = objectMapper.convertValue(it.value, PipelineRunnerInstance::class.java)
-            it.key.name to PipelineStateSnapshot(it.key.name, it.key.description, runner , RUNNING)
+            it.key.name to PipelineStateSnapshot(it.key.name, it.key.description, runner, RUNNING)
          }.toMap()
 
          pipelines.putAll(runningPipelines)
@@ -172,9 +175,6 @@ class RunningPipelineDiscoverer(val pipelineDeserialiser: PipelineDeserialiser) 
    }
 
 }
-
-
-
 
 
 data class PipelineReference(val name: String, val description: String)
