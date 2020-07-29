@@ -29,11 +29,12 @@ class QueryHistoryExporter(private val objectMapper: ObjectMapper) {
                      is TypeNamedInstance -> {
                         val listOfObj = results[it]  as List<TypeNamedInstance>
 
-                        listOfObj.map { it.value as Map<*,TypeNamedInstance> }.forEachIndexed { index, fields ->
-                           if(index == 0) {
-                              printer.printRecord(fields.keys)
-                           }
-                           printer.printRecord( fields.values.map { it.value})
+                        val objs =listOfObj.map { it.value as Map<*,TypeNamedInstance> }.sortedByDescending { it.keys.size }
+                        val firstObj = objs[0]
+                        val columns = firstObj.keys
+                        printer.printRecord(columns)
+                        objs.forEach { fields ->
+                           printer.printRecord( columns.map { column -> fields[column]?.value })
                         }
                      }
                      is Map<*, *> -> {
