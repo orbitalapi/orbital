@@ -3,21 +3,24 @@
 
 .container {
   flex: 1;
-  height: 200vh;
-  overflow: hidden;
 
   &:not(:last-child) {
     padding-right: 45px;
   }
+}
 
+.results-container {
+  margin-top: 1rem;
 }
 
 .query-editor-container{
-  overflow: hidden;
-  height: 100%
 }
 
 :host ::ng-deep .mat-tab-body-wrapper {
   flex-grow: 1;
 }
 
+.drawer-content {
+  margin: 2rem 3rem;
+  width: 40vw;
+}

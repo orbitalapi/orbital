@@ -62,7 +62,7 @@ export function isTypeNamedInstance(instance: any): instance is TypeNamedInstanc
 }
 
 export function isTypedCollection(instance: any): instance is TypeNamedInstance[] {
-  return instance && Array.isArray(instance) && instance[0] && isTypeNamedInstance(instance[0])
+  return instance && Array.isArray(instance) && instance[0] && isTypeNamedInstance(instance[0]);
 }
 
 export interface DataSourceReference {
@@ -109,7 +109,7 @@ export interface QueryResult {
   resultMode: ResultMode;
   lineageGraph: LineageGraph;
   queryResponseId: string;
-  error?: string
+  error?: string;
 }
 
 
