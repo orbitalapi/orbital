@@ -81,9 +81,9 @@ class QueryHistoryExportTest {
    @Test
    fun exportListTypeNamedInstanceToCsv() {
       val expected =
-         """id,firstName,lastName,birthday
-1,Joe,Pass,19991212 09:12:13
-2,Herb,Ellis,19991212 20:23:24
+         """id,firstName,lastName,birthday,address
+2,Herb,Ellis,19991212 20:23:24,Downing Street
+1,Joe,Pass,19991212 09:12:13,
          """.trimIndent()
 
       val order = mapOf(
@@ -97,7 +97,8 @@ class QueryHistoryExportTest {
                mapOf("id" to TypeNamedInstance("age", 2),
                   "firstName" to TypeNamedInstance("firstName", "Herb"),
                   "lastName" to TypeNamedInstance("lastName", "Ellis"),
-                  "birthday" to TypeNamedInstance("birthday", "19991212 20:23:24")))
+                  "birthday" to TypeNamedInstance("birthday", "19991212 20:23:24"),
+                  "address" to TypeNamedInstance("address", "Downing Street")))
          )
       )
 

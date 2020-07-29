@@ -26,7 +26,6 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy{
   }
 
   set instance(value: InstanceLikeOrCollection) {
-    console.log(`instance set on viewer ${this.componentId}`);
     this._instance = value;
     // When the instance changes, any assumptions we've made about
     // types based on the old instance are invalid, so null out to recompute
@@ -71,7 +70,6 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy{
   }
 
   set type(value: Type) {
-    console.log(`type set on viewer ${this.componentId}`);
     this._type = value;
     this._collectionMemberType = null;
     this._derivedType = null;
