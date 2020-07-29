@@ -96,7 +96,7 @@ class QueryServiceTest {
                "tradeId": "Trade_0"
             }]
          """.trimIndent()))
-      val response = queryService.submitVyneQlQuery("""findAll { Order[] } as Report[]""".trimIndent(), ResultMode.SIMPLE)
+      val response = queryService.doVyneQlQuery("""findAll { Order[] } as Report[]""".trimIndent(), ResultMode.SIMPLE)
       response.isFullyResolved.should.be.`false`
       (response as FailedSearchResponse).message.should.be.equal("The search failed with an exception: Found 2 instances of MaturityDate. Values are (TradeMaturityDate, 2026-12-01), (InstrumentMaturityDate, 2025-12-01)")
    }
