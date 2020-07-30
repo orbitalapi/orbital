@@ -61,8 +61,8 @@ service ClientService {
 
    val queryParser = QueryParser(schema)
 
-   fun typeNode(name: String): Set<QuerySpecTypeNode> {
-      return queryParser.parse(TypeNameQueryExpression(name))
+   fun typeNode(name: String, parser: QueryParser = queryParser): Set<QuerySpecTypeNode> {
+      return parser.parse(TypeNameQueryExpression(name))
    }
 
    fun queryContext(): QueryContext = vyne().queryEngine().queryContext()

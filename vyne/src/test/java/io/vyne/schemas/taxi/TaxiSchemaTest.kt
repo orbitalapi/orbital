@@ -266,6 +266,7 @@ type Sample {
       "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
+      "formula" : null,
       "constraints" : [ ]
     },
     "id" : {
@@ -283,6 +284,7 @@ type Sample {
       "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
+      "formula" : null,
       "constraints" : [ ]
     },
     "name" : {
@@ -300,6 +302,7 @@ type Sample {
       "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
+      "formula" : null,
       "constraints" : [ ]
     },
     "postcode" : {
@@ -317,6 +320,7 @@ type Sample {
       "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
+      "formula" : null,
       "constraints" : [ ]
     }
   },
@@ -336,6 +340,7 @@ type Sample {
   "isTypeAlias" : false,
   "format" : null,
   "hasFormat" : false,
+  "isCalculated": false,
   "unformattedTypeName" : null,
   "isParameterType" : false,
   "isClosed" : false,

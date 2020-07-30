@@ -12,6 +12,7 @@ import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.AttributePath
 import lang.taxi.types.EnumType
+import lang.taxi.types.Formula
 import lang.taxi.types.PrimitiveType
 import lang.taxi.utils.takeHead
 
@@ -109,6 +110,13 @@ data class Type(
 
    @JsonView(TypeFullView::class)
    val hasFormat = format != null
+
+   @JsonView(TypeFullView::class)
+   val isCalculated = taxiType.calculation != null
+
+   @get:JsonIgnore
+   val calculation: Formula?
+      get() = taxiType.calculation
 
    @get:JsonView(TypeFullView::class)
    val unformattedTypeName: QualifiedName? by lazy {

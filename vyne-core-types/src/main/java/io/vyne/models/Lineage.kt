@@ -58,3 +58,9 @@ data class MappedSynonym(override val source: TypedInstance) : MappedValue(Mappi
 object Provided : DataSource {
    override val name: String = "Provided"
 }
+
+object Calculated: DataSource {
+   override val name: String
+      get() = "Calculated"
+
+}

@@ -6,9 +6,11 @@ import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
+import io.vyne.query.CalculatedFieldScanStrategy
 import io.vyne.query.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.formulas.CalculatorRegistry
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
@@ -44,6 +46,7 @@ data class EvaluatableEdge(
 ) {
    @JsonIgnore
    val vertex1: Element = previous.element
+
    @JsonIgnore
    val vertex2 = target;
 
@@ -139,8 +142,7 @@ class ParameterFactory {
          var attributeValue: TypedInstance? = context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
 
          // First, look in the context to see if it's there.
-         if (attributeValue == null)
-         {
+         if (attributeValue == null) {
             // ... if not, try and find the value in the graph
             val queryResult = context.find(QuerySpecTypeNode(attributeType))
             if (queryResult.isFullyResolved) {
@@ -152,7 +154,7 @@ class ParameterFactory {
                if (!attributeType.isScalar && !typesCurrentlyUnderConstruction.contains(attributeType)) {
                   log().debug("Parameter of type {} not present within the context.  Attempting to construct one.", attributeType.name.fullyQualifiedName)
                   val constructedType = attemptToConstruct(attributeType, context, typesCurrentlyUnderConstruction = typesCurrentlyUnderConstruction + attributeType)
-                  log().debug("Parameter of type {} constructed: {}",constructedType, attributeType.name.fullyQualifiedName)
+                  log().debug("Parameter of type {} constructed: {}", constructedType, attributeType.name.fullyQualifiedName)
                   attributeValue = constructedType
                }
             }
@@ -217,9 +219,9 @@ class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_T
 
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
-      val previousValue = requireNotNull(edge.previousValue) {"Cannot evaluate $relationship when previous value was null.  Work with me here!"}
+      val previousValue = requireNotNull(edge.previousValue) { "Cannot evaluate $relationship when previous value was null.  Work with me here!" }
 
-      if(previousValue is TypedNull){
+      if (previousValue is TypedNull) {
          return edge.failure(previousValue)
       }
 
@@ -234,15 +236,30 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
 
       val previousObject = previousValue as TypedObject
       val pathToAttribute = edge.target.value as String// io.vyne.SomeType/someAttribute
-      val attributeName = pathToAttribute.split("/").last()
-      // TODO Consider removing this check, i think returning null value here is better than throwing error
-      require(previousObject.hasAttribute(attributeName)) {
-         "Cannot evaluation $relationship as the previous object (of type ${previousObject.type.fullyQualifiedName}) does not have an attribute called $attributeName - received path of $pathToAttribute"
+      val pathAttributeParts = pathToAttribute.split("/")
+      val attributeName = pathAttributeParts.last()
+      if (!previousObject.hasAttribute(attributeName)) {
+         val typeName = pathAttributeParts.first()
+         var calculatedValue: EvaluatedEdge? = null
+            if (context.schema.hasType(typeName)) {
+            val pathType = context.schema.type(typeName)
+            pathType.attributes[attributeName]?.let { field ->
+               if (field.formula != null) {
+                CalculatedFieldScanStrategy(CalculatorRegistry())
+                     .tryCalculate(context.schema.type(field.type), context, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)?.let {
+                      calculatedValue = edge.success(it)
+                     }
+               }
+
+            }
+         }
+         return calculatedValue ?: edge.failure(null)
       }
       val attribute = previousObject[attributeName]
       return edge.success(attribute)
    }
 }
+
 class InstanceHasAttributeEdgeEvaluator : AttributeEvaluator(Relationship.INSTANCE_HAS_ATTRIBUTE)
 
 // Note: I suspect this might cause problems.
