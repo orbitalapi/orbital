@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.5.4</version>
+      <version>0.5.5</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -52,6 +52,10 @@
       <dependency>
          <groupId>net.logstash.logback</groupId>
          <artifactId>logstash-logback-encoder</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
       </dependency>
       <dependency>
          <groupId>org.eclipse.jgit</groupId>

@@ -59,6 +59,7 @@ class EqualOperatorEvaluator : OperatorEvaluator {
          lhSubject is TypedNull && rhSubject == null -> true
          lhSubject == null && rhSubject is TypedNull -> true
          lhSubject is TypedValue && rhSubject is TypedValue -> lhSubject.valueEquals(rhSubject)
+         lhSubject is TypedValue -> lhSubject.value == rhSubject
          else -> lhSubject == rhSubject
       }
    }

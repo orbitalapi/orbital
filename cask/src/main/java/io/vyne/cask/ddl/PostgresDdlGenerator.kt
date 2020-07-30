@@ -146,16 +146,17 @@ class PostgresDdlGenerator {
    fun generateUpsertDml(versionedType: VersionedType, instance: InstanceAttributeSet): String {
       val tableName = tableName(versionedType)
       val fields = versionedType.allFields().sortedBy { it.name }
-      val annotations = (versionedType.taxiType as ObjectType).definition?.fields
+      val primaryKeyFields = (versionedType.taxiType as ObjectType).definition?.fields
          ?.filter { it.annotations.any { a -> a.name == _primaryKey } }
-      val diff = fields.minus(annotations ?: emptyList()).map { it }
+      val fieldsExcludingPk = fields.minus(primaryKeyFields ?: emptyList())
+      val values: Map<String, Any> = fields.map { it.name to generateValueForField(it, instance) }.toMap()
 
       return """INSERT INTO $tableName ( ${fields.joinToString(", ") { "\"${it.name}\"" }} )
-         | VALUES ( ${fields.joinToString(", ") { generateValueForField(it, instance) }} )
-         | ON CONFLICT ( ${annotations?.joinToString(", ") { "\"${it.name}\"" }} )
+         | VALUES ( ${fields.joinToString(", ") { values[it.name].toString() }} )
+         | ON CONFLICT ( ${primaryKeyFields?.joinToString(", ") { "\"${it.name}\"" }} )
          | ${
-      if (diff.isNotEmpty()) {
-         """DO UPDATE SET ${diff.joinToString(", ") { "\"${it.name}\" = ${generateValueForField(it, instance)}" }}"""
+      if (fieldsExcludingPk.isNotEmpty()) {
+         """DO UPDATE SET ${fieldsExcludingPk.joinToString(", ") { "\"${it.name}\" = ${values[it.name].toString()}" }}"""
       } else {
          """DO NOTHING"""
       }}

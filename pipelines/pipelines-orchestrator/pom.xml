@@ -5,7 +5,7 @@
    <parent>
       <artifactId>pipelines</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.5.4</version>
+      <version>0.5.5</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -53,6 +53,10 @@
       <dependency>
          <groupId>io.springfox</groupId>
          <artifactId>springfox-swagger-ui</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
       </dependency>
       <dependency>
          <groupId>com.nhaarman.mockitokotlin2</groupId>
