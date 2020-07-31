@@ -55,7 +55,7 @@ export const routerModule = RouterModule.forRoot(
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
   ],
   imports: [
     routerModule,

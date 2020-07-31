@@ -1,9 +1,44 @@
+@import "src/theme";
+
 table {
   width: 100%;
+
   th {
     padding-right: 1rem !important;
   }
+
   td {
     padding-right: 1rem !important;
+  }
+}
+
+@mixin type-name-pill {
+  //@include mat-elevation(1);
+
+  font-family: $mono;
+  color: $vyne-lilac;
+  background-color: rgba($vyne-lilac, 0.1);
+  font-size: 0.8rem;
+
+  border: 1px solid rgba($vyne-lilac, 0.6);
+  border-radius: 6px;
+
+  width: fit-content;
+  padding: 0.2rem 0.4rem;
+}
+
+.add-type-badge {
+  @include type-name-pill;
+
+  border: 1px dashed rgba($vyne-lilac, 0.4);
+  color: rgba($vyne-lilac, 0.6);
+  background-color: rgba($vyne-lilac, 0.05);
+
+  cursor: pointer;
+
+  &:hover {
+    color: rgba($vyne-lilac, 0.8);
+    border: 1px dashed rgba($vyne-lilac, 0.6);
+    background-color: rgba($vyne-lilac, 0.1);
   }
 }

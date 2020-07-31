@@ -6,7 +6,7 @@ import {ParsedCsvContent} from '../services/types.service';
   template: `
     <table mat-table [dataSource]="rowData">
       <ng-container [matColumnDef]="'column-' + i" *ngFor="let columnValue of headers; index as i">
-        <th mat-header-cell *matHeaderCellDef>{{ columnValue }}</th>
+        <th mat-header-cell *matHeaderCellDef>{{ columnValue }}<div class="add-type-badge">Add type</div></th>
         <td mat-cell *matCellDef="let element"> {{element[i]}} </td>
       </ng-container>
 
