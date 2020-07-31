@@ -36,6 +36,8 @@ WORKDIR /opt/service/
 ENV POSTGRES_USER=vynedb
 ENV POSTGRES_PASSWORD=vynedb
 ENV POSTGRES_DB=vynedb
+# default data folder /var/lib/postgresql/, reference https://hub.docker.com/_/postgres/?tab=description
+ENV PGDATA=/cask/data/
 
 # override postgres entry point with the cas entrypoint
 ENTRYPOINT ["/opt/service/docker-entrypoint.sh"]
