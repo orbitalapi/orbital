@@ -132,7 +132,7 @@ class PostgresDdlGenerator {
             versionedType.versionedNameHash
          } else {
             "${typeName}_${versionedType.versionedNameHash}"
-         }.takeLast(Companion.POSTGRES_MAX_NAME_LENGTH)
+         }.takeLast(POSTGRES_MAX_NAME_LENGTH)
          require(tableName.length <= POSTGRES_MAX_NAME_LENGTH) { "Generated tableName $tableName exceeds Postgres max of 31 characters" }
          return tableName
       }
@@ -170,14 +170,14 @@ class PostgresDdlGenerator {
       val deltaAgainstTableName = typeMigration?.predecessorType?.let { tableName(it) }
 
       // if we're not migrating types, store all fields on the type
-      val fields = typeMigration?.fields ?: versionedType.allFields()
+      val fields = (typeMigration?.fields ?: versionedType.allFields()).filter { it.formula == null }
 
-      return generateDdl(type, schema, versionedType, fields, cachePath, deltaAgainstTableName)
+      return generateDdl(type, versionedType, fields, cachePath, deltaAgainstTableName)
    }
 
-   private fun generateDdl(type: Type, schema: Schema, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
+   private fun generateDdl(type: Type, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
       return when (type) {
-         is ObjectType -> generateObjectDdl(type, schema, versionedType, fields, cachePath, deltaAgainstTableName)
+         is ObjectType -> generateObjectDdl(type, versionedType, fields, cachePath, deltaAgainstTableName)
          else -> TODO("Type ${type::class.simpleName} not yet supported")
       }
    }
@@ -185,7 +185,12 @@ class PostgresDdlGenerator {
    // Note - could probably collapse this with the caller method at the moment, since
    // we're not supporting anything other than ObjectTypes.
    // However, that'll change shortly, and don't wanna refactor this again.
-   private fun generateObjectDdl(type: ObjectType, schema: Schema, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
+   private fun generateObjectDdl(
+      type: ObjectType,
+      versionedType: VersionedType,
+      fields: List<Field>,
+      cachePath: Path?,
+      deltaAgainstTableName: String?): TableGenerationStatement {
       val columns = fields.map { generateColumnForField(it) }
       val tableName = tableName(versionedType)
       val ddl = """${generateCaskTableDdl(versionedType, fields)}
@@ -208,7 +213,7 @@ class PostgresDdlGenerator {
       return TableGenerationStatement(ddl, versionedType, tableName, columns, metadata)
    }
 
-   fun generateTableIndexesDdl(tableName: String, fields: List<Field>): String {
+   private fun generateTableIndexesDdl(tableName: String, fields: List<Field>): String {
       val result = StringBuilder()
       // TODO We can not have a field declared as both a PK and a unique constraint. Perhaps we should handle that on taxi side too.
       val indexedColumns = fields.filter { col -> col.annotations.any { it.name == _indexed } && !col.annotations.any { it.name == _primaryKey} }
@@ -218,7 +223,7 @@ class PostgresDdlGenerator {
       return result.toString()
    }
 
-   fun generateCaskTableDdl(versionedType: VersionedType, fields: List<Field>): String {
+   private fun generateCaskTableDdl(versionedType: VersionedType, fields: List<Field>): String {
       val tableName = tableName(versionedType)
       val columns = fields.map { generateColumnForField(it) }
       val fieldDef = columns.joinToString(",\n") { it.sql }
@@ -232,15 +237,20 @@ class PostgresDdlGenerator {
       return generateColumnForField(field, primitiveType)
    }
 
-   internal fun getPrimitiveType(field: Field, type: Type): PrimitiveType {
-      if (PrimitiveType.isAssignableToPrimitiveType(type)) {
-         return PrimitiveType.getUnderlyingPrimitive(type)
-      } else if (type is EnumType) {
-         return PrimitiveType.STRING
-      } else if (type.inheritsFrom.size == 1) {
-         return getPrimitiveType(field, type.inheritsFrom.first())
-      } else {
-         TODO("Unable to generate column for field=${field}, type=${type}") //To change body of created functions use File | Settings | File Templates.
+   private fun getPrimitiveType(field: Field, type: Type): PrimitiveType {
+      return when {
+          PrimitiveType.isAssignableToPrimitiveType(type) -> {
+             PrimitiveType.getUnderlyingPrimitive(type)
+          }
+          type is EnumType -> {
+             PrimitiveType.STRING
+          }
+          type.inheritsFrom.size == 1 -> {
+             getPrimitiveType(field, type.inheritsFrom.first())
+          }
+          else -> {
+             TODO("Unable to generate column for field=${field}, type=${type}") //To change body of created functions use File | Settings | File Templates.
+          }
       }
    }
 

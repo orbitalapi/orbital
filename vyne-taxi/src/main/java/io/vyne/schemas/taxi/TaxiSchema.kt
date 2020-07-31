@@ -133,7 +133,8 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                         accessor = field.accessor,
                         readCondition = field.readCondition,
                         typeDoc = field.typeDoc,
-                        defaultValue = field.defaultValue)
+                        defaultValue = field.defaultValue,
+                        formula = field.formula)
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType)
