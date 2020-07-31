@@ -5,10 +5,6 @@ spring:
 server:
    port: 9610
 
-service:
-   cask:
-      name: cask
-
 feign:
    client:
       config:
@@ -30,6 +26,8 @@ eureka:
 vyne:
    queryService:
       name: query-service
+   caskService:
+      name: cask
    queryServiceUrl: http://${vyne.queryService.name}
    schema:
         publicationmethod: REMOTE
