@@ -21,10 +21,16 @@
 # Note the ; at the end, without it query wont execute!
 
 # base postgres image
-FROM postgres:12.2-alpine
+FROM postgres:12.3
 
 # install jdk 8 runtime
-RUN apk update && apk add openjdk8-jre
+RUN echo "deb http://deb.debian.org/debian/ sid main" >> /etc/apt/sources.list
+RUN set -eux; \
+   apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update; \
+    apt-get install -y openjdk-8-jre-headless; \
+    apt-get install -y --no-install-recommends locales; rm -rf /var/lib/apt/lists/*; \
+    localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8; \
+    apt-get clean
 
 # copy cask jar file and entrypoint scripts
 COPY target/cask.jar /opt/service/
@@ -33,6 +39,7 @@ RUN chmod +x /opt/service/docker-entrypoint.sh
 WORKDIR /opt/service/
 
 # bake-in postgres image env variables
+ENV LANG en_US.utf8
 ENV POSTGRES_USER=vynedb
 ENV POSTGRES_PASSWORD=vynedb
 ENV POSTGRES_DB=vynedb
