@@ -42,7 +42,7 @@ class PipelinesManagerTest {
         PipelineRunnerInstance(instance.instanceId, instance.uri.toString())
      }
 
-      manager = PipelinesManager(discoveryClient, pipelineRunnerApi, runningPipelineDiscoverer, objectMapper)
+      manager = PipelinesManager(discoveryClient, pipelineRunnerApi, runningPipelineDiscoverer, objectMapper, "pipeline-runner")
    }
 
    @Test

@@ -37,7 +37,7 @@ logging:
       #        But, in some cases we may care -- so consider turning this back on.
       com.netflix.discovery.shared.transport.decorator.RedirectingEurekaHttpClient: OFF
       com.netflix.discovery.DiscoveryClient: OFF
-
+      org.apache.http: OFF
       com.netflix: WARN
       com.hazelcast: WARN
       io.vyne: INFO

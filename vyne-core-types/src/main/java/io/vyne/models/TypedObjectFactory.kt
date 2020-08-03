@@ -29,7 +29,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
       // This approach won't work for nested objects.
       // I think i need to build a hierachy of object factories, and allow nested access
       // via the get() method
-      type.attributes.forEach { (attributeName, field) ->
+      type.attributes.filter { it.value.formula == null }.forEach { (attributeName, field) ->
 
          // The value may have already been populated on-demand from a conditional
          // field set evaluation block, prior to the iterator hitting the field
