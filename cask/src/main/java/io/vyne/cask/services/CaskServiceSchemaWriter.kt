@@ -1,6 +1,7 @@
 package io.vyne.cask.services
 
 import io.vyne.VersionedSource
+import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
@@ -11,7 +12,7 @@ import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicInteger
 
 @Component
-class CaskServiceSchemaWriter(private val schemaStoreClient: SchemaStoreClient, private val schemaWriter: SchemaWriter = SchemaWriter()) {
+class CaskServiceSchemaWriter(private val schemaPublisher: SchemaPublisher, private val schemaWriter: SchemaWriter = SchemaWriter()) {
    private val generationCounter: AtomicInteger = AtomicInteger(0)
 
    fun write(map: Map<String, TaxiDocument>) {
@@ -27,7 +28,7 @@ class CaskServiceSchemaWriter(private val schemaStoreClient: SchemaStoreClient, 
       log().info("Injecting cask service schema (version=${schemaVersion}): \n${schemas.map{it.content}.joinToString(separator = "\n")}")
 
       try {
-         schemaStoreClient.submitSchemas(schemas)
+         schemaPublisher.submitSchemas(schemas)
       } catch (e: Exception) {
          log().error("Error in submitting schema", e)
       }

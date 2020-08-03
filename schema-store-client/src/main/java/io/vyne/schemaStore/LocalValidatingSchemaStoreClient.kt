@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * Schema store which upon having a schema submitted to it, will first
  * validate the schema compiles before updating the schemaset.
  */
-class LocalValidatingSchemaStore(private val schemaValidator: SchemaValidator = TaxiSchemaValidator()) : SchemaStoreClient {
+class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValidator = TaxiSchemaValidator()) : SchemaStoreClient {
    private val generationCounter = AtomicInteger(0)
    private val schemaSetHolder = mutableMapOf<SchemaSetCacheKey, SchemaSet>()
    private val schemaSourcesMap = mutableMapOf<SchemaId, ParsedSource>()
@@ -35,6 +35,13 @@ class LocalValidatingSchemaStore(private val schemaValidator: SchemaValidator = 
          return schemaSourcesMap.values.toList()
       }
 
+   fun removeSourceAndRecompile(schemaIds:List<SchemaId>) {
+      schemaIds.forEach { this.schemaSourcesMap.remove(it) }
+      rebuildAndStoreSchema()
+   }
+   fun removeSourceAndRecompile(schemaId:SchemaId) {
+      this.removeSourceAndRecompile(listOf(schemaId))
+   }
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
       val validationResult = schemaValidator.validate(schemaSet(), versionedSources)
       val (parsedSources, returnValue) = when (validationResult) {
