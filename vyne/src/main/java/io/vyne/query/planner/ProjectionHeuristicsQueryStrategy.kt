@@ -49,7 +49,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
       return queryStrategyResult ?: QueryStrategyResult.empty()
    }
 
-   private fun queryStrategyResult(matchedInstance: MutableList<TypedInstance>?, context: QueryContext, targetType: Type, target: Set<QuerySpecTypeNode>): QueryStrategyResult? {
+   private fun queryStrategyResult(matchedInstance: ProjectionResultList?, context: QueryContext, targetType: Type, target: Set<QuerySpecTypeNode>): QueryStrategyResult? {
       matchedInstance?.let { joinMatch ->
          if (joinMatch.size == 0) return null
          if (joinMatch.size == 1) {
@@ -79,7 +79,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
             // Add Trade object into the context, so that subsequent projection props might be extracted from Trade.
             context.addFact(joinMatch.first())
             // Remove the Trade just added into the context, as we'll call here again through ObjectBuilder for remaining matched Trades.
-            matchedInstance.removeAt(0)
+            matchedInstance.removeFirst()
             return QueryStrategyResult(mapOf(target.first() to  TypedCollection.from(retVal)))
          }
       }
@@ -148,7 +148,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
             val firstMatch = (result as TypedCollection).firstOrNull { item ->  (item as TypedObject).values.any { value -> value.valueEquals(arguments.first()) }}
             val key = (firstMatch as TypedObject?)?.value?.entries?.first { typedObjectValue -> typedObjectValue.value.valueEquals(arguments.first()) }?.key
             val resultMap =  arguments
-               .map { argument -> argument to result.filter { item ->  key?.let { attr -> (item as TypedObject).value[attr]?.valueEquals(argument) } == true}.toMutableList() }
+               .map { argument -> argument to result.filter { item ->  key?.let { attr -> (item as TypedObject).value[attr]?.valueEquals(argument) } == true}.toProjectionResultList() }
                .toMap()
             return ProjectionHeuristicsGraphSearchResult(Pair(resultMap, joinType))
          }
@@ -157,4 +157,4 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
    }
 }
 
-data class ProjectionHeuristicsGraphSearchResult(val pair: Pair<Map<TypedInstance, MutableList<TypedInstance>>, Type>?)
+data class ProjectionHeuristicsGraphSearchResult(val pair: Pair<Map<TypedInstance, ProjectionResultList>, Type>?)
