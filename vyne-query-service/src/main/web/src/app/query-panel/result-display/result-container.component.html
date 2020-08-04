@@ -14,8 +14,8 @@
     <button mat-stroked-button [matMenuTriggerFor]="menu" *ngIf="queryResultTypeNames.length>0"
             class="downloadFileButton">Download
     </button>
-    <div class="actions-container" >
-      <button mat-stroked-button (click)="queryAgain()" >Query again</button>
+    <div class="actions-container">
+      <button mat-stroked-button (click)="queryAgain()">Query again</button>
     </div>
     <mat-menu #menu="matMenu">
       <button mat-menu-item (click)="downloadQueryHistory(downloadFileType.JSON)">as JSON</button>
@@ -24,39 +24,37 @@
   </div>
 
   <div class="results-container">
-    <cdk-virtual-scroll-viewport itemSize="50" class="virtualScroll-viewport">
-      <mat-tab-group>
-        <mat-tab label="Table">
-          <div *ngFor="let resultTypeName of queryResultTypeNames">
-            <app-results-table [instance]="getResultForTypeName(resultTypeName)"
-                               [schema]="schema"
-                               [selectable]="true"
-                               [type]="getTypeIfNotIncluded(resultTypeName)"
-                               (instanceClicked)="instanceClicked($event)"></app-results-table>
-          </div>
-        </mat-tab>
-        <mat-tab label="Result">
-          <div *ngFor="let resultTypeName of queryResultTypeNames" >
-
-            <app-object-view [instance]="getResultForTypeName(resultTypeName)"
+    <mat-tab-group>
+      <mat-tab label="Table">
+        <div *ngFor="let resultTypeName of queryResultTypeNames">
+          <app-results-table [instance]="getResultForTypeName(resultTypeName)"
                              [schema]="schema"
                              [selectable]="true"
                              [type]="getTypeIfNotIncluded(resultTypeName)"
-                             (instanceClicked)="instanceClicked($event)"
-            ></app-object-view>
-          </div>
-        </mat-tab>
-        <mat-tab label="Json">
-          <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-card">
+                             (instanceClicked)="instanceClicked($event)"></app-results-table>
+        </div>
+      </mat-tab>
+      <mat-tab label="Result">
+        <div *ngFor="let resultTypeName of queryResultTypeNames">
 
-            <app-simple-code-viewer name="Json" [content]="getResultForTypeName(resultTypeName)"
-                                    lang="json"></app-simple-code-viewer>
-          </div>
-        </mat-tab>
+          <app-object-view [instance]="getResultForTypeName(resultTypeName)"
+                           [schema]="schema"
+                           [selectable]="true"
+                           [type]="getTypeIfNotIncluded(resultTypeName)"
+                           (instanceClicked)="instanceClicked($event)"
+          ></app-object-view>
+        </div>
+      </mat-tab>
+      <mat-tab label="Json">
+        <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-card">
 
-      </mat-tab-group>
+          <app-simple-code-viewer name="Json" [content]="getResultForTypeName(resultTypeName)"
+                                  lang="json"></app-simple-code-viewer>
+        </div>
+      </mat-tab>
 
-      <app-call-explorer *ngIf="showMermaid" [queryResult]="result"></app-call-explorer>
-    </cdk-virtual-scroll-viewport>
+    </mat-tab-group>
+
+    <app-call-explorer *ngIf="showMermaid" [queryResult]="result"></app-call-explorer>
   </div>
 </div>
