@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
 import {filter, take} from 'rxjs/operators';
 
@@ -30,6 +30,10 @@ export class QueryEditorComponent implements OnInit {
   query: string;
   lastQueryResult: QueryResult | QueryFailure;
   loading = false;
+  @Output()
+  queryResultUpdated = new EventEmitter<QueryResult | QueryFailure>();
+  @Output()
+  loadingChanged = new EventEmitter<boolean>();
 
   constructor(private monacoLoaderService: MonacoEditorLoaderService, private queryService: QueryService) {
     this.monacoLoaderService.isMonacoLoaded.pipe(
@@ -65,7 +69,7 @@ export class QueryEditorComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.query = this.initialQuery ? (this.initialQuery as VyneQlQueryHistoryRecord).query : ""
+    this.query = this.initialQuery ? (this.initialQuery as VyneQlQueryHistoryRecord).query : '';
   }
 
   remeasure() {
@@ -92,11 +96,14 @@ export class QueryEditorComponent implements OnInit {
   submitQuery() {
     this.lastQueryResult = null;
     this.loading = true;
+    this.loadingChanged.emit(true);
 
     this.queryService.submitVyneQlQuery(this.query).subscribe(
       result => {
         this.loading = false;
         this.lastQueryResult = result;
+        this.queryResultUpdated.emit(this.lastQueryResult);
+        this.loadingChanged.emit(false);
       },
       error => {
         this.loading = false;
@@ -106,6 +113,8 @@ export class QueryEditorComponent implements OnInit {
             errorResponse.error.message,
             errorResponse.error.profilerOperation,
             errorResponse.error.remoteCalls);
+          this.queryResultUpdated.emit(this.lastQueryResult);
+          this.loadingChanged.emit(false);
         } else {
           // There was an unhandled error...
           console.error('An unhandled error occurred:');

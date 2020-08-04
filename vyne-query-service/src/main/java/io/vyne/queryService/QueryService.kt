@@ -42,6 +42,13 @@ data class FailedSearchResponse(val message: String,
 }
 
 /**
+ * We have to do some funky serialization for QueryResult,
+ * so controller methods are marked to return the Json directly, rather
+ * than allow the default Jackson serialization to take hold
+ */
+typealias QueryResponseJson = String
+
+/**
  * QueryService provides a simple way to submit queries to vyne, and
  * explore the results.
  *
@@ -52,9 +59,15 @@ data class FailedSearchResponse(val message: String,
 class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
 
    @PostMapping("/api/query")
-   fun submitQuery(@RequestBody query: Query): String {
+   fun submitQuery(@RequestBody query: Query): QueryResponseJson {
       val response = executeQuery(query)
 
+      history.add(RestfulQueryHistoryRecord(query, response.historyRecord()))
+
+      return generateResponseJson(response)
+   }
+
+   private fun generateResponseJson(response: QueryResponse): String {
       // We handle the serialization here, and return a string, rather than
       // letting Spring handle it.
       // This is because the LineageGraphSerializationModule() is stateful, and
@@ -64,14 +77,17 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
          .registerModule(LineageGraphSerializationModule())
          .writerWithDefaultPrettyPrinter()
          .writeValueAsString(response)
-
-      history.add(RestfulQueryHistoryRecord(query, response.historyRecord()))
       return json
    }
 
    @PostMapping("/api/vyneql")
    fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString,
-                         @RequestParam("resultMode", defaultValue = "VERBOSE") resultMode: ResultMode): QueryResponse {
+                         @RequestParam("resultMode", defaultValue = "VERBOSE") resultMode: ResultMode): QueryResponseJson {
+      val response = doVyneQlQuery(query, resultMode)
+      return generateResponseJson(response) // consider returning record here
+   }
+
+   internal fun doVyneQlQuery(query: VyneQLQueryString, resultMode: ResultMode): QueryResponse {
       log().info("VyneQL query => $query")
       return timed("QueryService.submitVyneQlQuery") {
          val vyne = vyneFactory.createVyne()
@@ -88,7 +104,7 @@ class QueryService(val vyneFactory: VyneFactory, val history: QueryHistory) {
          }
          val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
          history.add(record)
-         response // consider returning record here
+         response
       }
    }
 

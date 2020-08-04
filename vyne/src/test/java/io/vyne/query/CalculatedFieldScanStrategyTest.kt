@@ -1,10 +1,12 @@
 package io.vyne.query
 
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import io.vyne.TestSchema
 import io.vyne.models.json.addJsonModel
 import io.vyne.query.formulas.CalculatorRegistry
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.testVyne
 import org.junit.Test
 import java.math.BigDecimal
 
@@ -42,4 +44,31 @@ type Invoice {
       expect(result.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(qtyTot.fullyQualifiedName)
       expect(result.matchedNodes.entries.first().value!!.value).to.equal(BigDecimal("400"))
    }
+
+   @Test
+   fun `Can concatenate Date and Time through calculated field`() {
+      val schema = """
+         type TransactionTime inherits Time
+         type TransactionDate inherits Date
+         type TransactionDateTime inherits Instant
+
+         model Transaction {
+            date : TransactionDate
+            time : TransactionTime
+            timestamp : TransactionDateTime as (TransactionDate + TransactionTime)
+         }
+         """
+      val (vyne, _) = testVyne(schema)
+      val json = """
+         {
+            "date" : "2020-10-12",
+            "time" : "18:00:00"
+         }
+      """.trimIndent()
+      vyne.addJsonModel("Transaction", json)
+      val result = vyne.query().find("TransactionDateTime")
+      result.resultMap["TransactionDateTime"]!!.should.equal("2020-10-12T18:00:00.000Z")
+   }
+
+
 }
