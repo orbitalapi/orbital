@@ -119,13 +119,11 @@ data class QueryResult(
                key.type.name.parameterizedName to value?.let { converter.convert(it) }
             }.toMap()
          }
-
-         ResultMode.SIMPLE -> {
+         else -> {
             val converter = TypedInstanceConverter(RawObjectMapper)
             this.results
                .map { (key, value) -> key.type.name.parameterizedName to value?.let { converter.convert(it) } }
                .toMap()
-
          }
       }
 
