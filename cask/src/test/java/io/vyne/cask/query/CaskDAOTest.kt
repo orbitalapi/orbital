@@ -3,12 +3,15 @@ package io.vyne.cask.query
 import com.nhaarman.mockitokotlin2.*
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
+import io.vyne.cask.ddl.INSERTED_AT_COLUM_NAME
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
 import org.junit.Test
 import org.springframework.jdbc.core.JdbcTemplate
 import java.math.BigDecimal
+import java.sql.Timestamp
+import java.time.Instant
 
 class CaskDAOTest {
    private val mockJdbcTemplate = mock<JdbcTemplate>()
@@ -135,4 +138,5 @@ class CaskDAOTest {
       CaskDAO.selectTableList(listOf("table1", "table2")).should.equal("table1 t0 full outer join table2 t1 on 0 = 1")
       CaskDAO.selectTableList(listOf("table1", "table2", "table3")).should.equal("table1 t0 full outer join table2 t1 on 0 = 1 full outer join table3 t2 on 0 = 1")
    }
+
 }

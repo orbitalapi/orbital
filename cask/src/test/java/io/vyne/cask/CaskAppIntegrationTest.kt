@@ -1,12 +1,18 @@
 package io.vyne.cask
 
+import arrow.core.Either
+import arrow.core.right
 import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
+import io.vyne.VersionedTypeReference
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
+import io.vyne.cask.ingest.CaskRequestGenerator
+import io.vyne.cask.query.CaskDAO
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.log
 import org.junit.AfterClass
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,6 +23,7 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
+import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
@@ -51,6 +58,18 @@ class CaskAppIntegrationTest {
    @Autowired
    lateinit var schemaPublisher: SchemaPublisher
 
+   @Autowired
+   lateinit var caskDao: CaskDAO
+
+lateinit var webClient: WebClient
+
+   @Before
+   fun setup() {
+      webClient = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+   }
 
    companion object {
       lateinit var pg: EmbeddedPostgres
@@ -256,4 +275,66 @@ Date,Symbol,Open,High,Low,Close
       val open: Double,
       val close: Double
    )
+
+
+
+   @Test
+   fun canEvictDataViaRestEndpoint() {
+      // mock schema
+      val schemaResult = schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1) as Either.Right
+      val schema = schemaResult.b
+
+      val beginning = Instant.now()
+      insertRecords(17)
+      val middle = Instant.now()
+      insertRecords(57)
+      val end = Instant.now()
+
+
+      val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummaryCsv")
+      val versionedType = schema.versionedType(versionedTypeReference)
+      caskDao.findAll(versionedType).size.should.be.equal(74)
+
+      // No eviction
+      evictQuery("rWindowSummaryCsv_d3c664_81a347", beginning.toString())
+      caskDao.findAll(versionedType).size.should.be.equal(74)
+
+      // 17 evictions
+      evictQuery("rWindowSummaryCsv_d3c664_81a347", middle.toString())
+      caskDao.findAll(versionedType).size.should.be.equal(57)
+
+      // 57 evictions
+      evictQuery("rWindowSummaryCsv_d3c664_81a347", end.toString())
+      caskDao.findAll(versionedType).size.should.be.equal(0)
+
+   }
+
+   fun evictQuery(tableName: String, writtenBefore: String) {
+      webClient
+         .post()
+         .uri("/api/casks/$tableName/evict")
+         .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+         .bodyValue(""" { "writtenBefore": "$writtenBefore"}""")
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+   }
+
+   fun insertRecords(n: Int)  {
+      var caskRequest = """Date,Symbol,Open,High,Low,Close"""
+      for(i in 1..n){
+         caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
+      }
+
+      val response =  webClient
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+
+      response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested $n records"}""")
+
+   }
 }

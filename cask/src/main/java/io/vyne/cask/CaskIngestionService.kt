@@ -20,6 +20,7 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Instant
 import java.util.*
 
 @Component
@@ -124,6 +125,18 @@ class CaskService(private val schemaProvider: SchemaProvider,
    fun emptyCask(tableName: String) {
       if(caskDAO.exists(tableName)) {
          caskDAO.emptyCask(tableName)
+      }
+   }
+
+   fun setEvictionSchedule(tableName: String, daysToRetain: Int) {
+      if(caskDAO.exists(tableName)) {
+         caskDAO.setEvictionSchedule(tableName, daysToRetain)
+      }
+   }
+
+   fun evict(tableName: String, writtenBefore: Instant) {
+      if(caskDAO.exists(tableName)) {
+         caskDAO.evict(tableName, writtenBefore)
       }
    }
 }

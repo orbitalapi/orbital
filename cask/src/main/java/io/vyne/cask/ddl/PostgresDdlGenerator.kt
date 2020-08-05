@@ -120,6 +120,7 @@ fun VersionedType.caskRecordTable(): String {
    return PostgresDdlGenerator.tableName(this)
 }
 
+const val INSERTED_AT_COLUM_NAME = "cask_inserted_at"
 class PostgresDdlGenerator {
    private val _primaryKey = "PrimaryKey"
    private val _indexed = "Indexed"
@@ -192,6 +193,8 @@ class PostgresDdlGenerator {
       cachePath: Path?,
       deltaAgainstTableName: String?): TableGenerationStatement {
       val columns = fields.map { generateColumnForField(it) }
+
+
       val tableName = tableName(versionedType)
       val ddl = """${generateCaskTableDdl(versionedType, fields)}
          |${generateTableIndexesDdl(tableName, fields)}
@@ -228,8 +231,10 @@ class PostgresDdlGenerator {
       val columns = fields.map { generateColumnForField(it) }
       val fieldDef = columns.joinToString(",\n") { it.sql }
 
+     val  caskInternalColumns = "\"$INSERTED_AT_COLUM_NAME\" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n"
+
       return """CREATE TABLE IF NOT EXISTS $tableName (
-         |$fieldDef${generatePrimaryKey(fields, tableName)});""".trimMargin()
+         |$caskInternalColumns$fieldDef${generatePrimaryKey(fields, tableName)});""".trimMargin()
    }
 
    fun generateColumnForField(field: Field): PostgresColumn {

@@ -28,6 +28,7 @@ type Person {
         val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
         statement.ddlStatement.trim().should.equal("""
 CREATE TABLE IF NOT EXISTS Person_201831 (
+"cask_inserted_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 "firstName" VARCHAR(255),
 "age" INTEGER,
 "alive" BOOLEAN,
@@ -58,6 +59,7 @@ type Person {
       val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
       statement.ddlStatement.should.equal("""
 CREATE TABLE IF NOT EXISTS Person_47dd1f (
+"cask_inserted_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 "firstName" VARCHAR(255),
 "age" INTEGER,
 "alive" BOOLEAN,

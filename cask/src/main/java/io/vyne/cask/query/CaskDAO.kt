@@ -1,6 +1,7 @@
 package io.vyne.cask.query
 
 import io.vyne.cask.api.CaskConfig
+import io.vyne.cask.ddl.INSERTED_AT_COLUM_NAME
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ddl.caskRecordTable
@@ -309,7 +310,8 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
                setArray(4, connection.createArrayOf("text", sourceSchemaIds.toTypedArray()))
                setArray(5, connection.createArrayOf("text", sources.toTypedArray()))
                setTimestamp(6, Timestamp.from(timestamp))
-               if (deltaAgainstTableName != null) setString(7, deltaAgainstTableName) else setNull(7, Types.VARCHAR)
+               setInt(7, 30)
+               if (deltaAgainstTableName != null) setString(8, deltaAgainstTableName) else setNull(8, Types.VARCHAR)
             }
          }
       }
@@ -341,6 +343,23 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       jdbcTemplate.update("TRUNCATE ${tableName}")
    }
 
+   fun evict(tableName: String, writtenBefore: Instant) {
+      log().info("Evicting records for table=$tableName, older than $writtenBefore")
+      jdbcTemplate.update { connection ->
+         connection.prepareStatement("DELETE from $tableName WHERE $INSERTED_AT_COLUM_NAME < ?").apply {
+            setTimestamp(1, Timestamp.from(writtenBefore))
+         }
+      }
+   }
+
+   fun setEvictionSchedule(tableName: String, daysToRetain: Int) {
+      jdbcTemplate.update { connection ->
+         connection.prepareStatement("UPDATE CASK_CONFIG SET daysToRetain= ? WHERE tableName= $tableName ").apply {
+            setInt(1, daysToRetain)
+         }
+      }
+   }
+
    private val ADD_CASK_CONFIG = """INSERT into CASK_CONFIG (
         | tableName,
         | qualifiedTypeName,
@@ -348,8 +367,9 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
         | sourceSchemaIds,
         | sources,
         | insertedAt,
+        | daysToRetain,
         | deltaAgainstTableName)
-        | values ( ? , ? , ?, ?, ?, ?, ?)""".trimMargin()
+        | values ( ? , ? , ?, ?, ?, ?, ?, ?)""".trimMargin()
 
 
    private val caskConfigRowMapper: (ResultSet, Int) -> CaskConfig = { rs: ResultSet, rowNum: Int ->
