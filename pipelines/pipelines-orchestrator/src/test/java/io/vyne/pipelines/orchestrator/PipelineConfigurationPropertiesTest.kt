@@ -13,8 +13,12 @@ import org.springframework.test.context.junit4.SpringRunner
 
 
 @RunWith(SpringRunner::class)
-@SpringBootTest
-@ActiveProfiles("test")
+@SpringBootTest(
+   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+   properties = [
+      "eureka.client.enabled=false"
+   ])
+@ActiveProfiles(profiles = ["test"])
 class PipelineConfigurationPropertiesTest {
    @Autowired
    lateinit var pipelineConfigurationProperties: PipelineConfigurationProperties
@@ -31,5 +35,35 @@ class PipelineConfigurationPropertiesTest {
       pipelines[1].name.should.equal("test-pipeline-2")
       pipelines[2].name.should.equal("test-pipeline-3")
       pipelines[3].name.should.equal("test-pipeline-4")
+
+      val stripWhiteSpaces = Regex("\\s")
+      pipelines[0].pipelineDescription.replace(stripWhiteSpaces, "").should.equal("""
+         {"name":"test-pipeline-1",
+         "input":{
+               "type":"imdb.Actor",
+               "transport":{
+                  "topic":"pipeline-input-avro",
+                  "targetType":"imdb.Actor",
+                  "type":"kafka",
+                  "direction":"INPUT",
+                  "props":{
+                     "group.id":"vyne-pipeline-group",
+                     "bootstrap.servers":"kafka:9092,",
+                     "heartbeat.interval.ms":"3000",
+                     "session.timeout.ms":"10000",
+                     "auto.offset.reset":"earliest"
+                     }
+                  }
+              },
+        "output":{
+               "type":"imdb.Actor",
+               "transport":{
+                  "targetType":"imdb.Actor",
+                  "type":"cask",
+                  "direction":"OUTPUT"
+                 }
+               }
+      }
+      """.trimIndent().replace(stripWhiteSpaces, ""))
    }
 }
