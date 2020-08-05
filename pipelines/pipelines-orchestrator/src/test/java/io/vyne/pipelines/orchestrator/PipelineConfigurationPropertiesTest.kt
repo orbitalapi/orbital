@@ -58,6 +58,9 @@ class PipelineConfigurationPropertiesTest {
         "output":{
                "type":"imdb.Actor",
                "transport":{
+                  "props": {
+                     "foo": "bar"
+                  },
                   "targetType":"imdb.Actor",
                   "type":"cask",
                   "direction":"OUTPUT"
