@@ -8,12 +8,14 @@ import com.fasterxml.jackson.module.mrbean.MrBeanModule
 import io.vyne.query.*
 import lang.taxi.TypeNames
 import lang.taxi.TypeReference
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
 import org.springframework.web.client.RestTemplate
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.WildcardType
 import kotlin.reflect.KClass
 
-class VyneClient(private val queryService: VyneQueryService, private val factProviders: List<FactProvider> = emptyList(), private val objectMapper: ObjectMapper = Jackson.objectMapper) {
+class VyneClient(private val queryService: VyneQueryService, private val factProviders: List<FactProvider> = emptyList(), private val objectMapper: ObjectMapper = Jackson.objectMapper) : VyneQueryService by queryService {
    constructor(queryServiceUrl: String) : this(HttpVyneQueryService(queryServiceUrl))
 
    fun given(vararg model: Any): VyneQueryBuilder {
@@ -42,6 +44,7 @@ class VyneClient(private val queryService: VyneQueryService, private val factPro
    inline fun <reified T : Any> discoverUntyped(): Any? {
       return given().discoverUntyped<T>()
    }
+
 }
 
 class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val queryService: VyneQueryService, val objectMapper: ObjectMapper) {
@@ -123,24 +126,16 @@ interface VyneQueryService {
 
 
 class HttpVyneQueryService(private val queryServiceUrl: String, private val restTemplate: RestTemplate = RestTemplate()) : VyneQueryService {
-   override fun submitQuery(query: Query): QueryClientResponse {
-      val queryResult = restTemplate.postForObject(
-         "$queryServiceUrl/api/query",
-         query,
-         QueryClientResponse::class.java
-      )
-      return queryResult
-   }
 
-   override fun submitVyneQl(vyneQL: String): QueryClientResponse {
-      val queryResult = restTemplate.postForObject(
-         "$queryServiceUrl/api/vyneql",
-         vyneQL,
-         QueryClientResponse::class.java
-      )
-      return queryResult
-   }
+   override fun submitQuery(query: Query) = post("/api/query", query)
+   override fun submitVyneQl(vyneQL: String) = post("/api/vyneql", vyneQL)
 
+   private fun post(path: String, body: Any): QueryClientResponse {
+      val headers = HttpHeaders()
+      headers.set("Content-Type", "application/json")
+      val query = HttpEntity(body, headers)
+      return restTemplate.postForObject("$queryServiceUrl$path", query, QueryClientResponse::class.java)
+   }
 }
 
 data class QueryClientResponse(
