@@ -1,5 +1,0 @@
-server:
-  port: 9020
-spring:
-  application:
-    name: schema-store
