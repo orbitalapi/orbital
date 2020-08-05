@@ -7,6 +7,9 @@ import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.query.CaskDAO
+import io.vyne.models.DefinedInSchema
+import io.vyne.models.RawObjectMapper
+import io.vyne.models.TypedInstance
 import io.vyne.schemas.fqn
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.Benchmark
@@ -23,8 +26,11 @@ import reactor.core.publisher.Flux
 import java.io.InputStream
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
+import java.time.LocalDate
+import java.time.LocalTime
 
 class DataIngestionTests {
    @Rule
@@ -193,4 +199,44 @@ class DataIngestionTests {
       }
    }
 
+   @Test
+   fun `Can downcast incoming Instant as Date or Time`() {
+      val source = """DateOnly,TimeOnly
+         |2013-06-30T00:00:00,2013-05-30T00:00:00
+         |2013-06-30T00:00:00,2013-05-30T00:00:00""".trimMargin()
+      val schema = TestSchema.schemaTemporalDownCastTest
+      val downCastTestType = schema.versionedType("DowncastTest".fqn())
+      val input: Flux<InputStream> = Flux.just(source.byteInputStream())
+      val pipelineSource = CsvStreamSource(input, downCastTestType, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(downCastTestType, TypeDbWrapper(downCastTestType, schema, pipelineSource.cachePath, null), pipelineSource)
+
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource))
+      ingester = Ingester(jdbcTemplate, pipeline)
+      caskDao.dropCaskRecordTable(downCastTestType)
+      caskDao.createCaskRecordTable(downCastTestType)
+      ingester.ingest().collectList().block()
+
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      result.first()["dateOnly"].should.equal(Date.valueOf("2013-06-30"))
+      (result.first()["timeOnly"] as Time).should.equal(Time.valueOf("00:00:00"))
+
+      caskDao.createCaskRecordTable(downCastTestType)
+      FileUtils.cleanDirectory(folder.root)
+
+      //
+      val dateOnlyQualifiedName = schema.type("DowncastTest").attributes.getValue("dateOnly").type
+      val rawValue = RawObjectMapper.map(
+         TypedInstance.from(schema.type(dateOnlyQualifiedName), LocalDate.now(), schema, false, setOf(), DefinedInSchema)
+      )
+      rawValue.should.be.equal("2020-08-05T00:00:00")
+
+      val timeOnlyQualifiedName = schema.type("DowncastTest").attributes.getValue("timeOnly").type
+      val timeRawValue = try { RawObjectMapper.map(
+         TypedInstance.from(schema.type(timeOnlyQualifiedName), LocalTime.now(), schema, false, setOf(), DefinedInSchema)
+      ) } catch(e: Exception) {
+        LocalTime.MAX
+      }
+
+      timeRawValue.should.be.equal(LocalTime.MAX)
+   }
 }
