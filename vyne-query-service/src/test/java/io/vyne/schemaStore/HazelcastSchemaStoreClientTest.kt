@@ -28,8 +28,9 @@ class HazelcastSchemaStoreClientTest {
 
    @Before
    fun before() {
-      instance1 = newHazelcastInstance("hazelcastInstance-cluster-node1")
-      instance2 = newHazelcastInstance("hazelcastInstance-cluster-node2")
+      val group = "hazel-test-cluster-${UUID.randomUUID()}"
+      instance1 = newHazelcastInstance("hazelcastInstance-cluster-node1", group)
+      instance2 = newHazelcastInstance("hazelcastInstance-cluster-node2", group)
    }
 
    @After
@@ -37,10 +38,10 @@ class HazelcastSchemaStoreClientTest {
       HazelcastInstanceFactory.terminateAll()
    }
 
-   private fun newHazelcastInstance(instanceName: String): HazelcastInstance {
+   private fun newHazelcastInstance(instanceName: String, group: String): HazelcastInstance {
       val cfg = Config()
       cfg.instanceName = instanceName
-      cfg.groupConfig.name = "hazel-test-cluster-${UUID.randomUUID()}"// TO prevent conflicts on the same build machine
+      cfg.groupConfig.name = group// TO prevent conflicts on the same build machine
       cfg.networkConfig.join.multicastConfig.isEnabled = false
       cfg.networkConfig.join.tcpIpConfig.isEnabled = true
       cfg.networkConfig.join.tcpIpConfig.members = listOf("127.0.0.1")
