@@ -158,10 +158,12 @@ class CaskWebsocketHandler(
       healthMonitor.reportStatus(UP)
 
       // Configure the session: inbounds and outbounds messages
-      return session.send(wsOutput.map {
+      return session.send(wsOutput.map { inputStream ->
             session.binaryMessage{ factory ->
                val buf = factory.allocateBuffer()
-               buf.asOutputStream().write(it.readBytes())
+               // here just copying the entire buffer
+               // one option would be to read chunks 1024 from inputStream
+               buf.asOutputStream().write(inputStream.readBytes())
                buf
             }
          })
