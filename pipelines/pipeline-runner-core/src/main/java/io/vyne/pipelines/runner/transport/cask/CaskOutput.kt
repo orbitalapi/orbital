@@ -47,7 +47,7 @@ class CaskOutput(
 
    private val CASK_CONTENT_TYPE_PARAMETER = "content-type"
 
-   val wsOutput: EmitterProcessor<InputStream> = EmitterProcessor.create()
+   val wsOutput: EmitterProcessor<MessageContentProvider> = EmitterProcessor.create()
    val wsHandler = CaskWebsocketHandler(logger, healthMonitor, wsOutput) { handleWebsocketTermination(it) }
 
    init {
@@ -140,7 +140,7 @@ class CaskOutput(
    }
 
 
-   override fun write(message: InputStream, logger: PipelineLogger) {
+   override fun write(message: MessageContentProvider, logger: PipelineLogger) {
       logger.info { "Sending message to Cask" }
       wsOutput.onNext(message)
    }
@@ -150,7 +150,7 @@ class CaskOutput(
 class CaskWebsocketHandler(
    val logger: PipelineLogger,
    val healthMonitor: PipelineTransportHealthMonitor,
-   val wsOutput: EmitterProcessor<InputStream>,
+   val wsOutput: EmitterProcessor<MessageContentProvider>,
    val onTermination: (throwable: Throwable?) -> Unit
 ) : WebSocketHandler {
    override fun handle(session: WebSocketSession): Mono<Void> {
@@ -159,12 +159,11 @@ class CaskWebsocketHandler(
       healthMonitor.reportStatus(UP)
 
       // Configure the session: inbounds and outbounds messages
-      return session.send(wsOutput.map { inputStream ->
+      return session.send(wsOutput.map { messageContentProvider ->
             session.binaryMessage{ factory ->
                val dataBuffer = factory.allocateBuffer()
-               // though it looks like we copying from one stream to the other
-               // what actually happens is the entire data ends up fully in dataBuffer (in memory)
-               ByteStreams.copy(inputStream, dataBuffer.asOutputStream())
+
+               messageContentProvider.writeToStream(logger, dataBuffer.asOutputStream())
                dataBuffer
             }
          })
