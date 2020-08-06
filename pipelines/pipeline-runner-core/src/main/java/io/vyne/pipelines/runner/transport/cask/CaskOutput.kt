@@ -1,6 +1,7 @@
 package io.vyne.pipelines.runner.transport.cask
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.io.ByteStreams
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
@@ -160,11 +161,11 @@ class CaskWebsocketHandler(
       // Configure the session: inbounds and outbounds messages
       return session.send(wsOutput.map { inputStream ->
             session.binaryMessage{ factory ->
-               val buf = factory.allocateBuffer()
-               // here just copying the entire buffer
-               // one option would be to read chunks 1024 from inputStream
-               buf.asOutputStream().write(inputStream.readBytes())
-               buf
+               val dataBuffer = factory.allocateBuffer()
+               // though it looks like we copying from one stream to the other
+               // what actually happens is the entire data ends up fully in dataBuffer (in memory)
+               ByteStreams.copy(inputStream, dataBuffer.asOutputStream())
+               dataBuffer
             }
          })
          .and(

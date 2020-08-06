@@ -115,11 +115,8 @@ class PipelineRunnerIntegrationTest : AbstractKafkaTest() {
       sendKafkaMessage(""" {"userId":"Andrzej"} """)
       sendKafkaMessage(""" {"userId":"Serhat"} """)
 
-      Thread.sleep(10000)
-      println("Received: ${websocketServer.messagesReceived}")
       await().until { websocketServer.messagesReceived.should.have.size(3) }
    }
-
 
    /**
     * Convenient method to POST the pipeline description
