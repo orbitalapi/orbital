@@ -17,6 +17,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
+import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.test.fail
 
@@ -39,7 +40,7 @@ class HazelcastSchemaStoreClientTest {
    private fun newHazelcastInstance(instanceName: String): HazelcastInstance {
       val cfg = Config()
       cfg.instanceName = instanceName
-      cfg.groupConfig.name = "hazel-test-cluster"
+      cfg.groupConfig.name = "hazel-test-cluster-${UUID.randomUUID()}"// TO prevent conflicts on the same build machine
       cfg.networkConfig.join.multicastConfig.isEnabled = false
       cfg.networkConfig.join.tcpIpConfig.isEnabled = true
       cfg.networkConfig.join.tcpIpConfig.members = listOf("127.0.0.1")
