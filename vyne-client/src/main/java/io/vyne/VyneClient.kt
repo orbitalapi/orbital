@@ -10,6 +10,7 @@ import lang.taxi.TypeNames
 import lang.taxi.TypeReference
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.web.client.RestTemplate
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.WildcardType
@@ -132,8 +133,8 @@ class HttpVyneQueryService(private val queryServiceUrl: String, private val rest
 
    private fun post(path: String, body: Any): QueryClientResponse {
       val headers = HttpHeaders()
-      headers.set("Content-Type", "application/json")
-      headers.set("Accept", "application/json")
+      headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+      headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
       val query = HttpEntity(body, headers)
       return restTemplate.postForObject("$queryServiceUrl$path", query, QueryClientResponse::class.java)
    }
