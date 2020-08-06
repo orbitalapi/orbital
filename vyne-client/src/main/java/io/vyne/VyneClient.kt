@@ -133,6 +133,7 @@ class HttpVyneQueryService(private val queryServiceUrl: String, private val rest
    private fun post(path: String, body: Any): QueryClientResponse {
       val headers = HttpHeaders()
       headers.set("Content-Type", "application/json")
+      headers.set("Accept", "application/json")
       val query = HttpEntity(body, headers)
       return restTemplate.postForObject("$queryServiceUrl$path", query, QueryClientResponse::class.java)
    }
