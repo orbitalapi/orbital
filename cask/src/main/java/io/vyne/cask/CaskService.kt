@@ -29,8 +29,9 @@ class CaskService(private val schemaProvider: SchemaProvider,
                   private val caskDAO: CaskDAO) {
 
    interface CaskServiceError {
-      val message:String
+      val message: String
    }
+
    data class TypeError(override val message: String) : CaskServiceError
    data class ContentTypeError(override val message: String) : CaskServiceError
 
@@ -112,31 +113,19 @@ class CaskService(private val schemaProvider: SchemaProvider,
    }
 
    fun getCaskDetails(tableName: String): CaskDetails {
-      val count =  caskDAO.countCaskRecords(tableName)
+      val count = caskDAO.countCaskRecords(tableName)
       return CaskDetails(count)
    }
 
-   fun deleteCask(tableName: String) {
-      if(caskDAO.exists(tableName)) {
-         caskDAO.deleteCask(tableName)
-      }
-   }
+   fun deleteCask(tableName: String) = withCask(tableName) {caskDAO.deleteCask(tableName) }
+   fun emptyCask(tableName: String) = withCask(tableName) { caskDAO.emptyCask(it) }
+   fun setEvictionSchedule(tableName: String, daysToRetain: Int) = withCask(tableName) { caskDAO.setEvictionSchedule(it, daysToRetain) }
+   fun evict(tableName: String, writtenBefore: Instant) = withCask(tableName) { caskDAO.evict(it, writtenBefore) }
 
-   fun emptyCask(tableName: String) {
-      if(caskDAO.exists(tableName)) {
-         caskDAO.emptyCask(tableName)
-      }
-   }
 
-   fun setEvictionSchedule(tableName: String, daysToRetain: Int) {
-      if(caskDAO.exists(tableName)) {
-         caskDAO.setEvictionSchedule(tableName, daysToRetain)
-      }
-   }
-
-   fun evict(tableName: String, writtenBefore: Instant) {
-      if(caskDAO.exists(tableName)) {
-         caskDAO.evict(tableName, writtenBefore)
+   private fun withCask(tableName: String, action: (String) -> Unit) {
+      if (caskDAO.exists(tableName)) {
+         action.invoke(tableName)
       }
    }
 }
