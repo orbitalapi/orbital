@@ -7,6 +7,7 @@ import io.vyne.schemas.Type
 import io.vyne.utils.log
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
+import java.io.InputStream
 import java.time.Instant
 import kotlin.math.absoluteValue
 
@@ -87,9 +88,9 @@ interface PipelineInputTransport : PipelineTransort {
    fun resume() {}
 }
 
-sealed class PipelineMessage(val content: String, val pipeline: Pipeline, val inputType: Type, val outputType: Type)
-class TransformablePipelineMessage(content: String,  pipeline: Pipeline,  inputType: Type, outputType: Type, val instance: TypedInstance, var transformedInstance: TypedInstance? = null)  : PipelineMessage(content, pipeline, inputType, outputType)
-class RawPipelineMessage( content: String, pipeline: Pipeline,  inputType: Type, outputType: Type): PipelineMessage(content, pipeline, inputType, outputType)
+sealed class PipelineMessage(val content: InputStream, val pipeline: Pipeline, val inputType: Type, val outputType: Type)
+class TransformablePipelineMessage(content: InputStream,  pipeline: Pipeline,  inputType: Type, outputType: Type, val instance: TypedInstance, var transformedInstance: TypedInstance? = null)  : PipelineMessage(content, pipeline, inputType, outputType)
+class RawPipelineMessage( content: InputStream, pipeline: Pipeline,  inputType: Type, outputType: Type): PipelineMessage(content, pipeline, inputType, outputType)
 
 
 data class PipelineInputMessage(
@@ -98,7 +99,7 @@ data class PipelineInputMessage(
    // has received it
    val messageTimestamp: Instant,
    val metadata: Map<String, Any> = emptyMap(),
-   val messageProvider: (logger: PipelineLogger) -> String
+   val messageProvider: (logger: PipelineLogger) -> InputStream
 ) {
    val id = messageTimestamp.toEpochMilli()
 }
@@ -107,7 +108,7 @@ data class PipelineInputMessage(
 interface PipelineOutputTransport : PipelineTransort {
 
    val type: VersionedTypeReference
-   fun write(message: String, logger: PipelineLogger)
+   fun write(message: InputStream, logger: PipelineLogger)
 
 }
 

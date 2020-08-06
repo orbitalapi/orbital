@@ -2,6 +2,7 @@ package io.vyne.pipelines.runner.transport.cask
 
 import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockitokotlin2.*
+import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineTransportHealthMonitor
@@ -17,6 +18,7 @@ import org.springframework.web.reactive.socket.client.WebSocketClient
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
+import java.io.ByteArrayInputStream
 import java.net.URI
 import java.util.concurrent.TimeUnit.SECONDS
 
@@ -133,13 +135,13 @@ class CaskOutputTest {
 
       caskOutput = CaskOutput(spec,mock(),  discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
-      caskOutput.write(""" This is a Message """, mock())
-      caskOutput.write(""" This is a second message """, mock())
+      caskOutput.write(""" This is a Message """.byteInputStream(), mock())
+      caskOutput.write(""" This is a second message """.byteInputStream(), mock())
 
       StepVerifier
-         .create(caskOutput.wsOutput)
+         .create(caskOutput.wsOutput.map { String(it.readBytes()) }.take(2))
          .expectNext(""" This is a Message """)
-         .expectNext(""" This is a second Message """)
+         .expectNext(""" This is a second message """)
+         .verifyComplete()
    }
-
 }

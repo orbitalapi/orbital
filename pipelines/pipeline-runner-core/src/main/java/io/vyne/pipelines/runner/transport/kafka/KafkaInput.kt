@@ -2,12 +2,10 @@ package io.vyne.pipelines.runner.transport.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
 import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
-import io.vyne.schemas.Schema
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -18,6 +16,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kafka.receiver.KafkaReceiver
 import reactor.kafka.receiver.ReceiverOptions
+import java.io.InputStream
 import java.nio.charset.Charset
 import java.time.Duration
 import java.time.Instant
@@ -33,7 +32,7 @@ class KafkaInputBuilder(val objectMapper: ObjectMapper = jacksonObjectMapper()) 
 
 class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper) : AbstractKafkaInput<String>(spec, objectMapper, StringDeserializer::class.qualifiedName!!) {
 
-   override fun toStringMessage(message: String): String = message
+   override fun toInputStream(message: String): InputStream = message.byteInputStream()
 
 }
 
@@ -53,10 +52,10 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
    override val healthMonitor = EmitterPipelineTransportHealthMonitor()
 
    /**
-    * Convert the incoming Kafka message to String for ingestion.
+    * Convert the incoming Kafka message to InputStream for ingestion.
     * Example: convert an Avro binary message to Json string
     */
-   abstract fun toStringMessage(message: V): String
+   abstract fun toInputStream(message: V): InputStream
 
    init {
       // ENHANCE: there might be a way to hook on some events from the flux below to know when we are actually connected to kafka
@@ -89,7 +88,7 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
                val message = kafkaMessage.value()
 
                // Step 2. The actual Kafka message ingested can have different type (e.g plain json, avro, other binary formats...). Extract the json string from the message
-               toStringMessage(message)
+               toInputStream(message)
             }
 
             Mono.create<PipelineInputMessage> { sink ->
