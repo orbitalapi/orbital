@@ -226,7 +226,7 @@ class DataIngestionTests {
       //
       val dateOnlyQualifiedName = schema.type("DowncastTest").attributes.getValue("dateOnly").type
       val rawValue = RawObjectMapper.map(
-         TypedInstance.from(schema.type(dateOnlyQualifiedName), LocalDate.now(), schema, false, setOf(), DefinedInSchema)
+         TypedInstance.from(schema.type(dateOnlyQualifiedName), LocalDate.of(2020, 8, 5), schema, false, setOf(), DefinedInSchema)
       )
       rawValue.should.be.equal("2020-08-06T00:00:00")
 
