@@ -16,7 +16,7 @@ class PipelineInstanceTest {
       override val healthMonitor= EmitterPipelineTransportHealthMonitor()
    }
    class DummyOutput(override val type: VersionedTypeReference) : PipelineOutputTransport {
-      override fun write(message: InputStream, logger: PipelineLogger) { }
+      override fun write(message: MessageContentProvider, logger: PipelineLogger) { }
       override val healthMonitor = EmitterPipelineTransportHealthMonitor()
    }
 

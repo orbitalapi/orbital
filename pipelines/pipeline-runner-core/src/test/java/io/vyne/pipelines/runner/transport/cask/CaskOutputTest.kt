@@ -7,6 +7,7 @@ import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.PipelineLogger
 import io.vyne.pipelines.PipelineTransportHealthMonitor
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
+import io.vyne.pipelines.StringContentProvider
 import io.vyne.schemas.fqn
 import org.junit.Before
 import org.junit.Test
@@ -135,11 +136,11 @@ class CaskOutputTest {
 
       caskOutput = CaskOutput(spec,mock(),  discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
-      caskOutput.write(""" This is a Message """.byteInputStream(), mock())
-      caskOutput.write(""" This is a second message """.byteInputStream(), mock())
+      caskOutput.write(StringContentProvider(" This is a Message "), mock())
+      caskOutput.write(StringContentProvider(" This is a second message "), mock())
 
       StepVerifier
-         .create(caskOutput.wsOutput.map { String(it.readBytes()) }.take(2))
+         .create(caskOutput.wsOutput.map { it.asString(mock()) }.take(2))
          .expectNext(""" This is a Message """)
          .expectNext(""" This is a second message """)
          .verifyComplete()
