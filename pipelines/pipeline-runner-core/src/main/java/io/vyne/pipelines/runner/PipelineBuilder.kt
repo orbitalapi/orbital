@@ -65,13 +65,11 @@ class PipelineBuilder(
       )
       val logger = stageObserverProvider("Ingest")
 
-      val inputMessage = message.messageProvider(logger)
-
       val pipelineMessage = when (inputType == outputType) {
-         true -> RawPipelineMessage(inputMessage, pipeline, inputType, outputType)
+         true -> RawPipelineMessage(message.contentProvider, pipeline, inputType, outputType)
          false -> {
-            val typedInstance = TypedInstance.from(inputType, objectMapper.readTree(inputMessage), vyne.schema, source = Provided)
-            TransformablePipelineMessage(inputMessage, pipeline, inputType, outputType, typedInstance)
+            val typedInstance = TypedInstance.from(inputType, objectMapper.readTree(message.contentProvider.asString(logger)), vyne.schema, source = Provided)
+            TransformablePipelineMessage(message.contentProvider, pipeline, inputType, outputType, typedInstance)
          }
       }
 
@@ -124,7 +122,7 @@ class PipelineBuilder(
 
       return loggedMono(logger) {
          val outputMessage = when (message) {
-            is TransformablePipelineMessage -> objectMapper.writeValueAsString(message.transformedInstance!!.toRawObject())
+            is TransformablePipelineMessage -> JacksonContentProvider(objectMapper, message.transformedInstance!!.toRawObject()!!)
             is RawPipelineMessage -> message.content
          }
 

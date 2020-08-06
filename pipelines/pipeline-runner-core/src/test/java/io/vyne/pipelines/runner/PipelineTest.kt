@@ -1,13 +1,8 @@
 package io.vyne.pipelines.runner
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineChannel
@@ -131,7 +126,7 @@ class TestSource(val type: Type, val schema: Schema) {
    fun send(message: String) {
       emitter.sink().next(
          PipelineInputMessage(
-            messageProvider = { _ -> message },
+            contentProvider = { _ -> message },
             messageTimestamp = Instant.now()
          )
       )

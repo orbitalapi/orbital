@@ -8,6 +8,7 @@ import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.discovery.DiscoveryClient
+import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
@@ -138,7 +139,7 @@ class CaskOutput(
    }
 
 
-   override fun write(message: String, logger: PipelineLogger) {
+   override fun write(message: MessageContentProvider, logger: PipelineLogger) {
       logger.info { "Sending message to Cask" }
       wsOutput.onNext(message)
    }
@@ -148,7 +149,7 @@ class CaskOutput(
 class CaskWebsocketHandler(
    val logger: PipelineLogger,
    val healthMonitor: PipelineTransportHealthMonitor,
-   val wsOutput: EmitterProcessor<String>,
+   val wsOutput: EmitterProcessor<MessageContentProvider>,
    val onTermination: (throwable: Throwable?) -> Unit
 ) : WebSocketHandler {
    override fun handle(session: WebSocketSession): Mono<Void> {
@@ -157,6 +158,11 @@ class CaskWebsocketHandler(
       healthMonitor.reportStatus(UP)
 
       // Configure the session: inbounds and outbounds messages
+      session.binaryMessage { factory -> factory. }
+      session.send(wsOutput.map { session.binaryMessage { dataBufferFactory ->
+
+      } }
+      )
       return session.send(wsOutput.map { session.textMessage(it) })
          .and(
             session.receive().map { it.payloadAsText }
