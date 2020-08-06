@@ -72,7 +72,7 @@ class PipelineTest {
       val message = output.messages.first()
 
 
-      message.should.be.equal("""{"id":"jimmy","name":"Jimmy Pitt"}""")
+      String(message.readBytes()).should.be.equal("""{"id":"jimmy","name":"Jimmy Pitt"}""")
    }
 
    @Test
@@ -119,7 +119,7 @@ class PipelineTest {
       val outputMessage = output.messages.first()
 
 
-      outputMessage.should.be.equal(message)
+      String(outputMessage.readBytes()).should.be.equal(message)
    }
 }
 
@@ -131,7 +131,7 @@ class TestSource(val type: Type, val schema: Schema) {
    fun send(message: String) {
       emitter.sink().next(
          PipelineInputMessage(
-            messageProvider = { _ -> message },
+            messageProvider = { _ -> message.byteInputStream() },
             messageTimestamp = Instant.now()
          )
       )

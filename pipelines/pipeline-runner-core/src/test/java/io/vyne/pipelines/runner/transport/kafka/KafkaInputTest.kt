@@ -33,7 +33,7 @@ class KafkaInputTest : AbstractKafkaTest() {
       await().until { output.messages.should.have.size(4) }
 
       // Check the values in the output
-      output.messages.should.have.all.elements(
+      output.messages.map { String(it.readBytes()) }.should.have.all.elements(
          """{"id":"Marty","name":"Marty@mail.com"}""",
          """{"id":"Paul","name":"Paul@mail.com"}""",
          """{"id":"Andrzej","name":"Andrzej@mail.com"}""",
@@ -77,7 +77,7 @@ class KafkaInputTest : AbstractKafkaTest() {
       await().until { output.messages.should.have.size(5) }
 
       // We should now ingest the 3 new messages. Total of 5
-      output.messages.should.have.all.elements(
+      output.messages.map { String(it.readBytes()) }.should.have.all.elements(
          """{"id":"Marty","name":"Marty@mail.com"}""",
          """{"id":"Paul","name":"Paul@mail.com"}""",
          """{"id":"Eric","name":"Eric@mail.com"}""",

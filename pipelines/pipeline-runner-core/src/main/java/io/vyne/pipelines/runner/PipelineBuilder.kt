@@ -14,6 +14,8 @@ import io.vyne.schemas.Type
 import io.vyne.spring.VyneProvider
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 import java.time.Instant
 
 @Component
@@ -123,8 +125,8 @@ class PipelineBuilder(
 
 
       return loggedMono(logger) {
-         val outputMessage = when (message) {
-            is TransformablePipelineMessage -> objectMapper.writeValueAsString(message.transformedInstance!!.toRawObject())
+         val outputMessage: InputStream = when (message) {
+            is TransformablePipelineMessage -> ByteArrayInputStream(objectMapper.writeValueAsBytes(message.transformedInstance!!.toRawObject()))
             is RawPipelineMessage -> message.content
          }
 
