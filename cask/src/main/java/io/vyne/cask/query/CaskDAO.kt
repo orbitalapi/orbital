@@ -380,6 +380,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
          listOf(*rs.getArray("sourceSchemaIds").array as Array<String>),
          listOf(*rs.getArray("sources").array as Array<String>),
          rs.getString("deltaAgainstTableName"),
+         rs.getInt("daysToRetain"),
          rs.getTimestamp("insertedAt").toInstant()
       )
    }

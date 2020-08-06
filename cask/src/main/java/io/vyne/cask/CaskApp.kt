@@ -30,6 +30,7 @@ import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.codec.ServerCodecConfigurer
+import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.config.WebFluxConfigurer
@@ -49,6 +50,7 @@ import javax.annotation.PostConstruct
 @VyneSchemaPublisher
 @EnableWebFlux
 @EnableAspectJAutoProxy
+@EnableScheduling
 class CaskApp {
    companion object {
       @JvmStatic

@@ -1,15 +1,14 @@
 package io.vyne.cask
 
 import arrow.core.Either
-import arrow.core.right
 import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
-import io.vyne.cask.ingest.CaskRequestGenerator
 import io.vyne.cask.query.CaskDAO
 import io.vyne.schemaStore.SchemaPublisher
+import io.vyne.schemas.Schema
 import io.vyne.utils.log
 import org.junit.AfterClass
 import org.junit.Before
@@ -61,7 +60,8 @@ class CaskAppIntegrationTest {
    @Autowired
    lateinit var caskDao: CaskDAO
 
-lateinit var webClient: WebClient
+   lateinit var webClient: WebClient
+   lateinit var schema: Schema
 
    @Before
    fun setup() {
@@ -69,6 +69,10 @@ lateinit var webClient: WebClient
          .builder()
          .baseUrl("http://localhost:${randomServerPort}")
          .build()
+
+      // mock schema
+      val schemaResult = schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1) as Either.Right
+      schema = schemaResult.b
    }
 
    companion object {
@@ -78,7 +82,7 @@ lateinit var webClient: WebClient
       @JvmStatic
       fun setupDb() {
          // port used in the config by the Flyway, hence hardcoded
-         pg =  EmbeddedPostgres.builder().setPort(6662).start()
+         pg = EmbeddedPostgres.builder().setPort(6662).start()
       }
 
       @AfterClass
@@ -120,8 +124,6 @@ Date,Symbol,Open,High,Low,Close
 
    @Test
    fun canIngestContentViaWebsocketConnection() {
-      // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
@@ -146,14 +148,8 @@ Date,Symbol,Open,High,Low,Close
 
    @Test
    fun canIngestLargeContentViaWebsocketConnection() {
-      var caskRequest = """Date,Symbol,Open,High,Low,Close"""
-      for(i in 1..10000){
-         caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
-      }
+      val caskRequest = insertRecords(10000)
       caskRequest.length.should.be.above(20000) // Default websocket buffer size is 8096
-
-      // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
@@ -178,8 +174,6 @@ Date,Symbol,Open,High,Low,Close
 
    @Test
    fun canIngestContentViaRestEndpoint() {
-      // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val client = WebClient
          .builder()
@@ -199,14 +193,8 @@ Date,Symbol,Open,High,Low,Close
 
    @Test
    fun canIngestLargeContentViaRestEndpoint() {
-      var caskRequest = """Date,Symbol,Open,High,Low,Close"""
-      for(i in 1..10000){
-         caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
-      }
+      val caskRequest = insertRecords(10000)
       caskRequest.length.should.be.above(20000)
-
-      // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val client = WebClient
          .builder()
@@ -226,8 +214,6 @@ Date,Symbol,Open,High,Low,Close
 
    @Test
    fun canQueryForCaskData() {
-      // mock schema
-      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val client = WebClient
          .builder()
@@ -277,19 +263,15 @@ Date,Symbol,Open,High,Low,Close
    )
 
 
-
    @Test
    fun canEvictDataViaRestEndpoint() {
-      // mock schema
-      val schemaResult = schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1) as Either.Right
-      val schema = schemaResult.b
-
       val beginning = Instant.now()
       insertRecords(17)
+
       val middle = Instant.now()
+
       insertRecords(57)
       val end = Instant.now()
-
 
       val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummaryCsv")
       val versionedType = schema.versionedType(versionedTypeReference)
@@ -309,6 +291,23 @@ Date,Symbol,Open,High,Low,Close
 
    }
 
+   @Test
+   fun canSetEvictionPeriod() {
+
+      val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummaryCsv")
+      val versionedType = schema.versionedType(versionedTypeReference)
+      val caskConfig = caskDao.findAllCaskConfigs().first { it.qualifiedTypeName == versionedType.fullyQualifiedName }
+
+      caskConfig.daysToRetain.should.equal(30) // Default is 30
+
+      // Set 45 days eviction schedule
+      setEvictionScheduleQuery(caskConfig.tableName, 45)
+
+      val newCaskConfig = caskDao.findAllCaskConfigs().first { it.qualifiedTypeName == versionedType.fullyQualifiedName }
+      newCaskConfig.daysToRetain.should.equal(45)
+
+   }
+
    fun evictQuery(tableName: String, writtenBefore: String) {
       webClient
          .post()
@@ -320,13 +319,24 @@ Date,Symbol,Open,High,Low,Close
          .block()
    }
 
-   fun insertRecords(n: Int)  {
+   fun setEvictionScheduleQuery(tableName: String, daysToRetain: Int) {
+      webClient
+         .put()
+         .uri("/api/casks/$tableName/evictSchedule")
+         .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+         .bodyValue(""" { "daysToRetain": "$daysToRetain"}""")
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+   }
+
+   fun insertRecords(n: Int): String {
       var caskRequest = """Date,Symbol,Open,High,Low,Close"""
-      for(i in 1..n){
+      for (i in 1..n) {
          caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
       }
 
-      val response =  webClient
+      val response = webClient
          .post()
          .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
          .bodyValue(caskRequest)
@@ -335,6 +345,6 @@ Date,Symbol,Open,High,Low,Close
          .block()
 
       response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested $n records"}""")
-
+      return caskRequest
    }
 }

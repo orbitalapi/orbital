@@ -25,7 +25,7 @@ class CaskServiceBootstrapTest {
       // prepare
       val schemaProvider = SimpleTaxiSchemaProvider("type Order {}")
       val versionedType = schemaProvider.schema().versionedType("Order".fqn())
-      val caskConfig = CaskConfig(versionedType.caskRecordTable(), "Order", versionedType.versionHash, emptyList(), emptyList(), null, Instant.now())
+      val caskConfig = CaskConfig(versionedType.caskRecordTable(), "Order", versionedType.versionHash, emptyList(), emptyList(), null, 30, Instant.now())
       whenever(caskDAO.findAllCaskConfigs()).thenReturn(mutableListOf(caskConfig))
 
       // act
@@ -42,7 +42,7 @@ class CaskServiceBootstrapTest {
       val schemaV2 = "type Order { id: String }"
       val taxiSchemaV2 = TaxiSchema.from(schemaV2, "order.taxi", "1.0.1")
       val versionedTypeV2 = taxiSchemaV2.versionedType("Order".fqn())
-      val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, Instant.now())
+      val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, 30, Instant.now())
       val schemaProviderV2 = VersionedSchemaProvider(versionedTypeV2.sources)
       whenever(caskDAO.findAllCaskConfigs()).thenReturn(mutableListOf(caskConfigV1))
 
@@ -64,7 +64,7 @@ class CaskServiceBootstrapTest {
       val schemaV1 = "type Order {}"
       val taxiSchemaV1 = TaxiSchema.from(schemaV1, "order.taxi", "1.0.1")
       val versionedTypeV1 = taxiSchemaV1.versionedType("Order".fqn())
-      val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, Instant.now())
+      val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, 30, Instant.now())
       val schemaProviderV1 = VersionedSchemaProvider(versionedTypeV1.sources)
       whenever(caskDAO.findAllCaskConfigs()).thenReturn(mutableListOf(caskConfigV1))
 
@@ -88,7 +88,7 @@ class CaskServiceBootstrapTest {
       val schemaV1 = "type Order {}"
       val taxiSchemaV1 = TaxiSchema.from(schemaV1, "order.taxi", "1.0.1")
       val versionedTypeV1 = taxiSchemaV1.versionedType("Order".fqn())
-      val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, Instant.now())
+      val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, 30,  Instant.now())
       val schemaProviderV1 = VersionedSchemaProvider(versionedTypeV1.sources)
       whenever(caskDAO.findAllCaskConfigs()).thenReturn(mutableListOf(caskConfigV1))
 
@@ -115,7 +115,7 @@ class CaskServiceBootstrapTest {
             id: String2
          }
       """.trimIndent())
-      val caskConfig = CaskConfig("Order_hash1", "common.order.Order", "hash1", emptyList(), emptyList(), null, Instant.now())
+      val caskConfig = CaskConfig("Order_hash1", "common.order.Order", "hash1", emptyList(), emptyList(), null, 30,  Instant.now())
       whenever(caskDAO.findAllCaskConfigs()).thenReturn(mutableListOf(caskConfig))
 
       // act

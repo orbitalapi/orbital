@@ -9,6 +9,7 @@ data class CaskConfig(
       val sourceSchemaIds: List<String>,
       val sources: List<String>,
       val deltaAgainstTableName: String?,
+      val daysToRetain: Int,
       val insertedAt: Instant
    )
 
