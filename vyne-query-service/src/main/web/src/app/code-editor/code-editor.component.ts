@@ -36,7 +36,6 @@ export class CodeEditorComponent implements OnInit {
         take(1),
       ).subscribe(() => {
         monaco.editor.onDidCreateEditor(editorInstance => {
-          console.log('CREATE MODEL')
           editorInstance.updateOptions({readOnly: false, minimap: { enabled: false}});
           this.monacoEditor = editorInstance;
             this.remeasure();
@@ -44,10 +43,6 @@ export class CodeEditorComponent implements OnInit {
 
         const language = this.editorOptions.language;
         monaco.editor.onDidCreateModel(model => {
-          console.log('model')
-          console.log(model)
-          console.log(monaco.editor)
-          console.log(this.monacoEditor)
           this.monacoModel = model;
           monaco.editor.defineTheme('vyne', this.getTheme(language));
           monaco.editor.setTheme('vyne');
