@@ -48,7 +48,7 @@ feign:
 cask:
    maxTextMessageBufferSize: 67108864 # 1024 * 1024 * 64
    maxBinaryMessageBufferSize: 67108864 # 1024 * 1024 * 64
-   scheduler.eviction.cron: 0 * * * * # every hours
+   eviction.cron: 0 * * * * * # every hours
 
 # Actuators + prometheus metrics configuration
 management:

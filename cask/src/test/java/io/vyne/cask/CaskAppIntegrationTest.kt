@@ -293,6 +293,7 @@ Date,Symbol,Open,High,Low,Close
 
    @Test
    fun canSetEvictionPeriod() {
+      insertRecords(1)
 
       val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummaryCsv")
       val versionedType = schema.versionedType(versionedTypeReference)

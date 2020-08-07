@@ -354,8 +354,9 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
 
    fun setEvictionSchedule(tableName: String, daysToRetain: Int) {
       jdbcTemplate.update { connection ->
-         connection.prepareStatement("UPDATE CASK_CONFIG SET daysToRetain= ? WHERE tableName= $tableName ").apply {
+         connection.prepareStatement("""UPDATE CASK_CONFIG SET daysToRetain=? WHERE tableName=? """).apply {
             setInt(1, daysToRetain)
+            setString(2, tableName)
          }
       }
    }
