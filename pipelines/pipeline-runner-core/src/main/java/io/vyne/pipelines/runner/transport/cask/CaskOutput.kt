@@ -96,7 +96,7 @@ class CaskOutput(
    private fun buildWsParameters(spec: CaskTransportOutputSpec, contentType: String) = spec.props.entries
       .filter { it.key.startsWith("${contentType}.") }
       .flatMap {
-         var parameterName = it.key.removePrefix("${contentType}.")
+         val parameterName = it.key.removePrefix("${contentType}.")
          if (parameterName == "nullValue") {
             it.value.split(",").map { nullValue -> parameterName to nullValue }
          } else {

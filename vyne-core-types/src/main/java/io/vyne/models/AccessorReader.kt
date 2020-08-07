@@ -78,8 +78,16 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
    private fun parseJson(value: Any, targetType: Type, schema: Schema, accessor: JsonPathAccessor, source: DataSource): TypedInstance {
       return when (value) {
          is ObjectNode -> jsonParser.parseToType(targetType, accessor, value, schema, source)
+         is Map<*,*> -> extractFromMap(targetType,accessor,value,schema,source)
          else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
+   }
+
+   private fun extractFromMap(targetType: Type, accessor: JsonPathAccessor, value: Map<*, *>, schema: Schema, source: DataSource): TypedInstance {
+      // Strictly speaking, we shouldn't be getting maps here.
+      // But it's a legacy thing, from when we used xpath(...) all over the shop, even in non xml types
+      return TypedInstance.from(targetType, value[accessor.expression.removePrefix("/")], schema, source = source)
+
    }
 
 }

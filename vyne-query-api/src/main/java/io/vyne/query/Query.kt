@@ -67,6 +67,10 @@ enum class QueryMode {
 
 enum class ResultMode {
    /**
+    * Raw results
+    */
+   RAW,
+   /**
     * Exclude type information for each attribute in 'results'
     */
    SIMPLE,

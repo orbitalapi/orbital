@@ -33,6 +33,17 @@ type UpsertTestMultiPk {
    v1: Decimal by column(4)
 }""".trimIndent()
 
+
+   val temporalSchemaSource = """
+      type DowncastTest {
+         dateOnly: Date(@format = "yyyy-MM-dd'T'HH:mm:ss") by column(1)
+         timeOnly: Time(@format = "yyyy-MM-dd'T'HH:mm:ss") by column(2)
+      }
+   """.trimIndent()
+
    val schemaTimeTest = TaxiSchema.from(timeTypeTest, "Test", "0.1.0")
    val schemaUpsertTest = TaxiSchema.from(upsertTest, "Test", "0.1.0")
+   val schemaTemporalDownCastTest = TaxiSchema.from(temporalSchemaSource, "Test", "0.1.0")
 }
+
+

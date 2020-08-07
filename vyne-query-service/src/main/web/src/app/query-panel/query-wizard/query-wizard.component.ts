@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {EnumValues, Modifier, Schema, Type} from '../../services/schema';
 import {ParsedTypeInstance, TypesService} from '../../services/types.service';
@@ -49,6 +49,13 @@ export class QueryWizardComponent implements OnInit {
   private subscribedDynamicForms: TdDynamicFormsComponent[] = [];
 
   lastQueryResult: QueryResult | QueryFailure;
+
+  @Output()
+  queryResultUpdated = new EventEmitter<QueryResult | QueryFailure>();
+
+  @Output()
+  loadingChanged = new EventEmitter<boolean>();
+
   addingNewFact = false;
 
   get targetTypeNames(): string[] {
@@ -156,6 +163,8 @@ export class QueryWizardComponent implements OnInit {
     this.queryService.submitQuery(query)
       .subscribe(result => {
         this.lastQueryResult = result;
+        this.queryResultUpdated.emit(this.lastQueryResult);
+        this.loadingChanged.emit(false);
       }, error => {
         const errorResponse = error as HttpErrorResponse;
         if (errorResponse.error && (errorResponse.error as any).hasOwnProperty('profilerOperation')) {
@@ -163,12 +172,16 @@ export class QueryWizardComponent implements OnInit {
             errorResponse.error.message,
             errorResponse.error.profilerOperation,
             errorResponse.error.remoteCalls);
+          this.queryResultUpdated.emit(this.lastQueryResult);
+          this.loadingChanged.emit(false);
         } else {
           // There was an unhandled error...
           console.error('An unhandled error occurred:');
           console.error(JSON.stringify(error));
         }
       });
+
+    this.loadingChanged.emit(true);
   }
 
   // Convert a property of "foo.bar = 123" to an object with nested properties
@@ -236,6 +249,7 @@ export class QueryWizardComponent implements OnInit {
       return elements;
     }
   }
+
   private findRootTypeName(type: Type): string {
     const targetType = (type.aliasForType) ? type.aliasForType.fullyQualifiedName : type.name.fullyQualifiedName;
     if (type.inheritsFrom && type.inheritsFrom.length > 0) {
@@ -260,8 +274,8 @@ export class QueryWizardComponent implements OnInit {
 
       return {
         type: TdDynamicElement.Select,
-        selections:  type.enumValues.map((enumValue: EnumValues) => {
-          return  {
+        selections: type.enumValues.map((enumValue: EnumValues) => {
+          return {
             label: `${enumValue.name} (${enumValue.value})`,
             value: enumValue.value ? enumValue.value : enumValue.name
           };

@@ -23,10 +23,10 @@ import {MatSidenavModule} from '@angular/material/sidenav';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
 import { QueryWizardComponent } from './query-wizard/query-wizard.component';
 import { QueryEditorComponent } from './query-editor/query-editor.component';
-import {MatTabsModule} from '@angular/material/tabs'; 
+import {MatTabsModule} from '@angular/material/tabs';
 import { CodeViewerModule } from '../code-viewer/code-viewer.module';
 import {MonacoEditorModule} from '@materia-ui/ngx-monaco-editor';
-import {MatProgressSpinnerModule} from '@angular/material/progress-spinner'; 
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 
 @NgModule({
   imports: [
@@ -53,7 +53,7 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
     MatTabsModule,
     CodeViewerModule,
     MonacoEditorModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
   ],
   exports: [QueryPanelComponent],
   declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent, VyneQueryViewerComponent, QueryEditorComponent],

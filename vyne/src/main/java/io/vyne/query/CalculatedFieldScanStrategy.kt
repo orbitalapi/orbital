@@ -4,8 +4,9 @@ import io.vyne.models.Calculated
 import io.vyne.models.TypedInstance
 import io.vyne.query.formulas.CalculatorRegistry
 import io.vyne.schemas.Type
+import io.vyne.utils.log
 
-class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegistry): QueryStrategy {
+class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegistry) : QueryStrategy {
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
       if (context.debugProfiling) {// enable profiling via context.debugProfiling=true flag
          return context.startChild(this, "scan for matches", OperationType.LOOKUP) { operation ->
@@ -29,7 +30,8 @@ class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegi
 
    fun tryCalculate(calculatedType: Type, context: QueryContext, factDiscoveryStrategy: FactDiscoveryStrategy): TypedInstance? {
       val calculation = calculatedType.calculation!!
-      val operands =  calculation.operandFields
+      val operands = calculation.operandFields
+      val operandTypes = operands.map { context.schema.type(it.fullyQualifiedName) }
       val operandValues = operands.map { operand ->
          val operandType = context.schema.type(operand.fullyQualifiedName)
          context.getFactOrNull(operandType, factDiscoveryStrategy)?.value
@@ -38,11 +40,14 @@ class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegi
       return if (operandValues.any { it == null }) {
          null
       } else {
-        TypedInstance.from(
-           type = calculatedType,
-           value = calculatorRegistry.calculate(calculation.operator, operandValues as List<Any>),
-           schema =  context.schema,
-           source =  Calculated)
+         calculatorRegistry.getCalculator(calculation, operandTypes)?.calculate(calculation, operandValues as List<Any>)?.let { calculatedValue ->
+            TypedInstance.from(
+               type = calculatedType,
+               value = calculatedValue,
+               schema = context.schema,
+               source = Calculated)
+         }
       }
+
    }
 }
