@@ -77,7 +77,7 @@ class CaskOutput(
          val caskServer = caskServers.random()  // ENHANCE client side load balancing ?
 
          // Build the WS connection parameters
-         val contentType = spec.props?.get(CASK_CONTENT_TYPE_PARAMETER) ?: "json"
+         val contentType = spec.props[CASK_CONTENT_TYPE_PARAMETER] ?: "json"
          val params = buildWsParameters(spec, contentType)
 
          // Build th final endpoint
@@ -93,18 +93,18 @@ class CaskOutput(
       }
    }
 
-   private fun buildWsParameters(spec: CaskTransportOutputSpec, contentType: String) = spec.props?.entries
-      ?.filter { it.key.startsWith("${contentType}.") }
-      ?.flatMap {
-         var parameterName = it.key.removePrefix("${contentType}.")
+   private fun buildWsParameters(spec: CaskTransportOutputSpec, contentType: String) = spec.props.entries
+      .filter { it.key.startsWith("${contentType}.") }
+      .flatMap {
+         val parameterName = it.key.removePrefix("${contentType}.")
          if (parameterName == "nullValue") {
             it.value.split(",").map { nullValue -> parameterName to nullValue }
          } else {
             listOf(parameterName to it.value)
          }
       }
-      ?.sortedBy { it.first }
-      ?.joinToString(separator = "&", prefix = "?") { e -> e.first + "=" + URLEncoder.encode(e.second, "UTF-8") }
+      .sortedBy { it.first }
+      .joinToString(separator = "&", prefix = "?") { e -> e.first + "=" + URLEncoder.encode(e.second, "UTF-8") }
 
    private fun handleWebsocketTermination(throwable: Throwable?) {
       log().info("Websocket terminated: ${throwable?.message ?: "Unknown reason"}")
