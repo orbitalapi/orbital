@@ -73,6 +73,8 @@ class CaskAppIntegrationTest {
       // mock schema
       val schemaResult = schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1) as Either.Right
       schema = schemaResult.b
+
+      caskDao.findAllCaskConfigs().forEach { caskDao.deleteCask(it.tableName) }
    }
 
    companion object {
