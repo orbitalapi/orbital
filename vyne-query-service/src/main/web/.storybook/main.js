@@ -10,14 +10,6 @@ module.exports = {
         // Make whatever fine-grained changes you need
 
         // Return the altered config
-        console.log({
-            ...config, resolve: { ...config.resolve, 
-                alias: {
-                    ...config.resolve.alias,
-                    'vscode': require.resolve('monaco-languageclient/lib/vscode-compatibility')
-                }
-            }
-        })
         return {
             ...config, resolve: { ...config.resolve, 
                 alias: {
