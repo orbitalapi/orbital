@@ -9,9 +9,6 @@ module.exports = {
 
         // Make whatever fine-grained changes you need
 
-        console.log('ASDASDSADAS')
-        console.log(configType)
-
         // Return the altered config
         console.log({
             ...config, resolve: { ...config.resolve, 
