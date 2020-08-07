@@ -233,6 +233,15 @@ class VyneQueryIntegrationTest {
    }
 
    @Test
+   fun `Vyne Client should handle Failed Search response`() {
+      val vyneClient = VyneClient("http://localhost:$randomServerPort")
+
+      val response = vyneClient.submitVyneQl("findAll { NotAvailableType[] }")
+      response.isFullyResolved.should.be.`false`
+      response.results.should.have.size(0)
+   }
+
+   @Test
    fun `Vyne Client should query with Query`() {
       val vyneClient = VyneClient("http://localhost:$randomServerPort")
 
@@ -249,4 +258,23 @@ class VyneQueryIntegrationTest {
       (results["lang.taxi.Array<User>"] as List<Any>).should.have.size.equal(3)
 
    }
+
+   @Test
+   fun `Vyne Client should query with Query And map to List`() {
+      val vyneClient = VyneClient("http://localhost:$randomServerPort")
+
+      val query = Query(
+         TypeNameListQueryExpression(listOf("User[]")),
+         emptyMap(),
+         queryMode = QueryMode.GATHER,
+         resultMode = ResultMode.SIMPLE)
+
+      val response = vyneClient.submitQuery(query).getResultListFor(User::class)
+
+
+      response.should.have.size.equal(3)
+
+   }
+
+   data class User(val userId: String, val userName: String)
 }
