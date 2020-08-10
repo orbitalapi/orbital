@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
@@ -57,7 +58,7 @@ typealias QueryResponseString = String
  * with Vyne directly), but useful for spiking / demos.
  */
 @RestController
-class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory) {
+class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, val objectMapper: ObjectMapper) {
 
 
    @PostMapping("/api/query", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
@@ -132,7 +133,8 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory) {
       // This is because the LineageGraphSerializationModule() is stateful, and
       // shares references during serialization.  Therefore, it's not threadsafe, so
       // we create an instance per response.
-      return jacksonObjectMapper()
+      return objectMapper
+         .copy()
          .registerModule(LineageGraphSerializationModule())
          .writerWithDefaultPrettyPrinter()
          .writeValueAsString(response)

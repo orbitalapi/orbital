@@ -1,7 +1,7 @@
 package io.vyne.query
 
 import io.vyne.FactSetMap
-import io.vyne.query.formulas.CalculatorRegistry
+import io.vyne.formulas.CalculatorRegistry
 import io.vyne.query.graph.*
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
