@@ -2,12 +2,11 @@ package io.vyne.pipelines.runner.transport.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.vyne.models.TypedInstance
+import com.google.common.io.ByteStreams
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
 import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
-import io.vyne.schemas.Schema
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -18,6 +17,9 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kafka.receiver.KafkaReceiver
 import reactor.kafka.receiver.ReceiverOptions
+import reactor.kafka.receiver.ReceiverRecord
+import java.io.InputStream
+import java.io.OutputStream
 import java.nio.charset.Charset
 import java.time.Duration
 import java.time.Instant
@@ -33,8 +35,23 @@ class KafkaInputBuilder(val objectMapper: ObjectMapper = jacksonObjectMapper()) 
 
 class KafkaInput(spec: KafkaTransportInputSpec, objectMapper: ObjectMapper) : AbstractKafkaInput<String>(spec, objectMapper, StringDeserializer::class.qualifiedName!!) {
 
-   override fun toStringMessage(message: String): String = message
+   override fun toMessageContent(kafkaMessage: ReceiverRecord<String, String>, metadata: Map<String, Any>): MessageContentProvider {
 
+      return object : MessageContentProvider {
+
+         override fun asString(logger: PipelineLogger): String {
+            logger.debug { "Deserializing record partition=${metadata["partition"]}/ offset=${metadata["offset"]}" }
+            val message = kafkaMessage.value()
+            return message
+         }
+         override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
+            // Step 1. Get the message
+            logger.debug { "Deserializing record partition=${metadata["partition"]}/ offset=${metadata["offset"]}" }
+            val message = kafkaMessage.value()
+            ByteStreams.copy(message.byteInputStream(), outputStream);
+         }
+      }
+   }
 }
 
 abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMapper: ObjectMapper, deserializerClass: String) : PipelineInputTransport {
@@ -53,10 +70,10 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
    override val healthMonitor = EmitterPipelineTransportHealthMonitor()
 
    /**
-    * Convert the incoming Kafka message to String for ingestion.
+    * Convert the incoming Kafka message to InputStream for ingestion.
     * Example: convert an Avro binary message to Json string
     */
-   abstract fun toStringMessage(message: V): String
+   abstract fun toMessageContent(message: ReceiverRecord<String,V>, metadata:Map<String,Any>):MessageContentProvider
 
    init {
       // ENHANCE: there might be a way to hook on some events from the flux below to know when we are actually connected to kafka
@@ -82,21 +99,15 @@ abstract class AbstractKafkaInput<V>(val spec: KafkaTransportInputSpec, objectMa
                "headers" to headers
             )
 
-            val messageProvider = { logger: PipelineLogger ->
-               logger.debug { "Deserializing record partition=$partition/ offset=$offset" }
 
-               // Step 1. Get the message
-               val message = kafkaMessage.value()
 
-               // Step 2. The actual Kafka message ingested can have different type (e.g plain json, avro, other binary formats...). Extract the json string from the message
-               toStringMessage(message)
-            }
+            val messageContent = toMessageContent(kafkaMessage, metadata)
 
             Mono.create<PipelineInputMessage> { sink ->
                sink.success(PipelineInputMessage(
                   Instant.now(), // TODO : Surely this is in the headers somewhere?
                   metadata,
-                  messageProvider
+                  messageContent
                ))
             }.doOnSuccess {
                kafkaMessage.receiverOffset().acknowledge()

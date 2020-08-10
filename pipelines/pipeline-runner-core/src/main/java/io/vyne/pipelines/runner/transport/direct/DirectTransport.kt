@@ -6,6 +6,7 @@ import io.vyne.pipelines.*
 import io.vyne.pipelines.runner.transport.PipelineInputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import reactor.core.publisher.Flux
+import java.io.InputStream
 
 /**
  * This type is primarily useful for testing, where the source and destination
@@ -63,8 +64,8 @@ class DirectOutput : PipelineOutputTransport {
    override val type: VersionedTypeReference
       get() = TODO("Not yet implemented")
 
-   override fun write(message: String, logger: PipelineLogger) {
-      this.messages.add(message)
+   override fun write(message: MessageContentProvider, logger: PipelineLogger) {
+      this.messages.add(message.asString(logger))
    }
 
 }

@@ -1,6 +1,7 @@
 package io.vyne.pipelines.runner.transport.cask
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.io.ByteStreams
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
@@ -16,6 +17,7 @@ import org.springframework.web.reactive.socket.client.WebSocketClient
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.io.InputStream
 import java.net.URI
 import java.net.URLEncoder
 import java.time.Duration.ofMillis
@@ -45,7 +47,7 @@ class CaskOutput(
 
    private val CASK_CONTENT_TYPE_PARAMETER = "content-type"
 
-   val wsOutput: EmitterProcessor<String> = EmitterProcessor.create()
+   val wsOutput: EmitterProcessor<MessageContentProvider> = EmitterProcessor.create()
    val wsHandler = CaskWebsocketHandler(logger, healthMonitor, wsOutput) { handleWebsocketTermination(it) }
 
    init {
@@ -138,7 +140,7 @@ class CaskOutput(
    }
 
 
-   override fun write(message: String, logger: PipelineLogger) {
+   override fun write(message: MessageContentProvider, logger: PipelineLogger) {
       logger.info { "Sending message to Cask" }
       wsOutput.onNext(message)
    }
@@ -148,7 +150,7 @@ class CaskOutput(
 class CaskWebsocketHandler(
    val logger: PipelineLogger,
    val healthMonitor: PipelineTransportHealthMonitor,
-   val wsOutput: EmitterProcessor<String>,
+   val wsOutput: EmitterProcessor<MessageContentProvider>,
    val onTermination: (throwable: Throwable?) -> Unit
 ) : WebSocketHandler {
    override fun handle(session: WebSocketSession): Mono<Void> {
@@ -157,7 +159,14 @@ class CaskWebsocketHandler(
       healthMonitor.reportStatus(UP)
 
       // Configure the session: inbounds and outbounds messages
-      return session.send(wsOutput.map { session.textMessage(it) })
+      return session.send(wsOutput.map { messageContentProvider ->
+            session.binaryMessage{ factory ->
+               val dataBuffer = factory.allocateBuffer()
+
+               messageContentProvider.writeToStream(logger, dataBuffer.asOutputStream())
+               dataBuffer
+            }
+         })
          .and(
             session.receive().map { it.payloadAsText }
                .doOnNext {

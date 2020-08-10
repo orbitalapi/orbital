@@ -1,5 +1,6 @@
 package io.vyne.pipelines
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.VersionedTypeReference
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus
@@ -7,6 +8,8 @@ import io.vyne.schemas.Type
 import io.vyne.utils.log
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
+import java.io.InputStream
+import java.io.OutputStream
 import java.time.Instant
 import kotlin.math.absoluteValue
 
@@ -87,10 +90,35 @@ interface PipelineInputTransport : PipelineTransort {
    fun resume() {}
 }
 
-sealed class PipelineMessage(val content: String, val pipeline: Pipeline, val inputType: Type, val outputType: Type)
-class TransformablePipelineMessage(content: String,  pipeline: Pipeline,  inputType: Type, outputType: Type, val instance: TypedInstance, var transformedInstance: TypedInstance? = null)  : PipelineMessage(content, pipeline, inputType, outputType)
-class RawPipelineMessage( content: String, pipeline: Pipeline,  inputType: Type, outputType: Type): PipelineMessage(content, pipeline, inputType, outputType)
+sealed class PipelineMessage(val content: MessageContentProvider, val pipeline: Pipeline, val inputType: Type, val outputType: Type)
+class TransformablePipelineMessage(content: MessageContentProvider, pipeline: Pipeline, inputType: Type, outputType: Type, val instance: TypedInstance, var transformedInstance: TypedInstance? = null) : PipelineMessage(content, pipeline, inputType, outputType)
+class RawPipelineMessage(content: MessageContentProvider, pipeline: Pipeline, inputType: Type, outputType: Type) : PipelineMessage(content, pipeline, inputType, outputType)
 
+interface MessageContentProvider {
+   fun asString(logger: PipelineLogger): String
+   fun writeToStream(logger: PipelineLogger, outputStream: OutputStream)
+}
+
+
+data class JacksonContentProvider(private val objectMapper: ObjectMapper, private val content: Any) : MessageContentProvider {
+   override fun asString(logger: PipelineLogger): String {
+      return objectMapper.writeValueAsString(content)
+   }
+
+   override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
+      objectMapper.writeValue(outputStream, content)
+   }
+}
+
+data class StringContentProvider(val content: String) : MessageContentProvider {
+   override fun asString(logger: PipelineLogger): String {
+      return content
+   }
+
+   override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
+      outputStream.write(content.toByteArray())
+   }
+}
 
 data class PipelineInputMessage(
    // Publishers should try to use the time that the
@@ -98,7 +126,7 @@ data class PipelineInputMessage(
    // has received it
    val messageTimestamp: Instant,
    val metadata: Map<String, Any> = emptyMap(),
-   val messageProvider: (logger: PipelineLogger) -> String
+   val contentProvider: MessageContentProvider
 ) {
    val id = messageTimestamp.toEpochMilli()
 }
@@ -107,11 +135,11 @@ data class PipelineInputMessage(
 interface PipelineOutputTransport : PipelineTransort {
 
    val type: VersionedTypeReference
-   fun write(message: String, logger: PipelineLogger)
+   fun write(message: MessageContentProvider, logger: PipelineLogger)
 
 }
 
-class AlwaysUpPipelineTransportMonitor: PipelineTransportHealthMonitor
+class AlwaysUpPipelineTransportMonitor : PipelineTransportHealthMonitor
 
 
 interface PipelineTransportHealthMonitor {
