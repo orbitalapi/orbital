@@ -1,5 +1,6 @@
 package io.vyne.pipelines.runner.transport.kafka
 
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.io.ByteStreams
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
@@ -27,26 +28,28 @@ class KafkaInputBuilder : PipelineInputTransportBuilder<KafkaTransportInputSpec>
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.INPUT
 
-   override fun build(spec: KafkaTransportInputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory) = KafkaInput(spec, transportFactory)
+   override fun build(spec: KafkaTransportInputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory) = KafkaInput(spec, transportFactory, logger)
 
 }
 
-class KafkaInput(spec: KafkaTransportInputSpec, transportFactory: PipelineTransportFactory) : AbstractKafkaInput<String>(spec, StringDeserializer::class.qualifiedName!!, transportFactory) {
+class KafkaInput(spec: KafkaTransportInputSpec, transportFactory: PipelineTransportFactory, logger: PipelineLogger) : AbstractKafkaInput<String,String>(spec, StringDeserializer::class.qualifiedName!!, transportFactory, logger) {
 
    override val description: String = spec.description
-   override fun toMessageContent(message: ReceiverRecord<String, String>, metadata: Map<String, Any>): MessageContentProvider {
+   override fun getBody(message:String): String {
+      return message
+   }
+   override fun toMessageContent(payload:String, metadata: Map<String, Any>): MessageContentProvider {
 
       return object : MessageContentProvider {
 
          override fun asString(logger: PipelineLogger): String {
             logger.debug { "Deserializing record partition=${metadata["partition"]}/ offset=${metadata["offset"]}" }
-            return message.value()
+            return payload
          }
          override fun writeToStream(logger: PipelineLogger, outputStream: OutputStream) {
             // Step 1. Get the message
             logger.debug { "Deserializing record partition=${metadata["partition"]}/ offset=${metadata["offset"]}" }
-            val messageValue = message.value()
-            ByteStreams.copy(messageValue.byteInputStream(), outputStream)
+            ByteStreams.copy(payload.byteInputStream(), outputStream)
          }
       }
    }
@@ -59,7 +62,12 @@ object KafkaMetadata {
    const val TOPIC = "topic"
    const val HEADERS = "headers"
 }
-abstract class AbstractKafkaInput<V>(private val spec: KafkaTransportInputSpec, deserializerClass: String, private val transportFactory: PipelineTransportFactory) : PipelineInputTransport {
+abstract class AbstractKafkaInput<V,TPayload>(
+   private val spec: KafkaTransportInputSpec,
+   deserializerClass: String,
+   private val transportFactory: PipelineTransportFactory,
+   private val  logger: PipelineLogger
+) : PipelineInputTransport {
 
    final override val feed: Flux<PipelineInputMessage>
 
@@ -78,9 +86,18 @@ abstract class AbstractKafkaInput<V>(private val spec: KafkaTransportInputSpec, 
     * Convert the incoming Kafka message to InputStream for ingestion.
     * Example: convert an Avro binary message to Json string
     */
-   protected abstract fun toMessageContent(message: ReceiverRecord<String,V>, metadata:Map<String,Any>):MessageContentProvider
+   @VisibleForTesting
+   abstract fun toMessageContent(payload:TPayload, metadata:Map<String,Any>):MessageContentProvider
 
-   protected open fun getOverrideOutput(message: ReceiverRecord<String, V>, metadata: Map<String, Any>):PipelineOutputTransport? {
+   @VisibleForTesting
+   abstract fun getBody(message: V):TPayload
+
+   protected open fun getOverrideOutput(
+      payload:TPayload,
+      metadata: Map<String, Any>,
+      transportFactory: PipelineTransportFactory,
+      logger: PipelineLogger
+   ):PipelineOutputTransport? {
       return null
    }
 
@@ -108,8 +125,9 @@ abstract class AbstractKafkaInput<V>(private val spec: KafkaTransportInputSpec, 
                KafkaMetadata.HEADERS to headers
             )
 
-            val messageContent = toMessageContent(kafkaMessage, metadata)
-            val overrideOutput = getOverrideOutput(kafkaMessage, metadata)
+            val payload = getBody(kafkaMessage.value())
+            val messageContent = toMessageContent(payload, metadata)
+            val overrideOutput = getOverrideOutput(payload, metadata, transportFactory, logger)
             Mono.create<PipelineInputMessage> { sink ->
                sink.success(PipelineInputMessage(
                   Instant.now(), // TODO : Surely this is in the headers somewhere?

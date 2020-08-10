@@ -26,7 +26,7 @@ import java.util.*
 
 
 @Component
-class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: DiscoveryClient, @Value("\${vyne.caskService.name}") var caskServiceName: String) : PipelineOutputTransportBuilder<CaskTransportOutputSpec> {
+class CaskOutputBuilder(val client: DiscoveryClient, @Value("\${vyne.caskService.name}") var caskServiceName: String) : PipelineOutputTransportBuilder<CaskTransportOutputSpec> {
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == CaskTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 
