@@ -6,6 +6,7 @@ import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
+import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.discovery.DiscoveryClient
@@ -29,7 +30,7 @@ class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: DiscoveryCli
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == CaskTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 
-   override fun build(spec: CaskTransportOutputSpec, logger: PipelineLogger): PipelineOutputTransport = CaskOutput(spec, logger, client, caskServiceName)
+   override fun build(spec: CaskTransportOutputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory): PipelineOutputTransport = CaskOutput(spec, logger, client, caskServiceName)
 
 }
 
@@ -42,6 +43,8 @@ class CaskOutput(
    private val wsClient: WebSocketClient = ReactorNettyWebSocketClient(),
    private val pollIntervalMillis: Long = 3000
 ) : PipelineOutputTransport {
+
+   override val description: String = spec.description
 
    override val type: VersionedTypeReference = spec.targetType
 

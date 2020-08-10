@@ -8,7 +8,6 @@ import io.vyne.schemas.Type
 import io.vyne.utils.log
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
-import java.io.InputStream
 import java.io.OutputStream
 import java.time.Instant
 import kotlin.math.absoluteValue
@@ -26,7 +25,9 @@ data class Pipeline(
 data class PipelineChannel(
    val type: VersionedTypeReference,
    val transport: PipelineTransportSpec
-)
+) {
+   val description:String = transport.description
+}
 
 /**
  * Defines the parameters of a transport,
@@ -37,9 +38,16 @@ interface PipelineTransportSpec {
    val direction: PipelineDirection
    val targetType: VersionedTypeReference
    val props: Map<String, Any>?
+
+   /**
+    * A human, log-friendly description of this spec
+    */
+   val description: String
 }
 
-data class GenericPipelineTransportSpec(override val type: PipelineTransportType, override val direction: PipelineDirection, override val targetType: VersionedTypeReference, override val props: Map<String, String>?) : PipelineTransportSpec
+data class GenericPipelineTransportSpec(override val type: PipelineTransportType, override val direction: PipelineDirection, override val targetType: VersionedTypeReference, override val props: Map<String, String>?) : PipelineTransportSpec {
+   override val description: String = "Pipeline $direction $type"
+}
 
 enum class PipelineDirection(val label: String) {
    INPUT("in"),
@@ -59,20 +67,26 @@ enum class PipelineDirection(val label: String) {
 typealias PipelineTransportType = String
 
 
-interface PipelineTransort {
+interface PipelineTransport {
 
    /**
     * Pipeline health monitor
     */
    val healthMonitor: PipelineTransportHealthMonitor
       get() = AlwaysUpPipelineTransportMonitor()
+
+   /**
+    * A human, log-friendly description of this pipeline.
+    * Generally, defer to the PipelineTransportSpec.description
+    */
+   val description: String
 }
 
 /**
  * Maker interface for the actual IO pipe where we'll connect
  * eg., kafka / files / etc
  */
-interface PipelineInputTransport : PipelineTransort {
+interface PipelineInputTransport : PipelineTransport {
 
    /**
     * Input feed of messages
@@ -90,9 +104,43 @@ interface PipelineInputTransport : PipelineTransort {
    fun resume() {}
 }
 
-sealed class PipelineMessage(val content: MessageContentProvider, val pipeline: Pipeline, val inputType: Type, val outputType: Type)
-class TransformablePipelineMessage(content: MessageContentProvider, pipeline: Pipeline, inputType: Type, outputType: Type, val instance: TypedInstance, var transformedInstance: TypedInstance? = null) : PipelineMessage(content, pipeline, inputType, outputType)
-class RawPipelineMessage(content: MessageContentProvider, pipeline: Pipeline, inputType: Type, outputType: Type) : PipelineMessage(content, pipeline, inputType, outputType)
+sealed class PipelineMessage {
+   abstract val content: MessageContentProvider
+   abstract val pipeline: Pipeline
+   abstract val inputType: Type
+   abstract val outputType: Type
+   /**
+    * Allows a message to override the target destination.
+    * If not provided, then the destination defined in the pipeline will be used
+    */
+   abstract val overrideOutput:PipelineOutputTransport?
+}
+
+data class TransformablePipelineMessage(
+   override val content: MessageContentProvider,
+   override val pipeline: Pipeline,
+   override val inputType: Type,
+   override val outputType: Type,
+   val instance: TypedInstance,
+   val transformedInstance: TypedInstance? = null,
+   /**
+    * Allows a message to override the target destination.
+    * If not provided, then the destination defined in the pipeline will be used
+    */
+   override val overrideOutput:PipelineOutputTransport? = null
+) : PipelineMessage()
+
+data class RawPipelineMessage(
+   override val content: MessageContentProvider,
+   override val pipeline: Pipeline,
+   override val inputType: Type,
+   override val outputType: Type,
+   /**
+    * Allows a message to override the target destination.
+    * If not provided, then the destination defined in the pipeline will be used
+    */
+   override val overrideOutput:PipelineOutputTransport? = null
+) : PipelineMessage()
 
 interface MessageContentProvider {
    fun asString(logger: PipelineLogger): String
@@ -126,13 +174,19 @@ data class PipelineInputMessage(
    // has received it
    val messageTimestamp: Instant,
    val metadata: Map<String, Any> = emptyMap(),
-   val contentProvider: MessageContentProvider
+   val contentProvider: MessageContentProvider,
+   /**
+    * Allows a message to override the target destination.
+    * If not provided, then the destination defined in the pipeline will be used
+    */
+   val overrideOutput:PipelineOutputTransport? = null
+
 ) {
    val id = messageTimestamp.toEpochMilli()
 }
 
 
-interface PipelineOutputTransport : PipelineTransort {
+interface PipelineOutputTransport : PipelineTransport {
 
    val type: VersionedTypeReference
    fun write(message: MessageContentProvider, logger: PipelineLogger)

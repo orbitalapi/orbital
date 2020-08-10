@@ -30,9 +30,9 @@ class PipelineBuilder(
    fun build(pipeline: Pipeline): PipelineInstance {
       val vyne = vyneFactory.createVyne()
 
-      var observerProvider = observerProvider.pipelineObserver(pipeline, null)
-      var observer = observerProvider("Preparing pipeline")
-      observer.info { "Building pipeline ${pipeline.name} [Input = ${pipeline.input.transport.type}, output = ${pipeline.output.transport.type}]" }
+      val observerProvider = observerProvider.pipelineObserver(pipeline, null)
+      val observer = observerProvider("Preparing pipeline")
+      observer.info { "Building pipeline ${pipeline.name} [Input = ${pipeline.input.description}, output = ${pipeline.output.description}]" }
 
       val inputObserver = observerProvider("Pipeline Input")
       val outputObserver = observerProvider("Pipeline Output")
@@ -49,7 +49,16 @@ class PipelineBuilder(
          .metrics()
          .flatMap { ingest(it, inputType, outputType, pipeline, vyne) }
          .flatMap { transform(it, vyne) }
-         .flatMap { publish(it, output) }
+         .flatMap {
+            val (_, message) = it
+            val destination = if (message.overrideOutput != null) {
+               observer.info { "Destination changed to ${message.overrideOutput!!.description}" }
+               message.overrideOutput!!
+            } else {
+               output
+            }
+            publish(it, destination)
+         }
 
       return PipelineInstance(
          pipeline,
@@ -68,7 +77,7 @@ class PipelineBuilder(
       val logger = stageObserverProvider("Ingest")
 
       val pipelineMessage = when (inputType == outputType) {
-         true -> RawPipelineMessage(message.contentProvider, pipeline, inputType, outputType)
+         true -> RawPipelineMessage(message.contentProvider, pipeline, inputType, outputType, message.overrideOutput)
          false -> {
             val typedInstance = TypedInstance.from(
                inputType,
@@ -76,7 +85,7 @@ class PipelineBuilder(
                vyne.schema,
                source = Provided
             )
-            TransformablePipelineMessage(message.contentProvider, pipeline, inputType, outputType, typedInstance)
+            TransformablePipelineMessage(message.contentProvider, pipeline, inputType, outputType, typedInstance, overrideOutput = message.overrideOutput)
          }
       }
 
@@ -93,15 +102,14 @@ class PipelineBuilder(
 
 
          // Transform if needed
-         var pipelineMessage = pipelineInput.second
-         when (pipelineMessage) {
-            is TransformablePipelineMessage -> pipelineMessage.transformedInstance = vyneTransformation(pipelineMessage, pipelineMessage.outputType, vyne)
-            is RawPipelineMessage -> {
-            }
+         val pipelineMessage = pipelineInput.second
+         val transformedMessage = when (pipelineMessage) {
+            is TransformablePipelineMessage -> pipelineMessage.copy(transformedInstance = vyneTransformation(pipelineMessage, pipelineMessage.outputType, vyne))
+            is RawPipelineMessage -> pipelineMessage
          }
 
          // Send to following steps
-         observerProvider to pipelineMessage
+         observerProvider to transformedMessage
       }
    }
 
