@@ -13,6 +13,7 @@ import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.PipelineChannel
 import io.vyne.pipelines.PipelineInputMessage
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
+import io.vyne.pipelines.StringContentProvider
 import io.vyne.pipelines.runner.events.ObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.pipelines.runner.transport.direct.*
@@ -71,8 +72,7 @@ class PipelineTest {
 
       val message = output.messages.first()
 
-
-      String(message.readBytes()).should.be.equal("""{"id":"jimmy","name":"Jimmy Pitt"}""")
+      message.should.be.equal("""{"id":"jimmy","name":"Jimmy Pitt"}""")
    }
 
    @Test
@@ -119,7 +119,7 @@ class PipelineTest {
       val outputMessage = output.messages.first()
 
 
-      String(outputMessage.readBytes()).should.be.equal(message)
+      outputMessage.should.be.equal(message)
    }
 }
 
@@ -131,7 +131,7 @@ class TestSource(val type: Type, val schema: Schema) {
    fun send(message: String) {
       emitter.sink().next(
          PipelineInputMessage(
-            messageProvider = { _ -> message.byteInputStream() },
+            contentProvider = StringContentProvider(message),
             messageTimestamp = Instant.now()
          )
       )

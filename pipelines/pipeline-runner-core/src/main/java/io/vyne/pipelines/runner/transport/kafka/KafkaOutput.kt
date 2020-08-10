@@ -3,6 +3,7 @@ package io.vyne.pipelines.runner.transport.kafka
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.*
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
+import io.vyne.utils.log
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringSerializer
@@ -28,13 +29,14 @@ class KafkaOutput(private val spec: KafkaTransportOutputSpec) : PipelineOutputTr
       ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.qualifiedName!!,
       ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.qualifiedName!!
    )
-   private val senderOptions = SenderOptions.create<String, InputStream>(spec.props + defaultProps)
+   private val senderOptions = SenderOptions.create<String, String>(spec.props + defaultProps)
    private val sender = KafkaSender.create(senderOptions)
-   override fun write(message: InputStream, logger: PipelineLogger) {
+   override fun write(message: MessageContentProvider, logger: PipelineLogger) {
 
-      var producer = Mono.create<ProducerRecord<String, InputStream>> { sink ->
+      var producer = Mono.create<ProducerRecord<String, String>> { sink ->
          logger.info { "Sending message to Kafka topic ${spec.topic}" }
-         sink.success(ProducerRecord<String, InputStream>(spec.topic, message))
+
+         sink.success(ProducerRecord<String, String>(spec.topic, message.asString(logger)))
       }
 
 
