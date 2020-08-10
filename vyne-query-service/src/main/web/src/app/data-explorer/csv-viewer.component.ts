@@ -1,30 +1,33 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {ParsedCsvContent} from '../services/types.service';
 
+interface ColumnDefs {
+headerName: string;
+field: string;
+}
+
 @Component({
   selector: 'app-csv-viewer',
   template: `
-    <table mat-table [dataSource]="rowData">
-      <ng-container [matColumnDef]="'column-' + i" *ngFor="let columnValue of headers; index as i">
-        <th mat-header-cell *matHeaderCellDef>{{ columnValue }}</th>
-        <td mat-cell *matCellDef="let element"> {{element[i]}} </td>
-      </ng-container>
-
-
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
+    <ag-grid-angular
+      style="width: 100%; height: 50vh;"
+      class="ag-theme-alpine"
+      [rowData]="data"
+      [columnDefs]="columnDefs"
+    >
+    </ag-grid-angular>
   `,
   styleUrls: ['./csv-viewer.component.scss']
 })
+
+
 export class CsvViewerComponent {
   private _firstRowAsHeaders = false;
   private _source: ParsedCsvContent;
   rowData: string[][] = [];
   headers: string[] = [];
-
-  displayedColumns: string[];
-
+  columnDefs: ColumnDefs[] = [];
+  data: {}[] = [];
 
   @Input()
   get firstRowAsHeaders(): boolean {
@@ -53,18 +56,27 @@ export class CsvViewerComponent {
       this.rowData = this.source.records;
       if (this.firstRowAsHeaders) {
         this.headers = this.source.headers;
-        this.displayedColumns = this.source.headers.map((columnValue: string, index: number) => 'column-' + index);
       } else {
         if (this.source.records.length === 0) {
           this.headers = [];
-          this.displayedColumns = [];
         } else {
           const templateRow = this.source.records[0];
           this.headers = templateRow.map((value, index: number) => 'Column ' + index + 1);
-          this.displayedColumns = templateRow.map((columnValue: string, index: number) => 'column-' + index);
         }
-
       }
+      this.data = this.rowData.map((value: string[]) => {
+        const row = {};
+        value.map((item: string, index: number) => {
+          row[this.headers[index]] = item;
+        });
+        return row;
+      });
+      this.columnDefs = this.headers.map(fieldName => {
+        return {
+          headerName: fieldName,
+          field: fieldName,
+        };
+      });
     }
   }
 }
