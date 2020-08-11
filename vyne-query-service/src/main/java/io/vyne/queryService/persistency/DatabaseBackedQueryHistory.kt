@@ -2,6 +2,7 @@ package io.vyne.queryService.persistency
 
 import io.r2dbc.postgresql.codec.Json
 import io.r2dbc.spi.ConnectionFactory
+import io.vyne.models.TypeNamedInstance
 import io.vyne.queryService.*
 import io.vyne.queryService.persistency.entity.QueryHistoryRecordEntity
 import io.vyne.queryService.persistency.entity.QueryHistoryRecordRepository
@@ -35,7 +36,39 @@ class DatabaseBackedQueryHistory(private val repository: QueryHistoryRecordRepos
    }
 
    override fun get(id: String): Mono<QueryHistoryRecord<out Any>> {
-      return repository.findByQueryId(id).map { it.record }
-   }
+      // TODO tests must be reviewed.
+      val subItems : MutableMap<String, TypeNamedInstance> = mutableMapOf()
+      return repository.findByQueryId(id).map { fromDb ->
+         val results = fromDb.record.response.results
+         if (results.size == 1 &&
+            results.values.first() != null &&
+            results.values.first() is List<*>) {
+            val typeNamedInstanceList =  results.values.first() as List<Map<String, Any?>>?
+            val value =  typeNamedInstanceList?.map { typedNameInstance ->
+               if (typedNameInstance.containsKey("value") && typedNameInstance.containsKey("source") && typedNameInstance.containsKey("typeName")) {
+                  val z = typedNameInstance["value"] as Map<String, Map<String, Any?>>
+                  z.keys.forEach {
+                     if(z[it]?.containsKey("typeName")!! && z[it]?.containsKey("value")!!) {
+                        val data = TypeNamedInstance(z[it]?.get("typeName")?.toString()!!, z[it]?.get("value")!!)
+                        subItems[it] = data
+                     }
+                  }
+                  TypeNamedInstance(typedNameInstance["typeName"].toString(), subItems)
 
+               } else {
+                  typedNameInstance
+               }
+            }
+
+            if (value != null) {
+               val modifiedResponse = fromDb.record.response.copy(results = mapOf<String, Any?>(Pair(results.keys.first(), value)))
+               fromDb.record.withResponse(modifiedResponse)
+            } else {
+               fromDb.record
+            }
+         } else {
+            fromDb.record
+         }
+      }
+   }
 }
