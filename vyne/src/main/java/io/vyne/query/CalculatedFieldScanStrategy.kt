@@ -2,9 +2,8 @@ package io.vyne.query
 
 import io.vyne.models.Calculated
 import io.vyne.models.TypedInstance
-import io.vyne.query.formulas.CalculatorRegistry
+import io.vyne.formulas.CalculatorRegistry
 import io.vyne.schemas.Type
-import io.vyne.utils.log
 
 class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegistry) : QueryStrategy {
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
@@ -40,7 +39,7 @@ class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegi
       return if (operandValues.any { it == null }) {
          null
       } else {
-         calculatorRegistry.getCalculator(calculation, operandTypes)?.calculate(calculation, operandValues as List<Any>)?.let { calculatedValue ->
+         calculatorRegistry.getCalculator(calculation.operator, operandTypes)?.calculate(calculation.operator, operandValues as List<Any>)?.let { calculatedValue ->
             TypedInstance.from(
                type = calculatedType,
                value = calculatedValue,

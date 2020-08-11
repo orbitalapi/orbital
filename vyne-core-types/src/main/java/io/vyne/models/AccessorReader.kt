@@ -42,7 +42,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
    }
 
    private fun evaluateConditionalAccessor(value: Any, targetType: Type, schema: Schema, accessor: ConditionalAccessor, nullValues: Set<String>, source: DataSource): TypedInstance {
-      return conditionalFieldSetEvaluator.evaluate(accessor.condition, targetType)
+      return conditionalFieldSetEvaluator.evaluate(accessor.expression, targetType)
    }
 
    private fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {

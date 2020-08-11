@@ -29,7 +29,7 @@ class TypeDiffer {
         return if (oldField.type !== newField.type
                 || oldField.nullable != newField.nullable
                 || oldField.accessor != newField.accessor
-                || oldField.readCondition != newField.readCondition
+                || oldField.readExpression != newField.readExpression
         ) {
            FieldChanged(fieldName, oldField, newField)
         } else {
