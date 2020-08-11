@@ -24,15 +24,19 @@ import java.time.Duration
 import java.time.Instant
 
 @Component
-class KafkaInputBuilder : PipelineInputTransportBuilder<KafkaTransportInputSpec> {
+class KafkaInputBuilder(val kafkaConnectionFactory:KafkaConnectionFactory<String> = DefaultKafkaConnectionFactory<String>()) : PipelineInputTransportBuilder<KafkaTransportInputSpec> {
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == KafkaTransport.TYPE && spec.direction == PipelineDirection.INPUT
 
-   override fun build(spec: KafkaTransportInputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory) = KafkaInput(spec, transportFactory, logger)
-
+   override fun build(spec: KafkaTransportInputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory) = KafkaInput(spec, transportFactory, logger, kafkaConnectionFactory)
 }
 
-class KafkaInput(spec: KafkaTransportInputSpec, transportFactory: PipelineTransportFactory, logger: PipelineLogger) : AbstractKafkaInput<String,String>(spec, StringDeserializer::class.qualifiedName!!, transportFactory, logger) {
+class KafkaInput(
+   spec: KafkaTransportInputSpec,
+   transportFactory: PipelineTransportFactory,
+   logger: PipelineLogger,
+   kafkaConnectionFactory:KafkaConnectionFactory<String> = DefaultKafkaConnectionFactory()
+) : AbstractKafkaInput<String,String>(spec, StringDeserializer::class.qualifiedName!!, transportFactory, logger, kafkaConnectionFactory) {
 
    override val description: String = spec.description
    override fun getBody(message:String): String {
@@ -66,7 +70,8 @@ abstract class AbstractKafkaInput<V,TPayload>(
    private val spec: KafkaTransportInputSpec,
    deserializerClass: String,
    private val transportFactory: PipelineTransportFactory,
-   private val  logger: PipelineLogger
+   private val  logger: PipelineLogger,
+   private val kafkaConnectionFactory:KafkaConnectionFactory<V> = DefaultKafkaConnectionFactory()
 ) : PipelineInputTransport {
 
    final override val feed: Flux<PipelineInputMessage>
@@ -106,9 +111,9 @@ abstract class AbstractKafkaInput<V,TPayload>(
       healthMonitor.reportStatus(UP)
 
       val options = getReceiverOptions(spec)
-      receiver = KafkaReceiver.create(options)
-      feed = receiver
-         .receive()
+      val (_receiver,_feed) = kafkaConnectionFactory.createReceiver(options)
+      receiver = _receiver
+      feed = _feed
          .doOnError { healthMonitor.reportStatus(DOWN) }
          .flatMap { kafkaMessage ->
             val recordId = kafkaMessage.key()
