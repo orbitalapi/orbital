@@ -48,6 +48,8 @@ export class DataExplorerComponent {
   typeNamedInstance: TypeNamedInstance | TypeNamedInstance[];
 
   parserErrorMessage: VyneHttpServiceError;
+  @Output()
+  isTypeNamePanelVisible = false;
 
   @Output()
   parsedInstanceChanged = new EventEmitter<ParsedTypeInstance | ParsedTypeInstance[]>();
@@ -69,6 +71,13 @@ export class DataExplorerComponent {
     }
     return CsvOptions.isCsvContent(this.fileExtension);
 
+  }
+
+  get isTypeNamePanelOpen(): boolean {
+    if (!this.isTypeNamePanelVisible || !this.fileExtension) {
+      return false;
+    }
+    return true;
   }
 
   @Input()
@@ -101,8 +110,6 @@ export class DataExplorerComponent {
       });
       reader.readAsText(file);
     });
-
-
   }
 
   clearFile() {
@@ -110,6 +117,13 @@ export class DataExplorerComponent {
     this.contentType = null;
     this.fileContents = null;
     this.parserErrorMessage = null;
+    this.showTypeNamePanel(false);
+
+  }
+
+  showTypeNamePanel($event) {
+    this.isTypeNamePanelVisible = $event;
+    return this.isTypeNamePanelVisible;
   }
 
   private parseCsvContentIfPossible() {
