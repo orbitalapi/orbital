@@ -25,6 +25,8 @@ build-jvm:
   stage: build
   except:
      - tags
+     - develop
+     - master
   cache:
      paths:
         - .m2/repository
@@ -48,6 +50,8 @@ build-ui:
    stage: build
    except:
       - tags
+      - develop
+      - master
    cache:
       paths:
          - vyne-query-service/src/main/web/node
@@ -60,21 +64,21 @@ build-ui:
          - "vyne-query-service/target/classes/static"
       expire_in: 1 hours
 
-publish-snapshot:
+build-publish-snapshot:
   resource_group: docker_release
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm deploy -DbuildNumber=$CI_BUILD_ID -P snapshot-release' # Skip UI and tests. Already there from previous stages and artifacts
+    - 'mvn $MAVEN_CLI_OPTS clean deploy -DbuildNumber=$CI_BUILD_ID -P snapshot-release'
   only:
     - develop
 
-publish-release:
+build-publish-release:
    resource_group: docker_release
    stage: deploy
    script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-      - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm deploy -P release' # Skip UI and tests. Already there from previous stages and artifacts
+      - 'mvn $MAVEN_CLI_OPTS clean deploy -P release'
    only:
       - master
 

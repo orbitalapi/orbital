@@ -10,7 +10,7 @@ import io.vyne.query.CalculatedFieldScanStrategy
 import io.vyne.query.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.formulas.CalculatorRegistry
+import io.vyne.formulas.CalculatorRegistry
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type

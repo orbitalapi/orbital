@@ -1,4 +1,4 @@
-package io.vyne.query.formulas
+package io.vyne.formulas
 
 import io.vyne.schemas.Type
 import lang.taxi.types.Formula
@@ -10,8 +10,8 @@ import java.time.LocalTime
 import java.time.ZoneOffset
 
 interface Calculator {
-   fun canCalculate(formula: Formula, types: List<Type>): Boolean
-   fun calculate(formula: Formula, values: List<Any>): Any?
+   fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean
+   fun calculate(operator: FormulaOperator, values: List<Any>): Any?
 }
 
 class CalculatorRegistry(private val calculators: List<Calculator> = listOf(
@@ -19,32 +19,32 @@ class CalculatorRegistry(private val calculators: List<Calculator> = listOf(
    StringCalculator(),
    DateTimeCalculator()
 )) {
-   fun getCalculator(formula: Formula, types: List<Type>): Calculator? {
-      return calculators.firstOrNull { it.canCalculate(formula, types) }
+   fun getCalculator(operator: FormulaOperator, types: List<Type>): Calculator? {
+      return calculators.firstOrNull { it.canCalculate(operator, types) }
    }
 }
 
 internal class StringCalculator : Calculator {
-   override fun canCalculate(formula: Formula, types: List<Type>): Boolean {
+   override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
       return types.all { it.taxiType.basePrimitive == PrimitiveType.STRING }
-         && formula.operator == FormulaOperator.Add
+         && operator == FormulaOperator.Add
    }
 
-   override fun calculate(formula: Formula, values: List<Any>): Any? {
+   override fun calculate(operator: FormulaOperator, values: List<Any>): Any? {
       return values.reduce { acc, next -> acc as String + next as String }
    }
 
 }
 
 internal class DateTimeCalculator : Calculator {
-   override fun canCalculate(formula: Formula, types: List<Type>): Boolean {
+   override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
       return types.size == 2 &&
          types[0].taxiType.basePrimitive == PrimitiveType.LOCAL_DATE &&
          types[1].taxiType.basePrimitive == PrimitiveType.TIME &&
-         formula.operator == FormulaOperator.Add
+         operator == FormulaOperator.Add
    }
 
-   override fun calculate(formula: Formula, values: List<Any>): Any? {
+   override fun calculate(operator: FormulaOperator, values: List<Any>): Any? {
       val date = values[0] as LocalDate
       val time = values[1] as LocalTime
       // This is a problem.
@@ -67,11 +67,11 @@ internal class DateTimeCalculator : Calculator {
  * about why I've omitted it.  Future generations will know.
  */
 internal class NumberCalculator : Calculator {
-   override fun canCalculate(formula: Formula, types: List<Type>): Boolean {
+   override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
       return types.all { it.taxiType.basePrimitive != null && PrimitiveType.NUMBER_TYPES.contains(it.taxiType.basePrimitive!!) }
    }
 
-   override fun calculate(formula: Formula, values: List<Any>): Any? {
+   override fun calculate(operator: FormulaOperator, values: List<Any>): Any? {
       // I'm being lazy here - we can add support for cross-type operations later,
       // but it's just a huge amount of typing to cover all the possible scenarios
       val numberTypes = values.map { it::class.java }.distinct()
@@ -79,7 +79,7 @@ internal class NumberCalculator : Calculator {
          error("Numeric formulas with differing number types is not yet supported - found ${numberTypes.joinToString { it.simpleName }}")
       }
 
-      return when (formula.operator) {
+      return when (operator) {
          FormulaOperator.Add -> addNumbers(values)
          FormulaOperator.Subtract -> subtractNumbers(values)
          FormulaOperator.Multiply -> multipleNumbers(values)

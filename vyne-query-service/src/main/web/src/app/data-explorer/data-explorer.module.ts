@@ -36,42 +36,44 @@ import {CaskPanelComponent} from './cask-panel.component';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
+import {AgGridModule} from 'ag-grid-angular';
 
 
 @NgModule({
-  imports: [
-    AttributeTableModule,
-    EnumTableModule,
-    InlineQueryRunnerModule,
-    ObjectViewModule,
-    CodeViewerModule,
+    imports: [
+        AttributeTableModule,
+        EnumTableModule,
+        InlineQueryRunnerModule,
+        ObjectViewModule,
+        CodeViewerModule,
 
-    CommonModule,
-    BrowserModule,
-    FormsModule,
-    BrowserAnimationsModule,
-    TypeAutocompleteModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatToolbarModule,
-    SearchModule,
-    MatSelectModule,
-    MatExpansionModule,
-    MatTabsModule,
-    MatMenuModule,
-    MatTableModule,
-    MatCheckboxModule,
-    CovalentHighlightModule,
-    MatSidenavModule,
-    // Note to future self:  This is named NgxFileDropModule in later versions
-    FileDropModule,
-    DescriptionEditorModule,
-    InheritanceGraphModule,
-    MatProgressBarModule,
-    TypedInstancePanelModule
+        CommonModule,
+        BrowserModule,
+        FormsModule,
+        BrowserAnimationsModule,
+        TypeAutocompleteModule,
+        MatButtonModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatToolbarModule,
+        SearchModule,
+        MatSelectModule,
+        MatExpansionModule,
+        MatTabsModule,
+        MatMenuModule,
+        MatTableModule,
+        MatCheckboxModule,
+        CovalentHighlightModule,
+        MatSidenavModule,
+        // Note to future self:  This is named NgxFileDropModule in later versions
+        FileDropModule,
+        DescriptionEditorModule,
+        InheritanceGraphModule,
+        MatProgressBarModule,
+        TypedInstancePanelModule,
+        AgGridModule
 
-  ],
+    ],
   declarations: [
     DataSourceToolbarComponent,
     DataSourceUploadComponent,

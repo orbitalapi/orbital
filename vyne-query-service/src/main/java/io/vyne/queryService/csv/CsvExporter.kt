@@ -8,15 +8,15 @@ import java.io.StringWriter
 fun toCsv(results: Map<String, Any?>): ByteArray {
    val writer = StringWriter()
    val printer = CSVPrinter(writer, CSVFormat.DEFAULT.withFirstRecordAsHeader())
-   results.keys.forEach {
-      when (results[it]) {
+   results.keys.forEach { key ->
+      when (results[key]) {
          is List<*> -> {
-            val listOfObj = results[it]  as List<*>
+            val listOfObj = results[key]  as List<*>
 
-            if(!listOfObj.isEmpty()){
+            if(listOfObj.isNotEmpty()){
                when(listOfObj[0]) {
                   is TypeNamedInstance -> {
-                     val listOfObj = results[it]  as List<TypeNamedInstance>
+                     val listOfObj = results[key]  as List<TypeNamedInstance>
 
                      val objs =listOfObj.map { it.value as Map<*, TypeNamedInstance> }.sortedByDescending { it.keys.size }
                      val firstObj = objs[0]
@@ -27,7 +27,7 @@ fun toCsv(results: Map<String, Any?>): ByteArray {
                      }
                   }
                   is Map<*, *> -> {
-                     val listOfObj = results[it]  as List<Map<*, *>>
+                     val listOfObj = results[key]  as List<Map<*, *>>
                      printer.printRecord(listOfObj.first().keys)
                      listOfObj.forEach { fields ->
                         printer.printRecord(fields.values)
@@ -37,7 +37,7 @@ fun toCsv(results: Map<String, Any?>): ByteArray {
             }
          }
          is Map<*, *> -> {
-            val singleObj = results[it] as Map<*, *>
+            val singleObj = results[key] as Map<*, *>
             printer.printRecord(singleObj.keys)
             printer.printRecord(singleObj.values)
          }

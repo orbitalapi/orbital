@@ -14,6 +14,7 @@ import io.vyne.spring.VyneFactory
 import org.junit.Before
 import org.junit.Test
 import org.springframework.http.MediaType
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import kotlin.test.assertEquals
 
 class QueryServiceTest {
@@ -78,7 +79,7 @@ class QueryServiceTest {
       vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
       val mockVyneFactory = mock<VyneFactory>()
       whenever(mockVyneFactory.createVyne()).thenReturn(vyne)
-      queryService = QueryService(mockVyneFactory, NoopQueryHistory())
+      queryService = QueryService(mockVyneFactory, NoopQueryHistory(), Jackson2ObjectMapperBuilder().build())
 
       stubService.addResponse("getOrders", vyne.parseJsonModel("Order[]", """
          [
@@ -174,6 +175,8 @@ orderId_0,john,Instrument_0
       val response = jacksonObjectMapper().readTree(responseStr)
       response["fullyResolved"].booleanValue().should.equal(true)
       response["results"].should.not.be.`null`
+      val resultList = response["results"]["lang.taxi.Array<Report>"] as ArrayNode
+      resultList.first()["maturityDate"].textValue().should.be.equal("2026-12-01")
    }
 
    @Test

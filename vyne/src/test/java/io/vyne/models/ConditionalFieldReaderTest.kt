@@ -1,12 +1,10 @@
 package io.vyne.models
 
 import com.winterbe.expekt.should
-import io.vyne.models.json.addJsonModel
 import io.vyne.testVyne
-import lang.taxi.Compiler
-import lang.taxi.types.*
 import org.junit.Ignore
 import org.junit.Test
+import java.time.Instant
 
 class ConditionalFieldReaderTest {
    val schema = """
@@ -176,5 +174,42 @@ type TransformedTradeRecord {
 
       val orderWithNull = TypedInstance.from(vyne.schema.type("Order"), """{ "bankDirection" : "xxxx" }""", vyne.schema, source = Provided) as TypedObject
       orderWithNull["payReceive"].value.should.be.`null`
+   }
+
+   @Test
+   fun `can declare calculated field based on other fields`() {
+      val (vyne, _) = testVyne("""
+      type FirstName inherits String
+      type LastName inherits String
+      type FullName inherits String
+      type BirthDate inherits Date
+      type BirthTime inherits Time
+      type BirthDateTime inherits Instant
+
+      model Person {
+                  firstName: FirstName
+                  lastName: LastName
+                  birthDate: BirthDate
+                  birthTime: BirthTime
+                  birthDateAndTime: BirthDateTime by (this.birthDate + this.birthTime)
+                  fullName : FullName by (this.firstName + this.lastName)
+               }
+
+      """)
+
+      val order = TypedInstance.from(
+         vyne.schema.type("Person"),
+         """
+            {
+               "firstName" : "John",
+                "lastName": "Doe",
+                "birthDate": "1970-01-02",
+                "birthTime": "12:13:14"
+            }
+         """.trimIndent(),
+         vyne.schema, source = Provided)
+         as TypedObject
+      order["fullName"].value.should.equal("JohnDoe")
+      order["birthDateAndTime"].value.should.equal(Instant.parse("1970-01-02T12:13:14Z"))
    }
 }
