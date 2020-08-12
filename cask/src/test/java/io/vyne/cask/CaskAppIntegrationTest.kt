@@ -4,6 +4,7 @@ import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
+import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.log
 import org.junit.AfterClass
@@ -11,6 +12,7 @@ import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
@@ -29,7 +31,6 @@ import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.*
@@ -44,6 +45,7 @@ import javax.annotation.PreDestroy
       "vyne.schema.publicationMethod=LOCAL"
    ])
 @ActiveProfiles("test")
+@EnableConfigurationProperties(OperationGeneratorConfig::class)
 class CaskAppIntegrationTest {
    @LocalServerPort
    val randomServerPort = 0
