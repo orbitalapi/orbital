@@ -15,6 +15,8 @@ import {TypeNamedInstance} from '../services/query.service';
 import {InstanceLike, typeName} from '../object-view/object-view.component';
 import {environment} from '../../environments/environment';
 import {CaskService} from '../services/cask.service';
+import {HeaderTypes} from './csv-viewer.component';
+import {SchemaGeneratorComponent} from './schema-generator-panel/schema-generator.component';
 
 @Component({
   selector: 'app-data-explorer',
@@ -48,10 +50,15 @@ export class DataExplorerComponent {
   typeNamedInstance: TypeNamedInstance | TypeNamedInstance[];
 
   parserErrorMessage: VyneHttpServiceError;
-
+  @Output()
+  isTypeNamePanelVisible = false;
+  @Output()
+  isGenerateSchemaPanelVisible = false;
   @Output()
   parsedInstanceChanged = new EventEmitter<ParsedTypeInstance | ParsedTypeInstance[]>();
   csvOptions: CsvOptions = new CsvOptions();
+  headersWithAssignedTypes: HeaderTypes[] = [];
+  assignedTypeName: string;
 
   constructor(private typesService: TypesService, private caskService: CaskService) {
     this.typesService.getTypes()
@@ -60,6 +67,11 @@ export class DataExplorerComponent {
   }
 
   @ViewChild('appCodeViewer', {read: CodeViewerComponent, static: false})
+  @ViewChild('schemaGenerator', {
+    read: SchemaGeneratorComponent,
+    static: false
+  }) schemaGenerationPanel: SchemaGeneratorComponent;
+
   appCodeViewer: CodeViewerComponent;
   caskServiceUrl: string;
 
@@ -69,6 +81,14 @@ export class DataExplorerComponent {
     }
     return CsvOptions.isCsvContent(this.fileExtension);
 
+  }
+
+  get isGenerateSchemaPanelOpen(): boolean {
+    return !!(this.isGenerateSchemaPanelVisible && this.fileExtension);
+  }
+
+  get isTypeNamePanelOpen(): boolean {
+    return !!(this.isTypeNamePanelVisible && this.fileExtension);
   }
 
   @Input()
@@ -101,8 +121,6 @@ export class DataExplorerComponent {
       });
       reader.readAsText(file);
     });
-
-
   }
 
   clearFile() {
@@ -110,6 +128,22 @@ export class DataExplorerComponent {
     this.contentType = null;
     this.fileContents = null;
     this.parserErrorMessage = null;
+    this.showTypeNamePanel(false);
+    this.showGenerateSchemaPanel(false);
+
+  }
+
+  showTypeNamePanel($event) {
+    this.isTypeNamePanelVisible = $event;
+    return this.isTypeNamePanelVisible;
+  }
+
+  showGenerateSchemaPanel($event) {
+    this.isGenerateSchemaPanelVisible = $event;
+    setTimeout(() => {
+      this.schemaGenerationPanel.generateSchema();
+    }, 0);
+    return this.isGenerateSchemaPanelVisible;
   }
 
   private parseCsvContentIfPossible() {
@@ -193,5 +227,13 @@ export class DataExplorerComponent {
     const instanceTypeName = typeName(event);
     this.selectedTypeInstanceType = findType(this.schema, instanceTypeName);
     console.log('clicked: ' + JSON.stringify(event));
+  }
+
+  onTypeNameChanged($event: string) {
+    this.assignedTypeName = $event;
+  }
+
+  getHeadersWithAssignedTypes($event: any) {
+    this.headersWithAssignedTypes = $event;
   }
 }

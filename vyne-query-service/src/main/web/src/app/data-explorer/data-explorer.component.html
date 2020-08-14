@@ -16,6 +16,7 @@
   <div class="content">
     <app-data-source-toolbar [schema]="schema"
                              (cleared)="clearFile()"
+                             (isNewTypeClicked)="showTypeNamePanel($event)"
                              (fileDataSourceChanged)="onFileSelected($event)"
                              (selectedTypeChanged)="contentType = $event"
                              (csvOptionsChanged)="onCsvOptionsChanged($event)"
@@ -24,6 +25,15 @@
     <div class="result-status error-display" *ngIf="parserErrorMessage">
       <i class="material-icons">error_outline</i>
       <span>{{ parserErrorMessage.message }}</span>
+    </div>
+    <div *ngIf="isTypeNamePanelOpen">
+      <app-type-name-panel (assignedTypeName)="onTypeNameChanged($event)"
+                           (isGenerateSchemaClicked)="showGenerateSchemaPanel($event)"></app-type-name-panel>
+    </div>
+
+    <div *ngIf="isGenerateSchemaPanelOpen">
+      <app-schema-generator [headersWithAssignedTypes]="headersWithAssignedTypes"
+                            [assignedTypeName]="assignedTypeName" #schemaGenerator></app-schema-generator>
     </div>
 
     <div class="cask-container" *ngIf="fileContents && contentType">
@@ -39,6 +49,10 @@
                    (selectedTabChange)="onSelectedTabChanged($event)">
       <mat-tab label="Source" *ngIf="fileContents">
         <app-csv-viewer [source]="csvContents" *ngIf="isCsvContent"
+                        [schema]="schema"
+                        (headerTypesChanged)="getHeadersWithAssignedTypes($event)"
+                        [isTypeNamePanelVisible]="isTypeNamePanelOpen"
+                        [isGenerateSchemaPanelVisible]="showGenerateSchemaPanel"
                         [firstRowAsHeaders]="csvOptions.firstRowAsHeader"
         ></app-csv-viewer>
         <td-highlight lang="json" [content]="fileContents" *ngIf="!isCsvContent">
