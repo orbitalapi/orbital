@@ -1,0 +1,8 @@
+cask:
+   operations:
+      -  applicableTo: LogDate
+         name: Between
+
+spring:
+   flyway:
+      enabled: false

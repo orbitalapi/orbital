@@ -18,6 +18,7 @@ import {CsvOptions} from '../services/types.service';
         <app-type-autocomplete placeholder="Select type to apply to content" [schema]="schema"
                                (selectedTypeChange)="selectedTypeChanged.emit($event)"
         ></app-type-autocomplete>
+        <button (click)=showTypeNamePanel($event) mat-stroked-button style="margin-left: 2rem">New...</button>
       </div>
     </div>
   `,
@@ -43,9 +44,15 @@ export class DataSourceToolbarComponent {
   @Output()
   csvOptionsChanged = new EventEmitter<CsvOptions>();
 
+  @Output() isNewTypeClicked = new EventEmitter<boolean>();
+
   clearSelectedFile() {
     this.fileDataSource = null;
     this.cleared.emit();
+  }
+
+  showTypeNamePanel(event) {
+    this.isNewTypeClicked.emit(true);
   }
 
   onFileSelected(event: UploadFile) {
