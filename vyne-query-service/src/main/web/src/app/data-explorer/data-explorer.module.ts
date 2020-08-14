@@ -5,7 +5,7 @@ import {DataSourceToolbarComponent} from './data-source-toolbar.component';
 import {DataSourceUploadComponent} from './data-source-upload.component';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
-import {FormsModule} from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatButtonModule} from '@angular/material/button';
 import {DataSourceConfigComponent} from './data-source-config.component';
@@ -37,41 +37,49 @@ import {MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
 import {AgGridModule} from 'ag-grid-angular';
+import {MatDialogModule} from '@angular/material/dialog';
+import { AssignTypeToColumnDialogComponent } from './assign-types-dialog/assign-type-to-column-dialog.component';
+import {MatDatepickerModule} from '@angular/material/datepicker';
+import { TypeNamePanelComponent } from './type-name-panel/type-name-panel.component';
+import { SchemaGeneratorComponent } from './schema-generator-panel/schema-generator.component';
+import {GridHeaderActionsComponent} from "./custom-csv-table-header";
 
 
 @NgModule({
-    imports: [
-        AttributeTableModule,
-        EnumTableModule,
-        InlineQueryRunnerModule,
-        ObjectViewModule,
-        CodeViewerModule,
-
-        CommonModule,
-        BrowserModule,
-        FormsModule,
-        BrowserAnimationsModule,
-        TypeAutocompleteModule,
-        MatButtonModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatToolbarModule,
-        SearchModule,
-        MatSelectModule,
-        MatExpansionModule,
-        MatTabsModule,
-        MatMenuModule,
-        MatTableModule,
-        MatCheckboxModule,
-        CovalentHighlightModule,
-        MatSidenavModule,
-        // Note to future self:  This is named NgxFileDropModule in later versions
-        FileDropModule,
-        DescriptionEditorModule,
-        InheritanceGraphModule,
-        MatProgressBarModule,
-        TypedInstancePanelModule,
-        AgGridModule
+  imports: [
+    AttributeTableModule,
+    EnumTableModule,
+    InlineQueryRunnerModule,
+    ObjectViewModule,
+    CodeViewerModule,
+    CommonModule,
+    BrowserModule,
+    FormsModule,
+    BrowserAnimationsModule,
+    TypeAutocompleteModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatToolbarModule,
+    SearchModule,
+    MatSelectModule,
+    MatExpansionModule,
+    MatTabsModule,
+    MatMenuModule,
+    MatTableModule,
+    MatCheckboxModule,
+    CovalentHighlightModule,
+    MatSidenavModule,
+    // Note to future self:  This is named NgxFileDropModule in later versions
+    FileDropModule,
+    DescriptionEditorModule,
+    InheritanceGraphModule,
+    MatProgressBarModule,
+    TypedInstancePanelModule,
+    AgGridModule,
+    MatDialogModule,
+    MatDatepickerModule,
+    ReactiveFormsModule
 
     ],
   declarations: [
@@ -80,15 +88,21 @@ import {AgGridModule} from 'ag-grid-angular';
     DataSourceConfigComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
+    GridHeaderActionsComponent,
     DataExplorerComponent,
-    CaskPanelComponent
+    CaskPanelComponent,
+    AssignTypeToColumnDialogComponent,
+    TypeNamePanelComponent,
+    SchemaGeneratorComponent
   ],
   exports: [
     DataSourceToolbarComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
     CaskPanelComponent
-  ]
+  ],
+  entryComponents: [AssignTypeToColumnDialogComponent, GridHeaderActionsComponent]
+
 })
 export class DataExplorerModule {
 }
