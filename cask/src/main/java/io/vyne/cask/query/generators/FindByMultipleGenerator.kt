@@ -13,7 +13,7 @@ import lang.taxi.types.Type
 import org.springframework.stereotype.Component
 
 @Component
-class FindByMultipleGenerator: OperationGenerator {
+class FindByMultipleGenerator(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()): OperationGenerator {
    override fun generate(field: Field, type: Type): Operation {
       val returnType = TemporalFieldUtils.collectionTypeOf(type)
       val parameter = Parameter(
@@ -33,7 +33,9 @@ class FindByMultipleGenerator: OperationGenerator {
    }
 
    override fun canGenerate(field: Field, type: Type): Boolean {
-      return PrimitiveType.isAssignableToPrimitiveType(field.type) && TemporalFieldUtils.annotationFor(field, FindBySingleResultGenerator.ExpectedAnnotationName) != null
+      return PrimitiveType.isAssignableToPrimitiveType(field.type) &&
+         (TemporalFieldUtils.annotationFor(field, OperationAnnotation.Association.annotation) != null ||
+            operationGeneratorConfig.definesOperation(field.type, OperationAnnotation.Association))
    }
 
    private fun getfindMultipleByRestPath(type: Type, field: Field): String {

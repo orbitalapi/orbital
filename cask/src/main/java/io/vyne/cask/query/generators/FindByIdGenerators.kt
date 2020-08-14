@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component
 *   operation findSingleByFooId(@PathVariable(name = "id") id : FooId) : Foo(FooId = id)
  */
 @Component
-class FindByIdGenerators: OperationGenerator {
+class FindByIdGenerators(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()): OperationGenerator {
    override fun generate(field: Field, type: Type): Operation {
       val parameterType = TemporalFieldUtils.parameterType(field)
       val equalsParameter = TemporalFieldUtils.parameterFor(
@@ -49,12 +49,15 @@ class FindByIdGenerators: OperationGenerator {
    }
 
    override fun canGenerate(field: Field, type: Type): Boolean {
-      return PrimitiveType.isAssignableToPrimitiveType(field.type) && TemporalFieldUtils.annotationFor(field, ExpectedAnnotationName) != null
+      return PrimitiveType.isAssignableToPrimitiveType(field.type) &&
+         (TemporalFieldUtils.annotationFor(field, expectedAnnotationName.annotation) != null ||
+            operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
    }
 
    companion object {
-      const val ExpectedAnnotationName = "Id"
+      private val expectedAnnotationName = OperationAnnotation.Id
       const val PathVariableName = "id"
+
       private fun getRestPath(type: Type, field: Field): String {
          val typeQualifiedName = type.toQualifiedName()
          val path = AttributePath.from(typeQualifiedName.toString())

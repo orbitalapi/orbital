@@ -2,9 +2,7 @@ package io.vyne.cask.query
 
 import arrow.core.Either
 import io.vyne.cask.CaskService
-import io.vyne.cask.query.generators.AfterTemporalOperationGenerator
-import io.vyne.cask.query.generators.BeforeTemporalOperationGenerator
-import io.vyne.cask.query.generators.BetweenTemporalOperationGenerator
+import io.vyne.cask.query.generators.OperationAnnotation
 import io.vyne.cask.services.CaskServiceSchemaGenerator
 import io.vyne.utils.log
 import org.springframework.core.ParameterizedTypeReference
@@ -26,9 +24,9 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val requestPath = request.path().replace(CaskServiceSchemaGenerator.CaskApiRootPath, "")
       val uriComponents = UriComponentsBuilder.fromUriString(requestPath).build()
       return when {
-         uriComponents.pathSegments.contains(BetweenTemporalOperationGenerator.ExpectedAnnotationName) -> findByBetween(request, requestPath, uriComponents)
-         uriComponents.pathSegments.contains(AfterTemporalOperationGenerator.ExpectedAnnotationName) -> findByAfter(request, requestPath, uriComponents)
-         uriComponents.pathSegments.contains(BeforeTemporalOperationGenerator.ExpectedAnnotationName) -> findByBefore(request, requestPath, uriComponents)
+         uriComponents.pathSegments.contains(OperationAnnotation.Between.annotation) -> findByBetween(request, requestPath, uriComponents)
+         uriComponents.pathSegments.contains(OperationAnnotation.After.annotation) -> findByAfter(request, requestPath, uriComponents)
+         uriComponents.pathSegments.contains(OperationAnnotation.Before.annotation) -> findByBefore(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains("findOneBy") -> findOneBy(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains("findMultipleBy") -> findMultipleBy(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains("findSingleBy") -> findSingleBy(request, requestPath, uriComponents)
