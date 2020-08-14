@@ -12,6 +12,7 @@ import io.vyne.cask.query.CaskApiHandler
 import io.vyne.cask.rest.CaskRestController
 import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPath
 import io.vyne.cask.websocket.CaskWebsocketHandler
+import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Qualifier
@@ -49,6 +50,7 @@ import javax.annotation.PostConstruct
 @VyneSchemaPublisher
 @EnableWebFlux
 @EnableAspectJAutoProxy
+@VyneSchemaConsumer
 class CaskApp {
    companion object {
       @JvmStatic

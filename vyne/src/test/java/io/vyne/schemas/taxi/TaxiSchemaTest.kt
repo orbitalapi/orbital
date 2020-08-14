@@ -333,7 +333,8 @@ type Sample {
     "name" : "<unknown>",
     "version" : "0.0.0",
     "content" : "type Customer {\n   email : CustomerEmailAddress as String\n   id : CustomerId as String\n   name : CustomerName as String\n   postcode : Postcode as String\n}",
-    "id" : "<unknown>:0.0.0"
+    "id" : "<unknown>:0.0.0",
+    "contentHash" : "7063d8"
   } ],
   "typeParameters" : [ ],
   "typeDoc" : "",
