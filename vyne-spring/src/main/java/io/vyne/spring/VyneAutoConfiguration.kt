@@ -79,11 +79,6 @@ const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
 // If they've @EnableVynePublisher, then a LocalTaxiSchemaProvider will have been configured.
 @ConditionalOnBean(LocalTaxiSchemaProvider::class)
 class VyneAutoConfiguration {
-   @Bean
-   fun vyneFactory(schemaProvider: SchemaSourceProvider, operationInvokers: List<OperationInvoker>): VyneFactory {
-      return VyneFactory(schemaProvider, operationInvokers)
-   }
-
    // TODO : This can't be left like this, as it would effect other rest templates within
    // the target application.
    @Bean
