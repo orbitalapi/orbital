@@ -57,5 +57,6 @@ class VyneSpringConfig {
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
+@Import(EnableVyneConfiguration::class)
 annotation class VyneQueryServer
 

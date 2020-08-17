@@ -2,15 +2,22 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
-import io.vyne.query.*
+import io.vyne.query.Fact
+import io.vyne.query.HistoryQueryResponse
+import io.vyne.query.LineageGraphSerializationModule
+import io.vyne.query.ProfilerOperation
+import io.vyne.query.Query
+import io.vyne.query.QueryMode
+import io.vyne.query.QueryResponse
+import io.vyne.query.QueryResult
+import io.vyne.query.ResultMode
+import io.vyne.query.SearchFailedException
 import io.vyne.queryService.csv.toCsv
 import io.vyne.schemas.Schema
-import io.vyne.spring.VyneFactory
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import io.vyne.utils.orElse
@@ -19,7 +26,12 @@ import io.vyne.vyneql.VyneQLQueryString
 import lang.taxi.CompilationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 import java.util.*
 
 const val TEXT_CSV = "text/csv"

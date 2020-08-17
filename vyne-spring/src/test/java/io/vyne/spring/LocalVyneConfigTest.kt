@@ -70,6 +70,7 @@ class LocalVyneConfigTest {
 
    @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED)
    @EnableAutoConfiguration
+   @EnableVyne
    class vyneConfigWithLocalSchemaStore {}
 }
 
@@ -109,6 +110,7 @@ class DistributedVyneConfigTest {
 
    @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
    @EnableAutoConfiguration
+   @EnableVyne
    class vyneConfigWithDistributedSchemaStore {}
 }
 
@@ -153,6 +155,7 @@ class LocalVyneClassPathSchemaFileConfigTest {
 
    @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED, schemaFile = "foo.taxi")
    @EnableAutoConfiguration
+   @EnableVyne
    class vyneConfigWithLocalClassPathSchemaFile {}
 }
 
@@ -182,6 +185,7 @@ class LocalVyneAnnotationControllerContextPathTest {
 
    @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED)
    @EnableAutoConfiguration()
+   @EnableVyne
    class vyneConfig {}
 
 }
