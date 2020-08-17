@@ -22,7 +22,7 @@ import {LineageDisplayModule} from '../lineage-display/lineage-display.module';
         InheritanceGraphModule,
         LineageDisplayModule
     ],
-  exports: [TypedInstancePanelContainerComponent],
+    exports: [TypedInstancePanelContainerComponent, TypedInstancePanelComponent],
   declarations: [
     TypedInstancePanelComponent,
     TypedInstancePanelContainerComponent

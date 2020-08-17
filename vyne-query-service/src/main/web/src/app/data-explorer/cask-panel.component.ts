@@ -73,10 +73,10 @@ export class CaskPanelComponent {
     this.caskService.publishToCask(this.url, this.contents)
       .subscribe(result => {
         this.loading = false;
-        this.resultMessage = result.result + (result.result == 'REJECTED' ?   `: ${result.message}` : '' );
+        this.resultMessage = result.result + (result.result === 'REJECTED' ?   `: ${result.message}` : '' );
       }, error => {
         this.loading = false;
-        this.resultMessage = error.error ? `Error: ${error.error.message}` : error.message
+        this.resultMessage = error.error ? `Error: ${error.error.message}` : error.message;
       });
   }
 }

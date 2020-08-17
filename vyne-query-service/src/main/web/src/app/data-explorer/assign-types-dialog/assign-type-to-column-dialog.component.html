@@ -2,8 +2,10 @@
   <mat-dialog-content class="add-type-dialog-content">
 
       <app-type-autocomplete placeholder="Select type to apply to content" [schema]="schema"
-                             (selectedTypeChange)="targetTypes = $event"
+                             (selectedTypeChange)="onTypeChange($event)"
       ></app-type-autocomplete>
+    <app-typed-instance-panel [type]="targetType"
+                              [inheritanceView]="inheritanceView"></app-typed-instance-panel>
 
     <mat-dialog-actions>
 
