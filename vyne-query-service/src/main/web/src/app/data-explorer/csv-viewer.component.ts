@@ -36,7 +36,9 @@ export interface HeaderTypes {
 
 export class CsvViewerComponent {
   constructor(private dialog: MatDialog, private customCsvTableHeaderService: CustomCsvTableHeaderService) {
-    this.subscription = this.customCsvTableHeaderService.getFieldName().subscribe(fieldName => { this.handleTypeAssignment(fieldName)});
+    this.subscription = this.customCsvTableHeaderService.getFieldName().subscribe(fieldName => {
+      this.handleTypeAssignment(fieldName)
+    });
   }
 
   @Input()
@@ -69,8 +71,10 @@ export class CsvViewerComponent {
         data: {schema: this.schema}
       });
       dialogRef.afterClosed().subscribe((result: QualifiedName) => {
-        dialogConfig.data = this.handleTypeAssignments(selectedColumnName, result.fullyQualifiedName);
-        this.getColumnDefinitions();
+        if (result) {
+          dialogConfig.data = this.handleTypeAssignments(selectedColumnName, result.fullyQualifiedName);
+          this.getColumnDefinitions();
+        }
       });
     }
   }
