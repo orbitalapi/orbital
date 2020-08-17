@@ -52,6 +52,7 @@ import javax.annotation.PostConstruct
 @VyneSchemaPublisher
 @EnableWebFlux
 @EnableAspectJAutoProxy
+@VyneSchemaConsumer
 class CaskApp {
    companion object {
       @JvmStatic
