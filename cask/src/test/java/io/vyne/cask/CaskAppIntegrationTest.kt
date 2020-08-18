@@ -9,13 +9,10 @@ import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.log
 import org.junit.AfterClass
 import org.junit.BeforeClass
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
@@ -37,17 +34,14 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.*
 import javax.annotation.PreDestroy
+import javax.sql.DataSource
 
-@Ignore("Issues with EmbeddedPostgres on build server - investigating")
 @RunWith(SpringRunner::class)
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
       "spring.main.allow-bean-definition-overriding=true",
       "eureka.client.enabled=false",
-//      Flyway validations are failing because of casing issues.
-//      Keep the migrations, but disable the validation in tests
-      "spring.flyway.validate-on-migrate=false",
       "vyne.schema.publicationMethod=LOCAL"
    ])
 @ActiveProfiles("test")
@@ -62,22 +56,12 @@ class CaskAppIntegrationTest {
 
    companion object {
       lateinit var pg: EmbeddedPostgres
-
-      @Bean
-      fun repair(): FlywayMigrationStrategy {
-         return FlywayMigrationStrategy { flyway ->
-            // repair each script checksum
-            flyway.repair()
-            // before migration is executed
-            flyway.migrate()
-         }
-      }
-
       @BeforeClass
       @JvmStatic
       fun setupDb() {
          // port used in the config by the Flyway, hence hardcoded
          pg =  EmbeddedPostgres.builder().setPort(6662).start()
+         pg.postgresDatabase.connection
       }
 
       @AfterClass
@@ -92,11 +76,7 @@ class CaskAppIntegrationTest {
 
       @Bean
       @Primary
-      fun jdbcTemplate(): JdbcTemplate {
-         val dataSource = DataSourceBuilder.create()
-            .url("jdbc:postgresql://localhost:${pg.port}/postgres")
-            .username("postgres")
-            .build()
+      fun jdbcTemplate(dataSource: DataSource): JdbcTemplate {
          val jdbcTemplate = JdbcTemplate(dataSource)
          jdbcTemplate.execute(TableMetadata.DROP_TABLE)
          return jdbcTemplate
