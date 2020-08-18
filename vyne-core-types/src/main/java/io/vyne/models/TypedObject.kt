@@ -87,10 +87,7 @@ data class TypedObject(
       return when {
          candidates.isEmpty() && returnNull -> TypedNull(type) // sometimes i want to allow null values
          candidates.isEmpty() -> error("No properties on type ${this.type.name.parameterizedName} have type ${type.name.parameterizedName}")
-         candidates.size > 1 -> {
-            val candidateDescription = candidates.entries.joinToString { "${it.key} : ${it.value.type.name.parameterizedName}" }
-            error("Ambiguous property - there are ${candidates.size} possible matches for type ${type.name.parameterizedName}: $candidateDescription")
-         }
+         candidates.size > 1 -> TypedInstanceCandidateFilter.resolve(candidates.values, type)
          else -> candidates.values.first()
       }
    }
