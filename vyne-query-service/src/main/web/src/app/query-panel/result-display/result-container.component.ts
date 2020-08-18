@@ -1,11 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {
-  ProfilerOperation, QueryHistoryRecord,
-  QueryResult,
-  QueryService,
-  RestfulQueryHistoryRecord,
-  ResultMode
-} from '../../services/query.service';
+import {ProfilerOperation, QueryHistoryRecord, QueryResult, ResultMode} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {MatTreeNestedDataSource} from '@angular/material';
 import {NestedTreeControl} from '@angular/cdk/tree';
@@ -75,12 +69,12 @@ export class ResultContainerComponent implements OnInit {
   }
   get unmatchedNodes(): string {
     const queryResult = <QueryResult>this.result;
-    return queryResult.unmatchedNodes.map(qn => qn.name).join(', ');
+    return queryResult.unmatchedNodes.map(qn => qn.longDisplayName).join(', ');
   }
 
   get error(): string {
     const queryResult = <QueryResult>this.result;
-    return queryResult.error ? queryResult.error : ""
+    return queryResult.error ? queryResult.error : '';
   }
 
   getResultForTypeName(qualifiedName: QualifiedName): InstanceLikeOrCollection {
