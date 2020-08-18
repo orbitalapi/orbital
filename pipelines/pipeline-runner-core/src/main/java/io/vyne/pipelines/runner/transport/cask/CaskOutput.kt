@@ -26,11 +26,19 @@ import java.util.*
 
 
 @Component
-class CaskOutputBuilder(val client: DiscoveryClient, @Value("\${vyne.caskService.name}") var caskServiceName: String) : PipelineOutputTransportBuilder<CaskTransportOutputSpec> {
+class CaskOutputBuilder(
+   val client: DiscoveryClient,
+   @Value("\${vyne.caskService.name}") var caskServiceName: String,
+   val healthMonitor: PipelineTransportHealthMonitor = EmitterPipelineTransportHealthMonitor(),
+   private val wsClient: WebSocketClient = ReactorNettyWebSocketClient(),
+   private val pollIntervalMillis: Long = 3000
+) : PipelineOutputTransportBuilder<CaskTransportOutputSpec> {
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == CaskTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 
-   override fun build(spec: CaskTransportOutputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory): PipelineOutputTransport = CaskOutput(spec, logger, client, caskServiceName)
+   override fun build(spec: CaskTransportOutputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory): PipelineOutputTransport {
+      return CaskOutput(spec, logger, client, caskServiceName, healthMonitor, wsClient, pollIntervalMillis)
+   }
 
 }
 
@@ -163,17 +171,17 @@ class CaskWebsocketHandler(
 
       // Configure the session: inbounds and outbounds messages
       return session.send(wsOutput.map { messageContentProvider ->
-            session.binaryMessage{ factory ->
-               val dataBuffer = factory.allocateBuffer()
+         session.binaryMessage { factory ->
+            val dataBuffer = factory.allocateBuffer()
 
-               messageContentProvider.writeToStream(logger, dataBuffer.asOutputStream())
-               dataBuffer
-            }
-         })
+            messageContentProvider.writeToStream(logger, dataBuffer.asOutputStream())
+            dataBuffer
+         }
+      })
          .and(
             session.receive().map { it.payloadAsText }
                .doOnNext {
-                  logger.error { "Received response from websocket: $it"}
+                  logger.error { "Received response from websocket: $it" }
                }.then()
          )
          .doOnError { onTermination(it) }
