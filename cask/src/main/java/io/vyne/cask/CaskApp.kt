@@ -8,6 +8,7 @@ import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
+import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.query.CaskApiHandler
 import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.rest.CaskRestController
@@ -53,6 +54,7 @@ import javax.annotation.PostConstruct
 @EnableWebFlux
 @EnableAspectJAutoProxy
 @VyneSchemaConsumer
+@EnableConfigurationProperties(CaskViewConfig::class)
 class CaskApp {
    companion object {
       @JvmStatic
