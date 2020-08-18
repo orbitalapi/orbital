@@ -162,7 +162,7 @@ class EurekaClientSchemaConsumer(
                      }
                instance to SourcePublisherRegistration(
                   application.name,
-                  concatUrlParts(instance.ipAddr, instance.port, instance.metadata[EurekaMetadata.VYNE_SCHEMA_URL]!!),
+                  concatUrlParts(instance.hostName, instance.port, instance.metadata[EurekaMetadata.VYNE_SCHEMA_URL]!!),
                   sourceReferences
                )
             }
