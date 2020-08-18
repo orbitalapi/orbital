@@ -13,9 +13,7 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
                       val caskConfigRepository: CaskConfigRepository,
                       val template: JdbcTemplate,
                       val viewConfig: CaskViewConfig) {
-   private var bootstrapped = false
-
-   fun generateView(viewDefinition: CaskViewDefinition): CaskConfig {
+   private fun generateView(viewDefinition: CaskViewDefinition): CaskConfig? {
       log().info("Generating view ${viewDefinition.typeName}")
       val builder = viewBuilderFactory.getBuilder(viewDefinition)
       val viewDdl = builder.generateCreateView()
@@ -25,20 +23,16 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
 
       log().info("Generating cask config for view ${viewDefinition.typeName}")
       val caskConfig = builder.generateCaskConfig()
-      caskConfigRepository.save(caskConfig)
+      if (!caskConfigRepository.findById(caskConfig.tableName).isPresent) {
+         return caskConfigRepository.save(caskConfig)
+      }
       log().info("Cask Config for view ${viewDefinition.typeName} created successfully")
-
-      return caskConfig
+      return null
 
    }
 
-   fun bootstrap() {
-      if (bootstrapped) {
-         log().info("Skipping bootstrapping views, as already completed once")
-         return
-      }
-      viewConfig.views.forEach { generateView(it) }
-      bootstrapped = true
+   fun bootstrap(): List<CaskConfig> {
+      return viewConfig.views.mapNotNull { generateView(it) }
    }
 }
 

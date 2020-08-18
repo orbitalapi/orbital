@@ -16,14 +16,14 @@ import io.vyne.utils.orElse
 import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
-import kotlin.concurrent.thread
 
 @Service
 class CaskServiceBootstrap constructor(
    private val caskServiceSchemaGenerator: CaskServiceSchemaGenerator,
    private val schemaProvider: SchemaProvider,
    private val caskConfigRepository: CaskConfigRepository,
-   private val caskViewService: CaskViewService) {
+   private val caskViewService: CaskViewService,
+   private val caskServiceRegenerationRunner: CaskServiceRegenerationRunner) {
 
    // TODO Update cask service when type changes (e.g. new attributes added)
    @EventListener
@@ -39,34 +39,43 @@ class CaskServiceBootstrap constructor(
 
       val caskChangesOnly = (deleted + added).all { it.name.startsWith(CaskNamespacePrefix) }
       if (caskChangesOnly) {
-         log().info("Schema changed, cask services do not need updating.")
+         log().info("Schema changed, cask services do not need updating, but re-registering Cask Views.")
+         // Required to handle the case:
+         // - blank Cask DB and configuration with a view that depends on cask A and cask B
+         // - Create Cask A
+         // - Create Cask B
+         // We need below call to handle view generation.
+         caskServiceRegenerationRunner.regenerate {
+            val newCaskViewConfigs = this.generateCaskViews()
+            val caskVersionedViewTypes = findTypesToRegister(newCaskViewConfigs.toMutableList())
+            if (caskVersionedViewTypes.isNotEmpty()) {
+               caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedViewTypes)
+            }
+         }
          return
       }
 
       log().info("Schema changed, cask services need to be updated!")
-      regenerateCaskServices()
+      caskServiceRegenerationRunner.regenerate { regenerateCaskServices() }
    }
 
    @EventListener(value = [ContextRefreshedEvent::class])
    fun generateCaskServicesOnStartup() {
-      regenerateCaskServices()
+      caskServiceRegenerationRunner.regenerate { regenerateCaskServices() }
+   }
+
+   private fun generateCaskViews(): List<CaskConfig> {
+      return caskViewService.bootstrap()
    }
 
    private fun regenerateCaskServices() {
-      thread(name = "cask-service-generation", start = true) {
-         // we need to generate views before we regenerate services, to ensure
-         // that any newly added views create their metadata prior to
-         // building
-         caskViewService.bootstrap()
-
-         val caskConfigs = caskConfigRepository.findAll()
-         log().info("Total number of CaskConfig entries=${caskConfigs.size}")
-         val caskVersionedTypes = findTypesToRegister(caskConfigs)
-         if (caskVersionedTypes.isNotEmpty()) {
-            caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedTypes)
-         }
+      this.generateCaskViews()
+      val caskConfigs = caskConfigRepository.findAll()
+      log().info("Total number of CaskConfig entries=${caskConfigs.size}")
+      val caskVersionedTypes = findTypesToRegister(caskConfigs)
+      if (caskVersionedTypes.isNotEmpty()) {
+         caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedTypes)
       }
-
    }
 
    private fun findTypesToRegister(caskConfigs: MutableList<CaskConfig>): List<CaskTaxiPublicationRequest> {
