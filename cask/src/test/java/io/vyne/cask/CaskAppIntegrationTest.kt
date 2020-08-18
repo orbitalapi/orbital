@@ -13,7 +13,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
@@ -35,6 +34,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.*
 import javax.annotation.PreDestroy
+import javax.sql.DataSource
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -56,12 +56,12 @@ class CaskAppIntegrationTest {
 
    companion object {
       lateinit var pg: EmbeddedPostgres
-
       @BeforeClass
       @JvmStatic
       fun setupDb() {
          // port used in the config by the Flyway, hence hardcoded
          pg =  EmbeddedPostgres.builder().setPort(6662).start()
+         pg.postgresDatabase.connection
       }
 
       @AfterClass
@@ -76,11 +76,7 @@ class CaskAppIntegrationTest {
 
       @Bean
       @Primary
-      fun jdbcTemplate(): JdbcTemplate {
-         val dataSource = DataSourceBuilder.create()
-            .url("jdbc:postgresql://localhost:${pg.port}/postgres")
-            .username("postgres")
-            .build()
+      fun jdbcTemplate(dataSource: DataSource): JdbcTemplate {
          val jdbcTemplate = JdbcTemplate(dataSource)
          jdbcTemplate.execute(TableMetadata.DROP_TABLE)
          return jdbcTemplate

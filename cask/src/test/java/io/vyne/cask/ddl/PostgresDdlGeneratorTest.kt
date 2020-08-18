@@ -27,7 +27,7 @@ type Person {
 }""".trim())
         val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
         statement.ddlStatement.trim().should.equal("""
-CREATE TABLE IF NOT EXISTS Person_201831 (
+CREATE TABLE IF NOT EXISTS person_201831 (
 "firstName" VARCHAR(255),
 "age" INTEGER,
 "alive" BOOLEAN,
@@ -57,7 +57,7 @@ type Person {
 }""".trim())
       val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
       statement.ddlStatement.should.equal("""
-CREATE TABLE IF NOT EXISTS Person_47dd1f (
+CREATE TABLE IF NOT EXISTS person_47dd1f (
 "firstName" VARCHAR(255),
 "age" INTEGER,
 "alive" BOOLEAN,
@@ -65,8 +65,8 @@ CREATE TABLE IF NOT EXISTS Person_47dd1f (
 "dateOfBirth" DATE,
 "timestamp" TIMESTAMP,
 "time" TIME,
-CONSTRAINT Person_47dd1f_pkey PRIMARY KEY ( "firstName" ));
-CREATE INDEX IF NOT EXISTS idx_Person_47dd1f_dateOfBirth ON Person_47dd1f("dateOfBirth");""".trim())
+CONSTRAINT person_47dd1f_pkey PRIMARY KEY ( "firstName" ));
+CREATE INDEX IF NOT EXISTS idx_person_47dd1f_dateOfBirth ON person_47dd1f("dateOfBirth");""".trim())
    }
 
     @Test
@@ -119,9 +119,9 @@ type Person {
        generator.generateColumnForField(person.field("time")).sql
           .should.equal(""""time" TIME""")
     }
+}
 
-    private fun schema(src: String): Pair<TaxiSchema, TaxiDocument> {
-        val schema = TaxiSchema.from(VersionedSource.sourceOnly(src))
-        return schema to schema.taxi
-    }
+fun schema(src: String): Pair<TaxiSchema, TaxiDocument> {
+   val schema = TaxiSchema.from(VersionedSource.sourceOnly(src))
+   return schema to schema.taxi
 }

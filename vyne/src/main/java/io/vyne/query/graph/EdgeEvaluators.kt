@@ -103,7 +103,7 @@ class ParameterFactory {
    fun discover(paramType: Type, context: QueryContext): TypedInstance {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
-      if (firstLevelDiscovery != null) {
+      if (firstLevelDiscovery != null && firstLevelDiscovery !is TypedNull) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
          // TODO (2) : Fail if there are multiple instances
          return firstLevelDiscovery
@@ -114,7 +114,7 @@ class ParameterFactory {
       // walked in the path.  But, it's unclear if this is possible, given the scattered way that
       // the algorithims are evaluated
       val anyDepthOneDistinct = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
-      if (anyDepthOneDistinct != null) {
+      if (anyDepthOneDistinct != null && anyDepthOneDistinct !is TypedNull) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
          return anyDepthOneDistinct
       }

@@ -102,4 +102,9 @@ class PipelineInstance(
          .forEach { it.dispose() }
    }
 
+   // primarily for testing
+   fun reportHealthStatus(inputStatus:PipelineTransportStatus, outputStatus:PipelineTransportStatus = inputStatus) {
+      input.healthMonitor.reportStatus(inputStatus)
+      output.healthMonitor.reportStatus(inputStatus)
+   }
 }

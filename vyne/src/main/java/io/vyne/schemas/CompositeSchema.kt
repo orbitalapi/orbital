@@ -2,6 +2,8 @@ package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
+import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 
 @Deprecated("This class fails to handle type extensions correctly.  Use TaxiSchema.fromNamedSources().first(), which will correctly order, compose and compile the sources")
@@ -14,6 +16,15 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
             TODO()
          }
          return schemas.first().taxi
+      }
+
+   @get:JsonIgnore
+   val taxiSchemas:List<TaxiSchema>
+      get() {
+         if (this.schemas.any { it !is TaxiSchema }) {
+            log().error("CompositeSchema contains schemas that aren't TaxiSchema.  That's a problem, as we're migrating away from CompositeSchema")
+         }
+         return this.schemas.filterIsInstance<TaxiSchema>()
       }
 
    override val sources: List<VersionedSource>
