@@ -58,7 +58,7 @@ class CaskServiceSchemaGeneratorTest {
       val (serviceSchemaGenerator,taxiSchema) = schemaGeneratorFor(schema, OperationGeneratorConfig(emptyList()))
 
       // When
-      val generated = serviceSchemaGenerator.generateSchema(taxiSchema.versionedType("Trade".fqn()))
+      val generated = serviceSchemaGenerator.generateSchema(CaskTaxiPublicationRequest(taxiSchema.versionedType("Trade".fqn())))
       val operation = generated.services.first().operation("findByTradeDateBefore")
       operation.parameters.first().type.qualifiedName.should.equal(PrimitiveType.INSTANT.qualifiedName)
    }
@@ -115,7 +115,7 @@ type OrderWindowSummaryCsv {
       val schemas = argumentCaptor<List<VersionedSource>>()
 
       // When
-      serviceSchemaGenerator.generateAndPublishService(taxiSchema.versionedType("OrderWindowSummaryCsv".fqn()))
+      serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummaryCsv".fqn())))
 
       // Then
       verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
@@ -152,7 +152,7 @@ namespace vyne.casks {
       val schemas = argumentCaptor<List<VersionedSource>>()
 
       // When
-      serviceSchemaGenerator.generateAndPublishService(taxiSchema.versionedType("OrderWindowSummary".fqn()))
+      serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummary".fqn())))
       // Then
       verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
       val submittedSchemas = schemas.firstValue
@@ -247,7 +247,7 @@ namespace vyne.casks {
       val schemas = argumentCaptor<List<VersionedSource>>()
 
       // When
-      serviceSchemaGenerator.generateAndPublishService(taxiSchema.versionedType("Simple".fqn()))
+      serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("Simple".fqn())))
       // Then
       verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
       val submittedSchemas = schemas.firstValue

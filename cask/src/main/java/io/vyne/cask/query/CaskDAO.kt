@@ -1,6 +1,7 @@
 package io.vyne.cask.query
 
 import io.vyne.cask.api.CaskConfig
+import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ddl.caskRecordTable
@@ -12,6 +13,7 @@ import io.vyne.utils.log
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.QualifiedName
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import java.nio.file.Path
@@ -33,14 +35,11 @@ fun String.toLocalDateTime(): LocalDateTime {
    return ZonedDateTime.parse(this).toLocalDateTime()
 }
 
-// TODO TIME db type
-//fun String.toTime(): LocalDateTime {
-//   // Postgres api does not accept LocalTime so have to map to LocalDateTime
-//   return LocalDateTime.of(LocalDate.of(1970, 1, 1), LocalTime.parse(this, DateTimeFormatter.ISO_TIME))
-//}
-
 @Component
-class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider: SchemaProvider) {
+class CaskDAO(
+   private val jdbcTemplate: JdbcTemplate,
+   private val schemaProvider: SchemaProvider
+) {
    val postgresDdlGenerator = PostgresDdlGenerator()
 
    fun findAll(versionedType: VersionedType): List<Map<String, Any>> {
@@ -67,7 +66,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
     *  it's questionable how much more performant they'd be.
     */
    private fun doForAllTablesOfType(versionedType: VersionedType, function: (tableName: String) -> List<Map<String, Any>>): List<Map<String, Any>> {
-      val tableNames = findTablesForType(versionedType)
+      val tableNames = findTableNamesForType(versionedType)
       val results = tableNames.map { tableName -> function(tableName) }
       return mergeResultSets(results)
    }
@@ -137,12 +136,15 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       }
    }
 
-   private fun findTablesForType(versionedType: VersionedType): List<String> {
+   fun findTableNamesForType(qualifiedName:QualifiedName): List<String> {
       return jdbcTemplate.queryForList<String>(
          "SELECT tablename from cask_config where qualifiedtypename = ?",
-         listOf(versionedType.fullyQualifiedName).toTypedArray(),
+         listOf(qualifiedName.toString()).toTypedArray(),
          String::class.java
       )
+   }
+   fun findTableNamesForType(versionedType: VersionedType): List<String> {
+      return findTableNamesForType(versionedType.taxiType.toQualifiedName())
    }
 
    fun findAfter(versionedType: VersionedType, columnName: String, after: String): List<Map<String, Any>> {
@@ -282,43 +284,47 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       return jdbcTemplate.query("Select * from CASK_CONFIG", caskConfigRowMapper)
    }
 
-   fun createCaskConfig(versionedType: VersionedType, typeMigration: TypeMigration? = null) {
+   fun createCaskConfig(versionedType: VersionedType, typeMigration: TypeMigration? = null, exposeType:Boolean = false, exposeService:Boolean = true) {
+      // TODO : Migrate this to use CaskConfigRepository.
       timed("CaskDao.addCaskConfig", true, TimeUnit.MILLISECONDS) {
-         val type = schemaProvider.schema().toTaxiType(versionedType)
-         val deltaAgainstTableName = typeMigration?.predecessorType?.let { it.caskRecordTable() }
          val tableName = versionedType.caskRecordTable()
-         val qualifiedTypeName = type.qualifiedName
-         val versionHash = versionedType.versionHash
-         val sourceSchemaIds = versionedType.sources.map { it.id }
-         val sources = versionedType.sources.map { it.content }
-         val timestamp = Instant.now()
-
          val exists = exists(tableName)
 
          if (exists) {
             log().info("CaskConfig already exists for type=${versionedType.versionedName}, tableName=$tableName")
             return@timed
          }
+         val config = CaskConfig.forType(
+            type = versionedType,
+            tableName = versionedType.caskRecordTable(),
+            deltaAgainstTableName = typeMigration?.predecessorType?.let { it.caskRecordTable()  },
+            exposesType = exposeType,
+            exposesService = exposeService
+         )
 
          log().info("Creating CaskConfig for type=${versionedType.versionedName}, tableName=$tableName")
          jdbcTemplate.update { connection ->
             connection.prepareStatement(ADD_CASK_CONFIG).apply {
-               setString(1, tableName)
-               setString(2, qualifiedTypeName)
-               setString(3, versionHash)
-               setArray(4, connection.createArrayOf("text", sourceSchemaIds.toTypedArray()))
-               setArray(5, connection.createArrayOf("text", sources.toTypedArray()))
-               setTimestamp(6, Timestamp.from(timestamp))
-               if (deltaAgainstTableName != null) setString(7, deltaAgainstTableName) else setNull(7, Types.VARCHAR)
+               setString(1, config.tableName)
+               setString(2, config.qualifiedTypeName)
+               setString(3, config.versionHash)
+               setArray(4, connection.createArrayOf("text", config.sourceSchemaIds.toTypedArray()))
+               setArray(5, connection.createArrayOf("text", config.sources.toTypedArray()))
+               setTimestamp(6, Timestamp.from(config.insertedAt))
+               if (config.deltaAgainstTableName != null) setString(7, config.deltaAgainstTableName) else setNull(7, Types.VARCHAR)
+               setBoolean(8, config.exposesService)
+               setBoolean(9, config.exposesType)
             }
          }
       }
    }
 
+   @Deprecated("Move to CaskConfigRepository")
    fun countCasks(tableName: String): Int {
       return jdbcTemplate.queryForObject("SELECT COUNT(*) from CASK_CONFIG WHERE tableName=?", arrayOf(tableName), Int::class.java)
    }
 
+   @Deprecated("Move to CaskConfigRepository")
    fun exists(tableName: String) = countCasks(tableName) > 0
 
    // ############################
@@ -348,8 +354,10 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
         | sourceSchemaIds,
         | sources,
         | insertedAt,
-        | deltaAgainstTableName)
-        | values ( ? , ? , ?, ?, ?, ?, ?)""".trimMargin()
+        | deltaAgainstTableName,
+        | exposesService,
+        | exposesType    )
+        | values ( ? , ? , ?, ?, ?, ?, ?, ?, ?)""".trimMargin()
 
 
    private val caskConfigRowMapper: (ResultSet, Int) -> CaskConfig = { rs: ResultSet, rowNum: Int ->
@@ -360,7 +368,9 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
          listOf(*rs.getArray("sourceSchemaIds").array as Array<String>),
          listOf(*rs.getArray("sources").array as Array<String>),
          rs.getString("deltaAgainstTableName"),
-         rs.getTimestamp("insertedAt").toInstant()
+         rs.getTimestamp("insertedAt").toInstant(),
+         rs.getBoolean("exposesType"),
+         rs.getBoolean("exposesService")
       )
    }
 
