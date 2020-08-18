@@ -7,6 +7,7 @@ import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SimpleSchema
+import io.vyne.utils.log
 import lang.taxi.CompilationException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.discovery.DiscoveryClient
@@ -16,12 +17,16 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class EurekaClientSchemaMetaPublisher(
    private val applicationInfoManager: ApplicationInfoManager,
-   @Value("\${vyne.taxi.rest.path:/taxi}") private val taxiRestPath: String) : SchemaPublisher {
+   @Value("\${vyne.taxi.rest.path:/taxi}") private val taxiRestPath: String,
+   @Value("\${server.servlet.context-path:}") private val contextPath: String
+) : SchemaPublisher {
    private var sources: List<VersionedSource> = emptyList()
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
+      val servletContextTaxiPath = contextPath + taxiRestPath
+      log().info("Registering schema at endpoint $servletContextTaxiPath")
       val schemaMetadata = versionedSources.map { versionedSource -> "${EurekaMetadata.VYNE_SOURCE_PREFIX}${versionedSource.id}" to versionedSource.contentHash }
          .toMap() +
-         mapOf(EurekaMetadata.VYNE_SCHEMA_URL to taxiRestPath)
+         mapOf(EurekaMetadata.VYNE_SCHEMA_URL to servletContextTaxiPath)
       applicationInfoManager.registerAppMetadata(schemaMetadata)
       this.sources = versionedSources
 
