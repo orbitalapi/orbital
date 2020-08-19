@@ -1,10 +1,7 @@
 package io.vyne.cask.ddl.views
 
 import io.vyne.utils.log
-import lang.taxi.types.Field
-import lang.taxi.types.ObjectType
-import lang.taxi.types.QualifiedName
-import lang.taxi.types.Type
+import lang.taxi.types.*
 
 /**
  * Handles resolution of duplicate fields present
@@ -42,12 +39,45 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
    }
 
    fun getRenamedFieldsForType(type: ObjectType): List<Field> {
-      return getOriginalFieldsForType(type).map { field -> field.copy(name = type.toQualifiedName().typeName.uncapitalize() + "_" + field.name.capitalize()) }
+      return getOriginalFieldsForType(type).map { field ->
+         val accessor = field.accessor?.let { accessor ->
+            when (accessor) {
+               is ConditionalAccessor -> renameConditionalAccessor(type, field, accessor)
+               else -> accessor
+            }
+
+
+         }
+         field.copy(
+            name = renameField(type, field.name),
+            accessor = accessor
+         )
+      }
    }
 
-   fun getAllFieldsOriginal():List<Field> {
+   private fun renameField(owningType: ObjectType, fieldName: String) =
+      owningType.toQualifiedName().typeName.uncapitalize() + "_" + fieldName.capitalize()
+
+   private fun renameConditionalAccessor(owningType: ObjectType, field: Field, accessor: ConditionalAccessor): ConditionalAccessor {
+      return when (accessor.expression) {
+         is CalculatedFieldSetExpression -> {
+            val expression = accessor.expression as CalculatedFieldSetExpression
+            accessor.copy(expression =
+            expression.copy(
+               operand1 = FieldReferenceSelector(renameField(owningType, expression.operand1.fieldName)),
+               operand2 = FieldReferenceSelector(renameField(owningType, expression.operand2.fieldName))
+            )
+            )
+         }
+         // TDOO... what are the other types?  Do we need to change 'em?
+         else -> accessor
+      }
+   }
+
+   fun getAllFieldsOriginal(): List<Field> {
       return this.types.flatMap { getOriginalFieldsForType(it) }
    }
+
    fun getAllFieldsRenamed(): List<Field> {
       return this.types.flatMap { getRenamedFieldsForType(it) }
    }
