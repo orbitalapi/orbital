@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.mrbean.MrBeanModule
 import io.vyne.query.*
+import io.vyne.utils.log
 import lang.taxi.TypeNames
 import lang.taxi.TypeReference
 import org.springframework.http.HttpEntity
@@ -181,10 +182,24 @@ data class QueryClientResponse(
 
 
    fun <T : Any> getResultListFor(type: KClass<T>, objectMapper: ObjectMapper = Jackson.objectMapper): List<T> {
-      val result = this.results["lang.taxi.Array<${type.simpleName}>"]!!
-      val typeRef = objectMapper.typeFactory.constructArrayType(type.java)
-      val typedResultArray = objectMapper.convertValue<Array<T>>(result, typeRef)
-      return typedResultArray.toList()
+      val result = this.results[taxiListForType(type)]
+      val resultList = result?.let {
+         try {
+            val typeRef = objectMapper.typeFactory.constructArrayType(type.java)
+            val typedResultArray = objectMapper.convertValue<Array<T>>(result, typeRef)
+            return typedResultArray.toList()
+         } catch (e: Exception) {
+            log().info("Error in getting result list for ${type.qualifiedName} from $results")
+            emptyList<T>()
+         }
+      }
+      return resultList ?: emptyList()
+   }
+
+   fun <T : Any> hasResultListFor(type: KClass<T>): Boolean = this.results.containsKey(taxiListForType(type))
+
+   companion object {
+      fun <T : Any> taxiListForType(type: KClass<T>) = "lang.taxi.Array<${type.qualifiedName}>"
    }
 }
 typealias TypeName = String

@@ -46,15 +46,16 @@ class VyneQueryIntegrationTest {
 
    object UserSchema {
       val source = """
+         namespace io.vyne.queryService {
+            type User {
+               userId : UserId as String
+               userName : Username as String
+            }
 
-         type User {
-            userId : UserId as String
-            userName : Username as String
-         }
-
-         service UserService {
-            operation getUsers(): User[]
-         }
+            service UserService {
+               operation getUsers(): User[]
+            }
+       }
 
 
       """.trimIndent()
@@ -78,7 +79,7 @@ class VyneQueryIntegrationTest {
       @Primary
       fun vyneProvider(): VyneProvider {
          val (vyne, stub) = UserSchema.pipelineTestVyne()
-         stub.addResponse("getUsers", vyne.parseJsonModel("User[]", """
+         stub.addResponse("getUsers", vyne.parseJsonModel("io.vyne.queryService.User[]", """
             [{
                "userId": "1010",
                "userName": "jean-pierre"
@@ -109,7 +110,7 @@ class VyneQueryIntegrationTest {
       response.headers["Content-Type"].should.equal(listOf(MediaType.APPLICATION_JSON_VALUE))
 
       val result = jacksonObjectMapper().readTree(response.body)
-      assertEquals(result["results"]["lang.taxi.Array<User>"].toPrettyString(), """
+      assertEquals(result["results"]["lang.taxi.Array<io.vyne.queryService.User>"].toPrettyString(), """
 [ {
   "userId" : "1010",
   "userName" : "jean-pierre"
@@ -162,7 +163,7 @@ class VyneQueryIntegrationTest {
       response.headers["Content-Type"].should.equal(listOf("text/csv;charset=UTF-8"))
 
       val result = jacksonObjectMapper().readTree(response.body)
-      assertEquals(result["results"]["lang.taxi.Array<User>"].toPrettyString(), """
+      assertEquals(result["results"]["lang.taxi.Array<io.vyne.queryService.User>"].toPrettyString(), """
          [ {
            "userId" : "1010",
            "userName" : "jean-pierre"
@@ -228,7 +229,7 @@ class VyneQueryIntegrationTest {
 
       val results = response.results
 
-      (results["lang.taxi.Array<User>"] as List<Any>).should.have.size.equal(3)
+      (results["lang.taxi.Array<io.vyne.queryService.User>"] as List<Any>).should.have.size.equal(3)
 
    }
 
@@ -246,7 +247,7 @@ class VyneQueryIntegrationTest {
       val vyneClient = VyneClient("http://localhost:$randomServerPort")
 
       val query = Query(
-         TypeNameListQueryExpression(listOf("User[]")),
+         TypeNameListQueryExpression(listOf("io.vyne.queryService.User[]")),
          emptyMap(),
          queryMode = QueryMode.GATHER,
          resultMode = ResultMode.SIMPLE)
@@ -255,7 +256,7 @@ class VyneQueryIntegrationTest {
 
       val results = response.results
 
-      (results["lang.taxi.Array<User>"] as List<Any>).should.have.size.equal(3)
+      (results["lang.taxi.Array<io.vyne.queryService.User>"] as List<Any>).should.have.size.equal(3)
 
    }
 
@@ -264,7 +265,7 @@ class VyneQueryIntegrationTest {
       val vyneClient = VyneClient("http://localhost:$randomServerPort")
 
       val query = Query(
-         TypeNameListQueryExpression(listOf("User[]")),
+         TypeNameListQueryExpression(listOf("io.vyne.queryService.User[]")),
          emptyMap(),
          queryMode = QueryMode.GATHER,
          resultMode = ResultMode.SIMPLE)
@@ -276,5 +277,5 @@ class VyneQueryIntegrationTest {
 
    }
 
-   data class User(val userId: String, val userName: String)
+
 }
