@@ -41,7 +41,8 @@ data class FailedSearchResponse(val message: String,
                                 @field:JsonIgnore // this sends too much information - need to build a lightweight version
                                 override val profilerOperation: ProfilerOperation?,
                                 override val resultMode: ResultMode,
-                                override val queryResponseId: String = UUID.randomUUID().toString()
+                                override val queryResponseId: String = UUID.randomUUID().toString(),
+                                val results: Map<String, Any?> = mapOf()
 
 ) : QueryResponse {
    override val isFullyResolved: Boolean = false
@@ -106,6 +107,9 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
             )
          } catch (e: SearchFailedException) {
             FailedSearchResponse(e.message!!, e.profilerOperation, resultMode)
+         } catch (e: NotImplementedError) {
+            // happens when Schema is empty
+            FailedSearchResponse(e.message!!,null, resultMode)
          }
          val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
          history.add(record)
