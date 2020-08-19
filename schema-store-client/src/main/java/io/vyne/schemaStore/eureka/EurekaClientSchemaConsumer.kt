@@ -155,7 +155,7 @@ class EurekaClientSchemaConsumer(
                   instance.metadata.keys
                      .filter { key -> key.startsWith(EurekaMetadata.VYNE_SOURCE_PREFIX) }
                      .map { key ->
-                        val sourceId = key.removePrefix(EurekaMetadata.VYNE_SOURCE_PREFIX)
+                        val sourceId = EurekaMetadata.fromXML(key.removePrefix(EurekaMetadata.VYNE_SOURCE_PREFIX))
                         val (sourceName, sourceVersion) = VersionedSource.nameAndVersionFromId(sourceId)
                         val sourceHash = instance.metadata[key]!!
                         VersionedSourceReference(sourceName, sourceVersion, sourceHash)
