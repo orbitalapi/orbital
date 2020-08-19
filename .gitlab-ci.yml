@@ -89,7 +89,7 @@ release-major:
    stage: release
    script:
       - *git_setup
-      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MAJOR_RELEASE_DIGIT'
+      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MAJOR_RELEASE_DIGIT -DskipTestProject=true'
    only:
       - develop
    when: manual
@@ -101,7 +101,7 @@ release-minor:
    stage: release
    script:
       - *git_setup
-      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MINOR_RELEASE_DIGIT'
+      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MINOR_RELEASE_DIGIT -DskipTestProject=true'
    only:
       - develop
    when: manual
@@ -113,7 +113,7 @@ release-patch:
    stage: release
    script:
       - *git_setup
-      - 'mvn gitflow:release -B -DversionDigitToIncrement=$PATCH_RELEASE_DIGIT'
+      - 'mvn gitflow:release -B -DversionDigitToIncrement=$PATCH_RELEASE_DIGIT -DskipTestProject=true'
    only:
       - develop
    when: manual
