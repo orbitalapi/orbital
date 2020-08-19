@@ -181,8 +181,7 @@ data class QueryClientResponse(
 
 
    fun <T : Any> getResultListFor(type: KClass<T>, objectMapper: ObjectMapper = Jackson.objectMapper): List<T> {
-      val typeName = TypeNames.deriveTypeName(type.java)
-      val result = this.results[typeName]!!
+      val result = this.results["lang.taxi.Array<${type.simpleName}>"]!!
       val typeRef = objectMapper.typeFactory.constructArrayType(type.java)
       val typedResultArray = objectMapper.convertValue<Array<T>>(result, typeRef)
       return typedResultArray.toList()
