@@ -7,7 +7,7 @@ import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
-import io.vyne.cask.ddl.views.ViewJoin.ViewJoinKind.*
+import io.vyne.cask.ddl.views.ViewJoin.ViewJoinKind.LEFT_OUTER
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.fqn
@@ -28,10 +28,15 @@ class CaskViewBuilderFactoryTest {
          type NotionalQuantityRequired inherits Int
          type QuantityRequired inherits Int
          type UnitMultiplier inherits Int
+         type TradeDate inherits Date
+         type TradeTime inherits Time
+         type TradeTimestamp inherits Instant
          type Order {
             @Id
             id : OrderId as String
-            lastTradeDate : TradeDate as Instant
+            lastTradeDate : TradeDate( @format = "YYYYDDTHH:nn:ss" )
+            lastTradeTime : TradeTime( @format = "HH:nn:ss" )
+            timestampt : TradeTimestamp by ( lastTradeDate + lastTradeTime )
             tradeStatus : TradeStatus as String
             notionalRequired : NotionalQuantityRequired as (QuantityRequired * UnitMultiplier)
          }
@@ -88,10 +93,15 @@ class CaskViewBuilderFactoryTest {
       val expected = """namespace test {
    type OrderEvent inherits test.TransactionEvent {
       @Id order_Id : OrderId
-      order_LastTradeDate : TradeDate
+      order_LastTradeDate : TradeDate( @format = "YYYYDDTHH:nn:ss" )
+      order_LastTradeTime : TradeTime( @format = "HH:nn:ss" )
+      order_Timestampt : TradeTimestamp  by ( this.order_LastTradeDate + this.order_LastTradeTime )
       order_TradeStatus : TradeStatus
       trade_Id : TradeId
+      @Between trade_TradeDate : TradeDate
    }
+
+
 }"""
       generatedTaxi.trimNewLines().should.equal(expected.trimNewLines())
    }
@@ -104,8 +114,11 @@ class CaskViewBuilderFactoryTest {
 select distinct
 "orders"."id" as "order_Id",
 "orders"."lastTradeDate" as "order_LastTradeDate",
+"orders"."lastTradeTime" as "order_LastTradeTime",
+"orders"."timestampt" as "order_Timestampt",
 "orders"."tradeStatus" as "order_TradeStatus",
-"trades"."id" as "trade_Id"
+"trades"."id" as "trade_Id",
+"trades"."tradeDate" as "trade_TradeDate"
 from
 "orders"
 left outer join "trades" on "orders"."id" = "trades"."orderId" and "orders"."lastTradeDate" = "trades"."tradeDate"
