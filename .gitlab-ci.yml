@@ -69,7 +69,7 @@ build-publish-snapshot:
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-    - 'mvn $MAVEN_CLI_OPTS clean deploy -DbuildNumber=$CI_BUILD_ID -P snapshot-release'
+    - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -DbuildNumber=$CI_BUILD_ID -P snapshot-release'
   only:
     - develop
 
@@ -78,7 +78,7 @@ build-publish-release:
    stage: deploy
    script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-      - 'mvn $MAVEN_CLI_OPTS clean deploy -P release'
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -P release'
    only:
       - master
 
