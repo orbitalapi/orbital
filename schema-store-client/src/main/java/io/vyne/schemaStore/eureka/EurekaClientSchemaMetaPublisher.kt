@@ -24,7 +24,8 @@ class EurekaClientSchemaMetaPublisher(
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
       val servletContextTaxiPath = contextPath + taxiRestPath
       log().info("Registering schema at endpoint $servletContextTaxiPath")
-      val schemaMetadata = versionedSources.map { versionedSource -> "${EurekaMetadata.VYNE_SOURCE_PREFIX}${versionedSource.id}" to versionedSource.contentHash }
+      val schemaMetadata = versionedSources.map { versionedSource ->
+         EurekaMetadata.escapeForXML("${EurekaMetadata.VYNE_SOURCE_PREFIX}${versionedSource.id}") to versionedSource.contentHash }
          .toMap() +
          mapOf(EurekaMetadata.VYNE_SCHEMA_URL to servletContextTaxiPath)
       applicationInfoManager.registerAppMetadata(schemaMetadata)
