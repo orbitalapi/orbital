@@ -17,6 +17,7 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.utils.assertingThat
 import io.vyne.utils.log
+import lang.taxi.types.PrimitiveType
 
 
 fun GraphEdge<Element, Relationship>.description(): String {
@@ -103,10 +104,10 @@ class ParameterFactory {
    fun discover(paramType: Type, context: QueryContext): TypedInstance {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
-      if (firstLevelDiscovery != null && firstLevelDiscovery !is TypedNull) {
+      if (hasValue(firstLevelDiscovery)) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
          // TODO (2) : Fail if there are multiple instances
-         return firstLevelDiscovery
+         return firstLevelDiscovery!!
       }
 
       // Check to see if there's exactly one instance somewhere within the context
@@ -114,9 +115,9 @@ class ParameterFactory {
       // walked in the path.  But, it's unclear if this is possible, given the scattered way that
       // the algorithims are evaluated
       val anyDepthOneDistinct = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
-      if (anyDepthOneDistinct != null && anyDepthOneDistinct !is TypedNull) {
+      if (hasValue(anyDepthOneDistinct)) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
-         return anyDepthOneDistinct
+         return anyDepthOneDistinct!!
       }
 
 //      if (startingPoint.type == paramType) {
@@ -129,6 +130,21 @@ class ParameterFactory {
       // This is a parameter type.  Try to construct an instance
       val requestObject = attemptToConstruct(paramType, context)
       return requestObject
+   }
+
+   private fun hasValue(instance: TypedInstance?): Boolean {
+      return when  {
+         instance == null -> false
+         instance is TypedNull -> false
+         // This is a big call, treating empty strings as not populated
+         // It's probably the wrong call.
+         // But we need to consider how to filter this data upstream from providers,
+         // and allow that filtering to be configurable.
+         // Adding this here now because it's caused a bug at a client, let's
+         // revisit if/when it becomes problematic.
+         instance.type.taxiType.basePrimitive == PrimitiveType.STRING && instance.value == "" -> false
+         else -> true
+      }
    }
 
    private fun attemptToConstruct(paramType: Type, context: QueryContext, typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
