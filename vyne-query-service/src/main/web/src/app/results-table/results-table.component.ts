@@ -49,11 +49,10 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     this.rebuildGridData();
   }
 
-  columnDefs = [
-  ];
+  columnDefs = [];
 
-  rowData = [
-  ];
+  rowData = [];
+
   private rebuildGridData() {
     if (!this.type || !this.instance) {
       this.columnDefs = [];
@@ -76,8 +75,20 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     if (collection.length === 0) {
       this.rowData = [];
     } else {
+      collection.forEach((instance: TypeNamedInstance) => {
+        Object.keys(instance.value).forEach((key) => {
+          if (!instance.value[key].value) {
+            instance.value[key] = {
+              source: instance.value[key].source,
+              value:  '',
+              typeName: instance.value[key].typeName
+            };
+          }
+        });
+      });
       if (isTypeNamedInstance(collection[0])) {
         this.rowData = collection.map((instance: TypeNamedInstance) => instance.value);
+
       } else if (isTypedInstance(collection[0])) {
         this.rowData = collection.map((instance: TypedInstance) => instance.value);
       } else {
