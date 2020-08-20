@@ -40,26 +40,3 @@ class DbPlus {
       return dataSource.connection
    }
 }
-fun JdbcTemplate.getCustomConnection(): Connection? {
-   val conn = this.dataSource.connection
-   conn.autoCommit = false
-   return conn
-}
-
-@Component
-class DbPlus {
-   @Autowired
-   private lateinit var env: Environment
-
-   @Bean
-   fun getCustomConnection(): Connection? {
-      val dataSource = DriverManagerDataSource()
-
-      dataSource.setDriverClassName(env.getProperty("jdbc.driverClassName")!!)
-      dataSource.url = env.getProperty("spring.datasource.url")
-      dataSource.username = env.getProperty("spring.datasource.username")
-      dataSource.password = env.getProperty("spring.datasource.password")
-
-      return dataSource.connection
-   }
-}
