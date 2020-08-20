@@ -1,12 +1,16 @@
 package io.vyne.cask.query
 
 import com.nhaarman.mockitokotlin2.*
+import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
+import com.zaxxer.hikari.HikariDataSource
 import io.vyne.VersionedTypeReference
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
 import org.springframework.jdbc.core.JdbcTemplate
 import java.math.BigDecimal
 
@@ -34,11 +38,20 @@ class CaskDAOTest {
    val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummary")
    val versionedType = taxiSchema.versionedType(versionedTypeReference)
    lateinit var caskDAO: CaskDAO
+   lateinit var largeObjectDataSourceProps: DataSourceProperties
 
+   @Rule
+   @JvmField
+   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(0) }
 
    @Before
    fun setUp() {
-      caskDAO = CaskDAO(mockJdbcTemplate, SimpleTaxiSchemaProvider(schema))
+      largeObjectDataSourceProps = DataSourceProperties()
+      largeObjectDataSourceProps.driverClassName = "org.postgresql.Driver"
+      largeObjectDataSourceProps.url = "jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres"
+      largeObjectDataSourceProps.username = "postgres"
+
+      caskDAO = CaskDAO(mockJdbcTemplate, SimpleTaxiSchemaProvider(schema), largeObjectDataSourceProps)
       whenever(mockJdbcTemplate.queryForList(
          eq("SELECT tablename from cask_config where qualifiedtypename = ?"),
          eq(listOf(versionedType.fullyQualifiedName).toTypedArray()),

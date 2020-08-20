@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.io.Resources
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
+import com.zaxxer.hikari.HikariDataSource
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
@@ -20,6 +21,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
@@ -40,6 +42,7 @@ class JsonIngesterDbBenchmarkTest {
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
    lateinit var caskDao: CaskDAO
+   lateinit var largeObjectDataSourceProps: DataSourceProperties
 
    @Before
    fun setup() {
@@ -47,13 +50,19 @@ class JsonIngesterDbBenchmarkTest {
          .url("jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres")
          .username("postgres")
          .build()
+
+      largeObjectDataSourceProps = DataSourceProperties()
+      largeObjectDataSourceProps.driverClassName = "org.postgresql.Driver"
+      largeObjectDataSourceProps.url = "jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres"
+      largeObjectDataSourceProps.username = "postgres"
+
       Flyway.configure()
          .dataSource(dataSource)
          .load()
          .migrate()
       jdbcTemplate = JdbcTemplate(dataSource)
       jdbcTemplate.execute(TableMetadata.DROP_TABLE)
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(CoinbaseJsonOrderSchema.sourceV1))
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(CoinbaseJsonOrderSchema.sourceV1), largeObjectDataSourceProps)
    }
 
    @After

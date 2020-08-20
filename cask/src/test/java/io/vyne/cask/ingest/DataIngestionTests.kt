@@ -2,6 +2,7 @@ package io.vyne.cask.ingest
 
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
+import com.zaxxer.hikari.HikariDataSource
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CsvStreamSource
@@ -20,6 +21,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
@@ -31,6 +33,7 @@ import java.sql.Time
 import java.sql.Timestamp
 import java.time.LocalDate
 import java.time.LocalTime
+import javax.sql.DataSource
 
 class DataIngestionTests {
    @Rule
@@ -44,6 +47,7 @@ class DataIngestionTests {
    lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
    lateinit var caskDao: CaskDAO
+   lateinit var largeObjectDataSourceProps: DataSourceProperties
 
    @Before
    fun setup() {
@@ -51,13 +55,20 @@ class DataIngestionTests {
          .url("jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres")
          .username("postgres")
          .build()
+
+      largeObjectDataSourceProps = DataSourceProperties()
+      largeObjectDataSourceProps.driverClassName = "org.postgresql.Driver"
+      largeObjectDataSourceProps.url = "jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres"
+      largeObjectDataSourceProps.username = "postgres"
+
+
       Flyway.configure()
          .dataSource(dataSource)
          .load()
          .migrate()
       jdbcTemplate = JdbcTemplate(dataSource)
       jdbcTemplate.execute(TableMetadata.DROP_TABLE)
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(CoinbaseJsonOrderSchema.sourceV1))
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(CoinbaseJsonOrderSchema.sourceV1), largeObjectDataSourceProps)
    }
 
    @Test
@@ -71,7 +82,7 @@ class DataIngestionTests {
       val pipelineSource = CsvStreamSource(input, timeType, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(timeType, TypeDbWrapper(timeType, schema, pipelineSource.cachePath, null), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.timeTypeTest))
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.timeTypeTest), largeObjectDataSourceProps)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(timeType)
       caskDao.createCaskRecordTable(timeType)
@@ -97,7 +108,7 @@ class DataIngestionTests {
       val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema, pipelineSource.cachePath, null), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest))
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), largeObjectDataSourceProps)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
@@ -127,7 +138,7 @@ class DataIngestionTests {
       val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema, pipelineSource.cachePath, null), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest))
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), largeObjectDataSourceProps)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
@@ -157,7 +168,7 @@ class DataIngestionTests {
       val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(type, TypeDbWrapper(type, schema, pipelineSource.cachePath, null), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest))
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), largeObjectDataSourceProps)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
@@ -186,7 +197,7 @@ class DataIngestionTests {
          val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
          val pipeline = IngestionStream(type, TypeDbWrapper(type, schema, pipelineSource.cachePath, null), pipelineSource)
 
-         caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest))
+         caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), largeObjectDataSourceProps)
          ingester = Ingester(jdbcTemplate, pipeline)
          caskDao.dropCaskRecordTable(type)
          caskDao.createCaskRecordTable(type)
@@ -210,7 +221,7 @@ class DataIngestionTests {
       val pipelineSource = CsvStreamSource(input, downCastTestType, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(downCastTestType, TypeDbWrapper(downCastTestType, schema, pipelineSource.cachePath, null), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource))
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource), largeObjectDataSourceProps)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(downCastTestType)
       caskDao.createCaskRecordTable(downCastTestType)
