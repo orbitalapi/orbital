@@ -9,6 +9,7 @@ import io.vyne.cask.types.allFields
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
+import lang.taxi.kapt.quoted
 import lang.taxi.types.*
 import org.springframework.jdbc.core.JdbcTemplate
 import java.lang.StringBuilder
@@ -135,9 +136,9 @@ class PostgresDdlGenerator {
             "${typeName}_${versionedType.versionedNameHash}"
          }.takeLast(POSTGRES_MAX_NAME_LENGTH)
          require(tableName.length <= POSTGRES_MAX_NAME_LENGTH) { "Generated tableName $tableName exceeds Postgres max of 31 characters" }
-         return tableName
+         return tableName.toLowerCase()
       }
-      fun toColumnName(field: Field) = """"${field.name}""""
+      fun toColumnName(field: Field) = field.name.quoted()
    }
 
    fun generateDrop(versionedType: VersionedType): String {

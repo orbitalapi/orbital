@@ -1,7 +1,7 @@
 package io.vyne.schemas
 
 import lang.taxi.types.Accessor
-import lang.taxi.types.FieldSetCondition
+import lang.taxi.types.FieldSetExpression
 import lang.taxi.types.Formula
 
 // Note: I'm progressively moving this towards Taxi schemas, as discussed
@@ -11,7 +11,7 @@ data class Field(
    val modifiers: List<FieldModifier>,
    private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider(),
    val accessor: Accessor?,
-   val readCondition: FieldSetCondition?,
+   val readCondition: FieldSetExpression?,
    val typeDoc:String?,
    val defaultValue: Any? = null,
    val formula: Formula? = null

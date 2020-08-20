@@ -1,8 +1,13 @@
 package io.vyne.spring
 
+import com.hazelcast.core.EntryEvent
+import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.map.listener.EntryAddedListener
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.schemas.Schema
 import lang.taxi.annotations.DataType
 import lang.taxi.annotations.Operation
 import lang.taxi.annotations.Service
@@ -19,6 +24,10 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 import org.springframework.web.bind.annotation.GetMapping
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
+
 
 @RunWith(SpringJUnit4ClassRunner::class)
 @ContextConfiguration(classes = [PropertyConfig::class, LocalVyneConfigTest.vyneConfigWithLocalSchemaStore::class])
@@ -61,17 +70,22 @@ class LocalVyneConfigTest {
 
    @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED)
    @EnableAutoConfiguration
+   @EnableVyne
    class vyneConfigWithLocalSchemaStore {}
 }
 
 @RunWith(SpringJUnit4ClassRunner::class)
-@ContextConfiguration(classes = [PropertyConfig::class, RemoteVyneConfigTest.vyneConfigWithRemoteSchemaStore::class])
-@TestPropertySource(properties = ["vyne.schema.name=testSchema", "vyne.schema.version=0.1.0", "spring.application.name=vyneTest"])
+@ContextConfiguration(classes = [PropertyConfig::class, DistributedVyneConfigTest.vyneConfigWithDistributedSchemaStore::class])
+@TestPropertySource(properties = ["vyne.schema.name=testSchema", "vyne.schema.version=0.1.0", "spring.application.name=vyneTest",
+"vyne.schme.publish.on.samethread=true"])
 @DirtiesContext
-class RemoteVyneConfigTest {
+class DistributedVyneConfigTest {
 
    @Autowired
    lateinit var vyneFactory: VyneFactory
+
+   @Autowired
+   lateinit var hazelcast: HazelcastInstance
 
    @Test
    fun given_schemaServiceReturnsSchemas_then_theyArePresentInvyne() {
@@ -96,7 +110,8 @@ class RemoteVyneConfigTest {
 
    @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
    @EnableAutoConfiguration
-   class vyneConfigWithRemoteSchemaStore {}
+   @EnableVyne
+   class vyneConfigWithDistributedSchemaStore {}
 }
 
 
@@ -140,6 +155,7 @@ class LocalVyneClassPathSchemaFileConfigTest {
 
    @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED, schemaFile = "foo.taxi")
    @EnableAutoConfiguration
+   @EnableVyne
    class vyneConfigWithLocalClassPathSchemaFile {}
 }
 
@@ -169,6 +185,7 @@ class LocalVyneAnnotationControllerContextPathTest {
 
    @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED)
    @EnableAutoConfiguration()
+   @EnableVyne
    class vyneConfig {}
 
 }

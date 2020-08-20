@@ -1,28 +1,23 @@
 package io.vyne.cask
 
-import arrow.core.Either
 import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
-import io.vyne.VersionedTypeReference
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
-import io.vyne.cask.query.CaskDAO
+import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.schemaStore.SchemaPublisher
-import io.vyne.schemas.Schema
 import io.vyne.utils.log
 import org.junit.AfterClass
-import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.jdbc.DataSourceBuilder
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
-import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
@@ -35,11 +30,11 @@ import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.*
 import javax.annotation.PreDestroy
+import javax.sql.DataSource
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -50,6 +45,7 @@ import javax.annotation.PreDestroy
       "vyne.schema.publicationMethod=LOCAL"
    ])
 @ActiveProfiles("test")
+@EnableConfigurationProperties(OperationGeneratorConfig::class)
 class CaskAppIntegrationTest {
    @LocalServerPort
    val randomServerPort = 0
@@ -57,34 +53,15 @@ class CaskAppIntegrationTest {
    @Autowired
    lateinit var schemaPublisher: SchemaPublisher
 
-   @Autowired
-   lateinit var caskDao: CaskDAO
-
-   lateinit var webClient: WebClient
-   lateinit var schema: Schema
-
-   @Before
-   fun setup() {
-      webClient = WebClient
-         .builder()
-         .baseUrl("http://localhost:${randomServerPort}")
-         .build()
-
-      // mock schema
-      val schemaResult = schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1) as Either.Right
-      schema = schemaResult.b
-
-      caskDao.findAllCaskConfigs().forEach { caskDao.deleteCask(it.tableName) }
-   }
 
    companion object {
       lateinit var pg: EmbeddedPostgres
-
       @BeforeClass
       @JvmStatic
       fun setupDb() {
          // port used in the config by the Flyway, hence hardcoded
-         pg = EmbeddedPostgres.builder().setPort(6662).start()
+         pg =  EmbeddedPostgres.builder().setPort(6662).start()
+         pg.postgresDatabase.connection
       }
 
       @AfterClass
@@ -99,11 +76,7 @@ class CaskAppIntegrationTest {
 
       @Bean
       @Primary
-      fun jdbcTemplate(): JdbcTemplate {
-         val dataSource = DataSourceBuilder.create()
-            .url("jdbc:postgresql://localhost:${pg.port}/postgres")
-            .username("postgres")
-            .build()
+      fun jdbcTemplate(dataSource: DataSource): JdbcTemplate {
          val jdbcTemplate = JdbcTemplate(dataSource)
          jdbcTemplate.execute(TableMetadata.DROP_TABLE)
          return jdbcTemplate
@@ -126,6 +99,8 @@ Date,Symbol,Open,High,Low,Close
 
    @Test
    fun canIngestContentViaWebsocketConnection() {
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
@@ -150,8 +125,14 @@ Date,Symbol,Open,High,Low,Close
 
    @Test
    fun canIngestLargeContentViaWebsocketConnection() {
-      val caskRequest = insertRecords(10000)
+      var caskRequest = """Date,Symbol,Open,High,Low,Close"""
+      for(i in 1..10000){
+         caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
+      }
       caskRequest.length.should.be.above(20000) // Default websocket buffer size is 8096
+
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
@@ -176,6 +157,8 @@ Date,Symbol,Open,High,Low,Close
 
    @Test
    fun canIngestContentViaRestEndpoint() {
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val client = WebClient
          .builder()
@@ -195,8 +178,14 @@ Date,Symbol,Open,High,Low,Close
 
    @Test
    fun canIngestLargeContentViaRestEndpoint() {
-      val caskRequest = insertRecords(10000)
+      var caskRequest = """Date,Symbol,Open,High,Low,Close"""
+      for(i in 1..10000){
+         caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
+      }
       caskRequest.length.should.be.above(20000)
+
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val client = WebClient
          .builder()
@@ -216,6 +205,8 @@ Date,Symbol,Open,High,Low,Close
 
    @Test
    fun canQueryForCaskData() {
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val client = WebClient
          .builder()

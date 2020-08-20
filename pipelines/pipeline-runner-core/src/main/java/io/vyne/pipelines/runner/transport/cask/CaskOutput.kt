@@ -1,10 +1,12 @@
 package io.vyne.pipelines.runner.transport.cask
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.io.ByteStreams
 import io.vyne.VersionedTypeReference
 import io.vyne.pipelines.*
 import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
+import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.discovery.DiscoveryClient
@@ -16,6 +18,7 @@ import org.springframework.web.reactive.socket.client.WebSocketClient
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.io.InputStream
 import java.net.URI
 import java.net.URLEncoder
 import java.time.Duration.ofMillis
@@ -23,11 +26,19 @@ import java.util.*
 
 
 @Component
-class CaskOutputBuilder(val objectMapper: ObjectMapper, val client: DiscoveryClient, @Value("\${vyne.caskService.name}") var caskServiceName: String) : PipelineOutputTransportBuilder<CaskTransportOutputSpec> {
+class CaskOutputBuilder(
+   val client: DiscoveryClient,
+   @Value("\${vyne.caskService.name}") var caskServiceName: String,
+   val healthMonitor: PipelineTransportHealthMonitor = EmitterPipelineTransportHealthMonitor(),
+   private val wsClient: WebSocketClient = ReactorNettyWebSocketClient(),
+   private val pollIntervalMillis: Long = 3000
+) : PipelineOutputTransportBuilder<CaskTransportOutputSpec> {
 
    override fun canBuild(spec: PipelineTransportSpec) = spec.type == CaskTransport.TYPE && spec.direction == PipelineDirection.OUTPUT
 
-   override fun build(spec: CaskTransportOutputSpec, logger: PipelineLogger): PipelineOutputTransport = CaskOutput(spec, logger, client, caskServiceName)
+   override fun build(spec: CaskTransportOutputSpec, logger: PipelineLogger, transportFactory: PipelineTransportFactory): PipelineOutputTransport {
+      return CaskOutput(spec, logger, client, caskServiceName, healthMonitor, wsClient, pollIntervalMillis)
+   }
 
 }
 
@@ -41,11 +52,13 @@ class CaskOutput(
    private val pollIntervalMillis: Long = 3000
 ) : PipelineOutputTransport {
 
+   override val description: String = spec.description
+
    override val type: VersionedTypeReference = spec.targetType
 
    private val CASK_CONTENT_TYPE_PARAMETER = "content-type"
 
-   val wsOutput: EmitterProcessor<String> = EmitterProcessor.create()
+   val wsOutput: EmitterProcessor<MessageContentProvider> = EmitterProcessor.create()
    val wsHandler = CaskWebsocketHandler(logger, healthMonitor, wsOutput) { handleWebsocketTermination(it) }
 
    init {
@@ -138,7 +151,7 @@ class CaskOutput(
    }
 
 
-   override fun write(message: String, logger: PipelineLogger) {
+   override fun write(message: MessageContentProvider, logger: PipelineLogger) {
       logger.info { "Sending message to Cask" }
       wsOutput.onNext(message)
    }
@@ -148,7 +161,7 @@ class CaskOutput(
 class CaskWebsocketHandler(
    val logger: PipelineLogger,
    val healthMonitor: PipelineTransportHealthMonitor,
-   val wsOutput: EmitterProcessor<String>,
+   val wsOutput: EmitterProcessor<MessageContentProvider>,
    val onTermination: (throwable: Throwable?) -> Unit
 ) : WebSocketHandler {
    override fun handle(session: WebSocketSession): Mono<Void> {
@@ -157,11 +170,18 @@ class CaskWebsocketHandler(
       healthMonitor.reportStatus(UP)
 
       // Configure the session: inbounds and outbounds messages
-      return session.send(wsOutput.map { session.textMessage(it) })
+      return session.send(wsOutput.map { messageContentProvider ->
+         session.binaryMessage { factory ->
+            val dataBuffer = factory.allocateBuffer()
+
+            messageContentProvider.writeToStream(logger, dataBuffer.asOutputStream())
+            dataBuffer
+         }
+      })
          .and(
             session.receive().map { it.payloadAsText }
                .doOnNext {
-                  logger.error { "Received response from websocket: $it"}
+                  logger.error { "Received response from websocket: $it" }
                }.then()
          )
          .doOnError { onTermination(it) }

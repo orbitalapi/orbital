@@ -2,7 +2,9 @@ package io.vyne.cask.services
 
 import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
-import io.vyne.cask.query.CaskDAO
+import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.config.schema
+import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskNamespacePrefix
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
@@ -19,7 +21,9 @@ import org.springframework.stereotype.Service
 class CaskServiceBootstrap constructor(
    private val caskServiceSchemaGenerator: CaskServiceSchemaGenerator,
    private val schemaProvider: SchemaProvider,
-   private val caskDAO: CaskDAO) {
+   private val caskConfigRepository: CaskConfigRepository,
+   private val caskViewService: CaskViewService,
+   private val caskServiceRegenerationRunner: CaskServiceRegenerationRunner) {
 
    // TODO Update cask service when type changes (e.g. new attributes added)
    @EventListener
@@ -35,37 +39,69 @@ class CaskServiceBootstrap constructor(
 
       val caskChangesOnly = (deleted + added).all { it.name.startsWith(CaskNamespacePrefix) }
       if (caskChangesOnly) {
-         log().info("Schema changed, cask services do not need updating.")
+         log().info("Schema changed, cask services do not need updating, but re-registering Cask Views.")
+         // Required to handle the case:
+         // - blank Cask DB and configuration with a view that depends on cask A and cask B
+         // - Create Cask A
+         // - Create Cask B
+         // We need below call to handle view generation.
+         caskServiceRegenerationRunner.regenerate {
+            val newCaskViewConfigs = this.generateCaskViews()
+            val caskVersionedViewTypes = findTypesToRegister(newCaskViewConfigs.toMutableList())
+            if (caskVersionedViewTypes.isNotEmpty()) {
+               caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedViewTypes)
+            }
+         }
          return
       }
 
       log().info("Schema changed, cask services need to be updated!")
-      regenerateCaskServices()
+      caskServiceRegenerationRunner.regenerate { regenerateCaskServices() }
    }
 
    @EventListener(value = [ContextRefreshedEvent::class])
    fun generateCaskServicesOnStartup() {
-      regenerateCaskServices()
+      caskServiceRegenerationRunner.regenerate { regenerateCaskServices() }
+   }
+
+   private fun generateCaskViews(): List<CaskConfig> {
+      return caskViewService.bootstrap()
    }
 
    private fun regenerateCaskServices() {
-      val caskConfigs = caskDAO.findAllCaskConfigs()
+      this.generateCaskViews()
+      val caskConfigs = caskConfigRepository.findAll()
       log().info("Total number of CaskConfig entries=${caskConfigs.size}")
-      val caskVersionedTypes = findExistingCaskTypes(caskConfigs)
+      val caskVersionedTypes = findTypesToRegister(caskConfigs)
       if (caskVersionedTypes.isNotEmpty()) {
          caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedTypes)
       }
    }
 
-   private fun findExistingCaskTypes(caskConfigs: MutableList<CaskConfig>): List<VersionedType> {
+   private fun findTypesToRegister(caskConfigs: MutableList<CaskConfig>): List<CaskTaxiPublicationRequest> {
       return getSchema()?.let { schema ->
-         caskConfigs.mapNotNull {
-            try {
-               schema.versionedType(it.qualifiedTypeName.fqn())
-            } catch (e: Exception) {
-               log().error("Unable to find type ${it.qualifiedTypeName.fqn()} Error: ${e.message}")
-               null
+         caskConfigs.mapNotNull { caskConfig ->
+            if (caskConfig.exposesType) {
+               val caskSchema = caskConfig.schema(importSchema = schema)
+               val type = caskSchema.versionedType(caskConfig.qualifiedTypeName.fqn())
+               CaskTaxiPublicationRequest(
+                  type,
+                  registerService = true,
+                  registerType = true
+               )
+            } else {
+               try {
+                  CaskTaxiPublicationRequest(
+                     schema.versionedType(caskConfig.qualifiedTypeName.fqn()),
+                     registerService = true,
+                     registerType = false
+                  )
+               } catch (e: Exception) {
+                  log().error("Unable to find type ${caskConfig.qualifiedTypeName.fqn()} Error: ${e.message}")
+                  null
+               }
             }
+
          }
       }?.toList().orElse(emptyList())
    }
@@ -79,3 +115,9 @@ class CaskServiceBootstrap constructor(
       }
    }
 }
+
+data class CaskTaxiPublicationRequest(
+   val type: VersionedType,
+   val registerService: Boolean = true,
+   val registerType: Boolean = false
+)

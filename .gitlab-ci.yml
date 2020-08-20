@@ -25,6 +25,8 @@ build-jvm:
   stage: build
   except:
      - tags
+     - develop
+     - master
   cache:
      paths:
         - .m2/repository
@@ -48,6 +50,8 @@ build-ui:
    stage: build
    except:
       - tags
+      - develop
+      - master
    cache:
       paths:
          - vyne-query-service/src/main/web/node
@@ -60,21 +64,21 @@ build-ui:
          - "vyne-query-service/target/classes/static"
       expire_in: 1 hours
 
-publish-snapshot:
+build-publish-snapshot:
   resource_group: docker_release
   stage: deploy
   script:
     - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-    - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm deploy -DbuildNumber=$CI_BUILD_ID -P snapshot-release' # Skip UI and tests. Already there from previous stages and artifacts
+    - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -DbuildNumber=$CI_BUILD_ID -P snapshot-release'
   only:
     - develop
 
-publish-release:
+build-publish-release:
    resource_group: docker_release
    stage: deploy
    script:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-      - 'mvn $MAVEN_CLI_OPTS -DskipTests -Dskip.npm deploy -P release' # Skip UI and tests. Already there from previous stages and artifacts
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -P release'
    only:
       - master
 
@@ -85,7 +89,7 @@ release-major:
    stage: release
    script:
       - *git_setup
-      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MAJOR_RELEASE_DIGIT'
+      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MAJOR_RELEASE_DIGIT -DskipTestProject=true'
    only:
       - develop
    when: manual
@@ -97,7 +101,7 @@ release-minor:
    stage: release
    script:
       - *git_setup
-      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MINOR_RELEASE_DIGIT'
+      - 'mvn gitflow:release -B -DversionDigitToIncrement=$MINOR_RELEASE_DIGIT -DskipTestProject=true'
    only:
       - develop
    when: manual
@@ -109,7 +113,7 @@ release-patch:
    stage: release
    script:
       - *git_setup
-      - 'mvn gitflow:release -B -DversionDigitToIncrement=$PATCH_RELEASE_DIGIT'
+      - 'mvn gitflow:release -B -DversionDigitToIncrement=$PATCH_RELEASE_DIGIT -DskipTestProject=true'
    only:
       - develop
    when: manual

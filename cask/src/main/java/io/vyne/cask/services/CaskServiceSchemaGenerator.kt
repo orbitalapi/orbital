@@ -36,9 +36,13 @@ class CaskServiceSchemaGenerator(
       if (alreadyExists(event.type)) {
          log().info("Cask service ${caskServiceSchemaName(event.type)} already exists ")
          return
+      } else {
+         generateAndPublishService(CaskTaxiPublicationRequest(
+            event.type,
+            registerService = true,
+            registerType = false
+         ))
       }
-
-      generateAndPublishService(event.type)
    }
 
    @EventListener
@@ -47,19 +51,20 @@ class CaskServiceSchemaGenerator(
       // TODO
    }
 
-   fun generateSchema(versionedType: VersionedType, typeMigration: TypeMigration? = null): TaxiDocument {
-      val taxiType = versionedType.taxiType
+   fun generateSchema(request:CaskTaxiPublicationRequest, typeMigration: TypeMigration? = null): TaxiDocument {
+      val taxiType = request.type.taxiType
       // TODO Handle Type Migration.
-      val fields = typeMigration?.fields ?: versionedType.allFields()
+      val fields = typeMigration?.fields ?: request.type.allFields()
       return if (taxiType is ObjectType) {
-         TaxiDocument(services = setOf(generateCaskService(fields, taxiType)), types = setOf())
+         val typesToRegister = if (request.registerType) setOf(taxiType) else emptySet()
+         TaxiDocument(services = setOf(generateCaskService(fields, taxiType)), types = typesToRegister)
       } else {
          TODO("Type ${taxiType::class.simpleName} not yet supported")
       }
    }
 
-   fun generateAndPublishService(versionedType: VersionedType, typeMigration: TypeMigration? = null) {
-      generateAndPublishServices(listOf(versionedType))
+   fun generateAndPublishService(request:CaskTaxiPublicationRequest, typeMigration: TypeMigration? = null) {
+      generateAndPublishServices(listOf(request))
    }
 
    fun alreadyExists(versionedType: VersionedType): Boolean {
@@ -67,10 +72,10 @@ class CaskServiceSchemaGenerator(
       return schemaStore.schemaSet().allSources.any { it.name == caskSchemaName }
    }
 
-   fun generateAndPublishServices(versionedTypes: List<VersionedType>) {
-      val services = versionedTypes.map {
-         val schemaName = caskServiceSchemaName(it)
-         val taxiDocument = generateSchema(it, null)
+   fun generateAndPublishServices(requests: List<CaskTaxiPublicationRequest>) {
+      val services = requests.map { request ->
+         val schemaName = caskServiceSchemaName(request.type)
+         val taxiDocument = generateSchema(request, null)
          schemaName to taxiDocument
       }.toMap()
       caskServiceSchemaWriter.write(services)
@@ -96,5 +101,3 @@ class CaskServiceSchemaGenerator(
       }
    }
 }
-
-

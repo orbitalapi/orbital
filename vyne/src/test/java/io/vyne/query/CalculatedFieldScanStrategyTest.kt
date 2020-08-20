@@ -4,7 +4,7 @@ import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.TestSchema
 import io.vyne.models.json.addJsonModel
-import io.vyne.query.formulas.CalculatorRegistry
+import io.vyne.formulas.CalculatorRegistry
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import org.junit.Test

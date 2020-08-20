@@ -1,15 +1,23 @@
 package io.vyne.queryService
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
-import io.vyne.query.*
+import io.vyne.query.Fact
+import io.vyne.query.HistoryQueryResponse
+import io.vyne.query.LineageGraphSerializationModule
+import io.vyne.query.ProfilerOperation
+import io.vyne.query.Query
+import io.vyne.query.QueryMode
+import io.vyne.query.QueryResponse
+import io.vyne.query.QueryResult
+import io.vyne.query.ResultMode
+import io.vyne.query.SearchFailedException
 import io.vyne.queryService.csv.toCsv
 import io.vyne.schemas.Schema
-import io.vyne.spring.VyneFactory
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import io.vyne.utils.orElse
@@ -18,7 +26,12 @@ import io.vyne.vyneql.VyneQLQueryString
 import lang.taxi.CompilationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 import java.util.*
 
 const val TEXT_CSV = "text/csv"
@@ -28,7 +41,8 @@ data class FailedSearchResponse(val message: String,
                                 @field:JsonIgnore // this sends too much information - need to build a lightweight version
                                 override val profilerOperation: ProfilerOperation?,
                                 override val resultMode: ResultMode,
-                                override val queryResponseId: String = UUID.randomUUID().toString()
+                                override val queryResponseId: String = UUID.randomUUID().toString(),
+                                val results: Map<String, Any?> = mapOf()
 
 ) : QueryResponse {
    override val isFullyResolved: Boolean = false
@@ -57,7 +71,7 @@ typealias QueryResponseString = String
  * with Vyne directly), but useful for spiking / demos.
  */
 @RestController
-class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory) {
+class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, val objectMapper: ObjectMapper) {
 
 
    @PostMapping("/api/query", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
@@ -93,6 +107,9 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory) {
             )
          } catch (e: SearchFailedException) {
             FailedSearchResponse(e.message!!, e.profilerOperation, resultMode)
+         } catch (e: NotImplementedError) {
+            // happens when Schema is empty
+            FailedSearchResponse(e.message!!,null, resultMode)
          }
          val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
          history.add(record)
@@ -132,7 +149,8 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory) {
       // This is because the LineageGraphSerializationModule() is stateful, and
       // shares references during serialization.  Therefore, it's not threadsafe, so
       // we create an instance per response.
-      return jacksonObjectMapper()
+      return objectMapper
+         .copy()
          .registerModule(LineageGraphSerializationModule())
          .writerWithDefaultPrettyPrinter()
          .writeValueAsString(response)

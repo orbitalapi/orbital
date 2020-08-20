@@ -15,7 +15,7 @@ import lang.taxi.types.Type
 import org.springframework.stereotype.Component
 
 @Component
-class BetweenTemporalOperationGenerator : OperationGenerator {
+class BetweenTemporalOperationGenerator(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()) : OperationGenerator {
    override fun generate(field: Field, type: Type): Operation {
       val parameterType = parameterType(field)
       val startParameter = TemporalFieldUtils.parameterFor(
@@ -30,7 +30,7 @@ class BetweenTemporalOperationGenerator : OperationGenerator {
       val lessThanEqualConstraint = TemporalFieldUtils.constraintFor(field, Operator.LESS_THAN, TemporalFieldUtils.End)
       val returnType = collectionTypeOf(type)
       return Operation(
-         name = "findBy${field.name.capitalize()}$ExpectedAnnotationName",
+         name = "findBy${field.name.capitalize()}$expectedAnnotationName",
          parameters = listOf(startParameter, endParameter),
          annotations = listOf(Annotation("HttpOperation", mapOf("method" to "GET", "url" to getRestPath(type, field)))),
          returnType = returnType,
@@ -42,16 +42,19 @@ class BetweenTemporalOperationGenerator : OperationGenerator {
    }
 
    override fun canGenerate(field: Field, type: Type): Boolean {
-      return TemporalFieldUtils.validate(field) != null && TemporalFieldUtils.annotationFor(field, ExpectedAnnotationName) != null
+      return TemporalFieldUtils.validate(field) != null &&
+         (TemporalFieldUtils.annotationFor(field, expectedAnnotationName.annotation) != null ||
+            operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
    }
 
    companion object {
-      const val ExpectedAnnotationName = "Between"
+      private val expectedAnnotationName = OperationAnnotation.Between
+
       private fun getRestPath(type: Type, field: Field): String {
          val typeQualifiedName = type.toQualifiedName()
          val fieldTypeQualifiedName = field.type.toQualifiedName()
          val path = AttributePath.from(typeQualifiedName.toString())
-         return "${CaskServiceSchemaGenerator.CaskApiRootPath}${path.parts.joinToString("/")}/${field.name}/$ExpectedAnnotationName/{start}/{end}"
+         return "${CaskServiceSchemaGenerator.CaskApiRootPath}${path.parts.joinToString("/")}/${field.name}/$expectedAnnotationName/{start}/{end}"
       }
    }
 }

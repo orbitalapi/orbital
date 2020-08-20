@@ -5,7 +5,7 @@ import {DataSourceToolbarComponent} from './data-source-toolbar.component';
 import {DataSourceUploadComponent} from './data-source-upload.component';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
-import {FormsModule} from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatButtonModule} from '@angular/material/button';
 import {DataSourceConfigComponent} from './data-source-config.component';
@@ -36,6 +36,13 @@ import {CaskPanelComponent} from './cask-panel.component';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
+import {AgGridModule} from 'ag-grid-angular';
+import {MatDialogModule} from '@angular/material/dialog';
+import { AssignTypeToColumnDialogComponent } from './assign-types-dialog/assign-type-to-column-dialog.component';
+import {MatDatepickerModule} from '@angular/material/datepicker';
+import { TypeNamePanelComponent } from './type-name-panel/type-name-panel.component';
+import { SchemaGeneratorComponent } from './schema-generator-panel/schema-generator.component';
+import {GridHeaderActionsComponent} from "./custom-csv-table-header";
 
 
 @NgModule({
@@ -45,7 +52,6 @@ import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-p
     InlineQueryRunnerModule,
     ObjectViewModule,
     CodeViewerModule,
-
     CommonModule,
     BrowserModule,
     FormsModule,
@@ -69,24 +75,34 @@ import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-p
     DescriptionEditorModule,
     InheritanceGraphModule,
     MatProgressBarModule,
-    TypedInstancePanelModule
+    TypedInstancePanelModule,
+    AgGridModule,
+    MatDialogModule,
+    MatDatepickerModule,
+    ReactiveFormsModule
 
-  ],
+    ],
   declarations: [
     DataSourceToolbarComponent,
     DataSourceUploadComponent,
     DataSourceConfigComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
+    GridHeaderActionsComponent,
     DataExplorerComponent,
-    CaskPanelComponent
+    CaskPanelComponent,
+    AssignTypeToColumnDialogComponent,
+    TypeNamePanelComponent,
+    SchemaGeneratorComponent
   ],
   exports: [
     DataSourceToolbarComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
     CaskPanelComponent
-  ]
+  ],
+  entryComponents: [AssignTypeToColumnDialogComponent, GridHeaderActionsComponent]
+
 })
 export class DataExplorerModule {
 }

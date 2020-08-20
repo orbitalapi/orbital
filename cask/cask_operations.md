@@ -37,6 +37,22 @@ Cask will create the following service definition for `Order`:
 As you can see, cask generates two methods for a model with four fields as only 'orderId' and 'orderDateTime' fields are annotated with
 `@Id` and `@Between` correspondingly.
 
+#### Operations created based on configuration
+Another way of creating service operations is through the yaml definitions.<br/>
+ The following setup allows you to generate the same service definitions for the given schema above.
+ 'applicableTo' holds the name of the field and 'name' holds the annotation that you associate with.<br/>
+ You can have multiple annotations for a field by repeating the definitions.
+ Note that the primitive type definitions and annotations that are not applicable to the specified types will have no effect on the service definitions.
+ 
+<pre><code>
+cask:
+    operations:
+        - applicableTo: OrderId
+        name: Id
+        - applicableTo: TransactionEventDateTime
+        name: Between
+</code></pre>
+
 ## Operation Generator Annotations:
 
 * Id

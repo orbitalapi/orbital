@@ -21,7 +21,7 @@ class UnknownResourceException(message: String) : RuntimeException(message)
 
 @RestController
 @RequestMapping("/api/schemas/taxi")
-class TaxiSchemaStoreService(private val validatingStore: LocalValidatingSchemaStore = LocalValidatingSchemaStore()) : SchemaStoreService, SchemaProvider {
+class TaxiSchemaStoreService(private val validatingStore: LocalValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient()) : SchemaStoreService, SchemaProvider {
 
    @RequestMapping(method = arrayOf(RequestMethod.POST))
    override fun submitSources(sources: List<VersionedSource>): SourceSubmissionResponse {

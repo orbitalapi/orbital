@@ -8,10 +8,13 @@ import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
+import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.query.CaskApiHandler
+import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.rest.CaskRestController
 import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPath
 import io.vyne.cask.websocket.CaskWebsocketHandler
+import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Qualifier
@@ -19,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
@@ -30,6 +34,7 @@ import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.codec.ServerCodecConfigurer
+import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
@@ -51,6 +56,8 @@ import javax.annotation.PostConstruct
 @EnableWebFlux
 @EnableAspectJAutoProxy
 @EnableScheduling
+@VyneSchemaConsumer
+@EnableConfigurationProperties(CaskViewConfig::class)
 class CaskApp {
    companion object {
       @JvmStatic

@@ -56,17 +56,28 @@ interface QueryHistoryRecord<T> {
       get() {
          return response.queryResponseId
       }
+
+   fun  withResponse(response: HistoryQueryResponse): QueryHistoryRecord<T>
 }
 
 data class VyneQlQueryHistoryRecord(
    override val query: VyneQLQueryString,
    override val response: HistoryQueryResponse,
    override val timestamp: Instant = Instant.now()
-) : QueryHistoryRecord<VyneQLQueryString>
+) : QueryHistoryRecord<VyneQLQueryString> {
+   override fun withResponse(historyQueryResponse: HistoryQueryResponse): QueryHistoryRecord<VyneQLQueryString> {
+     return copy(response = historyQueryResponse )
+   }
+}
+
 data class RestfulQueryHistoryRecord(
    override val query: Query,
    override val response: HistoryQueryResponse,
    override val timestamp: Instant = Instant.now()
-) : QueryHistoryRecord<Query>
+) : QueryHistoryRecord<Query> {
+   override fun withResponse(historyQueryResponse: HistoryQueryResponse): QueryHistoryRecord<Query> {
+      return copy(response = historyQueryResponse )
+   }
+}
 
 

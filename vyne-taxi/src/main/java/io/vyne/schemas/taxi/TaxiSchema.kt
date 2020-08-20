@@ -123,7 +123,7 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                         field.type.toVyneQualifiedName(),
                         field.modifiers.toVyneFieldModifiers(),
                         accessor = field.accessor,
-                        readCondition = field.readCondition,
+                        readCondition = field.readExpression,
                         typeDoc = field.typeDoc
                      )
                      else -> field.name to Field(
@@ -131,7 +131,7 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                         constraintProvider = buildDeferredConstraintProvider(field.type.qualifiedName.fqn(), field.constraints),
                         modifiers = field.modifiers.toVyneFieldModifiers(),
                         accessor = field.accessor,
-                        readCondition = field.readCondition,
+                        readCondition = field.readExpression,
                         typeDoc = field.typeDoc,
                         defaultValue = field.defaultValue,
                         formula = field.formula)
