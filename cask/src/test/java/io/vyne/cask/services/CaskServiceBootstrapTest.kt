@@ -1,13 +1,11 @@
 package io.vyne.cask.services
 
-import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.*
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.caskRecordTable
-import io.vyne.cask.query.CaskDAO
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.fqn
@@ -16,7 +14,6 @@ import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.spring.VersionedSchemaProvider
 import org.junit.Test
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
 
 class CaskServiceBootstrapTest {

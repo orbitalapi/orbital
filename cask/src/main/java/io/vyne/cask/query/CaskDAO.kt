@@ -145,6 +145,7 @@ class CaskDAO(
          String::class.java
       )
    }
+
    fun findTableNamesForType(versionedType: VersionedType): List<String> {
       return findTableNamesForType(versionedType.taxiType.toQualifiedName())
    }
@@ -316,7 +317,7 @@ class CaskDAO(
                if (config.deltaAgainstTableName != null) setString(7, config.deltaAgainstTableName) else setNull(7, Types.VARCHAR)
                setBoolean(8, config.exposesService)
                setBoolean(9, config.exposesType)
-               setInt(7, 30)// eviction
+               setInt(7, config.daysToRetain)
             }
          }
       }

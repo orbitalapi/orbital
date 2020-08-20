@@ -35,7 +35,7 @@ data class CaskConfig(
    @Column(name = "exposesservice")
    val exposesService: Boolean = true,
    @Column(name = "daysToRetain")
-   val daysToRetain: Int
+   val daysToRetain: Int = 30
 ) {
    companion object {
       fun forType(
@@ -44,7 +44,8 @@ data class CaskConfig(
          insertionTime:Instant = Instant.now(),
          deltaAgainstTableName: String? = null,
          exposesType: Boolean = false,
-         exposesService: Boolean = true
+         exposesService: Boolean = true,
+         daysToRetain: Int = 30
       ):CaskConfig {
          return CaskConfig(
             tableName,
@@ -55,7 +56,8 @@ data class CaskConfig(
             deltaAgainstTableName,
             insertionTime,
             exposesType,
-            exposesService
+            exposesService,
+            daysToRetain
          )
       }
    }

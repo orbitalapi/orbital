@@ -4,6 +4,7 @@ import arrow.core.Either
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskDetails
+import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionStream
@@ -13,6 +14,7 @@ import io.vyne.cask.query.CaskDAO
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
+import io.vyne.schemas.fqn
 import io.vyne.utils.log
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
@@ -26,7 +28,8 @@ import java.util.*
 @Component
 class CaskService(private val schemaProvider: SchemaProvider,
                   private val ingesterFactory: IngesterFactory,
-                  private val caskDAO: CaskDAO) {
+                  private val caskDAO: CaskDAO,
+                  private val caskConfigRepo: CaskConfigRepository) {
 
    interface CaskServiceError {
       val message: String
