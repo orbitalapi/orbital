@@ -153,6 +153,7 @@ data class LightweightQueryResult(
    override val timings: Map<OperationType, Long>,
    override val vyneCost: Long,
    override val resultMode: ResultMode = ResultMode.VERBOSE,
+   override val status: QueryResponse.QueryResponseStatus,
    val results: Map<String, TypeNamedInstance>
 
 ) : QueryResponse {

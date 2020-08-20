@@ -21,7 +21,7 @@ export class QueryService {
 
   submitVyneQlQuery(query: String): Observable<QueryResult> {
     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=VERBOSE`, query, { headers });
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=VERBOSE`, query, {headers});
   }
 
   getHistory(): Observable<QueryHistoryRecord[]> {
@@ -100,9 +100,15 @@ export interface OperationParam {
   value: TypeNamedInstance;
 }
 
+export enum QueryResponseStatus {
+  SUCCESS = 'SUCCESS',
+  ERROR = 'ERROR',
+  SEARCH_FAILED = 'SEARCH_FAILED'
+}
 
 export interface QueryResult {
   results: { [key: string]: InstanceLikeOrCollection };
+  status: QueryResponseStatus;
   unmatchedNodes: QualifiedName[];
   fullyResolved: boolean;
   profilerOperation: ProfilerOperation;

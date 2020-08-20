@@ -85,8 +85,9 @@ data class QueryResult(
 ) : QueryResponse {
 
    val duration = profilerOperation?.duration
-
    override val isFullyResolved = unmatchedNodes.isEmpty()
+   override val status: QueryResponse.QueryResponseStatus = if (this.isFullyResolved)  QueryResponse.QueryResponseStatus.SUCCESS else QueryResponse.QueryResponseStatus.SEARCH_FAILED
+
    operator fun get(typeName: String): TypedInstance? {
       val requestedParameterizedName = typeName.fqn().parameterizedName
       // TODO : THis should consider inheritence, rather than strict equals
@@ -146,7 +147,13 @@ data class QueryResult(
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
+   enum class QueryResponseStatus {
+      SUCCESS,
+      ERROR,
+      SEARCH_FAILED
+   }
    val queryResponseId: String
+   val status:QueryResponseStatus
 
    @get:JsonProperty("fullyResolved")
    val isFullyResolved: Boolean

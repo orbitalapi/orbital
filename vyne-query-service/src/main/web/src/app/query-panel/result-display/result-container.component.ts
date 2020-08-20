@@ -1,5 +1,11 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {ProfilerOperation, QueryHistoryRecord, QueryResult, ResultMode} from '../../services/query.service';
+import {
+  ProfilerOperation,
+  QueryHistoryRecord,
+  QueryResponseStatus,
+  QueryResult,
+  ResultMode
+} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {MatTreeNestedDataSource} from '@angular/material';
 import {NestedTreeControl} from '@angular/cdk/tree';
@@ -69,7 +75,8 @@ export class ResultContainerComponent implements OnInit {
   }
   get unmatchedNodes(): string {
     const queryResult = <QueryResult>this.result;
-    return queryResult.unmatchedNodes.map(qn => qn.longDisplayName).join(', ');
+    const unmatchedNodes = queryResult.unmatchedNodes || [];
+    return unmatchedNodes.map(qn => qn.longDisplayName).join(', ');
   }
 
   get error(): string {
@@ -182,14 +189,14 @@ export class ResultContainerComponent implements OnInit {
   }
 
   get isError(): Boolean {
-    return this.result && !this.isQueryResult(this.result);
+    return this.result && this.result.status === QueryResponseStatus.ERROR;
   }
 
   private isQueryResult(result: QueryResult | QueryFailure): result is QueryResult {
     if (!this.result) {
       return false;
     }
-    return (<QueryResult>result).results !== undefined;
+    return result.status !== QueryResponseStatus.ERROR;
   }
   public downloadQueryHistory(fileType: DownloadFileType) {
    const queryResponseId = (<QueryResult>this.result).queryResponseId;

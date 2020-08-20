@@ -14,7 +14,7 @@ import {
   Fact,
   ProfilerOperation,
   Query,
-  QueryMode,
+  QueryMode, QueryResponseStatus,
   QueryResult,
   QueryService,
   RemoteCall,
@@ -171,7 +171,8 @@ export class QueryWizardComponent implements OnInit {
           this.lastQueryResult = new QueryFailure(
             errorResponse.error.message,
             errorResponse.error.profilerOperation,
-            errorResponse.error.remoteCalls);
+            errorResponse.error.remoteCalls,
+            errorResponse.error.status);
           this.queryResultUpdated.emit(this.lastQueryResult);
           this.loadingChanged.emit(false);
         } else {
@@ -330,7 +331,11 @@ export class QueryWizardComponent implements OnInit {
 }
 
 export class QueryFailure {
-  constructor(readonly message: string, readonly profilerOperation: ProfilerOperation, readonly remoteCalls: RemoteCall[]) {
+  constructor(readonly message: string,
+              readonly profilerOperation: ProfilerOperation,
+              readonly remoteCalls: RemoteCall[],
+              readonly status: QueryResponseStatus
+  ) {
   }
 }
 
