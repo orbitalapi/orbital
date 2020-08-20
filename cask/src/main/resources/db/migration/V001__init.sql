@@ -11,6 +11,6 @@ CREATE TABLE IF NOT EXISTS CASK_CONFIG (
 CREATE TABLE IF NOT EXISTS CASK_MESSAGE (
     id varchar(40) NOT NULL PRIMARY  KEY, -- UUID
     qualifiedTypeName varchar(255) NOT NULL,
-    readCachePath varchar(255),
+    messageId int,
     insertedAt timestamp NOT NULL
 );
