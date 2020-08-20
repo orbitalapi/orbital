@@ -65,7 +65,7 @@ class CaskService(private val schemaProvider: SchemaProvider,
       val cacheDirectory = createCacheDirectory(versionedType, request, messageId)
 
       // capturing path to the message
-      caskDAO.createCaskMessage(versionedType, cacheDirectory, messageId)
+      caskDAO.createCaskMessage(versionedType, messageId, input)
 
       val streamSource: StreamSource = request.buildStreamSource(
          input = input,

@@ -5,6 +5,7 @@ import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.ViewPrefix
+import io.vyne.cask.ddl.*
 import io.vyne.cask.timed
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
@@ -14,9 +15,13 @@ import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
+import org.postgresql.PGConnection
+import org.postgresql.largeobject.LargeObjectManager
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import reactor.core.publisher.Flux
+import java.io.InputStream
 import java.nio.file.Path
 import java.sql.ResultSet
 import java.sql.Timestamp
@@ -252,41 +257,67 @@ class CaskDAO(
       return jdbcTemplate.query("Select * from CASK_MESSAGE", caskMessageRowMapper)
    }
 
-   fun createCaskMessage(versionedType: VersionedType, readCachePath: Path, id: String): CaskMessage {
+   fun createCaskMessage(versionedType: VersionedType, id: String, input: Flux<InputStream>): CaskMessage {
       return timed("CaskDao.createCaskMessage", true, TimeUnit.MILLISECONDS) {
          val type = schemaProvider.schema().toTaxiType(versionedType)
          val qualifiedTypeName = type.qualifiedName
          val insertedAt = Instant.now()
-         jdbcTemplate.update { connection ->
-            connection.prepareStatement(ADD_CASK_MESSAGE).apply {
-               setString(1, id)
-               setString(2, qualifiedTypeName)
-               setString(3, readCachePath.toString())
-               setTimestamp(4, Timestamp.from(insertedAt))
-            }
+
+//         val conn = jdbcTemplate.getCustomConnection()
+         val conn = DbPlus().getCustomConnection()
+         requireNotNull(conn) { "Connection could not be obtained." }
+         val pgConn = conn.unwrap(PGConnection::class.java)
+         requireNotNull(pgConn) { "Connection could not be obtained." }
+         val lobj = pgConn.largeObjectAPI
+         val oid = lobj.createLO(LargeObjectManager.READWRITE)
+         val obj = lobj.open(oid, LargeObjectManager.WRITE)
+
+         val chunkSize = 1024
+         val buf = ByteArray(chunkSize)
+         var stepSize = 0
+         var totalSize = 0
+
+         input.subscribe {
+            stepSize = it.read(buf, 0, chunkSize)
+            obj.write(buf, 0, stepSize)
+            totalSize += stepSize
          }
-         CaskMessage(id, qualifiedTypeName, readCachePath.toString(), insertedAt)
+
+         conn.prepareStatement(ADD_CASK_MESSAGE).apply {
+            setString(1, id)
+            setString(2, qualifiedTypeName)
+            setLong(3, oid)
+            setTimestamp(4, Timestamp.from(insertedAt))
+            executeUpdate()
+         }
+
+         obj.close()
+         conn.commit()
+         conn.autoCommit = true
+         conn.close()
+
+         CaskMessage(id, qualifiedTypeName, oid, insertedAt)
       }
    }
 
    private val ADD_CASK_MESSAGE = """INSERT into CASK_MESSAGE (
          | id,
          | qualifiedTypeName,
-         | readCachePath,
+         | messageId,
          | insertedAt) values ( ? , ?, ?, ? )""".trimMargin()
 
    data class CaskMessage(
       val id: String,
       val qualifiedTypeName: String,
-      val readCachePath: String,
+      val messageId: Long,
       val insertedAt: Instant
    )
 
    val caskMessageRowMapper: (ResultSet, Int) -> CaskMessage = { rs: ResultSet, rowNum: Int ->
       CaskMessage(
          rs.getString("id"),
-         rs.getString("readCachePath"),
          rs.getString("qualifiedTypeName"),
+         rs.getLong("messageId"),
          rs.getTimestamp("insertedAt").toInstant()
       )
    }
