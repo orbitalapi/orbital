@@ -53,5 +53,10 @@
           <artifactId>hibernate-core</artifactId>
           <version>${hibernate.version}</version>
        </dependency>
+       <dependency>
+          <groupId>io.vyne</groupId>
+          <artifactId>vyne</artifactId>
+          <version>${project.version}</version>
+       </dependency>
     </dependencies>
 </project>

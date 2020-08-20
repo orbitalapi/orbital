@@ -17,6 +17,7 @@ import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
+import sun.misc.Version
 import java.nio.file.Path
 import java.sql.ResultSet
 import java.sql.Timestamp
@@ -360,10 +361,7 @@ class CaskDAO(
 
    fun setEvictionSchedule(tableName: String, daysToRetain: Int) {
       jdbcTemplate.update { connection ->
-         connection.prepareStatement("""UPDATE CASK_CONFIG SET daysToRetain=? WHERE tableName=? """).apply {
-            setInt(1, daysToRetain)
-            setString(2, tableName)
-         }
+         connection.prepareStatement("UPDATE CASK_CONFIG SET daysToRetain=$daysToRetain WHERE tableName=$tableName")
       }
    }
 

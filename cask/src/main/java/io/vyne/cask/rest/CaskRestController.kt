@@ -11,6 +11,7 @@ import io.vyne.cask.api.EvictionParameters
 import io.vyne.cask.api.EvictionScheduleParameters
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.websocket.CaskWebsocketRequest
+import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
@@ -60,6 +61,8 @@ class CaskRestController(private val caskService: CaskService,
    override fun getCaskDetails(tableName: String) = caskService.getCaskDetails(tableName)
    override fun deleteCask(tableName: String) =  caskService.deleteCask(tableName)
    override fun emptyCask(tableName: String)  = caskService.emptyCask(tableName)
-   override fun setEvictionSchedule(tableName: String, parameters: EvictionScheduleParameters) = caskService.setEvictionSchedule(tableName, parameters.daysToRetain)
-   override fun evict(tableName: String, parameters: EvictionParameters) = caskService.evict(tableName, parameters.writtenBefore)
+   override fun setEvictionSchedule(typeName: String, parameters: EvictionScheduleParameters) =
+      caskService.setEvictionSchedule(typeName, parameters.daysToRetain)
+   override fun evict(typeName: String, parameters: EvictionParameters) =
+      caskService.evict(typeName, parameters.writtenBefore)
 }

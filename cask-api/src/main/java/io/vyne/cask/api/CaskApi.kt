@@ -1,5 +1,6 @@
 package io.vyne.cask.api
 
+import io.vyne.schemas.VersionedType
 import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.*
@@ -27,11 +28,11 @@ interface CaskApi {
    @PutMapping("/api/casks/{tableName}")
    fun emptyCask(@PathVariable("tableName") tableName: String)
 
-   @PutMapping("/api/casks/{tableName}/evictSchedule", produces = ["application/json"])
-   fun setEvictionSchedule(@PathVariable("tableName") tableName: String, @RequestBody parameters: EvictionScheduleParameters)
+   @PutMapping("/api/casks/{typeName}/evictSchedule", produces = ["application/json"])
+   fun setEvictionSchedule(@PathVariable("typeName") typeName: String, @RequestBody parameters: EvictionScheduleParameters)
 
-   @PostMapping("/api/casks/{tableName}/evict", produces = ["application/json"])
-   fun evict(@PathVariable("tableName") tableName: String, @RequestBody parameters: EvictionParameters)
+   @PostMapping("/api/casks/{typeName}/evict", produces = ["application/json"])
+   fun evict(@PathVariable("typeName") typeName: String, @RequestBody parameters: EvictionParameters)
 }
 
 data class EvictionScheduleParameters(val daysToRetain: Int)

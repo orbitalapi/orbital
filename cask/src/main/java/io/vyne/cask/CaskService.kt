@@ -119,13 +119,22 @@ class CaskService(private val schemaProvider: SchemaProvider,
 
    fun deleteCask(tableName: String) = withCask(tableName) {caskDAO.deleteCask(tableName) }
    fun emptyCask(tableName: String) = withCask(tableName) { caskDAO.emptyCask(it) }
-   fun setEvictionSchedule(tableName: String, daysToRetain: Int) = withCask(tableName) { caskDAO.setEvictionSchedule(it, daysToRetain) }
-   fun evict(tableName: String, writtenBefore: Instant) = withCask(tableName) { caskDAO.evict(it, writtenBefore) }
-
+   fun setEvictionSchedule(typeName: String, daysToRetain: Int) = withCasks(typeName) {
+      caskDAO.setEvictionSchedule(it, daysToRetain)
+   }
+   fun evict(typeName: String, writtenBefore: Instant) = withCasks(typeName) {
+      caskDAO.evict(it, writtenBefore)
+   }
 
    private fun withCask(tableName: String, action: (String) -> Unit) {
       if (caskDAO.exists(tableName)) {
          action.invoke(tableName)
+      }
+   }
+
+   private fun withCasks(typeName: String, action: (String) -> Unit ) {
+      caskConfigRepo.findAllByQualifiedTypeName(typeName).forEach {
+         action.invoke(it.tableName)
       }
    }
 }
