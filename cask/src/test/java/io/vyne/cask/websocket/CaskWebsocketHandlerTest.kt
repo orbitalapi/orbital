@@ -30,7 +30,7 @@ import org.springframework.web.reactive.socket.WebSocketMessage
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import java.io.ByteArrayInputStream
-import java.nio.file.Path
+import java.io.InputStream
 import java.nio.file.Paths
 import java.time.Duration
 
@@ -92,7 +92,7 @@ class CaskWebsocketHandlerTest {
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
       val captor = argumentCaptor<IngestionInitialisedEvent>()
       val versionedType = argumentCaptor<VersionedType>()
-      val cachePath = argumentCaptor<Path>()
+      val inputStream = argumentCaptor<Flux<InputStream>>()
       val messageId = argumentCaptor<String>()
 
       wsHandler.handle(session).block()
@@ -104,9 +104,9 @@ class CaskWebsocketHandlerTest {
       verify(applicationEventPublisher, times(1)).publishEvent(captor.capture())
       "OrderWindowSummary".should.be.equal(captor.firstValue.type.fullyQualifiedName)
 
-      verify(caskDao, times(1)).createCaskMessage(versionedType.capture(), cachePath.capture(), messageId.capture())
-      val expectedPath = Paths.get(System.getProperty("java.io.tmpdir"), versionedType.firstValue.versionedName, "json", messageId.firstValue)
-      cachePath.firstValue.should.be.equal(expectedPath)
+      verify(caskDao, times(1)).createCaskMessage(versionedType.capture(), messageId.capture(), inputStream.capture())
+//      val expectedPath = Paths.get(System.getProperty("java.io.tmpdir"), versionedType.firstValue.versionedName, "json", messageId.firstValue)
+//      inputStream.firstValue.should.be.equal(expectedPath)
    }
 
    @Test

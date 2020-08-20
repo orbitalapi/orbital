@@ -25,6 +25,7 @@ import org.junit.rules.TemporaryFolder
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.net.URI
 import java.nio.file.Paths
@@ -119,17 +120,16 @@ class CaskDAOIntegrationTest {
       val taxiSchema = CoinbaseJsonOrderSchema.schemaV1
       val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())
       val messageId = UUID.randomUUID().toString()
-      val messagePath = Paths.get("/caks/messages/OrderWindowSummary/${messageId}")
 
       // act
-      caskDao.createCaskMessage(versionedType, messagePath, messageId)
+      caskDao.createCaskMessage(versionedType, messageId, Flux.just(ByteArrayInputStream("Data to ingest".toByteArray(Charsets.UTF_8))))
 
       // assert
       val caskMessages: MutableList<CaskDAO.CaskMessage> = caskDao.findAllCaskMessages()
       caskMessages.size.should.be.equal(1)
       caskMessages[0].id.should.not.be.empty
-      caskMessages[0].readCachePath.should.equal("OrderWindowSummary")
-      caskMessages[0].qualifiedTypeName.should.equal(messagePath.toString())
+      caskMessages[0].messageId.should.above(0)
+      caskMessages[0].qualifiedTypeName.should.equal(versionedType.fullyQualifiedName)
       caskMessages[0].insertedAt.should.be.below(Instant.now())
    }
 
