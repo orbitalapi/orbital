@@ -1,28 +1,40 @@
 package io.vyne.cask.services
 
-import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskNamespacePrefix
-import io.vyne.schemaStore.SchemaStoreClient
-import io.vyne.schemas.VersionedType
+import io.vyne.VersionedSource
+import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 import lang.taxi.generators.SchemaWriter
+import lang.taxi.types.ArrayType
 import lang.taxi.types.PrimitiveType
 import org.springframework.stereotype.Component
-import java.lang.StringBuilder
+import java.util.concurrent.atomic.AtomicInteger
 
 @Component
-class CaskServiceSchemaWriter(private val schemaStoreClient: SchemaStoreClient, private val schemaWriter: SchemaWriter = SchemaWriter()) {
-   fun write(taxiDocument: TaxiDocument, versionedType: VersionedType) {
-      val serviceSchema = addRequiredImportsStatements(taxiDocument, schemaWriter.generateSchemas(listOf(taxiDocument)).first())
-      log().info("injecting cask service schema for $versionedType: \n$serviceSchema")
+class CaskServiceSchemaWriter(private val schemaPublisher: SchemaPublisher, private val schemaWriter: SchemaWriter = SchemaWriter()) {
+   private val generationCounter: AtomicInteger = AtomicInteger(0)
+
+   fun write(taxiDocumentsByName: Map<String, TaxiDocument>) {
+      // The rationale for not putting the types version ask the version for the cask schema is that
+      // the cask schema generation logic will evolve independently of the underlying type that it's generated from.
+      val schemaVersion = "1.0.${generationCounter.incrementAndGet()}"
+      val schemas = taxiDocumentsByName.flatMap { (schemaName, taxiDocument) ->
+         schemaWriter.generateSchemas(listOf(taxiDocument)).mapIndexed { index, generatedSchema ->
+            val serviceSchemaWithImports = addRequiredImportsStatements(taxiDocument, generatedSchema)
+            val versionedSourceName = if (index > 0) schemaName + index else schemaName
+            VersionedSource(versionedSourceName, schemaVersion, serviceSchemaWithImports)
+         }
+
+      }
+
+      log().info("Injecting cask service schema (version=${schemaVersion}): \n${schemas.map { it.content }.joinToString(separator = "\n")}")
+
       try {
-         schemaStoreClient.submitSchema(
-            caskServiceSchemaName(versionedType),
-            CaskServiceSchemaVersion,
-            serviceSchema)
+         schemaPublisher.submitSchemas(schemas)
       } catch (e: Exception) {
          log().error("Error in submitting schema", e)
       }
+
    }
 
    // TODO This should be part of schemaWriter.
@@ -32,9 +44,9 @@ class CaskServiceSchemaWriter(private val schemaStoreClient: SchemaStoreClient, 
       val serviceTypeNames = taxiDocument.types.map { type -> type.qualifiedName }
       taxiDocument.services.forEach { service ->
          service.operations.forEach { operation ->
-            val returnTypeName = operation.returnType.qualifiedName
+            val returnTypeName = if (operation.returnType is ArrayType) (operation.returnType as ArrayType).type.qualifiedName else operation.returnType.qualifiedName
             if (!serviceTypeNames.contains(returnTypeName) && !PrimitiveType.isPrimitiveType(returnTypeName)) {
-               importStatements.add("import ${operation.returnType.qualifiedName}")
+               importStatements.add("import $returnTypeName")
             }
             operation.parameters.forEach { parameter ->
                val paramTypeName = parameter.type.qualifiedName
@@ -44,20 +56,11 @@ class CaskServiceSchemaWriter(private val schemaStoreClient: SchemaStoreClient, 
             }
          }
       }
-         importStatements.forEach { importStatement -> builder.appendln(importStatement) }
-         builder.appendln()
+      importStatements.forEach { importStatement -> builder.appendln(importStatement) }
+      builder.appendln()
       // replace("this:", "") is nasty hack, but Schema Write generates
       // constraint method parameters with this: e.g. - this:MaturityData >= start
       // and above fais to compile!!!
       return builder.appendln(serviceSchema).toString().replace("this:", "")
-   }
-
-   companion object {
-      // The rationale for not putting the types version ask the version for the cask schema is that
-      // the cask schema generation logic will evolve independently of the underlying type that it's generated from.
-      private const val CaskServiceSchemaVersion = "1.0.0"
-      private fun caskServiceSchemaName(versionedType: VersionedType):String {
-         return "$CaskNamespacePrefix${versionedType.versionedName}"
-      }
    }
 }

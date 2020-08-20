@@ -14,7 +14,7 @@ import lang.taxi.types.Type
 import org.springframework.stereotype.Component
 
 @Component
-class FindBySingleResultGenerator: OperationGenerator {
+class FindBySingleResultGenerator(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()): OperationGenerator {
    override fun generate(field: Field, type: Type): Operation {
       val parameter = Parameter(
          annotations = listOf(Annotation("PathVariable", mapOf("name" to field.name))),
@@ -32,7 +32,9 @@ class FindBySingleResultGenerator: OperationGenerator {
    }
 
    override fun canGenerate(field: Field, type: Type): Boolean {
-      return PrimitiveType.isAssignableToPrimitiveType(field.type) && annotationFor(field, ExpectedAnnotationName) != null
+      return PrimitiveType.isAssignableToPrimitiveType(field.type) &&
+         (annotationFor(field, expectedAnnotationName.annotation) != null ||
+            operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
    }
 
    private fun getFindByIdRestPath(type: Type, field: Field): String {
@@ -43,6 +45,6 @@ class FindBySingleResultGenerator: OperationGenerator {
    }
 
    companion object {
-      const val ExpectedAnnotationName = "UniqueId"
+      private val expectedAnnotationName = OperationAnnotation.Association
    }
 }

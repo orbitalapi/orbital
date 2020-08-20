@@ -8,7 +8,15 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
 import com.google.common.collect.HashMultimap
-import io.vyne.models.*
+import io.vyne.models.MappedSynonym
+import io.vyne.models.RawObjectMapper
+import io.vyne.models.TypeNamedInstanceMapper
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
@@ -104,41 +112,36 @@ data class QueryResult(
    @JsonProperty("results")
    val resultMap: Map<String, Any?> =
       when (resultMode) {
-         ResultMode.VERBOSE -> this.results.map { (key, value) ->
-            val mapped = value?.toTypeNamedInstance()
-            key.type.name.parameterizedName to mapped
-         }.toMap()
-
-         ResultMode.SIMPLE -> this.results
-            .map { (key, value) -> key.type.name.parameterizedName to value?.toRawObject() }
-            .toMap()
+         // TODO remove dependency on ResultMode
+         ResultMode.VERBOSE -> {
+            val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+            this.results.map { (key, value) ->
+               key.type.name.parameterizedName to value?.let { converter.convert(it) }
+            }.toMap()
+         }
+         else -> {
+            val converter = TypedInstanceConverter(RawObjectMapper)
+            this.results
+               .map { (key, value) -> key.type.name.parameterizedName to value?.let { converter.convert(it) } }
+               .toMap()
+         }
       }
 
    override fun historyRecord(): HistoryQueryResponse {
       return HistoryQueryResponse(
          resultMap,
          unmatchedNodeNames,
-         path,
+         this.isFullyResolved,
          queryResponseId,
          resultMode,
          profilerOperation?.toDto(),
          remoteCalls,
-         timings,
-         unmatchedNodeNames.isEmpty())
+         timings)
    }
-}
 
-data class HistoryQueryResponse(val results: Map<String, Any?>,
-                                val unmatchedNodes: List<QualifiedName>,
-                                val path: Path? = null,
-                                val queryResponseId: String = UUID.randomUUID().toString(),
-                                val resultMode: ResultMode,
-                                val profilerOperation: ProfilerOperationDTO?,
-                                val remoteCalls: List<RemoteCall>,
-                                val timings: Map<OperationType, Long>,
-                                @get:JsonProperty("fullyResolved")
-                                val isFullyResolved: Boolean,
-                                val truncated: Boolean? = false) {
+
+   // HACK : Put this last, so that other stuff is serialized first
+   val lineageGraph = LineageGraph
 }
 
 // Note : Also models failures, so is fairly generic
@@ -179,7 +182,8 @@ object TypedInstanceTree {
       if (instance.type.isClosed) {
          return emptyList()
       }
-      return when (instance) {
+
+      when (instance) {
          is TypedObject -> instance.values.toList()
          is TypedEnumValue -> instance.synonyms
          is TypedValue -> {
@@ -191,10 +195,12 @@ object TypedInstanceTree {
 
          }
          is TypedCollection -> instance.value
+         is TypedNull -> emptyList()
          else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
-         // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-      }.filter { it -> it !is TypedNull }
-   }
+      }
+      // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
+   }//.filter { it -> it !is TypedNull }
+}
 
 
 }
@@ -215,11 +221,14 @@ data class QueryContext(
    val resultMode: ResultMode,
    val debugProfiling: Boolean = false,
    val parent: QueryContext? = null) : ProfilerOperation by profiler {
+
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
    private var projectResultsTo: Type? = null
+   private var inMemoryStream: List<TypedInstance>? = null
 
+   override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
    fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
 
    fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
@@ -238,7 +247,42 @@ data class QueryContext(
 
    companion object {
       fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler, resultMode: ResultMode): QueryContext {
-         return QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, resultMode)
+         val mutableFacts = facts.flatMap { fact -> resolveSynonyms(fact, schema) }.toMutableSet()
+         return QueryContext(schema, mutableFacts, queryEngine, profiler, resultMode)
+      }
+
+      private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
+         return if (fact is TypedObject) {
+            fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
+         } else {
+            resolveSynonym(fact, schema, true)
+         }
+      }
+
+      private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
+         val derivedFacts = if (fact.type.isEnum && fact.value != null) {
+            val underlyingEnumType = fact.type.taxiType as EnumType
+            underlyingEnumType.of(fact.value)
+               .synonyms
+               .map { synonym ->
+                  val synonymType = schema.type(synonym.synonymFullQualifiedName())
+                  val synonymTypeTaxiType = synonymType.taxiType as EnumType
+                  val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
+
+                  // Instantiate with either name or value depending on what we have as input
+                  val value = if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
+
+                  TypedValue.from(synonymType, value, false, MappedSynonym(fact))
+               }.toSet()
+         } else {
+            setOf()
+         }
+
+         return if (includeGivenFact) {
+            derivedFacts.plus(fact)
+         } else {
+            derivedFacts
+         }
       }
    }
 
@@ -252,7 +296,21 @@ data class QueryContext(
 
    fun addFact(fact: TypedInstance): QueryContext {
       log().debug("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
-      this.facts.add(fact)
+      inMemoryStream = null
+      when {
+          fact.type.isEnum -> {
+             val synonymSet = resolveSynonyms(fact, schema)
+             this.facts.addAll(synonymSet)
+          }
+          fact is TypedObject -> {
+             fact.values.filter { it.type.isEnum }.flatMap { resolveSynonyms(fact, schema) }.forEach { synonymsSet -> this.facts.add(synonymsSet) }
+             this.facts.add(fact)
+          }
+          else -> {
+             this.facts.add(fact)
+          }
+      }
+
       return this
    }
 
@@ -289,32 +347,41 @@ data class QueryContext(
     * Deeply nested children are less likely to be relevant matches.
     */
    fun modelTree(): Stream<TypedInstance> {
-      class TreeNavigator {
-         private val visitedNodes = mutableSetOf<TypedInstance>()
+      inMemoryStream = inMemoryStream ?: TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot()).toList()
+      return inMemoryStream!!.stream()
 
-         fun visit(instance:TypedInstance):List<TypedInstance> {
-            return if (visitedNodes.contains(instance)) {
-               return emptyList()
-            } else {
-               visitedNodes.add(instance)
-               TypedInstanceTree.visit(instance)
-            }
-         }
-      }
-      // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-      val navigator = TreeNavigator()
-      val treeDef:TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
-      return TreeStream.breadthFirst(treeDef, dataTreeRoot())
+//      Alternative to explore:
+//       class TreeNavigator {
+//         private val visitedNodes = mutableSetOf<TypedInstance>()
+//
+//         fun visit(instance:TypedInstance):List<TypedInstance> {
+//            return if (visitedNodes.contains(instance)) {
+//               return emptyList()
+//            } else {
+//               visitedNodes.add(instance)
+//               TypedInstanceTree.visit(instance)
+//            }
+//         }
+//      }
+//      // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
+//      val navigator = TreeNavigator()
+//      val treeDef:TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
+//      return TreeStream.breadthFirst(treeDef, dataTreeRoot())
    }
 
    fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
       // This could be optimized, as we're searching twice for everything, and not caching anything
-      return strategy.getFact(this, type) != null
+      return getFactOrNull(type, strategy) != null
    }
 
    fun getFact(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): TypedInstance {
       // This could be optimized, as we're searching twice for everything, and not caching anything
-      return strategy.getFact(this, type)!!
+      return getFactOrNull(type, strategy)!!
+   }
+
+   fun getFactOrNull(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): TypedInstance? {
+      return strategy.getFact(this, type)
+      //return factCache.get(FactCacheKey(type.fullyQualifiedName, strategy)).orElse(null)
    }
 
    fun evaluatedPath(): List<EvaluatedEdge> {
@@ -339,14 +406,16 @@ data class QueryContext(
    }
 
 
+   data class FactCacheKey(val fqn: String, val discoveryStrategy: FactDiscoveryStrategy)
    data class ServiceInvocationCacheKey(
       private val vertex1: Element,
       private val vertex2: Element,
       private val invocationParameter: TypedInstance?)
+
    private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
 
    private fun getTopLevelContext(): QueryContext {
-      return parent?.let {it.getTopLevelContext()} ?: this
+      return parent?.getTopLevelContext() ?: this
    }
 
    fun addOperationResult(operation: EvaluatableEdge, result: TypedInstance): TypedInstance {
@@ -409,8 +478,14 @@ enum class FactDiscoveryStrategy {
             matches.isEmpty() -> null
             matches.size == 1 -> matches.first()
             else -> {
-               log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
-               null
+               // last ditch attempt
+               val exactMatch = matches.filter { it.type == type }
+               if (exactMatch.size == 1) {
+                  exactMatch.first()
+               } else {
+                  log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
+                  null
+               }
             }
          }
       }
@@ -424,6 +499,19 @@ enum class FactDiscoveryStrategy {
       override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedCollection? {
          val matches = context.modelTree()
             .filter { matcher.matches(type, it.type) }
+            .distinct()
+            .toList()
+         return when {
+            matches.isEmpty() -> null
+            else -> TypedCollection.from(matches)
+         }
+      }
+   },
+
+   ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedCollection? {
+         val matches = context.modelTree()
+            .filter { matcher.matches(if (type.isCollection) type.typeParameters.first() else type, it.type) }
             .distinct()
             .toList()
          return when {

@@ -12,9 +12,11 @@ object CaskTransport {
 }
 
 data class CaskTransportOutputSpec(
-   val props: Map<String, String>,
+   override val props: Map<String, String> = mapOf(),
    override val targetType: VersionedTypeReference
 ) : PipelineTransportSpec {
+
+   override val description: String = "Cask for $targetType"
 
    companion object {
       val specId = PipelineTransportSpecId(CaskTransport.TYPE, PipelineDirection.OUTPUT, CaskTransportOutputSpec::class.java)

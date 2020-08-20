@@ -25,7 +25,10 @@
       <!--<a mat-list-item *ngFor="let element of sidebarElements" [routerLink]="element.route">{{ element.title }}</a>-->
     </mat-nav-list>
     <div class="appInfo">
-      <span>v{{ appInfo?.build?.version }} ({{appInfo?.git?.commit?.id}})</span>
+      <span>v{{ appInfo?.build?.baseVersion && appInfo?.build?.buildNumber !== '0' && appInfo?.build?.version?.includes('SNAPSHOT') ?
+        appInfo.build.baseVersion + "-BETA-" + appInfo.build.buildNumber :
+        appInfo?.build?.version }}
+        ({{ appInfo?.git?.commit?.id }})</span>
     </div>
   </mat-sidenav>
   <mat-sidenav-content>

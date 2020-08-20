@@ -1,31 +1,41 @@
 package io.vyne.models
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
+import io.vyne.models.json.Jackson
+import io.vyne.models.json.isJson
 import io.vyne.schemas.*
 import lang.taxi.types.Accessor
 import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
 
 
-class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet()) {
+class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet(), val source:DataSource, private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper) {
    private val valueReader = ValueReader()
-   private val accessorReader: AccessorReader by lazy { AccessorReader() }
+   private val accessorReader: AccessorReader by lazy { AccessorReader(this) }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
 
    private val mappedAttributes: MutableMap<AttributeName, TypedInstance> = mutableMapOf()
 
    fun build(): TypedObject {
+      if (isJson(value)) {
+         val map = objectMapper.readValue<Any>(value as String)
+         return TypedObjectFactory(type, map, schema, nullValues, source).build()
+      }
+
       // TODO : Naieve first pass.
       // This approach won't work for nested objects.
       // I think i need to build a hierachy of object factories, and allow nested access
       // via the get() method
-      type.attributes.forEach { (attributeName, field) ->
+      type.attributes.filter { it.value.formula == null }.forEach { (attributeName, field) ->
 
          // The value may have already been populated on-demand from a conditional
          // field set evaluation block, prior to the iterator hitting the field
          getOrBuild(attributeName, field)
       }
-      return TypedObject(type, mappedAttributes)
+      return TypedObject(type, mappedAttributes, source)
    }
 
    private fun getOrBuild(attributeName: AttributeName, field: Field): TypedInstance {
@@ -39,11 +49,11 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
    }
 
    internal fun readAccessor(type: Type, accessor: Accessor): TypedInstance {
-      return accessorReader.read(value, type, accessor, schema)
+      return accessorReader.read(value, type, accessor, schema, source = source)
    }
 
    internal fun readAccessor(type: QualifiedName, accessor: Accessor): TypedInstance {
-      return accessorReader.read(value, type, accessor, schema, nullValues)
+      return accessorReader.read(value, type, accessor, schema, nullValues, source = source)
    }
 
 
@@ -83,9 +93,9 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
    private fun readWithValueReader(attributeName: AttributeName, field: Field): TypedInstance {
       val attributeValue = valueReader.read(value, attributeName)
       return if (attributeValue == null) {
-         TypedNull(schema.type(field.type))
+         TypedNull(schema.type(field.type), source)
       } else {
-         TypedInstance.from(schema.type(field.type.fullyQualifiedName), attributeValue, schema, true)
+         TypedInstance.from(schema.type(field.type.fullyQualifiedName), attributeValue, schema, true, source = source)
       }
    }
 

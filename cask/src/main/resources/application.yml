@@ -1,11 +1,54 @@
+server:
+   port: 8800
+
+spring.datasource:
+   url: "jdbc:postgresql://localhost:5432/vynedb"
+   username: "vynedb"
+   password: "vynedb"
+
 spring:
    main:
       web-application-type: reactive
    application:
       name: cask
+   flyway:
+      url: ${spring.datasource.url}
+      user: ${spring.datasource.username}
+      password: ${spring.datasource.password}
+      enabled: true
 
-server:
-  port: 8800
+      locations: classpath:db/migration
+
+eureka:
+   uri: http://127.0.0.1:9022
+   client:
+      registryFetchIntervalSeconds: 1
+      initialInstanceInfoReplicationIntervalSeconds: 5
+      serviceUrl:
+         defaultZone: ${eureka.uri}/eureka/
+   instance:
+      leaseRenewalIntervalInSeconds: 2
+      leaseExpirationDurationInSeconds: 5
+
+vyne:
+   queryService:
+      name: query-service
+   queryServiceUrl: http://${vyne.queryService.name}
+   schema:
+      publicationMethod: REMOTE
+      pollInterval: 5s
+      publishRetryInterval: 3s
+
+feign:
+   client:
+      config:
+         default:
+            connectTimeout: 5000
+            readTimeout: 5000
+
+cask:
+   maxTextMessageBufferSize: 67108864 # 1024 * 1024 * 64
+   maxBinaryMessageBufferSize: 67108864 # 1024 * 1024 * 64
 
 # Actuators + prometheus metrics configuration
 management:

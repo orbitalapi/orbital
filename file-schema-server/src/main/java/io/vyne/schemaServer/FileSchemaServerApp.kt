@@ -1,6 +1,5 @@
 package io.vyne.schemaServer
 
-import io.vyne.spring.SchemaPublicationMethod
 import io.vyne.spring.VyneSchemaPublisher
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -14,7 +13,7 @@ import org.springframework.scheduling.annotation.EnableScheduling
 @EnableScheduling
 @EnableEurekaClient
 @EnableConfigurationProperties(GitSchemaRepoConfig::class)
-@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
+@VyneSchemaPublisher
 class FileSchemaServerApp {
    companion object {
       @JvmStatic

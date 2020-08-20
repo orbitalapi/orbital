@@ -1,0 +1,50 @@
+vyne:
+   pipeline:
+      definitions:
+         #location: file:/opt/vyne/pipelines/pipelines-orchestrator/sample-pipeline-definitions.json
+         location: classpath:sample-pipeline-definitions.json
+      definition:
+         -  name: test-pipeline-1
+            input:
+               type: imdb.Actor
+               transport:
+                  topic: pipeline-input-avro
+                  targetType: imdb.Actor
+                  type: "kafka"
+                  direction: INPUT
+                  props:
+                     group.id: vyne-pipeline-group
+                     bootstrap.servers: kafka:9092,
+                     heartbeat.interval.ms: '3000'
+                     session.timeout.ms: '10000'
+                     auto.offset.reset: earliest
+            output:
+               type: imdb.Actor
+               transport:
+                  props:
+                     foo: bar
+                  targetType: imdb.Actor
+                  type: "cask"
+                  direction: OUTPUT
+         -  name: test-pipeline-2
+            input:
+               type: imdb.Actor
+               transport:
+                  topic: pipeline-input-avro
+                  targetType: imdb.Actor
+                  type: "kafka"
+                  direction: INPUT
+                  props:
+                     group.id: vyne-pipeline-group
+                     bootstrap.servers: kafka:9092,
+                     heartbeat.interval.ms: '3000'
+                     session.timeout.ms: '10000'
+                     auto.offset.reset: earliest
+            output:
+               type: imdb.Actor
+               transport:
+                  props: {}
+                  targetType: imdb.Actor
+                  type: "cask"
+                  direction: OUTPUT
+

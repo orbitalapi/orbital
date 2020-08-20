@@ -1,0 +1,23 @@
+<h2 mat-dialog-title>Add Type</h2>
+  <mat-dialog-content class="add-type-dialog-content">
+
+      <app-type-autocomplete placeholder="Select type to apply to content" [schema]="schema"
+                             (selectedTypeChange)="onTypeChange($event)"
+      ></app-type-autocomplete>
+    <app-typed-instance-panel [type]="targetType"
+                              [inheritanceView]="inheritanceView"></app-typed-instance-panel>
+
+    <mat-dialog-actions>
+
+      <button class="mat-raised-button"
+              (click)="close()">
+        Close
+      </button>
+
+      <button class="mat-raised-button mat-primary"
+              (click)="save()">
+        Save
+      </button>
+
+    </mat-dialog-actions>
+  </mat-dialog-content>

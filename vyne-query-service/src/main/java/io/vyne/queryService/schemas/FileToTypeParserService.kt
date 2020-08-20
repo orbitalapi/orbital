@@ -1,7 +1,11 @@
 package io.vyne.queryService.schemas
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
+import io.vyne.models.json.isJsonArray
 import io.vyne.schemaStore.SchemaProvider
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
@@ -13,14 +17,19 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 
 @RestController
-class FileToTypeParserService(val schemaProvider: SchemaProvider) {
+class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapper: ObjectMapper) {
 
    @PostMapping("/api/content/parse")
-   fun parseFileToType(@RequestBody rawContent: String, @RequestParam("type") typeName: String): ParsedTypeInstance {
+   fun parseFileToType(@RequestBody rawContent: String, @RequestParam("type") typeName: String): List<ParsedTypeInstance>  {
       val schema = schemaProvider.schema()
       val targetType = schema.type(typeName)
       try {
-         return ParsedTypeInstance(TypedInstance.from(targetType, rawContent, schema))
+
+         if(isJsonArray(rawContent)) {
+            val list = objectMapper.readTree(rawContent) as ArrayNode
+            return list.map {  ParsedTypeInstance(TypedInstance.from(targetType, it, schema, source = Provided)) }
+         }
+         return listOf(ParsedTypeInstance(TypedInstance.from(targetType, rawContent, schema, source = Provided)))
       } catch (e: Exception) {
          throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
       }
@@ -43,7 +52,7 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider) {
       val targetType = schema.type(typeName)
       val nullValues = listOfNotNull(nullValue).toSet()
       val records = parsed.records.map { csvRecord ->
-         ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues).build())
+         ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided).build())
       }
       return records
    }

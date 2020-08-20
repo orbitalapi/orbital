@@ -78,8 +78,14 @@ class EchoWebSocket : WebSocketListener {
         }
     }
 
-    override fun onWebSocketBinary(arg0: ByteArray?, arg1: Int, arg2: Int) {
-        /* ignore */
+    override fun onWebSocketBinary(buffer: ByteArray?, arg1: Int, arg2: Int) {
+       val message = String(buffer!!)
+       TestWebSocketServer.messages.add(message)
+
+       if (outbound != null && outbound.isOpen()) {
+          log().info("Echoing back text message [{}]", message)
+          outbound.getRemote().sendString(message, null)
+       }
     }
 
 }

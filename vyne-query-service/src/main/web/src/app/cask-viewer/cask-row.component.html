@@ -1,0 +1,20 @@
+<div class="cask-configs-container">
+
+  <mat-accordion multi>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <div class="cask-typename">{{ typeName }}
+          <div class="badges">
+            <span class="badge">{{caskConfigs.length}}</span>
+          </div>
+        </div>
+      </mat-expansion-panel-header>
+
+      <div class="cask-config-row" *ngFor="let caskConfig of caskConfigs"  (click)="onCaskConfigClick.emit(caskConfig)">
+        <div class="row-name">{{  caskConfig.tableName }} </div>
+      </div>
+
+    </mat-expansion-panel>
+  </mat-accordion>
+
+</div>

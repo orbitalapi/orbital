@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.flatMap
 import io.vyne.VyneQLBaseListener
 import io.vyne.VyneQLParser
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.Schema
 import io.vyne.schemas.toVyneQualifiedName
@@ -130,7 +131,7 @@ class TokenProcessor(private val taxi: TaxiDocument, private val schema: Schema)
       val variableName = factCtx.variableName().Identifier().text
       return lookupType(factCtx.typeType()).flatMap { factType ->
          try {
-            Either.right(variableName to TypedInstance.from(schema.type(factType.toVyneQualifiedName()), factCtx.literal().value(), schema))
+            Either.right(variableName to TypedInstance.from(schema.type(factType.toVyneQualifiedName()), factCtx.literal().value(), schema, source = Provided))
          } catch (e: Exception) {
             Either.left(CompilationError(factCtx.start, "Failed to create TypedInstance - ${e.message}"))
          }

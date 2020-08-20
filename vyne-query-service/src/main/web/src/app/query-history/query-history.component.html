@@ -1,39 +1,49 @@
 <mat-toolbar color="primary" style="z-index: 999">
   <span>Query History</span>
-  <span style="flex: 1"></span>
+  <div class="toolbar-spacer"></div>
+  <span>
+    <button mat-stroked-button (click)="loadData()">Refresh</button>
+  </span>
   <app-search-bar-container></app-search-bar-container>
 </mat-toolbar>
-<div class="container">
-  <div class="list-container">
-    <div class="title-bar">
-      <h4>Query History</h4>
-      <button (click)="loadData()" mat-icon-button>
-        <i class="material-icons">
-          refresh
-        </i>
-      </button>
+
+<mat-sidenav-container [hasBackdrop]="true">
+  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel">
+    <div class="drawer-content">
+      <app-typed-instance-panel-container
+        [instance]="selectedTypeInstance"
+        [type]="selectedTypeInstanceType"
+        [lineageGraph]="activeRecord?.response?.lineageGraph"
+      ></app-typed-instance-panel-container>
     </div>
-    <div class="history-item" *ngFor="let historyRecord of history" (click)="setActiveRecord(historyRecord)">
-      <div [ngSwitch]="queryType(historyRecord)">
-        <div *ngSwitchCase="'RestfulQuery'">
-          <app-restful-record [expressionTypeName]="expressionTypeName(historyRecord)"
-                              [historyRecord]="historyRecord"
-                              [factTypeNames]="getFactTypeNames(historyRecord)"></app-restful-record>
-        </div>
-        <div *ngSwitchCase="'VyneQlQuery'">
-          <app-vyneql-record [historyRecord]="historyRecord">
+  </mat-drawer>
+  <div class="container">
+    <div class="list-container">
+      <div class="history-item" *ngFor="let historyRecord of history" (click)="setActiveRecord(historyRecord)">
+        <div [ngSwitch]="queryType(historyRecord)">
+          <div *ngSwitchCase="'RestfulQuery'">
+            <app-restful-record [expressionTypeName]="expressionTypeName(historyRecord)"
+                                [historyRecord]="historyRecord"
+                                [factTypeNames]="getFactTypeNames(historyRecord)"></app-restful-record>
+          </div>
+          <div *ngSwitchCase="'VyneQlQuery'">
+            <app-vyneql-record [historyRecord]="historyRecord">
 
-          </app-vyneql-record>
-        </div>
+            </app-vyneql-record>
+          </div>
 
+        </div>
       </div>
     </div>
-  </div>
-  <div class="results-section">
-    <div class="title-bar"><h4>Query Result</h4></div>
-    <div class="results-container">
-      <query-result-container [result]="activeRecord?.response"></query-result-container>
-    </div>
-  </div>
+    <div class="results-section">
+      <div class="results-container">
 
-</div>
+          <query-result-container [result]="activeRecord?.response"
+                                  [activeRecord]="activeRecord"
+                                  (instanceSelected)="onInstanceSelected($event)"
+          ></query-result-container>
+      </div>
+    </div>
+
+  </div>
+</mat-sidenav-container>

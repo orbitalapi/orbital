@@ -5,7 +5,7 @@ import {DataSourceToolbarComponent} from './data-source-toolbar.component';
 import {DataSourceUploadComponent} from './data-source-upload.component';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
-import {FormsModule} from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatButtonModule} from '@angular/material/button';
 import {DataSourceConfigComponent} from './data-source-config.component';
@@ -17,7 +17,7 @@ import {MatCheckboxModule} from '@angular/material/checkbox';
 import {CsvViewerComponent} from './csv-viewer.component';
 import {MatTableModule} from '@angular/material/table';
 import {MatInputModule} from '@angular/material/input';
-import {TypedInstancePanelComponent} from './typed-instance-panel.component';
+import {TypedInstancePanelComponent} from '../typed-instance-panel/typed-instance-panel.component';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {DescriptionEditorModule} from '../type-viewer/description-editor/description-editor.module';
 import {AttributeTableModule} from '../type-viewer/attribute-table/attribute-table.module';
@@ -30,11 +30,19 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {SearchModule} from '../search/search.module';
 import {CodeViewerModule} from '../code-viewer/code-viewer.module';
 import {CovalentHighlightModule} from '@covalent/highlight';
-import {TypedInstancePanelContainerComponent} from './typed-instance-panel-container.component';
+import {TypedInstancePanelContainerComponent} from '../typed-instance-panel/typed-instance-panel-container.component';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
-import { CaskPanelComponent } from './cask-panel.component';
+import {CaskPanelComponent} from './cask-panel.component';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
+import {AgGridModule} from 'ag-grid-angular';
+import {MatDialogModule} from '@angular/material/dialog';
+import { AssignTypeToColumnDialogComponent } from './assign-types-dialog/assign-type-to-column-dialog.component';
+import {MatDatepickerModule} from '@angular/material/datepicker';
+import { TypeNamePanelComponent } from './type-name-panel/type-name-panel.component';
+import { SchemaGeneratorComponent } from './schema-generator-panel/schema-generator.component';
+import {GridHeaderActionsComponent} from "./custom-csv-table-header";
 
 
 @NgModule({
@@ -44,7 +52,6 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
     InlineQueryRunnerModule,
     ObjectViewModule,
     CodeViewerModule,
-
     CommonModule,
     BrowserModule,
     FormsModule,
@@ -67,27 +74,35 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
     FileDropModule,
     DescriptionEditorModule,
     InheritanceGraphModule,
-    MatProgressBarModule
-  ],
+    MatProgressBarModule,
+    TypedInstancePanelModule,
+    AgGridModule,
+    MatDialogModule,
+    MatDatepickerModule,
+    ReactiveFormsModule
+
+    ],
   declarations: [
     DataSourceToolbarComponent,
     DataSourceUploadComponent,
     DataSourceConfigComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
-    TypedInstancePanelContainerComponent,
-    TypedInstancePanelComponent,
+    GridHeaderActionsComponent,
     DataExplorerComponent,
-    CaskPanelComponent
+    CaskPanelComponent,
+    AssignTypeToColumnDialogComponent,
+    TypeNamePanelComponent,
+    SchemaGeneratorComponent
   ],
   exports: [
     DataSourceToolbarComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
-    TypedInstancePanelComponent,
-    TypedInstancePanelContainerComponent,
     CaskPanelComponent
-  ]
+  ],
+  entryComponents: [AssignTypeToColumnDialogComponent, GridHeaderActionsComponent]
+
 })
 export class DataExplorerModule {
 }

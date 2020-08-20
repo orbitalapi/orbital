@@ -1,27 +1,50 @@
 package io.vyne.queryService
 
+import com.netflix.discovery.EurekaClient
+import com.netflix.niws.loadbalancer.EurekaNotificationServerListUpdater
+import io.vyne.cask.api.CaskApi
+import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
+import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
+import io.vyne.schemaStore.eureka.EurekaClientSchemaConsumer
 import io.vyne.search.embedded.EnableVyneEmbeddedSearch
-import io.vyne.spring.SchemaPublicationMethod
+import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
+import io.vyne.spring.VyneQueryServer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
+import org.apache.http.HttpResponse
+import org.apache.http.client.HttpRequestRetryHandler
+import org.apache.http.client.ServiceUnavailableRetryStrategy
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.protocol.HttpContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.cloud.openfeign.EnableFeignClients
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.client.ClientHttpRequestFactory
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
+import org.springframework.web.client.RestTemplate
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+import javax.inject.Provider
+import javax.inject.Qualifier
 
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class)
 @EnableVyneEmbeddedSearch
-@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
+@VyneSchemaPublisher
+@EnableFeignClients(clients = [CaskApi::class])
+@VyneQueryServer
 class QueryServiceApp {
 
    companion object {
@@ -34,6 +57,24 @@ class QueryServiceApp {
    }
 
    @Bean
+   @ConditionalOnProperty(VYNE_SCHEMA_PUBLICATION_METHOD, havingValue = "EUREKA")
+   fun eurekaClientConsumer(
+      clientProvider: Provider<EurekaClient>,
+      eventPublisher: ApplicationEventPublisher,
+      @Value("\${vyne.taxi.rest.retry.count:3}") retryCount: Int): EurekaClientSchemaConsumer {
+      val httpClient = HttpClients.custom()
+         .setRetryHandler { _, executionCount, _ -> executionCount < retryCount }
+         .setServiceUnavailableRetryStrategy(DefaultServiceUnavailableRetryStrategy(retryCount, 1000))
+         .build()
+
+      return EurekaClientSchemaConsumer(
+         clientProvider,
+         LocalValidatingSchemaStoreClient(),
+         eventPublisher,
+         RestTemplate(HttpComponentsClientHttpRequestFactory(httpClient)))
+   }
+
+   @Bean
    fun vyneJacksonModule() = VyneJacksonModule()
 
    @Bean
@@ -41,7 +82,14 @@ class QueryServiceApp {
 
    @Autowired
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {
-      val version = buildInfo?.version ?: "Dev version";
+      val baseVersion = buildInfo?.get("baseVersion")
+      val buildNumber = buildInfo?.get("buildNumber")
+      val version = if(!baseVersion.isNullOrEmpty() && buildNumber != "0" && buildInfo.version.contains("SNAPSHOT")) {
+         "$baseVersion-BETA-$buildNumber"
+      } else {
+         buildInfo?.version ?: "Dev version"
+      }
+
       log().info("Vyne query server $version")
    }
 

@@ -8,13 +8,13 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
 import io.vyne.VersionedSource
 import io.vyne.Vyne
+import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
-import org.junit.Test
 import java.io.File
 import java.time.Instant
 import kotlin.test.fail
@@ -100,10 +100,10 @@ class RegressionTest {
                // returned (the typeName will be UnknownCollectionType)
                // Therefore, map the collection values to a TypedCollection
                // using the type we've just been given from the response payload.
-               val collectionMembers = (typeNamedInstance.value as List<*>).map { TypedInstance.fromNamedType(it as TypeNamedInstance, vyne.schema) }
+               val collectionMembers = (typeNamedInstance.value as List<*>).map { TypedInstance.fromNamedType(it as TypeNamedInstance, vyne.schema, source = Provided) }
                TypedCollection(type, collectionMembers)
             }
-            else -> TypedInstance.fromNamedType(typeNamedInstance, vyne.schema)
+            else -> TypedInstance.fromNamedType(typeNamedInstance, vyne.schema, source = Provided)
          }
 
          type to typedInstance
@@ -157,8 +157,9 @@ data class LightweightQueryResult(
 
 ) : QueryResponse {
    override val profilerOperation: ProfilerOperation? = null
+
    override fun historyRecord(): HistoryQueryResponse {
-      return HistoryQueryResponse(mapOf(), listOf(), null, queryResponseId, resultMode, null, listOf(), mapOf(), isFullyResolved)
+      TODO("Not yet implemented")
    }
 }
 

@@ -1,0 +1,92 @@
+<div class="row">
+  <div class="container">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Facts</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div>
+          <p>Add the things you know, which Vyne will use as the starting point for your query</p>
+        </div>
+
+        <div class="fact-form-list">
+          <div *ngFor="let factForm of forms" class="fact-form-container">
+            <div class="delete-icon" (click)="removeFact(factForm)">
+              <mat-icon>delete</mat-icon>
+            </div>
+            <div class="type-name">{{ factForm.type.name.name }}</div>
+            <div class="fact-editor">
+              <td-dynamic-forms [elements]="getAndRegisterElements(factForm,dynamicForm)"
+                                #dynamicForm></td-dynamic-forms>
+            </div>
+          </div>
+        </div>
+        <div class="new-fact-editor" *ngIf="addingNewFact">
+          <app-type-autocomplete
+            class="fact-type-input"
+            [schema]="schema" (typeSelected)="onNewFactTypeSelected($event)"
+            placeholder="Select the type of fact"></app-type-autocomplete>
+        </div>
+
+        <div class="file-fact-list">
+          <app-file-fact-selector [schema]="schema"
+                                  *ngFor="let fileFactForm of fileFacts"
+                                  (parsedInstanceChanged)="handleFileFactChanged(fileFactForm, $event)"
+                                  (typeSelected)="handleFileFactTypeSelected(fileFactForm, $event)"
+          ></app-file-fact-selector>
+        </div>
+
+        <div class="button-bar">
+          <button mat-raised-button color="primary" (click)="addNewFact()">Add new fact</button>
+          <button mat-raised-button color="primary" (click)="addNewFileFact()">Add fact from a file</button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  <div class="container target-type-container">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Target to find</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form>
+          <app-type-autocomplete [schema]="schema" multiSelect="true"
+                                 placeholder="Select the type to discover"
+                                 (selectedTypesChange)="targetTypes = $event"
+          ></app-type-autocomplete>
+          <mat-checkbox [(ngModel)]="findAsArray" name="findAsArray">Find As Array</mat-checkbox>
+          <mat-form-field>
+            <mat-select placeholder="Query mode" [formControl]="queryMode" required>
+              <mat-option value="DISCOVER">Discover (Find a single result)</mat-option>
+              <mat-option value="BUILD">Build (Transform the data to another type, filling gaps where required)
+              </mat-option>
+              <mat-option value="GATHER">Gather (Find all the possible results)</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-select placeholder="Result mode" [formControl]="resultMode" required>
+              <mat-option value="SIMPLE">Exclude Type Information (Simple)</mat-option>
+              <mat-option value="VERBOSE">Include Type Information (Verbose)</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </form>
+        <div>
+          <button mat-raised-button color="primary" (click)="submitQuery()">Submit query</button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+<div class="row">
+  <app-vyne-query-viewer [targetTypes]="targetTypeNames"
+                         [facts]="facts"
+                         [schema]="schema"
+                         [queryMode]="queryMode.value"
+                         [findAsArray]="findAsArray"
+                         expanded="true"
+                         class="mat-elevation-z2"
+  ></app-vyne-query-viewer>
+
+</div>
+
+

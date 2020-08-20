@@ -1,7 +1,6 @@
 package io.vyne.queryService
 
 import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Type
 import io.vyne.spring.VyneFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

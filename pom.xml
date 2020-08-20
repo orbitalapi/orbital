@@ -6,7 +6,7 @@
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.3.1-SNAPSHOT</version>
+   <version>0.7.7-SNAPSHOT</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>0.5.1-SNAPSHOT</taxi.version>
+      <taxi.version>0.8.5</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -29,10 +29,12 @@
       <spring.cloud.netflix.version>2.2.3.RELEASE</spring.cloud.netflix.version>
       <arrow.version>0.10.4</arrow.version>
       <logstash.logback.version>6.4</logstash.logback.version>
+      <swagger.springfox.version>2.9.2</swagger.springfox.version>
    </properties>
 
    <modules>
       <module>cask</module>
+      <module>config-server</module>
       <module>eureka</module>
       <module>vyne-core-types</module>
       <module>events-api</module>
@@ -256,6 +258,16 @@
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash.logback.version}</version>
          </dependency>
+         <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+            <version>${swagger.springfox.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger-ui</artifactId>
+            <version>${swagger.springfox.version}</version>
+         </dependency>
       </dependencies>
    </dependencyManagement>
 
@@ -279,7 +291,7 @@
                <!-- Set to true to immediately bump the development version when creating a release branch -->
                <commitDevelopmentVersionAtStart>false</commitDevelopmentVersionAtStart>
                <!-- Execute mvn compile before release -->
-               <preReleaseGoals>compile</preReleaseGoals>
+               <!-- <preReleaseGoals>compile -DskipTests</preReleaseGoals>  -->
                <commitMessages>
                   <releaseStartMessage>Update versions for release @{version}</releaseStartMessage>
                   <releaseFinishMessage>Update for next development version @{version}</releaseFinishMessage>
@@ -345,6 +357,25 @@
                <target>1.8</target>
             </configuration>
          </plugin>
+         <plugin>
+            <!-- build helper plug-in is used for de-composing the version and it gaining access to its sub parts.
+             We are doing for tagging docker images, we want to have a tag with BETA qualifier instead of SNAPSHOT and the build number from git will be the last part. -->
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+               <execution>
+                  <phase>validate</phase>
+                  <id>phase-version</id>
+                  <goals>
+                     <goal>parse-version</goal>
+                  </goals>
+                  <configuration>
+                     <propertyPrefix>parsedVersion</propertyPrefix>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
       </plugins>
       <pluginManagement>
          <plugins>
@@ -404,6 +435,14 @@
          <name>bintray</name>
          <url>https://dl.bintray.com/taxi-lang/releases</url>
       </repository>
+      <repository>
+         <snapshots>
+            <enabled>false</enabled>
+         </snapshots>
+         <id>bintray</id>
+         <name>bintray</name>
+         <url>https://jcenter.bintray.com</url>
+      </repository>
    </repositories>
 
    <profiles>
@@ -413,7 +452,8 @@
             <activeByDefault>false</activeByDefault>
          </activation>
          <properties>
-            <docker.tag>latest-snapshot</docker.tag>
+            <docker.tag.latest>latest-snapshot</docker.tag.latest>
+            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag.numbered>
          </properties>
       </profile>
       <profile>
@@ -422,7 +462,7 @@
             <activeByDefault>false</activeByDefault>
          </activation>
          <properties>
-            <docker.tag>latest</docker.tag>
+            <docker.tag.latest>latest</docker.tag.latest>
          </properties>
       </profile>
    </profiles>

@@ -2,6 +2,8 @@ package io.vyne.pipelines.runner
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.Vyne
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.pipelines.*
 import io.vyne.pipelines.runner.events.ObserverProvider
@@ -12,6 +14,8 @@ import io.vyne.schemas.Type
 import io.vyne.spring.VyneProvider
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 import java.time.Instant
 
 @Component
@@ -22,12 +26,13 @@ class PipelineBuilder(
    private val objectMapper: ObjectMapper = jacksonObjectMapper()
 ) {
 
-   private val vyne = vyneFactory.createVyne()
 
    fun build(pipeline: Pipeline): PipelineInstance {
-      var observerProvider = observerProvider.pipelineObserver(pipeline, null)
-      var observer = observerProvider("Preparing pipeline")
-      observer.info { "Building pipeline ${pipeline.name} [Input = ${pipeline.input.transport.type}, output = ${pipeline.output.transport.type}]" }
+      val vyne = vyneFactory.createVyne()
+
+      val observerProvider = observerProvider.pipelineObserver(pipeline, null)
+      val observer = observerProvider("Preparing pipeline")
+      observer.info { "Building pipeline ${pipeline.name} [Input = ${pipeline.input.description}, output = ${pipeline.output.description}]" }
 
       val inputObserver = observerProvider("Pipeline Input")
       val outputObserver = observerProvider("Pipeline Output")
@@ -42,9 +47,18 @@ class PipelineBuilder(
          .name("pipeline_ingestion_request")
          .tag("pipeline_name", pipeline.name)
          .metrics()
-         .flatMap { ingest(it, inputType, outputType, pipeline) }
-         .flatMap { transform(it) }
-         .flatMap { publish(it, output) }
+         .flatMap { ingest(it, inputType, outputType, pipeline, vyne) }
+         .flatMap { transform(it, vyne) }
+         .flatMap {
+            val (_, message) = it
+            val destination = if (message.overrideOutput != null) {
+               observer.info { "Destination changed to ${message.overrideOutput!!.description}" }
+               message.overrideOutput!!
+            } else {
+               output
+            }
+            publish(it, destination)
+         }
 
       return PipelineInstance(
          pipeline,
@@ -55,20 +69,23 @@ class PipelineBuilder(
       )
    }
 
-   private fun ingest(message: PipelineInputMessage, inputType: Type, outputType: Type, pipeline: Pipeline): Mono<Pair<PipelineStageObserverProvider, PipelineMessage>> {
+   private fun ingest(message: PipelineInputMessage, inputType: Type, outputType: Type, pipeline: Pipeline, vyne: Vyne): Mono<Pair<PipelineStageObserverProvider, PipelineMessage>> {
       val stageObserverProvider: PipelineStageObserverProvider = observerProvider.pipelineObserver(
          pipeline,
          message
       )
       val logger = stageObserverProvider("Ingest")
 
-      val inputMessage = message.messageProvider(logger)
-
       val pipelineMessage = when (inputType == outputType) {
-         true -> RawPipelineMessage(inputMessage, pipeline, inputType, outputType)
+         true -> RawPipelineMessage(message.contentProvider, pipeline, inputType, outputType, message.overrideOutput)
          false -> {
-            val typedInstance = TypedInstance.from(inputType, objectMapper.readTree(inputMessage), vyne.schema)
-            TransformablePipelineMessage(inputMessage, pipeline, inputType, outputType, typedInstance)
+            val typedInstance = TypedInstance.from(
+               inputType,
+               objectMapper.readTree(message.contentProvider.asString(logger)),
+               vyne.schema,
+               source = Provided
+            )
+            TransformablePipelineMessage(message.contentProvider, pipeline, inputType, outputType, typedInstance, overrideOutput = message.overrideOutput)
          }
       }
 
@@ -77,7 +94,7 @@ class PipelineBuilder(
       }
    }
 
-   private fun transform(pipelineInput: Pair<PipelineStageObserverProvider, PipelineMessage>): Mono<Pair<PipelineStageObserverProvider, PipelineMessage>> {
+   private fun transform(pipelineInput: Pair<PipelineStageObserverProvider, PipelineMessage>, vyne: Vyne): Mono<Pair<PipelineStageObserverProvider, PipelineMessage>> {
       val (observerProvider, message) = pipelineInput
       val logger = observerProvider("Transform")
 
@@ -85,19 +102,18 @@ class PipelineBuilder(
 
 
          // Transform if needed
-         var pipelineMessage = pipelineInput.second
-         when (pipelineMessage) {
-            is TransformablePipelineMessage -> pipelineMessage.transformedInstance = vyneTransformation(pipelineMessage, pipelineMessage.outputType)
-            is RawPipelineMessage -> {
-            }
+         val pipelineMessage = pipelineInput.second
+         val transformedMessage = when (pipelineMessage) {
+            is TransformablePipelineMessage -> pipelineMessage.copy(transformedInstance = vyneTransformation(pipelineMessage, pipelineMessage.outputType, vyne))
+            is RawPipelineMessage -> pipelineMessage
          }
 
          // Send to following steps
-         observerProvider to pipelineMessage
+         observerProvider to transformedMessage
       }
    }
 
-   private fun vyneTransformation(message: TransformablePipelineMessage, outputType: Type): TypedInstance {
+   private fun vyneTransformation(message: TransformablePipelineMessage, outputType: Type, vyne: Vyne): TypedInstance {
       // TODO : The idea here is that metadata may provide hints as to whether
       // or not we want to deserailize the message.
       // Note, as I type this, that may be redundant, as the input feed
@@ -120,8 +136,8 @@ class PipelineBuilder(
 
 
       return loggedMono(logger) {
-         val outputMessage = when (message) {
-            is TransformablePipelineMessage -> objectMapper.writeValueAsString(message.transformedInstance!!.toRawObject())
+         val outputMessage: MessageContentProvider = when (message) {
+            is TransformablePipelineMessage -> JacksonContentProvider(objectMapper, message.transformedInstance!!.toRawObject()!!)
             is RawPipelineMessage -> message.content
          }
 

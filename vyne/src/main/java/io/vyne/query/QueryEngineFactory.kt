@@ -1,12 +1,13 @@
 package io.vyne.query
 
 import io.vyne.FactSetMap
-import io.vyne.models.TypedInstance
+import io.vyne.formulas.CalculatorRegistry
 import io.vyne.query.graph.*
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.query.planner.ProjectionHeuristicsQueryStrategy
 import io.vyne.query.policyManager.PolicyAwareOperationInvocationServiceDecorator
 import io.vyne.schemas.Schema
 
@@ -42,20 +43,23 @@ interface QueryEngineFactory {
       }
 
       fun withOperationInvokers(invokers: List<OperationInvoker>): QueryEngineFactory {
-         val edgeEvaluator = EdgeNavigator(edgeEvaluators(invokers))
+         val opInvocationEvaluator = OperationInvocationEvaluator(operationInvocationService(invokers))
+         val edgeEvaluator = EdgeNavigator(edgeEvaluators(opInvocationEvaluator))
          val graphQueryStrategy = HipsterDiscoverGraphQueryStrategy(
             edgeEvaluator
          )
 
          return DefaultQueryEngineFactory(
             strategies = listOf(
+               CalculatedFieldScanStrategy(CalculatorRegistry()),
                ModelsScanStrategy(),
-//               PolicyAwareQueryStrategyDecorator(
+               ProjectionHeuristicsQueryStrategy(opInvocationEvaluator),
+               //               PolicyAwareQueryStrategyDecorator(
                DirectServiceInvocationStrategy(operationInvocationService(invokers)),
-//               ),
+               //
+               //              ),
                graphQueryStrategy,
-               HipsterGatherGraphQueryStrategy(graphQueryStrategy)
-            )
+               HipsterGatherGraphQueryStrategy(graphQueryStrategy))
          )
       }
 
@@ -69,7 +73,7 @@ interface QueryEngineFactory {
             OperationInvocationEvaluator(operationInvocationService(invokers)))
       }
 
-      private fun edgeEvaluators(invokers: List<OperationInvoker>): List<EdgeEvaluator> {
+      private fun edgeEvaluators(operationInvocationEdgeEvaluator: EdgeEvaluator): List<EdgeEvaluator> {
          return listOf(RequiresParameterEdgeEvaluator(),
             AttributeOfEdgeEvaluator(),
             IsTypeOfEdgeEvaluator(),
@@ -80,7 +84,7 @@ interface QueryEngineFactory {
             HasAttributeEdgeEvaluator(),
             CanPopulateEdgeEvaluator(),
             ExtendsTypeEdgeEvaluator(),
-            OperationInvocationEvaluator(operationInvocationService(invokers))
+            operationInvocationEdgeEvaluator
          )
       }
 

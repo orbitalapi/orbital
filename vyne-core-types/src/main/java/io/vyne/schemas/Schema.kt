@@ -39,6 +39,19 @@ interface Schema {
       }.toSet()
    }
 
+   fun operationsWithReturnTypeAndWithSingleArgument(
+      requiredReturnType: Type,
+      requiredParameterType: Type,
+      typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Set<Pair<Service, Operation>> {
+      return services.flatMap { service ->
+         service.operations.filter { operation ->
+            typeMatchingStrategy.matches(requiredReturnType, operation.returnType)
+               && operation.parameters.size == 1 &&
+         typeMatchingStrategy.matches(requiredParameterType, operation.parameters.first().type)}
+            .map { service to it }
+      }.toSet()
+   }
+
    fun operationsWithSingleArgument(): Set<Pair<Service, Operation>> {
       return services.flatMap { service ->
          service.operations.filter { operation ->  operation.parameters.size == 1  }

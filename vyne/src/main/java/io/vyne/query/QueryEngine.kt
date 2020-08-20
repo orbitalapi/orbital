@@ -1,18 +1,25 @@
 package io.vyne.query
 
-import io.vyne.*
+import io.vyne.FactSetId
+import io.vyne.FactSetMap
+import io.vyne.FactSets
+import io.vyne.ModelContainer
+import io.vyne.filterFactSets
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import io.vyne.utils.timed
+import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 
 
 open class SearchFailedException(message: String, val evaluatedPath: List<EvaluatedEdge>, val profilerOperation: ProfilerOperation) : RuntimeException(message)
-
+open class ProjectionFailedException(message: String): RuntimeException(message)
 interface QueryEngine {
 
    val schema: Schema
@@ -119,14 +126,25 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          context.facts.stream().allMatch { it is TypedCollection }
             && targetType.isCollection
 
+      val isSingleToCollectionTransform = onlyTypedObject(context) != null
+         && targetType.isCollection
+
       val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
-      val result: TypedInstance? = if (isCollectionToCollectionTransformation) {
-         mapCollectionToCollection(targetType, context)
-      } else if (isCollectionsToCollectionTransformation) {
-         mapCollectionsToCollection(targetType, context)
-      } else {
-         context.isProjecting = true
-         ObjectBuilder(this, context).build(targetType)
+      val result: TypedInstance? = when {
+          isCollectionToCollectionTransformation -> {
+             mapCollectionToCollection(targetType, context)
+          }
+          isCollectionsToCollectionTransformation -> {
+             mapCollectionsToCollection(targetType, context)
+          }
+
+         isSingleToCollectionTransform -> {
+            mapSingleToCollection(targetType, context)
+         }
+          else -> {
+             context.isProjecting = true
+             ObjectBuilder(this, context, targetType).build()
+          }
       }
 
       return if (result != null) {
@@ -146,13 +164,22 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
    }
 
+   private fun onlyTypedObject(context: QueryContext): TypedObject? {
+      val typedObjects = context.facts.stream().filter { fact -> fact is TypedObject }.collect(Collectors.toList())
+      return if (typedObjects.size == 1) {
+          typedObjects[0] as TypedObject
+      } else {
+         null
+      }
+   }
+
    // TODO investigate why in tests got throught this method (there are two facts of TypedCollection), looks like this is only in tests
    private fun mapCollectionsToCollection(targetType: Type, context: QueryContext): TypedInstance? {
       val targetCollectionType = targetType.resolveAliases().typeParameters[0]
       log().info("Mapping collections to collection of type ${targetCollectionType.qualifiedName} ")
       val transformed = context.facts
          .map { it as TypedCollection }
-         .flatMap {it}
+         .flatten()
          .map { typedInstance -> mapTo(targetCollectionType, typedInstance, context) }
          .mapNotNull { it }
       return if (transformed.isEmpty()) {
@@ -169,10 +196,46 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
          val inboundFactList = (context.facts.first() as TypedCollection).value
          log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
-         val transformed = inboundFactList.mapNotNull {
-            mapTo(targetCollectionType, it, context)
+         val transformed =  inboundFactList
+            .stream()
+            .map {  mapTo(targetCollectionType, it, context) }
+            .filter { it != null}
+            .collect(Collectors.toList())
+
+         return@timed when {
+            transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
+            else -> TypedCollection.from(flattenResult(transformed))
          }
-         TypedCollection.from(transformed);
+      }
+   }
+
+   private fun mapSingleToCollection(targetType: Type, context: QueryContext): TypedInstance? {
+      require(targetType.resolveAliases().typeParameters.size == 1) { "Expected collection type to contain exactly 1 parameter" }
+      val targetCollectionType = targetType.resolveAliases().typeParameters[0]
+      return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
+         val inboundFactList = listOf(onlyTypedObject(context)!!)
+         log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
+         val transformed =  inboundFactList
+            .stream()
+            .map {  mapTo(targetCollectionType, it, context) }
+            .filter { it != null}
+            .collect(Collectors.toList())
+
+         return@timed when {
+            transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
+            else -> TypedCollection.from(flattenResult(transformed))
+         }
+      }
+   }
+
+   private fun flattenResult(result: List<TypedInstance?>): List<TypedInstance> {
+      return result
+         .filterNotNull()
+         .flatMap {
+         when(it) {
+            is TypedCollection -> it.value
+            else -> listOf(it)
+         }
       }
    }
 
@@ -191,9 +254,10 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
    }
 
-   override fun parse(queryExpression: QueryExpression):Set<QuerySpecTypeNode> {
+   override fun parse(queryExpression: QueryExpression): Set<QuerySpecTypeNode> {
       return queryParser.parse(queryExpression)
    }
+
    override fun find(queryString: QueryExpression, context: QueryContext): QueryResult {
       val target = queryParser.parse(queryString)
       return find(target, context)
@@ -252,17 +316,19 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val strategyIterator: Iterator<QueryStrategy> = strategies.iterator()
       while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
          val queryStrategy = strategyIterator.next()
-         val strategyResult = invokeStrategy(context, queryStrategy, querySet, target)
-         // Note : We should add this additional data to the context too,
-         // so that it's available for future query strategies to use.
-         context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
+         timed(name = "Strategy ${queryStrategy::class.java.name} ${target.type.name}", timeUnit = TimeUnit.MICROSECONDS, log = false) {
+            val strategyResult = invokeStrategy(context, queryStrategy, querySet, target)
+            // Note : We should add this additional data to the context too,
+            // so that it's available for future query strategies to use.
+            context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
 
-         matchedNodes.putAll(strategyResult.matchedNodes)
+            matchedNodes.putAll(strategyResult.matchedNodes)
 
-         if (strategyResult.additionalData.isNotEmpty()) {
-            // Note: Maybe we should only start re-querying if unresolvedNodes() has content
-            log().debug("Discovered additional facts, adding to the context")
-            context.addFacts(strategyResult.additionalData)
+            if (strategyResult.additionalData.isNotEmpty()) {
+               // Note: Maybe we should only start re-querying if unresolvedNodes() has content
+               log().debug("Discovered additional facts, adding to the context")
+               context.addFacts(strategyResult.additionalData)
+            }
          }
       }
       if (unresolvedNodes().isNotEmpty()) {
@@ -274,7 +340,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // Without it, there's a stack overflow error as projectTo seems to call ObjectBuilder.build which calls projectTo again.
       // ... Investigate
 
-      return if( !context.isProjecting && context.projectResultsTo() != null) {
+      return if (!context.isProjecting && context.projectResultsTo() != null) {
          projectTo(context.projectResultsTo()!!, context)
       } else QueryResult(
          matchedNodes,

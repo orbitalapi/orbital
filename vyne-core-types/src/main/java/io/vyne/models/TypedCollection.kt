@@ -2,9 +2,11 @@ package io.vyne.models
 
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import lang.taxi.Equality
 
 
-data class TypedCollection(override val type: Type, override val value: List<TypedInstance>) : List<TypedInstance> by value, TypedInstance {
+data class TypedCollection(override val type: Type, override val value: List<TypedInstance>, override val source: DataSource = MixedSources) : List<TypedInstance> by value, TypedInstance {
+   private val equality = Equality(this, TypedCollection::type, TypedCollection::value)
    init {
       require(type.isCollection) {
          "Type ${type.name} was passed to TypedCollection, but it is not a collection type.  Call TypedCollection.arrayOf(...) instead"
@@ -58,4 +60,7 @@ data class TypedCollection(override val type: Type, override val value: List<Typ
    fun parameterizedType(schema: Schema): Type {
       return schema.type("lang.taxi.Array<${type.name.parameterizedName}>")
    }
+
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int = equality.hash()
 }

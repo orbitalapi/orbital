@@ -6,6 +6,7 @@ import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.timed
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
+import lang.taxi.types.ObjectType
 import org.postgresql.PGConnection
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
@@ -54,9 +55,8 @@ class Ingester(
       val connection = jdbcTemplate.dataSource!!.connection
       val pgConnection = connection.unwrap(PGConnection::class.java)
       val table = ingestionStream.dbWrapper.rowWriterTable
-      val writer = SimpleRowWriter(table)
+      val writer = SimpleRowWriter(table, pgConnection)
       log().debug("Opening DB connection for ${table.table}")
-      writer.open(pgConnection)
       return ingestionStream.feed.stream
          .doOnError {
             log().debug("Closing DB connection for ${table.table}")
@@ -70,13 +70,23 @@ class Ingester(
          }
          .doOnEach { signal ->
             signal.get()?.let { instance ->
-               writer.startRow { rowWriter ->
-                  ingestionStream.dbWrapper.write(rowWriter, instance)
+               if ((instance.type.taxiType as ObjectType).definition?.fields
+                     ?.flatMap { it -> it.annotations }
+                     ?.any { a -> a.name == "PrimaryKey" }!!) {
+                  ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+               } else {
+                  writer.startRow { rowWriter ->
+                     ingestionStream.dbWrapper.write(rowWriter, instance)
+                  }
                }
             }
-
+         }.doOnError {
+            //invoked when pgbulkinsert throws.
+            if (!connection.isClosed) {
+               log().debug("Closing DB connection for ${table.table}")
+               connection.close()
+            }
          }
-
    }
 
    fun getRowCount(): Int {

@@ -1,42 +1,60 @@
 package io.vyne.cask
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.micrometer.core.aop.TimedAspect
 import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
+import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.query.CaskApiHandler
+import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.rest.CaskRestController
 import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskApiRootPath
 import io.vyne.cask.websocket.CaskWebsocketHandler
-import io.vyne.spring.SchemaPublicationMethod
+import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.core.io.ClassPathResource
 import org.springframework.http.HttpRequest
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
+import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
+import org.springframework.web.reactive.config.WebFluxConfigurer
 import org.springframework.web.reactive.function.server.router
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping
+import org.springframework.web.reactive.socket.server.WebSocketService
+import org.springframework.web.reactive.socket.server.support.HandshakeWebSocketService
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter
+import org.springframework.web.reactive.socket.server.upgrade.TomcatRequestUpgradeStrategy
 import java.time.Duration
+import java.util.*
+import javax.annotation.PostConstruct
 
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
+@VyneSchemaPublisher
 @EnableWebFlux
 @EnableAspectJAutoProxy
+@VyneSchemaConsumer
+@EnableConfigurationProperties(CaskViewConfig::class)
 class CaskApp {
    companion object {
       @JvmStatic
@@ -46,6 +64,18 @@ class CaskApp {
          app.run(*args)
       }
    }
+
+   @PostConstruct
+   fun setUtcTimezone() {
+      log().info("Setting default TimeZone to UTC")
+      TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+      // Date values are stored in Postgresql in UTC.
+      // However before sending dates to user a conversion happens (PgResultSet.getDate..) that includes default timezone
+      // E.g. date 2020.03.29:00:00:00 in DB can converted and returned to user as 2020.03.28:23:00:00
+      // This fix forces default timezone to be UTC
+      // Alternatively we could provide -Duser.timezone=UTC at startup
+   }
+
 
    @Bean
    fun handlerMapping(caskWebsocketHandler: CaskWebsocketHandler): HandlerMapping {
@@ -69,13 +99,24 @@ class CaskApp {
    }
 
    @Bean
-   fun websocketHandlerAdapter() = WebSocketHandlerAdapter()
+   fun websocketHandlerAdapter(webSocketService: WebSocketService) = WebSocketHandlerAdapter(webSocketService)
+
+   @Bean
+   fun webSocketService(
+      @Value("\${cask.maxTextMessageBufferSize}")  maxTextMessageBufferSize: Int,
+      @Value("\${cask.maxBinaryMessageBufferSize}")  maxBinaryMessageBufferSize: Int): WebSocketService {
+      val strategy = TomcatRequestUpgradeStrategy()
+      strategy.maxTextMessageBufferSize = maxTextMessageBufferSize
+      strategy.maxBinaryMessageBufferSize = maxBinaryMessageBufferSize
+      return HandshakeWebSocketService(strategy)
+   }
 
    @Bean
    fun caskRouter(caskApiHandler: CaskApiHandler, caskRestController: CaskRestController) = router {
       CaskApiRootPath.nest {
          accept(APPLICATION_JSON).nest {
             GET("**", caskApiHandler::findBy)
+            POST("**", caskApiHandler::findBy)
          }
       }
       resources("/static/**", ClassPathResource("static/"))
@@ -104,4 +145,23 @@ class CaskApp {
             }
          })
    }
+
+   @Bean
+   @Qualifier("ingesterMapper")
+   fun ingesterMapper(): ObjectMapper {
+      val mapper: ObjectMapper = jacksonObjectMapper()
+      mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+      return mapper
+   }
 }
+
+@Configuration
+ class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}")  val maxTextMessageBufferSize: Int) : WebFluxConfigurer {
+
+   override fun configureHttpMessageCodecs( configurer: ServerCodecConfigurer) {
+      configurer.defaultCodecs().maxInMemorySize(maxTextMessageBufferSize)
+   }
+}
+
+
+

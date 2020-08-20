@@ -15,12 +15,13 @@ object KafkaTransport {
 open class KafkaTransportInputSpec(
    val topic: String,
    override val targetType: VersionedTypeReference,
-   val props: Map<String, Any>
+   final override val props: Map<String, Any>
 ) : PipelineTransportSpec {
    companion object {
       val specId = PipelineTransportSpecId(KafkaTransport.TYPE, PipelineDirection.INPUT, KafkaTransportInputSpec::class.java)
    }
 
+   override val description: String = "Kafka topic ${props["topic"] ?: "Undefined"}"
    override val direction: PipelineDirection
       get() = PipelineDirection.INPUT
    override val type: PipelineTransportType
@@ -30,12 +31,14 @@ open class KafkaTransportInputSpec(
 
 data class KafkaTransportOutputSpec(
    val topic: String,
-   val props: Map<String, Any>,
+   final override val props: Map<String, Any>,
    override val targetType: VersionedTypeReference
 ) : PipelineTransportSpec {
    companion object {
       val specId = PipelineTransportSpecId(KafkaTransport.TYPE, PipelineDirection.OUTPUT, KafkaTransportOutputSpec::class.java)
    }
+
+   override val description: String = "Kafka topic ${props["topic"] ?: "Undefined"}"
 
    override val direction: PipelineDirection
       get() = PipelineDirection.OUTPUT

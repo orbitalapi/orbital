@@ -2,9 +2,7 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
@@ -63,8 +61,8 @@ service ClientService {
 
    val queryParser = QueryParser(schema)
 
-   fun typeNode(name: String): Set<QuerySpecTypeNode> {
-      return queryParser.parse(TypeNameQueryExpression(name))
+   fun typeNode(name: String, parser: QueryParser = queryParser): Set<QuerySpecTypeNode> {
+      return parser.parse(TypeNameQueryExpression(name))
    }
 
    fun queryContext(): QueryContext = vyne().queryEngine().queryContext()
@@ -137,7 +135,7 @@ class VyneTest {
             return product
          }
       })
-      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema)
+      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema, source = Provided)
       vyne.addModel(instance)
       val queryResult = vyne.query().find("companyX.Product")
       expect(queryResult.results.size).to.equal(1)
@@ -195,7 +193,7 @@ class VyneTest {
             return product
          }
       })
-      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema)
+      val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema, source = Provided)
       vyne.addModel(instance)
 
       val queryResult = vyne.query().find("companyY.Product")
@@ -249,7 +247,7 @@ class VyneTest {
       val stubService = StubService()
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
-      stubService.addResponse("creditRisk", TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100))
+      stubService.addResponse("creditRisk", TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100, source = Provided))
       vyne.addKeyValuePair("vyne.example.ClientId", "123")
       vyne.addKeyValuePair("vyne.example.InvoiceValue", 1000)
       val result: QueryResult = vyne.query().find("vyne.example.CreditRisk")
@@ -284,7 +282,7 @@ class VyneTest {
    "name" : "Jimmy's Choos",
    "isicCode" : "retailer"
 }"""
-      stubService.addResponse("creditRisk", TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100))
+      stubService.addResponse("creditRisk", TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100, source = Provided))
 
       val client = vyne.parseJsonModel("vyne.example.Client", json)
       stubService.addResponse("mockClient", client)
@@ -540,7 +538,7 @@ type LegacyTradeNotification {
     </legs>
 </tradeNotification>
       """.trimIndent()
-      val instance = TypedInstance.from(vyne.schema.type("LegacyTradeNotification"), xml, vyne.schema)
+      val instance = TypedInstance.from(vyne.schema.type("LegacyTradeNotification"), xml, vyne.schema, source = Provided)
       vyne.addModel(instance)
       val queryResult = vyne.query().find("NearLegNotional")
       TODO()
@@ -828,7 +826,7 @@ service Broker2Service {
 
    @Test
    fun `retrieve all types that can discovered through single argument function invocations`() {
-     val testSchema =  """
+      val testSchema = """
 namespace vyne.example
 type Invoice {
    clientId : ClientId
@@ -938,8 +936,8 @@ service ClientService {
    }
 }
 
-fun Vyne.typedValue(typeName: String, value: Any): TypedInstance {
-   return TypedInstance.from(this.getType(typeName), value, this.schema)
+fun Vyne.typedValue(typeName: String, value: Any, source: DataSource = Provided): TypedInstance {
+   return TypedInstance.from(this.getType(typeName), value, this.schema, source = source)
 //   return TypedValue.from(this.getType(typeName), value)
 }
 

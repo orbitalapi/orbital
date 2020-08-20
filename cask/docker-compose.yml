@@ -6,8 +6,13 @@ services:
          - POSTGRES_USER=vynedb
          - POSTGRES_PASSWORD=vynedb
          - POSTGRES_DB=vynedb
+         - POSTGRES_EXTRA_DATABASES="vyne-query" # comma-separated list of databases
+         - PGDATA=/cask/data/
       volumes:
-         - database-data:/var/lib/postgresql/data/ # persist data even if container shuts down
+         # persist data even if container shuts down
+         - database-data:/cask/data/
+         # creates extra databases defined in POSTGRES_EXTRA_DATABASES, the user is the same
+         - ./create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
       ports:
          - "5432:5432"
 

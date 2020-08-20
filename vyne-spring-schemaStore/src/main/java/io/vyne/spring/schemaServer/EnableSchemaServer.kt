@@ -1,6 +1,6 @@
 package io.vyne.spring.schemaServer
 
-import io.vyne.schemaStore.TaxiSchemaService
+import io.vyne.schemaStore.TaxiSchemaStoreService
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -13,5 +13,5 @@ annotation class EnableSchemaServer
 
 @EnableDiscoveryClient
 @Configuration
-@ComponentScan(basePackageClasses = arrayOf(TaxiSchemaService::class))
+@ComponentScan(basePackageClasses = arrayOf(TaxiSchemaStoreService::class))
 class SchemaServerConfig

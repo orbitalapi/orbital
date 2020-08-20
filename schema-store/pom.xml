@@ -3,7 +3,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.3.1-SNAPSHOT</version>
+      <version>0.7.7-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -17,12 +17,21 @@
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>schema-store-client</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>vyne</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-web</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-config</artifactId>
       </dependency>
       <dependency>
          <groupId>com.github.zafarkhaja</groupId>

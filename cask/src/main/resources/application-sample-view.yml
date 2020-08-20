@@ -1,0 +1,18 @@
+cask:
+   views:
+      -  typeName: ion.orders.OrderEvent
+         distinct: true
+         inherits:
+            - cacib.orders.OrderLifecycleEvent
+         join:
+            kind: LEFT_OUTER
+            left: ion.orders.Order
+            right: ion.trade.Trade
+            joinOn:
+               -  leftField: orderId
+                  rightField: orderId
+               -  leftField: lastTradeDate
+                  rightField: tradeCreationDate
+               -  leftField: lastTradeTime
+                  rightField: tradeCreationTime
+

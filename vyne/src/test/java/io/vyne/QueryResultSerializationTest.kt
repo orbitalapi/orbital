@@ -8,6 +8,7 @@ import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.ResultMode
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
+import org.skyscreamer.jsonassert.JSONCompareMode
 
 class QueryResultSerializationTest {
 
@@ -35,24 +36,26 @@ class QueryResultSerializationTest {
          ), resultMode = ResultMode.SIMPLE
       )
 
-
-      val expectedJson = """{
-  "results": {
-    "Client": {
-      "clientId": "123",
-      "name": "Jimmy",
-      "isicCode": "isic"
-    }
-  },
-  "unmatchedNodes": [],
-  "queryResponseId": "${result.queryResponseId}",
-  "resultMode": "SIMPLE",
-  "fullyResolved": true,
-  "remoteCalls": [],
-  "timings": {},
-  "vyneCost": 0,
-  "truncated": false
-}"""
+      val expectedJson = """
+         {
+           "results" : {
+             "Client" : {
+               "clientId" : "123",
+               "name" : "Jimmy",
+               "isicCode" : "isic"
+             }
+           },
+           "unmatchedNodes" : [ ],
+           "queryResponseId" : "${result.queryResponseId}",
+           "resultMode" : "SIMPLE",
+           "truncated" : false,
+            "lineageGraph" : { },
+           "vyneCost" : 0,
+           "timings" : { },
+           "remoteCalls" : [ ],
+           "fullyResolved" : true
+         }
+      """.trimIndent()
       val json = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(result)
       JSONAssert.assertEquals(expectedJson, json, true)
    }
@@ -74,7 +77,7 @@ class QueryResultSerializationTest {
          ), resultMode = ResultMode.SIMPLE
       )
       val expected = """
- {
+{
   "results" : {
     "Client" : [ {
       "clientId" : "123",
@@ -85,11 +88,12 @@ class QueryResultSerializationTest {
   "unmatchedNodes" : [ ],
   "queryResponseId" : "${result.queryResponseId}",
   "resultMode" : "SIMPLE",
-  "fullyResolved" : true,
+  "truncated" : false,
+  "lineageGraph" : { },
   "remoteCalls" : [ ],
   "timings" : { },
   "vyneCost" : 0,
-  "truncated": false
+  "fullyResolved" : true
 }
       """.trimIndent()
 

@@ -1,11 +1,12 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
 
 import {environment} from 'src/environments/environment';
 import {QualifiedName, TypedInstance} from './schema';
 import {InstanceLikeOrCollection} from '../object-view/object-view.component';
 import {VyneServicesModule} from './vyne-services.module';
+import {Data} from '@angular/router';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -16,6 +17,11 @@ export class QueryService {
 
   submitQuery(query: Query): Observable<QueryResult> {
     return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query);
+  }
+
+  submitVyneQlQuery(query: String): Observable<QueryResult> {
+    const headers = new HttpHeaders().set('Content-Type', 'application/json');
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=VERBOSE`, query, { headers });
   }
 
   getHistory(): Observable<QueryHistoryRecord[]> {
@@ -43,6 +49,55 @@ export class Fact {
 export interface TypeNamedInstance {
   typeName: string;
   value: any;
+  source?: DataSourceReference;
+}
+
+export function isTypedInstance(instance: InstanceLikeOrCollection): instance is TypedInstance {
+  const instanceAny = instance as any;
+  return instanceAny && instanceAny.type !== undefined && instanceAny.value !== undefined;
+}
+
+export function isTypeNamedInstance(instance: any): instance is TypeNamedInstance {
+  const instanceAny = instance as any;
+  return instanceAny && instanceAny.typeName !== undefined && instanceAny.value !== undefined;
+}
+
+export function isTypedCollection(instance: any): instance is TypeNamedInstance[] {
+  return instance && Array.isArray(instance) && instance[0] && isTypeNamedInstance(instance[0]);
+}
+
+export interface DataSourceReference {
+  dataSourceIndex: number;
+}
+
+export interface LineageGraph {
+  [index: number]: DataSource;
+}
+
+export interface DataSource {
+  name: DataSourceType;
+}
+
+export type DataSourceType =
+  'Provided'
+  | 'Mapped'
+  | 'Operation result'
+  | 'Defined in schema'
+  | 'Undefined source'
+  | 'Multiple sources';
+
+export function isOperationResult(source: DataSource): source is OperationResultDataSource {
+  return source.name === 'Operation result';
+}
+
+export interface OperationResultDataSource extends DataSource {
+  remoteCall: RemoteCall;
+  inputs: OperationParam[];
+}
+
+export interface OperationParam {
+  parameterName: String;
+  value: TypeNamedInstance;
 }
 
 
@@ -53,20 +108,23 @@ export interface QueryResult {
   profilerOperation: ProfilerOperation;
   remoteCalls: RemoteCall[];
   resultMode: ResultMode;
+  lineageGraph: LineageGraph;
+  queryResponseId: string;
+  error?: string;
 }
 
 
 export interface RemoteCall {
-  service: QualifiedName;
+  service: string;
   address: string;
   operation: string;
-  responseTypeName: QualifiedName;
+  responseTypeName: string;
   method: string;
   requestBody: any;
   resultCode: number;
   durationMs: number;
   response: any;
-  operationQualifiedName: QualifiedName;
+  operationQualifiedName: string;
 }
 
 export interface ProfilerOperation {

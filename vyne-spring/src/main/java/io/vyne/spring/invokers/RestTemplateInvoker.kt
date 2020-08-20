@@ -1,7 +1,10 @@
 package io.vyne.spring.invokers
 
+import io.vyne.models.DataSource
+import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
+import io.vyne.models.UndefinedSource
 import io.vyne.query.OperationType
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
@@ -13,9 +16,10 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
-import io.vyne.utils.timed
+import io.vyne.utils.orElse
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -26,23 +30,24 @@ import org.springframework.http.ResponseEntity
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.ClientHttpResponse
-import org.springframework.http.converter.StringHttpMessageConverter
 import org.springframework.web.client.ResponseErrorHandler
 import org.springframework.web.client.RestTemplate
 
 
 class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                           val restTemplate: RestTemplate,
-                          private val serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver())) : OperationInvoker {
+                          private val serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
+                          private val enableDataLineageForRemoteCalls: Boolean) : OperationInvoker {
 
    @Autowired
    constructor(schemaProvider: SchemaProvider,
                restTemplateBuilder: RestTemplateBuilder,
-               serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()))
+               serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
+               @Value("\${vyne.data-lineage.remoteCalls.enabled:false}") enableDataLineageForRemoteCalls: Boolean)
       : this(schemaProvider, restTemplateBuilder
       .errorHandler(CatchingErrorHandler())
       .additionalInterceptors(LoggingRequestInterceptor())
-   .build(), serviceUrlResolvers)
+      .build(), serviceUrlResolvers, enableDataLineageForRemoteCalls)
 
    private val uriVariableProvider = UriVariableProvider()
 
@@ -77,17 +82,18 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          val start = System.currentTimeMillis()
          val result = restTemplate.exchange(absoluteUrl, httpMethod, requestBody.first, requestBody.second, uriVariables)
          val executionTime = System.currentTimeMillis() - start
-         log().info("{} {} took {}ms", httpMethod, absoluteUrl, executionTime)
+         log().info("{} {} took {}ms with {}", httpMethod, absoluteUrl, executionTime, uriVariables)
 
          val expandedUri = restTemplate.uriTemplateHandler.expand(absoluteUrl, uriVariables)
-         httpInvokeOperation.addRemoteCall(RemoteCall(
+         val remoteCall = RemoteCall(
             service.name, expandedUri.toASCIIString(),
             operation.name,
             operation.returnType.name,
             httpMethod.name, requestBody.first.body, result.statusCodeValue, httpInvokeOperation.duration, result.body
-         ))
+         )
+         httpInvokeOperation.addRemoteCall(remoteCall)
          if (result.statusCode.is2xxSuccessful) {
-            handleSuccessfulHttpResponse(result, operation)
+            handleSuccessfulHttpResponse(result, operation, parameters, remoteCall)
          } else {
             handleFailedHttpResponse(result, operation, absoluteUrl, httpMethod, requestBody)
             throw RuntimeException("Shouldn't hit this point")
@@ -103,18 +109,27 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       throw OperationInvocationException(message)
    }
 
-   private fun handleSuccessfulHttpResponse(result: ResponseEntity<out Any>, operation: Operation): TypedInstance {
+   private fun handleSuccessfulHttpResponse(result: ResponseEntity<out Any>, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall): TypedInstance {
       // TODO : Handle scenario where we get a 2xx response, but no body
       log().debug("Result of ${operation.name} was $result")
       val resultBody = result.body
-
-      // TODO: WE should be validating that the response we received conforms with the expected schema,
-      // and doing...something? if it doesn't.
-      // See https://gitlab.com/vyne/vyne/issues/54
-
+      val dataSource = remoteCallDataLineage(parameters, remoteCall)
       return when (resultBody) {
-         is Map<*, *> -> TypedObject.fromAttributes(operation.returnType, resultBody as Map<String, Any>, schemaProvider.schema())
-         else -> TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema())
+         is Map<*, *> -> TypedObject.fromAttributes(operation.returnType, resultBody as Map<String, Any>, schemaProvider.schema(), source = dataSource)
+         else -> TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema(), source = dataSource)
+      }
+   }
+
+   private fun remoteCallDataLineage(parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall): DataSource {
+      return if (enableDataLineageForRemoteCalls) {
+         // TODO: WE should be validating that the response we received conforms with the expected schema,
+         // and doing...something? if it doesn't.
+         // See https://gitlab.com/vyne/vyne/issues/54
+         OperationResult(remoteCall, parameters.map { (param, instance) ->
+            OperationResult.OperationParam(param.name.orElse("Unnamed"), instance)
+         })
+      } else {
+         UndefinedSource
       }
    }
 
@@ -123,15 +138,15 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    }
 
    private fun buildRequestBody(operation: Operation, parameters: List<TypedInstance>): Pair<HttpEntity<*>, Class<*>> {
-     if (operation.hasMetadata("HttpOperation")) {
-        // TODO Revisit as this is a quick hack to invoke services that returns simple/text
-        val httpOperation = operation.metadata("HttpOperation")
-        httpOperation.params["consumes"]?.let {
-           val httpHeaders =  HttpHeaders()
-           httpHeaders.accept = mutableListOf(MediaType.parseMediaType(it as String))
-           return HttpEntity<String>(httpHeaders) to String::class.java
-        }
-     }
+      if (operation.hasMetadata("HttpOperation")) {
+         // TODO Revisit as this is a quick hack to invoke services that returns simple/text
+         val httpOperation = operation.metadata("HttpOperation")
+         httpOperation.params["consumes"]?.let {
+            val httpHeaders = HttpHeaders()
+            httpHeaders.accept = mutableListOf(MediaType.parseMediaType(it as String))
+            return HttpEntity<String>(httpHeaders) to String::class.java
+         }
+      }
       val requestBodyParamIdx = operation.parameters.indexOfFirst { it.hasMetadata("RequestBody") }
       if (requestBodyParamIdx == -1) return HttpEntity.EMPTY to Any::class.java
       // TODO : For now, only looking up param based on type.  This is obviously naieve, and should

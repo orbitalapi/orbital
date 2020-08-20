@@ -1,0 +1,55 @@
+<mat-toolbar color="primary" style="z-index: 999">
+  <span>Query wizard</span>
+  <span class="toolbar-spacer"></span>
+  <app-search-bar-container></app-search-bar-container>
+</mat-toolbar>
+
+<mat-sidenav-container [hasBackdrop]="true">
+  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel">
+    <div class="drawer-content">
+      <app-typed-instance-panel-container
+        [instance]="selectedTypeInstance"
+        [type]="selectedTypeInstanceType"
+        [lineageGraph]="lineageGraph"
+      ></app-typed-instance-panel-container>
+    </div>
+  </mat-drawer>
+
+  <div class="page-content" style="z-index: 0">
+    <div class="container">
+
+      <mat-tab-group mat-align-tabs="start" style="height: 100%" [(selectedIndex)]="selectedIndex">
+        <mat-tab label="Query Builder">
+          <query-wizard (queryResultUpdated)="resultUpdated($event)"
+                        (loadingChanged)="onLoadingChanged($event)"
+          ></query-wizard>
+        </mat-tab>
+        <mat-tab label="Query Editor">
+          <div class=query-editor-container>
+            <query-editor [initialQuery]="routeQuery"
+                          (queryResultUpdated)="resultUpdated($event)"
+                          (loadingChanged)="onLoadingChanged($event)"
+            ></query-editor>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+
+    </div>
+    <div class="row">
+        <div class="results-container">
+          <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
+
+
+          <mat-card *ngIf="lastQueryResult" style="width: 100%">
+            <mat-card-header>
+              <mat-card-title>Results</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <query-result-container [result]="lastQueryResult"
+                                      (instanceSelected)="onInstanceSelected($event)"></query-result-container>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+</mat-sidenav-container>

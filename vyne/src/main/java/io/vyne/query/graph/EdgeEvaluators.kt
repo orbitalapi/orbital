@@ -2,17 +2,22 @@ package io.vyne.query.graph
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import es.usc.citius.hipster.graph.GraphEdge
+import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
+import io.vyne.query.CalculatedFieldScanStrategy
 import io.vyne.query.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
+import io.vyne.formulas.CalculatorRegistry
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.utils.assertingThat
 import io.vyne.utils.log
+import lang.taxi.types.PrimitiveType
 
 
 fun GraphEdge<Element, Relationship>.description(): String {
@@ -42,6 +47,7 @@ data class EvaluatableEdge(
 ) {
    @JsonIgnore
    val vertex1: Element = previous.element
+
    @JsonIgnore
    val vertex2 = target;
 
@@ -54,6 +60,12 @@ data class EvaluatableEdge(
       // TODO : Are we adding any value by having "target" here? -- isn't it always vertex2?
       // If so, just remove it - as it's inferrable from 'previous'
       return EvaluatedEdge.success(this, target, value)
+   }
+
+   fun failure(value: TypedInstance?): EvaluatedEdge {
+      // TODO : Are we adding any value by having "target" here? -- isn't it always vertex2?
+      // If so, just remove it - as it's inferrable from 'previous'
+      return EvaluatedEdge(this, target, value, "Error")
    }
 }
 
@@ -91,19 +103,21 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
 class ParameterFactory {
    fun discover(paramType: Type, context: QueryContext): TypedInstance {
       // First, search only the top level for facts
-      if (context.hasFactOfType(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)) {
+      val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
+      if (hasValue(firstLevelDiscovery)) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
          // TODO (2) : Fail if there are multiple instances
-         return context.getFact(paramType)
+         return firstLevelDiscovery!!
       }
 
       // Check to see if there's exactly one instance somewhere within the context
       // Note : I'm cheating here, I really should find the value required by retracing steps
       // walked in the path.  But, it's unclear if this is possible, given the scattered way that
       // the algorithims are evaluated
-      if (context.hasFactOfType(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
+      val anyDepthOneDistinct = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+      if (hasValue(anyDepthOneDistinct)) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
-         return context.getFact(paramType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+         return anyDepthOneDistinct!!
       }
 
 //      if (startingPoint.type == paramType) {
@@ -118,6 +132,21 @@ class ParameterFactory {
       return requestObject
    }
 
+   private fun hasValue(instance: TypedInstance?): Boolean {
+      return when  {
+         instance == null -> false
+         instance is TypedNull -> false
+         // This is a big call, treating empty strings as not populated
+         // It's probably the wrong call.
+         // But we need to consider how to filter this data upstream from providers,
+         // and allow that filtering to be configurable.
+         // Adding this here now because it's caused a bug at a client, let's
+         // revisit if/when it becomes problematic.
+         instance.type.taxiType.basePrimitive == PrimitiveType.STRING && instance.value == "" -> false
+         else -> true
+      }
+   }
+
    private fun attemptToConstruct(paramType: Type, context: QueryContext, typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
       val fields = paramType.attributes.map { (attributeName, field) ->
          val attributeType = context.schema.type(field.type.name)
@@ -126,13 +155,10 @@ class ParameterFactory {
          // Try restructing this to a strategy approach.
          // Can we try searching within the context before we try constructing?
          // what are the impacts?
-         var attributeValue: TypedInstance? = null
+         var attributeValue: TypedInstance? = context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
 
          // First, look in the context to see if it's there.
-         if (context.hasFactOfType(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)) {
-            attributeValue = context.getFact(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
-         } else {
-
+         if (attributeValue == null) {
             // ... if not, try and find the value in the graph
             val queryResult = context.find(QuerySpecTypeNode(attributeType))
             if (queryResult.isFullyResolved) {
@@ -144,7 +170,7 @@ class ParameterFactory {
                if (!attributeType.isScalar && !typesCurrentlyUnderConstruction.contains(attributeType)) {
                   log().debug("Parameter of type {} not present within the context.  Attempting to construct one.", attributeType.name.fullyQualifiedName)
                   val constructedType = attemptToConstruct(attributeType, context, typesCurrentlyUnderConstruction = typesCurrentlyUnderConstruction + attributeType)
-                  log().debug("Parameter of type {} constructed: {}",constructedType, attributeType.name.fullyQualifiedName)
+                  log().debug("Parameter of type {} constructed: {}", constructedType, attributeType.name.fullyQualifiedName)
                   attributeValue = constructedType
                }
             }
@@ -157,7 +183,7 @@ class ParameterFactory {
          // else ... attributeValue != null -- we found it.  Good work team, move on.
          attributeName to attributeValue
       }.toMap()
-      return TypedObject(paramType, fields)
+      return TypedObject(paramType, fields, MixedSources)
    }
 
 }
@@ -209,20 +235,47 @@ class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_T
 
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
-      val previousValue = requireNotNull(edge.previousValue) {"Cannot evaluate $relationship when previous value was null.  Work with me here!"}
+      val previousValue = requireNotNull(edge.previousValue) { "Cannot evaluate $relationship when previous value was null.  Work with me here!" }
+
+      if (previousValue is TypedNull) {
+         return edge.failure(previousValue)
+      }
+
       require(previousValue is TypedObject) {
          "Cannot evaluate $relationship when the previous value isn't a TypedObject - got ${previousValue::class.simpleName}"
       }
+
+      // TypedObject has no attributes - service returned no value, returning failure response
+      if (previousValue.isEmpty()) {
+         return edge.failure(null)
+      }
+
       val previousObject = previousValue as TypedObject
       val pathToAttribute = edge.target.value as String// io.vyne.SomeType/someAttribute
-      val attributeName = pathToAttribute.split("/").last()
-      require(previousObject.hasAttribute(attributeName)) {
-         "Cannot evaluation $relationship as the previous object (of type ${previousObject.type.fullyQualifiedName}) does not have an attribute called $attributeName - received path of $pathToAttribute"
+      val pathAttributeParts = pathToAttribute.split("/")
+      val attributeName = pathAttributeParts.last()
+      if (!previousObject.hasAttribute(attributeName)) {
+         val typeName = pathAttributeParts.first()
+         var calculatedValue: EvaluatedEdge? = null
+            if (context.schema.hasType(typeName)) {
+            val pathType = context.schema.type(typeName)
+            pathType.attributes[attributeName]?.let { field ->
+               if (field.formula != null) {
+                CalculatedFieldScanStrategy(CalculatorRegistry())
+                     .tryCalculate(context.schema.type(field.type), context, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)?.let {
+                      calculatedValue = edge.success(it)
+                     }
+               }
+
+            }
+         }
+         return calculatedValue ?: edge.failure(null)
       }
       val attribute = previousObject[attributeName]
       return edge.success(attribute)
    }
 }
+
 class InstanceHasAttributeEdgeEvaluator : AttributeEvaluator(Relationship.INSTANCE_HAS_ATTRIBUTE)
 
 // Note: I suspect this might cause problems.

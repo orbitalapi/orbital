@@ -5,13 +5,18 @@
    <parent>
       <artifactId>pipelines</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.3.1-SNAPSHOT</version>
+      <version>0.7.7-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>pipelines-orchestrator</artifactId>
 
    <dependencies>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>pipelines-orchestrator-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
       <dependency>
          <groupId>com.fasterxml.jackson.module</groupId>
          <artifactId>jackson-module-kotlin</artifactId>
@@ -23,6 +28,10 @@
       <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.cloud</groupId>
+         <artifactId>spring-cloud-starter-config</artifactId>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -37,11 +46,27 @@
          <groupId>net.logstash.logback</groupId>
          <artifactId>logstash-logback-encoder</artifactId>
       </dependency>
-
+      <dependency>
+         <groupId>io.springfox</groupId>
+         <artifactId>springfox-swagger2</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.springfox</groupId>
+         <artifactId>springfox-swagger-ui</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
+      </dependency>
       <dependency>
          <groupId>com.nhaarman.mockitokotlin2</groupId>
          <artifactId>mockito-kotlin</artifactId>
          <version>2.2.0</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-test</artifactId>
          <scope>test</scope>
       </dependency>
    </dependencies>
@@ -67,8 +92,8 @@
                      <build>
                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                         <tags>
-                           <!-- defined in profiles.  see root pom.xml -->
-                           <tag>${docker.tag}</tag>
+                           <tag>${docker.tag.latest}</tag>
+                           <tag>${docker.tag.numbered}</tag>
                         </tags>
                      </build>
                   </image>
@@ -93,5 +118,7 @@
          </plugin>
 
       </plugins>
+
    </build>
+
 </project>

@@ -8,14 +8,15 @@ import {environment} from 'src/environments/environment';
 import {map} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
-  Message, ParsedSource,
+  Message,
+  ParsedSource,
   QualifiedName,
   Schema,
   SchemaGraph,
   SchemaGraphNode,
-  SchemaMember,
   SchemaSpec,
-  Type, TypedInstance,
+  Type,
+  TypedInstance,
   VersionedSource
 } from './schema';
 import {TypeNamedInstance} from './query.service';
@@ -27,11 +28,10 @@ import {VyneServicesModule} from './vyne-services.module';
 export class TypesService {
 
   private schema: Schema;
-  private schemaSubject: Subject<Schema>;
+  private schemaSubject: Subject<Schema> = new ReplaySubject(1);
   private schemaRequest: Observable<Schema>;
 
   constructor(private http: HttpClient) {
-    this.schemaSubject = new ReplaySubject(1);
     this.getTypes().subscribe(schema => {
       this.schema = schema;
     });
@@ -68,7 +68,7 @@ export class TypesService {
   }
 
   getDiscoverableTypes(typeName: string): Observable<QualifiedName[]> {
-    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${typeName}/discoverable-types`)
+    return this.http.get<QualifiedName[]>(`${environment.queryServiceUrl}/api/types/${typeName}/discoverable-types`);
   }
 
   getType(qualifiedName: string): Observable<Type> {
@@ -78,24 +78,38 @@ export class TypesService {
   }
 
   parse(content: string, type: Type): Observable<ParsedTypeInstance> {
-    return this.http.post<ParsedTypeInstance>(`${environment.queryServiceUrl}/api/content/parse?type=${type.name.fullyQualifiedName}`, content);
+    return this.http.post<ParsedTypeInstance>(
+      `${environment.queryServiceUrl}/api/content/parse?type=${type.name.fullyQualifiedName}`,
+      content);
   }
 
   parseCsvToType(content: string, type: Type, csvOptions: CsvOptions): Observable<ParsedTypeInstance[]> {
     const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedTypeInstance[]>(
       // tslint:disable-next-line:max-line-length
-      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${csvOptions.separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}${nullValueParam}`,
+      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}${nullValueParam}`,
       content);
   }
 
   parseCsv(content: string, csvOptions: CsvOptions): Observable<ParsedCsvContent> {
+    const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedCsvContent>(
-      `${environment.queryServiceUrl}/api/csv?delimiter=${csvOptions.separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}`,
+      `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}`,
       content);
   }
 
-  getTypes = (refresh: boolean = false): Observable<Schema> => {
+  private detectCsvDelimiter = (input: string) => {
+    const separators = [',', ';', '|', '\t'];
+    const idx = separators
+      .map((separator) => input.indexOf(separator))
+      .reduce((prev, cur) =>
+        prev === -1 || (cur !== -1 && cur < prev) ? cur : prev
+      );
+    return (input[idx] || ',') ;
+  }
+
+  getTypes(refresh: boolean = false): Observable<Schema> {
     if (refresh || !this.schemaRequest) {
       this.schemaRequest = this.http
         .get<Schema>(`${environment.queryServiceUrl}/api/types`)
@@ -115,6 +129,7 @@ export class TypesService {
     }
     return this.schemaSubject.asObservable();
   }
+
 
   createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
     const spec: SchemaSpec = {

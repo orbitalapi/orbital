@@ -1,0 +1,26 @@
+@import "src/theme";
+@import "src/toolbar";
+
+.container {
+  flex: 1;
+
+  &:not(:last-child) {
+    padding-right: 45px;
+  }
+}
+
+.results-container {
+  margin-top: 1rem;
+}
+
+.query-editor-container{
+}
+
+:host ::ng-deep .mat-tab-body-wrapper {
+  flex-grow: 1;
+}
+
+.drawer-content {
+  margin: 2rem 3rem;
+  width: 40vw;
+}

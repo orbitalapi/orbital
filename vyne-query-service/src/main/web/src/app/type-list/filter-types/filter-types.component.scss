@@ -1,0 +1,32 @@
+@import "src/app/expand-panel/expand-panel";
+@import "src/theme";
+
+.highlight-container {
+  background-color: $body;
+}
+
+td-highlight {
+  background-color: $body;
+}
+.inputField{
+  margin-left: 1em;
+  min-width: 20em;
+  margin-right: 7em;
+}
+
+.filterButton{
+  margin-left: 5em;
+}
+
+.filterPanelContainer{
+  border-radius: 0px;
+  background: #eef2f9;
+}
+
+.filterIcon{
+  opacity :0.6;
+  width: 16px;
+  padding-right: 0.5rem
+}
+
+

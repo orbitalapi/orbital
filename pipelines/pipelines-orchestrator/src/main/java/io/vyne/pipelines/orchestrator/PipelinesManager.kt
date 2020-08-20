@@ -1,11 +1,13 @@
 package io.vyne.pipelines.orchestrator
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.pipelines.PIPELINE_METADATA_KEY
 import io.vyne.pipelines.orchestrator.PipelineState.RUNNING
 import io.vyne.pipelines.orchestrator.PipelineState.STARTING
 import io.vyne.pipelines.orchestrator.pipelines.PipelineDeserialiser
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
 import io.vyne.utils.log
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.discovery.event.InstanceRegisteredEvent
@@ -16,7 +18,10 @@ import org.springframework.stereotype.Component
 @Component
 class PipelinesManager(private val discoveryClient: DiscoveryClient,
                        private val pipelineRunnerApi: PipelineRunnerApi,
-                       private val runningPipelineDiscoverer: RunningPipelineDiscoverer) : ApplicationListener<InstanceRegisteredEvent<Any>> {
+                       private val runningPipelineDiscoverer: RunningPipelineDiscoverer,
+                       private val objectMapper: ObjectMapper,
+                       @Value("\${vyne.pipelineRunnerService.name:pipeline-runner}") private val pipelineRunnerServiceName: String
+) : ApplicationListener<InstanceRegisteredEvent<Any>> {
 
 
    // All pipeline runners instances
@@ -28,7 +33,7 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
    /**
     * Add a pipeline to the global state. Perform some verification/validation here
     */
-   fun addPipeline(pipelineRef: PipelineReference) {
+   fun addPipeline(pipelineRef: PipelineReference): PipelineStateSnapshot {
 
 
       if (pipelines.containsKey(pipelineRef.name)) {
@@ -36,22 +41,24 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
       }
 
       // if pipeline is valid, we schedule it
-      schedulePipeline(pipelineRef.name, pipelineRef.description)
+      return schedulePipeline(pipelineRef.name, pipelineRef.description)
 
    }
 
    /**
     * Schedule a pipeline for assignment to runners
     */
-   private fun schedulePipeline(pipelineName: String, pipelineDefinition: String) {
+   private fun schedulePipeline(pipelineName: String, pipelineDefinition: String): PipelineStateSnapshot {
       log().info("Scheduling pipeline $pipelineName")
 
       // Initiate state
-      pipelines[pipelineName] = PipelineStateSnapshot(pipelineName, pipelineDefinition, null, PipelineState.SCHEDULED)
-
+      val pipelineState = PipelineStateSnapshot(pipelineName, pipelineDefinition, null, PipelineState.SCHEDULED)
+      pipelines[pipelineName] = pipelineState
       // For now, the scheduling is just a synchronous method call.
       // In the future, there might be a asynchronous queue and another period process to run the pipelines
       runPipeline(pipelineName)
+
+      return pipelineState
    }
 
    /**
@@ -101,14 +108,15 @@ class PipelinesManager(private val discoveryClient: DiscoveryClient,
 
          // 1. Find all the runner instances
          runnerInstances.clear()
-         runnerInstances.addAll(discoveryClient.getInstances("pipeline-runner"))
+         runnerInstances.addAll(discoveryClient.getInstances(pipelineRunnerServiceName))
 
          // 2. See what pipelines are currently running
          val pipelineInstances = runningPipelineDiscoverer.discoverPipelines(runnerInstances)
 
          // 3. Overwrite the running pipelines
          val runningPipelines = pipelineInstances.map {
-            it.key.name to PipelineStateSnapshot(it.key.name, it.key.description, it.value, RUNNING)
+            val runner = objectMapper.convertValue(it.value, PipelineRunnerInstance::class.java)
+            it.key.name to PipelineStateSnapshot(it.key.name, it.key.description, runner, RUNNING)
          }.toMap()
 
          pipelines.putAll(runningPipelines)
@@ -168,23 +176,6 @@ class RunningPipelineDiscoverer(val pipelineDeserialiser: PipelineDeserialiser) 
 
 }
 
-data class PipelineStateSnapshot(val name: String,
-                                 val pipelineDescription: String,
-                                 var instance: ServiceInstance?,
-                                 var state: PipelineState,
-                                 var info: String = "")
-
-enum class PipelineState {
-
-   // Pipeline has been scheduled for assignment to a runner
-   SCHEDULED,
-
-   // Pipeline has been submitting to a runner, and we're waiting for startup
-   STARTING,
-
-   // Pipeline is running on a runner. For now, running means just that the pipeline has been sent to a runner, and the runner acknowledged the pipeline (wrote it in its metadata)
-   RUNNING
-}
 
 data class PipelineReference(val name: String, val description: String)
 

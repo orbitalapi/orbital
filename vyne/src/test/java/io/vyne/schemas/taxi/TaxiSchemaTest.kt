@@ -265,6 +265,8 @@ type Sample {
       "accessor" : null,
       "readCondition" : null,
       "typeDoc" : null,
+      "defaultValue" : null,
+      "formula" : null,
       "constraints" : [ ]
     },
     "id" : {
@@ -281,6 +283,8 @@ type Sample {
       "accessor" : null,
       "readCondition" : null,
       "typeDoc" : null,
+      "defaultValue" : null,
+      "formula" : null,
       "constraints" : [ ]
     },
     "name" : {
@@ -297,6 +301,8 @@ type Sample {
       "accessor" : null,
       "readCondition" : null,
       "typeDoc" : null,
+      "defaultValue" : null,
+      "formula" : null,
       "constraints" : [ ]
     },
     "postcode" : {
@@ -313,6 +319,8 @@ type Sample {
       "accessor" : null,
       "readCondition" : null,
       "typeDoc" : null,
+      "defaultValue" : null,
+      "formula" : null,
       "constraints" : [ ]
     }
   },
@@ -325,13 +333,16 @@ type Sample {
     "name" : "<unknown>",
     "version" : "0.0.0",
     "content" : "type Customer {\n   email : CustomerEmailAddress as String\n   id : CustomerId as String\n   name : CustomerName as String\n   postcode : Postcode as String\n}",
-    "id" : "<unknown>:0.0.0"
+    "id" : "<unknown>:0.0.0",
+    "contentHash" : "7063d8"
   } ],
   "typeParameters" : [ ],
   "typeDoc" : "",
   "isTypeAlias" : false,
   "format" : null,
   "hasFormat" : false,
+  "isCalculated": false,
+  "unformattedTypeName" : null,
   "isParameterType" : false,
   "isClosed" : false,
   "isPrimitive" : false,

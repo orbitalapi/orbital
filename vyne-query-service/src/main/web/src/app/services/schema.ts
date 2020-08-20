@@ -37,6 +37,7 @@ export interface Documented {
 export interface Type extends Documented {
   name: QualifiedName;
   attributes: FieldMap;
+  collectionType: Type | null;
   modifiers: Array<Modifier>;
   isScalar: boolean;
   aliasForType: QualifiedName;
@@ -107,10 +108,19 @@ export interface ParsedSource {
   source: VersionedSource;
   errors: SourceCompilationError[];
   isValid: boolean;
-
 }
 
 function buildArrayType(schema: TypeCollection, typeName: string): Type {
+  if (schema.constructedArrayTypes === undefined) {
+    schema.constructedArrayTypes = {};
+  }
+  // This caching is important, as if we call this method multiple times,
+  // and create new (but equivalent) type instances, then equality checks
+  // fails, which cause setters and bindings to go nuts
+  if (schema.constructedArrayTypes[typeName]) {
+    return schema.constructedArrayTypes[typeName];
+  }
+
   const innerType = typeName.replace('lang.taxi.Array<', '')
     .replace('>', '');
   const arrayType = schema.types.find(t => t.name.parameterizedName === 'lang.taxi.Array');
@@ -121,10 +131,13 @@ function buildArrayType(schema: TypeCollection, typeName: string): Type {
   const result = {
     ...arrayType,
     name,
+    collectionType: paramType,
     isParameterType: true,
     isCollection: true,
     typeParameters: name.parameters
   } as Type;
+
+  schema.constructedArrayTypes[typeName] = result;
   return result;
 }
 
@@ -145,9 +158,10 @@ export function findType(schema: TypeCollection, typeName: string): Type {
 
 export interface TypeCollection {
   types: Array<Type>;
+  constructedArrayTypes?: { [key: string]: Type };
 }
 
-export interface Schema {
+export interface Schema extends TypeCollection {
 
   types: Array<Type>;
   services: Array<Service>;
@@ -220,6 +234,7 @@ export interface SchemaGraphNode {
   type: string; // Consider adding the enum ElementType here
   nodeId: string;
   subHeader?: string | null;
+  value?: any | null;
 }
 
 export interface SchemaGraphLink {

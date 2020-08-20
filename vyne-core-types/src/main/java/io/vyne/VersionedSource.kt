@@ -3,6 +3,7 @@ package io.vyne
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.github.zafarkhaja.semver.Version
 import com.google.common.annotations.VisibleForTesting
+import com.google.common.hash.Hashing
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import lang.taxi.CompilationError
@@ -22,6 +23,12 @@ data class VersionedSource(val name: String, val version: String, val content: S
       fun forIdAndContent(id: SchemaId, content: String): VersionedSource {
          val (name, version) = id.split(":")
          return VersionedSource(name, version, content)
+      }
+
+      fun nameAndVersionFromId(id:SchemaId):Pair<String,String> {
+         val parts = id.split(":")
+         require(parts.size == 2)
+         return parts[0] to parts[1]
       }
    }
 
@@ -43,6 +50,13 @@ data class VersionedSource(val name: String, val version: String, val content: S
          }
          return _semver ?: error("Semver failed to initialize")
       }
+
+   val contentHash:String = Hashing.sha256().newHasher()
+      .putString(content, java.nio.charset.Charset.defaultCharset())
+      .hash()
+      .toString()
+      .substring(0,6)
+
 }
 
 typealias SchemaId = String
@@ -56,7 +70,7 @@ data class ParsedSource(val source: VersionedSource, val errors: List<Compilatio
 
 fun TaxiPackageSources.versionedSources(): List<VersionedSource> {
    return this.sources.map { source -> source.asVersionedSource(this.project.version) }
-   }
+}
 
 fun SourceCode.asVersionedSource(version: String = VersionedSource.DEFAULT_VERSION.toString()): VersionedSource {
    return VersionedSource(this.sourceName, version, this.content)

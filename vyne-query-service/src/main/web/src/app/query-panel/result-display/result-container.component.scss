@@ -1,0 +1,120 @@
+@import "src/theme";
+
+.results-tree-invisible {
+  display: none;
+}
+
+.result-object-view {
+  margin-top: 1rem;
+  padding-right: 2rem;
+}
+
+
+app-results-table {
+  height: 300px;
+  display: block;
+}
+
+app-call-explorer {
+  margin-top: 1rem;
+  display: block;
+}
+
+.result-status {
+  display: flex;
+  align-items: center;
+
+  i {
+    margin-right: 8px;
+  }
+
+  padding: 8px;
+  //box-shadow: 0 1px 2px rgba(0, 0, 0, .6);
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.results-summary {
+  display: flex;
+  .spacer {
+    flex-grow: 1;
+  }
+  padding: 0 1rem;
+  background-color: rgba($light-purple-grey, 0.5);
+  border: 1px solid $light-purple-grey-300;
+}
+
+.unsuccessful-search {
+  background-color: #ffcf34;
+}
+
+.error-display {
+  background-color: $red-1;
+  color: white;
+}
+
+.success-display {
+  background-color: $green;
+  color: white;
+}
+
+.operation-container {
+  //border: 1px #5d7f92 solid;
+  padding: 8px;
+  border-left: 6px #7280d9 solid;
+  border-radius: 6px;
+  margin-bottom: 8px;
+
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .18);
+  background-color: rgba(236, 240, 242, 0.3);
+
+  .expand-button {
+    text-align: center;
+    font-size: 0.8rem;
+    color: $blue-grey-1;
+    cursor: pointer;
+
+    &:hover {
+      color: $dark-grey-1;
+    }
+
+    button {
+      width: unset;
+      height: unset;
+      line-height: unset;
+    }
+  }
+
+  .duration {
+    width: 100%;
+    font-size: 0.8rem;
+    color: $blue-grey-1;
+  }
+
+  .context-container {
+
+  }
+}
+
+.mat-card {
+  margin: 24px 0;
+}
+
+.downloadFileButton {
+  margin: 1rem .4rem;
+}
+
+.virtualScroll-viewport {
+  height: 100vh;
+  width: 100%;
+  contain: content;
+  margin-top: 2rem;
+  display: block;
+  position: relative;
+}
+.virtualScroll-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+// Use these for border colors of nesting levels:
+// #7280d9, #fe8736, #06b8ff, #00bbaf, #ff3769, #40c14a, #fc6363, #ffd600

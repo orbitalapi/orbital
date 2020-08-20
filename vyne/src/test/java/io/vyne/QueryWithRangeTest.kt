@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.winterbe.expekt.should
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.ConstrainedTypeNameQueryExpression
 import io.vyne.schemas.PropertyToParameterConstraint
@@ -28,7 +29,7 @@ class QueryWithRangeTest {
       }
       """.trimIndent()
       val (vyne, stub) = testVyne(schema)
-      stub.addResponse("findTrades", TypedInstance.from(vyne.type("Trade[]"), emptyList<Any>(), vyne.schema))
+      stub.addResponse("findTrades", TypedInstance.from(vyne.type("Trade[]"), emptyList<Any>(), vyne.schema, source = Provided))
 
       // We need simpler api for expressing date ranges
       vyne.query().find(ConstrainedTypeNameQueryExpression("Trade[]", listOf(

@@ -1,5 +1,7 @@
 taxi:
    schema-local-storage: /path/to/taxonomy
+   schema-recompile-interval-seconds: 3
+
 spring:
    application:
       name: file-schema-server
@@ -17,6 +19,17 @@ vyne:
    schema:
       name: ${spring.application.name}
       version: 0.1.0
+      publicationMethod: REMOTE
+      pollInterval: 5s
+      publishRetryInterval: 3s
+
+feign:
+   client:
+      config:
+         default:
+            connectTimeout: 5000
+            readTimeout: 5000
+
 server:
    port: 9301
 

@@ -1,5 +1,7 @@
 package io.vyne.cask.query
 
+import io.vyne.cask.api.CaskConfig
+import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ddl.caskRecordTable
@@ -11,6 +13,7 @@ import io.vyne.utils.log
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.QualifiedName
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import java.nio.file.Path
@@ -32,46 +35,116 @@ fun String.toLocalDateTime(): LocalDateTime {
    return ZonedDateTime.parse(this).toLocalDateTime()
 }
 
-// TODO TIME db type
-//fun String.toTime(): LocalDateTime {
-//   // Postgres api does not accept LocalTime so have to map to LocalDateTime
-//   return LocalDateTime.of(LocalDate.of(1970, 1, 1), LocalTime.parse(this, DateTimeFormatter.ISO_TIME))
-//}
-
 @Component
-class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider: SchemaProvider) {
+class CaskDAO(
+   private val jdbcTemplate: JdbcTemplate,
+   private val schemaProvider: SchemaProvider
+) {
    val postgresDdlGenerator = PostgresDdlGenerator()
 
-   fun findBy(versionedType: VersionedType, columnName: String, arg: String): List<Map<String, Any>> {
-      return timed("${versionedType.versionedName}.findBy${columnName}") {
-         val tableName = versionedType.caskRecordTable()
-         val originalTypeSchema = schemaProvider.schema()
-         val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
-         val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-         val findByArg = jdbcQueryArgumentType(fieldType, arg)
-         jdbcTemplate.queryForList(findByQuery(tableName, columnName), findByArg)
+   fun findAll(versionedType: VersionedType): List<Map<String, Any>> {
+      val name = "${versionedType.versionedName}.findAll"
+      return timed(name) {
+         doForAllTablesOfType(versionedType) { tableName ->
+            jdbcTemplate.queryForList(findAllQuery(tableName))
+         }
       }
    }
 
-   fun findOne(versionedType: VersionedType, columnName: String, arg: String): Map<String, Any> {
+   /**
+    * Finds all the tables that are present for a specific versioned type, executes the code block
+    * on each of them, and collates the responses.
+    *
+    * Note this is CLEARLY not the right way to do this long term.
+    * Tried but discounted approaches:
+    *  - UNION queries across the tables (requires tables to have the same set of columns)
+    *  - Full outer join across the tables (columns with the same name result in only one of the columns being returned)
+    *
+    *  Solutions to the above are possible, but require EITHER a dbtrip per table to determine the
+    *  column names, OR recompiling the schema for each versioned type, and attempting to recreate the
+    *  column name.  However, I don't have the time to implement either of these approaches right now, and
+    *  it's questionable how much more performant they'd be.
+    */
+   private fun doForAllTablesOfType(versionedType: VersionedType, function: (tableName: String) -> List<Map<String, Any>>): List<Map<String, Any>> {
+      val tableNames = findTableNamesForType(versionedType)
+      val results = tableNames.map { tableName -> function(tableName) }
+      return mergeResultSets(results)
+   }
+
+   private fun mergeResultSets(results: List<List<Map<String, Any>>>): List<Map<String, Any>> {
+      val allRecords = results.flatten()
+      // Note: Originally the plan was to inject null values in the sets for fields that aren't
+      // present in that record (because of the union of columns across multiple tables).
+      // However, turns out, the absense of the key is probably sufficient.
+      return allRecords
+   }
+
+   fun findBy(versionedType: VersionedType, columnName: String, arg: String): List<Map<String, Any>> {
+      val name = "${versionedType.versionedName}.findBy${columnName}"
+      return timed(name) {
+         doForAllTablesOfType(versionedType) { tableName ->
+            val originalTypeSchema = schemaProvider.schema()
+            val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
+            val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
+            val findByArg = jdbcQueryArgumentType(fieldType, arg)
+            jdbcTemplate.queryForList(findByQuery(tableName, columnName), findByArg)
+         }
+      }
+   }
+
+   fun findOne(versionedType: VersionedType, columnName: String, arg: String): Map<String, Any>? {
       return timed("${versionedType.versionedName}.findOne${columnName}") {
-         val tableName = versionedType.caskRecordTable()
-         val originalTypeSchema = schemaProvider.schema()
-         val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
-         val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-         val findOneArg = jdbcQueryArgumentType(fieldType, arg)
-         jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg).first()
+         val results = doForAllTablesOfType(versionedType) { tableName ->
+            val originalTypeSchema = schemaProvider.schema()
+            val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
+            val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
+            val findOneArg = jdbcQueryArgumentType(fieldType, arg)
+            jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg)
+         }
+         if (results.size > 1) {
+            log().error("Call to findOne() returned ${results.size} results.  Will pick the first")
+         }
+         results.firstOrNull() ?: emptyMap()
+      }
+   }
+
+   fun findMultiple(versionedType: VersionedType, columnName: String, arg: List<String>): List<Map<String, Any>> {
+      return timed("${versionedType.versionedName}.findMultiple${columnName}") {
+         doForAllTablesOfType(versionedType) { tableName ->
+            val originalTypeSchema = schemaProvider.schema()
+            val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
+            val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
+            val findMultipleArg = jdbcQueryArgumentsType(fieldType, arg)
+            val inPhrase = arg.joinToString(",") { "?" }
+            val argTypes = arg.map { Types.VARCHAR }.toTypedArray().toIntArray()
+            val argValues = findMultipleArg.toTypedArray()
+            val retVal = jdbcTemplate.queryForList(findInQuery(tableName, columnName, inPhrase), argValues, argTypes)
+            retVal
+         }
       }
    }
 
    fun findBetween(versionedType: VersionedType, columnName: String, start: String, end: String): List<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
          val field = fieldForColumnName(versionedType, columnName)
-         jdbcTemplate.queryForList(
-            findBetweenQuery(versionedType.caskRecordTable(), columnName),
-            jdbcQueryArgumentType(field, start),
-            jdbcQueryArgumentType(field, end))
+         doForAllTablesOfType(versionedType) { tableName ->
+            jdbcTemplate.queryForList(
+               findBetweenQuery(tableName, columnName),
+               jdbcQueryArgumentType(field, start),
+               jdbcQueryArgumentType(field, end))
+         }
       }
+   }
+
+   fun findTableNamesForType(qualifiedName:QualifiedName): List<String> {
+      return jdbcTemplate.queryForList<String>(
+         "SELECT tablename from cask_config where qualifiedtypename = ?",
+         listOf(qualifiedName.toString()).toTypedArray(),
+         String::class.java
+      )
+   }
+   fun findTableNamesForType(versionedType: VersionedType): List<String> {
+      return findTableNamesForType(versionedType.taxiType.toQualifiedName())
    }
 
    fun findAfter(versionedType: VersionedType, columnName: String, after: String): List<Map<String, Any>> {
@@ -98,12 +171,14 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       return (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
    }
 
+   private fun jdbcQueryArgumentsType(field: Field, args: List<String>) = args.map { jdbcQueryArgumentType(field, it) }
+
    private fun jdbcQueryArgumentType(field: Field, arg: String) = when (field.type.basePrimitive) {
       PrimitiveType.STRING -> arg
       PrimitiveType.ANY -> arg
       PrimitiveType.DECIMAL -> arg.toBigDecimal()
       PrimitiveType.DOUBLE -> arg.toBigDecimal()
-      PrimitiveType.INTEGER ->arg.toBigDecimal()
+      PrimitiveType.INTEGER -> arg.toBigDecimal()
       PrimitiveType.BOOLEAN -> arg.toBoolean()
       PrimitiveType.LOCAL_DATE -> arg.toLocalDate()
       // TODO TIME db column type
@@ -115,10 +190,21 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
 
    companion object {
       // TODO change to prepared statement, unlikely but potential for SQL injection via columnName
+      fun findAllQuery(tableName: String) = """SELECT * FROM $tableName"""
+      fun findInQuery(tableName: String, columnName: String, inPhrase: String) = """SELECT * FROM $tableName WHERE "$columnName" IN ($inPhrase)"""
       fun findByQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" = ?"""
       fun findBetweenQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" < ?"""
       fun findAfterQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ?"""
       fun findBeforeQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" < ?"""
+
+      internal fun selectTableList(tableNames: List<String>): String {
+         val indexTables = tableNames.mapIndexed { index, name -> "$name t$index" }
+         if (indexTables.size == 1) {
+            return indexTables[0]
+         }
+         return indexTables[0] + " " +
+            indexTables.drop(1).joinToString(separator = " ") { "full outer join $it on 0 = 1" }
+      }
    }
 
    // ############################
@@ -174,7 +260,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
          | readCachePath,
          | insertedAt) values ( ? , ?, ?, ? )""".trimMargin()
 
-   data class CaskMessage (
+   data class CaskMessage(
       val id: String,
       val qualifiedTypeName: String,
       val readCachePath: String,
@@ -198,37 +284,67 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       return jdbcTemplate.query("Select * from CASK_CONFIG", caskConfigRowMapper)
    }
 
-   fun createCaskConfig(versionedType: VersionedType, typeMigration: TypeMigration? = null) {
+   fun createCaskConfig(versionedType: VersionedType, typeMigration: TypeMigration? = null, exposeType:Boolean = false, exposeService:Boolean = true) {
+      // TODO : Migrate this to use CaskConfigRepository.
       timed("CaskDao.addCaskConfig", true, TimeUnit.MILLISECONDS) {
-         val type = schemaProvider.schema().toTaxiType(versionedType)
-         val deltaAgainstTableName = typeMigration?.predecessorType?.let { it.caskRecordTable() }
          val tableName = versionedType.caskRecordTable()
-         val qualifiedTypeName = type.qualifiedName
-         val versionHash = versionedType.versionHash
-         val sourceSchemaIds = versionedType.sources.map { it.id }
-         val sources = versionedType.sources.map { it.content }
-         val timestamp = Instant.now()
+         val exists = exists(tableName)
 
-         val count = jdbcTemplate.queryForObject("SELECT COUNT(*) from CASK_CONFIG WHERE tableName=?", arrayOf(tableName), Int::class.java)
-
-         if (count > 0) {
+         if (exists) {
             log().info("CaskConfig already exists for type=${versionedType.versionedName}, tableName=$tableName")
             return@timed
          }
+         val config = CaskConfig.forType(
+            type = versionedType,
+            tableName = versionedType.caskRecordTable(),
+            deltaAgainstTableName = typeMigration?.predecessorType?.let { it.caskRecordTable()  },
+            exposesType = exposeType,
+            exposesService = exposeService
+         )
 
          log().info("Creating CaskConfig for type=${versionedType.versionedName}, tableName=$tableName")
          jdbcTemplate.update { connection ->
             connection.prepareStatement(ADD_CASK_CONFIG).apply {
-               setString(1, tableName)
-               setString(2, qualifiedTypeName)
-               setString(3, versionHash)
-               setArray(4, connection.createArrayOf("text", sourceSchemaIds.toTypedArray()))
-               setArray(5, connection.createArrayOf("text", sources.toTypedArray()))
-               setTimestamp(6, Timestamp.from(timestamp))
-               if (deltaAgainstTableName != null) setString(7, deltaAgainstTableName) else setNull(7, Types.VARCHAR)
+               setString(1, config.tableName)
+               setString(2, config.qualifiedTypeName)
+               setString(3, config.versionHash)
+               setArray(4, connection.createArrayOf("text", config.sourceSchemaIds.toTypedArray()))
+               setArray(5, connection.createArrayOf("text", config.sources.toTypedArray()))
+               setTimestamp(6, Timestamp.from(config.insertedAt))
+               if (config.deltaAgainstTableName != null) setString(7, config.deltaAgainstTableName) else setNull(7, Types.VARCHAR)
+               setBoolean(8, config.exposesService)
+               setBoolean(9, config.exposesType)
             }
          }
       }
+   }
+
+   @Deprecated("Move to CaskConfigRepository")
+   fun countCasks(tableName: String): Int {
+      return jdbcTemplate.queryForObject("SELECT COUNT(*) from CASK_CONFIG WHERE tableName=?", arrayOf(tableName), Int::class.java)
+   }
+
+   @Deprecated("Move to CaskConfigRepository")
+   fun exists(tableName: String) = countCasks(tableName) > 0
+
+   // ############################
+   // ### COUNT Cask
+   // ############################
+   fun countCaskRecords(tableName: String): Int {
+      return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM $tableName", Int::class.java)
+   }
+
+   // ############################
+   // ### DELETE/EMPTY Cask
+   // ############################
+
+   fun deleteCask(tableName: String) {
+      jdbcTemplate.update("DELETE FROM CASK_CONFIG WHERE tableName=?", tableName)
+      jdbcTemplate.update("DROP TABLE ${tableName}")
+   }
+
+   fun emptyCask(tableName: String) {
+      jdbcTemplate.update("TRUNCATE ${tableName}")
    }
 
    private val ADD_CASK_CONFIG = """INSERT into CASK_CONFIG (
@@ -238,18 +354,11 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
         | sourceSchemaIds,
         | sources,
         | insertedAt,
-        | deltaAgainstTableName)
-        | values ( ? , ? , ?, ?, ?, ?, ?)""".trimMargin()
+        | deltaAgainstTableName,
+        | exposesService,
+        | exposesType    )
+        | values ( ? , ? , ?, ?, ?, ?, ?, ?, ?)""".trimMargin()
 
-   data class CaskConfig(
-      val tableName: String,
-      val qualifiedTypeName: String,
-      val versionHash: String,
-      val sourceSchemaIds: List<String>,
-      val sources: List<String>,
-      val deltaAgainstTableName: String?,
-      val insertedAt: Instant
-   )
 
    private val caskConfigRowMapper: (ResultSet, Int) -> CaskConfig = { rs: ResultSet, rowNum: Int ->
       CaskConfig(
@@ -259,7 +368,9 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
          listOf(*rs.getArray("sourceSchemaIds").array as Array<String>),
          listOf(*rs.getArray("sources").array as Array<String>),
          rs.getString("deltaAgainstTableName"),
-         rs.getTimestamp("insertedAt").toInstant()
+         rs.getTimestamp("insertedAt").toInstant(),
+         rs.getBoolean("exposesType"),
+         rs.getBoolean("exposesService")
       )
    }
 

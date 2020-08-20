@@ -3,18 +3,16 @@ package io.vyne.pipelines.orchestrator.runners
 import io.vyne.pipelines.orchestrator.OperationResult
 import io.vyne.pipelines.runner.PipelineInstanceReference
 import org.springframework.cloud.openfeign.FeignClient
-import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 
-@FeignClient("pipeline-runner")
+@FeignClient("\${vyne.pipelineRunnerService.name:pipeline-runner}")
 interface PipelineRunnerApi {
 
-
-   @PostMapping("/runner/pipelines", consumes = ["application/json"])
+   @PostMapping("/api/pipelines", consumes = ["application/json"])
    fun submitPipeline(@RequestBody pipeline: String): PipelineInstanceReference
-
-   @GetMapping("/runner/pipelines/{pipelineName}")
-   fun getPipeline(@PathVariable pipelineName: String): ResponseEntity<PipelineInstanceReference>
 
    // TODO might be removed as part of https://projects.notional.uk/youtrack/issue/LENS-159
    // See TestharnessController.kt for details

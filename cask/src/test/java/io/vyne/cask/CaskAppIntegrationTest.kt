@@ -4,16 +4,15 @@ import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
-import io.vyne.schemaStore.SchemaStoreClient
-import io.vyne.spring.SchemaPublicationMethod
-import io.vyne.spring.VyneSchemaPublisher
+import io.vyne.cask.query.generators.OperationGeneratorConfig
+import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.log
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.jdbc.DataSourceBuilder
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
@@ -31,33 +30,38 @@ import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.*
 import javax.annotation.PreDestroy
+import javax.sql.DataSource
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
    properties = [
       "spring.main.allow-bean-definition-overriding=true",
-      "eureka.client.enabled=false"
+      "eureka.client.enabled=false",
+      "vyne.schema.publicationMethod=LOCAL"
    ])
-@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED)
 @ActiveProfiles("test")
+@EnableConfigurationProperties(OperationGeneratorConfig::class)
 class CaskAppIntegrationTest {
    @LocalServerPort
    val randomServerPort = 0
 
    @Autowired
-   lateinit var schemaStoreClient: SchemaStoreClient
+   lateinit var schemaPublisher: SchemaPublisher
 
 
    companion object {
       lateinit var pg: EmbeddedPostgres
-
       @BeforeClass
       @JvmStatic
       fun setupDb() {
          // port used in the config by the Flyway, hence hardcoded
          pg =  EmbeddedPostgres.builder().setPort(6662).start()
+         pg.postgresDatabase.connection
       }
 
       @AfterClass
@@ -72,11 +76,7 @@ class CaskAppIntegrationTest {
 
       @Bean
       @Primary
-      fun jdbcTemplate(): JdbcTemplate {
-         val dataSource = DataSourceBuilder.create()
-            .url("jdbc:postgresql://localhost:${pg.port}/postgres")
-            .username("postgres")
-            .build()
+      fun jdbcTemplate(dataSource: DataSource): JdbcTemplate {
          val jdbcTemplate = JdbcTemplate(dataSource)
          jdbcTemplate.execute(TableMetadata.DROP_TABLE)
          return jdbcTemplate
@@ -95,12 +95,12 @@ Date,Symbol,Open,High,Low,Close
 2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
 2020-03-19,NULL,6300,6330,6186.08,6235.2
 2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
-2020-03-19,BTCUSD,6300,6330,6186.08,6235.2""".trimIndent()
+2020-03-19,ETHUSD,6300,6330,6186.08,6235.2""".trimIndent()
 
    @Test
    fun canIngestContentViaWebsocketConnection() {
       // mock schema
-      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
@@ -124,9 +124,41 @@ Date,Symbol,Open,High,Low,Close
    }
 
    @Test
+   fun canIngestLargeContentViaWebsocketConnection() {
+      var caskRequest = """Date,Symbol,Open,High,Low,Close"""
+      for(i in 1..10000){
+         caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
+      }
+      caskRequest.length.should.be.above(20000) // Default websocket buffer size is 8096
+
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val output: EmitterProcessor<String> = EmitterProcessor.create()
+      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+
+      val wsConnection = client.execute(uri)
+      { session ->
+         session.send(Mono.just(session.textMessage(caskRequest)))
+            .thenMany(session.receive()
+               .log()
+               .map(WebSocketMessage::getPayloadAsText)
+               .subscribeWith(output))
+            .then()
+      }.subscribe()
+
+      StepVerifier
+         .create(output.take(1).timeout(Duration.ofSeconds(10)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 10000 records"}""")
+         .verifyComplete()
+         .run { wsConnection.dispose() }
+   }
+
+   @Test
    fun canIngestContentViaRestEndpoint() {
       // mock schema
-      schemaStoreClient.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
       val client = WebClient
          .builder()
@@ -135,12 +167,91 @@ Date,Symbol,Open,High,Low,Close
 
       val response = client
          .post()
-         .uri("/api/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
          .bodyValue(caskRequest)
          .retrieve()
          .bodyToMono(String::class.java)
          .block()
 
-         response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+      response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
    }
+
+   @Test
+   fun canIngestLargeContentViaRestEndpoint() {
+      var caskRequest = """Date,Symbol,Open,High,Low,Close"""
+      for(i in 1..10000){
+         caskRequest += "\n2020-03-19,BTCUSD,6300,6330,6186.08,6235.2"
+      }
+      caskRequest.length.should.be.above(20000)
+
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      val response = client
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+
+      response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 10000 records"}""")
+   }
+
+   @Test
+   fun canQueryForCaskData() {
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      client
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+
+      client
+         .post()
+         .uri("/api/cask/OrderWindowSummaryCsv/symbol/ETHBTC")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("[]")
+
+      val result = client
+         .post()
+         .uri("/api/cask/OrderWindowSummaryCsv/symbol/ETHUSD")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToFlux(OrderWindowSummaryDto::class.java)
+         .collectList()
+         .block()
+
+      result.should.not.be.empty
+
+      // assert date coming back from Postgresql is equal to what was sent to cask for ingestion
+      result[0].orderDate
+         .toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+         .should.be.equal(LocalDate.parse("2020-03-19"))
+   }
+
+   data class OrderWindowSummaryDto(
+      val orderDate: Date,
+      val symbol: String,
+      val open: Double,
+      val close: Double
+   )
 }

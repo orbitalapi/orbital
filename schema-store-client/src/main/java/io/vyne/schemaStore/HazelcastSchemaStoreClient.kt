@@ -17,7 +17,6 @@ import lang.taxi.utils.log
 import org.springframework.context.ApplicationEventPublisher
 import java.io.Serializable
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 
 private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventPublisher, val invalidationListener: SchemaSetInvalidatedListener) : MembershipListener, Serializable, EntryAddedListener<SchemaSetCacheKey, SchemaSet>, EntryUpdatedListener<SchemaSetCacheKey, SchemaSet> {
@@ -47,7 +46,7 @@ private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventP
    }
 
    override fun entryUpdated(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
-      log().info("SchemaSet has changed: ${event.value.toString()} - dispatching event")
+      log().info("SchemaSet has changed: (${event.oldValue} ==> ${event.value}) - dispatching event")
       eventPublisher.publishEvent(SchemaSetChangedEvent(event.oldValue, event.value))
 
    }
@@ -59,7 +58,9 @@ interface SchemaSetInvalidatedListener {
 
 
 internal object SchemaSetCacheKey : Serializable
-class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, private val schemaValidator: SchemaValidator = TaxiSchemaValidator(), val eventPublisher: ApplicationEventPublisher) : SchemaStoreClient, SchemaSetInvalidatedListener {
+class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
+                                 private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
+                                 private val eventPublisher: ApplicationEventPublisher) : SchemaStoreClient, SchemaSetInvalidatedListener {
 
    private val generationCounter = hazelcast.getAtomicLong("schemaGenerationIndex")
    private val schemaSetHolder: IMap<SchemaSetCacheKey, SchemaSet> = hazelcast.getMap("schemaSet")
@@ -108,7 +109,9 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
             validationResult.a.second to Either.left(validationResult.a.first)
          }
       }
-      parsedSources.forEach { parsedSource ->
+      parsedSources
+         .filter { versionedSources.contains(it.source) }
+         .forEach { parsedSource ->
          // TODO : We now allow storing schemas that have errors.
          // This is because if schemas depend on other schemas that go away, (ie., from a service
          // that goes down).
@@ -120,6 +123,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
          // overwrite a valid source with on that contains compilation errors.
          // Deal with that if the scenario arises.
          val cachedSource = CacheMemberSchema(hazelcast.cluster.localMember.uuid, parsedSource)
+         log().info("Member=${hazelcast.cluster.localMember.uuid} added new schema ${parsedSource.source.id} to it's cache")
          schemaSourcesMap[parsedSource.source.id] = cachedSource
       }
       rebuildSchemaAndWriteToCache()
@@ -180,7 +184,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
          // Note: This should very rarely get called,
          // as we're actively rebuilding the schemaSet on invalidation now (whereas previously
          // we deferred that)
-         log().warn("SchemaSet was not present, so computing, however this shouldn't happen")
+         log().warn("${hazelcast.cluster.localMember.uuid} SchemaSet was not present, so computing, however this shouldn't happen")
          rebuildSchemaAndWriteToCache()
       }
 
@@ -191,7 +195,7 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance, priva
          when {
             existingSchemaSet != null && existingSchemaSet.id == schemaSetFromHazelcast.id -> existingSchemaSet
             else -> {
-               log().warn("Initializing local copy of schema from Hazelcast.  This is expensive, let's not do this too much")
+               log().warn("${hazelcast.cluster.localMember.uuid} Initializing local copy of schema from Hazelcast.  This is expensive, let's not do this too much")
                schemaSetFromHazelcast
             }
          }
@@ -235,7 +239,7 @@ class HazelcastSchemaPurger(private val hazelcastMap: IMap<SchemaId, CacheMember
       hazelcastMap.removeAll(object : Predicate<SchemaId, CacheMemberSchema> {
          override fun apply(mapEntry: MutableMap.MutableEntry<SchemaId, CacheMemberSchema>): Boolean {
             return if (currentClusterMembers.none { it == mapEntry.value.cacheMemberId }) {
-               log().info("Cluster member for schema ${mapEntry.key} has gone away, and it's schema is being removed")
+               log().info("Member=${mapEntry.value.cacheMemberId} disconnected, removing schema=${mapEntry.key} from cache")
                true
             } else {
                false

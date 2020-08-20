@@ -1,4 +1,5 @@
 @import "src/theme";
+@import "src/toolbar";
 
 .title-bar {
   background-color: $light-purple-grey;
@@ -14,6 +15,33 @@
     line-height: unset !important;
   }
   padding: 10px;
+}
+
+::ng-deep .mat-drawer-content {
+  // Was getting unnessary horizontal scrollbars in the drawer area.
+  overflow-x: hidden;
+}
+
+mat-sidenav-container {
+  height: 100%;
+}
+
+.actions-container {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .container {
+    flex-grow: 1;
+  }
 }
 
 .container {
@@ -45,3 +73,7 @@
   }
 }
 
+.drawer-content {
+  margin: 2rem 3rem;
+  width: 40vw;
+}

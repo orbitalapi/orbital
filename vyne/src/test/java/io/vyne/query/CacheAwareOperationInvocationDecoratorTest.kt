@@ -1,6 +1,7 @@
 package io.vyne.query
 
 import com.nhaarman.mockito_kotlin.*
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.graph.operationInvocation.OperationInvoker
@@ -27,7 +28,7 @@ class CacheAwareOperationInvocationDecoratorTest {
       val params = listOf(
          element = Pair(
             first = Parameter(type),
-            second = TypedInstance.from(type, null, mock())
+            second = TypedInstance.from(type, null, mock(), source = Provided)
          )
       )
       whenever(mockOperationInvoker.invoke(any(), any(), any(), any())).thenReturn(mockedTypeInstance)

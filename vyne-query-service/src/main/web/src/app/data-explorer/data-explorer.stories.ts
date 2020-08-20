@@ -45,11 +45,13 @@ storiesOf('Data Explorer', module)
     return {
       template: `<div style="margin: 20px"><app-csv-viewer [source]="data" [firstRowAsHeaders]="true"></app-csv-viewer></div>`,
       props: {
-        data: [
-          ['Column A', 'Column B', 'Column C'],
-          ['The quick', 'brown fox', 'jumps over'],
-          ['the lazy', 'but very cute', 'pupppppppy!']
-        ]
+        data: {
+          records: [
+            ['The quick', 'brown fox', 'jumps over'],
+            ['the lazy', 'but very cute', 'pupppppppy!']
+          ],
+          headers: ['Col 1', 'Col 2', 'Col 3']
+        }
       }
     };
   })
@@ -57,20 +59,6 @@ storiesOf('Data Explorer', module)
     return {
       template: `<div style="margin: 20px"><app-file-extension-icon extension="json"></app-file-extension-icon> </div>`,
       props: {}
-    };
-  })
-  .add('typed instance panel', () => {
-    return {
-      template: `<div style="margin: 20px">
-        <app-typed-instance-panel [instance]="value" [type]="testType"></app-typed-instance-panel>
-    </div>`,
-      props: {
-        testType: sampleOrderEventType,
-        value: {
-          'typeName': 'bank.orders.OrderEventType',
-          'value': 'Open'
-        }
-      }
     };
   })
   .add('cask panel', () => {

@@ -1,0 +1,45 @@
+@import "src/theme";
+
+.cask-config-row {
+  padding: 8px;
+  border: 1px solid transparent;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  font-size: 0.8rem;
+
+  .row-name {
+    margin-left: 3px
+  }
+
+  &:hover {
+    background-color: white;
+    border: 1px solid $vyne-lilac;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+}
+
+
+.badge {
+  background-color: rgba($vyne-lilac, 0.2);
+  color: $vyne-lilac;
+  font-weight: bold;
+  padding: 2px 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.cask-configs-container {
+
+  .cask-typename {
+    display: flex;
+    margin-bottom: 4px;
+    font-weight: bold;
+
+    .badges {
+      margin-left: 8px;
+    }
+  }
+
+
+}

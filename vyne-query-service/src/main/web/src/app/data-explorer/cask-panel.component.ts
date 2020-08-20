@@ -56,7 +56,7 @@ export class CaskPanelComponent {
   resultMessage: string;
 
   get url() {
-    let caskUrl = `${this.caskServiceUrl}/cask/${this.format}/${this.targetTypeName}`;
+    let caskUrl = `${this.caskServiceUrl}/api/ingest/${this.format}/${this.targetTypeName}`;
     if (this.format === 'csv') {
       let csvOptionsQueryString = `?csvDelimiter=${this.csvOptions.separator}&csvFirstRecordAsHeader=${this.csvOptions.firstRowAsHeader}`;
       if (this.csvOptions.nullValueTag) {
@@ -73,10 +73,10 @@ export class CaskPanelComponent {
     this.caskService.publishToCask(this.url, this.contents)
       .subscribe(result => {
         this.loading = false;
-        this.resultMessage = 'Success';
+        this.resultMessage = result.result + (result.result === 'REJECTED' ?   `: ${result.message}` : '' );
       }, error => {
         this.loading = false;
-        this.resultMessage = error.message;
+        this.resultMessage = error.error ? `Error: ${error.error.message}` : error.message;
       });
   }
 }

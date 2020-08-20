@@ -5,13 +5,31 @@ spring:
 server:
    port: 9610
 
-service:
-   cask:
-      name: cask
-
 feign:
    client:
       config:
          default:
             connectTimeout: 5000
             readTimeout: 5000
+
+eureka:
+   uri: http://127.0.0.1:9022
+   client:
+      registryFetchIntervalSeconds: 1
+      initialInstanceInfoReplicationIntervalSeconds: 5
+      serviceUrl:
+         defaultZone: ${eureka.uri}/eureka/
+   instance:
+      leaseRenewalIntervalInSeconds: 2
+      leaseExpirationDurationInSeconds: 5
+
+vyne:
+   queryService:
+      name: query-service
+   caskService:
+      name: cask
+   queryServiceUrl: http://${vyne.queryService.name}
+   schema:
+        publicationmethod: REMOTE
+        pollInterval: 5s
+        publishRetryInterval: 3s

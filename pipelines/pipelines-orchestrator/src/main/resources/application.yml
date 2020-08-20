@@ -1,6 +1,6 @@
 spring:
    application:
-      name: pipeline-orchestrator
+      name: pipelines-orchestrator
 
 server:
    port: 9600
@@ -13,3 +13,15 @@ feign:
          default:
             connectTimeout: 5000
             readTimeout: 5000
+
+eureka:
+   uri: http://127.0.0.1:9022
+   client:
+      registryFetchIntervalSeconds: 1
+      initialInstanceInfoReplicationIntervalSeconds: 5
+      serviceUrl:
+         defaultZone: ${eureka.uri}/eureka/
+   instance:
+      leaseRenewalIntervalInSeconds: 2
+      leaseExpirationDurationInSeconds: 5
+

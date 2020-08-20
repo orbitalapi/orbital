@@ -14,6 +14,7 @@ import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.AttributePath
 import lang.taxi.types.EnumType
+import lang.taxi.types.Formula
 import lang.taxi.types.PrimitiveType
 import lang.taxi.utils.takeHead
 
@@ -98,15 +99,7 @@ data class Type(
    // taxiType - the antlr classes make equailty hard, and not meaningful in this context
    // typeCache - screws with equality, and not meaningful
    private val equality = Equality(this,
-      Type::name,
-      Type::attributes,
-      Type::modifiers,
-      Type::metadata,
-      Type::aliasForTypeName,
-      Type::inheritsFromTypeNames,
-      Type::enumValues,
-      Type::typeParametersTypeNames,
-      Type::typeDoc)
+      Type::name)
 
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()
@@ -119,6 +112,20 @@ data class Type(
 
    @JsonView(TypeFullView::class)
    val hasFormat = format != null
+
+   @JsonView(TypeFullView::class)
+   val isCalculated = taxiType.calculation != null
+
+   @get:JsonIgnore
+   val calculation: Formula?
+      get() = taxiType.calculation
+
+   @get:JsonView(TypeFullView::class)
+   val unformattedTypeName: QualifiedName? by lazy {
+      if (hasFormat) {
+         resolveUnderlyingFormattedType().qualifiedName
+      } else null
+   }
 
    @get:JsonIgnore
    val inherits: List<Type> by lazy {
@@ -233,6 +240,11 @@ data class Type(
          underlyingType.attributes.isEmpty() && !underlyingType.isCollection
       }
 
+   }
+
+   @get:JsonIgnore
+   val defaultValues: Map<AttributeName, TypedInstance>? by lazy {
+      this.typeCache.defaultValues(this.name)
    }
 
    fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {

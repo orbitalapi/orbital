@@ -1,9 +1,6 @@
 package io.vyne.cask.query
 
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.*
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
 import io.vyne.schemas.taxi.TaxiSchema
@@ -42,6 +39,10 @@ class CaskDAOTest {
    @Before
    fun setUp() {
       caskDAO = CaskDAO(mockJdbcTemplate, SimpleTaxiSchemaProvider(schema))
+      whenever(mockJdbcTemplate.queryForList(
+         eq("SELECT tablename from cask_config where qualifiedtypename = ?"),
+         eq(listOf(versionedType.fullyQualifiedName).toTypedArray()),
+         eq(String::class.java))).thenReturn(listOf("rderWindowSummary_f1b588_de3f20"))
    }
 
    @Test
@@ -126,5 +127,12 @@ class CaskDAOTest {
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("SELECT * FROM rderWindowSummary_f1b588_de3f20 WHERE \"timestamp\" = ?")
       argsCaptor.firstValue.should.equal("2020-01-01T12:00:01.000Z".toLocalDateTime())
+   }
+
+   @Test
+   fun `select clauses generate outer joins for all tables`() {
+      CaskDAO.selectTableList(listOf("table1")).should.equal("table1 t0")
+      CaskDAO.selectTableList(listOf("table1", "table2")).should.equal("table1 t0 full outer join table2 t1 on 0 = 1")
+      CaskDAO.selectTableList(listOf("table1", "table2", "table3")).should.equal("table1 t0 full outer join table2 t1 on 0 = 1 full outer join table3 t2 on 0 = 1")
    }
 }

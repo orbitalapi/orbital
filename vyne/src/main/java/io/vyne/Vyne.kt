@@ -1,6 +1,6 @@
 package io.vyne
 
-import io.vyne.models.TypedInstance
+import io.vyne.models.*
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.query.*
 import io.vyne.query.graph.Algorithms
@@ -48,13 +48,13 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
-   fun query(vyneQlQuery: VyneQLQueryString): QueryResult {
+   fun query(vyneQlQuery: VyneQLQueryString, resultMode: ResultMode = ResultMode.SIMPLE): QueryResult {
       val vyneQuery = VyneQlCompiler(vyneQlQuery, this.schema.taxi).query()
-      return query(vyneQuery)
+      return query(vyneQuery, resultMode = resultMode)
    }
 
-   fun query(vyneQl: VyneQlQuery): QueryResult {
-      var queryContext = query(additionalFacts = vyneQl.facts.values.toSet())
+   fun query(vyneQl: VyneQlQuery, resultMode: ResultMode): QueryResult {
+      var queryContext = query(additionalFacts = vyneQl.facts.values.toSet(), resultMode = resultMode)
       queryContext = vyneQl.projectedType?.let { queryContext.projectResultsTo(it.toVyneQualifiedName()) } ?: queryContext
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
