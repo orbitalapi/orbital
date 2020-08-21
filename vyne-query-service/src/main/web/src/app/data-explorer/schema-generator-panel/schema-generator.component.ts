@@ -21,7 +21,8 @@ export class SchemaGeneratorComponent implements OnInit {
   generateSchema() {
     const assignedTypes = this.headersWithAssignedTypes.filter(item => item.typeName.length);
     const content = `model ${this.assignedTypeName} {
-    ${assignedTypes.map((type, index) => `${index > 0 ? '\n\t' : ''}${type.fieldName} : ${type.typeName}`)}\n}`;
+    ${assignedTypes.map((type, index) =>
+      `${index > 0 ? '\n\t' : ''}${type.fieldName} : ${type.typeName}  ${type.format ? `(@format = "${type.format && type.format}"` : ''})`)}\n}`;
 
     this.sources = [{content: content, name: '', version: ''}];
   }

@@ -1,9 +1,7 @@
 import {Component} from '@angular/core';
 import { IHeaderAngularComp } from 'ag-grid-angular';
 import {IHeaderParams} from 'ag-grid-community';
-import {CsvViewerComponent} from './csv-viewer.component';
-import {UploadFile} from "ngx-file-drop";
-import {CustomCsvTableHeaderService} from "../services/custom-csv-table-header.service";
+import {CustomCsvTableHeaderService} from '../services/custom-csv-table-header.service';
 
 export interface CustomHeader {
   typeName: string;

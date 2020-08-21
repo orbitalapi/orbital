@@ -33,6 +33,14 @@ $toolbar-height: 5rem;
   }
 }
 
+.info-panel {
+  background-color: rgba($blueish, 0.3);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid $blueish;
+}
+
+
 mat-button-toggle-group.selector-button {
   border-radius: 20px;
 }
