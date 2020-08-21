@@ -135,4 +135,48 @@ class CaskDAOTest {
       CaskDAO.selectTableList(listOf("table1", "table2")).should.equal("table1 t0 full outer join table2 t1 on 0 = 1")
       CaskDAO.selectTableList(listOf("table1", "table2", "table3")).should.equal("table1 t0 full outer join table2 t1 on 0 = 1 full outer join table3 t2 on 0 = 1")
    }
+
+   @Test
+   fun `find Between should query all relevant tables for given type`() {
+      // given
+      val start = "2020-01-01T12:00:01.000Z"
+      val end = "2020-10-01T12:00:01.000Z"
+      whenever(mockJdbcTemplate.queryForList(
+         eq("SELECT tablename from cask_config where qualifiedtypename = ?"),
+         eq(listOf(versionedType.fullyQualifiedName).toTypedArray()),
+         eq(String::class.java))).thenReturn(listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30"))
+      caskDAO.findBetween(versionedType, "timestamp", start, end)
+      val statementCaptor = argumentCaptor<String>()
+      val startDateCaptor = argumentCaptor<Any>()
+      val endDateCaptor = argumentCaptor<Any>()
+      verify(mockJdbcTemplate, times(2)).queryForList(statementCaptor.capture(), startDateCaptor.capture(), endDateCaptor.capture())
+   }
+
+   @Test
+   fun `find After should query all relevant tables for given type`() {
+      // given
+      val date = "2020-01-01T12:00:01.000Z"
+      whenever(mockJdbcTemplate.queryForList(
+         eq("SELECT tablename from cask_config where qualifiedtypename = ?"),
+         eq(listOf(versionedType.fullyQualifiedName).toTypedArray()),
+         eq(String::class.java))).thenReturn(listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30"))
+      caskDAO.findAfter(versionedType, "timestamp", date)
+      val statementCaptor = argumentCaptor<String>()
+      val argCaptor = argumentCaptor<Any>()
+      verify(mockJdbcTemplate, times(2)).queryForList(statementCaptor.capture(), argCaptor.capture())
+   }
+
+   @Test
+   fun `find Before should query all relevant tables for given type`() {
+      // given
+      val date = "2020-01-01T12:00:01.000Z"
+      whenever(mockJdbcTemplate.queryForList(
+         eq("SELECT tablename from cask_config where qualifiedtypename = ?"),
+         eq(listOf(versionedType.fullyQualifiedName).toTypedArray()),
+         eq(String::class.java))).thenReturn(listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30"))
+      caskDAO.findBefore(versionedType, "timestamp", date)
+      val statementCaptor = argumentCaptor<String>()
+      val argCaptor = argumentCaptor<Any>()
+      verify(mockJdbcTemplate, times(2)).queryForList(statementCaptor.capture(), argCaptor.capture())
+   }
 }
