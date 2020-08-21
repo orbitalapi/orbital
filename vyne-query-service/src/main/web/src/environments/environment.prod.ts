@@ -4,5 +4,5 @@ export const environment = {
   queryServiceUrl: `//${window.location.host}`,
   caskServiceUrl: `//${window.location.host}:8800`,
   showPolicyManager: false,
-  showGenerateSchema: false
+  showGenerateSchema: true
 };

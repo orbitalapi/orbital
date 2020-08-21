@@ -1,13 +1,16 @@
-import {Component, EventEmitter, Input, Output, ViewEncapsulation} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {ParsedCsvContent} from '../services/types.service';
 import {MatDialog, MatDialogConfig} from '@angular/material/dialog';
-import {AssignTypeToColumnDialogComponent} from './assign-types-dialog/assign-type-to-column-dialog.component';
-import {QualifiedName, Schema} from '../services/schema';
+import {
+  AssignedTypeData,
+  AssignTypeToColumnDialogComponent
+} from './assign-types-dialog/assign-type-to-column-dialog.component';
+import {Schema} from '../services/schema';
 import {GridHeaderActionsComponent} from './custom-csv-table-header';
 import {Subscription} from 'rxjs';
 import {CustomCsvTableHeaderService} from '../services/custom-csv-table-header.service';
 
-interface ColumnDefs {
+export interface AgGridColumnDefinitions {
   headerName: string;
   field: string;
 }
@@ -15,6 +18,7 @@ interface ColumnDefs {
 export interface HeaderTypes {
   fieldName: string;
   typeName: string;
+  format?: string;
 }
 
 @Component({
@@ -24,20 +28,16 @@ export interface HeaderTypes {
       style="width: 100%; height: 60vh;"
       class="ag-theme-alpine"
       [rowData]="data"
-      (gridReady)="onGridReady($event)"
-      [gridOptions]="gridOptions"
       [columnDefs]="columnDefs">
     </ag-grid-angular>
   `,
   styleUrls: ['./csv-viewer.component.scss'],
-  // Note: Ag-Grid component cannot retrieve Css classes unless encapsulation is set to None.
-  encapsulation: ViewEncapsulation.None
 })
 
 export class CsvViewerComponent {
   constructor(private dialog: MatDialog, private customCsvTableHeaderService: CustomCsvTableHeaderService) {
     this.subscription = this.customCsvTableHeaderService.getFieldName().subscribe(fieldName => {
-      this.handleTypeAssignment(fieldName)
+      this.renderAddTypePopup(fieldName);
     });
   }
 
@@ -47,48 +47,38 @@ export class CsvViewerComponent {
   private _source: ParsedCsvContent;
   private _isTypeNamePanelVisible: boolean;
   private _isGenerateSchemaPanelVisible: boolean;
-  gridOptions = {headerHeight: 50};
   rowData: string[][] = [];
   headers: string[] = [];
-  columnDefs: ColumnDefs[] = [];
+  columnDefs: AgGridColumnDefinitions[] = [];
   data: {}[] = [];
   headersWithAssignedTypes: HeaderTypes[] = [];
   @Output() headerTypesChanged: EventEmitter<HeaderTypes[]> = new EventEmitter<HeaderTypes[]>();
-  private gridApi;
-  private gridColumnApi;
   subscription: Subscription;
 
-
-  handleTypeAssignment(fieldName) {
-    const selectedColumnName = fieldName;
+  renderAddTypePopup(selectedColumnName: string) {
     const dialogConfig = new MatDialogConfig();
 
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
     dialogConfig.data = {};
-    if (selectedColumnName) {
       const dialogRef = this.dialog.open(AssignTypeToColumnDialogComponent, {
-        data: {schema: this.schema}
+        data: {schema: this.schema},
+        panelClass: 'add-type-panel-container'
       });
-      dialogRef.afterClosed().subscribe((result: QualifiedName) => {
+      dialogRef.beforeClosed().subscribe((result: AssignedTypeData) => {
         if (result) {
-          dialogConfig.data = this.handleTypeAssignments(selectedColumnName, result.fullyQualifiedName);
+          this.handleTypeAssignments(selectedColumnName, result.targetType.fullyQualifiedName, result.format);
           this.getColumnDefinitions();
         }
       });
-    }
   }
 
-  onGridReady(params) {
-    this.gridApi = params.api;
-    this.gridColumnApi = params.columnApi;
-  }
-
-  private handleTypeAssignments(selectedColumnName: string, changedType: string) {
+  private handleTypeAssignments(selectedColumnName: string, changedTypeName: string, format?: string) {
     this.headersWithAssignedTypes = this.headersWithAssignedTypes.map((item) => {
       return {
         fieldName: item.fieldName,
-        typeName: !item.typeName ? item.fieldName === selectedColumnName ? changedType : '' : item.typeName
+        typeName: !item.typeName ? item.fieldName === selectedColumnName ? changedTypeName : '' : item.typeName,
+        format: !item.format ? (item.fieldName === selectedColumnName ? (format || '') : '' ) : item.format
       };
     });
     this.headerTypesChanged.emit(this.headersWithAssignedTypes);

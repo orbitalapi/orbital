@@ -40,6 +40,8 @@ export interface Type extends Documented {
   collectionType: Type | null;
   modifiers: Array<Modifier>;
   isScalar: boolean;
+  format: string;
+  hasFormat: boolean;
   aliasForType: QualifiedName;
   enumValues: Array<EnumValues>;
   sources: Array<VersionedSource>;
