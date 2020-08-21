@@ -36,6 +36,7 @@ import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
+import kotlin.math.sign
 
 fun String.toLocalDate(): LocalDate {
    return LocalDate.parse(this)
@@ -53,6 +54,8 @@ class CaskDAO(
    dataSourceProps: DataSourceProperties
 ) {
    private val largeObjectDataSource: DataSource
+   val postgresDdlGenerator = PostgresDdlGenerator()
+
    init {
       largeObjectDataSource = HikariDataSource()
       largeObjectDataSource.driverClassName = "org.postgresql.Driver"
@@ -62,7 +65,6 @@ class CaskDAO(
       largeObjectDataSource.isAutoCommit = false
       largeObjectDataSource.poolName = "LargeObject_CONNECTION_POOL"
    }
-   val postgresDdlGenerator = PostgresDdlGenerator()
 
    fun findAll(versionedType: VersionedType): List<Map<String, Any>> {
       val name = "${versionedType.versionedName}.findAll"
@@ -280,10 +282,6 @@ class CaskDAO(
             val type = schemaProvider.schema().toTaxiType(versionedType)
             val qualifiedTypeName = type.qualifiedName
             val insertedAt = Instant.now()
-
-            // TODO Devrim cleanup
-//         val conn = jdbcTemplate.getCustomConnection()
-            //conn = largeObjectDataSource.connection
             requireNotNull(conn) { "Connection could not be obtained." }
             val pgConn = conn?.unwrap(PGConnection::class.java)
             requireNotNull(pgConn) { "Connection could not be obtained." }
@@ -296,11 +294,22 @@ class CaskDAO(
             var stepSize = 0
             var totalSize = 0
 
-            input.subscribe {
-               stepSize = it.read(buf, 0, chunkSize)
+            input.doOnEach { signal ->
+               stepSize = signal.get()?.let {
+                  it.read(buf, 0, chunkSize)
+               } ?: 0
                obj.write(buf, 0, stepSize)
                totalSize += stepSize
             }
+               .doOnComplete {
+                  conn.close()
+               }
+               .doOnError {
+                  log().error("${it.message}")
+                  if (!conn.isClosed) {
+                     conn.close()
+                  }
+               }
 
             conn.prepareStatement(ADD_CASK_MESSAGE).apply {
                setString(1, id)
@@ -315,9 +324,8 @@ class CaskDAO(
 
             CaskMessage(id, qualifiedTypeName, oid, insertedAt)
          }
-      }
-      finally {
-         if(!conn.isClosed) {
+      } finally {
+         if (!conn.isClosed) {
             conn.close()
          }
       }
