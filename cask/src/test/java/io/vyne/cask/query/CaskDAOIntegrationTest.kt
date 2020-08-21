@@ -8,15 +8,20 @@ import com.zaxxer.hikari.HikariDataSource
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
+import io.vyne.cask.format.csv.CoinbaseOrderSchema
+import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.Ingester
 import io.vyne.cask.ingest.IngestionStream
+import io.vyne.cask.ingest.StreamSource
+import io.vyne.cask.ingest.TestSchema
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.log
+import org.apache.commons.csv.CSVFormat
 import org.apache.commons.io.FileUtils
 import org.flywaydb.core.Flyway
 import org.junit.Before
@@ -30,6 +35,7 @@ import reactor.core.publisher.Flux
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.net.URI
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
@@ -164,13 +170,66 @@ class CaskDAOIntegrationTest {
       FileUtils.cleanDirectory(folder.root)
    }
 
+   @Test
+   fun `can ingest large data`() {
+      createLargeFile()
+
+      val taxiSchema = CoinbaseOrderSchema.schemaV3
+      val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())
+      val resource = File(folder.root, "largeGuts.csv").toURI()
+
+      ingestDataCsv(resource, versionedType, taxiSchema)
+
+      val records = caskDao.findAll(versionedType)
+      records.should.have.size(40)
+
+//      FileUtils.cleanDirectory(folder.root)
+   }
+
+   private fun createLargeFile() {
+      val file = File(folder.root, "largeGuts.csv")
+      file.bufferedWriter().use {
+         it.write("Date,Symbol,Open,High,Low,Close,Volume BTC,Volume USD${System.lineSeparator()}")
+         for (i in 1..40000000) {
+            it.write("2020-03-19 11:12:13,BTCUSD,6300,6330,6186.08,6235.2,817.78,5115937.58${System.lineSeparator()}")
+         }
+         it.close()
+      }
+   }
+
    private fun ingestData(resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema) {
-      val pipelineSource = JsonStreamSource(
+      val pipelineSource = CsvStreamSource(
          Flux.just(File(resource).inputStream()),
          versionedType,
          taxiSchema,
          folder.root.toPath(),
-         ObjectMapper())
+         csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+
+      val pipeline = IngestionStream(
+         versionedType,
+         TypeDbWrapper(versionedType, taxiSchema, pipelineSource.cachePath, null),
+         pipelineSource)
+
+      val ingester = Ingester(jdbcTemplate, pipeline)
+      caskDao.dropCaskRecordTable(versionedType)
+      caskDao.createCaskRecordTable(versionedType)
+      caskDao.createCaskConfig(versionedType)
+
+      ingester.ingest().collectList()
+         .doOnError { error ->
+            log().error("Error ", error)
+         }
+         .block(Duration.ofMillis(500))
+   }
+
+
+   private fun ingestDataCsv(resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema) {
+      val pipelineSource = CsvStreamSource(
+         Flux.just(File(resource).inputStream()),
+         versionedType,
+         taxiSchema,
+         folder.root.toPath(),
+         csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
 
       val pipeline = IngestionStream(
          versionedType,
