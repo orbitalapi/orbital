@@ -30,7 +30,24 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          uriComponents.pathSegments.contains("findOneBy") -> findOneBy(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains("findMultipleBy") -> findMultipleBy(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains("findSingleBy") -> findSingleBy(request, requestPath, uriComponents)
+         uriComponents.pathSegments.contains("findAll") -> findAll(request, requestPath, uriComponents)
          else -> findByField(request, requestPath, uriComponents)
+      }
+   }
+
+   fun findAll(request: ServerRequest, requestPath: String, uriComponents: UriComponents): Mono<ServerResponse> {
+      val caskType = uriComponents.pathSegments.drop(1).joinToString(".")
+      return when (val versionedType = caskService.resolveType(caskType)) {
+         is Either.Left -> {
+            log().info("The type failed to resolve for request $requestPath Error: ${versionedType.a.message}")
+            badRequest().build()
+         }
+         is Either.Right -> {
+            val record = caskDAO.findAll(versionedType.b)
+            return ok()
+               .contentType(MediaType.APPLICATION_JSON)
+               .body(BodyInserters.fromValue(record))
+         }
       }
    }
 

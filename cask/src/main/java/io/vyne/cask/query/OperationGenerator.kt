@@ -6,6 +6,7 @@ import lang.taxi.types.Field
 import lang.taxi.types.Type
 
 interface OperationGenerator {
-   fun generate(field: Field, type: Type): Operation
+   fun generate(field: Field?, type: Type): Operation
    fun canGenerate(field: Field, type: Type): Boolean
+   fun expectedAnnotationName(): OperationAnnotation
 }

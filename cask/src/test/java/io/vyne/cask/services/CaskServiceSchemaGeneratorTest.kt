@@ -78,7 +78,8 @@ class CaskServiceSchemaGeneratorTest {
             BetweenTemporalOperationGenerator(operationGeneratorConfig),
             FindBySingleResultGenerator(operationGeneratorConfig),
             FindByMultipleGenerator(operationGeneratorConfig),
-            FindByIdGenerators(operationGeneratorConfig))) to taxiSchema
+            FindByIdGenerators(operationGeneratorConfig),
+            FindAllGenerator())) to taxiSchema
    }
 
    @Test
@@ -133,6 +134,8 @@ namespace vyne.casks {
 
    @ServiceDiscoveryClient(serviceName = "cask")
    service OrderWindowSummaryCsvCaskService {
+      @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummaryCsv")
+      operation findAll(  ) : OrderWindowSummaryCsv[]
       @HttpOperation(method = "GET" , url = "/api/cask/findSingleBy/OrderWindowSummaryCsv/symbol/{id}")
       operation findSingleBySymbol( @PathVariable(name = "id") id : Symbol ) : OrderWindowSummaryCsv( Symbol = id )
    }
@@ -171,6 +174,8 @@ namespace vyne.casks {
 
    @ServiceDiscoveryClient(serviceName = "cask")
    service OrderWindowSummaryCaskService {
+      @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
+      operation findAll(  ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/symbol/{Symbol}")
       operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary[]( Symbol = symbol )
       @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/symbol/{Symbol}")
@@ -264,6 +269,8 @@ namespace vyne.casks {
          |
          |    @ServiceDiscoveryClient(serviceName = "cask")
          |    service SimpleCaskService {
+         |       @HttpOperation(method = "GET" , url = "/api/cask/findAll/Simple")
+         |       operation findAll(  ) : Simple[]
          |       @HttpOperation(method = "GET" , url = "/api/cask/Simple/logDatePlus/Between/{start}/{end}")
          |       operation findByLogDatePlusBetween( @PathVariable(name = "start") start : LogDatePlus, @PathVariable(name = "end") end : LogDatePlus ) : Simple[]( LogDatePlus >= start, LogDatePlus < end )
          |    }

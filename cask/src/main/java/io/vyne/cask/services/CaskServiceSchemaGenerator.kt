@@ -4,11 +4,13 @@ import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ingest.DataSourceUpgradedEvent
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.query.OperationGenerator
+import io.vyne.cask.query.generators.OperationAnnotation
 import io.vyne.cask.types.allFields
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import lang.taxi.TaxiDocument
+import lang.taxi.services.Operation
 import lang.taxi.services.Service
 import lang.taxi.types.Annotation
 import lang.taxi.types.CompilationUnit
@@ -51,7 +53,7 @@ class CaskServiceSchemaGenerator(
       // TODO
    }
 
-   fun generateSchema(request:CaskTaxiPublicationRequest, typeMigration: TypeMigration? = null): TaxiDocument {
+   fun generateSchema(request: CaskTaxiPublicationRequest, typeMigration: TypeMigration? = null): TaxiDocument {
       val taxiType = request.type.taxiType
       // TODO Handle Type Migration.
       val fields = typeMigration?.fields ?: request.type.allFields()
@@ -63,7 +65,7 @@ class CaskServiceSchemaGenerator(
       }
    }
 
-   fun generateAndPublishService(request:CaskTaxiPublicationRequest, typeMigration: TypeMigration? = null) {
+   fun generateAndPublishService(request: CaskTaxiPublicationRequest, typeMigration: TypeMigration? = null) {
       generateAndPublishServices(listOf(request))
    }
 
@@ -81,22 +83,30 @@ class CaskServiceSchemaGenerator(
       caskServiceSchemaWriter.write(services)
    }
 
-   private fun generateCaskService(fields: List<Field>, type: Type) = Service(
-      qualifiedName = fullyQualifiedCaskServiceName(type),
-      operations = fields.flatMap { field ->
-         operationGenerators
+   private fun generateCaskService(fields: List<Field>, type: Type): Service {
+      var operations: MutableList<Operation> = mutableListOf()
+
+      operations.addAll(operationGenerators.filter { it.expectedAnnotationName() == OperationAnnotation.FindAll }.map { it.generate(null, type) })
+      fields.flatMap { field ->
+         operations.addAll(operationGenerators
             .filter { operationGenerator -> operationGenerator.canGenerate(field, type) }
-            .map { operationGenerator -> operationGenerator.generate(field, type) }
-      },
-      compilationUnits = listOf(CompilationUnit.unspecified()),
-      annotations = listOf(Annotation("ServiceDiscoveryClient", mapOf("serviceName" to appName)))
-   )
+            .map { operationGenerator -> operationGenerator.generate(field, type) })
+         operations
+      }
+
+      return Service(
+         qualifiedName = fullyQualifiedCaskServiceName(type),
+         operations = operations,
+         compilationUnits = listOf(CompilationUnit.unspecified()),
+         annotations = listOf(Annotation("ServiceDiscoveryClient", mapOf("serviceName" to appName)))
+      )
+   }
 
    companion object {
       const val CaskNamespacePrefix = "vyne.casks."
       private fun fullyQualifiedCaskServiceName(type: Type) = "$CaskNamespacePrefix${type.toQualifiedName()}CaskService"
       const val CaskApiRootPath = "/api/cask/"
-      fun caskServiceSchemaName(versionedType: VersionedType):String {
+      fun caskServiceSchemaName(versionedType: VersionedType): String {
          return "$CaskNamespacePrefix${versionedType.fullyQualifiedName}"
       }
    }

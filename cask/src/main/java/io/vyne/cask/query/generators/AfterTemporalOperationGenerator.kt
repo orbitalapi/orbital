@@ -19,8 +19,8 @@ import org.springframework.stereotype.Component
 
 @Component
 class AfterTemporalOperationGenerator(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()): OperationGenerator {
-   override fun generate(field: Field, type: Type): Operation {
-      val parameterType = TemporalFieldUtils.parameterType(field)
+   override fun generate(field: Field?, type: Type): Operation {
+      val parameterType = TemporalFieldUtils.parameterType(field!!)
       val afterParameter = parameterFor(
          parameterType,
          TemporalFieldUtils.After,
@@ -43,6 +43,10 @@ class AfterTemporalOperationGenerator(val operationGeneratorConfig: OperationGen
       return validate(field) != null &&
          (annotationFor(field, expectedAnnotationName.annotation) != null ||
             operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
+   }
+
+   override fun expectedAnnotationName(): OperationAnnotation {
+      return expectedAnnotationName
    }
 
    companion object {

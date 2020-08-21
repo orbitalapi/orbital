@@ -54,7 +54,7 @@ import javax.annotation.PostConstruct
 @EnableWebFlux
 @EnableAspectJAutoProxy
 @VyneSchemaConsumer
-@EnableConfigurationProperties(CaskViewConfig::class)
+@EnableConfigurationProperties(CaskViewConfig::class, OperationGeneratorConfig::class)
 class CaskApp {
    companion object {
       @JvmStatic
