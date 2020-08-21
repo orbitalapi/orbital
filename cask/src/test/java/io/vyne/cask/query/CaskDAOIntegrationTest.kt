@@ -190,7 +190,7 @@ class CaskDAOIntegrationTest {
       val file = File(folder.root, "largeGuts.csv")
       file.bufferedWriter().use {
          it.write("Date,Symbol,Open,High,Low,Close,Volume BTC,Volume USD${System.lineSeparator()}")
-         for (i in 1..40000000) {
+         for (i in 1..40) {
             it.write("2020-03-19 11:12:13,BTCUSD,6300,6330,6186.08,6235.2,817.78,5115937.58${System.lineSeparator()}")
          }
          it.close()
