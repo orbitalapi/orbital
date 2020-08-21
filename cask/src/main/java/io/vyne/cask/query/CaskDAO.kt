@@ -150,18 +150,22 @@ class CaskDAO(
    fun findAfter(versionedType: VersionedType, columnName: String, after: String): List<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.after") {
          val field = fieldForColumnName(versionedType, columnName)
-         jdbcTemplate.queryForList(
-            findAfterQuery(versionedType.caskRecordTable(), columnName),
-            jdbcQueryArgumentType(field, after))
+         doForAllTablesOfType(versionedType) { tableName ->
+            jdbcTemplate.queryForList(
+               findAfterQuery(tableName, columnName),
+               jdbcQueryArgumentType(field, after))
+         }
       }
    }
 
    fun findBefore(versionedType: VersionedType, columnName: String, before: String): List<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.before") {
          val field = fieldForColumnName(versionedType, columnName)
-         jdbcTemplate.queryForList(
-            findBeforeQuery(versionedType.caskRecordTable(), columnName),
-            jdbcQueryArgumentType(field, before))
+         doForAllTablesOfType(versionedType) { tableName ->
+            jdbcTemplate.queryForList(
+               findBeforeQuery(tableName, columnName),
+               jdbcQueryArgumentType(field, before))
+         }
       }
    }
 
