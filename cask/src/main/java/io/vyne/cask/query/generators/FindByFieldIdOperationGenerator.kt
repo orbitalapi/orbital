@@ -14,9 +14,9 @@ import org.springframework.stereotype.Component
 
 @Component
 class FindByFieldIdOperationGenerator(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()) : OperationGenerator {
-   override fun generate(field: Field, type: Type): Operation {
+   override fun generate(field: Field?, type: Type): Operation {
       val parameter = Parameter(
-         annotations = listOf(Annotation("PathVariable", mapOf("name" to field.name))),
+         annotations = listOf(Annotation("PathVariable", mapOf("name" to field!!.name))),
          type = parameterType(field),
          name = field.name,
          constraints = listOf())
@@ -39,6 +39,10 @@ class FindByFieldIdOperationGenerator(val operationGeneratorConfig: OperationGen
       return PrimitiveType.isAssignableToPrimitiveType(field.type) &&
          (TemporalFieldUtils.annotationFor(field, expectedAnnotationName.annotation) != null ||
             operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
+   }
+
+   override fun expectedAnnotationName(): OperationAnnotation {
+      return expectedAnnotationName
    }
 
    private fun getFindByIdRestPath(type: Type, field: Field): String {

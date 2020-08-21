@@ -159,4 +159,21 @@ class CaskApiHandlerTest {
       "symbol".should.equal(columnNameCaptor.firstValue)
       "BTCUSD".should.equal(projectionValueCaptor.firstValue)
    }
+
+   @Test
+   fun `handler can map finadAll Request`() {
+      // Given  findSingleBy/OrderWindowSummary/symbol/BTCUSD
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val request = mock<ServerRequest>() {
+         on { path() } doReturn "/api/cask/findAll/OrderWindowSummary"
+      }
+      val mockedVersionedType = mock<VersionedType>()
+      val columnNameCaptor = argumentCaptor<String>()
+      val projectionValueCaptor = argumentCaptor<String>()
+      whenever(mockCaskService.resolveType(eq("OrderWindowSummary"))).thenReturn(Either.right(mockedVersionedType))
+      // When
+      caskApiHandler.findBy(request)
+      // Then
+      verify(mockCaskDao, times(1)).findAll(any())
+   }
 }

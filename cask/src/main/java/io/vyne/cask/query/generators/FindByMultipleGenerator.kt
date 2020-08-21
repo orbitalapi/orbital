@@ -14,11 +14,11 @@ import org.springframework.stereotype.Component
 
 @Component
 class FindByMultipleGenerator(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()): OperationGenerator {
-   override fun generate(field: Field, type: Type): Operation {
+   override fun generate(field: Field?, type: Type): Operation {
       val returnType = TemporalFieldUtils.collectionTypeOf(type)
       val parameter = Parameter(
          annotations = listOf(Annotation("RequestBody", mapOf())),
-         type = TemporalFieldUtils.collectionTypeOf(TemporalFieldUtils.parameterType(field)),
+         type = TemporalFieldUtils.collectionTypeOf(TemporalFieldUtils.parameterType(field!!)),
          name = field.name,
          constraints = listOf())
       //@HttpOperation(method = "POST" , url = "/api/cask/findOneBy/ion/trade/Trade/orderId/{cacib.orders.OrderId}")
@@ -36,6 +36,10 @@ class FindByMultipleGenerator(val operationGeneratorConfig: OperationGeneratorCo
       return PrimitiveType.isAssignableToPrimitiveType(field.type) &&
          (TemporalFieldUtils.annotationFor(field, OperationAnnotation.Association.annotation) != null ||
             operationGeneratorConfig.definesOperation(field.type, OperationAnnotation.Association))
+   }
+
+   override fun expectedAnnotationName(): OperationAnnotation {
+      return OperationAnnotation.FindMultipleBy
    }
 
    private fun getfindMultipleByRestPath(type: Type, field: Field): String {

@@ -35,5 +35,6 @@ enum class OperationAnnotation(val annotation: String) {
    // TODO followings should be removed or replace the ghost strings in CaskApiHandler
    FindOne("findOneBy"),
    FindMultipleBy("findMultipleBy"),
-   FindSingleBy("findSingleBy")
+   FindSingleBy("findSingleBy"),
+   FindAll("findAll")
 }
