@@ -46,6 +46,20 @@ enum Country {
    }
 
    @Test
+   fun `can parse enums with Int Values`() {
+      val src = """
+enum City {
+   IZMIR(35),
+   ANKARA(6)
+}
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      val enum = PrimitiveParser().parse("35",schema.type("City"), Provided)
+      enum.type.name.fullyQualifiedName.should.equal("City")
+      enum.value.should.equal(35)
+   }
+
+   @Test
    fun unknownEnumValueFailsParsing() {
       exception.expect(IllegalStateException::class.java)
       exception.expectMessage("""Unable to map Value=Great Britain to Enum Type=Country, allowed values=[(NZ, New Zealand), (AUS, Australia)""")
