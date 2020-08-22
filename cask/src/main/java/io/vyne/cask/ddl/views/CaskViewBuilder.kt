@@ -40,7 +40,7 @@ class CaskViewBuilder(
    private val tableConfigs: List<Pair<QualifiedName, CaskConfig>> by lazy { getCaskConfigs(viewSpec.join) }
    private val types: Map<QualifiedName, Type> by lazy { compileTypes(tableConfigs) }
    private val taxiTypes by lazy { types.mapValues { (_, vyneType) -> vyneType.taxiType as ObjectType } }
-   private val viewTableName = "v_${viewSpec.typeName.typeName}"
+   private val viewTableName = "$ViewSuffix${viewSpec.typeName.typeName}"
 
    fun generateCreateView(): String? {
       val join = viewSpec.join
@@ -111,8 +111,6 @@ class CaskViewBuilder(
       return ddl
    }
 
-
-
    fun generateCaskConfig(): CaskConfig {
       val viewType = generateViewType()
       val config = CaskConfig.forType(
@@ -123,9 +121,7 @@ class CaskViewBuilder(
          exposesService = true
       )
       return config
-
    }
-
 
    private fun mapTableFields(thisType: ObjectType, filter: CaskViewFieldFilter, thisTableName: String): List<String> {
       val originalFields = filter.getOriginalFieldsForType(thisType)
@@ -135,11 +131,6 @@ class CaskViewBuilder(
          """${thisTableName.quoted()}.${PostgresDdlGenerator.toColumnName(originalField)} as ${PostgresDdlGenerator.toColumnName(renamedField)}"""
       }
    }
-
-
-
-
-
 
    internal fun convertWhereClause(clause: String, types:List<ObjectType>, tableNames: Map<QualifiedName, String>):String {
       // I hate regex.  Here's what this is doing:
@@ -174,7 +165,6 @@ class CaskViewBuilder(
          }
       }
    }
-
 
    private fun generateViewType(): VersionedType {
       val taxiDoc = generateTaxi()
@@ -236,5 +226,8 @@ class CaskViewBuilder(
          // we need to expand this to support all versions
          qualifiedName to configs.maxBy { it.insertedAt }!!
       }
+   }
+   companion object {
+      const val ViewSuffix = "v_"
    }
 }

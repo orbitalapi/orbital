@@ -29,8 +29,8 @@ import org.springframework.stereotype.Component
  */
 @Component
 class FindByIdGenerators(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()): OperationGenerator {
-   override fun generate(field: Field, type: Type): Operation {
-      val parameterType = TemporalFieldUtils.parameterType(field)
+   override fun generate(field: Field?, type: Type): Operation {
+      val parameterType = TemporalFieldUtils.parameterType(field!!)
       val equalsParameter = TemporalFieldUtils.parameterFor(
          parameterType,
          PathVariableName,
@@ -52,6 +52,10 @@ class FindByIdGenerators(val operationGeneratorConfig: OperationGeneratorConfig 
       return PrimitiveType.isAssignableToPrimitiveType(field.type) &&
          (TemporalFieldUtils.annotationFor(field, expectedAnnotationName.annotation) != null ||
             operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
+   }
+
+   override fun expectedAnnotationName(): OperationAnnotation {
+      return expectedAnnotationName
    }
 
    companion object {
