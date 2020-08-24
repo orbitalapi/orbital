@@ -198,12 +198,12 @@ class CaskDAOIntegrationTest {
    }
 
    private fun ingestData(resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema) {
-      val pipelineSource = CsvStreamSource(
+      val pipelineSource = JsonStreamSource(
          Flux.just(File(resource).inputStream()),
          versionedType,
          taxiSchema,
          folder.root.toPath(),
-         csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+         ObjectMapper())
 
       val pipeline = IngestionStream(
          versionedType,
@@ -221,7 +221,6 @@ class CaskDAOIntegrationTest {
          }
          .block(Duration.ofMillis(500))
    }
-
 
    private fun ingestDataCsv(resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema) {
       val pipelineSource = CsvStreamSource(
