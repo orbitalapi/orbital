@@ -4,6 +4,7 @@ import com.google.common.io.Resources
 import io.vyne.schemas.fqn
 import io.vyne.utils.Benchmark
 import io.vyne.utils.log
+import org.apache.commons.csv.CSVFormat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -61,8 +62,31 @@ class CsvStreamMapperBenchmarkTest {
              .collectList()
              .block()
        }
-
-
     }
 
+   @Test
+   fun `can parse csv with format options and skipping inconsistent records`() {
+      val schema = CoinbaseOrderSchema.schemaV1
+      val versionedType = schema.versionedType("OrderWindowSummary".fqn())
+      val mapper = CsvStreamMapper(versionedType, schema)
+
+      val resource = Resources.getResource("Coinbase_BTCUSD_lines_end_with_comma.csv").toURI()
+      // Ingest it a few times to get an average performance
+      val writer = CsvBinaryWriter(bytesPerColumn = 30, shouldLogIndividualWriteTime = false,
+         format = CSVFormat.DEFAULT
+            .withFirstRecordAsHeader()
+            .withAllowMissingColumnNames()
+            .withTrailingDelimiter()
+            .withIgnoreEmptyLines()
+      )
+      Benchmark.benchmark("can_ingestAndMapToTypedInstance") {
+         val file = folder.newFile()
+
+         val results = writer.convert(File(resource).inputStream(), file.toPath())
+            .map { mapper.map(it, logMappingTime = false) }
+            .collectList()
+            .block()
+         log().info("Read ${results.size} instances of ${results.first().type.versionedName}")
+      }
+   }
 }
