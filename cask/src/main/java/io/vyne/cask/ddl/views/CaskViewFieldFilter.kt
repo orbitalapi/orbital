@@ -69,6 +69,10 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
             )
             )
          }
+         is UnaryCalculatedFieldSetExpression -> {
+            val expression = accessor.expression as UnaryCalculatedFieldSetExpression
+            accessor.copy(expression = expression.copy(operand = FieldReferenceSelector(renameField(owningType, expression.operand.fieldName))))
+         }
          // TDOO... what are the other types?  Do we need to change 'em?
          else -> accessor
       }

@@ -4,6 +4,8 @@ import io.vyne.schemas.Type
 import lang.taxi.types.Formula
 import lang.taxi.types.FormulaOperator
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.UnaryFormulaOperator
+import org.apache.commons.lang3.StringUtils
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
@@ -14,13 +16,39 @@ interface Calculator {
    fun calculate(operator: FormulaOperator, values: List<Any>): Any?
 }
 
+interface UnaryCalculator {
+   fun canCalculate(operator: UnaryFormulaOperator, type: Type): Boolean
+   fun calculate(operator: UnaryFormulaOperator, value: Any, literal: Any): Any?
+}
+
 class CalculatorRegistry(private val calculators: List<Calculator> = listOf(
    NumberCalculator(),
    StringCalculator(),
    DateTimeCalculator()
-)) {
+), private val unaryCalculators: List<UnaryCalculator> = listOf(LeftCalculator())) {
    fun getCalculator(operator: FormulaOperator, types: List<Type>): Calculator? {
       return calculators.firstOrNull { it.canCalculate(operator, types) }
+   }
+
+   fun getUnaryCalculator(operator: UnaryFormulaOperator, type: Type): UnaryCalculator? {
+      return unaryCalculators.firstOrNull { it.canCalculate(operator, type)}
+   }
+}
+
+internal class LeftCalculator: UnaryCalculator {
+   override fun canCalculate(operator: UnaryFormulaOperator, type: Type): Boolean {
+     return (
+        type.taxiType.basePrimitive == PrimitiveType.STRING
+           &&
+           operator == UnaryFormulaOperator.Left)
+   }
+
+   override fun calculate(operator: UnaryFormulaOperator, value: Any, literal: Any): Any? {
+      return if (literal.toString().toIntOrNull() == null) {
+         value
+      } else {
+         StringUtils.left(value.toString(), literal.toString().toInt())
+      }
    }
 }
 
