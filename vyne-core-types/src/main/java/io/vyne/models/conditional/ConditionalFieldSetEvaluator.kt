@@ -6,6 +6,7 @@ import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Type
 import lang.taxi.types.CalculatedFieldSetExpression
 import lang.taxi.types.FieldSetExpression
+import lang.taxi.types.UnaryCalculatedFieldSetExpression
 import lang.taxi.types.WhenFieldSetCondition
 
 class ConditionalFieldSetEvaluator(private val factory: TypedObjectFactory) {
@@ -19,6 +20,7 @@ class ConditionalFieldSetEvaluator(private val factory: TypedObjectFactory) {
       return when (readCondition) {
          is WhenFieldSetCondition -> whenEvaluator.evaluate(readCondition, attributeName, targetType)
          is CalculatedFieldSetExpression -> calculatedFieldEvaluator.evaluate(readCondition, attributeName, targetType)
+         is UnaryCalculatedFieldSetExpression -> calculatedFieldEvaluator.evaluate(readCondition, attributeName, targetType)
          else -> error("Unhandled type of readCondition: ${readCondition::class.simpleName}")
       }
    }

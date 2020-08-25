@@ -185,6 +185,7 @@ type TransformedTradeRecord {
       type BirthDate inherits Date
       type BirthTime inherits Time
       type BirthDateTime inherits Instant
+      type Initial inherits String
 
       model Person {
                   firstName: FirstName
@@ -193,6 +194,7 @@ type TransformedTradeRecord {
                   birthTime: BirthTime
                   birthDateAndTime: BirthDateTime by (this.birthDate + this.birthTime)
                   fullName : FullName by (this.firstName + this.lastName)
+                  initial: Initial by left(this.firstName, 1)
                }
 
       """)
@@ -211,5 +213,6 @@ type TransformedTradeRecord {
          as TypedObject
       order["fullName"].value.should.equal("JohnDoe")
       order["birthDateAndTime"].value.should.equal(Instant.parse("1970-01-02T12:13:14Z"))
+      order["initial"].value.should.equal("J")
    }
 }
