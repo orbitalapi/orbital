@@ -87,7 +87,7 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
       }
 
       val formatter = DateTimeFormatterBuilder()
-         .appendOptional(DateTimeFormatter.ofPattern(format, locale))
+         .appendOptional(DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(format).toFormatter(locale))
          .appendOptional(optionalFormatter)
          .toFormatter()
       return doConvert(source, formatter)
