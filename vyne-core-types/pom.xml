@@ -34,7 +34,7 @@
       <dependency>
          <groupId>org.apache.commons</groupId>
          <artifactId>commons-csv</artifactId>
-         <version>1.4</version>
+         <version>1.8</version>
       </dependency>
       <!-- Adding this being lazy - we need access to the ConversionService
       in TypedValue, that's the only reason.  Have added it in the weakest way

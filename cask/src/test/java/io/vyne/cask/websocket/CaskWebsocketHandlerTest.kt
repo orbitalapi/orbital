@@ -275,7 +275,7 @@ class CaskWebsocketHandlerTest {
 
       StepVerifier
          .create(session.textOutput.take(1).timeout(Duration.ofSeconds(1)))
-         .expectNext("""{"result":"REJECTED","message":"A header name is missing in [Date, Symbol, Open, High, Low, ]"}""")
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 0 records"}""")
          .verifyComplete()
    }
 

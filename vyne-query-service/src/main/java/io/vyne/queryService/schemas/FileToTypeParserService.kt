@@ -51,8 +51,9 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
       val schema = schemaProvider.schema()
       val targetType = schema.type(typeName)
       val nullValues = listOfNotNull(nullValue).toSet()
-      val records = parsed.records.map { csvRecord ->
-         ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided).build())
+      val records = parsed.records
+         .filter { parsed.headerNames == null || parsed.headerNames.size == it.size() }
+         .map { csvRecord -> ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided).build())
       }
       return records
    }
@@ -78,9 +79,13 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    private fun getCsvFormat(csvDelimiter: Char, firstRecordAsHeader: Boolean): CSVFormat {
       return CSVFormat
          .DEFAULT
+         .withTrailingDelimiter()
+         .withIgnoreEmptyLines()
          .withDelimiter(csvDelimiter).let {
             if (firstRecordAsHeader) {
                it.withFirstRecordAsHeader()
+                  .withAllowDuplicateHeaderNames()
+                  .withAllowMissingColumnNames()
             } else {
                it
             }
