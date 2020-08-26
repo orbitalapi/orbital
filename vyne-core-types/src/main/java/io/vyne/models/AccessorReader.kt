@@ -27,17 +27,17 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
    private val jsonParser: JsonAttributeAccessorParser by lazy { Parsers.jsonParser }
    private val conditionalFieldSetEvaluator: ConditionalFieldSetEvaluator by lazy { ConditionalFieldSetEvaluator(objectFactory) }
    private val readFunctionFieldEvaluator: ReadFunctionFieldEvaluator by lazy { ReadFunctionFieldEvaluator(objectFactory) }
-   fun read(value: Any, targetTypeRef: QualifiedName, accessor: Accessor, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
+   fun read(value: Any, targetTypeRef: QualifiedName, accessor: Accessor, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean): TypedInstance {
       val targetType = schema.type(targetTypeRef)
-      return read(value, targetType, accessor, schema, nullValues, source)
+      return read(value, targetType, accessor, schema, nullValues, source, nullable)
    }
 
-   fun read(value: Any, targetType: Type, accessor: Accessor, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
+   fun read(value: Any, targetType: Type, accessor: Accessor, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean = false): TypedInstance {
       return when (accessor) {
          is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source)
          is XpathAccessor -> parseXml(value, targetType, schema, accessor, source)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source)
-         is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source)
+         is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable)
          is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, nullValues, source)
          is ReadFunctionFieldAccessor -> evaluateReadFunctionAccessor(value, targetType, schema, accessor, nullValues, source)
          else -> TODO()
@@ -66,12 +66,12 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
       return conditionalFieldSetEvaluator.evaluate(accessor.expression, targetType)
    }
 
-   private fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
+   private fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean = false): TypedInstance {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
-         is String -> csvParser.parse(value, targetType, accessor, schema, source)
+         is String -> csvParser.parse(value, targetType, accessor, schema, source, nullable)
          // Efficient parsing where we've already parsed the record once (eg., streaming from disk).
-         is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues, source)
+         is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues, source, nullable)
          else -> TODO()
       }
    }
@@ -79,7 +79,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
    private fun parseDestructured(value: Any, targetType: Type, schema: Schema, accessor: DestructuredAccessor, source: DataSource): TypedInstance {
       val values = accessor.fields.map { (attributeName, accessor) ->
          val objectMemberField = targetType.attribute(attributeName)
-         val attributeValue = read(value, objectMemberField.type, accessor, schema, source = source)
+         val attributeValue = read(value, objectMemberField.type, accessor, schema, source = source, nullable = false)
          attributeName to attributeValue
       }.toMap()
       return TypedObject(targetType, values, source)
