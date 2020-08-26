@@ -69,7 +69,7 @@ export class ResultContainerComponent implements OnInit {
   }
   get unmatchedNodes(): string {
     const queryResult = <QueryResult>this.result;
-    return queryResult.unmatchedNodes.map(qn => qn.longDisplayName).join(', ');
+    return queryResult.unmatchedNodes ? queryResult.unmatchedNodes.map(qn => qn.longDisplayName).join(', ') : '';
   }
 
   get error(): string {
