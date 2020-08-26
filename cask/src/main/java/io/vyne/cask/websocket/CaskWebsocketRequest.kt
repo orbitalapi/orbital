@@ -55,9 +55,15 @@ data class CsvWebsocketRequest(override val params: MultiValueMap<String, String
    fun csvFormat(): CSVFormat {
       val csvDelimiter: Char = params?.getParam("csvDelimiter").orElse(",").single()
       val csvFirstRecordAsHeader: Boolean = params?.getParam("csvFirstRecordAsHeader").orElse("true").toBoolean()
-      val format = CSVFormat.DEFAULT.withDelimiter(csvDelimiter)
+      val format = CSVFormat.DEFAULT
+         .withTrailingDelimiter()
+         .withIgnoreEmptyLines()
+         .withDelimiter(csvDelimiter)
       if (csvFirstRecordAsHeader) {
-         return format.withFirstRecordAsHeader()
+         return format
+            .withFirstRecordAsHeader()
+            .withAllowMissingColumnNames()
+            .withAllowDuplicateHeaderNames()
       }
       return format
    }
