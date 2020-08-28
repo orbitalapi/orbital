@@ -239,4 +239,77 @@ class DataIngestionTests {
 
       timeRawValue.should.be.equal(LocalTime.MAX)
    }
+
+   @Test
+   fun `Can Ingest With Default Values`() {
+      val source = """FIRST_COLUMN
+         |First
+         |Second""".trimMargin()
+      val schema = TestSchema.schemaWithDefault
+      val modelWithDefaults = schema.versionedType("ModelWithDefaults".fqn())
+      val input: Flux<InputStream> = Flux.just(source.byteInputStream())
+      val pipelineSource = CsvStreamSource(input, modelWithDefaults, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(modelWithDefaults, TypeDbWrapper(modelWithDefaults, schema, pipelineSource.cachePath, null), pipelineSource)
+
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource))
+      ingester = Ingester(jdbcTemplate, pipeline)
+      caskDao.dropCaskRecordTable(modelWithDefaults)
+      caskDao.createCaskRecordTable(modelWithDefaults)
+      ingester.ingest().collectList().block()
+
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      result.first()["field1"].should.equal("First")
+      result.first()["defaultString"].should.equal("Default String")
+     val defaultDecimal =  result.first()["defaultDecimal"] as BigDecimal
+      defaultDecimal.compareTo(BigDecimal("1000000.0")).should.equal(0)
+
+      caskDao.createCaskRecordTable(modelWithDefaults)
+      FileUtils.cleanDirectory(folder.root)
+   }
+
+   @Test
+   fun `Can Ingest BY Concatenating Values`() {
+      val source = """FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
+         |First1,Second1,Third1
+         |First2,Second2,Third2""".trimMargin()
+      val schema = TestSchema.schemaConcat
+      val concatModel = schema.versionedType("ConcatModel".fqn())
+      val input: Flux<InputStream> = Flux.just(source.byteInputStream())
+      val pipelineSource = CsvStreamSource(input, concatModel, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(concatModel, TypeDbWrapper(concatModel, schema, pipelineSource.cachePath, null), pipelineSource)
+
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource))
+      ingester = Ingester(jdbcTemplate, pipeline)
+      caskDao.dropCaskRecordTable(concatModel)
+      caskDao.createCaskRecordTable(concatModel)
+      ingester.ingest().collectList().block()
+
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      result.first()["concatField"].should.equal("First1-Second1-Third1")
+      caskDao.createCaskRecordTable(concatModel)
+      FileUtils.cleanDirectory(folder.root)
+   }
+
+   @Test
+   fun `Instant Formatting`() {
+      val source = """ValidityPeriodDateAndTime
+         |2020-07-31T22:59:59.000000Z
+         |2020-08-31T22:59:59.000000Z""".trimMargin()
+      val schema = TestSchema.instantSchema
+      val instantModel = schema.versionedType("InstantModel".fqn())
+      val input: Flux<InputStream> = Flux.just(source.byteInputStream())
+      val pipelineSource = CsvStreamSource(input, instantModel, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(instantModel, TypeDbWrapper(instantModel, schema, pipelineSource.cachePath, null), pipelineSource)
+
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.instantFormatSource))
+      ingester = Ingester(jdbcTemplate, pipeline)
+      caskDao.dropCaskRecordTable(instantModel)
+      caskDao.createCaskRecordTable(instantModel)
+      ingester.ingest().collectList().block()
+
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      result.first()["instant"].toString().should.equal("2020-07-31 22:59:59.0")
+      caskDao.createCaskRecordTable(instantModel)
+      FileUtils.cleanDirectory(folder.root)
+   }
 }

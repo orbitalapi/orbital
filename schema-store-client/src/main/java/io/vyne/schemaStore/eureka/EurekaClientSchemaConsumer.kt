@@ -98,9 +98,14 @@ class EurekaClientSchemaConsumer(
    private fun sync(delta: SourceDelta) {
       val newSources = delta.newSources.flatMap { loadSources(it) }
       val updatedSources = delta.changedSources.flatMap { loadSources(it) }
-      schemaStore.submitSchemas(newSources + updatedSources)
+      val modifications = newSources + updatedSources
+      if (modifications.isNotEmpty()) {
+         schemaStore.submitSchemas(newSources + updatedSources)
+      }
 
-      schemaStore.removeSourceAndRecompile(delta.sourceIdsToRemove)
+      if (delta.sourceIdsToRemove.isNotEmpty()) {
+         schemaStore.removeSourceAndRecompile(delta.sourceIdsToRemove)
+      }
 
       this.sources.addAll(delta.newSources)
       this.sources.replaceAll { existingSource ->
@@ -147,6 +152,7 @@ class EurekaClientSchemaConsumer(
    }
 
    private fun rebuildSources(): List<SourcePublisherRegistration> {
+      log().info("Registered Eureka Application ${client.applications.registeredApplications.map { it.name }}")
       return client.applications.registeredApplications.mapNotNull { application ->
          val publishedSources = application.instances
             .filter { it.metadata.containsKey(EurekaMetadata.VYNE_SCHEMA_URL) }
