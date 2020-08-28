@@ -43,6 +43,7 @@ import {MatDatepickerModule} from '@angular/material/datepicker';
 import { TypeNamePanelComponent } from './type-name-panel/type-name-panel.component';
 import { SchemaGeneratorComponent } from './schema-generator-panel/schema-generator.component';
 import {GridHeaderActionsComponent} from './custom-csv-table-header';
+import {MatRadioModule} from '@angular/material/radio';
 
 @NgModule({
   imports: [
@@ -79,6 +80,7 @@ import {GridHeaderActionsComponent} from './custom-csv-table-header';
     MatDialogModule,
     MatDatepickerModule,
     ReactiveFormsModule,
+    MatRadioModule,
   ],
   declarations: [
     DataSourceToolbarComponent,

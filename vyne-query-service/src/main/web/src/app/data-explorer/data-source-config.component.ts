@@ -1,6 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {UploadFile} from 'ngx-file-drop';
 import {CsvOptions} from '../services/types.service';
+import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
 
 @Component({
   selector: 'app-data-source-config',
@@ -24,27 +25,65 @@ import {CsvOptions} from '../services/types.service';
             </mat-option>
           </mat-select>
         </mat-form-field>
-        <mat-checkbox [(ngModel)]="csvOptions.firstRowAsHeader" (change)="updateCsvOptions()">First row is header
-        </mat-checkbox>
-
         <mat-checkbox [(ngModel)]="useSpecialValueForNull" (change)="updateCsvOptions()"
                       (click)="$event.stopPropagation();">Use special value for null
         </mat-checkbox>
+        <mat-checkbox [(ngModel)]="dataContainsHeaders"
+                      (click)="onChangeDataContainsHeader($event)">Data contains headers
+        </mat-checkbox>
+        <div *ngIf="dataContainsHeaders">
+          <mat-radio-group class="example-radio-group">
+            <mat-radio-button value="csvOptions.firstRowAsHeader" checked="csvOptions.firstRowAsHeader"
+                              (click)="onChangeFirstRowIsHeader($event)">
+              First row is header
+            </mat-radio-button>
+            <mat-radio-button value="csvOptions.firstRowHasOffset" (click)="onChangeFirstRowHasOffset($event)">
+              Specify first two columns
+            </mat-radio-button>
+          </mat-radio-group>
+        </div>
         <mat-form-field *ngIf="useSpecialValueForNull" (click)="$event.stopPropagation();">
           <mat-label>Null tag</mat-label>
           <input matInput placeholder="Provide value to treat as null" [(ngModel)]="csvOptions.nullValueTag"
                  (click)="$event.stopPropagation();">
         </mat-form-field>
-
+        <form [formGroup]="columnNameForm" *ngIf="dataContainsHeaders && csvOptions.firstRowHasOffset"
+              class="column-name-input-form">
+          <mat-form-field class="add-column-name-text-field">
+            <input matInput placeholder="Enter first column name"
+                   [formControl]="columnOne"
+                   required
+                   (click)="$event.stopPropagation()"/>
+          </mat-form-field>
+          <mat-form-field class="add-column-name-text-field">
+            <input matInput placeholder="Enter second column name"
+                   required
+                   [formControl]="columnTwo"
+                   (click)="$event.stopPropagation()"/>
+          </mat-form-field>
+          <button mat-raised-button color="primary" (click)="submitColumnNamesForm($event)">Submit</button>
+          <button mat-stroked-button (click)="resetColumnNameForm($event)" style="margin-left: 0.4em">Clear</button>
+        </form>
       </div>
     </mat-menu>
   `,
   styleUrls: ['./data-source-config.component.scss']
 })
 export class DataSourceConfigComponent {
+  constructor(private fb: FormBuilder) {
+    this.columnNameForm = fb.group({
+      columnOne: this.columnOne,
+      columnTwo: this.columnTwo,
+    });
+  }
 
   private _fileDataSource: UploadFile;
   extension: string;
+  dataContainsHeaders = true;
+  columnNameForm: FormGroup;
+
+  columnOne = new FormControl();
+  columnTwo = new FormControl();
 
   get useSpecialValueForNull(): boolean {
     return this.csvOptions.nullValueTag !== null;
@@ -89,5 +128,44 @@ export class DataSourceConfigComponent {
 
   updateCsvOptions() {
     this.csvOptionsChanged.emit(this.csvOptions);
+  }
+
+  submitColumnNamesForm($event) {
+    $event.stopPropagation();
+    this.csvOptions.columnOneName = this.columnOne.value;
+    this.csvOptions.columnTwoName = this.columnTwo.value;
+    if (this.csvOptions.columnOneName.length && this.csvOptions.columnTwoName.length) {
+      this.updateCsvOptions();
+    }
+  }
+
+  onChangeFirstRowHasOffset($event) {
+    $event.stopPropagation();
+    this.csvOptions.firstRowHasOffset = true;
+    this.csvOptions.firstRecordAsHeader = false;
+  }
+
+  onChangeFirstRowIsHeader($event) {
+    $event.stopPropagation();
+    this.csvOptions.firstRowHasOffset = false;
+    this.csvOptions.firstRecordAsHeader = true;
+    this.updateCsvOptions();
+  }
+
+  onChangeDataContainsHeader($event) {
+    $event.stopPropagation();
+    this.resetColumnNameForm();
+    this.csvOptions.firstRecordAsHeader = !this.dataContainsHeaders;
+    this.csvOptions.firstRowHasOffset = this.dataContainsHeaders ? this.csvOptions.firstRowHasOffset : false;
+    this.updateCsvOptions();
+  }
+
+  resetColumnNameForm($event?) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.csvOptions.columnOneName = '';
+    this.csvOptions.columnTwoName = '';
+    this.columnNameForm.reset();
   }
 }
