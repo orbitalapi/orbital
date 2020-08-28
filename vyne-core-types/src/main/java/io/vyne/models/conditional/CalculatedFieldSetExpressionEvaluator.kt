@@ -9,6 +9,7 @@ import io.vyne.models.TypedObjectFactory
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Type
 import lang.taxi.types.CalculatedFieldSetExpression
+import lang.taxi.types.TerenaryFieldSetExpression
 import lang.taxi.types.UnaryCalculatedFieldSetExpression
 
 class CalculatedFieldSetExpressionEvaluator(
@@ -33,5 +34,15 @@ class CalculatedFieldSetExpressionEvaluator(
          val value = unaryCalculator.calculate(readCondition.operator, opValue, readCondition.literal)
          TypedInstance.from(targetType, value, factory.schema, source = Calculated)
       }
+   }
+
+   fun evaluate(readCondition: TerenaryFieldSetExpression, attributeName: AttributeName?, targetType: Type): TypedInstance {
+      val operandValues = listOf(
+         factory.getValue(readCondition.operand1.fieldName),
+         factory.getValue(readCondition.operand2.fieldName),
+         factory.getValue(readCondition.operand3.fieldName))
+      val calculator = calculatorRegistry.getTerenaryCalculator(readCondition.operator, operandValues.map { it.type }) ?: error("Invalid calculated field")
+      val value = calculator.calculate(readCondition.operator, operandValues.map { it.value!! }.plus(readCondition.literal))
+      return TypedInstance.from(targetType, value, factory.schema, source = Calculated)
    }
 }

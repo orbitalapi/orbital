@@ -62,13 +62,28 @@ class CaskWebsocketHandler(
          // Registry instance is auto-detected
          // Percentiles are configured globally for all the timers, see CaskApp
          .metrics()
-         .map {
+         .map { message ->
             log().info("Ingesting message from sessionId=${session.id}")
             try {
+               val containsHeader = request.params.getParam("firstRowAsHeader").orElse(false) as Boolean
+
+               if(containsHeader) {
+                  val firstColumn = request.params.getParam("columnOneName")
+                  val secondColumn = request.params.getParam("columnTwoName")
+
+                  if(!firstColumn.isNullOrEmpty() && !secondColumn.isNullOrEmpty()) {
+                     val headerOffset = message.payloadAsText.indexOf("$firstColumn,$secondColumn").orElse(0)
+
+                     if (headerOffset > 0) {
+                        message.payload.readPosition(headerOffset)
+                     }
+                  }
+               }
+
                caskService
-                  .ingestRequest(request, Flux.just(it.payload.asInputStream()))
+                  .ingestRequest(request, Flux.just(message.payload.asInputStream()))
                   .count()
-                  .map { "Successfully ingested ${it} records" }
+                  .map { "Successfully ingested $it records" }
                   .subscribe(
                      { result ->
                         log().info("Successfully ingested message from sessionId=${session.id}")

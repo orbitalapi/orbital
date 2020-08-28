@@ -193,8 +193,6 @@ export class DataExplorerComponent {
       this.typeNamedInstance = (result as ParsedTypeInstance).typeNamedInstance;
     }
     this.parsedInstanceChanged.emit(this.parsedInstance);
-
-
   }
 
   private parseStringContentToTypedInstance() {

@@ -23,7 +23,7 @@ class CsvBinaryCacheStreamSource(private val readCachePath: Path, private val mi
             .mapNotNull { field ->
                 when (field.accessor) {
                     null -> log().warn("Field ${field.name} is not mapped to a column, and will be ignored").let { null }
-                    is ColumnAccessor -> (field.accessor as ColumnAccessor).index to field
+                    is ColumnAccessor  -> (field.accessor as ColumnAccessor).index?.let { it to field } ?: null
                     else -> log().warn("Field ${field.name} is mapped to an accessor of type ${field.accessor!!::class.simpleName} which cannot be handled by this PipelineSource, so will be ignored").let { null }
                 }
             }.toMap()

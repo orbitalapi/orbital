@@ -88,14 +88,15 @@ export class TypesService {
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedTypeInstance[]>(
       // tslint:disable-next-line:max-line-length
-      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}${nullValueParam}`,
+      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}`,
       content);
   }
 
   parseCsv(content: string, csvOptions: CsvOptions): Observable<ParsedCsvContent> {
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedCsvContent>(
-      `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}`,
+      // tslint:disable-next-line:max-line-length
+      `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${csvOptions.firstRowHasOffset ? (`&columnOne=${csvOptions.columnOneName}&columnTwo=${csvOptions.columnTwoName}`) : ''}`,
       content);
   }
 
@@ -106,7 +107,7 @@ export class TypesService {
       .reduce((prev, cur) =>
         prev === -1 || (cur !== -1 && cur < prev) ? cur : prev
       );
-    return (input[idx] || ',') ;
+    return (input[idx] || ',');
   }
 
   getTypes(refresh: boolean = false): Observable<Schema> {
@@ -195,7 +196,8 @@ export interface ParsedCsvContent {
 }
 
 export class CsvOptions {
-  constructor(public firstRowAsHeader: boolean = true, public separator: string = ',', public nullValueTag: string | null = null) {
+  constructor(public firstRecordAsHeader: boolean = true, public separator: string = ',', public nullValueTag: string | null = null,
+              public firstRowHasOffset: boolean = false, public columnOneName: string = '', public columnTwoName: string = '') {
   }
 
   static isCsvContent(fileExtension: string): boolean {
@@ -210,5 +212,9 @@ export class CsvOptions {
       default:
         return false;
     }
+  }
+  containsHeader(firstRowAsHeaders: boolean) {
+    return firstRowAsHeaders ||
+      (this.columnTwoName && this.columnTwoName.length > 0 && this.columnOneName && this.columnOneName.length > 0);
   }
 }

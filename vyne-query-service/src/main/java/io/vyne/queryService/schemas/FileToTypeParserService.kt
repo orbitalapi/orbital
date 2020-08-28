@@ -41,18 +41,22 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
                       @RequestParam("type") typeName: String,
                       @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
                       @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
-                      @RequestParam("nullValue", required = false) nullValue: String? = null
+                      @RequestParam("nullValue", required = false) nullValue: String? = null,
+                      @RequestParam("columnOne", required = false) columnOneName: String? = null,
+                      @RequestParam("columnTwo", required = false) columnTwoName: String? = null
    ): List<ParsedTypeInstance> {
       // TODO : We need to find a better way to pass the metadata of how to parse a CSV into the TypedInstance.parse()
       // method.
 
-      val format = getCsvFormat(csvDelimiter, firstRecordAsHeader)
-      val parsed = CSVParser.parse(rawContent, format)
+      val hasHeader = firstRecordAsHeader || (!columnOneName.isNullOrEmpty() && !columnTwoName.isNullOrEmpty())
+      val format = getCsvFormat(csvDelimiter, hasHeader)
+      val content = processContent(rawContent, csvDelimiter, firstRecordAsHeader, columnOneName, columnTwoName)
+      val parsed = CSVParser.parse(content, format)
       val schema = schemaProvider.schema()
       val targetType = schema.type(typeName)
       val nullValues = listOfNotNull(nullValue).toSet()
       val records = parsed.records
-         .filter { parsed.headerNames == null || parsed.headerNames.size == it.size() }
+         .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
          .map { csvRecord -> ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided).build())
       }
       return records
@@ -61,13 +65,19 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    @PostMapping("/api/csv")
    fun parseCsvToRaw(@RequestBody rawContent: String,
                      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
-                     @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean
+                     @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
+                     @RequestParam("columnOne", required = false) columnOneName: String? = null,
+                     @RequestParam("columnTwo", required = false) columnTwoName: String? = null
    ): ParsedCsvContent {
-      val format = getCsvFormat(csvDelimiter, firstRecordAsHeader)
+      val hasHeader = firstRecordAsHeader || (!columnOneName.isNullOrEmpty() && !columnTwoName.isNullOrEmpty())
+      val format = getCsvFormat(csvDelimiter, hasHeader)
+      val content = processContent(rawContent, csvDelimiter, firstRecordAsHeader, columnOneName, columnTwoName)
 
       try {
-         val parsed = CSVParser.parse(rawContent, format)
-         val records = parsed.records.map { it.toList() }
+         val parsed = CSVParser.parse(content, format)
+         val records = parsed.records
+            .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
+            .map { it.toList() }
          val headers = parsed.headerMap?.keys?.toList() ?: emptyList()
          return ParsedCsvContent(headers, records)
       } catch (e: Exception) {
@@ -90,6 +100,20 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
                it
             }
          }
+   }
+
+   private fun processContent(content: String, csvDelimiter: Char, firstRecordAsHeader: Boolean, columnOneName: String?, columnTwoName: String?): String {
+      val hasHeader = firstRecordAsHeader || (!columnOneName.isNullOrEmpty() && !columnTwoName.isNullOrEmpty())
+      return if(hasHeader && !firstRecordAsHeader) {
+         val index = content.indexOf("$columnOneName$csvDelimiter$columnTwoName")
+         if (index > 0) {
+            content.removeRange(0, index)
+         } else {
+            content
+         }
+      } else {
+         content
+      }
    }
 }
 
