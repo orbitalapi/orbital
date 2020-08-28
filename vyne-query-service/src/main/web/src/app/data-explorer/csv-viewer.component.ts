@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {ParsedCsvContent} from '../services/types.service';
+import {CsvOptions, ParsedCsvContent} from '../services/types.service';
 import {MatDialog, MatDialogConfig} from '@angular/material/dialog';
 import {
   AssignedTypeData,
@@ -43,6 +43,8 @@ export class CsvViewerComponent {
 
   @Input()
   schema: Schema;
+  @Input()
+  csvOptions: CsvOptions;
   private _firstRowAsHeaders = false;
   private _source: ParsedCsvContent;
   private _isTypeNamePanelVisible: boolean;
@@ -65,7 +67,7 @@ export class CsvViewerComponent {
         data: {schema: this.schema},
         panelClass: 'add-type-panel-container'
       });
-      dialogRef.beforeClosed().subscribe((result: AssignedTypeData) => {
+      dialogRef.afterClosed().subscribe((result: AssignedTypeData) => {
         if (result) {
           this.handleTypeAssignments(selectedColumnName, result.targetType.fullyQualifiedName, result.format);
           this.getColumnDefinitions();
@@ -94,7 +96,6 @@ export class CsvViewerComponent {
     this._firstRowAsHeaders = value;
     this.updateRowData();
   }
-
   @Input()
   get source(): ParsedCsvContent {
     return this._source;
@@ -151,7 +152,7 @@ export class CsvViewerComponent {
       this.rowData = [];
     } else {
       this.rowData = this.source.records;
-      if (this.firstRowAsHeaders) {
+      if (this.csvOptions.containsHeader(this.firstRowAsHeaders)) {
         this.headers = this.source.headers;
       } else {
         if (this.source.records.length === 0) {
