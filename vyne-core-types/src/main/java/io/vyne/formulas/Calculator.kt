@@ -4,6 +4,7 @@ import io.vyne.schemas.Type
 import lang.taxi.types.Formula
 import lang.taxi.types.FormulaOperator
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.TerenaryFormulaOperator
 import lang.taxi.types.UnaryFormulaOperator
 import org.apache.commons.lang3.StringUtils
 import java.math.BigDecimal
@@ -21,26 +22,33 @@ interface UnaryCalculator {
    fun calculate(operator: UnaryFormulaOperator, value: Any, literal: Any): Any?
 }
 
-class CalculatorRegistry(private val calculators: List<Calculator> = listOf(
-   NumberCalculator(),
-   StringCalculator(),
-   DateTimeCalculator()
-), private val unaryCalculators: List<UnaryCalculator> = listOf(LeftCalculator())) {
+interface TerenaryCalculator {
+   fun canCalculate(operator: TerenaryFormulaOperator, types: List<Type>): Boolean
+   fun calculate(operator: TerenaryFormulaOperator, values: List<Any>): Any?
+}
+
+class CalculatorRegistry(private val calculators: List<Calculator> = listOf(NumberCalculator(), StringCalculator(), DateTimeCalculator()),
+                         private val unaryCalculators: List<UnaryCalculator> = listOf(LeftCalculator()),
+                         private val terenaryCalculators: List<TerenaryCalculator> = listOf(Concat3())) {
    fun getCalculator(operator: FormulaOperator, types: List<Type>): Calculator? {
       return calculators.firstOrNull { it.canCalculate(operator, types) }
    }
 
    fun getUnaryCalculator(operator: UnaryFormulaOperator, type: Type): UnaryCalculator? {
-      return unaryCalculators.firstOrNull { it.canCalculate(operator, type)}
+      return unaryCalculators.firstOrNull { it.canCalculate(operator, type) }
+   }
+
+   fun getTerenaryCalculator(operator: TerenaryFormulaOperator, types: List<Type>): TerenaryCalculator? {
+      return terenaryCalculators.firstOrNull { it.canCalculate(operator, types) }
    }
 }
 
-internal class LeftCalculator: UnaryCalculator {
+internal class LeftCalculator : UnaryCalculator {
    override fun canCalculate(operator: UnaryFormulaOperator, type: Type): Boolean {
-     return (
-        type.taxiType.basePrimitive == PrimitiveType.STRING
-           &&
-           operator == UnaryFormulaOperator.Left)
+      return (
+         type.taxiType.basePrimitive == PrimitiveType.STRING
+            &&
+            operator == UnaryFormulaOperator.Left)
    }
 
    override fun calculate(operator: UnaryFormulaOperator, value: Any, literal: Any): Any? {
@@ -49,6 +57,17 @@ internal class LeftCalculator: UnaryCalculator {
       } else {
          StringUtils.left(value.toString(), literal.toString().toInt())
       }
+   }
+}
+
+internal class Concat3 : TerenaryCalculator {
+   override fun canCalculate(operator: TerenaryFormulaOperator, types: List<Type>): Boolean {
+      return types.all { it.taxiType.basePrimitive == PrimitiveType.STRING }
+         && operator == TerenaryFormulaOperator.Concat3
+   }
+
+   override fun calculate(operator: TerenaryFormulaOperator, values: List<Any>): Any? {
+      return values.dropLast(1).joinToString(values.last().toString())
    }
 }
 

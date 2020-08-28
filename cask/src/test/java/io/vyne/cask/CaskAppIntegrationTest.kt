@@ -4,6 +4,7 @@ import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
+import io.vyne.cask.ingest.TestSchema.schemaWithConcatAndDefaultSource
 import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.log
@@ -118,6 +119,39 @@ Date,Symbol,Open,High,Low,Close
 
       StepVerifier
          .create(output.take(1).timeout(Duration.ofSeconds(1)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+         .verifyComplete()
+         .run { wsConnection.dispose() }
+   }
+
+   @Test
+   fun `Can Ingest via websocket for schema with default and concat definitions`() {
+      // mock schema
+      schemaPublisher.submitSchema("default-concat-schemas", "1.0.0", schemaWithConcatAndDefaultSource)
+
+      val csvData = """
+FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
+1,2,3
+4,5,6
+7,8,9
+10,11,2""".trimIndent()
+
+      val output: EmitterProcessor<String> = EmitterProcessor.create()
+      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/ModelWithDefaultsConcat?debug=true&csvDelimiter=,")
+
+      val wsConnection = client.execute(uri)
+      { session ->
+         session.send(Mono.just(session.textMessage(csvData)))
+            .thenMany(session.receive()
+               .log()
+               .map(WebSocketMessage::getPayloadAsText)
+               .subscribeWith(output))
+            .then()
+      }.subscribe()
+
+      StepVerifier
+         .create(output.take(1).timeout(Duration.ofSeconds(10)))
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
          .verifyComplete()
          .run { wsConnection.dispose() }

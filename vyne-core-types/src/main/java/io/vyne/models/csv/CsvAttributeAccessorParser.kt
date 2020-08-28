@@ -54,13 +54,14 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
 
    fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
       val value =
-         when(accessor.index) {
-            is Int -> record.get(accessor.index as Int - 1)
-            is String -> record.get((accessor.index as String).trim('"'))
+         when {
+            accessor.index is Int -> record.get(accessor.index!! as Int - 1)
+            accessor.index is String -> record.get((accessor.index!! as String).trim('"'))
+            accessor.defaultValue != null -> accessor.defaultValue!!
             else -> throw IllegalArgumentException("Index type must be either Int or String.")
          }
       if (nullValues.isNotEmpty() && nullValues.contains(value)) {
-         return TypedInstance.from(type, null, schema, source = source);
+         return TypedInstance.from(type, null, schema, source = source)
       }
       try {
          return primitiveParser.parse(value, type, source)

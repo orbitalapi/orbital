@@ -190,13 +190,14 @@ type TransformedTradeRecord {
       model Person {
                   firstName: FirstName
                   lastName: LastName
+                  middleName: String
                   birthDate: BirthDate
                   birthTime: BirthTime
                   birthDateAndTime: BirthDateTime by (this.birthDate + this.birthTime)
                   fullName : FullName by (this.firstName + this.lastName)
                   initial: Initial by left(this.firstName, 1)
+                  concatName: String by concat3(this.firstName, this.middleName, this.lastName, "-")
                }
-
       """)
 
       val order = TypedInstance.from(
@@ -204,6 +205,7 @@ type TransformedTradeRecord {
          """
             {
                "firstName" : "John",
+               "middleName": "Foo",
                 "lastName": "Doe",
                 "birthDate": "1970-01-02",
                 "birthTime": "12:13:14"
@@ -214,5 +216,6 @@ type TransformedTradeRecord {
       order["fullName"].value.should.equal("JohnDoe")
       order["birthDateAndTime"].value.should.equal(Instant.parse("1970-01-02T12:13:14Z"))
       order["initial"].value.should.equal("J")
+      order["concatName"].value.should.equal("John-Foo-Doe")
    }
 }
