@@ -50,7 +50,7 @@ class CaskWebsocketHandlerTest {
 
    fun schemaProvider(): SchemaProvider {
       return object : SchemaProvider {
-         override fun schemas(): List<Schema> = listOf(CoinbaseJsonOrderSchema.schemaV1)
+         override fun schemas(): List<Schema> = listOf(CoinbaseJsonOrderSchema.nullableSchemaV1)
       }
    }
 

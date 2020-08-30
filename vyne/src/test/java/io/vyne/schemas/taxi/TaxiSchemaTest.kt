@@ -267,6 +267,7 @@ type Sample {
       "typeDoc" : null,
       "defaultValue" : null,
       "formula" : null,
+      "nullable" : false,
       "constraints" : [ ]
     },
     "id" : {
@@ -285,6 +286,7 @@ type Sample {
       "typeDoc" : null,
       "defaultValue" : null,
       "formula" : null,
+      "nullable" : false,
       "constraints" : [ ]
     },
     "name" : {
@@ -303,6 +305,7 @@ type Sample {
       "typeDoc" : null,
       "defaultValue" : null,
       "formula" : null,
+      "nullable" : false,
       "constraints" : [ ]
     },
     "postcode" : {
@@ -321,6 +324,7 @@ type Sample {
       "typeDoc" : null,
       "defaultValue" : null,
       "formula" : null,
+      "nullable" : false,
       "constraints" : [ ]
     }
   },

@@ -41,9 +41,9 @@ internal object CsvDocumentCacheBuilder {
  * Parses a single attribute, defined by a ColumnAccessor
  */
 class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = PrimitiveParser(), private val documentCache: LoadingCache<String, List<CSVRecord>> = CsvDocumentCacheBuilder.sharedDocumentCache) {
-   fun parse(content: String, type: Type, accessor: ColumnAccessor, schema: Schema, source:DataSource): TypedInstance {
+   fun parse(content: String, type: Type, accessor: ColumnAccessor, schema: Schema, source:DataSource, nullable: Boolean): TypedInstance {
       val csvRecords = documentCache.get(content)
-      val instances = csvRecords.map { record -> parseToType(type, accessor, record, schema, source = source) }
+      val instances = csvRecords.map { record -> parseToType(type, accessor, record, schema, source = source, nullable = nullable) }
       if (instances.size == 1) {
          return instances.first()
       } else {
@@ -52,7 +52,7 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
 
    }
 
-   fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
+   fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean): TypedInstance {
       val value =
          when {
             accessor.index is Int -> record.get(accessor.index!! as Int - 1)
@@ -60,9 +60,10 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
             accessor.defaultValue != null -> accessor.defaultValue!!
             else -> throw IllegalArgumentException("Index type must be either Int or String.")
          }
-      if (nullValues.isNotEmpty() && nullValues.contains(value)) {
+      if (nullable && ((nullValues.isNotEmpty() && nullValues.contains(value)) || (nullValues.isEmpty() && value.toString().isEmpty()))) {
          return TypedInstance.from(type, null, schema, source = source)
       }
+
       try {
          return primitiveParser.parse(value, type, source)
       } catch (e: Exception) {

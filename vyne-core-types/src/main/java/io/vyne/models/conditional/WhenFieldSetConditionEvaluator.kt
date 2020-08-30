@@ -78,7 +78,7 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
             // method not found exceptions.
             // Probably just a local issue, can refactor later
             val typeReference = selectorExpression.declaredType.toQualifiedName().toVyneQualifiedName()
-            val instance = factory.readAccessor(typeReference, selectorExpression.accessor)
+            val instance = factory.readAccessor(typeReference, selectorExpression.accessor, nullable = false)
             instance
          }
          is FieldReferenceSelector -> {
