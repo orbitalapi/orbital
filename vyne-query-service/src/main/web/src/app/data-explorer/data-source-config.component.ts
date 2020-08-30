@@ -101,6 +101,7 @@ export class DataSourceConfigComponent {
   clear = new EventEmitter<void>();
 
   csvOptions: CsvOptions = new CsvOptions();
+  disabled = !this.csvOptions.firstRowHasOffset && !this.csvOptions.firstRecordAsHeader;
 
   @Output()
   csvOptionsChanged = new EventEmitter<CsvOptions>();

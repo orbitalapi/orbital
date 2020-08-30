@@ -150,14 +150,14 @@ class PostgresDdlGenerator {
       val primaryKeyFields = (versionedType.taxiType as ObjectType).definition?.fields
          ?.filter { it.annotations.any { a -> a.name == _primaryKey } }
       val fieldsExcludingPk = fields.minus(primaryKeyFields ?: emptyList())
-      val values: Map<String, Any> = fields.map { it.name to generateValueForField(it, instance) }.toMap()
+      val values: Map<String, Any?> = fields.map { it.name to generateValueForField(it, instance) }.toMap()
 
       return """INSERT INTO $tableName ( ${fields.joinToString(", ") { "\"${it.name}\"" }} )
          | VALUES ( ${fields.joinToString(", ") { values[it.name].toString() }} )
          | ON CONFLICT ( ${primaryKeyFields?.joinToString(", ") { "\"${it.name}\"" }} )
          | ${
       if (fieldsExcludingPk.isNotEmpty()) {
-         """DO UPDATE SET ${fieldsExcludingPk.joinToString(", ") { "\"${it.name}\" = ${values[it.name].toString()}" }}"""
+         """DO UPDATE SET ${fieldsExcludingPk.joinToString(", ") { "\"${it.name}\" = ${values[it.name]}" }}"""
       } else {
          """DO NOTHING"""
       }}
@@ -297,7 +297,7 @@ class PostgresDdlGenerator {
       }
    }
 
-   private fun generateValueForField(field: Field, instance: InstanceAttributeSet): String {
+   private fun generateValueForField(field: Field, instance: InstanceAttributeSet): Any? {
       return when (val primitiveType = getPrimitiveType(field, field.type)) {
          PrimitiveType.STRING,
          PrimitiveType.BOOLEAN,
@@ -305,10 +305,17 @@ class PostgresDdlGenerator {
          PrimitiveType.DATE_TIME,
          PrimitiveType.INSTANT,
          PrimitiveType.TIME,
-         PrimitiveType.ANY -> "'${instance.attributes.getValue(field.name).value.toString()}'"
+         PrimitiveType.ANY -> {
+            val value = instance.attributes.getValue(field.name).value
+            if (value == null) {
+               value
+            } else {
+               "'${instance.attributes.getValue(field.name).value}'"
+            }
+         }
          PrimitiveType.DECIMAL,
          PrimitiveType.DOUBLE,
-         PrimitiveType.INTEGER -> instance.attributes.getValue(field.name).value.toString()
+         PrimitiveType.INTEGER -> instance.attributes.getValue(field.name).value
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
    }

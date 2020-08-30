@@ -1,8 +1,6 @@
 package io.vyne.models
 
-import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -12,6 +10,9 @@ import java.time.temporal.TemporalAccessor
 object RawObjectMapper : TypedInstanceMapper {
    override fun map(typedInstance: TypedInstance): Any?  {
       return if (typedInstance.type.format != null) {
+         if (typedInstance.value == null) {
+            return typedInstance.value
+         }
          require(typedInstance.value is TemporalAccessor) { "Formatted types only supported on TemporalAccessors currently.  If you're seeing this error, time to do some work!"}
          val instant = typedInstance.value as TemporalAccessor
          when {

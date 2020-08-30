@@ -88,7 +88,7 @@ export class TypesService {
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedTypeInstance[]>(
       // tslint:disable-next-line:max-line-length
-      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}`,
+      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${csvOptions.firstRowHasOffset ? (`&columnOne=${csvOptions.columnOneName}&columnTwo=${csvOptions.columnTwoName}`) : ''}${nullValueParam}`,
       content);
   }
 

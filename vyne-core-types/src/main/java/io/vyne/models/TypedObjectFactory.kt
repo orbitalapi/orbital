@@ -52,8 +52,8 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
       return accessorReader.read(value, type, accessor, schema, source = source)
    }
 
-   internal fun readAccessor(type: QualifiedName, accessor: Accessor): TypedInstance {
-      return accessorReader.read(value, type, accessor, schema, nullValues, source = source)
+   internal fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean): TypedInstance {
+      return accessorReader.read(value, type, accessor, schema, nullValues, source = source, nullable = nullable)
    }
 
 
@@ -69,14 +69,14 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
       return when {
          // Cheaper readers first
          value is CSVRecord && field.accessor is ColumnAccessor -> {
-            readAccessor(field.type, field.accessor)
+            readAccessor(field.type, field.accessor, field.nullable)
          }
 
          // ValueReader can be expensive if the value is an object,
          // so only use the valueReader early if the value is a map
          value is Map<*, *> && valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
          field.accessor != null -> {
-            readAccessor(field.type, field.accessor)
+            readAccessor(field.type, field.accessor, field.nullable)
          }
          field.readCondition != null -> {
             conditionalFieldSetEvaluator.evaluate(field.readCondition, attributeName, schema.type(field.type))

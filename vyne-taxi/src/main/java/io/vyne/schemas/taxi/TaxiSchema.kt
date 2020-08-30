@@ -124,7 +124,8 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                         field.modifiers.toVyneFieldModifiers(),
                         accessor = field.accessor,
                         readCondition = field.readExpression,
-                        typeDoc = field.typeDoc
+                        typeDoc = field.typeDoc,
+                        nullable = field.nullable
                      )
                      else -> field.name to Field(
                         field.type.qualifiedName.fqn(),
@@ -134,7 +135,8 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                         readCondition = field.readExpression,
                         typeDoc = field.typeDoc,
                         defaultValue = field.defaultValue,
-                        formula = field.formula)
+                        formula = field.formula,
+                        nullable = field.nullable)
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType)
