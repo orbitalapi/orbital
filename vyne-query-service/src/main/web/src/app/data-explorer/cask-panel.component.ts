@@ -61,8 +61,8 @@ export class CaskPanelComponent {
     if (this.format === 'csv') {
       let csvOptionsQueryString =
         `?csvDelimiter=${csvOptions.separator}&csvFirstRecordAsHeader=${csvOptions.firstRecordAsHeader}${csvOptions.firstRowHasOffset
-          ? (`firstRowHasOffset=true&columnOne=${csvOptions.columnOneName}&columnTwo=${csvOptions.columnTwoName}`)
-          : `firstRowHasOffset=false`}`;
+          ? (`&firstRowHasOffset=true&columnOne=${csvOptions.columnOneName}&columnTwo=${csvOptions.columnTwoName}`)
+          : `&firstRowHasOffset=false`}`;
       if (this.csvOptions.nullValueTag) {
         csvOptionsQueryString += `&nullValue=${csvOptions.nullValueTag}`;
       }
