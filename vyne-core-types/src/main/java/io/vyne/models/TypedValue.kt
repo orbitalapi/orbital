@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatterBuilder
 import java.util.Locale
 
 interface ConversionService {
-   fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: String?): T
+   fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: List<String>?): T
 
    companion object {
       val DEFAULT_CONVERTER by lazy { newDefaultConverter() }
@@ -40,7 +40,7 @@ interface ConversionService {
  * Used when you don't want to perform any conversions
  */
 object NoOpConversionService : ConversionService {
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
       return source!! as T
    }
 }
@@ -58,7 +58,7 @@ object VyneDefaultConversionService : ConversionService {
       service
    }
 
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
       try {
          return innerConversionService.convert(source, targetType)!!
       } catch (e: ConverterNotFoundException) {
@@ -74,7 +74,7 @@ interface ForwardingConversionService : ConversionService {
 class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
    private fun <D> toTemporalObject(
       source: String,
-      format: String?,
+      format: List<String>?,
       doConvert: (source: String, formatter: DateTimeFormatter) -> D,
       optionalFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
    ): D {
@@ -86,15 +86,17 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
          else -> Locale.getDefault()
       }
 
-      val formatter = DateTimeFormatterBuilder()
-         .appendOptional(DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(format).toFormatter(locale))
+      val formatterBuilder = DateTimeFormatterBuilder()
+         format.forEach { f ->  formatterBuilder.appendOptional(DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(f).toFormatter(locale))}
+
+     val formatter = formatterBuilder
          .appendOptional(optionalFormatter)
          .toFormatter()
       return doConvert(source, formatter)
    }
 
 
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
       return when {
          source is String && targetType == Instant::class.java -> {
             toTemporalObject(source, format, LocalDateTime::parse).toInstant(ZoneOffset.UTC) as T  // TODO : We should be able to detect that from the format sometimes
@@ -116,7 +118,7 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
 }
 
 class StringToIntegerConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
       return if (source is String && targetType == Int::class.java) {
          BigDecimal(source).intValueExact() as T
       } else {

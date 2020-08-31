@@ -8,7 +8,7 @@ import io.vyne.schemas.Type
 class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegistry) : QueryStrategy {
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
       if (context.debugProfiling) {// enable profiling via context.debugProfiling=true flag
-         return context.startChild(this, "scan for matches", OperationType.LOOKUP) { operation ->
+         return context.startChild(this, "scan for matches", OperationType.LOOKUP) {
             scanForMatches(target, context)
          }
       }
@@ -36,17 +36,12 @@ class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegi
          context.getFactOrNull(operandType, factDiscoveryStrategy)?.value
       }
 
-      return if (operandValues.any { it == null }) {
-         null
-      } else {
-         calculatorRegistry.getCalculator(calculation.operator, operandTypes)?.calculate(calculation.operator, operandValues as List<Any>)?.let { calculatedValue ->
-            TypedInstance.from(
-               type = calculatedType,
-               value = calculatedValue,
-               schema = context.schema,
-               source = Calculated)
-         }
+      return calculatorRegistry.getCalculator(calculation.operator, operandTypes)?.calculate(calculation.operator, operandValues)?.let { calculatedValue ->
+         TypedInstance.from(
+            type = calculatedType,
+            value = calculatedValue,
+            schema = context.schema,
+            source = Calculated)
       }
-
    }
 }

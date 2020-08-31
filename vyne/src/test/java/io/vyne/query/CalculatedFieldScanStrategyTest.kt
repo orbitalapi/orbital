@@ -16,14 +16,21 @@ namespace vyne.example
 
 type QtyTick inherits Decimal
 type QtyHit inherits Decimal
+type MarketOrderId inherits String
+type BankOrderId inherits String
+type SecondaryOrderId inherits String
 
 type Order {
-   qtyTick: QtyTick
-   qtyHit: QtyHit
+   qtyTick: QtyTick?
+   qtyHit: QtyHit?
+   bankOrderId: BankOrderId?
+   marketOrderId: MarketOrderId?
+   secondaryOrderId: SecondaryOrderId?
 }
 
 type Invoice {
    qtyTot: Decimal as (QtyTick * QtyHit)
+   orderId: String as coalesce(vyne.example.MarketOrderId, BankOrderId, SecondaryOrderId)
 }
 
 """
@@ -33,16 +40,45 @@ type Invoice {
    @Test
    fun `Given operands available in context calculated field value is set`() {
       val json = """
-{
-   "qtyTick" : "2",
-   "qtyHit" : "200"
-}"""
+            {
+               "qtyTick" : "2",
+               "qtyHit" : "200",
+               "bankOrderId": "bankOrderId"
+            }
+      """.trimIndent()
       vyne.addJsonModel("vyne.example.Order", json)
-      val qtyTot = vyne.type("vyne.example.Invoice").attributes["qtyTot"]!!.type
+      val qtyTot = (vyne.type("vyne.example.Invoice").attributes["qtyTot"] ?: error("")).type
       val result = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(qtyTot.fullyQualifiedName, QueryParser(testSchema)), vyne.query())
       expect(result.matchedNodes).size.to.equal(1)
       expect(result.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(qtyTot.fullyQualifiedName)
       expect(result.matchedNodes.entries.first().value!!.value).to.equal(BigDecimal("400"))
+
+      val orderId = (vyne.type("vyne.example.Invoice").attributes["orderId"] ?: error("")).type
+      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(testSchema)), vyne.query())
+      expect(orderIdResult.matchedNodes).size.to.equal(1)
+      expect(orderIdResult.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(orderId.fullyQualifiedName)
+      expect(orderIdResult.matchedNodes.entries.first().value!!.value).to.equal("bankOrderId")
+   }
+
+   @Test
+   fun `Calculations can handle null values appropriately`() {
+      val json = """
+            {
+               "qtyTick" : "2",
+               "bankOrderId": "bankOrderId",
+               "marketOrderId": "marketOrderId"
+            }
+      """.trimIndent()
+      vyne.addJsonModel("vyne.example.Order", json)
+      val qtyTot = (vyne.type("vyne.example.Invoice").attributes["qtyTot"] ?: error("")).type
+      val result = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(qtyTot.fullyQualifiedName, QueryParser(testSchema)), vyne.query())
+      expect(result.matchedNodes).size.to.equal(0)
+      val orderId = (vyne.type("vyne.example.Invoice").attributes["orderId"] ?: error("")).type
+      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(testSchema)), vyne.query())
+      expect(orderIdResult.matchedNodes).size.to.equal(1)
+      expect(orderIdResult.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(orderId.fullyQualifiedName)
+      expect(orderIdResult.matchedNodes.entries.first().value!!.value).to.equal("marketOrderId")
+
    }
 
    @Test

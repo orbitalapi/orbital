@@ -14,7 +14,7 @@ import java.time.ZoneOffset
 
 interface Calculator {
    fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean
-   fun calculate(operator: FormulaOperator, values: List<Any>): Any?
+   fun calculate(operator: FormulaOperator, values: List<Any?>): Any?
 }
 
 interface UnaryCalculator {
@@ -27,7 +27,7 @@ interface TerenaryCalculator {
    fun calculate(operator: TerenaryFormulaOperator, values: List<Any>): Any?
 }
 
-class CalculatorRegistry(private val calculators: List<Calculator> = listOf(NumberCalculator(), StringCalculator(), DateTimeCalculator()),
+class CalculatorRegistry(private val calculators: List<Calculator> = listOf(NumberCalculator(), StringCalculator(), DateTimeCalculator(), CoalesceCalculator()),
                          private val unaryCalculators: List<UnaryCalculator> = listOf(LeftCalculator()),
                          private val terenaryCalculators: List<TerenaryCalculator> = listOf(Concat3())) {
    fun getCalculator(operator: FormulaOperator, types: List<Type>): Calculator? {
@@ -71,14 +71,29 @@ internal class Concat3 : TerenaryCalculator {
    }
 }
 
+internal class CoalesceCalculator: Calculator {
+   override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
+      return operator == FormulaOperator.Coalesce
+   }
+
+   override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
+      val firstNonNullIfExists = values.firstOrNull { it != null }
+      return firstNonNullIfExists
+   }
+
+}
+
 internal class StringCalculator : Calculator {
    override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
       return types.all { it.taxiType.basePrimitive == PrimitiveType.STRING }
          && operator == FormulaOperator.Add
    }
 
-   override fun calculate(operator: FormulaOperator, values: List<Any>): Any? {
-      return values.reduce { acc, next -> acc as String + next as String }
+   override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
+      return if (values.any { it == null }) {
+         null
+      } else { values.reduce { acc, next -> acc as String + next as String }
+      }
    }
 
 }
@@ -91,7 +106,10 @@ internal class DateTimeCalculator : Calculator {
          operator == FormulaOperator.Add
    }
 
-   override fun calculate(operator: FormulaOperator, values: List<Any>): Any? {
+   override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
+      if (values.any { it == null }) {
+         return null
+      }
       val date = values[0] as LocalDate
       val time = values[1] as LocalTime
       // This is a problem.
@@ -115,22 +133,27 @@ internal class DateTimeCalculator : Calculator {
  */
 internal class NumberCalculator : Calculator {
    override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
-      return types.all { it.taxiType.basePrimitive != null && PrimitiveType.NUMBER_TYPES.contains(it.taxiType.basePrimitive!!) }
+      return operator != FormulaOperator.Coalesce &&
+             types.all { it.taxiType.basePrimitive != null && PrimitiveType.NUMBER_TYPES.contains(it.taxiType.basePrimitive!!) }
    }
 
-   override fun calculate(operator: FormulaOperator, values: List<Any>): Any? {
+   override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {
+      if (values.any { it == null }) {
+         return null
+      }
       // I'm being lazy here - we can add support for cross-type operations later,
       // but it's just a huge amount of typing to cover all the possible scenarios
-      val numberTypes = values.map { it::class.java }.distinct()
+      val numberTypes = values.map { it!!::class.java }.distinct()
       if (numberTypes.size > 1) {
          error("Numeric formulas with differing number types is not yet supported - found ${numberTypes.joinToString { it.simpleName }}")
       }
 
       return when (operator) {
-         FormulaOperator.Add -> addNumbers(values)
-         FormulaOperator.Subtract -> subtractNumbers(values)
-         FormulaOperator.Multiply -> multipleNumbers(values)
-         FormulaOperator.Divide -> divideNumbers(values)
+         FormulaOperator.Add -> addNumbers(values as List<Any>)
+         FormulaOperator.Subtract -> subtractNumbers(values as List<Any>)
+         FormulaOperator.Multiply -> multipleNumbers(values as List<Any>)
+         FormulaOperator.Divide -> divideNumbers(values as List<Any>)
+         else -> error("$operator not supported!")
       }
    }
 
