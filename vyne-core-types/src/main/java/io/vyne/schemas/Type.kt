@@ -106,7 +106,7 @@ data class Type(
    val isTypeAlias = aliasForTypeName != null
 
    @JsonView(TypeFullView::class)
-   val format: String? = taxiType.format
+   val format: List<String>? = taxiType.format
 
    @JsonView(TypeFullView::class)
    val hasFormat = format != null

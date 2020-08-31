@@ -15,22 +15,28 @@ object RawObjectMapper : TypedInstanceMapper {
          }
          require(typedInstance.value is TemporalAccessor) { "Formatted types only supported on TemporalAccessors currently.  If you're seeing this error, time to do some work!"}
          val instant = typedInstance.value as TemporalAccessor
+         val relevantFormat = findFormatWith("'T'", typedInstance.type.format!!)
          when {
-            typedInstance.value is LocalDate && typedInstance.type.format!!.contains("'T'") -> DateTimeFormatter
-            .ofPattern(typedInstance.type.format)
+            typedInstance.value is LocalDate && relevantFormat != null -> DateTimeFormatter
+            .ofPattern(relevantFormat)
             .withZone(ZoneId.of("UTC"))
             .format((instant as LocalDate).atStartOfDay())
 
-            typedInstance.value is LocalTime && typedInstance.type.format!!.contains("'T'") ->
+            typedInstance.value is LocalTime && relevantFormat != null ->
                throw IllegalArgumentException("A time field, ${typedInstance.type.name.fullyQualifiedName}, can't have a format for an instance ${typedInstance.type.format}")
+
             else -> DateTimeFormatter
-               .ofPattern(typedInstance.type.format)
+               .ofPattern(typedInstance.type.format!!.first())
                .withZone(ZoneId.of("UTC"))
                .format(instant)
          }
       } else {
          typedInstance.value
       }
+   }
+
+   fun findFormatWith(searchPattern: String, formats: List<String>): String? {
+     return formats.firstOrNull { it.contains(searchPattern) }
    }
 }
 
