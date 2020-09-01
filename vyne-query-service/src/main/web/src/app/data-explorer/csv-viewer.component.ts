@@ -63,16 +63,16 @@ export class CsvViewerComponent {
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
     dialogConfig.data = {};
-      const dialogRef = this.dialog.open(AssignTypeToColumnDialogComponent, {
-        data: {schema: this.schema},
-        panelClass: 'add-type-panel-container'
-      });
-      dialogRef.afterClosed().subscribe((result: AssignedTypeData) => {
-        if (result) {
-          this.handleTypeAssignments(selectedColumnName, result.targetType.fullyQualifiedName, result.format);
-          this.getColumnDefinitions();
-        }
-      });
+    const dialogRef = this.dialog.open(AssignTypeToColumnDialogComponent, {
+      data: {schema: this.schema},
+      panelClass: 'add-type-panel-container'
+    });
+    dialogRef.afterClosed().subscribe((result: AssignedTypeData) => {
+      if (result) {
+        this.handleTypeAssignments(selectedColumnName, result.targetType.fullyQualifiedName, result.format);
+        this.getColumnDefinitions();
+      }
+    });
   }
 
   private handleTypeAssignments(selectedColumnName: string, changedTypeName: string, format?: string) {
@@ -80,7 +80,7 @@ export class CsvViewerComponent {
       return {
         fieldName: item.fieldName,
         typeName: !item.typeName ? item.fieldName === selectedColumnName ? changedTypeName : '' : item.typeName,
-        format: !item.format ? (item.fieldName === selectedColumnName ? (format || '') : '' ) : item.format
+        format: !item.format ? (item.fieldName === selectedColumnName ? (format || '') : '') : item.format
       };
     });
     this.headerTypesChanged.emit(this.headersWithAssignedTypes);
@@ -96,6 +96,7 @@ export class CsvViewerComponent {
     this._firstRowAsHeaders = value;
     this.updateRowData();
   }
+
   @Input()
   get source(): ParsedCsvContent {
     return this._source;
@@ -126,16 +127,25 @@ export class CsvViewerComponent {
     this.getColumnDefinitions();
   }
 
+  private calculateOptimalColumnWidth(fieldName: string, typeName: string) {
+    const pixelByChar = 8;
+    const defaultColumnWidth = 200;
+    const doesDefaultWidthFits = fieldName.length < 20;
+    return typeName && typeName.length > fieldName.length
+      ? typeName.length * pixelByChar
+      : doesDefaultWidthFits ? defaultColumnWidth : (fieldName.length * pixelByChar);
+  }
+
   private getColumnDefinitions() {
     this.columnDefs = this.headers.map((fieldName, index) => {
       const typeName = this.headersWithAssignedTypes[index].typeName;
       const shouldDisplayAddButtons = (this.isTypeNamePanelVisible && typeName.length === 0);
       const shouldDisplayBadges = (this.isTypeNamePanelVisible && typeName.length > 0);
-
+      const columnWidth = this.calculateOptimalColumnWidth(fieldName, typeName);
       return {
         headerName: fieldName,
         field: fieldName,
-        width: shouldDisplayBadges ? 300 : 200,
+        width: columnWidth,
         headerComponentFramework: GridHeaderActionsComponent,
         headerComponentParams: {
           typeName: typeName,
