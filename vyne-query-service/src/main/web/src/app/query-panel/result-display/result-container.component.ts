@@ -1,5 +1,11 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {ProfilerOperation, QueryHistoryRecord, QueryResult, ResultMode} from '../../services/query.service';
+import {
+  ProfilerOperation,
+  QueryHistoryRecord,
+  QueryResult,
+  ResponseStatus,
+  ResultMode
+} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {MatTreeNestedDataSource} from '@angular/material';
 import {NestedTreeControl} from '@angular/cdk/tree';
@@ -173,7 +179,7 @@ export class ResultContainerComponent implements OnInit {
 
 
   get isUnsuccessfulSearch(): Boolean {
-    return this.result && this.isQueryResult(this.result) && !this.result.fullyResolved;
+    return this.result && this.result.responseStatus === ResponseStatus.INCOMPLETE;
   }
 
   get isVerboseResult(): Boolean {
@@ -182,7 +188,7 @@ export class ResultContainerComponent implements OnInit {
   }
 
   get isError(): Boolean {
-    return this.result && !this.isQueryResult(this.result);
+    return this.result && this.result.responseStatus === ResponseStatus.ERROR;
   }
 
   private isQueryResult(result: QueryResult | QueryFailure): result is QueryResult {

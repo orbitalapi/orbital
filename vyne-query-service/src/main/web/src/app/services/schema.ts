@@ -43,6 +43,7 @@ export interface Type extends Documented {
   format: string;
   hasFormat: boolean;
   aliasForType: QualifiedName;
+  basePrimitiveTypeName: QualifiedName;
   enumValues: Array<EnumValues>;
   sources: Array<VersionedSource>;
   isClosed: boolean;
