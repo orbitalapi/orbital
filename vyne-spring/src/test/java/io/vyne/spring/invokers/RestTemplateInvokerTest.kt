@@ -42,6 +42,16 @@ namespace vyne {
       id : Int
     }
 
+    type Owner {
+      name : String
+    }
+
+    type OwnedPet {
+      pet : Pet
+      owner : Owner
+    }
+
+
     @ServiceDiscoveryClient(serviceName = "mockService")
     service CreditCostService {
         @HttpOperation(method = "POST",url = "/costs/{vyne.ClientId}/doCalculate")
