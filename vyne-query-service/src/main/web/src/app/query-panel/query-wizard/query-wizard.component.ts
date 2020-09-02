@@ -18,6 +18,7 @@ import {
   QueryResult,
   QueryService,
   RemoteCall,
+  ResponseStatus,
   ResultMode
 } from '../../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
@@ -333,6 +334,7 @@ export class QueryWizardComponent implements OnInit {
 }
 
 export class QueryFailure {
+  responseStatus: ResponseStatus = ResponseStatus.ERROR;
   constructor(readonly message: string, readonly profilerOperation: ProfilerOperation, readonly remoteCalls: RemoteCall[]) {
   }
 }

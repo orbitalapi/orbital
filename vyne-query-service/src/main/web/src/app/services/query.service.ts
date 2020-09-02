@@ -21,7 +21,7 @@ export class QueryService {
 
   submitVyneQlQuery(query: String): Observable<QueryResult> {
     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=VERBOSE`, query, { headers });
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=VERBOSE`, query, {headers});
   }
 
   getHistory(): Observable<QueryHistoryRecord[]> {
@@ -101,6 +101,13 @@ export interface OperationParam {
 }
 
 
+export enum ResponseStatus {
+  COMPLETED = 'COMPLETED',
+  // Ie., the query didn't error, but not everything was resolved
+  INCOMPLETE = 'INCOMPLETE',
+  ERROR = 'ERROR',
+}
+
 export interface QueryResult {
   results: { [key: string]: InstanceLikeOrCollection };
   unmatchedNodes: QualifiedName[];
@@ -111,6 +118,7 @@ export interface QueryResult {
   lineageGraph: LineageGraph;
   queryResponseId: string;
   error?: string;
+  responseStatus: ResponseStatus;
 }
 
 

@@ -236,7 +236,7 @@ type Sample {
          .withView(TypeFullView::class.java)
          .writeValueAsString(type)
 
-      JSONAssert.assertEquals(expectedJson,json,true)
+      JSONAssert.assertEquals(expectedJson, json, true)
    }
 
    private val expectedJson = """
@@ -346,6 +346,7 @@ type Sample {
   "format" : null,
   "hasFormat" : false,
   "isCalculated": false,
+  "basePrimitiveTypeName" : null,
   "unformattedTypeName" : null,
   "isParameterType" : false,
   "isClosed" : false,
@@ -372,7 +373,7 @@ type Sample {
    @Ignore("This test is handy for debugging issues with type hashes")
    fun loadSchemaFromDirectory() {
       val taxonomyPath = Paths.get("C:\\dev\\workspace\\lens\\test-schemas\\taxonomy\\src")
-      val schemaContentList:List<VersionedSource> = Files.walk(taxonomyPath)
+      val schemaContentList: List<VersionedSource> = Files.walk(taxonomyPath)
          .filter { it.toFile().isFile }
          .filter { it.toFile().extension.equals("taxi") }
          .map {
