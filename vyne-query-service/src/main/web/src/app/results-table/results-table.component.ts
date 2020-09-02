@@ -75,17 +75,20 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     if (collection.length === 0) {
       this.rowData = [];
     } else {
-      collection.forEach((instance: TypeNamedInstance) => {
-        Object.keys(instance.value).forEach((key) => {
-          if (!instance.value[key].value) {
-            instance.value[key] = {
-              source: instance.value[key].source,
-              value:  '',
-              typeName: instance.value[key].typeName
-            };
-          }
+      if (!this.isArray) {
+        collection.forEach((instance: TypeNamedInstance) => {
+          Object.keys(instance.value).forEach((key) => {
+            if (!instance.value[key].value) {
+              instance.value[key] = {
+                source: instance.value[key].source,
+                value: '',
+                typeName: instance.value[key].typeName
+              };
+            }
+          });
         });
-      });
+      }
+
       if (isTypeNamedInstance(collection[0])) {
         this.rowData = collection.map((instance: TypeNamedInstance) => instance.value);
 
@@ -94,6 +97,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       } else {
         this.rowData = collection;
       }
+
     }
   }
 
