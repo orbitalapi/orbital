@@ -14,7 +14,7 @@ class CaskServiceRegenerationRunner {
             try {
                regenerateFunction()
             } catch (e: Exception) {
-               log().warn("Cask regenaration task failed ${e.message}")
+               log().error("Cask regeneration task failed", e)
             }
          }
       })
