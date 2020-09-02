@@ -39,6 +39,9 @@ export class CsvViewerComponent {
     this.subscription = this.customCsvTableHeaderService.getFieldName().subscribe(fieldName => {
       this.renderAddTypePopup(fieldName);
     });
+    this.subscription = this.customCsvTableHeaderService.getTypeToRemove().subscribe(fieldName => {
+      this.onRemoveType(fieldName);
+    });
   }
 
   @Input()
@@ -188,5 +191,12 @@ export class CsvViewerComponent {
       this.headerTypesChanged.emit(this.headersWithAssignedTypes);
       this.getColumnDefinitions();
     }
+  }
+
+  private onRemoveType(fieldName: string) {
+    const match = this.headersWithAssignedTypes.filter(item => item.fieldName === fieldName);
+    this.headersWithAssignedTypes[this.headersWithAssignedTypes.indexOf(match[0])].typeName = '';
+    this.headerTypesChanged.emit(this.headersWithAssignedTypes);
+    this.getColumnDefinitions();
   }
 }

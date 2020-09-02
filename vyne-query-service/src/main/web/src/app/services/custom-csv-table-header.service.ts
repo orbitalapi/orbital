@@ -1,15 +1,25 @@
-import { Injectable } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import {Injectable} from '@angular/core';
+import {Observable, Subject} from 'rxjs';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({providedIn: 'root'})
 export class CustomCsvTableHeaderService {
-  private subject = new Subject<string>();
+  private addTypeSubject = new Subject<string>();
+  private removeTypeSubject = new Subject<string>();
+
 
   sendFieldName(fieldName: string) {
-    this.subject.next( fieldName);
+    this.addTypeSubject.next(fieldName);
   }
 
   getFieldName(): Observable<string> {
-    return this.subject.asObservable();
+    return this.addTypeSubject.asObservable();
+  }
+
+  getTypeToRemove(): Observable<string> {
+    return this.removeTypeSubject.asObservable();
+  }
+
+  sendTypeToRemove(fieldName: string) {
+    this.removeTypeSubject.next(fieldName);
   }
 }
