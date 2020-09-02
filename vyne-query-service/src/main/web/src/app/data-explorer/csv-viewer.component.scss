@@ -43,10 +43,16 @@ table {
   }
 }
 
-.badge-hidden{
+.clear-icon {
+  height: .8rem;
+  cursor: pointer
+}
+
+.badge-hidden {
   display: none
 }
-.badge-visible{
+
+.badge-visible {
   display: flex
 }
 
