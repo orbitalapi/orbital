@@ -2,6 +2,7 @@ package io.vyne.spring.invokers
 
 import com.jayway.jsonpath.JsonPath
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
@@ -40,7 +41,6 @@ namespace vyne {
     type Pet {
       id : Int
     }
-
 
     @ServiceDiscoveryClient(serviceName = "mockService")
     service CreditCostService {
@@ -95,6 +95,36 @@ namespace vyne {
    private fun paramAndType(typeName: String, value: Any, schema: TaxiSchema, paramName:String? = null): Pair<Parameter, TypedInstance> {
       val type = schema.type(typeName)
       return Parameter(type,paramName) to TypedInstance.from(type, value, schema, source = Provided)
+   }
+
+   @Test
+   fun `attributes returned from service not defined in type are ignored`() {
+      val restTemplate = RestTemplate()
+      val server = MockRestServiceServer.bindTo(restTemplate).build()
+      val responseJson = """{
+         |"id" : 100,
+         |"name" : "Fluffy"
+         |}
+      """.trimMargin()
+      server.expect(ExpectedCount.once(), requestTo("http://pets.com/pets/100"))
+         .andExpect(method(HttpMethod.GET))
+         .andRespond(MockRestResponseCreators.withSuccess(responseJson, MediaType.APPLICATION_JSON))
+
+      val schema = TaxiSchema.from(taxiDef)
+      val service = schema.service("vyne.PetService")
+      val operation = service.operation("getPetById")
+
+      val invoker = RestTemplateInvoker(
+         restTemplate = restTemplate,
+         serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
+         enableDataLineageForRemoteCalls = true,
+         schemaProvider = SchemaProvider.from(schema))
+      val response = invoker
+         .invoke(service, operation, listOf(
+         paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
+      ), QueryProfiler()) as TypedObject
+
+      response["id"].value.should.equal(100)
    }
 
    @Test

@@ -467,6 +467,10 @@ data class Type(
          resolvedTypes.values.first()
       }
    }
+
+   fun hasAttribute(name: String): Boolean {
+      return this.attributes.containsKey(name)
+   }
 }
 
 // Part of the migration back to Taxi types
