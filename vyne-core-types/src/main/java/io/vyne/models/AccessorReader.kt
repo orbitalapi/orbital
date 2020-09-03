@@ -30,7 +30,6 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
    private val csvParser: CsvAttributeAccessorParser by lazy { Parsers.csvParser }
    private val jsonParser: JsonAttributeAccessorParser by lazy { Parsers.jsonParser }
    private val conditionalFieldSetEvaluator: ConditionalFieldSetEvaluator by lazy { ConditionalFieldSetEvaluator(objectFactory) }
-   private val readFunctionFieldEvaluator: ReadFunctionFieldEvaluator by lazy { ReadFunctionFieldEvaluator(objectFactory) }
    fun read(value: Any, targetTypeRef: QualifiedName, accessor: Accessor, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean): TypedInstance {
       val targetType = schema.type(targetTypeRef)
       return read(value, targetType, accessor, schema, nullValues, source, nullable)
@@ -41,9 +40,9 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
          is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source)
          is XpathAccessor -> parseXml(value, targetType, schema, accessor, source)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source)
-         is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable)
+         is ColumnAccessor -> csvParser.parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable)
          is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, nullValues, source)
-         is ReadFunctionFieldAccessor -> readFunctionFieldEvaluator.evaluate(value, targetType, schema, accessor, nullValues, source, nullable, this::parseColumnData)
+         is ReadFunctionFieldAccessor -> csvParser.evaluate(value, targetType, schema, accessor, nullValues, source, nullable)
          else -> TODO()
       }
    }

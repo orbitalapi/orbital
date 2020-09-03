@@ -73,6 +73,20 @@ type UpsertTestMultiPk {
       }
    """.trimIndent()
 
+   val schemaMidLeftUpperSource = """
+      enum Currency {
+         GBP,
+         USD,
+         EUR
+      }
+      // assume CCY_PAIR_COLUMN has gbp/usd
+      model MidLeftUpper {
+         ccy: Currency by leftAndUpperCase(column("CCY_PAIR_COLUMN"), 3))
+         contraCcy: Currency by midAndUpperCase(column("CCY_PAIR_COLUMN", 5, 3))
+      }
+
+   """.trimIndent()
+
    val schemaTimeTest = TaxiSchema.from(timeTypeTest, "Test", "0.1.0")
    val schemaUpsertTest = TaxiSchema.from(upsertTest, "Test", "0.1.0")
    val schemaTemporalDownCastTest = TaxiSchema.from(temporalSchemaSource, "Test", "0.1.0")
@@ -80,6 +94,7 @@ type UpsertTestMultiPk {
    val schemaConcat = TaxiSchema.from(schemaConcatSource, "test", "0.1.0")
    val instantSchema = TaxiSchema.from(instantFormatSource, "test", "0.1.0")
    val schemaWithConcatAndDefault = TaxiSchema.from(schemaWithDefaultValueSource, "test", "0.1.0")
+   val schemaMidLeftUpper = TaxiSchema.from(schemaMidLeftUpperSource, "test", "0.1.0")
 }
 
 

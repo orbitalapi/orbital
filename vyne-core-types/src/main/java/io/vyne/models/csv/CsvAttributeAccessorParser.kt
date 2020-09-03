@@ -45,6 +45,17 @@ internal object CsvDocumentCacheBuilder {
  * Parses a single attribute, defined by a ColumnAccessor
  */
 class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = PrimitiveParser(), private val documentCache: LoadingCache<String, List<CSVRecord>> = CsvDocumentCacheBuilder.sharedDocumentCache) {
+
+    fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean = false): TypedInstance {
+      // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
+      return when (value) {
+         is String -> this.parse(value, targetType, accessor, schema, source, nullable)
+         // Efficient parsing where we've already parsed the record once (eg., streaming from disk).
+         is CSVRecord -> this.parseToType(targetType, accessor, value, schema, nullValues, source, nullable)
+         else -> TODO()
+      }
+   }
+
    fun parse(content: String, type: Type, accessor: ColumnAccessor, schema: Schema, source:DataSource, nullable: Boolean): TypedInstance {
       val csvRecords = documentCache.get(content)
       val instances = csvRecords.map { record -> parseToType(type, accessor, record, schema, source = source, nullable = nullable) }
@@ -95,8 +106,6 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
                }
             }
 
-
-
             val builder = StringBuilder()
             arguments.forEach { builder.append(it.toString()) }
             TypedInstance.from(targetType, builder.toString(), schema, source = source)
@@ -111,12 +120,30 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
                TypedInstance.from(targetType, null, schema, source = source)
             } else {
                val leftUpperCaseArg = columnValue.toString()
-               TypedInstance.from(targetType, StringUtils.left(leftUpperCaseArg, len), schema, source = source)
+               TypedInstance.from(targetType, StringUtils.left(leftUpperCaseArg, len).toUpperCase(), schema, source = source)
             }
          }
 
          ReadFunction.MIDUPPERCASE -> {
-
+            val columnAccessor = requireNotNull(accessor.arguments.first().columnAccessor)
+            val startNum = accessor.arguments[1].value as Int // starts from 1.
+            val numberOfCharacters = accessor.arguments[2].value as Int
+            val columnValue = parseColumnData(value, targetType, schema, columnAccessor, nullValues, source, nullable).value
+            if (columnValue == null) {
+               TypedInstance.from(targetType, null, schema, source = source)
+            } else {
+               val leftUpperCaseArg = columnValue.toString()
+               try {
+                  val midValue = leftUpperCaseArg.substring(startNum - 1, startNum + numberOfCharacters - 1) // mid("apple", 2, 3) should give ppl
+                  TypedInstance.from(targetType, midValue.toUpperCase(), schema, source = source)
+               } catch (e: StringIndexOutOfBoundsException) {
+                  if (columnValue == null) {
+                     TypedInstance.from(targetType, null, schema, source = source)
+                  } else {
+                     throw e
+                  }
+               }
+            }
          }
 
          else -> error("Only concat is allowed")

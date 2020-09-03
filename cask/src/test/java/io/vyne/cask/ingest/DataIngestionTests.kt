@@ -312,4 +312,13 @@ class DataIngestionTests {
       caskDao.createCaskRecordTable(instantModel)
       FileUtils.cleanDirectory(folder.root)
    }
+
+   @Test
+   fun `Left Mid Upper Tests`() {
+      //schemaMidLeftUpper
+      val source = """CCY_PAIR_COLUMN
+         |gbp/usd
+         |eur/usd
+"""
+   }
 }
