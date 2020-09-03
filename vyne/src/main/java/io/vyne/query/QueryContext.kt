@@ -18,6 +18,8 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
+import io.vyne.query.QueryResponse.ResponseStatus
+import io.vyne.query.QueryResponse.ResponseStatus.*
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
@@ -87,6 +89,8 @@ data class QueryResult(
    val duration = profilerOperation?.duration
 
    override val isFullyResolved = unmatchedNodes.isEmpty()
+   override val responseStatus: ResponseStatus = if (isFullyResolved) COMPLETED else INCOMPLETE
+
    operator fun get(typeName: String): TypedInstance? {
       val requestedParameterizedName = typeName.fqn().parameterizedName
       // TODO : THis should consider inheritence, rather than strict equals
@@ -146,6 +150,14 @@ data class QueryResult(
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
+   enum class ResponseStatus {
+      COMPLETED,
+      // Ie., the query didn't error, but not everything was resolved
+      INCOMPLETE,
+      ERROR,
+   }
+
+   val responseStatus: ResponseStatus
    val queryResponseId: String
 
    @get:JsonProperty("fullyResolved")

@@ -114,6 +114,9 @@ data class Type(
    @JsonView(TypeFullView::class)
    val isCalculated = taxiType.calculation != null
 
+   @get:JsonView(TypeFullView::class)
+   val basePrimitiveTypeName: QualifiedName? = taxiType.basePrimitive?.toQualifiedName()?.toVyneQualifiedName()
+
    @get:JsonIgnore
    val calculation: Formula?
       get() = taxiType.calculation
@@ -463,6 +466,10 @@ data class Type(
       } else {
          resolvedTypes.values.first()
       }
+   }
+
+   fun hasAttribute(name: String): Boolean {
+      return this.attributes.containsKey(name)
    }
 }
 

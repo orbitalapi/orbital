@@ -1,6 +1,7 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.json.JsonModelParser
@@ -56,7 +57,7 @@ class TypedObjectTest {
 
    @Test
    fun canParseJsonUsingTypedInstanceFrom() {
-      val trader = TypedInstance.from(schema.type("Trader"),traderJson, schema, source = Provided)
+      val trader = TypedInstance.from(schema.type("Trader"), traderJson, schema, source = Provided)
       val raw = trader.toRawObject()
       val rawJson = jacksonObjectMapper().writeValueAsString(raw)
       JSONAssert.assertEquals(traderJson, rawJson, false);
@@ -89,10 +90,19 @@ class TypedObjectTest {
       expect(raw.first().typeName).to.equal("Trader")
    }
 
+   @Test
+   fun canParseFromNestedMapToTypedObject() {
+      val traderAttributes = jacksonObjectMapper().readValue<Map<String,Any>>(traderJson)
+      val instance = TypedObject.fromAttributes(schema.type("Trader"), traderAttributes, schema, source = Provided)
+      val raw = instance.toRawObject()
+      val rawJson = jacksonObjectMapper().writeValueAsString(raw)
+      JSONAssert.assertEquals(traderJson, rawJson, false);
+   }
+
 
    @Test
    fun when_unwrappingDatesWithFormats_then_stringAreReturnedForNonStandard() {
-      val schema  = TaxiSchema.from("""
+      val schema = TaxiSchema.from("""
          type TradeDateInstant inherits Instant ( @format = "dd/MM/yy'T'HH:mm:ss" )
          type TradeDateDate inherits Date ( @format = "MM-dd-yyyy" )
          type TradeDateDateTime inherits DateTime ( @format = "dd/MM/yyyy HH:mm:ss" )
@@ -121,7 +131,7 @@ class TypedObjectTest {
 
       // tradeDateDateTime should be an date
       val tradeDateDateTime = trade["tradeDateDateTime"].value as LocalDateTime
-      tradeDateDateTime.should.equal(LocalDateTime.of(2020,7,15,21,33,22))
+      tradeDateDateTime.should.equal(LocalDateTime.of(2020, 7, 15, 21, 33, 22))
 
       val raw = trade.toRawObject()
 

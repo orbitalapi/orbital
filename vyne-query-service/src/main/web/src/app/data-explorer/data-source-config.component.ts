@@ -16,7 +16,7 @@ import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
       <img class="configure-icon" src="assets/img/more-dots.svg">
     </button>
     <mat-menu #configMenu="matMenu">
-      <div class="config-menu">
+      <div class="config-menu" (click)="$event.stopPropagation()">
         <mat-form-field>
           <mat-label>Separator</mat-label>
           <mat-select [(ngModel)]="csvOptions.separator" (selectionChange)="updateCsvOptions()">

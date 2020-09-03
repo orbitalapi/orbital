@@ -45,6 +45,7 @@ data class FailedSearchResponse(val message: String,
                                 val results: Map<String, Any?> = mapOf()
 
 ) : QueryResponse {
+   override val responseStatus: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.ERROR
    override val isFullyResolved: Boolean = false
    override fun historyRecord(): HistoryQueryResponse {
       return HistoryQueryResponse(

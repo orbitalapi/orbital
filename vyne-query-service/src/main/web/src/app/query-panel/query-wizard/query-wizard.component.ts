@@ -18,6 +18,7 @@ import {
   QueryResult,
   QueryService,
   RemoteCall,
+  ResponseStatus,
   ResultMode
 } from '../../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
@@ -252,6 +253,9 @@ export class QueryWizardComponent implements OnInit {
 
   private findRootTypeName(type: Type): string {
     const targetType = (type.aliasForType) ? type.aliasForType.fullyQualifiedName : type.name.fullyQualifiedName;
+    if (type.basePrimitiveTypeName) {
+      return type.basePrimitiveTypeName.fullyQualifiedName;
+    }
     if (type.inheritsFrom && type.inheritsFrom.length > 0) {
       // Example:
       // type OrderId inherits String
@@ -330,6 +334,7 @@ export class QueryWizardComponent implements OnInit {
 }
 
 export class QueryFailure {
+  responseStatus: ResponseStatus = ResponseStatus.ERROR;
   constructor(readonly message: string, readonly profilerOperation: ProfilerOperation, readonly remoteCalls: RemoteCall[]) {
   }
 }

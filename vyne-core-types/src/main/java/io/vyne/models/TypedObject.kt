@@ -33,7 +33,9 @@ data class TypedObject(
       }
 
       fun fromAttributes(type: Type, attributes: Map<String, Any>, schema: Schema, performTypeConversions: Boolean = true, source:DataSource): TypedObject {
-         val typedAttributes: Map<String, TypedInstance> = attributes.map { (attributeName, value) ->
+         val typedAttributes: Map<String, TypedInstance> = attributes
+            .filterKeys { type.hasAttribute(it) }
+            .map { (attributeName, value) ->
             val attributeType = schema.type(type.attributes.getValue(attributeName).type)
             attributeName to TypedInstance.from(attributeType, value, schema, performTypeConversions, source = source)
          }.toMap()

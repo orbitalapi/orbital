@@ -13,6 +13,7 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
+import io.vyne.query.QueryResponse.ResponseStatus.*
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import java.io.File
@@ -157,6 +158,7 @@ data class LightweightQueryResult(
 
 ) : QueryResponse {
    override val profilerOperation: ProfilerOperation? = null
+   override val responseStatus: QueryResponse.ResponseStatus = if (isFullyResolved) COMPLETED else INCOMPLETE
 
    override fun historyRecord(): HistoryQueryResponse {
       TODO("Not yet implemented")

@@ -48,7 +48,12 @@ class CaskViewBuilder(
       val tableNames: Map<QualifiedName, String> = tableConfigs.map { (qualifiedName, config) ->
          qualifiedName to config.tableName
       }.toMap()
-      val filter = CaskViewFieldFilter(viewSpec.typeName, taxiTypes.values.toList(), taxiTypes[join.types.first()]!!)
+      val preferredType = taxiTypes[join.types.first()]
+      if (preferredType == null) {
+         log().warn("No cask exists for type ${join.types.first()}.  This can happen if a view is defined before a cask is generated. Aborting view creation for view ${viewSpec.typeName}")
+         return null
+      }
+      val filter = CaskViewFieldFilter(viewSpec.typeName, taxiTypes.values.toList(), preferredType!!)
 
       val tableList = join.types.mapIndexed { index, qualifiedName ->
          val thisType = types[qualifiedName]?.taxiType as ObjectType?
@@ -219,7 +224,11 @@ class CaskViewBuilder(
    private fun getCaskConfigs(join: ViewJoin): List<Pair<QualifiedName, CaskConfig>> {
       return join.types.map { qualifiedName ->
          qualifiedName to caskConfigRepository.findAllByQualifiedTypeName(qualifiedName.fullyQualifiedName)
-      }.map { (qualifiedName, configs) ->
+      }.mapNotNull { (qualifiedName, configs) ->
+         if (configs.isEmpty()) {
+            log().error("Type ${qualifiedName.parameterizedName} does not have any cask configs assigned.  This can happen if a view is defined before a cask is generated.  This will prevent cask views being generated. ")
+            return@mapNotNull null
+         }
          // MVP: Only support a single table (the most recently created)
          // per config)
          // In the future, as part of supporting upgrades/migrations,

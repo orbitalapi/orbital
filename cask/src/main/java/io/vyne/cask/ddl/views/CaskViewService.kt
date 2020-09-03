@@ -17,6 +17,10 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
       log().info("Generating view ${viewDefinition.typeName}")
       val builder = viewBuilderFactory.getBuilder(viewDefinition)
       val viewDdl = builder.generateCreateView()
+      if (viewDdl == null) {
+         log().warn("No viewDDL generated for ${viewDefinition.typeName}, not proceeding with view creation")
+         return null
+      }
       log().info("View ${viewDefinition.typeName} view using DDL: $viewDdl \n")
       template.execute(viewDdl)
       log().info("View ${viewDefinition.typeName} created successfully")
