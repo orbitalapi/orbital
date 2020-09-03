@@ -12,6 +12,7 @@ object RelaxedJsonMapper {
       .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
 }
 
+@Deprecated("Call TypedInstance.from() instead.  This method has bugs with nested objects, and does not handle accessors or advanced features.")
 fun ModelContainer.addJsonModel(typeName: String, json: String, source:DataSource = Provided): TypedInstance {
    val model = parseJsonModel(typeName, json)
    this.addModel(model)

@@ -103,6 +103,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                   else -> populatedValues[attributeName] = convertValue(value, targetAttributeType)
                }
             }
+         } else {
+            missingAttributes.putAll(targetType.attributes)
          }
       } else {
          targetType.attributes.forEach { (attributeName, field) ->
