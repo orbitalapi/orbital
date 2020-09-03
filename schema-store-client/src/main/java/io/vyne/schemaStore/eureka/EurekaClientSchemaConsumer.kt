@@ -1,5 +1,7 @@
 package io.vyne.schemaStore.eureka
 
+import com.google.common.hash.Hasher
+import com.google.common.hash.Hashing
 import com.netflix.appinfo.InstanceInfo
 import com.netflix.discovery.EurekaClient
 import com.netflix.discovery.shared.Application
@@ -10,17 +12,25 @@ import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
+import io.vyne.utils.timed
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
+import java.nio.charset.Charset
 import javax.inject.Provider
 
 internal data class SourcePublisherRegistration(
    val applicationName: String,
    val sourceUrl: String,
    val availableSources: List<VersionedSourceReference>
-)
+) {
+   val sourceHash by lazy {
+      val hasher = Hashing.sha256().newHasher()
+      availableSources.forEach { hasher.putString(it.sourceIdContentHash, Charset.defaultCharset()) }
+      hasher.hash().toString().substring(0, 6)
+   }
+}
 
 internal data class VersionedSourceReference(
    val sourceName: String,
@@ -28,6 +38,7 @@ internal data class VersionedSourceReference(
    val sourceContentHash: String
 ) {
    val sourceId: String = "$sourceName:$sourceVersion"
+   val sourceIdContentHash = "$sourceId@$sourceContentHash"
 }
 
 internal data class SourceDelta(
@@ -61,32 +72,46 @@ class EurekaClientSchemaConsumer(
    private val schemaStore: LocalValidatingSchemaStoreClient,
    private val eventPublisher: ApplicationEventPublisher,
    private val restTemplate: RestTemplate = RestTemplate()) : SchemaStore {
-   private var lastEurekaApplicationVersion: Long = -1
 
    private var sources = mutableListOf<SourcePublisherRegistration>()
    private val client = clientProvider.get()
    private val eurekaNotificationUpdater = EurekaNotificationServerListUpdater(clientProvider)
 
    init {
+      // This is executed on a dedicated ThreadPool and it is guaranteed that 'only' one callback is active for the given 'event'
       eurekaNotificationUpdater.start {
-         // This is executed on a dedicated ThreadPool and it is guaranteed that 'only' one callback is active for the given 'event'
-         if (client.applications.version != lastEurekaApplicationVersion) {
-            log().info("Looks like the set of applications at Eureka has changed, will refresh schema cache")
-            val currentSourceSet = rebuildSources()
-            val logMsg = currentSourceSet.map { "${it.applicationName} exposes ${it.availableSources.size} sources at ${it.sourceUrl}" }
+         // Design note: previously we checked the apps.version from Eureka to see if things
+         // had changed.  However, we're seeing missed changes, and that method is deprecated,
+         // it's possible that it served as a premature optimisation.
+         // Let's add it back if this stuff turns out to be expensive
+         log().info("Received a eureka event, checking for changes to sources")
+
+         val currentSourceSet = rebuildSources()
+         val delta = calculateDelta(sources,currentSourceSet)
+         if (delta.hasChanges) {
+            log().info("Found changes to schema, proceeding to update.")
+            val logMsg = currentSourceSet.map {
+               "${it.applicationName} exposes ${it.availableSources.size} sources (@${it.sourceHash}) at ${it.sourceUrl}"
+            }
             log().info("Sources Summary: $logMsg")
-            updateSources(currentSourceSet)
-            this.lastEurekaApplicationVersion = client.applications.version
+            updateSources(currentSourceSet, delta)
          } else {
-            log().debug("Eureka event ignored because the apps hashcode hasn't changed")
+            log().info("No changes found, nothing to do")
          }
       }
    }
 
-   private fun updateSources(currentSourceSet: List<SourcePublisherRegistration>) {
-      val delta = calculateDelta(sources, currentSourceSet)
+   private fun updateSources(currentSourceSet: List<SourcePublisherRegistration>, delta: SourceDelta) {
+      fun sourcesDescription(sources: List<SourcePublisherRegistration>): String = sources.joinToString("\n") { "${it.applicationName} @${it.sourceHash}" }
+      fun logChanges(verb: String, changed: List<SourcePublisherRegistration>) {
+         if (changed.isNotEmpty()) {
+            log().info("Found $verb sources: \n${sourcesDescription(changed)}")
+         }
+      }
       if (delta.hasChanges) {
-         log().info("Found ${delta.newSources.size} new sources, ${delta.changedSources.size} changed sources and ${delta.removedSources.size} removed sources.  Starting to sync")
+         logChanges("new", delta.newSources)
+         logChanges("modified", delta.changedSources)
+         logChanges("removed", delta.removedSources)
          val oldSchemaSet = this.schemaSet()
          sync(delta)
          eventPublisher.publishEvent(SchemaSetChangedEvent(oldSchemaSet, this.schemaSet()))
@@ -152,32 +177,38 @@ class EurekaClientSchemaConsumer(
    }
 
    private fun rebuildSources(): List<SourcePublisherRegistration> {
-      log().info("Registered Eureka Application ${client.applications.registeredApplications.map { it.name }}")
-      return client.applications.registeredApplications.mapNotNull { application ->
-         val publishedSources = application.instances
-            .filter { it.metadata.containsKey(EurekaMetadata.VYNE_SCHEMA_URL) }
-            .map { instance ->
-               val sourceReferences =
-                  instance.metadata.keys
-                     .filter { key -> key.startsWith(EurekaMetadata.VYNE_SOURCE_PREFIX) }
-                     .map { key ->
-                        val sourceId = EurekaMetadata.fromXML(key.removePrefix(EurekaMetadata.VYNE_SOURCE_PREFIX))
-                        val (sourceName, sourceVersion) = VersionedSource.nameAndVersionFromId(sourceId)
-                        val sourceHash = instance.metadata[key]!!
-                        VersionedSourceReference(sourceName, sourceVersion, sourceHash)
-                     }
-               instance to SourcePublisherRegistration(
-                  application.name,
-                  concatUrlParts(instance.hostName, instance.port, instance.metadata[EurekaMetadata.VYNE_SCHEMA_URL]!!),
-                  sourceReferences
-               )
+      return timed("Rebuild of Eureka source list") {
+//         log().info("Registered Eureka Application ${client.applications.registeredApplications.map { it.name }}")
+         client.applications.registeredApplications
+            // Require that at least one instance is up
+            .filter { application -> application.instances.any { it.status == InstanceInfo.InstanceStatus.UP } }
+            .mapNotNull { application ->
+            val publishedSources = application.instances
+               .filter { it.metadata.containsKey(EurekaMetadata.VYNE_SCHEMA_URL) }
+               .map { instance ->
+                  val sourceReferences =
+                     instance.metadata.keys
+                        .filter { key -> key.startsWith(EurekaMetadata.VYNE_SOURCE_PREFIX) }
+                        .map { key ->
+                           val sourceId = EurekaMetadata.fromXML(key.removePrefix(EurekaMetadata.VYNE_SOURCE_PREFIX))
+                           val (sourceName, sourceVersion) = VersionedSource.nameAndVersionFromId(sourceId)
+                           val sourceHash = instance.metadata[key]!!
+                           VersionedSourceReference(sourceName, sourceVersion, sourceHash)
+                        }
+                  instance to SourcePublisherRegistration(
+                     application.name,
+                     concatUrlParts(instance.hostName, instance.port, instance.metadata[EurekaMetadata.VYNE_SCHEMA_URL]!!),
+                     sourceReferences
+                  )
+               }
+            if (publishedSources.isEmpty()) {
+               null
+            } else {
+               verifyAllInstancesContainTheSameMappings(application, publishedSources)
             }
-         if (publishedSources.isEmpty()) {
-            null
-         } else {
-            verifyAllInstancesContainTheSameMappings(application, publishedSources)
          }
       }
+
    }
 
    private fun concatUrlParts(ipAddr: String, port: Int, schemaUrlPath: String): String {
