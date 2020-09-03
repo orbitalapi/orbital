@@ -1,5 +1,6 @@
 package io.vyne
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.*
@@ -20,6 +21,7 @@ import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.QualifiedName
 import org.junit.Ignore
 import org.junit.Test
+import org.skyscreamer.jsonassert.JSONAssert
 import java.lang.StringBuilder
 import java.time.Instant
 import java.time.LocalDate
@@ -79,6 +81,55 @@ fun testVyne(schema: String) = testVyne(TaxiSchema.from(schema))
 
 class VyneTest {
 
+   @Test
+   fun `calls remote services to discover response from deeply nested value`() {
+      val (vyne, stubs) = testVyne("""
+         type Isin inherits String
+         type SecurityDescription inherits String
+         model InstrumentResponse {
+             isin : Isin?
+             annaJson : AnnaJson?
+         }
+         model AnnaJson {
+             Derived : Derived?
+         }
+         model Derived {
+             ShortName : SecurityDescription?
+         }
+
+         model RequiredOutput {
+            isin : Isin?
+            description : SecurityDescription?
+         }
+
+         service StubService {
+            @StubResponse("securityDescription")
+            operation getAnnaJson(isin:Isin):InstrumentResponse
+         }
+      """)
+      val stubResponse = TypedInstance.from(vyne.type("InstrumentResponse"), """
+         {
+            "isin": "foo",
+            "annaJson" : {
+               "Derived" : {
+                  "ShortName" : "Jimmy's Diner"
+               }
+            }
+         }
+      """.trimIndent(), vyne.schema, source = Provided)
+      stubs.addResponse("securityDescription", stubResponse )
+      vyne.addKeyValuePair("Isin", "foo")
+      val result = vyne.query().build("RequiredOutput")
+      result.isFullyResolved.should.be.`true`
+      val rawResult = result["RequiredOutput"]!!.toRawObject()
+      val resultJson = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(rawResult)
+      val expected = """{
+         | "isin" : "foo",
+         | "description" : "Jimmy's Diner"
+         | }
+      """.trimMargin()
+      JSONAssert.assertEquals(expected, resultJson, true)
+   }
 
    @Test
    fun shouldFindAPropertyOnAnObject() {
