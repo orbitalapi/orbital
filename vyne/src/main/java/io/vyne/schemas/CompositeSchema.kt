@@ -13,6 +13,7 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
       get() {
          // TODO : Not keen on solving this problem, since CompositeSchemas are going away
          if (schemas.size != 1) {
+            log().warn("Schema size should be 1 ${schemas.size}")
             TODO()
          }
          return schemas.first().taxi
