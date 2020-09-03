@@ -5,6 +5,7 @@ import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Type
 import io.vyne.schemas.asVyneTypeReference
 import io.vyne.schemas.toVyneQualifiedName
+import io.vyne.utils.log
 import lang.taxi.types.*
 
 class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
@@ -42,7 +43,10 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
          is NullAssignment -> {
             TypedNull(type, source = DefinedInSchema)
          }
-         else -> TODO()
+         else -> {
+            log().warn("Unexpected assignment $assignment")
+            TODO()
+         }
       }
    }
 
@@ -66,7 +70,10 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
          // Note - I'm assuming the literal value is the same type as what we're comparing to.
          // Reasonable for now, but suspect subtypes etc may cause complexity here I haven't considered
          is LiteralCaseMatchExpression -> TypedInstance.from(type, matchExpression.value, factory.schema, source = DefinedInSchema)
-         else -> TODO()
+         else -> {
+            log().warn("Unexpected match Expression $matchExpression")
+            TODO()
+         }
       }
    }
 

@@ -9,6 +9,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeReference
+import io.vyne.utils.log
 import lang.taxi.types.*
 import org.apache.commons.csv.CSVRecord
 import java.lang.StringBuilder
@@ -40,7 +41,10 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
          is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable)
          is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, nullValues, source)
          is ReadFunctionFieldAccessor -> evaluateReadFunctionAccessor(value, targetType, schema, accessor, nullValues, source)
-         else -> TODO()
+         else -> {
+            log().warn("UnExpected Accessor value $accessor")
+            TODO()
+         }
       }
    }
 
@@ -68,11 +72,18 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
 
    private fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean = false): TypedInstance {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
-      return when (value) {
-         is String -> csvParser.parse(value, targetType, accessor, schema, source, nullable)
+      return when  {
+         value is String -> csvParser.parse(value, targetType, accessor, schema, source, nullable)
          // Efficient parsing where we've already parsed the record once (eg., streaming from disk).
-         is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues, source, nullable)
-         else -> TODO()
+         value is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues, source, nullable)
+         value is Map<*, *> && accessor.defaultValue != null -> csvParser.parse(accessor.defaultValue.toString(), targetType, accessor, schema, source, nullable)
+         else -> {
+            if (nullable) {
+               return TypedInstance.from(targetType, null, schema, source = source)
+            } else {
+               throw IllegalArgumentException("Unhandled parsing $value $accessor")
+            }
+         }
       }
    }
 
