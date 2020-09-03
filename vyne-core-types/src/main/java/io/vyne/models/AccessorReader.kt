@@ -8,10 +8,14 @@ import io.vyne.models.xml.XmlTypedInstanceParser
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import io.vyne.schemas.TypeReference
-import lang.taxi.types.*
+import lang.taxi.types.Accessor
+import lang.taxi.types.ColumnAccessor
+import lang.taxi.types.ConditionalAccessor
+import lang.taxi.types.DestructuredAccessor
+import lang.taxi.types.JsonPathAccessor
+import lang.taxi.types.ReadFunctionFieldAccessor
+import lang.taxi.types.XpathAccessor
 import org.apache.commons.csv.CSVRecord
-import java.lang.StringBuilder
 
 object Parsers {
    val xmlParser: XmlTypedInstanceParser by lazy { XmlTypedInstanceParser() }
@@ -39,27 +43,9 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source)
          is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable)
          is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, nullValues, source)
-         is ReadFunctionFieldAccessor -> evaluateReadFunctionAccessor(value, targetType, schema, accessor, nullValues, source)
+         is ReadFunctionFieldAccessor -> readFunctionFieldEvaluator.evaluate(value, targetType, schema, accessor, nullValues, source, nullable, this::parseColumnData)
          else -> TODO()
       }
-   }
-
-   private fun evaluateReadFunctionAccessor(value: Any, targetType: Type, schema: Schema, accessor: ReadFunctionFieldAccessor, nullValues: Set<String>, source: DataSource): TypedInstance {
-      if (accessor.readFunction != ReadFunction.CONCAT) {
-         error("Only concat is allowed")
-      }
-
-      val arguments = accessor.arguments.mapNotNull { readFunctionArgument ->
-         if (readFunctionArgument.columnAccessor != null) {
-            parseColumnData(value, targetType, schema, readFunctionArgument.columnAccessor!!, nullValues, source).value
-         } else {
-            readFunctionArgument.value
-         }
-      }
-
-      val builder = StringBuilder()
-      arguments.forEach { builder.append(it.toString()) }
-      return TypedInstance.from(targetType, builder.toString(), schema, source = source)
    }
 
    private fun evaluateConditionalAccessor(value: Any, targetType: Type, schema: Schema, accessor: ConditionalAccessor, nullValues: Set<String>, source: DataSource): TypedInstance {

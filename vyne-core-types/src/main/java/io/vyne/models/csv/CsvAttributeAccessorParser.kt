@@ -10,9 +10,13 @@ import io.vyne.models.TypedInstance
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.types.ColumnAccessor
+import lang.taxi.types.ReadFunction
+import lang.taxi.types.ReadFunctionFieldAccessor
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
+import org.apache.commons.lang3.StringUtils
 import java.lang.IllegalArgumentException
+import java.lang.StringBuilder
 import java.util.concurrent.TimeUnit
 
 internal object CsvDocumentCacheBuilder {
@@ -60,7 +64,8 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
             accessor.defaultValue != null -> accessor.defaultValue!!
             else -> throw IllegalArgumentException("Index type must be either Int or String.")
          }
-      if (nullable && ((nullValues.isNotEmpty() && nullValues.contains(value)) || (nullValues.isEmpty() && value.toString().isEmpty()))) {
+
+      if (isNull(nullable, nullValues, value)) {
          return TypedInstance.from(type, null, schema, source = source)
       }
 
@@ -69,6 +74,62 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
       } catch (e: Exception) {
          val message = "Failed to parse value $value from column ${accessor.index} to type ${type.name.fullyQualifiedName} - ${e.message}"
          throw ParsingException(message, e)
+      }
+   }
+
+   fun evaluate(value: Any,
+                targetType: Type,
+                schema: Schema,
+                accessor: ReadFunctionFieldAccessor,
+                nullValues: Set<String>,
+                source: DataSource,
+                nullable: Boolean): TypedInstance {
+
+      return when(accessor.readFunction) {
+         ReadFunction.CONCAT -> {
+            val arguments = accessor.arguments.mapNotNull { readFunctionArgument ->
+               if (readFunctionArgument.columnAccessor != null) {
+                  parseColumnData(value, targetType, schema, readFunctionArgument.columnAccessor!!, nullValues, source, nullable).value
+               } else {
+                  readFunctionArgument.value
+               }
+            }
+
+
+
+            val builder = StringBuilder()
+            arguments.forEach { builder.append(it.toString()) }
+            TypedInstance.from(targetType, builder.toString(), schema, source = source)
+         }
+
+         ReadFunction.LEFTUPPERCASE -> {
+            // leftAndUpperCase(column("CCY"), 3)
+            val columnAccessor = requireNotNull(accessor.arguments.first().columnAccessor)
+            val len = accessor.arguments[1].value as Int
+            val columnValue = parseColumnData(value, targetType, schema, columnAccessor, nullValues, source, nullable).value
+            if (columnValue == null) {
+               TypedInstance.from(targetType, null, schema, source = source)
+            } else {
+               val leftUpperCaseArg = columnValue.toString()
+               TypedInstance.from(targetType, StringUtils.left(leftUpperCaseArg, len), schema, source = source)
+            }
+         }
+
+         ReadFunction.MIDUPPERCASE -> {
+
+         }
+
+         else -> error("Only concat is allowed")
+      }
+   }
+
+   companion object {
+      fun isNull(nullable: Boolean, nullValues: Set<String>, value: Any?) = (nullable && ((nullValues.isNotEmpty() && nullValues.contains(value)) || (nullValues.isEmpty() && value.toString().isEmpty())))
+      fun cellValue(accessor: ColumnAccessor, record: CSVRecord) = when {
+         accessor.index is Int -> record.get(accessor.index!! as Int - 1)
+         accessor.index is String -> record.get((accessor.index!! as String).trim('"'))
+         accessor.defaultValue != null -> accessor.defaultValue!!
+         else -> throw IllegalArgumentException("Index type must be either Int or String.")
       }
    }
 }
