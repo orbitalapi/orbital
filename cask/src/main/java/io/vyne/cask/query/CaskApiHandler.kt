@@ -17,6 +17,9 @@ import org.springframework.web.reactive.function.server.ServerResponse.ok
 import org.springframework.web.util.UriComponents
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Mono
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
+
 
 @Component
 class CaskApiHandler(private val caskService: CaskService, private val caskDAO: CaskDAO) {
@@ -157,10 +160,18 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       }
    }
 
+   private fun decode(value: String): String {
+      return try {
+         URLDecoder.decode(value, StandardCharsets.UTF_8.toString())
+      } catch (e: Exception) {
+         value
+      }
+   }
+
    private fun findOne(request: ServerRequest, requestPath: String, uriComponents: UriComponents): Mono<ServerResponse> {
       val fieldNameAndValue = fieldNameAndArgs(uriComponents, 2)
       val fieldName = fieldNameAndValue.first()
-      val findByValue = fieldNameAndValue.last()
+      val findByValue = decode(fieldNameAndValue.last())
       val caskType = uriComponents.pathSegments.dropLast(2).drop(1).joinToString(".")
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
