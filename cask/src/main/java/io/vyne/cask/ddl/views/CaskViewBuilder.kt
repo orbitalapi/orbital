@@ -40,7 +40,7 @@ class CaskViewBuilder(
    private val tableConfigs: List<Pair<QualifiedName, CaskConfig>> by lazy { getCaskConfigs(viewSpec.join) }
    private val types: Map<QualifiedName, Type> by lazy { compileTypes(tableConfigs) }
    private val taxiTypes by lazy { types.mapValues { (_, vyneType) -> vyneType.taxiType as ObjectType } }
-   private val viewTableName = "$ViewSuffix${viewSpec.typeName.typeName}"
+   private val viewTableName = "$ViewPrefix${viewSpec.typeName.typeName}"
 
    fun generateCreateView(): String? {
       val join = viewSpec.join
@@ -237,6 +237,6 @@ class CaskViewBuilder(
       }
    }
    companion object {
-      const val ViewSuffix = "v_"
+      const val ViewPrefix = "v_"
    }
 }

@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
+import java.lang.Exception
 
 @Component
 class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
@@ -22,17 +23,21 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
          return null
       }
       log().info("View ${viewDefinition.typeName} view using DDL: $viewDdl \n")
-      template.execute(viewDdl)
-      log().info("View ${viewDefinition.typeName} created successfully")
+      try {
+         template.execute(viewDdl)
+         log().info("View ${viewDefinition.typeName} created successfully")
 
-      log().info("Generating cask config for view ${viewDefinition.typeName}")
-      val caskConfig = builder.generateCaskConfig()
-      if (!caskConfigRepository.findById(caskConfig.tableName).isPresent) {
-         return caskConfigRepository.save(caskConfig)
+         log().info("Generating cask config for view ${viewDefinition.typeName}")
+         val caskConfig = builder.generateCaskConfig()
+         if (!caskConfigRepository.findById(caskConfig.tableName).isPresent) {
+            return caskConfigRepository.save(caskConfig)
+         }
+         log().info("Cask Config for view ${viewDefinition.typeName} created successfully")
+         return null
+      } catch (e: Exception) {
+         log().error("Error in generating view", e)
+         return null
       }
-      log().info("Cask Config for view ${viewDefinition.typeName} created successfully")
-      return null
-
    }
 
    fun bootstrap(): List<CaskConfig> {

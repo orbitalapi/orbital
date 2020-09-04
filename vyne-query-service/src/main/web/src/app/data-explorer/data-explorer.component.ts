@@ -33,6 +33,7 @@ export class DataExplorerComponent {
 
   selectedTypeInstance: InstanceLike;
   selectedTypeInstanceType: Type;
+  shouldTypedInstancePanelBeVisible: boolean;
 
   get showSidePanel(): boolean {
     return this.selectedTypeInstanceType !== undefined && this.selectedTypeInstance !== null;
@@ -221,6 +222,7 @@ export class DataExplorerComponent {
   }
 
   onInstanceClicked(event: InstanceLike) {
+    this.shouldTypedInstancePanelBeVisible = true;
     this.selectedTypeInstance = event;
     const instanceTypeName = typeName(event);
     this.selectedTypeInstanceType = findType(this.schema, instanceTypeName);
@@ -233,5 +235,9 @@ export class DataExplorerComponent {
 
   getHeadersWithAssignedTypes($event: any) {
     this.headersWithAssignedTypes = $event;
+  }
+
+  onCloseTypedInstanceDrawer($event: boolean) {
+    this.shouldTypedInstancePanelBeVisible = $event;
   }
 }
