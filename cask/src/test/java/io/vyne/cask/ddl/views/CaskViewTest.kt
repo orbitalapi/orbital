@@ -95,7 +95,7 @@ class CaskViewBuilderFactoryTest {
       @Id order_Id : OrderId
       order_LastTradeDate : TradeDate( @format = "YYYYDDTHH:nn:ss" )
       order_LastTradeTime : TradeTime( @format = "HH:nn:ss" )
-      order_Timestampt : TradeTimestamp  by ( this.order_LastTradeDate + this.order_LastTradeTime )
+      order_Timestampt : TradeTimestamp  by (this.order_LastTradeDate + this.order_LastTradeTime)
       order_TradeStatus : TradeStatus
       trade_Id : TradeId
       @Between trade_TradeDate : TradeDate
