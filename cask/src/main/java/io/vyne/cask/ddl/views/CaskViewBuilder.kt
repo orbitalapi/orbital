@@ -99,15 +99,16 @@ class CaskViewBuilder(
       }
 
       val tableListStatement = tableList.joinToString("\n") { it.joinCriteria ?: it.tableName.quoted() }
-      val whereClause = viewSpec.whereClause?.let { "WHERE ${convertWhereClause(it, taxiTypes.values.toList(), tableNames)}" } ?: ""
+      val whereClause = viewSpec.whereClause?.let { "WHERE ${convertWhereClause(it, taxiTypes.values.toList(), tableNames)}" }
+         ?: ""
       // Note - for the view, we don't need to use the VersionedType,
       // since the view is a function of the underlying VersionedType's
       // Therefore, a QualifiedName for the reference types is sufficient.
       // (Hope I'm right about that).
 
-      val ddl =  """create or replace view $viewTableName as
+      val ddl = """create or replace view $viewTableName as
          |select ${if (viewSpec.distinct) "distinct" else ""}
-         |${tableList.flatMap { it.fieldList }.joinToString(", \n") }
+         |${tableList.flatMap { it.fieldList }.joinToString(", \n")}
          |from
          |$tableListStatement
          |$whereClause;
@@ -137,7 +138,7 @@ class CaskViewBuilder(
       }
    }
 
-   internal fun convertWhereClause(clause: String, types:List<ObjectType>, tableNames: Map<QualifiedName, String>):String {
+   internal fun convertWhereClause(clause: String, types: List<ObjectType>, tableNames: Map<QualifiedName, String>): String {
       // I hate regex.  Here's what this is doing:
       // trying to match patterns like test.Foo:fieldName or just Foo.fieldName
       // ((\w+)\.)* : Find word characters followed by a . (and permit 0-to-many groups of that)
@@ -178,13 +179,15 @@ class CaskViewBuilder(
       val schema = TaxiSchema.from(VersionedSource.sourceOnly(taxiSource), importSources)
       return schema.versionedType(viewSpec.typeName.toVyneQualifiedName())
    }
+
    fun generateTaxiSource(): String {
       val document = generateTaxi()
       return generateTaxiSource(document)
    }
-   private fun generateTaxiSource(document: TaxiDocument):String {
-      return taxiWriter.generateSchemas(listOf(document), importLocation = SchemaWriter.ImportLocation.CollectImports)
-         .joinToString("\n")
+
+   private fun generateTaxiSource(document: TaxiDocument): String {
+      val schemas = taxiWriter.generateSchemas(listOf(document), importLocation = SchemaWriter.ImportLocation.CollectImports)
+      return schemas.joinToString("\n")
    }
 
    private fun generateTaxi(): TaxiDocument {
@@ -236,6 +239,7 @@ class CaskViewBuilder(
          qualifiedName to configs.maxBy { it.insertedAt }!!
       }
    }
+
    companion object {
       const val ViewPrefix = "v_"
    }
