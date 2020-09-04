@@ -1,10 +1,10 @@
 package io.vyne.cask.query
 
 import io.vyne.cask.api.CaskConfig
-import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ddl.caskRecordTable
+import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.ViewPrefix
 import io.vyne.cask.timed
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
@@ -16,6 +16,7 @@ import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.nio.file.Path
 import java.sql.ResultSet
 import java.sql.Timestamp
@@ -342,9 +343,15 @@ class CaskDAO(
    // ### DELETE/EMPTY Cask
    // ############################
 
+   @Transactional
    fun deleteCask(tableName: String) {
+      log().info("Removing Cask with underlying table / view $tableName")
       jdbcTemplate.update("DELETE FROM CASK_CONFIG WHERE tableName=?", tableName)
-      jdbcTemplate.update("DROP TABLE ${tableName}")
+      if (tableName.startsWith(ViewPrefix)) {
+         jdbcTemplate.update("DROP VIEW $tableName")
+      } else {
+         jdbcTemplate.update("DROP TABLE $tableName")
+      }
    }
 
    fun emptyCask(tableName: String) {
