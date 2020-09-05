@@ -42,7 +42,7 @@ class CaskViewBuilder(
    private val taxiTypes by lazy { types.mapValues { (_, vyneType) -> vyneType.taxiType as ObjectType } }
    private val viewTableName = "$ViewPrefix${viewSpec.typeName.typeName}"
 
-   fun generateCreateView(): String? {
+   fun generateCreateView(): List<String> {
       val join = viewSpec.join
 
       val tableNames: Map<QualifiedName, String> = tableConfigs.map { (qualifiedName, config) ->
@@ -51,7 +51,7 @@ class CaskViewBuilder(
       val preferredType = taxiTypes[join.types.first()]
       if (preferredType == null) {
          log().warn("No cask exists for type ${join.types.first()}.  This can happen if a view is defined before a cask is generated. Aborting view creation for view ${viewSpec.typeName}")
-         return null
+         return emptyList()
       }
       val filter = CaskViewFieldFilter(viewSpec.typeName, taxiTypes.values.toList(), preferredType!!)
 
@@ -90,7 +90,7 @@ class CaskViewBuilder(
             }
 
             if (errorInJoin) {
-               return null
+               return emptyList()
             }
 
             val joinStatement = "${join.kind.statement} ${thisTableName.quoted()} on $joinCriteria"
@@ -106,6 +106,8 @@ class CaskViewBuilder(
       // Therefore, a QualifiedName for the reference types is sufficient.
       // (Hope I'm right about that).
 
+      // LENS-343: Drop view first, to prevent errors about
+      //
       val ddl = """create or replace view $viewTableName as
          |select ${if (viewSpec.distinct) "distinct" else ""}
          |${tableList.flatMap { it.fieldList }.joinToString(", \n")}
@@ -114,7 +116,8 @@ class CaskViewBuilder(
          |$whereClause;
       """.trimMargin()
          .trim()
-      return ddl
+      val dropStatement = """drop view if exists $viewTableName;"""
+      return listOf(dropStatement, ddl)
    }
 
    fun generateCaskConfig(): CaskConfig {

@@ -95,7 +95,7 @@ class CaskViewBuilderFactoryTest {
       @Id order_Id : OrderId
       order_LastTradeDate : TradeDate( @format = "YYYYDDTHH:nn:ss" )
       order_LastTradeTime : TradeTime( @format = "HH:nn:ss" )
-      order_Timestampt : TradeTimestamp  by ( this.order_LastTradeDate + this.order_LastTradeTime )
+      order_Timestampt : TradeTimestamp  by (this.order_LastTradeDate + this.order_LastTradeTime)
       order_TradeStatus : TradeStatus
       trade_Id : TradeId
       @Between trade_TradeDate : TradeDate
@@ -108,9 +108,9 @@ class CaskViewBuilderFactoryTest {
 
    @Test
    fun `generates create view ddl`() {
-      val ddl = builderBuilderFactory.getBuilder(viewDef).generateCreateView()
-
-      val expected = """create or replace view v_OrderEvent as
+      val statements = builderBuilderFactory.getBuilder(viewDef).generateCreateView()
+      val expectedDrop = """drop view if exists v_OrderEvent;"""
+      val expectedCreate = """create or replace view v_OrderEvent as
 select distinct
 "orders"."id" as "order_Id",
 "orders"."lastTradeDate" as "order_LastTradeDate",
@@ -123,7 +123,9 @@ from
 "orders"
 left outer join "trades" on "orders"."id" = "trades"."orderId" and "orders"."lastTradeDate" = "trades"."tradeDate"
 WHERE "orders"."tradeStatus" = 'Cf';"""
-      ddl!!.trimNewLines().should.equal(expected.trimNewLines())
+      val (actualDrop, actualCreate) = statements
+      actualDrop.trimNewLines().should.equal(expectedDrop.trimNewLines())
+      actualCreate.trimNewLines().should.equal(expectedCreate.trimNewLines())
    }
 
    @Test
