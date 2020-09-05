@@ -17,14 +17,17 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
    private fun generateView(viewDefinition: CaskViewDefinition): CaskConfig? {
       log().info("Generating view ${viewDefinition.typeName}")
       val builder = viewBuilderFactory.getBuilder(viewDefinition)
-      val viewDdl = builder.generateCreateView()
-      if (viewDdl == null) {
+      val viewDdlStatements = builder.generateCreateView()
+      if (viewDdlStatements.isEmpty()) {
          log().warn("No viewDDL generated for ${viewDefinition.typeName}, not proceeding with view creation")
          return null
       }
-      log().info("View ${viewDefinition.typeName} view using DDL: $viewDdl \n")
       try {
-         template.execute(viewDdl)
+         viewDdlStatements.forEach { ddl ->
+            log().info("View ${viewDefinition.typeName} executing generated DDL: \n$ddl")
+            template.execute(ddl)
+         }
+
          log().info("View ${viewDefinition.typeName} created successfully")
 
          log().info("Generating cask config for view ${viewDefinition.typeName}")
