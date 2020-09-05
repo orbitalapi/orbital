@@ -100,7 +100,13 @@ class CaskDAO(
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
             val findOneArg = jdbcQueryArgumentType(fieldType, arg)
-            jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg)
+            try {
+               jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg)
+            } catch (exception:Exception) {
+               log().error("Failed to execute query", exception)
+               throw exception
+            }
+
          }
          if (results.size > 1) {
             log().error("Call to findOne() returned ${results.size} results.  Will pick the first")
@@ -110,14 +116,18 @@ class CaskDAO(
    }
 
    fun findMultiple(versionedType: VersionedType, columnName: String, arg: List<String>): List<Map<String, Any>> {
+      // Ignore the compiler -- filterNotNull() required here because we can receive a null inbound
+      // in the Json. Jackson doesn't filter it out, and so casting errors can occur.
+      val inputValues = arg.filterNotNull()
       return timed("${versionedType.versionedName}.findMultiple${columnName}") {
          doForAllTablesOfType(versionedType) { tableName ->
             val originalTypeSchema = schemaProvider.schema()
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-            val findMultipleArg = jdbcQueryArgumentsType(fieldType, arg)
-            val inPhrase = arg.joinToString(",") { "?" }
-            val argTypes = arg.map { Types.VARCHAR }.toTypedArray().toIntArray()
+            val findMultipleArg = jdbcQueryArgumentsType(fieldType, inputValues)
+
+            val inPhrase = inputValues.joinToString(",") { "?" }
+            val argTypes = inputValues.map { Types.VARCHAR }.toTypedArray().toIntArray()
             val argValues = findMultipleArg.toTypedArray()
             val retVal = jdbcTemplate.queryForList(findInQuery(tableName, columnName, inPhrase), argValues, argTypes)
             retVal
