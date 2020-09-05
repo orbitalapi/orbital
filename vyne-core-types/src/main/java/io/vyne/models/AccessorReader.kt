@@ -76,7 +76,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
          value is String -> csvParser.parse(value, targetType, accessor, schema, source, nullable)
          // Efficient parsing where we've already parsed the record once (eg., streaming from disk).
          value is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues, source, nullable)
-         value is Map<*, *> && accessor.defaultValue != null -> csvParser.parse(accessor.defaultValue.toString(), targetType, accessor, schema, source, nullable)
+         accessor.defaultValue != null -> csvParser.parse(accessor.defaultValue.toString(), targetType, accessor, schema, source, nullable)
          else -> {
             if (nullable) {
                return TypedInstance.from(targetType, null, schema, source = source)
