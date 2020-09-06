@@ -126,7 +126,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
                // If RAW result, we serialise depending on content type
                ResultMode.RAW -> {
                   return when (contentType) {
-                     TEXT_CSV -> String(toCsv(queryResponse.resultMap))
+                     TEXT_CSV -> String(toCsv(queryResponse.resultMap, vyneProvider.createVyne().schema))
                      else -> toJson(queryResponse.resultMap)
                   }
                }
