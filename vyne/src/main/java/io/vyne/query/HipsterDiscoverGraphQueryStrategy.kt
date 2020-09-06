@@ -139,7 +139,8 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
             .mapNotNull { fact ->
                val searchStart = instanceOfType(fact.type)
                try{
-                  search(searchStart, targetElement, context, directedGraph)
+                  val searchREsult = search(searchStart, targetElement, context, directedGraph)
+                  searchREsult
                } catch(e : SearchFailedException) {
                   log().debug("Failed to search for ${fact.type.taxiType}")
                   null
