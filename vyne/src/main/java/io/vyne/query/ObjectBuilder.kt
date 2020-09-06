@@ -10,6 +10,7 @@ import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
+import io.vyne.utils.log
 import lang.taxi.types.ObjectType
 
 class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
@@ -59,7 +60,9 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                if (nonNullMatches.size == 1) {
                   return nonNullMatches.first()
                }
-               error("Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${instance.map { Pair(it.typeName, it.value)}.joinToString()}")
+               log().error("Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${instance.map { Pair(it.typeName, it.value)}.joinToString()}")
+               // HACK : How do we handle this?
+               return nonNullMatches.first()
             }
          }
       }
