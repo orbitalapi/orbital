@@ -245,7 +245,7 @@ orderId_0,john,Instrument_0
       val csv = """
 orderId,traderName,instrumentId
 orderId_0,john,Instrument_0
-orderId_1,pierre
+orderId_1,pierre,
 """.trimIndent()
 
       assertEquals(csv, responseStr.trimIndent())
