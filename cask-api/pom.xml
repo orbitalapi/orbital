@@ -5,7 +5,7 @@
     <parent>
         <artifactId>platform</artifactId>
         <groupId>io.vyne</groupId>
-        <version>0.7.18</version>
+        <version>0.7.19</version>
     </parent>
     <packaging>jar</packaging>
     <modelVersion>4.0.0</modelVersion>
