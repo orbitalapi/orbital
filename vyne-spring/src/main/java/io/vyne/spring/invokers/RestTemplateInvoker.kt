@@ -96,16 +96,15 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
             handleSuccessfulHttpResponse(result, operation, parameters, remoteCall)
          } else {
             handleFailedHttpResponse(result, operation, absoluteUrl, httpMethod, requestBody)
-            throw RuntimeException("Shouldn't hit this point")
          }
       }
       return httpResult
 
    }
 
-   private fun handleFailedHttpResponse(result: ResponseEntity<out Any>, operation: Operation, absoluteUrl: Any, httpMethod: HttpMethod, requestBody: Any) {
+   private fun handleFailedHttpResponse(result: ResponseEntity<out Any>, operation: Operation, absoluteUrl: Any, httpMethod: HttpMethod, requestBody: Any):Nothing {
       val message = "Failed load invoke $httpMethod to $absoluteUrl - received $result"
-      log().error(message)
+      log().warn(message)
       throw OperationInvocationException(message)
    }
 

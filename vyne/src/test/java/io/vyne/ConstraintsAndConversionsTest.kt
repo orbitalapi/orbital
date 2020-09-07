@@ -50,7 +50,7 @@ service MyService {
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
       val vyne = Vyne(queryEngineFactory /*,"remote:localhost/test" */).addSchema(schema)
       stubService.addResponse("convertCurrency", money(2, "GBP", vyne))
-      stubService.addResponse("calculateRiskForClient", vyne.parseKeyValuePair("Risk", 0.5))
+      stubService.addResponse("calculateRiskForClient", vyne.parseKeyValuePair("ClientRisk", 0.5))
 
       val queryEngine = vyne.queryEngine()
       queryEngine.addModel(money(5, "USD", vyne))

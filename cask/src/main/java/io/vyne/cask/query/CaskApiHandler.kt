@@ -12,8 +12,7 @@ import org.springframework.web.reactive.function.BodyExtractors
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
-import org.springframework.web.reactive.function.server.ServerResponse.badRequest
-import org.springframework.web.reactive.function.server.ServerResponse.ok
+import org.springframework.web.reactive.function.server.ServerResponse.*
 import org.springframework.web.util.UriComponents
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Mono
@@ -61,9 +60,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
 
    private fun findMultipleBy(request: ServerRequest, requestPathOriginal: String, uriComponents: UriComponents): Mono<ServerResponse> {
       // Example request url => http://192.168.1.114:8800/api/cask/findMultipleBy/ion/trade/Trade/orderId
-      val extractor = BodyExtractors.toMono(object: ParameterizedTypeReference<List<String>> () {})
-      return request.body(extractor).flatMap {
-         inputArray ->
+      val extractor = BodyExtractors.toMono(object : ParameterizedTypeReference<List<String>>() {})
+      return request.body(extractor).flatMap { inputArray ->
          val requestPath = requestPathOriginal.replace("findMultipleBy/", "")
          val fieldName = uriComponents.pathSegments.takeLast(1).first()
          val caskType = uriComponents.pathSegments.dropLast(1).drop(1).joinToString(".")
@@ -180,11 +178,16 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val record = caskDAO.findOne(versionedType.b, fieldName, findByValue)
-            return ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .body(BodyInserters.fromValue(record))
+            if (record.isNullOrEmpty()) {
+               return notFound().build()
+            } else {
+               return ok()
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .body(BodyInserters.fromValue(record))
+            }
          }
       }
    }
-   private fun fieldNameAndArgs(uriComponents: UriComponents, takeLast: Int ) = uriComponents.pathSegments.takeLast(takeLast)
+
+   private fun fieldNameAndArgs(uriComponents: UriComponents, takeLast: Int) = uriComponents.pathSegments.takeLast(takeLast)
 }
