@@ -1,5 +1,7 @@
 package io.vyne.query.graph
 
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.Multimap
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
@@ -97,15 +99,19 @@ typealias MemberElement = Element
 
 class VyneGraphBuilder(private val schema: Schema) {
 
-   private val baseSchemaGraph: HipsterGraphBuilder<Element, Relationship> by lazy {
-      val builder = HipsterGraphBuilder.create<Element, Relationship>()
-      appendTypes(builder, schema)
-      appendServices(builder, schema)
-      builder
-   }
+   private var lastBuiltBaseGraphBuilder: HipsterGraphBuilder<Element, Relationship>? = null
 
-   fun build(types: Set<Type> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
-      val builder = baseSchemaGraph
+   private val baseSchemaCache = CacheBuilder.newBuilder()
+      .maximumSize(100) // arbitary, can tune later
+      .build<Int, HipsterGraphBuilder<Element, Relationship>>()
+
+   fun build(types: Set<Type> = emptySet(), excludedOperations: Set<QualifiedName> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
+      val builder = baseSchemaCache.get(excludedOperations.hashCode()) {
+         val instance = HipsterGraphBuilder.create<Element, Relationship>()
+         appendTypes(instance, schema)
+         appendServices(instance, schema, excludedOperations)
+         instance
+      }
       val thisBuilder = builder.copy()
       appendInstances(thisBuilder, types, schema)
       return thisBuilder.createDirectedGraph()
@@ -164,41 +170,43 @@ class VyneGraphBuilder(private val schema: Schema) {
       return "$typeFullyQualifiedName/$attributeName"
    }
 
-   private fun appendServices(builder: HipsterGraphBuilder<Element, Relationship>, schema: Schema) {
+   private fun appendServices(builder: HipsterGraphBuilder<Element, Relationship>, schema: Schema, excludedOperations: Set<QualifiedName>) {
       return schema.services.forEach { service: Service ->
-         service.operations.forEach { operation: Operation ->
-            val operationNode = operation(service, operation)
-            operation.parameters.forEachIndexed { index, parameter ->
-               // When building services, we need to use 'connector nodes'
-               // as Hipster4J doesn't support identical vertex pairs with seperate edges.
-               // eg: Service -[requiresParameter]-> Money && Service -[Provides]-> Money
-               // isn't supported, and results in the Edge for the 2nd pair to remain undefined
-               val typeFqn = parameter.type.fullyQualifiedName
-               val paramNode = parameter(typeFqn)
-               builder.connect(operationNode).to(paramNode).withEdge(Relationship.REQUIRES_PARAMETER)
-               builder.connect(paramNode).to(operationNode).withEdge(Relationship.IS_PARAMETER_ON)
+         service.operations
+            .filter { !excludedOperations.contains(it.qualifiedName) }
+            .forEach { operation: Operation ->
+               val operationNode = operation(service, operation)
+               operation.parameters.forEachIndexed { index, parameter ->
+                  // When building services, we need to use 'connector nodes'
+                  // as Hipster4J doesn't support identical vertex pairs with seperate edges.
+                  // eg: Service -[requiresParameter]-> Money && Service -[Provides]-> Money
+                  // isn't supported, and results in the Edge for the 2nd pair to remain undefined
+                  val typeFqn = parameter.type.fullyQualifiedName
+                  val paramNode = parameter(typeFqn)
+                  builder.connect(operationNode).to(paramNode).withEdge(Relationship.REQUIRES_PARAMETER)
+                  builder.connect(paramNode).to(operationNode).withEdge(Relationship.IS_PARAMETER_ON)
 
-               if (parameter.type.isParameterType) {
-                  // Traverse into the attributes of param types, and add extra nodes.
-                  // As we're allowed to instantiate param types, discovered values within the graph
-                  // can be used to populate new instances, so form links.
-                  parameter.type.attributes.forEach { attriubteName, typeRef ->
-                     // Point back to the "parent" param node (the parameterObject)
-                     // might revisit this in the future, and point back to the Operation itself.
-                     builder.connect(parameter(typeRef.type.fullyQualifiedName)).to(paramNode).withEdge(Relationship.IS_PARAMETER_ON)
+                  if (parameter.type.isParameterType) {
+                     // Traverse into the attributes of param types, and add extra nodes.
+                     // As we're allowed to instantiate param types, discovered values within the graph
+                     // can be used to populate new instances, so form links.
+                     parameter.type.attributes.forEach { attriubteName, typeRef ->
+                        // Point back to the "parent" param node (the parameterObject)
+                        // might revisit this in the future, and point back to the Operation itself.
+                        builder.connect(parameter(typeRef.type.fullyQualifiedName)).to(paramNode).withEdge(Relationship.IS_PARAMETER_ON)
+                     }
                   }
                }
-            }
 
-            // Build the instance.
-            // It connects to it's type, but also to the attributes that are
-            // now traversable, as we have an actual instance of the thing
-            val resultInstanceFqn = operation.returnType.qualifiedName.parameterizedName
-            appendProvidedInstances(builder, resultInstanceFqn, schema, operationNode)
+               // Build the instance.
+               // It connects to it's type, but also to the attributes that are
+               // now traversable, as we have an actual instance of the thing
+               val resultInstanceFqn = operation.returnType.qualifiedName.parameterizedName
+               appendProvidedInstances(builder, resultInstanceFqn, schema, operationNode)
 
 
 //            log().debug("Added Operation ${operationNode.value} to graph")
-         }
+            }
       }
    }
 

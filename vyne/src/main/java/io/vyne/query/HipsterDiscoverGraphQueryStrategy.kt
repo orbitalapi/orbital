@@ -57,12 +57,12 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
       } else {
          evaluator.evaluate(edge, queryContext)
       }
-      //log().debug("Evaluated ${evaluationResult.description()}")
-      if (evaluationResult.wasSuccessful) {
-         return evaluationResult
-      } else {
-         throw SearchFailedException("Could not evaluate edge $edge: ${evaluationResult.error!!}", queryContext.evaluatedPath(), queryContext.profiler.root)
-      }
+      return evaluationResult
+//      if (evaluationResult.wasSuccessful) {
+//         return evaluationResult
+//      } else {
+//         throw SearchFailedException("Could not evaluate edge $edge: ${evaluationResult.error!!}", queryContext.evaluatedPath(), queryContext.profiler.root)
+//      }
    }
 }
 
@@ -116,49 +116,46 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       val targetElement = type(target.type)
 
       // search from every fact in the context
-      val lastResult: Pair<TypedInstance, Path>? = find(targetElement, context)
+      val lastResult: TypedInstance? = find(targetElement, context)
       return if (lastResult != null) {
-         QueryStrategyResult(mapOf(target to lastResult.first))
+         QueryStrategyResult(mapOf(target to lastResult))
       } else {
          QueryStrategyResult.empty()
       }
    }
 
-   internal fun find(targetElement: Element, context: QueryContext): Pair<TypedInstance, Path>? {
+   internal fun find(targetElement: Element, context: QueryContext):TypedInstance? {
       // Take a copy, as the set is mutable, and performing a search is a
       // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
       val currentFacts = context.facts.toSet()
-      val graphBuilder = schemaGraphCache[context.schema]
-      val factSet = context.facts.map { it.type }.toSet()
-      val directedGraph =    schemaGraphFactSetCache.get(factSet) {
-            graphBuilder.build(factSet)
-         }
-
       return currentFacts
-            .asSequence()
-            .mapNotNull { fact ->
-               val searchStart = instanceOfType(fact.type)
-               try{
-                  val searchREsult = search(searchStart, targetElement, context, directedGraph)
-                  searchREsult
-               } catch(e : SearchFailedException) {
-                  log().debug("Failed to search for ${fact.type.taxiType}")
-                  null
-               }
-            }.firstOrNull()
+         .asSequence()
+         .mapNotNull { fact ->
+            val startFact = instanceOfType(fact.type)
 
-   }
-
-   internal fun search(start: Element, target: Element, queryContext: QueryContext, graph: HipsterDirectedGraph<Element, Relationship>): Pair<TypedInstance, Path>? {
-      return if (queryContext.debugProfiling) {
-         queryContext.startChild(this, "Searching for path ${start.valueAsQualifiedName().name} -> ${target.valueAsQualifiedName().name}", OperationType.GRAPH_TRAVERSAL) { op ->
-            doSearch(start, target, graph, queryContext, op)
+            val targetType = context.schema.type(targetElement.value as String)
+            val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema))
+            val searchResult = searcher.search(currentFacts) { pathToEvaluate ->
+               evaluatePath(pathToEvaluate,context)
+            }
+            searchResult
          }
-      } else {
-         doSearch(start, target, graph, queryContext)
-      }
+         .firstOrNull()
+
+
+
    }
-   private fun doSearch(start: Element, target: Element, graph: HipsterDirectedGraph<Element, Relationship>, queryContext: QueryContext, op: ProfilerOperation? = null): Pair<TypedInstance, Path>? {
+
+//   internal fun search(start: Element, target: Element, queryContext: QueryContext, graph: HipsterDirectedGraph<Element, Relationship>): TypedInstance? {
+//      return if (queryContext.debugProfiling) {
+//         queryContext.startChild(this, "Searching for path ${start.valueAsQualifiedName().name} -> ${target.valueAsQualifiedName().name}", OperationType.GRAPH_TRAVERSAL) { op ->
+//            doSearch(start, target, graph, queryContext, op)
+//         }
+//      } else {
+//         doSearch(start, target, graph, queryContext)
+//      }
+//   }
+   private fun doSearch(start: Element, target: Element, graph: HipsterDirectedGraph<Element, Relationship>, queryContext: QueryContext, op: ProfilerOperation? = null): TypedInstance? {
       val searchResult = graphSearch(start, target, graph)
 
       if (searchResult.state() != target) {
@@ -181,17 +178,21 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
 
       val evaluatedPath = evaluatePath(searchResult, queryContext)
       val resultValue = selectResultValue(evaluatedPath, queryContext, target)
-      val path = searchResult.path().convertToVynePath(start, target)
-      return if (resultValue != null) {
-         resultValue to path
-      } else { // Search failed
-         null
-      }
+      return resultValue
+//      val path = searchResult.path().convertToVynePath(start, target)
+//      return if (resultValue != null) {
+//         resultValue /* to path */
+//      } else { // Search failed
+//         null
+//      }
    }
 
    private fun graphSearch(from: Element, to: Element, graph: HipsterDirectedGraph<Element, Relationship>): WeightedNode<Relationship, Element, Double> {
       val result = graphSearchResultCache.get(SearchCacheKey(from, to)) {
-         val problem = GraphSearchProblem.startingFrom(from).`in`(graph).takeCostsFromEdges().build()
+         val problem = GraphSearchProblem
+            .startingFrom(from).`in`(graph)
+            .takeCostsFromEdges()
+            .build()
          Hipster.createAStar(problem).search(to).goalNode
       }
       //log().debug("Graph search completed.  Cache results: ${graphSearchResultCache.stats()}")
@@ -231,6 +232,16 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       )
       searchResult.path()
          .drop(1)
+         .asSequence()
+         .takeWhile {
+            val lastEvaluation = evaluatedEdges.last()
+            // Take as long as the last evaluation we made was successful.  Otherwise, stop.
+            if (lastEvaluation is EvaluatedEdge) {
+               lastEvaluation.wasSuccessful
+            } else {
+               true
+            }
+         }
          .mapIndexedTo(evaluatedEdges) { index, weightedNode ->
             // Note re index:  We dropped 1, so indexes are out-by-one.
             // Normally the lastValue would be index-1, but here, it's just index.

@@ -1,6 +1,7 @@
 package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.query.*
 import io.vyne.query.graph.*
 import io.vyne.schemas.*
@@ -128,11 +129,22 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       val visitedInstanceNodes = context.collectVisitedInstanceNodes()
 
 
-      val result: TypedInstance = invocationService.invokeOperation(service, operation, visitedInstanceNodes, context)
-      // Consider enhancing facts with the information how we derived them, e.g. via Operation so that can be used as cache?
-      context.addFact(result)
-      context.addOperationResult(edge, result)
-      return edge.success(result)
+      return try {
+         val result: TypedInstance = invocationService.invokeOperation(service, operation, visitedInstanceNodes, context)
+         if (result is TypedNull) {
+            log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
+         } else {
+            context.addFact(result)
+         }
+         context.addOperationResult(edge, result)
+         edge.success(result)
+         // Don't add nulls
+      } catch (exception:Exception) {
+         // Operation invokers throw exceptions for failed invocations.
+         // Don't throw here, just report the failure
+         edge.failure(null)
+      }
+
    }
 
    override val relationship: Relationship = Relationship.PROVIDES
