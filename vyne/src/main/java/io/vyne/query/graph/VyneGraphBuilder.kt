@@ -97,13 +97,17 @@ fun instanceOfType(type: Type): Element {
 typealias TypeElement = Element
 typealias MemberElement = Element
 
+private data class GraphWithFactsCacheKey(val facts:Set<Type>, val graphBuilder:HipsterGraphBuilder<Element,Relationship>)
 class VyneGraphBuilder(private val schema: Schema) {
 
-   private var lastBuiltBaseGraphBuilder: HipsterGraphBuilder<Element, Relationship>? = null
 
    private val baseSchemaCache = CacheBuilder.newBuilder()
       .maximumSize(100) // arbitary, can tune later
       .build<Int, HipsterGraphBuilder<Element, Relationship>>()
+
+   private val graphWithFactsCache = CacheBuilder.newBuilder()
+      .maximumSize(100)
+      .build<GraphWithFactsCacheKey, HipsterDirectedGraph<Element,Relationship>>()
 
    fun build(types: Set<Type> = emptySet(), excludedOperations: Set<QualifiedName> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
       val builder = baseSchemaCache.get(excludedOperations.hashCode()) {
@@ -112,9 +116,15 @@ class VyneGraphBuilder(private val schema: Schema) {
          appendServices(instance, schema, excludedOperations)
          instance
       }
-      val thisBuilder = builder.copy()
-      appendInstances(thisBuilder, types, schema)
-      return thisBuilder.createDirectedGraph()
+
+
+      val graphWithFacts = graphWithFactsCache.get(GraphWithFactsCacheKey(types,builder)) {
+         val thisBuilder = builder.copy()
+         appendInstances(thisBuilder, types, schema)
+         thisBuilder.createDirectedGraph()
+      }
+
+      return graphWithFacts
    }
 
    fun buildDisplayGraph(): HipsterDirectedGraph<Element, Relationship> {

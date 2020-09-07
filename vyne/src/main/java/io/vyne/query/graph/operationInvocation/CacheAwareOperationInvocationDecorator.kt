@@ -30,7 +30,7 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
 
       val previousError = cachedErrors.getIfPresent(key)
       if (previousError != null) {
-         log().warn("Last attempt to invoke operation with key $key resulted in exception ${previousError::class.simpleName}  - ${previousError.message}.  Not attempting, and will rethrow error")
+//         log().warn("Last attempt to invoke operation with key $key resulted in exception ${previousError::class.simpleName}  - ${previousError.message}.  Not attempting, and will rethrow error")
          throw previousError
       }
 
