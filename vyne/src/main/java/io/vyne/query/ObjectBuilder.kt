@@ -138,7 +138,12 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
    private fun findScalarInstance(targetType: Type): TypedInstance? {
       // Try searching for it.
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
-      val result = queryEngine.find(targetType, context)
+      val result = try {
+         queryEngine.find(targetType, context)
+      } catch (e:Exception) {
+         log().error("Failed to find type ${targetType.fullyQualifiedName}", e)
+         return null
+      }
       return if (result.isFullyResolved) {
          result[targetType] ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
       } else {
