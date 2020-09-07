@@ -17,6 +17,7 @@ interface OperationInvocationService {
 
 interface OperationInvoker {
    fun canSupport(service: Service, operation: Operation): Boolean
+
    // TODO : This should return some form of reactive type.
    fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance
 }
@@ -33,7 +34,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       return result
    }
 
-   private fun gatherParameters(parameters: List<Parameter>, candidateParamValues: Set<TypedInstance>, context: QueryContext, providedParamValues:List<Pair<Parameter,TypedInstance>>): List<Pair<Parameter, TypedInstance>> {
+   private fun gatherParameters(parameters: List<Parameter>, candidateParamValues: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): List<Pair<Parameter, TypedInstance>> {
       // NOTE : See DirectServiceInvocationStrategy, where we have an alternative approach for gatehring params.
       // Suggest merging that here.
 
@@ -43,20 +44,20 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       // to query the engine for a value.
       val parameterValuesOrQuerySpecs: List<Pair<Parameter, Any>> = parameters
          // Filter out the params that we've already been provided
-         .filter { requiredParam -> providedParamValues.none { (providedParam,_) -> requiredParam == providedParam } }
+         .filter { requiredParam -> providedParamValues.none { (providedParam, _) -> requiredParam == providedParam } }
          .map { requiredParam ->
-         val preferredParam = candidateParamValues.firstOrNull { it.type.resolvesSameAs(requiredParam.type) }
-         when {
-            preferredParam != null -> requiredParam to preferredParam
-            preferredParamsByType.containsKey(requiredParam.type) -> requiredParam to preferredParamsByType.getValue(requiredParam.type)
-            context.hasFactOfType(requiredParam.type) -> requiredParam to context.getFact(requiredParam.type)
-            else -> {
-               val queryNode = QuerySpecTypeNode(requiredParam.type)
-               unresolvedParams.add(queryNode)
-               requiredParam to queryNode
+            val preferredParam = candidateParamValues.firstOrNull { it.type.resolvesSameAs(requiredParam.type) }
+            when {
+               preferredParam != null -> requiredParam to preferredParam
+               preferredParamsByType.containsKey(requiredParam.type) -> requiredParam to preferredParamsByType.getValue(requiredParam.type)
+               context.hasFactOfType(requiredParam.type) -> requiredParam to context.getFact(requiredParam.type)
+               else -> {
+                  val queryNode = QuerySpecTypeNode(requiredParam.type)
+                  unresolvedParams.add(queryNode)
+                  requiredParam to queryNode
+               }
             }
          }
-      }
 
       // Try to resolve any unresolved params
       var resolvedParams = emptyMap<QuerySpecTypeNode, TypedInstance?>()
@@ -121,9 +122,15 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       // Therefore, just find all the params, and add them to the context.
       // This will fail if a param is not discoverable
       operation.parameters.forEach { requiredParam ->
-         val paramInstance = parameterFactory.discover(requiredParam.type, context)
-         context.addFact(paramInstance)
+         try {
+            val paramInstance = parameterFactory.discover(requiredParam.type, context)
+            context.addFact(paramInstance)
+         } catch (e: Exception) {
+            log().warn("Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}")
+            return edge.failure(null)
+         }
       }
+
 
       // VisitedNodes are better candidates for params, as they are more contextually relevant
       val visitedInstanceNodes = context.collectVisitedInstanceNodes()
@@ -139,7 +146,7 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
          context.addOperationResult(edge, result)
          edge.success(result)
          // Don't add nulls
-      } catch (exception:Exception) {
+      } catch (exception: Exception) {
          // Operation invokers throw exceptions for failed invocations.
          // Don't throw here, just report the failure
          edge.failure(null)
