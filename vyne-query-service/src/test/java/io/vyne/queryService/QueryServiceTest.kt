@@ -12,6 +12,7 @@ import io.vyne.query.*
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.VyneFactory
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.springframework.http.MediaType
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
@@ -251,6 +252,7 @@ orderId_1,pierre,
       assertEquals(csv, responseStr.trimIndent())
    }
 
+   @Ignore("LENS-345 has been opened to re-enable this functionality")
    @Test
    fun `duplicate match error in projection returned as part of failed response`() {
 
