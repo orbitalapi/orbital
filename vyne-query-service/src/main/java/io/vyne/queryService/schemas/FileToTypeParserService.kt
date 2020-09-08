@@ -107,7 +107,7 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
       return if(hasHeader && !firstRecordAsHeader) {
          val index = content.indexOf("$columnOneName$csvDelimiter$columnTwoName")
          if (index > 0) {
-            content.removeRange(0, index)
+            content.removeRange(0 until index)
          } else {
             content
          }

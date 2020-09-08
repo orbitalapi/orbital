@@ -57,10 +57,14 @@ export class CaskPanelComponent {
 
   get url() {
     let caskUrl = `${this.caskServiceUrl}/api/ingest/${this.format}/${this.targetTypeName}`;
+    const csvOptions = this.csvOptions;
     if (this.format === 'csv') {
-      let csvOptionsQueryString = `?csvDelimiter=${this.csvOptions.separator}&csvFirstRecordAsHeader=${this.csvOptions.firstRecordAsHeader}`;
+      let csvOptionsQueryString =
+        `?csvDelimiter=${csvOptions.separator}&csvFirstRecordAsHeader=${csvOptions.firstRecordAsHeader}${csvOptions.firstRowHasOffset
+          ? (`&firstRowHasOffset=true&columnOne=${csvOptions.columnOneName}&columnTwo=${csvOptions.columnTwoName}`)
+          : `&firstRowHasOffset=false`}`;
       if (this.csvOptions.nullValueTag) {
-        csvOptionsQueryString += `&nullValue=${this.csvOptions.nullValueTag}`;
+        csvOptionsQueryString += `&nullValue=${csvOptions.nullValueTag}`;
       }
       caskUrl += csvOptionsQueryString;
     }
@@ -73,7 +77,7 @@ export class CaskPanelComponent {
     this.caskService.publishToCask(this.url, this.contents)
       .subscribe(result => {
         this.loading = false;
-        this.resultMessage = result.result + (result.result === 'REJECTED' ?   `: ${result.message}` : '' );
+        this.resultMessage = result.result + (result.result === 'REJECTED' ? `: ${result.message}` : '');
       }, error => {
         this.loading = false;
         this.resultMessage = error.error ? `Error: ${error.error.message}` : error.message;
