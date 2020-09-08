@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
@@ -36,6 +37,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+import java.time.Duration
 import javax.inject.Provider
 import javax.inject.Qualifier
 
@@ -61,17 +63,28 @@ class QueryServiceApp {
    fun eurekaClientConsumer(
       clientProvider: Provider<EurekaClient>,
       eventPublisher: ApplicationEventPublisher,
-      @Value("\${vyne.taxi.rest.retry.count:3}") retryCount: Int): EurekaClientSchemaConsumer {
+      @Value("\${vyne.taxi.rest.retry.count:3}") retryCount: Int,
+      @Value("\${vyne.taxi.rest.connect-timeout:5000ms}") connectTimeout: Duration,
+      @Value("\${vyne.taxi.rest.read-timeout:5000ms}") readTimeout: Duration
+   ): EurekaClientSchemaConsumer {
       val httpClient = HttpClients.custom()
          .setRetryHandler { _, executionCount, _ -> executionCount < retryCount }
          .setServiceUnavailableRetryStrategy(DefaultServiceUnavailableRetryStrategy(retryCount, 1000))
          .build()
 
+      val restTemplate = RestTemplateBuilder()
+         .requestFactory { HttpComponentsClientHttpRequestFactory(httpClient) }
+         .setConnectTimeout(connectTimeout)
+         .setReadTimeout(readTimeout)
+         .build()
+
+      log().info("Eureka schema client configured with retry count of $retryCount, readTimeout of $readTimeout and connect timeout of $connectTimeout")
+
       return EurekaClientSchemaConsumer(
          clientProvider,
          LocalValidatingSchemaStoreClient(),
          eventPublisher,
-         RestTemplate(HttpComponentsClientHttpRequestFactory(httpClient)))
+         restTemplate)
    }
 
    @Bean
@@ -84,7 +97,7 @@ class QueryServiceApp {
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {
       val baseVersion = buildInfo?.get("baseVersion")
       val buildNumber = buildInfo?.get("buildNumber")
-      val version = if(!baseVersion.isNullOrEmpty() && buildNumber != "0" && buildInfo.version.contains("SNAPSHOT")) {
+      val version = if (!baseVersion.isNullOrEmpty() && buildNumber != "0" && buildInfo.version.contains("SNAPSHOT")) {
          "$baseVersion-BETA-$buildNumber"
       } else {
          buildInfo?.version ?: "Dev version"
