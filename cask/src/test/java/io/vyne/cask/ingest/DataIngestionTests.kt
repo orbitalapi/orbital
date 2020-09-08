@@ -262,7 +262,7 @@ class DataIngestionTests {
       val pipelineSource = CsvStreamSource(input, modelWithDefaults, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(modelWithDefaults, TypeDbWrapper(modelWithDefaults, schema, pipelineSource.cachePath, null), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource))
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource), DataSourceProperties())
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(modelWithDefaults)
       caskDao.createCaskRecordTable(modelWithDefaults)
@@ -289,7 +289,7 @@ class DataIngestionTests {
       val pipelineSource = CsvStreamSource(input, concatModel, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(concatModel, TypeDbWrapper(concatModel, schema, pipelineSource.cachePath, null), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource))
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource), DataSourceProperties())
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(concatModel)
       caskDao.createCaskRecordTable(concatModel)
@@ -312,7 +312,7 @@ class DataIngestionTests {
       val pipelineSource = CsvStreamSource(input, instantModel, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(instantModel, TypeDbWrapper(instantModel, schema, pipelineSource.cachePath, null), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.instantFormatSource))
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.instantFormatSource), DataSourceProperties())
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(instantModel)
       caskDao.createCaskRecordTable(instantModel)
