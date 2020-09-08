@@ -8,10 +8,11 @@
 </mat-toolbar>
 
 <mat-sidenav-container [hasBackdrop]="true">
-  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel">
+  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">
     <div class="drawer-content">
       <app-typed-instance-panel-container
         [instance]="selectedTypeInstance"
+        (hasTypedInstanceDrawerClosed)="onCloseTypedInstanceDrawer($event)"
         [type]="selectedTypeInstanceType"
         [lineageGraph]="activeRecord?.response?.lineageGraph"
       ></app-typed-instance-panel-container>
