@@ -279,15 +279,6 @@ class CaskWebsocketHandlerTest {
          .verifyComplete()
    }
 
-   private fun validCsvMessage(delimiter: String = ",", firstRecordAsHeader: Boolean = true): ByteArrayInputStream {
-      val buf = StringBuilder()
-      if (firstRecordAsHeader) {
-         buf.append("Date,Symbol,Open,High,Low,Close\n")
-      }
-      buf.append("2020-03-19,BTCUSD,6300,6330,6186.08,6235.2")
-      return buf.toString().replace(",", delimiter).byteInputStream()
-   }
-
    @Test
    fun csvMessageIngestionWithNullValues() {
       val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(csvMessageWithNullValues().readBytes()))
@@ -301,17 +292,50 @@ class CaskWebsocketHandlerTest {
          .verifyComplete()
    }
 
+   @Test
+   fun csvMessageIngestionWithHeaderOffset() {
+      val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(csvMessageWithHeaderOffset().readBytes()))
+      val sessionInput = Flux.just(validMessage)
+      val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&nullValue=NULL&nullValue=UNKNOWN&nullValue=N%2FA&delimiter=%2C&firstRecordAsHeader=false&columnOne=Date&columnTwo=Symbol", input = sessionInput) // N%2FA = N/A
+      wsHandler.handle(session).block()
+
+      StepVerifier
+         .create(session.textOutput.take(1).timeout(Duration.ofSeconds(1)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 2 records"}""")
+         .verifyComplete()
+   }
+
+   private fun validCsvMessage(delimiter: String = ",", firstRecordAsHeader: Boolean = true): ByteArrayInputStream {
+      val buf = StringBuilder()
+      if (firstRecordAsHeader) {
+         buf.append("Date,Symbol,Open,High,Low,Close\n")
+      }
+      buf.append("2020-03-19,BTCUSD,6300,6330,6186.08,6235.2")
+      return buf.toString().replace(",", delimiter).byteInputStream()
+   }
+
    private fun String.rejectedWithReason(reason:String):Boolean {
       val response = jacksonObjectMapper().readValue<CaskIngestionResponse>(this)
       response.result.should.equal(CaskIngestionResponse.ResponseResult.REJECTED)
       response.message.should.startWith(reason)
       return true
    }
+
    private fun csvMessageWithNullValues(): ByteArrayInputStream {
       return """
          Date,Symbol,Open,High,Low,Close
          NULL,BTCUSD,6300,6330,6186.08,6235.2
          2020-03-19,UNKNOWN,6300,6330,6186.08,6235.2
+         2020-03-19,BTCUSD,N/A,6330,6186.08,6235.2
+         2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
+      """.trimIndent().byteInputStream()
+   }
+
+   private fun csvMessageWithHeaderOffset(): ByteArrayInputStream {
+      return """
+         Before
+         Header,,
+         Date,Symbol,Open,High,Low,Close
          2020-03-19,BTCUSD,N/A,6330,6186.08,6235.2
          2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
       """.trimIndent().byteInputStream()

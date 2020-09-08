@@ -66,12 +66,11 @@ class CaskWebsocketHandler(
             log().info("Ingesting message from sessionId=${session.id}")
             try {
                val containsHeader = request.params.getParam("firstRowAsHeader").orElse(false) as Boolean
+               val firstColumn = request.params.getParam("columnOne")
+               val secondColumn = request.params.getParam("columnTwo")
 
-               if(containsHeader) {
-                  val firstColumn = request.params.getParam("columnOneName")
-                  val secondColumn = request.params.getParam("columnTwoName")
-
-                  if(!firstColumn.isNullOrEmpty() && !secondColumn.isNullOrEmpty()) {
+               if (containsHeader || (!firstColumn.isNullOrEmpty() && !secondColumn.isNullOrEmpty())) {
+                  if (!firstColumn.isNullOrEmpty() && !secondColumn.isNullOrEmpty()) {
                      val headerOffset = message.payloadAsText.indexOf("$firstColumn,$secondColumn").orElse(0)
 
                      if (headerOffset > 0) {

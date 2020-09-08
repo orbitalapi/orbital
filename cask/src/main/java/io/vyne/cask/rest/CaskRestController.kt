@@ -9,7 +9,9 @@ import io.vyne.cask.api.CaskApi
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.websocket.CaskWebsocketRequest
+import io.vyne.cask.websocket.getParam
 import io.vyne.utils.log
+import io.vyne.utils.orElse
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.util.MultiValueMap
@@ -41,7 +43,25 @@ class CaskRestController(private val caskService: CaskService,
       return requestOrError
          .map { request ->
             applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, request.versionedType))
-            val ingestionInput = Flux.just(input.byteInputStream() as InputStream)
+            var headerOffset = 0
+            val containsHeader = request.params.getParam("firstRowAsHeader").orElse(false) as Boolean
+            val firstColumn = request.params.getParam("columnOne")
+            val secondColumn = request.params.getParam("columnTwo")
+            val hasHeader = containsHeader || (!firstColumn.isNullOrEmpty() && !secondColumn.isNullOrEmpty())
+
+            if(hasHeader) {
+
+               if(!firstColumn.isNullOrEmpty() && !secondColumn.isNullOrEmpty()) {
+                  headerOffset = input.indexOf("$firstColumn,$secondColumn").orElse(0)
+               }
+            }
+
+            val ingestionInput = if (headerOffset > 0) {
+               Flux.just(input.removeRange(0 until headerOffset).byteInputStream() as InputStream)
+            } else {
+               Flux.just(input.byteInputStream() as InputStream)
+            }
+
             caskService.ingestRequest(request, ingestionInput)
                .count()
                .map { CaskIngestionResponse.success("Successfully ingested $it records") }
