@@ -283,43 +283,22 @@ class CaskDAO(
             val qualifiedTypeName = type.qualifiedName
             val insertedAt = Instant.now()
             requireNotNull(conn) { "Connection could not be obtained." }
-            val pgConn = conn?.unwrap(PGConnection::class.java)
-            requireNotNull(pgConn) { "Connection could not be obtained." }
-            val lobj = pgConn.largeObjectAPI
-            val oid = lobj.createLO(LargeObjectManager.READWRITE)
-            val obj = lobj.open(oid, LargeObjectManager.WRITE)
 
-            val chunkSize = 1024
-            val buf = ByteArray(chunkSize)
-            var stepSize = 0
-            var totalSize = 0
-
-            input.doOnEach { signal ->
-               stepSize = signal.get()?.let {
-                  it.read(buf, 0, chunkSize)
-               } ?: 0
-               obj.write(buf, 0, stepSize)
-               totalSize += stepSize
-            }
-               .doOnComplete {
-                  conn.close()
-               }
-               .doOnError {
-                  log().error("${it.message}")
-                  if (!conn.isClosed) {
-                     conn.close()
-                  }
-               }
+            val oid = createLargeObject(conn, input)
 
             conn.prepareStatement(ADD_CASK_MESSAGE).apply {
                setString(1, id)
                setString(2, qualifiedTypeName)
-               setLong(3, oid)
+               if(oid != null) {
+                  setLong(3, oid)
+               }
+               else {
+                  setNull(3, Types.INTEGER)
+               }
                setTimestamp(4, Timestamp.from(insertedAt))
                executeUpdate()
             }
 
-            obj.close()
             conn.commit()
 
             CaskMessage(id, qualifiedTypeName, oid, insertedAt)
@@ -328,6 +307,45 @@ class CaskDAO(
          if (!conn.isClosed) {
             conn.close()
          }
+      }
+   }
+
+   private fun createLargeObject(conn: Connection, input: Flux<InputStream>): Long? {
+      try {
+         val pgConn = conn?.unwrap(PGConnection::class.java)
+         requireNotNull(pgConn) { "Connection could not be obtained." }
+         val lobj = pgConn.largeObjectAPI
+         val oid = lobj.createLO(LargeObjectManager.READWRITE)
+         val obj = lobj.open(oid, LargeObjectManager.WRITE)
+
+         val chunkSize = 1024
+         val buf = ByteArray(chunkSize)
+         var stepSize = 0
+         var totalSize = 0
+
+         input.doOnEach { signal ->
+            stepSize = signal.get()?.let {
+               it.read(buf, 0, chunkSize)
+            } ?: 0
+            obj.write(buf, 0, stepSize)
+            totalSize += stepSize
+         }
+            .doOnComplete {
+               conn.close()
+               obj.close()
+            }
+            .doOnError {
+               log().error("${it.message}")
+               if (!conn.isClosed) {
+                  conn.close()
+                  obj.close()
+               }
+            }
+
+         return oid
+      } catch (ex: Exception) {
+         log().error("Large object creation failed: ${ex.message}")
+         return null
       }
    }
 
@@ -340,7 +358,7 @@ class CaskDAO(
    data class CaskMessage(
       val id: String,
       val qualifiedTypeName: String,
-      val messageId: Long,
+      val messageId: Long?,
       val insertedAt: Instant
    )
 
