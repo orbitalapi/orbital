@@ -47,6 +47,28 @@ class TypedObjectTest {
    }
 
    @Test
+   fun canReadValueFromJsonPath() {
+      val taxi = TaxiSchema.from("""
+         type Foo {
+            limitValue : Decimal by jsonPath("$.limit.value")
+         }
+      """.trimIndent())
+      val instance = TypedInstance.from(taxi.type("Foo"), traderJson, schema = taxi, source = Provided) as TypedObject
+      instance["limitValue"].value.should.equal(100.toBigDecimal())
+   }
+
+   @Test
+   fun jsonPathToUndefinedValueReturnsNull() {
+      val taxi = TaxiSchema.from("""
+         type Foo {
+            limitValue : Decimal by jsonPath("$.something.that.doesnt.exist")
+         }
+      """.trimIndent())
+      val instance = TypedInstance.from(taxi.type("Foo"), traderJson, schema = taxi, source = Provided) as TypedObject
+      instance["limitValue"].value.should.be.`null`
+   }
+
+   @Test
    fun canUnwrapTypedObject() {
       val trader = JsonModelParser(schema).parse(schema.type("Trader"), traderJson, source = Provided)
       val raw = trader.toRawObject()

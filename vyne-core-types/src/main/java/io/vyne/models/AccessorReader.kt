@@ -1,6 +1,8 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.jayway.jsonpath.JsonPath
+import com.jayway.jsonpath.PathNotFoundException
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.csv.CsvAttributeAccessorParser
 import io.vyne.models.json.JsonAttributeAccessorParser
@@ -72,7 +74,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
 
    private fun parseColumnData(value: Any, targetType: Type, schema: Schema, accessor: ColumnAccessor, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean = false): TypedInstance {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
-      return when  {
+      return when {
          value is String -> csvParser.parse(value, targetType, accessor, schema, source, nullable)
          // Efficient parsing where we've already parsed the record once (eg., streaming from disk).
          value is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues, source, nullable)
@@ -110,7 +112,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
    private fun parseJson(value: Any, targetType: Type, schema: Schema, accessor: JsonPathAccessor, source: DataSource): TypedInstance {
       return when (value) {
          is ObjectNode -> jsonParser.parseToType(targetType, accessor, value, schema, source)
-         is Map<*,*> -> extractFromMap(targetType,accessor,value,schema,source)
+         is Map<*, *> -> extractFromMap(targetType, accessor, value, schema, source)
          else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
    }
@@ -118,7 +120,25 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
    private fun extractFromMap(targetType: Type, accessor: JsonPathAccessor, value: Map<*, *>, schema: Schema, source: DataSource): TypedInstance {
       // Strictly speaking, we shouldn't be getting maps here.
       // But it's a legacy thing, from when we used xpath(...) all over the shop, even in non xml types
-      return TypedInstance.from(targetType, value[accessor.expression.removePrefix("/")], schema, source = source)
+      val expression = accessor.expression
+      return when {
+         expression.startsWith("$") -> {
+            val valueAtJsonPath = try {
+               JsonPath.parse(value).read<Any>(expression)
+            } catch (e: PathNotFoundException) {
+               null
+            }
+
+            TypedInstance.from(targetType, valueAtJsonPath, schema, source = source)
+         }
+         // Legacy support - old jsonPath as xpath mappings...
+         expression.startsWith("/") -> {
+            TypedInstance.from(targetType, value[accessor.expression.removePrefix("/")], schema, source = source)
+         }
+         else -> error("Invalid json path - expected something starting with $ or / but got $expression")
+
+      }
+
 
    }
 
