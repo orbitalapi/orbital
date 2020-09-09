@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.cask.CaskIngestionRequest
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskIngestionResponse
+import io.vyne.cask.api.ContentType
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.utils.log
 import io.vyne.utils.orElse
@@ -32,12 +34,15 @@ class CaskWebsocketHandler(
    override fun handle(session: WebSocketSession): Mono<Void> {
       log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri}")
 
-      val requestOrError = caskService.resolveContentType(session.contentType())
-         .flatMap { contentType ->
-            caskService.resolveType(session.typeReference()).map { versionedType ->
-               CaskWebsocketRequest.create(contentType, versionedType, mapper, session.queryParams())
-            }
+      val requestOrError = try {
+         Either.right(ContentType.valueOf(session.contentType()))
+      } catch (exception:IllegalArgumentException) {
+         Either.left(CaskService.ContentTypeError("Unknown contentType=${session.contentType()}"))
+      }.flatMap { contentType ->
+         caskService.resolveType(session.typeReference()).map { versionedType ->
+            CaskIngestionRequest.fromContentTypeAndHeaders(contentType, versionedType, mapper, session.queryParams())
          }
+      }
 
       return requestOrError
          .map { request ->
@@ -49,7 +54,7 @@ class CaskWebsocketHandler(
          }
    }
 
-   private fun ingestMessages(session: WebSocketSession, request: CaskWebsocketRequest): Mono<Void> {
+   private fun ingestMessages(session: WebSocketSession, request: CaskIngestionRequest): Mono<Void> {
       val output: EmitterProcessor<WebSocketMessage> = EmitterProcessor.create()
       val outputSink = output.sink()
 
@@ -65,21 +70,6 @@ class CaskWebsocketHandler(
          .map { message ->
             log().info("Ingesting message from sessionId=${session.id}")
             try {
-               val containsHeader = request.params.getParam("firstRowAsHeader").orElse(false) as Boolean
-
-               if(containsHeader) {
-                  val firstColumn = request.params.getParam("columnOneName")
-                  val secondColumn = request.params.getParam("columnTwoName")
-
-                  if(!firstColumn.isNullOrEmpty() && !secondColumn.isNullOrEmpty()) {
-                     val headerOffset = message.payloadAsText.indexOf("$firstColumn,$secondColumn").orElse(0)
-
-                     if (headerOffset > 0) {
-                        message.payload.readPosition(headerOffset)
-                     }
-                  }
-               }
-
                caskService
                   .ingestRequest(request, Flux.just(message.payload.asInputStream()))
                   .count()
@@ -87,7 +77,7 @@ class CaskWebsocketHandler(
                   .subscribe(
                      { result ->
                         log().info("Successfully ingested message from sessionId=${session.id}")
-                        if (request.debug()) {
+                        if (request.debug) {
                            outputSink.next(successResponse(session, result))
                         }
                      },

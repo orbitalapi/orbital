@@ -165,7 +165,7 @@ export class CsvViewerComponent {
       this.rowData = [];
     } else {
       this.rowData = this.source.records;
-      if (this.csvOptions.containsHeader(this.firstRowAsHeaders)) {
+      if (this.csvOptions.firstRecordAsHeader) {
         this.headers = this.source.headers;
       } else {
         if (this.source.records.length === 0) {

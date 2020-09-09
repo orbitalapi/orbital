@@ -6,12 +6,13 @@ import com.nhaarman.mockito_kotlin.mock
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import io.vyne.cask.CaskService
+import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.query.CaskDAO
-import io.vyne.cask.websocket.CsvIngestionRequest
+import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.schemas.fqn
 import io.vyne.spring.LocalResourceSchemaProvider
 import io.vyne.utils.Benchmark
@@ -106,7 +107,8 @@ class CsvIngesterBenchmarkTest {
          error("Type not found")
       }
       caskService.ingestRequest(
-         CsvIngestionRequest(CSVFormat.DEFAULT.withFirstRecordAsHeader(), type, emptySet()),
+
+         CsvWebsocketRequest(CsvIngestionParameters(firstRecordAsHeader = true) , type),
          input
       ).blockFirst()
    }

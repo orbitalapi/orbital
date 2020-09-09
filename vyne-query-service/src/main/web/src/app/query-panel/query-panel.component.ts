@@ -24,6 +24,8 @@ export class QueryPanelComponent {
   selectedTypeInstance: InstanceLike;
   selectedTypeInstanceType: Type;
 
+  shouldTypedInstancePanelBeVisible: boolean;
+
   loading = false;
 
   get showSidePanel(): boolean {
@@ -51,11 +53,16 @@ export class QueryPanelComponent {
   }
 
   onInstanceSelected($event: InstanceSelectedEvent) {
+    this.shouldTypedInstancePanelBeVisible = true;
     this.selectedTypeInstance = $event.selectedTypeInstance;
     this.selectedTypeInstanceType = $event.selectedTypeInstanceType;
   }
 
   onLoadingChanged($event: boolean) {
     this.loading = $event;
+  }
+
+  onCloseTypedInstanceDrawer($event: boolean) {
+    this.shouldTypedInstancePanelBeVisible = $event;
   }
 }

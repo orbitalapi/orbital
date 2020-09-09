@@ -73,6 +73,18 @@ type UpsertTestMultiPk {
       }
    """.trimIndent()
 
+   val personSchemaSource = """
+      type PersonId inherits Int
+      type FirstName inherits String
+      type LastName inherits String
+
+      type Person {
+         id: PersonId by column("Id")
+         firstName: FirstName by column("FirstName")
+         lastName: LastName by column("LastName")
+      }
+   """.trimIndent()
+
    val schemaTimeTest = TaxiSchema.from(timeTypeTest, "Test", "0.1.0")
    val schemaUpsertTest = TaxiSchema.from(upsertTest, "Test", "0.1.0")
    val schemaTemporalDownCastTest = TaxiSchema.from(temporalSchemaSource, "Test", "0.1.0")
@@ -80,6 +92,7 @@ type UpsertTestMultiPk {
    val schemaConcat = TaxiSchema.from(schemaConcatSource, "test", "0.1.0")
    val instantSchema = TaxiSchema.from(instantFormatSource, "test", "0.1.0")
    val schemaWithConcatAndDefault = TaxiSchema.from(schemaWithDefaultValueSource, "test", "0.1.0")
+   val personSchema = TaxiSchema.from(personSchemaSource, "test", "0.1.0")
 }
 
 

@@ -7,6 +7,7 @@ import io.vyne.models.*
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
+import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.*
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.schemas.Operation
@@ -1049,6 +1050,53 @@ service ClientService {
       val fqn = "vyne.example.Type0"
       val accessibleTypes = vyne.accessibleFrom(fqn)
       accessibleTypes.should.have.size(end)
+   }
+
+   @Test
+   fun `given multiple valid services to call with equal cost, should invoke all until a result is found`() {
+      // The issue we're testing here is if there are mutliple ways to find a value, all which look the same,
+      // but some which generate values, and others that don't, that we should keep trying until we find the approach
+      // that works.
+      val (vyne,stub) = testVyne("""
+         model User {
+            userId : UserId as Int
+            userName : UserName as String
+         }
+         service Users {
+            @StubResponse("lookupByIdEven")
+            operation lookupByIdEven(id:UserId):User
+            @StubResponse("lookupByIdOdd")
+            operation lookupByIdOdd(id:UserId):User
+         }
+      """.trimIndent())
+
+      stub.addResponse("lookupByIdEven") { _, parameters ->
+         val (_,userId) = parameters.first()
+         val userIdValue = userId.value as Int
+         if (userIdValue % 2 == 0) {
+            vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Even" }""")
+         } else {
+            error("Not found") // SImulate a 404
+//            TypedNull(vyne.type("User"))
+         }
+      }
+      stub.addResponse("lookupByIdOdd") { _, parameters ->
+         val (_,userId) = parameters.first()
+         val userIdValue = userId.value as Int
+         if (userIdValue % 2 != 0) {
+            vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Odd" }""")
+         } else {
+            error("not found")  // SImulate a 404
+//            TypedNull(vyne.type("User"))
+         }
+      }
+      val resultEven = vyne.query(additionalFacts = setOf(vyne.parseKeyValuePair("UserId", 2))).find("UserName")
+      resultEven.isFullyResolved.should.be.`true`
+      resultEven["UserName"]!!.value.should.equal("Jimmy Even")
+
+      val resultOdd =  vyne.query(additionalFacts = setOf(vyne.parseKeyValuePair("UserId", 3))).find("UserName")
+      resultOdd.isFullyResolved.should.be.`true`
+      resultOdd["UserName"]!!.value.should.equal("Jimmy Odd")
    }
 
    @Test

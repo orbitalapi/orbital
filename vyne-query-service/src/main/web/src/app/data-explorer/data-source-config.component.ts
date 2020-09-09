@@ -1,7 +1,7 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {UploadFile} from 'ngx-file-drop';
 import {CsvOptions} from '../services/types.service';
-import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
+import {FormControl} from '@angular/forms';
 
 @Component({
   selector: 'app-data-source-config',
@@ -31,56 +31,32 @@ import {FormBuilder, FormControl, FormGroup} from '@angular/forms';
         <mat-checkbox [(ngModel)]="dataContainsHeaders"
                       (click)="onChangeDataContainsHeader($event)">Data contains headers
         </mat-checkbox>
-        <div *ngIf="dataContainsHeaders">
-          <mat-radio-group class="example-radio-group">
-            <mat-radio-button value="csvOptions.firstRowAsHeader" checked="csvOptions.firstRowAsHeader"
-                              (click)="onChangeFirstRowIsHeader($event)">
-              First row is header
-            </mat-radio-button>
-            <mat-radio-button value="csvOptions.firstRowHasOffset" (click)="onChangeFirstRowHasOffset($event)">
-              Specify first two columns
-            </mat-radio-button>
-          </mat-radio-group>
-        </div>
+        <mat-checkbox [(ngModel)]="dataHasContentToIgnore"
+                      (click)="onChangeDataContainsHeader($event)">Data has prefix to ignore
+        </mat-checkbox>
+        <mat-form-field *ngIf="dataHasContentToIgnore" (click)="$event.stopPropagation()">
+          <mat-label>Ignore everything before</mat-label>
+          <input matInput placeholder="Start reading from this content"
+                 [(ngModel)]="csvOptions.ignoreContentBefore"
+                 (blur)="onContentPrefixChanged()"
+                 (click)="$event.stopPropagation();">
+        </mat-form-field>
         <mat-form-field *ngIf="useSpecialValueForNull" (click)="$event.stopPropagation();">
           <mat-label>Null tag</mat-label>
           <input matInput placeholder="Provide value to treat as null" [(ngModel)]="csvOptions.nullValueTag"
                  (click)="$event.stopPropagation();">
         </mat-form-field>
-        <form [formGroup]="columnNameForm" *ngIf="dataContainsHeaders && csvOptions.firstRowHasOffset"
-              class="column-name-input-form">
-          <mat-form-field class="add-column-name-text-field">
-            <input matInput placeholder="Enter first column name"
-                   [formControl]="columnOne"
-                   required
-                   (click)="$event.stopPropagation()"/>
-          </mat-form-field>
-          <mat-form-field class="add-column-name-text-field">
-            <input matInput placeholder="Enter second column name"
-                   required
-                   [formControl]="columnTwo"
-                   (click)="$event.stopPropagation()"/>
-          </mat-form-field>
-          <button mat-raised-button color="primary" (click)="submitColumnNamesForm($event)">Submit</button>
-          <button mat-stroked-button (click)="resetColumnNameForm($event)" style="margin-left: 0.4em">Clear</button>
-        </form>
       </div>
     </mat-menu>
   `,
   styleUrls: ['./data-source-config.component.scss']
 })
 export class DataSourceConfigComponent {
-  constructor(private fb: FormBuilder) {
-    this.columnNameForm = fb.group({
-      columnOne: this.columnOne,
-      columnTwo: this.columnTwo,
-    });
-  }
 
   private _fileDataSource: UploadFile;
   extension: string;
   dataContainsHeaders = true;
-  columnNameForm: FormGroup;
+  dataHasContentToIgnore = false;
 
   columnOne = new FormControl();
   columnTwo = new FormControl();
@@ -101,7 +77,7 @@ export class DataSourceConfigComponent {
   clear = new EventEmitter<void>();
 
   csvOptions: CsvOptions = new CsvOptions();
-  disabled = !this.csvOptions.firstRowHasOffset && !this.csvOptions.firstRecordAsHeader;
+  disabled = !this.csvOptions.firstRecordAsHeader;
 
   @Output()
   csvOptionsChanged = new EventEmitter<CsvOptions>();
@@ -133,40 +109,27 @@ export class DataSourceConfigComponent {
 
   submitColumnNamesForm($event) {
     $event.stopPropagation();
-    this.csvOptions.columnOneName = this.columnOne.value;
-    this.csvOptions.columnTwoName = this.columnTwo.value;
-    if (this.csvOptions.columnOneName.length && this.csvOptions.columnTwoName.length) {
-      this.updateCsvOptions();
-    }
+    this.updateCsvOptions();
   }
 
   onChangeFirstRowHasOffset($event) {
     $event.stopPropagation();
-    this.csvOptions.firstRowHasOffset = true;
     this.csvOptions.firstRecordAsHeader = false;
   }
 
   onChangeFirstRowIsHeader($event) {
     $event.stopPropagation();
-    this.csvOptions.firstRowHasOffset = false;
     this.csvOptions.firstRecordAsHeader = true;
     this.updateCsvOptions();
   }
 
   onChangeDataContainsHeader($event) {
     $event.stopPropagation();
-    this.resetColumnNameForm();
-    this.csvOptions.firstRecordAsHeader = !this.dataContainsHeaders;
-    this.csvOptions.firstRowHasOffset = this.dataContainsHeaders ? this.csvOptions.firstRowHasOffset : false;
+    this.csvOptions.firstRecordAsHeader = this.dataContainsHeaders;
     this.updateCsvOptions();
   }
 
-  resetColumnNameForm($event?) {
-    if ($event) {
-      $event.stopPropagation();
-    }
-    this.csvOptions.columnOneName = '';
-    this.csvOptions.columnTwoName = '';
-    this.columnNameForm.reset();
+  onContentPrefixChanged() {
+    this.updateCsvOptions();
   }
 }

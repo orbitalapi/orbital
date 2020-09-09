@@ -42,15 +42,13 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
                       @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
                       @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
                       @RequestParam("nullValue", required = false) nullValue: String? = null,
-                      @RequestParam("columnOne", required = false) columnOneName: String? = null,
-                      @RequestParam("columnTwo", required = false) columnTwoName: String? = null
+                      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null
    ): List<ParsedTypeInstance> {
       // TODO : We need to find a better way to pass the metadata of how to parse a CSV into the TypedInstance.parse()
       // method.
 
-      val hasHeader = firstRecordAsHeader || (!columnOneName.isNullOrEmpty() && !columnTwoName.isNullOrEmpty())
-      val format = getCsvFormat(csvDelimiter, hasHeader)
-      val content = processContent(rawContent, csvDelimiter, firstRecordAsHeader, columnOneName, columnTwoName)
+      val format = getCsvFormat(csvDelimiter, firstRecordAsHeader)
+      val content = trimContent(rawContent, ignoreContentBefore)
       val parsed = CSVParser.parse(content, format)
       val schema = schemaProvider.schema()
       val targetType = schema.type(typeName)
@@ -66,12 +64,10 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    fun parseCsvToRaw(@RequestBody rawContent: String,
                      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
                      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
-                     @RequestParam("columnOne", required = false) columnOneName: String? = null,
-                     @RequestParam("columnTwo", required = false) columnTwoName: String? = null
+                     @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null
    ): ParsedCsvContent {
-      val hasHeader = firstRecordAsHeader || (!columnOneName.isNullOrEmpty() && !columnTwoName.isNullOrEmpty())
-      val format = getCsvFormat(csvDelimiter, hasHeader)
-      val content = processContent(rawContent, csvDelimiter, firstRecordAsHeader, columnOneName, columnTwoName)
+      val format = getCsvFormat(csvDelimiter, firstRecordAsHeader)
+      val content = trimContent(rawContent, ignoreContentBefore)
 
       try {
          val parsed = CSVParser.parse(content, format)
@@ -102,12 +98,11 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
          }
    }
 
-   private fun processContent(content: String, csvDelimiter: Char, firstRecordAsHeader: Boolean, columnOneName: String?, columnTwoName: String?): String {
-      val hasHeader = firstRecordAsHeader || (!columnOneName.isNullOrEmpty() && !columnTwoName.isNullOrEmpty())
-      return if(hasHeader && !firstRecordAsHeader) {
-         val index = content.indexOf("$columnOneName$csvDelimiter$columnTwoName")
+   private fun trimContent(content: String, ignoreContentBefore: String?): String {
+      return if (ignoreContentBefore !=  null) {
+         val index = content.indexOf(ignoreContentBefore)
          if (index > 0) {
-            content.removeRange(0, index)
+            content.removeRange(0 until index)
          } else {
             content
          }

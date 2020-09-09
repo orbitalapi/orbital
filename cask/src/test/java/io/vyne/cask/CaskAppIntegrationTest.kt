@@ -98,6 +98,14 @@ Date,Symbol,Open,High,Low,Close
 2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
 2020-03-19,ETHUSD,6300,6330,6186.08,6235.2""".trimIndent()
 
+   val caskRequestWithPrologue = """
+this is a bunch
+of
+non csv </dos>asdfasdflj£!" , , , , , , ,
+rubbish
+$caskRequest
+      """.trimIndent()
+
    @Test
    fun canIngestContentViaWebsocketConnection() {
       // mock schema
@@ -105,7 +113,7 @@ Date,Symbol,Open,High,Low,Close
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
-      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
 
       val wsConnection = client.execute(uri)
       { session ->
@@ -118,7 +126,34 @@ Date,Symbol,Open,High,Low,Close
       }.subscribe()
 
       StepVerifier
-         .create(output.take(1).timeout(Duration.ofSeconds(1)))
+         .create(output.take(1).timeout(Duration.ofSeconds(10000)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+         .verifyComplete()
+         .run { wsConnection.dispose() }
+   }
+
+   @Test
+   fun `can ingest content via websocket with ignored prologue`() {
+
+
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val output: EmitterProcessor<String> = EmitterProcessor.create()
+      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,&ignoreContentBefore=Date,Symbol,Open")
+
+      val wsConnection = client.execute(uri)
+      { session ->
+         session.send(Mono.just(session.textMessage(caskRequest)))
+            .thenMany(session.receive()
+               .log()
+               .map(WebSocketMessage::getPayloadAsText)
+               .subscribeWith(output))
+            .then()
+      }.subscribe()
+
+      StepVerifier
+         .create(output.take(1).timeout(Duration.ofSeconds(10000)))
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
          .verifyComplete()
          .run { wsConnection.dispose() }
@@ -138,7 +173,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
-      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/ModelWithDefaultsConcat?debug=true&csvDelimiter=,")
+      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/ModelWithDefaultsConcat?debug=true&delimiter=,")
 
       val wsConnection = client.execute(uri)
       { session ->
@@ -170,7 +205,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
       val output: EmitterProcessor<String> = EmitterProcessor.create()
       val client: WebSocketClient = ReactorNettyWebSocketClient()
-      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
 
       val wsConnection = client.execute(uri)
       { session ->
@@ -201,7 +236,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
       val response = client
          .post()
-         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
          .bodyValue(caskRequest)
          .retrieve()
          .bodyToMono(String::class.java)
@@ -209,6 +244,28 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
       response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
    }
+
+   @Test
+   fun canIngestContentWithProloguseViaRestEndpoint() {
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      val response = client
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&delimiter=,&ignoreContentBefore=Date,Symbol")
+         .bodyValue(caskRequestWithPrologue)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+
+      response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+   }
+
 
    @Test
    fun canIngestLargeContentViaRestEndpoint() {
@@ -228,7 +285,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
       val response = client
          .post()
-         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
          .bodyValue(caskRequest)
          .retrieve()
          .bodyToMono(String::class.java)
@@ -249,7 +306,7 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
 
       client
          .post()
-         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=,")
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
          .bodyValue(caskRequest)
          .retrieve()
          .bodyToMono(String::class.java)

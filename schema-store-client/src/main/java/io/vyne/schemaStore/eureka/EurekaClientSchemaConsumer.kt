@@ -96,13 +96,15 @@ class EurekaClientSchemaConsumer(
             log().info("Sources Summary: $logMsg")
             updateSources(currentSourceSet, delta)
          } else {
-            log().info("No changes found, nothing to do")
+            log().debug("No changes found, nothing to do")
          }
       }
    }
 
    private fun updateSources(currentSourceSet: List<SourcePublisherRegistration>, delta: SourceDelta) {
-      fun sourcesDescription(sources: List<SourcePublisherRegistration>): String = sources.joinToString("\n") { "${it.applicationName} @${it.sourceHash}" }
+      detectDuplicateMismatchedSource(currentSourceSet)
+
+      fun sourcesDescription(sources: List<SourcePublisherRegistration>): String = sources.joinToString("\n") { " - ${it.applicationName} @${it.sourceHash} at ${it.sourceUrl} with ${it.availableSources.size} sources" }
       fun logChanges(verb: String, changed: List<SourcePublisherRegistration>) {
          if (changed.isNotEmpty()) {
             log().info("Found $verb sources: \n${sourcesDescription(changed)}")
@@ -117,6 +119,21 @@ class EurekaClientSchemaConsumer(
          eventPublisher.publishEvent(SchemaSetChangedEvent(oldSchemaSet, this.schemaSet()))
       } else {
          log().info("No changes found to sources - nothing to do")
+      }
+   }
+
+   private fun detectDuplicateMismatchedSource(currentSourceSet: List<SourcePublisherRegistration>) {
+      val applicationsWithDuplicateSchemas = currentSourceSet.groupBy { it.applicationName }
+         .filter { (name, sourceRegistrations) -> sourceRegistrations.size > 1 }
+
+      applicationsWithDuplicateSchemas.forEach { (name,registrations) ->
+         val hashes = registrations.map { it.sourceHash }
+         if (hashes.distinct().size == 1) {
+            log().info("Application $name has ${registrations.size} sources registered - (${registrations.joinToString { it.sourceUrl }}) However, all have the same hash, so this is fine")
+         } else {
+            // TODO : Here, we should be filtering to the most recent
+            log().warn("Application $name has ${registrations.size} sources registered - (${registrations.joinToString { it.sourceUrl }}) However, there are multiple different hashes present.  Multiple different schemas for the same application is not supported.  You should remove one.")
+         }
       }
    }
 
@@ -147,11 +164,11 @@ class EurekaClientSchemaConsumer(
          if (result.statusCode.is2xxSuccessful) {
             result.body!!
          } else {
-            log().error("Failed to load taxi sources from ${registration.sourceUrl} - received HTTP Response ${result.statusCode}")
+            log().error("Failed to load taxi sources from ${registration.sourceUrl} - received HTTP Response ${result.statusCode}.  Will ignore this and continue, and try again later")
             emptyList()
          }
       } catch (exception: Exception) {
-         log().error("Failed to load taxi sources from ${registration.sourceUrl} - exception thrown", exception)
+         log().error("Failed to load taxi sources from ${registration.sourceUrl} - exception thrown.   Will ignore this and continue, and try again later", exception)
          emptyList()
       }
 
@@ -166,8 +183,11 @@ class EurekaClientSchemaConsumer(
          currentSourceSet.none { currentSourceRegistration -> previousKnownSource.applicationName == currentSourceRegistration.applicationName }
       }
 
-      val changedSources = previousKnownSources.filter { previousKnownSource ->
-         currentSourceSet.any { it.applicationName == previousKnownSource.applicationName && it.availableSources.hashCode() != previousKnownSource.availableSources.hashCode() }
+      val changedSources = currentSourceSet.filter { currentSource ->
+         previousKnownSources.any { previousSource ->
+            val isChanged = currentSource.applicationName == previousSource.applicationName && currentSource.availableSources.hashCode() != previousSource.availableSources.hashCode()
+            isChanged
+         }
       }
 
       return SourceDelta(

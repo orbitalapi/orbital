@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {
   isRestQueryHistoryRecord,
   isVyneQlQueryHistoryRecord,
@@ -22,6 +22,9 @@ import {ActivatedRoute, Router} from '@angular/router';
 export class QueryHistoryComponent implements OnInit {
   history: QueryHistoryRecord[];
   activeRecord: QueryHistoryRecord;
+
+  @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
+  shouldTypedInstancePanelBeVisible: boolean;
 
   constructor(private service: QueryService, private router: Router) {
   }
@@ -99,16 +102,16 @@ export class QueryHistoryComponent implements OnInit {
   }
 
   setActiveRecord(historyRecord: QueryHistoryRecord) {
-      this.activeRecord = historyRecord;
-      this.profilerOperation = null;
-      this.profileLoading = true;
-      this.service.getQueryProfile(historyRecord.id).subscribe(
-        result => {
-          this.profileLoading = false;
-          this.profilerOperation = result;
-        }
-      );
-      this.setRouteFromActiveRecord();
+    this.activeRecord = historyRecord;
+    this.profilerOperation = null;
+    this.profileLoading = true;
+    this.service.getQueryProfile(historyRecord.id).subscribe(
+      result => {
+        this.profileLoading = false;
+        this.profilerOperation = result;
+      }
+    );
+    this.setRouteFromActiveRecord();
   }
 
   setActiveRecordFromRoute() {
@@ -141,10 +144,14 @@ export class QueryHistoryComponent implements OnInit {
   }
 
   onInstanceSelected($event: InstanceSelectedEvent) {
+    this.shouldTypedInstancePanelBeVisible = true;
     this.selectedTypeInstance = $event.selectedTypeInstance;
     this.selectedTypeInstanceType = $event.selectedTypeInstanceType;
   }
 
+  onCloseTypedInstanceDrawer($event: boolean) {
+    this.shouldTypedInstancePanelBeVisible = $event;
+  }
 }
 
 type QueryType = 'VyneQlQuery' | 'RestfulQuery';
