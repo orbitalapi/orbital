@@ -59,13 +59,9 @@ export class CaskPanelComponent {
     let caskUrl = `${this.caskServiceUrl}/api/ingest/${this.format}/${this.targetTypeName}`;
     const csvOptions = this.csvOptions;
     if (this.format === 'csv') {
-      let csvOptionsQueryString =
-        `?csvDelimiter=${csvOptions.separator}&csvFirstRecordAsHeader=${csvOptions.firstRecordAsHeader}${csvOptions.firstRowHasOffset
-          ? (`&firstRowHasOffset=true&columnOne=${csvOptions.columnOneName}&columnTwo=${csvOptions.columnTwoName}`)
-          : `&firstRowHasOffset=false`}`;
-      if (this.csvOptions.nullValueTag) {
-        csvOptionsQueryString += `&nullValue=${csvOptions.nullValueTag}`;
-      }
+      const nullValueArg = (this.csvOptions.nullValueTag) ? `&nullValue=${csvOptions.nullValueTag}` : '';
+      const ignoreContentBeforeArg = (this.csvOptions.ignoreContentBefore) ? `&ignoreContentBefore=${csvOptions.ignoreContentBefore}` : '';
+      const csvOptionsQueryString = `?delimiter=${csvOptions.separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueArg}${ignoreContentBeforeArg}`
       caskUrl += csvOptionsQueryString;
     }
     return caskUrl;

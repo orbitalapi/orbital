@@ -230,7 +230,7 @@ class CaskWebsocketHandlerTest {
    fun csvMessageIngestionWithSemicolonDelimiter() {
       val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(validCsvMessage(";").readBytes()))
       val sessionInput = Flux.just(validMessage)
-      val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=;", input = sessionInput)
+      val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=;", input = sessionInput)
       wsHandler.handle(session).block()
 
       StepVerifier
@@ -243,7 +243,7 @@ class CaskWebsocketHandlerTest {
    fun csvMessageIngestionWithSemicolonDelimiterUrlEncoded() {
       val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(validCsvMessage(";").readBytes()))
       val sessionInput = Flux.just(validMessage)
-      val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&csvDelimiter=%3B", input = sessionInput) // %3B = ;
+      val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=%3B", input = sessionInput) // %3B = ;
       wsHandler.handle(session).block()
 
       StepVerifier
@@ -257,7 +257,7 @@ class CaskWebsocketHandlerTest {
       val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT,
          DefaultDataBufferFactory().wrap(validCsvMessage(",", false).readBytes()))
       val sessionInput = Flux.just(validMessage)
-      val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&csvFirstRecordAsHeader=false", input = sessionInput)
+      val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&firstRecordAsHeader=false", input = sessionInput)
       wsHandler.handle(session).block()
 
       StepVerifier
@@ -296,7 +296,7 @@ class CaskWebsocketHandlerTest {
    fun csvMessageIngestionWithHeaderOffset() {
       val validMessage = WebSocketMessage(WebSocketMessage.Type.TEXT, DefaultDataBufferFactory().wrap(csvMessageWithHeaderOffset().readBytes()))
       val sessionInput = Flux.just(validMessage)
-      val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&nullValue=NULL&nullValue=UNKNOWN&nullValue=N%2FA&delimiter=%2C&firstRecordAsHeader=false&columnOne=Date&columnTwo=Symbol", input = sessionInput) // N%2FA = N/A
+      val session = MockWebSocketSession(uri = "/cask/csv/OrderWindowSummaryCsv?debug=true&nullValue=NULL&nullValue=UNKNOWN&nullValue=N%2FA&delimiter=%2C&firstRecordAsHeader=true&ignoreContentBefore=Date,Symbol", input = sessionInput) // N%2FA = N/A
       wsHandler.handle(session).block()
 
       StepVerifier
