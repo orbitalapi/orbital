@@ -85,18 +85,24 @@ export class TypesService {
 
   parseCsvToType(content: string, type: Type, csvOptions: CsvOptions): Observable<ParsedTypeInstance[]> {
     const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const ignoreContentParam = csvOptions.ignoreContentBefore ? '&ignoreContentBefore='
+      + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedTypeInstance[]>(
       // tslint:disable-next-line:max-line-length
-      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${csvOptions.firstRowHasOffset ? (`&columnOne=${csvOptions.columnOneName}&columnTwo=${csvOptions.columnTwoName}`) : ''}${nullValueParam}`,
+      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
       content);
   }
 
   parseCsv(content: string, csvOptions: CsvOptions): Observable<ParsedCsvContent> {
+    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const ignoreContentParam = csvOptions.ignoreContentBefore ?
+      '&ignoreContentBefore=' + encodeURIComponent(csvOptions.ignoreContentBefore)
+      : '';
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedCsvContent>(
       // tslint:disable-next-line:max-line-length
-      `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${csvOptions.firstRowHasOffset ? (`&columnOne=${csvOptions.columnOneName}&columnTwo=${csvOptions.columnTwoName}`) : ''}`,
+      `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}`,
       content);
   }
 
@@ -197,7 +203,7 @@ export interface ParsedCsvContent {
 
 export class CsvOptions {
   constructor(public firstRecordAsHeader: boolean = true, public separator: string = ',', public nullValueTag: string | null = null,
-              public firstRowHasOffset: boolean = false, public columnOneName: string = '', public columnTwoName: string = '') {
+              public ignoreContentBefore: string | null = null) {
   }
 
   static isCsvContent(fileExtension: string): boolean {
@@ -212,9 +218,5 @@ export class CsvOptions {
       default:
         return false;
     }
-  }
-  containsHeader(firstRowAsHeaders: boolean) {
-    return firstRowAsHeaders ||
-      (this.columnTwoName && this.columnTwoName.length > 0 && this.columnOneName && this.columnOneName.length > 0);
   }
 }
