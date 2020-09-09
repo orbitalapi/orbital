@@ -8,6 +8,7 @@ import {ServiceGraphModule} from '../service-graph/service-graph.module';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {SimpleCodeViewerModule} from '../../../simple-code-viewer/simple-code-viewer.module';
+import {MatTooltipModule} from '@angular/material/tooltip';
 
 @NgModule({
   imports: [
@@ -17,7 +18,8 @@ import {SimpleCodeViewerModule} from '../../../simple-code-viewer/simple-code-vi
     ServiceGraphModule,
     CommonModule,
     BrowserModule,
-    SimpleCodeViewerModule
+    SimpleCodeViewerModule,
+    MatTooltipModule,
   ],
   exports: [CallExplorerComponent, OperationViewComponent],
   declarations: [CallExplorerComponent, OperationViewComponent],

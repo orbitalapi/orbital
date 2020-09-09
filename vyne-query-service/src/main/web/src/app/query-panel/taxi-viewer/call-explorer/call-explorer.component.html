@@ -6,7 +6,7 @@
     </div>
     <div class="operation" *ngFor="let operation of queryResult?.remoteCalls" (click)="selectOperation(operation)">
       <div class="verb">{{ operation.method }}</div>
-      <div class="address">{{ getPathOnly(operation.addresss) }}</div>
+      <div class="address" [matTooltip]="getPathOnly(operation.addresss)">{{ getPathOnly(operation.addresss) }}</div>
     </div>
   </div>
   <div class="chart-container" *ngIf="!selectedOperation">

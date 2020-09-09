@@ -9,7 +9,6 @@ export class CallExplorerComponent {
 
   constructor() {
   }
-
   selectedChart: 'sequence' | 'graph' = 'graph';
 
   @Input()
