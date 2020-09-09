@@ -1,7 +1,6 @@
 package io.vyne.queryService
 
 import com.netflix.discovery.EurekaClient
-import com.netflix.niws.loadbalancer.EurekaNotificationServerListUpdater
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
@@ -12,12 +11,8 @@ import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
 import io.vyne.spring.VyneQueryServer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
-import org.apache.http.HttpResponse
-import org.apache.http.client.HttpRequestRetryHandler
-import org.apache.http.client.ServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
-import org.apache.http.protocol.HttpContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
@@ -31,13 +26,14 @@ import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.client.ClientHttpRequestFactory
+import org.springframework.core.task.TaskExecutor
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
+import org.springframework.scheduling.annotation.EnableAsync
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import javax.inject.Provider
-import javax.inject.Qualifier
 
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class)
@@ -45,6 +41,7 @@ import javax.inject.Qualifier
 @VyneSchemaPublisher
 @EnableFeignClients(clients = [CaskApi::class])
 @VyneQueryServer
+@EnableAsync
 class QueryServiceApp {
 
    companion object {
@@ -54,6 +51,17 @@ class QueryServiceApp {
          app.setBannerMode(Banner.Mode.OFF)
          app.run(*args)
       }
+   }
+
+   @Bean("threadPoolTaskExecutor")
+   fun getAsyncExecutor(): TaskExecutor? {
+      val executor = ThreadPoolTaskExecutor()
+      // TODO parameters should be in tune with the environment specs
+      executor.corePoolSize = 20
+      executor.maxPoolSize = 1000
+      executor.threadNamePrefix = "Async-"
+      executor.setWaitForTasksToCompleteOnShutdown(true)
+      return executor
    }
 
    @Bean
