@@ -51,6 +51,7 @@ type UpsertTestMultiPk {
    """.trimIndent()
 
    val schemaConcatSource = """
+      import vyne.stdlib.concat
       model ConcatModel {
          concatField: String by concat(column("FIRST_COLUMN"), "-", column("SECOND_COLUMN"), "-", column("THIRD_COLUMN"))
       }
@@ -65,6 +66,7 @@ type UpsertTestMultiPk {
 
 
    val schemaWithConcatAndDefaultSource = """
+      import vyne.stdlib.concat
       model ModelWithDefaultsConcat {
          field1: String by column("FIRST_COLUMN")
          defaultString: String by default("Default String")

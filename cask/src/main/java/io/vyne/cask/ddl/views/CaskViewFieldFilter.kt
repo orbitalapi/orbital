@@ -69,17 +69,17 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
             )
             )
          }
-         is UnaryCalculatedFieldSetExpression -> {
-            val expression = accessor.expression as UnaryCalculatedFieldSetExpression
-            accessor.copy(expression = expression.copy(operand = FieldReferenceSelector(renameField(owningType, expression.operand.fieldName))))
-         }
-         is TerenaryFieldSetExpression -> {
-            val expression = accessor.expression as TerenaryFieldSetExpression
-            accessor.copy(expression = expression.copy(operand1 = FieldReferenceSelector(renameField(owningType, expression.operand1.fieldName)),
-            operand2 = FieldReferenceSelector(renameField(owningType, expression.operand2.fieldName)),
-               operand3 = FieldReferenceSelector(renameField(owningType, expression.operand3.fieldName))))
-
-         }
+//         is UnaryCalculatedFieldSetExpression -> {
+//            val expression = accessor.expression as UnaryCalculatedFieldSetExpression
+//            accessor.copy(expression = expression.copy(operand = FieldReferenceSelector(renameField(owningType, expression.operand.fieldName))))
+//         }
+//         is TerenaryFieldSetExpression -> {
+//            val expression = accessor.expression as TerenaryFieldSetExpression
+//            accessor.copy(expression = expression.copy(operand1 = FieldReferenceSelector(renameField(owningType, expression.operand1.fieldName)),
+//            operand2 = FieldReferenceSelector(renameField(owningType, expression.operand2.fieldName)),
+//               operand3 = FieldReferenceSelector(renameField(owningType, expression.operand3.fieldName))))
+//
+//         }
          // TDOO... what are the other types?  Do we need to change 'em?
          else -> accessor
       }
