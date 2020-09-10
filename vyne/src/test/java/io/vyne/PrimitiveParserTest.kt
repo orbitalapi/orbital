@@ -75,6 +75,20 @@ enum Country {
    }
 
    @Test
+   fun unknownEnumValueMatchesDefault() {
+      val src = """
+enum Country {
+   default NZ("New Zealand"),
+   AUS("Australia")
+}
+      """.trimIndent()
+      val schema = TaxiSchema.from(src)
+      val enum = PrimitiveParser().parse("Great Britain",schema.type("Country"), Provided)
+      enum.type.name.fullyQualifiedName.should.equal("Country")
+      enum.value.should.equal("NZ")
+   }
+
+   @Test
    fun canParseInheritedEnums() {
       val src = """
 enum Country {
