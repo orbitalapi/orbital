@@ -102,7 +102,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
    }
 
-   private fun handleFailedHttpResponse(result: ResponseEntity<out Any>, operation: Operation, absoluteUrl: Any, httpMethod: HttpMethod, requestBody: Any):Nothing {
+   private fun handleFailedHttpResponse(result: ResponseEntity<out Any>, operation: Operation, absoluteUrl: Any, httpMethod: HttpMethod, requestBody: Any): Nothing {
       val message = "Failed load invoke $httpMethod to $absoluteUrl - received $result"
       log().warn(message)
       throw OperationInvocationException(message)
@@ -113,10 +113,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       log().debug("Result of ${operation.name} was $result")
       val resultBody = result.body
       val dataSource = remoteCallDataLineage(parameters, remoteCall)
-      return when (resultBody) {
-         is Map<*, *> -> TypedObject.fromAttributes(operation.returnType, resultBody as Map<String, Any>, schemaProvider.schema(), source = dataSource)
-         else -> TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema(), source = dataSource)
-      }
+      return TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema(), source = dataSource)
    }
 
    private fun remoteCallDataLineage(parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall): DataSource {
