@@ -1,14 +1,11 @@
-package io.vyne.models
+package io.vyne.models.functions
 
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObjectFactory
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Type
-import lang.taxi.types.CalculatedFieldSetExpression
-import lang.taxi.types.FieldSetExpression
 import lang.taxi.types.ReadFunction
 import lang.taxi.types.ReadFunctionFieldAccessor
-import lang.taxi.types.TerenaryFieldSetExpression
-import lang.taxi.types.UnaryCalculatedFieldSetExpression
-import lang.taxi.types.WhenFieldSetCondition
 
 class ReadFunctionFieldEvaluator(private val factory: TypedObjectFactory) {
    fun evaluate(readCondition: ReadFunctionFieldAccessor, targetType: Type): TypedInstance {

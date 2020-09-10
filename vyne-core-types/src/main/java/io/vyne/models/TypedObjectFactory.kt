@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
+import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.Jackson
 import io.vyne.models.json.isJson
 import io.vyne.schemas.*
@@ -12,9 +13,9 @@ import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
 
 
-class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet(), val source:DataSource, private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper) {
+class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet(), val source:DataSource, private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper, private val functionRegistry:FunctionRegistry = FunctionRegistry.default()) {
    private val valueReader = ValueReader()
-   private val accessorReader: AccessorReader by lazy { AccessorReader(this) }
+   private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry) }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
 
    private val mappedAttributes: MutableMap<AttributeName, TypedInstance> = mutableMapOf()

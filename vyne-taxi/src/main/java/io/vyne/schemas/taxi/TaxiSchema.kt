@@ -2,6 +2,7 @@ package io.vyne.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
+import io.vyne.models.functions.stdlib.StdLib
 import io.vyne.schemas.DefaultTypeCache
 import io.vyne.schemas.DeferredConstraintProvider
 import io.vyne.schemas.EnumValue
@@ -232,13 +233,18 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
       }
 
       fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
-         val doc = Compiler(sources.map { CharStreams.fromString(it.content,it.name) }, imports.map { it.document }).compile()
-         return TaxiSchema(doc,sources)
+         val sourcesWithStdLib = sources + listOf(StdLib.taxi)
+         val doc = Compiler(sourcesWithStdLib.map { CharStreams.fromString(it.content,it.name) }, imports.map { it.document }).compile()
+         // stdLib is always included.
+         // Could make this optional in future if needed
+
+         return TaxiSchema(doc,sourcesWithStdLib)
       }
 
 
       fun from(source: VersionedSource, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
-         return TaxiSchema(Compiler(CharStreams.fromString(source.content, source.name), importSources.map { it.document }).compile(), listOf(source))
+
+         return from(listOf(source), importSources)
       }
 
       fun from(taxi: String, sourceName: String = "<unknown>", version: String = VersionedSource.DEFAULT_VERSION.toString(), importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
