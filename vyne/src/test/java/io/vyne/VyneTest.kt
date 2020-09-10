@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.*
+import io.vyne.models.functions.stdlib.StdLib
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel

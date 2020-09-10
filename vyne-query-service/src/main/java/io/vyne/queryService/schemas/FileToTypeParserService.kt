@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
+import io.vyne.models.csv.CsvImporterUtil
+import io.vyne.models.csv.ParsedCsvContent
+import io.vyne.models.csv.ParsedTypeInstance
 import io.vyne.models.json.isJsonArray
 import io.vyne.schemaStore.SchemaProvider
 import org.apache.commons.csv.CSVFormat
@@ -20,14 +23,14 @@ import org.springframework.web.server.ResponseStatusException
 class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapper: ObjectMapper) {
 
    @PostMapping("/api/content/parse")
-   fun parseFileToType(@RequestBody rawContent: String, @RequestParam("type") typeName: String): List<ParsedTypeInstance>  {
+   fun parseFileToType(@RequestBody rawContent: String, @RequestParam("type") typeName: String): List<ParsedTypeInstance> {
       val schema = schemaProvider.schema()
       val targetType = schema.type(typeName)
       try {
 
-         if(isJsonArray(rawContent)) {
+         if (isJsonArray(rawContent)) {
             val list = objectMapper.readTree(rawContent) as ArrayNode
-            return list.map {  ParsedTypeInstance(TypedInstance.from(targetType, it, schema, source = Provided)) }
+            return list.map { ParsedTypeInstance(TypedInstance.from(targetType, it, schema, source = Provided)) }
          }
          return listOf(ParsedTypeInstance(TypedInstance.from(targetType, rawContent, schema, source = Provided)))
       } catch (e: Exception) {
@@ -46,18 +49,13 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    ): List<ParsedTypeInstance> {
       // TODO : We need to find a better way to pass the metadata of how to parse a CSV into the TypedInstance.parse()
       // method.
-
-      val format = getCsvFormat(csvDelimiter, firstRecordAsHeader)
-      val content = trimContent(rawContent, ignoreContentBefore)
-      val parsed = CSVParser.parse(content, format)
-      val schema = schemaProvider.schema()
-      val targetType = schema.type(typeName)
-      val nullValues = listOfNotNull(nullValue).toSet()
-      val records = parsed.records
-         .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
-         .map { csvRecord -> ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided).build())
-      }
-      return records
+      return CsvImporterUtil.parseCsvToType(
+         rawContent,
+         typeName,
+         csvDelimiter,
+         schemaProvider.schema(),
+         firstRecordAsHeader, nullValue, ignoreContentBefore
+      )
    }
 
    @PostMapping("/api/csv")
@@ -66,20 +64,13 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
                      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
                      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null
    ): ParsedCsvContent {
-      val format = getCsvFormat(csvDelimiter, firstRecordAsHeader)
-      val content = trimContent(rawContent, ignoreContentBefore)
-
       try {
-         val parsed = CSVParser.parse(content, format)
-         val records = parsed.records
-            .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
-            .map { it.toList() }
-         val headers = parsed.headerMap?.keys?.toList() ?: emptyList()
-         return ParsedCsvContent(headers, records)
+         return CsvImporterUtil.parseCsvToRaw(
+            rawContent, csvDelimiter, firstRecordAsHeader, ignoreContentBefore
+         )
       } catch (e: Exception) {
          throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
       }
-
    }
 
    private fun getCsvFormat(csvDelimiter: Char, firstRecordAsHeader: Boolean): CSVFormat {
@@ -98,25 +89,5 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
          }
    }
 
-   private fun trimContent(content: String, ignoreContentBefore: String?): String {
-      return if (ignoreContentBefore !=  null) {
-         val index = content.indexOf(ignoreContentBefore)
-         if (index > 0) {
-            content.removeRange(0 until index)
-         } else {
-            content
-         }
-      } else {
-         content
-      }
-   }
 }
 
-data class ParsedCsvContent(val headers: List<String>, val records: List<List<String>>)
-
-data class ParsedTypeInstance(
-   val instance: TypedInstance
-) {
-   val typeNamedInstance = instance.toTypeNamedInstance()
-   val raw = instance.toRawObject()
-}

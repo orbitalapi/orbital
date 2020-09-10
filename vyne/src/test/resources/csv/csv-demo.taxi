@@ -14,7 +14,7 @@ type CsvTradeRecord {
     quotedCurrency : CurrencySymbol by column(7)
     (   dealtAmount : DealtAmount
         settlementAmount : SettlementAmount
-    ) by when ( quotedCurrency ) {
+    ) by when ( this.quotedCurrency ) {
         ccy1 -> {
             dealtAmount(
                 quantity by column(3)

@@ -4,8 +4,6 @@ import io.vyne.schemas.Type
 import lang.taxi.types.Formula
 import lang.taxi.types.FormulaOperator
 import lang.taxi.types.PrimitiveType
-import lang.taxi.types.TerenaryFormulaOperator
-import lang.taxi.types.UnaryFormulaOperator
 import org.apache.commons.lang3.StringUtils
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -17,60 +15,46 @@ interface Calculator {
    fun calculate(operator: FormulaOperator, values: List<Any?>): Any?
 }
 
-interface UnaryCalculator {
-   fun canCalculate(operator: UnaryFormulaOperator, type: Type): Boolean
-   fun calculate(operator: UnaryFormulaOperator, value: Any, literal: Any): Any?
-}
-
-interface TerenaryCalculator {
-   fun canCalculate(operator: TerenaryFormulaOperator, types: List<Type>): Boolean
-   fun calculate(operator: TerenaryFormulaOperator, values: List<Any>): Any?
-}
-
-class CalculatorRegistry(private val calculators: List<Calculator> = listOf(NumberCalculator(), StringCalculator(), DateTimeCalculator(), CoalesceCalculator()),
-                         private val unaryCalculators: List<UnaryCalculator> = listOf(LeftCalculator()),
-                         private val terenaryCalculators: List<TerenaryCalculator> = listOf(Concat3())) {
+class CalculatorRegistry(private val calculators: List<Calculator> = listOf(NumberCalculator(), StringCalculator(), DateTimeCalculator(), CoalesceCalculator())) {
    fun getCalculator(operator: FormulaOperator, types: List<Type>): Calculator? {
       return calculators.firstOrNull { it.canCalculate(operator, types) }
    }
-
-   fun getUnaryCalculator(operator: UnaryFormulaOperator, type: Type): UnaryCalculator? {
-      return unaryCalculators.firstOrNull { it.canCalculate(operator, type) }
-   }
-
-   fun getTerenaryCalculator(operator: TerenaryFormulaOperator, types: List<Type>): TerenaryCalculator? {
-      return terenaryCalculators.firstOrNull { it.canCalculate(operator, types) }
-   }
 }
+//
+//internal class LeftCalculator : UnaryCalculator {
+//   override fun canCalculate(operator: UnaryFormulaOperator, type: Type): Boolean {
+//      return (
+//         type.taxiType.basePrimitive == PrimitiveType.STRING
+//            &&
+//            operator == UnaryFormulaOperator.Left)
+//   }
+//
+//   override fun calculate(operator: UnaryFormulaOperator, value: Any, literal: Any): Any? {
+//      return if (literal.toString().toIntOrNull() == null) {
+//         value
+//      } else {
+//         StringUtils.left(value.toString(), literal.toString().toInt())
+//      }
+//   }
+//}
+//
+//internal class Concat3 : TerenaryCalculator {
+//   override fun canCalculate(operator: TerenaryFormulaOperator, types: List<Type>): Boolean {
+//      return types.all { it.taxiType.basePrimitive == PrimitiveType.STRING }
+//         && operator == TerenaryFormulaOperator.Concat3
+//   }
+//
+//   override fun calculate(operator: TerenaryFormulaOperator, values: List<Any>): Any? {
+//      return values.dropLast(1).joinToString(values.last().toString())
+//   }
+//}
+//
 
-internal class LeftCalculator : UnaryCalculator {
-   override fun canCalculate(operator: UnaryFormulaOperator, type: Type): Boolean {
-      return (
-         type.taxiType.basePrimitive == PrimitiveType.STRING
-            &&
-            operator == UnaryFormulaOperator.Left)
-   }
-
-   override fun calculate(operator: UnaryFormulaOperator, value: Any, literal: Any): Any? {
-      return if (literal.toString().toIntOrNull() == null) {
-         value
-      } else {
-         StringUtils.left(value.toString(), literal.toString().toInt())
-      }
-   }
-}
-
-internal class Concat3 : TerenaryCalculator {
-   override fun canCalculate(operator: TerenaryFormulaOperator, types: List<Type>): Boolean {
-      return types.all { it.taxiType.basePrimitive == PrimitiveType.STRING }
-         && operator == TerenaryFormulaOperator.Concat3
-   }
-
-   override fun calculate(operator: TerenaryFormulaOperator, values: List<Any>): Any? {
-      return values.dropLast(1).joinToString(values.last().toString())
-   }
-}
-
+// Tried replacing this, but we seem to be running a special discovery strategy
+// for resolving type references.
+// This needs to go away, but not until I have time to work out how to migrate
+// that into the function architecture
+@Deprecated("This needs to be replaced with a function invoker.")
 internal class CoalesceCalculator: Calculator {
    override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
       return operator == FormulaOperator.Coalesce
@@ -133,8 +117,7 @@ internal class DateTimeCalculator : Calculator {
  */
 internal class NumberCalculator : Calculator {
    override fun canCalculate(operator: FormulaOperator, types: List<Type>): Boolean {
-      return operator != FormulaOperator.Coalesce &&
-             types.all { it.taxiType.basePrimitive != null && PrimitiveType.NUMBER_TYPES.contains(it.taxiType.basePrimitive!!) }
+      return types.all { it.taxiType.basePrimitive != null && PrimitiveType.NUMBER_TYPES.contains(it.taxiType.basePrimitive!!) }
    }
 
    override fun calculate(operator: FormulaOperator, values: List<Any?>): Any? {

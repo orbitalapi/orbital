@@ -5,13 +5,15 @@ import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.csv.CsvAttributeAccessorParser
+import io.vyne.models.functions.FunctionRegistry
+import io.vyne.models.functions.ReadFunctionFieldEvaluator
 import io.vyne.models.json.JsonAttributeAccessorParser
 import io.vyne.models.xml.XmlTypedInstanceParser
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import io.vyne.schemas.TypeReference
 import io.vyne.utils.log
+import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.*
 import org.apache.commons.csv.CSVRecord
 import java.lang.StringBuilder
@@ -22,7 +24,7 @@ object Parsers {
    val jsonParser: JsonAttributeAccessorParser by lazy { JsonAttributeAccessorParser() }
 }
 
-class AccessorReader(private val objectFactory: TypedObjectFactory) {
+class AccessorReader(private val objectFactory: TypedObjectFactory, private val functionRegistry: FunctionRegistry) {
    // There's a cost to building all the Xml junk - so defer if we don't need it,
    // and re-use inbetween readers
    private val xmlParser: XmlTypedInstanceParser by lazy { Parsers.xmlParser }
@@ -43,11 +45,42 @@ class AccessorReader(private val objectFactory: TypedObjectFactory) {
          is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable)
          is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, nullValues, source)
          is ReadFunctionFieldAccessor -> evaluateReadFunctionAccessor(value, targetType, schema, accessor, nullValues, source)
+         is FunctionAccessor -> evaluateFunctionAccessor(value, targetType, schema, accessor, nullValues, source)
+         is FieldReferenceSelector -> evaluateFieldReference(value, targetType, schema, accessor, nullValues, source)
+         is LiteralAccessor -> return TypedInstance.from(targetType, accessor.value, schema, source = source)
          else -> {
-            log().warn("UnExpected Accessor value $accessor")
+            log().warn("Unexpected Accessor value $accessor")
             TODO()
          }
       }
+   }
+
+   private fun evaluateFieldReference(value: Any, targetType: Type, schema: Schema, accessor: FieldReferenceSelector, nullValues: Set<String>, source: DataSource): TypedInstance {
+      return objectFactory.getValue(accessor.fieldName)
+   }
+
+   private fun evaluateFunctionAccessor(value: Any, targetType: Type, schema: Schema, accessor: FunctionAccessor, nullValues: Set<String>, source: DataSource): TypedInstance {
+      // TODO : Validate the number of args provided match what's required.
+      val declaredInputs = accessor.function.parameters.filter { !it.isVarArg }.mapIndexed { index, parameter ->
+         require(index < accessor.inputs.size) { "Cannot read parameter ${parameter.description} as no input was provided at index $index" }
+         val parameterInputAccessor = accessor.inputs[index]
+         val targetParameterType = schema.type(parameter.type)
+         read(value, targetParameterType, parameterInputAccessor, schema, nullValues, source)
+      }
+
+      val declaredVarArgs = if (accessor.function.parameters.isNotEmpty() && accessor.function.parameters.last().isVarArg) {
+         val varargFrom = accessor.function.parameters.size - 1
+         val varargParam = accessor.function.parameters.last()
+         val varargType = schema.type(varargParam.type)
+         val inputs = accessor.inputs.subList(varargFrom, accessor.inputs.size)
+         inputs.map { varargInputAccessor ->
+            read(value,varargType, varargInputAccessor, schema, nullValues, source)
+         }
+      } else emptyList()
+
+      val allInputs = declaredInputs + declaredVarArgs
+
+      return functionRegistry.invoke(accessor.function, allInputs, schema)
    }
 
    private fun evaluateReadFunctionAccessor(value: Any, targetType: Type, schema: Schema, accessor: ReadFunctionFieldAccessor, nullValues: Set<String>, source: DataSource): TypedInstance {
