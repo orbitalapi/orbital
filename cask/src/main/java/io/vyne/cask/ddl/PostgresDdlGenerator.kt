@@ -5,6 +5,7 @@ import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.VersionedSource
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_DDL
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
+import io.vyne.cask.ddl.views.ViewJoin
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.timed
 import io.vyne.cask.types.allFields
@@ -217,6 +218,21 @@ class PostgresDdlGenerator {
          Instant.now()
       )
       return TableGenerationStatement(ddl, versionedType, tableName, columns, metadata)
+   }
+
+   fun generateViewIndexesDdl(tables: Map<QualifiedName, String>, viewJoin: ViewJoin): String {
+      val result = StringBuilder()
+      val leftTable = tables[viewJoin.left]
+      val rightTable = tables[viewJoin.right]
+
+      viewJoin.joinOn.forEach {
+         result.appendln("""CREATE INDEX IF NOT EXISTS idx_${leftTable}_${it.leftField} ON ${leftTable}("${it.leftField}");""")
+         result.appendln("""CREATE INDEX IF NOT EXISTS idx_${rightTable}_${it.rightField} ON ${rightTable}("${it.rightField}");""")
+      }
+      result.appendln("""CREATE INDEX IF NOT EXISTS idx_${leftTable}_comp ON ${leftTable}(${viewJoin.joinOn.joinToString(",") { it.leftField.quoted() }});""")
+      result.appendln("""CREATE INDEX IF NOT EXISTS idx_${rightTable}_comp ON ${rightTable}(${viewJoin.joinOn.joinToString(",") { it.rightField.quoted() }});""")
+
+      return result.toString()
    }
 
    private fun generateTableIndexesDdl(tableName: String, fields: List<Field>): String {

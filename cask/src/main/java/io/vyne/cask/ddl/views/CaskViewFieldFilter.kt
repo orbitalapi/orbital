@@ -7,7 +7,7 @@ import lang.taxi.types.*
  * Handles resolution of duplicate fields present
  * across the types we're using to construct a view
  */
-class CaskViewFieldFilter(private val viewName: QualifiedName, private val types: List<ObjectType>, private val typeToPrefer: ObjectType) {
+class CaskViewFieldFilter(private val viewName: QualifiedName, private val types: List<ObjectType>, private val typeToPrefer: ObjectType, private val distinct: Boolean = false) {
    private val fieldsToExclude: Map<ObjectType, List<Field>>
 
    init {
@@ -15,12 +15,17 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
       // find fields with duplicate return types
       // This type is a mess .. key is the return type from a field.
       // Value is a collection of the types that defined the field, and the field itself
-      val fieldReturnTypesToAppearances: Map<Type, List<Pair<ObjectType, Field>>> = types.flatMap { type ->
-         type.fields.map { field ->
-            field.type to (type to field)
+      val fieldReturnTypesToAppearances: Map<Type, List<Pair<ObjectType, Field>>> =
+         if (distinct) {
+            emptyMap()
+         } else {
+            types.flatMap { type ->
+               type.fields.map { field ->
+                  field.type to (type to field)
+               }
+            }.groupBy { it.first }
+               .mapValues { (_, value) -> value.map { it.second } }
          }
-      }.groupBy { it.first }
-         .mapValues { (_, value) -> value.map { it.second } }
 
       val duplicates = fieldReturnTypesToAppearances.filter { it.value.size > 1 }
       this.fieldsToExclude = duplicates.flatMap { (duplicateTypeName, locations) ->
@@ -35,7 +40,6 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
       return type.fields.filter { !exclusions.contains(it) }
          // Exclude fields with formulas, as these aren't persisted
          .filter { it.formula == null }
-
    }
 
    fun getRenamedFieldsForType(type: ObjectType): List<Field> {
@@ -45,8 +49,6 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
                is ConditionalAccessor -> renameConditionalAccessor(type, field, accessor)
                else -> accessor
             }
-
-
          }
          field.copy(
             name = renameField(type, field.name),

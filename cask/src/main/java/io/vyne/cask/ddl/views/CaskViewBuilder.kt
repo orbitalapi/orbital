@@ -59,6 +59,7 @@ class CaskViewBuilder(
          return emptyList()
       }
       val filter = CaskViewFieldFilter(viewSpec.typeName, taxiTypes.values.toList(), preferredType)
+      val filterDistinct = CaskViewFieldFilter(viewSpec.typeName, taxiTypes.values.toList(), preferredType!!, viewSpec.distinct)
 
       val tableList = join.types.mapIndexed { index, qualifiedName ->
          val thisType = types[qualifiedName]?.taxiType as ObjectType?
@@ -80,6 +81,7 @@ class CaskViewBuilder(
                ?: error("$previousTypeName was not mapped to a type.  This shouldn't happen")
 
             val fields = mapTableFields(thisType, filter, thisTableName)
+            val fieldsDist = mapTableFields(thisType, filterDistinct, thisTableName)
 
             var errorInJoin = false
             val joinCriteria = join.joinOn.joinToString(separator = " and ") { joinExpression ->
@@ -93,8 +95,18 @@ class CaskViewBuilder(
                   errorInJoin = true
                   return@joinToString ""
                }
-               val leftFieldColumnName = PostgresDdlGenerator.toColumnName(previousType.field(joinExpression.leftField))
-               val rightFieldColumnName = PostgresDdlGenerator.toColumnName(thisType.field(joinExpression.rightField))
+               val leftFieldColumnName =
+                  if (viewSpec.distinct) {
+                     filterDistinct.getRenamedFieldsForType(previousType)[filterDistinct.getOriginalFieldsForType(previousType).indexOfFirst { it.name == joinExpression.leftField }].name.quoted()
+                  } else {
+                     PostgresDdlGenerator.toColumnName(previousType.field(joinExpression.leftField))
+                  }
+               val rightFieldColumnName =
+                  if (viewSpec.distinct) {
+                     filterDistinct.getRenamedFieldsForType(thisType)[filterDistinct.getOriginalFieldsForType(thisType).indexOfFirst { it.name == joinExpression.rightField }].name.quoted()
+                  } else {
+                     PostgresDdlGenerator.toColumnName(thisType.field(joinExpression.rightField))
+                  }
                "${previousTableName.quoted()}.$leftFieldColumnName = ${thisTableName.quoted()}.$rightFieldColumnName"
             }
 
@@ -102,7 +114,20 @@ class CaskViewBuilder(
                return emptyList()
             }
 
-            val joinStatement = "${join.kind.statement} ${thisTableName.quoted()} on $joinCriteria"
+            val joinStatement = if (viewSpec.distinct) {
+               """) as distinctLeft
+                  |${join.kind.statement} (select distinct
+                  |${fieldsDist.joinToString(", \n")}
+                  |from ${thisTableName.quoted()}) as distinctRight
+                  |on ${
+                  joinCriteria
+                     .replace(tableNames.map { it.value }[0].quoted(), "distinctLeft")
+                     .replace(thisTableName.quoted(), "distinctRight")
+               }
+               """.trimMargin().trim()
+            } else {
+               "${join.kind.statement} ${thisTableName.quoted()} on $joinCriteria"
+            }
             JoinTableSpec(thisTableName, fields, joinStatement)
          }
       }
@@ -117,17 +142,32 @@ class CaskViewBuilder(
 
       // LENS-343: Drop view first, to prevent errors about
       //
-      val ddl = """create or replace view $viewTableName as
-         |select ${if (viewSpec.distinct) "distinct" else ""}
+      val regex = "\"\\w+\" as ".toRegex()
+      val selection = regex.replace(tableList.flatMap { it.fieldList }.joinToString(", \n")
+         .replace(tableList[0].tableName.quoted(), "distinctLeft")
+         .replace(tableList[1].tableName.quoted(), "distinctRight"), "")
+      val ddl = if (viewSpec.distinct) {
+         """create or replace view $viewTableName as
+         |select
+         |$selection
+         |from (select distinct
+         |${tableList[0].fieldList.joinToString(", \n")}
+         |from $tableListStatement
+         |$whereClause;
+      """
+      } else {
+         """create or replace view $viewTableName as
+         |select distinct
          |${tableList.flatMap { it.fieldList }.joinToString(", \n")}
          |from
          |$tableListStatement
          |$whereClause;
-      """.trimMargin()
+      """
+      }
+         .trimMargin()
          .trim()
-      return listOf(dropViewStatement(viewTableName), ddl)
+      return listOf(dropViewStatement(viewTableName), ddl, createIndexes())
    }
-
 
    fun generateCaskConfig(): CaskConfig {
       val viewType = generateViewType()
@@ -139,6 +179,15 @@ class CaskViewBuilder(
          exposesService = true
       )
       return config
+   }
+
+   private fun createIndexes(): String {
+      val tableNames: Map<QualifiedName, String> = getCaskConfigs(viewSpec.join)
+         .map { (qualifiedName, config) ->
+            qualifiedName to config.tableName
+         }.toMap()
+
+      return PostgresDdlGenerator().generateViewIndexesDdl(tableNames, viewSpec.join)
    }
 
    private fun mapTableFields(thisType: ObjectType, filter: CaskViewFieldFilter, thisTableName: String): List<String> {
@@ -179,7 +228,7 @@ class CaskViewBuilder(
             }
             val columnName = PostgresDdlGenerator.toColumnName(type.field(fieldName))
 
-            tableName.quoted() + "." + columnName
+            "${if(viewSpec.distinct) "distinctLeft" else tableName.quoted()}.$columnName"
          }
       }
    }

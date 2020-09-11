@@ -51,6 +51,28 @@ class CaskViewBuilderFactoryTest {
 
    val viewDef = CaskViewDefinition(
       QualifiedName.from("test.OrderEvent"),
+      distinct = false,
+      inherits = listOf(QualifiedName.from("test.TransactionEvent")),
+      join = ViewJoin(
+         kind = LEFT_OUTER,
+         left = QualifiedName.from("test.Order"),
+         right = QualifiedName.from("test.Trade"),
+         joinOn = listOf(
+            JoinExpression(
+               leftField = "id",
+               rightField = "orderId"
+            ),
+            JoinExpression(
+               leftField = "lastTradeDate",
+               rightField = "tradeDate"
+            )
+         )
+      ),
+      whereClause = "test.Order:tradeStatus = 'Cf'"
+   )
+
+   val viewDefDistinct = CaskViewDefinition(
+      QualifiedName.from("test.OrderEvent"),
       distinct = true,
       inherits = listOf(QualifiedName.from("test.TransactionEvent")),
       join = ViewJoin(
@@ -123,6 +145,47 @@ from
 "orders"
 left outer join "trades" on "orders"."id" = "trades"."orderId" and "orders"."lastTradeDate" = "trades"."tradeDate"
 WHERE "orders"."tradeStatus" = 'Cf';"""
+      val expectedIndexes = """
+CREATE INDEX IF NOT EXISTS idx_orders_id ON orders("id");
+CREATE INDEX IF NOT EXISTS idx_trades_orderId ON trades("orderId");
+CREATE INDEX IF NOT EXISTS idx_orders_lastTradeDate ON orders("lastTradeDate");
+CREATE INDEX IF NOT EXISTS idx_trades_tradeDate ON trades("tradeDate");
+CREATE INDEX IF NOT EXISTS idx_orders_comp ON orders("id","lastTradeDate");
+CREATE INDEX IF NOT EXISTS idx_trades_comp ON trades("orderId","tradeDate");"""
+      val (actualDrop, actualCreate, indexes) = statements
+      actualDrop.trimNewLines().should.equal(expectedDrop.trimNewLines())
+      actualCreate.trimNewLines().should.equal(expectedCreate.trimNewLines())
+      indexes.trimNewLines().should.equal(expectedIndexes.trimNewLines())
+   }
+
+   @Test
+   fun `generates create distinct view ddl`() {
+      val statements = builderBuilderFactory.getBuilder(viewDefDistinct).generateCreateView()
+      val expectedDrop = """drop view if exists v_OrderEvent;"""
+      val expectedCreate = """create or replace view v_OrderEvent as
+select
+distinctLeft."order_Id",
+distinctLeft."order_LastTradeDate",
+distinctLeft."order_LastTradeTime",
+distinctLeft."order_Timestampt",
+distinctLeft."order_TradeStatus",
+distinctRight."trade_Id",
+distinctRight."trade_TradeDate"
+from (select distinct
+"orders"."id" as "order_Id",
+"orders"."lastTradeDate" as "order_LastTradeDate",
+"orders"."lastTradeTime" as "order_LastTradeTime",
+"orders"."timestampt" as "order_Timestampt",
+"orders"."tradeStatus" as "order_TradeStatus"
+from "orders"
+) as distinctLeft
+left outer join (select distinct
+"trades"."id" as "trade_Id",
+"trades"."orderId" as "trade_OrderId",
+"trades"."tradeDate" as "trade_TradeDate"
+from "trades") as distinctRight
+on distinctLeft."order_Id" = distinctRight."trade_OrderId" and distinctLeft."order_LastTradeDate" = distinctRight."trade_TradeDate"
+WHERE distinctLeft."tradeStatus" = 'Cf';"""
       val (actualDrop, actualCreate) = statements
       actualDrop.trimNewLines().should.equal(expectedDrop.trimNewLines())
       actualCreate.trimNewLines().should.equal(expectedCreate.trimNewLines())

@@ -202,6 +202,7 @@ class CaskWebsocketHandlerTest {
          .verifyComplete()
    }
 
+   @Ignore
    @Test
    @Ignore("This is now a warning, not an error, so the message is not rejected")
    fun ingestionErrorCausedByMissingValue() {
