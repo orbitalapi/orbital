@@ -1,5 +1,6 @@
 package io.vyne.schemas
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import lang.taxi.types.Accessor
 import lang.taxi.types.FieldSetExpression
 import lang.taxi.types.Formula
@@ -10,10 +11,13 @@ data class Field(
    val type: QualifiedName,
    val modifiers: List<FieldModifier>,
    private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider(),
+   @get:JsonIgnore
    val accessor: Accessor?,
+   @get:JsonIgnore
    val readCondition: FieldSetExpression?,
    val typeDoc:String?,
    val defaultValue: Any? = null,
+   @get:JsonIgnore
    val formula: Formula? = null,
    val nullable: Boolean = false
 ) {
