@@ -81,7 +81,7 @@
       <dependency>
          <groupId>lang.taxi</groupId>
          <artifactId>taxi-writer</artifactId>
-         <version>0.9.0-SNAPSHOT</version>
+         <version>${taxi.version}</version>
          <scope>test</scope>
       </dependency>
    </dependencies>
