@@ -4,7 +4,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.*
-import io.vyne.models.functions.stdlib.StdLib
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
@@ -917,6 +916,91 @@ service Broker2Service {
    }
 
    @Test
+   fun `should build by using lenient synonyms`() {
+      val lenientEnumSchema = TaxiSchema.from("""
+                namespace common {
+                   enum BankDirection {
+                     BankBuys("bankbuys"),
+                     BankSell("banksell")
+                   }
+
+                   model CommonOrder {
+                      direction: BankDirection
+                   }
+                }
+                namespace BankX {
+                   lenient enum BankXDirection {
+                        BUY("bank_buys") synonym of common.BankDirection.BankBuys,
+                        SELL("bank_sells") synonym of common.BankDirection.BankSell
+                   }
+                   model BankOrder {
+                      buySellIndicator: BankXDirection
+                   }
+                }
+
+      """.trimIndent())
+
+      // Given
+      val (vyne, stubService) = testVyne(lenientEnumSchema)
+
+      fun query(factJson:String):TypedObject {
+         return vyne
+            .query(
+               additionalFacts = setOf(
+                  vyne.parseJsonModel("BankX.BankOrder", factJson)
+               ))
+            .build("common.CommonOrder")
+            .get("common.CommonOrder") as TypedObject
+      }
+      // When
+      query(""" { "buySellIndicator" : "BUY" } """)["direction"].value.should.equal("BankBuys")
+      query(""" { "buySellIndicator" : "buy" } """)["direction"].value.should.equal("BankBuys")
+   }
+
+   @Test
+   fun `should build by using default enum values`() {
+      val lenientEnumSchema = TaxiSchema.from("""
+                namespace common {
+                   enum BankDirection {
+                     BankBuys("bankbuys"),
+                     BankSell("banksells")
+                   }
+
+                   model CommonOrder {
+                      direction: BankDirection
+                   }
+                }
+                namespace BankX {
+                   enum BankXDirection {
+                        BUY("bank_buys") synonym of common.BankDirection.BankBuys,
+                        default SELL("bank_sells") synonym of common.BankDirection.BankSell
+                   }
+                   model BankOrder {
+                      buySellIndicator: BankXDirection
+                   }
+                }
+
+      """.trimIndent())
+
+      // Given
+      val (vyne, stubService) = testVyne(lenientEnumSchema)
+
+      fun query(factJson:String):TypedObject {
+         return vyne
+            .query(
+               additionalFacts = setOf(
+                  vyne.parseJsonModel("BankX.BankOrder", factJson)
+               ))
+            .build("common.CommonOrder")
+            .get("common.CommonOrder") as TypedObject
+      }
+      // When
+      query(""" { "buySellIndicator" : "BUY" } """)["direction"].value.should.equal("bankbuys")
+      // Note here that buy doesn't resolve, so the default of SELL should be applied
+      query(""" { "buySellIndicator" : "buy" } """)["direction"].value.should.equal("banksells")
+   }
+
+   @Test
    fun `should build by using synonyms with vyneql`() {
 
       // Given
@@ -987,6 +1071,8 @@ service Broker2Service {
       val rawResult = result.results.values.first()!!.toRawObject()
       rawResult.should.equal(mapOf("direction" to 1))
    }
+
+
 
    @Test
    fun `retrieve all types that can discovered through single argument function invocations`() {
