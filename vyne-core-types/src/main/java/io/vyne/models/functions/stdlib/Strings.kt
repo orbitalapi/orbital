@@ -26,7 +26,7 @@ object Concat : SelfDescribingFunction {
    override val taxiDeclaration: String = "declare function concat(String...):String"
    override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.concat")
    override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
-      val result = inputValues.joinToString("") { it.valueAs<String>() }
+      val result = inputValues.joinToString("") { it.value.toString() }
       return TypedInstance.from(schema.type(PrimitiveType.STRING), result, schema, source = Calculated)
    }
 
