@@ -34,11 +34,11 @@ type Invoice {
 }
 
 """
-   val testSchema = TaxiSchema.from(taxiDef)
-   val vyne = TestSchema.vyne(QueryEngineFactory.default(), TaxiSchema.from(taxiDef))
 
    @Test
    fun `Given operands available in context calculated field value is set`() {
+      val (vyne,_) = testVyne(taxiDef)
+
       val json = """
             {
                "qtyTick" : "2",
@@ -48,13 +48,13 @@ type Invoice {
       """.trimIndent()
       vyne.addJsonModel("vyne.example.Order", json)
       val qtyTot = (vyne.type("vyne.example.Invoice").attributes["qtyTot"] ?: error("")).type
-      val result = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(qtyTot.fullyQualifiedName, QueryParser(testSchema)), vyne.query())
+      val result = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(qtyTot.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query())
       expect(result.matchedNodes).size.to.equal(1)
       expect(result.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(qtyTot.fullyQualifiedName)
       expect(result.matchedNodes.entries.first().value!!.value).to.equal(BigDecimal("400"))
 
       val orderId = (vyne.type("vyne.example.Invoice").attributes["orderId"] ?: error("")).type
-      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(testSchema)), vyne.query())
+      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query())
       expect(orderIdResult.matchedNodes).size.to.equal(1)
       expect(orderIdResult.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(orderId.fullyQualifiedName)
       expect(orderIdResult.matchedNodes.entries.first().value!!.value).to.equal("bankOrderId")
@@ -62,6 +62,8 @@ type Invoice {
 
    @Test
    fun `Calculations can handle null values appropriately`() {
+      val (vyne,_) = testVyne(taxiDef)
+
       val json = """
             {
                "qtyTick" : "2",
@@ -71,10 +73,10 @@ type Invoice {
       """.trimIndent()
       vyne.addJsonModel("vyne.example.Order", json)
       val qtyTot = (vyne.type("vyne.example.Invoice").attributes["qtyTot"] ?: error("")).type
-      val result = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(qtyTot.fullyQualifiedName, QueryParser(testSchema)), vyne.query())
+      val result = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(qtyTot.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query())
       expect(result.matchedNodes).size.to.equal(0)
       val orderId = (vyne.type("vyne.example.Invoice").attributes["orderId"] ?: error("")).type
-      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(testSchema)), vyne.query())
+      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query())
       expect(orderIdResult.matchedNodes).size.to.equal(1)
       expect(orderIdResult.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(orderId.fullyQualifiedName)
       expect(orderIdResult.matchedNodes.entries.first().value!!.value).to.equal("marketOrderId")

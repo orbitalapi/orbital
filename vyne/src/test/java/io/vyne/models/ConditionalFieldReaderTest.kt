@@ -112,7 +112,7 @@ type TransformedTradeRecord {
       type ClientDirection inherits Direction
       type Order {
          bankDirection: BankDirection
-         clientDirection: ClientDirection by when (bankDirection) {
+         clientDirection: ClientDirection by when (this.bankDirection) {
             "Buy" -> "Sell"
             "Sell" -> "Buy"
          }
@@ -161,7 +161,7 @@ type TransformedTradeRecord {
       type BankDirection inherits Direction
       type Order {
          bankDirection: BankDirection
-         payReceive: PayReceive by when (bankDirection) {
+         payReceive: PayReceive by when (this.bankDirection) {
             "Buy" -> PayReceive.Pay
             "Sell" -> PayReceive.Receive
             else -> null
@@ -179,6 +179,9 @@ type TransformedTradeRecord {
    @Test
    fun `can declare calculated field based on other fields`() {
       val (vyne, _) = testVyne("""
+      import vyne.stdlib.left
+      import vyne.stdlib.concat
+
       type FirstName inherits String
       type LastName inherits String
       type FullName inherits String
@@ -196,7 +199,7 @@ type TransformedTradeRecord {
                   birthDateAndTime: BirthDateTime by (this.birthDate + this.birthTime)
                   fullName : FullName by (this.firstName + this.lastName)
                   initial: Initial by left(this.firstName, 1)
-                  concatName: String by concat3(this.firstName, this.middleName, this.lastName, "-")
+                  concatName: String by concat(this.firstName,  '-', this.middleName, '-', this.lastName)
                }
       """)
 

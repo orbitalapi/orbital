@@ -5,7 +5,6 @@ import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import lang.taxi.types.Formula
 import lang.taxi.types.FormulaOperator
-import lang.taxi.types.UnaryFormulaOperator
 import org.junit.Test
 import java.math.BigDecimal
 
@@ -47,15 +46,6 @@ class CalculatorTest {
       }
    }
 
-   @Test
-   fun `unary left operation`() {
-      val unaryCalculator = LeftCalculator()
-      unaryCalculator.calculate(UnaryFormulaOperator.Left, "teststring", 1).should.be.equal("t")
-      unaryCalculator.calculate(UnaryFormulaOperator.Left, "teststring", 2).should.be.equal("te")
-      unaryCalculator.calculate(UnaryFormulaOperator.Left, "teststring", 3).should.be.equal("tes")
-      unaryCalculator.calculate(UnaryFormulaOperator.Left, "teststring", 4).should.be.equal("test")
-      unaryCalculator.calculate(UnaryFormulaOperator.Left, "teststring", 5).should.be.equal("tests")
-   }
 
    private fun verifyCalculation(scenario: TestScenario, calculator: Calculator) {
       val formula = mock<Formula> {

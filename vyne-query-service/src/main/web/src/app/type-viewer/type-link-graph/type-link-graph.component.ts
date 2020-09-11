@@ -65,7 +65,7 @@ export class TypeLinkGraphComponent {
   nodeClicked: EventEmitter<SchemaGraphNode> = new EventEmitter<SchemaGraphNode>();
 
 
-  @ViewChild('chartOuterContianer' , {static: true})
+  @ViewChild('chartOuterContianer', {static: true})
   chartContainer: ElementRef;
 
 
@@ -150,4 +150,8 @@ export class TypeLinkGraphComponent {
     return innerRectangle(width, height);
   }
 
+  tooltipTitle(node) {
+    return node && node.nodeId ? node.nodeId.replace(':', '.') : '';
+  }
 }
+

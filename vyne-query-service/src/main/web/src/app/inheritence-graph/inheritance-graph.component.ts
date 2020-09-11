@@ -101,6 +101,7 @@ export class InheritanceGraphComponent {
         nodeId: name.fullyQualifiedName.split('.').join(''),
         label: name.shortDisplayName,
         subHeader: name.namespace,
+        fullyQualifiedName: name.fullyQualifiedName,
         type: 'TYPE'
       } as SchemaGraphNode;
     }
