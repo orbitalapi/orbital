@@ -262,11 +262,8 @@ type Sample {
         "shortDisplayName" : "CustomerEmailAddress"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
       "nullable" : false,
       "constraints" : [ ]
     },
@@ -281,11 +278,8 @@ type Sample {
         "shortDisplayName" : "CustomerId"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
       "nullable" : false,
       "constraints" : [ ]
     },
@@ -300,11 +294,8 @@ type Sample {
         "shortDisplayName" : "CustomerName"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
       "nullable" : false,
       "constraints" : [ ]
     },
@@ -319,11 +310,8 @@ type Sample {
         "shortDisplayName" : "Postcode"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
       "nullable" : false,
       "constraints" : [ ]
     }
