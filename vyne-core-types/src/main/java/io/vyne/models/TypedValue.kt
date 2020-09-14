@@ -87,10 +87,15 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
       }
 
       val formatterBuilder = DateTimeFormatterBuilder()
-         format.forEach { f ->  formatterBuilder.appendOptional(DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(f).toFormatter(locale))}
+         format.forEach { f ->  formatterBuilder.appendOptional(DateTimeFormatterBuilder()
+            .parseLenient()
+            .parseCaseInsensitive()
+            .appendPattern(f)
+            .toFormatter(locale))}
 
      val formatter = formatterBuilder
-         .appendOptional(optionalFormatter)
+        .parseLenient()
+        .appendOptional(optionalFormatter)
          .toFormatter()
       return doConvert(source, formatter)
    }
@@ -142,7 +147,7 @@ data class TypedValue private constructor(override val type: Type, override val 
                val valueToUse = converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
                return TypedValue(type, valueToUse, source)
             } catch (exception: Exception) {
-               throw DataParsingException("Failed to parse value $value to type ${type.fullyQualifiedName} - ${exception.message}", exception)
+               throw DataParsingException("Failed to parse value $value to type ${type.longDisplayName} - ${exception.message}", exception)
             }
          }
 

@@ -265,6 +265,7 @@ type Sample {
       "typeDoc" : null,
       "defaultValue" : null,
       "nullable" : false,
+      "typeDisplayName" : "CustomerEmailAddress",
       "constraints" : [ ]
     },
     "id" : {
@@ -281,6 +282,7 @@ type Sample {
       "typeDoc" : null,
       "defaultValue" : null,
       "nullable" : false,
+      "typeDisplayName" : "CustomerId",
       "constraints" : [ ]
     },
     "name" : {
@@ -297,6 +299,7 @@ type Sample {
       "typeDoc" : null,
       "defaultValue" : null,
       "nullable" : false,
+      "typeDisplayName" : "CustomerName",
       "constraints" : [ ]
     },
     "postcode" : {
@@ -313,6 +316,7 @@ type Sample {
       "typeDoc" : null,
       "defaultValue" : null,
       "nullable" : false,
+      "typeDisplayName" : "Postcode",
       "constraints" : [ ]
     }
   },
@@ -333,13 +337,14 @@ type Sample {
   "isTypeAlias" : false,
   "format" : null,
   "hasFormat" : false,
-  "isCalculated": false,
+  "isCalculated" : false,
   "basePrimitiveTypeName" : null,
-  "unformattedTypeName" : null,
   "isParameterType" : false,
   "isClosed" : false,
   "isPrimitive" : false,
   "fullyQualifiedName" : "Customer",
+  "unformattedTypeName" : null,
+  "longDisplayName" : "Customer",
   "memberQualifiedName" : {
     "fullyQualifiedName" : "Customer",
     "parameters" : [ ],
