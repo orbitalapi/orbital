@@ -13,7 +13,13 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 
-
+/**
+ * This class pads csv content to a specified width.
+ * The intention is to allow fast seeking to specific
+ * columns per record whilst upgrading.
+ * Currently, we're not using this approach, as we haven't
+ * proven that the performance benefits this provides are neccessary.
+ */
 class CsvBinaryWriter(
    private val bytesPerColumn: Int = 15,
    private val format: CSVFormat = CsvFormatFactory.default(),

@@ -5,6 +5,9 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import com.zaxxer.hikari.HikariDataSource
 import io.vyne.VersionedTypeReference
+import io.vyne.cask.api.CaskConfig
+import io.vyne.cask.api.CaskStatus
+import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
@@ -13,6 +16,7 @@ import org.junit.Test
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
 import org.springframework.jdbc.core.JdbcTemplate
 import java.math.BigDecimal
+import java.time.Instant
 
 class CaskDAOTest {
    private val mockJdbcTemplate = mock<JdbcTemplate>()
@@ -38,24 +42,17 @@ class CaskDAOTest {
    val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummary")
    val versionedType = taxiSchema.versionedType(versionedTypeReference)
    lateinit var caskDAO: CaskDAO
-   lateinit var largeObjectDataSourceProps: DataSourceProperties
-
-   @Rule
-   @JvmField
-   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(0) }
+   lateinit var caskConfigRepository:CaskConfigRepository
 
    @Before
    fun setUp() {
-      largeObjectDataSourceProps = DataSourceProperties()
-      largeObjectDataSourceProps.driverClassName = "org.postgresql.Driver"
-      largeObjectDataSourceProps.url = "jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres"
-      largeObjectDataSourceProps.username = "postgres"
+      caskConfigRepository = mock {  }
 
-      caskDAO = CaskDAO(mockJdbcTemplate, SimpleTaxiSchemaProvider(schema), largeObjectDataSourceProps)
-      whenever(mockJdbcTemplate.queryForList(
-         eq("SELECT tablename from cask_config where qualifiedtypename = ?"),
-         eq(listOf(versionedType.fullyQualifiedName).toTypedArray()),
-         eq(String::class.java))).thenReturn(listOf("rderWindowSummary_f1b588_de3f20"))
+      caskDAO = CaskDAO(mockJdbcTemplate, SimpleTaxiSchemaProvider(schema),  mock {  }, mock {  }, caskConfigRepository)
+      whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
+         .thenReturn(listOf(
+            CaskConfig("rderWindowSummary_f1b588_de3f20",versionedType.fullyQualifiedName,"", insertedAt = Instant.now())
+         ))
    }
 
    @Test
@@ -154,10 +151,13 @@ class CaskDAOTest {
       // given
       val start = "2020-01-01T12:00:01.000Z"
       val end = "2020-10-01T12:00:01.000Z"
-      whenever(mockJdbcTemplate.queryForList(
-         eq("SELECT tablename from cask_config where qualifiedtypename = ?"),
-         eq(listOf(versionedType.fullyQualifiedName).toTypedArray()),
-         eq(String::class.java))).thenReturn(listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30"))
+      whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
+         .thenReturn(
+            listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30").map {
+               CaskConfig(it,versionedType.fullyQualifiedName,"", insertedAt = Instant.now())
+            }
+         )
+
       caskDAO.findBetween(versionedType, "timestamp", start, end)
       val statementCaptor = argumentCaptor<String>()
       val startDateCaptor = argumentCaptor<Any>()
@@ -169,10 +169,13 @@ class CaskDAOTest {
    fun `find After should query all relevant tables for given type`() {
       // given
       val date = "2020-01-01T12:00:01.000Z"
-      whenever(mockJdbcTemplate.queryForList(
-         eq("SELECT tablename from cask_config where qualifiedtypename = ?"),
-         eq(listOf(versionedType.fullyQualifiedName).toTypedArray()),
-         eq(String::class.java))).thenReturn(listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30"))
+      whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
+         .thenReturn(
+            listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30").map {
+               CaskConfig(it,versionedType.fullyQualifiedName,"", insertedAt = Instant.now())
+            }
+         )
+
       caskDAO.findAfter(versionedType, "timestamp", date)
       val statementCaptor = argumentCaptor<String>()
       val argCaptor = argumentCaptor<Any>()
@@ -183,10 +186,13 @@ class CaskDAOTest {
    fun `find Before should query all relevant tables for given type`() {
       // given
       val date = "2020-01-01T12:00:01.000Z"
-      whenever(mockJdbcTemplate.queryForList(
-         eq("SELECT tablename from cask_config where qualifiedtypename = ?"),
-         eq(listOf(versionedType.fullyQualifiedName).toTypedArray()),
-         eq(String::class.java))).thenReturn(listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30"))
+      whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
+         .thenReturn(
+            listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30").map {
+               CaskConfig(it,versionedType.fullyQualifiedName,"", insertedAt = Instant.now())
+            }
+         )
+
       caskDAO.findBefore(versionedType, "timestamp", date)
       val statementCaptor = argumentCaptor<String>()
       val argCaptor = argumentCaptor<Any>()

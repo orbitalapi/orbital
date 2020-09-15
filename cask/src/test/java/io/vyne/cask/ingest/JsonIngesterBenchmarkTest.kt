@@ -2,6 +2,7 @@ package io.vyne.cask.ingest
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.io.Resources
+import io.vyne.cask.MessageIds
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.schemas.fqn
@@ -32,7 +33,7 @@ class JsonIngesterBenchmarkTest {
             Flux.just(File(resource).inputStream()),
             versionedType,
             taxiSchema,
-            folder.root.toPath(),
+            MessageIds.uniqueId(),
             ObjectMapper())
 
          pipelineSource.stream.blockLast()

@@ -2,71 +2,30 @@ package io.vyne.cask.ingest
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.io.Resources
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
-import com.zaxxer.hikari.HikariDataSource
-import io.vyne.cask.ddl.TableMetadata
+import io.vyne.cask.MessageIds
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
-import io.vyne.cask.query.CaskDAO
+import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.schemas.fqn
-import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.Benchmark
 import io.vyne.utils.log
-import org.apache.commons.io.FileUtils
-import org.flywaydb.core.Flyway
 import org.junit.After
-import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
-import org.springframework.boot.jdbc.DataSourceBuilder
-import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
 import java.io.File
 import java.time.Duration
 
 
-class JsonIngesterDbBenchmarkTest {
+class JsonIngesterDbBenchmarkTest : BaseCaskIntegrationTest() {
 
-   @Rule
-   @JvmField
-   val folder = TemporaryFolder()
 
-   @Rule
-   @JvmField
-   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(0) }
-
-   lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
-   lateinit var caskDao: CaskDAO
-   lateinit var largeObjectDataSourceProps: DataSourceProperties
-
-   @Before
-   fun setup() {
-      val dataSource = DataSourceBuilder.create()
-         .url("jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres")
-         .username("postgres")
-         .build()
-
-      largeObjectDataSourceProps = DataSourceProperties()
-      largeObjectDataSourceProps.driverClassName = "org.postgresql.Driver"
-      largeObjectDataSourceProps.url = "jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres"
-      largeObjectDataSourceProps.username = "postgres"
-
-      Flyway.configure()
-         .dataSource(dataSource)
-         .load()
-         .migrate()
-      jdbcTemplate = JdbcTemplate(dataSource)
-      jdbcTemplate.execute(TableMetadata.DROP_TABLE)
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(CoinbaseJsonOrderSchema.sourceV1), largeObjectDataSourceProps)
-   }
 
    @After
-   fun tearDown() {
+   override fun tearDown() {
+      super.tearDown()
       ingester.destroy()
    }
 
@@ -82,12 +41,12 @@ class JsonIngesterDbBenchmarkTest {
             Flux.just(File(resource).inputStream()),
             versionedType,
             taxiSchema,
-            folder.root.toPath(),
+            MessageIds.uniqueId(),
             ObjectMapper())
 
          val pipeline = IngestionStream(
             versionedType,
-            TypeDbWrapper(versionedType, taxiSchema, pipelineSource.cachePath, null),
+            TypeDbWrapper(versionedType, taxiSchema),
             pipelineSource)
 
          ingester = Ingester(jdbcTemplate, pipeline)
@@ -103,7 +62,6 @@ class JsonIngesterDbBenchmarkTest {
 
          val rowCount = ingester.getRowCount()
          rowCount.should.equal(10061)
-         FileUtils.cleanDirectory(folder.root)
       }
    }
 }

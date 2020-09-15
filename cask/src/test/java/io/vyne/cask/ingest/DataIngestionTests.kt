@@ -1,12 +1,15 @@
 package io.vyne.cask.ingest
 
+import com.nhaarman.mockito_kotlin.mock
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import com.zaxxer.hikari.HikariDataSource
+import io.vyne.cask.MessageIds
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
+import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.query.CaskDAO
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.RawObjectMapper
@@ -35,41 +38,9 @@ import java.time.LocalDate
 import java.time.LocalTime
 import javax.sql.DataSource
 
-class DataIngestionTests {
-   @Rule
-   @JvmField
-   val folder = TemporaryFolder()
+class DataIngestionTests : BaseCaskIntegrationTest() {
 
-   @Rule
-   @JvmField
-   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(0) }
-
-   lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
-   lateinit var caskDao: CaskDAO
-   lateinit var largeObjectDataSourceProps: DataSourceProperties
-
-   @Before
-   fun setup() {
-      val dataSource = DataSourceBuilder.create()
-         .url("jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres")
-         .username("postgres")
-         .build()
-
-      largeObjectDataSourceProps = DataSourceProperties()
-      largeObjectDataSourceProps.driverClassName = "org.postgresql.Driver"
-      largeObjectDataSourceProps.url = "jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres"
-      largeObjectDataSourceProps.username = "postgres"
-
-
-      Flyway.configure()
-         .dataSource(dataSource)
-         .load()
-         .migrate()
-      jdbcTemplate = JdbcTemplate(dataSource)
-      jdbcTemplate.execute(TableMetadata.DROP_TABLE)
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(CoinbaseJsonOrderSchema.sourceV1), largeObjectDataSourceProps)
-   }
 
    @Test
    fun canIngestWithTimeType() {
@@ -79,10 +50,10 @@ class DataIngestionTests {
       val schema = TestSchema.schemaTimeTest
       val timeType = schema.versionedType("TimeTest".fqn())
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-      val pipelineSource = CsvStreamSource(input, timeType, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(timeType, TypeDbWrapper(timeType, schema, pipelineSource.cachePath, null), pipelineSource)
+      val pipelineSource = CsvStreamSource(input, timeType, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(timeType, TypeDbWrapper(timeType, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.timeTypeTest), largeObjectDataSourceProps)
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.timeTypeTest), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(timeType)
       caskDao.createCaskRecordTable(timeType)
@@ -93,7 +64,7 @@ class DataIngestionTests {
       (result.first()["time"] as Time).toString().should.equal("11:11:11")
 
       caskDao.createCaskRecordTable(timeType)
-      FileUtils.cleanDirectory(folder.root)
+
    }
 
    @Test
@@ -105,10 +76,10 @@ class DataIngestionTests {
       val schema = TestSchema.schemaUpsertTest
       val type = schema.versionedType("UpsertTestNoPk".fqn())
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-      val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(type, TypeDbWrapper(type, schema, pipelineSource.cachePath, null), pipelineSource)
+      val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), largeObjectDataSourceProps)
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
@@ -122,7 +93,7 @@ class DataIngestionTests {
       (result.first()["v1"] as BigDecimal).setScale(2, RoundingMode.DOWN).should.equal(BigDecimal(3.14).setScale(2, RoundingMode.DOWN))
 
       caskDao.createCaskRecordTable(type)
-      FileUtils.cleanDirectory(folder.root)
+
    }
 
    @Test
@@ -135,10 +106,10 @@ class DataIngestionTests {
       val type = schema.versionedType("UpsertTestSinglePk".fqn())
 
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-      val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(type, TypeDbWrapper(type, schema, pipelineSource.cachePath, null), pipelineSource)
+      val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), largeObjectDataSourceProps)
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
@@ -152,7 +123,7 @@ class DataIngestionTests {
       (result[1]["v1"] as BigDecimal).setScale(1).should.equal(BigDecimal("6.6"))
 
       caskDao.createCaskRecordTable(type)
-      FileUtils.cleanDirectory(folder.root)
+
    }
 
    @Test
@@ -165,10 +136,10 @@ class DataIngestionTests {
       val type = schema.versionedType("UpsertTestMultiPk".fqn())
 
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-      val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(type, TypeDbWrapper(type, schema, pipelineSource.cachePath, null), pipelineSource)
+      val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), largeObjectDataSourceProps)
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(type)
       caskDao.createCaskRecordTable(type)
@@ -182,7 +153,7 @@ class DataIngestionTests {
       (result[1]["v1"] as BigDecimal).setScale(1).should.equal(BigDecimal("6.6"))
 
       caskDao.createCaskRecordTable(type)
-      FileUtils.cleanDirectory(folder.root)
+
    }
 
    @Test
@@ -194,10 +165,10 @@ class DataIngestionTests {
 
       Benchmark.benchmark("UPSERT to db") { stopwatch ->
          val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-         val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-         val pipeline = IngestionStream(type, TypeDbWrapper(type, schema, pipelineSource.cachePath, null), pipelineSource)
+         val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+         val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
 
-         caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), largeObjectDataSourceProps)
+         caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
          ingester = Ingester(jdbcTemplate, pipeline)
          caskDao.dropCaskRecordTable(type)
          caskDao.createCaskRecordTable(type)
@@ -206,7 +177,7 @@ class DataIngestionTests {
          stopwatch.stop()
 
          caskDao.createCaskRecordTable(type)
-         FileUtils.cleanDirectory(folder.root)
+
       }
    }
 
@@ -218,10 +189,10 @@ class DataIngestionTests {
       val schema = TestSchema.schemaTemporalDownCastTest
       val downCastTestType = schema.versionedType("DowncastTest".fqn())
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-      val pipelineSource = CsvStreamSource(input, downCastTestType, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(downCastTestType, TypeDbWrapper(downCastTestType, schema, pipelineSource.cachePath, null), pipelineSource)
+      val pipelineSource = CsvStreamSource(input, downCastTestType, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(downCastTestType, TypeDbWrapper(downCastTestType, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource), largeObjectDataSourceProps)
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.temporalSchemaSource), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(downCastTestType)
       caskDao.createCaskRecordTable(downCastTestType)
@@ -232,7 +203,7 @@ class DataIngestionTests {
       (result.first()["timeOnly"] as Time).should.equal(Time.valueOf("00:00:00"))
 
       caskDao.createCaskRecordTable(downCastTestType)
-      FileUtils.cleanDirectory(folder.root)
+
 
       //
       val dateOnlyQualifiedName = schema.type("DowncastTest").attributes.getValue("dateOnly").type
@@ -259,10 +230,10 @@ class DataIngestionTests {
       val schema = TestSchema.schemaWithDefault
       val modelWithDefaults = schema.versionedType("ModelWithDefaults".fqn())
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-      val pipelineSource = CsvStreamSource(input, modelWithDefaults, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(modelWithDefaults, TypeDbWrapper(modelWithDefaults, schema, pipelineSource.cachePath, null), pipelineSource)
+      val pipelineSource = CsvStreamSource(input, modelWithDefaults, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(modelWithDefaults, TypeDbWrapper(modelWithDefaults, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource), DataSourceProperties())
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaWithDefaultValueSource), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(modelWithDefaults)
       caskDao.createCaskRecordTable(modelWithDefaults)
@@ -275,7 +246,7 @@ class DataIngestionTests {
       defaultDecimal.compareTo(BigDecimal("1000000.0")).should.equal(0)
 
       caskDao.createCaskRecordTable(modelWithDefaults)
-      FileUtils.cleanDirectory(folder.root)
+
    }
 
    @Test
@@ -286,10 +257,10 @@ class DataIngestionTests {
       val schema = TestSchema.schemaConcat
       val concatModel = schema.versionedType("ConcatModel".fqn())
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-      val pipelineSource = CsvStreamSource(input, concatModel, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(concatModel, TypeDbWrapper(concatModel, schema, pipelineSource.cachePath, null), pipelineSource)
+      val pipelineSource = CsvStreamSource(input, concatModel, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(concatModel, TypeDbWrapper(concatModel, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource), DataSourceProperties())
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.schemaConcatSource), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(concatModel)
       caskDao.createCaskRecordTable(concatModel)
@@ -298,7 +269,7 @@ class DataIngestionTests {
       val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
       result.first()["concatField"].should.equal("First1-Second1-Third1")
       caskDao.createCaskRecordTable(concatModel)
-      FileUtils.cleanDirectory(folder.root)
+//
    }
 
    @Test
@@ -309,10 +280,10 @@ class DataIngestionTests {
       val schema = TestSchema.instantSchema
       val instantModel = schema.versionedType("InstantModel".fqn())
       val input: Flux<InputStream> = Flux.just(source.byteInputStream())
-      val pipelineSource = CsvStreamSource(input, instantModel, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(instantModel, TypeDbWrapper(instantModel, schema, pipelineSource.cachePath, null), pipelineSource)
+      val pipelineSource = CsvStreamSource(input, instantModel, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(instantModel, TypeDbWrapper(instantModel, schema), pipelineSource)
 
-      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.instantFormatSource), DataSourceProperties())
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.instantFormatSource), dataSource, caskMessageRepository, configRepository)
       ingester = Ingester(jdbcTemplate, pipeline)
       caskDao.dropCaskRecordTable(instantModel)
       caskDao.createCaskRecordTable(instantModel)
@@ -321,6 +292,6 @@ class DataIngestionTests {
       val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
       result.first()["instant"].toString().should.equal("2020-07-31 22:59:59.0")
       caskDao.createCaskRecordTable(instantModel)
-      FileUtils.cleanDirectory(folder.root)
+//
    }
 }
