@@ -5,6 +5,7 @@ import io.vyne.cask.CaskIngestionRequest
 import io.vyne.cask.api.ContentType
 import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.api.JsonIngestionParameters
+import io.vyne.cask.api.csv.CsvFormatFactory
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.StreamSource
@@ -36,27 +37,15 @@ data class CsvWebsocketRequest(private val parameters: CsvIngestionParameters, o
    override val contentType = ContentType.csv
    override val debug: Boolean = parameters.debug
    override val nullValues: Set<String> = parameters.nullValue
-
-   val ignoreContentBefore = parameters.ignoreContentBefore
-
-   fun csvFormat(): CSVFormat {
-      val format = CSVFormat.DEFAULT
-         .withTrailingDelimiter()
-         .withIgnoreEmptyLines()
-         .withDelimiter(parameters.delimiter)
-      if (parameters.firstRecordAsHeader) {
-         return format
-            .withFirstRecordAsHeader()
-            .withAllowMissingColumnNames()
-            .withAllowDuplicateHeaderNames()
-      }
-      return format
+   val csvFormat by lazy {
+      CsvFormatFactory.fromParameters(parameters)
    }
+   val ignoreContentBefore = parameters.ignoreContentBefore
 
    override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, readCacheDirectory: Path): StreamSource {
       return CsvStreamSource(
          input, type, schema, readCacheDirectory,
-         csvFormat = this.csvFormat(),
+         csvFormat = this.csvFormat,
          nullValues =  parameters.nullValue,
          ignoreContentBefore = parameters.ignoreContentBefore
       )

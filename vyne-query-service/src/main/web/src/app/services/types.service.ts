@@ -203,7 +203,8 @@ export interface ParsedCsvContent {
 
 export class CsvOptions {
   constructor(public firstRecordAsHeader: boolean = true, public separator: string = ',', public nullValueTag: string | null = null,
-              public ignoreContentBefore: string | null = null) {
+              public ignoreContentBefore: string | null = null,
+              public containsTrailingDelimiters: boolean = false) {
   }
 
   static isCsvContent(fileExtension: string): boolean {

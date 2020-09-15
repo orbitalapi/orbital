@@ -1,5 +1,6 @@
 package io.vyne.cask.format.csv
 
+import io.vyne.cask.api.csv.CsvFormatFactory
 import io.vyne.cask.format.byteArrayOfLength
 import io.vyne.cask.format.unPad
 import io.vyne.utils.log
@@ -15,13 +16,7 @@ import java.nio.file.Path
 
 class CsvBinaryWriter(
    private val bytesPerColumn: Int = 15,
-   private val format: CSVFormat =
-      CSVFormat.DEFAULT
-         .withFirstRecordAsHeader()
-         .withAllowMissingColumnNames()
-         .withTrailingDelimiter()
-         .withIgnoreEmptyLines()
-         .withAllowDuplicateHeaderNames(),
+   private val format: CSVFormat = CsvFormatFactory.default(),
    private val shouldLogIndividualWriteTime: Boolean = true) {
 
    fun convert(input: InputStream, outputPath: Path): Flux<CSVRecord> {
