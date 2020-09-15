@@ -262,12 +262,10 @@ type Sample {
         "shortDisplayName" : "CustomerEmailAddress"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
       "nullable" : false,
+      "typeDisplayName" : "CustomerEmailAddress",
       "constraints" : [ ]
     },
     "id" : {
@@ -281,12 +279,10 @@ type Sample {
         "shortDisplayName" : "CustomerId"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
       "nullable" : false,
+      "typeDisplayName" : "CustomerId",
       "constraints" : [ ]
     },
     "name" : {
@@ -300,12 +296,10 @@ type Sample {
         "shortDisplayName" : "CustomerName"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
       "nullable" : false,
+      "typeDisplayName" : "CustomerName",
       "constraints" : [ ]
     },
     "postcode" : {
@@ -319,12 +313,10 @@ type Sample {
         "shortDisplayName" : "Postcode"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
       "nullable" : false,
+      "typeDisplayName" : "Postcode",
       "constraints" : [ ]
     }
   },
@@ -345,13 +337,14 @@ type Sample {
   "isTypeAlias" : false,
   "format" : null,
   "hasFormat" : false,
-  "isCalculated": false,
+  "isCalculated" : false,
   "basePrimitiveTypeName" : null,
-  "unformattedTypeName" : null,
   "isParameterType" : false,
   "isClosed" : false,
   "isPrimitive" : false,
   "fullyQualifiedName" : "Customer",
+  "unformattedTypeName" : null,
+  "longDisplayName" : "Customer",
   "memberQualifiedName" : {
     "fullyQualifiedName" : "Customer",
     "parameters" : [ ],

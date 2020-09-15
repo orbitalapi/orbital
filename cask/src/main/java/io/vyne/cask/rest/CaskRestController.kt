@@ -25,9 +25,23 @@ class CaskRestController(private val caskService: CaskService,
                          @Qualifier("ingesterMapper") private val mapper: ObjectMapper) : CaskApi {
 
    // Workaround for feign not supporting pojos for RequestParam
-   override fun ingestCsv(typeReference: String, delimiter: Char, firstRecordAsHeader: Boolean, nullValue: Set<String>, ignoreContentBefore: String?, debug: Boolean, input: String): CaskIngestionResponse {
+   override fun ingestCsv(
+      typeReference: String,
+      delimiter: Char,
+      firstRecordAsHeader: Boolean,
+      nullValue: Set<String>,
+      ignoreContentBefore: String?,
+      containsTrailingDelimiters: Boolean,
+      debug: Boolean,
+      input: String
+   ): CaskIngestionResponse {
       val parameters = CsvIngestionParameters(
-         delimiter, firstRecordAsHeader, nullValue, ignoreContentBefore, debug
+         delimiter,
+         firstRecordAsHeader,
+         nullValue,
+         ignoreContentBefore,
+         containsTrailingDelimiters,
+         debug
       )
       return ingestCsv(typeReference, parameters, input)
    }

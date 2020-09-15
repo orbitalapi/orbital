@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.8.0</version>
+      <version>0.8.1</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -21,6 +21,15 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <!-- This might be a bad idea - it's just to access CsvImportParameters.
+      If this creates circular dependencies, or a mess, let's just refactor the
+      required classes elsewhere -->
+
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>cask-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>

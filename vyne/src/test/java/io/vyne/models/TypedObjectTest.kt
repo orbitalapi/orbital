@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.json.JsonModelParser
+import io.vyne.query.graph.type
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Before
@@ -13,6 +14,9 @@ import org.skyscreamer.jsonassert.JSONAssert
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import kotlin.test.fail
 
 class TypedObjectTest {
 
@@ -114,13 +118,62 @@ class TypedObjectTest {
 
    @Test
    fun canParseFromNestedMapToTypedObject() {
-      val traderAttributes = jacksonObjectMapper().readValue<Map<String,Any>>(traderJson)
+      val traderAttributes = jacksonObjectMapper().readValue<Map<String, Any>>(traderJson)
       val instance = TypedObject.fromAttributes(schema.type("Trader"), traderAttributes, schema, source = Provided)
       val raw = instance.toRawObject()
       val rawJson = jacksonObjectMapper().writeValueAsString(raw)
       JSONAssert.assertEquals(traderJson, rawJson, false);
    }
 
+
+   @Test
+   fun when_unwrappingDatesWithFormats_lenientDateParsingIsUsed() {
+      val schema = TaxiSchema.from("""
+         type Trade {
+            tradeDate : Instant (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
+         }
+      """.trimIndent())
+      val tradeType = schema.type("Trade")
+      fun parseJson(date: String): Instant {
+         val json = """{
+         |"tradeDate" : "$date"
+         |}
+      """.trimMargin()
+         val typedObject = TypedInstance.from(tradeType, json, schema, source = Provided) as TypedObject
+         return typedObject["tradeDate"].value as Instant
+      }
+
+      val instant = Instant.parse("2020-05-15T13:00:00Z")
+      parseJson("2020-05-15T13:00:00.0Z").should.equal(instant)
+      parseJson("2020-05-15T13:00:00.00Z").should.equal(instant)
+      parseJson("2020-05-15T13:00:00.000Z").should.equal(instant)
+      parseJson("2020-05-15T13:00:00.0000Z").should.equal(instant)
+      parseJson("2020-05-15T13:00:00.00000Z").should.equal(instant)
+      parseJson("2020-05-15T13:00:00.000000Z").should.equal(instant)
+   }
+
+   @Test
+   fun whenDateFormatsAreInvalid_then_errorMessageContainsTheExpectedFormat() {
+      val schema = TaxiSchema.from("""
+         type Trade {
+            tradeDate : Instant (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
+         }
+      """.trimIndent())
+      val tradeType = schema.type("Trade")
+      val json = """{
+         |"tradeDate" : "2020-05-01"
+         |}
+      """.trimMargin()
+      try {
+         TypedInstance.from(tradeType, json, schema, source = Provided) as TypedObject
+      } catch (e:DataParsingException) {
+         e.message.should.equal("Failed to parse value 2020-05-01 to type lang.taxi.Instant(yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z') - Text '2020-05-01' could not be parsed, unparsed text found at index 0")
+         return
+      }
+      fail("Expected an exception to be thrown")
+
+
+   }
 
    @Test
    fun when_unwrappingDatesWithFormats_then_stringAreReturnedForNonStandard() {

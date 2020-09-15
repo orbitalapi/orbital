@@ -17,7 +17,8 @@ object Strings {
       Mid,
       Concat,
       Uppercase,
-      Lowercase
+      Lowercase,
+      Trim
 //      Coalesce
    )
 }
@@ -26,12 +27,21 @@ object Concat : SelfDescribingFunction {
    override val taxiDeclaration: String = "declare function concat(String...):String"
    override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.concat")
    override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
-      val result = inputValues.joinToString("") { it.valueAs<String>() }
+      val result = inputValues.mapNotNull { it.value }.joinToString("")
       return TypedInstance.from(schema.type(PrimitiveType.STRING), result, schema, source = Calculated)
    }
-
 }
 
+object Trim : SelfDescribingFunction {
+   override val taxiDeclaration: String = "declare function trim(String):String"
+   override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.trim")
+
+   override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
+      val input = inputValues[0].value.toString()
+      val output = input.trim()
+      return TypedInstance.from(schema.type(PrimitiveType.STRING), output, schema, source = Calculated)
+   }
+}
 object Left : SelfDescribingFunction {
    override val taxiDeclaration: String = "declare function left(String,Int):String"
    override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.left")
@@ -41,7 +51,7 @@ object Left : SelfDescribingFunction {
       val count: Int = inputValues[1].valueAs()
 
       val result = input.substring(0, count)
-      return TypedInstance.from(schema.type("String"), result, schema, source = Calculated)
+      return TypedInstance.from(schema.type(PrimitiveType.STRING), result, schema, source = Calculated)
    }
 }
 

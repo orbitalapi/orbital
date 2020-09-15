@@ -8,6 +8,7 @@ import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.Jackson
 import io.vyne.models.json.isJson
 import io.vyne.schemas.*
+import io.vyne.utils.log
 import lang.taxi.types.Accessor
 import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
@@ -86,7 +87,10 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
          // call, so we defer to last-ish
          valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
 
-         else -> error("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read")
+         else -> {
+            log().error("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
+            TypedNull(schema.type(field.type))
+         }
       }
 
    }

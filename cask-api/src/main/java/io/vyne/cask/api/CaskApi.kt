@@ -9,9 +9,9 @@ data class CsvIngestionParameters(
    val firstRecordAsHeader: Boolean = true,
    val nullValue: Set<String> = emptySet(),
    val ignoreContentBefore: String? = null,
+   val containsTrailingDelimiters: Boolean = false,
    val debug: Boolean = false
 )
-
 data class JsonIngestionParameters(
    val debug: Boolean = false
 )
@@ -30,6 +30,7 @@ interface CaskApi {
                  @RequestParam("firstRecordAsHeader", defaultValue = "true") firstRecordAsHeader: Boolean = true,
                  @RequestParam("nullValue", required = false, defaultValue = "") nullValue: Set<String> = emptySet(),
                  @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+                 @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false,
                  @RequestParam("debug", defaultValue = "false") debug: Boolean = false,
                  @RequestBody input: String): CaskIngestionResponse
 
