@@ -1,5 +1,7 @@
 package io.vyne.models.csv
 
+import io.vyne.cask.api.CsvIngestionParameters
+import io.vyne.cask.api.csv.CsvFormatFactory
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
@@ -10,35 +12,28 @@ import org.apache.commons.csv.CSVParser
 object CsvImporterUtil {
 
    fun parseCsvToType(rawContent: String,
-                      typeName: String,
-                      csvDelimiter: Char = ',',
+                      parameters: CsvIngestionParameters,
                       schema: Schema,
-                      firstRecordAsHeader: Boolean,
-                      nullValue: String? = null,
-                      ignoreContentBefore: String? = null
+                      typeName: String
    ): List<ParsedTypeInstance> {
-      // TODO : We need to find a better way to pass the metadata of how to parse a CSV into the TypedInstance.parse()
-      // method.
-
-      val format = getCsvFormat(csvDelimiter, firstRecordAsHeader)
-      val content = trimContent(rawContent, ignoreContentBefore)
+      val format = CsvFormatFactory.fromParameters(parameters)
+      val content = trimContent(rawContent, parameters.ignoreContentBefore)
       val parsed = CSVParser.parse(content, format)
       val targetType = schema.type(typeName)
-      val nullValues = listOfNotNull(nullValue).toSet()
+      val nullValues = parameters.nullValue
       val records = parsed.records
          .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
-         .map { csvRecord -> ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided).build())
+         .map { csvRecord ->
+            ParsedTypeInstance(TypedObjectFactory(targetType, csvRecord, schema, nullValues, source = Provided).build())
          }
       return records
    }
 
    fun parseCsvToRaw(rawContent: String,
-                     csvDelimiter: Char,
-                     firstRecordAsHeader: Boolean,
-                     ignoreContentBefore: String? = null
+                     parameters: CsvIngestionParameters
    ): ParsedCsvContent {
-      val format = getCsvFormat(csvDelimiter, firstRecordAsHeader)
-      val content = trimContent(rawContent, ignoreContentBefore)
+      val format = CsvFormatFactory.fromParameters(parameters)
+      val content = trimContent(rawContent, parameters.ignoreContentBefore)
 
       val parsed = CSVParser.parse(content, format)
       val records = parsed.records
@@ -46,22 +41,6 @@ object CsvImporterUtil {
          .map { it.toList() }
       val headers = parsed.headerMap?.keys?.toList() ?: emptyList()
       return ParsedCsvContent(headers, records)
-   }
-
-   private fun getCsvFormat(csvDelimiter: Char, firstRecordAsHeader: Boolean): CSVFormat {
-      return CSVFormat
-         .DEFAULT
-         .withTrailingDelimiter()
-         .withIgnoreEmptyLines()
-         .withDelimiter(csvDelimiter).let {
-            if (firstRecordAsHeader) {
-               it.withFirstRecordAsHeader()
-                  .withAllowDuplicateHeaderNames()
-                  .withAllowMissingColumnNames()
-            } else {
-               it
-            }
-         }
    }
 
    private fun trimContent(content: String, ignoreContentBefore: String?): String {

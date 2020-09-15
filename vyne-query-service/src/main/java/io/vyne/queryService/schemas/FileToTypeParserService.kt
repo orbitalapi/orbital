@@ -2,6 +2,7 @@ package io.vyne.queryService.schemas
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
@@ -45,16 +46,19 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
                       @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
                       @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
                       @RequestParam("nullValue", required = false) nullValue: String? = null,
-                      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null
+                      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+                      @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false
    ): List<ParsedTypeInstance> {
       // TODO : We need to find a better way to pass the metadata of how to parse a CSV into the TypedInstance.parse()
       // method.
+      val parameters = CsvIngestionParameters(
+         csvDelimiter, firstRecordAsHeader, setOf(nullValue).filterNotNull().toSet(), ignoreContentBefore, containsTrailingDelimiters
+      )
       return CsvImporterUtil.parseCsvToType(
          rawContent,
-         typeName,
-         csvDelimiter,
+         parameters,
          schemaProvider.schema(),
-         firstRecordAsHeader, nullValue, ignoreContentBefore
+         typeName
       )
    }
 
@@ -62,32 +66,21 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    fun parseCsvToRaw(@RequestBody rawContent: String,
                      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
                      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
-                     @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null
+                     @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+                     @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false
    ): ParsedCsvContent {
       try {
+         val parameters = CsvIngestionParameters(
+            csvDelimiter, firstRecordAsHeader, ignoreContentBefore = ignoreContentBefore, containsTrailingDelimiters = containsTrailingDelimiters
+         )
          return CsvImporterUtil.parseCsvToRaw(
-            rawContent, csvDelimiter, firstRecordAsHeader, ignoreContentBefore
+            rawContent, parameters
          )
       } catch (e: Exception) {
          throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
       }
    }
 
-   private fun getCsvFormat(csvDelimiter: Char, firstRecordAsHeader: Boolean): CSVFormat {
-      return CSVFormat
-         .DEFAULT
-         .withTrailingDelimiter()
-         .withIgnoreEmptyLines()
-         .withDelimiter(csvDelimiter).let {
-            if (firstRecordAsHeader) {
-               it.withFirstRecordAsHeader()
-                  .withAllowDuplicateHeaderNames()
-                  .withAllowMissingColumnNames()
-            } else {
-               it
-            }
-         }
-   }
 
 }
 

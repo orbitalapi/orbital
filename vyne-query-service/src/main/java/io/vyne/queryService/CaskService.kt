@@ -11,8 +11,8 @@ class CaskService(private val feignCaskApi: CaskApi) : CaskApi by feignCaskApi {
 
    // For some reason, deferring this to the delegate (ie., not overriding here)
    // means defaults aren't parsed.
-   override fun ingestCsv(typeReference: String, delimiter: Char, firstRecordAsHeader: Boolean, nullValue: Set<String>, ignoreContentBefore: String?, debug: Boolean, input: String): CaskIngestionResponse {
-      return feignCaskApi.ingestCsv(typeReference, delimiter, firstRecordAsHeader, nullValue, ignoreContentBefore, debug, input)
+   override fun ingestCsv(typeReference: String, delimiter: Char, firstRecordAsHeader: Boolean, nullValue: Set<String>, ignoreContentBefore: String?,  containsTrailingDelimiters: Boolean , debug: Boolean, input: String): CaskIngestionResponse {
+      return feignCaskApi.ingestCsv(typeReference, delimiter, firstRecordAsHeader, nullValue, ignoreContentBefore, debug, containsTrailingDelimiters, input)
    }
 
    override fun ingestJson(typeReference: String, debug: Boolean, input: String): CaskIngestionResponse {

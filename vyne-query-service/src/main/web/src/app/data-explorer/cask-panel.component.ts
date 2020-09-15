@@ -61,7 +61,7 @@ export class CaskPanelComponent {
     if (this.format === 'csv') {
       const nullValueArg = (this.csvOptions.nullValueTag) ? `&nullValue=${csvOptions.nullValueTag}` : '';
       const ignoreContentBeforeArg = (this.csvOptions.ignoreContentBefore) ? `&ignoreContentBefore=${csvOptions.ignoreContentBefore}` : '';
-      const csvOptionsQueryString = `?delimiter=${csvOptions.separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueArg}${ignoreContentBeforeArg}`
+      const csvOptionsQueryString = `?delimiter=${csvOptions.separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}&containsTrailingDelimiters=${csvOptions.containsTrailingDelimiters}${nullValueArg}${ignoreContentBeforeArg}`
       caskUrl += csvOptionsQueryString;
     }
     return caskUrl;
