@@ -172,6 +172,14 @@ data class Type(
    val qualifiedName: QualifiedName
       get() = QualifiedName(fullyQualifiedName, typeParametersTypeNames)
 
+   val longDisplayName:String
+      get() {
+         return if (this.hasFormat) {
+            this.unformattedTypeName!!.longDisplayName + "(${this.format!!.joinToString(",")})"
+         } else {
+            qualifiedName.longDisplayName
+         }
+      }
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.

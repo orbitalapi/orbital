@@ -28,6 +28,46 @@ class StringsTest {
    }
 
    @Test
+   fun concatShouldIgnoreTypedNulls() {
+      val schema= TaxiSchema.from("""
+         import vyne.stdlib.concat
+         model Person {
+            firstName : String
+            lastName : String
+            fullName : String by concat(this.firstName, ' ',this.lastName)
+         }
+      """.trimIndent())
+      val json = """{
+         |"firstName" : "Jimmy",
+         |"lastName" : null
+         |}
+      """.trimMargin()
+      val person = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
+      person["fullName"].value.should.equal("Jimmy ")
+   }
+
+   @Test
+   fun `trim should trim whitespace`() {
+      val schema= TaxiSchema.from("""
+         import vyne.stdlib.concat
+         import vyne.stdlib.trim
+
+         model Person {
+            firstName : String
+            lastName : String
+            fullName : String by trim(concat(this.firstName, ' ',this.lastName))
+         }
+      """.trimIndent())
+      val json = """{
+         |"firstName" : " Jimmy ",
+         |"lastName" : null
+         |}
+      """.trimMargin()
+      val person = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
+      person["fullName"].value.should.equal("Jimmy")
+   }
+
+   @Test
    fun leftShouldReturnSubstring() {
       val schema= TaxiSchema.from("""
          import vyne.stdlib.left

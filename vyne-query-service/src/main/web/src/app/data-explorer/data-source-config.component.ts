@@ -31,6 +31,9 @@ import {FormControl} from '@angular/forms';
         <mat-checkbox [(ngModel)]="dataContainsHeaders"
                       (click)="onChangeDataContainsHeader($event)">Data contains headers
         </mat-checkbox>
+        <mat-checkbox [(ngModel)]="csvOptions.containsTrailingDelimiters"
+                      (click)="onChangeDataContainsTrailingDelimiters($event)">Data contains trailing delimiters
+        </mat-checkbox>
         <mat-checkbox [(ngModel)]="dataHasContentToIgnore"
                       (click)="onChangeDataContainsHeader($event)">Data has prefix to ignore
         </mat-checkbox>
@@ -129,6 +132,10 @@ export class DataSourceConfigComponent {
     this.updateCsvOptions();
   }
 
+  onChangeDataContainsTrailingDelimiters($event) {
+    $event.stopPropagation();
+    this.updateCsvOptions();
+  }
   onContentPrefixChanged() {
     this.updateCsvOptions();
   }

@@ -344,7 +344,7 @@ class CaskWebsocketHandlerTest {
    private fun invalidCsvMessage(): ByteArrayInputStream {
       return """
          Date,Symbol,Open,High,Low,
-         2020-03-19,BTCUSD,6300,6330,6186.08,6235.2
+         2020-03-19,BTCUSD
       """.trimIndent().byteInputStream()
    }
 
