@@ -1,5 +1,7 @@
 <div class="type-name top-level" *ngIf="topLevel">{{ type?.name.name }}</div>
-<div class="typed-value-container" *ngIf="isPrimitive" (click)="onTopLevelPrimitiveClicked()"
+<button mat-stroked-button *ngIf="topLevel" (click)="downloadParsedData($event)"
+        class="downloadFileButton">Download
+</button><div class="typed-value-container" *ngIf="isPrimitive" (click)="onTopLevelPrimitiveClicked()"
   [class.selectable]="selectable"
 >
   <!--  <div class="type-name">{{ typedObject.typeName }}</div>-->

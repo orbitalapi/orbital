@@ -29,6 +29,8 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     // tslint:disable-next-line:no-inferrable-types
   selectable: boolean = false;
 
+  @Output() downloadParsedDataClicked = new EventEmitter<boolean>();
+
   // Indicates if it's a straight typedInstance (ie., a typedValue)
   // or a typed object, which is indexed with property names
 
@@ -59,6 +61,10 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       this.instanceClicked.emit(this.typedObject);
     }
 
+  }
+
+  downloadParsedData($event) {
+    this.downloadParsedDataClicked.emit($event);
   }
 }
 

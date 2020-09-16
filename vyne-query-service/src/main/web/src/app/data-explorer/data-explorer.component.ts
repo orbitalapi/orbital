@@ -11,12 +11,15 @@ import {FileSystemEntry, FileSystemFileEntry, UploadFile} from 'ngx-file-drop';
 import {HttpErrorResponse} from '@angular/common/http';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {CodeViewerComponent} from '../code-viewer/code-viewer.component';
-import {TypeNamedInstance} from '../services/query.service';
+import {QueryResult, TypeNamedInstance} from '../services/query.service';
 import {InstanceLike, typeName} from '../object-view/object-view.component';
 import {environment} from '../../environments/environment';
 import {CaskService} from '../services/cask.service';
 import {HeaderTypes} from './csv-viewer.component';
 import {SchemaGeneratorComponent} from './schema-generator-panel/schema-generator.component';
+import * as fileSaver from 'file-saver';
+import {QueryFailure} from "../query-panel/query-wizard/query-wizard.component";
+import {ExportFileService} from "../services/export.file.service";
 
 @Component({
   selector: 'app-data-explorer',
@@ -45,6 +48,7 @@ export class DataExplorerComponent {
     }
   }
 
+  private _result: QueryResult | QueryFailure;
 
   private _contentType: Type;
   parsedInstance: ParsedTypeInstance | ParsedTypeInstance[];
@@ -57,11 +61,14 @@ export class DataExplorerComponent {
   isGenerateSchemaPanelVisible = false;
   @Output()
   parsedInstanceChanged = new EventEmitter<ParsedTypeInstance | ParsedTypeInstance[]>();
+
   csvOptions: CsvOptions = new CsvOptions();
   headersWithAssignedTypes: HeaderTypes[] = [];
   assignedTypeName: string;
 
-  constructor(private typesService: TypesService, private caskService: CaskService) {
+
+
+  constructor(private typesService: TypesService, private caskService: CaskService, private exportFileService: ExportFileService) {
     this.typesService.getTypes()
       .subscribe(next => this.schema = next);
     this.caskServiceUrl = environment.queryServiceUrl;
@@ -239,5 +246,12 @@ export class DataExplorerComponent {
 
   onCloseTypedInstanceDrawer($event: boolean) {
     this.shouldTypedInstancePanelBeVisible = $event;
+  }
+
+  onDownloadParsedDataClicked($event: any) {
+    this.exportFileService.exportParsedData(this.parsedInstance).subscribe(response => {
+      const blob: Blob = new Blob([response], {type: `text/${'json'}; charset=utf-8`});
+      fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.${'json'}`);
+    });
   }
 }
