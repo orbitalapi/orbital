@@ -11,6 +11,7 @@ import junit.framework.Assert.fail
 import lang.taxi.types.JsonPathAccessor
 import lang.taxi.types.XpathAccessor
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -32,7 +33,7 @@ class JsonAttributeAccessorParserTest() {
    fun parseInteger() {
       val accessor = JsonPathAccessor("/age")
 
-      var node = jacksonObjectMapper().readTree(""" {  "age": 1 } """) as ObjectNode
+      val node = jacksonObjectMapper().readTree(""" {  "age": 1 } """) as ObjectNode
 
 
       parser.parseToType(mock(), accessor, node, mock(), Provided)
@@ -44,7 +45,7 @@ class JsonAttributeAccessorParserTest() {
    fun parseDouble() {
       val accessor = JsonPathAccessor("/age")
 
-      var node = jacksonObjectMapper().readTree(""" {  "age": 1.609 } """) as ObjectNode
+      val node = jacksonObjectMapper().readTree(""" {  "age": 1.609 } """) as ObjectNode
 
 
       parser.parseToType(mock(), accessor, node, mock(), Provided)
@@ -56,7 +57,7 @@ class JsonAttributeAccessorParserTest() {
    fun parseIntegerAsString() {
       val accessor = JsonPathAccessor("/age")
 
-      var node = jacksonObjectMapper().readTree(""" {  "age": "1" } """) as ObjectNode
+      val node = jacksonObjectMapper().readTree(""" {  "age": "1" } """) as ObjectNode
 
       parser.parseToType(mock(), accessor, node, mock(), Provided)
 
@@ -68,14 +69,10 @@ class JsonAttributeAccessorParserTest() {
    fun parseFieldDoesntExist() {
       val accessor = JsonPathAccessor("/year")
 
-      var node = jacksonObjectMapper().readTree(""" {  "age": "1" } """) as ObjectNode
+      val node = jacksonObjectMapper().readTree(""" {  "age": "1" } """) as ObjectNode
 
-      try{
-         parser.parseToType(mock(), accessor, node, mock(), Provided)
-         fail()
-      }catch(e: IllegalStateException) {
-         e.message.should.be.equal("Could not find json pointer /year in record")
-      }
+      val value = parser.parseToType(mock(), accessor, node, mock(), Provided)
+      value.value.should.be.`null`
 
    }
 
@@ -83,9 +80,9 @@ class JsonAttributeAccessorParserTest() {
    fun parseEnum() {
       val accessor = JsonPathAccessor("/country")
 
-      var node = jacksonObjectMapper().readTree(""" {  "country": "France" } """) as ObjectNode
+      val node = jacksonObjectMapper().readTree(""" {  "country": "France" } """) as ObjectNode
 
-      var enumMock = mock<Type>()
+      val enumMock = mock<Type>()
       doReturn(true).whenever(enumMock).isEnum
       parser.parseToType(enumMock, accessor, node, mock(), Provided)
 
@@ -97,9 +94,9 @@ class JsonAttributeAccessorParserTest() {
    fun parseEmptyEnum() {
       val accessor = JsonPathAccessor("/country")
 
-      var node = jacksonObjectMapper().readTree(""" {  "country": "" } """) as ObjectNode
+      val node = jacksonObjectMapper().readTree(""" {  "country": "" } """) as ObjectNode
 
-      var enumMock = mock<Type>()
+      val enumMock = mock<Type>()
       doReturn(true).whenever(enumMock).isEnum
 
       val instance = parser.parseToType(enumMock, accessor, node, mock(), Provided)
@@ -108,5 +105,84 @@ class JsonAttributeAccessorParserTest() {
       verify(primitiveParser, never()).parse(any(), any(), eq(Provided))
 
    }
+
+   @Test
+   fun jsonPathParseInteger() {
+      val accessor = JsonPathAccessor("$.age")
+
+      val node = jacksonObjectMapper().readTree(""" {  "age": 1 } """) as ObjectNode
+
+      parser.parseToType(mock(), accessor, node, mock(), Provided)
+
+      verify(primitiveParser).parse(eq(1), any(), eq(Provided))
+   }
+
+   @Test
+   fun jsonPathParseDouble() {
+      val accessor = JsonPathAccessor("$.age")
+
+      val node = jacksonObjectMapper().readTree(""" {  "age": 1.609 } """) as ObjectNode
+
+
+      parser.parseToType(mock(), accessor, node, mock(), Provided)
+
+      verify(primitiveParser).parse(eq(1.609), any(), eq(Provided))
+   }
+
+   @Test
+   fun jsonPathParseIntegerAsString() {
+      val accessor = JsonPathAccessor("$.age")
+
+      val node = jacksonObjectMapper().readTree(""" {  "age": "1" } """) as ObjectNode
+
+      parser.parseToType(mock(), accessor, node, mock(), Provided)
+
+      verify(primitiveParser).parse(eq("1"), any(), eq(Provided))
+
+   }
+
+   @Test
+   fun jsonPathParseFieldDoesntExist() {
+      val accessor = JsonPathAccessor("$.year")
+
+      val node = jacksonObjectMapper().readTree(""" {  "age": "1" } """) as ObjectNode
+
+      val value = parser.parseToType(mock(), accessor, node, mock(), Provided)
+      value.value.should.be.`null`
+
+   }
+
+   @Test
+   fun jsonPathParseEnum() {
+      val accessor = JsonPathAccessor("$.country")
+
+      val node = jacksonObjectMapper().readTree(""" {  "country": "France" } """) as ObjectNode
+
+      val enumMock = mock<Type>()
+      doReturn(true).whenever(enumMock).isEnum
+      parser.parseToType(enumMock, accessor, node, mock(), Provided)
+
+      verify(primitiveParser).parse(eq("France"), any(), eq(Provided))
+
+   }
+
+   @Test
+   @Ignore("Is this valid?  Passing empty string is not a valid enum value.")
+   fun jsonPathParseEmptyEnum() {
+      val accessor = JsonPathAccessor("$.country")
+
+      val node = jacksonObjectMapper().readTree(""" {  "country": "" } """) as ObjectNode
+
+      val enumMock = mock<Type>()
+      doReturn(true).whenever(enumMock).isEnum
+
+      val instance = parser.parseToType(enumMock, accessor, node, mock(), Provided)
+      instance.value.should.be.`null`
+
+      verify(primitiveParser, never()).parse(any(), any(), eq(Provided))
+
+   }
+
+
 }
 
