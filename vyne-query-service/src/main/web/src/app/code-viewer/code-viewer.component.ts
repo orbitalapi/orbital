@@ -44,7 +44,7 @@ export class CodeViewerComponent {
   selectedSource: VersionedSource;
   selectedSourceErrors: SourceCompilationError[];
 
-  @ViewChild(MonacoEditorComponent , {static: true})
+  @ViewChild(MonacoEditorComponent, {static: true})
   editor: MonacoEditorComponent;
 
   monacoEditor: ICodeEditor;
@@ -78,7 +78,7 @@ export class CodeViewerComponent {
       monaco.editor.onDidCreateEditor(editorInstance => {
         editorInstance.updateOptions({readOnly: true});
         this.monacoEditor = editorInstance;
-          this.remeasure();
+        this.remeasure();
       });
       monaco.editor.onDidCreateModel(model => {
         this.monacoModel = model;
@@ -104,7 +104,7 @@ export class CodeViewerComponent {
   }
 
   remeasure() {
-    const shouldSkipRemeasure =  this.router.url.includes('schema-explorer');
+    const shouldSkipRemeasure = this.router.url.includes('schema-explorer');
     setTimeout(() => {
       if (!this.monacoEditor || shouldSkipRemeasure) {
         return;
@@ -114,6 +114,12 @@ export class CodeViewerComponent {
       if (editorDomNode) {
         const codeContainer = this.monacoEditor.getDomNode().getElementsByClassName('view-lines')[0] as HTMLElement;
         const calculatedHeight = codeContainer.offsetHeight + offsetHeightFixer + 'px';
+        if (codeContainer.offsetHeight === 0) {
+          setTimeout(() => {
+            console.warn('Deferring code container remeasuring, as layout not yet finished');
+            this.remeasure();
+          }, 0);
+        }
         editorDomNode.style.height = calculatedHeight;
         const firstParent = editorDomNode.parentElement;
         firstParent.style.height = calculatedHeight;

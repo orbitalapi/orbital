@@ -1,10 +1,16 @@
 package io.vyne.cask.query
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.cask.api.CaskConfig
+import io.vyne.cask.api.CaskStatus
+import io.vyne.cask.api.ContentType
+import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.PostgresDdlGenerator
-import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.ViewPrefix
+import io.vyne.cask.ingest.CaskMessage
+import io.vyne.cask.ingest.CaskMessageRepository
 import io.vyne.cask.timed
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
@@ -14,18 +20,23 @@ import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
+import org.apache.commons.io.IOUtils
+import org.postgresql.PGConnection
+import org.postgresql.largeobject.LargeObjectManager
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.nio.file.Path
+import reactor.core.publisher.Flux
+import java.io.InputStream
+import java.sql.Connection
 import java.sql.ResultSet
-import java.sql.Timestamp
 import java.sql.Types
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
+import javax.sql.DataSource
 
 fun String.toLocalDate(): LocalDate {
    return LocalDate.parse(this)
@@ -39,9 +50,23 @@ fun String.toLocalDateTime(): LocalDateTime {
 @Component
 class CaskDAO(
    private val jdbcTemplate: JdbcTemplate,
-   private val schemaProvider: SchemaProvider
+   private val schemaProvider: SchemaProvider,
+   private val largeObjectDataSource: DataSource,
+   private val caskMessageRepository: CaskMessageRepository,
+   private val caskConfigRepository: CaskConfigRepository,
+   private val objectMapper: ObjectMapper = jacksonObjectMapper()
 ) {
+   //   private val largeObjectDataSource: DataSource
    val postgresDdlGenerator = PostgresDdlGenerator()
+//   init {
+//      largeObjectDataSource = HikariDataSource()
+//      largeObjectDataSource.driverClassName = "org.postgresql.Driver"
+//      largeObjectDataSource.jdbcUrl = dataSourceProps.url
+//      largeObjectDataSource.username = dataSourceProps.username
+//      largeObjectDataSource.password = dataSourceProps.password
+//      largeObjectDataSource.isAutoCommit = false
+//      largeObjectDataSource.poolName = "LargeObject_CONNECTION_POOL"
+//   }
 
    fun findAll(versionedType: VersionedType): List<Map<String, Any>> {
       val name = "${versionedType.versionedName}.findAll"
@@ -50,6 +75,10 @@ class CaskDAO(
             jdbcTemplate.queryForList(findAllQuery(tableName))
          }
       }
+   }
+
+   fun findAll(tableName: String): List<Map<String, Any>> {
+      return jdbcTemplate.queryForList(findAllQuery(tableName))
    }
 
    /**
@@ -102,7 +131,7 @@ class CaskDAO(
             val findOneArg = jdbcQueryArgumentType(fieldType, arg)
             try {
                jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg)
-            } catch (exception:Exception) {
+            } catch (exception: Exception) {
                log().error("Failed to execute query", exception)
                throw exception
             }
@@ -147,13 +176,11 @@ class CaskDAO(
       }
    }
 
-   fun findTableNamesForType(qualifiedName:QualifiedName): List<String> {
-      return jdbcTemplate.queryForList<String>(
-         "SELECT tablename from cask_config where qualifiedtypename = ?",
-         listOf(qualifiedName.toString()).toTypedArray(),
-         String::class.java
-      )
+   fun findTableNamesForType(qualifiedName: QualifiedName): List<String> {
+      return caskConfigRepository.findAllByQualifiedTypeNameAndStatus(qualifiedName.fullyQualifiedName, CaskStatus.ACTIVE)
+         .map { it.tableName }
    }
+
    fun findTableNamesForType(versionedType: VersionedType): List<String> {
       return findTableNamesForType(versionedType.taxiType.toQualifiedName())
    }
@@ -228,7 +255,7 @@ class CaskDAO(
 
    fun createCaskRecordTable(versionedType: VersionedType): String {
       return timed("CaskDao.createCaskRecordTable", true, TimeUnit.MICROSECONDS) {
-         val caskTable = postgresDdlGenerator.generateDdl(versionedType, schemaProvider.schema(), null, null)
+         val caskTable = postgresDdlGenerator.generateDdl(versionedType, schemaProvider.schema())
          jdbcTemplate.execute(caskTable.ddlStatement)
          log().info("CaskRecord table=${caskTable.generatedTableName} created")
          caskTable.generatedTableName
@@ -248,91 +275,74 @@ class CaskDAO(
    // ### ADD Cask Message
    // ############################
 
-   fun findAllCaskMessages(): MutableList<CaskMessage> {
-      return jdbcTemplate.query("Select * from CASK_MESSAGE", caskMessageRowMapper)
+   fun getCaskMessages(messageIds: List<String>): List<CaskMessage> {
+      return caskMessageRepository.findAllById(messageIds)
    }
 
-   fun createCaskMessage(versionedType: VersionedType, readCachePath: Path, id: String): CaskMessage {
-      return timed("CaskDao.createCaskMessage", true, TimeUnit.MILLISECONDS) {
-         val type = schemaProvider.schema().toTaxiType(versionedType)
-         val qualifiedTypeName = type.qualifiedName
-         val insertedAt = Instant.now()
-         jdbcTemplate.update { connection ->
-            connection.prepareStatement(ADD_CASK_MESSAGE).apply {
-               setString(1, id)
-               setString(2, qualifiedTypeName)
-               setString(3, readCachePath.toString())
-               setTimestamp(4, Timestamp.from(insertedAt))
-            }
+   fun createCaskMessage(versionedType: VersionedType, id: String, input: Flux<InputStream>, contentType: ContentType, parameters: Any): CaskMessage {
+      largeObjectDataSource.connection.use { connection ->
+         connection.autoCommit = false
+         return timed("CaskDao.createCaskMessage", true, TimeUnit.MILLISECONDS) {
+            val type = schemaProvider.schema().toTaxiType(versionedType)
+            val qualifiedTypeName = type.qualifiedName
+            val insertedAt = Instant.now()
+
+            val messageObjectId = persistMessageAsLargeObject(connection, input)
+
+            val parametersJson = objectMapper.writeValueAsString(parameters)
+
+            val caskMessage = caskMessageRepository.save(CaskMessage(id, qualifiedTypeName, messageObjectId, insertedAt, contentType, parametersJson))
+            connection.commit()
+            caskMessage
          }
-         CaskMessage(id, qualifiedTypeName, readCachePath.toString(), insertedAt)
       }
    }
 
-   private val ADD_CASK_MESSAGE = """INSERT into CASK_MESSAGE (
-         | id,
-         | qualifiedTypeName,
-         | readCachePath,
-         | insertedAt) values ( ? , ?, ?, ? )""".trimMargin()
 
-   data class CaskMessage(
-      val id: String,
-      val qualifiedTypeName: String,
-      val readCachePath: String,
-      val insertedAt: Instant
-   )
+   fun getMessageContent(largeObjectId: Long): Flux<InputStream> {
+      return Flux.create<InputStream> { emitter ->
+         largeObjectDataSource.connection.use { connection ->
+            connection.autoCommit = false
+            val pgConn = connection.unwrap(PGConnection::class.java)
+            val largeObjectManager = pgConn.largeObjectAPI
+            val largeObject = largeObjectManager.open(largeObjectId)
+            emitter.next(largeObject.inputStream)
+            emitter.complete()
+         }
+      }
+   }
 
-   val caskMessageRowMapper: (ResultSet, Int) -> CaskMessage = { rs: ResultSet, rowNum: Int ->
-      CaskMessage(
-         rs.getString("id"),
-         rs.getString("readCachePath"),
-         rs.getString("qualifiedTypeName"),
-         rs.getTimestamp("insertedAt").toInstant()
-      )
+   private fun persistMessageAsLargeObject(conn: Connection, input: Flux<InputStream>): Long? {
+      val pgConn = conn.unwrap(PGConnection::class.java)
+      val largeObjectManager = pgConn.largeObjectAPI
+      val objectId = largeObjectManager.createLO(LargeObjectManager.READWRITE)
+      Flux.from(input).subscribe { inputStream ->
+         try {
+            val largeObject = largeObjectManager.open(objectId, LargeObjectManager.WRITE)
+            log().info("Streaming message contents to LargeObject API")
+            IOUtils.copy(inputStream, largeObject.outputStream)
+            log().info("Streaming message contents to LargeObject API completed")
+            largeObject.close()
+            conn.commit()
+         } catch (exception: Exception) {
+            log().error("Exception thrown whilst streaming message content to db", exception)
+         }
+      }
+      return objectId
+
    }
 
    // ############################
    // ### ADD Cask Config
    // ############################
 
-   fun findAllCaskConfigs(): MutableList<CaskConfig> {
-      return jdbcTemplate.query("Select * from CASK_CONFIG", caskConfigRowMapper)
+   fun findMessageIdsToReplay(sourceTableName: String, targetTableName: String): List<String> {
+      return jdbcTemplate.queryForList("""select distinct ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}
+         |from $sourceTableName where ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} not in (
+         |  select distinct ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} from $targetTableName
+         |)""".trimMargin(), String::class.java)
    }
 
-   fun createCaskConfig(versionedType: VersionedType, typeMigration: TypeMigration? = null, exposeType:Boolean = false, exposeService:Boolean = true) {
-      // TODO : Migrate this to use CaskConfigRepository.
-      timed("CaskDao.addCaskConfig", true, TimeUnit.MILLISECONDS) {
-         val tableName = versionedType.caskRecordTable()
-         val exists = exists(tableName)
-
-         if (exists) {
-            log().info("CaskConfig already exists for type=${versionedType.versionedName}, tableName=$tableName")
-            return@timed
-         }
-         val config = CaskConfig.forType(
-            type = versionedType,
-            tableName = versionedType.caskRecordTable(),
-            deltaAgainstTableName = typeMigration?.predecessorType?.let { it.caskRecordTable()  },
-            exposesType = exposeType,
-            exposesService = exposeService
-         )
-
-         log().info("Creating CaskConfig for type=${versionedType.versionedName}, tableName=$tableName")
-         jdbcTemplate.update { connection ->
-            connection.prepareStatement(ADD_CASK_CONFIG).apply {
-               setString(1, config.tableName)
-               setString(2, config.qualifiedTypeName)
-               setString(3, config.versionHash)
-               setArray(4, connection.createArrayOf("text", config.sourceSchemaIds.toTypedArray()))
-               setArray(5, connection.createArrayOf("text", config.sources.toTypedArray()))
-               setTimestamp(6, Timestamp.from(config.insertedAt))
-               if (config.deltaAgainstTableName != null) setString(7, config.deltaAgainstTableName) else setNull(7, Types.VARCHAR)
-               setBoolean(8, config.exposesService)
-               setBoolean(9, config.exposesType)
-            }
-         }
-      }
-   }
 
    @Deprecated("Move to CaskConfigRepository")
    fun countCasks(tableName: String): Int {
@@ -366,33 +376,6 @@ class CaskDAO(
 
    fun emptyCask(tableName: String) {
       jdbcTemplate.update("TRUNCATE ${tableName}")
-   }
-
-   private val ADD_CASK_CONFIG = """INSERT into CASK_CONFIG (
-        | tableName,
-        | qualifiedTypeName,
-        | versionHash,
-        | sourceSchemaIds,
-        | sources,
-        | insertedAt,
-        | deltaAgainstTableName,
-        | exposesService,
-        | exposesType    )
-        | values ( ? , ? , ?, ?, ?, ?, ?, ?, ?)""".trimMargin()
-
-
-   private val caskConfigRowMapper: (ResultSet, Int) -> CaskConfig = { rs: ResultSet, rowNum: Int ->
-      CaskConfig(
-         rs.getString("tableName"),
-         rs.getString("qualifiedTypeName"),
-         rs.getString("versionHash"),
-         listOf(*rs.getArray("sourceSchemaIds").array as Array<String>),
-         listOf(*rs.getArray("sources").array as Array<String>),
-         rs.getString("deltaAgainstTableName"),
-         rs.getTimestamp("insertedAt").toInstant(),
-         rs.getBoolean("exposesType"),
-         rs.getBoolean("exposesService")
-      )
    }
 
 

@@ -4,4 +4,5 @@ import reactor.core.publisher.Flux
 
 interface StreamSource {
     val stream: Flux<InstanceAttributeSet>
+   val messageId:String
 }

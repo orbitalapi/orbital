@@ -234,12 +234,11 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
       }
 
       fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
-         val sourcesWithStdLib = sources + listOf(StdLib.taxi)
-         val doc = Compiler(sourcesWithStdLib.map { CharStreams.fromString(it.content,it.name) }, imports.map { it.document }).compile()
+         val doc = Compiler(sources.map { CharStreams.fromString(it.content,it.name) }, imports.map { it.document }).compile()
          // stdLib is always included.
          // Could make this optional in future if needed
 
-         return TaxiSchema(doc,sourcesWithStdLib)
+         return TaxiSchema(doc, sources)
       }
 
 

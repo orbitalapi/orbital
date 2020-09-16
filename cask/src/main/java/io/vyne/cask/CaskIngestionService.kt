@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.convertValue
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.api.*
+import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionStream
@@ -29,6 +30,7 @@ import java.util.*
 @Component
 class CaskService(private val schemaProvider: SchemaProvider,
                   private val ingesterFactory: IngesterFactory,
+                  private val caskConfigRepository: CaskConfigRepository,
                   private val caskDAO: CaskDAO) {
 
    interface CaskServiceError {
@@ -62,20 +64,27 @@ class CaskService(private val schemaProvider: SchemaProvider,
       val schema = schemaProvider.schema()
       val versionedType = request.versionedType
       val messageId = UUID.randomUUID().toString()
-      val cacheDirectory = createCacheDirectory(versionedType, request, messageId)
 
       // capturing path to the message
-      caskDAO.createCaskMessage(versionedType, cacheDirectory, messageId)
+      val message = caskDAO.createCaskMessage(versionedType, messageId, input, request.contentType, request.parameters)
+      val inputToProcess = if (message.messageContentId != null) {
+         log().info("Message content for message ${message.id} was persisted, will stream from db")
+         caskDAO.getMessageContent(message.messageContentId)
+      } else {
+         log().warn("Failed to persist message content for message ${message.id}.  Will continue to ingest, but this message will not be replayable")
+         input
+      }
+
 
       val streamSource: StreamSource = request.buildStreamSource(
-         input = input,
+         input = inputToProcess,
          type = versionedType,
          schema = schema,
-         readCacheDirectory = cacheDirectory
+         messageId = messageId
       )
       val ingestionStream = IngestionStream(
          versionedType,
-         TypeDbWrapper(versionedType, schema, cacheDirectory, null),
+         TypeDbWrapper(versionedType, schema),
          streamSource)
 
       return ingesterFactory
@@ -83,21 +92,8 @@ class CaskService(private val schemaProvider: SchemaProvider,
          .ingest()
    }
 
-   private fun createCacheDirectory(versionedType: VersionedType, request: CaskIngestionRequest, messageId: String): Path {
-      // TODO setup folder via config once we start making a use of it
-      val caskMessageCache = System.getProperty("java.io.tmpdir")
-      val cachePath = Paths.get(
-         caskMessageCache,
-         versionedType.versionedName,
-         request.contentType.name,
-         messageId)
-      log().info("CaskMessage cachePath=$cachePath")
-      Files.createDirectories(cachePath)
-      return cachePath
-   }
-
    fun getCasks(): List<CaskConfig> {
-      return caskDAO.findAllCaskConfigs()
+      return caskConfigRepository.findAll()
    }
 
    fun getCaskDetails(tableName: String): CaskDetails {
@@ -119,9 +115,13 @@ class CaskService(private val schemaProvider: SchemaProvider,
 }
 
 interface CaskIngestionRequest {
-   fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, readCacheDirectory: Path): StreamSource
+   fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, messageId:String): StreamSource
    val versionedType: VersionedType
    val contentType: ContentType
+
+   // Emits the parameters that this ingestion request has used to be configured.
+   // Will be persisted along with the message.
+   val parameters:Any
 
    val debug: Boolean
    val nullValues: Set<String>

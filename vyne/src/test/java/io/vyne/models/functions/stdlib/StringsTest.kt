@@ -11,7 +11,6 @@ class StringsTest {
    @Test
    fun concatShouldJoinFieldValues() {
       val schema= TaxiSchema.from("""
-         import vyne.stdlib.concat
          model Person {
             firstName : String
             lastName : String
@@ -30,7 +29,6 @@ class StringsTest {
    @Test
    fun concatShouldIgnoreTypedNulls() {
       val schema= TaxiSchema.from("""
-         import vyne.stdlib.concat
          model Person {
             firstName : String
             lastName : String
@@ -49,9 +47,6 @@ class StringsTest {
    @Test
    fun `trim should trim whitespace`() {
       val schema= TaxiSchema.from("""
-         import vyne.stdlib.concat
-         import vyne.stdlib.trim
-
          model Person {
             firstName : String
             lastName : String
@@ -70,7 +65,6 @@ class StringsTest {
    @Test
    fun leftShouldReturnSubstring() {
       val schema= TaxiSchema.from("""
-         import vyne.stdlib.left
          model Person {
             fullName : String
             title : String by left(this.fullName, 3)
@@ -88,9 +82,6 @@ class StringsTest {
    @Test
    fun rightShouldReturnRightMostCharacters() {
       val schema = TaxiSchema.from("""
-         import vyne.stdlib.right
-         import vyne.stdlib.upperCase
-
          model Trade {
             symbol : String
             ccy1 : String by upperCase(right(this.symbol,4))
@@ -107,9 +98,6 @@ class StringsTest {
    @Test
    fun midShouldReturnSubstring() {
       val schema = TaxiSchema.from("""
-         import vyne.stdlib.mid
-         import vyne.stdlib.upperCase
-
          model Trade {
             symbol : String
             ccy2 : String by upperCase(mid(this.symbol,4,7))
@@ -126,9 +114,6 @@ class StringsTest {
    @Test
    fun upperShouldConvertToUppercase() {
       val schema = TaxiSchema.from("""
-         import vyne.stdlib.left
-         import vyne.stdlib.upperCase
-
          model Trade {
             symbol : String
             ccy1 : String by upperCase(left(this.symbol,3))
@@ -145,9 +130,6 @@ class StringsTest {
    @Test
    fun lowerShouldConvertToUppercase() {
       val schema = TaxiSchema.from("""
-         import vyne.stdlib.left
-         import vyne.stdlib.lowerCase
-
          model Trade {
             symbol : String
             ccy1 : String by lowerCase(left(this.symbol,3))

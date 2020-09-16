@@ -3,6 +3,7 @@ package io.vyne.cask.format.json
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.io.Resources
 import io.vyne.VersionedTypeReference
+import io.vyne.cask.MessageIds
 import io.vyne.utils.Benchmark
 import io.vyne.utils.log
 import org.junit.Rule
@@ -25,7 +26,7 @@ class JsonStreamMapperTest {
 
       // Ingest it a few times to get an average performance
       Benchmark.benchmark("can_ingestAndMapToTypedInstance") {
-         val stream = JsonStreamSource(Flux.just(File(resource).inputStream()), versionedType, schema, folder.root.toPath(), ObjectMapper())
+         val stream = JsonStreamSource(Flux.just(File(resource).inputStream()), versionedType, schema, MessageIds.uniqueId(), ObjectMapper())
          val noOfMappedRows = stream
             .stream
             .count()

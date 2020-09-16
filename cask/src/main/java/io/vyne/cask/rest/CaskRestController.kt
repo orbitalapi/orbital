@@ -93,3 +93,4 @@ class CaskRestController(private val caskService: CaskService,
    override fun deleteCask(tableName: String) = caskService.deleteCask(tableName)
    override fun emptyCask(tableName: String) = caskService.emptyCask(tableName)
 }
+

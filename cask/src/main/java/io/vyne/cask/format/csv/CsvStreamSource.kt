@@ -11,42 +11,17 @@ import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.charset.Charset
-import java.nio.file.Files
 import java.nio.file.Path
 
 class CsvStreamSource(private val input: Flux<InputStream>,
                       private val versionedType: VersionedType,
                       private val schema: Schema,
-                      private val readCacheDirectory: Path,
-                      private val bytesPerColumn: Int = 1000,
+                      override val messageId:String,
                       private val csvFormat: CSVFormat = CSVFormat.DEFAULT,
                       private val nullValues: Set<String> = emptySet(),
                       private val ignoreContentBefore: String? = null) : StreamSource {
-// TODO : Need to re-implement this...
 
-   //     applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, request.versionedType))
-//            var headerOffset = 0
-//            val containsHeader = request.params.getParam("firstRowAsHeader").orElse(false) as Boolean
-//            val firstColumn = request.params.getParam("columnOne")
-//            val secondColumn = request.params.getParam("columnTwo")
-//            val hasHeader = containsHeader || (!firstColumn.isNullOrEmpty() && !secondColumn.isNullOrEmpty())
-//
-//            if (hasHeader) {
-//
-//               if (!firstColumn.isNullOrEmpty() && !secondColumn.isNullOrEmpty()) {
-//                  headerOffset = input.indexOf("$firstColumn,$secondColumn").orElse(0)
-//               }
-//            }
-//
-//            val ingestionInput = if (headerOffset > 0) {
-//               Flux.just(input.removeRange(0 until headerOffset).byteInputStream() as InputStream)
-//            } else {
-//               Flux.just(input.byteInputStream() as InputStream)
-//            }
-   val cachePath: Path by lazy {
-      Files.createFile(readCacheDirectory.resolve(versionedType.versionedName))
-   }
-   private val writer = CsvBinaryWriter(bytesPerColumn, csvFormat)
+   private val writer = InputStreamToCsvRecordConverter(csvFormat)
    private val mapper = CsvStreamMapper(versionedType, schema)
 
    override val stream: Flux<InstanceAttributeSet>
@@ -81,8 +56,7 @@ class CsvStreamSource(private val input: Flux<InputStream>,
 
 
          return inputWithoutPrologue
-            .map { writer.convert(it, cachePath) }
-            .concatMap { it }
-            .map { mapper.map(it, nullValues) }
+            .flatMap { inputStream -> writer.convert(inputStream) }
+            .map { csvRecord -> mapper.map(csvRecord, nullValues, messageId) }
       }
 }
