@@ -3,7 +3,7 @@ package io.vyne.cask.format.csv
 import io.vyne.schemas.taxi.TaxiSchema
 
 object CoinbaseOrderSchema {
-   private val sourceV1 = """
+   val sourceV1 = """
 type alias Price as Decimal
 type alias Symbol as String
 type OrderWindowSummary {
@@ -13,7 +13,7 @@ type OrderWindowSummary {
     close : Price by column(4)
 }""".trimIndent()
 
-   private val sourceV2 = """
+   val sourceV2 = """
 type alias Price as Decimal
 type alias Symbol as String
 type OrderWindowSummary {
@@ -37,7 +37,22 @@ type OrderWindowSummary {
     close : Price by column("Close")
 }""".trimIndent()
 
-   private val personSource = """
+   val personSourceV1 = """
+      namespace demo {
+         type PersonId inherits String
+         type FirstName inherits String
+         type LastName inherits String
+
+         type Person {
+            id : PersonId by column("id")
+
+            firstName : FirstName by column("firstName")
+
+      	  lastName : LastName by column("lastName")
+         }
+      }
+   """.trimIndent()
+   val personSourceV2 = """
 namespace demo {
    type PersonId inherits String
    type FirstName inherits String
@@ -66,5 +81,6 @@ namespace demo {
    val schemaV1 = TaxiSchema.from(sourceV1, "Coinbase", "0.1.0")
    val schemaV2 = TaxiSchema.from(sourceV2, "Coinbase", "0.2.0")
    val schemaV3 = TaxiSchema.from(sourceV3, "Coinbase", "0.3.0")
-   val personSchema = TaxiSchema.from(personSource, "Coinbase", "0.3.0")
+   val personSchemaV1 = TaxiSchema.from(personSourceV1, "Coinbase", "0.3.0")
+   val personSchemaV2 = TaxiSchema.from(personSourceV2, "Coinbase", "0.3.0")
 }

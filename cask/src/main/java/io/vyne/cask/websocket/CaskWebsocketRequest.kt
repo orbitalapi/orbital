@@ -11,29 +11,27 @@ import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.StreamSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
-import org.apache.commons.csv.CSVFormat
 import reactor.core.publisher.Flux
 import java.io.InputStream
-import java.nio.file.Path
 
-data class JsonWebsocketRequest(private val params: JsonIngestionParameters, override val versionedType: VersionedType, private val objectMapper: ObjectMapper) : CaskIngestionRequest {
+data class JsonWebsocketRequest(override val parameters: JsonIngestionParameters, override val versionedType: VersionedType, private val objectMapper: ObjectMapper) : CaskIngestionRequest {
    override val contentType = ContentType.json
-   override val debug: Boolean = params.debug
+   override val debug: Boolean = parameters.debug
    override val nullValues: Set<String> = emptySet()
 
-   override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, readCacheDirectory: Path): StreamSource {
+   override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema,messageId: String): StreamSource {
       return JsonStreamSource(
          input,
          versionedType,
          schema,
-         readCacheDirectory,
+         messageId,
          objectMapper
       )
    }
 }
 
 
-data class CsvWebsocketRequest(private val parameters: CsvIngestionParameters, override val versionedType: VersionedType) : CaskIngestionRequest {
+data class CsvWebsocketRequest(override val parameters: CsvIngestionParameters, override val versionedType: VersionedType) : CaskIngestionRequest {
    override val contentType = ContentType.csv
    override val debug: Boolean = parameters.debug
    override val nullValues: Set<String> = parameters.nullValue
@@ -42,9 +40,10 @@ data class CsvWebsocketRequest(private val parameters: CsvIngestionParameters, o
    }
    val ignoreContentBefore = parameters.ignoreContentBefore
 
-   override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, readCacheDirectory: Path): StreamSource {
+   override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, messageId:String): StreamSource {
       return CsvStreamSource(
-         input, type, schema, readCacheDirectory,
+         input, type, schema,
+         messageId = messageId,
          csvFormat = this.csvFormat,
          nullValues =  parameters.nullValue,
          ignoreContentBefore = parameters.ignoreContentBefore

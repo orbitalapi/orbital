@@ -15,14 +15,9 @@ import java.nio.file.Path
 class JsonStreamSource(private val input: Flux<InputStream>,
                        private val versionedType: VersionedType,
                        private val schema: Schema,
-                       private val readCacheDirectory: Path,
+                       override val messageId: String,
                        private val objectMapper: ObjectMapper) : StreamSource {
 
-   // TODO LENS-47 save input stream to disk for replay
-   val cachePath: Path? by lazy {
-      null
-//      Files.createFile(readCacheDirectory.resolve(versionedType.fullyQualifiedName))
-   }
    private val mapper = JsonStreamMapper(versionedType, schema)
 
    override val stream: Flux<InstanceAttributeSet>
@@ -33,9 +28,9 @@ class JsonStreamSource(private val input: Flux<InputStream>,
             .map { record ->
                // when
                when (record) {
-                  is ArrayNode -> record.map { mapper.map(it) }
+                  is ArrayNode -> record.map { mapper.map(it, messageId) }
                   else ->
-                     listOf(mapper.map(record))
+                     listOf(mapper.map(record, messageId))
                }
             }.flatMapIterable { it }
       }

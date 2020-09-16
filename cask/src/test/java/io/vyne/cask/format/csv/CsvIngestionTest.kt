@@ -2,11 +2,10 @@ package io.vyne.cask.format.csv
 
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
+import io.vyne.cask.MessageIds
 import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.api.csv.CsvFormatFactory
 import io.vyne.schemas.fqn
-import io.vyne.utils.Benchmark
-import io.vyne.utils.log
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -33,7 +32,7 @@ class CsvIngestionTest {
       val file = folder.newFile()
 
       val results = writer.convert(File(resource).inputStream(), file.toPath())
-         .map { mapper.map(it, logMappingTime = false) }
+         .map { mapper.map(it, logMappingTime = false, messageId = MessageIds.uniqueId()) }
          .collectList()
          .block()
       results.should.have.size(10)
@@ -53,7 +52,7 @@ class CsvIngestionTest {
       val file = folder.newFile()
 
       val results = writer.convert(File(resource).inputStream(), file.toPath())
-         .map { mapper.map(it, logMappingTime = false) }
+         .map { mapper.map(it, logMappingTime = false, messageId = MessageIds.uniqueId()) }
          .collectList()
          .block()
       results.should.have.size(3)
@@ -61,7 +60,7 @@ class CsvIngestionTest {
 
    @Test
    fun `can parse date and time`() {
-      val schema = CoinbaseOrderSchema.personSchema
+      val schema = CoinbaseOrderSchema.personSchemaV2
       val versionedType = schema.versionedType("demo.Person".fqn())
       val mapper = CsvStreamMapper(versionedType, schema)
 
@@ -73,7 +72,7 @@ class CsvIngestionTest {
       val file = folder.newFile()
 
       val results = writer.convert(File(resource).inputStream(), file.toPath())
-         .map { mapper.map(it, logMappingTime = false) }
+         .map { mapper.map(it, logMappingTime = false, messageId = MessageIds.uniqueId()) }
          .collectList()
          .block()!!
       results.should.have.size(4)

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockitokotlin2.times
@@ -12,13 +13,12 @@ import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskIngestionResponse
+import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
-import io.vyne.cask.ingest.Ingester
-import io.vyne.cask.ingest.IngesterFactory
-import io.vyne.cask.ingest.IngestionInitialisedEvent
-import io.vyne.cask.ingest.IngestionStream
+import io.vyne.cask.ingest.*
 import io.vyne.cask.query.CaskDAO
 import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import org.junit.Before
@@ -30,14 +30,16 @@ import org.springframework.web.reactive.socket.WebSocketMessage
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import java.io.ByteArrayInputStream
-import java.nio.file.Path
+import java.io.InputStream
 import java.nio.file.Paths
 import java.time.Duration
+import java.time.Instant
 
 
 class CaskWebsocketHandlerTest {
    val ingester: Ingester = mock()
    val caskDao: CaskDAO = mock()
+   val caskConfigRepository:CaskConfigRepository = mock()
    val applicationEventPublisher = mock<ApplicationEventPublisher>()
    lateinit var wsHandler: CaskWebsocketHandler
 
@@ -54,7 +56,7 @@ class CaskWebsocketHandlerTest {
       }
    }
 
-   private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester), caskDao)
+   private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester),caskConfigRepository, caskDao)
    private val mapper: ObjectMapper = jacksonObjectMapper()
 
 
@@ -62,6 +64,23 @@ class CaskWebsocketHandlerTest {
    fun setUp() {
       mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
       wsHandler = CaskWebsocketHandler(caskService, applicationEventPublisher, mapper)
+
+      whenever(caskDao.createCaskMessage(
+         versionedType = any(),
+         id = any(),
+         input = any(),
+         contentType = any(),
+         parameters = any()
+      )).thenAnswer {call ->
+         CaskMessage(
+            call.getArgument(1),
+            call.getArgument<VersionedType>(0).fullyQualifiedName,
+            null,
+            Instant.now(),
+            call.getArgument(3),
+            null
+         )
+      }
    }
 
    @Test
@@ -92,7 +111,7 @@ class CaskWebsocketHandlerTest {
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
       val captor = argumentCaptor<IngestionInitialisedEvent>()
       val versionedType = argumentCaptor<VersionedType>()
-      val cachePath = argumentCaptor<Path>()
+      val inputStream = argumentCaptor<Flux<InputStream>>()
       val messageId = argumentCaptor<String>()
 
       wsHandler.handle(session).block()
@@ -104,9 +123,9 @@ class CaskWebsocketHandlerTest {
       verify(applicationEventPublisher, times(1)).publishEvent(captor.capture())
       "OrderWindowSummary".should.be.equal(captor.firstValue.type.fullyQualifiedName)
 
-      verify(caskDao, times(1)).createCaskMessage(versionedType.capture(), cachePath.capture(), messageId.capture())
-      val expectedPath = Paths.get(System.getProperty("java.io.tmpdir"), versionedType.firstValue.versionedName, "json", messageId.firstValue)
-      cachePath.firstValue.should.be.equal(expectedPath)
+      verify(caskDao, times(1)).createCaskMessage(versionedType.capture(), messageId.capture(), inputStream.capture(), any(), any())
+//      val expectedPath = Paths.get(System.getProperty("java.io.tmpdir"), versionedType.firstValue.versionedName, "json", messageId.firstValue)
+//      inputStream.firstValue.should.be.equal(expectedPath)
    }
 
    @Test

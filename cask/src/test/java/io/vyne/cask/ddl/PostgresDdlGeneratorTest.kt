@@ -25,17 +25,20 @@ type Person {
     timestamp: Instant
     time: Time
 }""".trim())
-        val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
-        statement.ddlStatement.trim().should.equal("""
-CREATE TABLE IF NOT EXISTS person_201831 (
+        val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema)
+       val expected = """CREATE TABLE IF NOT EXISTS person_201831 (
 "firstName" VARCHAR(255),
 "age" INTEGER,
 "alive" BOOLEAN,
 "spouseName" VARCHAR(255),
 "dateOfBirth" DATE,
 "timestamp" TIMESTAMP,
-"time" TIME);
-""".trim())
+"time" TIME,
+"caskmessageid" varchar(64)
+);
+CREATE INDEX IF NOT EXISTS idx_person_201831_caskmessageid on person_201831("caskmessageid");
+""".trim()
+       statement.ddlStatement.trim().should.equal(expected)
     }
 
    @Test
@@ -55,8 +58,8 @@ type Person {
     timestamp: Instant
     time: Time
 }""".trim())
-      val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema, null, null)
-      statement.ddlStatement.should.equal("""
+      val statement = generator.generateDdl(schema.versionedType("Person".fqn()), schema)
+      val expected = """
 CREATE TABLE IF NOT EXISTS person_47dd1f (
 "firstName" VARCHAR(255),
 "age" INTEGER,
@@ -65,8 +68,13 @@ CREATE TABLE IF NOT EXISTS person_47dd1f (
 "dateOfBirth" DATE,
 "timestamp" TIMESTAMP,
 "time" TIME,
+"caskmessageid" varchar(64)
+,
 CONSTRAINT person_47dd1f_pkey PRIMARY KEY ( "firstName" ));
-CREATE INDEX IF NOT EXISTS idx_person_47dd1f_dateOfBirth ON person_47dd1f("dateOfBirth");""".trim())
+CREATE INDEX IF NOT EXISTS idx_person_47dd1f_dateOfBirth ON person_47dd1f("dateOfBirth");
+CREATE INDEX IF NOT EXISTS idx_person_47dd1f_caskmessageid on person_47dd1f("caskmessageid");
+""".trim()
+      statement.ddlStatement.trim().should.equal(expected)
    }
 
     @Test

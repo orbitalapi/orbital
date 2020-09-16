@@ -174,6 +174,6 @@ class CaskApiHandlerTest {
       // When
       caskApiHandler.findBy(request)
       // Then
-      verify(mockCaskDao, times(1)).findAll(any())
+      verify(mockCaskDao, times(1)).findAll(any<VersionedType>())
    }
 }

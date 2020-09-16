@@ -29,11 +29,13 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.core.io.ClassPathResource
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.http.HttpRequest
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.codec.ServerCodecConfigurer
+import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.config.WebFluxConfigurer
@@ -49,11 +51,7 @@ import javax.annotation.PostConstruct
 
 
 @SpringBootApplication
-@EnableDiscoveryClient
-@VyneSchemaPublisher
-@EnableWebFlux
 @EnableAspectJAutoProxy
-@VyneSchemaConsumer
 @EnableConfigurationProperties(CaskViewConfig::class, OperationGeneratorConfig::class)
 class CaskApp {
    companion object {
@@ -74,6 +72,23 @@ class CaskApp {
       // E.g. date 2020.03.29:00:00:00 in DB can converted and returned to user as 2020.03.28:23:00:00
       // This fix forces default timezone to be UTC
       // Alternatively we could provide -Duser.timezone=UTC at startup
+   }
+
+
+   @Bean
+   @Qualifier("ingesterMapper")
+   fun ingesterMapper(): ObjectMapper {
+      val mapper: ObjectMapper = jacksonObjectMapper()
+      mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+      return mapper
+   }
+}
+
+@Configuration
+class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMessageBufferSize: Int) : WebFluxConfigurer {
+
+   override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
+      configurer.defaultCodecs().maxInMemorySize(maxTextMessageBufferSize)
    }
 
 
@@ -103,8 +118,8 @@ class CaskApp {
 
    @Bean
    fun webSocketService(
-      @Value("\${cask.maxTextMessageBufferSize}")  maxTextMessageBufferSize: Int,
-      @Value("\${cask.maxBinaryMessageBufferSize}")  maxBinaryMessageBufferSize: Int): WebSocketService {
+      @Value("\${cask.maxTextMessageBufferSize}") maxTextMessageBufferSize: Int,
+      @Value("\${cask.maxBinaryMessageBufferSize}") maxBinaryMessageBufferSize: Int): WebSocketService {
       val strategy = TomcatRequestUpgradeStrategy()
       strategy.maxTextMessageBufferSize = maxTextMessageBufferSize
       strategy.maxBinaryMessageBufferSize = maxBinaryMessageBufferSize
@@ -121,6 +136,34 @@ class CaskApp {
       }
       resources("/static/**", ClassPathResource("static/"))
    }
+
+}
+
+// Marker configration classes, to make app more testable
+
+@EnableDiscoveryClient
+@Configuration
+class DiscoveryConfig
+
+@Configuration
+@EnableAsync
+class AsyncConfig
+
+@VyneSchemaPublisher
+@VyneSchemaConsumer
+@Configuration
+class VyneConfig
+
+@EnableWebFlux
+@Configuration
+class WebConfig
+
+@EnableJpaRepositories
+@Configuration
+class RepositoryConfig
+
+@Configuration
+class MetricsConfig {
 
    @Bean
    fun timedAspect(registry: MeterRegistry): TimedAspect? {
@@ -146,22 +189,4 @@ class CaskApp {
          })
    }
 
-   @Bean
-   @Qualifier("ingesterMapper")
-   fun ingesterMapper(): ObjectMapper {
-      val mapper: ObjectMapper = jacksonObjectMapper()
-      mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
-      return mapper
-   }
 }
-
-@Configuration
- class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}")  val maxTextMessageBufferSize: Int) : WebFluxConfigurer {
-
-   override fun configureHttpMessageCodecs( configurer: ServerCodecConfigurer) {
-      configurer.defaultCodecs().maxInMemorySize(maxTextMessageBufferSize)
-   }
-}
-
-
-

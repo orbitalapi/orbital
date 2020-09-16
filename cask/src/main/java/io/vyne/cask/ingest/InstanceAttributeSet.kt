@@ -11,5 +11,6 @@ import io.vyne.schemas.VersionedType
  */
 data class InstanceAttributeSet(
         val type: VersionedType,
-        val attributes: Map<String, TypedInstance>
+        val attributes: Map<String, TypedInstance>,
+        val messageId:String
 )

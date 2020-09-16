@@ -4,9 +4,7 @@ import com.vladmihalcea.hibernate.type.array.ListArrayType
 import io.vyne.schemas.VersionedType
 import org.hibernate.annotations.TypeDef
 import java.time.Instant
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.Id
+import javax.persistence.*
 
 @Entity(name = "cask_config")
 @TypeDef(name = "list-array", typeClass = ListArrayType::class)
@@ -18,14 +16,17 @@ data class CaskConfig(
    val qualifiedTypeName: String,
    @Column(name = "versionhash")
    val versionHash: String,
+   @Deprecated("Will be removed")
    @Column(name = "sourceschemaids",  columnDefinition = "text[]")
    @org.hibernate.annotations.Type(type = "list-array")
-   val sourceSchemaIds: List<String>,
+   val sourceSchemaIds: List<String> = emptyList(),
    @Column(name = "sources",  columnDefinition = "text[]")
    @org.hibernate.annotations.Type(type = "list-array")
-   val sources: List<String>,
+   @Deprecated("Will be removed")
+   val sources: List<String> = emptyList(),
    @Column(name = "deltaagainsttablename")
-   val deltaAgainstTableName: String?,
+   @Deprecated("Will be removed")
+   val deltaAgainstTableName: String? = null,
    @Column(name = "insertedat")
    val insertedAt: Instant,
    @Column(name = "exposestype")
@@ -33,7 +34,13 @@ data class CaskConfig(
    // For views, we are generating a type, so expose it
    val exposesType: Boolean = false,
    @Column(name = "exposesservice")
-   val exposesService: Boolean = true
+   val exposesService: Boolean = true,
+   @Column(name = "status")
+   @Enumerated(value = EnumType.STRING)
+   val status:CaskStatus = CaskStatus.ACTIVE,
+
+   @Column(name = "replacedby")
+   val replacedByTableName:String? = null
 ) {
    companion object {
       fun forType(
@@ -59,6 +66,11 @@ data class CaskConfig(
    }
 }
 
+enum class CaskStatus {
+   ACTIVE,
+   MIGRATING,
+   REPLACED
+}
 data class CaskDetails(
    val recordsNumber: Int
 )

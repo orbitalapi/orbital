@@ -7,10 +7,12 @@ import io.vyne.cask.timed
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import lang.taxi.types.ObjectType
+import lang.taxi.types.Type
 import org.postgresql.PGConnection
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
 import java.util.concurrent.TimeUnit
+import kotlin.math.sign
 
 data class IngestionStream(
    val type: VersionedType,
@@ -21,6 +23,8 @@ data class IngestionStream(
 class Ingester(
    private val jdbcTemplate: JdbcTemplate,
    private val ingestionStream: IngestionStream) {
+
+   private val hasPrimaryKey = hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
 
    @Deprecated("Remove this in favor of CaskDao")
    fun destroy() {
@@ -59,21 +63,19 @@ class Ingester(
       log().debug("Opening DB connection for ${table.table}")
       return ingestionStream.feed.stream
          .doOnError {
-            log().debug("Closing DB connection for ${table.table}")
+            log().error("Closing DB connection for ${table.table}", it)
             writer.close()
             connection.close()
          }
          .doOnComplete {
-            log().debug("Closing DB connection for ${table.table}")
+            log().info("Closing DB connection for ${table.table}")
             writer.close()
             connection.close()
          }
          .doOnEach { signal ->
             signal.get()?.let { instance ->
-               if ((instance.type.taxiType as ObjectType).definition?.fields
-                     ?.flatMap { it -> it.annotations }
-                     ?.any { a -> a.name == "PrimaryKey" }!!) {
-                  ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+               if (this.hasPrimaryKey) {
+                  ingestionStream.dbWrapper.upsert(jdbcTemplate,instance)
                } else {
                   writer.startRow { rowWriter ->
                      ingestionStream.dbWrapper.write(rowWriter, instance)
@@ -83,10 +85,16 @@ class Ingester(
          }.doOnError {
             //invoked when pgbulkinsert throws.
             if (!connection.isClosed) {
-               log().debug("Closing DB connection for ${table.table}")
+               log().error("Closing DB connection for ${table.table}", it)
                connection.close()
             }
          }
+   }
+
+   private fun hasPrimaryKey(type: ObjectType): Boolean {
+      return type.definition?.fields
+         ?.flatMap { it -> it.annotations }
+         ?.any { a -> a.name == "PrimaryKey" } ?: false
    }
 
    fun getRowCount(): Int {

@@ -3,61 +3,32 @@ package io.vyne.cask.ingest
 import arrow.core.getOrElse
 import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.winterbe.expekt.should
 import io.vyne.cask.CaskService
+import io.vyne.cask.MessageIds
 import io.vyne.cask.api.CsvIngestionParameters
-import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
 import io.vyne.cask.format.csv.CsvStreamSource
+import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.schemas.fqn
 import io.vyne.spring.LocalResourceSchemaProvider
 import io.vyne.utils.Benchmark
 import org.apache.commons.csv.CSVFormat
-import org.apache.commons.io.FileUtils
-import org.flywaydb.core.Flyway
-import org.junit.Before
 import org.junit.Ignore
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import org.springframework.boot.jdbc.DataSourceBuilder
-import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
 import java.io.File
 import java.io.InputStream
 import java.math.BigDecimal
 import java.nio.file.Paths
 
-class CsvIngesterBenchmarkTest {
+class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
 
-   @Rule
-   @JvmField
-   val folder = TemporaryFolder()
 
-   @Rule
-   @JvmField
-   val pg = EmbeddedPostgresRules.singleInstance().customize { it.setPort(0) }
-
-   lateinit var jdbcTemplate: JdbcTemplate
    lateinit var ingester: Ingester
-
-   @Before
-   fun setup() {
-      val dataSource = DataSourceBuilder.create()
-         .url("jdbc:postgresql://localhost:${pg.embeddedPostgres.port}/postgres")
-         .username("postgres")
-         .build()
-      Flyway.configure()
-         .dataSource(dataSource)
-         .load()
-         .migrate()
-      jdbcTemplate = JdbcTemplate(dataSource)
-      jdbcTemplate.execute(TableMetadata.DROP_TABLE)
-   }
 
    @Ignore
    @Test
@@ -68,10 +39,10 @@ class CsvIngesterBenchmarkTest {
 
       Benchmark.benchmark("ingest to db") { stopwatch ->
          val input: Flux<InputStream> = Flux.just(File(resource).inputStream())
-         val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+         val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
          val pipeline = IngestionStream(
             type,
-            TypeDbWrapper(type, schema, pipelineSource.cachePath, null),
+            TypeDbWrapper(type, schema),
             pipelineSource)
 
          ingester = Ingester(jdbcTemplate, pipeline)
@@ -86,7 +57,6 @@ class CsvIngesterBenchmarkTest {
          val rowCount = ingester.getRowCount()
          rowCount.should.equal(23695)
          ingester.destroy()
-         FileUtils.cleanDirectory(folder.root)
       }
    }
 
@@ -101,6 +71,7 @@ class CsvIngesterBenchmarkTest {
       val caskService = CaskService(
          schemaProvider,
          ingesterFactory,
+         configRepository,
          caskDAO
       )
       val type = caskService.resolveType("OrderWindowSummaryCsv").getOrElse {
@@ -108,7 +79,7 @@ class CsvIngesterBenchmarkTest {
       }
       caskService.ingestRequest(
 
-         CsvWebsocketRequest(CsvIngestionParameters(firstRecordAsHeader = true) , type),
+         CsvWebsocketRequest(CsvIngestionParameters(firstRecordAsHeader = true), type),
          input
       ).blockFirst()
    }
@@ -119,8 +90,8 @@ class CsvIngesterBenchmarkTest {
       val typeV3 = schemaV3.versionedType("OrderWindowSummary".fqn())
       val resource = Resources.getResource("Coinbase_BTCUSD_single.csv").toURI()
       val input: Flux<InputStream> = Flux.just(File(resource).inputStream())
-      val pipelineSource = CsvStreamSource(input, typeV3, schemaV3, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(typeV3, TypeDbWrapper(typeV3, schemaV3, pipelineSource.cachePath, null), pipelineSource)
+      val pipelineSource = CsvStreamSource(input, typeV3, schemaV3, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(typeV3, TypeDbWrapper(typeV3, schemaV3), pipelineSource)
       val queryView = QueryView(jdbcTemplate)
 
       ingester = Ingester(jdbcTemplate, pipeline)
@@ -141,46 +112,7 @@ class CsvIngesterBenchmarkTest {
       6235.2.compareTo((result.first()["close"] as BigDecimal).toDouble()).should.equal(0)
 
       ingester.destroy()
-      FileUtils.cleanDirectory(folder.root)
    }
 
-   @Test
-   fun canGenerateDeltaTable() {
-      val schemaV1 = CoinbaseOrderSchema.schemaV1
-      val typeV1 = schemaV1.versionedType("OrderWindowSummary".fqn())
-      val schemaV2 = CoinbaseOrderSchema.schemaV2
-      val typeV2 = schemaV2.versionedType("OrderWindowSummary".fqn())
-      val resource = Resources.getResource("Coinbase_BTCUSD_1h.csv").toURI()
-      val input: Flux<InputStream> = Flux.just(File(resource).inputStream())
-      val pipelineSource = CsvStreamSource(input, typeV1, schemaV1, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      val pipeline = IngestionStream(
-         typeV1,
-         TypeDbWrapper(typeV1, schemaV1, pipelineSource.cachePath, null),
-         pipelineSource)
 
-      val queryView = QueryView(jdbcTemplate)
-
-      ingester = Ingester(jdbcTemplate, pipeline)
-      // Ensure clean before we start
-      ingester.destroy()
-      ingester.initialize()
-      ingester.ingest().collectList().block()
-
-      val v1QueryStrategy = queryView.getQueryStrategy(typeV1)
-      v1QueryStrategy.should.be.instanceof(TableQuerySpec::class.java)
-
-      val v2QueryStrategy = queryView.getQueryStrategy(typeV2)
-      v2QueryStrategy.should.be.instanceof(UpgradeDataSourceSpec::class.java)
-
-      Benchmark.benchmark("Update type") { stopwatch ->
-         val strategy = queryView.getQueryStrategy(typeV2)
-         val upgradeResult = queryView.prepare(strategy, schemaV2).collectList().block()
-         stopwatch.stop()
-         queryView.destroy(strategy, schemaV2)
-         upgradeResult
-      }
-
-      ingester.destroy()
-      FileUtils.forceDeleteOnExit(folder.root)// this was failing on windows
-   }
 }

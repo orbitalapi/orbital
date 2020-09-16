@@ -6,6 +6,7 @@ import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.whenever
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import io.vyne.cask.MessageIds
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
 import io.vyne.cask.format.csv.CsvStreamSource
@@ -53,10 +54,10 @@ class IngesterTests {
    fun `Ingester closes underlying DB connection properly when ingested successfully`() {
       //given
       val input: Flux<InputStream> = Flux.just(File( Resources.getResource("Coinbase_BTCUSD_1h.csv").toURI()).inputStream())
-      val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(
          type,
-         TypeDbWrapper(type, schema, pipelineSource.cachePath, null),
+         TypeDbWrapper(type, schema),
          pipelineSource)
      val ingester = Ingester(jdbcTemplate, pipeline)
 
@@ -70,10 +71,10 @@ class IngesterTests {
    fun `Ingester closes underlying DB connection properly when ingestestion fails`() {
       //given
       val input: Flux<InputStream> = Flux.just(File( Resources.getResource("Coinbase_BTCUSD_invalid.csv").toURI()).inputStream())
-      val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(
          type,
-         TypeDbWrapper(type, schema, pipelineSource.cachePath, null),
+         TypeDbWrapper(type, schema),
          pipelineSource)
       val ingester = Ingester(jdbcTemplate, pipeline)
       // when
@@ -88,11 +89,11 @@ class IngesterTests {
    fun `Ingester closes underlying DB connection properly when pgbulkinsert throws`() {
       //given
       val input: Flux<InputStream> = Flux.just(File( Resources.getResource("Coinbase_BTCUSD_1h.csv").toURI()).inputStream())
-      val pipelineSource = CsvStreamSource(input, type, schema, folder.root.toPath(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       whenever(copyIn.flushCopy()).thenThrow(ArithmeticException("Negative Exponent"))
       val pipeline = IngestionStream(
          type,
-         TypeDbWrapper(type, schema, pipelineSource.cachePath, null),
+         TypeDbWrapper(type, schema),
          pipelineSource)
       val ingester = Ingester(jdbcTemplate, pipeline)
 
