@@ -10,15 +10,15 @@ import io.vyne.models.csv.CsvImporterUtil
 import io.vyne.models.csv.ParsedCsvContent
 import io.vyne.models.csv.ParsedTypeInstance
 import io.vyne.models.json.isJsonArray
+import io.vyne.queryService.ExportType
 import io.vyne.schemaStore.SchemaProvider
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
+import org.apache.commons.csv.CSVPrinter
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
+import java.io.StringWriter
 
 @RestController
 class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapper: ObjectMapper) {
@@ -81,6 +81,29 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
       }
    }
 
+   @PostMapping("/api/downloadParsedData/{type}")
+   fun downloadParsedData(@RequestBody parsedContent: ParsedCsvContent, @PathVariable("type") exportType: ExportType): ByteArray {
+      if (exportType == ExportType.JSON) {
+         val records = parsedContent.records.map{
+            parsedContent.headers.mapIndexed { index, header ->
+               if (index < it.size) {
+                  Pair(header, it[index])
+               } else {
+                  Pair(header, null)
+               }
+            }.toMap()
+         }
 
+         return objectMapper
+            .writeValueAsString(records)
+            .toByteArray()
+      } else {
+         val writer = StringWriter()
+         val printer = CSVPrinter(writer, CSVFormat.DEFAULT.withFirstRecordAsHeader())
+         printer.printRecord(parsedContent.headers)
+         parsedContent.records.forEach { printer.printRecord(it) }
+         return writer.toString().toByteArray()
+      }
+   }
 }
 

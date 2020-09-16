@@ -1,8 +1,15 @@
-<div class="type-name top-level" *ngIf="topLevel">{{ type?.name.name }}</div>
-<button mat-stroked-button *ngIf="topLevel" (click)="downloadParsedData($event)"
-        class="downloadFileButton">Download
-</button><div class="typed-value-container" *ngIf="isPrimitive" (click)="onTopLevelPrimitiveClicked()"
-  [class.selectable]="selectable"
+<div class="top-level">
+  <div class="type-name " *ngIf="topLevel">{{ type?.name.name }}</div>
+  <button mat-stroked-button [matMenuTriggerFor]="menu" *ngIf="topLevel"
+          class="downloadParsedDataButton">Download
+  </button>
+  <mat-menu #menu="matMenu">
+    <button mat-menu-item (click)="downloadParsedData($event, downloadFileType.JSON)">as JSON</button>
+    <button mat-menu-item (click)="downloadParsedData($event, downloadFileType.CSV)">as CSV</button>
+  </mat-menu>
+</div>
+<div class="typed-value-container" *ngIf="isPrimitive" (click)="onTopLevelPrimitiveClicked()"
+     [class.selectable]="selectable"
 >
   <!--  <div class="type-name">{{ typedObject.typeName }}</div>-->
   <div class="type-value">{{ typedObject.value }}</div>

@@ -7,7 +7,7 @@ import reactor.core.publisher.Mono
 import kotlin.streams.toList
 
 @RestController
-class QueryHistoryService(private val history: QueryHistory, private val queryHistoryExporter: QueryHistoryExporter, private val parsedDataExporter: ParsedDataExporter) {
+class QueryHistoryService(private val history: QueryHistory, private val queryHistoryExporter: QueryHistoryExporter) {
    private val truncationThreshold = 10
 
    @GetMapping("/api/query/history")
@@ -30,11 +30,6 @@ class QueryHistoryService(private val history: QueryHistory, private val queryHi
       return history.get(queryId).map {
          queryHistoryExporter.export(it.response.results, exportType)
       }
-   }
-
-   @PostMapping("/api/parsed/{type}/export")
-   fun getParsedDataExport(@RequestParam("parsedContent") request: Map<String, Any?>, @PathVariable("type") exportType: ExportType2): ByteArray {
-      return parsedDataExporter.export(request, exportType)
    }
 }
 

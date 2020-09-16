@@ -114,12 +114,12 @@ export class CodeViewerComponent {
       if (editorDomNode) {
         const codeContainer = this.monacoEditor.getDomNode().getElementsByClassName('view-lines')[0] as HTMLElement;
         const calculatedHeight = codeContainer.offsetHeight + offsetHeightFixer + 'px';
- /*       if (codeContainer.offsetHeight === 0) {
+        if (codeContainer.offsetHeight === 0) {
           setTimeout(() => {
             console.warn('Deferring code container remeasuring, as layout not yet finished');
             this.remeasure();
           }, 0);
-        }*/
+        }
         editorDomNode.style.height = calculatedHeight;
         const firstParent = editorDomNode.parentElement;
         firstParent.style.height = calculatedHeight;

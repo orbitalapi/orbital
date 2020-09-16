@@ -20,6 +20,7 @@ import {SchemaGeneratorComponent} from './schema-generator-panel/schema-generato
 import * as fileSaver from 'file-saver';
 import {QueryFailure} from "../query-panel/query-wizard/query-wizard.component";
 import {ExportFileService} from "../services/export.file.service";
+import {DownloadFileType} from "../query-panel/result-display/result-container.component";
 
 @Component({
   selector: 'app-data-explorer',
@@ -48,8 +49,6 @@ export class DataExplorerComponent {
     }
   }
 
-  private _result: QueryResult | QueryFailure;
-
   private _contentType: Type;
   parsedInstance: ParsedTypeInstance | ParsedTypeInstance[];
   typeNamedInstance: TypeNamedInstance | TypeNamedInstance[];
@@ -61,7 +60,6 @@ export class DataExplorerComponent {
   isGenerateSchemaPanelVisible = false;
   @Output()
   parsedInstanceChanged = new EventEmitter<ParsedTypeInstance | ParsedTypeInstance[]>();
-
   csvOptions: CsvOptions = new CsvOptions();
   headersWithAssignedTypes: HeaderTypes[] = [];
   assignedTypeName: string;
@@ -248,10 +246,10 @@ export class DataExplorerComponent {
     this.shouldTypedInstancePanelBeVisible = $event;
   }
 
-  onDownloadParsedDataClicked($event: any) {
-    this.exportFileService.exportParsedData(this.parsedInstance).subscribe(response => {
-      const blob: Blob = new Blob([response], {type: `text/${'json'}; charset=utf-8`});
-      fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.${'json'}`);
+  onDownloadParsedDataClicked(downloadFileType: DownloadFileType) {
+    this.exportFileService.exportParsedData(this.csvContents, downloadFileType).subscribe(response => {
+      const blob: Blob = new Blob([response], {type: `text/${downloadFileType}; charset=utf-8`});
+      fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.${downloadFileType}`);
     });
   }
 }

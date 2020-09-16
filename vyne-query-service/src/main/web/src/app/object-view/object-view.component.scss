@@ -31,6 +31,7 @@
 
   font-family: $mono;
   color: $vyne-lilac;
+  float: left;
   background-color: rgba($vyne-lilac, 0.1);
   font-size: 0.8rem;
 
@@ -61,6 +62,11 @@
   .collection-member {
     padding-left: 30px;
   }
+}
+
+.downloadParsedDataButton {
+  float: right;
+  right: 0.4rem;
 }
 
 .typed-object-container {
