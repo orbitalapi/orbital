@@ -3,8 +3,8 @@ package io.vyne.models.functions.stdlib
 import io.vyne.models.Calculated
 import io.vyne.models.TypedInstance
 import io.vyne.models.functions.FunctionInvoker
-import io.vyne.models.functions.SelfDescribingFunction
 import io.vyne.schemas.Schema
+import lang.taxi.functions.stdlib.StdLib
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 
@@ -23,18 +23,16 @@ object Strings {
    )
 }
 
-object Concat : SelfDescribingFunction {
-   override val taxiDeclaration: String = "declare function concat(String...):String"
-   override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.concat")
+object Concat : FunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Concat.name
    override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
       val result = inputValues.mapNotNull { it.value }.joinToString("")
       return TypedInstance.from(schema.type(PrimitiveType.STRING), result, schema, source = Calculated)
    }
 }
 
-object Trim : SelfDescribingFunction {
-   override val taxiDeclaration: String = "declare function trim(String):String"
-   override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.trim")
+object Trim : FunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Trim.name
 
    override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
       val input = inputValues[0].value.toString()
@@ -42,9 +40,8 @@ object Trim : SelfDescribingFunction {
       return TypedInstance.from(schema.type(PrimitiveType.STRING), output, schema, source = Calculated)
    }
 }
-object Left : SelfDescribingFunction {
-   override val taxiDeclaration: String = "declare function left(String,Int):String"
-   override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.left")
+object Left : FunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Left.name
 
    override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
@@ -55,9 +52,8 @@ object Left : SelfDescribingFunction {
    }
 }
 
-object Right : SelfDescribingFunction {
-   override val taxiDeclaration: String = "declare function right(String,Int):String"
-   override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.right")
+object Right : FunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Right.name
 
    override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
@@ -68,9 +64,8 @@ object Right : SelfDescribingFunction {
    }
 }
 
-object Mid : SelfDescribingFunction {
-   override val taxiDeclaration: String = "declare function mid(String,Int,Int):String"
-   override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.mid")
+object Mid : FunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Mid.name
 
    override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
@@ -81,9 +76,8 @@ object Mid : SelfDescribingFunction {
       return TypedInstance.from(schema.type("String"), result, schema, source = Calculated)
    }
 }
-object Uppercase : SelfDescribingFunction {
-   override val taxiDeclaration: String = "declare function upperCase(String):String"
-   override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.upperCase")
+object Uppercase : FunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Uppercase.name
 
    override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
@@ -93,9 +87,8 @@ object Uppercase : SelfDescribingFunction {
 }
 
 
-object Lowercase : SelfDescribingFunction {
-   override val taxiDeclaration: String = "declare function lowerCase(String):String"
-   override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.lowerCase")
+object Lowercase : FunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Lowercase.name
 
    override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
@@ -106,8 +99,7 @@ object Lowercase : SelfDescribingFunction {
 
    // This is not included currently, as we seem to be dependent on previous
 // behaviour where we would discover values to coalese through the query engine
-object Coalesce : SelfDescribingFunction {
-   override val taxiDeclaration: String = "declare function coalesce(String...):String"
+object Coalesce : FunctionInvoker {
    override val functionName: QualifiedName = QualifiedName.from("vyne.stdlib.coalesce")
    override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
       TODO("Not yet implemented")

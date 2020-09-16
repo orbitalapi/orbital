@@ -179,8 +179,6 @@ type TransformedTradeRecord {
    @Test
    fun `can declare calculated field based on other fields`() {
       val (vyne, _) = testVyne("""
-      import vyne.stdlib.left
-      import vyne.stdlib.concat
 
       type FirstName inherits String
       type LastName inherits String

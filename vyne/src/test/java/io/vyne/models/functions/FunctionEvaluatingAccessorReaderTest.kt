@@ -16,13 +16,11 @@ class FunctionEvaluatingAccessorReaderTest {
    @Test
    fun `default vyne should include stdlib`() {
       val (vyne,_) = testVyne("")
-      val function = vyne.schema.taxi.function("vyne.stdlib.left")
+      val function = vyne.schema.taxi.function("taxi.stdlib.left")
    }
    @Test
    fun `functions should be invoked`() {
       val (vyne,_) = testVyne("""
-         import vyne.stdlib.left
-
          type Person {
             fullName : String by jsonPath("$.name")
             title : String by left(this.fullName,3)
