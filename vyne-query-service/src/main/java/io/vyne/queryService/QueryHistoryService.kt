@@ -2,12 +2,7 @@ package io.vyne.queryService
 
 import io.vyne.query.Lineage
 import io.vyne.query.ProfilerOperationDTO
-import io.vyne.queryService.schemas.SchemaPreview
-import io.vyne.queryService.schemas.SchemaPreviewRequest
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 import kotlin.streams.toList
 
@@ -37,10 +32,9 @@ class QueryHistoryService(private val history: QueryHistory, private val queryHi
       }
    }
 
-   @GetMapping("/api/parsed/{type}/export")
-   fun getParsedDataExport(@RequestBody request: Map<String, Any?>, @PathVariable("type") exportType: ExportType2): ByteArray {
+   @PostMapping("/api/parsed/{type}/export")
+   fun getParsedDataExport(@RequestParam("parsedContent") request: Map<String, Any?>, @PathVariable("type") exportType: ExportType2): ByteArray {
       return parsedDataExporter.export(request, exportType)
    }
 }
-
 

@@ -12,10 +12,10 @@ export class ExportFileService {
   }
 
   exportQueryHistory(id: string, type: DownloadFileType): Observable<ArrayBuffer> {
-    return this.http.get(`${environment.queryServiceUrl}/api/query/history/${id}/${type}/export`, {responseType: 'arraybuffer'});
+    return this.http.get(`${environment.queryServiceUrl}/api/query/history/${id}/${type}/export`, {responseType: 'arraybuffer' });
   }
 
-  exportParsedData(parsedContent: any): Observable<ArrayBuffer> {
-    return this.http.get(`${environment.queryServiceUrl}/api/parsed/json/export`, parsedContent);
+  exportParsedData(parsedContent: any): Observable<any> {
+    return this.http.post(`${environment.queryServiceUrl}/api/parsed/json/export`, {headers: parsedContent});
   }
 }
