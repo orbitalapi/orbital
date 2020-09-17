@@ -6,7 +6,7 @@ import io.vyne.formulas.CalculatorRegistry
 import io.vyne.schemas.Type
 
 class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegistry) : QueryStrategy {
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
       if (context.debugProfiling) {// enable profiling via context.debugProfiling=true flag
          return context.startChild(this, "scan for matches", OperationType.LOOKUP) {
             scanForMatches(target, context)

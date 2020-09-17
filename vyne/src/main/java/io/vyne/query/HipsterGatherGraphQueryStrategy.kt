@@ -6,7 +6,7 @@ import io.vyne.query.graph.operation
 import io.vyne.utils.log
 
 class HipsterGatherGraphQueryStrategy(private val graphQueryStrategy: HipsterDiscoverGraphQueryStrategy) : QueryStrategy {
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
       val targetType = target.first().type
       val queryResults = target.filter { it.mode == QueryMode.GATHER }
          .flatMap { querySpec ->

@@ -7,11 +7,7 @@ import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-import io.vyne.query.FactDiscoveryStrategy
-import io.vyne.query.QueryContext
-import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.QueryStrategy
-import io.vyne.query.QueryStrategyResult
+import io.vyne.query.*
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.ElementType
 import io.vyne.query.graph.VyneGraphBuilder
@@ -29,7 +25,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
    private val cache = CacheBuilder.newBuilder()
       .weakKeys()
       .build<Type, ProjectionHeuristicsGraphSearchResult>()
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
       if (!context.isProjecting) {
          return QueryStrategyResult.empty()
       }
@@ -41,7 +37,9 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
       val queryStrategyResult = timed(name = "heuristics result", timeUnit = TimeUnit.MICROSECONDS, log = false) {
          searchResult.pair?.first?.let {
             cache.put(targetType, searchResult)
-            val joinedFact = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT.getFact(context, searchResult.pair.second)
+            // Using AlwaysGood build spec because at the time of writing we're not passing specs this deep.
+            // Let's revisit as / when needed
+            val joinedFact = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT.getFact(context, searchResult.pair.second, spec = AlwaysGoodSpec)
             val matchedInstance = it[joinedFact]
             return@timed queryStrategyResult(matchedInstance, context, targetType, target)
          }
@@ -141,7 +139,9 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
    private fun processRemoteCallResults(candidateOperation: Operation, candidateService: Service, context: QueryContext, joinType: Type): ProjectionHeuristicsGraphSearchResult {
       val firstOperationArgumentType = candidateOperation.parameters.first().type
       context.parent?.let { qc ->
-         val requiredArgument = FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION.getFact(qc, firstOperationArgumentType)
+         // Using AlwaysGood build spec because at the time of writing we're not passing specs this deep.
+         // Let's revisit as / when needed
+         val requiredArgument = FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION.getFact(qc, firstOperationArgumentType, spec = AlwaysGoodSpec)
          requiredArgument?.let { arg ->
             val result = operationInvocationEvaluator.invocationService.invokeOperation(candidateService, candidateOperation, setOf(arg), qc)
             val arguments = arg as TypedCollection

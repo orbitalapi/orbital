@@ -1,5 +1,6 @@
 package io.vyne.schemas
 
+// TODO : Rename to annotations, to align with Taxi concept
 data class Metadata(val name: QualifiedName, val params: Map<String, Any?> = emptyMap())
 
 interface MetadataTarget {

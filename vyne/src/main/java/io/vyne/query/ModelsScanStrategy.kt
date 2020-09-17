@@ -16,16 +16,16 @@ import org.springframework.stereotype.Component
  */
 @Component
 class ModelsScanStrategy : QueryStrategy {
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
       if (context.debugProfiling) {// enable profiling via context.debugProfiling=true flag
          return context.startChild(this, "scan for matches", OperationType.LOOKUP) { operation ->
-            scanForMatches(target, context)
+            scanForMatches(target, context, spec)
          }
       }
-      return scanForMatches(target, context)
+      return scanForMatches(target, context, spec)
    }
 
-   private fun scanForMatches(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
+   private fun scanForMatches(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
       val targetTypes: Map<Type, QuerySpecTypeNode> = target.associateBy { it.type }
 
       // This is wrong, and won't work long-term
@@ -33,8 +33,9 @@ class ModelsScanStrategy : QueryStrategy {
       // Eg., given an instance of Money, it's concievable that there would be multiple instances
       // within the graph
       val matches = targetTypes
-         .map { (type, querySpec) -> querySpec to context.getFactOrNull(type, querySpec.mode.discoveryStrategy()) }
+         .map { (type, querySpec) -> querySpec to context.getFactOrNull(type, querySpec.mode.discoveryStrategy(), spec) }
          .filter { it.second != null }
+         .filter { spec.isValid(it.second!!) }
          .toMap()
       return QueryStrategyResult(matches)
    }

@@ -204,6 +204,60 @@ type Sample {
    }
 
    @Test
+   fun annotationsOnTypesArePopulated() {
+      val metadata = TaxiSchema.from("""
+         @Foo
+         model Person {
+            name : String
+         }
+      """.trimIndent()).type("Person").metadata
+      metadata.should.have.size(1)
+      metadata.first().name.fullyQualifiedName.should.equal("Foo")
+      metadata.first().params.should.be.empty
+   }
+   @Test
+   fun annotationsWithAttributesAreMapped() {
+      val metadata = TaxiSchema.from("""
+         @Foo(name = 'baz', count = 1)
+         model Person {
+            name : String
+         }
+      """.trimIndent()).type("Person").metadata
+      metadata.should.have.size(1)
+      val annotation = metadata.first()
+      annotation.params["name"].should.equal("baz")
+      annotation.params["count"].should.equal(1)
+   }
+
+   @Test
+   fun annotationsWithParamsOnFieldsAreMapped() {
+      val metadata = TaxiSchema.from("""
+         model Person {
+            @Foo(name = 'baz', count = 1)
+            name : String
+         }
+      """.trimIndent()).type("Person").attribute("name").metadata
+      metadata.should.have.size(1)
+      val annotation = metadata.first()
+      annotation.params["name"].should.equal("baz")
+      annotation.params["count"].should.equal(1)
+   }
+
+   @Test
+   fun annotationsOnFieldsAreMapped() {
+      val metadata = TaxiSchema.from("""
+         model Person {
+            @Foo
+            name : String
+         }
+      """.trimIndent()).type("Person").attribute("name").metadata
+      metadata.should.have.size(1)
+      val annotation = metadata.first()
+      annotation.name.fullyQualifiedName.should.equal("Foo")
+      annotation.params.should.be.empty
+   }
+
+   @Test
    fun inheritenceIsPopulatedCorrectly() {
       val src = """
          type alias Name as String
@@ -266,6 +320,7 @@ type Sample {
       "defaultValue" : null,
       "nullable" : false,
       "typeDisplayName" : "CustomerEmailAddress",
+      "metadata" : [ ],
       "constraints" : [ ]
     },
     "id" : {
@@ -283,6 +338,7 @@ type Sample {
       "defaultValue" : null,
       "nullable" : false,
       "typeDisplayName" : "CustomerId",
+      "metadata" : [ ],
       "constraints" : [ ]
     },
     "name" : {
@@ -300,6 +356,7 @@ type Sample {
       "defaultValue" : null,
       "nullable" : false,
       "typeDisplayName" : "CustomerName",
+      "metadata" : [ ],
       "constraints" : [ ]
     },
     "postcode" : {
@@ -317,6 +374,7 @@ type Sample {
       "defaultValue" : null,
       "nullable" : false,
       "typeDisplayName" : "Postcode",
+      "metadata" : [ ],
       "constraints" : [ ]
     }
   },

@@ -1,11 +1,13 @@
 package io.vyne.query
 
+import arrow.core.extensions.list.functorFilter.filter
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
+import io.vyne.query.build.BuildSpecFactory
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
 import io.vyne.schemas.QualifiedName
@@ -14,6 +16,7 @@ import io.vyne.utils.log
 import lang.taxi.types.ObjectType
 
 class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
+   private val buildSpecProvider = BuildSpecFactory()
    private val originalContext = if (context.isProjecting) context
       .facts
       .firstOrNull { it is TypedObject }
@@ -26,8 +29,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
 
    private var manyBuilder: ObjectBuilder? = null
 
-   fun build(): TypedInstance? {
-      val returnValue = build(rootTargetType)
+   fun build(spec: TypedInstanceValidPredicate = AlwaysGoodSpec): TypedInstance? {
+      val returnValue = build(rootTargetType,spec)
       return manyBuilder?.build()?.let {
          when (it) {
             is TypedCollection -> TypedCollection.from(listOfNotNull(returnValue).plus(it.value))
@@ -36,8 +39,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       } ?: returnValue
    }
 
-   private fun build(targetType: Type): TypedInstance? {
-      val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
+   private fun build(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
+      val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY, spec)
       if (nullableFact != null) {
          val instance = nullableFact as TypedCollection
          when (instance.size) {
@@ -68,14 +71,14 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
 
       return if (targetType.isScalar) {
-         findScalarInstance(targetType)
+         findScalarInstance(targetType, spec)
       } else {
-         buildObjectInstance(targetType)
+         buildObjectInstance(targetType, spec)
       }
    }
 
-   private fun build(targetType: QualifiedName): TypedInstance? {
-      return build(context.schema.type(targetType))
+   private fun build(targetType: QualifiedName, spec:TypedInstanceValidPredicate): TypedInstance? {
+      return build(context.schema.type(targetType), spec)
    }
 
    private fun convertValue(discoveredValue: TypedInstance, targetType: Type): TypedInstance {
@@ -86,7 +89,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
    }
 
-   private fun buildObjectInstance(targetType: Type): TypedInstance? {
+   private fun buildObjectInstance(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
       val populatedValues = mutableMapOf<String, TypedInstance>()
       val missingAttributes = mutableMapOf<AttributeName, Field>()
       // =============================================================
@@ -116,7 +119,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
 
       missingAttributes.forEach { (attributeName, field) ->
-         val value = build(field.type)
+         val buildSpec = buildSpecProvider.provide(field)
+         val value = build(field.type, buildSpec)
          if (value != null) {
             if (value.type.isCollection) {
                val typedCollection = value as TypedCollection?
@@ -135,11 +139,11 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       return TypedObject(targetType, populatedValues, MixedSources)
    }
 
-   private fun findScalarInstance(targetType: Type): TypedInstance? {
+   private fun findScalarInstance(targetType: Type, spec:TypedInstanceValidPredicate): TypedInstance? {
       // Try searching for it.
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {
-         queryEngine.find(targetType, context)
+         queryEngine.find(targetType, context, spec)
       } catch (e:Exception) {
          log().error("Failed to find type ${targetType.fullyQualifiedName}", e)
          return null
