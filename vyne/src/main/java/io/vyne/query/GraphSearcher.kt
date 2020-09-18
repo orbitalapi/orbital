@@ -54,12 +54,10 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
             if (buildSpec.isValid(resultValue)) {
                return resultValue
             } else {
-               // Current use case - we found something in the graph
-               // we want to exclude and re-search.
-               // This code may prove too naieve for later usecases
-               val edgesToExclude = pathExclusionCalculator.findEdgesToExclude(evaluatedPath,buildSpec)
-               if (edgesToExclude.isNotEmpty()) {
-                  excludedEdges.addAll(edgesToExclude)
+
+               // Check to see if there are any nodes in the executed path
+               // that we want to ignore and try a new search
+               if (appendIgnorableEdges(evaluatedPath, excludedEdges)) {
                   nextPath = buildNextPath()
                } else {
                   log().info("Search found an instance which failed the provided spec, and couldn't find anything to exclude - giving up")
@@ -72,19 +70,42 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
                // Giving up.  However, perhaps there are other opportunities here later.
                return null
             }
-            if (lastStep.edge.vertex1.elementType == ElementType.OPERATION) {
-               // We tried to call an operation, and it failed.
-               // Remove the operation from the graph, and try searching again to see if there's another path
-               excludedOperations.add(lastStep.edge.vertex1.valueAsQualifiedName())
+            // Check to see if there are any nodes in the executed path
+            // that we want to ignore and try a new search
+            if (appendIgnorableEdges(evaluatedPath, excludedEdges)) {
                nextPath = buildNextPath()
             } else {
-               // Giving up.  However, perhaps there are other opportunities here later.
+               // TODO : Migrate this into the PathExclusionCalcaultor
+               if (lastStep.edge.vertex1.elementType == ElementType.OPERATION) {
+                  // We tried to call an operation, and it failed.
+                  // Remove the operation from the graph, and try searching again to see if there's another path
+                  excludedOperations.add(lastStep.edge.vertex1.valueAsQualifiedName())
+                  nextPath = buildNextPath()
+               } else {
+                  // Giving up.  However, perhaps there are other opportunities here later.
+                  return null
+               }
+               log().info("Search found an instance which failed the provided spec, and couldn't find anything to exclude - giving up")
                return null
             }
+
          }
       }
       // There were no search paths to evaluate.  Just exit
       return null
+   }
+
+   private fun appendIgnorableEdges(evaluatedPath: List<PathEvaluation>, excludedEdges: MutableList<EvaluatableEdge>): Boolean {
+      val edgesToExclude = pathExclusionCalculator.findEdgesToExclude(evaluatedPath, buildSpec)
+      if (edgesToExclude.size > 1) {
+         log().warn("Found ${edgesToExclude.size} edges to exclude.  Currently, that's unexpected, but not neccessarily wrong.  This should be investigated")
+      }
+      return if (edgesToExclude.isNotEmpty()) {
+         excludedEdges.addAll(edgesToExclude)
+         true
+      } else {
+         false
+      }
    }
 
    private fun logOperationCost() {
@@ -145,7 +166,7 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
       return findPath(graph)
    }
 
-   private fun findPath(facts: List<TypedInstance>, excludedOperations: Set<QualifiedName>, excludedEdges:List<EvaluatableEdge>): WeightedNode<Relationship, Element, Double>? {
+   private fun findPath(facts: List<TypedInstance>, excludedOperations: Set<QualifiedName>, excludedEdges: List<EvaluatableEdge>): WeightedNode<Relationship, Element, Double>? {
       val graph = logTimeTo(graphBuilderTimes) {
          graphBuilder.build(facts, excludedOperations, excludedEdges)
       }

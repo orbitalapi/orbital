@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import io.vyne.models.TypedNull
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.PathEvaluation
@@ -19,9 +20,69 @@ class PathExclusionCalculator {
    fun findEdgesToExclude(evaluatedPath: List<PathEvaluation>, spec: TypedInstanceValidPredicate): List<EvaluatableEdge> {
       // These are a bunch of specific use cases that we've found that are useful to exclude
       return listOfNotNull(
-         instanceWhichProvidedInvalidMember(evaluatedPath, spec)
+         instanceWhichProvidedInvalidMember(evaluatedPath, spec),
+         operationReturnedResultWhichFailsPredicateTest(evaluatedPath, spec),
+         operationReturnedResultWithAttributeWhichFailsPredicateTest(evaluatedPath, spec)
 
       ).flatten()
+   }
+
+   private fun operationReturnedResultWithAttributeWhichFailsPredicateTest(evaluatedPath: List<PathEvaluation>, predicate: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+      val pathEndedByEvaluatingAttriubteOnResultFromOperation = evaluatedPath.endsWith(
+         Relationship.PROVIDES,
+         Relationship.INSTANCE_HAS_ATTRIBUTE,
+         Relationship.IS_ATTRIBUTE_OF,
+         Relationship.IS_INSTANCE_OF
+      )
+      if (!pathEndedByEvaluatingAttriubteOnResultFromOperation) {
+         return emptyList()
+      }
+      val finalResultFailedPredicate = !predicate.isValid(evaluatedPath.last().resultValue)
+
+      if (!finalResultFailedPredicate) {
+         return emptyList()
+      }
+      val operationEvaluation = evaluatedPath.fromEnd(3)
+      if (operationEvaluation !is EvaluatedEdge) {
+         log().error("Expected to find an evaluated edge, but found a ${operationEvaluation::class.simpleName}.  This is a bug")
+         return emptyList()
+      }
+      if (operationEvaluation.edge.relationship != Relationship.PROVIDES) {
+         log().error("Expected to find an edge of type Operation -[Provides]-> ??? but found ${operationEvaluation.edge.description}.  This is a bug")
+         return emptyList()
+      }
+      return listOf(operationEvaluation.edge)
+
+
+   }
+
+   private fun operationReturnedResultWhichFailsPredicateTest(evaluatedPath: List<PathEvaluation>, predicate: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+      val pathEndedByEvaluatingResultFromOperation = evaluatedPath.endsWith(
+         Relationship.PROVIDES,
+         Relationship.INSTANCE_HAS_ATTRIBUTE
+      )
+      if (!pathEndedByEvaluatingResultFromOperation) {
+         return emptyList()
+      }
+      val operationEvaluation = evaluatedPath.fromEnd(1)
+      return excludeOperationIfResponseFailsPredicate(operationEvaluation, predicate)
+   }
+
+   private fun excludeOperationIfResponseFailsPredicate(operationEvaluation: PathEvaluation, predicate: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+      if (operationEvaluation !is EvaluatedEdge) {
+         log().error("Expected to find an evaluated edge, but found a ${operationEvaluation::class.simpleName}.  This is a bug")
+         return emptyList()
+      }
+      if (operationEvaluation.edge.relationship != Relationship.PROVIDES) {
+         log().error("Expected to find an edge of type Operation -[Provides]-> ??? but found ${operationEvaluation.edge.description}.  This is a bug")
+         return emptyList()
+      }
+      val isValid = predicate.isValid(operationEvaluation.resultValue)
+      return if (isValid) {
+         return emptyList()
+      } else {
+         listOf(operationEvaluation.edge)
+      }
    }
 
    private fun instanceWhichProvidedInvalidMember(evaluatedPath: List<PathEvaluation>, spec: TypedInstanceValidPredicate): List<EvaluatableEdge> {
