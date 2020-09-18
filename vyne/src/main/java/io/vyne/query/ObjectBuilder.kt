@@ -7,7 +7,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
-import io.vyne.query.build.BuildSpecFactory
+import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
 import io.vyne.schemas.QualifiedName
@@ -16,7 +16,7 @@ import io.vyne.utils.log
 import lang.taxi.types.ObjectType
 
 class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
-   private val buildSpecProvider = BuildSpecFactory()
+   private val buildSpecProvider = TypedInstancePredicateFactory()
    private val originalContext = if (context.isProjecting) context
       .facts
       .firstOrNull { it is TypedObject }

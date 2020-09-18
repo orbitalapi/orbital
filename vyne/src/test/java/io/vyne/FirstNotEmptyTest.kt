@@ -5,7 +5,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
-import io.vyne.query.build.FirstNotEmptySpec
+import io.vyne.query.build.FirstNotEmptyPredicate
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
@@ -22,40 +22,40 @@ class FirstNotEmptyTest {
             productName : String
          }
       """.trimIndent()).type("TradeOutput")
-      FirstNotEmptySpec.provide(type.attribute("isin")).should.be.`null`
-      FirstNotEmptySpec.provide(type.attribute("productName")).should.not.be.`null`
+      FirstNotEmptyPredicate.provide(type.attribute("isin")).should.be.`null`
+      FirstNotEmptyPredicate.provide(type.attribute("productName")).should.not.be.`null`
    }
 
    @Test
    fun buildSpecRejectsEmptyString() {
-      FirstNotEmptySpec.isValid(
+      FirstNotEmptyPredicate.isValid(
          instance(PrimitiveType.STRING, "")
       ).should.equal(false)
    }
    @Test
    fun buildSpecRejectsWhitepaceString() {
-      FirstNotEmptySpec.isValid(
+      FirstNotEmptyPredicate.isValid(
          instance(PrimitiveType.STRING, "   ")
       ).should.equal(false)
    }
 
    @Test
    fun buildSpecRejectsTypedNull() {
-      FirstNotEmptySpec.isValid(
+      FirstNotEmptyPredicate.isValid(
          instance(PrimitiveType.STRING, null)
       ).should.equal(false)
    }
 
    @Test
    fun buildSpecAcceptsString() {
-      FirstNotEmptySpec.isValid(
+      FirstNotEmptyPredicate.isValid(
          instance(PrimitiveType.STRING, "foo")
       ).should.equal(true)
    }
 
    @Test
    fun buildSpecAcceptsNumber() {
-      FirstNotEmptySpec.isValid(
+      FirstNotEmptyPredicate.isValid(
          instance(PrimitiveType.INTEGER, 123)
       ).should.equal(true)
    }
