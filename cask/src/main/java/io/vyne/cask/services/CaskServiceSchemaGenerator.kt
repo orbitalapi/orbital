@@ -1,7 +1,6 @@
 package io.vyne.cask.services
 
 import io.vyne.cask.ddl.TypeMigration
-import io.vyne.cask.ingest.DataSourceUpgradedEvent
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.query.OperationGenerator
 import io.vyne.cask.query.generators.OperationAnnotation
@@ -19,6 +18,7 @@ import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.event.EventListener
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 
 /**
@@ -32,6 +32,7 @@ class CaskServiceSchemaGenerator(
    @Value("\${spring.application.name}") private val appName: String = "cask") {
 
    @EventListener
+   @Async
    fun onIngesterInitialised(event: IngestionInitialisedEvent) {
       log().info("Received Ingestion Initialised event ${event.type}")
 
@@ -45,12 +46,6 @@ class CaskServiceSchemaGenerator(
             registerType = false
          ))
       }
-   }
-
-   @EventListener
-   fun onDataSourceUpgraded(event: DataSourceUpgradedEvent) {
-      log().info("Received Data Source Upgraded event {}", event)
-      // TODO
    }
 
    fun generateSchema(request: CaskTaxiPublicationRequest, typeMigration: TypeMigration? = null): TaxiDocument {
