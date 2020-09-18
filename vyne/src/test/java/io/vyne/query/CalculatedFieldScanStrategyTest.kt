@@ -5,7 +5,8 @@ import com.winterbe.expekt.should
 import io.vyne.TestSchema
 import io.vyne.models.json.addJsonModel
 import io.vyne.formulas.CalculatorRegistry
-import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.models.Provided
+import io.vyne.models.TypedInstance
 import io.vyne.testVyne
 import org.junit.Test
 import java.math.BigDecimal
@@ -36,8 +37,29 @@ type Invoice {
 """
 
    @Test
+   fun `given coalesce refers to field names then it is calculated`() {
+      val (vyne, _) = testVyne("""
+         type PreferredName inherits String
+         model Person {
+            firstName : FirstName as String
+            nickName : NickName as String
+            preferredName : PreferredName as coalesce(NickName, FirstName)
+         }
+      """.trimIndent())
+      val json = """{ "firstName" : "Marty" } """
+      val withoutNickName = TypedInstance.from(vyne.type("Person"), json, vyne.schema, source = Provided)
+      val withoutNickNameResult = vyne.query(additionalFacts = setOf(withoutNickName)).find("PreferredName")
+      withoutNickNameResult["PreferredName"]?.value.should.equal("Marty")
+
+      val withNicknameJson = """{ "firstName" : "Marty" , "nickName" : "Jimmy" } """
+      val withNickName = TypedInstance.from(vyne.type("Person"), withNicknameJson, vyne.schema, source = Provided)
+      val withNickNameResult = vyne.query(additionalFacts = setOf(withNickName)).find("PreferredName")
+      withNickNameResult["PreferredName"]?.value.should.equal("Jimmy")
+   }
+
+   @Test
    fun `Given operands available in context calculated field value is set`() {
-      val (vyne,_) = testVyne(taxiDef)
+      val (vyne, _) = testVyne(taxiDef)
 
       val json = """
             {
@@ -62,7 +84,7 @@ type Invoice {
 
    @Test
    fun `Calculations can handle null values appropriately`() {
-      val (vyne,_) = testVyne(taxiDef)
+      val (vyne, _) = testVyne(taxiDef)
 
       val json = """
             {
