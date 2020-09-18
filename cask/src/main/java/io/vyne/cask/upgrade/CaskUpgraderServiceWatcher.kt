@@ -17,14 +17,17 @@ class CaskUpgraderServiceWatcher(
    private val upgraderService: CaskUpgraderService
 ) {
 
+   @Async
    @EventListener
    fun onUpgradeWorkDetected(event: CaskUpgradesRequiredEvent) {
       log().info("Received CaskUpgradesRequiredEvent - looking for work")
       checkForUprades()
    }
 
+   @Async
    @EventListener(value = [ContextRefreshedEvent::class])
    fun checkForUpgradesOnStartup() {
+      log().info("Cask upgrader service watcher started - checking for work")
       checkForUprades()
       dropReplacedCasks()
    }
