@@ -1,10 +1,7 @@
 package io.vyne
 
 import com.winterbe.expekt.should
-import io.vyne.models.Provided
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
+import io.vyne.models.*
 import io.vyne.query.build.FirstNotEmptyPredicate
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
@@ -224,6 +221,60 @@ class FirstNotEmptyTest {
       val result = vyne.query().build("TradeOutput")
       val output = result["TradeOutput"] as TypedObject
       output["productName"].value.should.equal("ice cream")
+   }
+
+
+   @Test
+   fun `when projecting a collection and operation fails for first entry but succeeds for second then value is still populated`() {
+      val schema = TaxiSchema.from("""
+         model TradeInput {
+            isin : Isin as String
+            productName : ProductName as String
+         }
+         service CalendarService {
+            @StubResponse("lookupProduct")
+            operation lookupProduct(Isin):Product
+         }
+         model Product {
+            name : ProductName
+         }
+         model TradeOutput {
+            isin : Isin
+
+            @FirstNotEmpty
+            productName : ProductName
+         }
+      """.trimIndent())
+      val (vyne, stubs) = testVyne(schema)
+      val firstResponderReturnsNullHandler:StubResponseHandler = { operation: Operation, inputs: List<Pair<Parameter, TypedInstance>> ->
+         val inputParam = inputs[0].second.value as String
+         if (inputParam == "productA") {
+            // First time, return null in the name attribute
+            TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided)
+         } else {
+            TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+         }
+      }
+      stubs.addResponse("lookupProduct", firstResponderReturnsNullHandler)
+      val inputJson = """[{
+         |"isin" : "productA",
+         |"productName" : null
+         |},
+         |{
+         |"isin" : "productB",
+         |"productName" : null
+         |}]
+      """.trimMargin()
+      val inputModel = TypedInstance.from(schema.type("TradeInput[]"), inputJson, schema, source = Provided)
+      vyne.addModel(inputModel)
+      val result = vyne.query().build("TradeOutput[]")
+      val output = result["TradeOutput[]"] as TypedCollection
+      val transformedProductA = output.first { (it as TypedObject)["isin"].value == "productA" } as TypedObject
+      val transformedProductB = output.first { (it as TypedObject)["isin"].value == "productB" } as TypedObject
+      // Note to future self:  I suspect we'll change this at some point so the attribute
+      // is there, but null
+      transformedProductA.hasAttribute("productName").should.be.`false`
+      transformedProductB["productName"].value.should.equal("ice cream")
    }
 
 
