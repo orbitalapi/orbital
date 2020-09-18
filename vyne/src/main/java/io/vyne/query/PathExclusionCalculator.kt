@@ -1,6 +1,5 @@
 package io.vyne.query
 
-import io.vyne.models.TypedNull
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.PathEvaluation
@@ -20,11 +19,27 @@ class PathExclusionCalculator {
    fun findEdgesToExclude(evaluatedPath: List<PathEvaluation>, spec: TypedInstanceValidPredicate): List<EvaluatableEdge> {
       // These are a bunch of specific use cases that we've found that are useful to exclude
       return listOfNotNull(
+         operationThrewError(evaluatedPath, spec),
          instanceWhichProvidedInvalidMember(evaluatedPath, spec),
          operationReturnedResultWhichFailsPredicateTest(evaluatedPath, spec),
          operationReturnedResultWithAttributeWhichFailsPredicateTest(evaluatedPath, spec)
 
       ).flatten()
+   }
+
+   private fun operationThrewError(evaluatedPath: List<PathEvaluation>, predicate: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+      val pathEndedWithOperationThatFailed = evaluatedPath.endsWith(
+         Relationship.PROVIDES
+      )
+      if (!pathEndedWithOperationThatFailed) {
+         return emptyList()
+      }
+      val operationEvaluation = getAsOperationEvaluation(evaluatedPath.fromEnd(0)) ?: return emptyList()
+      return if (!operationEvaluation.wasSuccessful) {
+         listOf(operationEvaluation.edge)
+      } else {
+         emptyList()
+      }
    }
 
    private fun operationReturnedResultWithAttributeWhichFailsPredicateTest(evaluatedPath: List<PathEvaluation>, predicate: TypedInstanceValidPredicate): List<EvaluatableEdge> {
@@ -42,18 +57,20 @@ class PathExclusionCalculator {
       if (!finalResultFailedPredicate) {
          return emptyList()
       }
-      val operationEvaluation = evaluatedPath.fromEnd(3)
-      if (operationEvaluation !is EvaluatedEdge) {
-         log().error("Expected to find an evaluated edge, but found a ${operationEvaluation::class.simpleName}.  This is a bug")
-         return emptyList()
-      }
-      if (operationEvaluation.edge.relationship != Relationship.PROVIDES) {
-         log().error("Expected to find an edge of type Operation -[Provides]-> ??? but found ${operationEvaluation.edge.description}.  This is a bug")
-         return emptyList()
-      }
+      val operationEvaluation = getAsOperationEvaluation(evaluatedPath.fromEnd(3)) ?: return emptyList()
       return listOf(operationEvaluation.edge)
+   }
 
-
+   private fun getAsOperationEvaluation(pathEvaluation: PathEvaluation): EvaluatedEdge? {
+      if (pathEvaluation !is EvaluatedEdge) {
+         log().error("Expected to find an evaluated edge, but found a ${pathEvaluation::class.simpleName}.  This is a bug")
+         return null
+      }
+      if (pathEvaluation.edge.relationship != Relationship.PROVIDES) {
+         log().error("Expected to find an edge of type Operation -[Provides]-> ??? but found ${pathEvaluation.edge.description}.  This is a bug")
+         return null
+      }
+      return pathEvaluation
    }
 
    private fun operationReturnedResultWhichFailsPredicateTest(evaluatedPath: List<PathEvaluation>, predicate: TypedInstanceValidPredicate): List<EvaluatableEdge> {
@@ -64,19 +81,7 @@ class PathExclusionCalculator {
       if (!pathEndedByEvaluatingResultFromOperation) {
          return emptyList()
       }
-      val operationEvaluation = evaluatedPath.fromEnd(1)
-      return excludeOperationIfResponseFailsPredicate(operationEvaluation, predicate)
-   }
-
-   private fun excludeOperationIfResponseFailsPredicate(operationEvaluation: PathEvaluation, predicate: TypedInstanceValidPredicate): List<EvaluatableEdge> {
-      if (operationEvaluation !is EvaluatedEdge) {
-         log().error("Expected to find an evaluated edge, but found a ${operationEvaluation::class.simpleName}.  This is a bug")
-         return emptyList()
-      }
-      if (operationEvaluation.edge.relationship != Relationship.PROVIDES) {
-         log().error("Expected to find an edge of type Operation -[Provides]-> ??? but found ${operationEvaluation.edge.description}.  This is a bug")
-         return emptyList()
-      }
+      val operationEvaluation = getAsOperationEvaluation(evaluatedPath.fromEnd(1)) ?: return emptyList()
       val isValid = predicate.isValid(operationEvaluation.resultValue)
       return if (isValid) {
          return emptyList()

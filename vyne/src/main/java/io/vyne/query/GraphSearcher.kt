@@ -75,20 +75,9 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
             if (appendIgnorableEdges(evaluatedPath, excludedEdges)) {
                nextPath = buildNextPath()
             } else {
-               // TODO : Migrate this into the PathExclusionCalcaultor
-               if (lastStep.edge.vertex1.elementType == ElementType.OPERATION) {
-                  // We tried to call an operation, and it failed.
-                  // Remove the operation from the graph, and try searching again to see if there's another path
-                  excludedOperations.add(lastStep.edge.vertex1.valueAsQualifiedName())
-                  nextPath = buildNextPath()
-               } else {
-                  // Giving up.  However, perhaps there are other opportunities here later.
-                  return null
-               }
                log().info("Search found an instance which failed the provided spec, and couldn't find anything to exclude - giving up")
                return null
             }
-
          }
       }
       // There were no search paths to evaluate.  Just exit
