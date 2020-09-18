@@ -33,6 +33,8 @@ import es.usc.citius.hipster.graph.HashBasedHipsterDirectedGraph
 import es.usc.citius.hipster.graph.HashBasedHipsterGraph
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.graph.HipsterGraph
+import io.vyne.query.graph.Element
+import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.utils.log
 import io.vyne.utils.timed
 import java.util.*
@@ -74,14 +76,37 @@ class HipsterGraphBuilder<V, E> private constructor() {
       return this
    }
 
-   fun createDirectedGraph(): HipsterDirectedGraph<V, E> {
+   fun createDirectedGraph(excludedEdges:List<EvaluatableEdge> = emptyList()): HipsterDirectedGraph<V, E> {
       val graph = HashBasedHipsterDirectedGraph.create<V, E>()
-      for (c in connections) {
-         graph.add(c.vertex1)
-         graph.add(c.vertex2)
-         graph.connect(c.vertex1!!, c.vertex2!!, c.edge)
+      val permittedConnections = filterToEligibleConnections(excludedEdges)
+      permittedConnections.forEach { connection ->
+         graph.add(connection.vertex1)
+         graph.add(connection.vertex2)
+         graph.connect(connection.vertex1!!, connection.vertex2!!, connection.edge)
       }
       return graph
+   }
+
+   private fun filterToEligibleConnections(excludedEdges:List<EvaluatableEdge>) :List<Connection<V,E>>{
+      // bail early if there's nothing to do.
+      if (excludedEdges.isEmpty()) {
+         return connections
+      }
+      val edgesByFirstVertex = excludedEdges.groupBy { it.vertex1 }
+
+      val permittedConnections = connections
+         .filter { connection ->
+            if (connection.vertex1 !is Element) {
+               return@filter true // This is simply to bypass the type checker.
+               // All connections actually are elements.
+            }
+            val excludedFromVertex = edgesByFirstVertex[connection.vertex1] ?: emptyList()
+
+            val isExcluded = excludedFromVertex.any { it.vertex2 == connection.vertex2 && it.relationship == connection.edge }
+            !isExcluded
+         }
+      return permittedConnections
+
    }
 
    fun createUndirectedGraph(): HipsterGraph<V, E> {

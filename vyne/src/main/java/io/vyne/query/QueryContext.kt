@@ -355,18 +355,18 @@ data class QueryContext(
       return inMemoryStream!!.stream()
    }
 
-   fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
+   fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): Boolean {
       // This could be optimized, as we're searching twice for everything, and not caching anything
-      return getFactOrNull(type, strategy) != null
+      return getFactOrNull(type, strategy, spec) != null
    }
 
-   fun getFact(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): TypedInstance {
+   fun getFact(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): TypedInstance {
       // This could be optimized, as we're searching twice for everything, and not caching anything
-      return getFactOrNull(type, strategy)!!
+      return getFactOrNull(type, strategy, spec)!!
    }
 
-   fun getFactOrNull(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): TypedInstance? {
-      return strategy.getFact(this, type)
+   fun getFactOrNull(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): TypedInstance? {
+      return strategy.getFact(this, type, spec = spec)
       //return factCache.get(FactCacheKey(type.fullyQualifiedName, strategy)).orElse(null)
    }
 
@@ -426,7 +426,9 @@ data class QueryContext(
 
 enum class FactDiscoveryStrategy {
    TOP_LEVEL_ONLY {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedInstance? = context.facts.firstOrNull { matcher.matches(type, it.type) }
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec:TypedInstanceValidPredicate): TypedInstance?{
+         return context.facts.firstOrNull { matcher.matches(type, it.type) && spec.isValid(it) }
+      }
    },
 
    /**
@@ -434,9 +436,10 @@ enum class FactDiscoveryStrategy {
     * exactly one match in the context
     */
    ANY_DEPTH_EXPECT_ONE {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedInstance? {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec:TypedInstanceValidPredicate): TypedInstance? {
          val matches = context.modelTree()
             .filter { matcher.matches(type, it.type) }
+            .filter { spec.isValid(it) }
             .toList()
          return when {
             matches.isEmpty() -> null
@@ -455,9 +458,10 @@ enum class FactDiscoveryStrategy {
     * one DISITNCT match within the context
     */
    ANY_DEPTH_EXPECT_ONE_DISTINCT {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedInstance? {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec: TypedInstanceValidPredicate): TypedInstance? {
          val matches = context.modelTree()
             .filter { matcher.matches(type, it.type) }
+            .filter { spec.isValid(it) }
             .distinct()
             .toList()
          return when {
@@ -482,9 +486,10 @@ enum class FactDiscoveryStrategy {
     * one DISITNCT match within the context
     */
    ANY_DEPTH_ALLOW_MANY {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedCollection? {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec:TypedInstanceValidPredicate): TypedCollection? {
          val matches = context.modelTree()
             .filter { matcher.matches(type, it.type) }
+            .filter { spec.isValid(it) }
             .distinct()
             .toList()
          return when {
@@ -495,9 +500,10 @@ enum class FactDiscoveryStrategy {
    },
 
    ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedCollection? {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec:TypedInstanceValidPredicate): TypedCollection? {
          val matches = context.modelTree()
             .filter { matcher.matches(if (type.isCollection) type.typeParameters.first() else type, it.type) }
+            .filter { spec.isValid(it) }
             .distinct()
             .toList()
          return when {
@@ -508,7 +514,7 @@ enum class FactDiscoveryStrategy {
    };
 
 
-   abstract fun getFact(context: QueryContext, type: Type, strictness: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): TypedInstance?
+   abstract fun getFact(context: QueryContext, type: Type, strictness: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES, spec: TypedInstanceValidPredicate): TypedInstance?
 
 }
 

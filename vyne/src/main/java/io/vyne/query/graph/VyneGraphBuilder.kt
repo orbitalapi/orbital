@@ -1,12 +1,12 @@
 package io.vyne.query.graph
 
 import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.Multimap
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.vyne.DisplayGraphBuilder
 import io.vyne.HipsterGraphBuilder
+import io.vyne.models.TypedInstance
 import io.vyne.schemas.*
 
 enum class ElementType {
@@ -81,6 +81,11 @@ fun operation(service: Service, operation: Operation): Element {
 }
 
 fun operation(name: String) = Element(name, ElementType.OPERATION)
+fun providedInstance(typedInstance: TypedInstance): Element {
+   val instanceHash = typedInstance.value?.hashCode() ?: -1
+   val nodeId = typedInstance.typeName + "@$instanceHash"
+   return providedInstance(nodeId,typedInstance)
+}
 fun providedInstance(name: String, value: Any? = null) = Element(name, ElementType.TYPE_INSTANCE, value)
 fun providedInstanceMember(name: String) = Element(name, ElementType.PROVIDED_INSTANCE_MEMBER)
 
@@ -97,7 +102,8 @@ fun instanceOfType(type: Type): Element {
 typealias TypeElement = Element
 typealias MemberElement = Element
 
-private data class GraphWithFactsCacheKey(val facts:Set<Type>, val graphBuilder:HipsterGraphBuilder<Element,Relationship>)
+private data class GraphWithFactTypesCacheKey(val facts:Set<Type>, val graphBuilder:HipsterGraphBuilder<Element,Relationship>)
+private data class GraphWithFactInstancesCacheKey(val facts:List<TypedInstance>, val excludedEdges: List<EvaluatableEdge>, val graphBuilder:HipsterGraphBuilder<Element,Relationship>)
 class VyneGraphBuilder(private val schema: Schema) {
 
 
@@ -105,10 +111,32 @@ class VyneGraphBuilder(private val schema: Schema) {
       .maximumSize(100) // arbitary, can tune later
       .build<Int, HipsterGraphBuilder<Element, Relationship>>()
 
-   private val graphWithFactsCache = CacheBuilder.newBuilder()
+   // experiment: migrating to graphWitFactInstances -- not sure why we used types here.
+   private val graphWithFactTypesCache = CacheBuilder.newBuilder()
       .maximumSize(100)
-      .build<GraphWithFactsCacheKey, HipsterDirectedGraph<Element,Relationship>>()
+      .build<GraphWithFactTypesCacheKey, HipsterDirectedGraph<Element,Relationship>>()
 
+   // experiment: Why were we using types, instead of instances?
+   private val graphWithFactInstancesCache = CacheBuilder.newBuilder()
+      .maximumSize(100)
+      .build<GraphWithFactInstancesCacheKey, HipsterDirectedGraph<Element,Relationship>>()
+
+   fun build(facts:List<TypedInstance>, excludedOperations: Set<QualifiedName> = emptySet(), excludedEdges:List<EvaluatableEdge>): HipsterDirectedGraph<Element, Relationship> {
+      val builder = baseSchemaCache.get(excludedOperations.hashCode()) {
+         val instance = HipsterGraphBuilder.create<Element, Relationship>()
+         appendTypes(instance, schema)
+         appendServices(instance, schema, excludedOperations)
+         instance
+      }
+      val graphWithFacts = graphWithFactInstancesCache.get(GraphWithFactInstancesCacheKey(facts,excludedEdges, builder)) {
+         val thisBuilder = builder.copy()
+         appendInstances(thisBuilder, facts, schema, excludedEdges)
+         thisBuilder.createDirectedGraph(excludedEdges)
+      }
+
+      return graphWithFacts
+
+   }
    fun build(types: Set<Type> = emptySet(), excludedOperations: Set<QualifiedName> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
       val builder = baseSchemaCache.get(excludedOperations.hashCode()) {
          val instance = HipsterGraphBuilder.create<Element, Relationship>()
@@ -118,9 +146,9 @@ class VyneGraphBuilder(private val schema: Schema) {
       }
 
 
-      val graphWithFacts = graphWithFactsCache.get(GraphWithFactsCacheKey(types,builder)) {
+      val graphWithFacts = graphWithFactTypesCache.get(GraphWithFactTypesCacheKey(types,builder)) {
          val thisBuilder = builder.copy()
-         appendInstances(thisBuilder, types, schema)
+         appendInstanceTypes(thisBuilder, types, schema)
          thisBuilder.createDirectedGraph()
       }
 
@@ -132,13 +160,19 @@ class VyneGraphBuilder(private val schema: Schema) {
       return DisplayGraphBuilder().convertToDisplayGraph(graph)
    }
 
-   private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, types: Set<Type>, schema: Schema) {
+   private fun appendInstanceTypes(builder: HipsterGraphBuilder<Element, Relationship>, types: Set<Type>, schema: Schema) {
       types.forEach {
          val typeFqn = it.qualifiedName.parameterizedName
          appendProvidedInstances(builder, typeFqn, schema)
          // Note: An old implementation has been removed from here.  Check the git history
          // if we think stuff has broken.
 
+      }
+   }
+
+   private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, instances: List<TypedInstance>, schema: Schema, excludedEdges: List<EvaluatableEdge>) {
+      instances.forEach {typedInstance ->
+         appendProvidedInstances(builder, typedInstance.typeName, schema, value = typedInstance)
       }
    }
 
@@ -225,14 +259,38 @@ class VyneGraphBuilder(private val schema: Schema) {
     * It's return type is created as an instance:type, and all the parameters of the return type
     * are also mapped as providedInstanceMembers() and instance:types.
     */
-   private fun appendProvidedInstances(builder: HipsterGraphBuilder<Element, Relationship>, instanceFqn: String, schema: Schema, provider: Element? = null) {
-      val providedInstance = providedInstance(instanceFqn)
+   private fun appendProvidedInstances(builder: HipsterGraphBuilder<Element, Relationship>, instanceFqn: String, schema: Schema, provider: Element? = null, value:TypedInstance? = null) {
+      val providedInstance = if (value != null) {
+         providedInstance(value)
+      } else {
+         // TODO : Not sure if this is still value -- ie., not provided a typedInstance here
+         providedInstance(instanceFqn)
+      }
       if (provider != null) {
          builder.connect(provider).to(providedInstance).withEdge(Relationship.PROVIDES)
       }
 
       val type = schema.type(instanceFqn)
-      builder.connect(providedInstance).to(type(instanceFqn)).withEdge(Relationship.IS_INSTANCE_OF)
+      // Note - We don't link provided instances to their instance types, as it creates a
+      // link that can't be removed later.
+      // eg - this is a problem:
+      // instanceOfFoo -[isInstanceOf]-> TypeFoo
+      // TypeFoo -[hasAttribute] -> FooParam
+      // This creates a problem if we decide that the specific instance of foo
+      // should not be permitted to provide FooParam (because it's invalid / null / etc).
+      // By linking Foo to TypeFoo, the graph is able to navigate instance -> type -> attribute
+      // If we were to remove the type -> attribute link, it would break for
+      // searches against values we haven't yet received (eg., finding a value from
+      // a service to navigate to it's attribute).
+      // So, build a link of instanceOfFoo -[canPopulate]-> TypeFoo.
+      // Later, if we don't want to populate TypeFoo with this specific instance,
+      // we can exclude the edge  (See PathExclusionCalculator and HipsterGraphBuilder.filterToEligibleConnections
+      // So, only build the link if we're linking a theoretical instance (ie.,
+      // one we haven't yet discovered).  If we're linking an actual value, just
+      // use the canPopulate relationship.
+      if (value == null) {
+         builder.connect(providedInstance).to(type(instanceFqn)).withEdge(Relationship.IS_INSTANCE_OF)
+      }
       builder.connect(providedInstance).to(parameter(instanceFqn)).withEdge(Relationship.CAN_POPULATE)
 
       // This instance can also populate any types that it inherits from.

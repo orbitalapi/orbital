@@ -19,9 +19,7 @@ class FunctionRegistry(private val invokers: List<FunctionInvoker>) {
    }
 
    companion object {
-      fun default(): FunctionRegistry {
-         return FunctionRegistry(StdLib.functions)
-      }
+      val default: FunctionRegistry = FunctionRegistry(StdLib.functions)
    }
 }
 

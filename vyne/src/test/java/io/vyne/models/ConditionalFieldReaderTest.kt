@@ -119,7 +119,7 @@ type TransformedTradeRecord {
       }
       """)
       val json = """{ "bankDirection" : "Buy" }"""
-      val order = TypedObjectFactory(vyne.schema.type("Order"), json, vyne.schema, source = Provided).build()
+      val order = TypedObjectFactory(vyne.schema.type("Order"), json, vyne.schema, source = Provided).build() as TypedObject
 
       order["clientDirection"].value!!.should.equal("Sell")
       order["bankDirection"].value!!.should.equal("Buy")

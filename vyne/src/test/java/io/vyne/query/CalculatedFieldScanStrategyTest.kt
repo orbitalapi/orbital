@@ -48,13 +48,13 @@ type Invoice {
       """.trimIndent()
       vyne.addJsonModel("vyne.example.Order", json)
       val qtyTot = (vyne.type("vyne.example.Invoice").attributes["qtyTot"] ?: error("")).type
-      val result = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(qtyTot.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query())
+      val result = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(qtyTot.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query(), AlwaysGoodSpec)
       expect(result.matchedNodes).size.to.equal(1)
       expect(result.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(qtyTot.fullyQualifiedName)
       expect(result.matchedNodes.entries.first().value!!.value).to.equal(BigDecimal("400"))
 
       val orderId = (vyne.type("vyne.example.Invoice").attributes["orderId"] ?: error("")).type
-      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query())
+      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query(), AlwaysGoodSpec)
       expect(orderIdResult.matchedNodes).size.to.equal(1)
       expect(orderIdResult.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(orderId.fullyQualifiedName)
       expect(orderIdResult.matchedNodes.entries.first().value!!.value).to.equal("bankOrderId")
@@ -73,10 +73,10 @@ type Invoice {
       """.trimIndent()
       vyne.addJsonModel("vyne.example.Order", json)
       val qtyTot = (vyne.type("vyne.example.Invoice").attributes["qtyTot"] ?: error("")).type
-      val result = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(qtyTot.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query())
+      val result = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(qtyTot.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query(), AlwaysGoodSpec)
       expect(result.matchedNodes).size.to.equal(0)
       val orderId = (vyne.type("vyne.example.Invoice").attributes["orderId"] ?: error("")).type
-      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query())
+      val orderIdResult = CalculatedFieldScanStrategy(CalculatorRegistry()).invoke(TestSchema.typeNode(orderId.fullyQualifiedName, QueryParser(vyne.schema)), vyne.query(), AlwaysGoodSpec)
       expect(orderIdResult.matchedNodes).size.to.equal(1)
       expect(orderIdResult.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal(orderId.fullyQualifiedName)
       expect(orderIdResult.matchedNodes.entries.first().value!!.value).to.equal("marketOrderId")

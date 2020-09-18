@@ -118,7 +118,7 @@ class VyneTest {
             }
          }
       """.trimIndent(), vyne.schema, source = Provided)
-      stubs.addResponse("securityDescription", stubResponse )
+      stubs.addResponse("securityDescription", stubResponse)
       vyne.addKeyValuePair("Isin", "foo")
       val result = vyne.query().build("RequiredOutput")
       result.isFullyResolved.should.be.`true`
@@ -943,7 +943,7 @@ service Broker2Service {
       // Given
       val (vyne, stubService) = testVyne(lenientEnumSchema)
 
-      fun query(factJson:String):TypedObject {
+      fun query(factJson: String): TypedObject {
          return vyne
             .query(
                additionalFacts = setOf(
@@ -985,7 +985,7 @@ service Broker2Service {
       // Given
       val (vyne, stubService) = testVyne(lenientEnumSchema)
 
-      fun query(factJson:String):TypedObject {
+      fun query(factJson: String): TypedObject {
          return vyne
             .query(
                additionalFacts = setOf(
@@ -1073,7 +1073,6 @@ service Broker2Service {
    }
 
 
-
    @Test
    fun `retrieve all types that can discovered through single argument function invocations`() {
       val testSchema = """
@@ -1144,7 +1143,7 @@ service ClientService {
       // The issue we're testing here is if there are mutliple ways to find a value, all which look the same,
       // but some which generate values, and others that don't, that we should keep trying until we find the approach
       // that works.
-      val (vyne,stub) = testVyne("""
+      val (vyne, stub) = testVyne("""
          model User {
             userId : UserId as Int
             userName : UserName as String
@@ -1158,7 +1157,7 @@ service ClientService {
       """.trimIndent())
 
       stub.addResponse("lookupByIdEven") { _, parameters ->
-         val (_,userId) = parameters.first()
+         val (_, userId) = parameters.first()
          val userIdValue = userId.value as Int
          if (userIdValue % 2 == 0) {
             vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Even" }""")
@@ -1168,7 +1167,7 @@ service ClientService {
          }
       }
       stub.addResponse("lookupByIdOdd") { _, parameters ->
-         val (_,userId) = parameters.first()
+         val (_, userId) = parameters.first()
          val userIdValue = userId.value as Int
          if (userIdValue % 2 != 0) {
             vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Odd" }""")
@@ -1181,7 +1180,7 @@ service ClientService {
       resultEven.isFullyResolved.should.be.`true`
       resultEven["UserName"]!!.value.should.equal("Jimmy Even")
 
-      val resultOdd =  vyne.query(additionalFacts = setOf(vyne.parseKeyValuePair("UserId", 3))).find("UserName")
+      val resultOdd = vyne.query(additionalFacts = setOf(vyne.parseKeyValuePair("UserId", 3))).find("UserName")
       resultOdd.isFullyResolved.should.be.`true`
       resultOdd["UserName"]!!.value.should.equal("Jimmy Odd")
    }
