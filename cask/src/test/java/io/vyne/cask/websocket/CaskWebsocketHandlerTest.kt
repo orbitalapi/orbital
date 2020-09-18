@@ -22,6 +22,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.core.io.buffer.DefaultDataBufferFactory
@@ -202,6 +203,7 @@ class CaskWebsocketHandlerTest {
    }
 
    @Test
+   @Ignore("This is now a warning, not an error, so the message is not rejected")
    fun ingestionErrorCausedByMissingValue() {
       val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT,
          DefaultDataBufferFactory().wrap(ingestionMessageWithMissingValue().readBytes())))
