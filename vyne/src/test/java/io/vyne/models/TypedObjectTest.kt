@@ -5,7 +5,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.json.JsonModelParser
-import io.vyne.query.graph.type
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Before
@@ -14,8 +13,6 @@ import org.skyscreamer.jsonassert.JSONAssert
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatterBuilder
 import kotlin.test.fail
 
 class TypedObjectTest {
@@ -166,13 +163,39 @@ class TypedObjectTest {
       """.trimMargin()
       try {
          TypedInstance.from(tradeType, json, schema, source = Provided) as TypedObject
-      } catch (e:DataParsingException) {
+      } catch (e: DataParsingException) {
          e.message.should.equal("Failed to parse value 2020-05-01 to type lang.taxi.Instant(yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z') - Text '2020-05-01' could not be parsed, unparsed text found at index 0")
          return
       }
       fail("Expected an exception to be thrown")
 
 
+   }
+
+   @Test
+   fun `can use default values in json when parsing`() {
+      val schema = TaxiSchema.from("""
+         model Person {
+            firstName : FirstName as String
+            title : Title as String by default("foo")
+         }
+      """.trimIndent())
+      val json = """{ "firstName" : "Jimmy" }"""
+      val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
+      instance["title"].value.should.equal("foo")
+   }
+
+   @Test // This specific test because of a bug found where this was failing
+   fun `can use default value of empty string in json when parsing`() {
+      val schema = TaxiSchema.from("""
+         model Person {
+            firstName : FirstName as String
+            title : Title as String by default("")
+         }
+      """.trimIndent())
+      val json = """{ "firstName" : "Jimmy" }"""
+      val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
+      instance["title"].value.should.equal("")
    }
 
    @Test
