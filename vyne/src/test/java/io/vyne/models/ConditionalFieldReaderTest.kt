@@ -130,7 +130,7 @@ type TransformedTradeRecord {
    @Test
    fun conditionalFieldSelectedOnConstantEnum() {
 
-      val (vyne, _) = testVyne( """
+      val (vyne, _) = testVyne("""
       type Direction inherits String
       type BankDirection inherits Direction
       type ClientDirection inherits Direction
@@ -148,6 +148,73 @@ type TransformedTradeRecord {
 //      vyne.addJsonModel("Order", """{ bankDirection : "Buy" }""")
 
 
+   }
+
+   @Test
+   fun `can evaluate functions in where clauses in xml`() {
+      val (vyne, _) = testVyne("""
+         model Foo {
+            assetClass : String by xpath("/Foo/assetClass")
+            identifierValue : String? by when (this.assetClass) {
+               "FXD" -> left(xpath("/Foo/symbol"),6)
+               else -> xpath("/Foo/isin")
+            }
+         }""")
+
+      fun xml(assetClass: String) = """<Foo>
+         |<assetClass>$assetClass</assetClass>
+         |<symbol>GBPUSD-100293</symbol>
+         |<isin>ISIN-138443</isin>
+         |</Foo>
+      """.trimMargin()
+
+      val fooWithSymbol = TypedInstance.from(vyne.type("Foo"), xml("FXD"), vyne.schema, source = Provided) as TypedObject
+      fooWithSymbol["identifierValue"].value.should.equal("GBPUSD")
+
+      val fooWithIsin = TypedInstance.from(vyne.type("Foo"), xml("xxx"), vyne.schema, source = Provided) as TypedObject
+      fooWithIsin["identifierValue"].value.should.equal("ISIN-138443")
+   }
+
+   @Test
+   fun `can evaluate functions in where clauses in json`() {
+      val (vyne, _) = testVyne("""
+         model Foo {
+            assetClass : String
+            identifierValue : String? by when (this.assetClass) {
+               "FXD" -> left(jsonPath("$.symbol"),6)
+               else -> jsonPath("$.isin")
+            }
+         }""")
+      fun json(assetClass: String) = """{
+      "assetClass" : "$assetClass",
+      "symbol" : "GBPUSD-100293",
+      "isin" : "ISIN-138443"
+      }
+      """.trimMargin()
+
+      val fooWithSymbol = TypedInstance.from(vyne.type("Foo"), json("FXD"), vyne.schema, source = Provided) as TypedObject
+      fooWithSymbol["identifierValue"].value.should.equal("GBPUSD")
+
+      val fooWithIsin = TypedInstance.from(vyne.type("Foo"), json("xxx"), vyne.schema, source = Provided) as TypedObject
+      fooWithIsin["identifierValue"].value.should.equal("ISIN-138443")
+   }
+
+   @Test
+   fun `can evaluate functions in where clauses in csv`() {
+      val (vyne, _) = testVyne("""
+         model Foo {
+            assetClass : String by column(1)
+            identifierValue : String? by when (this.assetClass) {
+               "FXD" -> left(column(2),6)
+               else -> column(3)
+            }
+         }""")
+      fun csv(assetClass: String) = """$assetClass,GBPUSD-100293,ISIN-138443"""
+      val fooWithSymbol = TypedInstance.from(vyne.type("Foo"), csv("FXD"), vyne.schema, source = Provided) as TypedObject
+      fooWithSymbol["identifierValue"].value.should.equal("GBPUSD")
+
+      val fooWithIsin = TypedInstance.from(vyne.type("Foo"), csv("xxx"), vyne.schema, source = Provided) as TypedObject
+      fooWithIsin["identifierValue"].value.should.equal("ISIN-138443")
    }
 
    @Test

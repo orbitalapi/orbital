@@ -16,7 +16,6 @@ import io.vyne.utils.log
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.*
 import org.apache.commons.csv.CSVRecord
-import java.lang.StringBuilder
 
 object Parsers {
    val xmlParser: XmlTypedInstanceParser by lazy { XmlTypedInstanceParser() }
@@ -111,7 +110,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
          value is String -> csvParser.parse(value, targetType, accessor, schema, source, nullable)
          // Efficient parsing where we've already parsed the record once (eg., streaming from disk).
          value is CSVRecord -> csvParser.parseToType(targetType, accessor, value, schema, nullValues, source, nullable)
-         accessor.defaultValue != null -> csvParser.parse(accessor.defaultValue.toString(), targetType, accessor, schema, source, nullable)
+         accessor.defaultValue != null -> TypedInstance.from(targetType, accessor.defaultValue.toString(), schema, nullValues = nullValues, source = source)
          else -> {
             if (nullable) {
                return TypedInstance.from(targetType, null, schema, source = source)

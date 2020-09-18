@@ -7,12 +7,12 @@ import com.google.common.io.CharSource
 import io.vyne.models.DataSource
 import io.vyne.models.PrimitiveParser
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
-import java.lang.IllegalArgumentException
 import java.util.concurrent.TimeUnit
 
 internal object CsvDocumentCacheBuilder {
@@ -44,6 +44,9 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
    fun parse(content: String, type: Type, accessor: ColumnAccessor, schema: Schema, source:DataSource, nullable: Boolean): TypedInstance {
       val csvRecords = documentCache.get(content)
       val instances = csvRecords.map { record -> parseToType(type, accessor, record, schema, source = source, nullable = nullable) }
+      if (instances.isEmpty()) {
+         return TypedNull(type)
+      }
       if (instances.size == 1) {
          return instances.first()
       } else {
