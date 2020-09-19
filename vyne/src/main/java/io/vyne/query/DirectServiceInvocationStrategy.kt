@@ -45,6 +45,8 @@ class DirectServiceInvocationStrategy(private val invocationService: OperationIn
             val serviceResults = operationsToInvoke.map { operation ->
                val parameters = operationToParameters.getValue(operation)
                val (service, _) = context.schema.operation(operation.qualifiedName)
+               // Adding logging as seeing too many http calls.
+               log().info("As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked")
                val serviceResult = invocationService.invokeOperation(
                   service,
                   operation,

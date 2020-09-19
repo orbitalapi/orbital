@@ -63,7 +63,9 @@ data class QuerySpecTypeNode(
    // Note: Not really convinced these need to be OutputCOnstraints (vs Constraints).
    // Revisit later
    val dataConstraints: List<OutputConstraint> = emptyList()
-)
+) {
+   val description = type.longDisplayName
+}
 
 class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
    override fun deserializeKey(p0: String?, p1: DeserializationContext?): Any? {
