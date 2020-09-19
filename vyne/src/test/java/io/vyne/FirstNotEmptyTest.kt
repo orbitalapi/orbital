@@ -8,6 +8,7 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
+import java.time.LocalDate
 
 class FirstNotEmptyTest {
 
@@ -127,6 +128,41 @@ class FirstNotEmptyTest {
    }
 
    @Test
+   fun `FirstNotEmpty discovery works on formatted types`() {
+      val schema = TaxiSchema.from("""
+         type ExpiryDate inherits Date
+         model TradeInput {
+            isin : Isin as String
+            expiryDate : ExpiryDate(@format = "dd-MMM-yy")
+         }
+         service CalendarService {
+            @StubResponse("lookupDate")
+            operation lookupDate(Isin):Product
+         }
+         model Product {
+            expires : ExpiryDate
+         }
+         model TradeOutput {
+            isin : Isin
+
+            @FirstNotEmpty
+            expiryDate : ExpiryDate(@format = "yyyy-MM-dd")
+         }
+      """.trimIndent())
+      val (vyne, stubs) = testVyne(schema)
+      val product = TypedInstance.from(schema.type("Product"), """{ "expires": "1979-05-10" } """, schema, source = Provided)
+      stubs.addResponse("lookupDate", product)
+      val inputJson = """{
+         |"isin" : "1234"
+         |}
+      """.trimMargin()
+      vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
+      val result = vyne.query().build("TradeOutput")
+      val output = result["TradeOutput"] as TypedObject
+      output["expiryDate"].value.should.equal(LocalDate.parse("1979-05-10"))
+   }
+
+   @Test
    fun `when value is tagged @FirstNotEmpty and multiple services expose it, if first service returns null, subsequent services are called`() {
       val schema = TaxiSchema.from("""
          model TradeInput {
@@ -173,6 +209,7 @@ class FirstNotEmptyTest {
       val output = result["TradeOutput"] as TypedObject
       output["productName"].value.should.equal("ice cream")
    }
+
 
 
    @Test

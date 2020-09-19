@@ -21,6 +21,7 @@ class PathExclusionCalculator {
       return listOfNotNull(
          operationThrewError(evaluatedPath, spec),
          instanceWhichProvidedInvalidMember(evaluatedPath, spec),
+         instanceWhichProviedInvalidInheritedMember(evaluatedPath, spec),
          operationReturnedResultWhichFailsPredicateTest(evaluatedPath, spec),
          operationReturnedResultWithAttributeWhichFailsPredicateTest(evaluatedPath, spec)
 
@@ -90,17 +91,19 @@ class PathExclusionCalculator {
       }
    }
 
-   private fun instanceWhichProvidedInvalidMember(evaluatedPath: List<PathEvaluation>, spec: TypedInstanceValidPredicate): List<EvaluatableEdge> {
-      // Look for a recent (ie., near the end of the path) instance
-      // which provided a value that failed our search criteria spec
+   private fun instanceWhichProviedInvalidInheritedMember(evaluatedPath: List<PathEvaluation>, spec: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+      // This path deals sepcifically with an inhertited / formatted type
+      // that fails the predicate test.
       val pathEndedBySelectingValueFromInstance = evaluatedPath.endsWith(
          Relationship.INSTANCE_HAS_ATTRIBUTE,
          Relationship.IS_ATTRIBUTE_OF,
-         Relationship.IS_INSTANCE_OF
+         Relationship.IS_INSTANCE_OF,
+         Relationship.EXTENDS_TYPE,
+         Relationship.CAN_POPULATE
       )
       val selectedInstanceFailedTest = !spec.isValid(evaluatedPath.last().resultValue)
       return if (pathEndedBySelectingValueFromInstance && selectedInstanceFailedTest) {
-         val evaluation = evaluatedPath.fromEnd(2)
+         val evaluation = evaluatedPath.fromEnd(4)
          // evaluation should be TypedInstance -[Instance has attribute]-> Provied Instance Member
          if (evaluation is EvaluatedEdge) {
             listOf(evaluation.edge)
@@ -111,6 +114,36 @@ class PathExclusionCalculator {
       } else {
          emptyList()
       }
+   }
+
+   private fun instanceWhichProvidedInvalidMember(evaluatedPath: List<PathEvaluation>, spec: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+      // Look for a recent (ie., near the end of the path) instance
+      // which provided a value that failed our search criteria spec
+      val pathWithRelevantNodes = evaluatedPath.excluding(Relationship.EXTENDS_TYPE)
+      val pathEndedBySelectingValueFromInstance = pathWithRelevantNodes.endsWith(
+            Relationship.INSTANCE_HAS_ATTRIBUTE,
+            Relationship.IS_ATTRIBUTE_OF,
+            Relationship.IS_INSTANCE_OF
+         )
+      val selectedInstanceFailedTest = !spec.isValid(evaluatedPath.last().resultValue)
+      return if (pathEndedBySelectingValueFromInstance && selectedInstanceFailedTest) {
+         val evaluation = pathWithRelevantNodes.fromEnd(2)
+         // evaluation should be TypedInstance -[Instance has attribute]-> Provied Instance Member
+         if (evaluation is EvaluatedEdge) {
+            listOf(evaluation.edge)
+         } else {
+            log().error("Expected to find an evaluated edge, but found a ${evaluation::class.simpleName}.  This is a bug")
+            emptyList()
+         }
+      } else {
+         emptyList()
+      }
+   }
+}
+
+private fun List<PathEvaluation>.excluding(relationship: Relationship): List<PathEvaluation> {
+   return this.filter {
+      !(it is EvaluatedEdge && it.edge.relationship == relationship)
    }
 }
 

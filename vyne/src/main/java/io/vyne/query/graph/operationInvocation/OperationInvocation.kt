@@ -149,6 +149,7 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       } catch (exception: Exception) {
          // Operation invokers throw exceptions for failed invocations.
          // Don't throw here, just report the failure
+         log().info("Operation ${operation.qualifiedName} failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected.")
          edge.failure(null)
       }
 

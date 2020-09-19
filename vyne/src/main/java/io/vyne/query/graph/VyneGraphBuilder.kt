@@ -187,6 +187,15 @@ class VyneGraphBuilder(private val schema: Schema) {
             builder.connect(typeNode).to(type(inheritedType)).withEdge(Relationship.EXTENDS_TYPE)
          }
 
+         type.unformattedTypeName?.let { unformattedType ->
+            // A formatted value can be populated by it's unformatted value,
+            // and vice versa
+            // Note: Is CanPopulate the right relationship here? Might need another one.
+            val unformattedTypeNode = type(unformattedType.fullyQualifiedName)
+            builder.connect(typeNode).to(unformattedTypeNode).withEdge(Relationship.CAN_POPULATE)
+            builder.connect(unformattedTypeNode).to(typeNode).withEdge(Relationship.CAN_POPULATE)
+         }
+
          if (!type.isClosed) {
             type.attributes.map { (attributeName, attributeType) ->
                val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)

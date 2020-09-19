@@ -307,7 +307,10 @@ data class QueryContext(
              this.facts.addAll(synonymSet)
           }
           fact is TypedObject -> {
-             fact.values.filter { it.type.isEnum }.flatMap { resolveSynonyms(fact, schema) }.forEach { synonymsSet -> this.facts.add(synonymsSet) }
+             fact.values
+                .filter { it.type.isEnum }
+                .flatMap { resolveSynonyms(fact, schema) }
+                .forEach { synonymsSet -> this.facts.add(synonymsSet) }
              this.facts.add(fact)
           }
           else -> {
