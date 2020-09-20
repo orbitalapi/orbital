@@ -11,6 +11,7 @@ object CsvFormatFactory  {
       val format = CSVFormat.DEFAULT
          .withTrailingDelimiter(parameters.containsTrailingDelimiters)
          .withIgnoreEmptyLines()
+         .withIgnoreSurroundingSpaces()
          .withDelimiter(parameters.delimiter)
       if (parameters.firstRecordAsHeader) {
          return format
