@@ -30,6 +30,6 @@ vyne:
       name: cask
    queryServiceUrl: http://${vyne.queryService.name}
    schema:
-        publicationmethod: REMOTE
+        publicationMethod: DISTRIBUTED
         pollInterval: 5s
         publishRetryInterval: 3s
