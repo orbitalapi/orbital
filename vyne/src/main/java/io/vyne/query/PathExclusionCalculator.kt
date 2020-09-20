@@ -18,7 +18,7 @@ import kotlin.math.min
  */
 class PathExclusionCalculator {
 
-   fun findEdgesToExclude(evaluatedPath: List<PathEvaluation>, spec: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+   fun findEdgesToExclude(evaluatedPath: List<PathEvaluation>, spec: TypedInstanceValidPredicate): Set<EvaluatableEdge> {
       // These are a bunch of specific use cases that we've found that are useful to exclude
       return listOfNotNull(
          operationThrewError(evaluatedPath, spec),
@@ -28,7 +28,7 @@ class PathExclusionCalculator {
 //         operationReturnedResultWhichFailsPredicateTest(evaluatedPath, spec),
 //         operationReturnedResultWithAttributeWhichFailsPredicateTest(evaluatedPath, spec)
 
-      ).flatten()
+      ).flatten().toSet()
    }
 
    private fun operation(evaluatedPath: List<PathEvaluation>, predicate: TypedInstanceValidPredicate):List<EvaluatableEdge> {
