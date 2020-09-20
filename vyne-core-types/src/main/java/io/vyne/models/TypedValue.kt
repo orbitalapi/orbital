@@ -10,6 +10,8 @@ import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
 import org.springframework.lang.Nullable
 import java.math.BigDecimal
+import java.text.DecimalFormat
+import java.text.NumberFormat
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
@@ -27,7 +29,7 @@ interface ConversionService {
        * If you're not planning on customizing, use DEFAULT_CONVERTER
        */
       fun newDefaultConverter(): ConversionService {
-         return StringToIntegerConverter(
+         return StringToNumberConverter(
             FormattedInstantConverter(
                VyneDefaultConversionService
             )
@@ -54,7 +56,7 @@ object VyneDefaultConversionService : ConversionService {
       // TODO Check this as it is a quick addition for the demo!
       service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate(); }
       service.addConverter(java.lang.Long::class.java, LocalDateTime::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDateTime(); }
-      service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName}
+      service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName }
       service
    }
 
@@ -87,15 +89,17 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
       }
 
       val formatterBuilder = DateTimeFormatterBuilder()
-         format.forEach { f ->  formatterBuilder.appendOptional(DateTimeFormatterBuilder()
+      format.forEach { f ->
+         formatterBuilder.appendOptional(DateTimeFormatterBuilder()
             .parseLenient()
             .parseCaseInsensitive()
             .appendPattern(f)
-            .toFormatter(locale))}
+            .toFormatter(locale))
+      }
 
-     val formatter = formatterBuilder
-        .parseLenient()
-        .appendOptional(optionalFormatter)
+      val formatter = formatterBuilder
+         .parseLenient()
+         .appendOptional(optionalFormatter)
          .toFormatter()
       return doConvert(source, formatter)
    }
@@ -122,24 +126,39 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
    }
 }
 
-class StringToIntegerConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
+class StringToNumberConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
    override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
-      return if (source is String && targetType == Int::class.java) {
-         BigDecimal(source).intValueExact() as T
+      if (source !is String) {
+         return next.convert(source, targetType, format)
       } else {
-         next.convert(source, targetType, format)
+         val numberFormat = NumberFormat.getInstance()
+         return when (targetType) {
+            Int::class.java -> numberFormat.parse(source).toInt() as T
+            Double::class.java -> numberFormat.parse(source).toDouble() as T
+            BigDecimal::class.java -> {
+               if (numberFormat is DecimalFormat) {
+                  numberFormat.isParseBigDecimal = true
+                  numberFormat.parse(source) as T
+               } else {
+                  TODO("Didn't receive a decimal formatter from the locale")
+               }
+            }
+            else -> next.convert(source, targetType, format)
+         }
       }
+
    }
 }
 
 data class TypedValue private constructor(override val type: Type, override val value: Any, override val source: DataSource) : TypedInstance {
    private val equality = Equality(this, TypedValue::type, TypedValue::value)
+
    companion object {
       private val conversionService by lazy {
          ConversionService.newDefaultConverter()
       }
 
-      fun from(type: Type, value: Any, converter: ConversionService, source:DataSource): TypedValue {
+      fun from(type: Type, value: Any, converter: ConversionService, source: DataSource): TypedValue {
          if (!type.taxiType.inheritsFromPrimitive) {
             error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
          } else {
@@ -154,7 +173,7 @@ data class TypedValue private constructor(override val type: Type, override val 
       }
 
       @Deprecated("Use conversionService approach")
-      fun from(type: Type, value: Any, performTypeConversions: Boolean = true, source:DataSource): TypedValue {
+      fun from(type: Type, value: Any, performTypeConversions: Boolean = true, source: DataSource): TypedValue {
          val conversionServiceToUse = if (performTypeConversions) {
             conversionService
          } else {

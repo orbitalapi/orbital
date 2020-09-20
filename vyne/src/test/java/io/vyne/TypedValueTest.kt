@@ -11,6 +11,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
 import org.mockito.Mockito.mock
+import java.math.BigDecimal
 import java.time.Instant
 
 class TypedValueTest {
@@ -33,6 +34,19 @@ class TypedValueTest {
 
    }
 
+   @Test
+   fun canParseNumbersWithCommas() {
+      val schema = TaxiSchema.from("")
+      fun toType(value:Any, type:PrimitiveType):Any {
+         return TypedInstance.from(schema.type(type.qualifiedName), value, schema, source = Provided).value!!
+      }
+
+      toType("6,300.00",PrimitiveType.INTEGER).should.equal(6300)
+      toType("6,300.00",PrimitiveType.DECIMAL).should.satisfy { (it as BigDecimal).compareTo(BigDecimal("6300.00")) == 0 }
+      // Need to bump taxi version
+//      toType("6,300.00",PrimitiveType.DOUBLE).should.equal(6300.0)
+
+   }
    @Test
    fun shouldParseIntsWithTrailingZerosAsInts() {
       val schema = TaxiSchema.from("")
