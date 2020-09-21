@@ -24,20 +24,46 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
       const val MAX_SEARCH_COUNT = 100
    }
 
+   private enum class PathPrevaliationResult {
+      EVALUATE,
+      // We made some changes to the graph, so try again
+      REQUERY,
+      // Don't attempt this, but no point in requerying, as the graph is unchanged
+      ABORT
+   }
+
+   private fun prevalidatePath(proposedPath: WeightedNode<Relationship, Element, Double>, excludedEdges: MutableList<EvaluatableEdge>): PathPrevaliationResult {
+      // TODO
+      return PathPrevaliationResult.EVALUATE
+   }
+
    fun search(knownFacts: Set<TypedInstance>, evaluator: PathEvaluator): TypedInstance? {
       // TODO : EEEK!  We should be adding the instances, not the types.
       // This will cause problems when we have multiple facts of the same type,
       // as one may result in a happy path, and the other might not.
 //      val factTypes = knownFacts.map { it.type }.toSet()
 
+      // Can probably remove
       val excludedOperations = mutableSetOf<QualifiedName>()
       val excludedInstance = mutableSetOf<TypedInstance>()
       val excludedEdges = mutableListOf<EvaluatableEdge>()
-      fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
+
+
+
+      tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
          val facts = knownFacts.filterNot { excludedInstance.contains(it) }
          // Note: I think we can migrate to using exclusively excludedEdges (Not using excludedOperations
          // and excludedInstances)..as it should be a more powerful abstraction
-         return findPath(facts, excludedOperations, excludedEdges)
+         val proposedPath = findPath(facts, excludedOperations, excludedEdges)
+         return if (proposedPath == null) {
+            null
+         } else {
+            when (prevalidatePath(proposedPath,excludedEdges)) {
+               PathPrevaliationResult.EVALUATE -> proposedPath
+               PathPrevaliationResult.REQUERY -> buildNextPath()
+               PathPrevaliationResult.ABORT -> null
+             }
+         }
       }
 
       var searchCount = 0
@@ -148,12 +174,12 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
 //      return queryContext.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
    }
 
-   private fun findPath(factTypes: Set<Type>, excludedOperations: Set<QualifiedName>): WeightedNode<Relationship, Element, Double>? {
-      val graph = logTimeTo(graphBuilderTimes) {
-         graphBuilder.build(factTypes, excludedOperations)
-      }
-      return findPath(graph)
-   }
+//   private fun findPath(factTypes: Set<Type>, excludedOperations: Set<QualifiedName>): WeightedNode<Relationship, Element, Double>? {
+//      val graph = logTimeTo(graphBuilderTimes) {
+//         graphBuilder.build(factTypes, excludedOperations)
+//      }
+//      return findPath(graph)
+//   }
 
    private fun findPath(facts: List<TypedInstance>, excludedOperations: Set<QualifiedName>, excludedEdges: List<EvaluatableEdge>): WeightedNode<Relationship, Element, Double>? {
       val graph = logTimeTo(graphBuilderTimes) {

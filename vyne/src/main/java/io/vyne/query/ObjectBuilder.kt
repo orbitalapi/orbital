@@ -102,11 +102,20 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          val sourceObjectType = context.facts.filter { !it.type.isEnum }.iterator().next()
          if (sourceObjectType is TypedObject) {
             targetType.attributes.forEach { (attributeName, field) ->
+               val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
                val targetAttributeType = context.schema.type(field.type)
                val returnTypedNull = true
                when (val value = sourceObjectType.getAttributeIdentifiedByType(targetAttributeType, returnTypedNull)) {
                   is TypedNull -> missingAttributes[attributeName] = field
-                  else -> populatedValues[attributeName] = convertValue(value, targetAttributeType)
+                  else -> {
+                     val attributeSatisfiesPredicate = fieldInstanceValidPredicate.isValid(value)
+                     if (attributeSatisfiesPredicate) {
+                        populatedValues[attributeName] = convertValue(value, targetAttributeType)
+                     } else {
+                        missingAttributes[attributeName] = field
+                     }
+
+                  }
                }
             }
          } else {
