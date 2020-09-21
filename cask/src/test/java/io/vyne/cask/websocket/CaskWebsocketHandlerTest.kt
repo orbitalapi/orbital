@@ -22,6 +22,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.core.io.buffer.DefaultDataBufferFactory
@@ -197,11 +198,12 @@ class CaskWebsocketHandlerTest {
 
       StepVerifier
          .create(session.textOutput.take(1))
-         .expectNextMatches { json -> json.rejectedWithReason("Failed to parse value 6300USD to type Price - Failed to convert from type [java.lang.String] to type [java.math.BigDecimal] for value '6300USD'") }
+         .expectNextMatches { json -> json.rejectedWithReason("Failed to parse value ??6300USD to type Price") }
          .verifyComplete()
    }
 
    @Test
+   @Ignore("This is now a warning, not an error, so the message is not rejected")
    fun ingestionErrorCausedByMissingValue() {
       val sessionInput = Flux.just(WebSocketMessage(WebSocketMessage.Type.TEXT,
          DefaultDataBufferFactory().wrap(ingestionMessageWithMissingValue().readBytes())))
@@ -227,7 +229,7 @@ class CaskWebsocketHandlerTest {
       StepVerifier
          .create(session.textOutput.take(3))
          .expectNextMatches { json -> json.rejectedWithReason("com.fasterxml.jackson.core.io.JsonEOFException: Unexpected end-of-input in VALUE_STRING") }
-         .expectNextMatches { json -> json.rejectedWithReason("Failed to parse value 6300USD to type Price - Failed to convert from type [java.lang.String] to type [java.math.BigDecimal] for value '6300USD'") }
+         .expectNextMatches { json -> json.rejectedWithReason("Failed to parse value ??6300USD to type Price") }
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
          .verifyComplete()
    }
@@ -382,7 +384,7 @@ class CaskWebsocketHandlerTest {
       return """{
         "Date": "2020-03-19",
         "Symbol": "BTCUSD",
-        "Open": "6300USD",
+        "Open": "??6300USD",
         "High": "6330",
         "Low": "6186.08",
         "Close": "6235.2"

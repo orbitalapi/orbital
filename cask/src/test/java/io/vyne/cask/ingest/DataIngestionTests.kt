@@ -212,14 +212,15 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       )
       rawValue.should.be.equal("2020-08-05T00:00:00")
 
+      val timeValue = LocalTime.parse("21:06:07")
       val timeOnlyQualifiedName = schema.type("DowncastTest").attributes.getValue("timeOnly").type
       val timeRawValue = try { RawObjectMapper.map(
-         TypedInstance.from(schema.type(timeOnlyQualifiedName), LocalTime.now(), schema, false, setOf(), DefinedInSchema)
+         TypedInstance.from(schema.type(timeOnlyQualifiedName), timeValue, schema, false, setOf(), DefinedInSchema)
       ) } catch(e: Exception) {
         LocalTime.MAX
       }
 
-      timeRawValue.should.be.equal(LocalTime.MAX)
+      timeRawValue.should.equal("21:06:07")
    }
 
    @Test

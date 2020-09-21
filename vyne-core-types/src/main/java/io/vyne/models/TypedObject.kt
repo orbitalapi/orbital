@@ -24,7 +24,7 @@ data class TypedObject(
 
    private val equality = Equality(this, TypedObject::type, TypedObject::value)
    companion object {
-      fun fromValue(typeName: String, value: Any, schema: Schema, source:DataSource): TypedObject {
+      fun fromValue(typeName: String, value: Any, schema: Schema, source:DataSource): TypedInstance {
          return fromValue(schema.type(typeName), value, schema, source = source)
       }
 
@@ -42,7 +42,7 @@ data class TypedObject(
          return TypedObject(type, typedAttributes, source)
       }
 
-      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource): TypedObject {
+      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource): TypedInstance {
          return TypedObjectFactory(type, value, schema, nullValues, source).build()
       }
    }

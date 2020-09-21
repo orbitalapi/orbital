@@ -148,8 +148,8 @@ abstract class AbstractKafkaInput<V,TPayload>(
 
    protected fun getReceiverOptions(spec: KafkaTransportInputSpec): ReceiverOptions<String, V> {
       return ReceiverOptions.create<String, V>(spec.props + defaultProps)
-         .commitBatchSize(0) // Don't commit in batches ..  can explore this later
-         .commitInterval(Duration.ZERO) // Don't delay commits .. can explore this later
+         .commitBatchSize(10)
+         .commitInterval(Duration.ofSeconds(5))
          .subscription(listOf(spec.topic))
          .addAssignListener { partitions ->
             log().debug("Partitions assigned to KafkaInput: $partitions")

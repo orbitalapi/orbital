@@ -8,16 +8,9 @@ import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
+import es.usc.citius.hipster.model.problem.ProblemBuilder
 import io.vyne.models.TypedInstance
-import io.vyne.query.graph.EdgeEvaluator
-import io.vyne.query.graph.Element
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.PathEvaluation
-import io.vyne.query.graph.StartingEdge
-import io.vyne.query.graph.VyneGraphBuilder
-import io.vyne.query.graph.instanceOfType
-import io.vyne.query.graph.type
+import io.vyne.query.graph.*
 import io.vyne.schemas.Link
 import io.vyne.schemas.Path
 import io.vyne.schemas.Relationship
@@ -94,12 +87,12 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       .maximumSize(500)
       .build<SearchCacheKey, WeightedNode<Relationship, Element, Double>>()
 
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
 
-      return find(target, context)
+      return find(target, context, spec)
    }
 
-   fun find(targets: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
+   fun find(targets: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
       // Note : There is an existing, working impl. of this in QueryEngine (the OrientDB approach),
       // but I haven't gotten around to copying it yet.
       if (targets.size != 1) TODO("Support for target sets not yet built")
@@ -116,7 +109,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       val targetElement = type(target.type)
 
       // search from every fact in the context
-      val lastResult: TypedInstance? = find(targetElement, context)
+      val lastResult: TypedInstance? = find(targetElement, context, spec)
       return if (lastResult != null) {
          QueryStrategyResult(mapOf(target to lastResult))
       } else {
@@ -124,17 +117,17 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       }
    }
 
-   internal fun find(targetElement: Element, context: QueryContext):TypedInstance? {
+   internal fun find(targetElement: Element, context: QueryContext, spec:TypedInstanceValidPredicate):TypedInstance? {
       // Take a copy, as the set is mutable, and performing a search is a
       // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
       val currentFacts = context.facts.toSet()
       return currentFacts
          .asSequence()
          .mapNotNull { fact ->
-            val startFact = instanceOfType(fact.type)
+            val startFact =  providedInstance(fact)
 
             val targetType = context.schema.type(targetElement.value as String)
-            val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema))
+            val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema), spec)
             val searchResult = searcher.search(currentFacts) { pathToEvaluate ->
                evaluatePath(pathToEvaluate,context)
             }
@@ -230,7 +223,8 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       val evaluatedEdges = mutableListOf<PathEvaluation>(
          getStartingEdge(searchResult, queryContext)
       )
-      searchResult.path()
+      val path = searchResult.path()
+      path
          .drop(1)
          .asSequence()
          .takeWhile {
@@ -247,7 +241,11 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
             // Normally the lastValue would be index-1, but here, it's just index.
             val lastResult = evaluatedEdges[index]
             val endNode = weightedNode.state()
-            val evaluationResult = edgeEvaluator.evaluate(EvaluatableEdge(lastResult, weightedNode.action(), endNode), queryContext)
+            val evaluatableEdge = EvaluatableEdge(lastResult, weightedNode.action(), endNode)
+            if (evaluatableEdge.relationship == Relationship.PROVIDES) {
+               log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried")
+            }
+            val evaluationResult = edgeEvaluator.evaluate(evaluatableEdge, queryContext)
             evaluationResult
          }
 
@@ -256,6 +254,12 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
 
    fun getStartingEdge(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): StartingEdge {
       val firstNode = searchResult.path().first()
+      if (firstNode.state().instanceValue is TypedInstance) {
+         return StartingEdge(firstNode.state().instanceValue as TypedInstance, firstNode.state())
+      }
+
+      // Legacy -- is this still valid?  Why do we hit this, now we're adding typedInstances to
+      // the graph?
       val firstType = queryContext.schema.type(firstNode.state().valueAsQualifiedName())
       val firstFact = queryContext.getFactOrNull(firstType)
       require(firstFact != null) { "The queryContext doesn't have a fact present of type ${firstType.fullyQualifiedName}, but this is the starting point of the discovered solution." }
@@ -355,7 +359,7 @@ private fun Algorithm<*, Element, *>.SearchResult.recreatePath(start: Element, t
    return Path(start.valueAsQualifiedName(), target.valueAsQualifiedName(), links)
 }
 
-private fun <V, E> HipsterDirectedGraph<V, E>.edgeDescriptions(): List<String> {
+fun <V, E> HipsterDirectedGraph<V, E>.edgeDescriptions(): List<String> {
    return this.vertices().flatMap {
       this.outgoingEdgesOf(it).map { edge ->
          "${edge.vertex1} -[${edge.edgeValue}]-> ${edge.vertex2}"

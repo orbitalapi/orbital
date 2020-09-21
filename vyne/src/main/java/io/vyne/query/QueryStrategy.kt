@@ -12,5 +12,5 @@ data class QueryStrategyResult(
 }
 
 interface QueryStrategy {
-   fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult
+   fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult
 }

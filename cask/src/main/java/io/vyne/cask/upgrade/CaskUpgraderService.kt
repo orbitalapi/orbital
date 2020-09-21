@@ -35,7 +35,13 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
 ) {
    fun upgrade(config: CaskConfig) {
       log().info("Starting to upgrade cask ${config.tableName}")
-      val schema = schemaProvider.schema()
+      val schema = try {
+          schemaProvider.schema()
+      } catch (exception:Exception) {
+         log().warn("Unable to upgrade cask ${config.tableName}, as the schema is invalid.  Will try later", exception)
+         return
+      }
+
       // TODO : Possible issue here that the versioned type doesn't match the
       // type we're upgrading to, because time has passed between the config being
       // tagged for upgrade, and now.

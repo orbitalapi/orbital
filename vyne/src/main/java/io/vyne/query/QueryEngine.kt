@@ -23,10 +23,10 @@ open class ProjectionFailedException(message: String): RuntimeException(message)
 interface QueryEngine {
 
    val schema: Schema
-   fun find(type: Type, context: QueryContext): QueryResult
-   fun find(queryString: QueryExpression, context: QueryContext): QueryResult
-   fun find(target: QuerySpecTypeNode, context: QueryContext): QueryResult
-   fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult
+   fun find(type: Type, context: QueryContext, spec:TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   fun find(queryString: QueryExpression, context: QueryContext, spec:TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   fun find(target: QuerySpecTypeNode, context: QueryContext, spec:TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   fun find(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
 
    fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult
 
@@ -258,22 +258,22 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return queryParser.parse(queryExpression)
    }
 
-   override fun find(queryString: QueryExpression, context: QueryContext): QueryResult {
+   override fun find(queryString: QueryExpression, context: QueryContext, spec:TypedInstanceValidPredicate): QueryResult {
       val target = queryParser.parse(queryString)
-      return find(target, context)
+      return find(target, context, spec)
    }
 
-   override fun find(type: Type, context: QueryContext): QueryResult {
-      return find(TypeNameQueryExpression(type.fullyQualifiedName), context)
+   override fun find(type: Type, context: QueryContext, spec:TypedInstanceValidPredicate): QueryResult {
+      return find(TypeNameQueryExpression(type.fullyQualifiedName), context, spec)
    }
 
-   override fun find(target: QuerySpecTypeNode, context: QueryContext): QueryResult {
-      return find(setOf(target), context)
+   override fun find(target: QuerySpecTypeNode, context: QueryContext, spec:TypedInstanceValidPredicate): QueryResult {
+      return find(setOf(target), context, spec)
    }
 
-   override fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult {
+   override fun find(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryResult {
       try {
-         return doFind(target, context)
+         return doFind(target, context, spec)
       } catch (e: Exception) {
          log().error("Search failed with exception:", e)
          throw SearchRuntimeException(e, context.profiler.root)
@@ -281,11 +281,11 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    }
 
 
-   private fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult {
+   private fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryResult {
       // TODO : BIG opportunity to optimize this by evaluating multiple querySpecNodes at once.
       // Which would allow us to be smarter about results we collect from rest calls.
       // Optimize later.
-      val results = target.map { doFind(it, context) }
+      val results = target.map { doFind(it, context, spec) }
       val result = results.reduce { acc, queryResult ->
          QueryResult(
             results = acc.results + queryResult.results,
@@ -298,7 +298,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return result
    }
 
-   private fun doFind(target: QuerySpecTypeNode, context: QueryContext): QueryResult {
+   private fun doFind(target: QuerySpecTypeNode, context: QueryContext, spec:TypedInstanceValidPredicate): QueryResult {
 
       val matchedNodes = mutableMapOf<QuerySpecTypeNode, TypedInstance?>()
 
@@ -317,7 +317,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
          val queryStrategy = strategyIterator.next()
          timed(name = "Strategy ${queryStrategy::class.java.name} ${target.type.name}", timeUnit = TimeUnit.MICROSECONDS, log = false) {
-            val strategyResult = invokeStrategy(context, queryStrategy, querySet, target)
+            val strategyResult = invokeStrategy(context, queryStrategy, querySet, target, spec)
             // Note : We should add this additional data to the context too,
             // so that it's available for future query strategies to use.
             context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
@@ -351,14 +351,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       )
    }
 
-   private fun invokeStrategy(context: QueryContext, queryStrategy: QueryStrategy, querySet: Set<QuerySpecTypeNode>, target: QuerySpecTypeNode): QueryStrategyResult {
+   private fun invokeStrategy(context: QueryContext, queryStrategy: QueryStrategy, querySet: Set<QuerySpecTypeNode>, target: QuerySpecTypeNode, spec: TypedInstanceValidPredicate): QueryStrategyResult {
       return if (context.debugProfiling) {
          context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) { op ->
             op.addContext("Search target", querySet.map { it.type.fullyQualifiedName })
-            queryStrategy.invoke(setOf(target), context)
+            queryStrategy.invoke(setOf(target), context ,spec)
          }
       } else {
-         return queryStrategy.invoke(setOf(target), context)
+         return queryStrategy.invoke(setOf(target), context, spec)
       }
    }
 }

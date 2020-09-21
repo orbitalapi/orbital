@@ -8,7 +8,6 @@ import io.vyne.schemas.*
 import io.vyne.utils.log
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.RelativeValueExpression
-import lang.taxi.types.AttributePath
 import org.springframework.stereotype.Component
 
 // Note:  Currently tested via tests in VyneTest, no direct tests, but that'd be good to add.
@@ -18,7 +17,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class DirectServiceInvocationStrategy(private val invocationService: OperationInvocationService) : QueryStrategy {
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
       return if(context.debugProfiling) {
          context.startChild(this, "look for candidate services", OperationType.LOOKUP) { profilerOperation ->
             lookForCandidateServices(context, target)
@@ -46,6 +45,8 @@ class DirectServiceInvocationStrategy(private val invocationService: OperationIn
             val serviceResults = operationsToInvoke.map { operation ->
                val parameters = operationToParameters.getValue(operation)
                val (service, _) = context.schema.operation(operation.qualifiedName)
+               // Adding logging as seeing too many http calls.
+               log().info("As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked")
                val serviceResult = invocationService.invokeOperation(
                   service,
                   operation,

@@ -1,11 +1,11 @@
 package io.vyne.formulas
 
 import io.vyne.schemas.Type
-import lang.taxi.types.Formula
+import io.vyne.utils.log
 import lang.taxi.types.FormulaOperator
 import lang.taxi.types.PrimitiveType
-import org.apache.commons.lang3.StringUtils
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneOffset
@@ -128,7 +128,10 @@ internal class NumberCalculator : Calculator {
       // but it's just a huge amount of typing to cover all the possible scenarios
       val numberTypes = values.map { it!!::class.java }.distinct()
       if (numberTypes.size > 1) {
-         error("Numeric formulas with differing number types is not yet supported - found ${numberTypes.joinToString { it.simpleName }}")
+         log().warn("Multiple number types found: ${numberTypes.joinToString { it.simpleName }}. Current support for this is limited, so casting all to BigDecimal to proceed")
+         val bigDecimals = values.map { BigDecimal(it.toString()) }
+         return calculate(operator, bigDecimals)
+//         error("Numeric formulas with differing number types is not yet supported - found ${numberTypes.joinToString { it.simpleName }}")
       }
 
       return when (operator) {
@@ -146,7 +149,7 @@ internal class NumberCalculator : Calculator {
             is Int -> acc / next as Int
             is Double -> acc / next as Double
             is Float -> acc / next as Float
-            is BigDecimal -> acc.divide(next as BigDecimal)
+            is BigDecimal -> acc.divide(next as BigDecimal, 15, RoundingMode.HALF_UP).stripTrailingZeros()
             is Long -> acc / next as Long
             is Short -> acc / next as Short
             else -> error("Unsupported number type: ${acc::class.java.simpleName}")

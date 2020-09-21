@@ -10,6 +10,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -78,5 +79,27 @@ class CsvIngestionTest {
       results.should.have.size(4)
       results.first().attributes["logDate"]!!.value.should.equal(LocalDate.parse("1999-10-10"))
       results.first().attributes["logTime"]!!.value.should.equal(LocalTime.parse("11:12:13.123"))
+   }
+
+   @Test
+   fun `can ingest values with thousand seperators in quotes`() {
+      val schema = CoinbaseOrderSchema.schemaV1
+      val versionedType = schema.versionedType("OrderWindowSummary".fqn())
+      val mapper = CsvStreamMapper(versionedType, schema)
+
+      val resource = Resources.getResource("Coinbase_BTCUSD_10_records_thousand_seperators.csv").toURI()
+      // Ingest it a few times to get an average performance
+      val writer = CsvBinaryWriter(bytesPerColumn = 30, shouldLogIndividualWriteTime = false,
+         format = CsvFormatFactory.fromParameters(CsvIngestionParameters(firstRecordAsHeader = true, containsTrailingDelimiters = true))
+      )
+      val file = folder.newFile()
+
+      val results = writer.convert(File(resource).inputStream(), file.toPath())
+         .map { mapper.map(it, logMappingTime = false, messageId = MessageIds.uniqueId()) }
+         .collectList()
+         .block()
+      val firstClosePrice = results[0].attributes["close"]?.value as BigDecimal
+      firstClosePrice.compareTo(BigDecimal("6330")).should.equal(0)
+      results.should.have.size(10)
    }
 }

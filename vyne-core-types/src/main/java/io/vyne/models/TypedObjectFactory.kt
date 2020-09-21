@@ -14,17 +14,17 @@ import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
 
 
-class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet(), val source:DataSource, private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper, private val functionRegistry:FunctionRegistry = FunctionRegistry.default()) {
+class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet(), val source:DataSource, private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper, private val functionRegistry:FunctionRegistry = FunctionRegistry.default) {
    private val valueReader = ValueReader()
    private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry) }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
 
    private val mappedAttributes: MutableMap<AttributeName, TypedInstance> = mutableMapOf()
 
-   fun build(): TypedObject {
+   fun build(): TypedInstance {
       if (isJson(value)) {
          val map = objectMapper.readValue<Any>(value as String)
-         return TypedObjectFactory(type, map, schema, nullValues, source).build()
+         return TypedInstance.from(type,map,schema, nullValues = nullValues, source = source)
       }
 
       // TODO : Naieve first pass.

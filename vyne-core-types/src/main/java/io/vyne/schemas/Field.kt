@@ -20,7 +20,8 @@ data class Field(
    @get:JsonIgnore
    val formula: Formula? = null,
    val nullable: Boolean = false,
-   val typeDisplayName:String = type.longDisplayName
+   val typeDisplayName:String = type.longDisplayName,
+   val metadata:List<Metadata> = emptyList()
 ) {
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
    // we parse fields before we parse their underlying types, so constrains may not be
