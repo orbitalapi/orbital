@@ -9,6 +9,7 @@ import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskNamespaceP
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.cask.upgrade.CaskUpgradesRequiredEvent
 import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.VersionedType
@@ -29,6 +30,8 @@ class CaskServiceBootstrap constructor(
    private val caskServiceRegenerationRunner: CaskServiceRegenerationRunner,
    private val changeDetector: CaskSchemaChangeDetector,
    private val eventPublisher: ApplicationEventPublisher) {
+
+   private var lastServiceGenerationSuccessful:Boolean = false
 
    // TODO Update cask service when type changes (e.g. new attributes added)
    @EventListener
@@ -61,6 +64,10 @@ class CaskServiceBootstrap constructor(
             log().info("Schema changed, cask services need to be updated!")
             caskServiceRegenerationRunner.regenerate { regenerateCaskServices() }
          }
+         !lastServiceGenerationSuccessful -> {
+            log().info("Last attempt to generate services failed.  The schema has changed, so will reattempt")
+            regenerateCaskServices()
+         }
          else -> {
             log().info("Upgrade check completed, nothing to do.")
          }
@@ -89,7 +96,7 @@ class CaskServiceBootstrap constructor(
 
    private fun findTypesToRegister(caskConfigs: MutableList<CaskConfig>): List<CaskTaxiPublicationRequest> {
       return getSchema()?.let { schema ->
-         caskConfigs.mapNotNull { caskConfig ->
+         val caskPublicationRequests =  caskConfigs.map { caskConfig ->
             if (caskConfig.exposesType) {
                val caskSchema = caskConfig.schema(importSchema = schema)
                val type = caskSchema.versionedType(caskConfig.qualifiedTypeName.fqn())
@@ -106,12 +113,22 @@ class CaskServiceBootstrap constructor(
                      registerType = false
                   )
                } catch (e: Exception) {
-                  log().error("Unable to find type ${caskConfig.qualifiedTypeName.fqn()} Error: ${e.message}")
+                  log().error("Unable to find type ${caskConfig.qualifiedTypeName.fqn()}. Flagging cask generation failure, will try again on next schema update. Error: ${e.message}")
+                  lastServiceGenerationSuccessful = false
                   null
                }
             }
 
          }
+         if (caskPublicationRequests.any { it == null }) {
+            lastServiceGenerationSuccessful = false
+         } else {
+            if (!lastServiceGenerationSuccessful) {
+               log().info("Poll for service generation requests completed successfully.  Flagging as healthy again")
+               lastServiceGenerationSuccessful = true
+            }
+         }
+         caskPublicationRequests.filterNotNull()
       }?.toList().orElse(emptyList())
    }
 
