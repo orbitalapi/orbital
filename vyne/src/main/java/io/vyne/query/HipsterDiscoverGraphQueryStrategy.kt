@@ -8,6 +8,7 @@ import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
+import es.usc.citius.hipster.model.problem.ProblemBuilder
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
 import io.vyne.schemas.Link
@@ -222,7 +223,8 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       val evaluatedEdges = mutableListOf<PathEvaluation>(
          getStartingEdge(searchResult, queryContext)
       )
-      searchResult.path()
+      val path = searchResult.path()
+      path
          .drop(1)
          .asSequence()
          .takeWhile {
@@ -239,7 +241,11 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
             // Normally the lastValue would be index-1, but here, it's just index.
             val lastResult = evaluatedEdges[index]
             val endNode = weightedNode.state()
-            val evaluationResult = edgeEvaluator.evaluate(EvaluatableEdge(lastResult, weightedNode.action(), endNode), queryContext)
+            val evaluatableEdge = EvaluatableEdge(lastResult, weightedNode.action(), endNode)
+            if (evaluatableEdge.relationship == Relationship.PROVIDES) {
+               log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried")
+            }
+            val evaluationResult = edgeEvaluator.evaluate(evaluatableEdge, queryContext)
             evaluationResult
          }
 
