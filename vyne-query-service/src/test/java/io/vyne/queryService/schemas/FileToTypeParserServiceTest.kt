@@ -22,16 +22,4 @@ class FileToTypeParserServiceTest {
       """.trimIndent()
       expectedJson.should.be.equal(jsonString)
    }
-
-   @Test
-   fun canDownloadParsedContentsAsCsv() {
-      val csvContentBytes = testedObject.downloadParsedData(content)
-      val csvString = String(csvContentBytes).trimIndent()
-      val expectedCsv = """
-         col1,col2
-         row1_col1,row1_col2
-         row2_col1,row2_col2
-      """.trimIndent()
-      csvString.should.be.equal(expectedCsv)
-   }
 }
