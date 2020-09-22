@@ -83,6 +83,53 @@ fun testVyne(schema: String) = testVyne(TaxiSchema.from(schema))
 class VyneTest {
 
    @Test
+   fun `when a provided object has a typed null for a value, it shouldnt be used as an input`() {
+      val (vyne, stubs) = testVyne("""
+         model Order {
+            cfiCode : CfiCode? as String
+            isin : Isin as String
+         }
+         model Product {
+            productId : ProductId as Int
+            cfiCode : CfiCode
+         }
+
+         service ProductService {
+            // Shortest path, but provided value is null, so shouldn't be called
+            @StubOperation("findByCfiCode")
+            operation findByCfiCode(CfiCode):Product
+            // Longer path, but returns correct value
+            @StubOperation("isinToCfi")
+            operation isinToCfi(Isin):CfiCode
+         }
+      """.trimIndent())
+      val inputJson = """{
+         |"cfiCode" : null,
+         |"isin" : "isin-123"
+         |}
+      """.trimMargin()
+      val input = TypedInstance.from(vyne.type("Order"), inputJson, vyne.schema, source = Provided)
+
+      stubs.addResponse("isinToCfi", TypedInstance.from(vyne.type("CfiCode"), "Cfi-123", vyne.schema, source = Provided))
+      stubs.addResponse("findByCfiCode") { operation, parameters ->
+         val cfiCode = parameters[0].second
+         if (cfiCode.value == "Cfi-123") {
+            val response = """{
+               |"productId" : 123,
+               |"cfiCode" : "Cfi-123"
+               |}
+            """.trimMargin()
+            TypedInstance.from(vyne.type("Product"), response, vyne.schema, source = Provided)
+         } else {
+            fail("findByCfiCode called using the wrong parameter -- should've resolve against Isin first")
+         }
+      }
+      val queryResult = vyne.from(input).find("ProductId")
+      queryResult.isFullyResolved.should.be.`true`
+      queryResult["ProductId"]!!.value.should.equal(123)
+   }
+
+   @Test
    fun `calls remote services to discover response from deeply nested value`() {
       val (vyne, stubs) = testVyne("""
          type Isin inherits String
