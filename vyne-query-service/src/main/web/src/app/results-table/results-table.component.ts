@@ -75,7 +75,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     if (collection.length === 0) {
       this.rowData = [];
     } else {
-      if (!this.isArray) {
         collection.forEach((instance: TypeNamedInstance) => {
           Object.keys(instance.value).forEach((key) => {
             if (!instance.value[key].value) {
@@ -87,7 +86,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
             }
           });
         });
-      }
 
       if (isTypeNamedInstance(collection[0])) {
         this.rowData = collection.map((instance: TypeNamedInstance) => instance.value);
