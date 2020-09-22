@@ -8,6 +8,7 @@ import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
+import io.vyne.cask.config.CaskQueryOptions
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.query.CaskApiHandler
 import io.vyne.cask.query.generators.OperationGeneratorConfig
@@ -17,6 +18,7 @@ import io.vyne.cask.websocket.CaskWebsocketHandler
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
+import org.hibernate.jpa.spi.HibernateEntityManagerImplementor
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
@@ -52,7 +54,7 @@ import javax.annotation.PostConstruct
 
 @SpringBootApplication
 @EnableAspectJAutoProxy
-@EnableConfigurationProperties(CaskViewConfig::class, OperationGeneratorConfig::class)
+@EnableConfigurationProperties(CaskViewConfig::class, OperationGeneratorConfig::class, CaskQueryOptions::class)
 class CaskApp {
    companion object {
       @JvmStatic
