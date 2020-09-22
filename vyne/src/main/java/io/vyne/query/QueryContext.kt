@@ -478,8 +478,13 @@ enum class FactDiscoveryStrategy {
                if (exactMatch.size == 1) {
                   exactMatch.first()
                } else {
-                  log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
-                  null
+                  val nonNullMatches = matches.filter { it.value != null }
+                  if (nonNullMatches.size == 1) {
+                     nonNullMatches.first()
+                  } else {
+                     log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
+                     null
+                  }
                }
             }
          }

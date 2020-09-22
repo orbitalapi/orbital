@@ -94,13 +94,18 @@ class VyneTest {
             cfiCode : CfiCode
          }
 
+         model CfiCodeHolder {
+            cfiCode: CfiCode
+            field: String
+         }
+
          service ProductService {
             // Shortest path, but provided value is null, so shouldn't be called
             @StubOperation("findByCfiCode")
             operation findByCfiCode(CfiCode):Product
             // Longer path, but returns correct value
             @StubOperation("isinToCfi")
-            operation isinToCfi(Isin):CfiCode
+            operation isinToCfi(Isin):CfiCodeHolder
          }
       """.trimIndent())
       val inputJson = """{
@@ -110,7 +115,12 @@ class VyneTest {
       """.trimMargin()
       val input = TypedInstance.from(vyne.type("Order"), inputJson, vyne.schema, source = Provided)
 
-      stubs.addResponse("isinToCfi", TypedInstance.from(vyne.type("CfiCode"), "Cfi-123", vyne.schema, source = Provided))
+      val cfiCodeHolder = """{
+         |"cfiCode": "Cfi-123",
+         |"field": "value"
+         |}
+      """.trimMargin()
+      stubs.addResponse("isinToCfi", TypedInstance.from(vyne.type("CfiCodeHolder"), cfiCodeHolder, vyne.schema, source = Provided))
       stubs.addResponse("findByCfiCode") { operation, parameters ->
          val cfiCode = parameters[0].second
          if (cfiCode.value == "Cfi-123") {
