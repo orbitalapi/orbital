@@ -68,7 +68,6 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
    @PostMapping("/api/csv")
    fun parseCsvToRaw(@RequestBody rawContent: String,
                      @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
-                     @RequestParam("exportFileType", required = false) exportFileType: ExportType? = null,
                      @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
                      @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
                      @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false
