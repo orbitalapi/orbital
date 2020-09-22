@@ -127,8 +127,8 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
 //   }
 
 
-   fun from(s: TypedInstance): QueryContext {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+   fun from(fact: TypedInstance): QueryContext {
+      return query(additionalFacts = setOf(fact))
    }
 
    //   fun getType(typeName: String): Type = schema.type(typeName)
