@@ -68,7 +68,8 @@
           <app-object-view *ngIf="parsedInstance" [schema]="schema"
                            [selectable]="true"
                            (instanceClicked)="onInstanceClicked($event)"
-                           (downloadParsedDataClicked)="onDownloadParsedDataClicked($event)"
+                           (downloadParsedDataClicked)="onDownloadParsedDataClicked()"
+                           (downloadTypedParsedDataClicked)="onDownloadTypedParsedDataClicked()"
                            [instance]="typeNamedInstance"></app-object-view>
         </div>
       </mat-tab>

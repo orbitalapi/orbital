@@ -15,7 +15,7 @@ class FileToTypeParserServiceTest {
 
    @Test
    fun canDownloadParsedContentsAsjson() {
-      val jsonContentBytes = testedObject.downloadParsedData(content, ExportType.JSON)
+      val jsonContentBytes = testedObject.downloadParsedData(content)
       val jsonString = String(jsonContentBytes)
       val expectedJson = """
          [{"col1":"row1_col1","col2":"row1_col2"},{"col1":"row2_col1","col2":"row2_col2"}]
@@ -25,7 +25,7 @@ class FileToTypeParserServiceTest {
 
    @Test
    fun canDownloadParsedContentsAsCsv() {
-      val csvContentBytes = testedObject.downloadParsedData(content, ExportType.CSV)
+      val csvContentBytes = testedObject.downloadParsedData(content)
       val csvString = String(csvContentBytes).trimIndent()
       val expectedCsv = """
          col1,col2

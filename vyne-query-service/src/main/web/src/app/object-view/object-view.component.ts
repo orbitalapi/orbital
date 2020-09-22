@@ -2,7 +2,7 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../services/query.service';
 import {Field, findType, getCollectionMemberType, Schema, Type, TypedInstance} from '../services/schema';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
-import {DownloadFileType} from '../query-panel/result-display/result-container.component';
+import {MatRadioChange} from '@angular/material/radio';
 
 /**
  * This displays results fetched from service calls.
@@ -31,11 +31,15 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     // tslint:disable-next-line:no-inferrable-types
   selectable: boolean = false;
 
-  @Output() downloadParsedDataClicked = new EventEmitter<DownloadFileType>();
+  @Output() downloadParsedDataClicked = new EventEmitter<Boolean>();
+
+  @Output() downloadTypedParsedDataClicked = new EventEmitter<Boolean>();
+
 
   // Indicates if it's a straight typedInstance (ie., a typedValue)
   // or a typed object, which is indexed with property names
-  downloadFileType = DownloadFileType;
+
+  isTypeInfoIncluded = false;
 
   get isPrimitive(): boolean {
     return this._instance != null && this.typedObject.value != null && !this.isTypedObject && !this.isArray;
@@ -66,8 +70,16 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
   }
 
-  downloadParsedData($event, downloadFileType: DownloadFileType) {
-    this.downloadParsedDataClicked.emit(downloadFileType);
+  downloadParsedData() {
+    if (this.isTypeInfoIncluded) {
+      this.downloadTypedParsedDataClicked.emit();
+    } else {
+      this.downloadParsedDataClicked.emit();
+    }
+  }
+
+  handleRadio($event: MatRadioChange) {
+    this.isTypeInfoIncluded = $event.value === 'TypeIncluded' ? true : false;
   }
 }
 

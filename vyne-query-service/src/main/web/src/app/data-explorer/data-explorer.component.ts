@@ -246,10 +246,19 @@ export class DataExplorerComponent {
     this.shouldTypedInstancePanelBeVisible = $event;
   }
 
-  onDownloadParsedDataClicked(downloadFileType: DownloadFileType) {
-    this.exportFileService.exportParsedData(this.csvContents, downloadFileType).subscribe(response => {
-      const blob: Blob = new Blob([response], {type: `text/${downloadFileType}; charset=utf-8`});
-      fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.${downloadFileType}`);
+  onDownloadParsedDataClicked() {
+    this.exportFileService.exportParsedData(this.fileContents, this.contentType, this.csvOptions, false)
+      .subscribe(response => {
+      const blob: Blob = new Blob([response], {type: `text/json; charset=utf-8`});
+      fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.json`);
+    });
+  }
+
+  onDownloadTypedParsedDataClicked() {
+    this.exportFileService.exportParsedData(this.fileContents, this.contentType, this.csvOptions, true)
+      .subscribe(response => {
+      const blob: Blob = new Blob([response], {type: `text/json; charset=utf-8`});
+      fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.json`);
     });
   }
 }
