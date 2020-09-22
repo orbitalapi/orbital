@@ -7,7 +7,9 @@ import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.vyne.DisplayGraphBuilder
 import io.vyne.HipsterGraphBuilder
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
 import io.vyne.schemas.*
+import io.vyne.utils.log
 
 enum class ElementType {
    TYPE,
@@ -84,8 +86,9 @@ fun operation(name: String) = Element(name, ElementType.OPERATION)
 fun providedInstance(typedInstance: TypedInstance): Element {
    val instanceHash = typedInstance.value?.hashCode() ?: -1
    val nodeId = typedInstance.typeName + "@$instanceHash"
-   return providedInstance(nodeId,typedInstance)
+   return providedInstance(nodeId, typedInstance)
 }
+
 fun providedInstance(name: String, value: Any? = null) = Element(name, ElementType.TYPE_INSTANCE, value)
 fun providedInstanceMember(name: String) = Element(name, ElementType.PROVIDED_INSTANCE_MEMBER)
 
@@ -102,8 +105,8 @@ fun instanceOfType(type: Type): Element {
 typealias TypeElement = Element
 typealias MemberElement = Element
 
-private data class GraphWithFactTypesCacheKey(val facts:Set<Type>, val graphBuilder:HipsterGraphBuilder<Element,Relationship>)
-private data class GraphWithFactInstancesCacheKey(val facts:List<TypedInstance>, val excludedEdges: List<EvaluatableEdge>, val graphBuilder:HipsterGraphBuilder<Element,Relationship>)
+private data class GraphWithFactTypesCacheKey(val facts: Set<Type>, val graphBuilder: HipsterGraphBuilder<Element, Relationship>)
+private data class GraphWithFactInstancesCacheKey(val facts: List<TypedInstance>, val excludedEdges: List<EvaluatableEdge>, val graphBuilder: HipsterGraphBuilder<Element, Relationship>)
 class VyneGraphBuilder(private val schema: Schema) {
 
 
@@ -114,21 +117,21 @@ class VyneGraphBuilder(private val schema: Schema) {
    // experiment: migrating to graphWitFactInstances -- not sure why we used types here.
    private val graphWithFactTypesCache = CacheBuilder.newBuilder()
       .maximumSize(100)
-      .build<GraphWithFactTypesCacheKey, HipsterDirectedGraph<Element,Relationship>>()
+      .build<GraphWithFactTypesCacheKey, HipsterDirectedGraph<Element, Relationship>>()
 
    // experiment: Why were we using types, instead of instances?
    private val graphWithFactInstancesCache = CacheBuilder.newBuilder()
       .maximumSize(100)
-      .build<GraphWithFactInstancesCacheKey, HipsterDirectedGraph<Element,Relationship>>()
+      .build<GraphWithFactInstancesCacheKey, HipsterDirectedGraph<Element, Relationship>>()
 
-   fun build(facts:List<TypedInstance>, excludedOperations: Set<QualifiedName> = emptySet(), excludedEdges:List<EvaluatableEdge>): HipsterDirectedGraph<Element, Relationship> {
+   fun build(facts: List<TypedInstance>, excludedOperations: Set<QualifiedName> = emptySet(), excludedEdges: List<EvaluatableEdge>): HipsterDirectedGraph<Element, Relationship> {
       val builder = baseSchemaCache.get(excludedOperations.hashCode()) {
          val instance = HipsterGraphBuilder.create<Element, Relationship>()
          appendTypes(instance, schema)
          appendServices(instance, schema, excludedOperations)
          instance
       }
-      val graphWithFacts = graphWithFactInstancesCache.get(GraphWithFactInstancesCacheKey(facts,excludedEdges, builder)) {
+      val graphWithFacts = graphWithFactInstancesCache.get(GraphWithFactInstancesCacheKey(facts, excludedEdges, builder)) {
          val thisBuilder = builder.copy()
          appendInstances(thisBuilder, facts, schema, excludedEdges)
          thisBuilder.createDirectedGraph(excludedEdges)
@@ -137,6 +140,7 @@ class VyneGraphBuilder(private val schema: Schema) {
       return graphWithFacts
 
    }
+
    fun build(types: Set<Type> = emptySet(), excludedOperations: Set<QualifiedName> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
       val builder = baseSchemaCache.get(excludedOperations.hashCode()) {
          val instance = HipsterGraphBuilder.create<Element, Relationship>()
@@ -146,7 +150,7 @@ class VyneGraphBuilder(private val schema: Schema) {
       }
 
 
-      val graphWithFacts = graphWithFactTypesCache.get(GraphWithFactTypesCacheKey(types,builder)) {
+      val graphWithFacts = graphWithFactTypesCache.get(GraphWithFactTypesCacheKey(types, builder)) {
          val thisBuilder = builder.copy()
          appendInstanceTypes(thisBuilder, types, schema)
          thisBuilder.createDirectedGraph()
@@ -171,7 +175,7 @@ class VyneGraphBuilder(private val schema: Schema) {
    }
 
    private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, instances: List<TypedInstance>, schema: Schema, excludedEdges: List<EvaluatableEdge>) {
-      instances.forEach {typedInstance ->
+      instances.forEach { typedInstance ->
          appendProvidedInstances(builder, typedInstance.typeName, schema, value = typedInstance)
       }
    }
@@ -268,7 +272,7 @@ class VyneGraphBuilder(private val schema: Schema) {
     * It's return type is created as an instance:type, and all the parameters of the return type
     * are also mapped as providedInstanceMembers() and instance:types.
     */
-   private fun appendProvidedInstances(builder: HipsterGraphBuilder<Element, Relationship>, instanceFqn: String, schema: Schema, provider: Element? = null, value:TypedInstance? = null) {
+   private fun appendProvidedInstances(builder: HipsterGraphBuilder<Element, Relationship>, instanceFqn: String, schema: Schema, provider: Element? = null, value: TypedInstance? = null) {
       val providedInstance = if (value != null) {
          providedInstance(value)
       } else {
@@ -307,21 +311,56 @@ class VyneGraphBuilder(private val schema: Schema) {
          builder.connect(providedInstance).to(parameter(inheritedType.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
       }
       if (!type.isClosed) {
-         appendInstanceAttributes(schema, instanceFqn, builder, providedInstance)
+         // We treat attributes of actual values that we know differently
+         // from those that we could theoretically discover.
+         // Attributes from real instances have atttributes with null values excluded.
+         // If it's discoverable, we optimistically add them.
+         // Note: We might need to modify this so that once a discoverable value
+         // becomes known, we rebuild our graph, trimming edges where attribues were discovered
+         // to be null
+         if (value != null) {
+            appendInstanceAttributesOfActualInstance(schema, instanceFqn, builder, providedInstance, value)
+         } else {
+            appendInstanceAttributesOfDiscoverableInstance(schema, instanceFqn, builder, providedInstance)
+         }
       }
    }
 
-   private fun appendInstanceAttributes(schema: Schema, instanceFqn: String, builder: HipsterGraphBuilder<Element, Relationship>, providedInstance: Element) {
-      schema.type(instanceFqn).attributes.forEach { attributeName, field ->
-         val providedInstanceMember = providedInstanceMember(attributeFqn(instanceFqn, attributeName))
-         builder.connect(providedInstance).to(providedInstanceMember).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
-         // The "providedInstance" node of the member itself
-         val memberInstance = providedInstance(field.type.fullyQualifiedName)
-         builder.connect(providedInstanceMember).to(memberInstance).withEdge(Relationship.IS_ATTRIBUTE_OF)
-         // The member instance we have can populate required params
-         builder.connect(memberInstance).to(parameter(field.type.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
-         builder.connect(memberInstance).to(type(field.type.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
+   private fun appendInstanceAttributesOfActualInstance(schema: Schema, instanceFqn: String, builder: HipsterGraphBuilder<Element, Relationship>, providedInstanceNode: Element, instance: TypedInstance) {
+      if (instance !is TypedObject) {
+         return
+      }
+      schema.type(instanceFqn).attributes.forEach { (attributeName, field) ->
+         when {
+            instance.hasAttribute(attributeName) && instance[attributeName].value != null -> {
+               connectProvidedInstanceAttribute(instanceFqn, attributeName, builder, providedInstanceNode, field)
+            }
+            // Include calculated fields
+            field.formula != null -> {
+               connectProvidedInstanceAttribute(instanceFqn, attributeName, builder, providedInstanceNode, field)
+            }
+
+            else -> log().debug("Not building link to attribute $attributeName on typedInstance, as provided value was null")
+         }
       }
    }
+
+   private fun connectProvidedInstanceAttribute(instanceFqn: String, attributeName: AttributeName, builder: HipsterGraphBuilder<Element, Relationship>, providedInstanceNode: Element, field: Field) {
+      val providedInstanceMember = providedInstanceMember(attributeFqn(instanceFqn, attributeName))
+      builder.connect(providedInstanceNode).to(providedInstanceMember).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
+      // The "providedInstance" node of the member itself
+      val memberInstance = providedInstance(field.type.fullyQualifiedName)
+      builder.connect(providedInstanceMember).to(memberInstance).withEdge(Relationship.IS_ATTRIBUTE_OF)
+      // The member instance we have can populate required params
+      builder.connect(memberInstance).to(parameter(field.type.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
+      builder.connect(memberInstance).to(type(field.type.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
+   }
+
+   private fun appendInstanceAttributesOfDiscoverableInstance(schema: Schema, instanceFqn: String, builder: HipsterGraphBuilder<Element, Relationship>, providedInstance: Element) {
+      schema.type(instanceFqn).attributes.forEach { (attributeName, field) ->
+         connectProvidedInstanceAttribute(instanceFqn, attributeName, builder, providedInstance, field)
+      }
+   }
+
 
 }
