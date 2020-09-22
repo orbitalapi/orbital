@@ -33,9 +33,11 @@ export enum DownloadFileType {JSON = 'JSON', CSV = 'CSV'}
 })
 export class ResultContainerComponent implements OnInit {
 
-  constructor(private typeService: TypesService, private fileService: ExportFileService, private router: Router) {
+  constructor(private typeService: TypesService,
+              private fileService: ExportFileService,
+              private router: Router,
+              private exportFileService: ExportFileService) {
     typeService.getTypes().subscribe(schema => this.schema = schema);
-
   }
 
   private _result: QueryResult | QueryFailure;
@@ -46,7 +48,7 @@ export class ResultContainerComponent implements OnInit {
 
   objectKeys = Object.keys;
   objectValues = Object.values;
- @Input()
+  @Input()
   activeRecord: QueryHistoryRecord;
 
   @Output()
@@ -73,6 +75,7 @@ export class ResultContainerComponent implements OnInit {
   get result(): QueryResult | QueryFailure {
     return this._result;
   }
+
   get unmatchedNodes(): string {
     const queryResult = <QueryResult>this.result;
     return queryResult.unmatchedNodes ? queryResult.unmatchedNodes.map(qn => qn.longDisplayName).join(', ') : '';
@@ -197,8 +200,9 @@ export class ResultContainerComponent implements OnInit {
     }
     return (<QueryResult>result).results !== undefined;
   }
+
   public downloadQueryHistory(fileType: DownloadFileType) {
-   const queryResponseId = (<QueryResult>this.result).queryResponseId;
+    const queryResponseId = (<QueryResult>this.result).queryResponseId;
     this.fileService.exportQueryHistory(queryResponseId, fileType).subscribe(response => {
       const blob: Blob = new Blob([response], {type: `text/${fileType}; charset=utf-8`});
       fileSaver.saveAs(blob, `query-${new Date().getTime()}.${fileType}`);
@@ -220,6 +224,15 @@ export class ResultContainerComponent implements OnInit {
   }
 
   queryAgain() {
-    this.activeRecord && this.router.navigate(['/query-wizard'], { state: { query: this.activeRecord}});
+    this.activeRecord && this.router.navigate(['/query-wizard'], {state: {query: this.activeRecord}});
+  }
+
+  onDownloadRemoteCalls() {
+    const queryResponseId = (<QueryResult>this.result).queryResponseId;
+    this.exportFileService.exportRemoteCalls(queryResponseId)
+      .subscribe(response => {
+        const blob: Blob = new Blob([response], {type: `text/json; charset=utf-8`});
+        fileSaver.saveAs(blob, `remote-calls-data-${new Date().getTime()}.json`);
+      });
   }
 }

@@ -55,6 +55,6 @@
 
     </mat-tab-group>
 
-    <app-call-explorer *ngIf="showMermaid" [queryResult]="result"></app-call-explorer>
+    <app-call-explorer *ngIf="showMermaid" [queryResult]="result" (downloadRemoteCallsClicked)="onDownloadRemoteCalls()"></app-call-explorer>
   </div>
 </div>

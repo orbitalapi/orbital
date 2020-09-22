@@ -59,9 +59,10 @@ export class QueryHistoryComponent implements OnInit {
 
 
   ngOnInit() {
-    this.loadData();
     if (this._queryResponseId && this._queryResponseId.length > 0) {
       this.setActiveRecordFromRoute();
+    } else {
+      this.loadData();
     }
   }
 
@@ -116,8 +117,8 @@ export class QueryHistoryComponent implements OnInit {
 
   setActiveRecordFromRoute() {
     this.service.getHistory()
-      .subscribe(history => this.activeRecord = history.find(a => a.response.queryResponseId === this._queryResponseId));
-
+      .subscribe(history =>  this.history = history);
+    this.activeRecord = this.history.find(a => a.response.queryResponseId === this._queryResponseId);
   }
 
   setRouteFromActiveRecord() {

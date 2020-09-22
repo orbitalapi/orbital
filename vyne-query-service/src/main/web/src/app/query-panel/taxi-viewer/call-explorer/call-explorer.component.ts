@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 
 @Component({
   selector: 'app-call-explorer',
@@ -16,6 +16,8 @@ export class CallExplorerComponent {
 
   selectedOperation: any;
 
+  @Output() downloadRemoteCallsClicked = new EventEmitter<Boolean>();
+
   getPathOnly(address: string) {
     // Hack - there's proabably a better way
     const parts: string[] = address.split('/');
@@ -24,5 +26,9 @@ export class CallExplorerComponent {
 
   selectOperation(operation) {
     this.selectedOperation = operation;
+  }
+
+  downloadRemoteCalls($event: MouseEvent) {
+    this.downloadRemoteCallsClicked.emit();
   }
 }

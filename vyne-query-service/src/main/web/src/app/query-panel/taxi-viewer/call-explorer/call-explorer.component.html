@@ -18,6 +18,7 @@
         <mat-icon>compare_arrows</mat-icon>
       </mat-button-toggle>
     </mat-button-toggle-group>
+    <button mat-stroked-button class="download-remote-call-button" (click)="downloadRemoteCalls($event)">Download</button>
     <app-service-graph [result]="queryResult" *ngIf="selectedChart == 'graph'"></app-service-graph>
     <app-sequence-diagram [result]="queryResult" *ngIf="selectedChart == 'sequence'"></app-sequence-diagram>
   </div>
