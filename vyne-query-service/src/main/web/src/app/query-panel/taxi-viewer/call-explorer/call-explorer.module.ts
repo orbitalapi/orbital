@@ -9,18 +9,20 @@ import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {SimpleCodeViewerModule} from '../../../simple-code-viewer/simple-code-viewer.module';
 import {MatTooltipModule} from '@angular/material/tooltip';
+import {MatButtonModule} from "@angular/material/button";
 
 @NgModule({
-  imports: [
-    SequenceDiagramModule,
-    MatButtonToggleModule,
-    MatIconModule,
-    ServiceGraphModule,
-    CommonModule,
-    BrowserModule,
-    SimpleCodeViewerModule,
-    MatTooltipModule,
-  ],
+    imports: [
+        SequenceDiagramModule,
+        MatButtonToggleModule,
+        MatIconModule,
+        ServiceGraphModule,
+        CommonModule,
+        BrowserModule,
+        SimpleCodeViewerModule,
+        MatTooltipModule,
+        MatButtonModule,
+    ],
   exports: [CallExplorerComponent, OperationViewComponent],
   declarations: [CallExplorerComponent, OperationViewComponent],
   providers: [],
