@@ -6,6 +6,9 @@ import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.api.ContentType
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.config.CaskQueryOptions
+import io.vyne.cask.config.FindOneMatchesManyBehaviour
+import io.vyne.cask.config.QueryMatchesNoneBehaviour
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.ViewPrefix
@@ -54,19 +57,13 @@ class CaskDAO(
    private val largeObjectDataSource: DataSource,
    private val caskMessageRepository: CaskMessageRepository,
    private val caskConfigRepository: CaskConfigRepository,
-   private val objectMapper: ObjectMapper = jacksonObjectMapper()
+   private val objectMapper: ObjectMapper = jacksonObjectMapper(),
+   private val queryOptions:CaskQueryOptions = CaskQueryOptions()
 ) {
-   //   private val largeObjectDataSource: DataSource
    val postgresDdlGenerator = PostgresDdlGenerator()
-//   init {
-//      largeObjectDataSource = HikariDataSource()
-//      largeObjectDataSource.driverClassName = "org.postgresql.Driver"
-//      largeObjectDataSource.jdbcUrl = dataSourceProps.url
-//      largeObjectDataSource.username = dataSourceProps.username
-//      largeObjectDataSource.password = dataSourceProps.password
-//      largeObjectDataSource.isAutoCommit = false
-//      largeObjectDataSource.poolName = "LargeObject_CONNECTION_POOL"
-//   }
+   init {
+      log().info("Cask running with query options: \n$queryOptions")
+   }
 
    fun findAll(versionedType: VersionedType): List<Map<String, Any>> {
       val name = "${versionedType.versionedName}.findAll"
@@ -137,10 +134,28 @@ class CaskDAO(
             }
 
          }
-         if (results.size > 1) {
-            log().error("Call to findOne() returned ${results.size} results.  Will pick the first")
+         when {
+            results.isEmpty() -> {
+               when (queryOptions.queryMatchesNoneBehaviour) {
+                  QueryMatchesNoneBehaviour.RETURN_EMPTY -> emptyMap()
+                  QueryMatchesNoneBehaviour.THROW_404 -> throw CaskQueryEmptyResultsException("Call to findOne on ${versionedType.fullyQualifiedName} by $columnName returned ${results.size} results.  Throwing a 404 exception.  You can configure this behaviour by setting cask.query-options.queryMatchesNoneBehaviour")
+               }
+            }
+            results.size == 1 -> {
+               results.first()
+            }
+            else -> { // results.size > 1
+               when (queryOptions.findOneMatchesManyBehaviour) {
+                  FindOneMatchesManyBehaviour.RETURN_FIRST -> {
+                     log().warn("Call to findOne on ${versionedType.fullyQualifiedName} by $columnName returned ${results.size} results. pickFirstFromFindOne is configured to return first, so selecting the first record")
+                     results.first()
+                  }
+                  FindOneMatchesManyBehaviour.THROW_ERROR -> {
+                     throw CaskBadRequestException("Call to findOne on ${versionedType.fullyQualifiedName} by $columnName returned ${results.size} results.  This is not permitted.  You can configure this behaviour by setting cask.query-options.findOneMatchesManyBehaviour")
+                  }
+               }
+            }
          }
-         results.firstOrNull() ?: emptyMap()
       }
    }
 
