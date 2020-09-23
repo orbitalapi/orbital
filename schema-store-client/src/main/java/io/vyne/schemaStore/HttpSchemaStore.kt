@@ -60,7 +60,13 @@ class HttpSchemaStore(private val httpVersionedSchemaProvider: HttpVersionedSche
       }
 
       val changedSources = previousKnownSources.filter { previousKnownSource ->
-         currentSourceSet.any { it.name == previousKnownSource.name && it.contentHash != previousKnownSource.contentHash }
+         currentSourceSet.any {
+            val hasChanged = it.name == previousKnownSource.name && it.contentHash != previousKnownSource.contentHash
+            if (hasChanged) {
+               log().info("Source ${it.name} appears to have changed.  Previous content hash was ${previousKnownSource.content}, current content hash is ${it.contentHash}")
+            }
+            hasChanged
+         }
       }
 
       return newSources.isNotEmpty() || removedSources.isNotEmpty() || changedSources.isNotEmpty()

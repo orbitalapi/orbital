@@ -50,6 +50,8 @@ feign:
 cask:
    maxTextMessageBufferSize: 67108864 # 1024 * 1024 * 64
    maxBinaryMessageBufferSize: 67108864 # 1024 * 1024 * 64
+   service:
+      annotations: Datasource
 
 # Actuators + prometheus metrics configuration
 management:

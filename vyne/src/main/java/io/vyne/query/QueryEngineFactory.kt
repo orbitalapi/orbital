@@ -8,6 +8,7 @@ import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.query.planner.ProjectionHeuristicsQueryStrategy
+import io.vyne.query.policyManager.DatasourceAwareOperationInvocationServiceDecorator
 import io.vyne.query.policyManager.PolicyAwareOperationInvocationServiceDecorator
 import io.vyne.schemas.Schema
 
@@ -89,14 +90,11 @@ interface QueryEngineFactory {
       }
 
       private fun operationInvocationService(invokers: List<OperationInvoker>): OperationInvocationService {
-         return PolicyAwareOperationInvocationServiceDecorator(
+         return DatasourceAwareOperationInvocationServiceDecorator(PolicyAwareOperationInvocationServiceDecorator(
             DefaultOperationInvocationService(invokers)
-         )
+         ))
       }
-
    }
-
-
 }
 
 class DefaultQueryEngineFactory(private val strategies: List<QueryStrategy>) : QueryEngineFactory {
