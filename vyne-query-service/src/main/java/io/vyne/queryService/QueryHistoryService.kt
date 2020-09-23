@@ -30,17 +30,13 @@ class QueryHistoryService(private val history: QueryHistory, private val queryHi
    }
 
    @GetMapping("/api/query/history/remotecalls/{id}/export")
-   fun getRemoteCallExport(@PathVariable("id") queryId: String): ByteArray {
-      val queries = history.list()
-         .toStream().toList()
-      var queryRemoteCall: List<RemoteCall> = listOf();
-      queries.forEach { query -> if(query.id == queryId){
-         queryRemoteCall = query.response.remoteCalls
-      } }
-      val json = Lineage.newLineageAwareJsonMapper()
-         .writeValueAsString(queryRemoteCall)
-      return json.toByteArray()
+   fun getRemoteCallExport(@PathVariable("id") queryId: String): Mono<ByteArray> {
+      val relatedQuery = history.get(queryId)
+      return relatedQuery.map {
+         Lineage.newLineageAwareJsonMapper()
+            .writeValueAsString(it.response.remoteCalls).toByteArray()
       }
+   }
 
 
 
