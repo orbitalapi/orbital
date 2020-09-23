@@ -121,6 +121,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       // Take a copy, as the set is mutable, and performing a search is a
       // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
       val currentFacts = context.facts.toSet()
+      val excludedServices = context.facts
       return currentFacts
          .asSequence()
          .mapNotNull { fact ->
@@ -128,7 +129,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
 
             val targetType = context.schema.type(targetElement.value as String)
             val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema), spec)
-            val searchResult = searcher.search(currentFacts) { pathToEvaluate ->
+            val searchResult = searcher.search(currentFacts, context.excludedServices.toSet()) { pathToEvaluate ->
                evaluatePath(pathToEvaluate,context)
             }
             searchResult

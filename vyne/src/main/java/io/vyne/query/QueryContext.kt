@@ -23,11 +23,14 @@ import io.vyne.query.QueryResponse.ResponseStatus.*
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.ServiceAnnotations
+import io.vyne.schemas.OperationNames
 import io.vyne.schemas.OutputConstraint
 import io.vyne.schemas.Path
 import io.vyne.schemas.Policy
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import io.vyne.schemas.TypeMatchingStrategy
 import io.vyne.schemas.fqn
@@ -297,7 +300,9 @@ data class QueryContext(
    fun only(fact: TypedInstance): QueryContext {
       val mutableFacts = resolveSynonyms(fact, schema).toMutableSet()
       mutableFacts.add(fact)
-      return this.copy(facts = mutableFacts, parent = this)
+      val copiedContext =  this.copy(facts = mutableFacts, parent = this)
+      copiedContext.excludedServices.addAll(this.excludedServices)
+      return copiedContext
    }
 
    fun addFact(fact: TypedInstance): QueryContext {
@@ -404,6 +409,7 @@ data class QueryContext(
       private val invocationParameter: TypedInstance?)
 
    private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
+   val excludedServices: MutableSet<QualifiedName> = mutableSetOf()
 
    private fun getTopLevelContext(): QueryContext {
       return parent?.getTopLevelContext() ?: this
@@ -411,9 +417,18 @@ data class QueryContext(
 
    fun addOperationResult(operation: EvaluatableEdge, result: TypedInstance): TypedInstance {
       val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, operation.previousValue)
+      val (service, _) = OperationNames.serviceAndOperation(operation.vertex1.valueAsQualifiedName())
+      val invokedService = schema.services.firstOrNull { it.name.fullyQualifiedName == service }
+      onServiceInvoked((invokedService))
       getTopLevelContext().operationCache[key] = result
       log().info("Caching {} [{} -> {}]", operation, operation.previousValue?.value, result.type.qualifiedName)
       return result
+   }
+
+   fun onServiceInvoked(invokedService: Service?) {
+      if (invokedService?.hasMetadata(ServiceAnnotations.Datasource.annotation) == true) {
+         excludedServices.add(invokedService.name)
+      }
    }
 
    fun getOperationResult(operation: EvaluatableEdge): TypedInstance? {
