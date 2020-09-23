@@ -125,6 +125,26 @@ type TransformedTradeRecord {
       order["bankDirection"].value!!.should.equal("Buy")
    }
 
+   @Test
+   fun conditionalWithNoMatchSetsNull() {
+      val (vyne, _) = testVyne( """
+      type Order {
+         bankDirection: BankDirection as String
+         clientDirection: ClientDirection as String by when (this.bankDirection) {
+            "Buy" -> "Sell"
+            "Sell" -> "Buy"
+            else -> null
+         }
+      }
+      """)
+      val json = """{ "bankDirection" : "buy" }"""
+      val order = TypedObjectFactory(vyne.schema.type("Order"), json, vyne.schema, source = Provided).build() as TypedObject
+
+      order["bankDirection"].value!!.should.equal("buy")
+      order["clientDirection"].value.should.be.`null`
+
+   }
+
 
    @Ignore("this feature isn't implemented yet")
    @Test
