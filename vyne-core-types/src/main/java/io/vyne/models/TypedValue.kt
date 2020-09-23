@@ -133,20 +133,34 @@ class StringToNumberConverter(override val next: ConversionService = NoOpConvers
       } else {
          val numberFormat = NumberFormat.getInstance()
          return when (targetType) {
-            Int::class.java -> numberFormat.parse(source).toInt() as T
-            Double::class.java -> numberFormat.parse(source).toDouble() as T
+            Int::class.java -> fromScientific(source)?.toInt() as T ?: numberFormat.parse(source).toInt() as T
+            Double::class.java -> fromScientific(source)?.toDouble() as T ?: numberFormat.parse(source).toDouble() as T
             BigDecimal::class.java -> {
-               if (numberFormat is DecimalFormat) {
-                  numberFormat.isParseBigDecimal = true
-                  numberFormat.parse(source) as T
-               } else {
-                  TODO("Didn't receive a decimal formatter from the locale")
+               val scientificValue = fromScientific(source)
+               when {
+                   scientificValue != null -> {
+                      scientificValue as T
+                   }
+                   numberFormat is DecimalFormat -> {
+                      numberFormat.isParseBigDecimal = true
+                      numberFormat.parse(source) as T
+                   }
+                   else -> {
+                      TODO("Didn't receive a decimal formatter from the locale")
+                   }
                }
             }
             else -> next.convert(source, targetType, format)
          }
       }
+   }
 
+   private fun fromScientific(source: String): BigDecimal? {
+      return if (source.contains("E") || source.contains("e")) {
+         BigDecimal(source)
+      } else {
+         null
+      }
    }
 }
 

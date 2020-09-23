@@ -54,4 +54,25 @@ class TypedValueTest {
 
       instance.value.should.equal(10)
    }
+
+   @Test
+   fun `should handle decimals in scientific format`() {
+      val schema = TaxiSchema.from("")
+      val instance = TypedInstance.from(schema.type(PrimitiveType.DECIMAL), "2.50E+07", schema, source = Provided)
+      instance.value.should.equal(BigDecimal("2.50E+07"))
+   }
+
+   @Test
+   fun `should handle ints in scientific format`() {
+      val schema = TaxiSchema.from("")
+      val instance = TypedInstance.from(schema.type(PrimitiveType.INTEGER), "2.50E+02", schema, source = Provided)
+      instance.value.should.equal(250)
+   }
+
+   @Test
+   fun `should handle doubles in scientific format`() {
+      val schema = TaxiSchema.from("")
+      val instance = TypedInstance.from(schema.type(PrimitiveType.DOUBLE), "2.512E+03", schema, source = Provided)
+      instance.value.should.equal(2512.0)
+   }
 }
