@@ -157,7 +157,7 @@ class CaskDAO(
       }
    }
 
-   fun findMultiple(versionedType: VersionedType, columnName: String, arg: List<String>): List<Map<String, Any>> {
+   fun findMany(versionedType: VersionedType, columnName: String, arg: List<String>): List<Map<String, Any>> {
       // Ignore the compiler -- filterNotNull() required here because we can receive a null inbound
       // in the Json. Jackson doesn't filter it out, and so casting errors can occur.
       val inputValues = arg.filterNotNull()

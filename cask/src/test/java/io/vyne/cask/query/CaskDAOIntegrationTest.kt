@@ -8,6 +8,7 @@ import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.schemas.fqn
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import org.apache.commons.io.FileUtils
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder

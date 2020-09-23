@@ -227,7 +227,7 @@ namespace vyne.casks {
 </code>
 </pre>
 
-* Association
+* Association (Deprecated)
 
 example:
 

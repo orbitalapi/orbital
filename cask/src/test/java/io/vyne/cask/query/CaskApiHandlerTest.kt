@@ -124,7 +124,7 @@ class CaskApiHandlerTest {
       // Given  findMultipleBy/OrderWindowSummary/symbol
       val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
       val request = mock<ServerRequest>() {
-         on { path() } doReturn "/api/cask/findMultipleBy/OrderWindowSummary/symbol"
+         on { path() } doReturn "/api/cask/findManyBy/OrderWindowSummary/symbol"
          on { method() } doReturn HttpMethod.POST
          on {body(any<BodyExtractor<Mono<List<String>>, ReactiveHttpInputMessage>>())} doReturn Mono.just(listOf("id"))
       }
@@ -135,29 +135,10 @@ class CaskApiHandlerTest {
       // When
       caskApiHandler.findBy(request).subscribe {
          // Then
-         verify(mockCaskDao, times(1)).findMultiple(any(), columnNameCaptor.capture(), projectionValueCaptor.capture())
+         verify(mockCaskDao, times(1)).findMany(any(), columnNameCaptor.capture(), projectionValueCaptor.capture())
          "symbol".should.equal(columnNameCaptor.firstValue)
          listOf("id").should.equal(projectionValueCaptor.firstValue)
       }
-   }
-
-   @Test
-   fun `handler can map findSingleBy Request`() {
-      // Given  findSingleBy/OrderWindowSummary/symbol/BTCUSD
-      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
-      val request = mock<ServerRequest>() {
-         on { path() } doReturn "/api/cask/findSingleBy/OrderWindowSummary/symbol/BTCUSD"
-      }
-      val mockedVersionedType = mock<VersionedType>()
-      val columnNameCaptor = argumentCaptor<String>()
-      val projectionValueCaptor = argumentCaptor<String>()
-      whenever(mockCaskService.resolveType(eq("OrderWindowSummary"))).thenReturn(Either.right(mockedVersionedType))
-      // When
-      caskApiHandler.findBy(request)
-      // Then
-      verify(mockCaskDao, times(1)).findOne(any(), columnNameCaptor.capture(), projectionValueCaptor.capture())
-      "symbol".should.equal(columnNameCaptor.firstValue)
-      "BTCUSD".should.equal(projectionValueCaptor.firstValue)
    }
 
    @Test
@@ -168,8 +149,6 @@ class CaskApiHandlerTest {
          on { path() } doReturn "/api/cask/findAll/OrderWindowSummary"
       }
       val mockedVersionedType = mock<VersionedType>()
-      val columnNameCaptor = argumentCaptor<String>()
-      val projectionValueCaptor = argumentCaptor<String>()
       whenever(mockCaskService.resolveType(eq("OrderWindowSummary"))).thenReturn(Either.right(mockedVersionedType))
       // When
       caskApiHandler.findBy(request)

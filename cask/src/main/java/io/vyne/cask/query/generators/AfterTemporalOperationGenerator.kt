@@ -28,7 +28,7 @@ class AfterTemporalOperationGenerator(val operationGeneratorConfig: OperationGen
       val greaterThanConstraint = constraintFor(field, Operator.GREATER_THAN, TemporalFieldUtils.After)
       val returnType = collectionTypeOf(type)
       return Operation(
-         name = "findBy${field.name.capitalize()}${expectedAnnotationName}",
+         name = "${OperationAnnotation.After.annotation}${field.name.capitalize()}${expectedAnnotationName}",
          parameters = listOf(afterParameter),
          annotations = listOf(Annotation("HttpOperation", mapOf("method" to "GET", "url" to getRestPath(type, field)))),
          returnType = returnType,
@@ -41,7 +41,7 @@ class AfterTemporalOperationGenerator(val operationGeneratorConfig: OperationGen
 
    override fun canGenerate(field: Field, type: Type): Boolean {
       return validate(field) != null &&
-         (annotationFor(field, expectedAnnotationName.annotation) != null ||
+         (annotationFor(field, expectedAnnotationName.name) != null ||
             operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
    }
 

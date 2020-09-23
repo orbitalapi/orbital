@@ -27,14 +27,13 @@ data class OperationGeneratorConfig(val operations: List<OperationConfigDefiniti
 }
 
 enum class OperationAnnotation(val annotation: String) {
+   @Deprecated("Deprecated annotation, use @FindOne and @FindMany.")
    Association("Association"),
-   After("After"),
-   Before("Before"),
-   Between("Between"),
+   After("findBy"),
+   Before("findBy"),
+   Between("findBy"),
    Id("Id"),
-   // TODO followings should be removed or replace the ghost strings in CaskApiHandler
    FindOne("findOneBy"),
-   FindMultipleBy("findMultipleBy"),
-   FindSingleBy("findSingleBy"),
+   FindMany("findManyBy"),
    FindAll("findAll")
 }

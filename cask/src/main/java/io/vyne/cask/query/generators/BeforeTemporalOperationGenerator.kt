@@ -24,7 +24,7 @@ class BeforeTemporalOperationGenerator(val operationGeneratorConfig: OperationGe
       val lessThanConstraint = TemporalFieldUtils.constraintFor(field, Operator.LESS_THAN, TemporalFieldUtils.Before)
       val returnType = collectionTypeOf(type)
       return Operation(
-         name = "findBy${field.name.capitalize()}${expectedAnnotationName}",
+         name = "${OperationAnnotation.Before.annotation}${field.name.capitalize()}${expectedAnnotationName}",
          parameters = listOf(beforeParameter),
          annotations = listOf(Annotation("HttpOperation", mapOf("method" to "GET", "url" to getRestPath(type, field)))),
          returnType = returnType,
@@ -37,7 +37,7 @@ class BeforeTemporalOperationGenerator(val operationGeneratorConfig: OperationGe
 
    override fun canGenerate(field: Field, type: Type): Boolean {
       return TemporalFieldUtils.validate(field) != null &&
-         (TemporalFieldUtils.annotationFor(field, expectedAnnotationName.annotation) != null ||
+         (TemporalFieldUtils.annotationFor(field, expectedAnnotationName.name) != null ||
             operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
    }
 

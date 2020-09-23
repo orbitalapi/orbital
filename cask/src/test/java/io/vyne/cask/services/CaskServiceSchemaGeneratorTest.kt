@@ -32,7 +32,9 @@ class CaskServiceSchemaGeneratorTest {
     @Association
     @Id
     symbol : Symbol by xpath("/Symbol")
+    @FindOne
     open : Price by xpath("/Open")
+    @FindMany
     high : Price by xpath("/High")
     close : Price by xpath("/Close")
     @Between
@@ -46,6 +48,242 @@ class CaskServiceSchemaGeneratorTest {
 }
 
    """.trimIndent()
+
+   @Test
+   fun `operation id`() {
+      // given
+      val schemaDefinition = """
+    type Id inherits String
+
+    type OrderWindowSummary {
+
+    @Id
+    id: Id
+}
+   """.trimIndent()
+
+      val typeSchema = lang.taxi.Compiler(schemaDefinition).compile()
+      val taxiSchema = TaxiSchema(typeSchema, listOf())
+      val sources = taxiSchema.sources.map { ParsedSource(it) }
+      whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
+      val (serviceSchemaGenerator, _) = schemaGeneratorFor(schemaDefinition, OperationGeneratorConfig(emptyList()))
+      val schemas = argumentCaptor<List<VersionedSource>>()
+
+      // When
+      serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummary".fqn())))
+      // Then
+      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
+      val submittedSchemas = schemas.firstValue
+      submittedSchemas.size.should.equal(1)
+      submittedSchemas[0].name.should.equal("vyne.casks.OrderWindowSummary")
+      submittedSchemas[0].version.should.equal("1.0.1")
+      """
+   import OrderWindowSummary
+   import Id
+
+   namespace vyne.casks {
+
+   @ServiceDiscoveryClient(serviceName = "cask")
+   @Datasource
+   service OrderWindowSummaryCaskService {
+      @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
+      operation findAll(  ) : OrderWindowSummary[]
+      @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/id/{Id}")
+      operation findOneById( @PathVariable(name = "id") id : Id ) : OrderWindowSummary( Id = id )
+   }
+}
+""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
+   }
+
+   @Test
+   fun `operation association`() {
+      // given
+      val schemaDefinition = """
+    type Name inherits String
+
+    type OrderWindowSummary {
+
+    @Association
+    name: Name
+}
+   """.trimIndent()
+
+      val typeSchema = lang.taxi.Compiler(schemaDefinition).compile()
+      val taxiSchema = TaxiSchema(typeSchema, listOf())
+      val sources = taxiSchema.sources.map { ParsedSource(it) }
+      whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
+      val (serviceSchemaGenerator, _) = schemaGeneratorFor(schemaDefinition, OperationGeneratorConfig(emptyList()))
+      val schemas = argumentCaptor<List<VersionedSource>>()
+
+      // When
+      serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummary".fqn())))
+      // Then
+      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
+      val submittedSchemas = schemas.firstValue
+      submittedSchemas.size.should.equal(1)
+      submittedSchemas[0].name.should.equal("vyne.casks.OrderWindowSummary")
+      submittedSchemas[0].version.should.equal("1.0.1")
+      """
+import OrderWindowSummary
+import Name
+
+namespace vyne.casks {
+   @ServiceDiscoveryClient(serviceName = "cask")
+   @Datasource
+   service OrderWindowSummaryCaskService {
+      @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
+      operation findAll(  ) : OrderWindowSummary[]
+      @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/name/{Name}")
+      operation findOneByName( @PathVariable(name = "name") name : Name ) : OrderWindowSummary( Name = name )
+      @HttpOperation(method = "GET" , url = "/api/cask/findManyBy/OrderWindowSummary/name/{Name}")
+      operation findManyByName( @RequestBody name : Name[] ) : OrderWindowSummary[]( Name = name )
+   }
+}
+""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
+   }
+
+   @Test
+   fun `operation findMany`() {
+      // given
+      val schemaDefinition = """
+    type Name inherits String
+
+    type OrderWindowSummary {
+
+    @FindMany
+    name: Name
+}
+   """.trimIndent()
+
+      val typeSchema = lang.taxi.Compiler(schemaDefinition).compile()
+      val taxiSchema = TaxiSchema(typeSchema, listOf())
+      val sources = taxiSchema.sources.map { ParsedSource(it) }
+      whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
+      val (serviceSchemaGenerator, _) = schemaGeneratorFor(schemaDefinition, OperationGeneratorConfig(emptyList()))
+      val schemas = argumentCaptor<List<VersionedSource>>()
+
+      // When
+      serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummary".fqn())))
+      // Then
+      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
+      val submittedSchemas = schemas.firstValue
+      submittedSchemas.size.should.equal(1)
+      submittedSchemas[0].name.should.equal("vyne.casks.OrderWindowSummary")
+      submittedSchemas[0].version.should.equal("1.0.1")
+      """
+import OrderWindowSummary
+
+namespace vyne.casks {
+   @ServiceDiscoveryClient(serviceName = "cask")
+   @Datasource
+   service OrderWindowSummaryCaskService {
+      @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
+      operation findAll(  ) : OrderWindowSummary[]
+      @HttpOperation(method = "GET" , url = "/api/cask/findManyBy/OrderWindowSummary/name/{Name}")
+      operation findManyByName( @RequestBody name : Name[] ) : OrderWindowSummary[]( Name = name )
+   }
+}
+
+""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
+   }
+
+   @Test
+   fun `operation findOne`() {
+      // given
+      val schemaDefinition = """
+    type Name inherits String
+
+    type OrderWindowSummary {
+
+    @FindOne
+    name: Name
+}
+   """.trimIndent()
+
+      val typeSchema = lang.taxi.Compiler(schemaDefinition).compile()
+      val taxiSchema = TaxiSchema(typeSchema, listOf())
+      val sources = taxiSchema.sources.map { ParsedSource(it) }
+      whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
+      val (serviceSchemaGenerator, _) = schemaGeneratorFor(schemaDefinition, OperationGeneratorConfig(emptyList()))
+      val schemas = argumentCaptor<List<VersionedSource>>()
+
+      // When
+      serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummary".fqn())))
+      // Then
+      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
+      val submittedSchemas = schemas.firstValue
+      submittedSchemas.size.should.equal(1)
+      submittedSchemas[0].name.should.equal("vyne.casks.OrderWindowSummary")
+      submittedSchemas[0].version.should.equal("1.0.1")
+      """
+import OrderWindowSummary
+import Name
+
+namespace vyne.casks {
+   @ServiceDiscoveryClient(serviceName = "cask")
+   @Datasource
+   service OrderWindowSummaryCaskService {
+      @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
+      operation findAll(  ) : OrderWindowSummary[]
+      @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/name/{Name}")
+      operation findOneByName( @PathVariable(name = "name") name : Name ) : OrderWindowSummary( Name = name )
+   }
+}
+
+""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
+   }
+
+   @Test
+   fun `operation before after between`() {
+      // given
+      val schemaDefinition = """
+    type LogDate inherits Instant
+
+    type OrderWindowSummary {
+
+    @Before
+    @After
+    @Between
+    logDate: LogDate
+}
+   """.trimIndent()
+
+      val typeSchema = lang.taxi.Compiler(schemaDefinition).compile()
+      val taxiSchema = TaxiSchema(typeSchema, listOf())
+      val sources = taxiSchema.sources.map { ParsedSource(it) }
+      whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
+      val (serviceSchemaGenerator, _) = schemaGeneratorFor(schemaDefinition, OperationGeneratorConfig(emptyList()))
+      val schemas = argumentCaptor<List<VersionedSource>>()
+
+      // When
+      serviceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(taxiSchema.versionedType("OrderWindowSummary".fqn())))
+      // Then
+      verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
+      val submittedSchemas = schemas.firstValue
+      submittedSchemas.size.should.equal(1)
+      submittedSchemas[0].name.should.equal("vyne.casks.OrderWindowSummary")
+      submittedSchemas[0].version.should.equal("1.0.1")
+      """
+import OrderWindowSummary
+import LogDate
+
+namespace vyne.casks {
+   @ServiceDiscoveryClient(serviceName = "cask")
+   @Datasource
+   service OrderWindowSummaryCaskService {
+      @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
+      operation findAll(  ) : OrderWindowSummary[]
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/logDate/After/{after}")
+      operation findByLogDateAfter( @PathVariable(name = "after") after : LogDate ) : OrderWindowSummary[]( LogDate > after )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/logDate/Before/{before}")
+      operation findByLogDateBefore( @PathVariable(name = "before") before : LogDate ) : OrderWindowSummary[]( LogDate < before )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/logDate/Between/{start}/{end}")
+      operation findByLogDateBetween( @PathVariable(name = "start") start : LogDate, @PathVariable(name = "end") end : LogDate ) : OrderWindowSummary[]( LogDate >= start, LogDate < end )
+   }
+}
+
+""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
+   }
 
    @Test
    fun `schemas with formatted date types generate valid schemas`() {
@@ -72,13 +310,15 @@ class CaskServiceSchemaGeneratorTest {
          schemaProvider,
          caskServiceSchemaWriter,
          listOf(
-            FindByFieldIdOperationGenerator(operationGeneratorConfig),
+            FindOneByGenerator(operationGeneratorConfig),
+            FindManyByGenerator(operationGeneratorConfig),
+//            FindByFieldIdOperationGenerator(operationGeneratorConfig),
             AfterTemporalOperationGenerator(operationGeneratorConfig),
             BeforeTemporalOperationGenerator(operationGeneratorConfig),
             BetweenTemporalOperationGenerator(operationGeneratorConfig),
-            FindBySingleResultGenerator(operationGeneratorConfig),
-            FindByMultipleGenerator(operationGeneratorConfig),
-            FindByIdGenerators(operationGeneratorConfig),
+//            FindBySingleResultGenerator(operationGeneratorConfig),
+//            FindByMultipleGenerator(operationGeneratorConfig),
+//            FindByIdGenerators(operationGeneratorConfig),
             FindAllGenerator()),
       "Datasource") to taxiSchema
    }
@@ -131,15 +371,13 @@ import Symbol
 
 namespace vyne.casks {
 
-
-
    @ServiceDiscoveryClient(serviceName = "cask")
    @Datasource
    service OrderWindowSummaryCsvCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummaryCsv")
       operation findAll(  ) : OrderWindowSummaryCsv[]
-      @HttpOperation(method = "GET" , url = "/api/cask/findSingleBy/OrderWindowSummaryCsv/symbol/{id}")
-      operation findSingleBySymbol( @PathVariable(name = "id") id : Symbol ) : OrderWindowSummaryCsv( Symbol = id )
+      @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummaryCsv/symbol/{Symbol}")
+      operation findOneBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummaryCsv( Symbol = symbol )
    }
 }
 
@@ -167,26 +405,25 @@ namespace vyne.casks {
       """
 import OrderWindowSummary
 import Symbol
+import Price
 import MaturityDate
 import TransactionEventDateTime
 
 namespace vyne.casks {
-
-
 
    @ServiceDiscoveryClient(serviceName = "cask")
    @Datasource
    service OrderWindowSummaryCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
       operation findAll(  ) : OrderWindowSummary[]
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/symbol/{Symbol}")
-      operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary[]( Symbol = symbol )
       @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/symbol/{Symbol}")
-      operation findOneBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary
-      @HttpOperation(method = "POST" , url = "/api/cask/findMultipleBy/OrderWindowSummary/symbol")
-      operation findMultipleBySymbol( @RequestBody symbol : Symbol[] ) : OrderWindowSummary[]
-      @HttpOperation(method = "GET" , url = "/api/cask/findSingleBy/OrderWindowSummary/symbol/{id}")
-      operation findSingleBySymbol( @PathVariable(name = "id") id : Symbol ) : OrderWindowSummary( Symbol = id )
+      operation findOneBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary( Symbol = symbol )
+      @HttpOperation(method = "GET" , url = "/api/cask/findManyBy/OrderWindowSummary/symbol/{Symbol}")
+      operation findManyBySymbol( @RequestBody symbol : Symbol[] ) : OrderWindowSummary[]( Symbol = symbol )
+      @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/open/{Price}")
+      operation findOneByOpen( @PathVariable(name = "open") open : Price ) : OrderWindowSummary( Price = open )
+      @HttpOperation(method = "GET" , url = "/api/cask/findManyBy/OrderWindowSummary/high/{Price}")
+      operation findManyByHigh( @RequestBody high : Price[] ) : OrderWindowSummary[]( Price = high )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/After/{after}")
       operation findByMaturityDateAfter( @PathVariable(name = "after") after : MaturityDate ) : OrderWindowSummary[]( MaturityDate > after )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/Before/{before}")
