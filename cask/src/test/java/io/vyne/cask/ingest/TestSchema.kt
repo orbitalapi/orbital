@@ -85,6 +85,12 @@ type UpsertTestMultiPk {
       }
    """.trimIndent()
 
+   val decimalSchemaSource = """
+      model DecimalModel {
+        qty: Decimal by column("Quantity")
+      }
+      """.trimIndent()
+
    val schemaTimeTest = TaxiSchema.from(timeTypeTest, "Test", "0.1.0")
    val schemaUpsertTest = TaxiSchema.from(upsertTest, "Test", "0.1.0")
    val schemaTemporalDownCastTest = TaxiSchema.from(temporalSchemaSource, "Test", "0.1.0")
@@ -93,6 +99,7 @@ type UpsertTestMultiPk {
    val instantSchema = TaxiSchema.from(instantFormatSource, "test", "0.1.0")
    val schemaWithConcatAndDefault = TaxiSchema.from(schemaWithDefaultValueSource, "test", "0.1.0")
    val personSchema = TaxiSchema.from(personSchemaSource, "test", "0.1.0")
+   val decimalSchema = TaxiSchema.from(decimalSchemaSource, "test", "0.1.0")
 }
 
 
