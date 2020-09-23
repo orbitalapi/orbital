@@ -68,7 +68,7 @@ class CaskServiceBootstrapTest {
    }
 
    @Test
-   fun `Do not regenerate when schema change contains added cask services`() {
+   fun `Do regenerate when schema change contains added cask services`() {
       // prepare
       val schemaV1 = "type Order {}"
       val taxiSchemaV1 = TaxiSchema.from(schemaV1, "order.taxi", "1.0.1")
@@ -88,11 +88,11 @@ class CaskServiceBootstrapTest {
       CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).regenerateCasksOnSchemaChange(event)
 
       // assert
-      verify(caskServiceSchemaGenerator, times(0)).generateAndPublishServices(any())
+      verify(caskServiceSchemaGenerator, times(1)).generateAndPublishServices(any())
    }
 
    @Test
-   fun `Do not regenerate when schema change contains removed cask services`() {
+   fun `Do regenerate when schema change contains removed cask services`() {
       // prepare
       val schemaV1 = "type Order {}"
       val taxiSchemaV1 = TaxiSchema.from(schemaV1, "order.taxi", "1.0.1")
@@ -112,7 +112,7 @@ class CaskServiceBootstrapTest {
       CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).regenerateCasksOnSchemaChange(event)
 
       // assert
-      verify(caskServiceSchemaGenerator, times(0)).generateAndPublishServices(any())
+      verify(caskServiceSchemaGenerator, times(1)).generateAndPublishServices(any())
    }
 
    @Test

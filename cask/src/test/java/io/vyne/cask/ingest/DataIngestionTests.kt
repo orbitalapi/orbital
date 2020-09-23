@@ -214,10 +214,12 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
 
       val timeValue = LocalTime.parse("21:06:07")
       val timeOnlyQualifiedName = schema.type("DowncastTest").attributes.getValue("timeOnly").type
-      val timeRawValue = try { RawObjectMapper.map(
-         TypedInstance.from(schema.type(timeOnlyQualifiedName), timeValue, schema, false, setOf(), DefinedInSchema)
-      ) } catch(e: Exception) {
-        LocalTime.MAX
+      val timeRawValue = try {
+         RawObjectMapper.map(
+            TypedInstance.from(schema.type(timeOnlyQualifiedName), timeValue, schema, false, setOf(), DefinedInSchema)
+         )
+      } catch (e: Exception) {
+         LocalTime.MAX
       }
 
       timeRawValue.should.equal("21:06:07")
@@ -243,7 +245,7 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
       result.first()["field1"].should.equal("First")
       result.first()["defaultString"].should.equal("Default String")
-     val defaultDecimal =  result.first()["defaultDecimal"] as BigDecimal
+      val defaultDecimal = result.first()["defaultDecimal"] as BigDecimal
       defaultDecimal.compareTo(BigDecimal("1000000.0")).should.equal(0)
 
       caskDao.createCaskRecordTable(modelWithDefaults)
@@ -293,6 +295,29 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
       result.first()["instant"].toString().should.equal("2020-07-31 22:59:59.0")
       caskDao.createCaskRecordTable(instantModel)
-//
+   }
+
+   @Test
+   fun `Ingestion of scientific numbers`() {
+      val source = """Quantity
+         |2.50E+07
+         |3.0E+07
+         |2500.1234""".trimMargin()
+      val schema = TestSchema.decimalSchema
+      val decimalModel = schema.versionedType("DecimalModel".fqn())
+      val input: Flux<InputStream> = Flux.just(source.byteInputStream())
+      val pipelineSource = CsvStreamSource(input, decimalModel, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipeline = IngestionStream(decimalModel, TypeDbWrapper(decimalModel, schema), pipelineSource)
+
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.decimalSchemaSource), dataSource, caskMessageRepository, configRepository)
+      ingester = Ingester(jdbcTemplate, pipeline)
+      caskDao.dropCaskRecordTable(decimalModel)
+      caskDao.createCaskRecordTable(decimalModel)
+      ingester.ingest().collectList().block()
+
+      val result = jdbcTemplate.queryForList("SELECT * FROM ${pipeline.dbWrapper.tableName}")!!
+      result.first()["qty"].toString().should.equal("25000000.000000000000000")
+      result[1]["qty"].toString().should.equal("30000000.000000000000000")
+      result[2]["qty"].toString().should.equal("2500.123400000000000")
    }
 }

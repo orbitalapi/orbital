@@ -79,7 +79,8 @@ class CaskServiceSchemaGeneratorTest {
             FindBySingleResultGenerator(operationGeneratorConfig),
             FindByMultipleGenerator(operationGeneratorConfig),
             FindByIdGenerators(operationGeneratorConfig),
-            FindAllGenerator())) to taxiSchema
+            FindAllGenerator()),
+      "Datasource") to taxiSchema
    }
 
    @Test
@@ -133,6 +134,7 @@ namespace vyne.casks {
 
 
    @ServiceDiscoveryClient(serviceName = "cask")
+   @Datasource
    service OrderWindowSummaryCsvCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummaryCsv")
       operation findAll(  ) : OrderWindowSummaryCsv[]
@@ -173,6 +175,7 @@ namespace vyne.casks {
 
 
    @ServiceDiscoveryClient(serviceName = "cask")
+   @Datasource
    service OrderWindowSummaryCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
       operation findAll(  ) : OrderWindowSummary[]
@@ -268,6 +271,7 @@ namespace vyne.casks {
          |
          |
          |    @ServiceDiscoveryClient(serviceName = "cask")
+         |    @Datasource
          |    service SimpleCaskService {
          |       @HttpOperation(method = "GET" , url = "/api/cask/findAll/Simple")
          |       operation findAll(  ) : Simple[]

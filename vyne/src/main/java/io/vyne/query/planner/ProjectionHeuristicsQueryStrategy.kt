@@ -102,7 +102,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
    }
 
    private fun graphSearchResult(target: Set<QuerySpecTypeNode>, context: QueryContext): WeightedNode<Relationship, Element, Double>? {
-      val graph = VyneGraphBuilder(context.schema).build(context.facts.map { it.type }.toSet())
+      val graph = VyneGraphBuilder(context.schema).build(types = context.facts.map { it.type }.toSet(), excludedServices = context.excludedServices.toSet())
       return context.facts.asSequence()
          .mapNotNull { fact ->
             val searchStart = instanceOfType(fact.type)
