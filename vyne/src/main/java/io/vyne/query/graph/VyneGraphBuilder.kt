@@ -332,7 +332,7 @@ class VyneGraphBuilder(private val schema: Schema) {
       }
       schema.type(instanceFqn).attributes.forEach { (attributeName, field) ->
          when {
-            instance.hasAttribute(attributeName) && instance[attributeName].value != null -> {
+            instance.hasAttribute(attributeName) && instance[attributeName].value != null && instance[attributeName].value != "" -> {
                connectProvidedInstanceAttribute(instanceFqn, attributeName, builder, providedInstanceNode, field)
             }
             // Include calculated fields
