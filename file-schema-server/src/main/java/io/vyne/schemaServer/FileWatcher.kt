@@ -24,6 +24,8 @@ class FileWatcherInitializer(val watcher: FileWatcher) {
 @Component
 class FileWatcher(@Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String?,
                   @Value("\${taxi.schema-recompile-interval-seconds:3}") private val schemaRecompileIntervalSeconds: Long,
+                  @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
+
                   private val compilerService: CompilerService,
                   private val excludedDirectoryNames: List<String> = FileWatcher.excludedDirectoryNames) {
 
@@ -33,14 +35,16 @@ class FileWatcher(@Value("\${taxi.schema-local-storage}") private val schemaLoca
 
    @PostConstruct
    fun init() {
-      log().info("taxi.schema-local-storage=${schemaLocalStorage} taxi.schema-recompile-interval-seconds=${schemaRecompileIntervalSeconds}")
+      log().info("""taxi.schema-local-storage=${schemaLocalStorage}
+| taxi.schema-recompile-interval-seconds=${schemaRecompileIntervalSeconds}
+| taxi.schema-increment-version-on-recompile=${incrementVersionOnRecompile}""".trimMargin())
       // scheduling recompilations at fixed interval
       // this is useful to batch multiple taxi file updates into a single update
       scheduler.scheduleAtFixedRate({
          if (recompile) {
             recompile = false
             try {
-               compilerService.recompile()
+               compilerService.recompile(incrementVersionOnRecompile)
             } catch (exception: Exception) {
                log().error("Exception in compiler service:", exception)
             }

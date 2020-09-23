@@ -84,7 +84,7 @@ class EurekaClientSchemaConsumer(
          // had changed.  However, we're seeing missed changes, and that method is deprecated,
          // it's possible that it served as a premature optimisation.
          // Let's add it back if this stuff turns out to be expensive
-         log().info("Received a eureka event, checking for changes to sources")
+         log().debug("Received a eureka event, checking for changes to sources")
 
          val currentSourceSet = rebuildSources()
          val delta = calculateDelta(sources,currentSourceSet)
@@ -197,9 +197,8 @@ class EurekaClientSchemaConsumer(
    }
 
    private fun rebuildSources(): List<SourcePublisherRegistration> {
-      return timed("Rebuild of Eureka source list") {
 //         log().info("Registered Eureka Application ${client.applications.registeredApplications.map { it.name }}")
-         client.applications.registeredApplications
+         return client.applications.registeredApplications
             // Require that at least one instance is up
             .filter { application -> application.instances.any { it.status == InstanceInfo.InstanceStatus.UP } }
             .mapNotNull { application ->
@@ -227,7 +226,6 @@ class EurekaClientSchemaConsumer(
                verifyAllInstancesContainTheSameMappings(application, publishedSources)
             }
          }
-      }
 
    }
 
