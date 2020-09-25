@@ -9,4 +9,5 @@ interface CaskConfigRepository : JpaRepository<CaskConfig, String> {
    fun findAllByQualifiedTypeNameAndStatus(typeName: String,status:CaskStatus): List<CaskConfig>
    fun findAllByStatus(status:CaskStatus):List<CaskConfig>
    fun findByTableName(tableName:String):CaskConfig?
+   fun findAllByStatusAndExposesType(status:CaskStatus, exposesType: Boolean):List<CaskConfig>
 }

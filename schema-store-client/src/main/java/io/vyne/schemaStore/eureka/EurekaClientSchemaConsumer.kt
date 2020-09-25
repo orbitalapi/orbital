@@ -116,7 +116,9 @@ class EurekaClientSchemaConsumer(
          logChanges("removed", delta.removedSources)
          val oldSchemaSet = this.schemaSet()
          sync(delta)
-         eventPublisher.publishEvent(SchemaSetChangedEvent(oldSchemaSet, this.schemaSet()))
+         SchemaSetChangedEvent.generateFor(oldSchemaSet, this.schemaSet())?.let {
+            eventPublisher.publishEvent(it)
+         }
       } else {
          log().info("No changes found to sources - nothing to do")
       }

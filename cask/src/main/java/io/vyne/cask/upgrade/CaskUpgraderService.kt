@@ -33,6 +33,9 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
                           private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
                           private val applicationEventPublisher: ApplicationEventPublisher
 ) {
+   fun upgradeAll(casks:List<CaskNeedingUpgrade>) {
+      casks.forEach { upgrade(it.config) }
+   }
    fun upgrade(config: CaskConfig) {
       log().info("Starting to upgrade cask ${config.tableName}")
       val schema = try {

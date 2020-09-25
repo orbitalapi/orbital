@@ -3,6 +3,7 @@ package io.vyne.cask.query
 import com.winterbe.expekt.should
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.schemas.fqn
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
@@ -12,12 +13,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.junit4.SpringRunner
 import java.time.Instant
 
 @DataJpaTest(properties = ["spring.main.web-application-type=none"])
 @RunWith(SpringRunner::class)
 @AutoConfigureEmbeddedDatabase(beanName = "dataSource")
+@Import(StringToQualifiedNameConverter::class)
 class CaskConfigServiceTest {
 
    @Autowired
