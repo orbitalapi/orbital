@@ -124,11 +124,14 @@ class VyneGraphBuilder(private val schema: Schema) {
       .maximumSize(100)
       .build<GraphWithFactInstancesCacheKey, HipsterDirectedGraph<Element, Relationship>>()
 
-   fun build(facts: List<TypedInstance>, excludedOperations: Set<QualifiedName> = emptySet(), excludedEdges: List<EvaluatableEdge>): HipsterDirectedGraph<Element, Relationship> {
+   fun build(facts:List<TypedInstance>,
+             excludedOperations: Set<QualifiedName> = emptySet(),
+             excludedEdges:List<EvaluatableEdge>,
+             excludedServices: Set<QualifiedName>): HipsterDirectedGraph<Element, Relationship> {
       val builder = baseSchemaCache.get(excludedOperations.hashCode()) {
          val instance = HipsterGraphBuilder.create<Element, Relationship>()
          appendTypes(instance, schema)
-         appendServices(instance, schema, excludedOperations)
+         appendServices(instance, schema, excludedOperations, excludedServices)
          instance
       }
       val graphWithFacts = graphWithFactInstancesCache.get(GraphWithFactInstancesCacheKey(facts, excludedEdges, builder)) {
@@ -141,11 +144,11 @@ class VyneGraphBuilder(private val schema: Schema) {
 
    }
 
-   fun build(types: Set<Type> = emptySet(), excludedOperations: Set<QualifiedName> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
+   fun build(types: Set<Type> = emptySet(), excludedOperations: Set<QualifiedName> = emptySet(), excludedServices: Set<QualifiedName> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
       val builder = baseSchemaCache.get(excludedOperations.hashCode()) {
          val instance = HipsterGraphBuilder.create<Element, Relationship>()
          appendTypes(instance, schema)
-         appendServices(instance, schema, excludedOperations)
+         appendServices(instance, schema, excludedOperations, excludedServices)
          instance
       }
 
@@ -227,13 +230,16 @@ class VyneGraphBuilder(private val schema: Schema) {
       return "$typeFullyQualifiedName/$attributeName"
    }
 
-   private fun appendServices(builder: HipsterGraphBuilder<Element, Relationship>, schema: Schema, excludedOperations: Set<QualifiedName>) {
-      return schema.services.forEach { service: Service ->
+   private fun appendServices(builder: HipsterGraphBuilder<Element, Relationship>, schema: Schema, excludedOperations: Set<QualifiedName>, excludedServices: Set<QualifiedName>) {
+      return schema
+         .services
+         .filter { !excludedServices.contains(it.name) }
+         .forEach { service: Service ->
          service.operations
             .filter { !excludedOperations.contains(it.qualifiedName) }
             .forEach { operation: Operation ->
                val operationNode = operation(service, operation)
-               operation.parameters.forEachIndexed { index, parameter ->
+               operation.parameters.forEachIndexed { _, parameter ->
                   // When building services, we need to use 'connector nodes'
                   // as Hipster4J doesn't support identical vertex pairs with seperate edges.
                   // eg: Service -[requiresParameter]-> Money && Service -[Provides]-> Money
@@ -247,7 +253,7 @@ class VyneGraphBuilder(private val schema: Schema) {
                      // Traverse into the attributes of param types, and add extra nodes.
                      // As we're allowed to instantiate param types, discovered values within the graph
                      // can be used to populate new instances, so form links.
-                     parameter.type.attributes.forEach { attriubteName, typeRef ->
+                     parameter.type.attributes.forEach { (_, typeRef) ->
                         // Point back to the "parent" param node (the parameterObject)
                         // might revisit this in the future, and point back to the Operation itself.
                         builder.connect(parameter(typeRef.type.fullyQualifiedName)).to(paramNode).withEdge(Relationship.IS_PARAMETER_ON)
