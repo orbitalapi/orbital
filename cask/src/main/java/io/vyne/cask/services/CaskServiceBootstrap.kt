@@ -1,15 +1,12 @@
 package io.vyne.cask.services
 
-import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.schema
 import io.vyne.cask.ddl.views.CaskViewService
-import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskNamespacePrefix
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.cask.upgrade.CaskUpgradesRequiredEvent
 import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.VersionedType
@@ -31,7 +28,8 @@ class CaskServiceBootstrap constructor(
    private val changeDetector: CaskSchemaChangeDetector,
    private val eventPublisher: ApplicationEventPublisher) {
 
-   private var lastServiceGenerationSuccessful:Boolean = false
+   @Volatile
+   private var lastServiceGenerationSuccessful: Boolean = false
 
    // TODO Update cask service when type changes (e.g. new attributes added)
    @EventListener
@@ -43,30 +41,23 @@ class CaskServiceBootstrap constructor(
          eventPublisher.publishEvent(CaskUpgradesRequiredEvent())
       }
 
-      val caskChangesOnly = casksNeedingUpgrading.isNotEmpty() && casksNeedingUpgrading.all { it.config.qualifiedTypeName.startsWith(CaskNamespacePrefix) }
-      when {
-         caskChangesOnly -> {
-            log().info("Schema changed, cask services do not need updating, but re-registering Cask Views.")
-            // Required to handle the case:
-            // - blank Cask DB and configuration with a view that depends on cask A and cask B
-            // - Create Cask A
-            // - Create Cask B
-            // We need below call to handle view generation.
-            caskServiceRegenerationRunner.regenerate {
-               val newCaskViewConfigs = this.generateCaskViews()
-               val caskVersionedViewTypes = findTypesToRegister(newCaskViewConfigs.toMutableList())
-               if (caskVersionedViewTypes.isNotEmpty()) {
-                  caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedViewTypes)
-               }
-            }
+      caskServiceRegenerationRunner.regenerate {
+         // Look for cask views that need rebuilding
+         val newCaskViewConfigs = this.generateCaskViews()
+         val caskVersionedViewTypes = findTypesToRegister(newCaskViewConfigs.toMutableList())
+         if (caskVersionedViewTypes.isNotEmpty()) {
+            caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedViewTypes)
          }
+      }
+
+      when {
          casksNeedingUpgrading.isNotEmpty() -> {
             log().info("Schema changed, cask services need to be updated!")
-            caskServiceRegenerationRunner.regenerate { regenerateCaskServices() }
+            regenerateCaskServicesAsync()
          }
          !lastServiceGenerationSuccessful -> {
             log().info("Last attempt to generate services failed.  The schema has changed, so will reattempt")
-            regenerateCaskServices()
+            regenerateCaskServicesAsync()
          }
          else -> {
             log().info("Upgrade check completed, nothing to do.")
@@ -76,12 +67,12 @@ class CaskServiceBootstrap constructor(
    }
 
    @EventListener(value = [ContextRefreshedEvent::class])
-   fun generateCaskServicesOnStartup() {
+   fun regenerateCaskServicesAsync() {
       caskServiceRegenerationRunner.regenerate { regenerateCaskServices() }
    }
 
    private fun generateCaskViews(): List<CaskConfig> {
-      return caskViewService.bootstrap()
+      return caskViewService.generateViews()
    }
 
    private fun regenerateCaskServices() {
@@ -94,42 +85,46 @@ class CaskServiceBootstrap constructor(
       }
    }
 
-   private fun findTypesToRegister(caskConfigs: MutableList<CaskConfig>): List<CaskTaxiPublicationRequest> {
-      return getSchema()?.let { schema ->
-         val caskPublicationRequests =  caskConfigs.map { caskConfig ->
-            if (caskConfig.exposesType) {
-               val caskSchema = caskConfig.schema(importSchema = schema)
-               val type = caskSchema.versionedType(caskConfig.qualifiedTypeName.fqn())
-               CaskTaxiPublicationRequest(
-                  type,
-                  registerService = true,
-                  registerType = true
-               )
-            } else {
-               try {
-                  CaskTaxiPublicationRequest(
-                     schema.versionedType(caskConfig.qualifiedTypeName.fqn()),
-                     registerService = true,
-                     registerType = false
-                  )
-               } catch (e: Exception) {
-                  log().error("Unable to find type ${caskConfig.qualifiedTypeName.fqn()}. Flagging cask generation failure, will try again on next schema update. Error: ${e.message}")
-                  lastServiceGenerationSuccessful = false
-                  null
-               }
-            }
+   private fun findTypesToRegister(caskConfigs: List<CaskConfig>): List<CaskTaxiPublicationRequest> {
+      if (caskConfigs.isEmpty()) {
+         return emptyList()
+      }
+      val schema = getSchema() ?: return emptyList()
 
-         }
-         if (caskPublicationRequests.any { it == null }) {
-            lastServiceGenerationSuccessful = false
+      val caskPublicationRequests = caskConfigs.map { caskConfig ->
+         if (caskConfig.exposesType) {
+            val caskSchema = caskConfig.schema(importSchema = schema)
+            val type = caskSchema.versionedType(caskConfig.qualifiedTypeName.fqn())
+            CaskTaxiPublicationRequest(
+               type,
+               registerService = true,
+               registerType = true
+            )
          } else {
-            if (!lastServiceGenerationSuccessful) {
-               log().info("Poll for service generation requests completed successfully.  Flagging as healthy again")
-               lastServiceGenerationSuccessful = true
+            try {
+               CaskTaxiPublicationRequest(
+                  schema.versionedType(caskConfig.qualifiedTypeName.fqn()),
+                  registerService = true,
+                  registerType = false
+               )
+            } catch (e: Exception) {
+               log().error("Unable to find type ${caskConfig.qualifiedTypeName.fqn()}. Flagging cask generation failure, will try again on next schema update. Error: ${e.message}")
+               lastServiceGenerationSuccessful = false
+               null
             }
          }
-         caskPublicationRequests.filterNotNull()
-      }?.toList().orElse(emptyList())
+
+      }
+      if (caskPublicationRequests.any { it == null }) {
+         lastServiceGenerationSuccessful = false
+      } else {
+         if (!lastServiceGenerationSuccessful) {
+            log().info("Poll for service generation requests completed successfully.  Flagging as healthy again")
+            lastServiceGenerationSuccessful = true
+         }
+      }
+      return caskPublicationRequests.filterNotNull()
+
    }
 
    private fun getSchema(): Schema? {

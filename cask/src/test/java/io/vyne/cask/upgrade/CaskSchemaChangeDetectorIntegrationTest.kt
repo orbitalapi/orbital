@@ -25,7 +25,7 @@ class CaskSchemaChangeDetectorIntegrationTest : BaseCaskIntegrationTest() {
    override fun setup() {
       super.setup()
       configService = CaskConfigService(configRepository)
-      changeDetector = CaskSchemaChangeDetector(configRepository,configService,caskDao)
+      changeDetector = CaskSchemaChangeDetector(configRepository,configService,caskDao, caskViewService)
    }
 
    @Test
