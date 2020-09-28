@@ -2,6 +2,7 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../services/query.service';
 import {Field, findType, getCollectionMemberType, Schema, Type, TypedInstance} from '../services/schema';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
+import {MatRadioChange} from '@angular/material/radio';
 
 /**
  * This displays results fetched from service calls.
@@ -12,6 +13,7 @@ import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
  * Previously, this was split across multiple different UI components, but that
  * created too many inconsistencies in display.
  */
+
 @Component({
   selector: 'app-object-view',
   templateUrl: './object-view.component.html',
@@ -29,8 +31,15 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     // tslint:disable-next-line:no-inferrable-types
   selectable: boolean = false;
 
+  @Output() downloadParsedDataClicked = new EventEmitter<Boolean>();
+
+  @Output() downloadTypedParsedDataClicked = new EventEmitter<Boolean>();
+
+
   // Indicates if it's a straight typedInstance (ie., a typedValue)
   // or a typed object, which is indexed with property names
+
+  isTypeInfoIncluded = false;
 
   get isPrimitive(): boolean {
     return this._instance != null && this.typedObject.value != null && !this.isTypedObject && !this.isArray;
@@ -59,6 +68,18 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       this.instanceClicked.emit(this.typedObject);
     }
 
+  }
+
+  downloadParsedData() {
+    if (this.isTypeInfoIncluded) {
+      this.downloadTypedParsedDataClicked.emit();
+    } else {
+      this.downloadParsedDataClicked.emit();
+    }
+  }
+
+  handleRadio($event: MatRadioChange) {
+    this.isTypeInfoIncluded = $event.value === 'TypeIncluded' ? true : false;
   }
 }
 

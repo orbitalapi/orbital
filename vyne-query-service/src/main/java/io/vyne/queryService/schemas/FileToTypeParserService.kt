@@ -4,21 +4,22 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.models.Provided
+import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObjectFactory
 import io.vyne.models.csv.CsvImporterUtil
 import io.vyne.models.csv.ParsedCsvContent
 import io.vyne.models.csv.ParsedTypeInstance
 import io.vyne.models.json.isJsonArray
+import io.vyne.queryService.ExportType
 import io.vyne.schemaStore.SchemaProvider
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
+import org.apache.commons.csv.CSVPrinter
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
+import java.io.StringWriter
 
 @RestController
 class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapper: ObjectMapper) {
@@ -54,6 +55,8 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
       val parameters = CsvIngestionParameters(
          csvDelimiter, firstRecordAsHeader, setOf(nullValue).filterNotNull().toSet(), ignoreContentBefore, containsTrailingDelimiters
       )
+
+
       return CsvImporterUtil.parseCsvToType(
          rawContent,
          parameters,
@@ -74,13 +77,75 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
             csvDelimiter, firstRecordAsHeader, ignoreContentBefore = ignoreContentBefore, containsTrailingDelimiters = containsTrailingDelimiters
          )
          return CsvImporterUtil.parseCsvToRaw(
-            rawContent, parameters
-         )
+            rawContent, parameters)
       } catch (e: Exception) {
          throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
       }
    }
 
+   @PostMapping("/api/csv/downloadParsed")
+   fun parseAndDownload(@RequestBody rawContent: String,
+                        @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
+                        @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
+                        @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+                        @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false
+   ): ByteArray {
+      try {
+         val parameters = CsvIngestionParameters(
+            csvDelimiter, firstRecordAsHeader, ignoreContentBefore = ignoreContentBefore, containsTrailingDelimiters = containsTrailingDelimiters
+         )
+         return downloadParsedData(CsvImporterUtil.parseCsvToRaw(rawContent, parameters))
+      } catch (e: Exception) {
+         throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
+      }
+   }
 
+   @PostMapping("/api/csv/downloadTypedParsed")
+   fun parseToTypeAndDownload(@RequestBody rawContent: String,
+                             @RequestParam("delimiter", required = false, defaultValue = ",") csvDelimiter: Char,
+                             @RequestParam("type") typeName: String,
+                             @RequestParam("firstRecordAsHeader", required = false, defaultValue = "true") firstRecordAsHeader: Boolean,
+                             @RequestParam("ignoreContentBefore", required = false) ignoreContentBefore: String? = null,
+                             @RequestParam("containsTrailingDelimiters", required = false, defaultValue = "false") containsTrailingDelimiters: Boolean = false
+   ): ByteArray {
+      try {
+         val parameters = CsvIngestionParameters(
+            csvDelimiter, firstRecordAsHeader, ignoreContentBefore = ignoreContentBefore, containsTrailingDelimiters = containsTrailingDelimiters
+         )
+         val typed = CsvImporterUtil.parseCsvToType(
+            rawContent,
+            parameters,
+            schemaProvider.schema(),
+            typeName
+         );
+         return downloadTypedParsedData(typed)
+      } catch (e: Exception) {
+         throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
+      }
+   }
+
+   fun downloadTypedParsedData(parsedContent: List<ParsedTypeInstance>): ByteArray {
+      val typedNamedInstanceList = parsedContent.map { it.typeNamedInstance }
+      return objectMapper
+         .writeValueAsString(typedNamedInstanceList)
+         .toByteArray()
+   }
+
+   fun downloadParsedData(parsedContent: ParsedCsvContent): ByteArray {
+
+         val records = parsedContent.records.map {
+            parsedContent.headers.mapIndexed { index, header ->
+               if (index < it.size) {
+                  Pair(header, it[index])
+               } else {
+                  Pair(header, null)
+               }
+            }.toMap()
+         }
+
+         return objectMapper
+            .writeValueAsString(records)
+            .toByteArray()
+   }
 }
 
