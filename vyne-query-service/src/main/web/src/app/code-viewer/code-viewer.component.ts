@@ -118,7 +118,7 @@ export class CodeViewerComponent {
           setTimeout(() => {
             console.warn('Deferring code container remeasuring, as layout not yet finished');
             this.remeasure();
-          }, 0);
+          }, 10);
         }
         editorDomNode.style.height = calculatedHeight;
         const firstParent = editorDomNode.parentElement;

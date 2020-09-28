@@ -23,8 +23,7 @@ export class InstanceSelectedEvent {
   }
 }
 
-export enum DownloadFileType {JSON = 'JSON', CSV = 'CSV'}
-
+export enum DownloadFileType {JSON = 'JSON', CSV = 'CSV',}
 
 @Component({
   selector: 'query-result-container',
