@@ -92,28 +92,27 @@ class CaskServiceBootstrap constructor(
       val schema = getSchema() ?: return emptyList()
 
       val caskPublicationRequests = caskConfigs.map { caskConfig ->
-         if (caskConfig.exposesType) {
-            val caskSchema = caskConfig.schema(importSchema = schema)
-            val type = caskSchema.versionedType(caskConfig.qualifiedTypeName.fqn())
-            CaskTaxiPublicationRequest(
-               type,
-               registerService = true,
-               registerType = true
-            )
-         } else {
-            try {
+         try {
+            if (caskConfig.exposesType) {
+               val caskSchema = caskConfig.schema(importSchema = schema)
+               val type = caskSchema.versionedType(caskConfig.qualifiedTypeName.fqn())
+               CaskTaxiPublicationRequest(
+                  type,
+                  registerService = true,
+                  registerType = true
+               )
+            } else {
                CaskTaxiPublicationRequest(
                   schema.versionedType(caskConfig.qualifiedTypeName.fqn()),
                   registerService = true,
                   registerType = false
                )
-            } catch (e: Exception) {
-               log().error("Unable to find type ${caskConfig.qualifiedTypeName.fqn()}. Flagging cask generation failure, will try again on next schema update. Error: ${e.message}")
-               lastServiceGenerationSuccessful = false
-               null
             }
+         } catch (e: Exception) {
+            log().error("Unable to find type ${caskConfig.qualifiedTypeName.fqn()}. Flagging cask generation failure, will try again on next schema update. Error: ${e.message}")
+            lastServiceGenerationSuccessful = false
+            null
          }
-
       }
       if (caskPublicationRequests.any { it == null }) {
          lastServiceGenerationSuccessful = false
