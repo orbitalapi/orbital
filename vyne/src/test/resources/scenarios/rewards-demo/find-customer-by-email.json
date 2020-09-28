@@ -43,7 +43,7 @@
          "path": null,
          "queryResponseId": "69198837-e136-4dfe-b582-25d3cc145eb7",
          "duration": 9,
-         "fullyResolved": true,
+         "isFullyResolved": true,
          "remoteCalls": [
             {
                "service": {
@@ -53,7 +53,7 @@
                   "parameterizedName": "io.vyne.demos.rewards.CustomerService",
                   "name": "CustomerService"
                },
-               "addresss": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
+               "address": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
                "operation": "getCustomerByEmail",
                "responseTypeName": {
                   "fullyQualifiedName": "demo.Customer",

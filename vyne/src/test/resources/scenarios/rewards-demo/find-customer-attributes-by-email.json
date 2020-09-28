@@ -41,7 +41,7 @@
                   "parameterizedName": "io.vyne.demos.rewards.CustomerService",
                   "name": "CustomerService"
                },
-               "addresss": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
+               "address": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
                "operation": "getCustomerByEmail",
                "responseTypeName": {
                   "fullyQualifiedName": "demo.Customer",

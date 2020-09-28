@@ -14,8 +14,10 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
 import io.vyne.query.QueryResponse.ResponseStatus.*
+import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
+import org.junit.Test
 import java.io.File
 import java.time.Instant
 import kotlin.test.fail
@@ -51,7 +53,7 @@ class RegressionTest {
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
    // Disabled while I investigate
-//   @Test
+   @Test
    fun runTest() {
       val resource = Resources.getResource("scenarios")
       val root = File(resource.toURI())
@@ -102,7 +104,8 @@ class RegressionTest {
                // Therefore, map the collection values to a TypedCollection
                // using the type we've just been given from the response payload.
                val collectionMembers = (typeNamedInstance.value as List<*>).map { TypedInstance.fromNamedType(it as TypeNamedInstance, vyne.schema, source = Provided) }
-               TypedCollection(type, collectionMembers)
+//               TypedCollection(type, collectionMembers)
+               TypedCollection.arrayOf(type, collectionMembers)
             }
             else -> TypedInstance.fromNamedType(typeNamedInstance, vyne.schema, source = Provided)
          }

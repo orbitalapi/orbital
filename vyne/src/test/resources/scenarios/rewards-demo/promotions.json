@@ -82,7 +82,7 @@
                   "parameterizedName": "io.vyne.demos.rewards.CustomerService",
                   "name": "CustomerService"
                },
-               "addresss": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
+               "address": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
                "operation": "getCustomerByEmail",
                "responseTypeName": {
                   "fullyQualifiedName": "demo.Customer",
@@ -117,7 +117,7 @@
                   "parameterizedName": "io.vyne.demos.marketing.promotions.DiscountPromotionService",
                   "name": "DiscountPromotionService"
                },
-               "addresss": "http://martypitt-XPS-15-9560:9206/discounts",
+               "address": "http://martypitt-XPS-15-9560:9206/discounts",
                "operation": "getDiscountPromotion",
                "responseTypeName": {
                   "fullyQualifiedName": "demos.DiscountPromotion",
@@ -153,7 +153,7 @@
                   "parameterizedName": "io.vyne.demos.rewards.CustomerService",
                   "name": "CustomerService"
                },
-               "addresss": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
+               "address": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
                "operation": "getCustomerByEmail",
                "responseTypeName": {
                   "fullyQualifiedName": "demo.Customer",
@@ -188,7 +188,7 @@
                   "parameterizedName": "io.vyne.demos.rewards.CustomerService",
                   "name": "CustomerService"
                },
-               "addresss": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
+               "address": "http://martypitt-XPS-15-9560:9200/customers/email/jimmy@demo.com",
                "operation": "getCustomerByEmail",
                "responseTypeName": {
                   "fullyQualifiedName": "demo.Customer",
@@ -223,7 +223,7 @@
                   "parameterizedName": "io.vyne.demos.marketing.MarketingService",
                   "name": "MarketingService"
                },
-               "addresss": "http://martypitt-XPS-15-9560:9201/marketing/1",
+               "address": "http://martypitt-XPS-15-9560:9201/marketing/1",
                "operation": "getMarketingDetailsForCustomer",
                "responseTypeName": {
                   "fullyQualifiedName": "io.vyne.demos.marketing.CustomerMarketingRecord",
@@ -256,7 +256,7 @@
                   "parameterizedName": "io.vyne.demos.rewards.balances.RewardsBalanceService",
                   "name": "RewardsBalanceService"
                },
-               "addresss": "http://martypitt-XPS-15-9560:9202/balances/4005-2003-2330-1002",
+               "address": "http://martypitt-XPS-15-9560:9202/balances/4005-2003-2330-1002",
                "operation": "getRewardsBalance",
                "responseTypeName": {
                   "fullyQualifiedName": "demo.RewardsAccountBalance",
@@ -290,7 +290,7 @@
                   "parameterizedName": "io.vyne.demos.marketing.promotions.DiscountPromotionService",
                   "name": "DiscountPromotionService"
                },
-               "addresss": "http://martypitt-XPS-15-9560:9206/gift",
+               "address": "http://martypitt-XPS-15-9560:9206/gift",
                "operation": "getDoublePointsPromotion",
                "responseTypeName": {
                   "fullyQualifiedName": "demo.DoublePointsPromotion",
