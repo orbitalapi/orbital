@@ -81,7 +81,6 @@ fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
 fun testVyne(schema: String) = testVyne(TaxiSchema.from(schema))
 
 class VyneTest {
-
    @Test
    fun `when a provided object has a typed null for a value, it shouldnt be used as an input`() {
       val (vyne, stubs) = testVyne("""
@@ -94,13 +93,18 @@ class VyneTest {
             cfiCode : CfiCode
          }
 
+         model CfiCodeHolder {
+            cfiCode: CfiCode
+            field: String
+         }
+
          service ProductService {
             // Shortest path, but provided value is null, so shouldn't be called
             @StubOperation("findByCfiCode")
             operation findByCfiCode(CfiCode):Product
             // Longer path, but returns correct value
             @StubOperation("isinToCfi")
-            operation isinToCfi(Isin):CfiCode
+            operation isinToCfi(Isin):CfiCodeHolder
          }
       """.trimIndent())
       val inputJson = """{
@@ -110,7 +114,12 @@ class VyneTest {
       """.trimMargin()
       val input = TypedInstance.from(vyne.type("Order"), inputJson, vyne.schema, source = Provided)
 
-      stubs.addResponse("isinToCfi", TypedInstance.from(vyne.type("CfiCode"), "Cfi-123", vyne.schema, source = Provided))
+      val cfiCodeHolder = """{
+         |"cfiCode": "Cfi-123",
+         |"field": "value"
+         |}
+      """.trimMargin()
+      stubs.addResponse("isinToCfi", TypedInstance.from(vyne.type("CfiCodeHolder"), cfiCodeHolder, vyne.schema, source = Provided))
       stubs.addResponse("findByCfiCode") { operation, parameters ->
          val cfiCode = parameters[0].second
          if (cfiCode.value == "Cfi-123") {
@@ -132,30 +141,32 @@ class VyneTest {
    @Test
    fun `calls remote services to discover response from deeply nested value`() {
       val (vyne, stubs) = testVyne("""
-         type Isin inherits String
-         type SecurityDescription inherits String
-         model InstrumentResponse {
-             isin : Isin?
-             annaJson : AnnaJson?
-         }
-         model AnnaJson {
-             Derived : Derived?
-         }
-         model Derived {
-             ShortName : SecurityDescription?
-         }
+         namespace vyne.tests {
+            type Isin inherits String
+            type SecurityDescription inherits String
+            model InstrumentResponse {
+                isin : Isin?
+                annaJson : AnnaJson?
+            }
+            model AnnaJson {
+                Derived : Derived?
+            }
+            model Derived {
+                ShortName : SecurityDescription?
+            }
 
-         model RequiredOutput {
-            isin : Isin?
-            description : SecurityDescription?
-         }
+            model RequiredOutput {
+               isin : Isin?
+               description : SecurityDescription?
+            }
 
-         service StubService {
-            @StubResponse("securityDescription")
-            operation getAnnaJson(isin:Isin):InstrumentResponse
+            service StubService {
+               @StubResponse("securityDescription")
+               operation getAnnaJson(isin:Isin):InstrumentResponse
+            }
          }
       """)
-      val stubResponse = TypedInstance.from(vyne.type("InstrumentResponse"), """
+      val stubResponse = TypedInstance.from(vyne.type("vyne.tests.InstrumentResponse"), """
          {
             "isin": "foo",
             "annaJson" : {
@@ -166,10 +177,10 @@ class VyneTest {
          }
       """.trimIndent(), vyne.schema, source = Provided)
       stubs.addResponse("securityDescription", stubResponse)
-      vyne.addKeyValuePair("Isin", "foo")
-      val result = vyne.query().build("RequiredOutput")
+      vyne.addKeyValuePair("vyne.tests.Isin", "foo")
+      val result = vyne.query().build("vyne.tests.RequiredOutput")
       result.isFullyResolved.should.be.`true`
-      val rawResult = result["RequiredOutput"]!!.toRawObject()
+      val rawResult = result["vyne.tests.RequiredOutput"]!!.toRawObject()
       val resultJson = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(rawResult)
       val expected = """{
          | "isin" : "foo",

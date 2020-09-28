@@ -1,6 +1,8 @@
 package io.vyne.cask.upgrade
 
 import arrow.core.extensions.list.show.show
+import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.eq
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
@@ -23,7 +25,7 @@ class CaskSchemaChangeDetectorTest {
    fun setup() {
       configService = mock {}
       repository = mock {  }
-      changeDetector = CaskSchemaChangeDetector(repository, configService, mock {  })
+      changeDetector = CaskSchemaChangeDetector(repository, configService, mock {  }, mock {  })
    }
    @Test
    fun `when type has changed definition it is detected`() {
@@ -32,7 +34,7 @@ class CaskSchemaChangeDetectorTest {
             firstName : FirstName as String
          }
       """.trimIndent())
-      whenever(repository.findAllByStatus(CaskStatus.ACTIVE)).thenReturn(listOf(caskForType(originalSchema, "Person")))
+      whenever(repository.findAllByStatusAndExposesType(eq(CaskStatus.ACTIVE), any())).thenReturn(listOf(caskForType(originalSchema, "Person")))
       val updatedSchema = TaxiSchema.from("""
          model Person {
             firstName : FirstName as String
@@ -61,8 +63,6 @@ class CaskSchemaChangeDetectorTest {
       val updated = changeDetector.findCasksRequiringUpgrading(updatedSchema)
       updated.should.be.empty
    }
-
-
 
 
 }

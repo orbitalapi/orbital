@@ -41,13 +41,19 @@ private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventP
    }
 
    override fun entryAdded(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
-      log().info("SchemaSet has been created: ${event.value.toString()} - dispatching event.")
-      eventPublisher.publishEvent(SchemaSetChangedEvent(event.oldValue, event.value))
+      SchemaSetChangedEvent.generateFor(event.oldValue, event.value)?.let {
+         log().info("SchemaSet has been created: ${event.value.toString()} - dispatching event.")
+         eventPublisher.publishEvent(it)
+      }
+
    }
 
    override fun entryUpdated(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
-      log().info("SchemaSet has changed: (${event.oldValue} ==> ${event.value}) - dispatching event")
-      eventPublisher.publishEvent(SchemaSetChangedEvent(event.oldValue, event.value))
+     SchemaSetChangedEvent.generateFor(event.oldValue, event.value)?.let {
+        log().info("SchemaSet has changed: (${event.oldValue} ==> ${event.value}) - dispatching event")
+        eventPublisher.publishEvent(it)
+     }
+
 
    }
 }

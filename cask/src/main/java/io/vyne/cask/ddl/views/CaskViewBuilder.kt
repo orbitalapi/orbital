@@ -2,6 +2,7 @@ package io.vyne.cask.ddl.views
 
 import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
+import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.schema
 import io.vyne.cask.ddl.PostgresDdlGenerator
@@ -36,11 +37,15 @@ class CaskViewBuilder(
    private val schemaStore: SchemaStore,
    private val viewSpec: CaskViewDefinition
 ) {
+   companion object {
+      const val VIEW_PREFIX = "v_"
+     fun dropViewStatement(viewTableName:String) =  """drop view if exists $viewTableName;"""
+   }
    private val taxiWriter = SchemaWriter()
    private val tableConfigs: List<Pair<QualifiedName, CaskConfig>> by lazy { getCaskConfigs(viewSpec.join) }
    private val types: Map<QualifiedName, Type> by lazy { compileTypes(tableConfigs) }
    private val taxiTypes by lazy { types.mapValues { (_, vyneType) -> vyneType.taxiType as ObjectType } }
-   private val viewTableName = "$ViewPrefix${viewSpec.typeName.typeName}"
+   private val viewTableName = "$VIEW_PREFIX${viewSpec.typeName.typeName}"
 
    fun generateCreateView(): List<String> {
       val join = viewSpec.join
@@ -53,11 +58,15 @@ class CaskViewBuilder(
          log().warn("No cask exists for type ${join.types.first()}.  This can happen if a view is defined before a cask is generated. Aborting view creation for view ${viewSpec.typeName}")
          return emptyList()
       }
-      val filter = CaskViewFieldFilter(viewSpec.typeName, taxiTypes.values.toList(), preferredType!!)
+      val filter = CaskViewFieldFilter(viewSpec.typeName, taxiTypes.values.toList(), preferredType)
 
       val tableList = join.types.mapIndexed { index, qualifiedName ->
          val thisType = types[qualifiedName]?.taxiType as ObjectType?
-            ?: error("$qualifiedName was not mapped to a type.  This shouldn't happen")
+//            ?: error("$qualifiedName was not mapped to a type.  This shouldn't happen")
+         if (thisType == null) {
+            log().error("$qualifiedName was not mapped to a type. This suggests either the view has been incorrectly defined, or our schema is out of date.  Aborting generation of view.")
+            return emptyList()
+         }
          val thisTableName = tableNames[qualifiedName]
             ?: error("$qualifiedName was not mapped to a type.  This shouldn't happen")
 
@@ -116,9 +125,9 @@ class CaskViewBuilder(
          |$whereClause;
       """.trimMargin()
          .trim()
-      val dropStatement = """drop view if exists $viewTableName;"""
-      return listOf(dropStatement, ddl)
+      return listOf(dropViewStatement(viewTableName), ddl)
    }
+
 
    fun generateCaskConfig(): CaskConfig {
       val viewType = generateViewType()
@@ -230,6 +239,12 @@ class CaskViewBuilder(
    private fun getCaskConfigs(join: ViewJoin): List<Pair<QualifiedName, CaskConfig>> {
       return join.types.map { qualifiedName ->
          qualifiedName to caskConfigRepository.findAllByQualifiedTypeName(qualifiedName.fullyQualifiedName)
+      }.map { (qualifiedName,configs) ->
+         val activeConfigs = configs.filter { it.status == CaskStatus.ACTIVE }
+         if (configs.isNotEmpty() && activeConfigs.isEmpty()) {
+            log().warn("Cask view for $qualifiedName cannot be created, as it has no active configs -- all are either replaced or migrating")
+         }
+         qualifiedName to activeConfigs
       }.mapNotNull { (qualifiedName, configs) ->
          if (configs.isEmpty()) {
             log().error("Type ${qualifiedName.parameterizedName} does not have any cask configs assigned.  This can happen if a view is defined before a cask is generated.  This will prevent cask views being generated. ")
@@ -243,7 +258,4 @@ class CaskViewBuilder(
       }
    }
 
-   companion object {
-      const val ViewPrefix = "v_"
-   }
 }

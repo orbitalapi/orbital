@@ -18,6 +18,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
 import java.nio.charset.Charset
+import java.util.concurrent.ExecutorService
 import javax.inject.Provider
 
 internal data class SourcePublisherRegistration(
@@ -71,11 +72,12 @@ class EurekaClientSchemaConsumer(
    clientProvider: Provider<EurekaClient>,
    private val schemaStore: LocalValidatingSchemaStoreClient,
    private val eventPublisher: ApplicationEventPublisher,
-   private val restTemplate: RestTemplate = RestTemplate()) : SchemaStore {
+   private val restTemplate: RestTemplate = RestTemplate(),
+   private val refreshExecutorService: ExecutorService = EurekaNotificationServerListUpdater.getDefaultRefreshExecutor()) : SchemaStore {
 
    private var sources = mutableListOf<SourcePublisherRegistration>()
    private val client = clientProvider.get()
-   private val eurekaNotificationUpdater = EurekaNotificationServerListUpdater(clientProvider)
+   private val eurekaNotificationUpdater = EurekaNotificationServerListUpdater(clientProvider, refreshExecutorService)
 
    init {
       // This is executed on a dedicated ThreadPool and it is guaranteed that 'only' one callback is active for the given 'event'
@@ -84,7 +86,7 @@ class EurekaClientSchemaConsumer(
          // had changed.  However, we're seeing missed changes, and that method is deprecated,
          // it's possible that it served as a premature optimisation.
          // Let's add it back if this stuff turns out to be expensive
-         log().info("Received a eureka event, checking for changes to sources")
+         log().debug("Received a eureka event, checking for changes to sources")
 
          val currentSourceSet = rebuildSources()
          val delta = calculateDelta(sources,currentSourceSet)
@@ -116,7 +118,9 @@ class EurekaClientSchemaConsumer(
          logChanges("removed", delta.removedSources)
          val oldSchemaSet = this.schemaSet()
          sync(delta)
-         eventPublisher.publishEvent(SchemaSetChangedEvent(oldSchemaSet, this.schemaSet()))
+         SchemaSetChangedEvent.generateFor(oldSchemaSet, this.schemaSet())?.let {
+            eventPublisher.publishEvent(it)
+         }
       } else {
          log().info("No changes found to sources - nothing to do")
       }
@@ -147,6 +151,30 @@ class EurekaClientSchemaConsumer(
 
       if (delta.sourceIdsToRemove.isNotEmpty()) {
          schemaStore.removeSourceAndRecompile(delta.sourceIdsToRemove)
+      }
+
+      if (delta.changedSources.isNotEmpty()) {
+         // Handle the following case:
+         // given
+         // 'FileSchemaServer' publishes two taxi files - a.taxi and b.taxi
+         // When
+         // a.taxi is deleted.
+         // Then
+         // delta.changedSources becomes 'non-empty' (i.e. contains FileSchemaServer)
+         // and we need the following bit to remove 'a.taxi' from the list of known sources.
+         // see EurekaClientSchemaConsumerTest::`can detect removed sources and update whole schema accordingly`
+         delta.changedSources.forEach { changedPublisherRegistration ->
+            this.sources
+               .firstOrNull { existingPublisherRegistration ->
+                  existingPublisherRegistration.applicationName == changedPublisherRegistration.applicationName
+               }?.let { existingPublisherRegistration ->
+                  existingPublisherRegistration
+                     .availableSources
+                     .filter { existingSource ->
+                        changedPublisherRegistration.availableSources.none { it.sourceId == existingSource.sourceId }
+                     }.map { it.sourceId }
+               }?.let { schemaStore.removeSourceAndRecompile(it) }
+         }
       }
 
       this.sources.addAll(delta.newSources)
@@ -197,9 +225,8 @@ class EurekaClientSchemaConsumer(
    }
 
    private fun rebuildSources(): List<SourcePublisherRegistration> {
-      return timed("Rebuild of Eureka source list") {
 //         log().info("Registered Eureka Application ${client.applications.registeredApplications.map { it.name }}")
-         client.applications.registeredApplications
+         return client.applications.registeredApplications
             // Require that at least one instance is up
             .filter { application -> application.instances.any { it.status == InstanceInfo.InstanceStatus.UP } }
             .mapNotNull { application ->
@@ -227,7 +254,6 @@ class EurekaClientSchemaConsumer(
                verifyAllInstancesContainTheSameMappings(application, publishedSources)
             }
          }
-      }
 
    }
 

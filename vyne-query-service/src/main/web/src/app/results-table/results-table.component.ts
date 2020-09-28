@@ -75,27 +75,35 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     if (collection.length === 0) {
       this.rowData = [];
     } else {
-        collection.forEach((instance: TypeNamedInstance) => {
-          Object.keys(instance.value).forEach((key) => {
-            if (!instance.value[key].value) {
-              instance.value[key] = {
-                source: instance.value[key].source,
+      if (isTypeNamedInstance(collection[0])) {
+        collection.forEach((instance: InstanceLikeOrCollection) => {
+          Object.keys(instance).forEach((key) => {
+            if (!instance[key].value) {
+              instance[key] = {
+                source: instance[key].source,
                 value: '',
-                typeName: instance.value[key].typeName
+                typeName: instance[key].typeName
               };
             }
           });
         });
-
-      if (isTypeNamedInstance(collection[0])) {
         this.rowData = collection.map((instance: TypeNamedInstance) => instance.value);
-
       } else if (isTypedInstance(collection[0])) {
+        collection.forEach((instance: TypedInstance) => {
+          Object.keys(instance).forEach((key) => {
+            if (!instance[key].value) {
+              instance[key] = {
+                source: instance[key].source,
+                value: '',
+                typeName: instance[key].typeName
+              };
+            }
+          });
+        });
         this.rowData = collection.map((instance: TypedInstance) => instance.value);
       } else {
         this.rowData = collection;
       }
-
     }
   }
 

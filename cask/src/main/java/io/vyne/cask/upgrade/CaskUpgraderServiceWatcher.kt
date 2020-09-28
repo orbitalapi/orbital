@@ -21,14 +21,14 @@ class CaskUpgraderServiceWatcher(
    @EventListener
    fun onUpgradeWorkDetected(event: CaskUpgradesRequiredEvent) {
       log().info("Received CaskUpgradesRequiredEvent - looking for work")
-      checkForUprades()
+      checkForUpgrades()
    }
 
    @Async
    @EventListener(value = [ContextRefreshedEvent::class])
    fun checkForUpgradesOnStartup() {
       log().info("Cask upgrader service watcher started - checking for work")
-      checkForUprades()
+      checkForUpgrades()
       dropReplacedCasks()
    }
 
@@ -41,11 +41,11 @@ class CaskUpgraderServiceWatcher(
    private fun dropReplacedCasks() {
       caskConfigRepository.findAllByStatus(CaskStatus.REPLACED).forEach { config ->
          log().info("Dropping replaced cask ${config.tableName}")
-         caskDAO.deleteCask(config.tableName)
+         caskDAO.deleteCask(config.tableName, true)
       }
    }
 
-   private fun checkForUprades() {
+   private fun checkForUpgrades() {
       caskConfigRepository.findAllByStatus(CaskStatus.MIGRATING).forEach { config ->
          log().info("Queuing ${config.tableName} for upgrading")
          queueUpgradeAsync(config)

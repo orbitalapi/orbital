@@ -912,5 +912,62 @@ service Broker1Service {
          )
       )
    }
+
+   @Test
+   fun `A service annotated with @DataSource will not be invoked twice`() {
+      val testSchema = """
+         model Client {
+            name : PersonName as String
+            country : CountryCode as String
+         }
+         model Country {
+             countryCode : CountryCode
+             countryName : CountryName as String
+         }
+         model ClientAndCountry {
+            personName : PersonName
+            countryName : CountryName
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getCustomers():Client[]
+            operation getCountry(CountryCode): Country
+         }
+      """.trimIndent()
+
+      var getCountryInvoked = false
+      val (vyne, stubService) = testVyne(testSchema)
+      stubService.addResponse("getCustomers", vyne.parseJsonModel("Client[]", """
+         [
+            { name : "Jimmy", country : "UK" },
+            { name : "Devrim", country : "TR" }
+         ]
+         """.trimIndent()))
+
+      stubService.addResponse("getCountry", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            getCountryInvoked = true
+            val countryCode = parameters.first().second.value!!.toString()
+            return if (countryCode == "UK") {
+               vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
+            } else {
+               TypedObject(vyne.schema.type("Country"), emptyMap(), Provided)
+            }
+         }
+      })
+
+      // act
+      val result =  vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+
+      // assert
+      result.resultMap["lang.taxi.Array<ClientAndCountry>"].should.be.equal(
+         listOf(
+            mapOf("personName" to "Jimmy"),
+            mapOf("personName" to "Devrim")
+         )
+      )
+      getCountryInvoked.should.be.`false`
+   }
 }
 

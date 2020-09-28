@@ -117,27 +117,29 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       val (service, operation) = context.schema.operation(operationName)
 
       // Discover parameters.
-      // Note: We can't always assume that the REQUIRES_PARAM relationship has taken care of this
-      // for us, as we don't know what path was travelled to arrive here.
-      // Therefore, just find all the params, and add them to the context.
-      // This will fail if a param is not discoverable
-      operation.parameters.forEach { requiredParam ->
+
+      val parameterValues = operation.parameters.map { requiredParam ->
+
          try {
-            val paramInstance = parameterFactory.discover(requiredParam.type, context)
-            context.addFact(paramInstance)
+            // Note: We can't always assume that the inbound relationship has taken care of this
+            // for us, as we don't know what path was travelled to arrive here.
+            if (edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type)) {
+               edge.previousValue
+            } else {
+               val paramInstance = parameterFactory.discover(requiredParam.type, context)
+               context.addFact(paramInstance)
+               paramInstance
+            }
+
+
          } catch (e: Exception) {
             log().warn("Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}")
             return edge.failure(null)
          }
       }
 
-
-      // VisitedNodes are better candidates for params, as they are more contextually relevant
-      val visitedInstanceNodes = context.collectVisitedInstanceNodes()
-
-
       return try {
-         val result: TypedInstance = invocationService.invokeOperation(service, operation, visitedInstanceNodes, context)
+         val result: TypedInstance = invocationService.invokeOperation(service, operation, parameterValues.toSet(), context)
          if (result is TypedNull) {
             log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
          } else {

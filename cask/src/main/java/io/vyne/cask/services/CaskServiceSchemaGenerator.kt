@@ -29,7 +29,12 @@ class CaskServiceSchemaGenerator(
    private val schemaStore: SchemaStore,
    private val caskServiceSchemaWriter: CaskServiceSchemaWriter,
    private val operationGenerators: List<OperationGenerator>,
-   @Value("\${spring.application.name}") private val appName: String = "cask") {
+   @Value("\${cask.service.annotations:#{null}}") private val caskServiceAnnotations: String? = null,
+   @Value("\${spring.application.name}") private val appName: String = "cask"
+   ) {
+   private val serviceAnnotations =
+      listOf(Annotation("ServiceDiscoveryClient", mapOf("serviceName" to appName))) +
+         (caskServiceAnnotations?.split(",")?.map { Annotation(it.trim()) } ?: listOf())
 
    @EventListener
    @Async
@@ -93,7 +98,7 @@ class CaskServiceSchemaGenerator(
          qualifiedName = fullyQualifiedCaskServiceName(type),
          operations = operations,
          compilationUnits = listOf(CompilationUnit.unspecified()),
-         annotations = listOf(Annotation("ServiceDiscoveryClient", mapOf("serviceName" to appName)))
+         annotations = serviceAnnotations
       )
    }
 

@@ -2,7 +2,6 @@ package io.vyne.cask.query
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.api.ContentType
 import io.vyne.cask.config.CaskConfigRepository
@@ -11,7 +10,7 @@ import io.vyne.cask.config.FindOneMatchesManyBehaviour
 import io.vyne.cask.config.QueryMatchesNoneBehaviour
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.caskRecordTable
-import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.ViewPrefix
+import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.VIEW_PREFIX
 import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.ingest.CaskMessageRepository
 import io.vyne.cask.timed
@@ -32,7 +31,6 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import java.io.InputStream
 import java.sql.Connection
-import java.sql.ResultSet
 import java.sql.Types
 import java.time.Instant
 import java.time.LocalDate
@@ -379,13 +377,18 @@ class CaskDAO(
    // ############################
 
    @Transactional
-   fun deleteCask(tableName: String) {
+   fun deleteCask(tableName: String, shouldCascade: Boolean = false) {
       log().info("Removing Cask with underlying table / view $tableName")
       jdbcTemplate.update("DELETE FROM CASK_CONFIG WHERE tableName=?", tableName)
-      if (tableName.startsWith(ViewPrefix)) {
+      if (tableName.startsWith(VIEW_PREFIX)) {
          jdbcTemplate.update("DROP VIEW $tableName")
       } else {
-         jdbcTemplate.update("DROP TABLE $tableName")
+         val dropStatement = if (shouldCascade) {
+            "DROP TABLE $tableName CASCADE"
+         } else {
+            "DROP TABLE $tableName"
+         }
+         jdbcTemplate.update(dropStatement)
       }
    }
 

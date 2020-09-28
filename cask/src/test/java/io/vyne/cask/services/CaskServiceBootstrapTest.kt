@@ -1,13 +1,11 @@
 package io.vyne.cask.services
 
-import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.*
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.caskRecordTable
-import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemas.SchemaSetChangedEvent
@@ -19,7 +17,6 @@ import org.junit.Ignore
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
 
 class CaskServiceBootstrapTest {
@@ -37,7 +34,7 @@ class CaskServiceBootstrapTest {
       whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfig))
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).generateCaskServicesOnStartup()
+      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).regenerateCaskServicesAsync()
 
       // assert
       verify(caskServiceSchemaGenerator,timeout(1000).times(1)).generateAndPublishServices(listOf(CaskTaxiPublicationRequest(versionedType)))
@@ -61,14 +58,15 @@ class CaskServiceBootstrapTest {
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV2, caskConfigRepository,mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).regenerateCasksOnSchemaChange(event)
+      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV2, caskConfigRepository,mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher)
+         .regenerateCasksOnSchemaChange(event)
 
       // assert
       verify(caskServiceSchemaGenerator, timeout(1000).times(1)).generateAndPublishServices(listOf(CaskTaxiPublicationRequest(versionedTypeV2)))
    }
 
    @Test
-   fun `Do not regenerate when schema change contains added cask services`() {
+   fun `Do regenerate when schema change contains added cask services`() {
       // prepare
       val schemaV1 = "type Order {}"
       val taxiSchemaV1 = TaxiSchema.from(schemaV1, "order.taxi", "1.0.1")
@@ -88,11 +86,11 @@ class CaskServiceBootstrapTest {
       CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).regenerateCasksOnSchemaChange(event)
 
       // assert
-      verify(caskServiceSchemaGenerator, times(0)).generateAndPublishServices(any())
+      verify(caskServiceSchemaGenerator, timeout(5000).times(1)).generateAndPublishServices(any())
    }
 
    @Test
-   fun `Do not regenerate when schema change contains removed cask services`() {
+   fun `Do regenerate when schema change contains removed cask services`() {
       // prepare
       val schemaV1 = "type Order {}"
       val taxiSchemaV1 = TaxiSchema.from(schemaV1, "order.taxi", "1.0.1")
@@ -112,7 +110,7 @@ class CaskServiceBootstrapTest {
       CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).regenerateCasksOnSchemaChange(event)
 
       // assert
-      verify(caskServiceSchemaGenerator, times(0)).generateAndPublishServices(any())
+      verify(caskServiceSchemaGenerator, timeout(5000).times(1)).generateAndPublishServices(any())
    }
 
    @Test
@@ -128,7 +126,7 @@ class CaskServiceBootstrapTest {
       whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfig))
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).generateCaskServicesOnStartup()
+      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).regenerateCaskServicesAsync()
 
       // assert
       verify(caskServiceSchemaGenerator, times(0)).generateAndPublishServices(any())
