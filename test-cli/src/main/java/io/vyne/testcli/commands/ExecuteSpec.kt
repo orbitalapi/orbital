@@ -1,5 +1,7 @@
 package io.vyne.testcli.commands
 
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
 import io.vyne.models.Provided
@@ -7,14 +9,13 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.versionedSources
-import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
-import lang.taxi.packages.TaxiPackageSources
 import lang.taxi.packages.TaxiSourcesLoader
 import org.skyscreamer.jsonassert.JSONAssert
 import picocli.CommandLine
 import picocli.CommandLine.Model.CommandSpec
 import java.io.PrintWriter
+import java.lang.reflect.InvocationTargetException
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -25,12 +26,20 @@ import java.util.concurrent.Callable
 )
 class ExecuteSpecCommand : Callable<Int> {
    @CommandLine.Option(
-      names = ["-f", "--file", "--spec"],
-      defaultValue = "input.json",
-      description = ["The spec to execute.  Should be in a json or HOCON format, ending in .json or .conf"]
+      names = ["-p", "--path"],
+      defaultValue = "",
+      description = ["The directory of specs"]
    )
    lateinit var specPath: Path
    private val mapper = Jackson.defaultObjectMapper
+   private val schemaCache = CacheBuilder
+      .newBuilder()
+      .build(object : CacheLoader<Path, TaxiSchema>() {
+         override fun load(path: Path): TaxiSchema {
+            val sources = TaxiSourcesLoader.loadPackage(path)
+            return TaxiSchema.from(sources.versionedSources())
+         }
+      })
 
    @CommandLine.Spec
    lateinit var commandSpec: CommandSpec
@@ -45,7 +54,7 @@ class ExecuteSpecCommand : Callable<Int> {
       get() {
          // spec paths are typically absolute when we're running inside
          // unit tests
-         val absoluteSpecPath = if(specPath.isAbsolute) {
+         val absoluteSpecPath = if (specPath.isAbsolute) {
             specPath
          } else {
             FileSystems.getDefault().getPath("").toAbsolutePath().resolve(specPath)
@@ -59,37 +68,61 @@ class ExecuteSpecCommand : Callable<Int> {
 
 
    override fun call(): Int {
-      val result = executeTest()
-      result.writeTo(commandSpec.commandLine().out)
-      return if (result.successful) {
+      val writer = commandSpec.commandLine().out
+      val result = executeTests()
+         .map {
+            it.writeTo(writer)
+            it
+         }
+         .toList()
+
+      val successful = result.all { it.successful }
+      val passCount = result.count { it.successful }
+      val failCount = result.count { !it.successful }
+      writer.println("${result.size} tests run, $passCount passed, $failCount failed")
+      return if (successful) {
          TEST_SUCCESSFUL
       } else {
          TEST_FAILED
       }
    }
 
-   fun executeTest(): TestResult {
-      val spec = buildTestSpec()
-      return try {
-         val schema = TaxiSchema.from(loadSources().versionedSources())
+   fun executeTests(): Sequence<TestResult> {
+      return buildTestSpecs()
+         .map { testSpecFile ->
+            if (testSpecFile.spec != null) {
+               executeTest(testSpecFile, testSpecFile.spec)
+            } else {
+               TestResult(
+                  testSpecFile,
+                  testSpecFile.asFailure()
+               )
+            }
+         }
+   }
 
-         val source = readSource(spec)
-         val expected = readExpected(spec)
+   private fun executeTest(file: TestSpecFile, spec: TestSpec): TestResult {
+
+      return try {
+         val schema = schemaCache.get(findTaxiProjectDirectoryPath(file.directory))
+
+         val source = readSource(file,spec)
+         val expected = readExpected(file,spec)
          val sourceType = schema.type(spec.targetType)
          val instance = TypedInstance.from(sourceType, source, schema, source = Provided)
          val actual = mapper.writer().writeValueAsString(instance)
          attempt("Output did not match expected") {
             JSONAssert.assertEquals(expected, actual, true)
          }
-         TestResult(spec)
+         TestResult(file)
       } catch (exception: TestFailureException) {
-         TestResult(spec, exception.failure)
+         TestResult(file, exception.failure)
       }
 
    }
 
-   private fun readExpected(spec: TestSpec): String {
-      val input = specFolder.resolve(spec.expected)
+   private fun readExpected(file:TestSpecFile, spec: TestSpec): String {
+      val input = file.directory.resolve(spec.expected)
       if (!Files.exists(input)) {
          failure("$input does not exist")
       }
@@ -98,8 +131,8 @@ class ExecuteSpecCommand : Callable<Int> {
       }
    }
 
-   private fun readSource(spec: TestSpec): String {
-      val input = specFolder.resolve(spec.source)
+   private fun readSource(specFile:TestSpecFile, spec: TestSpec): String {
+      val input = specFile.directory.resolve(spec.source)
       if (!Files.exists(input)) {
          failure("$input does not exist")
       }
@@ -108,37 +141,66 @@ class ExecuteSpecCommand : Callable<Int> {
       }
    }
 
-   internal fun buildTestSpec(): TestSpec {
-      return attempt("Failed to load test spec") {
-         ConfigFactory.parseFile(specPath.toFile()).extract<TestSpec>()
-      }
+   internal fun buildTestSpecs(): Sequence<TestSpecFile> {
+      return specFolder.toFile().walk()
+         .filter { it.name.endsWith(".spec.conf") }
+         .map { file ->
+            try {
+               val testSpec = ConfigFactory.parseFile(file).extract<TestSpec>()
+               TestSpecFile(file.toPath(), testSpec, null)
+            } catch (exception: Exception) {
+               TestSpecFile(file.toPath(), null, message = "Failed to load spec at $file :" + exception.message)
+            }
+         }
    }
 
    private fun <T> attempt(failureDescription: String, callback: () -> T): T {
       return try {
          callback()
-      } catch (exception: Exception) {
+      } catch (exception: Throwable) {
          throw exception.asFailure(failureDescription)
       }
    }
 
-   internal fun loadSources(): TaxiPackageSources {
-      var taxiProjectDirectoryPath = specFolder
+   internal fun findTaxiProjectDirectoryPath(directory:Path): Path {
+      var taxiProjectDirectoryPath = directory
       while (!Files.exists(taxiProjectDirectoryPath.resolve("taxi.conf")) && taxiProjectDirectoryPath.parent != null) {
          taxiProjectDirectoryPath = taxiProjectDirectoryPath.parent
       }
-      val taxiProjectFilePath = taxiProjectDirectoryPath.resolve("taxi.conf")
       if (!Files.exists(taxiProjectDirectoryPath)) {
          failure("Could not find a taxi.conf project searching from $taxiProjectDirectoryPath")
       }
-      return TaxiSourcesLoader.loadPackage(taxiProjectDirectoryPath)
-
+      return taxiProjectDirectoryPath
+   }
+   internal fun findTaxiProjectDirectoryPath(file:TestSpecFile): Path {
+      var taxiProjectDirectoryPath = file.directory
+      return findTaxiProjectDirectoryPath(taxiProjectDirectoryPath)
    }
 
    // probably just for testing
    internal fun buildProject(): TaxiDocument {
-      return Compiler(loadSources()).compile()
+      return schemaCache.get(findTaxiProjectDirectoryPath(specPath)).document
    }
+}
+
+data class TestSpecFile(
+   val path: Path,
+   val spec: TestSpec?,
+   val message: String?
+) {
+   val directory = path.parent
+   fun asFailure(): TestFailure {
+      return TestFailure(this.message!!)
+   }
+
+   val description: String
+      get() {
+         return if (this.spec != null) {
+            this.spec.name
+         } else {
+            this.path.toString()
+         }
+      }
 }
 
 data class TestSpec(
@@ -152,10 +214,16 @@ fun failure(message: String): Nothing = throw TestFailureException(TestFailure(m
 data class TestFailure(val message: String)
 class TestFailureException(val failure: TestFailure) : RuntimeException(failure.message)
 
-fun Throwable.asFailure(prefix: String): TestFailureException = TestFailureException(TestFailure(prefix + this.message))
+fun Throwable.asFailure(prefix: String): TestFailureException {
+   val message = when (this) {
+      is InvocationTargetException -> this.targetException.message
+      else -> this.message
+   }
+   return TestFailureException(TestFailure(prefix + this.message))
+}
 
 data class TestResult(
-   val spec: TestSpec,
+   val spec: TestSpecFile,
    val failure: TestFailure? = null
 ) {
    val successful = failure == null
@@ -166,7 +234,8 @@ data class TestResult(
       } else {
          "@|bold,red ✗ [Fail] "
       }
-      val message = CommandLine.Help.Ansi.AUTO.string("$prefix ${spec.name} ${failure?.message ?: ""}|@")
+
+      val message = CommandLine.Help.Ansi.AUTO.string("$prefix ${spec.description} ${failure?.message ?: ""}|@")
       out.println(message)
    }
 

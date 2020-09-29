@@ -8,12 +8,35 @@ import java.nio.file.Paths
 class ExecuteSpecCommandTest {
 
    @Test
+   fun `executes all specs under directory`() {
+      val spec = Resources.getResource("simple-test/specs")
+      val testResults = ExecuteSpecCommand().apply {
+         specPath = Paths.get(spec.toURI())
+      }.executeTests()
+         .toList()
+      testResults.should.have.size(2)
+      testResults.count { it.successful }.should.equal(1)
+      testResults.count { !it.successful }.should.equal(1)
+   }
+
+   @Test
    fun `simple project gets executed`() {
       val spec = Resources.getResource("simple-test/specs/hello-world/hello-world.spec.conf")
       val testResult = ExecuteSpecCommand().apply {
          specPath = Paths.get(spec.toURI())
-      }.executeTest()
+      }.executeTests().toList().first()
       testResult.successful.should.be.`true`
+   }
+
+   @Test
+   fun `captures failure`() {
+      val spec = Resources.getResource("simple-test/specs/expect-to-fail")
+      val testResult = ExecuteSpecCommand().apply {
+         specPath = Paths.get(spec.toURI())
+      }.executeTests().toList().first()
+      testResult.successful.should.be.`false`
+      testResult.failure!!.message.should.contain("Expected: vyne.demo.LastName")
+      testResult.failure!!.message.should.contain("got: vyne.demo.FirstName")
    }
 
    @Test
@@ -21,7 +44,7 @@ class ExecuteSpecCommandTest {
       val specUrl = Resources.getResource("simple-test/specs/hello-world/hello-world.spec.conf")
       val spec = ExecuteSpecCommand().apply {
          specPath = Paths.get(specUrl.toURI())
-      }.buildTestSpec()
+      }.buildTestSpecs().toList().first().spec!!
       spec.name.should.equal("simple hello world")
       spec.targetType.should.equal("vyne.demo.Person")
    }

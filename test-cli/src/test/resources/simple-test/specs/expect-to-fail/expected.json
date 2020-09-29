@@ -1,0 +1,23 @@
+{
+   "firstName": {
+      "value": "Marty",
+      "source": {
+         "dataSourceName": "Provided"
+      },
+      "typeName": "vyne.demo.LastName"
+   },
+   "lastName": {
+      "value": "Pitt",
+      "source": {
+         "dataSourceName": "Provided"
+      },
+      "typeName": "vyne.demo.LastName"
+   },
+   "resident": {
+      "value": "UK",
+      "source": {
+         "dataSourceName": "Provided"
+      },
+      "typeName": "vyne.demo.Country"
+   }
+}
