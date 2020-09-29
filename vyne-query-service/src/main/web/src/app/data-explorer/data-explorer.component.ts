@@ -1,4 +1,4 @@
-import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {findType, Schema, Type} from '../services/schema';
 import {
   VyneHttpServiceError,
@@ -7,20 +7,18 @@ import {
   CsvOptions,
   ParsedCsvContent
 } from '../services/types.service';
-import {FileSystemEntry, FileSystemFileEntry, UploadFile} from 'ngx-file-drop';
+import {FileSystemFileEntry, UploadFile} from 'ngx-file-drop';
 import {HttpErrorResponse} from '@angular/common/http';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {CodeViewerComponent} from '../code-viewer/code-viewer.component';
-import {QueryResult, TypeNamedInstance} from '../services/query.service';
+import {TypeNamedInstance} from '../services/query.service';
 import {InstanceLike, typeName} from '../object-view/object-view.component';
 import {environment} from '../../environments/environment';
 import {CaskService} from '../services/cask.service';
 import {HeaderTypes} from './csv-viewer.component';
 import {SchemaGeneratorComponent} from './schema-generator-panel/schema-generator.component';
 import * as fileSaver from 'file-saver';
-import {QueryFailure} from "../query-panel/query-wizard/query-wizard.component";
-import {ExportFileService} from "../services/export.file.service";
-import {DownloadFileType} from "../query-panel/result-display/result-container.component";
+import {ExportFileService} from '../services/export.file.service';
 
 @Component({
   selector: 'app-data-explorer',
@@ -63,7 +61,7 @@ export class DataExplorerComponent {
   csvOptions: CsvOptions = new CsvOptions();
   headersWithAssignedTypes: HeaderTypes[] = [];
   assignedTypeName: string;
-
+  activeTab: number;
 
 
   constructor(private typesService: TypesService, private caskService: CaskService, private exportFileService: ExportFileService) {
@@ -146,9 +144,11 @@ export class DataExplorerComponent {
 
   showGenerateSchemaPanel($event) {
     this.isGenerateSchemaPanelVisible = $event;
-    setTimeout(() => {
-      this.schemaGenerationPanel.generateSchema();
-    }, 0);
+    if (this.isGenerateSchemaPanelVisible) {
+      setTimeout(() => {
+        this.schemaGenerationPanel.generateSchema();
+      }, 0);
+    }
     return this.isGenerateSchemaPanelVisible;
   }
 
@@ -210,6 +210,7 @@ export class DataExplorerComponent {
   }
 
   onSelectedTabChanged(event: MatTabChangeEvent) {
+    this.activeTab = event.tab.origin;
     if (event.tab.textLabel === this.schemaLabel && this.appCodeViewer) {
       this.appCodeViewer.remeasure();
     }
@@ -249,16 +250,16 @@ export class DataExplorerComponent {
   onDownloadParsedDataClicked() {
     this.exportFileService.exportParsedData(this.fileContents, this.contentType, this.csvOptions, false)
       .subscribe(response => {
-      const blob: Blob = new Blob([response], {type: `text/json; charset=utf-8`});
-      fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.json`);
-    });
+        const blob: Blob = new Blob([response], {type: `text/json; charset=utf-8`});
+        fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.json`);
+      });
   }
 
   onDownloadTypedParsedDataClicked() {
     this.exportFileService.exportParsedData(this.fileContents, this.contentType, this.csvOptions, true)
       .subscribe(response => {
-      const blob: Blob = new Blob([response], {type: `text/json; charset=utf-8`});
-      fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.json`);
-    });
+        const blob: Blob = new Blob([response], {type: `text/json; charset=utf-8`});
+        fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.json`);
+      });
   }
 }
