@@ -14,6 +14,7 @@ import io.vyne.cask.ingest.StreamSource
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
+import io.vyne.cask.websocket.XmlWebsocketRequest
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
@@ -137,6 +138,10 @@ interface CaskIngestionRequest {
                 val params = mapper.convertValue<JsonIngestionParameters>(queryParams.toMapOfListWhereMultiple())
                 JsonWebsocketRequest(params, versionedType, mapper)
              }
+            ContentType.xml -> {
+               val parameters = mapper.convertValue<XmlIngestionParameters>(queryParams.toMapOfListWhereMultiple())
+               XmlWebsocketRequest(parameters, versionedType)
+            }
          }
       }
    }

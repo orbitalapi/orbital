@@ -8,9 +8,11 @@ import io.vyne.cask.api.CaskApi
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.api.JsonIngestionParameters
+import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.cask.websocket.JsonWebsocketRequest
+import io.vyne.cask.websocket.XmlWebsocketRequest
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
@@ -63,6 +65,17 @@ class CaskRestController(private val caskService: CaskService,
    override fun ingestJson(typeReference: String, debug: Boolean, input: String): CaskIngestionResponse {
       val parameters = JsonIngestionParameters(debug)
       return ingestJson(typeReference, parameters, input)
+   }
+
+   override fun ingestXml(typeReference: String, debug: Boolean, elementSelector: String?, input: String): CaskIngestionResponse {
+      val xmlIngestionParameters = XmlIngestionParameters(debug, elementSelector)
+      return caskService.resolveType(typeReference).map { versionedType ->
+         val request = XmlWebsocketRequest(xmlIngestionParameters, versionedType)
+         val inputStream = Flux.just(input.byteInputStream() as InputStream)
+         ingestRequest(request, inputStream).block()
+      }.getOrHandle { error ->
+         CaskIngestionResponse.rejected(error.message)
+      }
    }
 
    private fun ingestJson(typeReference: String, parameters: JsonIngestionParameters, input: String): CaskIngestionResponse {

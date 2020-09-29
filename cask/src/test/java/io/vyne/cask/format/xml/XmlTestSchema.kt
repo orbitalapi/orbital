@@ -1,13 +1,9 @@
-type alias Price as Decimal
-type alias Symbol as String
+package io.vyne.cask.format.xml
 
-type OrderWindowSummaryCsv {
-    orderDate : DateTime( @format = 'yyyy-MM-dd hh-a' ) by column(1)
-    symbol : Symbol by column(2)
-    open : Price by column(3)
-    close : Price by column(4)
-}
+import io.vyne.schemas.taxi.TaxiSchema
 
+object XmlTestSchema {
+   val sourceV1 = """
 type alias Price as Decimal
 type alias Symbol as String
 type OrderWindowSummaryXml {
@@ -15,4 +11,8 @@ type OrderWindowSummaryXml {
     symbol : Symbol by xpath("/Order/Symbol")
     open : Price by xpath("/Order/Open")
     close : Price by xpath("/Order/Close")
+    volume: Decimal? by xpath("/Order/Volume")
+}
+""".trimIndent()
+   val schemaV1 = TaxiSchema.from(sourceV1, "Coinbase", "0.1.0")
 }

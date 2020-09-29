@@ -5,9 +5,11 @@ import io.vyne.cask.CaskIngestionRequest
 import io.vyne.cask.api.ContentType
 import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.api.JsonIngestionParameters
+import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.api.csv.CsvFormatFactory
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.JsonStreamSource
+import io.vyne.cask.format.xml.XmlStreamSource
 import io.vyne.cask.ingest.StreamSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
@@ -48,5 +50,14 @@ data class CsvWebsocketRequest(override val parameters: CsvIngestionParameters, 
          nullValues =  parameters.nullValue,
          ignoreContentBefore = parameters.ignoreContentBefore
       )
+   }
+}
+
+data class XmlWebsocketRequest(override val parameters: XmlIngestionParameters, override val versionedType: VersionedType): CaskIngestionRequest {
+   override val contentType = ContentType.xml
+   override val debug: Boolean = parameters.debug
+   override val nullValues: Set<String> = emptySet()
+   override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, messageId:String): StreamSource {
+      return XmlStreamSource(input, type, schema, messageId, parameters.elementSelector)
    }
 }
