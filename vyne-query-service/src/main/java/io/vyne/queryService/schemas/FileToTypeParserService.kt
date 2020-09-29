@@ -4,22 +4,21 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.models.Provided
-import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObjectFactory
 import io.vyne.models.csv.CsvImporterUtil
 import io.vyne.models.csv.ParsedCsvContent
 import io.vyne.models.csv.ParsedTypeInstance
 import io.vyne.models.json.isJsonArray
-import io.vyne.queryService.ExportType
 import io.vyne.schemaStore.SchemaProvider
-import org.apache.commons.csv.CSVFormat
-import org.apache.commons.csv.CSVParser
-import org.apache.commons.csv.CSVPrinter
+import io.vyne.utils.xml.XmlDocumentProvider
+import org.apache.commons.io.IOUtils
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
-import java.io.StringWriter
+import reactor.core.publisher.Flux
 
 @RestController
 class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapper: ObjectMapper) {
@@ -133,19 +132,39 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
 
    fun downloadParsedData(parsedContent: ParsedCsvContent): ByteArray {
 
-         val records = parsedContent.records.map {
-            parsedContent.headers.mapIndexed { index, header ->
-               if (index < it.size) {
-                  Pair(header, it[index])
-               } else {
-                  Pair(header, null)
-               }
-            }.toMap()
-         }
+      val records = parsedContent.records.map {
+         parsedContent.headers.mapIndexed { index, header ->
+            if (index < it.size) {
+               Pair(header, it[index])
+            } else {
+               Pair(header, null)
+            }
+         }.toMap()
+      }
 
-         return objectMapper
-            .writeValueAsString(records)
-            .toByteArray()
+      return objectMapper
+         .writeValueAsString(records)
+         .toByteArray()
+   }
+
+   @PostMapping("/api/xml/parse")
+   fun parseXmlContentToType(@RequestBody rawContent: String,
+                             @RequestParam("type") typeName: String,
+                             @RequestParam("elementSelector", required = false) elementSelector: String? = null): List<ParsedTypeInstance> {
+      val schema = schemaProvider.schema()
+      val targetType = schema.type(typeName)
+      try {
+         return IOUtils.toInputStream(rawContent).use {
+            XmlDocumentProvider(elementSelector)
+               .parseXmlStream(Flux.just(it))
+               .map { document -> TypedInstance.from(targetType, document, schema, source = Provided) }
+               .map { typedInstance -> ParsedTypeInstance(typedInstance)  }
+               .collectList()
+               .block()
+         }
+      } catch (e: Exception) {
+         throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
+      }
    }
 }
 

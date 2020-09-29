@@ -5,7 +5,7 @@ import {
   ParsedTypeInstance,
   TypesService,
   CsvOptions,
-  ParsedCsvContent
+  ParsedCsvContent, XmlIngestionParameters
 } from '../services/types.service';
 import {FileSystemFileEntry, UploadFile} from 'ngx-file-drop';
 import {HttpErrorResponse} from '@angular/common/http';
@@ -62,7 +62,7 @@ export class DataExplorerComponent {
   headersWithAssignedTypes: HeaderTypes[] = [];
   assignedTypeName: string;
   activeTab: number;
-
+  xmlIngestionParameters: XmlIngestionParameters = new XmlIngestionParameters();
 
   constructor(private typesService: TypesService, private caskService: CaskService, private exportFileService: ExportFileService) {
     this.typesService.getTypes()
@@ -84,7 +84,10 @@ export class DataExplorerComponent {
       return false;
     }
     return CsvOptions.isCsvContent(this.fileExtension);
+  }
 
+  get isXmlContent(): boolean {
+    return XmlIngestionParameters.isXmlContent(this.fileExtension);
   }
 
   get isGenerateSchemaPanelOpen(): boolean {
@@ -175,10 +178,11 @@ export class DataExplorerComponent {
 
     if (this.isCsvContent) {
       this.parseCsvToTypedInstance();
+    } else if (this.isXmlContent) {
+      this.parseXmlToTypedInstances();
     } else {
       this.parseStringContentToTypedInstance();
     }
-
   }
 
   private parseCsvToTypedInstance() {
@@ -187,6 +191,15 @@ export class DataExplorerComponent {
         this.parserErrorMessage = (error as HttpErrorResponse).error as VyneHttpServiceError;
         console.error('Failed to parse instance: ' + this.parserErrorMessage.message);
       });
+  }
+
+  private parseXmlToTypedInstances() {
+    this.typesService.parseXmlToType(this.fileContents, this.contentType, this.xmlIngestionParameters)
+      .subscribe(parsedTypedInstant => this.handleParsingResult(parsedTypedInstant),
+        error => {
+          this.parserErrorMessage = (error as HttpErrorResponse).error as VyneHttpServiceError;
+          console.error('Failed to parse instance: ' + this.parserErrorMessage.message);
+        });
   }
 
   private handleParsingResult(result: ParsedTypeInstance | ParsedTypeInstance[]) {
@@ -225,6 +238,11 @@ export class DataExplorerComponent {
     this.csvOptions = csvOptions;
     this.parseCsvContentIfPossible();
     this.parseToTypedInstanceIfPossible();
+  }
+
+  onXmlOptionsChanged(xmlOptions: XmlIngestionParameters) {
+    this.xmlIngestionParameters = xmlOptions;
+    this.parseCsvContentIfPossible();
   }
 
   onInstanceClicked(event: InstanceLike) {
