@@ -27,9 +27,10 @@
         </mat-tab>
         <mat-tab label="Query Editor">
           <div class=query-editor-container>
-            <query-editor [initialQuery]="routeQuery"
-                          (queryResultUpdated)="resultUpdated($event)"
-                          (loadingChanged)="onLoadingChanged($event)"
+            <query-editor
+              [initialQuery]="routeQuery"
+              (queryResultUpdated)="resultUpdated($event)"
+              (loadingChanged)="onLoadingChanged($event)"
             ></query-editor>
           </div>
         </mat-tab>
@@ -37,20 +38,20 @@
 
     </div>
     <div class="row">
-        <div class="results-container">
-          <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
+      <div class="results-container">
+        <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
 
 
-          <mat-card *ngIf="lastQueryResult" style="width: 100%">
-            <mat-card-header>
-              <mat-card-title>Results</mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <query-result-container [result]="lastQueryResult"
-                                      (instanceSelected)="onInstanceSelected($event)"></query-result-container>
-            </mat-card-content>
-          </mat-card>
-        </div>
+        <mat-card *ngIf="lastQueryResult" style="width: 100%">
+          <mat-card-header>
+            <mat-card-title>Results</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <query-result-container [result]="lastQueryResult"
+                                    (instanceSelected)="onInstanceSelected($event)"></query-result-container>
+          </mat-card-content>
+        </mat-card>
       </div>
     </div>
+  </div>
 </mat-sidenav-container>
