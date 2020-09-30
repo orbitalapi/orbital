@@ -106,6 +106,15 @@ export class TypesService {
       content);
   }
 
+  parseXmlToType(content: string, type: Type, xmlIngestionParameters: XmlIngestionParameters): Observable<ParsedTypeInstance> {
+    const elementSelector = xmlIngestionParameters.elementSelector;
+    const url = elementSelector
+      ? `${environment.queryServiceUrl}/api/xml/parse?type=${type.name.fullyQualifiedName}`
+      + `&elementSelector=${encodeURIComponent(elementSelector)}`
+      : `${environment.queryServiceUrl}/api/xml/parse?type=${type.name.fullyQualifiedName}`;
+    return this.http.post<ParsedTypeInstance>(url, content);
+  }
+
   private detectCsvDelimiter = (input: string) => {
     const separators = [',', ';', '|', '\t'];
     const idx = separators
@@ -221,3 +230,22 @@ export class CsvOptions {
     }
   }
 }
+
+export class XmlIngestionParameters {
+  constructor(public elementSelector: string | null = null) {
+  }
+
+  static isXmlContent(fileExtension: string): boolean {
+    if (!fileExtension) {
+      return false;
+    }
+    switch (fileExtension) {
+      case 'xml' :
+        return true;
+      default:
+        return false;
+    }
+  }
+}
+
+

@@ -18,6 +18,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
 import java.nio.charset.Charset
+import java.util.concurrent.ExecutorService
 import javax.inject.Provider
 
 internal data class SourcePublisherRegistration(
@@ -71,11 +72,12 @@ class EurekaClientSchemaConsumer(
    clientProvider: Provider<EurekaClient>,
    private val schemaStore: LocalValidatingSchemaStoreClient,
    private val eventPublisher: ApplicationEventPublisher,
-   private val restTemplate: RestTemplate = RestTemplate()) : SchemaStore {
+   private val restTemplate: RestTemplate = RestTemplate(),
+   private val refreshExecutorService: ExecutorService = EurekaNotificationServerListUpdater.getDefaultRefreshExecutor()) : SchemaStore {
 
    private var sources = mutableListOf<SourcePublisherRegistration>()
    private val client = clientProvider.get()
-   private val eurekaNotificationUpdater = EurekaNotificationServerListUpdater(clientProvider)
+   private val eurekaNotificationUpdater = EurekaNotificationServerListUpdater(clientProvider, refreshExecutorService)
 
    init {
       // This is executed on a dedicated ThreadPool and it is guaranteed that 'only' one callback is active for the given 'event'
@@ -116,7 +118,9 @@ class EurekaClientSchemaConsumer(
          logChanges("removed", delta.removedSources)
          val oldSchemaSet = this.schemaSet()
          sync(delta)
-         eventPublisher.publishEvent(SchemaSetChangedEvent(oldSchemaSet, this.schemaSet()))
+         SchemaSetChangedEvent.generateFor(oldSchemaSet, this.schemaSet())?.let {
+            eventPublisher.publishEvent(it)
+         }
       } else {
          log().info("No changes found to sources - nothing to do")
       }
@@ -147,6 +151,30 @@ class EurekaClientSchemaConsumer(
 
       if (delta.sourceIdsToRemove.isNotEmpty()) {
          schemaStore.removeSourceAndRecompile(delta.sourceIdsToRemove)
+      }
+
+      if (delta.changedSources.isNotEmpty()) {
+         // Handle the following case:
+         // given
+         // 'FileSchemaServer' publishes two taxi files - a.taxi and b.taxi
+         // When
+         // a.taxi is deleted.
+         // Then
+         // delta.changedSources becomes 'non-empty' (i.e. contains FileSchemaServer)
+         // and we need the following bit to remove 'a.taxi' from the list of known sources.
+         // see EurekaClientSchemaConsumerTest::`can detect removed sources and update whole schema accordingly`
+         delta.changedSources.forEach { changedPublisherRegistration ->
+            this.sources
+               .firstOrNull { existingPublisherRegistration ->
+                  existingPublisherRegistration.applicationName == changedPublisherRegistration.applicationName
+               }?.let { existingPublisherRegistration ->
+                  existingPublisherRegistration
+                     .availableSources
+                     .filter { existingSource ->
+                        changedPublisherRegistration.availableSources.none { it.sourceId == existingSource.sourceId }
+                     }.map { it.sourceId }
+               }?.let { schemaStore.removeSourceAndRecompile(it) }
+         }
       }
 
       this.sources.addAll(delta.newSources)

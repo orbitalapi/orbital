@@ -65,7 +65,8 @@ storiesOf('Data Explorer', module)
     return {
       template: `<div style="margin: 20px">
        <app-cask-panel format="json" targetTypeName="demo.Customer"></app-cask-panel>
-       <app-cask-panel format="csv" targetTypeName="demo.Customer" [csvOptions]="csvOptions"></app-cask-panel>
+       <app-cask-panel format="csv" targetTypeName="demo.Customer" [csvOptions]="csvOptions"
+       [xmlIngestionParameters]="xmlIngestionParameters"></app-cask-panel>
     </div>`,
       props: {
         csvOptions: new CsvOptions(true, ';', 'NULL')

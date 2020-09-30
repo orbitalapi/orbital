@@ -1,5 +1,6 @@
 package io.vyne.cask.format.csv
 
+import io.vyne.VersionedSource
 import io.vyne.schemas.taxi.TaxiSchema
 
 object CoinbaseOrderSchema {
@@ -83,4 +84,24 @@ namespace demo {
    val schemaV3 = TaxiSchema.from(sourceV3, "Coinbase", "0.3.0")
    val personSchemaV1 = TaxiSchema.from(personSourceV1, "Coinbase", "0.3.0")
    val personSchemaV2 = TaxiSchema.from(personSourceV2, "Coinbase", "0.3.0")
+
+
+   val personAndOrderSourceV1 = """
+      $personSourceV1
+
+      namespace coinbase {
+      $sourceV1
+      }
+   """.trimIndent()
+
+   val personV2AndOrderSourceV1 = """
+      $personSourceV2
+
+      namespace coinbase {
+      $sourceV1
+      }
+   """.trimIndent()
+//      VersionedSource("Coinbase", "0.1.0", sourceV1),
+//      VersionedSource("People", "0.1.0", personSourceV1)
+//   ))
 }

@@ -50,7 +50,7 @@ class HttpSchemaStoreClient(private val schemaStoreService: SchemaStoreService,
                             @Value("\${vyne.schema.pollInterval:5s}") private val pollInterval: Duration) : SchemaStoreClient {
 
    init {
-       log().info("Initializing client vyne.schema.pollInterval=${pollInterval}, vyne.schema.publishRetryInterval=${publishRetryInterval}")
+      log().info("Initializing client vyne.schema.pollInterval=${pollInterval}, vyne.schema.publishRetryInterval=${publishRetryInterval}")
    }
 
    private val retryTemplate: RetryTemplate = RetryConfig.simpleRetryWithBackoff(publishRetryInterval)
@@ -61,7 +61,7 @@ class HttpSchemaStoreClient(private val schemaStoreService: SchemaStoreService,
    override fun schemaSet() = schemaSet
 
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
-      val result:SourceSubmissionResponse = retryTemplate.execute<SourceSubmissionResponse, Exception> { context: RetryContext ->
+      val result: SourceSubmissionResponse = retryTemplate.execute<SourceSubmissionResponse, Exception> { context: RetryContext ->
          log().info("Pushing ${versionedSources.size} schemas to store ${versionedSources.map { it.name }}")
          schemaStoreService.submitSources(versionedSources)
       }
@@ -94,8 +94,7 @@ class HttpSchemaStoreClient(private val schemaStoreService: SchemaStoreService,
    fun pollForSchemaUpdates() {
       try {
          val schemaSet = schemaStoreService.listSchemas()
-         if (this.schemaSet.id != schemaSet.id) {
-            val event = SchemaSetChangedEvent(this.schemaSet, schemaSet)
+         SchemaSetChangedEvent.generateFor(this.schemaSet, schemaSet)?.let { event ->
             this.schemaSet = schemaSet
             this.generationCounter.incrementAndGet()
             log().info("Updated to SchemaSet ${schemaSet.id}, generation $generation, ${schemaSet.size()} schemas, ${schemaSet.sources.map { it.source.id }}")

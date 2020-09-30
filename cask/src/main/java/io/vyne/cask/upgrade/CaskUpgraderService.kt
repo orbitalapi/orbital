@@ -6,15 +6,16 @@ import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.api.ContentType
 import io.vyne.cask.api.CsvIngestionParameters
+import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TypeDbWrapper
-import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.ingest.StreamSource
 import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.websocket.CsvWebsocketRequest
+import io.vyne.cask.websocket.XmlWebsocketRequest
 import io.vyne.models.json.Jackson
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
@@ -33,6 +34,9 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
                           private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
                           private val applicationEventPublisher: ApplicationEventPublisher
 ) {
+   fun upgradeAll(casks:List<CaskNeedingUpgrade>) {
+      casks.forEach { upgrade(it.config) }
+   }
    fun upgrade(config: CaskConfig) {
       log().info("Starting to upgrade cask ${config.tableName}")
       val schema = try {
@@ -105,6 +109,10 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
             CsvWebsocketRequest(csvIngestionParameters, versionedType)
                .buildStreamSource(inputStream, versionedType, schemaProvider.schema(), messageId)
          }
+         ContentType.xml -> {
+            val parameters = tryParseXmlMessageParams(messageParams)
+            XmlWebsocketRequest(parameters, versionedType).buildStreamSource(inputStream, versionedType, schemaProvider.schema(), messageId)
+         }
       }
    }
 
@@ -122,4 +130,17 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
       }
    }
 
+   private fun tryParseXmlMessageParams(messageParams: String?): XmlIngestionParameters {
+      return if (messageParams == null) {
+         log().warn("No message parameters were stored, will attempt to use defaults")
+         XmlIngestionParameters()
+      } else {
+         try {
+            objectMapper.readValue<XmlIngestionParameters>(messageParams)
+         } catch (e: Exception) {
+            log().warn("Failed to parse XmlIngestionParameters, will attempt to use defaults. $messageParams", e)
+            XmlIngestionParameters()
+         }
+      }
+   }
 }

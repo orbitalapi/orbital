@@ -3,7 +3,12 @@ package io.vyne.cask.query
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.cask.MessageIds
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.ddl.TypeDbWrapper
+import io.vyne.cask.ddl.views.CaskViewBuilderFactory
+import io.vyne.cask.ddl.views.CaskViewConfig
+import io.vyne.cask.ddl.views.CaskViewDefinition
+import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
@@ -22,6 +27,9 @@ import org.junit.Before
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Propagation
@@ -37,6 +45,7 @@ import javax.sql.DataSource
 @RunWith(SpringRunner::class)
 @AutoConfigureEmbeddedDatabase(beanName = "dataSource")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
+@Import(StringToQualifiedNameConverter::class)
 abstract class BaseCaskIntegrationTest  {
 
    @Autowired
@@ -54,6 +63,8 @@ abstract class BaseCaskIntegrationTest  {
    lateinit var caskConfigService: CaskConfigService
 
    lateinit var schemaProvider:UpdatableSchemaProvider
+   lateinit var viewDefinitions: MutableList<CaskViewDefinition>
+   lateinit var caskViewService: CaskViewService
 
    @After
    fun tearDown() {
@@ -72,6 +83,13 @@ abstract class BaseCaskIntegrationTest  {
       schemaProvider = UpdatableSchemaProvider.withSource(CoinbaseJsonOrderSchema.sourceV1)
       caskDao = CaskDAO(jdbcTemplate, schemaProvider, dataSource, caskMessageRepository, configRepository)
       caskConfigService = CaskConfigService(configRepository)
+      viewDefinitions = mutableListOf()
+      caskViewService = CaskViewService(
+         CaskViewBuilderFactory(configRepository, schemaProvider),
+         configRepository,
+         jdbcTemplate,
+         CaskViewConfig(viewDefinitions)
+      )
    }
 
    fun ingestJsonData(resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema) {
@@ -123,5 +141,6 @@ abstract class BaseCaskIntegrationTest  {
          }
          .block(Duration.ofMillis(500))
    }
+
 
 }

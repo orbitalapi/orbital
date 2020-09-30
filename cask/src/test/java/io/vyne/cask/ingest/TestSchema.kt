@@ -91,6 +91,49 @@ type UpsertTestMultiPk {
       }
       """.trimIndent()
 
+   val enumConcatSchemaSource = """
+      enum Leg1BankPayReceive {
+         Pay,
+         Receive
+      }
+
+      enum Leg2BankPayReceive {
+         Pay,
+         Receive
+      }
+
+      enum IcapLeg2PayReceive {
+      	Receive("BUYI") synonym of Leg2BankPayReceive.Receive,
+      	Pay("SELL") synonym of Leg2BankPayReceive.Pay
+      }
+
+      enum IcapLeg1PayReceive {
+      	Pay("BUYI") synonym of Leg1BankPayReceive.Pay,
+      	Receive("SELL") synonym of Leg1BankPayReceive.Receive
+      }
+
+      model OrderI {
+         tempPayReceive: String? by concat(column("InstrumentClassification"),"-",column("BuySellIndicator"))
+         leg1PayReceive: IcapLeg1PayReceive? by when(this.tempPayReceive) {
+		      "SRCCSP-BUYI" -> Leg1BankPayReceive.Pay
+		      "SRCCSP-SELL" -> Leg1BankPayReceive.Receive
+            else -> null
+         }
+
+         leg2PayReceive: IcapLeg2PayReceive? by when(this.tempPayReceive) {
+		      "SRCCSP-BUYI" -> Leg2BankPayReceive.Receive
+		      "SRCCSP-SELL" -> Leg2BankPayReceive.Pay
+            else -> null
+	      }
+
+         tempLegRate: String? by concat(column("InstrumentClassification"),"-",column("BuySellIndicator"))
+            leg1Rate: Leg1Rate? by when (this.tempLegRate) {
+               "SRCCSP-BUYI" -> column ("LimitPrice")
+               else -> null
+             }
+      }
+   """.trimIndent()
+
    val schemaTimeTest = TaxiSchema.from(timeTypeTest, "Test", "0.1.0")
    val schemaUpsertTest = TaxiSchema.from(upsertTest, "Test", "0.1.0")
    val schemaTemporalDownCastTest = TaxiSchema.from(temporalSchemaSource, "Test", "0.1.0")

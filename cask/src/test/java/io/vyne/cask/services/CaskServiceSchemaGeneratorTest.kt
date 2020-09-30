@@ -1,5 +1,6 @@
 package io.vyne.cask.services
 
+import com.google.common.util.concurrent.MoreExecutors
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
@@ -22,7 +23,9 @@ import org.junit.Test
 class CaskServiceSchemaGeneratorTest {
    val schemaProvider = mock<SchemaStore>()
    val schemaStoreClient = mock<SchemaStoreClient>()
-   val caskServiceSchemaWriter = CaskServiceSchemaWriter(schemaStoreClient)
+   val caskServiceSchemaWriter = CaskServiceSchemaWriter(
+      schemaPublisher = schemaStoreClient,
+      caskDefinitionPublicationExecutor = MoreExecutors.newDirectExecutorService())
    private val schema = """
     type alias Price as Decimal
     type alias Symbol as String

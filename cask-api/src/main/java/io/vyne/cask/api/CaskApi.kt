@@ -16,7 +16,12 @@ data class JsonIngestionParameters(
    val debug: Boolean = false
 )
 
-enum class ContentType { json, csv }
+data class XmlIngestionParameters(
+   val debug: Boolean = false,
+   val elementSelector: String? = null
+)
+
+enum class ContentType { json, csv, xml }
 
 @FeignClient("\${vyne.caskService.name:cask}")
 interface CaskApi {
@@ -40,6 +45,15 @@ interface CaskApi {
       // so we're left with this litany of input parameters, which is weak as. Grr.
 //                  parameters: JsonIngestionParameters = JsonIngestionParameters(),
                   @RequestParam("debug", defaultValue = "false") debug: Boolean = false,
+                  @RequestBody input: String): CaskIngestionResponse
+
+   @PostMapping("/api/ingest/xml/{typeReference}")
+   fun ingestXml(@PathVariable("typeReference") typeReference: String,
+      // Note: While spring supports parsing parameters to POJO's, feign doesn't,
+      // so we're left with this litany of input parameters, which is weak as. Grr.
+//                  parameters: JsonIngestionParameters = JsonIngestionParameters(),
+                  @RequestParam("debug", defaultValue = "false") debug: Boolean = false,
+                 @RequestParam("elementSelector", required = false) elementSelector: String? = null,
                   @RequestBody input: String): CaskIngestionResponse
 
    @GetMapping("/api/casks", produces = ["application/json"])

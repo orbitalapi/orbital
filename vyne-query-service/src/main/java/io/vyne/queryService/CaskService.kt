@@ -19,6 +19,10 @@ class CaskService(private val feignCaskApi: CaskApi) : CaskApi by feignCaskApi {
       return feignCaskApi.ingestJson(typeReference, debug, input)
    }
 
+   override fun ingestXml(typeReference: String, debug: Boolean, elementSelector: String?, input: String): CaskIngestionResponse {
+      return feignCaskApi.ingestXml(typeReference, debug, elementSelector, input)
+   }
+
 //
 //   override fun ingestCsv(typeReference: String, parameters: CsvIngestionParameters, input: String) = caskApi.ingestCsv(typeReference, parameters, input)
 //   override fun ingestJson(typeReference: String, parameters: JsonIngestionParameters, input: String) = caskApi.ingestJson(typeReference, parameters, input)
