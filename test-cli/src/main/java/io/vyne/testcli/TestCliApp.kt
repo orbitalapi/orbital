@@ -1,6 +1,6 @@
 package io.vyne.testcli
 
-import io.vyne.testcli.commands.ExecuteSpecCommand
+import io.vyne.testcli.commands.ExecuteTestCommand
 import picocli.CommandLine
 import picocli.CommandLine.Spec
 import kotlin.system.exitProcess
@@ -9,8 +9,9 @@ import kotlin.system.exitProcess
    name = "testcli",
    description = ["Vyne test cli"],
    subcommands = [
-      ExecuteSpecCommand::class
-   ]
+      ExecuteTestCommand::class
+   ],
+   versionProvider = VersionInfoProvider::class
 )
 class TestCliApp : Runnable {
    @Spec

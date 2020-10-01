@@ -22,9 +22,9 @@ import java.nio.file.Path
 import java.util.concurrent.Callable
 
 @CommandLine.Command(
-   name = "spec"
+   name = "test"
 )
-class ExecuteSpecCommand : Callable<Int> {
+class ExecuteTestCommand : Callable<Int> {
    @CommandLine.Option(
       names = ["-p", "--path"],
       defaultValue = "",

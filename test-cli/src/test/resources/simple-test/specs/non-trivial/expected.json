@@ -1,0 +1,2558 @@
+[
+   {
+      "typeName": "bgc.orders.Order",
+      "value": {
+         "bgcOrderID": {
+            "typeName": "bgc.orders.BgcOrderID",
+            "value": "903736896",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "entryType": {
+            "typeName": "bgc.orders.BgcOrderStatus",
+            "value": "New",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderDateTime": {
+            "typeName": "cacib.orders.FormattedOrderEventDateTime_c14ec8",
+            "value": "2020-08-20T01:05:14.882Z",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "assetClass": {
+            "typeName": "bgc.orders.BgcAssetClass",
+            "value": "FXD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "subSecurityType": {
+            "typeName": "bgc.orders.BgcProductTaxonomy",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identiferValue": {
+            "typeName": "cacib.instrument.StrategyInstrumentId",
+            "value": "EZG47HRRKVW0",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identifierType": {
+            "typeName": "cacib.instrument.InstrumentIdentifierType",
+            "value": "ISIN",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "isin": {
+            "typeName": "cacib.instrument.Isin",
+            "value": "EZG47HRRKVW0",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "securityDescription": {
+            "typeName": "cacib.instrument.SecurityDescription",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cfiCode": {
+            "typeName": "cacib.common.CfiCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceAmount": {
+            "typeName": "cacib.orders.OrderPriceAmount",
+            "value": 10.75,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceType": {
+            "typeName": "bgc.orders.BgcPriceType",
+            "value": "volatility",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "initialQuantity": {
+            "typeName": "cacib.orders.Quantity",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityNotation": {
+            "typeName": "bgc.orders.BgcQuantityType",
+            "value": "MONEY",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityRequired": {
+            "typeName": "cacib.orders.QuantityRequired",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityHit": {
+            "typeName": "cacib.orders.QuantityHit",
+            "value": 0,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "unitMultiplier": {
+            "typeName": "cacib.instrument.UnitMultiplier",
+            "value": 1,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityCurrency": {
+            "typeName": "cacib.orders.OrderCurrencyCode",
+            "value": "AUD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderType": {
+            "typeName": "bgc.orders.BgcOrderType",
+            "value": "Limit",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "buySellIndicator": {
+            "typeName": "bgc.orders.BgcBankDirection",
+            "value": "sell",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderValidityPeriod": {
+            "typeName": "bgc.orders.BgcTimeInForce",
+            "value": "Good Till Cancel",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "exchange": {
+            "typeName": "cacib.instrument.Exchange",
+            "value": "GFBO",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cacibTraderBrokerLogin": {
+            "typeName": "cacib.common.CacibTraderBrokerLogin",
+            "value": "robert.johnson@gfigroup.co.uk",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "brokerLEI": {
+            "typeName": "cacib.broker.BrokerLei",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderMethod": {
+            "typeName": "bgc.orders.BgcExecutionMethod",
+            "value": "ELECTRONIC",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "underlyingIndexName": {
+            "typeName": "cacib.instrument.UnderlyingIndexName",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "maturityDate": {
+            "typeName": "cacib.instrument.FormattedMaturityDateDate_abd9de",
+            "value": "2025-07-16",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "tradingSystem": {
+            "typeName": "cacib.orders.OrderSourceSystemName",
+            "value": "gfiForex",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "activityCategory": {
+            "typeName": "cacib.orders.OrderActivityCategory",
+            "value": "Hedge",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "leg1DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg1DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg2DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg1PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg1PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg2PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "clientid": {
+            "typeName": "cacib.common.client.SubRicosId",
+            "value": "SC0000198746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterpartyLei": {
+            "typeName": "cacib.common.counterparty.CounterpartyLegalEntityIdentifier",
+            "value": "549300P5P8RXOD23W720",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterParty": {
+            "typeName": "cacib.common.counterparty.CounterpartyName",
+            "value": "BGC EUROPEAN HOLDINGS LP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   },
+   {
+      "typeName": "bgc.orders.Order",
+      "value": {
+         "bgcOrderID": {
+            "typeName": "bgc.orders.BgcOrderID",
+            "value": "903736895",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "entryType": {
+            "typeName": "bgc.orders.BgcOrderStatus",
+            "value": "New",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderDateTime": {
+            "typeName": "cacib.orders.FormattedOrderEventDateTime_c14ec8",
+            "value": "2020-08-20T01:05:14.882Z",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "assetClass": {
+            "typeName": "bgc.orders.BgcAssetClass",
+            "value": "FXD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "subSecurityType": {
+            "typeName": "bgc.orders.BgcProductTaxonomy",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identiferValue": {
+            "typeName": "cacib.instrument.StrategyInstrumentId",
+            "value": "EZG47HRRKVW0",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identifierType": {
+            "typeName": "cacib.instrument.InstrumentIdentifierType",
+            "value": "ISIN",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "isin": {
+            "typeName": "cacib.instrument.Isin",
+            "value": "EZG47HRRKVW0",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "securityDescription": {
+            "typeName": "cacib.instrument.SecurityDescription",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cfiCode": {
+            "typeName": "cacib.common.CfiCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceAmount": {
+            "typeName": "cacib.orders.OrderPriceAmount",
+            "value": 8.75,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceType": {
+            "typeName": "bgc.orders.BgcPriceType",
+            "value": "volatility",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "initialQuantity": {
+            "typeName": "cacib.orders.Quantity",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityNotation": {
+            "typeName": "bgc.orders.BgcQuantityType",
+            "value": "MONEY",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityRequired": {
+            "typeName": "cacib.orders.QuantityRequired",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityHit": {
+            "typeName": "cacib.orders.QuantityHit",
+            "value": 0,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "unitMultiplier": {
+            "typeName": "cacib.instrument.UnitMultiplier",
+            "value": 1,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityCurrency": {
+            "typeName": "cacib.orders.OrderCurrencyCode",
+            "value": "AUD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderType": {
+            "typeName": "bgc.orders.BgcOrderType",
+            "value": "Limit",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "buySellIndicator": {
+            "typeName": "bgc.orders.BgcBankDirection",
+            "value": "buy",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderValidityPeriod": {
+            "typeName": "bgc.orders.BgcTimeInForce",
+            "value": "Good Till Cancel",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "exchange": {
+            "typeName": "cacib.instrument.Exchange",
+            "value": "GFBO",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cacibTraderBrokerLogin": {
+            "typeName": "cacib.common.CacibTraderBrokerLogin",
+            "value": "robert.johnson@gfigroup.co.uk",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "brokerLEI": {
+            "typeName": "cacib.broker.BrokerLei",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderMethod": {
+            "typeName": "bgc.orders.BgcExecutionMethod",
+            "value": "ELECTRONIC",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "underlyingIndexName": {
+            "typeName": "cacib.instrument.UnderlyingIndexName",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "maturityDate": {
+            "typeName": "cacib.instrument.FormattedMaturityDateDate_abd9de",
+            "value": "2025-07-16",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "tradingSystem": {
+            "typeName": "cacib.orders.OrderSourceSystemName",
+            "value": "gfiForex",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "activityCategory": {
+            "typeName": "cacib.orders.OrderActivityCategory",
+            "value": "Hedge",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "leg1DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg1DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg2DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg1PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg1PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg2PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "clientid": {
+            "typeName": "cacib.common.client.SubRicosId",
+            "value": "SC0000198746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterpartyLei": {
+            "typeName": "cacib.common.counterparty.CounterpartyLegalEntityIdentifier",
+            "value": "549300P5P8RXOD23W720",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterParty": {
+            "typeName": "cacib.common.counterparty.CounterpartyName",
+            "value": "BGC EUROPEAN HOLDINGS LP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   },
+   {
+      "typeName": "bgc.orders.Order",
+      "value": {
+         "bgcOrderID": {
+            "typeName": "bgc.orders.BgcOrderID",
+            "value": "903705325",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "entryType": {
+            "typeName": "bgc.orders.BgcOrderStatus",
+            "value": "New",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderDateTime": {
+            "typeName": "cacib.orders.FormattedOrderEventDateTime_c14ec8",
+            "value": "2020-08-19T05:34:07.773Z",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "assetClass": {
+            "typeName": "bgc.orders.BgcAssetClass",
+            "value": "FXD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "subSecurityType": {
+            "typeName": "bgc.orders.BgcProductTaxonomy",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identiferValue": {
+            "typeName": "cacib.instrument.StrategyInstrumentId",
+            "value": "EZM1T0K1V1L1",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identifierType": {
+            "typeName": "cacib.instrument.InstrumentIdentifierType",
+            "value": "ISIN",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "isin": {
+            "typeName": "cacib.instrument.Isin",
+            "value": "EZM1T0K1V1L1",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "securityDescription": {
+            "typeName": "cacib.instrument.SecurityDescription",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cfiCode": {
+            "typeName": "cacib.common.CfiCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceAmount": {
+            "typeName": "cacib.orders.OrderPriceAmount",
+            "value": 6.25,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceType": {
+            "typeName": "bgc.orders.BgcPriceType",
+            "value": "volatility",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "initialQuantity": {
+            "typeName": "cacib.orders.Quantity",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityNotation": {
+            "typeName": "bgc.orders.BgcQuantityType",
+            "value": "MONEY",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityRequired": {
+            "typeName": "cacib.orders.QuantityRequired",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityHit": {
+            "typeName": "cacib.orders.QuantityHit",
+            "value": 0,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "unitMultiplier": {
+            "typeName": "cacib.instrument.UnitMultiplier",
+            "value": 1,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityCurrency": {
+            "typeName": "cacib.orders.OrderCurrencyCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderType": {
+            "typeName": "bgc.orders.BgcOrderType",
+            "value": "Limit",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "buySellIndicator": {
+            "typeName": "bgc.orders.BgcBankDirection",
+            "value": "buy",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderValidityPeriod": {
+            "typeName": "bgc.orders.BgcTimeInForce",
+            "value": "Good Till Cancel",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "exchange": {
+            "typeName": "cacib.instrument.Exchange",
+            "value": "GFBO",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cacibTraderBrokerLogin": {
+            "typeName": "cacib.common.CacibTraderBrokerLogin",
+            "value": "44746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "brokerLEI": {
+            "typeName": "cacib.broker.BrokerLei",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderMethod": {
+            "typeName": "bgc.orders.BgcExecutionMethod",
+            "value": "ELECTRONIC",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "underlyingIndexName": {
+            "typeName": "cacib.instrument.UnderlyingIndexName",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "maturityDate": {
+            "typeName": "cacib.instrument.FormattedMaturityDateDate_abd9de",
+            "value": "2025-07-16",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "tradingSystem": {
+            "typeName": "cacib.orders.OrderSourceSystemName",
+            "value": "gfiForex",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "activityCategory": {
+            "typeName": "cacib.orders.OrderActivityCategory",
+            "value": "Hedge",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "leg1DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg1DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg2DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg1PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg1PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg2PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "clientid": {
+            "typeName": "cacib.common.client.SubRicosId",
+            "value": "SC0000198746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterpartyLei": {
+            "typeName": "cacib.common.counterparty.CounterpartyLegalEntityIdentifier",
+            "value": "549300P5P8RXOD23W720",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterParty": {
+            "typeName": "cacib.common.counterparty.CounterpartyName",
+            "value": "BGC EUROPEAN HOLDINGS LP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   },
+   {
+      "typeName": "bgc.orders.Order",
+      "value": {
+         "bgcOrderID": {
+            "typeName": "bgc.orders.BgcOrderID",
+            "value": "903705326",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "entryType": {
+            "typeName": "bgc.orders.BgcOrderStatus",
+            "value": "New",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderDateTime": {
+            "typeName": "cacib.orders.FormattedOrderEventDateTime_c14ec8",
+            "value": "2020-08-19T05:34:07.773Z",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "assetClass": {
+            "typeName": "bgc.orders.BgcAssetClass",
+            "value": "FXD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "subSecurityType": {
+            "typeName": "bgc.orders.BgcProductTaxonomy",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identiferValue": {
+            "typeName": "cacib.instrument.StrategyInstrumentId",
+            "value": "EZM1T0K1V1L1",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identifierType": {
+            "typeName": "cacib.instrument.InstrumentIdentifierType",
+            "value": "ISIN",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "isin": {
+            "typeName": "cacib.instrument.Isin",
+            "value": "EZM1T0K1V1L1",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "securityDescription": {
+            "typeName": "cacib.instrument.SecurityDescription",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cfiCode": {
+            "typeName": "cacib.common.CfiCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceAmount": {
+            "typeName": "cacib.orders.OrderPriceAmount",
+            "value": 7.15,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceType": {
+            "typeName": "bgc.orders.BgcPriceType",
+            "value": "volatility",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "initialQuantity": {
+            "typeName": "cacib.orders.Quantity",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityNotation": {
+            "typeName": "bgc.orders.BgcQuantityType",
+            "value": "MONEY",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityRequired": {
+            "typeName": "cacib.orders.QuantityRequired",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityHit": {
+            "typeName": "cacib.orders.QuantityHit",
+            "value": 0,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "unitMultiplier": {
+            "typeName": "cacib.instrument.UnitMultiplier",
+            "value": 1,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityCurrency": {
+            "typeName": "cacib.orders.OrderCurrencyCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderType": {
+            "typeName": "bgc.orders.BgcOrderType",
+            "value": "Limit",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "buySellIndicator": {
+            "typeName": "bgc.orders.BgcBankDirection",
+            "value": "sell",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderValidityPeriod": {
+            "typeName": "bgc.orders.BgcTimeInForce",
+            "value": "Good Till Cancel",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "exchange": {
+            "typeName": "cacib.instrument.Exchange",
+            "value": "GFBO",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cacibTraderBrokerLogin": {
+            "typeName": "cacib.common.CacibTraderBrokerLogin",
+            "value": "44746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "brokerLEI": {
+            "typeName": "cacib.broker.BrokerLei",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderMethod": {
+            "typeName": "bgc.orders.BgcExecutionMethod",
+            "value": "ELECTRONIC",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "underlyingIndexName": {
+            "typeName": "cacib.instrument.UnderlyingIndexName",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "maturityDate": {
+            "typeName": "cacib.instrument.FormattedMaturityDateDate_abd9de",
+            "value": "2025-07-16",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "tradingSystem": {
+            "typeName": "cacib.orders.OrderSourceSystemName",
+            "value": "gfiForex",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "activityCategory": {
+            "typeName": "cacib.orders.OrderActivityCategory",
+            "value": "Hedge",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "leg1DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg1DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg2DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg1PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg1PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg2PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "clientid": {
+            "typeName": "cacib.common.client.SubRicosId",
+            "value": "SC0000198746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterpartyLei": {
+            "typeName": "cacib.common.counterparty.CounterpartyLegalEntityIdentifier",
+            "value": "549300P5P8RXOD23W720",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterParty": {
+            "typeName": "cacib.common.counterparty.CounterpartyName",
+            "value": "BGC EUROPEAN HOLDINGS LP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   },
+   {
+      "typeName": "bgc.orders.Order",
+      "value": {
+         "bgcOrderID": {
+            "typeName": "bgc.orders.BgcOrderID",
+            "value": "903705325",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "entryType": {
+            "typeName": "bgc.orders.BgcOrderStatus",
+            "value": "Cancelled",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderDateTime": {
+            "typeName": "cacib.orders.FormattedOrderEventDateTime_c14ec8",
+            "value": "2020-08-19T08:47:31.850Z",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "assetClass": {
+            "typeName": "bgc.orders.BgcAssetClass",
+            "value": "FXD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "subSecurityType": {
+            "typeName": "bgc.orders.BgcProductTaxonomy",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identiferValue": {
+            "typeName": "cacib.instrument.StrategyInstrumentId",
+            "value": "EZM1T0K1V1L1",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identifierType": {
+            "typeName": "cacib.instrument.InstrumentIdentifierType",
+            "value": "ISIN",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "isin": {
+            "typeName": "cacib.instrument.Isin",
+            "value": "EZM1T0K1V1L1",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "securityDescription": {
+            "typeName": "cacib.instrument.SecurityDescription",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cfiCode": {
+            "typeName": "cacib.common.CfiCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceAmount": {
+            "typeName": "cacib.orders.OrderPriceAmount",
+            "value": 6.25,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceType": {
+            "typeName": "bgc.orders.BgcPriceType",
+            "value": "volatility",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "initialQuantity": {
+            "typeName": "cacib.orders.Quantity",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityNotation": {
+            "typeName": "bgc.orders.BgcQuantityType",
+            "value": "MONEY",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityRequired": {
+            "typeName": "cacib.orders.QuantityRequired",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityHit": {
+            "typeName": "cacib.orders.QuantityHit",
+            "value": 0,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "unitMultiplier": {
+            "typeName": "cacib.instrument.UnitMultiplier",
+            "value": 1,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityCurrency": {
+            "typeName": "cacib.orders.OrderCurrencyCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderType": {
+            "typeName": "bgc.orders.BgcOrderType",
+            "value": "Limit",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "buySellIndicator": {
+            "typeName": "bgc.orders.BgcBankDirection",
+            "value": "buy",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderValidityPeriod": {
+            "typeName": "bgc.orders.BgcTimeInForce",
+            "value": "Good Till Cancel",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "exchange": {
+            "typeName": "cacib.instrument.Exchange",
+            "value": "GFBO",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cacibTraderBrokerLogin": {
+            "typeName": "cacib.common.CacibTraderBrokerLogin",
+            "value": "a@b",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "brokerLEI": {
+            "typeName": "cacib.broker.BrokerLei",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderMethod": {
+            "typeName": "bgc.orders.BgcExecutionMethod",
+            "value": "ELECTRONIC",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "underlyingIndexName": {
+            "typeName": "cacib.instrument.UnderlyingIndexName",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "maturityDate": {
+            "typeName": "cacib.instrument.FormattedMaturityDateDate_abd9de",
+            "value": "2025-07-16",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "tradingSystem": {
+            "typeName": "cacib.orders.OrderSourceSystemName",
+            "value": "gfiForex",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "activityCategory": {
+            "typeName": "cacib.orders.OrderActivityCategory",
+            "value": "Hedge",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "leg1DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg1DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg2DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg1PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg1PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg2PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "clientid": {
+            "typeName": "cacib.common.client.SubRicosId",
+            "value": "SC0000198746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterpartyLei": {
+            "typeName": "cacib.common.counterparty.CounterpartyLegalEntityIdentifier",
+            "value": "549300P5P8RXOD23W720",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterParty": {
+            "typeName": "cacib.common.counterparty.CounterpartyName",
+            "value": "BGC EUROPEAN HOLDINGS LP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   },
+   {
+      "typeName": "bgc.orders.Order",
+      "value": {
+         "bgcOrderID": {
+            "typeName": "bgc.orders.BgcOrderID",
+            "value": "903705326",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "entryType": {
+            "typeName": "bgc.orders.BgcOrderStatus",
+            "value": "Cancelled",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderDateTime": {
+            "typeName": "cacib.orders.FormattedOrderEventDateTime_c14ec8",
+            "value": "2020-08-19T08:47:32.954Z",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "assetClass": {
+            "typeName": "bgc.orders.BgcAssetClass",
+            "value": "FXD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "subSecurityType": {
+            "typeName": "bgc.orders.BgcProductTaxonomy",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identiferValue": {
+            "typeName": "cacib.instrument.StrategyInstrumentId",
+            "value": "EZM1T0K1V1L1",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identifierType": {
+            "typeName": "cacib.instrument.InstrumentIdentifierType",
+            "value": "ISIN",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "isin": {
+            "typeName": "cacib.instrument.Isin",
+            "value": "EZM1T0K1V1L1",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "securityDescription": {
+            "typeName": "cacib.instrument.SecurityDescription",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cfiCode": {
+            "typeName": "cacib.common.CfiCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceAmount": {
+            "typeName": "cacib.orders.OrderPriceAmount",
+            "value": 7.15,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceType": {
+            "typeName": "bgc.orders.BgcPriceType",
+            "value": "volatility",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "initialQuantity": {
+            "typeName": "cacib.orders.Quantity",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityNotation": {
+            "typeName": "bgc.orders.BgcQuantityType",
+            "value": "MONEY",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityRequired": {
+            "typeName": "cacib.orders.QuantityRequired",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityHit": {
+            "typeName": "cacib.orders.QuantityHit",
+            "value": 0,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "unitMultiplier": {
+            "typeName": "cacib.instrument.UnitMultiplier",
+            "value": 1,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityCurrency": {
+            "typeName": "cacib.orders.OrderCurrencyCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderType": {
+            "typeName": "bgc.orders.BgcOrderType",
+            "value": "Limit",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "buySellIndicator": {
+            "typeName": "bgc.orders.BgcBankDirection",
+            "value": "sell",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderValidityPeriod": {
+            "typeName": "bgc.orders.BgcTimeInForce",
+            "value": "Good Till Cancel",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "exchange": {
+            "typeName": "cacib.instrument.Exchange",
+            "value": "GFBO",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cacibTraderBrokerLogin": {
+            "typeName": "cacib.common.CacibTraderBrokerLogin",
+            "value": "a@b",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "brokerLEI": {
+            "typeName": "cacib.broker.BrokerLei",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderMethod": {
+            "typeName": "bgc.orders.BgcExecutionMethod",
+            "value": "ELECTRONIC",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "underlyingIndexName": {
+            "typeName": "cacib.instrument.UnderlyingIndexName",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "maturityDate": {
+            "typeName": "cacib.instrument.FormattedMaturityDateDate_abd9de",
+            "value": "2025-07-16",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "tradingSystem": {
+            "typeName": "cacib.orders.OrderSourceSystemName",
+            "value": "gfiForex",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "activityCategory": {
+            "typeName": "cacib.orders.OrderActivityCategory",
+            "value": "Hedge",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "leg1DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg1DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg2DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg1PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg1PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg2PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "clientid": {
+            "typeName": "cacib.common.client.SubRicosId",
+            "value": "SC0000198746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterpartyLei": {
+            "typeName": "cacib.common.counterparty.CounterpartyLegalEntityIdentifier",
+            "value": "549300P5P8RXOD23W720",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterParty": {
+            "typeName": "cacib.common.counterparty.CounterpartyName",
+            "value": "BGC EUROPEAN HOLDINGS LP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   },
+   {
+      "typeName": "bgc.orders.Order",
+      "value": {
+         "bgcOrderID": {
+            "typeName": "bgc.orders.BgcOrderID",
+            "value": "903707410",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "entryType": {
+            "typeName": "bgc.orders.BgcOrderStatus",
+            "value": "New",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderDateTime": {
+            "typeName": "cacib.orders.FormattedOrderEventDateTime_c14ec8",
+            "value": "2020-08-19T06:38:44.083Z",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "assetClass": {
+            "typeName": "bgc.orders.BgcAssetClass",
+            "value": "FXD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "subSecurityType": {
+            "typeName": "bgc.orders.BgcProductTaxonomy",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identiferValue": {
+            "typeName": "cacib.instrument.StrategyInstrumentId",
+            "value": "EZ168BJPJ2J7",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identifierType": {
+            "typeName": "cacib.instrument.InstrumentIdentifierType",
+            "value": "ISIN",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "isin": {
+            "typeName": "cacib.instrument.Isin",
+            "value": "EZ168BJPJ2J7",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "securityDescription": {
+            "typeName": "cacib.instrument.SecurityDescription",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cfiCode": {
+            "typeName": "cacib.common.CfiCode",
+            "value": "SRCDSP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceAmount": {
+            "typeName": "cacib.orders.OrderPriceAmount",
+            "value": 7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceType": {
+            "typeName": "bgc.orders.BgcPriceType",
+            "value": "volatility",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "initialQuantity": {
+            "typeName": "cacib.orders.Quantity",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityNotation": {
+            "typeName": "bgc.orders.BgcQuantityType",
+            "value": "MONEY",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityRequired": {
+            "typeName": "cacib.orders.QuantityRequired",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityHit": {
+            "typeName": "cacib.orders.QuantityHit",
+            "value": 0,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "unitMultiplier": {
+            "typeName": "cacib.instrument.UnitMultiplier",
+            "value": 1,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityCurrency": {
+            "typeName": "cacib.orders.OrderCurrencyCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderType": {
+            "typeName": "bgc.orders.BgcOrderType",
+            "value": "Limit",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "buySellIndicator": {
+            "typeName": "bgc.orders.BgcBankDirection",
+            "value": "buy",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderValidityPeriod": {
+            "typeName": "bgc.orders.BgcTimeInForce",
+            "value": "Good Till Cancel",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "exchange": {
+            "typeName": "cacib.instrument.Exchange",
+            "value": "GFBO",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cacibTraderBrokerLogin": {
+            "typeName": "cacib.common.CacibTraderBrokerLogin",
+            "value": "44746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "brokerLEI": {
+            "typeName": "cacib.broker.BrokerLei",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderMethod": {
+            "typeName": "bgc.orders.BgcExecutionMethod",
+            "value": "ELECTRONIC",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "underlyingIndexName": {
+            "typeName": "cacib.instrument.UnderlyingIndexName",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "maturityDate": {
+            "typeName": "cacib.instrument.FormattedMaturityDateDate_abd9de",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "tradingSystem": {
+            "typeName": "cacib.orders.OrderSourceSystemName",
+            "value": "gfiForex",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "activityCategory": {
+            "typeName": "cacib.orders.OrderActivityCategory",
+            "value": "Hedge",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "leg1DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg1DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg2DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg1PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg1PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg2PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "clientid": {
+            "typeName": "cacib.common.client.SubRicosId",
+            "value": "SC0000198746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterpartyLei": {
+            "typeName": "cacib.common.counterparty.CounterpartyLegalEntityIdentifier",
+            "value": "549300P5P8RXOD23W720",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterParty": {
+            "typeName": "cacib.common.counterparty.CounterpartyName",
+            "value": "BGC EUROPEAN HOLDINGS LP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   },
+   {
+      "typeName": "bgc.orders.Order",
+      "value": {
+         "bgcOrderID": {
+            "typeName": "bgc.orders.BgcOrderID",
+            "value": "903707411",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "entryType": {
+            "typeName": "bgc.orders.BgcOrderStatus",
+            "value": "New",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderDateTime": {
+            "typeName": "cacib.orders.FormattedOrderEventDateTime_c14ec8",
+            "value": "2020-08-19T06:38:44.083Z",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "assetClass": {
+            "typeName": "bgc.orders.BgcAssetClass",
+            "value": "FXD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "subSecurityType": {
+            "typeName": "bgc.orders.BgcProductTaxonomy",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identiferValue": {
+            "typeName": "cacib.instrument.StrategyInstrumentId",
+            "value": "EZ168BJPJ2J7",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identifierType": {
+            "typeName": "cacib.instrument.InstrumentIdentifierType",
+            "value": "ISIN",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "isin": {
+            "typeName": "cacib.instrument.Isin",
+            "value": "EZ168BJPJ2J7",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "securityDescription": {
+            "typeName": "cacib.instrument.SecurityDescription",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cfiCode": {
+            "typeName": "cacib.common.CfiCode",
+            "value": "SRCDSP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceAmount": {
+            "typeName": "cacib.orders.OrderPriceAmount",
+            "value": 10,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceType": {
+            "typeName": "bgc.orders.BgcPriceType",
+            "value": "volatility",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "initialQuantity": {
+            "typeName": "cacib.orders.Quantity",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityNotation": {
+            "typeName": "bgc.orders.BgcQuantityType",
+            "value": "MONEY",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityRequired": {
+            "typeName": "cacib.orders.QuantityRequired",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityHit": {
+            "typeName": "cacib.orders.QuantityHit",
+            "value": 0,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "unitMultiplier": {
+            "typeName": "cacib.instrument.UnitMultiplier",
+            "value": 1,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityCurrency": {
+            "typeName": "cacib.orders.OrderCurrencyCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderType": {
+            "typeName": "bgc.orders.BgcOrderType",
+            "value": "Limit",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "buySellIndicator": {
+            "typeName": "bgc.orders.BgcBankDirection",
+            "value": "sell",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderValidityPeriod": {
+            "typeName": "bgc.orders.BgcTimeInForce",
+            "value": "Good Till Cancel",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "exchange": {
+            "typeName": "cacib.instrument.Exchange",
+            "value": "GFBO",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cacibTraderBrokerLogin": {
+            "typeName": "cacib.common.CacibTraderBrokerLogin",
+            "value": "44746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "brokerLEI": {
+            "typeName": "cacib.broker.BrokerLei",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderMethod": {
+            "typeName": "bgc.orders.BgcExecutionMethod",
+            "value": "ELECTRONIC",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "underlyingIndexName": {
+            "typeName": "cacib.instrument.UnderlyingIndexName",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "maturityDate": {
+            "typeName": "cacib.instrument.FormattedMaturityDateDate_abd9de",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "tradingSystem": {
+            "typeName": "cacib.orders.OrderSourceSystemName",
+            "value": "gfiForex",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "activityCategory": {
+            "typeName": "cacib.orders.OrderActivityCategory",
+            "value": "Hedge",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "leg1DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg1DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg2DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg1PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg1PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg2PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "clientid": {
+            "typeName": "cacib.common.client.SubRicosId",
+            "value": "SC0000198746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterpartyLei": {
+            "typeName": "cacib.common.counterparty.CounterpartyLegalEntityIdentifier",
+            "value": "549300P5P8RXOD23W720",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterParty": {
+            "typeName": "cacib.common.counterparty.CounterpartyName",
+            "value": "BGC EUROPEAN HOLDINGS LP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   },
+   {
+      "typeName": "bgc.orders.Order",
+      "value": {
+         "bgcOrderID": {
+            "typeName": "bgc.orders.BgcOrderID",
+            "value": "903707410",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "entryType": {
+            "typeName": "bgc.orders.BgcOrderStatus",
+            "value": "Cancelled",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderDateTime": {
+            "typeName": "cacib.orders.FormattedOrderEventDateTime_c14ec8",
+            "value": "2020-08-19T07:51:26.691Z",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "assetClass": {
+            "typeName": "bgc.orders.BgcAssetClass",
+            "value": "FXD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "subSecurityType": {
+            "typeName": "bgc.orders.BgcProductTaxonomy",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identiferValue": {
+            "typeName": "cacib.instrument.StrategyInstrumentId",
+            "value": "EZ168BJPJ2J7",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identifierType": {
+            "typeName": "cacib.instrument.InstrumentIdentifierType",
+            "value": "ISIN",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "isin": {
+            "typeName": "cacib.instrument.Isin",
+            "value": "EZ168BJPJ2J7",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "securityDescription": {
+            "typeName": "cacib.instrument.SecurityDescription",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cfiCode": {
+            "typeName": "cacib.common.CfiCode",
+            "value": "SRCDSP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceAmount": {
+            "typeName": "cacib.orders.OrderPriceAmount",
+            "value": 7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceType": {
+            "typeName": "bgc.orders.BgcPriceType",
+            "value": "volatility",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "initialQuantity": {
+            "typeName": "cacib.orders.Quantity",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityNotation": {
+            "typeName": "bgc.orders.BgcQuantityType",
+            "value": "MONEY",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityRequired": {
+            "typeName": "cacib.orders.QuantityRequired",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityHit": {
+            "typeName": "cacib.orders.QuantityHit",
+            "value": 0,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "unitMultiplier": {
+            "typeName": "cacib.instrument.UnitMultiplier",
+            "value": 1,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityCurrency": {
+            "typeName": "cacib.orders.OrderCurrencyCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderType": {
+            "typeName": "bgc.orders.BgcOrderType",
+            "value": "Limit",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "buySellIndicator": {
+            "typeName": "bgc.orders.BgcBankDirection",
+            "value": "buy",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderValidityPeriod": {
+            "typeName": "bgc.orders.BgcTimeInForce",
+            "value": "Good Till Cancel",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "exchange": {
+            "typeName": "cacib.instrument.Exchange",
+            "value": "GFBO",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cacibTraderBrokerLogin": {
+            "typeName": "cacib.common.CacibTraderBrokerLogin",
+            "value": "a@b",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "brokerLEI": {
+            "typeName": "cacib.broker.BrokerLei",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderMethod": {
+            "typeName": "bgc.orders.BgcExecutionMethod",
+            "value": "ELECTRONIC",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "underlyingIndexName": {
+            "typeName": "cacib.instrument.UnderlyingIndexName",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "maturityDate": {
+            "typeName": "cacib.instrument.FormattedMaturityDateDate_abd9de",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "tradingSystem": {
+            "typeName": "cacib.orders.OrderSourceSystemName",
+            "value": "gfiForex",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "activityCategory": {
+            "typeName": "cacib.orders.OrderActivityCategory",
+            "value": "Hedge",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "leg1DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg1DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg2DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg1PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg1PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg2PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "clientid": {
+            "typeName": "cacib.common.client.SubRicosId",
+            "value": "SC0000198746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterpartyLei": {
+            "typeName": "cacib.common.counterparty.CounterpartyLegalEntityIdentifier",
+            "value": "549300P5P8RXOD23W720",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterParty": {
+            "typeName": "cacib.common.counterparty.CounterpartyName",
+            "value": "BGC EUROPEAN HOLDINGS LP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   },
+   {
+      "typeName": "bgc.orders.Order",
+      "value": {
+         "bgcOrderID": {
+            "typeName": "bgc.orders.BgcOrderID",
+            "value": "903707411",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "entryType": {
+            "typeName": "bgc.orders.BgcOrderStatus",
+            "value": "Cancelled",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderDateTime": {
+            "typeName": "cacib.orders.FormattedOrderEventDateTime_c14ec8",
+            "value": "2020-08-19T07:51:36.644Z",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "assetClass": {
+            "typeName": "bgc.orders.BgcAssetClass",
+            "value": "FXD",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "subSecurityType": {
+            "typeName": "bgc.orders.BgcProductTaxonomy",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identiferValue": {
+            "typeName": "cacib.instrument.StrategyInstrumentId",
+            "value": "EZ168BJPJ2J7",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "identifierType": {
+            "typeName": "cacib.instrument.InstrumentIdentifierType",
+            "value": "ISIN",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "isin": {
+            "typeName": "cacib.instrument.Isin",
+            "value": "EZ168BJPJ2J7",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "securityDescription": {
+            "typeName": "cacib.instrument.SecurityDescription",
+            "value": "fx.optionFX.vanilla.european.put.physical",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cfiCode": {
+            "typeName": "cacib.common.CfiCode",
+            "value": "SRCDSP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceAmount": {
+            "typeName": "cacib.orders.OrderPriceAmount",
+            "value": 10,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "priceType": {
+            "typeName": "bgc.orders.BgcPriceType",
+            "value": "volatility",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "initialQuantity": {
+            "typeName": "cacib.orders.Quantity",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityNotation": {
+            "typeName": "bgc.orders.BgcQuantityType",
+            "value": "MONEY",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityRequired": {
+            "typeName": "cacib.orders.QuantityRequired",
+            "value": 3.00E+7,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityHit": {
+            "typeName": "cacib.orders.QuantityHit",
+            "value": 0,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "unitMultiplier": {
+            "typeName": "cacib.instrument.UnitMultiplier",
+            "value": 1,
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "quantityCurrency": {
+            "typeName": "cacib.orders.OrderCurrencyCode",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderType": {
+            "typeName": "bgc.orders.BgcOrderType",
+            "value": "Limit",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "buySellIndicator": {
+            "typeName": "bgc.orders.BgcBankDirection",
+            "value": "sell",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderValidityPeriod": {
+            "typeName": "bgc.orders.BgcTimeInForce",
+            "value": "Good Till Cancel",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "exchange": {
+            "typeName": "cacib.instrument.Exchange",
+            "value": "GFBO",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "cacibTraderBrokerLogin": {
+            "typeName": "cacib.common.CacibTraderBrokerLogin",
+            "value": "a@b",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "brokerLEI": {
+            "typeName": "cacib.broker.BrokerLei",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "orderMethod": {
+            "typeName": "bgc.orders.BgcExecutionMethod",
+            "value": "ELECTRONIC",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "underlyingIndexName": {
+            "typeName": "cacib.instrument.UnderlyingIndexName",
+            "value": "",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "maturityDate": {
+            "typeName": "cacib.instrument.FormattedMaturityDateDate_abd9de",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "tradingSystem": {
+            "typeName": "cacib.orders.OrderSourceSystemName",
+            "value": "gfiForex",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "activityCategory": {
+            "typeName": "cacib.orders.OrderActivityCategory",
+            "value": "Hedge",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "leg1DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg1DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2DayCountMethodInd": {
+            "typeName": "cacib.instrument.swap.Leg2DayCountFraction",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg1PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg1PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "leg2PaymentFrequency": {
+            "typeName": "cacib.instrument.swap.Leg2PaymentFrequency",
+            "source": {
+               "dataSourceName": "Undefined source"
+            }
+         },
+         "clientid": {
+            "typeName": "cacib.common.client.SubRicosId",
+            "value": "SC0000198746",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterpartyLei": {
+            "typeName": "cacib.common.counterparty.CounterpartyLegalEntityIdentifier",
+            "value": "549300P5P8RXOD23W720",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "counterParty": {
+            "typeName": "cacib.common.counterparty.CounterpartyName",
+            "value": "BGC EUROPEAN HOLDINGS LP",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   }
+]

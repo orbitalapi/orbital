@@ -5,12 +5,12 @@ import com.winterbe.expekt.should
 import org.junit.Test
 import java.nio.file.Paths
 
-class ExecuteSpecCommandTest {
+class ExecuteTestCommandTest {
 
    @Test
    fun `executes all specs under directory`() {
       val spec = Resources.getResource("simple-test/specs")
-      val testResults = ExecuteSpecCommand().apply {
+      val testResults = ExecuteTestCommand().apply {
          specPath = Paths.get(spec.toURI())
       }.executeTests()
          .toList()
@@ -22,7 +22,7 @@ class ExecuteSpecCommandTest {
    @Test
    fun `simple project gets executed`() {
       val spec = Resources.getResource("simple-test/specs/hello-world/hello-world.spec.conf")
-      val testResult = ExecuteSpecCommand().apply {
+      val testResult = ExecuteTestCommand().apply {
          specPath = Paths.get(spec.toURI())
       }.executeTests().toList().first()
       testResult.successful.should.be.`true`
@@ -31,7 +31,7 @@ class ExecuteSpecCommandTest {
    @Test
    fun `captures failure`() {
       val spec = Resources.getResource("simple-test/specs/expect-to-fail")
-      val testResult = ExecuteSpecCommand().apply {
+      val testResult = ExecuteTestCommand().apply {
          specPath = Paths.get(spec.toURI())
       }.executeTests().toList().first()
       testResult.successful.should.be.`false`
@@ -42,7 +42,7 @@ class ExecuteSpecCommandTest {
    @Test
    fun `reads spec correctly`() {
       val specUrl = Resources.getResource("simple-test/specs/hello-world/hello-world.spec.conf")
-      val spec = ExecuteSpecCommand().apply {
+      val spec = ExecuteTestCommand().apply {
          specPath = Paths.get(specUrl.toURI())
       }.buildTestSpecs().toList().first().spec!!
       spec.name.should.equal("simple hello world")
@@ -52,7 +52,7 @@ class ExecuteSpecCommandTest {
    @Test
    fun `finds taxi conf in parent folder and compiles project`() {
       val spec = Resources.getResource("simple-test/specs/hello-world/hello-world.spec.conf")
-      val taxi = ExecuteSpecCommand().apply {
+      val taxi = ExecuteTestCommand().apply {
          specPath = Paths.get(spec.toURI())
       }.buildProject()
       taxi.containsType("vyne.demo.Person").should.be.`true`
