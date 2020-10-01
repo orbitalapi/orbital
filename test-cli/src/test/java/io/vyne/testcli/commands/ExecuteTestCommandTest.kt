@@ -57,4 +57,13 @@ class ExecuteTestCommandTest {
       }.buildProject()
       taxi.containsType("vyne.demo.Person").should.be.`true`
    }
+
+   @Test
+   fun `can execute with multiple csvs`() {
+      val spec = Resources.getResource("simple-test/specs/csv-with-multiple-records/csv.spec.conf")
+      val testResult = ExecuteTestCommand().apply {
+         specPath = Paths.get(spec.toURI())
+      }.executeTests().toList().first()
+      testResult.successful.should.be.`true`
+   }
 }

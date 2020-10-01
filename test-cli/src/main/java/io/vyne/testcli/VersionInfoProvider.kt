@@ -10,7 +10,6 @@ import java.util.*
 class VersionInfoProvider : CommandLine.IVersionProvider {
    val version:String
    init {
-      val propertiesUrl = Resources.getResource("git.properties")
       version = try {
          val properties = PropertiesLoaderUtils.loadAllProperties("git.properties")
          val gitSha = properties["git.commit.id.abbrev"] as String

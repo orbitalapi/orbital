@@ -11,3 +11,8 @@ model Person {
    lastName : LastName as String
    resident: Country
 }
+
+model CsvPerson {
+   firstName : FirstName by column("firstName")
+   lastName : LastName by column("lastName")
+}

@@ -1,14 +1,34 @@
 package io.vyne.testcli.commands
 
+import arrow.core.Either
+import arrow.core.getOrHandle
+import arrow.core.left
+import arrow.core.right
+import com.fasterxml.jackson.databind.MapperFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
+import io.vyne.cask.api.ContentType
+import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.models.Provided
+import io.vyne.models.TypeNamedInstance
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.csv.CsvImporterUtil
+import io.vyne.models.csv.ParsedTypeInstance
 import io.vyne.models.json.Jackson
+import io.vyne.query.TaxiJacksonModule
+import io.vyne.query.VyneJacksonModule
+import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.utils.log
 import io.vyne.versionedSources
+import lang.taxi.CompilationException
 import lang.taxi.TaxiDocument
 import lang.taxi.packages.TaxiSourcesLoader
 import org.skyscreamer.jsonassert.JSONAssert
@@ -16,9 +36,9 @@ import picocli.CommandLine
 import picocli.CommandLine.Model.CommandSpec
 import java.io.PrintWriter
 import java.lang.reflect.InvocationTargetException
-import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.concurrent.Callable
 
 @CommandLine.Command(
@@ -31,13 +51,23 @@ class ExecuteTestCommand : Callable<Int> {
       description = ["The directory of specs"]
    )
    lateinit var specPath: Path
-   private val mapper = Jackson.defaultObjectMapper
+   private val mapper = jacksonObjectMapper()
+      .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+      .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
+      .registerModule(JavaTimeModule())
+      .registerModule(VyneJacksonModule())
+      .registerModule(TaxiJacksonModule())
+
    private val schemaCache = CacheBuilder
       .newBuilder()
-      .build(object : CacheLoader<Path, TaxiSchema>() {
-         override fun load(path: Path): TaxiSchema {
+      .build(object : CacheLoader<Path, Either<CompilationException, TaxiSchema>>() {
+         override fun load(path: Path): Either<CompilationException, TaxiSchema> {
             val sources = TaxiSourcesLoader.loadPackage(path)
-            return TaxiSchema.from(sources.versionedSources())
+            return try {
+               TaxiSchema.from(sources.versionedSources()).right()
+            } catch (e: CompilationException) {
+               e.left()
+            }
          }
       })
 
@@ -57,7 +87,12 @@ class ExecuteTestCommand : Callable<Int> {
          val absoluteSpecPath = if (specPath.isAbsolute) {
             specPath
          } else {
-            FileSystems.getDefault().getPath("").toAbsolutePath().resolve(specPath)
+            val currentDir = Paths.get(System.getProperty("user.dir"))
+            log().debug("Launched from $currentDir")
+
+            val resolvedPath = currentDir.resolve(specPath)
+            log().debug("Searching for tests from $resolvedPath")
+            resolvedPath
          }
          return if (Files.isDirectory(absoluteSpecPath)) {
             absoluteSpecPath
@@ -104,24 +139,52 @@ class ExecuteTestCommand : Callable<Int> {
    private fun executeTest(file: TestSpecFile, spec: TestSpec): TestResult {
 
       return try {
-         val schema = schemaCache.get(findTaxiProjectDirectoryPath(file.directory))
-
-         val source = readSource(file,spec)
-         val expected = readExpected(file,spec)
-         val sourceType = schema.type(spec.targetType)
-         val instance = TypedInstance.from(sourceType, source, schema, source = Provided)
-         val actual = mapper.writer().writeValueAsString(instance)
-         attempt("Output did not match expected") {
-            JSONAssert.assertEquals(expected, actual, true)
+         schemaCache.get(findTaxiProjectDirectoryPath(file.directory)).map { schema ->
+            val source = readSource(file, spec)
+            val expected = readExpected(file, spec)
+            val sourceType = schema.type(spec.targetType)
+            val instance = parseContent(sourceType, source, schema, spec)
+            val actual = when (instance) {
+               is Either.Left -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance.a)
+               is Either.Right -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance.b)
+            }
+            attempt("Output did not match expected") {
+               JSONAssert.assertEquals(expected, actual, true)
+            }
+            TestResult(file)
+         }.getOrHandle { compilationException ->
+            TestResult(file, TestFailure("Compilation error: ${compilationException.message}"))
          }
-         TestResult(file)
       } catch (exception: TestFailureException) {
          TestResult(file, exception.failure)
       }
 
    }
 
-   private fun readExpected(file:TestSpecFile, spec: TestSpec): String {
+   private fun parseContent(sourceType: Type, source: String, schema: TaxiSchema, spec: TestSpec): Either<TypeNamedInstance, List<TypeNamedInstance>> {
+      return when {
+         spec.contentType == ContentType.csv -> parseCsvContent(sourceType, source, schema, spec).right()
+         spec.csvOptions != null -> parseCsvContent(sourceType, source, schema, spec).right()
+         else -> {
+            // TODO : Why isn't .toTypeNamedInstance returning a TypeNamedInstance?  Suspect collections.
+            val instance = TypedInstance.from(sourceType, source, schema, source = Provided).toTypeNamedInstance() as TypeNamedInstance
+            instance.left()
+         }
+      }
+   }
+
+   private fun parseCsvContent(sourceType: Type, source: String, schema: TaxiSchema, spec: TestSpec): List<TypeNamedInstance> {
+      val csvOptions = spec.csvOptions ?: CsvIngestionParameters()
+      val results = CsvImporterUtil.parseCsvToType(
+         source,
+         csvOptions,
+         schema,
+         sourceType.fullyQualifiedName
+      ).map { it.typeNamedInstance as TypeNamedInstance }
+      return results
+   }
+
+   private fun readExpected(file: TestSpecFile, spec: TestSpec): String {
       val input = file.directory.resolve(spec.expected)
       if (!Files.exists(input)) {
          failure("$input does not exist")
@@ -131,7 +194,7 @@ class ExecuteTestCommand : Callable<Int> {
       }
    }
 
-   private fun readSource(specFile:TestSpecFile, spec: TestSpec): String {
+   private fun readSource(specFile: TestSpecFile, spec: TestSpec): String {
       val input = specFile.directory.resolve(spec.source)
       if (!Files.exists(input)) {
          failure("$input does not exist")
@@ -162,7 +225,7 @@ class ExecuteTestCommand : Callable<Int> {
       }
    }
 
-   internal fun findTaxiProjectDirectoryPath(directory:Path): Path {
+   internal fun findTaxiProjectDirectoryPath(directory: Path): Path {
       var taxiProjectDirectoryPath = directory
       while (!Files.exists(taxiProjectDirectoryPath.resolve("taxi.conf")) && taxiProjectDirectoryPath.parent != null) {
          taxiProjectDirectoryPath = taxiProjectDirectoryPath.parent
@@ -172,14 +235,17 @@ class ExecuteTestCommand : Callable<Int> {
       }
       return taxiProjectDirectoryPath
    }
-   internal fun findTaxiProjectDirectoryPath(file:TestSpecFile): Path {
+
+   internal fun findTaxiProjectDirectoryPath(file: TestSpecFile): Path {
       var taxiProjectDirectoryPath = file.directory
       return findTaxiProjectDirectoryPath(taxiProjectDirectoryPath)
    }
 
    // probably just for testing
    internal fun buildProject(): TaxiDocument {
-      return schemaCache.get(findTaxiProjectDirectoryPath(specPath)).document
+      return schemaCache.get(findTaxiProjectDirectoryPath(specPath)).map {
+         it.document
+      }.getOrHandle { e -> throw e }
    }
 }
 
@@ -207,7 +273,9 @@ data class TestSpec(
    val name: String,
    val targetType: String,
    val source: String,
-   val expected: String
+   val expected: String,
+   val contentType: ContentType? = null,
+   val csvOptions: CsvIngestionParameters? = null
 )
 
 fun failure(message: String): Nothing = throw TestFailureException(TestFailure(message))
