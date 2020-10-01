@@ -879,6 +879,46 @@ service Broker2Service {
       (result["Target"]!!.toRawObject() as Map<*, *>).get("eventDate").should.equal("2020-05-28T13:44:23.000Z")
    }
 
+   @Test
+   fun `when projecting, values with same type but different format get formats applied`()
+   {
+      val schema = """
+         type EventDate inherits Instant
+         model Source {
+            eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
+         }
+         model Target {
+            eventDate : EventDate( @format = "MM-dd-yy'T'HH:mm:ss.SSSX" )
+         }
+      """.trimIndent()
+      val (vyne, _) = testVyne(schema)
+      vyne.addJsonModel("Source", """{ "eventDate" : "05/28/20T13:44:23.000Z" }""")
+      val result = vyne.query("""findOne { Source } as Target""", ResultMode.VERBOSE)
+      result.isFullyResolved.should.be.`true`
+      (result["Target"]!!.toRawObject() as Map<*, *>).get("eventDate").should.equal("05-28-20T13:44:23.000Z")
+   }
+
+   @Test
+   fun `when projecting a collection, values with same type but different format get formats applied`()
+   {
+      val schema = """
+         type EventDate inherits Instant
+         model Source {
+            eventDate : EventDate( @format = "MM/dd/yy'T'HH:mm:ss.SSSX" )
+         }
+         model Target {
+            eventDate : EventDate( @format = "MM-dd-yy'T'HH:mm:ss.SSSX" )
+         }
+      """.trimIndent()
+      val (vyne, _) = testVyne(schema)
+      vyne.addJsonModel("Source[]", """[{ "eventDate" : "05/28/20T13:44:23.000Z" }]""")
+      val result = vyne.query("""findOne { Source[] } as Target[]""", ResultMode.VERBOSE)
+      result.isFullyResolved.should.be.`true`
+      val map = result.resultMap["lang.taxi.Array<Target>"] as List<TypeNamedInstance>
+      val firstEntry = map.first().value as Map<String,TypeNamedInstance>
+      firstEntry["eventDate"]!!.value.should.equal("05-28-20T13:44:23.000Z")
+   }
+
    @Ignore("This test throws StackOverFlowException, will be investigated.")
    @Test
    fun `should use cache for multiple invocations of given service operation`() {
