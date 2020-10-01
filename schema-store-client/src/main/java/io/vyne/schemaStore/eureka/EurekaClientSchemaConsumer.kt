@@ -19,6 +19,7 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
 import java.nio.charset.Charset
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import javax.inject.Provider
 
 internal data class SourcePublisherRegistration(
@@ -73,7 +74,7 @@ class EurekaClientSchemaConsumer(
    private val schemaStore: LocalValidatingSchemaStoreClient,
    private val eventPublisher: ApplicationEventPublisher,
    private val restTemplate: RestTemplate = RestTemplate(),
-   private val refreshExecutorService: ExecutorService = EurekaNotificationServerListUpdater.getDefaultRefreshExecutor()) : SchemaStore {
+   private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1)) : SchemaStore {
 
    private var sources = mutableListOf<SourcePublisherRegistration>()
    private val client = clientProvider.get()
@@ -242,6 +243,7 @@ class EurekaClientSchemaConsumer(
                            val sourceHash = instance.metadata[key]!!
                            VersionedSourceReference(sourceName, sourceVersion, sourceHash)
                         }
+                  log().trace("detected ${sourceReferences.size} sources from ${instance.appName}")
                   instance to SourcePublisherRegistration(
                      application.name,
                      concatUrlParts(instance.hostName, instance.port, instance.metadata[EurekaMetadata.VYNE_SCHEMA_URL]!!),
