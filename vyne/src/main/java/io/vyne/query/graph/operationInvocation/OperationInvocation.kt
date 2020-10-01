@@ -110,6 +110,7 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       if (context.hasOperationResult(edge)) {
          val cachedResult = context.getOperationResult(edge)
+         cachedResult?.let { context.addFact(it)  }
          return edge.success(cachedResult)
       }
 
