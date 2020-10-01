@@ -7,20 +7,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAccessor
 
-
-object RawObjectMapper : TypedInstanceMapper {
-   override fun map(typedInstance: TypedInstance): Any? {
-      if (typedInstance.value == null) {
-         return typedInstance.value
-      }
-      return if (typedInstance.type.format != null) {
-         applyFormat(typedInstance)
-      } else {
-         typedInstance.value
-      }
-   }
-
-   private fun applyFormat(typedInstance: TypedInstance): String? {
+private object TypeFormatter {
+   fun applyFormat(typedInstance: TypedInstance): String? {
       require(typedInstance.value is TemporalAccessor) { "Formatted types only supported on TemporalAccessors currently.  If you're seeing this error, time to do some work!" }
       val instant = typedInstance.value as TemporalAccessor
       val dateTimeFormat = findFormatWith("'T'", typedInstance.type.format!!)?.let { dateTimeFormat ->
@@ -56,8 +44,38 @@ object RawObjectMapper : TypedInstanceMapper {
    }
 }
 
+object RawObjectMapper : TypedInstanceMapper {
+   override fun map(typedInstance: TypedInstance): Any? {
+      if (typedInstance.value == null) {
+         return typedInstance.value
+      }
+      return if (typedInstance.type.format != null) {
+         TypeFormatter.applyFormat(typedInstance)
+      } else {
+         typedInstance.value
+      }
+   }
+
+
+}
+
 object TypeNamedInstanceMapper : TypedInstanceMapper {
-   override fun map(typedInstance: TypedInstance): Any? = TypeNamedInstance(typedInstance.type.name, typedInstance.value, typedInstance.source)
+   private fun formatValue(typedInstance: TypedInstance): Any? {
+      val type = typedInstance.type
+      val formattedValue = if (type.hasFormat && typedInstance.value != null && typedInstance.value !is String) {
+         // I feel like this is a bad idea, as the typed value will no longer statisfy the type contract
+         // This could cause casing exceptions elsewhere.
+         TypeFormatter.applyFormat(typedInstance)
+      } else {
+         typedInstance.value
+      }
+      return formattedValue
+   }
+
+   override fun map(typedInstance: TypedInstance): Any? {
+      return TypeNamedInstance(typedInstance.type.name, formatValue(typedInstance), typedInstance.source)
+   }
+
    override fun handleUnwrapped(original: TypedInstance, value: Any?): Any? {
       return when (value) {
          is TypeNamedInstance -> value
@@ -76,12 +94,14 @@ interface TypedInstanceMapper {
 class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
 
    private fun unwrapMap(valueMap: Map<String, Any>): Map<String, Any?> {
-      return valueMap.map { (entryKey, entryValue) ->
-         when (entryValue) {
+      val unwrapped = valueMap.map { (entryKey, entryValue) ->
+         val converted = when (entryValue) {
             is TypedInstance -> entryKey to convert(entryValue)
             else -> entryKey to entryValue
          }
+         converted
       }.toMap()
+      return unwrapped
    }
 
    private fun unwrapCollection(valueCollection: Collection<*>): List<Any?> {
@@ -95,12 +115,15 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
 
    fun convert(typedInstance: TypedInstance): Any? {
       val value = typedInstance.value
-      return when (typedInstance) {
-         is Map<*, *> -> mapper.handleUnwrapped(typedInstance, unwrapMap(value as Map<String, Any>))
+      val converted = when (typedInstance) {
+         is Map<*, *> -> {
+            val unwrapped = unwrapMap(value as Map<String, Any>)
+            mapper.handleUnwrapped(typedInstance, unwrapped)
+         }
          is Collection<*> -> unwrapCollection(value as Collection<*>)
          // TODO : There's likely other types that need unwrapping
          else -> mapper.map(typedInstance)
       }
-
+      return converted
    }
 }
