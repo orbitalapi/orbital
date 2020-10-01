@@ -28,7 +28,7 @@ class EurekaClientSchemaMetaPublisher(
          EurekaMetadata.escapeForXML("${EurekaMetadata.VYNE_SOURCE_PREFIX}${versionedSource.id}") to versionedSource.contentHash }
          .toMap() +
          mapOf(EurekaMetadata.VYNE_SCHEMA_URL to servletContextTaxiPath)
-      applicationInfoManager.registerAppMetadata(schemaMetadata)
+      registerEurekaMetadata(schemaMetadata)
       this.sources = versionedSources
 
       // this return type doesn't feel right - we don't actually know the
@@ -37,6 +37,18 @@ class EurekaClientSchemaMetaPublisher(
       // don't really want their services to become burdened with this.
       // which makes sense, ie., apps likely don't need to know / care.
       return Either.right(SimpleSchema(emptySet(), emptySet()))
+   }
+
+   private fun registerEurekaMetadata(latestMetadata: Map<String, String>) {
+      // Note that we're not using:
+      // applicationInfoManager.registerAppMetadata(latestMetadata)
+      // as above call 'appends latestMetadata' into the existing application metadata, rather than replacing it.
+
+      // Clear the existing metadata.
+      applicationInfoManager.info.metadata.clear()
+      // and set the metadata
+      applicationInfoManager.registerAppMetadata(latestMetadata)
+
    }
 
    @GetMapping("\${vyne.taxi.rest.path:/taxi}") // TODO : Make configurable

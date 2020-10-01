@@ -195,16 +195,16 @@ data class QueryClientResponse(
             }
             // TODO this is very nasty hack to deserialise TypedInstanced data (which serialised as hashmap) into given pojo
             // However, the proper fix requires bringing additional dependencies (e.g. vyne-core-types) into vyne-client...
-            val deserisalisedMap =  valueList.map { entity ->
+            val deserialisedMap =  valueList.map { entity ->
                entity.keys.map { attributeName ->
                   val attributeValue = entity[attributeName]?.get("value")
                   attributeName to attributeValue
                }.toMap()
             }
-            val typedResultArray = objectMapper.convertValue<Array<T>>(deserisalisedMap, typeRef)
+            val typedResultArray = objectMapper.convertValue<Array<T>>(deserialisedMap, typeRef)
             return typedResultArray.toList()
          } catch (e: Exception) {
-            log().info("Error in getting result list for ${type.qualifiedName} from $results")
+            log().error("Error in getting result list for ${type.qualifiedName} from $results", e)
             emptyList<T>()
          }
       }

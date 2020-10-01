@@ -36,6 +36,7 @@ class HttpSchemaStore(private val httpVersionedSchemaProvider: HttpVersionedSche
    fun pollForSchemaUpdates() {
       try {
          val versionedSources = httpVersionedSchemaProvider.getVersionedSchemas()
+         log().trace("pulled ${versionedSources.size} sources from query-server")
          if (shouldRecompile(localValidatingSchemaStoreClient.schemaSet().allSources, versionedSources)) {
             val oldSchemaSet = this.schemaSet()
             localValidatingSchemaStoreClient.submitSchemas(versionedSources)
