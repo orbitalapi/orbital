@@ -14,14 +14,14 @@ class ExecuteTestCommandTest {
          specPath = Paths.get(spec.toURI())
       }.executeTests()
          .toList()
-      testResults.should.have.size(2)
-      testResults.count { it.successful }.should.equal(1)
+      testResults.should.have.size(3)
+      testResults.count { it.successful }.should.equal(2)
       testResults.count { !it.successful }.should.equal(1)
    }
 
    @Test
    fun `simple project gets executed`() {
-      val spec = Resources.getResource("simple-test/specs/hello-world/hello-world.spec.conf")
+      val spec = Resources.getResource("simple-test/specs/hello-world/hello-world.spec.json")
       val testResult = ExecuteTestCommand().apply {
          specPath = Paths.get(spec.toURI())
       }.executeTests().toList().first()
@@ -41,7 +41,7 @@ class ExecuteTestCommandTest {
 
    @Test
    fun `reads spec correctly`() {
-      val specUrl = Resources.getResource("simple-test/specs/hello-world/hello-world.spec.conf")
+      val specUrl = Resources.getResource("simple-test/specs/hello-world/hello-world.spec.json")
       val spec = ExecuteTestCommand().apply {
          specPath = Paths.get(specUrl.toURI())
       }.buildTestSpecs().toList().first().spec!!
@@ -51,7 +51,7 @@ class ExecuteTestCommandTest {
 
    @Test
    fun `finds taxi conf in parent folder and compiles project`() {
-      val spec = Resources.getResource("simple-test/specs/hello-world/hello-world.spec.conf")
+      val spec = Resources.getResource("simple-test/specs/hello-world/hello-world.spec.json")
       val taxi = ExecuteTestCommand().apply {
          specPath = Paths.get(spec.toURI())
       }.buildProject()
@@ -60,7 +60,7 @@ class ExecuteTestCommandTest {
 
    @Test
    fun `can execute with multiple csvs`() {
-      val spec = Resources.getResource("simple-test/specs/csv-with-multiple-records/csv.spec.conf")
+      val spec = Resources.getResource("simple-test/specs/csv-with-multiple-records/csv.spec.json")
       val testResult = ExecuteTestCommand().apply {
          specPath = Paths.get(spec.toURI())
       }.executeTests().toList().first()

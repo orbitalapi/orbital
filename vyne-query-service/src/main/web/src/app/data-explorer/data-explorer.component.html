@@ -64,12 +64,19 @@
         <app-code-viewer [sources]="contentType?.sources" #appCodeViewer></app-code-viewer>
       </mat-tab>
       <mat-tab label="Parsed Data" *ngIf="parsedInstance">
+        <div class="toolbar">
+          <button mat-stroked-button [matMenuTriggerFor]="menu"
+                  class="downloadParsedDataButton">Download
+          </button>
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="onDownloadParsedDataClicked()">Download content as Json</button>
+            <button mat-menu-item (click)="onDownloadTestSpecClicked()">Download test spec</button>
+          </mat-menu>
+        </div>
         <div class="object-view-wrapper">
           <app-object-view *ngIf="parsedInstance" [schema]="schema"
                            [selectable]="true"
                            (instanceClicked)="onInstanceClicked($event)"
-                           (downloadParsedDataClicked)="onDownloadParsedDataClicked()"
-                           (downloadTypedParsedDataClicked)="onDownloadTypedParsedDataClicked()"
                            [instance]="typeNamedInstance"></app-object-view>
         </div>
       </mat-tab>

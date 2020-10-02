@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.typesafe.config.ConfigFactory
@@ -206,10 +207,10 @@ class ExecuteTestCommand : Callable<Int> {
 
    internal fun buildTestSpecs(): Sequence<TestSpecFile> {
       return specFolder.toFile().walk()
-         .filter { it.name.endsWith(".spec.conf") }
+         .filter { it.name.endsWith("spec.json") }
          .map { file ->
             try {
-               val testSpec = ConfigFactory.parseFile(file).extract<TestSpec>()
+               val testSpec = mapper.readValue<TestSpec>(file)
                TestSpecFile(file.toPath(), testSpec, null)
             } catch (exception: Exception) {
                TestSpecFile(file.toPath(), null, message = "Failed to load spec at $file :" + exception.message)

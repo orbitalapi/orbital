@@ -4,6 +4,7 @@ import {Observable} from 'rxjs';
 import {environment} from 'src/environments/environment';
 import {DownloadFileType} from '../query-panel/result-display/result-container.component';
 import {CsvOptions, ParsedCsvContent} from './types.service';
+import {Type} from './schema';
 
 
 @Injectable({providedIn: 'root'})
@@ -24,6 +25,18 @@ export class ExportFileService {
         prev === -1 || (cur !== -1 && cur < prev) ? cur : prev
       );
     return (input[idx] || ',');
+  }
+
+  exportTestSpec(content: string, contentType: Type, csvOptions: CsvOptions, testSpecName:String): Observable<ArrayBuffer> {
+    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const ignoreContentParam = csvOptions.ignoreContentBefore ?
+      '&ignoreContentBefore=' + encodeURIComponent(csvOptions.ignoreContentBefore)
+      : '';
+    const separator = encodeURIComponent(this.detectCsvDelimiter(content));
+    return this.http.post(
+      // tslint:disable-next-line:max-line-length
+      `${environment.queryServiceUrl}/api/csv/downloadTypedParsedTestSpec?testSpecName=${testSpecName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}&type=${contentType.name.fullyQualifiedName}`,
+      content, {responseType: 'arraybuffer'});
   }
 
   exportParsedData(content: string, contentType: any, csvOptions: CsvOptions, isTypeIncluded: boolean)

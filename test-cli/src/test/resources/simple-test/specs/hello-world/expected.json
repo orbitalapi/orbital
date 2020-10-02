@@ -1,23 +1,29 @@
 {
-   "firstName": {
-      "value": "Marty",
-      "source": {
-         "dataSourceName": "Provided"
+   "typeName": "vyne.demo.Person",
+   "value": {
+      "firstName": {
+         "typeName": "vyne.demo.FirstName",
+         "value": "Marty",
+         "source": {
+            "dataSourceName": "Provided"
+         }
       },
-      "typeName": "vyne.demo.FirstName"
+      "lastName": {
+         "typeName": "vyne.demo.LastName",
+         "value": "Pitt",
+         "source": {
+            "dataSourceName": "Provided"
+         }
+      },
+      "resident": {
+         "typeName": "vyne.demo.Country",
+         "value": "UK",
+         "source": {
+            "dataSourceName": "Provided"
+         }
+      }
    },
-   "lastName": {
-      "value": "Pitt",
-      "source": {
-         "dataSourceName": "Provided"
-      },
-      "typeName": "vyne.demo.LastName"
-   },
-   "resident": {
-      "value": "UK",
-      "source": {
-         "dataSourceName": "Provided"
-      },
-      "typeName": "vyne.demo.Country"
+   "source": {
+      "dataSourceName": "Provided"
    }
 }

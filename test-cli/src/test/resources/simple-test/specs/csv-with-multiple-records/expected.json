@@ -1,34 +1,46 @@
 [
    {
-      "firstName": {
-         "value": "Jimmy",
-         "source": {
-            "dataSourceName": "Provided"
+      "typeName": "vyne.demo.CsvPerson",
+      "value": {
+         "firstName": {
+            "typeName": "vyne.demo.FirstName",
+            "value": "Jimmy",
+            "source": {
+               "dataSourceName": "Provided"
+            }
          },
-         "typeName": "vyne.demo.FirstName"
+         "lastName": {
+            "typeName": "vyne.demo.LastName",
+            "value": "Pitt",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
       },
-      "lastName": {
-         "value": "Pitt",
-         "source": {
-            "dataSourceName": "Provided"
-         },
-         "typeName": "vyne.demo.LastName"
+      "source": {
+         "dataSourceName": "Provided"
       }
    },
    {
-      "firstName": {
-         "value": "Mini",
-         "source": {
-            "dataSourceName": "Provided"
+      "typeName": "vyne.demo.CsvPerson",
+      "value": {
+         "firstName": {
+            "typeName": "vyne.demo.FirstName",
+            "value": "Mini",
+            "source": {
+               "dataSourceName": "Provided"
+            }
          },
-         "typeName": "vyne.demo.FirstName"
+         "lastName": {
+            "typeName": "vyne.demo.LastName",
+            "value": "Pitt",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
       },
-      "lastName": {
-         "value": "Pitt",
-         "source": {
-            "dataSourceName": "Provided"
-         },
-         "typeName": "vyne.demo.LastName"
+      "source": {
+         "dataSourceName": "Provided"
       }
    }
 ]

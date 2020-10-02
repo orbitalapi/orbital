@@ -1,20 +1,5 @@
 <div class="top-level">
   <div class="type-name " *ngIf="topLevel">{{ type?.name.name }}</div>
-  <button mat-stroked-button [matMenuTriggerFor]="menu" *ngIf="topLevel"
-          class="downloadParsedDataButton">Download
-  </button>
-  <mat-menu #menu="matMenu">
-    <mat-radio-group>
-      <mat-radio-button [checked] ="isTypeInfoIncluded" value="TypeIncluded" (change)="handleRadio($event)"
-                        (click)="$event.stopPropagation()" style="padding-left: 20px; padding-bottom: 10px">
-        Include type info
-      </mat-radio-button>
-      <mat-radio-button [checked] ="!isTypeInfoIncluded" value="TypeExcluded" (change)="handleRadio($event)"
-                        (click)="$event.stopPropagation()" style="padding-left: 20px">Exclude type info
-      </mat-radio-button>
-    </mat-radio-group>
-    <button mat-menu-item (click)="downloadParsedData()">Download as JSON</button>
-  </mat-menu>
 </div>
 <div class="typed-value-container" *ngIf="isPrimitive" (click)="onTopLevelPrimitiveClicked()"
      [class.selectable]="selectable"

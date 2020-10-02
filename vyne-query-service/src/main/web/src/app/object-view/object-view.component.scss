@@ -21,9 +21,11 @@
   padding-bottom: 0.5rem;
 }
 
-.type-name.top-level {
-  font-size: 1.2rem;
-  margin-bottom: 1.2rem;
+.top-level {
+  .type-name {
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+  }
 }
 
 .type-name {

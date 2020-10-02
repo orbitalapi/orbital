@@ -38,12 +38,13 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
 import {AgGridModule} from 'ag-grid-angular';
 import {MatDialogModule} from '@angular/material/dialog';
-import { AssignTypeToColumnDialogComponent } from './assign-types-dialog/assign-type-to-column-dialog.component';
+import {AssignTypeToColumnDialogComponent} from './assign-types-dialog/assign-type-to-column-dialog.component';
 import {MatDatepickerModule} from '@angular/material/datepicker';
-import { TypeNamePanelComponent } from './type-name-panel/type-name-panel.component';
-import { SchemaGeneratorComponent } from './schema-generator-panel/schema-generator.component';
+import {TypeNamePanelComponent} from './type-name-panel/type-name-panel.component';
+import {SchemaGeneratorComponent} from './schema-generator-panel/schema-generator.component';
 import {GridHeaderActionsComponent} from './custom-csv-table-header';
 import {MatRadioModule} from '@angular/material/radio';
+import {TestSpecFormComponent} from './test-spec-form.component';
 
 @NgModule({
   imports: [
@@ -93,7 +94,8 @@ import {MatRadioModule} from '@angular/material/radio';
     CaskPanelComponent,
     AssignTypeToColumnDialogComponent,
     TypeNamePanelComponent,
-    SchemaGeneratorComponent
+    SchemaGeneratorComponent,
+    TestSpecFormComponent
   ],
   exports: [
     DataSourceToolbarComponent,
@@ -101,7 +103,11 @@ import {MatRadioModule} from '@angular/material/radio';
     CsvViewerComponent,
     CaskPanelComponent
   ],
-  entryComponents: [AssignTypeToColumnDialogComponent, GridHeaderActionsComponent]
+  entryComponents: [
+    AssignTypeToColumnDialogComponent,
+    GridHeaderActionsComponent,
+    TestSpecFormComponent
+  ]
 
 })
 export class DataExplorerModule {
