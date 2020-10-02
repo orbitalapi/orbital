@@ -1,0 +1,7 @@
+{
+   "contentType" : "csv",
+   "expected" : "expected.json",
+   "name" : "multiple csvs",
+   "source" : "input.csv",
+   "targetType" : "vyne.demo.CsvPerson"
+}

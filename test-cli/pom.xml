@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>platform</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.10.3-SNAPSHOT</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>test-cli</artifactId>
+
+   <dependencies>
+      <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>compiler</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-taxi</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.module</groupId>
+         <artifactId>jackson-module-kotlin</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.fasterxml.jackson.core</groupId>
+         <artifactId>jackson-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.skyscreamer</groupId>
+         <artifactId>jsonassert</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.google.guava</groupId>
+         <artifactId>guava</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>info.picocli</groupId>
+         <artifactId>picocli</artifactId>
+         <version>4.5.1</version>
+      </dependency>
+      <dependency>
+         <groupId>io.github.config4k</groupId>
+         <artifactId>config4k</artifactId>
+         <version>0.4.0</version>
+      </dependency>
+      <dependency>
+         <groupId>org.beryx</groupId>
+         <artifactId>text-io</artifactId>
+         <version>3.4.1</version>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>cask-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <resources>
+         <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>
+         </resource>
+      </resources>
+      <plugins>
+         <plugin>
+            <groupId>pl.project13.maven</groupId>
+            <artifactId>git-commit-id-plugin</artifactId>
+            <version>2.2.4</version>
+            <executions>
+               <execution>
+                  <id>get-the-git-infos</id>
+                  <goals>
+                     <goal>revision</goal>
+                  </goals>
+               </execution>
+            </executions>
+            <configuration>
+               <generateGitPropertiesFile>true</generateGitPropertiesFile>
+               <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties
+               </generateGitPropertiesFilename>
+            </configuration>
+         </plugin>
+         <!--         <plugin>-->
+         <!--            <groupId>org.springframework.boot</groupId>-->
+         <!--            <artifactId>spring-boot-maven-plugin</artifactId>-->
+         <!--            <executions>-->
+         <!--               <execution>-->
+         <!--                  <goals>-->
+         <!--                     <goal>repackage</goal>-->
+         <!--                  </goals>-->
+         <!--                  <configuration>-->
+         <!--                     <classifier>spring-boot</classifier>-->
+         <!--                     <mainClass>-->
+         <!--                        io.vyne.testcli.TestCliAppKt-->
+         <!--                     </mainClass>-->
+         <!--                  </configuration>-->
+         <!--               </execution>-->
+         <!--            </executions>-->
+         <!--         </plugin>-->
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>appassembler-maven-plugin</artifactId>
+            <version>1.10</version>
+            <executions>
+               <execution>
+                  <id>assemble-script</id>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>assemble</goal>
+                  </goals>
+                  <configuration>
+                     <!--<assembleDirectory>${project.build.directory}/appassembler</assembleDirectory>-->
+                     <!--                     <assembleDirectory>${project.build.directory}/</assembleDirectory>-->
+                     <!--                     <binFileExtensions>-->
+                     <!--                        <unix>.sh</unix>-->
+                     <!--                     </binFileExtensions>-->
+                     <!--                     <platforms>-->
+                     <!--                        <platform>unix</platform>-->
+                     <!--                        <platform>windows</platform>-->
+                     <!--                     </platforms>-->
+                     <programs>
+                        <program>
+                           <mainClass>io.vyne.testcli.TestCliAppKt</mainClass>
+                           <id>vynetest</id>
+                        </program>
+                     </programs>
+                     <repositoryLayout>flat</repositoryLayout>
+                     <repositoryName>lib</repositoryName>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>3.3.0</version>
+            <configuration>
+               <descriptors>
+                  <descriptor>src/main/assembly/assembly.xml</descriptor>
+               </descriptors>
+            </configuration>
+            <executions>
+               <execution>
+                  <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                  <phase>package</phase> <!-- bind to the packaging phase -->
+                  <goals>
+                     <goal>single</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+</project>

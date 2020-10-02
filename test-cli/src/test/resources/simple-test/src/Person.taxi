@@ -1,0 +1,18 @@
+namespace vyne.demo
+
+enum Country {
+   NZ("New Zealand"),
+   AUS("Australia"),
+   UK("United Kingdom")
+}
+
+model Person {
+   firstName : FirstName as String
+   lastName : LastName as String
+   resident: Country
+}
+
+model CsvPerson {
+   firstName : FirstName by column("firstName")
+   lastName : LastName by column("lastName")
+}

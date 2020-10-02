@@ -1,0 +1,6 @@
+{
+   "expected" : "expected.json",
+   "name" : "expected to fail",
+   "source" : "input.json",
+   "targetType" : "vyne.demo.Person"
+}

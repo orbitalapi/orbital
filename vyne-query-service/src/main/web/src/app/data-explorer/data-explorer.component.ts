@@ -18,7 +18,11 @@ import {CaskService} from '../services/cask.service';
 import {HeaderTypes} from './csv-viewer.component';
 import {SchemaGeneratorComponent} from './schema-generator-panel/schema-generator.component';
 import * as fileSaver from 'file-saver';
+import {QueryFailure} from '../query-panel/query-wizard/query-wizard.component';
 import {ExportFileService} from '../services/export.file.service';
+import {DownloadFileType} from '../query-panel/result-display/result-container.component';
+import {MatDialog} from '@angular/material/dialog';
+import {TestSpecFormComponent} from './test-spec-form.component';
 
 @Component({
   selector: 'app-data-explorer',
@@ -64,7 +68,10 @@ export class DataExplorerComponent {
   activeTab: number;
   xmlIngestionParameters: XmlIngestionParameters = new XmlIngestionParameters();
 
-  constructor(private typesService: TypesService, private caskService: CaskService, private exportFileService: ExportFileService) {
+  constructor(private typesService: TypesService,
+              private caskService: CaskService,
+              private exportFileService: ExportFileService,
+              private dialogService: MatDialog) {
     this.typesService.getTypes()
       .subscribe(next => this.schema = next);
     this.caskServiceUrl = environment.queryServiceUrl;
@@ -273,11 +280,22 @@ export class DataExplorerComponent {
       });
   }
 
-  onDownloadTypedParsedDataClicked() {
-    this.exportFileService.exportParsedData(this.fileContents, this.contentType, this.csvOptions, true)
-      .subscribe(response => {
-        const blob: Blob = new Blob([response], {type: `text/json; charset=utf-8`});
-        fileSaver.saveAs(blob, `parsed-data-${new Date().getTime()}.json`);
-      });
+  onDownloadTestSpecClicked() {
+    const dialogRef = this.dialogService.open(TestSpecFormComponent, {
+      width: '550px'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result !== null) {
+        // noinspection UnnecessaryLocalVariableJS
+        const specName = result;
+        this.exportFileService.exportTestSpec(this.fileContents, this.contentType, this.csvOptions, specName)
+          .subscribe(response => {
+            const blob: Blob = new Blob([response], {type: `application/zip`});
+            fileSaver.saveAs(blob, `${specName}-spec-${new Date().getTime()}.zip`);
+          });
+      }
+    });
+
   }
 }
