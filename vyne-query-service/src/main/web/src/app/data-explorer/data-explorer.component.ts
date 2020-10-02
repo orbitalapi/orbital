@@ -1,17 +1,17 @@
-import {Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {findType, Schema, Type} from '../services/schema';
 import {
   VyneHttpServiceError,
   ParsedTypeInstance,
   TypesService,
   CsvOptions,
-  ParsedCsvContent
+  ParsedCsvContent, XmlIngestionParameters
 } from '../services/types.service';
-import {FileSystemEntry, FileSystemFileEntry, UploadFile} from 'ngx-file-drop';
+import {FileSystemFileEntry, UploadFile} from 'ngx-file-drop';
 import {HttpErrorResponse} from '@angular/common/http';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {CodeViewerComponent} from '../code-viewer/code-viewer.component';
-import {QueryResult, TypeNamedInstance} from '../services/query.service';
+import {TypeNamedInstance} from '../services/query.service';
 import {InstanceLike, typeName} from '../object-view/object-view.component';
 import {environment} from '../../environments/environment';
 import {CaskService} from '../services/cask.service';
@@ -65,7 +65,8 @@ export class DataExplorerComponent {
   csvOptions: CsvOptions = new CsvOptions();
   headersWithAssignedTypes: HeaderTypes[] = [];
   assignedTypeName: string;
-
+  activeTab: number;
+  xmlIngestionParameters: XmlIngestionParameters = new XmlIngestionParameters();
 
   constructor(private typesService: TypesService,
               private caskService: CaskService,
@@ -90,7 +91,10 @@ export class DataExplorerComponent {
       return false;
     }
     return CsvOptions.isCsvContent(this.fileExtension);
+  }
 
+  get isXmlContent(): boolean {
+    return XmlIngestionParameters.isXmlContent(this.fileExtension);
   }
 
   get isGenerateSchemaPanelOpen(): boolean {
@@ -150,9 +154,11 @@ export class DataExplorerComponent {
 
   showGenerateSchemaPanel($event) {
     this.isGenerateSchemaPanelVisible = $event;
-    setTimeout(() => {
-      this.schemaGenerationPanel.generateSchema();
-    }, 0);
+    if (this.isGenerateSchemaPanelVisible) {
+      setTimeout(() => {
+        this.schemaGenerationPanel.generateSchema();
+      }, 0);
+    }
     return this.isGenerateSchemaPanelVisible;
   }
 
@@ -179,10 +185,11 @@ export class DataExplorerComponent {
 
     if (this.isCsvContent) {
       this.parseCsvToTypedInstance();
+    } else if (this.isXmlContent) {
+      this.parseXmlToTypedInstances();
     } else {
       this.parseStringContentToTypedInstance();
     }
-
   }
 
   private parseCsvToTypedInstance() {
@@ -191,6 +198,15 @@ export class DataExplorerComponent {
         this.parserErrorMessage = (error as HttpErrorResponse).error as VyneHttpServiceError;
         console.error('Failed to parse instance: ' + this.parserErrorMessage.message);
       });
+  }
+
+  private parseXmlToTypedInstances() {
+    this.typesService.parseXmlToType(this.fileContents, this.contentType, this.xmlIngestionParameters)
+      .subscribe(parsedTypedInstant => this.handleParsingResult(parsedTypedInstant),
+        error => {
+          this.parserErrorMessage = (error as HttpErrorResponse).error as VyneHttpServiceError;
+          console.error('Failed to parse instance: ' + this.parserErrorMessage.message);
+        });
   }
 
   private handleParsingResult(result: ParsedTypeInstance | ParsedTypeInstance[]) {
@@ -214,6 +230,7 @@ export class DataExplorerComponent {
   }
 
   onSelectedTabChanged(event: MatTabChangeEvent) {
+    this.activeTab = event.tab.origin;
     if (event.tab.textLabel === this.schemaLabel && this.appCodeViewer) {
       this.appCodeViewer.remeasure();
     }
@@ -228,6 +245,11 @@ export class DataExplorerComponent {
     this.csvOptions = csvOptions;
     this.parseCsvContentIfPossible();
     this.parseToTypedInstanceIfPossible();
+  }
+
+  onXmlOptionsChanged(xmlOptions: XmlIngestionParameters) {
+    this.xmlIngestionParameters = xmlOptions;
+    this.parseCsvContentIfPossible();
   }
 
   onInstanceClicked(event: InstanceLike) {

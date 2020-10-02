@@ -76,13 +76,13 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       this.rowData = [];
     } else {
       if (isTypeNamedInstance(collection[0])) {
-        collection.forEach((instance: InstanceLikeOrCollection) => {
-          Object.keys(instance).forEach((key) => {
-            if (!instance[key].value) {
-              instance[key] = {
-                source: instance[key].source,
+        collection.forEach((instance: TypeNamedInstance) => {
+          Object.keys(instance.value).forEach((key) => {
+            if (!instance.value[key].value) {
+              instance.value[key] = {
+                source: instance.value[key].source,
                 value: '',
-                typeName: instance[key].typeName
+                typeName: instance.value[key].typeName
               };
             }
           });

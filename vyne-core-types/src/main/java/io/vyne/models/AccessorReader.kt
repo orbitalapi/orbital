@@ -16,6 +16,7 @@ import io.vyne.utils.log
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.*
 import org.apache.commons.csv.CSVRecord
+import org.w3c.dom.Document
 
 object Parsers {
    val xmlParser: XmlTypedInstanceParser by lazy { XmlTypedInstanceParser() }
@@ -39,7 +40,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
    fun read(value: Any, targetType: Type, accessor: Accessor, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean = false): TypedInstance {
       return when (accessor) {
          is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source)
-         is XpathAccessor -> parseXml(value, targetType, schema, accessor, source)
+         is XpathAccessor -> parseXml(value, targetType, schema, accessor, source, nullable)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source)
          is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable)
          is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, nullValues, source)
@@ -130,13 +131,14 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
       return TypedObject(targetType, values, source)
    }
 
-   private fun parseXml(value: Any, targetType: Type, schema: Schema, accessor: XpathAccessor, source: DataSource): TypedInstance {
+   private fun parseXml(value: Any, targetType: Type, schema: Schema, accessor: XpathAccessor, source: DataSource, nullable: Boolean): TypedInstance {
       // TODO : We should really support parsing from a stream, to avoid having to load large sets in memory
       return when (value) {
-         is String -> xmlParser.parse(value, targetType, accessor, schema, source)
+         is String -> xmlParser.parse(value, targetType, accessor, schema, source, nullable)
          // Strictly speaking, we shouldn't be getting maps here.
          // But it's a legacy thing, from when we used xpath(...) all over the shop, even in non xml types
          is Map<*, *> -> TypedInstance.from(targetType, value[accessor.expression.removePrefix("/")], schema, source = source)
+         is Document -> xmlParser.parse(value, targetType, accessor, schema, source, nullable)
          else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
    }

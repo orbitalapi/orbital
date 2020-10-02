@@ -145,6 +145,24 @@ type TransformedTradeRecord {
 
    }
 
+   @Test
+   fun `can use a function inside the when selection clause`() {
+      val (vyne, _) = testVyne( """
+      type Order {
+         bankDirection: BankDirection as String
+         clientDirection: ClientDirection as String by when (upperCase(this.bankDirection):String) {
+            "BUY" -> "Sell"
+            "SELL" -> "Buy"
+            else -> null
+         }
+      }
+      """)
+      val json = """{ "bankDirection" : "buy" }"""
+      val order = TypedObjectFactory(vyne.schema.type("Order"), json, vyne.schema, source = Provided).build() as TypedObject
+
+      order["bankDirection"].value!!.should.equal("buy")
+      order["clientDirection"].value.should.equal("Sell")
+   }
 
    @Ignore("this feature isn't implemented yet")
    @Test

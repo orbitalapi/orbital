@@ -68,6 +68,82 @@ service Broker1Service {
 """.trimIndent()
 
    @Test
+   fun `project by enriching from other services`() {
+      val schema = """
+         type Id inherits String
+         type Field1 inherits String
+         type ParentType inherits String
+         type ChildType inherits ParentType
+         type GrandChildType inherits ChildType
+         type ProvidedByService inherits String
+
+         model ServiceData {
+            field: ProvidedByService
+         }
+
+         model Target {
+               id: Id
+               field1: Field1
+               field2: ProvidedByService
+         }
+         model Order {
+            id: Id
+            field1: Field1
+            child: ChildType
+         }
+
+         @DataSource
+         service HelperService {
+            operation getData( input : ChildType) : ServiceData
+         }
+
+         service OrderService {
+            operation findAll( ) : Order[]
+         }
+
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(schema)
+      stubService.addResponse("getData", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            return vyne.addJsonModel("ServiceData", """
+               {
+                   "field": "This is Provided By External Service"
+               }
+            """.trimIndent())
+         }
+      })
+
+      stubService.addResponse("findAll", object : StubResponseHandler {
+         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            return vyne.addJsonModel("Order[]", """
+               [
+               {
+                   "id": "id1",
+                   "field1": "Field - 1",
+                   "child": "Child 1"
+               },
+               {
+                   "id": "id2",
+                   "field1": "Field - 2",
+                   "child": "Child 2"
+               }
+               ]
+            """.trimIndent())
+         }
+      })
+
+      val result = vyne.query("""
+         findAll {
+            Order[]
+         } as Target[]""".trimIndent())
+      result.isFullyResolved.should.be.`true`
+      val results = result.resultMap[result.resultMap.keys.first()] as List<Map<String, Any>>
+      results.first().should.contain(Pair("field2" ,"This is Provided By External Service"))
+      results[1].should.contain(Pair("field2" ,"This is Provided By External Service"))
+   }
+
+   @Test
    fun `project an array of Orders to the array of CommonOrder`() {
       // prepare
       val schema = """

@@ -21,6 +21,7 @@
                              (fileDataSourceChanged)="onFileSelected($event)"
                              (selectedTypeChanged)="contentType = $event"
                              (csvOptionsChanged)="onCsvOptionsChanged($event)"
+                             (xmlOptionsChanged)="onXmlOptionsChanged($event)"
     ></app-data-source-toolbar>
 
     <div class="result-status error-display" *ngIf="parserErrorMessage">
@@ -43,6 +44,7 @@
                       [caskServiceUrl]="caskServiceUrl"
                       [contents]="fileContents"
                       [targetTypeName]="contentType.name.fullyQualifiedName"
+                      [xmlIngestionParameters]="xmlIngestionParameters"
       ></app-cask-panel>
     </div>
     <mat-tab-group animationDuration="250ms"
@@ -61,7 +63,7 @@
         </td-highlight>
       </mat-tab>
       <mat-tab label="Schema" *ngIf="contentType">
-        <app-code-viewer [sources]="contentType?.sources" #appCodeViewer></app-code-viewer>
+        <app-code-viewer *ngIf="activeTab === 1" [sources]="contentType?.sources" #appCodeViewer></app-code-viewer>
       </mat-tab>
       <mat-tab label="Parsed Data" *ngIf="parsedInstance">
         <div class="toolbar">
