@@ -1,9 +1,7 @@
 package io.vyne.models.json
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.NumericNode
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.databind.node.ValueNode
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
@@ -16,14 +14,13 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.types.JsonPathAccessor
-import lang.taxi.types.XpathAccessor
 
 /**
  * Parses a single attribute at defined xpath accessor
  */
 class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser = PrimitiveParser()) {
    companion object {
-      val jsonPath =  JsonPath.using(
+      val jsonPath = JsonPath.using(
          Configuration.defaultConfiguration()
             .mappingProvider(JacksonMappingProvider())
             .jsonProvider(JacksonJsonNodeJsonProvider())
@@ -31,11 +28,12 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
 
 
    }
-   fun parseToType(type: Type, accessor: JsonPathAccessor, record: ObjectNode, schema: Schema, source:DataSource): TypedInstance {
+
+   fun parseToType(type: Type, accessor: JsonPathAccessor, record: ObjectNode, schema: Schema, source: DataSource, nullable: Boolean = false): TypedInstance {
       val expressionValue = if (accessor.expression.startsWith("/")) {
-         parseXpathStyleExpression(record, accessor, type, schema, source)
+         parseXpathStyleExpression(record, accessor, type, nullable)
       } else {
-         parseJsonPathStyleExpression(record, accessor, type, schema, source)
+         parseJsonPathStyleExpression(record, accessor, nullable)
       }
       if (expressionValue === null) {
          return TypedInstance.from(type, null, schema, source = source);
@@ -45,7 +43,7 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
 
    }
 
-   private fun parseJsonPathStyleExpression(record: ObjectNode, accessor: JsonPathAccessor, type: Type, schema: Schema, source: DataSource): Any? {
+   private fun parseJsonPathStyleExpression(record: ObjectNode, accessor: JsonPathAccessor, nullable: Boolean): Any? {
 
       return try {
          val node = jsonPath.parse(record).read<Any>(accessor.expression) as JsonNode
@@ -56,15 +54,19 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
             else -> node.textValue()
          }
       } catch (e: PathNotFoundException) {
-         log().warn("Could not evaluate path ${accessor.expression}, will return null - ${e.message}")
+         if (!nullable) {
+            log().warn("Could not evaluate path for non-nullable field. Expression: ${accessor.expression}, will return null - ${e.message}")
+         }
          null
       }
    }
 
-   private fun parseXpathStyleExpression(record: ObjectNode, accessor: JsonPathAccessor, type: Type, schema: Schema, source: DataSource): Any? {
+   private fun parseXpathStyleExpression(record: ObjectNode, accessor: JsonPathAccessor, type: Type, nullable: Boolean): Any? {
       val node = record.at(accessor.expression)
       return if (node.isMissingNode) {
-         log().warn("Could not find json pointer ${accessor.expression} in record")
+         if (!nullable) {
+            log().warn("Could not find json pointer ${accessor.expression} in record for non-nullable field.")
+         }
          null
       } else {
          when {
@@ -73,8 +75,6 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
             node.isTextual && node.asText().trim().isEmpty() && type.isEnum -> null
             else -> node.asText()
          }
-
-
       }
    }
 }

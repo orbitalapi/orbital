@@ -39,7 +39,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
 
    fun read(value: Any, targetType: Type, accessor: Accessor, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean = false): TypedInstance {
       return when (accessor) {
-         is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source)
+         is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source, nullable)
          is XpathAccessor -> parseXml(value, targetType, schema, accessor, source, nullable)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source)
          is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable)
@@ -143,15 +143,15 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
       }
    }
 
-   private fun parseJson(value: Any, targetType: Type, schema: Schema, accessor: JsonPathAccessor, source: DataSource): TypedInstance {
+   private fun parseJson(value: Any, targetType: Type, schema: Schema, accessor: JsonPathAccessor, source: DataSource, nullable: Boolean): TypedInstance {
       return when (value) {
-         is ObjectNode -> jsonParser.parseToType(targetType, accessor, value, schema, source)
-         is Map<*, *> -> extractFromMap(targetType, accessor, value, schema, source)
+         is ObjectNode -> jsonParser.parseToType(targetType, accessor, value, schema, source, nullable)
+         is Map<*, *> -> extractFromMap(targetType, accessor, value, schema, source, nullable)
          else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
    }
 
-   private fun extractFromMap(targetType: Type, accessor: JsonPathAccessor, value: Map<*, *>, schema: Schema, source: DataSource): TypedInstance {
+   private fun extractFromMap(targetType: Type, accessor: JsonPathAccessor, value: Map<*, *>, schema: Schema, source: DataSource, nullable: Boolean): TypedInstance {
       // Strictly speaking, we shouldn't be getting maps here.
       // But it's a legacy thing, from when we used xpath(...) all over the shop, even in non xml types
       val expression = accessor.expression

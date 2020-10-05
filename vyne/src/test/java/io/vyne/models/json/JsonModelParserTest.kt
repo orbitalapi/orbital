@@ -7,6 +7,7 @@ import com.winterbe.expekt.should
 import io.vyne.Vyne
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.QueryEngineFactory
 import io.vyne.schemas.taxi.TaxiSchema
@@ -30,6 +31,13 @@ type Client {
    buildingType : BuildingType
    emails : Email[]
    address : Address
+}
+
+type ModelWithNullableFields {
+    stringNullable: String? by jsonPath("$.string")
+    intNullable: Int? by jsonPath("$.int")
+    dateNullable: Date? by jsonPath("$.date")
+    id: String by jsonPath("$.id")
 }
 """
 
@@ -152,5 +160,23 @@ type Client {
       val client2 = clients[1] as TypedObject
       expect(client2["clientId"]!!.value).to.equal("mert")
 
+   }
+
+   @Test
+   fun `json parsing handles nullable field definitions correctly`() {
+      val vyne = Vyne(QueryEngineFactory.noQueryEngine()).addSchema(TaxiSchema.from(taxiDef))
+      val jsonContent = """
+         {  "id": "1" }
+      """.trimIndent()
+      val map = jacksonObjectMapper().readValue<Map<String, Any>>(jsonContent)
+      val schema = vyne.schema
+      val parsedResult = TypedInstance.from(schema.type("ModelWithNullableFields"), jsonContent, vyne.schema, source = Provided)
+      expect(parsedResult).instanceof(TypedObject::class.java)
+      val modelWithNullableFields = parsedResult as TypedObject
+      expect(modelWithNullableFields.type.name).to.equal(schema.type("ModelWithNullableFields").name)
+      expect(modelWithNullableFields["id"].value).to.be.not.`null`
+      expect(modelWithNullableFields["intNullable"].value).to.be.`null`
+      expect(modelWithNullableFields["dateNullable"].value).to.be.`null`
+      expect(modelWithNullableFields["stringNullable"].value).to.be.`null`
    }
 }
