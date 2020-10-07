@@ -1,15 +1,15 @@
 variables:
-  # This will supress any download for dependencies and plugins or upload messages which would clutter the console log.
-  # `showDateTime` will show the passed time in milliseconds. You need to specify `--batch-mode` to make this work.
-  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
-  # As of Maven 3.3.0 instead of this you may define these options in `.mvn/maven.config` so the same config is used
-  # when running from the command line.
-  # `installAtEnd` and `deployAtEnd` are only effective with recent version of the corresponding plugins.
-  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U"
-  # Used during gitflow interaction.
-  MAJOR_RELEASE_DIGIT: 0
-  MINOR_RELEASE_DIGIT: 1
-  PATCH_RELEASE_DIGIT: 2
+   # This will supress any download for dependencies and plugins or upload messages which would clutter the console log.
+   # `showDateTime` will show the passed time in milliseconds. You need to specify `--batch-mode` to make this work.
+   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
+   # As of Maven 3.3.0 instead of this you may define these options in `.mvn/maven.config` so the same config is used
+   # when running from the command line.
+   # `installAtEnd` and `deployAtEnd` are only effective with recent version of the corresponding plugins.
+   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -U"
+   # Used during gitflow interaction.
+   MAJOR_RELEASE_DIGIT: 0
+   MINOR_RELEASE_DIGIT: 1
+   PATCH_RELEASE_DIGIT: 2
 
 .git_template: &git_setup |
    git remote set-url --push origin "https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
@@ -22,29 +22,30 @@ stages:
    - release
 
 build-jvm:
-  stage: build
-  except:
-     - tags
-     - develop
-     - master
-  cache:
-     paths:
-        - .m2/repository
-     key: "maven-$CI_COMMIT_REF_SLUG"
-  script:
-    - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
-    - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
-    - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
-    - 'mvn $MAVEN_CLI_OPTS clean install -Dskip.npm -PrunBenchmarkTests'
-  artifacts:
-    paths:
-       - "*/target"
-    expire_in: 1 hours
-    reports:
-      junit:
-      # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
-      # However, leaving this here to pick up later
-        - "*/target/surefire-reports/TEST-*.xml"
+   stage: build
+   except:
+      - tags
+      - develop
+      - master
+   cache:
+      paths:
+         - .m2/repository
+      key: "maven-$CI_COMMIT_REF_SLUG"
+   script:
+      - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
+      - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
+      - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
+      - 'mvn $MAVEN_CLI_OPTS clean install -Dskip.npm -PrunBenchmarkTests'
+   artifacts:
+      paths:
+         - "*/target"
+         -  "test-cli/target/*.zip"
+      expire_in: 1 hours
+      reports:
+         junit:
+            # Note:This won't actually work, b/c of https://gitlab.com/gitlab-org/gitlab-runner/issues/2620
+            # However, leaving this here to pick up later
+            - "*/target/surefire-reports/TEST-*.xml"
 
 build-ui:
    stage: build
@@ -65,13 +66,16 @@ build-ui:
       expire_in: 1 hours
 
 build-publish-snapshot:
-  resource_group: docker_release
-  stage: deploy
-  script:
-    - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-    - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -DbuildNumber=$CI_BUILD_ID -P snapshot-release'
-  only:
-    - develop
+   resource_group: docker_release
+   stage: deploy
+   script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -DbuildNumber=$CI_BUILD_ID -P snapshot-release'
+   only:
+      - develop
+   artifacts:
+      paths:
+         - "test-cli/target/*.zip"
 
 build-publish-release:
    resource_group: docker_release
@@ -81,6 +85,9 @@ build-publish-release:
       - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -P release'
    only:
       - master
+   artifacts:
+      paths:
+         - "test-cli/target/*.zip"
 
 release-major:
    variables:

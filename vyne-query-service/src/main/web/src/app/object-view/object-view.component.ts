@@ -23,7 +23,6 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
   NOT_PROVIDED = 'Value not provided';
 
-
   @Input()
   topLevel = true;
 
@@ -31,16 +30,8 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     // tslint:disable-next-line:no-inferrable-types
   selectable: boolean = false;
 
-  @Output() downloadParsedDataClicked = new EventEmitter<Boolean>();
-
-  @Output() downloadTypedParsedDataClicked = new EventEmitter<Boolean>();
-
-
   // Indicates if it's a straight typedInstance (ie., a typedValue)
   // or a typed object, which is indexed with property names
-
-  isTypeInfoIncluded = false;
-
   get isPrimitive(): boolean {
     return this._instance != null && this.typedObject.value != null && !this.isTypedObject && !this.isArray;
   }
@@ -68,18 +59,6 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       this.instanceClicked.emit(this.typedObject);
     }
 
-  }
-
-  downloadParsedData() {
-    if (this.isTypeInfoIncluded) {
-      this.downloadTypedParsedDataClicked.emit();
-    } else {
-      this.downloadParsedDataClicked.emit();
-    }
-  }
-
-  handleRadio($event: MatRadioChange) {
-    this.isTypeInfoIncluded = $event.value === 'TypeIncluded' ? true : false;
   }
 }
 

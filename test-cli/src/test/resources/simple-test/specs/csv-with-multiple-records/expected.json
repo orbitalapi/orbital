@@ -1,0 +1,46 @@
+[
+   {
+      "typeName": "vyne.demo.CsvPerson",
+      "value": {
+         "firstName": {
+            "typeName": "vyne.demo.FirstName",
+            "value": "Jimmy",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "lastName": {
+            "typeName": "vyne.demo.LastName",
+            "value": "Pitt",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   },
+   {
+      "typeName": "vyne.demo.CsvPerson",
+      "value": {
+         "firstName": {
+            "typeName": "vyne.demo.FirstName",
+            "value": "Mini",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         },
+         "lastName": {
+            "typeName": "vyne.demo.LastName",
+            "value": "Pitt",
+            "source": {
+               "dataSourceName": "Provided"
+            }
+         }
+      },
+      "source": {
+         "dataSourceName": "Provided"
+      }
+   }
+]

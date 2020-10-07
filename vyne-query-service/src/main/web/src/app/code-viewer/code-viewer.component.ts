@@ -110,6 +110,12 @@ export class CodeViewerComponent {
         return;
       }
       const editorDomNode = this.monacoEditor.getDomNode();
+      const isVisible = editorDomNode.offsetParent != null;
+      if (!isVisible) {
+        // tslint:disable-next-line:no-console
+        console.info('Skipping code container remeasuring, as code container not yet visible');
+        return;
+      }
       const offsetHeightFixer = 20;
       if (editorDomNode) {
         const codeContainer = this.monacoEditor.getDomNode().getElementsByClassName('view-lines')[0] as HTMLElement;
