@@ -4,6 +4,7 @@ import com.jayway.jsonpath.JsonPath
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.QueryProfiler
@@ -23,6 +24,7 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers.method
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators
 import org.springframework.web.client.RestTemplate
+import kotlin.math.exp
 
 class RestTemplateInvokerTest {
    val taxiDef = """
@@ -51,6 +53,18 @@ namespace vyne {
       owner : Owner
     }
 
+    type ClientName inherits String
+    model Contact {
+       name: String
+       surname: String
+       email: String
+    }
+
+    model Client {
+       name: ClientName
+       contacts: Contact[]?
+    }
+
 
     @ServiceDiscoveryClient(serviceName = "mockService")
     service CreditCostService {
@@ -61,6 +75,12 @@ namespace vyne {
     service PetService {
       @HttpOperation(method = "GET",url = "http://pets.com/pets/{petId}")
       operation getPetById( petId : Int ):Pet
+    }
+
+    @ServiceDiscoveryClient(serviceName = "clientService")
+    service ClientDataService {
+        @HttpOperation(method = "GET",url = "/clients/{vyne.ClientName}")
+        operation getContactsForClient( clientName: String ) : Client
     }
 }      """
 
@@ -79,6 +99,46 @@ namespace vyne {
          }
 
       }
+   }
+
+   @Test
+   fun `When invoked a service that returns a list property mapped to a taxi array`() {
+      val restTemplate = RestTemplate()
+      val server = MockRestServiceServer.bindTo(restTemplate).build()
+
+      server.expect(ExpectedCount.once(), requestTo("http://clientService/clients/notional"))
+         .andExpect(method(HttpMethod.GET))
+         .andRespond(MockRestResponseCreators.withSuccess(
+            """
+            {
+               "name" : "Notional",
+               "contacts":
+                 [
+                  {
+                     "name": "Marty",
+                     "surname": "Pitt",
+                     "email": "marty.pitt@vyne.co"
+                  },
+                  {
+                     "name": "John",
+                     "surname": "Doe",
+                     "email": "john.doe@vyne.co"
+                  }
+                 ],
+               "clientAttributes" : [ { } ]
+           }""".trimIndent(),
+            MediaType.APPLICATION_JSON))
+      val schema = TaxiSchema.from(taxiDef)
+      val service = schema.service("vyne.ClientDataService")
+      val operation = service.operation("getContactsForClient")
+
+      val response = RestTemplateInvoker(restTemplate = restTemplate, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true)
+         .invoke(service, operation, listOf(
+         paramAndType("vyne.ClientName", "notional", schema)
+      ), QueryProfiler()) as TypedObject
+      expect(response.type.fullyQualifiedName).to.equal("vyne.Client")
+      expect(response["name"].value).to.equal("Notional")
+      expect((response["contacts"] as TypedCollection)).size.to.equal(2)
    }
 
    @Test
