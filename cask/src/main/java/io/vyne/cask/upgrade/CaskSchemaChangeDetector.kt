@@ -44,8 +44,8 @@ class CaskSchemaChangeDetector(private val caskConfigRepository: CaskConfigRepos
       )
       log().info("Tagging that cask with table ${migratingCask.tableName} (which is type ${caskNeedingUpgrade.config.qualifiedTypeName} @${caskNeedingUpgrade.config.versionHash} is migrating to ${newConfig.tableName} (which is the type @${newConfig.versionHash})")
       caskConfigRepository.save(migratingCask)
-      log().info("Deleting cask views: ${caskNeedingUpgrade.dependantViews.joinToString { it.tableName }}")
       val allViewsDropped = caskNeedingUpgrade.dependantViews.all {
+         log().info("Deleting dependent cask view: ${it.tableName}")
          caskViewService.deleteView(it)
       }
       if (!allViewsDropped) {

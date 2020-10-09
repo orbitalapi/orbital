@@ -4,17 +4,18 @@ import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.schema
 import io.vyne.cask.ddl.views.CaskViewService
+import io.vyne.cask.ingest.IngestionEventHandler
+import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.cask.upgrade.CaskUpgradesRequiredEvent
+import io.vyne.schemaStore.ControlSchemaPollEvent
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
-import io.vyne.utils.orElse
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.context.event.ContextRefreshedEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 
@@ -26,6 +27,7 @@ class CaskServiceBootstrap constructor(
    private val caskViewService: CaskViewService,
    private val caskServiceRegenerationRunner: CaskServiceRegenerationRunner,
    private val changeDetector: CaskSchemaChangeDetector,
+   private val ingestionEventHandler: IngestionEventHandler,
    private val eventPublisher: ApplicationEventPublisher) {
 
    @Volatile
@@ -38,16 +40,16 @@ class CaskServiceBootstrap constructor(
       val casksNeedingUpgrading = changeDetector.markModifiedCasksAsRequiringUpgrading(event.newSchemaSet.schema)
 
       if (casksNeedingUpgrading.isNotEmpty()) {
+         // Stop polling for new schema changes till we finish upgrade operation.
+         eventPublisher.publishEvent(ControlSchemaPollEvent(false))
          eventPublisher.publishEvent(CaskUpgradesRequiredEvent())
       }
 
-      caskServiceRegenerationRunner.regenerate {
-         // Look for cask views that need rebuilding
-         val newCaskViewConfigs = this.generateCaskViews()
-         val caskVersionedViewTypes = findTypesToRegister(newCaskViewConfigs.toMutableList())
-         if (caskVersionedViewTypes.isNotEmpty()) {
-            caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedViewTypes)
-         }
+      // Look for cask views that need rebuilding
+      val newCaskViewConfigs = this.generateCaskViews()
+      val caskVersionedViewTypes = findTypesToRegister(newCaskViewConfigs.toMutableList())
+      if (caskVersionedViewTypes.isNotEmpty()) {
+         caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedViewTypes)
       }
 
       when {
@@ -66,7 +68,22 @@ class CaskServiceBootstrap constructor(
 
    }
 
-   @EventListener(value = [ContextRefreshedEvent::class])
+   @EventListener
+   fun onIngesterInitialised(event: IngestionInitialisedEvent) {
+      log().info("Received Ingestion Initialised event ${event.type}")
+      // immediately create the configuration and corresponding data table.
+      ingestionEventHandler.onIngestionInitialised(event)
+      if (caskServiceSchemaGenerator.alreadyExists(event.type)) {
+         log().info("Cask service ${CaskServiceSchemaGenerator.caskServiceSchemaName(event.type)} already exists ")
+      } else {
+         caskServiceSchemaGenerator.generateAndPublishService(CaskTaxiPublicationRequest(
+            event.type,
+            registerService = true,
+            registerType = false
+         ))
+      }
+   }
+
    fun regenerateCaskServicesAsync() {
       caskServiceRegenerationRunner.regenerate { regenerateCaskServices() }
    }

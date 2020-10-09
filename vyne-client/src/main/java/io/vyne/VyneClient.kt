@@ -213,8 +213,24 @@ data class QueryClientResponse(
 
    fun <T : Any> hasResultListFor(type: KClass<T>): Boolean = this.results.containsKey(taxiListForType(type))
 
+   fun <T: Any> getResultMapListFor(type: Class<T>, replaceNullWith: Any? = null): List<Map<String, Any?>> {
+      val untypedResults = this.results[taxiListForType(type)]
+      return if (untypedResults != null) {
+         val valueList = (untypedResults as List<Map<Any, Any>>).mapNotNull { it["value"] } as List<Map<String, Map<String, Any>>>
+         valueList.map { entity ->
+            entity.keys.map { attributeName ->
+               val attributeValue = entity[attributeName]?.get("value")
+               attributeName to (attributeValue ?: replaceNullWith)
+            }.toMap()
+         }
+      } else {
+         listOf()
+      }
+   }
+
    companion object {
       fun <T : Any> taxiListForType(type: KClass<T>) = "lang.taxi.Array<${type.qualifiedName}>"
+      fun <T : Any> taxiListForType(type: Class<T>) = "lang.taxi.Array<${TypeNames.deriveTypeName(type)}>"
    }
 }
 typealias TypeName = String

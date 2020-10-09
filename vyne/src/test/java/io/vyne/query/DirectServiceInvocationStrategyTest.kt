@@ -37,6 +37,13 @@ class DirectServiceInvocationStrategyTest {
             TradeDate < endDate
          )
       }
+
+      type Order {
+         timestamp : OrderDate as Instant
+      }
+      service OrderService {
+         operation findAllOrders(): Order[]
+      }
       """.trimIndent()
 
 
@@ -97,6 +104,24 @@ class DirectServiceInvocationStrategyTest {
       parameters.should.have.size(2)
       parameters[0].value.should.equal(Instant.parse("2020-05-10T10:00:00Z"))
       parameters[1].value.should.equal(Instant.parse("2020-05-10T11:00:00Z"))
+   }
+
+   @Test
+   fun `findAll() operation will not be invoked for a vyneQL with constraints`() {
+      val expression = ConstrainedTypeNameQueryExpression("Order[]", listOf(
+         PropertyToParameterConstraint(
+            PropertyTypeIdentifier(QualifiedName.from("OrderDate")),
+            Operator.GREATER_THAN_OR_EQUAL_TO,
+            ConstantValueExpression(Instant.parse("2020-05-10T10:00:00Z"))
+         ),
+         PropertyToParameterConstraint(
+            PropertyTypeIdentifier(QualifiedName.from("OrderDate")),
+            Operator.LESS_THAN,
+            ConstantValueExpression(Instant.parse("2020-05-10T11:00:00Z"))
+         )
+      ))
+      val candidates = getCandidatesFor(expression)
+      candidates.should.be.empty
    }
 
    private fun getCandidatesFor(typeName: String): List<Operation> {

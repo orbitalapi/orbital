@@ -1,13 +1,11 @@
 package io.vyne.cask.services
 
 import io.vyne.cask.ddl.TypeMigration
-import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.query.OperationGenerator
 import io.vyne.cask.query.generators.OperationAnnotation
 import io.vyne.cask.types.allFields
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.VersionedType
-import io.vyne.utils.log
 import lang.taxi.TaxiDocument
 import lang.taxi.services.Operation
 import lang.taxi.services.Service
@@ -17,8 +15,6 @@ import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.event.EventListener
-import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 
 /**
@@ -36,22 +32,7 @@ class CaskServiceSchemaGenerator(
       listOf(Annotation("ServiceDiscoveryClient", mapOf("serviceName" to appName))) +
          (caskServiceAnnotations?.split(",")?.map { Annotation(it.trim()) } ?: listOf())
 
-   @EventListener
-   @Async
-   fun onIngesterInitialised(event: IngestionInitialisedEvent) {
-      log().info("Received Ingestion Initialised event ${event.type}")
 
-      if (alreadyExists(event.type)) {
-         log().info("Cask service ${caskServiceSchemaName(event.type)} already exists ")
-         return
-      } else {
-         generateAndPublishService(CaskTaxiPublicationRequest(
-            event.type,
-            registerService = true,
-            registerType = false
-         ))
-      }
-   }
 
    fun generateSchema(request: CaskTaxiPublicationRequest, typeMigration: TypeMigration? = null): TaxiDocument {
       val taxiType = request.type.taxiType

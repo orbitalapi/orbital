@@ -46,17 +46,12 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
             pipelineSource)
 
          ingester = Ingester(jdbcTemplate, pipeline)
-         // Ensure clean before we start
-         ingester.destroy()
-
-         ingester.initialize()
-
+         ingestionEventHandler.onIngestionInitialised(IngestionInitialisedEvent(this, type))
          ingester.ingest().collectList().block()
          stopwatch.stop()
 
          val rowCount = ingester.getRowCount()
          rowCount.should.equal(23695)
-         ingester.destroy()
       }
    }
 
@@ -92,15 +87,14 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
       val input: Flux<InputStream> = Flux.just(File(resource).inputStream())
       val pipelineSource = CsvStreamSource(input, typeV3, schemaV3, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
       val pipeline = IngestionStream(typeV3, TypeDbWrapper(typeV3, schemaV3), pipelineSource)
-      val queryView = QueryView(jdbcTemplate)
+    //  val queryView = QueryView(jdbcTemplate)
 
       ingester = Ingester(jdbcTemplate, pipeline)
-      ingester.destroy()
-      ingester.initialize()
+      ingestionEventHandler.onIngestionInitialised(event = IngestionInitialisedEvent(this, typeV3))
       ingester.ingest().collectList().block()
 
-      val v3QueryStrategy = queryView.getQueryStrategy(typeV3)
-      v3QueryStrategy.should.be.instanceof(TableQuerySpec::class.java)
+    //  val v3QueryStrategy = queryView.getQueryStrategy(typeV3)
+    //  v3QueryStrategy.should.be.instanceof(TableQuerySpec::class.java)
 
       val rowCount = ingester.getRowCount()
       rowCount.should.equal(1)
@@ -110,8 +104,6 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
       6300.compareTo((result.first()["open"] as BigDecimal).toDouble()).should.equal(0)
       6330.0.compareTo((result.first()["high"] as BigDecimal).toDouble()).should.equal(0)
       6235.2.compareTo((result.first()["close"] as BigDecimal).toDouble()).should.equal(0)
-
-      ingester.destroy()
    }
 
 

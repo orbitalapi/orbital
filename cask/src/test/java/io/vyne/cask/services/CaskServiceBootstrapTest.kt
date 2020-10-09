@@ -6,6 +6,7 @@ import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.caskRecordTable
+import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemas.SchemaSetChangedEvent
@@ -24,6 +25,7 @@ class CaskServiceBootstrapTest {
    val caskConfigRepository: CaskConfigRepository = mock()
    val changeDetector:CaskSchemaChangeDetector = mock()
    val eventPublisher:ApplicationEventPublisher = mock()
+   val ingestionEventHandler: IngestionEventHandler = mock()
 
    @Test
    fun `Initialize cask services on startup`() {
@@ -34,7 +36,14 @@ class CaskServiceBootstrapTest {
       whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfig))
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).regenerateCaskServicesAsync()
+      CaskServiceBootstrap(caskServiceSchemaGenerator,
+         schemaProvider,
+         caskConfigRepository,
+         mock {  },
+         CaskServiceRegenerationRunner(),
+         changeDetector,
+         ingestionEventHandler,
+         eventPublisher).regenerateCaskServicesAsync()
 
       // assert
       verify(caskServiceSchemaGenerator,timeout(1000).times(1)).generateAndPublishServices(listOf(CaskTaxiPublicationRequest(versionedType)))
@@ -58,7 +67,7 @@ class CaskServiceBootstrapTest {
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV2, caskConfigRepository,mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher)
+      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV2, caskConfigRepository,mock {  }, CaskServiceRegenerationRunner(), changeDetector, ingestionEventHandler, eventPublisher)
          .regenerateCasksOnSchemaChange(event)
 
       // assert
@@ -83,7 +92,7 @@ class CaskServiceBootstrapTest {
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).regenerateCasksOnSchemaChange(event)
+      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, ingestionEventHandler, eventPublisher).regenerateCasksOnSchemaChange(event)
 
       // assert
       verify(caskServiceSchemaGenerator, timeout(5000).times(1)).generateAndPublishServices(any())
@@ -107,7 +116,7 @@ class CaskServiceBootstrapTest {
       val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).regenerateCasksOnSchemaChange(event)
+      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, ingestionEventHandler, eventPublisher).regenerateCasksOnSchemaChange(event)
 
       // assert
       verify(caskServiceSchemaGenerator, timeout(5000).times(1)).generateAndPublishServices(any())
@@ -126,7 +135,7 @@ class CaskServiceBootstrapTest {
       whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfig))
 
       // act
-      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, eventPublisher).regenerateCaskServicesAsync()
+      CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProvider, caskConfigRepository, mock {  }, CaskServiceRegenerationRunner(), changeDetector, ingestionEventHandler, eventPublisher).regenerateCaskServicesAsync()
 
       // assert
       verify(caskServiceSchemaGenerator, times(0)).generateAndPublishServices(any())

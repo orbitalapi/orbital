@@ -14,6 +14,7 @@ import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.CaskMessageRepository
 import io.vyne.cask.ingest.Ingester
+import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.upgrade.UpdatableSchemaProvider
 import io.vyne.schemas.VersionedType
@@ -65,6 +66,7 @@ abstract class BaseCaskIntegrationTest  {
    lateinit var schemaProvider:UpdatableSchemaProvider
    lateinit var viewDefinitions: MutableList<CaskViewDefinition>
    lateinit var caskViewService: CaskViewService
+   lateinit var ingestionEventHandler: IngestionEventHandler
 
    @After
    fun tearDown() {
@@ -90,6 +92,7 @@ abstract class BaseCaskIntegrationTest  {
          jdbcTemplate,
          CaskViewConfig(viewDefinitions)
       )
+      ingestionEventHandler = IngestionEventHandler(caskConfigService, caskDao)
    }
 
    fun ingestJsonData(resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema) {

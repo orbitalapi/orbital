@@ -130,7 +130,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
             log().info("When adding ${source.id} version ${existingSource.id} was found, so not making any changes")
             return this
          } else {
-            if (existingSource.contentHash == source.contentHash) {
+            if (existingSource.contentHash == source.contentHash && existingSource.semver == source.semver) {
                this
             } else {
                log().info("Replacing ${existingSource.id} with ${source.id}")

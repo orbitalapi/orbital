@@ -1,18 +1,16 @@
 package io.vyne.cask.ingest
 
+import arrow.core.extensions.either.applicativeError.raiseError
 import de.bytefish.pgbulkinsert.row.SimpleRowWriter
-import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
-import io.vyne.cask.timed
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import lang.taxi.types.ObjectType
-import lang.taxi.types.Type
 import org.postgresql.PGConnection
+import org.postgresql.util.PSQLException
+import org.postgresql.util.PSQLState
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
-import java.util.concurrent.TimeUnit
-import kotlin.math.sign
 
 data class IngestionStream(
    val type: VersionedType,
@@ -23,30 +21,7 @@ data class IngestionStream(
 class Ingester(
    private val jdbcTemplate: JdbcTemplate,
    private val ingestionStream: IngestionStream) {
-
    private val hasPrimaryKey = hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
-
-   @Deprecated("Remove this in favor of CaskDao")
-   fun destroy() {
-      jdbcTemplate.execute(ingestionStream.dbWrapper.dropTableStatement)
-      TableMetadata.deleteEntry(ingestionStream.type, jdbcTemplate)
-   }
-
-   @Deprecated("Remove this in favor of CaskDao")
-   fun initialize() {
-      timed("Ingester.initialize", true, TimeUnit.MILLISECONDS) {
-         jdbcTemplate.execute(TableMetadata.CREATE_TABLE)
-         val createTableStatement = ingestionStream.dbWrapper.createTableStatement
-         val generatedTableName = createTableStatement.generatedTableName
-         log().info("Initializing table $generatedTableName for pipeline for type ${ingestionStream.type.versionedName}")
-         jdbcTemplate.execute(createTableStatement.ddlStatement)
-         log().info("Table $generatedTableName created")
-
-         log().info("Creating TableMetadata entry for $generatedTableName")
-         createTableStatement.metadata.executeInsert(jdbcTemplate)
-      }
-   }
-
    // TODO refactor so that we open/close transaction based on types of messages
    //   1. Message StartTransaction
    //   2. receive InstanceAttributeSet
@@ -59,7 +34,25 @@ class Ingester(
       val connection = jdbcTemplate.dataSource!!.connection
       val pgConnection = connection.unwrap(PGConnection::class.java)
       val table = ingestionStream.dbWrapper.rowWriterTable
-      val writer = SimpleRowWriter(table, pgConnection)
+      val writer =
+         try
+         {
+            SimpleRowWriter(table, pgConnection)
+         } catch (e: PSQLException) {
+            // Apart from DB is down, main reason to be at this point is a schema update
+            // resulting a change in the relevant table name. In this case sqlState of the exception will be
+            // "42P01" (UNDEFINED_TABLE). We're returning Flux.error which should terminate the socket session
+            // on pipeline. Upon termination, pipeline should re-initiate the connection and Cask will re-initialise
+            // TypeDbWrapper with correct table name.
+            log().error("error in creating row writer for table  ${table.table} Sql State = ${e.sqlState}")
+            if (!connection.isClosed) {
+               log().error("Closing DB connection for ${table.table}", e)
+               // We must close the connection otherwise, we won't return the connection to the connection pool.
+               // leading to connection pool exhaustion.
+               connection.close()
+            }
+            return Flux.error(e)
+         }
       log().debug("Opening DB connection for ${table.table}")
       return ingestionStream.feed.stream
          .doOnError {
@@ -90,6 +83,7 @@ class Ingester(
             }
          }
    }
+
 
    private fun hasPrimaryKey(type: ObjectType): Boolean {
       return type.definition?.fields
