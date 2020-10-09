@@ -127,7 +127,8 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                         readCondition = field.readExpression,
                         typeDoc = field.typeDoc,
                         nullable = field.nullable,
-                        metadata = parseAnnotationsToMetadata(field.annotations)
+                        metadata = parseAnnotationsToMetadata(field.annotations),
+                        name = field.name
                      )
                      else -> field.name to Field(
                         field.type.qualifiedName.fqn(),
@@ -139,7 +140,8 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                         defaultValue = field.defaultValue,
                         formula = field.formula,
                         nullable = field.nullable,
-                        metadata = parseAnnotationsToMetadata(field.annotations)
+                        metadata = parseAnnotationsToMetadata(field.annotations),
+                        name = field.name
                         )
                   }
                }.toMap()
@@ -219,6 +221,7 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
             when (it) {
                lang.taxi.types.Modifier.CLOSED -> Modifier.CLOSED
                lang.taxi.types.Modifier.PARAMETER_TYPE -> Modifier.PARAMETER_TYPE
+               lang.taxi.types.Modifier.ABSTRACT -> Modifier.ABSTRACT
             }
          }
          else -> emptyList()

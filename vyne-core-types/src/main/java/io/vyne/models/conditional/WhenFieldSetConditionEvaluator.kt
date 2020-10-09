@@ -9,6 +9,7 @@ import io.vyne.utils.log
 import lang.taxi.types.*
 
 class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
+   private val valueExpressionEvaluator = ValueExpressionEvaluator(factory)
    fun evaluate(readCondition: WhenFieldSetCondition, attributeName: AttributeName?, targetType: Type): TypedInstance {
       val selectorValue = evaluateSelector(readCondition.selectorExpression)
       val caseBlock = selectCaseBlock(selectorValue, readCondition)
@@ -52,11 +53,15 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
 
    private fun selectCaseBlock(selectorValue: TypedInstance, readCondition: WhenFieldSetCondition): WhenCaseBlock {
       return readCondition.cases.firstOrNull { caseBlock ->
-         if (caseBlock.matchExpression is ElseMatchExpression) {
-            true
-         } else {
-            val valueToCompare = evaluateExpression(caseBlock.matchExpression, selectorValue.type)
-            selectorValue.valueEquals(valueToCompare)
+         when (caseBlock.matchExpression) {
+            is ElseMatchExpression -> true
+            is ValueExpression -> {
+               valueExpressionEvaluator.expressionEvaluatesEqualTo(caseBlock.matchExpression as ValueExpression, selectorValue.type, selectorValue)
+            }
+            else -> {
+               log().error("Unhandled caseBlock expression - ${caseBlock.matchExpression::class.simpleName}")
+               false
+            }
          }
 
 
@@ -64,18 +69,6 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
 
    }
 
-   private fun evaluateExpression(matchExpression: WhenCaseMatchExpression, type: Type): TypedInstance {
-      return when (matchExpression) {
-         is ReferenceCaseMatchExpression -> factory.getValue(matchExpression.reference)
-         // Note - I'm assuming the literal value is the same type as what we're comparing to.
-         // Reasonable for now, but suspect subtypes etc may cause complexity here I haven't considered
-         is LiteralCaseMatchExpression -> TypedInstance.from(type, matchExpression.value, factory.schema, source = DefinedInSchema)
-         else -> {
-            log().warn("Unexpected match Expression $matchExpression")
-            TODO()
-         }
-      }
-   }
 
    private fun evaluateSelector(selectorExpression: WhenSelectorExpression): TypedInstance {
       return when (selectorExpression) {

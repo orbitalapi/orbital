@@ -7,13 +7,11 @@ import io.vyne.VersionedSource
 import io.vyne.models.TypedInstance
 import io.vyne.utils.log
 import lang.taxi.Equality
+import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
-import lang.taxi.types.AttributePath
-import lang.taxi.types.EnumType
-import lang.taxi.types.Formula
-import lang.taxi.types.PrimitiveType
+import lang.taxi.types.*
 import lang.taxi.utils.takeHead
 
 interface TypeFullView : TypeLightView
@@ -154,6 +152,26 @@ data class Type(
       this.underlyingTypeParameters.map { it.name }
    }
 
+   val discriminatorField: VyneTypeDiscriminatorField? by lazy {
+      if (taxiType !is ObjectType) {
+         null
+      } else {
+         when (taxiType.discriminatorField) {
+            null -> null
+            is BaseTypeDiscriminatorField -> VyneBaseTypeDiscriminatorField(
+               field = this.attribute((taxiType.discriminatorField as BaseTypeDiscriminatorField).field.name)
+            )
+            is SubTypeDiscriminatorField -> {
+               val subTypeDiscriminatorField = taxiType.discriminatorField as SubTypeDiscriminatorField
+               VyneSubTypeDiscriminatorField(
+                  field = this.attribute(subTypeDiscriminatorField.field.name),
+                  expression = subTypeDiscriminatorField.expression
+               )
+            }
+         }
+      }
+
+   }
 
    // TODO : I suspect all of these isXxxx vars need to defer to the underlying aliased type.
    @JsonView(TypeFullView::class)
@@ -162,6 +180,8 @@ data class Type(
    // TODO : I suspect all of these isXxxx vars need to defer to the underlying aliased type.
    @JsonView
    val isClosed: Boolean = this.modifiers.contains(Modifier.CLOSED)
+
+   val isAbstract = this.modifiers.contains(Modifier.ABSTRACT)
 
    val isPrimitive: Boolean = this.modifiers.contains(Modifier.PRIMITIVE)
 
@@ -172,7 +192,7 @@ data class Type(
    val qualifiedName: QualifiedName
       get() = QualifiedName(fullyQualifiedName, typeParametersTypeNames)
 
-   val longDisplayName:String
+   val longDisplayName: String
       get() {
          return if (this.hasFormat) {
             this.unformattedTypeName!!.longDisplayName + "(${this.format!!.joinToString(",")})"
@@ -180,6 +200,7 @@ data class Type(
             qualifiedName.longDisplayName
          }
       }
+
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.
@@ -490,9 +511,17 @@ fun lang.taxi.types.Type.asVyneTypeReference(): TypeReference {
 enum class Modifier {
    CLOSED,
    PARAMETER_TYPE,
+   ABSTRACT,
 
    // TODO : Is it right to treat these as modifiers?  They're not really,
    // but I'm trying to avoid a big collection of boolean flags
    ENUM,
    PRIMITIVE
 }
+
+sealed class VyneTypeDiscriminatorField() {
+   abstract val field: Field
+}
+
+data class VyneSubTypeDiscriminatorField(override val field: Field, val expression: ValueExpression) : VyneTypeDiscriminatorField()
+data class VyneBaseTypeDiscriminatorField(override val field: Field) : VyneTypeDiscriminatorField()

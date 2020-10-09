@@ -21,7 +21,8 @@ data class Field(
    val formula: Formula? = null,
    val nullable: Boolean = false,
    val typeDisplayName:String = type.longDisplayName,
-   val metadata:List<Metadata> = emptyList()
+   val metadata:List<Metadata> = emptyList(),
+   val name:String? = null
 ) {
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
    // we parse fields before we parse their underlying types, so constrains may not be

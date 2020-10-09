@@ -3,6 +3,7 @@ package io.vyne.schemas
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import lang.taxi.services.operations.constraints.*
+import lang.taxi.types.ValueExpression
 
 object ReplaceValueUpdater : ConstraintViolationValueUpdater {
    override fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance = updatedValue
@@ -61,6 +62,8 @@ data class ExpectedConstantValueMismatch(private val evaluatedInstance: TypedIns
 private fun ValueExpression.asParameterIdentifier(): PropertyIdentifier {
    return when (this) {
       is ConstantValueExpression -> error("I don't know what to do in this situation yet, let's see what the scneario looks like")
+      is EnumValueExpression -> error("I don't know what to do in this situation yet, let's see what the scneario looks like")
       is RelativeValueExpression -> PropertyFieldNameIdentifier(this.path)
+      else -> error("ValueExpression.asParameterIdentifier received unexpected instance of ValueExpression - ${this::class.simpleName}")
    }
 }

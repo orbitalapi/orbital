@@ -62,6 +62,6 @@ data class ParsedCsvContent(val headers: List<String>, val records: List<List<St
 data class ParsedTypeInstance(
    val instance: TypedInstance
 ) {
-   val typeNamedInstance = instance.toTypeNamedInstance()
-   val raw = instance.toRawObject()
+   val typeNamedInstance by lazy { instance.toTypeNamedInstance() }
+   val raw by lazy { instance.toRawObject() }
 }

@@ -8,6 +8,8 @@ import io.vyne.models.TypedValue
 import lang.taxi.Operator
 import lang.taxi.services.operations.constraints.*
 import lang.taxi.types.AttributePath
+import lang.taxi.types.EnumValue
+import lang.taxi.types.ValueExpression
 
 /**
  * Indicates that an attribute of a parameter (which is an Object type)
@@ -111,6 +113,13 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
             val type = schema.type(argumentType.attribute(propertyIdentifier).type)
             TypedInstance.from(type, expectedValue.value, schema, source = DefinedInSchema)
          }
+         // Note : Added this for completeness to make the compiler happy.
+         // If the below EnumValueExpression case causes problems, lets change it -- not much thought went into this.
+         is EnumValueExpression -> {
+            val (typeName,enumName) = EnumValue.qualifiedNameFrom(expectedValue.enumValue.qualifiedName)
+            val enumType = schema.type(typeName.fullyQualifiedName)
+            TypedInstance.from(enumType, enumName, schema, source = DefinedInSchema)
+         }
          is RelativeValueExpression -> {
             when (value) {
                // This seems wrong - we shouldn't be accessing the the expected value path against value,
@@ -119,6 +128,9 @@ class PropertyToParameterConstraint(propertyIdentifier: PropertyIdentifier,
                is TypedObject -> value[expectedValue.path]
                else -> error("Relative value expressions are not supported on values of type ${value::class.simpleName}")
             }
+         }
+         else -> {
+            error("Unexpected value expression type:  ${expectedValue::class.simpleName}")
          }
       }
    }

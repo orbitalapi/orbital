@@ -47,14 +47,15 @@ interface Schema {
          service.operations.filter { operation ->
             typeMatchingStrategy.matches(requiredReturnType, operation.returnType)
                && operation.parameters.size == 1 &&
-         typeMatchingStrategy.matches(requiredParameterType, operation.parameters.first().type)}
+               typeMatchingStrategy.matches(requiredParameterType, operation.parameters.first().type)
+         }
             .map { service to it }
       }.toSet()
    }
 
    fun operationsWithSingleArgument(): Set<Pair<Service, Operation>> {
       return services.flatMap { service ->
-         service.operations.filter { operation ->  operation.parameters.size == 1  }
+         service.operations.filter { operation -> operation.parameters.size == 1 }
             .map { service to it }
       }.toSet()
    }
@@ -125,5 +126,8 @@ interface Schema {
    }
 
    fun toTaxiType(versionedType: VersionedType) = type(versionedType.fullyQualifiedName.fqn()).taxiType
+   fun findSubtypesOf(type: Type): Set<Type> {
+      return this.types.filter { it != type && it.inheritsFrom(type) }.toSet()
+   }
 }
 

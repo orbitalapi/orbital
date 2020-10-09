@@ -1,9 +1,9 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
+import io.vyne.models.conditional.ValueExpressionEvaluator
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.Jackson
 import io.vyne.models.json.isJson
@@ -14,17 +14,31 @@ import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
 
 
-class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet(), val source:DataSource, private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper, private val functionRegistry:FunctionRegistry = FunctionRegistry.default) {
+class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet(), val source: DataSource, private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper, private val functionRegistry: FunctionRegistry = FunctionRegistry.default) {
    private val valueReader = ValueReader()
    private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry) }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
-
+   private val valueExpressionEvaluator = ValueExpressionEvaluator(this)
    private val mappedAttributes: MutableMap<AttributeName, TypedInstance> = mutableMapOf()
 
    fun build(): TypedInstance {
       if (isJson(value)) {
          val map = objectMapper.readValue<Any>(value as String)
-         return TypedInstance.from(type,map,schema, nullValues = nullValues, source = source)
+         return TypedInstance.from(type, map, schema, nullValues = nullValues, source = source)
+      }
+
+      if (type.isAbstract) {
+         val baseTypeDiscriminatorField = type.discriminatorField
+            ?: error("Type ${type.qualifiedName} is abstract, but no discriminator field is defined - this shouldn't happen")
+         if (baseTypeDiscriminatorField !is VyneBaseTypeDiscriminatorField) error("Type ${type.qualifiedName} is abstract, so expected to find a VyneBaseTypeDiscriminatorField but found ${baseTypeDiscriminatorField::class.simpleName}")
+         val discriminatorValue = getOrBuild(baseTypeDiscriminatorField.field.name!!, baseTypeDiscriminatorField.field)
+         val matchingSubtype = schema.findSubtypesOf(type).firstOrNull { subType ->
+            val subTypeDiscriminatorField = subType.discriminatorField as? VyneSubTypeDiscriminatorField
+               ?: return@firstOrNull false
+            valueExpressionEvaluator.expressionEvaluatesEqualTo(subTypeDiscriminatorField.expression, schema.type(subTypeDiscriminatorField.field.type), discriminatorValue)
+         }
+            ?: error("Unable to find a subtype of ${type.qualifiedName} which matches discriminator value of ${discriminatorValue.value}")
+         return TypedInstance.from(matchingSubtype, value, schema, source = source)
       }
 
       // TODO : Naieve first pass.

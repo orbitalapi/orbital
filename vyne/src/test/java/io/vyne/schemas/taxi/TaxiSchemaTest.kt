@@ -4,10 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
-import io.vyne.schemas.FieldModifier
-import io.vyne.schemas.Modifier
-import io.vyne.schemas.TypeFullView
-import io.vyne.schemas.fqn
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import junit.framework.Assert.fail
 import org.junit.Ignore
@@ -271,6 +268,29 @@ type Sample {
       schema.type("FirstName").inherits.should.have.size(1)
       schema.type("FirstName").inheritanceGraph.should.have.size(1)
       schema.type("GivenName").inheritanceGraph.map { it.name.fullyQualifiedName }.should.contain("Name")
+   }
+
+   @Test
+   fun schemasWithAbstractModelsAreSupported() {
+      val schema = TaxiSchema.from("""enum AnimalType {
+               MAMMAL,
+               REPTILE
+            }
+            abstract model Animal(animalType : AnimalType by column(1)) {
+               speciesName : SpeciesName as String by column(2)
+            }
+            model Person inherits Animal( this.animalType = AnimalType.MAMMAL ) {
+               favouriteCoffee : FavouriteCoffee as String by column(3)
+            }""")
+      val animal = schema.type("Animal")
+      animal.isAbstract.should.be.`true`
+      animal.attributes.should.have.size(2)
+      val animalDiscriminatorField = animal.discriminatorField as VyneBaseTypeDiscriminatorField
+      animalDiscriminatorField.field.name!!.should.equal("animalType")
+
+      val person = schema.type("Person")
+      val personDiscriminatorField = person.discriminatorField as VyneSubTypeDiscriminatorField
+      personDiscriminatorField.expression.should.not.be.`null`
    }
 
    @Test
