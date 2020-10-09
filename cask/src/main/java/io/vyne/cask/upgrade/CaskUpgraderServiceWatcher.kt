@@ -4,17 +4,21 @@ import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.query.CaskDAO
+import io.vyne.schemaStore.ControlSchemaPollEvent
+import io.vyne.schemas.Schema
 import io.vyne.utils.log
-import org.springframework.context.event.ContextRefreshedEvent
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
+import java.util.concurrent.CompletableFuture
 
 @Component
 class CaskUpgraderServiceWatcher(
    private val caskConfigRepository: CaskConfigRepository,
    private val caskDAO: CaskDAO,
-   private val upgraderService: CaskUpgraderService
+   private val upgraderService: CaskUpgraderService,
+   private val eventPublisher: ApplicationEventPublisher
 ) {
 
    @Async
@@ -23,15 +27,6 @@ class CaskUpgraderServiceWatcher(
       log().info("Received CaskUpgradesRequiredEvent - looking for work")
       checkForUpgrades()
    }
-
-   @Async
-   @EventListener(value = [ContextRefreshedEvent::class])
-   fun checkForUpgradesOnStartup() {
-      log().info("Cask upgrader service watcher started - checking for work")
-      checkForUpgrades()
-      dropReplacedCasks()
-   }
-
 
    @EventListener
    fun dropReplacedCasks(event: CaskUpgradeCompletedEvent) {
@@ -46,17 +41,16 @@ class CaskUpgraderServiceWatcher(
    }
 
    private fun checkForUpgrades() {
-      caskConfigRepository.findAllByStatus(CaskStatus.MIGRATING).forEach { config ->
+     val upgradeTasks = caskConfigRepository.findAllByStatus(CaskStatus.MIGRATING).map { config ->
          log().info("Queuing ${config.tableName} for upgrading")
-         queueUpgradeAsync(config)
+         CompletableFuture.supplyAsync {
+            upgraderService.upgrade(config)
+         }
+      }
+      CompletableFuture.allOf(*upgradeTasks.toTypedArray()).thenApply {
+         eventPublisher.publishEvent(ControlSchemaPollEvent(true))
       }
    }
-
-   @Async()
-   fun queueUpgradeAsync(config: CaskConfig) {
-      upgraderService.upgrade(config)
-   }
-
 }
 
 class CaskUpgradesRequiredEvent

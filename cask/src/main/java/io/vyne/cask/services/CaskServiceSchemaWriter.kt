@@ -1,5 +1,6 @@
 package io.vyne.cask.services
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.utils.log
@@ -16,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class CaskServiceSchemaWriter(
    private val schemaPublisher: SchemaPublisher,
    private val schemaWriter: SchemaWriter = SchemaWriter(),
-   private val caskDefinitionPublicationExecutor: ExecutorService = Executors.newFixedThreadPool(1)) {
+   private val caskDefinitionPublicationExecutor: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder().setNameFormat("CaskServiceSchemaWriter-%d").build())) {
    private val generationCounter: AtomicInteger = AtomicInteger(0)
    private val versionedSourceMap: MutableMap<String, VersionedSource> = mutableMapOf()
 

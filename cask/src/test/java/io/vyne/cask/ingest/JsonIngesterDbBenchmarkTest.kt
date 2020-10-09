@@ -26,7 +26,6 @@ class JsonIngesterDbBenchmarkTest : BaseCaskIntegrationTest() {
    @After
    override fun tearDown() {
       super.tearDown()
-      ingester.destroy()
    }
 
    @Test

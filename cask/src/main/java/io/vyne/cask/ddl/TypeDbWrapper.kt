@@ -7,7 +7,6 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import lang.taxi.types.Field
 import org.springframework.jdbc.core.JdbcTemplate
-import java.nio.file.Path
 
 data class TypeMigration(
    val targetType: VersionedType,
@@ -29,10 +28,7 @@ class TypeDbWrapper(val type: VersionedType, schema: Schema) {
    }
 
    private val postgresDdlGenerator = PostgresDdlGenerator()
-   val dropTableStatement: String = postgresDdlGenerator.generateDrop(type)
-   val createTableStatement: TableGenerationStatement = postgresDdlGenerator.generateDdl(type, schema)
-   val columns = createTableStatement.columns
+   val columns = PostgresDdlGenerator().generateDdl(type, schema).columns
    val tableName = PostgresDdlGenerator.tableName(type)
-
-   val rowWriterTable = SimpleRowWriter.Table(tableName, *createTableStatement.columns.map { it.name }.toTypedArray())
+   val rowWriterTable = SimpleRowWriter.Table(tableName, *columns.map { it.name }.toTypedArray())
 }
