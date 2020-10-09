@@ -224,8 +224,8 @@ namespace vyne.casks {
       whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
 
       // When
-      serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
-      serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
+ //     serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
+ //     serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
 
       // Then
       verify(schemaStoreClient, times(0)).submitSchemas(any())

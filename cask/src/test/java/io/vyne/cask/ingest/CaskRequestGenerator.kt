@@ -1,6 +1,7 @@
 package io.vyne.cask.ingest
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.utils.log
@@ -26,7 +27,7 @@ class CaskRequestGenerator {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
-         generateRequests(20, "/cask/OrderWindowSummary", { generateCaskRequest() })
+         generateRequests(1, "/cask/OrderWindowSummary", { generateCaskRequest() })
       }
 
       private fun generateRequests(noOfRequestsPerSecond: Int, uri: String, request: () -> String?) {
@@ -46,13 +47,14 @@ class CaskRequestGenerator {
          val mapper = jacksonObjectMapper()
                   .registerModule(JavaTimeModule())
                   // enforcing property names starting with uppercase letter
-                  .setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE);
+                  .setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE)
+                  .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
           return mapper.writeValueAsString(orders)
       }
 
       private fun generateOrders(): List<OrderWindowSummary> {
          val random = Random()
-         return (0..10).map {
+         return (0..1).map {
             OrderWindowSummary(
                LocalDate.now().minusDays(1L * random.nextInt(10)),
                currencyPairs[random.nextInt(5)],

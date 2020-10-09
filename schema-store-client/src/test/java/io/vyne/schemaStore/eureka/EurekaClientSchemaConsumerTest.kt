@@ -64,7 +64,8 @@ class EurekaClientSchemaConsumerTest {
               }
          }
       """.trimIndent())
-      val (eurekaEventListener, server, eurekaClientSchemaConsumer) = initialise(instanceInfo, listOf(productVersionedSource, orderVersionedSource))
+      val (eurekaEventListener, server, eurekaClientSchemaConsumer) = initialise(listOf(instanceInfo),
+         listOf(Pair(instanceInfo, listOf(productVersionedSource, orderVersionedSource))))
 
       // When
       eurekaEventListener!!.onEvent(CacheRefreshedEvent())
@@ -74,7 +75,7 @@ class EurekaClientSchemaConsumerTest {
 
       // One of the files deleted
       instanceInfo.metadata.remove("vyne.sources.product.taxi___0.0.1") // remove one of the files.
-      setTaxiSchemasRestResponse(server, listOf(orderVersionedSource))
+      setTaxiSchemasRestResponse(server, listOf(Pair(instanceInfo, listOf(orderVersionedSource))))
       // When
       eurekaEventListener!!.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
@@ -96,7 +97,8 @@ class EurekaClientSchemaConsumerTest {
               }
          }
       """.trimIndent())
-      val (eurekaEventListener, server, eurekaClientSchemaConsumer) = initialise(instanceInfo, listOf(productVersionedSource))
+      val (eurekaEventListener, server, eurekaClientSchemaConsumer) = initialise(listOf(instanceInfo),
+         listOf(Pair(instanceInfo, listOf(productVersionedSource))))
       // When
       eurekaEventListener!!.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
@@ -112,7 +114,7 @@ class EurekaClientSchemaConsumerTest {
          }
       """.trimIndent())
 
-      setTaxiSchemasRestResponse(server, listOf(updatedProductVersionedSource))
+      setTaxiSchemasRestResponse(server, listOf(Pair(instanceInfo, listOf(updatedProductVersionedSource))))
       instanceInfo.metadata["vyne.sources.product.taxi___0.0.1"] = "2caef"
       // When
       eurekaEventListener!!.onEvent(CacheRefreshedEvent())
@@ -122,20 +124,63 @@ class EurekaClientSchemaConsumerTest {
 
    }
 
-   private fun instanceInfo(appName: String, sourceMap: Map<String, String>) = InstanceInfo
+   @Test
+   fun `Handling of multiple schema sources`() {
+      val instanceInfo1 = instanceInfo("file-schema-server", mapOf("vyne.sources.product.taxi___0.0.1" to "47df0b"))
+      val productVersionedSource = VersionedSource(name = "product.taxi", version = "0.0.1", content = """
+         namespace foo.bar {
+             model Product {
+                 id: String
+              }
+         }
+      """.trimIndent())
+
+      val instanceInfo2 = instanceInfo("order-schema-provider", mapOf("vyne.sources.order.taxi___0.0.1" to "12321"), 12345)
+      val orderVersionedSource = VersionedSource(name = "order.taxi", version = "0.0.1", content = """
+         namespace foo.bar {
+             model Order {
+                 orderId: String
+              }
+         }
+      """.trimIndent())
+
+      val (eurekaEventListener, server, eurekaClientSchemaConsumer) = initialise(listOf(instanceInfo1, instanceInfo2),
+         listOf(Pair(instanceInfo1, listOf(productVersionedSource)), Pair(instanceInfo2, listOf(orderVersionedSource))))
+
+      // When
+      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(2)
+
+      // update version
+      val updatedProductVersionedSource = productVersionedSource.copy(version = "0.0.2")
+      instanceInfo1.metadata.remove("vyne.sources.product.taxi___0.0.1")
+      instanceInfo1.metadata["vyne.sources.product.taxi___0.0.2"] = "47df0b"
+      setTaxiSchemasRestResponse(server, listOf(Pair(instanceInfo1, listOf(updatedProductVersionedSource))))
+      // Whens
+      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(2)
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.map { it.version }.should.contain("0.0.2")
+   }
+
+   private fun instanceInfo(appName: String, sourceMap: Map<String, String>, port: Int = 1234) = InstanceInfo
       .Builder
       .newBuilder()
       .setInstanceId("instanceId")
       .setAppName(appName)
       .setHostName("localhost")
-      .setPort(1234)
+      .setPort(port)
       .setMetadata(mutableMapOf(EurekaMetadata.VYNE_SCHEMA_URL to "/taxi").plus(sourceMap).toMutableMap())
       .build()
 
-   private fun initialise(instanceInfo: InstanceInfo,
-                          initialVersionedSources: List<VersionedSource>): Triple<EurekaEventListener, MockRestServiceServer, EurekaClientSchemaConsumer> {
-      val fileSchemaServerApp = Application(instanceInfo.appName, listOf(instanceInfo))
-      eurekaApplications.addApplication(fileSchemaServerApp)
+   private fun initialise(instanceInfos: List<InstanceInfo>,
+                          initialVersionedSources: List<Pair<InstanceInfo, List<VersionedSource>>>): Triple<EurekaEventListener, MockRestServiceServer, EurekaClientSchemaConsumer> {
+      instanceInfos.forEach { instanceInfo ->
+         val application = Application(instanceInfo.appName, listOf(instanceInfo))
+         eurekaApplications.addApplication(application)
+      }
+
       val restTemplate = RestTemplate()
       val server = MockRestServiceServer.bindTo(restTemplate).build()
       setTaxiSchemasRestResponse(server, initialVersionedSources)
@@ -154,11 +199,15 @@ class EurekaClientSchemaConsumerTest {
       return Triple(eurekaEventListener!!, server, eurekaClientSchemaConsumer)
    }
 
-   private fun setTaxiSchemasRestResponse(server: MockRestServiceServer, response: List<VersionedSource>) {
+
+   private fun setTaxiSchemasRestResponse(server: MockRestServiceServer, responses: List<Pair<InstanceInfo, List<VersionedSource>>>) {
       server.reset()
-      server.expect(ExpectedCount.once(), MockRestRequestMatchers.requestTo("http://localhost:1234/taxi"))
-         .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
-         .andExpect(MockRestRequestMatchers.anything())
-         .andRespond(MockRestResponseCreators.withSuccess(jacksonObjectMapper().writeValueAsString(response), MediaType.APPLICATION_JSON))
+      responses.forEach { (instanceInfo, response) ->
+         server.expect(ExpectedCount.once(), MockRestRequestMatchers.requestTo("http://${instanceInfo.hostName}:${instanceInfo.port}/taxi"))
+            .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
+            .andExpect(MockRestRequestMatchers.anything())
+            .andRespond(MockRestResponseCreators.withSuccess(jacksonObjectMapper().writeValueAsString(response), MediaType.APPLICATION_JSON))
+      }
+
    }
 }

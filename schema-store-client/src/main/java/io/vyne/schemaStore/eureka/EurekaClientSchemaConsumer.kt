@@ -83,23 +83,30 @@ class EurekaClientSchemaConsumer(
    init {
       // This is executed on a dedicated ThreadPool and it is guaranteed that 'only' one callback is active for the given 'event'
       eurekaNotificationUpdater.start {
-         // Design note: previously we checked the apps.version from Eureka to see if things
-         // had changed.  However, we're seeing missed changes, and that method is deprecated,
-         // it's possible that it served as a premature optimisation.
-         // Let's add it back if this stuff turns out to be expensive
-         log().debug("Received a eureka event, checking for changes to sources")
+         try {
+            // Design note: previously we checked the apps.version from Eureka to see if things
+            // had changed.  However, we're seeing missed changes, and that method is deprecated,
+            // it's possible that it served as a premature optimisation.
+            // Let's add it back if this stuff turns out to be expensive
+            // this whole block is wrapped in try-catch as without it any unhandled exception simply stops
+            // eurekaNotificationUpdater getting further eureka updated
+            log().debug("Received a eureka event, checking for changes to sources")
 
-         val currentSourceSet = rebuildSources()
-         val delta = calculateDelta(sources,currentSourceSet)
-         if (delta.hasChanges) {
-            log().info("Found changes to schema, proceeding to update.")
-            val logMsg = currentSourceSet.map {
-               "${it.applicationName} exposes ${it.availableSources.size} sources (@${it.sourceHash}) at ${it.sourceUrl}"
+            val currentSourceSet = rebuildSources()
+            val delta = calculateDelta(sources, currentSourceSet)
+            if (delta.hasChanges) {
+               log().info("Found changes to schema, proceeding to update.")
+               val logMsg = currentSourceSet.map {
+                  "${it.applicationName} exposes ${it.availableSources.size} sources (@${it.sourceHash}) at ${it.sourceUrl}"
+               }
+               log().info("Sources Summary: $logMsg")
+               updateSources(currentSourceSet, delta)
+            } else {
+               log().debug("No changes found, nothing to do")
             }
-            log().info("Sources Summary: $logMsg")
-            updateSources(currentSourceSet, delta)
-         } else {
-            log().debug("No changes found, nothing to do")
+         } catch (e: Exception) {
+            log().error("Error in processing eureka update", e)
+
          }
       }
    }

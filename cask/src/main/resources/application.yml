@@ -76,10 +76,13 @@ management:
          enabled: true
       prometheus:
          enabled: true
+      logfile:
+         enabled: true
+         external-file: logs/cask.log
    endpoints:
       web:
          exposure:
-            include: prometheus,metrics,info,health
+            include: prometheus,metrics,info,health,logfile
    metrics:
       export:
          prometheus:
