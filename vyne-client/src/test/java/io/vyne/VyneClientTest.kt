@@ -1,5 +1,6 @@
 package io.vyne
 
+import arrow.core.MapKOf
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.verify
@@ -8,6 +9,7 @@ import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.query.Query
 import io.vyne.query.TypeNameListQueryExpression
+import lang.taxi.TypeNames
 import lang.taxi.annotations.DataType
 import org.junit.Before
 import org.junit.Test
@@ -67,6 +69,19 @@ class VyneClientTest {
 
       verify(queryService).submitQuery(query)
       response.should.be.equal(expectedRespone)
+   }
+
+   @Test
+   fun `Can return vyneQL results a Map List`() {
+      val titleMap = mapOf("title" to mapOf("value" to "War and Peace"))
+      val resultItem = mapOf("value" to titleMap, "typeName" to TypeNames.deriveTypeName(Book::class.java))
+      val results = listOf(resultItem)
+      val expectedResponse = QueryClientResponse(true, mapOf("lang.taxi.Array<foo.Book>" to results));
+      whenever(queryService.submitQuery(any())).thenReturn(expectedResponse)
+      val query = Query(TypeNameListQueryExpression(listOf("Book")), emptyMap())
+      val response = client.submitQuery(query)
+      val resultMapList = response.getResultMapListFor(Book::class.java)
+      resultMapList.size.should.equal(1)
    }
 }
 
