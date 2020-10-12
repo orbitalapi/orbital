@@ -1,7 +1,6 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.functions.FunctionRegistry
@@ -19,8 +18,15 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
    private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry) }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
 
-   private val mappedAttributes: MutableMap<AttributeName, TypedInstance> = mutableMapOf()
+   private val attributesToMap by lazy {
+      type.attributes.filter { it.value.formula == null }
+   }
 
+   private val fieldInitializers : Map<AttributeName,Lazy<TypedInstance>> by lazy {
+      attributesToMap.map {(attributeName, field) ->
+         attributeName to lazy { buildField(field, attributeName) }
+      }.toMap()
+   }
    fun build(): TypedInstance {
       if (isJson(value)) {
          val map = objectMapper.readValue<Any>(value as String)
@@ -31,23 +37,25 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
       // This approach won't work for nested objects.
       // I think i need to build a hierachy of object factories, and allow nested access
       // via the get() method
-      type.attributes.filter { it.value.formula == null }.forEach { (attributeName, field) ->
-
+      val mappedAttributes = attributesToMap.map { (attributeName) ->
          // The value may have already been populated on-demand from a conditional
          // field set evaluation block, prior to the iterator hitting the field
-         getOrBuild(attributeName, field)
-      }
+         attributeName to getOrBuild(attributeName)
+      }.toMap()
+
       return TypedObject(type, mappedAttributes, source)
    }
 
-   private fun getOrBuild(attributeName: AttributeName, field: Field): TypedInstance {
-      return mappedAttributes.computeIfAbsent(attributeName) {
-         buildField(field, attributeName)
-      }
+   private fun getOrBuild(attributeName: AttributeName): TypedInstance {
+      // Originally we used a concurrentHashMap.computeIfAbsent { ... } approach here.
+      // However, functions on accessors can access other fields, which can cause recursive access.
+      // Therefore, migrated to using initializers with kotlin Lazy functions
+      val initializer = fieldInitializers[attributeName] ?: error("Cannot request field $attributeName as no initializer has been prepared")
+      return initializer.value
    }
 
    internal fun getValue(attributeName: AttributeName): TypedInstance {
-      return getOrBuild(attributeName, type.attribute(attributeName))
+      return getOrBuild(attributeName)
    }
 
    internal fun readAccessor(type: Type, accessor: Accessor): TypedInstance {
@@ -86,6 +94,9 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
          // Not a map, so could be an object, try the value reader - but this is an expensive
          // call, so we defer to last-ish
          valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
+
+         // Is there a default?
+         field.defaultValue != null -> TypedValue.from(schema.type(field.type), field.defaultValue, ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)
 
          else -> {
             log().error("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")

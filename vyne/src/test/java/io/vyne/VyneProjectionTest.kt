@@ -581,8 +581,9 @@ service Broker1Service {
             //last result, corresponding to an order without a trade and hence it doesn't contain a tradeNo.
             result.should.equal(
                mapOf(
-                  Pair("id", "broker1Order1"),
-                  Pair("date", "2020-01-01")
+                  "id" to "broker1Order1",
+                  "date" to "2020-01-01",
+                  "tradeNo" to null // See TypedObjectFactory.build() for discussion on returning nulls
                )
             )
          }
@@ -706,14 +707,15 @@ service Broker1Service {
             return if (parameters.first().second.value == "broker1Order0") {
                vyne.parseJsonModel("Broker1Order", generateBroker1Order(0))
             } else {
-               vyne.parseJsonModel("Broker1Order", "{}")
+               TypedNull(vyne.type("Broker1Order"))
+//               vyne.parseJsonModel("Broker1Order", "{}")
             }
          }
       })
       // find by a non-existing order Id and project
       val noResult = vyne.query("""findAll { Order (OrderId = "MY SPECIAL ORDER ID") } as CommonOrder[]""".trimIndent())
       val noResultList = noResult.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
-      noResultList.first().should.equal(emptyMap<Any, Any>())
+      noResultList.should.be.empty
    }
 
    @Test
@@ -901,7 +903,7 @@ service Broker1Service {
       result.resultMap.get("lang.taxi.Array<ClientAndCountry>").should.be.equal(
          listOf(
             mapOf("personName" to "Jimmy", "countryName" to "United Kingdom"),
-            mapOf("personName" to "Devrim")
+            mapOf("personName" to "Devrim", "countryName" to null)
          )
       )
    }
@@ -1039,8 +1041,8 @@ service Broker1Service {
       // assert
       result.resultMap["lang.taxi.Array<ClientAndCountry>"].should.be.equal(
          listOf(
-            mapOf("personName" to "Jimmy"),
-            mapOf("personName" to "Devrim")
+            mapOf("personName" to "Jimmy" ,"countryName" to null),
+            mapOf("personName" to "Devrim", "countryName" to null) // See TypedObjectFactory.build() for discussion on returning nulls
          )
       )
       getCountryInvoked.should.be.`false`

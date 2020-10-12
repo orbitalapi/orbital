@@ -1,12 +1,7 @@
 package io.vyne.query
 
 import arrow.core.extensions.list.functorFilter.filter
-import io.vyne.models.MixedSources
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Field
@@ -145,7 +140,9 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          }
       }
 
-      return TypedObject(targetType, populatedValues, MixedSources)
+      return TypedObjectFactory(targetType, populatedValues, context.schema, source = MixedSources).build()
+
+//      return TypedObject(targetType, populatedValues, MixedSources)
    }
 
    private fun findScalarInstance(targetType: Type, spec:TypedInstanceValidPredicate): TypedInstance? {

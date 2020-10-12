@@ -109,5 +109,12 @@ interface TypedInstance {
             type
          }
       }
+
+      /**
+       * Indciates if the instance, or it's value, is null or a TypedNull
+       */
+      fun isNull(instance: TypedInstance?): Boolean {
+         return instance?.value == null || instance.value is TypedNull
+      }
    }
 }

@@ -17,7 +17,7 @@ data class TypedObject(
    private val suppliedValue: Map<String, TypedInstance>,
    override val source: DataSource) : TypedInstance, Map<String, TypedInstance>  {
 
-   private val combinedValues = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
+   private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
 
    override val value: Map<String, TypedInstance>
       get() = combinedValues
