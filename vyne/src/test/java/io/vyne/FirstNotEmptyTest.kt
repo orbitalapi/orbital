@@ -310,7 +310,7 @@ class FirstNotEmptyTest {
       val transformedProductB = output.first { (it as TypedObject)["isin"].value == "productB" } as TypedObject
       // Note to future self:  I suspect we'll change this at some point so the attribute
       // is there, but null
-      transformedProductA.hasAttribute("productName").should.be.`false`
+      transformedProductA["productName"].value.should.be.`null`
       transformedProductB["productName"].value.should.equal("ice cream")
    }
 
