@@ -133,9 +133,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
       val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
       val result: TypedInstance? = when {
-         context.facts.filter { it !is TypedNull }.isEmpty() && targetType.isCollection -> {
-            TypedCollection.arrayOf(targetType.collectionType!!, emptyList())
-         }
          isCollectionToCollectionTransformation -> {
             mapCollectionToCollection(targetType, context)
          }
@@ -145,6 +142,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
          isSingleToCollectionTransform -> {
             mapSingleToCollection(targetType, context)
+         }
+         targetType.isCollection && context.facts.all { it is TypedNull } -> {
+            TypedCollection.arrayOf(targetType.collectionType!!, emptyList())
          }
          else -> {
             context.isProjecting = true
