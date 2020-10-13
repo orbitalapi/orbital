@@ -13,6 +13,8 @@ import io.vyne.cask.api.ContentType
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.utils.log
 import io.vyne.utils.orElse
+import org.postgresql.util.PSQLException
+import org.postgresql.util.PSQLState
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
@@ -32,17 +34,9 @@ class CaskWebsocketHandler(
    @Qualifier("ingesterMapper") val mapper: ObjectMapper) : WebSocketHandler {
 
    override fun handle(session: WebSocketSession): Mono<Void> {
-      log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri}")
+      log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri} remoteAddress=${session.handshakeInfo.remoteAddress}")
 
-      val requestOrError = try {
-         Either.right(ContentType.valueOf(session.contentType()))
-      } catch (exception:IllegalArgumentException) {
-         Either.left(CaskService.ContentTypeError("Unknown contentType=${session.contentType()}"))
-      }.flatMap { contentType ->
-         caskService.resolveType(session.typeReference()).map { versionedType ->
-            CaskIngestionRequest.fromContentTypeAndHeaders(contentType, versionedType, mapper, session.queryParams())
-         }
-      }
+      val requestOrError = requestOrError(session)
 
       return requestOrError
          .map { request ->
@@ -54,9 +48,22 @@ class CaskWebsocketHandler(
          }
    }
 
+   private fun requestOrError(session: WebSocketSession): Either<CaskService.CaskServiceError, CaskIngestionRequest> {
+     return try {
+         Either.right(ContentType.valueOf(session.contentType()))
+      } catch (exception:IllegalArgumentException) {
+         Either.left(CaskService.ContentTypeError("Unknown contentType=${session.contentType()}"))
+      }.flatMap { contentType ->
+         caskService.resolveType(session.typeReference()).map { versionedType ->
+            CaskIngestionRequest.fromContentTypeAndHeaders(contentType, versionedType, mapper, session.queryParams())
+         }
+      }
+   }
+
    private fun ingestMessages(session: WebSocketSession, request: CaskIngestionRequest): Mono<Void> {
       val output: EmitterProcessor<WebSocketMessage> = EmitterProcessor.create()
       val outputSink = output.sink()
+      var currentRequest = request
 
       // i don't like this, it's pretty ugly
       // partially because exceptions are thrown outside flux pipelines
@@ -71,23 +78,28 @@ class CaskWebsocketHandler(
             log().info("Ingesting message from sessionId=${session.id}")
             try {
                caskService
-                  .ingestRequest(request, Flux.just(message.payload.asInputStream()))
+                  .ingestRequest(currentRequest, Flux.just(message.payload.asInputStream()))
                   .count()
                   .map { "Successfully ingested $it records" }
                   .subscribe(
                      { result ->
-                        log().info("Successfully ingested message from sessionId=${session.id}")
+                        log().info("$result from sessionId=${session.id}")
                         if (request.debug) {
                            outputSink.next(successResponse(session, result))
                         }
                      },
                      { error ->
-                        log().error("Error ingesting message from sessionId=${session.id}", error)
+                        log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
+                        if (error is PSQLException && error.sqlState == PSQLState.UNDEFINED_TABLE.state) {
+                           requestOrError(session).map {
+                              currentRequest = it
+                           }
+                        }
                         outputSink.next(errorResponse(session, extractError(error)))
                      }
                   )
             } catch (error: Exception) {
-               log().error("Error ingesting message from sessionId=${session.id}", error)
+               log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
                outputSink.next(errorResponse(session, extractError(error)))
             }
          }
