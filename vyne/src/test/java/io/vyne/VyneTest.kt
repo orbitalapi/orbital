@@ -1284,6 +1284,35 @@ service ClientService {
    }
 
    @Test
+   fun `when projecting to a model, functions on the output model are evaluated`() {
+      val (vyne,stub) = testVyne("""
+         model OutputModel {
+            username : String by concat(this.firstName,this.lastName)
+            firstName : FirstName as String
+            lastName : LastName as String
+            favouriteCoffee : String by default("Latte")
+         }
+         model InputModel {
+            firstName : FirstName
+            lastName : LastName
+         }
+         service UserService {
+            @StubResponse("findUsers")
+            operation findAllUsers() : InputModel[]
+         }
+      """)
+      val inputJson = """{ "firstName" : "Jimmy", "lastName" : "Pitt" }"""
+      val user = TypedInstance.from(vyne.type("InputModel"), inputJson, vyne.schema, source = Provided)
+      stub.addResponse("findUsers", TypedCollection.from(listOf(user)))
+      val queryResult = vyne.query("findAll { InputModel[] } as OutputModel[]")
+      val firstEntity = (queryResult["OutputModel[]"] as TypedCollection).first() as TypedObject
+      firstEntity["username"].value.should.equal("JimmyPitt")
+      firstEntity["favouriteCoffee"].value.should.equal("Latte")
+      firstEntity["firstName"].value.should.equal("Jimmy")
+      firstEntity["lastName"].value.should.equal("Pitt")
+   }
+
+   @Test
    fun `vyne should accept Instant parameters that are in ISO format`() {
       val testSchema = """
          type alias Symbol as String
