@@ -60,7 +60,12 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                }
                log().error("Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${instance.map { Pair(it.typeName, it.value)}.joinToString()}")
                // HACK : How do we handle this?
-               return nonNullMatches.first()
+               return if (nonNullMatches.isNotEmpty()) {
+                  nonNullMatches.first()
+               } else {
+                  // Case for all matches are TypedNull.
+                  null
+               }
             }
          }
       }

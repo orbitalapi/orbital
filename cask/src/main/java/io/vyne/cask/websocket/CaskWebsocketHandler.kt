@@ -26,6 +26,7 @@ import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.io.InputStream
 
 @Component
 class CaskWebsocketHandler(
@@ -91,8 +92,11 @@ class CaskWebsocketHandler(
                      { error ->
                         log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
                         if (error is PSQLException && error.sqlState == PSQLState.UNDEFINED_TABLE.state) {
+                           // Table not found - this should be due to schema change.
+                           // update CaskIngestionRequest with the new schema info and re-try.
                            requestOrError(session).map {
                               currentRequest = it
+                              reIngestRequest(currentRequest, message).block() // blocking is not nice, but this should happen very rare.
                            }
                         }
                         outputSink.next(errorResponse(session, extractError(error)))
@@ -113,6 +117,16 @@ class CaskWebsocketHandler(
          .subscribe()
 
       return session.send(output)
+   }
+
+   private fun reIngestRequest(request: CaskIngestionRequest, message: WebSocketMessage): Mono<CaskIngestionResponse> {
+      return caskService.ingestRequest(request, Flux.just(message.payload.asInputStream()))
+         .count()
+         .map { CaskIngestionResponse.success("Successfully ingested $it records") }
+         .onErrorResume {
+            log().error("Ingestion error", it)
+            Mono.just(CaskIngestionResponse.rejected(it.toString()))
+         }
    }
 
    private fun extractError(error: Throwable): String {

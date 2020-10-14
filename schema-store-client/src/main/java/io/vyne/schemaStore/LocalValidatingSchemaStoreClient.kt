@@ -12,11 +12,84 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Schema store which upon having a schema submitted to it, will first
  * validate the schema compiles before updating the schemaset.
+ *
+ * assume the following:
+
+In schema server
+
+foo.taxi:
+
+model Foo {
+@Between
+time: DateTime
+}
+
+Assume Cask is already created for Foo.
+
+
+t0:
+
+Eureka, Vyne, Schema Server, Cask up
+
+schema server ->   foo.taxi version 0.1.0
+Cask -> vyne.cask.Foo  version 1.0.1
+
+service vyne.cask.Foo {
+
+operation findByTimeBetween...
+}
+
+
+t1:
+
+foo.taxi is modified as:
+
+model Foo {
+@Between
+time: DateTime
+@Between
+date: Date
+}
+
+schema server ->   foo.taxi version 0.2.0
+Cask -> vyne.cask.Foo  version 1.0.2
+
+service vyne.cask.Foo {
+
+operation findByTimeBetween...
+operation findByDateBetween...
+}
+
+t2:
+
+
+foo.taxi is modified as:
+
+model Foo {
+@Between
+time: DateTime
+}
+
+
+and schema server immediately bounced.
+
+schema server ->   foo.taxi version 0.1.0
+Cask receives taxi.version 0.1.0 from Vyne
+it doesn't update its own taxi.version 0.2.0 as 0.2.0 > 0.1.0
+
+and keep cask definition as:
+
+service vyne.cask.Foo {
+
+operation findByTimeBetween...
+operation findByDateBetween...
+}
+
  */
 class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValidator = TaxiSchemaValidator()) : SchemaStoreClient {
    private val generationCounter = AtomicInteger(0)
    private val schemaSetHolder = mutableMapOf<SchemaSetCacheKey, SchemaSet>()
-   private val schemaSourcesMap = mutableMapOf<SchemaId, ParsedSource>()
+   private val schemaSourcesMap = mutableMapOf<String, ParsedSource>()
 
    override fun schemaSet(): SchemaSet {
       if (!schemaSetHolder.containsKey(SchemaSetCacheKey)) {
@@ -35,7 +108,7 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
          return schemaSourcesMap.values.toList()
       }
 
-   fun removeSourceAndRecompile(schemaIds:List<SchemaId>) {
+   fun removeSourceAndRecompile(schemaIds:List<String>) {
       schemaIds.forEach { this.schemaSourcesMap.remove(it) }
       rebuildAndStoreSchema()
    }
@@ -63,7 +136,7 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
          // chance that if publishers aren't incrementing their ids properly, that we
          // overwrite a valid source with on that contains compilation errors.
          // Deal with that if the scenario arises.
-         schemaSourcesMap[parsedSource.source.id] = parsedSource
+         schemaSourcesMap[parsedSource.source.name] = parsedSource
       }
       rebuildAndStoreSchema()
       return returnValue

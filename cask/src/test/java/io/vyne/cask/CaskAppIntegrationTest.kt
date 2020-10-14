@@ -4,14 +4,24 @@ import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
+import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.ingest.TestSchema.schemaWithConcatAndDefaultSource
 import io.vyne.cask.query.generators.OperationGeneratorConfig
+import io.vyne.cask.services.CaskServiceBootstrap
 import io.vyne.schemaStore.SchemaPublisher
+import io.vyne.schemaStore.SchemaStoreClient
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.SchemaSetChangedEvent
+import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import org.junit.AfterClass
 import org.junit.BeforeClass
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.reactivestreams.Publisher
+import org.reactivestreams.Subscriber
+import org.reactivestreams.Subscription
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
@@ -24,6 +34,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.socket.WebSocketMessage
+import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import org.springframework.web.reactive.socket.client.WebSocketClient
 import reactor.core.publisher.EmitterProcessor
@@ -53,6 +64,9 @@ class CaskAppIntegrationTest {
 
    @Autowired
    lateinit var schemaPublisher: SchemaPublisher
+
+   @Autowired
+   lateinit var caskServiceBootstrap: CaskServiceBootstrap
 
 
    companion object {
@@ -337,6 +351,68 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
       result[0].orderDate
          .toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
          .should.be.equal(LocalDate.parse("2020-03-19"))
+   }
+
+   @Test
+   @Ignore
+   fun `Can ingest when schema is upgraded`() {
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val output: EmitterProcessor<String> = EmitterProcessor.create()
+      val outputAfterSchemaChanged: EmitterProcessor<String> = EmitterProcessor.create()
+      val client: WebSocketClient = ReactorNettyWebSocketClient()
+      val uri = URI.create("ws://localhost:${randomServerPort}/cask/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
+
+      val wsConnection = client.execute(uri)
+      { session ->
+         session.send(MessagePublisher(session, caskRequest, schemaPublisher, caskServiceBootstrap))
+            .thenMany(session.receive()
+               .log()
+               .map(WebSocketMessage::getPayloadAsText)
+               .subscribeWith(output))
+            .then()
+
+      }.subscribe()
+
+
+
+      StepVerifier
+         .create(output.take(2).timeout(Duration.ofSeconds(10000)))
+         .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+         //.expectNext("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+         .verifyComplete()
+         .run { wsConnection.dispose() }
+   }
+
+   class MessagePublisher(val session: WebSocketSession, val messageContent: String, val schemaPublisher: SchemaPublisher,  val caskServiceBootstrap: CaskServiceBootstrap): Publisher<WebSocketMessage> {
+      override fun subscribe(subscriber: Subscriber<in WebSocketMessage>) {
+         subscriber.onSubscribe( object: Subscription {
+            override fun request(p0: Long) {
+               subscriber.onNext(session.textMessage(messageContent))
+
+               schemaPublisher.submitSchema("test-schemas", "1.0.1", CoinbaseJsonOrderSchema.CsvWithDefault).map {
+                  val schemaStoreClient = schemaPublisher as SchemaStoreClient
+                   caskServiceBootstrap.regenerateCasksOnSchemaChange(SchemaSetChangedEvent(null, schemaStoreClient.schemaSet()))
+               //   caskServiceBootstrap.onIngesterInitialised(IngestionInitialisedEvent(this,
+            //        VersionedType(it.sources, it.type("OrderWindowSummaryCsv"), it.taxiType(QualifiedName("OrderWindowSummaryCsv")))))
+               }
+
+               Thread.sleep(2000)
+               subscriber.onNext(session.textMessage(messageContent))
+               subscriber.onComplete()
+            }
+
+            override fun cancel() {
+               TODO("Not yet implemented")
+            }
+
+         })
+
+
+
+      }
+
    }
 
    data class OrderWindowSummaryDto(

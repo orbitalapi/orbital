@@ -74,5 +74,17 @@ type OrderWindowSummaryCsv {
     close : Price? by column(4)
 }
 """.trimIndent()
+
+   val CsvWithDefault = """
+      type alias Price as Decimal
+      type alias Symbol as String
+      type OrderWindowSummaryCsv {
+          orderDate : Date by column(1)
+          symbol : Symbol by column(2)
+          open : Price by column(3)
+          close : Price by column(4)
+          foo: String by default("")
+      }
+   """.trimIndent()
    val nullableSchemaV1 = TaxiSchema.from(nullableSourceV1, "Coinbase", "0.1.0")
 }
