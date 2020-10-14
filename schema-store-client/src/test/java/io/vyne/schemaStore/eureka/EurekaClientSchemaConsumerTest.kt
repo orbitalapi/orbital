@@ -82,7 +82,7 @@ class EurekaClientSchemaConsumerTest {
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(1)
       val remainingSource = eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.first()
       remainingSource.content.should.equal(orderVersionedSource.content)
-      (remainingSource === orderSource).should.be.`true`
+      (remainingSource.name == orderSource.name).should.be.`true`
 
    }
 

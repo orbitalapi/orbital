@@ -50,6 +50,7 @@ internal data class SourceDelta(
 ) {
    val hasChanges = newSources.isNotEmpty() || changedSources.isNotEmpty() || removedSources.isNotEmpty()
    val sourceIdsToRemove = removedSources.flatMap { it.availableSources.map { source -> source.sourceId } }
+   val sourceNamesToRemove = removedSources.flatMap { it.availableSources.map { source -> source.sourceName } }
 }
 
 
@@ -158,7 +159,7 @@ class EurekaClientSchemaConsumer(
       }
 
       if (delta.sourceIdsToRemove.isNotEmpty()) {
-         schemaStore.removeSourceAndRecompile(delta.sourceIdsToRemove)
+         schemaStore.removeSourceAndRecompile(delta.sourceNamesToRemove)
       }
 
       if (delta.changedSources.isNotEmpty()) {
@@ -179,8 +180,8 @@ class EurekaClientSchemaConsumer(
                   existingPublisherRegistration
                      .availableSources
                      .filter { existingSource ->
-                        changedPublisherRegistration.availableSources.none { it.sourceId == existingSource.sourceId }
-                     }.map { it.sourceId }
+                        changedPublisherRegistration.availableSources.none { it.sourceName == existingSource.sourceName }
+                     }.map { it.sourceName }
                }?.let { schemaStore.removeSourceAndRecompile(it) }
          }
       }

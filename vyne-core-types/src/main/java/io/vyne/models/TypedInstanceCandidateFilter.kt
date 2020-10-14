@@ -1,6 +1,7 @@
 package io.vyne.models
 
 import io.vyne.schemas.Type
+import io.vyne.utils.log
 
 /**
  * When a request for a specific typed instance has been made,
@@ -43,13 +44,15 @@ object TypedInstanceCandidateFilter {
       }
 
       // are all the values the same?
-      if (bestTypeMatches.all { it.valueEquals(bestTypeMatches[0]) }) {
+      if (bestTypeMatches.isNotEmpty() && bestTypeMatches.all { it.valueEquals(bestTypeMatches[0]) }) {
          // all the values are the same, so just return the first.
          return bestTypeMatches.first()
       }
 
       // Out of ideas, give up.
       val candidateDescription = bestTypeMatches.joinToString("\n") { "${it.type.name.parameterizedName} : ${it.value}" }
-      error("Ambiguous property - there are ${bestTypeMatches.size} possible matches for type ${requestedType.name.parameterizedName}, each with different values: $candidateDescription.  Consider restricting the requested type to a more specific type")
+      log().info("returning TypedNull for $requestedType as candidates are $candidateDescription")
+      return TypedNull(requestedType)
+      //error("Ambiguous property - there are ${bestTypeMatches.size} possible matches for type ${requestedType.name.parameterizedName}, each with different values: $candidateDescription.  Consider restricting the requested type to a more specific type")
    }
 }
