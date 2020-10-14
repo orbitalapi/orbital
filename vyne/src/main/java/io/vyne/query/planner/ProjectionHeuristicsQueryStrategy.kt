@@ -18,6 +18,7 @@ import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
+import io.vyne.utils.log
 import io.vyne.utils.timed
 import java.util.concurrent.TimeUnit
 
@@ -25,30 +26,36 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
    private val cache = CacheBuilder.newBuilder()
       .weakKeys()
       .build<Type, ProjectionHeuristicsGraphSearchResult>()
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
+
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryStrategyResult {
       if (!context.isProjecting) {
          return QueryStrategyResult.empty()
       }
       val targetType = target.first().type
-      val searchResult =  cache.get(targetType) {
-         fetchFromGraph(target, context)
+      val searchResult: ProjectionHeuristicsGraphSearchResult = cache.get(targetType) {
+         fetchFromGraph(target, context, spec)
+      }
+
+      if (searchResult.isEmpty || searchResult == ProjectionHeuristicsGraphSearchResult.UNABLE_TO_SEARCH) {
+         return QueryStrategyResult.empty()
       }
 
       val queryStrategyResult = timed(name = "heuristics result", timeUnit = TimeUnit.MICROSECONDS, log = false) {
-         searchResult.pair?.first?.let {
-            cache.put(targetType, searchResult)
-            // Using AlwaysGood build spec because at the time of writing we're not passing specs this deep.
-            // Let's revisit as / when needed
-            val joinedFact = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT.getFact(context, searchResult.pair.second, spec = AlwaysGoodSpec)
-            val matchedInstance = it[joinedFact]
-            return@timed queryStrategyResult(matchedInstance, context, targetType, target)
-         }
+//            Commmenting out this line, as I don't think it makes snese.
+         // Isn't thie the value we've just fetched from the cache?  Why add it back?
+//            cache.put(targetType, searchResult)
+
+         FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT.getFact(context, searchResult.joinType!!, spec = AlwaysGoodSpec)
+            ?.let { joinedFact ->
+               searchResult.queryResultByKey[joinedFact]
+            }?.let { matchedInstance ->
+               queryStrategyResult(matchedInstance, context, targetType, target, spec)
+            } ?: QueryStrategyResult.empty()
       }
-      return queryStrategyResult ?: QueryStrategyResult.empty()
+      return queryStrategyResult
    }
 
-   private fun queryStrategyResult(matchedInstance: ProjectionResultList?, context: QueryContext, targetType: Type, target: Set<QuerySpecTypeNode>): QueryStrategyResult? {
-      matchedInstance?.let { joinMatch ->
+   private fun queryStrategyResult(joinMatch: ProjectionResultList, context: QueryContext, targetType: Type, target: Set<QuerySpecTypeNode>, spec: TypedInstanceValidPredicate): QueryStrategyResult? {
          if (joinMatch.size == 0) return null
          if (joinMatch.size == 1) {
             // one to one mapping case.
@@ -59,9 +66,13 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
                val typedObject = match as TypedObject
                // Example:
                val retVal = typedObject.values.first { typedValue -> typedValue.type.isAssignableTo(targetType, true) }
-               // Add 'Trade' into the context, so subsequent target projection props might be resolved..
-               context.addFact(match)
-               return QueryStrategyResult(mapOf(target.first() to retVal))
+               return if (spec.isValid(retVal)) {
+                  // Add 'Trade' into the context, so subsequent target projection props might be resolved..
+                  context.addFact(match)
+                  QueryStrategyResult(mapOf(target.first() to retVal))
+               } else {
+                  QueryStrategyResult.empty()
+               }
             }
          } else {
             // one to many case.
@@ -77,11 +88,9 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
             // Add Trade object into the context, so that subsequent projection props might be extracted from Trade.
             context.addFact(joinMatch.first())
             // Remove the Trade just added into the context, as we'll call here again through ObjectBuilder for remaining matched Trades.
-            matchedInstance.removeFirst()
-            return QueryStrategyResult(mapOf(target.first() to  TypedCollection.from(retVal)))
-         }
+            joinMatch.removeFirst()
+            return QueryStrategyResult(mapOf(target.first() to TypedCollection.from(retVal)))
       }
-      return null
    }
 
    /**
@@ -90,14 +99,15 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
     * tradeNo is an attribute of Trade, and this tries to find the following operation
     * operation(orderIds: OrderId[]): Trade[]
     */
-   private fun fetchFromGraph(target: Set<QuerySpecTypeNode>, context: QueryContext): ProjectionHeuristicsGraphSearchResult {
+   private fun fetchFromGraph(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): ProjectionHeuristicsGraphSearchResult {
       return timed("fetch from Graph", log = false) {
          graphSearchResult(target, context)?.let { firstMatch ->
             findFetchManyOperation(firstMatch, context)?.let { (candidateService, candidateOperation, joinType) ->
-               return@timed processRemoteCallResults(candidateOperation, candidateService, context, joinType)
+               return@timed processRemoteCallResults(candidateOperation, candidateService, context, joinType, spec)
             }
          }
-         ProjectionHeuristicsGraphSearchResult(null)
+         // else
+         ProjectionHeuristicsGraphSearchResult.UNABLE_TO_SEARCH
       }
    }
 
@@ -113,7 +123,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
          }.firstOrNull()
    }
 
-   private fun findFetchManyOperation(firstMatch: WeightedNode<Relationship, Element, Double>?, context: QueryContext):  Triple<Service, Operation, Type>? {
+   private fun findFetchManyOperation(firstMatch: WeightedNode<Relationship, Element, Double>?, context: QueryContext): Triple<Service, Operation, Type>? {
       firstMatch?.let { it ->
          it.path().firstOrNull { path -> path.action() == Relationship.PROVIDES }?.let { node ->
             val operationElement = node.previousNode().state()
@@ -136,25 +146,56 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
       return null
    }
 
-   private fun processRemoteCallResults(candidateOperation: Operation, candidateService: Service, context: QueryContext, joinType: Type): ProjectionHeuristicsGraphSearchResult {
+   private fun processRemoteCallResults(candidateOperation: Operation, candidateService: Service, context: QueryContext, joinType: Type, spec: TypedInstanceValidPredicate): ProjectionHeuristicsGraphSearchResult {
       val firstOperationArgumentType = candidateOperation.parameters.first().type
-      context.parent?.let { qc ->
+      context.parent?.let { parentQueryContext ->
          // Using AlwaysGood build spec because at the time of writing we're not passing specs this deep.
          // Let's revisit as / when needed
-         val requiredArgument = FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION.getFact(qc, firstOperationArgumentType, spec = AlwaysGoodSpec)
-         requiredArgument?.let { arg ->
-            val result = operationInvocationEvaluator.invocationService.invokeOperation(candidateService, candidateOperation, setOf(arg), qc)
-            val arguments = arg as TypedCollection
-            val firstMatch = (result as TypedCollection).firstOrNull { item ->  (item as TypedObject).values.any { value -> value.valueEquals(arguments.first()) }}
-            val key = (firstMatch as TypedObject?)?.value?.entries?.first { typedObjectValue -> typedObjectValue.value.valueEquals(arguments.first()) }?.key
-            val resultMap =  arguments
-               .map { argument -> argument to result.filter { item ->  key?.let { attr -> (item as TypedObject).value[attr]?.valueEquals(argument) } == true}.toProjectionResultList() }
-               .toMap()
-            return ProjectionHeuristicsGraphSearchResult(Pair(resultMap, joinType))
+         val requiredArgument = FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION.getFact(parentQueryContext, firstOperationArgumentType, spec = AlwaysGoodSpec)
+            ?: return ProjectionHeuristicsGraphSearchResult(emptyMap(), joinType)
+
+         val result = operationInvocationEvaluator.invocationService.invokeOperation(candidateService, candidateOperation, setOf(requiredArgument), parentQueryContext) as TypedCollection
+         if (result.isEmpty()) {
+            // bail early if we received nothing
+            return ProjectionHeuristicsGraphSearchResult(emptyMap(), joinType)
          }
+         val arguments = requiredArgument as TypedCollection
+
+         // Match the results against the arguments that were collected.
+         // For now, assume all the args are a single type
+         val argumentTypes = arguments.map { it.type }.distinct()
+         if (argumentTypes.size > 1) {
+            log().warn("Multiple argument types are not currently supported - some results may not match, resulting in further HTTP operations downstream")
+         }
+         val argType = argumentTypes.first()
+         val firstResultEntry = result.first() as TypedObject
+         val keyFieldName = firstResultEntry.entries
+            .firstOrNull { (_, instance) -> instance.type.name == argType.name }
+            ?.key
+         if (keyFieldName == null) {
+            log().warn("The result of the batch operation ${candidateOperation.qualifiedName} did not contain an entry with type ${argType.name} meaning results cannot be grouped.  Aborting the batch lookup")
+            return ProjectionHeuristicsGraphSearchResult.empty(joinType)
+         }
+         val resultsByKey = result.groupBy { resultEntry ->
+            val resultEntryObject = resultEntry as TypedObject
+            resultEntryObject[keyFieldName]
+         }.mapValues { (_, value) ->
+            // Only include results which pass the TypedInstance spec we were provided
+            value.filter { spec.isValid(it) }
+         }.filter { (_, values) -> values.isNotEmpty() }
+            .mapValues { (_, values) -> values.toProjectionResultList() }
+
+         return ProjectionHeuristicsGraphSearchResult(resultsByKey, joinType)
       }
-      return ProjectionHeuristicsGraphSearchResult(null)
+      return ProjectionHeuristicsGraphSearchResult.empty(joinType)
    }
 }
 
-data class ProjectionHeuristicsGraphSearchResult(val pair: Pair<Map<TypedInstance, ProjectionResultList>, Type>?)
+// TODO : Fix the nullable on type
+data class ProjectionHeuristicsGraphSearchResult(val queryResultByKey: Map<TypedInstance, ProjectionResultList>, val joinType: Type?) {
+   companion object {
+      fun empty(type:Type) = ProjectionHeuristicsGraphSearchResult(emptyMap(), type)
+      val UNABLE_TO_SEARCH = ProjectionHeuristicsGraphSearchResult(emptyMap(), null)
+   }
+   val isEmpty = queryResultByKey.isEmpty()
+}
