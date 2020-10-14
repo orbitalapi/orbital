@@ -5,6 +5,7 @@ import io.vyne.models.DataParsingException
 import io.vyne.models.PrimitiveParser
 import io.vyne.models.Provided
 import io.vyne.schemas.taxi.TaxiSchema
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
@@ -57,6 +58,35 @@ enum City {
       val enum = PrimitiveParser().parse("35",schema.type("City"), Provided)
       enum.type.name.fullyQualifiedName.should.equal("City")
       enum.value.should.equal(35)
+   }
+
+   @Test
+   fun `can parse enums with boolean names`() {
+      val schema = TaxiSchema.from("""
+         enum IsAlive {
+            true,
+            false
+         }
+      """.trimIndent())
+      val enum = PrimitiveParser().parse(true, schema.type("IsAlive"), Provided)
+      enum.type.name.fullyQualifiedName.should.equal("IsAlive")
+      // Note -it's a string, because enum values are string by default
+      enum.value.should.equal("true")
+   }
+
+   @Test
+   @Ignore("Needs taxi enhancmenent")
+   fun `can parse enums with boolean values`() {
+         val schema = TaxiSchema.from("""
+         enum IsAlive {
+            Living(true),
+            Dead(false)
+         }
+      """.trimIndent())
+         val enum = PrimitiveParser().parse(true, schema.type("IsAlive"), Provided)
+         enum.type.name.fullyQualifiedName.should.equal("IsAlive")
+         // Note -it's a string, because enum values are string by default
+         enum.value.should.equal("true")
    }
 
    @Test
