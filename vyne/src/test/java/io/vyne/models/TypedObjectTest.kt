@@ -7,6 +7,7 @@ import com.winterbe.expekt.should
 import io.vyne.models.json.JsonModelParser
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.testVyne
 import org.junit.Before
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -196,6 +197,60 @@ class TypedObjectTest {
       val json = """{ "firstName" : "Jimmy" }"""
       val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
       instance["title"].value.should.equal("")
+   }
+
+   @Test
+   fun `can ingest boolean value into enum with synonym`() {
+      val schema = TaxiSchema.from("""
+         enum LivingOrDead {
+            Alive, Dead
+         }
+         enum IsAlive {
+            true synonym of LivingOrDead.Alive,
+            false synonym of LivingOrDead.Dead
+         }
+         model Person {
+            name : Name as String
+            isAlive : IsAlive
+         }
+         model OutputPerson {
+            name : Name
+            livingOrDead : LivingOrDead
+         }
+      """.trimIndent())
+      val (vyne,_) = testVyne(schema)
+      val json = """{ "name" : "Bernstein", "isAlive" : false }"""
+      val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
+      val buildResult = vyne.query().addFact(instance).build("OutputPerson")
+      val output = buildResult["OutputPerson"] as TypedObject
+      output["livingOrDead"].value!!.should.equal("Dead")
+   }
+
+   @Test
+   fun `can ingest boolean value into enum with synonym when read using an accessor`() {
+      val schema = TaxiSchema.from("""
+         enum LivingOrDead {
+            Alive, Dead
+         }
+         enum IsAlive {
+            true synonym of LivingOrDead.Alive,
+            false synonym of LivingOrDead.Dead
+         }
+         model Person {
+            name : Name as String
+            isAlive : IsAlive by jsonPath("$.living")
+         }
+         model OutputPerson {
+            name : Name
+            livingOrDead : LivingOrDead
+         }
+      """.trimIndent())
+      val (vyne,_) = testVyne(schema)
+      val json = """{ "name" : "Bernstein", "living" : false }"""
+      val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
+      val buildResult = vyne.query().addFact(instance).build("OutputPerson")
+      val output = buildResult["OutputPerson"] as TypedObject
+      output["livingOrDead"].value!!.should.equal("Dead")
    }
 
    @Test
