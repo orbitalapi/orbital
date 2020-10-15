@@ -40,4 +40,24 @@ class CaskUpgraderServiceWatcherTest {
       //Then
       latch.await(1, TimeUnit.SECONDS).should.be.`true`
    }
+
+   @Test
+   fun `Fires resume schema polling event even one of more cask upgrade operations completed with exceptions`() {
+      val upgradeServiceWatcher = CaskUpgraderServiceWatcher(caskConfigRepository,caskDAO, upgraderService, eventPublisher)
+      val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, Instant.now())
+      val caskConfigV2 = CaskConfig("Order_hash2", "Order", "hash1", emptyList(), emptyList(), null, Instant.now())
+      val latch: CountDownLatch = CountDownLatch(1)
+      whenever(caskConfigRepository.findAllByStatus(eq(CaskStatus.MIGRATING))).thenReturn(
+         listOf(caskConfigV1, caskConfigV2))
+      whenever(eventPublisher.publishEvent(any<ControlSchemaPollEvent>())).then {
+         it.getArgument(0, ControlSchemaPollEvent::class.java).poll.should.be.`true`
+         latch.countDown()
+      }
+      whenever(upgraderService.upgrade(any())).thenThrow(IllegalArgumentException())
+      //When
+      upgradeServiceWatcher.onUpgradeWorkDetected(CaskUpgradesRequiredEvent())
+      //Then
+      latch.await(1, TimeUnit.SECONDS).should.be.`true`
+
+   }
 }

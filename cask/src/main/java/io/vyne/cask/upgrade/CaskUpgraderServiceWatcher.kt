@@ -44,7 +44,11 @@ class CaskUpgraderServiceWatcher(
      val upgradeTasks = caskConfigRepository.findAllByStatus(CaskStatus.MIGRATING).map { config ->
          log().info("Queuing ${config.tableName} for upgrading")
          CompletableFuture.supplyAsync {
-            upgraderService.upgrade(config)
+            try {
+               upgraderService.upgrade(config)
+            } catch (e: Exception) {
+               log().error("Error in upgrading Cask $config", e)
+            }
          }
       }
       CompletableFuture.allOf(*upgradeTasks.toTypedArray()).thenApply {
