@@ -164,6 +164,40 @@ class EurekaClientSchemaConsumerTest {
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.map { it.version }.should.contain("0.0.2")
    }
 
+   @Test
+   fun `can handle failure whilst retrieving taxi files from a registered application`() {
+      // Given
+      val instanceInfo = instanceInfo("file-schema-server", mapOf("vyne.sources.product.taxi___0.0.1" to "47df0b", "vyne.sources.order.taxi___0.0.1" to "12321"))
+      val productVersionedSource = VersionedSource(name = "product.taxi", version = "0.0.1", content = """
+         namespace foo.bar {
+             model Product {
+                 id: String
+              }
+         }
+      """.trimIndent())
+      val orderVersionedSource = VersionedSource(name = "order.taxi", version = "0.0.1", content = """
+         namespace foo.bar {
+             model Order {
+                 orderId: String
+              }
+         }
+      """.trimIndent())
+      val (eurekaEventListener, server, eurekaClientSchemaConsumer) = initialise(listOf(instanceInfo),
+         listOf(Pair(instanceInfo, listOf())))
+
+      // When
+      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.should.be.empty
+
+      // One of the files deleted
+      //instanceInfo.metadata.remove("vyne.sources.product.taxi___0.0.1") // remove one of the files.
+      setTaxiSchemasRestResponse(server, listOf(Pair(instanceInfo, listOf(productVersionedSource, orderVersionedSource))))
+      // When
+      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(2)
+   }
+
    private fun instanceInfo(appName: String, sourceMap: Map<String, String>, port: Int = 1234) = InstanceInfo
       .Builder
       .newBuilder()
@@ -203,10 +237,17 @@ class EurekaClientSchemaConsumerTest {
    private fun setTaxiSchemasRestResponse(server: MockRestServiceServer, responses: List<Pair<InstanceInfo, List<VersionedSource>>>) {
       server.reset()
       responses.forEach { (instanceInfo, response) ->
-         server.expect(ExpectedCount.once(), MockRestRequestMatchers.requestTo("http://${instanceInfo.hostName}:${instanceInfo.port}/taxi"))
-            .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
-            .andExpect(MockRestRequestMatchers.anything())
-            .andRespond(MockRestResponseCreators.withSuccess(jacksonObjectMapper().writeValueAsString(response), MediaType.APPLICATION_JSON))
+         if (response.isEmpty()) {
+            server.expect(ExpectedCount.once(), MockRestRequestMatchers.requestTo("http://${instanceInfo.hostName}:${instanceInfo.port}/taxi"))
+               .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
+               .andExpect(MockRestRequestMatchers.anything())
+               .andRespond(MockRestResponseCreators.withServerError())
+         } else {
+            server.expect(ExpectedCount.once(), MockRestRequestMatchers.requestTo("http://${instanceInfo.hostName}:${instanceInfo.port}/taxi"))
+               .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
+               .andExpect(MockRestRequestMatchers.anything())
+               .andRespond(MockRestResponseCreators.withSuccess(jacksonObjectMapper().writeValueAsString(response), MediaType.APPLICATION_JSON))
+         }
       }
 
    }
