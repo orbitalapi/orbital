@@ -27,6 +27,7 @@ internal data class SourcePublisherRegistration(
    val sourceUrl: String,
    val availableSources: List<VersionedSourceReference>
 ) {
+   val nameAndUrl = "$applicationName@$sourceUrl"
    val sourceHash by lazy {
       val hasher = Hashing.sha256().newHasher()
       availableSources.forEach { hasher.putString(it.sourceIdContentHash, Charset.defaultCharset()) }
@@ -81,6 +82,8 @@ class EurekaClientSchemaConsumer(
    private val client = clientProvider.get()
    private val eurekaNotificationUpdater = EurekaNotificationServerListUpdater(clientProvider, refreshExecutorService)
 
+   private val unhealthySources = mutableSetOf<SourcePublisherRegistration>()
+
    init {
       // This is executed on a dedicated ThreadPool and it is guaranteed that 'only' one callback is active for the given 'event'
       eurekaNotificationUpdater.start {
@@ -94,6 +97,8 @@ class EurekaClientSchemaConsumer(
             log().debug("Received a eureka event, checking for changes to sources")
 
             val currentSourceSet = rebuildSources()
+            removeUnhealthySourcesNowRemoved(currentSourceSet)
+
             val delta = calculateDelta(sources, currentSourceSet)
             if (delta.hasChanges) {
                log().info("Found changes to schema, proceeding to update.")
@@ -110,6 +115,18 @@ class EurekaClientSchemaConsumer(
 
          }
       }
+   }
+
+   private fun removeUnhealthySourcesNowRemoved(currentSourceSet: List<SourcePublisherRegistration>) {
+      val removedUnhealhtySources = unhealthySources.filter { !currentSourceSet.contains(it) }
+      removedUnhealhtySources.forEach {
+         log().info("Taxi source registration at ${it.nameAndUrl} was previously registered as unhealthy, and now has been removed from Eureka.  Removing it from the list of unhealthy schemas")
+         unhealthySources.remove(it)
+      }
+      if (removedUnhealhtySources.isNotEmpty()) {
+         log().info("After pruning removed unhealthy sources, there are now ${unhealthySources.size} unhealthy sources remaining ${unhealthySources.joinToString { it.nameAndUrl }}")
+      }
+
    }
 
    private fun updateSources(currentSourceSet: List<SourcePublisherRegistration>, delta: SourceDelta) {
@@ -142,10 +159,10 @@ class EurekaClientSchemaConsumer(
       applicationsWithDuplicateSchemas.forEach { (name,registrations) ->
          val hashes = registrations.map { it.sourceHash }
          if (hashes.distinct().size == 1) {
-            log().info("Application $name has ${registrations.size} sources registered - (${registrations.joinToString { it.sourceUrl }}) However, all have the same hash, so this is fine")
+            log().info("Application $name has ${registrations.size} sources registered - (${registrations.joinToString { it.nameAndUrl }}) However, all have the same hash, so this is fine")
          } else {
             // TODO : Here, we should be filtering to the most recent
-            log().warn("Application $name has ${registrations.size} sources registered - (${registrations.joinToString { it.sourceUrl }}) However, there are multiple different hashes present.  Multiple different schemas for the same application is not supported.  You should remove one.")
+            log().warn("Application $name has ${registrations.size} sources registered - (${registrations.joinToString { it.nameAndUrl }}) However, there are multiple different hashes present.  Multiple different schemas for the same application is not supported.  You should remove one.")
          }
       }
    }
@@ -199,13 +216,18 @@ class EurekaClientSchemaConsumer(
       return try {
          val result = restTemplate.exchange<List<VersionedSource>>(registration.sourceUrl, HttpMethod.GET, null)
          if (result.statusCode.is2xxSuccessful) {
+            if (unhealthySources.remove(registration)) {
+               log().info("Source registration ${registration.nameAndUrl} has been successfully loaded after previously being marked unhealthy.  Now healthy again")
+            }
             result.body!!
          } else {
-            log().error("Failed to load taxi sources from ${registration.sourceUrl} - received HTTP Response ${result.statusCode}.  Will ignore this and continue, and try again later")
+            log().error("Failed to load taxi sources from ${registration.nameAndUrl} - received HTTP Response ${result.statusCode}.  Will ignore this and continue, and try again later")
+            unhealthySources.add(registration)
             emptyList()
          }
       } catch (exception: Exception) {
-         log().error("Failed to load taxi sources from ${registration.sourceUrl} - exception thrown.   Will ignore this and continue, and try again later", exception)
+         log().error("Failed to load taxi sources from ${registration.nameAndUrl} - exception thrown.   Will ignore this and continue, and try again later", exception)
+         unhealthySources.add(registration)
          emptyList()
       }
 
@@ -216,17 +238,22 @@ class EurekaClientSchemaConsumer(
          previousKnownSources.none { previousKnownSource -> previousKnownSource.applicationName == currentSourceRegistration.applicationName }
       }
 
+
+
       val removedSources = previousKnownSources.filter { previousKnownSource ->
          currentSourceSet.none { currentSourceRegistration -> previousKnownSource.applicationName == currentSourceRegistration.applicationName }
       }
 
-      val changedSources = currentSourceSet.filter { currentSource ->
+      val changedSources = (currentSourceSet.filter { currentSource ->
          previousKnownSources.any { previousSource ->
             val isChanged = currentSource.applicationName == previousSource.applicationName && currentSource.availableSources.hashCode() != previousSource.availableSources.hashCode()
             isChanged
          }
-      }
+      } + unhealthySources).distinct()
 
+      if (unhealthySources.isNotEmpty()) {
+         log().info("When calculating a schema delta, there are currently ${unhealthySources.size} source(s) that are unhealthy, and are being treated as changed: ${unhealthySources.joinToString { it.nameAndUrl }}")
+      }
       return SourceDelta(
          newSources, changedSources, removedSources
       )
