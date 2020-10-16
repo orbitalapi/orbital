@@ -259,7 +259,8 @@ class EurekaClientSchemaConsumer(
 
       val changedSources = (currentSourceSet.filter { currentSource ->
          previousKnownSources.any { previousSource ->
-            val isChanged = currentSource.applicationName == previousSource.applicationName && currentSource.availableSources.hashCode() != previousSource.availableSources.hashCode()
+            val isChanged = currentSource.applicationName == previousSource.applicationName &&
+               ((currentSource.availableSources.hashCode() != previousSource.availableSources.hashCode()) || (currentSource.nameAndUrl != previousSource.nameAndUrl) )
             isChanged
          }
       } + unhealthySources).distinct()
