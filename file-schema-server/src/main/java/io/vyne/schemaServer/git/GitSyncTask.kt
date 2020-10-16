@@ -1,24 +1,34 @@
-package io.vyne.schemaServer
+package io.vyne.schemaServer.git
 
+import io.vyne.schemaServer.CompilerService
+import io.vyne.schemaServer.FileWatcher
 import io.vyne.utils.log
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
+@ConditionalOnProperty(
+   name = ["taxi.gitCloningJobEnabled"],
+   havingValue = "true",
+   matchIfMissing = false
+)
 @Component
-class GitSynch(
+class GitSyncTask(
    private val gitSchemaRepoConfig: GitSchemaRepoConfig,
    private val gitRepoProvider: GitRepoProvider,
    private val fileWatcher: FileWatcher,
    private val compilerService: CompilerService) {
 
-   private var inProgress = AtomicBoolean(false)
+   private val inProgress = AtomicBoolean(false)
 
-   fun isInProgress(): Boolean {
-      return inProgress.get()
+   init {
+      log().info("Git sync job created: \n$gitSchemaRepoConfig")
    }
 
-   fun synch() {
+   @Scheduled(fixedRateString = "\${taxi.gitCloningJobPeriodMs:300000}")
+   fun sync() {
       if (inProgress.get()) {
          log().warn("Another cloning process is running, exiting.")
          return
@@ -40,26 +50,26 @@ class GitSynch(
             val git = gitRepoProvider.provideRepo(rootDir.absolutePath, repoConfig)
 
             try {
-               git.use { it ->
-                  if(it.lsRemote() == OperationResult.FAILURE) {
+               git.use { gitRepo ->
+                  if (gitRepo.lsRemote() == OperationResult.FAILURE) {
                      log().error("Synch error: Could not reach repository ${repoConfig.name} - ${repoConfig.uri} / ${repoConfig.branch}")
                      return@forEach
                   }
 
-                  if(it.existsLocally()) {
-                     it.checkout()
-                     it.pull()
+                  if (gitRepo.existsLocally()) {
+                     gitRepo.checkout()
+                     gitRepo.pull()
                   } else {
-                     it.clone()
-                     it.checkout()
+                     gitRepo.clone()
+                     gitRepo.checkout()
                   }
 
-                  if(it.isUpdated()) {
+                  if (gitRepo.isUpdated()) {
                      recompile = true
                   }
                }
 
-               if(recompile) {
+               if (recompile) {
                   compilerService.recompile(false)
                }
             } catch (e: Exception) {

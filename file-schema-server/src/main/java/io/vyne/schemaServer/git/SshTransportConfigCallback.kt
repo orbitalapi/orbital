@@ -1,4 +1,4 @@
-package io.vyne.schemaServer
+package io.vyne.schemaServer.git
 
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
