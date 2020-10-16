@@ -32,6 +32,9 @@
     </div>
   </mat-sidenav>
   <mat-sidenav-content>
+    <div class="alerts-container">
+      <app-system-alert *ngFor="let alert of alerts" [alert]="alert"></app-system-alert>
+    </div>
     <router-outlet></router-outlet>
   </mat-sidenav-content>
 </mat-sidenav-container>

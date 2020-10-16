@@ -4,8 +4,7 @@ import {AppInfo, AppInfoService} from './services/app-info.service';
 
 @Component({
   selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss'],
+  template: `<vyne-app></vyne-app>`,
   providers: [TypesService, AppInfoService]
 })
 export class AppComponent {

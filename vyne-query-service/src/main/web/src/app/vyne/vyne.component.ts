@@ -1,17 +1,20 @@
-import {Component} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {BreakpointObserver, Breakpoints} from '@angular/cdk/layout';
 import {Observable} from 'rxjs';
 import {filter, map} from 'rxjs/operators';
 import {AppInfo, AppInfoService} from '../services/app-info.service';
 import {NavigationEnd, Router} from '@angular/router';
+import {SchemaNotificationService} from '../services/schema-notification.service';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {SystemAlert} from '../system-alert/system-alert.component';
+import {TypesService} from '../services/types.service';
 
 @Component({
   selector: 'vyne-app',
   templateUrl: './vyne.component.html',
   styleUrls: ['./vyne.component.scss']
 })
-export class VyneComponent {
-
+export class VyneComponent implements OnInit {
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
       map(result => result.matches)
@@ -48,11 +51,11 @@ export class VyneComponent {
       icon: 'assets/img/history.svg',
       route: 'query-history'
     },
-     {
-       title: 'Cask',
-       icon: 'assets/img/cask.svg',
-       route: 'cask-viewer'
-     }
+    {
+      title: 'Cask',
+      icon: 'assets/img/cask.svg',
+      route: 'cask-viewer'
+    }
 
   ].map(value => {
     return {
@@ -66,8 +69,14 @@ export class VyneComponent {
   });
 
   appInfo: AppInfo;
+  alerts: SystemAlert[] = [];
 
-  constructor(private breakpointObserver: BreakpointObserver, appInfoService: AppInfoService, private router: Router) {
+  constructor(private breakpointObserver: BreakpointObserver,
+              private appInfoService: AppInfoService,
+              private router: Router,
+              private schemaNotificationService: SchemaNotificationService,
+              private typeService: TypesService,
+              private snackbar: MatSnackBar) {
     appInfoService.getAppInfo()
       .subscribe(info => this.appInfo = info);
 
@@ -84,9 +93,47 @@ export class VyneComponent {
       .subscribe(() => {
         document.querySelector('.mat-sidenav-content').scrollTop = 0;
       });
+
+    this.schemaNotificationService.createSchemaNotificationsSubscription()
+      .subscribe(schemaUpdateNotification => {
+        let message: string;
+        if (schemaUpdateNotification.invalidSourceCount > 0) {
+          message = 'Schema has been updated, but contains compilation errors';
+          this.setCompilationErrorAlert();
+        } else {
+          message = 'Schema has been updated';
+          const alertIndex = this.alerts.findIndex(alert => alert.id === 'compilationErrors');
+          if (alertIndex >= 0) {
+            this.alerts.splice(alertIndex, 1);
+          }
+        }
+        this.snackbar.open(
+          message, 'Dismiss', {
+            duration: 5000,
+          }
+        );
+      });
   }
 
-  onNavigationEvent() {
+  private setCompilationErrorAlert() {
+    this.alerts.push({
+      id: 'compilationErrors',
+      actionLabel: 'Go to schema explorer',
+      message: 'Compilation errors detected in schemas',
+      severity: 'Warning',
+      handler: () => {
+        this.router.navigate(['schema-explorer']);
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.typeService.getSchemaSummary()
+      .subscribe(summary => {
+        if (summary.invalidSourceCount > 0) {
+          this.setCompilationErrorAlert();
+        }
+      });
   }
 }
 

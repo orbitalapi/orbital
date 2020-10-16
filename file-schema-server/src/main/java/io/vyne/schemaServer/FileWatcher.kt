@@ -2,6 +2,7 @@ package io.vyne.schemaServer
 
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import java.nio.file.*
@@ -12,6 +13,11 @@ import javax.annotation.PreDestroy
 
 
 @Component
+@ConditionalOnProperty(
+   name = ["taxi.change-detection-method"],
+   havingValue = "watch",
+   matchIfMissing = true
+)
 class FileWatcherInitializer(val watcher: FileWatcher) {
 
    @PostConstruct
@@ -22,7 +28,12 @@ class FileWatcherInitializer(val watcher: FileWatcher) {
 }
 
 @Component
-class FileWatcher(@Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String?,
+@ConditionalOnProperty(
+   name = ["taxi.change-detection-method"],
+   havingValue = "watch",
+   matchIfMissing = true
+)
+class FileWatcher(@Value("\${taxi.schema-local-storage}") private val schemaLocalStorage: String,
                   @Value("\${taxi.schema-recompile-interval-seconds:3}") private val schemaRecompileIntervalSeconds: Long,
                   @Value("\${taxi.schema-increment-version-on-recompile:true}") private val incrementVersionOnRecompile: Boolean,
 
@@ -35,6 +46,7 @@ class FileWatcher(@Value("\${taxi.schema-local-storage}") private val schemaLoca
 
    @PostConstruct
    fun init() {
+      log().info("Creating FileWatcher")
       log().info("""taxi.schema-local-storage=${schemaLocalStorage}
 | taxi.schema-recompile-interval-seconds=${schemaRecompileIntervalSeconds}
 | taxi.schema-increment-version-on-recompile=${incrementVersionOnRecompile}""".trimMargin())
@@ -73,7 +85,7 @@ class FileWatcher(@Value("\${taxi.schema-local-storage}") private val schemaLoca
    }
 
    private fun registerKeys(watchService: WatchService) {
-      val path: Path = Paths.get(schemaLocalStorage!!)
+      val path: Path = Paths.get(schemaLocalStorage)
 
       path.toFile().walkTopDown()
          .onEnter {

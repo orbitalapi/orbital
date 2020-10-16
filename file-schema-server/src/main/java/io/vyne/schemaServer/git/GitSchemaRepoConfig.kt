@@ -1,4 +1,4 @@
-package io.vyne.schemaServer
+package io.vyne.schemaServer.git
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding

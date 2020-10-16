@@ -1,4 +1,4 @@
-package io.vyne.schemaServer
+package io.vyne.schemaServer.git
 
 import org.eclipse.jgit.api.CloneCommand
 import org.eclipse.jgit.api.Git
