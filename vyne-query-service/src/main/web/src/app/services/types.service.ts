@@ -21,6 +21,7 @@ import {
 } from './schema';
 import {TypeNamedInstance} from './query.service';
 import {VyneServicesModule} from './vyne-services.module';
+import {SchemaUpdatedNotification} from './schema-notification.service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -40,6 +41,10 @@ export class TypesService {
   getRawSchema = (): Observable<string> => {
     return this.http
       .get<string>(`${environment.queryServiceUrl}/api/schemas/raw`);
+  }
+
+  getSchemaSummary(): Observable<SchemaUpdatedNotification> {
+    return this.http.get<SchemaUpdatedNotification>(`${environment.queryServiceUrl}/api/schemas/summary`);
   }
 
   getVersionedSchemas(): Observable<VersionedSource[]> {
