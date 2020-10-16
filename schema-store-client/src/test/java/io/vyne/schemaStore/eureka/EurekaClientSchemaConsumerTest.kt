@@ -233,6 +233,102 @@ class EurekaClientSchemaConsumerTest {
       return Triple(eurekaEventListener!!, server, eurekaClientSchemaConsumer)
    }
 
+   @Test
+   fun `Should Handle Zombie registrations on Eureka`() {
+      // Test Scenario:
+      // Application A has registration info on Eureka, but it is actually down.
+      // EurekaClientSchemaConsumer detects the Application A but fails to fetch files (as it is down)
+      // Application A metadata removed from Eureka
+      // A new instance of Application A started on a different port.
+      // Given
+      val instanceInfo = instanceInfo("file-schema-server", mapOf("vyne.sources.product.taxi___0.0.1" to "47df0b", "vyne.sources.order.taxi___0.0.1" to "12321"))
+      val productVersionedSource = VersionedSource(name = "product.taxi", version = "0.0.1", content = """
+         namespace foo.bar {
+             model Product {
+                 id: String
+              }
+         }
+      """.trimIndent())
+      val orderVersionedSource = VersionedSource(name = "order.taxi", version = "0.0.1", content = """
+         namespace foo.bar {
+             model Order {
+                 orderId: String
+              }
+         }
+      """.trimIndent())
+      val (eurekaEventListener, server, eurekaClientSchemaConsumer) = initialise(listOf(instanceInfo),
+         listOf(Pair(instanceInfo, listOf())))
+
+      // When
+      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.should.be.empty
+
+      val application = Application(instanceInfo.appName, listOf(instanceInfo))
+      eurekaApplications.registeredApplications.forEach {
+         eurekaApplications.removeApplication(application)
+      }
+
+      // Application A metadata removed from Eureka
+      whenever(mockEurekaClient.applications).thenReturn(Applications())
+      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+
+      // A new instance of Application A started on a different port.
+      val updatedInstanceInfo = instanceInfo("file-schema-server", mapOf("vyne.sources.product.taxi___0.0.1" to "47df0b", "vyne.sources.order.taxi___0.0.1" to "12321"), 12345)
+      val updatedEurekaApp = Applications()
+      updatedEurekaApp.addApplication( Application(instanceInfo.appName, listOf(updatedInstanceInfo)))
+      whenever(mockEurekaClient.applications).thenReturn(updatedEurekaApp)
+      setTaxiSchemasRestResponse(server, listOf(Pair(updatedInstanceInfo, listOf(productVersionedSource, orderVersionedSource))))
+      // When
+      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(2)
+   }
+
+   @Test
+   fun `Should Handle Zombie registrations II on Eureka`() {
+      // Test Scenario:
+      // Application A has registration info on Eureka, but it is actually down.
+      // EurekaClientSchemaConsumer detects the Application A but fails to fetch files (as it is down)
+      // Application A metadata removed from Eureka and a new instance of Application A started on a different port.
+      // Given
+      val instanceInfo = instanceInfo("file-schema-server", mapOf("vyne.sources.product.taxi___0.0.1" to "47df0b", "vyne.sources.order.taxi___0.0.1" to "12321"))
+      val productVersionedSource = VersionedSource(name = "product.taxi", version = "0.0.1", content = """
+         namespace foo.bar {
+             model Product {
+                 id: String
+              }
+         }
+      """.trimIndent())
+      val orderVersionedSource = VersionedSource(name = "order.taxi", version = "0.0.1", content = """
+         namespace foo.bar {
+             model Order {
+                 orderId: String
+              }
+         }
+      """.trimIndent())
+      val (eurekaEventListener, server, eurekaClientSchemaConsumer) = initialise(listOf(instanceInfo),
+         listOf(Pair(instanceInfo, listOf())))
+
+      // When
+      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.should.be.empty
+
+      val application = Application(instanceInfo.appName, listOf(instanceInfo))
+      eurekaApplications.registeredApplications.forEach {
+         eurekaApplications.removeApplication(application)
+      }
+
+      //  Application A metadata removed from Eureka & A new instance of Application A started on a different port.
+      val updatedInstanceInfo = instanceInfo("file-schema-server", mapOf("vyne.sources.product.taxi___0.0.1" to "47df0b", "vyne.sources.order.taxi___0.0.1" to "12321"), 12345)
+      val updatedEurekaApp = Applications()
+      updatedEurekaApp.addApplication( Application(instanceInfo.appName, listOf(updatedInstanceInfo)))
+      whenever(mockEurekaClient.applications).thenReturn(updatedEurekaApp)
+      setTaxiSchemasRestResponse(server, listOf(Pair(updatedInstanceInfo, listOf(productVersionedSource, orderVersionedSource))))
+      // When
+      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
+      eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(2)
+   }
 
    private fun setTaxiSchemasRestResponse(server: MockRestServiceServer, responses: List<Pair<InstanceInfo, List<VersionedSource>>>) {
       server.reset()

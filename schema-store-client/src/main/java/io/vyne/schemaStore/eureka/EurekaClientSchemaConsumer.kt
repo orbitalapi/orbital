@@ -24,10 +24,10 @@ import javax.inject.Provider
 
 internal data class SourcePublisherRegistration(
    val applicationName: String,
-   val sourceUrl: String,
+   val sourceUrls: List<String>,
    val availableSources: List<VersionedSourceReference>
 ) {
-   val nameAndUrl = "$applicationName@$sourceUrl"
+   val nameAndUrl = "$applicationName@[${sourceUrls.joinToString(",")}]"
    val sourceHash by lazy {
       val hasher = Hashing.sha256().newHasher()
       availableSources.forEach { hasher.putString(it.sourceIdContentHash, Charset.defaultCharset()) }
@@ -103,7 +103,7 @@ class EurekaClientSchemaConsumer(
             if (delta.hasChanges) {
                log().info("Found changes to schema, proceeding to update.")
                val logMsg = currentSourceSet.map {
-                  "${it.applicationName} exposes ${it.availableSources.size} sources (@${it.sourceHash}) at ${it.sourceUrl}"
+                  "${it.applicationName} exposes ${it.availableSources.size} sources (@${it.sourceHash}) at ${it.sourceUrls}"
                }
                log().info("Sources Summary: $logMsg")
                updateSources(currentSourceSet, delta)
@@ -132,7 +132,7 @@ class EurekaClientSchemaConsumer(
    private fun updateSources(currentSourceSet: List<SourcePublisherRegistration>, delta: SourceDelta) {
       detectDuplicateMismatchedSource(currentSourceSet)
 
-      fun sourcesDescription(sources: List<SourcePublisherRegistration>): String = sources.joinToString("\n") { " - ${it.applicationName} @${it.sourceHash} at ${it.sourceUrl} with ${it.availableSources.size} sources" }
+      fun sourcesDescription(sources: List<SourcePublisherRegistration>): String = sources.joinToString("\n") { " - ${it.applicationName} @${it.sourceHash} at ${it.sourceUrls} with ${it.availableSources.size} sources" }
       fun logChanges(verb: String, changed: List<SourcePublisherRegistration>) {
          if (changed.isNotEmpty()) {
             log().info("Found $verb sources: \n${sourcesDescription(changed)}")
@@ -156,7 +156,7 @@ class EurekaClientSchemaConsumer(
       val applicationsWithDuplicateSchemas = currentSourceSet.groupBy { it.applicationName }
          .filter { (name, sourceRegistrations) -> sourceRegistrations.size > 1 }
 
-      applicationsWithDuplicateSchemas.forEach { (name,registrations) ->
+      applicationsWithDuplicateSchemas.forEach { (name, registrations) ->
          val hashes = registrations.map { it.sourceHash }
          if (hashes.distinct().size == 1) {
             log().info("Application $name has ${registrations.size} sources registered - (${registrations.joinToString { it.nameAndUrl }}) However, all have the same hash, so this is fine")
@@ -213,23 +213,37 @@ class EurekaClientSchemaConsumer(
    }
 
    private fun loadSources(registration: SourcePublisherRegistration): List<VersionedSource> {
-      return try {
-         val result = restTemplate.exchange<List<VersionedSource>>(registration.sourceUrl, HttpMethod.GET, null)
-         if (result.statusCode.is2xxSuccessful) {
-            if (unhealthySources.remove(registration)) {
-               log().info("Source registration ${registration.nameAndUrl} has been successfully loaded after previously being marked unhealthy.  Now healthy again")
-            }
-            result.body!!
-         } else {
-            log().error("Failed to load taxi sources from ${registration.nameAndUrl} - received HTTP Response ${result.statusCode}.  Will ignore this and continue, and try again later")
+      fun handleFailure(message: String, index: Int, exception: Exception? = null) {
+         log().warn(message)
+         if (index + 1 >= registration.sourceUrls.size) {
+            log().warn("All source urls for application ${registration.applicationName} have failed to load.  Marking this as unhealthy.  Will continue trying", exception)
             unhealthySources.add(registration)
-            emptyList()
          }
-      } catch (exception: Exception) {
-         log().error("Failed to load taxi sources from ${registration.nameAndUrl} - exception thrown.   Will ignore this and continue, and try again later", exception)
-         unhealthySources.add(registration)
-         emptyList()
       }
+      return registration.sourceUrls
+         .asSequence()
+         .mapIndexedNotNull { index, sourceUrl ->
+            try {
+               log().info("Attmepting to load registration ${registration.applicationName} from $sourceUrl.")
+               val result = restTemplate.exchange<List<VersionedSource>>(sourceUrl, HttpMethod.GET, null)
+               if (result.statusCode.is2xxSuccessful) {
+                  if (unhealthySources.remove(registration)) {
+                     log().info("Source registration ${registration.applicationName} has been successfully loaded from $sourceUrl after previously being marked unhealthy.  Now healthy again")
+                  } else {
+                     log().info("Successfully loaded source registration ${registration.applicationName} from $sourceUrl")
+                  }
+                  result.body!!
+               } else {
+                  handleFailure("Failed to load taxi sources for ${registration.applicationName} at $sourceUrl (${index + 1} of ${registration.sourceUrls.size} urls). Received HTTP Response ${result.statusCode}.  Will ignore this and continue, and try again later", index)
+                  null
+               }
+            } catch (exception: Exception) {
+               handleFailure("Failed to load taxi sources for ${registration.applicationName} at $sourceUrl (${index + 1} of ${registration.sourceUrls.size} urls). - exception thrown.   Will ignore this and continue, and try again later", index, exception)
+               unhealthySources.add(registration)
+               null
+            }
+         }.firstOrNull() ?: emptyList()
+
 
    }
 
@@ -239,14 +253,14 @@ class EurekaClientSchemaConsumer(
       }
 
 
-
       val removedSources = previousKnownSources.filter { previousKnownSource ->
          currentSourceSet.none { currentSourceRegistration -> previousKnownSource.applicationName == currentSourceRegistration.applicationName }
       }
 
       val changedSources = (currentSourceSet.filter { currentSource ->
          previousKnownSources.any { previousSource ->
-            val isChanged = currentSource.applicationName == previousSource.applicationName && currentSource.availableSources.hashCode() != previousSource.availableSources.hashCode()
+            val isChanged = currentSource.applicationName == previousSource.applicationName
+               && ( (currentSource.availableSources.hashCode() != previousSource.availableSources.hashCode()) || (currentSource.nameAndUrl != previousSource.nameAndUrl))
             isChanged
          }
       } + unhealthySources).distinct()
@@ -262,10 +276,10 @@ class EurekaClientSchemaConsumer(
 
    private fun rebuildSources(): List<SourcePublisherRegistration> {
 //         log().info("Registered Eureka Application ${client.applications.registeredApplications.map { it.name }}")
-         return client.applications.registeredApplications
-            // Require that at least one instance is up
-            .filter { application -> application.instances.any { it.status == InstanceInfo.InstanceStatus.UP } }
-            .mapNotNull { application ->
+      return client.applications.registeredApplications
+         // Require that at least one instance is up
+         .filter { application -> application.instances.any { it.status == InstanceInfo.InstanceStatus.UP } }
+         .mapNotNull { application ->
             val publishedSources = application.instances
                .filter { it.metadata.containsKey(EurekaMetadata.VYNE_SCHEMA_URL) }
                .map { instance ->
@@ -281,7 +295,7 @@ class EurekaClientSchemaConsumer(
                   log().trace("detected ${sourceReferences.size} sources from ${instance.appName}")
                   instance to SourcePublisherRegistration(
                      application.name,
-                     concatUrlParts(instance.hostName, instance.port, instance.metadata[EurekaMetadata.VYNE_SCHEMA_URL]!!),
+                     listOf(concatUrlParts(instance.hostName, instance.port, instance.metadata[EurekaMetadata.VYNE_SCHEMA_URL]!!)),
                      sourceReferences
                   )
                }
@@ -300,18 +314,14 @@ class EurekaClientSchemaConsumer(
 
    private fun verifyAllInstancesContainTheSameMappings(application: Application, publishedSources: List<Pair<InstanceInfo, SourcePublisherRegistration>>): SourcePublisherRegistration {
       val sourceRegistrationsBySourceHashes = publishedSources.associateBy { it.second.availableSources.hashCode() }
-      return if (sourceRegistrationsBySourceHashes.size == 1) {
-         publishedSources.first().second
-      } else {
-         log().warn("Application ${application.name} has multiple instances that publish different schemas.")
-         // TODO : Be more selective abut which we use.
-         // We should favor the last registered version if it's known,
-         // otherwise, select ... maybe ... highest version?
-         // By selecting the first() we're not being picky (or deterministic) at all --
-         // it's effectively up to however Eurkea returned these to us.
-         publishedSources.first().second
+      if (sourceRegistrationsBySourceHashes.size > 1) {
+         log().warn("Application ${application.name} has multiple instances that publish different schemas. Will use the first")
       }
-      TODO("Not yet implemented")
+
+      // Let's gather up the urls so that if one instance goes down, we can try the others
+      val allUrls = publishedSources.flatMap { it.second.sourceUrls }
+      val combinedRegistration = publishedSources.first().second.copy(sourceUrls = allUrls)
+      return combinedRegistration
    }
 
    override fun schemaSet(): SchemaSet {
