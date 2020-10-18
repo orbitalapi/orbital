@@ -10,12 +10,15 @@ import {
   TypeNamedInstance
 } from '../services/query.service';
 import {CellClickedEvent, GridReadyEvent, ValueGetterParams} from 'ag-grid-community';
+import {AgGridColumn} from 'ag-grid-angular';
+import {TypeInfoHeaderComponent} from './type-info-header.component';
 
 @Component({
   selector: 'app-results-table',
   template: `
     <ag-grid-angular
       class="ag-theme-alpine"
+      headerHeight="65"
       [rowData]="rowData"
       [columnDefs]="columnDefs"
       (gridReady)="onGridReady($event)"
@@ -83,6 +86,11 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
         headerName: fieldName,
         field: fieldName,
         flex: (lastColumn) ? 1 : null,
+        headerComponentFramework: TypeInfoHeaderComponent,
+        headerComponentParams: {
+          fieldName: fieldName,
+          typeName: this.type.attributes[fieldName].type
+        },
         valueGetter: (params: ValueGetterParams) => {
           return this.unwrap(params.data, fieldName);
         }
@@ -92,20 +100,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     const collection = (this.isArray) ? this.instance as InstanceLike[] : [this.instance];
     if (collection.length === 0) {
       this.rowData = [];
-      // } else if (isTypedInstance(collection[0])) {
-      // TODO  :Why was this here?  It's mutating the input. Fucking unforgivable.
-      // collection.forEach((instance: TypedInstance) => {
-      //   Object.keys(instance).forEach((key) => {
-      //     if (!instance[key].value) {
-      //       instance[key] = {
-      //         source: instance[key].source,
-      //         value: '',
-      //         typeName: instance[key].typeName
-      //       };
-      //     }
-      //   });
-      // });
-      // this.rowData = collection.map((instance: TypedInstance) => instance.value);
     } else {
       this.rowData = collection;
     }
