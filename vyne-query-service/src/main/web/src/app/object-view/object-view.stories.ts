@@ -5,6 +5,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {findType, Schema, TypeCollection, TypedInstance} from '../services/schema';
 import {TypeNamedInstance} from '../services/query.service';
 import {testSchema} from './test-schema';
+import {ObjectViewModule} from './object-view.module';
 
 const schema = testSchema;
 const typeNamedInstance: TypeNamedInstance = {
@@ -41,7 +42,7 @@ const typeWithLineage: TypeNamedInstance = {
   }
 };
 
-const typedInstance: TypedInstance = {
+const typedInstance: TypedInstance = Object.freeze({
   type: findType(schema as TypeCollection, 'demo.Customer'),
   value: {
     id: 1,
@@ -54,28 +55,41 @@ const typedInstance: TypedInstance = {
       currencyUnit: 'GBP'
     }
   }
-};
+});
 
 storiesOf('Object Viewer', module)
   .addDecorator(
     moduleMetadata({
-      declarations: [ObjectViewComponent],
-      imports: [CommonModule, BrowserModule]
+      declarations: [],
+      imports: [CommonModule, BrowserModule, ObjectViewModule]
     })
-  ).add('default', () => {
-  return {
-    template: `<div style="padding: 40px">
+  )
+  .add('container view', () => {
+    return {
+      template: `<div style="padding: 40px">
+    <app-object-view-container [schema]="schema" [instance]="typedInstance" style="display: block; height: 300px"></app-object-view-container>
+    </div>`,
+      props: {
+        schema,
+        typeNamedInstance,
+        typedInstance
+      }
+    };
+  })
+  .add('default', () => {
+    return {
+      template: `<div style="padding: 40px">
     <app-object-view [schema]="schema" [instance]="typedInstance"></app-object-view>
     <hr>
     <app-object-view [schema]="schema" [instance]="typeNamedInstance"></app-object-view>
     </div>`,
-    props: {
-      schema,
-      typeNamedInstance,
-      typedInstance
-    }
-  };
-})
+      props: {
+        schema,
+        typeNamedInstance,
+        typedInstance
+      }
+    };
+  })
   .add('collections', () => {
     return {
       template: `<div style="padding: 40px">

@@ -123,6 +123,7 @@ const type = {
   'isParameterType': false,
   'isClosed': false,
   'isPrimitive': false,
+  'basePrimitiveTypeName' : null,
   'fullyQualifiedName': 'demo.Customer',
   'memberQualifiedName': {
     'fullyQualifiedName': 'demo.Customer',

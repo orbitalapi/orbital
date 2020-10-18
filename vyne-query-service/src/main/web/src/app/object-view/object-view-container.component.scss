@@ -1,0 +1,41 @@
+@import "src/theme";
+@import "object-view.common";
+
+img.icon {
+  width: 24px;
+}
+:host {
+  height: 100%;
+}
+.container {
+  height: 100%;
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+}
+// Override the width & height of the toggle button from 48x48 to
+// 36x36 - just to keep inline with the buttons and minimize too much whitespace
+::ng-deep .mat-button-toggle-appearance-standard .mat-button-toggle-label-content {
+  padding: 0 6px !important;
+  line-height: 36px !important;
+}
+
+.display-wrapper {
+  flex-grow: 1;
+}
+
+app-results-table {
+  display: block;
+  height: 100%;
+}
+
+.toolbar {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  .type-name {
+    font-size: 1rem;
+    margin-right: 2rem;
+  }
+}
+
