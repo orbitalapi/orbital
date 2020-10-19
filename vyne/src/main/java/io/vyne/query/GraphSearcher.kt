@@ -52,7 +52,7 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
 
 
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
-         val facts = knownFacts.filterNot { excludedInstance.contains(it) }
+         val facts = if (excludedInstance.isEmpty()) { knownFacts } else { knownFacts.filterNot { excludedInstance.contains(it) } }
          // Note: I think we can migrate to using exclusively excludedEdges (Not using excludedOperations
          // and excludedInstances)..as it should be a more powerful abstraction
          val proposedPath = findPath(facts, excludedOperations, excludedEdges, excludedServices)
@@ -182,17 +182,21 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
 //      return findPath(graph)
 //   }
 
-   private fun findPath(facts: List<TypedInstance>, excludedOperations: Set<QualifiedName>, excludedEdges: List<EvaluatableEdge>, excludedServices: Set<QualifiedName>): WeightedNode<Relationship, Element, Double>? {
-      val graph = logTimeTo(graphBuilderTimes) {
-         graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
-      }
+   private fun findPath(facts: Collection<TypedInstance>, excludedOperations: Set<QualifiedName>, excludedEdges: List<EvaluatableEdge>, excludedServices: Set<QualifiedName>): WeightedNode<Relationship, Element, Double>? {
+      // logTimeTo eats up significant time, so commented out.
+      //val graph = logTimeTo(graphBuilderTimes) {
+      //
+      //   graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
+      // }
+      val graph = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
       return findPath(graph)
    }
 
    private fun findPath(graph: HipsterDirectedGraph<Element, Relationship>): WeightedNode<Relationship, Element, Double>? {
       val problem = GraphSearchProblem
          .startingFrom(startFact).`in`(graph)
-         .takeCostsFromEdges()
+         .extractCostFromEdges { 1.0 }
+         //.takeCostsFromEdges()
          .build()
       val executionPath = logTimeTo(graphSearchTimes) {
          Hipster.createAStar(problem).search(targetFact).goalNode

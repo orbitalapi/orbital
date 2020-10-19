@@ -106,7 +106,7 @@ typealias TypeElement = Element
 typealias MemberElement = Element
 
 private data class GraphWithFactTypesCacheKey(val facts: Set<Type>, val graphBuilder: HipsterGraphBuilder<Element, Relationship>)
-private data class GraphWithFactInstancesCacheKey(val facts: List<TypedInstance>, val excludedEdges: List<EvaluatableEdge>, val graphBuilder: HipsterGraphBuilder<Element, Relationship>)
+private data class GraphWithFactInstancesCacheKey(val facts: Collection<TypedInstance>, val excludedEdges: List<EvaluatableEdge>, val graphBuilder: HipsterGraphBuilder<Element, Relationship>)
 class VyneGraphBuilder(private val schema: Schema) {
 
 
@@ -124,7 +124,7 @@ class VyneGraphBuilder(private val schema: Schema) {
       .maximumSize(100)
       .build<GraphWithFactInstancesCacheKey, HipsterDirectedGraph<Element, Relationship>>()
 
-   fun build(facts:List<TypedInstance>,
+   fun build(facts:Collection<TypedInstance>,
              excludedOperations: Set<QualifiedName> = emptySet(),
              excludedEdges:List<EvaluatableEdge>,
              excludedServices: Set<QualifiedName>): HipsterDirectedGraph<Element, Relationship> {
@@ -177,7 +177,7 @@ class VyneGraphBuilder(private val schema: Schema) {
       }
    }
 
-   private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, instances: List<TypedInstance>, schema: Schema, excludedEdges: List<EvaluatableEdge>) {
+   private fun appendInstances(builder: HipsterGraphBuilder<Element, Relationship>, instances: Collection<TypedInstance>, schema: Schema, excludedEdges: List<EvaluatableEdge>) {
       instances.forEach { typedInstance ->
          appendProvidedInstances(builder, typedInstance.typeName, schema, value = typedInstance)
       }
