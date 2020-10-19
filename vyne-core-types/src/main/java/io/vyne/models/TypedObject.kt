@@ -1,10 +1,6 @@
 package io.vyne.models
 
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
-import io.vyne.schemas.toVyneQualifiedName
+import io.vyne.schemas.*
 import lang.taxi.Equality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
@@ -23,6 +19,7 @@ data class TypedObject(
       get() = combinedValues
 
    private val equality = Equality(this, TypedObject::type, TypedObject::value)
+   private val hash:Int by lazy { equality.hash() }
    companion object {
       fun fromValue(typeName: String, value: Any, schema: Schema, source:DataSource): TypedInstance {
          return fromValue(schema.type(typeName), value, schema, source = source)
@@ -48,7 +45,7 @@ data class TypedObject(
    }
 
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-   override fun hashCode(): Int = equality.hash()
+   override fun hashCode(): Int = hash
 
    fun hasAttribute(name: String): Boolean {
       return this.combinedValues.containsKey(name)
@@ -87,7 +84,7 @@ data class TypedObject(
    fun getAttributeIdentifiedByType(type: Type, returnNull: Boolean = false): TypedInstance {
       val candidates = this.value.filter { (_, value) -> value.type.isAssignableTo(type) }
       return when {
-         candidates.isEmpty() && returnNull -> TypedNull(type) // sometimes i want to allow null values
+         candidates.isEmpty() && returnNull -> TypedNull.create(type) // sometimes i want to allow null values
          candidates.isEmpty() -> error("No properties on type ${this.type.name.parameterizedName} have type ${type.name.parameterizedName}")
          candidates.size > 1 -> TypedInstanceCandidateFilter.resolve(candidates.values, type)
          else -> candidates.values.first()

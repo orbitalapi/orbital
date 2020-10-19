@@ -76,10 +76,10 @@
           </mat-menu>
         </div>
         <div class="object-view-wrapper">
-          <app-object-view *ngIf="parsedInstance" [schema]="schema"
+          <app-object-view-container *ngIf="parsedInstance" [schema]="schema"
                            [selectable]="true"
                            (instanceClicked)="onInstanceClicked($event)"
-                           [instance]="typeNamedInstance"></app-object-view>
+                           [instance]="typeNamedInstance"></app-object-view-container>
         </div>
       </mat-tab>
     </mat-tab-group>

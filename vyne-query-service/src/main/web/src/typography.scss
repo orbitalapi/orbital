@@ -16,6 +16,7 @@ $font-sans-alt: Hind,system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,
   // Adding important here, as font sizes are getting
   // overridden by search in the toolbar.
   font-size: 0.85rem !important;
+  font-weight: 300;
   color: $vyne-lilac;
   border: 1px solid rgba($vyne-lilac,0.6);
   background-color: rgba($vyne-lilac, 0.1);

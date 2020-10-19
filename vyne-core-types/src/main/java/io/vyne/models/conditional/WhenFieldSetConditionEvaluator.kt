@@ -3,7 +3,6 @@ package io.vyne.models.conditional
 import io.vyne.models.*
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Type
-import io.vyne.schemas.asVyneTypeReference
 import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
 import lang.taxi.types.*
@@ -41,7 +40,7 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
             TypedInstance.from(enumType, assignment.enumValue.value, factory.schema, source = DefinedInSchema)
          }
          is NullAssignment -> {
-            TypedNull(type, source = DefinedInSchema)
+            TypedNull.create(type, source = DefinedInSchema)
          }
          else -> {
             log().warn("Unexpected assignment $assignment")

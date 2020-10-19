@@ -335,6 +335,7 @@ export const testSchema = {
     'typeDoc': 'Represents a value which is either `true` or `false`.',
     'isTypeAlias': false,
     'format': null,
+    'basePrimitiveTypeName' : 'lang.taxi.Boolean',
     'hasFormat': false,
     'isParameterType': false,
     'isClosed': false,

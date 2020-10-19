@@ -99,8 +99,8 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
          field.defaultValue != null -> TypedValue.from(schema.type(field.type), field.defaultValue, ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)
 
          else -> {
-            log().error("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
-            TypedNull(schema.type(field.type))
+           // log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
+            TypedNull.create(schema.type(field.type))
          }
       }
 
@@ -109,7 +109,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
    private fun readWithValueReader(attributeName: AttributeName, field: Field): TypedInstance {
       val attributeValue = valueReader.read(value, attributeName)
       return if (attributeValue == null) {
-         TypedNull(schema.type(field.type), source)
+         TypedNull.create(schema.type(field.type), source)
       } else {
          TypedInstance.from(schema.type(field.type.parameterizedName), attributeValue, schema, true, source = source)
       }

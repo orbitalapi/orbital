@@ -1,7 +1,6 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.vyne.models.json.JsonModelParser
 import io.vyne.models.json.isJson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -41,12 +40,12 @@ interface TypedInstance {
          val (typeName, value) = typeNamedInstance
          val type = schema.type(typeName)
          return when {
-            value == null -> TypedNull(type)
+            value == null -> TypedNull.create(type)
             value is Collection<*> -> {
                val collectionMemberType = getCollectionType(type)
                val members = value.map { member ->
                   if (member == null) {
-                     TypedNull(collectionMemberType)
+                     TypedNull.create(collectionMemberType)
                   } else {
                      fromNamedType(member as TypeNamedInstance, schema, performTypeConversions, source)
                   }
@@ -79,7 +78,7 @@ interface TypedInstance {
       fun from(type: Type, value: Any?, schema: Schema, performTypeConversions: Boolean = true, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
          return when {
             value is TypedInstance -> value
-            value == null -> TypedNull(type)
+            value == null -> TypedNull.create(type)
             value is Collection<*> -> {
                val collectionMemberType = getCollectionType(type)
                TypedCollection.arrayOf(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema, performTypeConversions, source = source) })

@@ -2,8 +2,10 @@
 @import "call-explorer.component";
 
 .operation-view {
-  background-color: $blue-grey-1;
+  //background-color: $blue-grey-1;
   position: relative;
+  max-height: 400px;
+  overflow: scroll;
 }
 
 .close-container {

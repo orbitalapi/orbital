@@ -10,6 +10,10 @@ $toolbar-height: 5rem;
   height: 100%;
 }
 
+.full-width-page-content {
+  background-color: $body-bg;
+  height: 100%;
+}
 .mat-toolbar {
   position: sticky;
   top: 0;
@@ -49,3 +53,12 @@ $light-grey-1: mat-color($vyne-grey-blue-palette, 50);
 $light-grey-2: mat-color($vyne-grey-blue-palette, 100);
 $light-grey-3: mat-color($vyne-grey-blue-palette, 200);
 
+$border-dark: $light-grey-2;
+$borer-light: $light-purple-grey-300;
+$border-highlight: rgba($vyne-lilac,0.6);
+
+//background-color: rgba($vyne-lilac, 0.1);
+
+//  color: $vyne-lilac;
+//  border: 1px solid rgba($vyne-lilac,0.6);
+//  background-color: rgba($vyne-lilac, 0.1);

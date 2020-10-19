@@ -4,7 +4,7 @@ import {Field, findType, getCollectionMemberType, Schema, Type} from '../service
 import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../services/query.service';
 
 
-export class BaseTypedInstanceViewer implements OnInit, OnDestroy{
+export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
   private componentId = Math.random().toString(36).substring(7);
   protected _instance: InstanceLikeOrCollection;
 
@@ -51,8 +51,15 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy{
     if (this._type) {
       return this._type;
     }
-    this._derivedType = this.selectType(this._instance);
-    return this._derivedType;
+    if (this._derivedType) {
+      return this._derivedType;
+    }
+    if (!this._instance) {
+      return null;
+    } else {
+      this._derivedType = this.selectType(this._instance);
+      return this._derivedType;
+    }
   }
 
   private selectType(instance: InstanceLikeOrCollection): Type {
