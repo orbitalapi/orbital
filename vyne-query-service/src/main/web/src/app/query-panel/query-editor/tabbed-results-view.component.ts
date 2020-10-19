@@ -11,6 +11,10 @@ import {DownloadClickedEvent} from '../../object-view/object-view-container.comp
       <mat-tab label="Query results">
         <ng-template matTabContent>
           <div class="results-container">
+            <div class="empty-results" *ngIf="queryResultTypeNames.length === 0">
+              <img src="assets/img/no-results.svg">
+              <p>There's nothing to display here.</p>
+            </div>
             <div *ngFor="let resultTypeName of queryResultTypeNames">
               <app-object-view-container [instance]="getResultForTypeName(resultTypeName)"
                                          [schema]="schema"
