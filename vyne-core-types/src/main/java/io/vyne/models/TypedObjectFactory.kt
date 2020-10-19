@@ -99,7 +99,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
          field.defaultValue != null -> TypedValue.from(schema.type(field.type), field.defaultValue, ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)
 
          else -> {
-            log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
+           // log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
             TypedNull.create(schema.type(field.type))
          }
       }

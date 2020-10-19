@@ -10,6 +10,8 @@ import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
 import es.usc.citius.hipster.model.problem.ProblemBuilder
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.query.graph.*
 import io.vyne.schemas.Link
 import io.vyne.schemas.Path
@@ -124,6 +126,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       val excludedServices = context.facts
       return currentFacts
          .asSequence()
+     //    .filter { it is TypedObject }
          .mapNotNull { fact ->
             val startFact =  providedInstance(fact)
 
@@ -185,7 +188,8 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       val result = graphSearchResultCache.get(SearchCacheKey(from, to)) {
          val problem = GraphSearchProblem
             .startingFrom(from).`in`(graph)
-            .takeCostsFromEdges()
+            .extractCostFromEdges { 1.0 }
+           // .takeCostsFromEdges()
             .build()
          Hipster.createAStar(problem).search(to).goalNode
       }
