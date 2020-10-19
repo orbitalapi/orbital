@@ -4,26 +4,55 @@
   width: 100%;
   flex: 1;
 
-  &:not(:last-child) {
-    padding-right: 45px;
+  // Why was this here?  Next time I read this message, remove it
+  //&:not(:last-child) {
+  //  padding-right: 45px;
+  //}
+}
+
+.mat-tab-header {
+  border-bottom: 0px;
+}
+
+$warning: #DD8902;
+.unmatched-nodes-alert {
+  display: flex;
+  background-color: rgba($warning, 0.15);
+  border: 2px solid rgba($warning, 0.8);
+  margin: 1rem;
+  border-radius: 4px;
+  color: darken($warning, 20%);
+  padding: 1rem;
+  align-items: center;
+  font-size: 0.9rem;
+
+  ul {
+    margin: 0.5rem 0;
+  }
+
+  img {
+    width: 48px;
+    margin-right: 1.5rem;
   }
 
 }
 
 .code-viewer-container {
+  padding-top: 0.5rem;
+  // Note - this is the background color of the monaco code editor.
+  // Found it by using the eye dropper tool, can't see where it's configured.
+  background-color: #1e1e1e;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 200px;
 
-    margin-top: 0.5rem;
+  .code-editor {
+
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    height: 200px;
+    height: 100%;
 
-    .code-editor {
-
-      width: 100%;
-      height: 100%;
-
-    }
+  }
 }
 
 .results-container {
@@ -33,13 +62,8 @@
 
 }
 
-.buttons-container {
-  width: 100%;
-  margin: 5px;
 
-}
-
-.query-submit-button{
+.query-submit-button {
   margin: 1rem 0;
 }
 
@@ -50,4 +74,11 @@
   margin-bottom: 3px;
 }
 
+app-query-editor-bottom-bar {
+  display: block;
+  width: 100%;
+  // Overflow hidden because the ngx-monaco editor is causing width sizing
+  // issues, which can incorrectly trigger horizontal scrollbars appearing
+  overflow-x: hidden;
+}
 

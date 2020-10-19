@@ -2,12 +2,30 @@ import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Field, Schema, Type, TypedInstance} from '../services/schema';
 import {InstanceLike, InstanceLikeOrCollection} from '../object-view/object-view.component';
 import {BaseTypedInstanceViewer} from '../object-view/BaseTypedInstanceViewer';
-import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../services/query.service';
-import {CellClickedEvent, ValueGetterParams} from 'ag-grid-community';
+import {
+  isTypedInstance,
+  isTypedNull,
+  isTypeNamedInstance,
+  isTypeNamedNull,
+  TypeNamedInstance
+} from '../services/query.service';
+import {CellClickedEvent, GridReadyEvent, ValueGetterParams} from 'ag-grid-community';
+import {AgGridColumn} from 'ag-grid-angular';
+import {TypeInfoHeaderComponent} from './type-info-header.component';
 
 @Component({
   selector: 'app-results-table',
-  templateUrl: './results-table.component.html',
+  template: `
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      headerHeight="65"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      (gridReady)="onGridReady($event)"
+      (cellClicked)="onCellClicked($event)"
+    >
+    </ag-grid-angular>
+  `,
   styleUrls: ['./results-table.component.scss']
 })
 export class ResultsTableComponent extends BaseTypedInstanceViewer {
@@ -61,12 +79,20 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     }
 
     const attributeNames = this.getAttributes(this.type);
-    this.columnDefs = attributeNames.map(fieldName => {
+    this.columnDefs = attributeNames.map((fieldName, index) => {
+      const lastColumn = index === attributeNames.length - 1;
+
       return {
         headerName: fieldName,
         field: fieldName,
+        flex: (lastColumn) ? 1 : null,
+        headerComponentFramework: TypeInfoHeaderComponent,
+        headerComponentParams: {
+          fieldName: fieldName,
+          typeName: this.type.attributes[fieldName].type
+        },
         valueGetter: (params: ValueGetterParams) => {
-          return this.unwrap(params.data[fieldName]);
+          return this.unwrap(params.data, fieldName);
         }
       };
     });
@@ -75,35 +101,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     if (collection.length === 0) {
       this.rowData = [];
     } else {
-      if (isTypeNamedInstance(collection[0])) {
-        collection.forEach((instance: TypeNamedInstance) => {
-          Object.keys(instance.value).forEach((key) => {
-            if (!instance.value[key].value) {
-              instance.value[key] = {
-                source: instance.value[key].source,
-                value: '',
-                typeName: instance.value[key].typeName
-              };
-            }
-          });
-        });
-        this.rowData = collection.map((instance: TypeNamedInstance) => instance.value);
-      } else if (isTypedInstance(collection[0])) {
-        collection.forEach((instance: TypedInstance) => {
-          Object.keys(instance).forEach((key) => {
-            if (!instance[key].value) {
-              instance[key] = {
-                source: instance[key].source,
-                value: '',
-                typeName: instance[key].typeName
-              };
-            }
-          });
-        });
-        this.rowData = collection.map((instance: TypedInstance) => instance.value);
-      } else {
-        this.rowData = collection;
-      }
+      this.rowData = collection;
     }
   }
 
@@ -115,24 +113,36 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     return Object.keys(itemType.attributes);
   }
 
-  private unwrap(instance: any): any {
-    if (isTypedInstance(instance)) {
-      return instance.value;
-    } else if (isTypeNamedInstance(instance)) {
-      return instance.value;
+  private unwrap(instance: any, fieldName: string | null): any {
+    if (isTypedInstance(instance) || isTypeNamedInstance(instance)) {
+      const object = instance.value;
+      if (fieldName === null) {
+        return object;
+      } else {
+        return this.unwrap(object[fieldName], null);
+      }
+    } else if (isTypedNull(instance) || isTypeNamedNull(instance)) {
+      return null;
     } else {
       return instance;
     }
   }
 
   onCellClicked($event: CellClickedEvent) {
-    const instance = $event.data[$event.colDef.field];
-    if (isTypeNamedInstance(instance)) {
-      this.instanceClicked.emit(instance);
-    } else if (isTypedInstance(instance)) {
-      this.instanceClicked.emit(instance);
+    const rowInstance: InstanceLike = $event.data;
+    if (isTypeNamedInstance(rowInstance) || isTypeNamedInstance(rowInstance)) {
+      const cellInstance = rowInstance.value[$event.colDef.field];
+      this.instanceClicked.emit(cellInstance);
+    } else if (isTypeNamedNull(rowInstance) || isTypedNull(rowInstance)) {
+      // TODO  :Suspect we may have to handle typed-nulls differently
+      const cellInstance = rowInstance.value[$event.colDef.field];
+      this.instanceClicked.emit(cellInstance);
     } else {
       console.log('Item clicked didn\'t have type data, so not emitting event');
     }
+  }
+
+  onGridReady(event: GridReadyEvent) {
+    event.api.setGridAutoHeight(true);
   }
 }

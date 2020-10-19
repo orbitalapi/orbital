@@ -33,7 +33,6 @@ class CaskServiceBootstrap constructor(
    @Volatile
    private var lastServiceGenerationSuccessful: Boolean = false
 
-   // TODO Update cask service when type changes (e.g. new attributes added)
    @EventListener
    fun regenerateCasksOnSchemaChange(event: SchemaSetChangedEvent) {
       log().info("Schema changed, checking for upgrade work required")
