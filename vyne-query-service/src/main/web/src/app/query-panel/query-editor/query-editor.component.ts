@@ -17,7 +17,7 @@ import {DownloadFileType, InstanceSelectedEvent} from '../result-display/result-
 import {QueryState} from './bottom-bar.component';
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
-import {isQueryFailure} from '../result-display/BaseQueryResultComponent';
+import {isQueryFailure, isQueryResult} from '../result-display/BaseQueryResultComponent';
 import {ExportFileService} from '../../services/export.file.service';
 import * as fileSaver from 'file-saver';
 
@@ -38,6 +38,14 @@ export class QueryEditorComponent implements OnInit {
   monacoModel: ITextModel;
   query: string;
   lastQueryResult: QueryResult | QueryFailure;
+
+  get lastQueryResultAsSuccess(): QueryResult | null {
+    if (isQueryResult(this.lastQueryResult)) {
+      return this.lastQueryResult;
+    } else {
+      return null;
+    }
+  }
 
   lastErrorMessage: string | null;
 
