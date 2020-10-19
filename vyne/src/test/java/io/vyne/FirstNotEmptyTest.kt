@@ -192,7 +192,7 @@ class FirstNotEmptyTest {
       val firstResponderReturnsNullHandler:StubResponseHandler = { operation: Operation, list: List<Pair<Parameter, TypedInstance>> ->
          if (counter == 0) {
             counter++
-            TypedNull(schema.type("Product"))
+            TypedNull.create(schema.type("Product"))
          } else {
             product
          }
@@ -317,7 +317,7 @@ class FirstNotEmptyTest {
 
    private fun instance(type:PrimitiveType, value:Any?):TypedInstance {
       return if (value == null) {
-         TypedNull(emptySchema.type(type.qualifiedName))
+         TypedNull.create(emptySchema.type(type.qualifiedName))
       } else {
          TypedInstance.from(emptySchema.type(type.qualifiedName), value, emptySchema, source = Provided)
       }

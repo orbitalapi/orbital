@@ -3,10 +3,8 @@ package io.vyne.query.graph
 import com.winterbe.expekt.should
 import io.vyne.Vyne
 import io.vyne.models.TypedNull
-import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
-import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
@@ -33,7 +31,7 @@ class ParameterFactoryTest {
 
    @Test(expected = UnresolvedOperationParametersException::class)
    fun typedNullsAreNotReturned() {
-      vyne.addModel(TypedNull(vyne.type("FirstName")))
+      vyne.addModel(TypedNull.create(vyne.type("FirstName")))
       ParameterFactory().discover(vyne.type("FirstName"), vyne.query().queryEngine.queryContext())
    }
 

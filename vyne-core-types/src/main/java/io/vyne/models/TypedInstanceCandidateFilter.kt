@@ -52,7 +52,7 @@ object TypedInstanceCandidateFilter {
       // Out of ideas, give up.
       val candidateDescription = bestTypeMatches.joinToString("\n") { "${it.type.name.parameterizedName} : ${it.value}" }
       log().info("returning TypedNull for $requestedType as candidates are $candidateDescription")
-      return TypedNull(requestedType)
+      return TypedNull.create(requestedType)
       //error("Ambiguous property - there are ${bestTypeMatches.size} possible matches for type ${requestedType.name.parameterizedName}, each with different values: $candidateDescription.  Consider restricting the requested type to a more specific type")
    }
 }

@@ -45,7 +45,7 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
       val csvRecords = documentCache.get(content)
       val instances = csvRecords.map { record -> parseToType(type, accessor, record, schema, source = source, nullable = nullable) }
       if (instances.isEmpty()) {
-         return TypedNull(type)
+         return TypedNull.create(type)
       }
       if (instances.size == 1) {
          return instances.first()
