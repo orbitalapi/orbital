@@ -1,6 +1,7 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
 import {InstanceLikeOrCollection} from './object-view.component';
+import {DownloadFileType} from '../query-panel/result-display/result-container.component';
 
 @Component({
   selector: 'app-object-view-container',
@@ -16,6 +17,14 @@ import {InstanceLikeOrCollection} from './object-view.component';
             <img class="icon" src="assets/img/tree-view.svg">
           </mat-button-toggle>
         </mat-button-toggle-group>
+        <div class="spacer"></div>
+        <button mat-stroked-button [matMenuTriggerFor]="menu" *ngIf="downloadSupported"
+                class="downloadFileButton">Download
+        </button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item (click)="onDownloadClicked(downloadFileType.JSON)">as JSON</button>
+          <button mat-menu-item (click)="onDownloadClicked(downloadFileType.CSV)">as CSV</button>
+        </mat-menu>
       </div>
       <div *ngIf="ready" class="display-wrapper">
         <app-results-table *ngIf="displayMode==='table'"
@@ -38,6 +47,9 @@ import {InstanceLikeOrCollection} from './object-view.component';
   styleUrls: ['./object-view-container.component.scss']
 })
 export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
+  // workaroun for lack of enum support in templates
+  downloadFileType = DownloadFileType;
+
   get displayMode(): DisplayMode {
     return this._displayMode;
   }
@@ -55,10 +67,16 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
     return this.instance && this.schema && this.type;
   }
 
+  @Output()
+  downloadClicked = new EventEmitter<DownloadClickedEvent>();
+
   @Input()
   get instance(): InstanceLikeOrCollection {
     return this._instance;
   }
+
+  @Input()
+  downloadSupported = false;
 
   private _localInstance: InstanceLikeOrCollection;
   private _localInstanceCopy: InstanceLikeOrCollection;
@@ -72,6 +90,15 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
     this._derivedType = null;
     this._collectionMemberType = null;
   }
+
+  onDownloadClicked(format: DownloadFileType) {
+    this.downloadClicked.emit(new DownloadClickedEvent(format));
+  }
 }
 
 export type DisplayMode = 'table' | 'tree';
+
+export class DownloadClickedEvent {
+  constructor(public readonly format: DownloadFileType) {
+  }
+}

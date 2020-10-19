@@ -10,6 +10,10 @@ $toolbar-height: 5rem;
   height: 100%;
 }
 
+.full-width-page-content {
+  background-color: $body-bg;
+  height: 100%;
+}
 .mat-toolbar {
   position: sticky;
   top: 0;

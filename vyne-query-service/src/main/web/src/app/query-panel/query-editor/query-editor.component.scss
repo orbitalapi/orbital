@@ -7,23 +7,28 @@
   &:not(:last-child) {
     padding-right: 45px;
   }
+}
 
+.mat-tab-header {
+  border-bottom: 0px;
 }
 
 .code-viewer-container {
+  padding-top: 0.5rem;
+  // Note - this is the background color of the monaco code editor.
+  // Found it by using the eye dropper tool, can't see where it's configured.
+  background-color: #1e1e1e;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 200px;
 
-    margin-top: 0.5rem;
+  .code-editor {
+
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    height: 200px;
+    height: 100%;
 
-    .code-editor {
-
-      width: 100%;
-      height: 100%;
-
-    }
+  }
 }
 
 .results-container {
@@ -33,13 +38,8 @@
 
 }
 
-.buttons-container {
-  width: 100%;
-  margin: 5px;
 
-}
-
-.query-submit-button{
+.query-submit-button {
   margin: 1rem 0;
 }
 

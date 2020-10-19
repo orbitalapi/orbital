@@ -78,8 +78,8 @@ $vyne-grey-blue-palette: (
   900 : #304f63,
   A100 : #afdfff,
   A200 : #7ccbff,
-  A400 : #49b6ff,
-  A700 : #30acff,
+  A400 : $vyne-primary,
+  A700 : darken($vyne-primary, 30%),
   contrast: (
     50 : #000000,
     100 : #000000,

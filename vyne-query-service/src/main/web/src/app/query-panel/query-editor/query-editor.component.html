@@ -1,22 +1,19 @@
-<div class="row">
-  <div class="container">
-    <mat-card>
-      <mat-card-header>
-        <mat-card-title>Query</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-
-        <div class="code-viewer-container">
-          <ngx-monaco-editor [options]="editorOptions" class="code-editor" [(ngModel)]="query" #editor>
-          </ngx-monaco-editor>
-        </div>
-
-        <div class="buttons-container query-submit-button">
-          <button mat-raised-button color="primary" [disabled]="!monacoModel || !monacoModel.getValue() || loading"
-            (click)="submitQuery()">Submit</button>
-        </div>
-      </mat-card-content>
-
-    </mat-card>
+<div class="container">
+  <div class="code-viewer-container">
+    <ngx-monaco-editor [options]="editorOptions" class="code-editor" [(ngModel)]="query" #editor>
+    </ngx-monaco-editor>
   </div>
+
+  <app-query-editor-bottom-bar
+    (executeQuery)="submitQuery()"
+    [currentState]="currentState"
+    [error]="lastErrorMessage"
+  >
+  </app-query-editor-bottom-bar>
 </div>
+
+<app-tabbed-results-view *ngIf="lastQueryResult"
+                         [result]="lastQueryResult"
+                         (instanceSelected)="instanceSelected.emit($event)"
+                         (downloadClicked)="downloadQueryHistory($event.format)"
+></app-tabbed-results-view>

@@ -1,16 +1,25 @@
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
 import {filter, take} from 'rxjs/operators';
 
 import {editor} from 'monaco-editor';
-import ITextModel = editor.ITextModel;
-import ICodeEditor = editor.ICodeEditor;
-import {QueryService, QueryResult, VyneQlQueryHistoryRecord, QueryHistoryRecord} from 'src/app/services/query.service';
+import {
+  QueryHistoryRecord,
+  QueryResult,
+  QueryService,
+  ResponseStatus,
+  VyneQlQueryHistoryRecord
+} from 'src/app/services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {HttpErrorResponse} from '@angular/common/http';
 import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
-import {Input} from '@angular/core';
-
+import {DownloadFileType, InstanceSelectedEvent} from '../result-display/result-container.component';
+import {QueryState} from './bottom-bar.component';
+import ITextModel = editor.ITextModel;
+import ICodeEditor = editor.ICodeEditor;
+import {isQueryFailure} from '../result-display/BaseQueryResultComponent';
+import {ExportFileService} from '../../services/export.file.service';
+import * as fileSaver from 'file-saver';
 
 declare const monaco: any; // monaco
 
@@ -29,13 +38,24 @@ export class QueryEditorComponent implements OnInit {
   monacoModel: ITextModel;
   query: string;
   lastQueryResult: QueryResult | QueryFailure;
+
+  lastErrorMessage: string | null;
+
   loading = false;
+
+  currentState: QueryState = 'Editing';
+
   @Output()
   queryResultUpdated = new EventEmitter<QueryResult | QueryFailure>();
   @Output()
   loadingChanged = new EventEmitter<boolean>();
 
-  constructor(private monacoLoaderService: MonacoEditorLoaderService, private queryService: QueryService) {
+  @Output()
+  instanceSelected = new EventEmitter<InstanceSelectedEvent>();
+
+  constructor(private monacoLoaderService: MonacoEditorLoaderService,
+              private queryService: QueryService,
+              private fileService: ExportFileService) {
     this.monacoLoaderService.isMonacoLoaded.pipe(
       filter(isLoaded => isLoaded),
       take(1),
@@ -94,6 +114,7 @@ export class QueryEditorComponent implements OnInit {
   }
 
   submitQuery() {
+    this.currentState = 'Running';
     this.lastQueryResult = null;
     this.loading = true;
     this.loadingChanged.emit(true);
@@ -104,6 +125,17 @@ export class QueryEditorComponent implements OnInit {
         this.lastQueryResult = result;
         this.queryResultUpdated.emit(this.lastQueryResult);
         this.loadingChanged.emit(false);
+
+        if (this.lastQueryResult.responseStatus === ResponseStatus.COMPLETED) {
+          this.currentState = 'Result';
+        } else if (this.lastQueryResult.responseStatus === ResponseStatus.INCOMPLETE) {
+          this.currentState = 'Result';
+        } else {
+          this.currentState = 'Error';
+          if (isQueryFailure(this.lastQueryResult)) {
+            this.lastErrorMessage = this.lastQueryResult.message;
+          }
+        }
       },
       error => {
         this.loading = false;
@@ -115,7 +147,9 @@ export class QueryEditorComponent implements OnInit {
             errorResponse.error.remoteCalls);
           this.queryResultUpdated.emit(this.lastQueryResult);
           this.loadingChanged.emit(false);
+          this.currentState = 'Error';
         } else {
+
           // There was an unhandled error...
           console.error('An unhandled error occurred:');
           console.error(JSON.stringify(error));
@@ -123,5 +157,17 @@ export class QueryEditorComponent implements OnInit {
         }
       }
     );
+  }
+
+  onInstanceSelected($event: InstanceSelectedEvent) {
+    this.instanceSelected.emit($event);
+  }
+
+  public downloadQueryHistory(fileType: DownloadFileType) {
+    const queryResponseId = (<QueryResult>this.lastQueryResult).queryResponseId;
+    this.fileService.exportQueryHistory(queryResponseId, fileType).subscribe(response => {
+      const blob: Blob = new Blob([response], {type: `text/${fileType}; charset=utf-8`});
+      fileSaver.saveAs(blob, `query-${new Date().getTime()}.${fileType}`);
+    });
   }
 }
