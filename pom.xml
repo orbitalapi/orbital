@@ -6,7 +6,7 @@
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.10.11</version>
+   <version>0.10.12-SNAPSHOT</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
