@@ -15,7 +15,7 @@ import java.text.NumberFormat
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
-import java.util.Locale
+import java.util.*
 
 interface ConversionService {
    fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: List<String>?): T
@@ -166,7 +166,7 @@ class StringToNumberConverter(override val next: ConversionService = NoOpConvers
 
 data class TypedValue private constructor(override val type: Type, override val value: Any, override val source: DataSource) : TypedInstance {
    private val equality = Equality(this, TypedValue::type, TypedValue::value)
-
+   private val hash : Int by lazy { equality.hash() }
    companion object {
       private val conversionService by lazy {
          ConversionService.newDefaultConverter()
@@ -202,7 +202,7 @@ data class TypedValue private constructor(override val type: Type, override val 
    }
 
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-   override fun hashCode(): Int = equality.hash()
+   override fun hashCode(): Int = hash
 
    /**
     * Returns true if the two are equal, where the values are the same, and the underlying

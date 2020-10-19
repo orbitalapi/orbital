@@ -47,7 +47,7 @@ class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = Prim
          //xpath evaluate returns empty string if there is no match.
          val matchingNodes = xpath.evaluate(xml, XPathConstants.NODESET) as NodeList?
          if ((matchingNodes == null || matchingNodes.length == 0) && nullable) {
-            return TypedNull(type, source)
+            return TypedNull.create(type, source)
          }
       }
       return primitiveParser.parse(result, type, source)

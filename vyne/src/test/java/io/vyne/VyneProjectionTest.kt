@@ -556,7 +556,7 @@ service Broker1Service {
             val orderId = parameters[0].second.value as String
             findOneByOrderIdInvocationCount++
 
-            return TypedNull(vyne.type("Broker1Trade"))
+            return TypedNull.create(vyne.type("Broker1Trade"))
          }
       })
 
@@ -633,7 +633,7 @@ service Broker1Service {
             val orderId = parameters[0].second.value as String
             findOneByOrderIdInvocationCount++
 
-            return TypedNull(vyne.type("Broker1Trade"))
+            return TypedNull.create(vyne.type("Broker1Trade"))
          }
       })
 
@@ -696,7 +696,7 @@ service Broker1Service {
             val orderId = parameters[0].second.value as String
             findOneByOrderIdInvocationCount++
 
-            return TypedNull(vyne.type("Broker1Trade"))
+            return TypedNull.create(vyne.type("Broker1Trade"))
          }
       })
 
@@ -707,7 +707,7 @@ service Broker1Service {
             return if (parameters.first().second.value == "broker1Order0") {
                vyne.parseJsonModel("Broker1Order", generateBroker1Order(0))
             } else {
-               TypedNull(vyne.type("Broker1Order"))
+               TypedNull.create(vyne.type("Broker1Order"))
 //               vyne.parseJsonModel("Broker1Order", "{}")
             }
          }
@@ -761,7 +761,7 @@ service Broker1Service {
             val orderId = parameters[0].second.value as String
             findOneByOrderIdInvocationCount++
 
-            return TypedNull(vyne.type("Broker1Trade"))
+            return TypedNull.create(vyne.type("Broker1Trade"))
          }
       })
 
