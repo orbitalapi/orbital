@@ -2,11 +2,15 @@ package io.vyne.schemaServer
 
 import com.nhaarman.mockitokotlin2.*
 import com.winterbe.expekt.should
+import io.vyne.schemaServer.git.GitRepo
+import io.vyne.schemaServer.git.GitRepoProvider
+import io.vyne.schemaServer.git.GitSchemaRepoConfig
+import io.vyne.schemaServer.git.GitSyncTask
 import org.junit.After
 import org.junit.Test
 import java.io.File
 
-class GitSynchTest {
+class GitSyncTaskTest {
    private val repoRoot = "${System.getProperty("user.dir")}${File.separator}repoRoot"
    private val mockGitRepoProvider = mock<GitRepoProvider>()
    private val mockGitRepo = mock<GitRepo>()
@@ -23,7 +27,7 @@ class GitSynchTest {
       schemaLocalStorage = repoRoot,
       gitSchemaRepos = gitConfigs
    )
-   private val gitSynch = GitSynch(gitSchemaRepoConfig, mockGitRepoProvider, mockFileWatcher, mockCompilerService)
+   private val gitSynch = GitSyncTask(gitSchemaRepoConfig, mockGitRepoProvider, mockFileWatcher, mockCompilerService)
 
    private val repoRootCaptor = argumentCaptor<String>()
    private val repoConfigCaptor = argumentCaptor<GitSchemaRepoConfig.GitRemoteRepo>()
@@ -38,7 +42,7 @@ class GitSynchTest {
       whenever(mockGitRepoProvider.provideRepo(any(), any())).thenReturn(mockGitRepo)
       whenever(mockGitRepo.existsLocally()).thenReturn(false)
 
-      gitSynch.synch()
+      gitSynch.sync()
 
       verify(mockGitRepoProvider, times(1)).provideRepo(repoRootCaptor.capture(), repoConfigCaptor.capture())
       repoRoot.should.equal(repoRootCaptor.firstValue)
@@ -54,7 +58,7 @@ class GitSynchTest {
       whenever(mockGitRepoProvider.provideRepo(any(), any())).thenReturn(mockGitRepo)
       whenever(mockGitRepo.existsLocally()).thenReturn(true)
 
-      gitSynch.synch()
+      gitSynch.sync()
 
       verify(mockGitRepoProvider, times(1)).provideRepo(repoRootCaptor.capture(), repoConfigCaptor.capture())
       repoRoot.should.equal(repoRootCaptor.firstValue)

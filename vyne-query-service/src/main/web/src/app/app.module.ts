@@ -28,13 +28,14 @@ import {TypeListModule} from './type-list/type-list.module';
 import {TypeListComponent} from './type-list/type-list.component';
 import {SchemaExplorerModule} from './schema-explorer/schema-explorer.module';
 import {VyneModule} from './vyne/vyne.module';
-import { CaskViewerModule } from './cask-viewer/cask-viewer.module';
+import {CaskViewerModule} from './cask-viewer/cask-viewer.module';
 import {CaskViewerComponent} from './cask-viewer/cask-viewer.component';
-import {InheritanceGraphComponent} from './inheritence-graph/inheritance-graph.component';
 import {QueryHistoryContainerComponent} from './query-history/query-history-container.component';
-import { QueryPanelComponent } from './query-panel/query-panel.component';
-import { QueryPanelModule } from './query-panel/query-panel.module';
-import { ResultsTableComponent } from './results-table/results-table.component';
+import {QueryPanelComponent} from './query-panel/query-panel.component';
+import {QueryPanelModule} from './query-panel/query-panel.module';
+import {InjectableRxStompConfig, RxStompService, rxStompServiceFactory} from '@stomp/ng2-stompjs';
+import {RxStompConfig} from './stomp-config';
+import {SchemaNotificationService} from './services/schema-notification.service';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -55,7 +56,7 @@ export const routerModule = RouterModule.forRoot(
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
   ],
   imports: [
     routerModule,
@@ -84,8 +85,21 @@ export const routerModule = RouterModule.forRoot(
     VyneModule
 
   ],
-  // Not sure why I'm having to do this -- but here we are
-  providers: [TypesService, QueryService, SearchService],
+  providers: [
+    TypesService,
+    QueryService,
+    SearchService,
+    SchemaNotificationService,
+    {
+      provide: InjectableRxStompConfig,
+      useValue: RxStompConfig
+    },
+    {
+      provide: RxStompService,
+      useFactory: rxStompServiceFactory,
+      deps: [InjectableRxStompConfig]
+    }
+  ],
   exports: [],
   bootstrap: [AppComponent]
 })

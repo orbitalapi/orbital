@@ -3,11 +3,9 @@ package io.vyne.queryService
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.queryService.policies.PolicyDto
-import io.vyne.queryService.schemas.SchemaImportRequest
-import io.vyne.queryService.schemas.SchemaImportService
-import io.vyne.queryService.schemas.SchemaPreview
-import io.vyne.queryService.schemas.SchemaPreviewRequest
+import io.vyne.queryService.schemas.*
 import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemaStore.VersionedSourceProvider
 import io.vyne.schemas.Schema
 import lang.taxi.generators.SourceFormatter
@@ -15,11 +13,23 @@ import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 
 @RestController
-class SchemaService(private val schemaProvider: SchemaSourceProvider, private val importer: SchemaImportService,
+class SchemaService(private val schemaProvider: SchemaSourceProvider,
+                    private val importer: SchemaImportService,
+                    private val schemaStore: SchemaStore,
                     private val config: QueryServerConfig) {
    @GetMapping(path = ["/api/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")
+   }
+
+   @GetMapping("/api/schemas/summary")
+   fun getSchemaStateSummary(): SchemaUpdatedNotification {
+      val schemaSet = schemaStore.schemaSet()
+      return SchemaUpdatedNotification(
+         schemaSet.id,
+         schemaSet.generation,
+         schemaSet.invalidSources.size
+      )
    }
 
    @GetMapping(path = ["/api/parsedSources"])

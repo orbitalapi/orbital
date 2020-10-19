@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 import {Router} from '@angular/router';
 import {Schema, SchemaMember, SchemaMemberType, Service, Type} from '../services/schema';
 import {TypeFilter, TypeFilterParams} from './filter-types/filter-types.component';
+import {SchemaNotificationService} from '../services/schema-notification.service';
 
 @Component({
   selector: 'app-type-list',
@@ -12,7 +13,9 @@ import {TypeFilter, TypeFilterParams} from './filter-types/filter-types.componen
 })
 export class TypeListComponent implements OnInit {
 
-  constructor(private typeService: TypesService, private router: Router) {
+  constructor(private typeService: TypesService,
+              private router: Router,
+              private schemaNotificationService: SchemaNotificationService) {
   }
 
   schema: Schema;
@@ -22,14 +25,18 @@ export class TypeListComponent implements OnInit {
 
   ngOnInit() {
     this.loadTypes();
+    this.schemaNotificationService.createSchemaNotificationsSubscription()
+      .subscribe(() => {
+        this.loadTypes(true);
+      });
   }
 
   type(schemaMember: SchemaMember): Type {
     return this.schema.types.find((t) => t.name.fullyQualifiedName === schemaMember.name.fullyQualifiedName);
   }
 
-  private loadTypes() {
-    this.typeService.getTypes().subscribe(schema => {
+  private loadTypes(refresh: boolean = false) {
+    this.typeService.getTypes(refresh).subscribe(schema => {
         this.schema = schema;
         this.applyFilter();
       }, error => console.log('error : ' + error)

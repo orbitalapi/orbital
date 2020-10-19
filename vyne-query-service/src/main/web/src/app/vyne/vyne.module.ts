@@ -6,6 +6,9 @@ import {BrowserModule} from '@angular/platform-browser';
 import {CommonModule} from '@angular/common';
 import {MatListModule} from '@angular/material/list';
 import {RouterModule} from '@angular/router';
+import {MatSnackBarModule} from '@angular/material/snack-bar';
+import {SystemAlertComponent} from '../system-alert/system-alert.component';
+import {SystemAlertModule} from '../system-alert/system-alert.module';
 
 @NgModule({
   imports: [
@@ -14,7 +17,9 @@ import {RouterModule} from '@angular/router';
     BrowserModule,
     CommonModule,
     MatListModule,
-    RouterModule
+    RouterModule,
+    MatSnackBarModule,
+    SystemAlertModule
   ],
   exports: [VyneComponent],
   declarations: [VyneComponent],

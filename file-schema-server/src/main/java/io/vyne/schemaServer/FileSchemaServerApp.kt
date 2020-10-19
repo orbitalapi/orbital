@@ -1,5 +1,6 @@
 package io.vyne.schemaServer
 
+import io.vyne.schemaServer.git.GitSchemaRepoConfig
 import io.vyne.spring.VyneSchemaPublisher
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
