@@ -56,23 +56,6 @@ mat-sidenav-container {
   }
 }
 
-.list-container {
-  width: 400px;
-  height: 100%;
-  background-color: $light-purple-grey;
-  border-right: 1px solid $light-purple-grey-300;
-}
-
-.history-item {
-  cursor: pointer;
-  background-color: $grey-1;
-  padding: 10px 20px;
-  border-bottom: 1px solid $light-purple-grey-300;
-  &:hover {
-    background-color: rgba($dark-grey-2,0.1);
-  }
-}
-
 .drawer-content {
   margin: 2rem 3rem;
   width: 40vw;

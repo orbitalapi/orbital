@@ -1,18 +1,13 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {QueryHistoryRecord, VyneQlQueryHistoryRecord} from '../services/query.service';
-import {Router} from "@angular/router";
+import {Component, Input, OnInit, Output} from '@angular/core';
+import {QueryHistoryRecord, VyneQlQueryHistoryRecord, VyneQlQueryHistorySummary} from '../services/query.service';
+import {Router} from '@angular/router';
+import {Timespan} from '../query-panel/query-editor/counter-timer.component';
 
 @Component({
   selector: 'app-vyneql-record',
   template: `
-    <code>{{ historyRecord.query }}</code>
-    <div class="timestamp-row">
-      <span>{{historyRecord.timestamp | amTimeAgo}}</span>
-      <span style="float: right">
-        <button mat-icon-button  color="primary" (click)="queryAgain()">
-        <img src="assets/img/repeat.svg" class="repeatIcon" >
-        </button>
-      </span>
+    <div class="history-item">
+      <code>{{ historyRecord.query }}</code>
     </div>
   `,
   styleUrls: ['./vyneql-record.component.scss']
@@ -20,11 +15,5 @@ import {Router} from "@angular/router";
 export class VyneqlRecordComponent {
 
   @Input()
-  historyRecord: VyneQlQueryHistoryRecord;
-  constructor(private router: Router) {
-  }
-
-  queryAgain() {
-    this.historyRecord && this.router.navigate(['/query-wizard'], { state: { query: this.historyRecord}});
-  }
+  historyRecord: VyneQlQueryHistorySummary;
 }

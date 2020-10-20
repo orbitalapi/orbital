@@ -2,8 +2,12 @@ package io.vyne.queryService
 
 import io.vyne.query.Lineage
 import io.vyne.query.ProfilerOperationDTO
-import org.springframework.web.bind.annotation.*
+import io.vyne.query.QueryResponse
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
+import java.time.Instant
 import kotlin.streams.toList
 
 @RestController
@@ -11,13 +15,29 @@ class QueryHistoryService(private val history: QueryHistory, private val queryHi
    private val truncationThreshold = 10
 
    @GetMapping("/api/query/history")
-   fun listHistory(): String {
+   fun listHistory(): List<QueryHistoryRecordSummary<Any>> {
 
-      val queries = history.list()
+      return history.list()
+         .map { historyRecord ->
+            QueryHistoryRecordSummary(
+               historyRecord.id,
+               historyRecord.query,
+               historyRecord.response.responseStatus,
+               historyRecord.response.durationMs,
+               historyRecord.response.resultSize,
+               historyRecord.timestamp
+            )
+         }
          .toStream().toList()
-      val json = Lineage.newLineageAwareJsonMapper()
-         .writeValueAsString(queries)
-      return json
+   }
+
+   @GetMapping("/api/query/history/{id}")
+   fun getHistoryRecord(@PathVariable("id") queryId: String): Mono<String> {
+      return this.history.get(queryId)
+         .map { record ->
+            Lineage.newLineageAwareJsonMapper()
+               .writeValueAsString(record)
+         }
    }
 
    @GetMapping("/api/query/history/{id}/profile")
@@ -33,3 +53,11 @@ class QueryHistoryService(private val history: QueryHistory, private val queryHi
    }
 }
 
+data class QueryHistoryRecordSummary<T>(
+   val queryId: String,
+   val query: T,
+   val responseStatus: QueryResponse.ResponseStatus,
+   val durationMs: Long,
+   val recordSize: Int,
+   val timestamp: Instant
+)

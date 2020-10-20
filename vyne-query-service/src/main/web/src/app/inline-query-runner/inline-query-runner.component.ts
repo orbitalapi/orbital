@@ -49,7 +49,7 @@ export class InlineQueryRunnerComponent {
     this.loading = true;
 
     const query = new Query(
-      [this.targetType.parameterizedName],
+      { typeNames: [this.targetType.parameterizedName] },
       this.facts.map(fact => {
         return new Fact(typeName(fact), fact.value);
       }),

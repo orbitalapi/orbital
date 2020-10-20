@@ -141,7 +141,8 @@ interface Generator {
 
 class JsonGenerator implements Generator {
   generate(schema: Schema, facts: Fact[], targetType: string[], queryMode: QueryMode): Snippet {
-    const query = new Query(targetType, facts, queryMode, ResultMode.VERBOSE);
+    const query = new Query(
+      { typeNames: targetType }, facts, queryMode, ResultMode.VERBOSE);
     return new Snippet('json', 'json', JSON.stringify(query, null, 3));
   }
 

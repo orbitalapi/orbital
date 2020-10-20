@@ -53,6 +53,7 @@ data class FailedSearchResponse(val message: String,
          queryResponseId = queryResponseId,
          resultMode = resultMode,
          profilerOperation = profilerOperation?.toDto(),
+         responseStatus = this.responseStatus,
          error = message)
    }
 }

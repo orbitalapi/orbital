@@ -1,0 +1,65 @@
+@import "src/theme";
+
+.history-item {
+  min-height: 80px;
+  cursor: pointer;
+  background-color: $grey-1;
+  padding: 10px 20px;
+  border-bottom: 1px solid $light-purple-grey-300;
+  display: flex;
+  flex-direction: column;
+
+  code {
+    flex-grow: 1;
+  }
+  &:hover {
+    background-color: rgba($dark-grey-2, 0.1);
+  }
+}
+
+
+.timestamp-row {
+  font-size: 0.8rem;
+  color: $dark-grey-1;
+}
+
+.record-stats {
+  margin-top: 1rem;
+  display: flex;
+  margin-bottom: 0.3rem
+}
+
+.record-stat {
+  color: $dark-grey-1;
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  margin-right: 1rem;
+
+  ::ng-deep mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 0.5rem;
+  }
+}
+
+
+.timestamp-row {
+  width: 100%;
+  display: flex;
+  font-size: 0.8rem;
+  color: $dark-grey-1;
+  span {
+    flex-grow: 1;
+  }
+
+  img {
+    width: 15px;
+    opacity: 0.6;
+    &:hover {
+      opacity: 1;
+    }
+
+  }
+}
