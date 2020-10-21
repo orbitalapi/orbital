@@ -58,3 +58,8 @@ $vyne-app-theme: mat-light-theme($vyne-app-primary, $vyne-app-accent, $vyne-app-
 @include angular-material-theme($vyne-app-theme);
 @include angular-material-typography($custom-typography);
 
+// We want the tabs to fill 100% height of their parents.
+// If removing this, be sure to test the ag-grid height in the tabbed-results-view component
+.mat-tab-body-wrapper{
+  flex-grow: 1;
+}

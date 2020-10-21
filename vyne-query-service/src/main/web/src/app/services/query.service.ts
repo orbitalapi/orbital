@@ -20,9 +20,9 @@ export class QueryService {
     return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query);
   }
 
-  submitVyneQlQuery(query: String): Observable<QueryResult> {
+  submitVyneQlQuery(query: String, resultMode: ResultMode = ResultMode.VERBOSE): Observable<QueryResult> {
     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=VERBOSE`, query, {headers});
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}`, query, {headers});
   }
 
   getHistoryRecord(queryId: string): Observable<QueryHistoryRecord> {

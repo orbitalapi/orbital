@@ -2,13 +2,14 @@ import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
 import {InstanceLikeOrCollection} from './object-view.component';
 import {DownloadFileType} from '../query-panel/result-display/result-container.component';
+import {Type} from '../services/schema';
 
 @Component({
   selector: 'app-object-view-container',
   template: `
     <div class="container">
       <div class="toolbar">
-        <div class="type-name">{{ type?.name.name }}</div>
+        <div class="type-name">{{ type?.name.shortDisplayName }}</div>
         <mat-button-toggle-group [(ngModel)]="displayMode">
           <mat-button-toggle value="table" aria-label="Text align left">
             <img class="icon" src="assets/img/table-view.svg">

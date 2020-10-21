@@ -131,6 +131,8 @@ function buildArrayType(schema: TypeCollection, typeName: string): Type {
   name.parameterizedName = typeName;
   const paramType = findType(schema, innerType);
   name.parameters = [paramType.name];
+  name.shortDisplayName = paramType.name.shortDisplayName + '[]';
+  name.longDisplayName = paramType.name.longDisplayName + '[]';
   const result = {
     ...arrayType,
     name,

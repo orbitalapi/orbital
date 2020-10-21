@@ -12,28 +12,28 @@ import {Component, Input, OnInit} from '@angular/core';
 
   `,
   styles: [`
-    .outer-container {
-      width: 34px;
-      height: 34px;
-    }
+      .outer-container {
+          width: 34px;
+          height: 34px;
+      }
 
     .container {
-      position: relative;
-    }
+          position: relative;
+      }
 
-    img {
-      position: absolute;
-      width: 34px;
-    }
+      img {
+          position: absolute;
+          width: 34px;
+      }
 
-    span {
-      position: absolute;
-      top: 14px;
-      left: 5px;
-      font-size: 10px;
-      color: white;
-      font-weight: bold;
-    }
+      span {
+          position: absolute;
+          top: 14px;
+          left: 5px;
+          font-size: 10px;
+          color: white;
+          font-weight: bold;
+      }
   `]
 })
 export class FileExtensionIconComponent {

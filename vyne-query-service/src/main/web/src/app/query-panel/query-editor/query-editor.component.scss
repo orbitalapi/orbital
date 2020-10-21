@@ -1,8 +1,13 @@
 @import "src/theme";
 
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .container {
   width: 100%;
-  flex: 1;
 
   // Why was this here?  Next time I read this message, remove it
   //&:not(:last-child) {
@@ -45,7 +50,7 @@ $warning: #DD8902;
   width: 100%;
   display: flex;
   flex-direction: column;
-  height: 200px;
+  height: 100px;
 
   .code-editor {
 
@@ -82,3 +87,6 @@ app-query-editor-bottom-bar {
   overflow-x: hidden;
 }
 
+app-tabbed-results-view {
+  flex: 1;
+}

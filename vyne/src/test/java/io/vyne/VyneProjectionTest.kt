@@ -2,18 +2,12 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.Provided
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
-import io.vyne.query.QueryEngineFactory
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
-import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
 
@@ -989,6 +983,28 @@ service Broker1Service {
                "maturityDate" to "$maturityDate")
          )
       )
+   }
+
+   @Test
+   fun `can use calculated fields on output models`() {
+      val (vyne,_) = testVyne("""
+         type Quantity inherits Int
+         type Value inherits Int
+         type Cost inherits Int
+         model Input {
+            qty : Quantity
+            value : Value
+         }
+         model Output {
+            qty : Quantity
+            value : Value
+            cost : Cost by (qty * value)
+         }
+      """.trimIndent())
+      val input = vyne.parseJsonModel("Input", """{ "qty" : 100, "value" : 2 }""", source = Provided)
+      val result = vyne.from(input).build("Output")
+      val output = result["Output"] as TypedObject
+      output["cost"].value.should.equal(200)
    }
 
    @Test

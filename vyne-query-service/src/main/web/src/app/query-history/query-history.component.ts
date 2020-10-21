@@ -3,15 +3,17 @@ import {
   isRestQueryHistoryRecord,
   isVyneQlQueryHistoryRecord,
   ProfilerOperation,
-  QueryHistoryRecord, QueryHistorySummary,
+  QueryHistoryRecord, QueryHistorySummary, QueryResult,
   QueryService,
   VyneQlQueryHistoryRecord,
 } from '../services/query.service';
 import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
-import {InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
+import {DownloadFileType, InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
 import {InstanceLike} from '../object-view/object-view.component';
 import {Type} from '../services/schema';
 import {ActivatedRoute, Router} from '@angular/router';
+import {ExportFileService} from '../services/export.file.service';
+import {DownloadClickedEvent} from '../object-view/object-view-container.component';
 
 
 @Component({
@@ -26,7 +28,8 @@ export class QueryHistoryComponent implements OnInit {
   @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
   shouldTypedInstancePanelBeVisible: boolean;
 
-  constructor(private service: QueryService, private router: Router) {
+  constructor(private service: QueryService, private router: Router,
+              private fileService: ExportFileService) {
   }
 
   profileLoading = false;
@@ -100,12 +103,14 @@ export class QueryHistoryComponent implements OnInit {
         this.activeRecord = result;
       }
     );
-    this.service.getQueryProfile(historyRecord.queryId).subscribe(
-      result => {
-        this.profileLoading = false;
-        this.profilerOperation = result;
-      }
-    );
+    // Profiles on large objects are causing problems.
+    // Disabling for now.
+    // this.service.getQueryProfile(historyRecord.queryId).subscribe(
+    //   result => {
+    //     this.profileLoading = false;
+    //     this.profilerOperation = result;
+    //   }
+    // );
     this.setRouteFromActiveRecord();
   }
 
@@ -128,6 +133,11 @@ export class QueryHistoryComponent implements OnInit {
 
   onCloseTypedInstanceDrawer($event: boolean) {
     this.shouldTypedInstancePanelBeVisible = $event;
+  }
+
+  downloadQueryHistory(event: DownloadClickedEvent) {
+    const queryResponseId = (<QueryResult>this.activeRecord.response).queryResponseId;
+    this.fileService.downloadQueryHistory(queryResponseId, event.format);
   }
 }
 

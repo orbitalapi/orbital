@@ -20,14 +20,11 @@
   </mat-drawer>
   <div class="container">
     <app-query-list [historyRecords]="history" (recordSelected)="setActiveRecord($event)"></app-query-list>
-    <div class="results-section">
-      <div class="results-container">
-
-          <query-result-container [result]="activeRecord?.response"
-                                  [activeRecord]="activeRecord"
-                                  (instanceSelected)="onInstanceSelected($event)"
-          ></query-result-container>
-      </div>
+    <div class="results-section" *ngIf="activeRecord">
+      <app-tabbed-results-view
+        [result]="activeRecord?.response"
+        (downloadClicked)="downloadQueryHistory($event)"
+        (instanceSelected)="onInstanceSelected($event)"></app-tabbed-results-view>
     </div>
 
   </div>
