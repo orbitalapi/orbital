@@ -16,15 +16,15 @@ import {TypeInfoHeaderComponent} from './type-info-header.component';
 @Component({
   selector: 'app-results-table',
   template: `
-    <ag-grid-angular
-      class="ag-theme-alpine"
-      headerHeight="65"
-      [rowData]="rowData"
-      [columnDefs]="columnDefs"
-      (gridReady)="onGridReady($event)"
-      (cellClicked)="onCellClicked($event)"
-    >
-    </ag-grid-angular>
+      <ag-grid-angular
+        class="ag-theme-alpine"
+        headerHeight="65"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+        (gridReady)="onGridReady($event)"
+        (cellClicked)="onCellClicked($event)"
+      >
+      </ag-grid-angular>
   `,
   styleUrls: ['./results-table.component.scss']
 })
@@ -89,7 +89,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
         headerComponentFramework: TypeInfoHeaderComponent,
         headerComponentParams: {
           fieldName: fieldName,
-          typeName: this.type.attributes[fieldName].type
+          typeName: this.getTypeForAttribute(fieldName).name
         },
         valueGetter: (params: ValueGetterParams) => {
           return this.unwrap(params.data, fieldName);
@@ -123,6 +123,8 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       }
     } else if (isTypedNull(instance) || isTypeNamedNull(instance)) {
       return null;
+    } else if (fieldName !== null) {
+      return instance[fieldName];
     } else {
       return instance;
     }
@@ -143,6 +145,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   }
 
   onGridReady(event: GridReadyEvent) {
-    event.api.setGridAutoHeight(true);
+    // event.api.setGridAutoHeight(true);
   }
 }

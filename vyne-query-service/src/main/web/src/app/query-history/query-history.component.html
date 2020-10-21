@@ -19,31 +19,12 @@
     </div>
   </mat-drawer>
   <div class="container">
-    <div class="list-container">
-      <div class="history-item" *ngFor="let historyRecord of history" (click)="setActiveRecord(historyRecord)">
-        <div [ngSwitch]="queryType(historyRecord)">
-          <div *ngSwitchCase="'RestfulQuery'">
-            <app-restful-record [expressionTypeName]="expressionTypeName(historyRecord)"
-                                [historyRecord]="historyRecord"
-                                [factTypeNames]="getFactTypeNames(historyRecord)"></app-restful-record>
-          </div>
-          <div *ngSwitchCase="'VyneQlQuery'">
-            <app-vyneql-record [historyRecord]="historyRecord">
-
-            </app-vyneql-record>
-          </div>
-
-        </div>
-      </div>
-    </div>
-    <div class="results-section">
-      <div class="results-container">
-
-          <query-result-container [result]="activeRecord?.response"
-                                  [activeRecord]="activeRecord"
-                                  (instanceSelected)="onInstanceSelected($event)"
-          ></query-result-container>
-      </div>
+    <app-query-list [historyRecords]="history" (recordSelected)="setActiveRecord($event)"></app-query-list>
+    <div class="results-section" *ngIf="activeRecord">
+      <app-tabbed-results-view
+        [result]="activeRecord?.response"
+        (downloadClicked)="downloadQueryHistory($event)"
+        (instanceSelected)="onInstanceSelected($event)"></app-tabbed-results-view>
     </div>
 
   </div>

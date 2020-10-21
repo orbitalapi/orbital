@@ -8,20 +8,20 @@ import {QualifiedName} from '../services/schema';
   styleUrls: ['./inline-query-runner.component.scss'],
   template: `
     <div class="container">
-      <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
-      <mat-expansion-panel [(expanded)]="expanded">
-        <mat-expansion-panel-header>
-          <mat-panel-title>{{ targetType.longDisplayName }}</mat-panel-title>
-          <mat-panel-description>
-            <button mat-stroked-button (click)="executeQueryClicked($event)">Run</button>
-          </mat-panel-description>
-        </mat-expansion-panel-header>
+          <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
+          <mat-expansion-panel [(expanded)]="expanded">
+              <mat-expansion-panel-header>
+                  <mat-panel-title>{{ targetType.longDisplayName }}</mat-panel-title>
+                  <mat-panel-description>
+                      <button mat-stroked-button (click)="executeQueryClicked($event)">Run</button>
+                  </mat-panel-description>
+              </mat-expansion-panel-header>
 
-        <div *ngIf="queryResult">
-          <query-result-container [result]="queryResult"></query-result-container>
-        </div>
-      </mat-expansion-panel>
-    </div>
+              <div *ngIf="queryResult">
+                  <query-result-container [result]="queryResult"></query-result-container>
+              </div>
+          </mat-expansion-panel>
+      </div>
 
   `,
 
@@ -49,7 +49,7 @@ export class InlineQueryRunnerComponent {
     this.loading = true;
 
     const query = new Query(
-      [this.targetType.parameterizedName],
+      { typeNames: [this.targetType.parameterizedName] },
       this.facts.map(fact => {
         return new Fact(typeName(fact), fact.value);
       }),

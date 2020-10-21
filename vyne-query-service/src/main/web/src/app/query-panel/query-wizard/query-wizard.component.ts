@@ -1,6 +1,6 @@
 import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {EnumValues, Modifier, Schema, Type} from '../../services/schema';
+import {EnumValues, findType, Modifier, Schema, Type} from '../../services/schema';
 import {ParsedTypeInstance, TypesService} from '../../services/types.service';
 import {map} from 'rxjs/operators';
 import {
@@ -155,7 +155,9 @@ export class QueryWizardComponent implements OnInit {
     console.log('findAsArray:' + this.findAsArray);
     const factList = this.buildFacts();
     const query = new Query(
-      this.targetTypes.map(t => this.findAsArray ? `${t.name.fullyQualifiedName}[]` : t.name.fullyQualifiedName),
+      {
+        typeNames: this.targetTypes.map(t => this.findAsArray ? `${t.name.fullyQualifiedName}[]` : t.name.fullyQualifiedName),
+      },
       // this.targetTypeInput.value,
       factList,
       this.queryMode.value,
@@ -243,7 +245,7 @@ export class QueryWizardComponent implements OnInit {
       let elements: ITdDynamicElementConfig[] = [];
       Object.keys(type.attributes).forEach(attributeName => {
         const attributeTypeRef = type.attributes[attributeName];
-        const attributeType = schema.types.find(schemaType => schemaType.name.fullyQualifiedName === attributeTypeRef.type.fullyQualifiedName);
+        const attributeType = findType(schema, attributeTypeRef.type.fullyQualifiedName);
         const newPrefix = prefix.concat([attributeName]);
         elements = elements.concat(this.getElementsForType(attributeType, schema, newPrefix, attributeName));
       });
@@ -303,7 +305,8 @@ export class QueryWizardComponent implements OnInit {
         control = {type: TdDynamicElement.Checkbox};
         break;
       default:
-        debugger;
+        console.error('Unhandled type in getInputControlForType()');
+        break;
     }
     return control;
   }
@@ -335,6 +338,7 @@ export class QueryWizardComponent implements OnInit {
 
 export class QueryFailure {
   responseStatus: ResponseStatus = ResponseStatus.ERROR;
+
   constructor(readonly message: string, readonly profilerOperation: ProfilerOperation, readonly remoteCalls: RemoteCall[]) {
   }
 }

@@ -13,22 +13,28 @@ import {MatSidenavModule} from '@angular/material/sidenav';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
 import {QueryHistoryContainerComponent} from './query-history-container.component';
 import {ScrollingModule} from '@angular/cdk/scrolling';
+import { QueryListComponent } from './query-list.component';
+import {MatIconModule} from '@angular/material/icon';
+import { QueryHistoryCardComponent } from './query-history-card.component';
+import {QueryPanelModule} from '../query-panel/query-panel.module';
 
 @NgModule({
-  imports: [
-    BrowserModule,
-    CommonModule,
-    SearchModule,
-    MatButtonModule,
-    ResultViewerModule,
-    MomentModule,
-    MatToolbarModule,
-    MatSidenavModule,
-    TypedInstancePanelModule,
-    ScrollingModule
-  ],
-  exports: [QueryHistoryComponent],
-  declarations: [QueryHistoryComponent, VyneqlRecordComponent, RestfulRecordComponent, QueryHistoryContainerComponent],
+    imports: [
+        BrowserModule,
+        CommonModule,
+        SearchModule,
+        MatButtonModule,
+        ResultViewerModule,
+        MomentModule,
+        MatToolbarModule,
+        MatIconModule,
+        MatSidenavModule,
+        TypedInstancePanelModule,
+        ScrollingModule,
+        QueryPanelModule
+    ],
+  exports: [QueryHistoryComponent, QueryListComponent],
+  declarations: [QueryHistoryComponent, VyneqlRecordComponent, RestfulRecordComponent, QueryHistoryContainerComponent, QueryListComponent, QueryHistoryCardComponent],
   providers: [],
 })
 export class QueryHistoryModule {

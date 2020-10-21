@@ -20,13 +20,17 @@ export class QueryService {
     return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query);
   }
 
-  submitVyneQlQuery(query: String): Observable<QueryResult> {
+  submitVyneQlQuery(query: String, resultMode: ResultMode = ResultMode.VERBOSE): Observable<QueryResult> {
     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=VERBOSE`, query, {headers});
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}`, query, {headers});
   }
 
-  getHistory(): Observable<QueryHistoryRecord[]> {
-    return this.http.get<QueryHistoryRecord[]>(`${environment.queryServiceUrl}/api/query/history`);
+  getHistoryRecord(queryId: string): Observable<QueryHistoryRecord> {
+    return this.http.get<QueryHistoryRecord>(`${environment.queryServiceUrl}/api/query/history/${queryId}`);
+  }
+
+  getHistory(): Observable<QueryHistorySummary[]> {
+    return this.http.get<QueryHistorySummary[]>(`${environment.queryServiceUrl}/api/query/history`);
   }
 
   getQueryProfile(queryId: string): Observable<ProfilerOperation> {
@@ -35,16 +39,25 @@ export class QueryService {
 }
 
 export class Query {
-  constructor(readonly expression: string[],
+  constructor(readonly expression: TypeNameListQueryExpression,
               readonly facts: Fact[],
               readonly queryMode: QueryMode,
               readonly resultMode: ResultMode) {
   }
 }
 
+export interface TypeNameListQueryExpression {
+  typeNames: string[];
+
+  // Received from the server, but don't need to send it up
+  qualifiedTypeNames?: QualifiedName[] | null;
+}
+
 export class Fact {
   constructor(readonly typeName: string, readonly  value: any) {
   }
+
+  qualifiedName: QualifiedName | null; // sent from the server, not required when sending to the server
 }
 
 export interface TypeNamedInstance {
@@ -196,11 +209,35 @@ export interface QueryHistoryRecord {
   id: string;
 }
 
+export interface RestfulQueryHistorySummary extends QueryHistorySummary {
+  query: Query;
+}
+
+export interface VyneQlQueryHistorySummary extends QueryHistorySummary {
+  query: string;
+}
+
+export interface QueryHistorySummary {
+  queryId: string;
+  responseStatus: ResponseStatus;
+  durationMs: number;
+  recordSize: number;
+  timestamp: Date;
+}
+
+export function isVyneQlQueryHistorySummaryRecord(value: QueryHistorySummary): value is VyneQlQueryHistorySummary {
+  return typeof value['query'] === 'string';
+}
+
 export function isVyneQlQueryHistoryRecord(value: QueryHistoryRecord): value is VyneQlQueryHistoryRecord {
   return typeof value['query'] === 'string';
 }
 
 export function isRestQueryHistoryRecord(value: QueryHistoryRecord): value is RestfulQueryHistoryRecord {
   return (value as RestfulQueryHistoryRecord).query.queryMode !== undefined;
+}
+
+export function isRestQueryHistorySummaryRecord(value: QueryHistorySummary): value is RestfulQueryHistorySummary {
+  return (value as RestfulQueryHistorySummary).query.queryMode !== undefined;
 }
 

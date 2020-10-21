@@ -1,12 +1,16 @@
 @import "src/theme";
 @import "src/toolbar";
 
-.container {
-  flex: 1;
+:host {
+  height: 100%;
+  display: block;
+}
 
-  &:not(:last-child) {
-    padding-right: 45px;
-  }
+mat-sidenav-container {
+  height: 100%;
+}
+.container {
+  height: 100%;
 }
 
 .results-container {
@@ -18,7 +22,7 @@
 }
 
 :host ::ng-deep .mat-tab-body-wrapper {
-  flex-grow: 1;
+  //flex-grow: 1;
 }
 
 .drawer-content {

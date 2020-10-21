@@ -47,14 +47,12 @@
         </mat-tab>
         <mat-tab label="Query Editor">
           <ng-template matTabContent>
-            <div class=query-editor-container>
               <query-editor
                 [initialQuery]="routeQuery"
                 (queryResultUpdated)="resultUpdated($event)"
                 (loadingChanged)="onLoadingChanged($event)"
                 (instanceSelected)="onInstanceSelected($event)"
               ></query-editor>
-            </div>
           </ng-template>
         </mat-tab>
       </mat-tab-group>

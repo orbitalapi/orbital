@@ -25,30 +25,33 @@ export class CounterTimerComponent implements OnInit {
   }
 
   get duration(): string {
-    const timespan = this.getElapsedTime();
-    const suffix = (timespan.largestUnit === 'seconds') ? 's' : '';
-
-    function pad(num: number): string {
-      return (num < 10) ? `0${num}` : `${num}`;
-    }
-
-    if (timespan.largestUnit === 'hours') {
-      return `${timespan.hours}:${pad(timespan.minutes)}:${pad(timespan.seconds)}`;
-    } else if (timespan.largestUnit === 'minutes') {
-      return `${timespan.minutes}:${pad(timespan.seconds)}`;
-    } else {
-      return `${timespan.seconds}${suffix}`;
-    }
+    return this.getElapsedTime().duration;
   }
 
-  getElapsedTime(): TimeSpan {
+  getElapsedTime(): Timespan {
     const fromDate = this.startDate || new Date();
-    let totalSeconds = Math.floor((new Date().getTime() - fromDate.getTime()) / 1000);
+    return Timespan.since(fromDate);
 
+  }
+}
+
+export class Timespan {
+  static since(fromDate: Date): Timespan {
+    const totalMilliseconds = Math.floor((new Date().getTime() - fromDate.getTime()));
+    return this.ofMillis(totalMilliseconds);
+  }
+
+  constructor(public readonly hours: number, public readonly minutes: number,
+              public readonly seconds: number, public readonly largestUnit: TimeUnit) {
+  }
+
+  static ofMillis(millis: number): Timespan {
     let hours = 0;
     let minutes = 0;
     let seconds = 0;
     let largestUnit: TimeUnit = 'seconds';
+
+    let totalSeconds = Math.floor(millis / 1000);
 
     if (totalSeconds >= 3600) {
       hours = Math.floor(totalSeconds / 3600);
@@ -63,16 +66,26 @@ export class CounterTimerComponent implements OnInit {
     }
 
     seconds = totalSeconds;
-
-    return {
-      hours: hours,
-      minutes: minutes,
-      seconds: seconds,
-      largestUnit
-    };
+    return new Timespan(
+      hours, minutes, seconds, largestUnit
+    );
   }
 
+  get duration(): string {
+    const suffix = (this.largestUnit === 'seconds') ? 's' : '';
 
+    function pad(num: number): string {
+      return (num < 10) ? `0${num}` : `${num}`;
+    }
+
+    if (this.largestUnit === 'hours') {
+      return `${this.hours}:${pad(this.minutes)}:${pad(this.seconds)}`;
+    } else if (this.largestUnit === 'minutes') {
+      return `${this.minutes}:${pad(this.seconds)}`;
+    } else {
+      return `${this.seconds}${suffix}`;
+    }
+  }
 }
 
 interface TimeSpan {
