@@ -1,10 +1,16 @@
 package io.vyne.pipelines.runner.transport.cask
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.io.ByteStreams
 import io.vyne.VersionedTypeReference
-import io.vyne.pipelines.*
-import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.*
+import io.vyne.pipelines.EmitterPipelineTransportHealthMonitor
+import io.vyne.pipelines.MessageContentProvider
+import io.vyne.pipelines.PipelineDirection
+import io.vyne.pipelines.PipelineLogger
+import io.vyne.pipelines.PipelineOutputTransport
+import io.vyne.pipelines.PipelineTransportHealthMonitor
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.DOWN
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.TERMINATED
+import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.UP
+import io.vyne.pipelines.PipelineTransportSpec
 import io.vyne.pipelines.runner.transport.PipelineOutputTransportBuilder
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.utils.log
@@ -15,14 +21,13 @@ import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import org.springframework.web.reactive.socket.client.WebSocketClient
-import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.io.InputStream
 import java.net.URI
 import java.net.URLEncoder
 import java.time.Duration.ofMillis
 import java.util.*
+import java.util.concurrent.Executors
 
 
 @Component
@@ -44,7 +49,7 @@ class CaskOutputBuilder(
 
 class CaskOutput(
    val spec: CaskTransportOutputSpec,
-   logger: PipelineLogger,
+   val logger: PipelineLogger,
    private val discoveryClient: DiscoveryClient,
    private val caskServiceName: String,
    override val healthMonitor: PipelineTransportHealthMonitor = EmitterPipelineTransportHealthMonitor(),
@@ -58,9 +63,7 @@ class CaskOutput(
 
    private val CASK_CONTENT_TYPE_PARAMETER = "content-type"
 
-   val wsOutput: EmitterProcessor<MessageContentProvider> = EmitterProcessor.create()
-   val wsHandler = CaskWebsocketHandler(logger, healthMonitor, wsOutput) { handleWebsocketTermination(it) }
-
+   val messageHandler = CaskOutputMessageProvider(Executors.newSingleThreadExecutor())
    init {
       tryToRestart()
    }
@@ -120,6 +123,7 @@ class CaskOutput(
       .joinToString(separator = "&", prefix = "?") { e -> e.first + "=" + URLEncoder.encode(e.second, "UTF-8") }
 
    private fun handleWebsocketTermination(throwable: Throwable?) {
+      messageHandler.write(PoisonPill())
       log().info("Websocket terminated: ${throwable?.message ?: "Unknown reason"}")
       healthMonitor.reportStatus(DOWN)
       tryToRestart()
@@ -132,15 +136,13 @@ class CaskOutput(
 
 
       // Connect to the websocket
-      val handshakeMono = wsClient.execute(URI(endpoint), wsHandler)
+      wsClient.execute(URI(endpoint),
+         CaskWebsocketHandler(logger, healthMonitor, spec.targetType, messageHandler) { handleWebsocketTermination(it) })
          .doOnError {
             log().error("Could not connect to CASK. Handshake error.", it)
             healthMonitor.reportStatus(DOWN) // Handshake error = terminated (down for now as terminated is not handled)
             tryToRestart()
-         }
-
-      // Subscribe to all
-      wsOutput.doOnSubscribe { handshakeMono.subscribe() }.subscribe()
+         }.subscribe()
    }
 
    private fun tryToRestart() {
@@ -152,16 +154,16 @@ class CaskOutput(
 
 
    override fun write(message: MessageContentProvider, logger: PipelineLogger) {
-      logger.info { "Sending message to Cask" }
-      wsOutput.onNext(message)
+      logger.info { "Enqueuing message to send to Cask" }
+      messageHandler.write(message)
    }
-
 }
 
 class CaskWebsocketHandler(
    val logger: PipelineLogger,
    val healthMonitor: PipelineTransportHealthMonitor,
-   val wsOutput: EmitterProcessor<MessageContentProvider>,
+   val versionedTypeReference: VersionedTypeReference,
+   val caskOutputMessageProvider: CaskOutputMessageProvider,
    val onTermination: (throwable: Throwable?) -> Unit
 ) : WebSocketHandler {
    override fun handle(session: WebSocketSession): Mono<Void> {
@@ -169,15 +171,16 @@ class CaskWebsocketHandler(
       // ENHANCE: There might be a better place to hook on for this status
       healthMonitor.reportStatus(UP)
 
+      val messageFlux = Flux.create(caskOutputMessageProvider).share()
       // Configure the session: inbounds and outbounds messages
-      return session.send(wsOutput.map { messageContentProvider ->
+      return session.send(messageFlux.map { messageContentProvider ->
          session.binaryMessage { factory ->
             val dataBuffer = factory.allocateBuffer()
 
             messageContentProvider.writeToStream(logger, dataBuffer.asOutputStream())
             dataBuffer
          }
-      })
+      }).doOnSubscribe { logger.info { "subscribed on session ${session.id} for $versionedTypeReference" } }
          .and(
             session.receive().map { it.payloadAsText }
                .doOnNext {

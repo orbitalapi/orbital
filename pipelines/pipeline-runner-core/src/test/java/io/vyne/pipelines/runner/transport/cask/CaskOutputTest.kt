@@ -17,6 +17,7 @@ import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.reactive.socket.client.WebSocketClient
 import reactor.core.publisher.EmitterProcessor
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 import java.io.ByteArrayInputStream
@@ -56,7 +57,7 @@ class CaskOutputTest {
 
       // Websocket session mono/flux
       session = mock()
-      whenever(session.send(any())).thenReturn(Mono.create {  })
+      whenever(session.send(any())).thenReturn(Mono.create { })
       whenever(session.receive()).thenReturn(caskInputMessages)
    }
 
@@ -112,19 +113,15 @@ class CaskOutputTest {
       caskOutput = CaskOutput(spec, pipelineLogger, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       await().atMost(2, SECONDS).until {
-         verify(healthMonitor, atLeast( 1)).reportStatus(DOWN)
+         verify(healthMonitor, atLeast(1)).reportStatus(DOWN)
       }
    }
 
    @Test
    fun testCaskServerHandshakeSuccess() {
       mockCaskServer()
-
-      caskOutput = CaskOutput(spec, pipelineLogger, discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
-
-
-      caskOutput.wsHandler.handle(session)
-
+      val handler = CaskWebsocketHandler(pipelineLogger, healthMonitor, mock(), mock()) {}
+      handler.handle(session)
       await().atMost(2, SECONDS).until {
          verify(healthMonitor).reportStatus(UP)
       }
@@ -134,15 +131,22 @@ class CaskOutputTest {
    fun testCaskOutputWrite() {
       mockCaskServer()
 
-      caskOutput = CaskOutput(spec,mock(),  discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
+      caskOutput = CaskOutput(spec, mock(), discoveryClient, caskServiceName, healthMonitor, wsClient, 100)
 
       caskOutput.write(StringContentProvider(" This is a Message "), mock())
       caskOutput.write(StringContentProvider(" This is a second message "), mock())
 
       StepVerifier
-         .create(caskOutput.wsOutput.map { it.asString(mock()) }.take(2))
+         .create(Flux.create(caskOutput.messageHandler).map { it.asString(mock()) }.take(2))
          .expectNext(""" This is a Message """)
          .expectNext(""" This is a second message """)
          .verifyComplete()
+   }
+
+   @Test
+   fun `emitter processor test`() {
+      val emitterProcessor: EmitterProcessor<String> = EmitterProcessor.create()
+      emitterProcessor.onNext("first")
+      emitterProcessor.map { it }.blockFirst().should.equal("first")
    }
 }
