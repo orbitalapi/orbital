@@ -1,29 +1,7 @@
 @import "src/theme";
 
-.history-item {
-  cursor: pointer;
-  background-color: $grey-1;
-  padding: 10px 20px;
-  border-bottom: 1px solid $light-purple-grey-300;
-  &:hover {
-    background-color: rgba($dark-grey-2,0.1);
-  }
-}
-
-
 .query-description {
   font-family: $mono;
   line-height: 1.5rem;
   font-size: 1rem;
-}
-
-.timestamp-row {
-  font-size: 0.8rem;
-  color: $dark-grey-1;
-}
-
-.repeatIcon{
-  width: 15px;
-  opacity: 0.6;
-  margin: 0 20px 20px
 }

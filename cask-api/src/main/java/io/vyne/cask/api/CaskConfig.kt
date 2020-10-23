@@ -42,6 +42,10 @@ data class CaskConfig(
    @Column(name = "replacedby")
    val replacedByTableName:String? = null
 ) {
+
+   override fun toString(): String {
+      return "CaskConfig (qualifiedTypeName=$qualifiedTypeName,  tableName=$tableName, versionHash=$versionHash)"
+   }
    companion object {
       fun forType(
          type:VersionedType,

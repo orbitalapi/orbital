@@ -15,7 +15,10 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
+import java.io.ByteArrayOutputStream
 import kotlin.test.assertEquals
 
 class QueryServiceTest {
@@ -114,7 +117,7 @@ class QueryServiceTest {
 
       val query = buildQuery("Order[]", ResultMode.SIMPLE)
       val responseStr = queryService.submitQuery(query, MediaType.APPLICATION_JSON_VALUE)
-
+         .contentString()
       val response = jacksonObjectMapper().readTree(responseStr)
       response["fullyResolved"].booleanValue().should.equal(true)
       response["results"].should.not.be.`null`
@@ -126,7 +129,7 @@ class QueryServiceTest {
 
       val query = buildQuery("Order[]", ResultMode.SIMPLE)
       val responseStr = queryService.submitQuery(query, TEXT_CSV)
-
+         .contentString()
       // Simple CSV should still be json
       val response = jacksonObjectMapper().readTree(responseStr)
       response["fullyResolved"].booleanValue().should.equal(true)
@@ -138,7 +141,7 @@ class QueryServiceTest {
 
       val query = buildQuery("Order[]", ResultMode.RAW)
       val responseStr = queryService.submitQuery(query, MediaType.APPLICATION_JSON_VALUE)
-
+         .contentString()
       val response = jacksonObjectMapper().readTree(responseStr)
 
       response[0]["orderId"].textValue().should.equal("orderId_0")
@@ -152,7 +155,7 @@ class QueryServiceTest {
 
       val query = buildQuery("Order[]", ResultMode.RAW)
       val responseStr = queryService.submitQuery(query, TEXT_CSV)
-
+         .contentString()
       val csv = """
 orderId,traderName,instrumentId
 orderId_0,john,Instrument_0
@@ -172,7 +175,7 @@ orderId_0,john,Instrument_0
    fun `submitVyneQLQueryJsonSimple`() {
 
       val responseStr = queryService.submitVyneQlQuery("""findAll { Order[] } as Report[]""".trimIndent(), ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
-
+         .contentString()
       val response = jacksonObjectMapper().readTree(responseStr)
       response["fullyResolved"].booleanValue().should.equal(true)
       response["results"].should.not.be.`null`
@@ -184,7 +187,7 @@ orderId_0,john,Instrument_0
    fun `submitVyneQLQueryCsvSimple`() {
 
       val responseStr = queryService.submitVyneQlQuery("""findAll { Order[] } as Report[]""".trimIndent(), ResultMode.SIMPLE, TEXT_CSV)
-
+         .contentString()
       // Simple CSV should still be json
       val response = jacksonObjectMapper().readTree(responseStr)
       response["fullyResolved"].booleanValue().should.equal(true)
@@ -209,7 +212,7 @@ orderId_0,john,Instrument_0
          """.trimIndent()))
 
       val responseStr = queryService.submitVyneQlQuery("""findAll { Order[] } """.trimIndent(), ResultMode.RAW, MediaType.APPLICATION_JSON_VALUE)
-
+         .contentString()
       val response = jacksonObjectMapper().readTree(responseStr)
 
       response.isArray.should.be.`true`
@@ -242,6 +245,7 @@ orderId_0,john,Instrument_0
          """.trimIndent()))
 
       val responseStr = queryService.submitVyneQlQuery("""findAll { Order[] } """.trimIndent(), ResultMode.RAW, TEXT_CSV)
+         .contentString()
 
       val csv = """
 orderId,traderName,instrumentId
@@ -266,9 +270,16 @@ orderId_1,pierre,
          """.trimIndent()))
 
       val responseStr = queryService.submitVyneQlQuery("""findAll { Order[] } as Report[]""".trimIndent(), ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
+         .contentString()
 
       val response = jacksonObjectMapper().readTree(responseStr)
       response["fullyResolved"].booleanValue().should.equal(false)
       response["message"].textValue().should.equal("The search failed with an exception: Found 2 instances of MaturityDate. Values are (TradeMaturityDate, 2026-12-01), (InstrumentMaturityDate, 2025-12-01)")
    }
+}
+
+private fun ResponseEntity<StreamingResponseBody>.contentString():String {
+   val stream = ByteArrayOutputStream()
+   this.body!!.writeTo(stream)
+   return String(stream.toByteArray())
 }

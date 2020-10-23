@@ -29,7 +29,7 @@ import {MonacoEditorModule} from '@materia-ui/ngx-monaco-editor';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {BottomBarComponent} from './query-editor/bottom-bar.component';
 import {CounterTimerComponent} from './query-editor/counter-timer.component';
-import { TabbedResultsViewComponent } from './query-editor/tabbed-results-view.component';
+import {TabbedResultsViewComponent} from './query-editor/tabbed-results-view.component';
 import {CallExplorerModule} from './taxi-viewer/call-explorer/call-explorer.module';
 
 @NgModule({
@@ -60,8 +60,10 @@ import {CallExplorerModule} from './taxi-viewer/call-explorer/call-explorer.modu
     MatProgressSpinnerModule,
     CallExplorerModule,
   ],
-  exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent],
-  declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent, VyneQueryViewerComponent, QueryEditorComponent, BottomBarComponent, CounterTimerComponent, TabbedResultsViewComponent],
+  exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent],
+  declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent,
+    VyneQueryViewerComponent, QueryEditorComponent, BottomBarComponent, CounterTimerComponent,
+    TabbedResultsViewComponent],
   providers: [],
 })
 export class QueryPanelModule {

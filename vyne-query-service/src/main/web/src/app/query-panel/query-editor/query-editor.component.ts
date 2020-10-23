@@ -8,6 +8,7 @@ import {
   QueryResult,
   QueryService,
   ResponseStatus,
+  ResultMode,
   VyneQlQueryHistoryRecord
 } from 'src/app/services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
@@ -15,11 +16,10 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
 import {DownloadFileType, InstanceSelectedEvent} from '../result-display/result-container.component';
 import {QueryState} from './bottom-bar.component';
-import ITextModel = editor.ITextModel;
-import ICodeEditor = editor.ICodeEditor;
 import {isQueryFailure, isQueryResult} from '../result-display/BaseQueryResultComponent';
 import {ExportFileService} from '../../services/export.file.service';
-import * as fileSaver from 'file-saver';
+import ITextModel = editor.ITextModel;
+import ICodeEditor = editor.ICodeEditor;
 
 declare const monaco: any; // monaco
 
@@ -127,7 +127,7 @@ export class QueryEditorComponent implements OnInit {
     this.loading = true;
     this.loadingChanged.emit(true);
 
-    this.queryService.submitVyneQlQuery(this.query).subscribe(
+    this.queryService.submitVyneQlQuery(this.query, ResultMode.SIMPLE).subscribe(
       result => {
         this.loading = false;
         this.lastQueryResult = result;
@@ -173,9 +173,6 @@ export class QueryEditorComponent implements OnInit {
 
   public downloadQueryHistory(fileType: DownloadFileType) {
     const queryResponseId = (<QueryResult>this.lastQueryResult).queryResponseId;
-    this.fileService.exportQueryHistory(queryResponseId, fileType).subscribe(response => {
-      const blob: Blob = new Blob([response], {type: `text/${fileType}; charset=utf-8`});
-      fileSaver.saveAs(blob, `query-${new Date().getTime()}.${fileType}`);
-    });
+    this.fileService.downloadQueryHistory(queryResponseId, fileType);
   }
 }

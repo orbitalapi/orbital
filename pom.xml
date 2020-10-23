@@ -6,7 +6,7 @@
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.10.12</version>
+   <version>0.10.13</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>0.9.5</taxi.version>
+      <taxi.version>0.9.7</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>

@@ -132,7 +132,10 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
 
 
   getTypeForAttribute(attributeName: string): Type {
-    const field: Field = this.type.attributes[attributeName];
+    // Don't use this.type directly here, as sometimes we're actually working against
+    // the arrayType (ie., when in a table view)
+    const type = (this.isArray) ? this.collectionMemberType : this.type;
+    const field: Field = type.attributes[attributeName];
     if (this.fieldTypes.has(field)) {
       return this.fieldTypes.get(field);
     } else {

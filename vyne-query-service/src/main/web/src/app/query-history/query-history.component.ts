@@ -3,15 +3,17 @@ import {
   isRestQueryHistoryRecord,
   isVyneQlQueryHistoryRecord,
   ProfilerOperation,
-  QueryHistoryRecord,
+  QueryHistoryRecord, QueryHistorySummary, QueryResult,
   QueryService,
   VyneQlQueryHistoryRecord,
 } from '../services/query.service';
 import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
-import {InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
+import {DownloadFileType, InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
 import {InstanceLike} from '../object-view/object-view.component';
 import {Type} from '../services/schema';
 import {ActivatedRoute, Router} from '@angular/router';
+import {ExportFileService} from '../services/export.file.service';
+import {DownloadClickedEvent} from '../object-view/object-view-container.component';
 
 
 @Component({
@@ -20,13 +22,14 @@ import {ActivatedRoute, Router} from '@angular/router';
   styleUrls: ['./query-history.component.scss']
 })
 export class QueryHistoryComponent implements OnInit {
-  history: QueryHistoryRecord[];
+  history: QueryHistorySummary[];
   activeRecord: QueryHistoryRecord;
 
   @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
   shouldTypedInstancePanelBeVisible: boolean;
 
-  constructor(private service: QueryService, private router: Router) {
+  constructor(private service: QueryService, private router: Router,
+              private fileService: ExportFileService) {
   }
 
   profileLoading = false;
@@ -92,55 +95,34 @@ export class QueryHistoryComponent implements OnInit {
     return isRestQueryHistoryRecord(record);
   }
 
-  getFactTypeNames(record: QueryHistoryRecord): string[] {
-    if (isRestQueryHistoryRecord(record)) {
-      return record.query.facts.map(fact => this.typeName(fact.typeName));
-    } else {
-      return [];
-    }
-
-  }
-
-  setActiveRecord(historyRecord: QueryHistoryRecord) {
-    this.activeRecord = historyRecord;
+  setActiveRecord(historyRecord: QueryHistorySummary) {
     this.profilerOperation = null;
     this.profileLoading = true;
-    this.service.getQueryProfile(historyRecord.id).subscribe(
+    this.service.getHistoryRecord(historyRecord.queryId).subscribe(
       result => {
-        this.profileLoading = false;
-        this.profilerOperation = result;
+        this.activeRecord = result;
       }
     );
+    // Profiles on large objects are causing problems.
+    // Disabling for now.
+    // this.service.getQueryProfile(historyRecord.queryId).subscribe(
+    //   result => {
+    //     this.profileLoading = false;
+    //     this.profilerOperation = result;
+    //   }
+    // );
     this.setRouteFromActiveRecord();
   }
 
   setActiveRecordFromRoute() {
-    this.service.getHistory()
-      .subscribe(history => this.activeRecord = history.find(a => a.response.queryResponseId === this._queryResponseId));
-
+    this.service.getHistoryRecord(this._queryResponseId)
+      .subscribe(record => {
+        this.activeRecord = record;
+      });
   }
 
   setRouteFromActiveRecord() {
     this.router.navigate(['/query-history', this.activeRecord.id]);
-  }
-
-  expressionTypeName(historyRecord: QueryHistoryRecord): string {
-    if (isRestQueryHistoryRecord(historyRecord)) {
-      return historyRecord.query.expression.map(t => this.typeName(t)).join(', ');
-    } else {
-      return '';
-    }
-  }
-
-
-  queryType(historyRecord: QueryHistoryRecord): QueryType {
-    if (isVyneQlQueryHistoryRecord(historyRecord)) {
-      return 'VyneQlQuery';
-    } else if (isRestQueryHistoryRecord(historyRecord)) {
-      return 'RestfulQuery';
-    } else {
-      throw new Error('Unknown type of query history record: ' + JSON.stringify(historyRecord));
-    }
   }
 
   onInstanceSelected($event: InstanceSelectedEvent) {
@@ -152,6 +134,10 @@ export class QueryHistoryComponent implements OnInit {
   onCloseTypedInstanceDrawer($event: boolean) {
     this.shouldTypedInstancePanelBeVisible = $event;
   }
+
+  downloadQueryHistory(event: DownloadClickedEvent) {
+    const queryResponseId = (<QueryResult>this.activeRecord.response).queryResponseId;
+    this.fileService.downloadQueryHistory(queryResponseId, event.format);
+  }
 }
 
-type QueryType = 'VyneQlQuery' | 'RestfulQuery';
