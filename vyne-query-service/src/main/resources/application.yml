@@ -11,6 +11,9 @@ spring:
       name: query-service
    autoconfigure:
       exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+   mvc:
+      async:
+         request-timeout: 1800000
 vyne:
    query-history:
       enabled: false
@@ -20,6 +23,11 @@ vyne:
    schema:
       publicationMethod: LOCAL # this exposes in memory schema store via http API, use only in Vyne settings
       pollInterval: 5s
+   mvc:
+      executor:
+         corePoolSize: 5
+         maxPoolSize: 15
+         queueCapacity: 50
 
 feign:
    client:
