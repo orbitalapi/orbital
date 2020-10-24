@@ -171,7 +171,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       // shares references during serialization.  Therefore, it's not threadsafe, so
       // we create an instance per response.
       objectMapper
-         .copy()
+ //        .copy()
 //         .registerModule(LineageGraphSerializationModule())
          .writerWithDefaultPrettyPrinter()
          .writeValue(outputStream, response)

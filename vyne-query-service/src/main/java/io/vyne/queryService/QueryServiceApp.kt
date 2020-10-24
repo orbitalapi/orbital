@@ -1,7 +1,6 @@
 package io.vyne.queryService
 
 import com.netflix.discovery.EurekaClient
-import com.netflix.niws.loadbalancer.EurekaNotificationServerListUpdater
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
@@ -12,12 +11,8 @@ import io.vyne.spring.VYNE_SCHEMA_PUBLICATION_METHOD
 import io.vyne.spring.VyneQueryServer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
-import org.apache.http.HttpResponse
-import org.apache.http.client.HttpRequestRetryHandler
-import org.apache.http.client.ServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
-import org.apache.http.protocol.HttpContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
@@ -31,13 +26,13 @@ import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.client.ClientHttpRequestFactory
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import javax.inject.Provider
-import javax.inject.Qualifier
 
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class)
@@ -102,6 +97,25 @@ class QueryServiceApp {
 
       @Value("\${cors.enabled:false}")
       var corsEnabled: Boolean = false
+
+      @Value("\${vyne.mvc.executor.corePoolSize:5}")
+      var corePoolSize: Int = 5
+
+      @Value("\${vyne.mvc.executor.maxPoolSize:5}")
+      var maxPoolSize: Int = 15
+
+      @Value("\${vyne.mvc.executor.queueCapacity:50}")
+      var queueCapacity: Int = 50
+
+      override fun configureAsyncSupport(configurer: AsyncSupportConfigurer) {
+         val executor = ThreadPoolTaskExecutor()
+         executor.corePoolSize = corePoolSize
+         executor.maxPoolSize = maxPoolSize // maximum number of concurrent running threads when queue size is full
+         executor.setQueueCapacity(queueCapacity)
+         executor.threadNamePrefix = "vyne-query-executor"
+         executor.initialize()
+         configurer.setTaskExecutor(executor)
+      }
 
       override fun addCorsMappings(registry: CorsRegistry) {
          if (corsEnabled) {
