@@ -324,4 +324,103 @@ type TransformedTradeRecord {
       order["initial"].value.should.equal("J")
       order["concatName"].value.should.equal("John-Foo-Doe")
    }
+
+   @Test
+   fun `can handle logical expressions for when cases during read`() {
+      val (vyne, _) = testVyne("""
+         model ComplexWhen {
+            trader: String?
+            status: String?
+            initialQuantity: Decimal?
+            leavesQuantity: Decimal?
+            quantityStatus: String by when {
+                this.initialQuantity = this.leavesQuantity -> "ZeroFill"
+                this.trader = "Marty" || this.status = "Foo" -> "ZeroFill"
+                this.leavesQuantity > 0 && this.leavesQuantity < this.initialQuantity -> "PartialFill"
+                this.leavesQuantity > 0 && this.leavesQuantity < this.initialQuantity || this.trader = "Jimmy" || this.status = "Pending"  -> "FullyFilled"
+                else -> "CompleteFill"
+            }
+         }
+      """.trimIndent())
+      fun json(trader: String) = """{
+      "trader" : "$trader",
+      "status" : "Pending",
+      "initialQuantity" : 100,
+      "leavesQuantity": 1
+      }
+      """.trimMargin()
+
+      val typedObject = TypedInstance.from(vyne.type("ComplexWhen"), json("Jimmy"), vyne.schema, source = Provided) as TypedObject
+      typedObject["quantityStatus"].value.should.equal("FullyFilled")
+   }
+
+   @Test
+   fun `can handle logical expressions for when cases during read II`() {
+      val (vyne, _) = testVyne("""
+         model ComplexWhen {
+            trader: String?
+            initialQuantity: Int?
+            quantityStatus: String by when {
+                this.trader = "Marty" || this.initialQuantity = 100 -> "ZeroFill"
+                else -> "CompleteFill"
+            }
+         }
+      """.trimIndent())
+      fun json(trader: String) = """{
+      "trader" : "$trader",
+      "initialQuantity" : 100
+      }
+      """.trimMargin()
+
+      val typedObject = TypedInstance.from(vyne.type("ComplexWhen"), json("Marty"), vyne.schema, source = Provided) as TypedObject
+      typedObject["quantityStatus"].value.should.equal("ZeroFill")
+   }
+
+   @Test
+   fun `can handle logical expressions for when cases during read and handle null equality`() {
+      val (vyne, _) = testVyne("""
+         model ComplexWhen {
+            trader: String?
+            initialQuantity: Int?
+            endQuantity: Int?
+            quantityStatus: String by when {
+                this.trader = "Marty" && this.initialQuantity = this.endQuantity -> "ZeroFill"
+                else -> "CompleteFill"
+            }
+         }
+      """.trimIndent())
+      fun json(trader: String) = """{
+      "trader" : "$trader"
+      }
+      """.trimMargin()
+
+      val typedObject = TypedInstance.from(vyne.type("ComplexWhen"), json("Marty"), vyne.schema, source = Provided) as TypedObject
+      typedObject["quantityStatus"].value.should.equal("ZeroFill")
+   }
+
+   @Test
+   fun `can handle null checks`() {
+      val (vyne, _) = testVyne("""
+         enum PriceType {
+            PERCENTAGE,
+            BASIS
+         }
+         model SampleType {
+            price: Decimal?
+            priceType: PriceType? by when {
+                this.price = null -> null
+                this.price != null -> jsonPath("${'$'}.type")
+            }
+         }
+      """.trimIndent())
+      val json = """{
+         "price": null,
+         "type": "BASIS"
+      }
+      """.trimMargin()
+
+      val typedObject = TypedInstance.from(vyne.type("SampleType"), json, vyne.schema, source = Provided) as TypedObject
+      typedObject["priceType"].value.should.be.`null`
+
+   }
 }
