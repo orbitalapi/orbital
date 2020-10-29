@@ -9,19 +9,37 @@ import lang.taxi.types.*
 
 class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
    fun evaluate(readCondition: WhenFieldSetCondition, attributeName: AttributeName?, targetType: Type): TypedInstance {
-      val selectorValue = evaluateSelector(readCondition.selectorExpression)
-      val caseBlock = selectCaseBlock(selectorValue, readCondition)
-      val assignmentExpression = if (attributeName != null) {
-         caseBlock.getAssignmentFor(attributeName)
-      } else {
-         caseBlock.getSingleAssignment()
+      return when (readCondition.selectorExpression) {
+         is EmptyReferenceSelector -> {
+            val assignmentExpression = evaluateLogicalWhenCases(readCondition, attributeName, targetType)
+            evaluateExpression(assignmentExpression.assignment, targetType)
+         }
+         else -> {
+            val selectorValue = evaluateSelector(readCondition.selectorExpression)
+            val caseBlock = selectCaseBlock(selectorValue, readCondition)
+            val assignmentExpression = if (attributeName != null) {
+               caseBlock.getAssignmentFor(attributeName)
+            } else {
+               caseBlock.getSingleAssignment()
+            }
+            val typedValue = evaluateExpression(assignmentExpression.assignment, targetType)
+            typedValue
+         }
       }
-      val typedValue = evaluateExpression(assignmentExpression.assignment, targetType)
-      return typedValue
+   }
+
+   private fun evaluateLogicalWhenCases(readCondition: WhenFieldSetCondition, attributeName: AttributeName?, targetType: Type): AssignmentExpression {
+      val retVal =  LogicalExpressionEvaluator.evaluate(readCondition.cases, factory, targetType)?.let {
+         if (attributeName != null) {
+            it.getAssignmentFor(attributeName)
+         } else {
+            it.getSingleAssignment()
+         }
+      }
+      return retVal ?: error("unexpected result when evaluating logical expressions for a when. ensure that your when clause has 'else' part.")
    }
 
    private fun evaluateExpression(assignment: ValueAssignment, type: Type): TypedInstance {
-//      val assignment = matchExpression.assignment
       return when (assignment) {
          is ScalarAccessorValueAssignment -> factory.readAccessor(type, assignment.accessor) // WTF? Why isn't the compiler working this out?
          is ReferenceAssignment -> factory.getValue(assignment.reference)
@@ -69,6 +87,7 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
          // Note - I'm assuming the literal value is the same type as what we're comparing to.
          // Reasonable for now, but suspect subtypes etc may cause complexity here I haven't considered
          is LiteralCaseMatchExpression -> TypedInstance.from(type, matchExpression.value, factory.schema, source = DefinedInSchema)
+         //is LogicalExpression ->
          else -> {
             log().warn("Unexpected match Expression $matchExpression")
             TODO()
