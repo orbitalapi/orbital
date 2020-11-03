@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @Component
 class CaskServiceSchemaWriter(
    private val schemaPublisher: SchemaPublisher,
+   private val defaultCaskTypeProvider: DefaultCaskTypeProvider,
    private val schemaWriter: SchemaWriter = SchemaWriter(),
    private val caskDefinitionPublicationExecutor: ExecutorService = Executors.newSingleThreadExecutor(ThreadFactoryBuilder().setNameFormat("CaskServiceSchemaWriter-%d").build())) {
    private val generationCounter: AtomicInteger = AtomicInteger(0)
@@ -26,7 +27,7 @@ class CaskServiceSchemaWriter(
       // the cask schema generation logic will evolve independently of the underlying type that it's generated from.
       caskDefinitionPublicationExecutor.submit {
          val schemaVersion = "1.0.${generationCounter.incrementAndGet()}"
-         val schemas = taxiDocumentsByName.flatMap { (schemaName, taxiDocument) ->
+         val schemas = defaultCaskTypeProvider.defaultCaskTaxiTypes().plus(taxiDocumentsByName).flatMap { (schemaName, taxiDocument) ->
             schemaWriter.generateSchemas(listOf(taxiDocument)).mapIndexed { index, generatedSchema ->
                val serviceSchemaWithImports = addRequiredImportsStatements(taxiDocument, generatedSchema)
                val versionedSourceName = if (index > 0) schemaName + index else schemaName

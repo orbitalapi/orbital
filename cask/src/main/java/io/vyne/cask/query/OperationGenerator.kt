@@ -10,3 +10,8 @@ interface OperationGenerator {
    fun canGenerate(field: Field, type: Type): Boolean
    fun expectedAnnotationName(): OperationAnnotation
 }
+
+interface DefaultOperationGenerator {
+   fun generate(returnType: Type): Operation
+
+}

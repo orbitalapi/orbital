@@ -72,7 +72,12 @@ class CaskViewBuilder(
 
          if (index == 0) {
             val fields = mapTableFields(thisType, filter, thisTableName)
-            JoinTableSpec(thisTableName, fields)
+            // Cask now exposes functionality to query given cask by cask_message.insertedAt column.
+            // This requires joining actual 'data' table to cask_message via  <data_table>.caskmessageid = cask_message.id.
+            // Therefore we need to create caskmessageid column in view as well. Below we simply set the value of caskmessageid column of the
+            // first table, but this is just an arbitraty decision for the moment as we can't come up with a better approach.
+            val caskMessageIdColumn = """${thisTableName.quoted()}.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} as ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}"""
+            JoinTableSpec(thisTableName, fields.plus(caskMessageIdColumn))
          } else {
             val previousTypeName = join.types[index - 1]
             val previousTableName = tableNames[previousTypeName] ?: error("No table defined for $previousTypeName")

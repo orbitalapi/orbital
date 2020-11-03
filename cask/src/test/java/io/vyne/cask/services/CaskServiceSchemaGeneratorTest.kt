@@ -10,7 +10,6 @@ import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
-import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.query.generators.*
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SchemaStore
@@ -25,6 +24,7 @@ class CaskServiceSchemaGeneratorTest {
    val schemaStoreClient = mock<SchemaStoreClient>()
    val caskServiceSchemaWriter = CaskServiceSchemaWriter(
       schemaPublisher = schemaStoreClient,
+      defaultCaskTypeProvider = DefaultCaskTypeProvider(),
       caskDefinitionPublicationExecutor = MoreExecutors.newDirectExecutorService())
    private val schema = """
     type alias Price as Decimal
@@ -81,8 +81,8 @@ class CaskServiceSchemaGeneratorTest {
             BetweenTemporalOperationGenerator(operationGeneratorConfig),
             FindBySingleResultGenerator(operationGeneratorConfig),
             FindByMultipleGenerator(operationGeneratorConfig),
-            FindByIdGenerators(operationGeneratorConfig),
-            FindAllGenerator()),
+            FindByIdGenerators(operationGeneratorConfig)),
+         listOf(FindAllGenerator(), FindBetweenInsertedAtOperationGenerator(DefaultCaskTypeProvider())),
       "Datasource") to taxiSchema
    }
 
@@ -125,11 +125,12 @@ type OrderWindowSummaryCsv {
       // Then
       verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
       val submittedSchemas = schemas.firstValue
-      submittedSchemas.size.should.equal(1)
-      submittedSchemas[0].name.should.equal("vyne.casks.OrderWindowSummaryCsv")
-      submittedSchemas[0].version.should.equal("1.0.1")
+      submittedSchemas.size.should.equal(2)
+      submittedSchemas[1].name.should.equal("vyne.casks.OrderWindowSummaryCsv")
+      submittedSchemas[1].version.should.equal("1.0.1")
       """
 import OrderWindowSummaryCsv
+import vyne.cask.CaskInsertedAt
 import Symbol
 
 namespace vyne.casks {
@@ -141,12 +142,14 @@ namespace vyne.casks {
    service OrderWindowSummaryCsvCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummaryCsv")
       operation findAll(  ) : OrderWindowSummaryCsv[]
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummaryCsv/CaskInsertedAt/Between/{start}/{end}")
+      operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : vyne.cask.CaskInsertedAt, @PathVariable(name = "end") end : vyne.cask.CaskInsertedAt ) : OrderWindowSummaryCsv[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
       @HttpOperation(method = "GET" , url = "/api/cask/findSingleBy/OrderWindowSummaryCsv/symbol/{id}")
       operation findSingleBySymbol( @PathVariable(name = "id") id : Symbol ) : OrderWindowSummaryCsv( Symbol = id )
    }
 }
 
-""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
+""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[1].content.replace("\\s".toRegex(), ""))
    }
 
    @Test
@@ -164,11 +167,12 @@ namespace vyne.casks {
       // Then
       verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
       val submittedSchemas = schemas.firstValue
-      submittedSchemas.size.should.equal(1)
-      submittedSchemas[0].name.should.equal("vyne.casks.OrderWindowSummary")
-      submittedSchemas[0].version.should.equal("1.0.1")
+      submittedSchemas.size.should.equal(2)
+      submittedSchemas[1].name.should.equal("vyne.casks.OrderWindowSummary")
+      submittedSchemas[1].version.should.equal("1.0.1")
       """
 import OrderWindowSummary
+import vyne.cask.CaskInsertedAt
 import Symbol
 import MaturityDate
 import TransactionEventDateTime
@@ -182,7 +186,8 @@ namespace vyne.casks {
    service OrderWindowSummaryCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
       operation findAll(  ) : OrderWindowSummary[]
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/symbol/{Symbol}")
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/CaskInsertedAt/Between/{start}/{end}")
+      operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : vyne.cask.CaskInsertedAt, @PathVariable(name = "end") end : vyne.cask.CaskInsertedAt ) : OrderWindowSummary[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/symbol/{Symbol}")
       operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary[]( Symbol = symbol )
       @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/symbol/{Symbol}")
       operation findOneBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary
@@ -204,7 +209,7 @@ namespace vyne.casks {
       operation findByOrderDateTimeBetween( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime < end )
    }
 }
-""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
+""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[1].content.replace("\\s".toRegex(), ""))
    }
 
    @Test
@@ -262,26 +267,28 @@ namespace vyne.casks {
       // Then
       verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
       val submittedSchemas = schemas.firstValue
-      submittedSchemas.size.should.equal(1)
-      submittedSchemas[0].name.should.equal("vyne.casks.Simple")
-      submittedSchemas[0].version.should.equal("1.0.1")
+      submittedSchemas.size.should.equal(2)
+      submittedSchemas[1].name.should.equal("vyne.casks.Simple")
+      submittedSchemas[1].version.should.equal("1.0.1")
       """
-         | import Simple
-         | import LogDatePlus
-         |
-         | namespace vyne.casks {
-         |
-         |
-         |
-         |    @ServiceDiscoveryClient(serviceName = "cask")
-         |    @Datasource
-         |    service SimpleCaskService {
-         |       @HttpOperation(method = "GET" , url = "/api/cask/findAll/Simple")
-         |       operation findAll(  ) : Simple[]
-         |       @HttpOperation(method = "GET" , url = "/api/cask/Simple/logDatePlus/Between/{start}/{end}")
-         |       operation findByLogDatePlusBetween( @PathVariable(name = "start") start : LogDatePlus, @PathVariable(name = "end") end : LogDatePlus ) : Simple[]( LogDatePlus >= start, LogDatePlus < end )
-         |    }
-         | }
-      """.trimMargin().replace("\\s".toRegex(), "").should.equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
+import Simple
+import vyne.cask.CaskInsertedAt
+import LogDatePlus
+
+namespace vyne.casks {
+
+
+   @ServiceDiscoveryClient(serviceName = "cask")
+   @Datasource
+   service SimpleCaskService {
+      @HttpOperation(method = "GET" , url = "/api/cask/findAll/Simple")
+      operation findAll(  ) : Simple[]
+      @HttpOperation(method = "GET" , url = "/api/cask/Simple/CaskInsertedAt/Between/{start}/{end}")
+      operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : vyne.cask.CaskInsertedAt, @PathVariable(name = "end") end : vyne.cask.CaskInsertedAt ) : Simple[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
+      @HttpOperation(method = "GET" , url = "/api/cask/Simple/logDatePlus/Between/{start}/{end}")
+      operation findByLogDatePlusBetween( @PathVariable(name = "start") start : LogDatePlus, @PathVariable(name = "end") end : LogDatePlus ) : Simple[]( LogDatePlus >= start, LogDatePlus < end )
+   }
+}
+      """.trimMargin().replace("\\s".toRegex(), "").should.equal(submittedSchemas[1].content.replace("\\s".toRegex(), ""))
    }
 }
