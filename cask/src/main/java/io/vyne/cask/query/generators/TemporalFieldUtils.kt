@@ -35,6 +35,10 @@ object TemporalFieldUtils {
 
    fun constraintFor(field: Field, op: Operator, path: String): PropertyToParameterConstraint{
       val inheritedType = parameterType(field)
+      return constraintFor(inheritedType, op, path)
+   }
+
+   fun constraintFor(inheritedType: Type, op: Operator, path: String): PropertyToParameterConstraint{
       return PropertyToParameterConstraint(
          propertyIdentifier = PropertyTypeIdentifier(inheritedType.toQualifiedName()),
          operator = op,

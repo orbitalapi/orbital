@@ -176,4 +176,25 @@ class CaskApiHandlerTest {
       // Then
       verify(mockCaskDao, times(1)).findAll(any<VersionedType>())
    }
+
+   @Test
+   fun `handler can map a between CaskInsertedAt request`() {
+      // Given
+      val caskApiHandler = CaskApiHandler(mockCaskService, mockCaskDao)
+      val request = mock<ServerRequest>() {
+         on { path() } doReturn "/api/cask/foo/orders/Order/CaskInsertedAt/Between/2010-03-27T11:01:09Z/2030-03-27T11:01:11Z"
+      }
+      val mockedVersionedType = mock<VersionedType>()
+      val columnNameCaptor = argumentCaptor<String>()
+      val startArgumentCaptor = argumentCaptor<String>()
+      val endArgumentCaptor = argumentCaptor<String>()
+      whenever(mockCaskService.resolveType(eq("foo.orders.Order"))).thenReturn(Either.right(mockedVersionedType))
+      // When
+      caskApiHandler.findBy(request)
+      // Then
+      verify(mockCaskDao, times(1)).findBetween(any(), columnNameCaptor.capture(), startArgumentCaptor.capture(), endArgumentCaptor.capture())
+      "CaskInsertedAt".should.equal(columnNameCaptor.firstValue)
+      "2010-03-27T11:01:09Z".should.equal(startArgumentCaptor.firstValue)
+      "2030-03-27T11:01:11Z".should.equal(endArgumentCaptor.firstValue)
+   }
 }

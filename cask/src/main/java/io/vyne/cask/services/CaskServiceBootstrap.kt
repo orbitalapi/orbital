@@ -45,11 +45,11 @@ class CaskServiceBootstrap constructor(
       }
 
       // Look for cask views that need rebuilding
-      val newCaskViewConfigs = this.generateCaskViews()
-      val caskVersionedViewTypes = findTypesToRegister(newCaskViewConfigs.toMutableList())
-      if (caskVersionedViewTypes.isNotEmpty()) {
-         caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedViewTypes)
-      }
+      //val newCaskViewConfigs = this.generateCaskViews()
+      //val caskVersionedViewTypes = findTypesToRegister(newCaskViewConfigs.toMutableList())
+      //if (caskVersionedViewTypes.isNotEmpty()) {
+       //  caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedViewTypes)
+     // }
 
       when {
          casksNeedingUpgrading.isNotEmpty() -> {
