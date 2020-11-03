@@ -6,13 +6,11 @@
   height: 100%;
 }
 
-.container {
+.code-editor-section {
   width: 100%;
-
-  // Why was this here?  Next time I read this message, remove it
-  //&:not(:last-child) {
-  //  padding-right: 45px;
-  //}
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .mat-tab-header {
@@ -52,6 +50,9 @@ $warning: #DD8902;
   flex-direction: column;
   min-height: 120px;
 
+  // When resizing the splitter container, make sure this is the bit the grows
+  flex-grow: 1;
+
   .code-editor {
 
     width: 100%;
@@ -85,6 +86,9 @@ app-query-editor-bottom-bar {
   // Overflow hidden because the ngx-monaco editor is causing width sizing
   // issues, which can incorrectly trigger horizontal scrollbars appearing
   overflow-x: hidden;
+
+  // When resizing the splitter, don't let this bar shrink
+  flex-shrink: 0;
 }
 
 app-tabbed-results-view {

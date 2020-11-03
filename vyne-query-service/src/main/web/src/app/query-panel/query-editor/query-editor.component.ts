@@ -175,4 +175,6 @@ export class QueryEditorComponent implements OnInit {
     const queryResponseId = (<QueryResult>this.lastQueryResult).queryResponseId;
     this.fileService.downloadQueryHistory(queryResponseId, fileType);
   }
+
+
 }
