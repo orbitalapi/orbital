@@ -1,6 +1,7 @@
 package io.vyne.cask.services
 
 import io.vyne.cask.ddl.TypeMigration
+import io.vyne.cask.query.DefaultOperationGenerator
 import io.vyne.cask.query.OperationGenerator
 import io.vyne.cask.query.generators.OperationAnnotation
 import io.vyne.cask.types.allFields
@@ -25,6 +26,7 @@ class CaskServiceSchemaGenerator(
    private val schemaStore: SchemaStore,
    private val caskServiceSchemaWriter: CaskServiceSchemaWriter,
    private val operationGenerators: List<OperationGenerator>,
+   private val defaultOperationGenerators: List<DefaultOperationGenerator>,
    @Value("\${cask.service.annotations:#{null}}") private val caskServiceAnnotations: String? = null,
    @Value("\${spring.application.name}") private val appName: String = "cask"
    ) {
@@ -66,8 +68,8 @@ class CaskServiceSchemaGenerator(
 
    private fun generateCaskService(fields: List<Field>, type: Type): Service {
       var operations: MutableList<Operation> = mutableListOf()
-
-      operations.addAll(operationGenerators.filter { it.expectedAnnotationName() == OperationAnnotation.FindAll }.map { it.generate(null, type) })
+      val defaultOperations = defaultOperationGenerators.map {defaultOperationGenerators -> defaultOperationGenerators.generate(type) }
+      operations.addAll(defaultOperations)
       fields.flatMap { field ->
          operations.addAll(operationGenerators
             .filter { operationGenerator -> operationGenerator.canGenerate(field, type) }

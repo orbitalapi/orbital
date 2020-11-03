@@ -1006,6 +1006,34 @@ service Broker1Service {
       val output = result["Output"] as TypedObject
       output["cost"].value.should.equal(200)
    }
+   @Test
+   fun `can use when by`() {
+      val (vyne,_) = testVyne("""
+         model Input {
+            str: String
+            value : Decimal?
+         }
+
+         enum PriceType {
+            Percentage("%"),
+            Basis("Bps")
+         }
+
+         model SampleType {
+            price: Decimal?
+            tempPriceType: String?
+            priceType: PriceType? by when {
+                this.price = null -> null
+                this.price != null -> tempPriceType
+            }
+         }
+      """.trimIndent())
+      val input = vyne.parseJsonModel("Input", """{ "value": 100, "str": "Percentage" }""", source = Provided)
+      val result = vyne.from(input).build("SampleType")
+      val output = result["SampleType"] as TypedObject
+      output["priceType"].value.should.equal("Percentage")
+   }
+
 
    @Test
    fun `A service annotated with @DataSource will not be invoked twice`() {

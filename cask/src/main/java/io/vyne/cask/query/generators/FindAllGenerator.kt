@@ -1,15 +1,17 @@
 package io.vyne.cask.query.generators
 
-import io.vyne.cask.query.OperationGenerator
+import io.vyne.cask.query.DefaultOperationGenerator
 import io.vyne.cask.services.CaskServiceSchemaGenerator
 import lang.taxi.services.Operation
-import lang.taxi.types.*
 import lang.taxi.types.Annotation
+import lang.taxi.types.AttributePath
+import lang.taxi.types.CompilationUnit
+import lang.taxi.types.Type
 import org.springframework.stereotype.Component
 
 @Component
-class FindAllGenerator: OperationGenerator {
-   override fun generate(field: Field?, type: Type): Operation {
+class FindAllGenerator: DefaultOperationGenerator {
+   override fun generate(type: Type): Operation {
       return Operation(
          name = "findAll",
          parameters = emptyList(),
@@ -19,11 +21,8 @@ class FindAllGenerator: OperationGenerator {
       )
    }
 
-   override fun canGenerate(field: Field, type: Type): Boolean {
-      return false
-   }
 
-   override fun expectedAnnotationName(): OperationAnnotation {
+    fun expectedAnnotationName(): OperationAnnotation {
       return OperationAnnotation.FindAll
    }
 

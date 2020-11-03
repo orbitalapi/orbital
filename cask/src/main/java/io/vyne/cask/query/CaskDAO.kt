@@ -13,6 +13,7 @@ import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.VIEW_PREFIX
 import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.ingest.CaskMessageRepository
+import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
 import io.vyne.cask.timed
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
@@ -179,12 +180,21 @@ class CaskDAO(
 
    fun findBetween(versionedType: VersionedType, columnName: String, start: String, end: String): List<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
-         val field = fieldForColumnName(versionedType, columnName)
-         doForAllTablesOfType(versionedType) { tableName ->
-            jdbcTemplate.queryForList(
-               findBetweenQuery(tableName, columnName),
-               jdbcQueryArgumentType(field, start),
-               jdbcQueryArgumentType(field, end))
+         if (FindBetweenInsertedAtOperationGenerator.fieldName == columnName) {
+            doForAllTablesOfType(versionedType) { tableName ->
+               jdbcTemplate.queryForList(
+                  findBetweenCaskInsertedAtQuery(tableName),
+                  jdbcQueryArgumentType(PrimitiveType.INSTANT, start),
+                  jdbcQueryArgumentType(PrimitiveType.INSTANT, end))
+            }
+         } else {
+            val field = fieldForColumnName(versionedType, columnName)
+            doForAllTablesOfType(versionedType) { tableName ->
+               jdbcTemplate.queryForList(
+                  findBetweenQuery(tableName, columnName),
+                  jdbcQueryArgumentType(field, start),
+                  jdbcQueryArgumentType(field, end))
+            }
          }
       }
    }
@@ -228,7 +238,9 @@ class CaskDAO(
 
    private fun jdbcQueryArgumentsType(field: Field, args: List<String>) = args.map { jdbcQueryArgumentType(field, it) }
 
-   private fun jdbcQueryArgumentType(field: Field, arg: String) = when (field.type.basePrimitive) {
+   private fun jdbcQueryArgumentType(field: Field, arg: String) = jdbcQueryArgumentType (field.type.basePrimitive, arg)
+
+   private fun jdbcQueryArgumentType(primitiveType: PrimitiveType?, arg: String) = when (primitiveType) {
       PrimitiveType.STRING -> arg
       PrimitiveType.ANY -> arg
       PrimitiveType.DECIMAL -> arg.toBigDecimal()
@@ -240,7 +252,7 @@ class CaskDAO(
       //PrimitiveType.TIME -> arg.toTime()
       PrimitiveType.INSTANT -> arg.toLocalDateTime()
 
-      else -> TODO("type ${field.name} not yet mapped")
+      else -> TODO("type ${primitiveType?.name} not yet mapped")
    }
 
    companion object {
@@ -249,6 +261,7 @@ class CaskDAO(
       fun findInQuery(tableName: String, columnName: String, inPhrase: String) = """SELECT * FROM $tableName WHERE "$columnName" IN ($inPhrase)"""
       fun findByQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" = ?"""
       fun findBetweenQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" < ?"""
+      fun findBetweenCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.* FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
       fun findAfterQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ?"""
       fun findBeforeQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" < ?"""
 

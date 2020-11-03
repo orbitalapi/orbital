@@ -117,6 +117,7 @@ select distinct
 "orders"."lastTradeTime" as "order_LastTradeTime",
 "orders"."timestampt" as "order_Timestampt",
 "orders"."tradeStatus" as "order_TradeStatus",
+"orders".caskmessageid as caskmessageid,
 "trades"."id" as "trade_Id",
 "trades"."tradeDate" as "trade_TradeDate"
 from
