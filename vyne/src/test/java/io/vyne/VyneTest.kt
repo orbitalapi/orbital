@@ -893,7 +893,7 @@ service Broker2Service {
       """.trimIndent()
       val (vyne, _) = testVyne(schema)
       vyne.addJsonModel("Source", """{ "eventDate" : "05/28/20T13:44:23.000Z" }""")
-      val result = vyne.query("""findOne { Source } as Target""", ResultMode.VERBOSE)
+      val result = vyne.query("""findOne { Source } as Target""")
       result.isFullyResolved.should.be.`true`
       (result["Target"]!!.toRawObject() as Map<*, *>).get("eventDate").should.equal("05-28-20T13:44:23.000Z")
    }
@@ -912,7 +912,7 @@ service Broker2Service {
       """.trimIndent()
       val (vyne, _) = testVyne(schema)
       vyne.addJsonModel("Source[]", """[{ "eventDate" : "05/28/20T13:44:23.000Z" }]""")
-      val result = vyne.query("""findOne { Source[] } as Target[]""", ResultMode.VERBOSE)
+      val result = vyne.query("""findOne { Source[] } as Target[]""")
       result.isFullyResolved.should.be.`true`
       val map = result.resultMap["lang.taxi.Array<Target>"] as List<TypeNamedInstance>
       val firstEntry = map.first().value as Map<String,TypeNamedInstance>

@@ -6,6 +6,7 @@ import io.vyne.FactSets
 import io.vyne.schemas.OutputConstraint
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
+import kotlin.reflect.KClass
 
 
 data class Fact @JvmOverloads constructor(val typeName: String, val value: Any, val factSetId: FactSetId = FactSets.DEFAULT) {
@@ -17,21 +18,18 @@ data class Fact @JvmOverloads constructor(val typeName: String, val value: Any, 
 data class Query(
    val expression: QueryExpression,
    val facts: List<Fact> = emptyList(),
-   val queryMode: QueryMode = QueryMode.DISCOVER,
-   val resultMode: ResultMode = ResultMode.SIMPLE) {
+   val queryMode: QueryMode = QueryMode.DISCOVER) {
    constructor(
       queryString: QueryExpression,
       facts: Map<String, Any> = emptyMap(),
-      queryMode: QueryMode = QueryMode.DISCOVER,
-      resultMode: ResultMode = ResultMode.SIMPLE)
-      : this(queryString, facts.map { Fact(it.key, it.value) }, queryMode, resultMode)
+      queryMode: QueryMode = QueryMode.DISCOVER)
+      : this(queryString, facts.map { Fact(it.key, it.value) }, queryMode)
 
    constructor(
       queryString: String,
       facts: Map<String, Any> = emptyMap(),
-      queryMode: QueryMode = QueryMode.DISCOVER,
-      resultMode: ResultMode = ResultMode.SIMPLE)
-      : this(TypeNameQueryExpression(queryString), facts.map { Fact(it.key, it.value) }, queryMode, resultMode)
+      queryMode: QueryMode = QueryMode.DISCOVER)
+      : this(TypeNameQueryExpression(queryString), facts.map { Fact(it.key, it.value) }, queryMode)
 }
 
 //@JsonDeserialize(using = QueryExpressionDeserializer::class)
@@ -76,20 +74,22 @@ enum class QueryMode {
    BUILD
 }
 
-enum class ResultMode {
+enum class ResultMode(val viewClass: KClass<out ResultView>) {
    /**
     * Raw results
     */
-   RAW,
+   RAW(SimpleResultView::class),
 
    /**
     * Exclude type information for each attribute in 'results'
     */
-   SIMPLE,
+   SIMPLE(SimpleResultView::class),
 
    /**
     * Include type information for each attribute included in 'results'
     */
-   VERBOSE
+   VERBOSE(VerboseResultView::class)
 }
-
+interface ResultView
+interface SimpleResultView : ResultView
+interface VerboseResultView : ResultView

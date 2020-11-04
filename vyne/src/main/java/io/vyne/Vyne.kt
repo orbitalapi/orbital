@@ -48,13 +48,13 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
-   fun query(vyneQlQuery: VyneQLQueryString, resultMode: ResultMode = ResultMode.SIMPLE): QueryResult {
+   fun query(vyneQlQuery: VyneQLQueryString): QueryResult {
       val vyneQuery = VyneQlCompiler(vyneQlQuery, this.schema.taxi).query()
-      return query(vyneQuery, resultMode = resultMode)
+      return query(vyneQuery)
    }
 
-   fun query(vyneQl: VyneQlQuery, resultMode: ResultMode): QueryResult {
-      var queryContext = query(additionalFacts = vyneQl.facts.values.toSet(), resultMode = resultMode)
+   fun query(vyneQl: VyneQlQuery): QueryResult {
+      var queryContext = query(additionalFacts = vyneQl.facts.values.toSet())
       queryContext = vyneQl.projectedType?.let { queryContext.projectResultsTo(it.toVyneQualifiedName()) } ?: queryContext
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
@@ -82,8 +82,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
 
    fun query(
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
-      additionalFacts: Set<TypedInstance> = emptySet(),
-      resultMode: ResultMode = ResultMode.SIMPLE): QueryContext {
+      additionalFacts: Set<TypedInstance> = emptySet()): QueryContext {
       // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
       // what is asked for, but only providing the desired factSets to the queryContext.
       // This is because the context only evalutates the factSets that are provided,
@@ -93,7 +92,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       // Hopefully, this lets us have the best of both worlds.
 
       val queryEngine = queryEngine(setOf(FactSets.ALL), additionalFacts)
-      return queryEngine.queryContext(factSetIds = factSetIds, resultMode = resultMode)
+      return queryEngine.queryContext(factSetIds = factSetIds)
    }
 
    fun accessibleFrom(fullyQualifiedTypeName: String): Set<Type> {

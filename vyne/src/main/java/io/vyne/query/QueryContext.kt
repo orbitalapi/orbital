@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.collect.HashMultimap
 import io.vyne.models.*
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
@@ -69,7 +70,6 @@ data class QueryResult(
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
    override val queryResponseId: String = UUID.randomUUID().toString(),
-   override val resultMode: ResultMode,
    val truncated: Boolean = false
 ) : QueryResponse {
 
@@ -95,51 +95,58 @@ data class QueryResult(
    @JsonProperty("unmatchedNodes")
    val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
 
+   @get:JsonIgnore
+   val verboseResults: Map<String, Any?> by lazy {
+      val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+      this.results.map { (key, value) ->
+         key.type.name.parameterizedName to value?.let { converter.convert(it) }
+      }.toMap()
+   }
+
    // The result map is structured so the key is the thing that was asked for, and the value
    // is a TypeNamedInstance of the result.
    // By including the type in both places, it allows for polymorphic return types.
    // Also, the reason we're using Any for the value is that the result could be a
    // TypedInstnace, a map of TypedInstnaces, or a collection of TypedInstances.
-   @JsonProperty("results")
-   val resultMap: Map<String, Any?> =
-      when (resultMode) {
-         // TODO remove dependency on ResultMode
-         ResultMode.VERBOSE -> {
-            val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
-            this.results.map { (key, value) ->
-               key.type.name.parameterizedName to value?.let { converter.convert(it) }
-            }.toMap()
-         }
-         else -> {
-            val converter = TypedInstanceConverter(RawObjectMapper)
-            this.results
-               .map { (key, value) -> key.type.name.parameterizedName to value?.let { converter.convert(it) } }
-               .toMap()
-         }
+   @get:JsonIgnore
+   val simpleResults: Map<String, Any?> by lazy {
+      val converter = TypedInstanceConverter(RawObjectMapper)
+      this.results
+         .map { (key, value) -> key.type.name.parameterizedName to value?.let { converter.convert(it) } }
+         .toMap()
+   }
+
+   @get:JsonProperty("results")
+   @get:JsonSerialize(using = ResultModeAwareResultSerializer::class)
+   val resultModeAwareResults: QueryResultProvider
+      get() {
+         return QueryResultProvider({ verboseResults }, { simpleResults })
       }
+
+
+   // For backwards compatability
+   @get:JsonIgnore
+   @delegate:JsonIgnore
+   val resultMap: Map<String, Any?> by lazy { verboseResults }
 
    override fun historyRecord(): HistoryQueryResponse {
       return HistoryQueryResponse(
-         resultMap,
+         verboseResults,
          unmatchedNodeNames,
          this.isFullyResolved,
          queryResponseId,
-         resultMode,
          profilerOperation?.toDto(),
          responseStatus,
          remoteCalls,
          timings)
    }
-
-
-   // HACK : Put this last, so that other stuff is serialized first
-   val lineageGraph = LineageGraph
 }
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
    enum class ResponseStatus {
       COMPLETED,
+
       // Ie., the query didn't error, but not everything was resolved
       INCOMPLETE,
       ERROR,
@@ -161,8 +168,6 @@ interface QueryResponse {
 
    val vyneCost: Long
       get() = profilerOperation?.vyneCost ?: 0L
-
-   val resultMode: ResultMode
 
    fun historyRecord(): HistoryQueryResponse
 }
@@ -208,7 +213,6 @@ data class QueryContext(
    val facts: MutableSet<TypedInstance>,
    val queryEngine: QueryEngine,
    val profiler: QueryProfiler,
-   val resultMode: ResultMode,
    val debugProfiling: Boolean = false,
    val parent: QueryContext? = null) : ProfilerOperation by profiler {
 
@@ -227,7 +231,7 @@ data class QueryContext(
 
    fun build(typeName: QualifiedName): QueryResult = build(typeName.fullyQualifiedName)
    fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
-   fun build(expression: QueryExpression): QueryResult = timed("QueryContext.build") { queryEngine.build(expression, this)}
+   fun build(expression: QueryExpression): QueryResult = timed("QueryContext.build") { queryEngine.build(expression, this) }
 
    fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
    fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
@@ -236,9 +240,9 @@ data class QueryContext(
    fun parseQuery(expression: QueryExpression) = queryEngine.parse(expression)
 
    companion object {
-      fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler, resultMode: ResultMode): QueryContext {
+      fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler): QueryContext {
          val mutableFacts = facts.flatMap { fact -> resolveSynonyms(fact, schema) }.toMutableSet()
-         return QueryContext(schema, mutableFacts, queryEngine, profiler, resultMode)
+         return QueryContext(schema, mutableFacts, queryEngine, profiler)
       }
 
       private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
@@ -283,7 +287,7 @@ data class QueryContext(
    fun only(fact: TypedInstance): QueryContext {
       val mutableFacts = resolveSynonyms(fact, schema).toMutableSet()
       mutableFacts.add(fact)
-      val copiedContext =  this.copy(facts = mutableFacts, parent = this)
+      val copiedContext = this.copy(facts = mutableFacts, parent = this)
       copiedContext.excludedServices.addAll(this.excludedServices)
       return copiedContext
    }
@@ -292,20 +296,20 @@ data class QueryContext(
       log().debug("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
       inMemoryStream = null
       when {
-          fact.type.isEnum -> {
-             val synonymSet = resolveSynonyms(fact, schema)
-             this.facts.addAll(synonymSet)
-          }
-          fact is TypedObject -> {
-             fact.values
-                .filter { it.type.isEnum }
-                .flatMap { resolveSynonyms(fact, schema) }
-                .forEach { synonymsSet -> this.facts.add(synonymsSet) }
-             this.facts.add(fact)
-          }
-          else -> {
-             this.facts.add(fact)
-          }
+         fact.type.isEnum -> {
+            val synonymSet = resolveSynonyms(fact, schema)
+            this.facts.addAll(synonymSet)
+         }
+         fact is TypedObject -> {
+            fact.values
+               .filter { it.type.isEnum }
+               .flatMap { resolveSynonyms(fact, schema) }
+               .forEach { synonymsSet -> this.facts.add(synonymsSet) }
+            this.facts.add(fact)
+         }
+         else -> {
+            this.facts.add(fact)
+         }
       }
 
       return this
@@ -429,7 +433,7 @@ data class QueryContext(
 
 enum class FactDiscoveryStrategy {
    TOP_LEVEL_ONLY {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec:TypedInstanceValidPredicate): TypedInstance?{
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec: TypedInstanceValidPredicate): TypedInstance? {
          return context.facts.firstOrNull { matcher.matches(type, it.type) && spec.isValid(it) }
       }
    },
@@ -439,7 +443,7 @@ enum class FactDiscoveryStrategy {
     * exactly one match in the context
     */
    ANY_DEPTH_EXPECT_ONE {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec:TypedInstanceValidPredicate): TypedInstance? {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec: TypedInstanceValidPredicate): TypedInstance? {
          val matches = context.modelTree()
             .filter { matcher.matches(type, it.type) }
             .filter { spec.isValid(it) }
@@ -494,7 +498,7 @@ enum class FactDiscoveryStrategy {
     * one DISITNCT match within the context
     */
    ANY_DEPTH_ALLOW_MANY {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec:TypedInstanceValidPredicate): TypedCollection? {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec: TypedInstanceValidPredicate): TypedCollection? {
          val matches = context.modelTree()
             .filter { matcher.matches(type, it.type) }
             .filter { spec.isValid(it) }
@@ -508,7 +512,7 @@ enum class FactDiscoveryStrategy {
    },
 
    ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec:TypedInstanceValidPredicate): TypedCollection? {
+      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy, spec: TypedInstanceValidPredicate): TypedCollection? {
          val matches = context.modelTree()
             .filter { matcher.matches(if (type.isCollection) type.typeParameters.first() else type, it.type) }
             .filter { spec.isValid(it) }

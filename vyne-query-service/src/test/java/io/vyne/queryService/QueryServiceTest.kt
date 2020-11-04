@@ -2,121 +2,23 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
-import io.vyne.StubService
-import io.vyne.Vyne
 import io.vyne.models.json.parseJsonModel
-import io.vyne.query.*
-import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.VyneFactory
-import org.junit.Before
+import io.vyne.query.ResultMode
 import org.junit.Ignore
 import org.junit.Test
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
-import java.io.ByteArrayOutputStream
 import kotlin.test.assertEquals
 
-class QueryServiceTest {
-   fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
-      val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
-      val vyne = Vyne(queryEngineFactory).addSchema(schema)
-      return vyne to stubService
-   }
+class QueryServiceTest : BaseQueryServiceTest() {
 
-   fun testVyne(schema: String) = testVyne(TaxiSchema.from(schema))
 
-   val testSchema = """
-         type OrderId inherits String
-         type TraderName inherits String
-         type InstrumentId inherits String
-         type MaturityDate inherits Date
-         type InstrumentMaturityDate inherits MaturityDate
-         type TradeMaturityDate inherits MaturityDate
-         type TradeId inherits String
-         type InstrumentName inherits String
-         model Order {
-            orderId: OrderId
-            traderName : TraderName
-            instrumentId: InstrumentId
-         }
-         model Instrument {
-             instrumentId: InstrumentId
-             maturityDate: InstrumentMaturityDate
-             name: InstrumentName
-         }
-         model Trade {
-            orderId: OrderId
-            maturityDate: TradeMaturityDate
-            tradeId: TradeId
-         }
-
-         model Report {
-            orderId: OrderId
-            tradeId: TradeId
-            instrumentName: InstrumentName
-            maturityDate: MaturityDate
-            traderName : TraderName
-         }
-
-         service MultipleInvocationService {
-            operation getOrders(): Order[]
-            operation getTrades(orderIds: OrderId): Trade
-            operation getTrades(orderIds: OrderId[]): Trade[]
-            operation getInstrument(instrumentId: InstrumentId): Instrument
-         }
-      """.trimIndent()
-
-   lateinit var queryService: QueryService
-   lateinit var stubService: StubService
-   lateinit var vyne: Vyne
-
-   @Before
-   fun setup() {
-      stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
-      vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
-      val mockVyneFactory = mock<VyneFactory>()
-      whenever(mockVyneFactory.createVyne()).thenReturn(vyne)
-      queryService = QueryService(mockVyneFactory, NoopQueryHistory(), Jackson2ObjectMapperBuilder().build())
-
-      stubService.addResponse("getOrders", vyne.parseJsonModel("Order[]", """
-         [
-            {
-               "orderId": "orderId_0",
-               "traderName": "john",
-               "instrumentId": "Instrument_0"
-            }
-         ]
-         """.trimIndent()))
-
-      val maturityDateTrade = "2026-12-01"
-      stubService.addResponse("getTrades", vyne.parseJsonModel("Trade[]", """
-            [{
-               "maturityDate": "$maturityDateTrade",
-               "orderId": "orderId_0",
-               "tradeId": "Trade_0"
-            }]
-         """.trimIndent()))
-
-      stubService.addResponse("getInstrument", vyne.parseJsonModel("Instrument", """
-            {
-               "instrumentId": "Instrument_0",
-               "name": "2040-11-20 0.1 Bond"
-            }
-         """.trimIndent()))
-   }
 
    @Test
    fun `submitQueryJsonSimple`() {
 
-      val query = buildQuery("Order[]", ResultMode.SIMPLE)
-      val responseStr = queryService.submitQuery(query, MediaType.APPLICATION_JSON_VALUE)
+      val query = buildQuery("Order[]")
+      val responseStr = queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
          .contentString()
       val response = jacksonObjectMapper().readTree(responseStr)
       response["fullyResolved"].booleanValue().should.equal(true)
@@ -127,8 +29,8 @@ class QueryServiceTest {
    @Test
    fun `submitQueryCsvSimple`() {
 
-      val query = buildQuery("Order[]", ResultMode.SIMPLE)
-      val responseStr = queryService.submitQuery(query, TEXT_CSV)
+      val query = buildQuery("Order[]")
+      val responseStr = queryService.submitQuery(query, ResultMode.SIMPLE, TEXT_CSV)
          .contentString()
       // Simple CSV should still be json
       val response = jacksonObjectMapper().readTree(responseStr)
@@ -139,8 +41,8 @@ class QueryServiceTest {
    @Test
    fun `submitQueryJsonRaw`() {
 
-      val query = buildQuery("Order[]", ResultMode.RAW)
-      val responseStr = queryService.submitQuery(query, MediaType.APPLICATION_JSON_VALUE)
+      val query = buildQuery("Order[]")
+      val responseStr = queryService.submitQuery(query, ResultMode.RAW, MediaType.APPLICATION_JSON_VALUE)
          .contentString()
       val response = jacksonObjectMapper().readTree(responseStr)
 
@@ -153,8 +55,8 @@ class QueryServiceTest {
    @Test
    fun `submitQueryCsvRaw`() {
 
-      val query = buildQuery("Order[]", ResultMode.RAW)
-      val responseStr = queryService.submitQuery(query, TEXT_CSV)
+      val query = buildQuery("Order[]")
+      val responseStr = queryService.submitQuery(query, ResultMode.RAW, TEXT_CSV)
          .contentString()
       val csv = """
 orderId,traderName,instrumentId
@@ -163,12 +65,6 @@ orderId_0,john,Instrument_0
 
       assertEquals(csv, responseStr.trimIndent())
    }
-
-   private fun buildQuery(type: String, resultMode: ResultMode) = Query(
-      TypeNameListQueryExpression(listOf(type)),
-      emptyMap(),
-      queryMode = QueryMode.GATHER,
-      resultMode = resultMode)
 
 
    @Test
@@ -278,8 +174,3 @@ orderId_1,pierre,
    }
 }
 
-private fun ResponseEntity<StreamingResponseBody>.contentString():String {
-   val stream = ByteArrayOutputStream()
-   this.body!!.writeTo(stream)
-   return String(stream.toByteArray())
-}

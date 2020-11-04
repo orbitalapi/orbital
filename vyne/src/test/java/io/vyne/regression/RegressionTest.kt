@@ -13,7 +13,8 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
-import io.vyne.query.QueryResponse.ResponseStatus.*
+import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
+import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import java.io.File
@@ -153,7 +154,6 @@ data class LightweightQueryResult(
    override val remoteCalls: List<RemoteCall>,
    override val timings: Map<OperationType, Long>,
    override val vyneCost: Long,
-   override val resultMode: ResultMode = ResultMode.VERBOSE,
    val results: Map<String, TypeNamedInstance>
 
 ) : QueryResponse {

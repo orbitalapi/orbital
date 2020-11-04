@@ -117,30 +117,29 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
       val query = Query(
          TypeNameListQueryExpression(typeNames),
          facts,
-         queryMode = mode,
-         resultMode = ResultMode.SIMPLE)
+         queryMode = mode)
       val response = queryService.submitQuery(query)
       return response
    }
 }
 
 interface VyneQueryService {
-   fun submitQuery(query: Query): QueryClientResponse
-   fun submitVyneQl(vyneQL: String): QueryClientResponse
+   fun submitQuery(query: Query, resultMode:ResultMode = ResultMode.SIMPLE): QueryClientResponse
+   fun submitVyneQl(vyneQL: String, resultMode:ResultMode = ResultMode.SIMPLE): QueryClientResponse
 }
 
 
 class HttpVyneQueryService(private val queryServiceUrl: String, private val restTemplate: RestTemplate = RestTemplate()) : VyneQueryService {
 
-   override fun submitQuery(query: Query) = post("/api/query", query)
-   override fun submitVyneQl(vyneQL: String) = post("/api/vyneql", vyneQL)
+   override fun submitQuery(query: Query, resultMode: ResultMode) = post("/api/query",resultMode, query)
+   override fun submitVyneQl(vyneQL: String, resultMode: ResultMode) = post("/api/vyneql", resultMode, vyneQL)
 
-   private fun post(path: String, body: Any): QueryClientResponse {
+   private fun post(path: String, resultMode:ResultMode, body: Any): QueryClientResponse {
       val headers = HttpHeaders()
       headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
       headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
       val query = HttpEntity(body, headers)
-      return restTemplate.postForObject("$queryServiceUrl$path", query, QueryClientResponse::class.java)
+      return restTemplate.postForObject("$queryServiceUrl$path?resultMode=${resultMode.name}", query, QueryClientResponse::class.java)
    }
 }
 
