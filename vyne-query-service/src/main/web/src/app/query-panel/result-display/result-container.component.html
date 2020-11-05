@@ -31,31 +31,6 @@
                                  [type]="getTypeIfNotIncluded(resultTypeName)"
                                  (instanceClicked)="instanceClicked($event)"></app-object-view-container>
     </div>
-<!--    <mat-tab-group>-->
-<!--      <mat-tab label="Table">-->
-<!--        -->
-<!--      </mat-tab>-->
-<!--      <mat-tab label="Result">-->
-<!--        <div *ngFor="let resultTypeName of queryResultTypeNames">-->
-
-<!--          <app-object-view [instance]="getResultForTypeName(resultTypeName)"-->
-<!--                           [schema]="schema"-->
-<!--                           [selectable]="true"-->
-<!--                           [type]="getTypeIfNotIncluded(resultTypeName)"-->
-<!--                           (instanceClicked)="instanceClicked($event)"-->
-<!--          ></app-object-view>-->
-<!--        </div>-->
-<!--      </mat-tab>-->
-<!--      <mat-tab label="Json">-->
-<!--        <div *ngFor="let resultTypeName of queryResultTypeNames" class="result-card">-->
-
-<!--          <app-simple-code-viewer name="Json" [content]="getResultForTypeName(resultTypeName)"-->
-<!--                                  lang="json"></app-simple-code-viewer>-->
-<!--        </div>-->
-<!--      </mat-tab>-->
-
-<!--    </mat-tab-group>-->
-
     <app-call-explorer *ngIf="showMermaid" [queryResult]="result"></app-call-explorer>
   </div>
 </div>
