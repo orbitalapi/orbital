@@ -1,8 +1,8 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, Input} from '@angular/core';
 import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../services/query.service';
-import {Field, findType, getCollectionMemberType, Schema, Type, TypedInstance} from '../services/schema';
+import {TypedInstance} from '../services/schema';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
-import {MatRadioChange} from '@angular/material/radio';
+import {InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
 
 /**
  * This displays results fetched from service calls.
@@ -48,15 +48,17 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
   onAttributeClicked(attributeName: string) {
     if (this.selectable) {
+      const nodeId = null; // todo
       const instance = this.getTypedObjectAttribute(attributeName);
-      this.instanceClicked.emit(instance);
+      this.instanceClicked.emit(new InstanceSelectedEvent(instance, null, nodeId));
 
     }
   }
 
   onTopLevelPrimitiveClicked() {
     if (this.selectable) {
-      this.instanceClicked.emit(this.typedObject);
+      const nodeId = null; // todo
+      this.instanceClicked.emit(new InstanceSelectedEvent(this.typedObject, null, nodeId));
     }
 
   }

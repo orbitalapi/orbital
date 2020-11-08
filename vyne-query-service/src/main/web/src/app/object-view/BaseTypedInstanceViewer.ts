@@ -2,6 +2,7 @@ import {InstanceLike, InstanceLikeOrCollection, TypedObjectAttributes} from './o
 import {EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
 import {Field, findType, getCollectionMemberType, Schema, Type} from '../services/schema';
 import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../services/query.service';
+import {InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
 
 
 export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
@@ -9,7 +10,7 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
   protected _instance: InstanceLikeOrCollection;
 
   @Output()
-  instanceClicked = new EventEmitter<InstanceLike>();
+  instanceClicked = new EventEmitter<InstanceSelectedEvent>();
 
   @Input()
   schema: Schema;

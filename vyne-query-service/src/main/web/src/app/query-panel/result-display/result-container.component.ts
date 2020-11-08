@@ -19,7 +19,8 @@ import {BaseQueryResultComponent} from './BaseQueryResultComponent';
 
 export class InstanceSelectedEvent {
   constructor(public readonly selectedTypeInstance: InstanceLike,
-              public readonly selectedTypeInstanceType: Type
+              public readonly selectedTypeInstanceType: Type | null,
+              public readonly nodeId: string | null
   ) {
   }
 }

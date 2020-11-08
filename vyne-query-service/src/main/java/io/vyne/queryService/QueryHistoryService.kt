@@ -7,7 +7,6 @@ import io.vyne.schemas.QualifiedName
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.client.HttpClientErrorException
 import reactor.core.publisher.Mono
@@ -50,10 +49,10 @@ class QueryHistoryService(private val history: QueryHistory, private val queryHi
     *  * For array index access, use `[n]`
     *  * Otherwise, use the property name
     */
-   @GetMapping("/api/query/history/{id}/{queryType}", params = ["nodeId"])
+   @GetMapping("/api/query/history/{id}/{queryType}/{nodeId}")
    fun getNodeDetail(@PathVariable("id") queryId: String,
                      @PathVariable("queryType") queryType: String,
-                     @RequestParam("nodeId") nodeId: String): Mono<QueryResultNodeDetail> {
+                     @PathVariable("nodeId") nodeId: String): Mono<QueryResultNodeDetail> {
       return history.get(queryId).map { historyRecord ->
          val queryTypeResults = historyRecord.response.results[queryType] ?: throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,"Type $queryType is not present within query result $queryId"

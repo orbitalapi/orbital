@@ -32,6 +32,7 @@ import {CounterTimerComponent} from './query-editor/counter-timer.component';
 import {TabbedResultsViewComponent} from './query-editor/tabbed-results-view.component';
 import {CallExplorerModule} from './taxi-viewer/call-explorer/call-explorer.module';
 import {AngularSplitModule} from 'angular-split';
+import {InstanceLike} from '../object-view/object-view.component';
 
 @NgModule({
   imports: [

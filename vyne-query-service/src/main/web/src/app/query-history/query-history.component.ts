@@ -10,10 +10,12 @@ import {
 import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
 import {DownloadFileType, InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
 import {InstanceLike} from '../object-view/object-view.component';
-import {Type} from '../services/schema';
+import {findType, Schema, Type} from '../services/schema';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ExportFileService} from '../services/export.file.service';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
+import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
+import {TypesService} from '../services/types.service';
 
 
 @Component({
@@ -28,8 +30,14 @@ export class QueryHistoryComponent implements OnInit {
   @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
   shouldTypedInstancePanelBeVisible: boolean;
 
-  constructor(private service: QueryService, private router: Router,
+  private schema: Schema;
+
+  constructor(private service: QueryService,
+              private typeService: TypesService,
+              private router: Router,
               private fileService: ExportFileService) {
+    typeService.getTypes()
+      .subscribe(schema => this.schema = schema);
   }
 
   profileLoading = false;
@@ -125,10 +133,18 @@ export class QueryHistoryComponent implements OnInit {
     this.router.navigate(['/query-history', this.activeRecord.id]);
   }
 
-  onInstanceSelected($event: InstanceSelectedEvent) {
+  onInstanceSelected($event: QueryResultInstanceSelectedEvent) {
+    if ($event.instanceSelectedEvent.nodeId) {
+      this.service.getQueryResultNodeDetail(
+        this.activeRecord.id, $event.queryTypeName, $event.instanceSelectedEvent.nodeId
+      )
+        .subscribe(result => {
+          console.log(result);
+          this.selectedTypeInstanceType = findType(this.schema, result.typeName.fullyQualifiedName);
+        });
+    }
     this.shouldTypedInstancePanelBeVisible = true;
-    this.selectedTypeInstance = $event.selectedTypeInstance;
-    this.selectedTypeInstanceType = $event.selectedTypeInstanceType;
+    this.selectedTypeInstance = $event.instanceSelectedEvent.selectedTypeInstance;
   }
 
   onCloseTypedInstanceDrawer($event: boolean) {

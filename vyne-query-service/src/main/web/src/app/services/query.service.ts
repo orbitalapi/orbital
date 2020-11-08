@@ -33,6 +33,13 @@ export class QueryService {
     return this.http.get<QueryHistorySummary[]>(`${environment.queryServiceUrl}/api/query/history`);
   }
 
+  getQueryResultNodeDetail(queryId: string, requestedTypeInQuery: QualifiedName, nodeId: string): Observable<QueryResultNodeDetail> {
+    const safeNodeId = encodeURI(nodeId);
+    return this.http.get<QueryResultNodeDetail>(
+      `${environment.queryServiceUrl}/api/query/history/${queryId}/${requestedTypeInQuery.parameterizedName}/${safeNodeId}`
+    );
+  }
+
   getQueryProfile(queryId: string): Observable<ProfilerOperation> {
     return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`);
   }
@@ -64,6 +71,13 @@ export interface TypeNamedInstance {
   typeName: string;
   value: any;
   source?: DataSourceReference;
+}
+
+export interface QueryResultNodeDetail {
+  attributeName: string;
+  path: string;
+  typeName: QualifiedName;
+  source: DataSource;
 }
 
 export function isTypedInstance(instance: InstanceLikeOrCollection): instance is TypedInstance {

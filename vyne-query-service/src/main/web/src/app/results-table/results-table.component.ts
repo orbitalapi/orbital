@@ -12,26 +12,27 @@ import {
 import {CellClickedEvent, GridReadyEvent, ValueGetterParams} from 'ag-grid-community';
 import {AgGridColumn} from 'ag-grid-angular';
 import {TypeInfoHeaderComponent} from './type-info-header.component';
+import {InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
 
 @Component({
   selector: 'app-results-table',
   template: `
-      <ag-grid-angular
-        class="ag-theme-alpine"
-        headerHeight="65"
-        [rowData]="rowData"
-        [columnDefs]="columnDefs"
-        (gridReady)="onGridReady($event)"
-        (cellClicked)="onCellClicked($event)"
-      >
-      </ag-grid-angular>
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      headerHeight="65"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      (gridReady)="onGridReady($event)"
+      (cellClicked)="onCellClicked($event)"
+    >
+    </ag-grid-angular>
   `,
   styleUrls: ['./results-table.component.scss']
 })
 export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   @Output()
-  instanceClicked = new EventEmitter<InstanceLike>();
+  instanceClicked = new EventEmitter<InstanceSelectedEvent>();
 
   @Input()
     // tslint:disable-next-line:no-inferrable-types
@@ -132,16 +133,9 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   onCellClicked($event: CellClickedEvent) {
     const rowInstance: InstanceLike = $event.data;
-    if (isTypeNamedInstance(rowInstance) || isTypeNamedInstance(rowInstance)) {
-      const cellInstance = rowInstance.value[$event.colDef.field];
-      this.instanceClicked.emit(cellInstance);
-    } else if (isTypeNamedNull(rowInstance) || isTypedNull(rowInstance)) {
-      // TODO  :Suspect we may have to handle typed-nulls differently
-      const cellInstance = rowInstance.value[$event.colDef.field];
-      this.instanceClicked.emit(cellInstance);
-    } else {
-      console.log('Item clicked didn\'t have type data, so not emitting event');
-    }
+    const nodeId = `[${$event.rowIndex}].${$event.colDef.field}`;
+    const cellInstance = rowInstance.value[$event.colDef.field];
+    this.instanceClicked.emit(new InstanceSelectedEvent(cellInstance, null, nodeId));
   }
 
   onGridReady(event: GridReadyEvent) {
