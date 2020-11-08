@@ -1,6 +1,11 @@
 package io.vyne.models
 
-import io.vyne.schemas.*
+import com.fasterxml.jackson.annotation.JsonIgnore
+import io.vyne.schemas.AttributeName
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
+import io.vyne.schemas.toVyneQualifiedName
 import lang.taxi.Equality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
@@ -11,6 +16,8 @@ import lang.taxi.types.AttributePath
 data class TypedObject(
    override val type: Type,
    private val suppliedValue: Map<String, TypedInstance>,
+   @get:JsonIgnore
+   @field:JsonIgnore
    override val source: DataSource) : TypedInstance, Map<String, TypedInstance>  {
 
    private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue

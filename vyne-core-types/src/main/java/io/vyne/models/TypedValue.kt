@@ -2,6 +2,7 @@
 
 package io.vyne.models
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
@@ -12,7 +13,12 @@ import org.springframework.lang.Nullable
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.NumberFormat
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.util.*
@@ -164,7 +170,10 @@ class StringToNumberConverter(override val next: ConversionService = NoOpConvers
    }
 }
 
-data class TypedValue private constructor(override val type: Type, override val value: Any, override val source: DataSource) : TypedInstance {
+data class TypedValue private constructor(override val type: Type, override val value: Any,
+                                          @get:JsonIgnore
+                                          @field:JsonIgnore
+                                          override val source: DataSource) : TypedInstance {
    private val equality = Equality(this, TypedValue::type, TypedValue::value)
    private val hash : Int by lazy { equality.hash() }
    companion object {

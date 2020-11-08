@@ -26,22 +26,23 @@
               <query-wizard (queryResultUpdated)="resultUpdated($event)"
                             (loadingChanged)="onLoadingChanged($event)"
               ></query-wizard>
-              <div class="row">
                 <div class="results-container">
                   <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
 
-
-                  <mat-card *ngIf="lastQueryResult" style="width: 100%">
-                    <mat-card-header>
-                      <mat-card-title>Results</mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                      <query-result-container [result]="lastQueryResult"
-                                              (instanceSelected)="onInstanceSelected($event)"></query-result-container>
-                    </mat-card-content>
-                  </mat-card>
+                  <app-tabbed-results-view (instanceSelected)="onInstanceSelected($event)"
+                                           *ngIf="lastQueryResult"
+                                           [result]="lastQueryResult"
+                  ></app-tabbed-results-view>
+                  <!--                  <mat-card *ngIf="lastQueryResult" style="width: 100%">-->
+                  <!--                    <mat-card-header>-->
+                  <!--                      <mat-card-title>Results</mat-card-title>-->
+                  <!--                    </mat-card-header>-->
+                  <!--                    <mat-card-content>-->
+                  <!--                      <query-result-container [result]="lastQueryResult"-->
+                  <!--                                              (instanceSelected)="onInstanceSelected($event)"></query-result-container>-->
+                  <!--                    </mat-card-content>-->
+                  <!--                  </mat-card>-->
                 </div>
-              </div>
             </div>
           </ng-template>
         </mat-tab>

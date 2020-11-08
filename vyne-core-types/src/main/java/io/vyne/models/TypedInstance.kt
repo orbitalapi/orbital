@@ -13,6 +13,7 @@ interface TypedInstance {
    val type: Type
    val value: Any?
 
+   @get:JsonIgnore
    val source: DataSource
 
    val typeName: String

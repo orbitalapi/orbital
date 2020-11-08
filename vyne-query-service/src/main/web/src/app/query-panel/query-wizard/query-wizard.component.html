@@ -77,16 +77,18 @@
     </mat-card>
   </div>
 </div>
-<div class="row">
-  <app-vyne-query-viewer [targetTypes]="targetTypeNames"
-                         [facts]="facts"
-                         [schema]="schema"
-                         [queryMode]="queryMode.value"
-                         [findAsArray]="findAsArray"
-                         expanded="true"
-                         class="mat-elevation-z2"
-  ></app-vyne-query-viewer>
+<!-- Disabling the query code viewer for now, since the code it generates
+is incorrect, and we should re-evaluate in the context of VyneQL -->
+<!--<div class="row">-->
+<!--  <app-vyne-query-viewer [targetTypes]="targetTypeNames"-->
+<!--                         [facts]="facts"-->
+<!--                         [schema]="schema"-->
+<!--                         [queryMode]="queryMode.value"-->
+<!--                         [findAsArray]="findAsArray"-->
+<!--                         expanded="true"-->
+<!--                         class="mat-elevation-z2"-->
+<!--  ></app-vyne-query-viewer>-->
 
-</div>
+<!--</div>-->
 
 

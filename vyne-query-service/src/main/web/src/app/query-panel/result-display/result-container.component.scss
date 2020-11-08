@@ -112,9 +112,17 @@ app-call-explorer {
   display: block;
   position: relative;
 }
+
 .virtualScroll-viewport::-webkit-scrollbar {
   display: none;
 }
 
 // Use these for border colors of nesting levels:
 // #7280d9, #fe8736, #06b8ff, #00bbaf, #ff3769, #40c14a, #fc6363, #ffd600
+
+// Fixing the height here, as there's a demo coming up, and
+// we're back in scrollbar / sizing hell.  Will revisit this shortly.
+app-object-view-container {
+  display: block;
+  height: 250px;
+}

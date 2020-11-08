@@ -3,6 +3,7 @@ import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../servic
 import {TypedInstance} from '../services/schema';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
 import {InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
+import {isNullOrUndefined} from 'util';
 
 /**
  * This displays results fetched from service calls.
@@ -34,6 +35,30 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   // or a typed object, which is indexed with property names
   get isPrimitive(): boolean {
     return this._instance != null && this.typedObject.value != null && !this.isTypedObject && !this.isArray;
+  }
+
+  get isScalar(): boolean {
+    if (isNullOrUndefined(this._instance) || isNullOrUndefined(this.type === null)) {
+      return false;
+    } else {
+      return this.type.isScalar;
+    }
+  }
+
+  get scalarValue(): any | null {
+    if (!this.isScalar) {
+      return null;
+    }
+    // HACK :  This needs investigation.
+    // When performing a query that returns a scalar value,
+    // it looks like the value passed here is not a typed object, but just
+    // the value itself.
+    if (isTypedInstance(this.typedObject)) {
+      return this.typedObject.value;
+    } else {
+      return this.typedObject;
+    }
+
   }
 
   get isTypedObject(): boolean {

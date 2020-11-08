@@ -1,11 +1,10 @@
 <!--<div class="top-level">-->
 <!--  <div class="type-name " *ngIf="topLevel">{{ type?.name.name }}</div>-->
 <!--</div>-->
-<div class="typed-value-container" *ngIf="isPrimitive" (click)="onTopLevelPrimitiveClicked()"
+<div (click)="onTopLevelPrimitiveClicked()" *ngIf="isScalar" class="typed-value-container"
      [class.selectable]="selectable"
 >
-  <!--  <div class="type-name">{{ typedObject.typeName }}</div>-->
-  <div class="type-value">{{ typedObject.value }}</div>
+  <div class="type-value">{{ scalarValue }}</div>
 </div>
 <div class="typed-object-container" *ngIf="isTypedObject">
   <div *ngFor="let attributeName of typedObjectAttributeNames" class="attribute-row"
