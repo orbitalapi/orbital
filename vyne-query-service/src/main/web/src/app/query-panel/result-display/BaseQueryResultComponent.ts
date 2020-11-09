@@ -35,6 +35,9 @@ export abstract class BaseQueryResultComponent {
 
   @Input()
   set result(value: QueryResult | QueryFailure) {
+    if (this._result === value) {
+      return;
+    }
     this._result = value;
     this.queryResultTypeNames = this.buildQueryResultTypeNames();
 
