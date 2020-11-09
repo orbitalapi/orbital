@@ -63,12 +63,6 @@
               <mat-option value="GATHER">Gather (Find all the possible results)</mat-option>
             </mat-select>
           </mat-form-field>
-          <mat-form-field>
-            <mat-select placeholder="Result mode" [formControl]="resultMode" required>
-              <mat-option value="SIMPLE">Exclude Type Information (Simple)</mat-option>
-              <mat-option value="VERBOSE">Include Type Information (Verbose)</mat-option>
-            </mat-select>
-          </mat-form-field>
         </form>
         <div>
           <button mat-raised-button color="primary" (click)="submitQuery()">Submit query</button>
