@@ -18,8 +18,6 @@ export class QueryResultInstanceSelectedEvent {
 
 
 export abstract class BaseQueryResultComponent {
-
-
   protected constructor(protected typeService: TypesService) {
     typeService.getTypes().subscribe(schema => this.schema = schema);
 

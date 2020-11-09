@@ -228,6 +228,11 @@ export function isOperation(candidate): candidate is Operation {
   return (candidate as Operation).returnType !== undefined;
 }
 
+export function isMappedSynonym(candidate): candidate is MappedSynonym {
+  const mappedValueCandidate = candidate as MappedValue;
+  return mappedValueCandidate.dataSourceName === 'Mapped' && mappedValueCandidate.mappingType === MappingType.SYNONYM;
+}
+
 export interface OperationContract {
   returnType: Type;
   constraints: Array<any>;
@@ -471,7 +476,7 @@ export function getTypeName(instance: InstanceLike): string {
 }
 
 export function isUntypedInstance(instance: any): instance is UntypedInstance {
-  return !isNullOrUndefined(instance.value) && instance.type === UnknownType.UnknownType;
+  return !isNullOrUndefined(instance.type) && instance.type === UnknownType.UnknownType;
 }
 
 export function isTypedInstance(instance: any): instance is TypedInstance {
@@ -511,6 +516,20 @@ export interface DataSourceReference {
 
 export interface DataSource {
   dataSourceName: DataSourceType;
+}
+
+export enum MappingType {
+  SYNONYM = 'SYNONYM'
+}
+
+export interface MappedValue extends DataSource {
+  mappingType: MappingType;
+  dataSourceName: 'Mapped';
+}
+
+export interface MappedSynonym extends MappedValue {
+  source: TypeNamedInstance;
+  mappingType: MappingType.SYNONYM;
 }
 
 export type DataSourceType =
