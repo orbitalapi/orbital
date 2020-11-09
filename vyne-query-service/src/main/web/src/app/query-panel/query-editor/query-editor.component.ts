@@ -16,7 +16,11 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
 import {DownloadFileType, InstanceSelectedEvent} from '../result-display/result-container.component';
 import {QueryState} from './bottom-bar.component';
-import {isQueryFailure, isQueryResult} from '../result-display/BaseQueryResultComponent';
+import {
+  isQueryFailure,
+  isQueryResult,
+  QueryResultInstanceSelectedEvent
+} from '../result-display/BaseQueryResultComponent';
 import {ExportFileService} from '../../services/export.file.service';
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
@@ -59,7 +63,7 @@ export class QueryEditorComponent implements OnInit {
   loadingChanged = new EventEmitter<boolean>();
 
   @Output()
-  instanceSelected = new EventEmitter<InstanceSelectedEvent>();
+  instanceSelected = new EventEmitter<QueryResultInstanceSelectedEvent>();
 
   constructor(private monacoLoaderService: MonacoEditorLoaderService,
               private queryService: QueryService,
@@ -167,7 +171,7 @@ export class QueryEditorComponent implements OnInit {
     );
   }
 
-  onInstanceSelected($event: InstanceSelectedEvent) {
+  onInstanceSelected($event: QueryResultInstanceSelectedEvent) {
     this.instanceSelected.emit($event);
   }
 

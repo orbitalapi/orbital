@@ -89,6 +89,13 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   }
 }
 
+export interface UntypedInstance {
+  value: any;
+  type: UnknownType;
+}
+export enum UnknownType {
+  UnknownType = 'UnknownType'
+}
 export type InstanceLike = TypedInstance | TypedObjectAttributes | TypeNamedInstance;
 export type InstanceLikeOrCollection = InstanceLike | InstanceLike[];
 export type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;

@@ -1,6 +1,8 @@
 package io.vyne.queryService
 
+import com.fasterxml.jackson.annotation.JsonView
 import io.vyne.models.DataSource
+import io.vyne.models.DataSourceIncludedView
 import io.vyne.query.ProfilerOperationDTO
 import io.vyne.query.QueryResponse
 import io.vyne.schemas.QualifiedName
@@ -50,6 +52,7 @@ class QueryHistoryService(private val history: QueryHistory, private val queryHi
     *  * Otherwise, use the property name
     */
    @GetMapping("/api/query/history/{id}/{queryType}/{nodeId}")
+   @JsonView(DataSourceIncludedView::class)
    fun getNodeDetail(@PathVariable("id") queryId: String,
                      @PathVariable("queryType") queryType: String,
                      @PathVariable("nodeId") nodeId: String): Mono<QueryResultNodeDetail> {

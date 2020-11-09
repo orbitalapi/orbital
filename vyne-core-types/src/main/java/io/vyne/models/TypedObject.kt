@@ -16,8 +16,6 @@ import lang.taxi.types.AttributePath
 data class TypedObject(
    override val type: Type,
    private val suppliedValue: Map<String, TypedInstance>,
-   @get:JsonIgnore
-   @field:JsonIgnore
    override val source: DataSource) : TypedInstance, Map<String, TypedInstance>  {
 
    private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue

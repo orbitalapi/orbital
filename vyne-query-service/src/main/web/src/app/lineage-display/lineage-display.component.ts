@@ -4,7 +4,7 @@ import {
   DataSource,
   isOperationResult,
   isTypeNamedInstance,
-  LineageGraph, OperationResultDataSource, RemoteCall,
+  OperationResultDataSource, RemoteCall,
   TypeNamedInstance,
   isTypedCollection,
   DataSourceReference
@@ -24,19 +24,22 @@ type LineageElement = TypeNamedInstance | TypeNamedInstance[] | DataSource;
 export class LineageDisplayComponent extends BaseGraphComponent {
   static NODE_ID = '__nodeId';
 
-  private _lineageGraph: LineageGraph;
+  private _dataSource: DataSource;
   private _instance: TypeNamedInstance;
 
   graphNodesChanged = new Subject<boolean>()
 
 
   @Input()
-  get lineageGraph(): LineageGraph {
-    return this._lineageGraph;
+  get dataSource(): DataSource {
+    return this._dataSource;
   }
 
-  set lineageGraph(value: LineageGraph) {
-    this._lineageGraph = value;
+  set dataSource(value: DataSource) {
+    if (this._dataSource === value) {
+      return;
+    }
+    this._dataSource = value;
     this.schemaGraph = this.buildGraph(this.instance);
   }
 
@@ -46,6 +49,9 @@ export class LineageDisplayComponent extends BaseGraphComponent {
   }
 
   set instance(value: TypeNamedInstance) {
+    if (this._instance === value) {
+      return;
+    }
     this._instance = value;
     this.schemaGraph = this.buildGraph(this.instance);
   }
@@ -53,7 +59,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
   schemaGraph: SchemaNodeSet = this.emptyGraph();
 
   private buildGraph(node: LineageElement, linkTo: SchemaGraphNode = null): SchemaNodeSet {
-    if (!node || !this.lineageGraph) {
+    if (!node || !this.dataSource) {
       return this.emptyGraph();
     }
     const self = this;
@@ -106,14 +112,14 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     }
 
     function dataSourceToNode(dataSource: DataSource): SchemaGraphNode {
-      const instanceId = nodeId(dataSource, () => dataSource.name + new Date().getTime());
+      const instanceId = nodeId(dataSource, () => dataSource.dataSourceName + new Date().getTime());
       let label: string;
-      switch (dataSource.name) {
+      switch (dataSource.dataSourceName) {
         case 'Provided':
           label = 'Provided as input';
           break;
         default:
-          label = dataSource.name;
+          label = dataSource.dataSourceName;
       }
       return {
         id: instanceId,
@@ -132,12 +138,8 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       links
     };
 
-    const buildDataSourceTo = (source: DataSourceReference, typedInstanceNode: SchemaGraphNode) =>  {
-      const dataSource = this.lineageGraph[source.dataSourceIndex];
-      if (!dataSource) {
-        throw new Error(`node declares data source with index ${source.dataSourceIndex} but no such index exists`);
-      }
-      const dataSourceNodes = this.buildGraph(dataSource, typedInstanceNode);
+    const buildDataSourceTo = (source: DataSource, typedInstanceNode: SchemaGraphNode) =>  {
+      const dataSourceNodes = this.buildGraph(source, typedInstanceNode);
       this.appendNodeSet(dataSourceNodes, nodeSet);
     }
 
@@ -147,6 +149,8 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
       if (node.source) {
         buildDataSourceTo(node.source, typedInstanceNode)
+      } else if(node === this.instance) { // Are we building the root level node?
+        buildDataSourceTo(this.dataSource, typedInstanceNode)
       }
     }
     else if(isTypedCollection(node)) {

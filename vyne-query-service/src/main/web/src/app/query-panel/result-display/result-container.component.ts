@@ -11,14 +11,19 @@ import {MatTreeNestedDataSource} from '@angular/material';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {TypesService} from '../../services/types.service';
 import {findType, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
-import {InstanceLike, InstanceLikeOrCollection, typeName} from '../../object-view/object-view.component';
+import {
+  InstanceLike,
+  InstanceLikeOrCollection,
+  typeName,
+  UntypedInstance
+} from '../../object-view/object-view.component';
 import {ExportFileService} from '../../services/export.file.service';
 import * as fileSaver from 'file-saver';
 import {Router} from '@angular/router';
 import {BaseQueryResultComponent} from './BaseQueryResultComponent';
 
 export class InstanceSelectedEvent {
-  constructor(public readonly selectedTypeInstance: InstanceLike,
+  constructor(public readonly selectedTypeInstance: InstanceLike | UntypedInstance,
               public readonly selectedTypeInstanceType: Type | null,
               public readonly nodeId: string | null
   ) {

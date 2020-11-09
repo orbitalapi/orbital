@@ -17,8 +17,6 @@ private data class TypedNullWrapper(val type: Type) {
 }
 
 class TypedNull private constructor(private val wrapper: TypedNullWrapper,
-                                    @get:JsonIgnore
-                                    @field:JsonIgnore
                                     override val source: DataSource = UndefinedSource) : TypedInstance {
    companion object {
       private val cache = CacheBuilder.newBuilder()

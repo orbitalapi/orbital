@@ -1,61 +1,53 @@
 import {Component} from '@angular/core';
 import {Router} from '@angular/router';
-import {QueryHistoryRecord, isVyneQlQueryHistoryRecord, QueryResult} from '../services/query.service';
+import {
+  QueryHistoryRecord,
+  isVyneQlQueryHistoryRecord,
+  QueryResult,
+  DataSource,
+  QueryService
+} from '../services/query.service';
 import {VyneQueryViewerComponent} from './taxi-viewer/vyne-query-viewer/vyne-query-viewer.component';
 import {VyneqlRecordComponent} from '../query-history/vyneql-record.component';
 import {QueryFailure} from './query-wizard/query-wizard.component';
 import {InstanceLike} from '../object-view/object-view.component';
 import {Type} from '../services/schema';
 import {InstanceSelectedEvent} from './result-display/result-container.component';
+import {isQueryResult, QueryResultInstanceSelectedEvent} from './result-display/BaseQueryResultComponent';
+import {BaseQueryResultDisplayComponent} from './BaseQueryResultDisplayComponent';
+import {TypesService} from '../services/types.service';
 
 @Component({
   selector: 'query-panel',
   templateUrl: './query-panel.component.html',
   styleUrls: ['./query-panel.component.scss'],
 })
-export class QueryPanelComponent {
+export class QueryPanelComponent extends BaseQueryResultDisplayComponent {
   routeQuery: QueryHistoryRecord;
   selectedIndex: number;
 
   lastQueryResult: QueryResult | QueryFailure;
 
-  lineageGraph;
-
-  selectedTypeInstance: InstanceLike;
-  selectedTypeInstanceType: Type;
-
-  shouldTypedInstancePanelBeVisible: boolean;
-
   loading = false;
 
-  get showSidePanel(): boolean {
-    return this.selectedTypeInstanceType !== undefined && this.selectedTypeInstance !== null;
-  }
-
-  set showSidePanel(value: boolean) {
-    if (!value) {
-      this.selectedTypeInstance = null;
-    }
-  }
-
-
-  constructor(private router: Router) {
+  constructor(private router: Router, queryService: QueryService, typeService: TypesService) {
+    super(queryService, typeService);
     // https://angular.io/api/router/NavigationExtras#state
     const navigationState = this.router.getCurrentNavigation().extras.state;
     this.routeQuery = navigationState ? navigationState.query : undefined;
     this.selectedIndex = this.routeQuery ? (isVyneQlQueryHistoryRecord(this.routeQuery) ? 1 : 0) : 0;
   }
 
+  get queryId(): string {
+    if (isQueryResult(this.lastQueryResult)) {
+      return this.lastQueryResult.queryResponseId;
+    } else {
+      return null;
+    }
+  }
 
   resultUpdated(result: QueryResult | QueryFailure) {
     this.lastQueryResult = result;
-    this.lineageGraph = (result as QueryResult).lineageGraph || null;
-  }
-
-  onInstanceSelected($event: InstanceSelectedEvent) {
-    this.shouldTypedInstancePanelBeVisible = true;
-    this.selectedTypeInstance = $event.selectedTypeInstance;
-    this.selectedTypeInstanceType = $event.selectedTypeInstanceType;
   }
 
   onLoadingChanged($event: boolean) {

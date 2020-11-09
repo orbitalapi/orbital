@@ -10,6 +10,8 @@ interface DataSource {
    val name: String
 }
 
+interface DataSourceIncludedView
+
 /**
  * Use this when a source has multiple independent sources, and callers
  * should traverse further to find the underlying sources.

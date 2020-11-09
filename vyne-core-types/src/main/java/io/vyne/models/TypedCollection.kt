@@ -7,8 +7,6 @@ import lang.taxi.Equality
 
 
 data class TypedCollection(override val type: Type, override val value: List<TypedInstance>,
-                           @get:JsonIgnore
-                           @field:JsonIgnore
                            override val source: DataSource = MixedSources) : List<TypedInstance> by value, TypedInstance {
    private val equality = Equality(this, TypedCollection::type, TypedCollection::value)
    init {

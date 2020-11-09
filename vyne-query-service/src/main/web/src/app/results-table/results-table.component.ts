@@ -1,6 +1,11 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {Type} from '../services/schema';
-import {InstanceLike, InstanceLikeOrCollection} from '../object-view/object-view.component';
+import {
+  InstanceLike,
+  InstanceLikeOrCollection,
+  UnknownType,
+  UntypedInstance
+} from '../object-view/object-view.component';
 import {BaseTypedInstanceViewer} from '../object-view/BaseTypedInstanceViewer';
 import {isTypedInstance, isTypedNull, isTypeNamedInstance, isTypeNamedNull} from '../services/query.service';
 import {CellClickedEvent, GridReadyEvent, ValueGetterParams} from 'ag-grid-community';
@@ -93,7 +98,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
           typeName: this.type.name
         },
         valueGetter: (params: ValueGetterParams) => {
-          return this.instance;
+          return this.unwrap(this.instance, null);
         }
       }];
     } else {
@@ -145,9 +150,13 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   onCellClicked($event: CellClickedEvent) {
     const rowInstance: InstanceLike = $event.data;
-    const nodeId = `[${$event.rowIndex}].${$event.colDef.field}`;
-    const cellInstance = rowInstance.value[$event.colDef.field];
-    this.instanceClicked.emit(new InstanceSelectedEvent(cellInstance, null, nodeId));
+    const nodeId = this.isArray ? `[${$event.rowIndex}].${$event.colDef.field}` : $event.colDef.field;
+    const cellInstance = this.unwrap(rowInstance, $event.colDef.field);
+    const untypedCellInstance: UntypedInstance = {
+      value: cellInstance,
+      type: UnknownType.UnknownType
+    };
+    this.instanceClicked.emit(new InstanceSelectedEvent(untypedCellInstance, null, nodeId));
   }
 
   onGridReady(event: GridReadyEvent) {

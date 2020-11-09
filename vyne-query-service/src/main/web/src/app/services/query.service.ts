@@ -4,9 +4,8 @@ import {Observable} from 'rxjs/internal/Observable';
 
 import {environment} from 'src/environments/environment';
 import {QualifiedName, TypedInstance} from './schema';
-import {InstanceLikeOrCollection} from '../object-view/object-view.component';
+import {InstanceLikeOrCollection, UnknownType, UntypedInstance} from '../object-view/object-view.component';
 import {VyneServicesModule} from './vyne-services.module';
-import {Data} from '@angular/router';
 import {isNullOrUndefined} from 'util';
 
 @Injectable({
@@ -70,7 +69,7 @@ export class Fact {
 export interface TypeNamedInstance {
   typeName: string;
   value: any;
-  source?: DataSourceReference;
+  source?: DataSource;
 }
 
 export interface QueryResultNodeDetail {
@@ -80,9 +79,12 @@ export interface QueryResultNodeDetail {
   source: DataSource;
 }
 
-export function isTypedInstance(instance: InstanceLikeOrCollection): instance is TypedInstance {
-  const instanceAny = instance as any;
-  return instanceAny && instanceAny.type !== undefined && instanceAny.value !== undefined;
+export function isUntypedInstance(instance: any): instance is UntypedInstance {
+  return !isNullOrUndefined(instance.value) && instance.type === UnknownType.UnknownType;
+}
+
+export function isTypedInstance(instance: any): instance is TypedInstance {
+  return instance && instance.type !== undefined && instance.value !== undefined;
 }
 
 export function isTypedNull(instance: InstanceLikeOrCollection): instance is TypedInstance {
@@ -108,12 +110,8 @@ export interface DataSourceReference {
   dataSourceIndex: number;
 }
 
-export interface LineageGraph {
-  [index: number]: DataSource;
-}
-
 export interface DataSource {
-  name: DataSourceType;
+  dataSourceName: DataSourceType;
 }
 
 export type DataSourceType =
@@ -125,7 +123,7 @@ export type DataSourceType =
   | 'Multiple sources';
 
 export function isOperationResult(source: DataSource): source is OperationResultDataSource {
-  return source.name === 'Operation result';
+  return source.dataSourceName === 'Operation result';
 }
 
 export interface OperationResultDataSource extends DataSource {
@@ -153,7 +151,6 @@ export interface QueryResult {
   profilerOperation: ProfilerOperation;
   remoteCalls: RemoteCall[];
   resultMode: ResultMode;
-  lineageGraph: LineageGraph;
   queryResponseId: string;
   error?: string;
   responseStatus: ResponseStatus;

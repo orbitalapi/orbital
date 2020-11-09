@@ -15,7 +15,7 @@ storiesOf('Lineage display', module)
   return {
     template: `<div style="padding: 40px">
     <app-lineage-display
-    [lineageGraph]="lineageGraph"
+    [dataSource]="lineageGraph"
     [instance]="typeNamedInstance"
     ></app-lineage-display>
     </div>`,
@@ -23,10 +23,7 @@ storiesOf('Lineage display', module)
       lineageGraph: LINEAGE_GRAPH,
       typeNamedInstance: {
         'typeName': 'demo.RewardsBalance',
-        'value': 2300,
-        'source': {
-          'dataSourceIndex': 0
-        }
+        'value': 2300
       }
     }
   };

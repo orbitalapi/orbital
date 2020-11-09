@@ -2,7 +2,6 @@
 
 package io.vyne.models
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
@@ -171,8 +170,6 @@ class StringToNumberConverter(override val next: ConversionService = NoOpConvers
 }
 
 data class TypedValue private constructor(override val type: Type, override val value: Any,
-                                          @get:JsonIgnore
-                                          @field:JsonIgnore
                                           override val source: DataSource) : TypedInstance {
    private val equality = Equality(this, TypedValue::type, TypedValue::value)
    private val hash : Int by lazy { equality.hash() }

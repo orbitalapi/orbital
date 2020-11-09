@@ -28,6 +28,7 @@ export class BaseGraphComponent {
       '#aebfc9'
     ]
   };
+  // orientation = 'TD';
   orientation = 'LR';
 
   getStroke(node) {
