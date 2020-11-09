@@ -1,8 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {QualifiedName, Type} from '../services/schema';
-import {InstanceLike, UntypedInstance} from '../object-view/object-view.component';
+import {QualifiedName, Type, InstanceLike, DataSource} from '../services/schema';
 import {Inheritable} from '../inheritence-graph/inheritance-graph.component';
-import {DataSource} from '../services/query.service';
 
 @Component({
   selector: 'app-typed-instance-panel',

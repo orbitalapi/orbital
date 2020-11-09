@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
-import {findType, Schema, Type} from '../services/schema';
+import {findType, Schema, Type, InstanceLike, getTypeName, TypeNamedInstance} from '../services/schema';
 import {
   VyneHttpServiceError,
   ParsedTypeInstance,
@@ -11,8 +11,6 @@ import {FileSystemFileEntry, UploadFile} from 'ngx-file-drop';
 import {HttpErrorResponse} from '@angular/common/http';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {CodeViewerComponent} from '../code-viewer/code-viewer.component';
-import {TypeNamedInstance} from '../services/query.service';
-import {InstanceLike, typeName} from '../object-view/object-view.component';
 import {environment} from '../../environments/environment';
 import {CaskService} from '../services/cask.service';
 import {HeaderTypes} from './csv-viewer.component';
@@ -255,7 +253,7 @@ export class DataExplorerComponent {
   onInstanceClicked(event: InstanceLike) {
     this.shouldTypedInstancePanelBeVisible = true;
     this.selectedTypeInstance = event;
-    const instanceTypeName = typeName(event);
+    const instanceTypeName = getTypeName(event);
     this.selectedTypeInstanceType = findType(this.schema, instanceTypeName);
     console.log('clicked: ' + JSON.stringify(event));
   }

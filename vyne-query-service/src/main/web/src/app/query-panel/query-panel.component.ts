@@ -1,19 +1,8 @@
 import {Component} from '@angular/core';
 import {Router} from '@angular/router';
-import {
-  QueryHistoryRecord,
-  isVyneQlQueryHistoryRecord,
-  QueryResult,
-  DataSource,
-  QueryService
-} from '../services/query.service';
-import {VyneQueryViewerComponent} from './taxi-viewer/vyne-query-viewer/vyne-query-viewer.component';
-import {VyneqlRecordComponent} from '../query-history/vyneql-record.component';
+import {isVyneQlQueryHistoryRecord, QueryHistoryRecord, QueryResult, QueryService} from '../services/query.service';
 import {QueryFailure} from './query-wizard/query-wizard.component';
-import {InstanceLike} from '../object-view/object-view.component';
-import {Type} from '../services/schema';
-import {InstanceSelectedEvent} from './result-display/result-container.component';
-import {isQueryResult, QueryResultInstanceSelectedEvent} from './result-display/BaseQueryResultComponent';
+import {isQueryResult} from './result-display/BaseQueryResultComponent';
 import {BaseQueryResultDisplayComponent} from './BaseQueryResultDisplayComponent';
 import {TypesService} from '../services/types.service';
 

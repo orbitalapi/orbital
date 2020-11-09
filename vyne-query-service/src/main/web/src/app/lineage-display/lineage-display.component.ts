@@ -1,16 +1,19 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {InstanceLike} from '../object-view/object-view.component';
 import {
-  DataSource,
   isOperationResult,
-  isTypeNamedInstance,
   OperationResultDataSource, RemoteCall,
-  TypeNamedInstance,
-  isTypedCollection,
-  DataSourceReference
 } from '../services/query.service';
 
-import {SchemaGraphLink, SchemaGraphNode, SchemaNodeSet, TypedInstance} from '../services/schema';
+import {
+  isTypeNamedInstance,
+  SchemaGraphLink,
+  SchemaGraphNode,
+  SchemaNodeSet,
+  TypedInstance,
+  isTypedCollection,
+  TypeNamedInstance,
+  DataSource
+} from '../services/schema';
 import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
 import {Subject} from 'rxjs';
 

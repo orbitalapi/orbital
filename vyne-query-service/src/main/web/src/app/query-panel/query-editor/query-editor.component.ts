@@ -14,7 +14,7 @@ import {
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {HttpErrorResponse} from '@angular/common/http';
 import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
-import {DownloadFileType, InstanceSelectedEvent} from '../result-display/result-container.component';
+import {DownloadFileType} from '../result-display/result-container.component';
 import {QueryState} from './bottom-bar.component';
 import {
   isQueryFailure,

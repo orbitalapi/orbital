@@ -3,27 +3,15 @@
    "value" : {
       "firstName" : {
          "typeName" : "vyne.demo.LastName",
-         "value" : "Marty",
-         "source" : {
-            "dataSourceName" : "Provided"
-         }
+         "value" : "Marty"
       },
       "lastName" : {
          "typeName" : "vyne.demo.LastName",
-         "value" : "Pitt",
-         "source" : {
-            "dataSourceName" : "Provided"
-         }
+         "value" : "Pitt"
       },
       "resident" : {
          "typeName" : "vyne.demo.Country",
-         "value" : "UK",
-         "source" : {
-            "dataSourceName" : "Provided"
-         }
+         "value" : "UK"
       }
-   },
-   "source" : {
-      "dataSourceName" : "Provided"
    }
 }

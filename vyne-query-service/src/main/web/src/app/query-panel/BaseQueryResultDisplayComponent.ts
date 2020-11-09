@@ -1,13 +1,17 @@
 import {
-  DataSource,
-  isTypedInstance, isTypeNamedInstance,
-  isUntypedInstance,
   QueryService,
-  TypeNamedInstance
 } from '../services/query.service';
 import {EventEmitter, Output} from '@angular/core';
-import {InstanceLike} from '../object-view/object-view.component';
-import {findType, Schema, Type} from '../services/schema';
+import {
+  DataSource,
+  findType,
+  InstanceLike,
+  isTypedInstance,
+  isTypeNamedInstance,
+  isUntypedInstance,
+  Schema,
+  Type, TypeNamedInstance
+} from '../services/schema';
 import {QueryResultInstanceSelectedEvent} from './result-display/BaseQueryResultComponent';
 import {TypesService} from '../services/types.service';
 

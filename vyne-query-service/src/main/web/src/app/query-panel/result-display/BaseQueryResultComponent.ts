@@ -1,10 +1,9 @@
 import {TypesService} from '../../services/types.service';
-import {findType, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
+import {findType, InstanceLikeOrCollection, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
 import {EventEmitter, Input, Output} from '@angular/core';
 import {QueryResult, ResponseStatus, ResultMode} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
-import {InstanceLike, InstanceLikeOrCollection, typeName} from '../../object-view/object-view.component';
-import {InstanceSelectedEvent} from './result-container.component';
+import {InstanceSelectedEvent} from '../instance-selected-event';
 
 /**
  * Query results contain an entry for each top-level type that was requested.

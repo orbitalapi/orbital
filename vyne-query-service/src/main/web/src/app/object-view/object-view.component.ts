@@ -1,9 +1,8 @@
 import {Component, Input} from '@angular/core';
-import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../services/query.service';
-import {TypedInstance} from '../services/schema';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
-import {InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
 import {isNullOrUndefined} from 'util';
+import {isTypedInstance} from '../services/schema';
+import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 
 /**
  * This displays results fetched from service calls.
@@ -86,33 +85,6 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       this.instanceClicked.emit(new InstanceSelectedEvent(this.typedObject, null, nodeId));
     }
 
-  }
-}
-
-export interface UntypedInstance {
-  value: any;
-  type: UnknownType;
-}
-export enum UnknownType {
-  UnknownType = 'UnknownType'
-}
-export type InstanceLike = TypedInstance | TypedObjectAttributes | TypeNamedInstance;
-export type InstanceLikeOrCollection = InstanceLike | InstanceLike[];
-export type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;
-
-export interface TypedObjectAttributes {
-  [key: string]: TypeInstanceOrAttributeSet;
-}
-
-export function typeName(instance: InstanceLike): string {
-  if (isTypedInstance(instance)) {
-    return instance.type.name.fullyQualifiedName;
-  } else if (isTypeNamedInstance(instance)) {
-    return instance.typeName;
-  } else {
-    // No good reason for not supporting this, just haven't hit the usecase yet, and it's not
-    // obvious how we should support it.
-    throw new Error('Looks like the instance is a TypedObjectAttributes, which isn\'t yet supported');
   }
 }
 

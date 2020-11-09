@@ -1,16 +1,16 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {Type} from '../services/schema';
 import {
   InstanceLike,
-  InstanceLikeOrCollection,
+  InstanceLikeOrCollection, isTypedInstance, isTypedNull,
+  isTypeNamedInstance, isTypeNamedNull,
+  Type,
   UnknownType,
   UntypedInstance
-} from '../object-view/object-view.component';
+} from '../services/schema';
 import {BaseTypedInstanceViewer} from '../object-view/BaseTypedInstanceViewer';
-import {isTypedInstance, isTypedNull, isTypeNamedInstance, isTypeNamedNull} from '../services/query.service';
 import {CellClickedEvent, GridReadyEvent, ValueGetterParams} from 'ag-grid-community';
 import {TypeInfoHeaderComponent} from './type-info-header.component';
-import {InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
+import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 
 @Component({
   selector: 'app-results-table',

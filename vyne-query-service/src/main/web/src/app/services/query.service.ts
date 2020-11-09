@@ -3,10 +3,8 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
 
 import {environment} from 'src/environments/environment';
-import {QualifiedName, TypedInstance} from './schema';
-import {InstanceLikeOrCollection, UnknownType, UntypedInstance} from '../object-view/object-view.component';
+import {DataSource, InstanceLikeOrCollection, QualifiedName, TypeNamedInstance} from './schema';
 import {VyneServicesModule} from './vyne-services.module';
-import {isNullOrUndefined} from 'util';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -66,11 +64,6 @@ export class Fact {
   qualifiedName: QualifiedName | null; // sent from the server, not required when sending to the server
 }
 
-export interface TypeNamedInstance {
-  typeName: string;
-  value: any;
-  source?: DataSource;
-}
 
 export interface QueryResultNodeDetail {
   attributeName: string;
@@ -79,48 +72,7 @@ export interface QueryResultNodeDetail {
   source: DataSource;
 }
 
-export function isUntypedInstance(instance: any): instance is UntypedInstance {
-  return !isNullOrUndefined(instance.value) && instance.type === UnknownType.UnknownType;
-}
 
-export function isTypedInstance(instance: any): instance is TypedInstance {
-  return instance && instance.type !== undefined && instance.value !== undefined;
-}
-
-export function isTypedNull(instance: InstanceLikeOrCollection): instance is TypedInstance {
-  const instanceAny = instance as any;
-  return instanceAny && instanceAny.type !== undefined && isNullOrUndefined(instanceAny.value);
-}
-
-export function isTypeNamedInstance(instance: any): instance is TypeNamedInstance {
-  const instanceAny = instance as any;
-  return instanceAny && instanceAny.typeName !== undefined && instanceAny.value !== undefined;
-}
-
-export function isTypeNamedNull(instance: any): instance is TypeNamedInstance {
-  const instanceAny = instance as any;
-  return instanceAny && instanceAny.typeName !== undefined && isNullOrUndefined(instanceAny.value);
-}
-
-export function isTypedCollection(instance: any): instance is TypeNamedInstance[] {
-  return instance && Array.isArray(instance) && instance[0] && isTypeNamedInstance(instance[0]);
-}
-
-export interface DataSourceReference {
-  dataSourceIndex: number;
-}
-
-export interface DataSource {
-  dataSourceName: DataSourceType;
-}
-
-export type DataSourceType =
-  'Provided'
-  | 'Mapped'
-  | 'Operation result'
-  | 'Defined in schema'
-  | 'Undefined source'
-  | 'Multiple sources';
 
 export function isOperationResult(source: DataSource): source is OperationResultDataSource {
   return source.dataSourceName === 'Operation result';

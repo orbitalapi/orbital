@@ -1,21 +1,16 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {
-  DataSource,
-  isRestQueryHistoryRecord, isTypedInstance, isTypeNamedInstance, isUntypedInstance,
+  isRestQueryHistoryRecord,
   isVyneQlQueryHistoryRecord,
   ProfilerOperation,
-  QueryHistoryRecord, QueryHistorySummary, QueryResult,
-  QueryService, TypeNamedInstance,
-  VyneQlQueryHistoryRecord,
+  QueryHistoryRecord,
+  QueryHistorySummary,
+  QueryResult,
+  QueryService,
 } from '../services/query.service';
-import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
-import {DownloadFileType, InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
-import {InstanceLike} from '../object-view/object-view.component';
-import {findType, Schema, Type} from '../services/schema';
-import {ActivatedRoute, Router} from '@angular/router';
+import {Router} from '@angular/router';
 import {ExportFileService} from '../services/export.file.service';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
-import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 import {TypesService} from '../services/types.service';
 import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
 
