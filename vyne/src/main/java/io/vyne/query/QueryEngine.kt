@@ -1,10 +1,6 @@
 package io.vyne.query
 
-import io.vyne.FactSetId
-import io.vyne.FactSetMap
-import io.vyne.FactSets
-import io.vyne.ModelContainer
-import io.vyne.filterFactSets
+import io.vyne.*
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -33,8 +29,7 @@ interface QueryEngine {
 
    fun queryContext(
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
-      additionalFacts: Set<TypedInstance> = emptySet(),
-      resultMode: ResultMode = ResultMode.SIMPLE): QueryContext
+      additionalFacts: Set<TypedInstance> = emptySet()): QueryContext
 
    fun build(type: Type, context: QueryContext): QueryResult = build(TypeNameQueryExpression(type.fullyQualifiedName), context)
    fun build(query: QueryExpression, context: QueryContext): QueryResult
@@ -72,10 +67,9 @@ class StatefulQueryEngine(
 
    override fun queryContext(
       factSetIds: Set<FactSetId>,
-      additionalFacts: Set<TypedInstance>,
-      resultMode: ResultMode): QueryContext {
+      additionalFacts: Set<TypedInstance>): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
-      return QueryContext.from(schema, facts + additionalFacts, this, profiler, resultMode)
+      return QueryContext.from(schema, facts + additionalFacts, this, profiler)
    }
 }
 
@@ -156,14 +150,12 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          QueryResult(
             mapOf(querySpecTypeNode to result),
             emptySet(),
-            resultMode = context.resultMode,
             profilerOperation = context.profiler.root
          )
       } else {
          QueryResult(
             emptyMap(),
             setOf(querySpecTypeNode),
-            resultMode = context.resultMode,
             profilerOperation = context.profiler.root
          )
       }
@@ -296,8 +288,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             results = acc.results + queryResult.results,
             unmatchedNodes = acc.unmatchedNodes + queryResult.unmatchedNodes,
             path = null,
-            profilerOperation = queryResult.profilerOperation,
-            resultMode = context.resultMode
+            profilerOperation = queryResult.profilerOperation
          )
       }
       return result
@@ -351,8 +342,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          matchedNodes,
          unresolvedNodes().toSet(),
          path = null,
-         profilerOperation = context.profiler.root,
-         resultMode = context.resultMode
+         profilerOperation = context.profiler.root
       )
    }
 

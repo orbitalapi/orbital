@@ -1,14 +1,23 @@
 import {TypesService} from '../../services/types.service';
-import {findType, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
+import {findType, InstanceLikeOrCollection, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
 import {EventEmitter, Input, Output} from '@angular/core';
 import {QueryResult, ResponseStatus, ResultMode} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
-import {InstanceLike, InstanceLikeOrCollection, typeName} from '../../object-view/object-view.component';
-import {InstanceSelectedEvent} from './result-container.component';
+import {InstanceSelectedEvent} from '../instance-selected-event';
+
+/**
+ * Query results contain an entry for each top-level type that was requested.
+ * Instance selected events are relative to the typed isntance that contained the attribute
+ * Therefore, this event combines the two - the instance selected event, within the
+ * specific requestedType
+ */
+export class QueryResultInstanceSelectedEvent {
+  constructor(public readonly queryTypeName: QualifiedName, public readonly instanceSelectedEvent: InstanceSelectedEvent) {
+  }
+}
+
 
 export abstract class BaseQueryResultComponent {
-
-
   protected constructor(protected typeService: TypesService) {
     typeService.getTypes().subscribe(schema => this.schema = schema);
 
@@ -23,6 +32,9 @@ export abstract class BaseQueryResultComponent {
 
   @Input()
   set result(value: QueryResult | QueryFailure) {
+    if (this._result === value) {
+      return;
+    }
     this._result = value;
     this.queryResultTypeNames = this.buildQueryResultTypeNames();
 
@@ -30,7 +42,7 @@ export abstract class BaseQueryResultComponent {
   }
 
   @Output()
-  instanceSelected = new EventEmitter<InstanceSelectedEvent>();
+  instanceSelected = new EventEmitter<QueryResultInstanceSelectedEvent>();
 
   queryResultTypeNames: QualifiedName[] = [];
 
@@ -96,11 +108,8 @@ export abstract class BaseQueryResultComponent {
       .map(elementTypeName => findType(this.schema, elementTypeName).name);
   }
 
-  instanceClicked(instance: InstanceLike) {
-    const instanceTypeName = typeName(instance);
-    const selectedTypeInstanceType = findType(this.schema, instanceTypeName);
-
-    this.instanceSelected.emit(new InstanceSelectedEvent(instance, selectedTypeInstanceType));
+  instanceClicked(event: InstanceSelectedEvent, queryRequestedTypeName: QualifiedName) {
+    this.instanceSelected.emit(new QueryResultInstanceSelectedEvent(queryRequestedTypeName, event));
   }
 
 }

@@ -256,10 +256,9 @@ class VyneQueryIntegrationTest {
       val query = Query(
          TypeNameListQueryExpression(listOf("io.vyne.queryService.User[]")),
          emptyMap(),
-         queryMode = QueryMode.GATHER,
-         resultMode = ResultMode.SIMPLE)
+         queryMode = QueryMode.GATHER)
 
-      val response = vyneClient.submitQuery(query)
+      val response = vyneClient.submitQuery(query, ResultMode.SIMPLE)
 
       val results = response.results
 
@@ -274,10 +273,9 @@ class VyneQueryIntegrationTest {
       val query = Query(
          TypeNameListQueryExpression(listOf("io.vyne.queryService.User[]")),
          emptyMap(),
-         queryMode = QueryMode.GATHER,
-         resultMode = ResultMode.SIMPLE)
+         queryMode = QueryMode.GATHER)
 
-      val response = vyneClient.submitQuery(query).getResultListFor(User::class)
+      val response = vyneClient.submitQuery(query,ResultMode.SIMPLE).getResultListFor(User::class)
 
 
       response.should.have.size.equal(3)

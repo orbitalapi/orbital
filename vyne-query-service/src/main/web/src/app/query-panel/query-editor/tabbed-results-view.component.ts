@@ -23,7 +23,7 @@ import {DownloadClickedEvent} from '../../object-view/object-view-container.comp
                                          [downloadSupported]="true"
                                          (downloadClicked)="this.downloadClicked.emit($event)"
                                          [type]="getTypeIfNotIncluded(resultTypeName)"
-                                         (instanceClicked)="instanceClicked($event)"></app-object-view-container>
+                                         (instanceClicked)="instanceClicked($event,resultTypeName)"></app-object-view-container>
             </div>
           </div>
         </ng-template>

@@ -1,6 +1,7 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonView
 import io.vyne.models.json.isJson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -13,6 +14,7 @@ interface TypedInstance {
    val type: Type
    val value: Any?
 
+   @get:JsonView(DataSourceIncludedView::class)
    val source: DataSource
 
    val typeName: String

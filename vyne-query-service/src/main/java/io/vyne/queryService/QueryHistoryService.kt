@@ -1,11 +1,16 @@
 package io.vyne.queryService
 
-import io.vyne.query.Lineage
+import com.fasterxml.jackson.annotation.JsonView
+import io.vyne.models.DataSource
+import io.vyne.models.DataSourceIncludedView
 import io.vyne.query.ProfilerOperationDTO
 import io.vyne.query.QueryResponse
+import io.vyne.schemas.QualifiedName
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.client.HttpClientErrorException
 import reactor.core.publisher.Mono
 import java.time.Instant
 import kotlin.streams.toList
@@ -32,12 +37,32 @@ class QueryHistoryService(private val history: QueryHistory, private val queryHi
    }
 
    @GetMapping("/api/query/history/{id}")
-   fun getHistoryRecord(@PathVariable("id") queryId: String): Mono<String> {
+   fun getHistoryRecord(@PathVariable("id") queryId: String): Mono<QueryHistoryRecord<out Any>> {
       return this.history.get(queryId)
-         .map { record ->
-            Lineage.newLineageAwareJsonMapper()
-               .writeValueAsString(record)
-         }
+
+   }
+
+   /**
+    * Returns a node detail, containing the actual type name, and lineage
+    * for a specific value within a query history.
+    * A nodeId takes the format of `[0].orderId`
+    * The format is as follows:
+    *  * JsonPath-like syntax, without the $. prefix
+    *  * For array index access, use `[n]`
+    *  * Otherwise, use the property name
+    */
+   @GetMapping("/api/query/history/{id}/{queryType}/{nodeId}")
+   @JsonView(DataSourceIncludedView::class)
+   fun getNodeDetail(@PathVariable("id") queryId: String,
+                     @PathVariable("queryType") queryType: String,
+                     @PathVariable("nodeId") nodeId: String): Mono<QueryResultNodeDetail> {
+      return history.get(queryId).map { historyRecord ->
+         val queryTypeResults = historyRecord.response.results[queryType] ?: throw HttpClientErrorException(
+            HttpStatus.BAD_REQUEST,"Type $queryType is not present within query result $queryId"
+         )
+         val nodeParts = nodeId.split(".")
+         QueryHistoryResultNodeFinder.find(nodeParts,queryTypeResults, nodeId)
+      }
    }
 
    @GetMapping("/api/query/history/{id}/profile")
@@ -52,6 +77,13 @@ class QueryHistoryService(private val history: QueryHistory, private val queryHi
       }
    }
 }
+
+data class QueryResultNodeDetail(
+   val attributeName:String,
+   val path:String,
+   val typeName: QualifiedName,
+   val source: DataSource?
+)
 
 data class QueryHistoryRecordSummary<T>(
    val queryId: String,

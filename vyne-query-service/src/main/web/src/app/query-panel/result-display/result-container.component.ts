@@ -1,28 +1,13 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {
-  ProfilerOperation,
-  QueryHistoryRecord,
-  QueryResult,
-  ResponseStatus,
-  ResultMode
-} from '../../services/query.service';
+import {Component, Input, OnInit} from '@angular/core';
+import {ProfilerOperation, QueryHistoryRecord, QueryResult} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {MatTreeNestedDataSource} from '@angular/material';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {TypesService} from '../../services/types.service';
-import {findType, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
-import {InstanceLike, InstanceLikeOrCollection, typeName} from '../../object-view/object-view.component';
 import {ExportFileService} from '../../services/export.file.service';
 import * as fileSaver from 'file-saver';
 import {Router} from '@angular/router';
 import {BaseQueryResultComponent} from './BaseQueryResultComponent';
-
-export class InstanceSelectedEvent {
-  constructor(public readonly selectedTypeInstance: InstanceLike,
-              public readonly selectedTypeInstanceType: Type
-  ) {
-  }
-}
 
 export enum DownloadFileType {JSON = 'JSON', CSV = 'CSV'}
 

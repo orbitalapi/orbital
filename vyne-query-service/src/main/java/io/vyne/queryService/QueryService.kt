@@ -2,6 +2,7 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.cfg.ContextAttributes
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.models.Provided
@@ -31,7 +32,6 @@ private typealias MimeTypeString = String
 data class FailedSearchResponse(val message: String,
                                 @field:JsonIgnore // this sends too much information - need to build a lightweight version
                                 override val profilerOperation: ProfilerOperation?,
-                                override val resultMode: ResultMode,
                                 override val queryResponseId: String = UUID.randomUUID().toString(),
                                 val results: Map<String, Any?> = mapOf()
 
@@ -42,7 +42,6 @@ data class FailedSearchResponse(val message: String,
       return HistoryQueryResponse(
          fullyResolved = false,
          queryResponseId = queryResponseId,
-         resultMode = resultMode,
          profilerOperation = profilerOperation?.toDto(),
          responseStatus = this.responseStatus,
          error = message)
@@ -68,11 +67,12 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
    @PostMapping("/api/query", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
    fun submitQuery(@RequestBody query: Query,
+                   @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
                    @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String
    ):ResponseEntity<StreamingResponseBody> {
 
       val body = StreamingResponseBody { outputStream ->
-         query(query, contentType, outputStream)
+         query(query, contentType, outputStream, resultMode)
       }
       val responseContentType = when(contentType) {
          TEXT_CSV -> TEXT_CSV_UTF_8
@@ -86,7 +86,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
    @PostMapping("/api/vyneql", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
    fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString,
-                         @RequestParam("resultMode", defaultValue = "VERBOSE") resultMode: ResultMode,
+                         @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
                          @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String
    ):ResponseEntity<StreamingResponseBody>  {
       val body = StreamingResponseBody {outputStream ->
@@ -103,10 +103,10 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
    }
 
 
-   private fun query(query: Query, contentType: String, outputStream: OutputStream):MimeTypeString {
+   private fun query(query: Query, contentType: String, outputStream: OutputStream, resultMode: ResultMode):MimeTypeString {
       val response = executeQuery(query)
       history.add(RestfulQueryHistoryRecord(query, response.historyRecord()))
-      return serialise(response, contentType, outputStream)
+      return serialise(response, contentType, outputStream, resultMode)
    }
 
    private fun vyneQLQuery(query: VyneQLQueryString, resultMode: ResultMode, contentType: String, outputStream: OutputStream):MimeTypeString {
@@ -114,23 +114,22 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       return timed("QueryService.submitVyneQlQuery") {
          val vyne = vyneProvider.createVyne()
          val response = try {
-            vyne.query(query, resultMode)
+            vyne.query(query)
          } catch (e: CompilationException) {
             FailedSearchResponse(
                message = e.message!!, // Message contains the error messages from the compiler
-               profilerOperation = null,
-               resultMode = resultMode
+               profilerOperation = null
             )
          } catch (e: SearchFailedException) {
-            FailedSearchResponse(e.message!!, e.profilerOperation, resultMode)
+            FailedSearchResponse(e.message!!, e.profilerOperation)
          } catch (e: NotImplementedError) {
             // happens when Schema is empty
-            FailedSearchResponse(e.message!!, null, resultMode)
+            FailedSearchResponse(e.message!!, null)
          }
          val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
          history.add(record)
 
-         serialise(response, contentType, outputStream)
+         serialise(response, contentType, outputStream, resultMode)
       }
    }
 
@@ -139,32 +138,32 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
     * content type.
     * Returns the MediaType that was ultimately selected
     */
-   private fun serialise(queryResponse: QueryResponse, contentType: String, outputStream: OutputStream):MimeTypeString {
+   private fun serialise(queryResponse: QueryResponse, contentType: String, outputStream: OutputStream, resultMode: ResultMode):MimeTypeString {
       return when (queryResponse) {
          is QueryResult -> {
-            when (queryResponse.resultMode) {
+            when (resultMode) {
                // If RAW result, we serialise depending on content type
                ResultMode.RAW -> {
                   return when (contentType) {
-                     TEXT_CSV -> outputStream.write(toCsv(queryResponse.resultMap, vyneProvider.createVyne().schema)).let { TEXT_CSV }
-                     else -> toJson(queryResponse.resultMap, outputStream).let { MediaType.APPLICATION_JSON_VALUE }
+                     TEXT_CSV -> outputStream.write(toCsv(queryResponse.simpleResults, vyneProvider.createVyne().schema)).let { TEXT_CSV }
+                     else -> toJson(queryResponse.simpleResults, outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
                   }
                }
                // Any other result mode is json
-               else -> generateResponseJson(queryResponse, outputStream).let { MediaType.APPLICATION_JSON_VALUE }
+               else -> generateResponseJson(queryResponse, outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
             }
          }
          // Any Query failure is json
-         else -> generateResponseJson(queryResponse, outputStream).let { MediaType.APPLICATION_JSON_VALUE }
+         else -> generateResponseJson(queryResponse, outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
       }
    }
 
-   private fun toJson(results: Map<String, Any?>, outputStream: OutputStream) {
+   private fun toJson(results: Map<String, Any?>, outputStream: OutputStream, resultMode: ResultMode) {
       val firstResult = results.values.firstOrNull().orElse(emptyMap<String, Any?>())
-      generateResponseJson(firstResult, outputStream)
+      generateResponseJson(firstResult, outputStream, resultMode)
    }
 
-   private fun generateResponseJson(response: Any, outputStream: OutputStream) {
+   private fun generateResponseJson(response: Any, outputStream: OutputStream, resultMode:ResultMode) {
       // We handle the serialization here, and return a string, rather than
       // letting Spring handle it.
       // This is because the LineageGraphSerializationModule() is stateful, and
@@ -174,6 +173,9 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
  //        .copy()
 //         .registerModule(LineageGraphSerializationModule())
          .writerWithDefaultPrettyPrinter()
+         .with(ContextAttributes.getEmpty()
+            .withSharedAttribute(ResultMode::class, resultMode)
+         )
          .writeValue(outputStream, response)
    }
 
@@ -187,14 +189,14 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       return try {
          // Note: Only using the default set for the originating query,
          // but the queryEngine contains all the factSets, so we can expand this later.
-         val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT), resultMode = query.resultMode)
+         val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT))
          when (query.queryMode) {
             QueryMode.DISCOVER -> queryContext.find(query.expression)
             QueryMode.GATHER -> queryContext.findAll(query.expression)
             QueryMode.BUILD -> queryContext.build(query.expression)
          }
       } catch (e: SearchFailedException) {
-         FailedSearchResponse(e.message!!, e.profilerOperation, query.resultMode)
+         FailedSearchResponse(e.message!!, e.profilerOperation)
       }
    }
 

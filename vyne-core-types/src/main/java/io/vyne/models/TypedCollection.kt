@@ -1,11 +1,13 @@
 package io.vyne.models
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 
 
-data class TypedCollection(override val type: Type, override val value: List<TypedInstance>, override val source: DataSource = MixedSources) : List<TypedInstance> by value, TypedInstance {
+data class TypedCollection(override val type: Type, override val value: List<TypedInstance>,
+                           override val source: DataSource = MixedSources) : List<TypedInstance> by value, TypedInstance {
    private val equality = Equality(this, TypedCollection::type, TypedCollection::value)
    init {
       require(type.isCollection) {
