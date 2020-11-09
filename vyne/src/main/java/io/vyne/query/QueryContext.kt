@@ -127,7 +127,7 @@ data class QueryResult(
    // For backwards compatability
    @get:JsonIgnore
    @delegate:JsonIgnore
-   val resultMap: Map<String, Any?> by lazy { verboseResults }
+   val resultMap: Map<String, Any?> by lazy { simpleResults }
 
    override fun historyRecord(): HistoryQueryResponse {
       return HistoryQueryResponse(
