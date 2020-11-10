@@ -1,5 +1,6 @@
 package io.vyne.cask.format.csv
 
+import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.ingest.StreamSource
 import io.vyne.schemas.Schema
@@ -11,12 +12,12 @@ import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.charset.Charset
-import java.nio.file.Path
 
 class CsvStreamSource(private val input: Flux<InputStream>,
                       private val versionedType: VersionedType,
                       private val schema: Schema,
                       override val messageId:String,
+                      private val ingestionErrorProcessor: CaskIngestionErrorProcessor,
                       private val csvFormat: CSVFormat = CSVFormat.DEFAULT,
                       private val nullValues: Set<String> = emptySet(),
                       private val ignoreContentBefore: String? = null) : StreamSource {
@@ -56,7 +57,7 @@ class CsvStreamSource(private val input: Flux<InputStream>,
 
 
          return inputWithoutPrologue
-            .flatMap { inputStream -> writer.convert(inputStream) }
+            .flatMap { inputStream -> writer.convert(inputStream, messageId, ingestionErrorProcessor, versionedType) }
             .map { csvRecord -> mapper.map(csvRecord, nullValues, messageId) }
       }
 }

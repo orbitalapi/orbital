@@ -10,6 +10,7 @@ import io.vyne.cask.api.csv.CsvFormatFactory
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.format.xml.XmlStreamSource
+import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.StreamSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
@@ -33,7 +34,10 @@ data class JsonWebsocketRequest(override val parameters: JsonIngestionParameters
 }
 
 
-data class CsvWebsocketRequest(override val parameters: CsvIngestionParameters, override val versionedType: VersionedType) : CaskIngestionRequest {
+data class CsvWebsocketRequest(
+   override val parameters: CsvIngestionParameters,
+   override val versionedType: VersionedType,
+   private val caskIngestionErrorProcessor: CaskIngestionErrorProcessor) : CaskIngestionRequest {
    override val contentType = ContentType.csv
    override val debug: Boolean = parameters.debug
    override val nullValues: Set<String> = parameters.nullValue
@@ -48,7 +52,8 @@ data class CsvWebsocketRequest(override val parameters: CsvIngestionParameters, 
          messageId = messageId,
          csvFormat = this.csvFormat,
          nullValues =  parameters.nullValue,
-         ignoreContentBefore = parameters.ignoreContentBefore
+         ignoreContentBefore = parameters.ignoreContentBefore,
+         ingestionErrorProcessor = caskIngestionErrorProcessor
       )
    }
 }

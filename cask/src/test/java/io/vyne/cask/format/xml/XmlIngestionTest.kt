@@ -11,6 +11,7 @@ import io.vyne.cask.CaskService
 import io.vyne.cask.api.ContentType
 import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.CaskDAO
@@ -34,6 +35,7 @@ import javax.sql.DataSource
 
 class XmlIngestionTest {
    val jdbcTemplate = mock<JdbcTemplate>()
+   val ingestionErrorRepository = mock< io.vyne.cask.ingest.IngestionErrorRepository>()
    private val configRepository = mock< CaskConfigRepository>()
    val dataSource = mock< DataSource>()
    private val connection = mock< Connection>()
@@ -53,13 +55,14 @@ class XmlIngestionTest {
       val source = Resources.getResource("Coinbase_BTCUSD_single.xml").toURI()
       val input: Flux<InputStream> = Flux.just(File(source).inputStream())
       val schemaProvider = LocalResourceSchemaProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
-      val ingesterFactory = IngesterFactory(jdbcTemplate)
+      val ingesterFactory = IngesterFactory(jdbcTemplate, CaskIngestionErrorProcessor(ingestionErrorRepository))
       val caskDAO: CaskDAO = mock()
       val caskService = CaskService(
          schemaProvider,
          ingesterFactory,
          configRepository,
-         caskDAO
+         caskDAO,
+         ingestionErrorRepository
       )
       val type = caskService.resolveType("OrderWindowSummaryXml").getOrElse {
          error("Type not found")

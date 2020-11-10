@@ -20,6 +20,7 @@ import org.apache.commons.csv.CSVFormat
 import org.junit.Ignore
 import org.junit.Test
 import reactor.core.publisher.Flux
+import reactor.core.publisher.UnicastProcessor
 import java.io.File
 import java.io.InputStream
 import java.math.BigDecimal
@@ -39,13 +40,14 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
 
       Benchmark.benchmark("ingest to db") { stopwatch ->
          val input: Flux<InputStream> = Flux.just(File(resource).inputStream())
-         val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+         val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(),
+         ingestionErrorProcessor = caskIngestionErrorProcessor)
          val pipeline = IngestionStream(
             type,
             TypeDbWrapper(type, schema),
             pipelineSource)
 
-         ingester = Ingester(jdbcTemplate, pipeline)
+         ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink())
          ingestionEventHandler.onIngestionInitialised(IngestionInitialisedEvent(this, type))
          ingester.ingest().collectList().block()
          stopwatch.stop()
@@ -61,20 +63,21 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
       val source = Resources.getResource("Coinbase_BTCUSD_single.csv").toURI()
       val input: Flux<InputStream> = Flux.just(File(source).inputStream())
       val schemaProvider = LocalResourceSchemaProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
-      val ingesterFactory = IngesterFactory(jdbcTemplate)
+      val ingesterFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
       val caskDAO: CaskDAO = mock()
       val caskService = CaskService(
          schemaProvider,
          ingesterFactory,
          configRepository,
-         caskDAO
+         caskDAO,
+         ingestionErrorRepository
       )
       val type = caskService.resolveType("OrderWindowSummaryCsv").getOrElse {
          error("Type not found")
       }
       caskService.ingestRequest(
 
-         CsvWebsocketRequest(CsvIngestionParameters(firstRecordAsHeader = true), type),
+         CsvWebsocketRequest(CsvIngestionParameters(firstRecordAsHeader = true), type, caskIngestionErrorProcessor),
          input
       ).blockFirst()
    }
@@ -85,11 +88,11 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
       val typeV3 = schemaV3.versionedType("OrderWindowSummary".fqn())
       val resource = Resources.getResource("Coinbase_BTCUSD_single.csv").toURI()
       val input: Flux<InputStream> = Flux.just(File(resource).inputStream())
-      val pipelineSource = CsvStreamSource(input, typeV3, schemaV3, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+      val pipelineSource = CsvStreamSource(input, typeV3, schemaV3, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
       val pipeline = IngestionStream(typeV3, TypeDbWrapper(typeV3, schemaV3), pipelineSource)
     //  val queryView = QueryView(jdbcTemplate)
 
-      ingester = Ingester(jdbcTemplate, pipeline)
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       ingestionEventHandler.onIngestionInitialised(event = IngestionInitialisedEvent(this, typeV3))
       ingester.ingest().collectList().block()
 
