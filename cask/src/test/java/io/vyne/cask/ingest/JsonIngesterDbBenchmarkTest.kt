@@ -48,7 +48,7 @@ class JsonIngesterDbBenchmarkTest : BaseCaskIntegrationTest() {
             TypeDbWrapper(versionedType, taxiSchema),
             pipelineSource)
 
-         ingester = Ingester(jdbcTemplate, pipeline)
+         ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
          caskDao.dropCaskRecordTable(versionedType)
          caskDao.createCaskRecordTable(versionedType)
 

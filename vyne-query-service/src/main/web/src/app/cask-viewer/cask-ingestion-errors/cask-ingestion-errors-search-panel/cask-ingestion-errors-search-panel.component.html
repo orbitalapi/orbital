@@ -1,0 +1,24 @@
+<div class="container target-type-container">
+  <form>
+    <mat-form-field appearance="outline">
+      <mat-label>Start Date</mat-label>
+      <input matInput [matDatepicker]="startDate" [formControl]="searchStartDate">
+      <mat-datepicker-toggle matSuffix [for]="startDate">
+        <mat-icon matDatepickerToggleIcon>keyboard_arrow_down</mat-icon>
+      </mat-datepicker-toggle>
+      <mat-datepicker #startDate></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>End Date</mat-label>
+      <input matInput [matDatepicker]="endDate" [formControl]="searchEndDate">
+      <mat-datepicker-toggle matSuffix [for]="endDate">
+        <mat-icon matDatepickerToggleIcon>keyboard_arrow_down</mat-icon>
+      </mat-datepicker-toggle>
+      <mat-datepicker #endDate></mat-datepicker>
+    </mat-form-field>
+  </form>
+  <div>
+    <button mat-raised-button class="search-ingestion-errors-button" (click)="onSearchCriteriaUpdated()">Search</button>
+  </div>
+</div>

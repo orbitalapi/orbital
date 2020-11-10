@@ -2,14 +2,14 @@ package io.vyne.cask.websocket
 
 import arrow.core.*
 import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.cask.CaskIngestionRequest
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.api.ContentType
+import io.vyne.cask.ingest.CaskIngestionErrorProcessor
+import io.vyne.cask.ingest.IngestionError
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.utils.log
 import io.vyne.utils.orElse
@@ -26,12 +26,13 @@ import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.io.InputStream
+import java.util.*
 
 @Component
 class CaskWebsocketHandler(
    val caskService: CaskService,
    val applicationEventPublisher: ApplicationEventPublisher,
+   val caskIngestionErrorProcessor: CaskIngestionErrorProcessor,
    @Qualifier("ingesterMapper") val mapper: ObjectMapper) : WebSocketHandler {
 
    override fun handle(session: WebSocketSession): Mono<Void> {
@@ -56,7 +57,7 @@ class CaskWebsocketHandler(
          Either.left(CaskService.ContentTypeError("Unknown contentType=${session.contentType()}"))
       }.flatMap { contentType ->
          caskService.resolveType(session.typeReference()).map { versionedType ->
-            CaskIngestionRequest.fromContentTypeAndHeaders(contentType, versionedType, mapper, session.queryParams())
+            CaskIngestionRequest.fromContentTypeAndHeaders(contentType, versionedType, mapper, session.queryParams(), caskIngestionErrorProcessor)
          }
       }
    }
@@ -65,7 +66,6 @@ class CaskWebsocketHandler(
       val output: EmitterProcessor<WebSocketMessage> = EmitterProcessor.create()
       val outputSink = output.sink()
       var currentRequest = request
-
       // i don't like this, it's pretty ugly
       // partially because exceptions are thrown outside flux pipelines
       // we have to refactor code behind ingestion to fix this problem
@@ -77,9 +77,10 @@ class CaskWebsocketHandler(
          .metrics()
          .map { message ->
             log().info("Ingesting message from sessionId=${session.id}")
+            val messageId = UUID.randomUUID().toString()
             try {
                caskService
-                  .ingestRequest(currentRequest, Flux.just(message.payload.asInputStream()))
+                  .ingestRequest(currentRequest, Flux.just(message.payload.asInputStream()), messageId)
                   .count()
                   .map { "Successfully ingested $it records" }
                   .subscribe(
@@ -100,11 +101,13 @@ class CaskWebsocketHandler(
                            }
                         }
                         outputSink.next(errorResponse(session, extractError(error)))
+                        caskIngestionErrorProcessor.sink().next(IngestionError.fromThrowable(error, messageId, request.versionedType))
                      }
                   )
             } catch (error: Exception) {
                log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
                outputSink.next(errorResponse(session, extractError(error)))
+               caskIngestionErrorProcessor.sink().next(IngestionError.fromThrowable(error, messageId, request.versionedType))
             }
          }
          .doOnComplete {

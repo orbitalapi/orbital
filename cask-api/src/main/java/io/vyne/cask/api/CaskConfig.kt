@@ -76,6 +76,7 @@ enum class CaskStatus {
    REPLACED
 }
 data class CaskDetails(
-   val recordsNumber: Int
+   val recordsNumber: Int,
+   val ingestionErrorsInLast24Hours: Int
 )
 

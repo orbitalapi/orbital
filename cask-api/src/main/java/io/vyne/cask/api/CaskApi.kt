@@ -1,8 +1,11 @@
 package io.vyne.cask.api
 
 import org.springframework.cloud.openfeign.FeignClient
+import org.springframework.core.io.Resource
+import org.springframework.http.ResponseEntity
 import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 
 data class CsvIngestionParameters(
    val delimiter: Char = ',',
@@ -67,4 +70,11 @@ interface CaskApi {
 
    @PutMapping("/api/casks/{tableName}")
    fun emptyCask(@PathVariable("tableName") tableName: String)
+
+   @PostMapping("/api/casks/{tableName}/errors", produces = ["application/json"])
+   fun getCaskIngestionErrors(@PathVariable("tableName") tableName: String,
+                              @RequestBody request: CaskIngestionErrorsRequestDto): CaskIngestionErrorDtoPage
+
+   @GetMapping("/api/casks/{caskMessageId}")
+   fun getIngestionMessage(@PathVariable caskMessageId: String): ResponseEntity<Resource>
 }
