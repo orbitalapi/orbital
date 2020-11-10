@@ -1,19 +1,18 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {
   isRestQueryHistoryRecord,
   isVyneQlQueryHistoryRecord,
   ProfilerOperation,
-  QueryHistoryRecord, QueryHistorySummary, QueryResult,
+  QueryHistoryRecord,
+  QueryHistorySummary,
+  QueryResult,
   QueryService,
-  VyneQlQueryHistoryRecord,
 } from '../services/query.service';
-import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
-import {DownloadFileType, InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
-import {InstanceLike} from '../object-view/object-view.component';
-import {Type} from '../services/schema';
-import {ActivatedRoute, Router} from '@angular/router';
+import {Router} from '@angular/router';
 import {ExportFileService} from '../services/export.file.service';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
+import {TypesService} from '../services/types.service';
+import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
 
 
 @Component({
@@ -21,21 +20,20 @@ import {DownloadClickedEvent} from '../object-view/object-view-container.compone
   templateUrl: './query-history.component.html',
   styleUrls: ['./query-history.component.scss']
 })
-export class QueryHistoryComponent implements OnInit {
+export class QueryHistoryComponent extends BaseQueryResultDisplayComponent implements OnInit {
   history: QueryHistorySummary[];
   activeRecord: QueryHistoryRecord;
 
-  @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
-  shouldTypedInstancePanelBeVisible: boolean;
-
-  constructor(private service: QueryService, private router: Router,
+  constructor(queryService: QueryService,
+              typeService: TypesService,
+              private router: Router,
               private fileService: ExportFileService) {
+    super(queryService, typeService);
   }
 
   profileLoading = false;
   profilerOperation: ProfilerOperation;
   private _queryResponseId: string;
-
 
   @Input()
   get queryResponseId(): string {
@@ -46,20 +44,9 @@ export class QueryHistoryComponent implements OnInit {
     this._queryResponseId = value;
   }
 
-
-  selectedTypeInstance: InstanceLike;
-  selectedTypeInstanceType: Type;
-
-  get showSidePanel(): boolean {
-    return this.selectedTypeInstanceType !== undefined && this.selectedTypeInstance !== null;
+  get queryId(): string {
+    return this.activeRecord.id;
   }
-
-  set showSidePanel(value: boolean) {
-    if (!value) {
-      this.selectedTypeInstance = null;
-    }
-  }
-
 
   ngOnInit() {
     this.loadData();
@@ -69,7 +56,7 @@ export class QueryHistoryComponent implements OnInit {
   }
 
   loadData() {
-    this.service.getHistory()
+    this.queryService.getHistory()
       .subscribe(history => this.history = history);
   }
 
@@ -98,7 +85,7 @@ export class QueryHistoryComponent implements OnInit {
   setActiveRecord(historyRecord: QueryHistorySummary) {
     this.profilerOperation = null;
     this.profileLoading = true;
-    this.service.getHistoryRecord(historyRecord.queryId).subscribe(
+    this.queryService.getHistoryRecord(historyRecord.queryId).subscribe(
       result => {
         this.activeRecord = result;
       }
@@ -115,7 +102,7 @@ export class QueryHistoryComponent implements OnInit {
   }
 
   setActiveRecordFromRoute() {
-    this.service.getHistoryRecord(this._queryResponseId)
+    this.queryService.getHistoryRecord(this._queryResponseId)
       .subscribe(record => {
         this.activeRecord = record;
       });
@@ -123,12 +110,6 @@ export class QueryHistoryComponent implements OnInit {
 
   setRouteFromActiveRecord() {
     this.router.navigate(['/query-history', this.activeRecord.id]);
-  }
-
-  onInstanceSelected($event: InstanceSelectedEvent) {
-    this.shouldTypedInstancePanelBeVisible = true;
-    this.selectedTypeInstance = $event.selectedTypeInstance;
-    this.selectedTypeInstanceType = $event.selectedTypeInstanceType;
   }
 
   onCloseTypedInstanceDrawer($event: boolean) {

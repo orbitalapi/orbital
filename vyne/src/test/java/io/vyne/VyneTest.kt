@@ -3,12 +3,24 @@ package io.vyne
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.*
+import io.vyne.models.DataSource
+import io.vyne.models.Provided
+import io.vyne.models.TypeNamedInstance
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
-import io.vyne.query.*
+import io.vyne.query.ConstrainedTypeNameQueryExpression
+import io.vyne.query.QueryContext
+import io.vyne.query.QueryEngineFactory
+import io.vyne.query.QueryParser
+import io.vyne.query.QueryResult
+import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.TypeNameQueryExpression
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
@@ -23,7 +35,6 @@ import lang.taxi.types.QualifiedName
 import org.junit.Ignore
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
-import java.lang.StringBuilder
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.test.fail
@@ -893,7 +904,7 @@ service Broker2Service {
       """.trimIndent()
       val (vyne, _) = testVyne(schema)
       vyne.addJsonModel("Source", """{ "eventDate" : "05/28/20T13:44:23.000Z" }""")
-      val result = vyne.query("""findOne { Source } as Target""", ResultMode.VERBOSE)
+      val result = vyne.query("""findOne { Source } as Target""")
       result.isFullyResolved.should.be.`true`
       (result["Target"]!!.toRawObject() as Map<*, *>).get("eventDate").should.equal("05-28-20T13:44:23.000Z")
    }
@@ -912,9 +923,9 @@ service Broker2Service {
       """.trimIndent()
       val (vyne, _) = testVyne(schema)
       vyne.addJsonModel("Source[]", """[{ "eventDate" : "05/28/20T13:44:23.000Z" }]""")
-      val result = vyne.query("""findOne { Source[] } as Target[]""", ResultMode.VERBOSE)
+      val result = vyne.query("""findOne { Source[] } as Target[]""")
       result.isFullyResolved.should.be.`true`
-      val map = result.resultMap["lang.taxi.Array<Target>"] as List<TypeNamedInstance>
+      val map = result.verboseResults["lang.taxi.Array<Target>"] as List<TypeNamedInstance>
       val firstEntry = map.first().value as Map<String,TypeNamedInstance>
       firstEntry["eventDate"]!!.value.should.equal("05-28-20T13:44:23.000Z")
    }

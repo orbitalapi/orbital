@@ -31,6 +31,7 @@ import {BottomBarComponent} from './query-editor/bottom-bar.component';
 import {CounterTimerComponent} from './query-editor/counter-timer.component';
 import {TabbedResultsViewComponent} from './query-editor/tabbed-results-view.component';
 import {CallExplorerModule} from './taxi-viewer/call-explorer/call-explorer.module';
+import {AngularSplitModule} from 'angular-split';
 
 @NgModule({
   imports: [
@@ -59,6 +60,7 @@ import {CallExplorerModule} from './taxi-viewer/call-explorer/call-explorer.modu
     MonacoEditorModule,
     MatProgressSpinnerModule,
     CallExplorerModule,
+    AngularSplitModule.forChild()
   ],
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent],
   declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent,

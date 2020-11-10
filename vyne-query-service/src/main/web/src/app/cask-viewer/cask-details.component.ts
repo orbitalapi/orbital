@@ -22,8 +22,8 @@ export class CaskDetailsComponent implements OnInit {
   ngOnInit() {
   }
 
-  private _caskConfig: CaskConfigRecord
-  sources: VersionedSource[]
+  private _caskConfig: CaskConfigRecord;
+  sources: VersionedSource[];
 
   @Input()
   get caskConfig(): CaskConfigRecord {
@@ -32,10 +32,11 @@ export class CaskDetailsComponent implements OnInit {
 
   set caskConfig(value: CaskConfigRecord) {
     this._caskConfig = value;
-    this.sources = this.computeSources()
+    this.sources = this.computeSources();
   }
 
-  computeSources() : VersionedSource[] {
-    return this.caskConfig.sources.map ( (source, index) => { return {name: this.caskConfig.sourceSchemaIds[index],  version: '1', content: source }} )
+  computeSources(): VersionedSource[] {
+    return this.caskConfig.sources.map (
+      (source, index) => ({name: this.caskConfig.sourceSchemaIds[index],  version: '1', content: source }) );
   }
 }

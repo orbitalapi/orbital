@@ -10,6 +10,7 @@ import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.json.JsonStreamSource
+import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.ingest.StreamSource
@@ -32,7 +33,8 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
                           private val ingesterFactory: IngesterFactory,
                           private val configRepository: CaskConfigRepository,
                           private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-                          private val applicationEventPublisher: ApplicationEventPublisher
+                          private val applicationEventPublisher: ApplicationEventPublisher,
+                          private val caskIngestionErrorProcessor: CaskIngestionErrorProcessor
 ) {
    fun upgradeAll(casks:List<CaskNeedingUpgrade>) {
       casks.forEach { upgrade(it.config) }
@@ -106,7 +108,7 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
          )
          ContentType.csv -> {
             val csvIngestionParameters = tryParseCsvMessageParams(messageParams)
-            CsvWebsocketRequest(csvIngestionParameters, versionedType)
+            CsvWebsocketRequest(csvIngestionParameters, versionedType, caskIngestionErrorProcessor)
                .buildStreamSource(inputStream, versionedType, schemaProvider.schema(), messageId)
          }
          ContentType.xml -> {

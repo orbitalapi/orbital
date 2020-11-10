@@ -63,12 +63,6 @@
               <mat-option value="GATHER">Gather (Find all the possible results)</mat-option>
             </mat-select>
           </mat-form-field>
-          <mat-form-field>
-            <mat-select placeholder="Result mode" [formControl]="resultMode" required>
-              <mat-option value="SIMPLE">Exclude Type Information (Simple)</mat-option>
-              <mat-option value="VERBOSE">Include Type Information (Verbose)</mat-option>
-            </mat-select>
-          </mat-form-field>
         </form>
         <div>
           <button mat-raised-button color="primary" (click)="submitQuery()">Submit query</button>
@@ -77,16 +71,18 @@
     </mat-card>
   </div>
 </div>
-<div class="row">
-  <app-vyne-query-viewer [targetTypes]="targetTypeNames"
-                         [facts]="facts"
-                         [schema]="schema"
-                         [queryMode]="queryMode.value"
-                         [findAsArray]="findAsArray"
-                         expanded="true"
-                         class="mat-elevation-z2"
-  ></app-vyne-query-viewer>
+<!-- Disabling the query code viewer for now, since the code it generates
+is incorrect, and we should re-evaluate in the context of VyneQL -->
+<!--<div class="row">-->
+<!--  <app-vyne-query-viewer [targetTypes]="targetTypeNames"-->
+<!--                         [facts]="facts"-->
+<!--                         [schema]="schema"-->
+<!--                         [queryMode]="queryMode.value"-->
+<!--                         [findAsArray]="findAsArray"-->
+<!--                         expanded="true"-->
+<!--                         class="mat-elevation-z2"-->
+<!--  ></app-vyne-query-viewer>-->
 
-</div>
+<!--</div>-->
 
 

@@ -1,8 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
-import {InstanceLikeOrCollection} from './object-view.component';
 import {DownloadFileType} from '../query-panel/result-display/result-container.component';
-import {Type} from '../services/schema';
+import {Type, InstanceLikeOrCollection} from '../services/schema';
 
 @Component({
   selector: 'app-object-view-container',

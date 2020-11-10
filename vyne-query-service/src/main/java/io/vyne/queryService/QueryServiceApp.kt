@@ -1,5 +1,6 @@
 package io.vyne.queryService
 
+import com.fasterxml.jackson.databind.MapperFeature
 import com.netflix.discovery.EurekaClient
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
@@ -19,6 +20,7 @@ import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
@@ -74,6 +76,15 @@ class QueryServiceApp {
 
    @Bean
    fun taxiJacksonModule() = TaxiJacksonModule()
+
+   @Bean
+   fun jacksonCustomizer(): Jackson2ObjectMapperBuilderCustomizer {
+      return Jackson2ObjectMapperBuilderCustomizer { builder ->
+         builder.featuresToEnable(
+            MapperFeature.DEFAULT_VIEW_INCLUSION
+         )
+      }
+   }
 
    @Autowired
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {

@@ -3,11 +3,8 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
 
 import {environment} from 'src/environments/environment';
-import {QualifiedName, TypedInstance} from './schema';
-import {InstanceLikeOrCollection} from '../object-view/object-view.component';
+import {DataSource, InstanceLikeOrCollection, QualifiedName, TypeNamedInstance} from './schema';
 import {VyneServicesModule} from './vyne-services.module';
-import {Data} from '@angular/router';
-import {isNullOrUndefined} from 'util';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -31,6 +28,13 @@ export class QueryService {
 
   getHistory(): Observable<QueryHistorySummary[]> {
     return this.http.get<QueryHistorySummary[]>(`${environment.queryServiceUrl}/api/query/history`);
+  }
+
+  getQueryResultNodeDetail(queryId: string, requestedTypeInQuery: QualifiedName, nodeId: string): Observable<QueryResultNodeDetail> {
+    const safeNodeId = encodeURI(nodeId);
+    return this.http.get<QueryResultNodeDetail>(
+      `${environment.queryServiceUrl}/api/query/history/${queryId}/${requestedTypeInQuery.parameterizedName}/${safeNodeId}`
+    );
   }
 
   getQueryProfile(queryId: string): Observable<ProfilerOperation> {
@@ -60,58 +64,18 @@ export class Fact {
   qualifiedName: QualifiedName | null; // sent from the server, not required when sending to the server
 }
 
-export interface TypeNamedInstance {
-  typeName: string;
-  value: any;
-  source?: DataSourceReference;
+
+export interface QueryResultNodeDetail {
+  attributeName: string;
+  path: string;
+  typeName: QualifiedName;
+  source: DataSource;
 }
 
-export function isTypedInstance(instance: InstanceLikeOrCollection): instance is TypedInstance {
-  const instanceAny = instance as any;
-  return instanceAny && instanceAny.type !== undefined && instanceAny.value !== undefined;
-}
 
-export function isTypedNull(instance: InstanceLikeOrCollection): instance is TypedInstance {
-  const instanceAny = instance as any;
-  return instanceAny && instanceAny.type !== undefined && isNullOrUndefined(instanceAny.value);
-}
-
-export function isTypeNamedInstance(instance: any): instance is TypeNamedInstance {
-  const instanceAny = instance as any;
-  return instanceAny && instanceAny.typeName !== undefined && instanceAny.value !== undefined;
-}
-
-export function isTypeNamedNull(instance: any): instance is TypeNamedInstance {
-  const instanceAny = instance as any;
-  return instanceAny && instanceAny.typeName !== undefined && isNullOrUndefined(instanceAny.value);
-}
-
-export function isTypedCollection(instance: any): instance is TypeNamedInstance[] {
-  return instance && Array.isArray(instance) && instance[0] && isTypeNamedInstance(instance[0]);
-}
-
-export interface DataSourceReference {
-  dataSourceIndex: number;
-}
-
-export interface LineageGraph {
-  [index: number]: DataSource;
-}
-
-export interface DataSource {
-  name: DataSourceType;
-}
-
-export type DataSourceType =
-  'Provided'
-  | 'Mapped'
-  | 'Operation result'
-  | 'Defined in schema'
-  | 'Undefined source'
-  | 'Multiple sources';
 
 export function isOperationResult(source: DataSource): source is OperationResultDataSource {
-  return source.name === 'Operation result';
+  return source.dataSourceName === 'Operation result';
 }
 
 export interface OperationResultDataSource extends DataSource {
@@ -139,7 +103,6 @@ export interface QueryResult {
   profilerOperation: ProfilerOperation;
   remoteCalls: RemoteCall[];
   resultMode: ResultMode;
-  lineageGraph: LineageGraph;
   queryResponseId: string;
   error?: string;
   responseStatus: ResponseStatus;

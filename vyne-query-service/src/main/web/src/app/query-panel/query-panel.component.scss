@@ -7,7 +7,12 @@
 }
 
 mat-sidenav-container {
-  height: 100%;
+  // This has been a real pain.
+  // Sizing this to 100% causes vertical scrollbars to appear,
+  // and seems to size without considering the toolbar (ie., it
+  // appears we get a height that is toolbarHeight too high.
+  //Usng this approach seems to work.
+  height: calc(100vh - #{$toolbar-height})
 }
 .container {
   height: 100%;
@@ -15,10 +20,15 @@ mat-sidenav-container {
 
 .results-container {
   margin-top: 1rem;
+  flex-grow: 1;
+  min-height: 300px;
 }
 
 .query-wizard-container {
   margin: 1rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 :host ::ng-deep .mat-tab-body-wrapper {

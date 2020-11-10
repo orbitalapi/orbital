@@ -1,4 +1,5 @@
 import {PrimitiveTypeNames} from './taxi';
+import {isNullOrUndefined} from 'util';
 
 export class QualifiedName {
   name: string;
@@ -227,6 +228,11 @@ export function isOperation(candidate): candidate is Operation {
   return (candidate as Operation).returnType !== undefined;
 }
 
+export function isMappedSynonym(candidate): candidate is MappedSynonym {
+  const mappedValueCandidate = candidate as MappedValue;
+  return mappedValueCandidate.dataSourceName === 'Mapped' && mappedValueCandidate.mappingType === MappingType.SYNONYM;
+}
+
 export interface OperationContract {
   returnType: Type;
   constraints: Array<any>;
@@ -439,3 +445,97 @@ function collectionMemberTypeFromArray(name: QualifiedName, schema: Schema, defa
     return defaultValue();
   }
 }
+
+export interface UntypedInstance {
+  value: any;
+  type: UnknownType;
+}
+
+export enum UnknownType {
+  UnknownType = 'UnknownType'
+}
+
+export type InstanceLike = TypedInstance | TypedObjectAttributes | TypeNamedInstance;
+export type InstanceLikeOrCollection = InstanceLike | InstanceLike[];
+export type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;
+
+export interface TypedObjectAttributes {
+  [key: string]: TypeInstanceOrAttributeSet;
+}
+
+export function getTypeName(instance: InstanceLike): string {
+  if (isTypedInstance(instance)) {
+    return instance.type.name.fullyQualifiedName;
+  } else if (isTypeNamedInstance(instance)) {
+    return instance.typeName;
+  } else {
+    // No good reason for not supporting this, just haven't hit the usecase yet, and it's not
+    // obvious how we should support it.
+    throw new Error('Looks like the instance is a TypedObjectAttributes, which isn\'t yet supported');
+  }
+}
+
+export function isUntypedInstance(instance: any): instance is UntypedInstance {
+  return !isNullOrUndefined(instance.type) && instance.type === UnknownType.UnknownType;
+}
+
+export function isTypedInstance(instance: any): instance is TypedInstance {
+  return instance && instance.type !== undefined && instance.value !== undefined;
+}
+
+export function isTypedNull(instance: InstanceLikeOrCollection): instance is TypedInstance {
+  const instanceAny = instance as any;
+  return instanceAny && instanceAny.type !== undefined && isNullOrUndefined(instanceAny.value);
+}
+
+export function isTypeNamedInstance(instance: any): instance is TypeNamedInstance {
+  const instanceAny = instance as any;
+  return instanceAny && instanceAny.typeName !== undefined && instanceAny.value !== undefined;
+}
+
+export function isTypeNamedNull(instance: any): instance is TypeNamedInstance {
+  const instanceAny = instance as any;
+  return instanceAny && instanceAny.typeName !== undefined && isNullOrUndefined(instanceAny.value);
+}
+
+export function isTypedCollection(instance: any): instance is TypeNamedInstance[] {
+  return instance && Array.isArray(instance) && instance[0] && isTypeNamedInstance(instance[0]);
+}
+
+
+export interface TypeNamedInstance {
+  typeName: string;
+  value: any;
+  source?: DataSource;
+}
+
+
+export interface DataSourceReference {
+  dataSourceIndex: number;
+}
+
+export interface DataSource {
+  dataSourceName: DataSourceType;
+}
+
+export enum MappingType {
+  SYNONYM = 'SYNONYM'
+}
+
+export interface MappedValue extends DataSource {
+  mappingType: MappingType;
+  dataSourceName: 'Mapped';
+}
+
+export interface MappedSynonym extends MappedValue {
+  source: TypeNamedInstance;
+  mappingType: MappingType.SYNONYM;
+}
+
+export type DataSourceType =
+  'Provided'
+  | 'Mapped'
+  | 'Operation result'
+  | 'Defined in schema'
+  | 'Undefined source'
+  | 'Multiple sources';

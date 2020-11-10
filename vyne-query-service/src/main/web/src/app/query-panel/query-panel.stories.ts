@@ -1,14 +1,14 @@
 import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
-import {ResultsTableModule} from '../results-table/results-table.module';
 import {QueryPanelModule} from './query-panel.module';
+import {AngularSplitModule} from 'angular-split';
 
 storiesOf('Query panel', module)
   .addDecorator(
     moduleMetadata({
       declarations: [],
-      imports: [CommonModule, BrowserModule, QueryPanelModule]
+      imports: [CommonModule, BrowserModule, QueryPanelModule, AngularSplitModule.forChild()]
     })
   ).add('Query editor', () => {
   return {

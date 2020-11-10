@@ -41,10 +41,12 @@ class CaskWebsocketHandlerTest {
    val ingester: Ingester = mock()
    val caskDao: CaskDAO = mock()
    val caskConfigRepository:CaskConfigRepository = mock()
+   val ingestionErrorRepository: IngestionErrorRepository = mock()
    val applicationEventPublisher = mock<ApplicationEventPublisher>()
    lateinit var wsHandler: CaskWebsocketHandler
+   lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
 
-   class IngesterFactoryMock(val ingester: Ingester) : IngesterFactory(mock()) {
+   class IngesterFactoryMock(val ingester: Ingester) : IngesterFactory(mock(), mock()) {
       override fun create(ingestionStream: IngestionStream): Ingester {
          whenever(ingester.ingest()).thenReturn(ingestionStream.feed.stream)
          return ingester
@@ -57,14 +59,16 @@ class CaskWebsocketHandlerTest {
       }
    }
 
-   private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester),caskConfigRepository, caskDao)
+   private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester),caskConfigRepository, caskDao, ingestionErrorRepository)
    private val mapper: ObjectMapper = jacksonObjectMapper()
 
 
    @Before()
    fun setUp() {
       mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
-      wsHandler = CaskWebsocketHandler(caskService, applicationEventPublisher, mapper)
+      caskIngestionErrorProcessor = CaskIngestionErrorProcessor(ingestionErrorRepository)
+      wsHandler = CaskWebsocketHandler(caskService, applicationEventPublisher, caskIngestionErrorProcessor, mapper)
+      caskIngestionErrorProcessor.afterPropertiesSet()
 
       whenever(caskDao.createCaskMessage(
          versionedType = any(),
@@ -87,7 +91,7 @@ class CaskWebsocketHandlerTest {
    @Test
    fun closeWebsocketForUnknownContentType() {
       val session = MockWebSocketSession("/cask/xxx/OrderWindowSummary")
-      val wsHandler = CaskWebsocketHandler(caskService, applicationEventPublisher, mapper)
+      val wsHandler = CaskWebsocketHandler(caskService, applicationEventPublisher, caskIngestionErrorProcessor, mapper)
 
       wsHandler.handle(session)
 
@@ -200,6 +204,12 @@ class CaskWebsocketHandlerTest {
          .create(session.textOutput.take(1))
          .expectNextMatches { json -> json.rejectedWithReason("Failed to parse value ??6300USD to type Price") }
          .verifyComplete()
+
+      argumentCaptor<IngestionError>().apply {
+         verify(ingestionErrorRepository, times(1)).save(capture())
+         allValues.size.should.equal(1)
+         firstValue.error.should.equal("""Failed to parse value ??6300USD to type Price - Unparseable number: "??6300USD"""")
+      }
    }
 
    @Test
@@ -232,6 +242,11 @@ class CaskWebsocketHandlerTest {
          .expectNextMatches { json -> json.rejectedWithReason("Failed to parse value ??6300USD to type Price") }
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
          .verifyComplete()
+
+      argumentCaptor<IngestionError>().apply {
+         verify(ingestionErrorRepository, times(2)).save(capture())
+         allValues.size.should.equal(2)
+      }
    }
 
    @Test
@@ -298,6 +313,11 @@ class CaskWebsocketHandlerTest {
          .create(session.textOutput.take(1).timeout(Duration.ofSeconds(1)))
          .expectNext("""{"result":"SUCCESS","message":"Successfully ingested 0 records"}""")
          .verifyComplete()
+
+      argumentCaptor<IngestionError>().apply {
+         verify(ingestionErrorRepository, times(1)).save(capture())
+         allValues.size.should.equal(1)
+      }
    }
 
    @Test

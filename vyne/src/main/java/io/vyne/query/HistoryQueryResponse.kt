@@ -8,7 +8,6 @@ data class HistoryQueryResponse(val results: Map<String, Any?> = mapOf(),
                                 val unmatchedNodes: List<QualifiedName> = listOf(),
                                 val fullyResolved: Boolean,
                                 val queryResponseId: String = UUID.randomUUID().toString(),
-                                val resultMode: ResultMode,
                                 @field:JsonIgnore
                                 val profilerOperation: ProfilerOperationDTO?,
                                 val responseStatus: QueryResponse.ResponseStatus,
@@ -17,8 +16,6 @@ data class HistoryQueryResponse(val results: Map<String, Any?> = mapOf(),
                                 val error: String? = null) {
    val resultSize: Int
 
-   // HACK : Put this last, so that other stuff is serialized first
-   val lineageGraph = LineageGraph
    // TODO ... how do we work this out?
    val durationMs = profilerOperation?.duration ?: 0;
    init {

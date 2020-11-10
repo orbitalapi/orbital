@@ -42,10 +42,10 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
    @Before
    override fun setup() {
       super.setup()
-      val ingestorFactory = IngesterFactory(jdbcTemplate)
+      val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
       changeDetector = CaskSchemaChangeDetector(configRepository, caskConfigService, caskDao, caskViewService)
-      caskUpgrader = CaskUpgraderService(caskDao, schemaProvider, ingestorFactory, configRepository, applicationEventPublisher = mock { })
-      caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao)
+      caskUpgrader = CaskUpgraderService(caskDao, schemaProvider, ingestorFactory, configRepository, applicationEventPublisher = mock { }, caskIngestionErrorProcessor = caskIngestionErrorProcessor)
+      caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository)
    }
 
    @Test
@@ -61,7 +61,8 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       // We're using the service to ensure the message record is created
       caskService.ingestRequest(CsvWebsocketRequest(
          CsvIngestionParameters(),
-         versionedType
+         versionedType,
+         caskIngestionErrorProcessor
       ), Flux.just(source.openStream())).blockLast(Duration.ofSeconds(2L))
 
       val originalRecords = caskDao.findAll(versionedType)
@@ -99,7 +100,8 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
 
       caskService.ingestRequest(CsvWebsocketRequest(
          CsvIngestionParameters(),
-         versionedType
+         versionedType,
+         caskIngestionErrorProcessor
       ), Flux.just(source.openStream())).blockLast(Duration.ofSeconds(2L))
 
       schemaProvider.updateSource(CoinbaseOrderSchema.personSourceV2)
@@ -154,7 +156,8 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       caskConfigService.createCaskConfig(personType)
       caskService.ingestRequest(CsvWebsocketRequest(
          CsvIngestionParameters(),
-         personType
+         personType,
+         caskIngestionErrorProcessor
       ), Flux.just(personSource.openStream())).blockLast(Duration.ofSeconds(2L))
 
       // First, create a table with the original schema
@@ -163,7 +166,8 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       caskConfigService.createCaskConfig(orderType)
       caskService.ingestRequest(CsvWebsocketRequest(
          CsvIngestionParameters(),
-         orderType
+         orderType,
+         caskIngestionErrorProcessor
       ), Flux.just(orderSource.openStream())).blockLast(Duration.ofSeconds(2L))
 
       // Now, creation of the views should succeed

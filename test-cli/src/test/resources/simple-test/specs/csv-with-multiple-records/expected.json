@@ -4,21 +4,12 @@
       "value": {
          "firstName": {
             "typeName": "vyne.demo.FirstName",
-            "value": "Jimmy",
-            "source": {
-               "dataSourceName": "Provided"
-            }
+            "value": "Jimmy"
          },
          "lastName": {
             "typeName": "vyne.demo.LastName",
-            "value": "Pitt",
-            "source": {
-               "dataSourceName": "Provided"
-            }
+            "value": "Pitt"
          }
-      },
-      "source": {
-         "dataSourceName": "Provided"
       }
    },
    {
@@ -26,21 +17,12 @@
       "value": {
          "firstName": {
             "typeName": "vyne.demo.FirstName",
-            "value": "Mini",
-            "source": {
-               "dataSourceName": "Provided"
-            }
+            "value": "Mini"
          },
          "lastName": {
             "typeName": "vyne.demo.LastName",
-            "value": "Pitt",
-            "source": {
-               "dataSourceName": "Provided"
-            }
+            "value": "Pitt"
          }
-      },
-      "source": {
-         "dataSourceName": "Provided"
       }
    }
 ]

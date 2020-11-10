@@ -12,8 +12,11 @@ import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
+import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.CaskMessageRepository
 import io.vyne.cask.ingest.Ingester
+import io.vyne.cask.ingest.IngestionError
+import io.vyne.cask.ingest.IngestionErrorRepository
 import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.upgrade.UpdatableSchemaProvider
@@ -36,6 +39,7 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
+import reactor.core.publisher.UnicastProcessor
 import java.io.File
 import java.lang.Exception
 import java.net.URI
@@ -60,6 +64,9 @@ abstract class BaseCaskIntegrationTest  {
 
    @Autowired
    lateinit var jdbcTemplate: JdbcTemplate
+   @Autowired
+   lateinit var ingestionErrorRepository: IngestionErrorRepository
+   lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
    lateinit var caskDao: CaskDAO
    lateinit var caskConfigService: CaskConfigService
 
@@ -82,6 +89,7 @@ abstract class BaseCaskIntegrationTest  {
    }
    @Before
    fun setup() {
+      caskIngestionErrorProcessor = CaskIngestionErrorProcessor(ingestionErrorRepository)
       schemaProvider = UpdatableSchemaProvider.withSource(CoinbaseJsonOrderSchema.sourceV1)
       caskDao = CaskDAO(jdbcTemplate, schemaProvider, dataSource, caskMessageRepository, configRepository)
       caskConfigService = CaskConfigService(configRepository)
@@ -108,7 +116,7 @@ abstract class BaseCaskIntegrationTest  {
          TypeDbWrapper(versionedType, taxiSchema),
          pipelineSource)
 
-      val ingester = Ingester(jdbcTemplate, pipeline)
+      val ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink())
       caskDao.dropCaskRecordTable(versionedType)
       caskDao.createCaskRecordTable(versionedType)
       caskConfigService.createCaskConfig(versionedType)
@@ -126,14 +134,15 @@ abstract class BaseCaskIntegrationTest  {
          versionedType,
          taxiSchema,
          MessageIds.uniqueId(),
-         csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader())
+         csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(),
+         ingestionErrorProcessor = caskIngestionErrorProcessor)
 
       val pipeline = IngestionStream(
          versionedType,
          TypeDbWrapper(versionedType, taxiSchema),
          pipelineSource)
 
-      val ingester = Ingester(jdbcTemplate, pipeline)
+      val ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink())
       caskDao.dropCaskRecordTable(versionedType)
       caskDao.createCaskRecordTable(versionedType)
       caskConfigService.createCaskConfig(versionedType)

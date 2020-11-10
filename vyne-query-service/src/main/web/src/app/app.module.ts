@@ -36,6 +36,7 @@ import {QueryPanelModule} from './query-panel/query-panel.module';
 import {InjectableRxStompConfig, RxStompService, rxStompServiceFactory} from '@stomp/ng2-stompjs';
 import {RxStompConfig} from './stomp-config';
 import {SchemaNotificationService} from './services/schema-notification.service';
+import {MatNativeDateModule} from '@angular/material/core';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -67,6 +68,7 @@ export const routerModule = RouterModule.forRoot(
     LayoutModule,
 
     HttpClientModule,
+    MatNativeDateModule,
 
     MarkdownModule.forRoot(),
 

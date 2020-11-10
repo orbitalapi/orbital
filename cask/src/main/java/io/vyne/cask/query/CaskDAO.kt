@@ -26,6 +26,7 @@ import lang.taxi.types.QualifiedName
 import org.apache.commons.io.IOUtils
 import org.postgresql.PGConnection
 import org.postgresql.largeobject.LargeObjectManager
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -321,6 +322,20 @@ class CaskDAO(
             connection.commit()
             caskMessage
          }
+      }
+   }
+
+   fun fetchRawCaskMessage(caskMessageId: String): Pair<ByteArray, ContentType?>? {
+     return caskMessageRepository.findByIdOrNull(caskMessageId)?.let { caskMessage ->
+        caskMessage.messageContentId?.let { largeObjectId ->
+           largeObjectDataSource.connection.use { connection ->
+              connection.autoCommit = false
+              val pgConn = connection.unwrap(PGConnection::class.java)
+              val largeObjectManager = pgConn.largeObjectAPI
+              val largeObject = largeObjectManager.open(largeObjectId, LargeObjectManager.READ)
+              IOUtils.toByteArray(largeObject.inputStream) to caskMessage.messageContentType
+           }
+        }
       }
    }
 

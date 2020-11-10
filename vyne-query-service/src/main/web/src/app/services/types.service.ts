@@ -17,9 +17,9 @@ import {
   SchemaSpec,
   Type,
   TypedInstance,
+  TypeNamedInstance,
   VersionedSource
 } from './schema';
-import {TypeNamedInstance} from './query.service';
 import {VyneServicesModule} from './vyne-services.module';
 import {SchemaUpdatedNotification} from './schema-notification.service';
 

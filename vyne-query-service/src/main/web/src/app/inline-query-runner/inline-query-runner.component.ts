@@ -1,7 +1,6 @@
 import {Component, Input} from '@angular/core';
-import {InstanceLike, typeName} from '../object-view/object-view.component';
 import {Fact, Query, QueryMode, QueryResult, QueryService, ResultMode} from '../services/query.service';
-import {QualifiedName} from '../services/schema';
+import {QualifiedName, InstanceLike, getTypeName} from '../services/schema';
 
 @Component({
   selector: 'app-inline-query-runner',
@@ -51,7 +50,7 @@ export class InlineQueryRunnerComponent {
     const query = new Query(
       { typeNames: [this.targetType.parameterizedName] },
       this.facts.map(fact => {
-        return new Fact(typeName(fact), fact.value);
+        return new Fact(getTypeName(fact), fact.value);
       }),
       QueryMode.DISCOVER,
       ResultMode.VERBOSE

@@ -1,8 +1,10 @@
 @import "src/theme";
 
 .results-container {
-  margin: 1rem;
   height: 100%;
+  // padding+box-sizing seemed to fix errant vertical scrollbars
+  padding: 1rem;
+  box-sizing: border-box;
 }
 .results-object-view-list-block {
   height: 100%;

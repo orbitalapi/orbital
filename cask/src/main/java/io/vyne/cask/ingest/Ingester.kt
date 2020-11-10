@@ -11,6 +11,7 @@ import org.postgresql.util.PSQLException
 import org.postgresql.util.PSQLState
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
+import reactor.core.publisher.FluxSink
 
 data class IngestionStream(
    val type: VersionedType,
@@ -20,7 +21,8 @@ data class IngestionStream(
 
 class Ingester(
    private val jdbcTemplate: JdbcTemplate,
-   private val ingestionStream: IngestionStream) {
+   private val ingestionStream: IngestionStream,
+   private val ingestionErrorSink: FluxSink<IngestionError>) {
    private val hasPrimaryKey = hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
    // TODO refactor so that we open/close transaction based on types of messages
    //   1. Message StartTransaction
@@ -51,6 +53,7 @@ class Ingester(
                // leading to connection pool exhaustion.
                connection.close()
             }
+            ingestionErrorSink.next(IngestionError.fromThrowable(e, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
             return Flux.error(e)
          }
       log().debug("Opening DB connection for ${table.table}")
@@ -59,6 +62,7 @@ class Ingester(
             log().error("Closing DB connection for ${table.table}", it)
             writer.close()
             connection.close()
+            ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
          }
          .doOnComplete {
             log().info("Closing DB connection for ${table.table}")
@@ -81,6 +85,7 @@ class Ingester(
                log().error("Closing DB connection for ${table.table}", it)
                connection.close()
             }
+            ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
          }
    }
 

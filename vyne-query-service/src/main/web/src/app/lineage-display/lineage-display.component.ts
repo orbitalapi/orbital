@@ -1,18 +1,20 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {InstanceLike} from '../object-view/object-view.component';
+import {Component, Input} from '@angular/core';
+import {isOperationResult, OperationResultDataSource, RemoteCall,} from '../services/query.service';
+
 import {
   DataSource,
-  isOperationResult,
-  isTypeNamedInstance,
-  LineageGraph, OperationResultDataSource, RemoteCall,
-  TypeNamedInstance,
+  isMappedSynonym,
   isTypedCollection,
-  DataSourceReference
-} from '../services/query.service';
-
-import {SchemaGraphLink, SchemaGraphNode, SchemaNodeSet, TypedInstance} from '../services/schema';
+  isTypeNamedInstance,
+  isUntypedInstance,
+  SchemaGraphLink,
+  SchemaGraphNode,
+  SchemaNodeSet,
+  TypeNamedInstance
+} from '../services/schema';
 import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
 import {Subject} from 'rxjs';
+import {isNullOrUndefined} from 'util';
 
 type LineageElement = TypeNamedInstance | TypeNamedInstance[] | DataSource;
 
@@ -24,19 +26,22 @@ type LineageElement = TypeNamedInstance | TypeNamedInstance[] | DataSource;
 export class LineageDisplayComponent extends BaseGraphComponent {
   static NODE_ID = '__nodeId';
 
-  private _lineageGraph: LineageGraph;
+  private _dataSource: DataSource;
   private _instance: TypeNamedInstance;
 
   graphNodesChanged = new Subject<boolean>()
 
 
   @Input()
-  get lineageGraph(): LineageGraph {
-    return this._lineageGraph;
+  get dataSource(): DataSource {
+    return this._dataSource;
   }
 
-  set lineageGraph(value: LineageGraph) {
-    this._lineageGraph = value;
+  set dataSource(value: DataSource) {
+    if (this._dataSource === value) {
+      return;
+    }
+    this._dataSource = value;
     this.schemaGraph = this.buildGraph(this.instance);
   }
 
@@ -46,6 +51,9 @@ export class LineageDisplayComponent extends BaseGraphComponent {
   }
 
   set instance(value: TypeNamedInstance) {
+    if (this._instance === value) {
+      return;
+    }
     this._instance = value;
     this.schemaGraph = this.buildGraph(this.instance);
   }
@@ -53,7 +61,12 @@ export class LineageDisplayComponent extends BaseGraphComponent {
   schemaGraph: SchemaNodeSet = this.emptyGraph();
 
   private buildGraph(node: LineageElement, linkTo: SchemaGraphNode = null): SchemaNodeSet {
-    if (!node || !this.lineageGraph) {
+    if (!node || !this.dataSource) {
+      return this.emptyGraph();
+    }
+    if (isUntypedInstance(node)) {
+      // If we get given an untypedInstance, we should wait, as there's a real instance coming
+      // after the server call completes
       return this.emptyGraph();
     }
     const self = this;
@@ -67,20 +80,21 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
 
     function instanceToNode(instance: TypeNamedInstance): SchemaGraphNode {
-      const instanceId = nodeId(instance, () => instance.typeName +  (Math.random() * 10000));
+      const instanceId = nodeId(instance, () => instance.typeName + (Math.random() * 10000));
+      const label = isNullOrUndefined(instance.value) ? 'Null value' : instance.value;
       return {
         id: instanceId,
         nodeId: instanceId,
-        label: instance.value,
+        label: label,
         subHeader: instance.typeName,
         value: instance,
         type: 'TYPE'
       } as SchemaGraphNode;
     }
 
-    function collectionToNode(instance:  TypeNamedInstance[]): SchemaGraphNode {
+    function collectionToNode(instance: TypeNamedInstance[]): SchemaGraphNode {
       var typeName = instance[0] ? instance[0].typeName : 'asd'
-      var value = instance.map( instance => instance.value)
+      var value = instance.map(instance => instance.value)
 
       const instanceId = nodeId(instance, () => typeName + new Date().getTime());
       return {
@@ -106,14 +120,21 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     }
 
     function dataSourceToNode(dataSource: DataSource): SchemaGraphNode {
-      const instanceId = nodeId(dataSource, () => dataSource.name + new Date().getTime());
+      const instanceId = nodeId(dataSource, () => dataSource.dataSourceName + new Date().getTime());
       let label: string;
-      switch (dataSource.name) {
+      let subHeader = 'Fixed';
+      switch (dataSource.dataSourceName) {
         case 'Provided':
           label = 'Provided as input';
           break;
+        case 'Mapped':
+          label = dataSource.dataSourceName;
+          if (isMappedSynonym(dataSource)) {
+            subHeader = 'From Foo.Baz'
+          }
+
         default:
-          label = dataSource.name;
+          label = dataSource.dataSourceName;
       }
       return {
         id: instanceId,
@@ -132,12 +153,8 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       links
     };
 
-    const buildDataSourceTo = (source: DataSourceReference, typedInstanceNode: SchemaGraphNode) =>  {
-      const dataSource = this.lineageGraph[source.dataSourceIndex];
-      if (!dataSource) {
-        throw new Error(`node declares data source with index ${source.dataSourceIndex} but no such index exists`);
-      }
-      const dataSourceNodes = this.buildGraph(dataSource, typedInstanceNode);
+    const buildDataSourceTo = (source: DataSource, typedInstanceNode: SchemaGraphNode) => {
+      const dataSourceNodes = this.buildGraph(source, typedInstanceNode);
       this.appendNodeSet(dataSourceNodes, nodeSet);
     }
 
@@ -147,21 +164,21 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
       if (node.source) {
         buildDataSourceTo(node.source, typedInstanceNode)
+      } else if (node === this.instance) { // Are we building the root level node?
+        buildDataSourceTo(this.dataSource, typedInstanceNode)
       }
-    }
-    else if(isTypedCollection(node)) {
+    } else if (isTypedCollection(node)) {
       const typedCollectionNode = collectionToNode(node);
       nodes.push(typedCollectionNode);
 
-    // Take the datasource from the first node for now. THat's the best we can do
-    // IN the future, enrich the API response to include datasource for TypedCOllections
+      // Take the datasource from the first node for now. THat's the best we can do
+      // IN the future, enrich the API response to include datasource for TypedCOllections
       const source = node[0] ? node[0].source : null
       if (source) {
         buildDataSourceTo(source, typedCollectionNode)
       }
 
-    }
-    else if (isOperationResult(node)) {
+    } else if (isOperationResult(node)) {
       const remoteCallNode = remoteCallToNode(node.remoteCall, node);
       if (remoteCallNode.nodeId !== linkTo.nodeId) {
         nodes.push(remoteCallNode);
@@ -172,7 +189,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
         });
         node.inputs.forEach(param => {
           var inputNode = undefined;
-          if(Array.isArray(param.value)) {
+          if (Array.isArray(param.value)) {
             inputNode = collectionToNode(param.value);
           } else {
             inputNode = instanceToNode(param.value);
@@ -186,6 +203,15 @@ export class LineageDisplayComponent extends BaseGraphComponent {
           });
         });
       }
+    } else if (isMappedSynonym(node)) {
+      const synonymSource = node.source
+      const inputNode = instanceToNode(synonymSource);
+      nodes.push(inputNode)
+      links.push({
+        source: inputNode.nodeId,
+        target: linkTo.nodeId,
+        label: 'Is synonym of'
+      })
     } else {
       const dataSource = node as DataSource;
       const dataSourceNode = dataSourceToNode(dataSource);
