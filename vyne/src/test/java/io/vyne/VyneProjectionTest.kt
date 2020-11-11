@@ -13,6 +13,8 @@ import io.vyne.models.json.parseKeyValuePair
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import org.junit.Test
+import java.time.Instant
+import java.time.ZoneId
 
 
 class VyneProjectionTest {
@@ -1094,6 +1096,79 @@ service Broker1Service {
          )
       )
       getCountryInvoked.should.be.`false`
+   }
+
+
+   @Test
+   fun `should output offset  correctly`() {
+      val (vyne, stubService) = testVyne("""
+         model InputModel {
+           inputField: Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+         }
+
+         model OutputModel {
+            myField : Instant( @format = ["yyyy-MM-dd'T'HH:mm:ss.SSSZ"], @offset = 60 )
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getInputData(): InputModel[]
+         }
+      """.trimIndent())
+
+      val inputInstant1 = "2020-08-19T13:07:09.591Z"
+      val inputInstant2 = "2020-08-18T13:07:09.591Z"
+      val outputInstant1 = "2020-08-19T14:07:09.591+0100"
+      val outputInstant2 = "2020-08-18T14:07:09.591+0100"
+      stubService.addResponse("getInputData", vyne.parseJsonModel("InputModel[]", """
+         [
+            { "inputField": "$inputInstant1" },
+            { "inputField": "$inputInstant2" }
+         ]
+         """.trimIndent()))
+      val result =  vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
+         listOf(
+            mapOf("myField" to "$outputInstant1" ),
+            mapOf("myField" to "$outputInstant2")
+         )
+      )
+   }
+
+   @Test
+   fun `should output offset correctly without any format`() {
+      val (vyne, stubService) = testVyne("""
+         model InputModel {
+           inputField: Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+         }
+
+         model OutputModel {
+            myField : Instant( @offset = 60 )
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getInputData(): InputModel[]
+         }
+      """.trimIndent())
+
+      val inputInstant1 = "2020-08-19T13:07:09.591Z"
+      val inputInstant2 = "2020-08-18T13:07:09.591Z"
+      val outputInstant1 = "2020-08-19T14:07:09.591+01"
+      val outputInstant2 = "2020-08-18T14:07:09.591+01"
+      stubService.addResponse("getInputData", vyne.parseJsonModel("InputModel[]", """
+         [
+            { "inputField": "$inputInstant1" },
+            { "inputField": "$inputInstant2" }
+         ]
+         """.trimIndent()))
+      val result =  vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
+         listOf(
+            mapOf("myField" to "$outputInstant1" ),
+            mapOf("myField" to "$outputInstant2")
+         )
+      )
    }
 }
 

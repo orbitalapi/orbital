@@ -1,13 +1,16 @@
 package io.vyne.models
 
 import io.vyne.utils.log
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAccessor
 
 private object TypeFormatter {
+   val UtcZoneId = ZoneId.of("UTC")
    fun applyFormat(typedInstance: TypedInstance): String? {
       require(typedInstance.value is TemporalAccessor) { "Formatted types only supported on TemporalAccessors currently.  If you're seeing this error, time to do some work!" }
       val instant = typedInstance.value as TemporalAccessor
@@ -25,22 +28,39 @@ private object TypeFormatter {
       return when {
          typedInstance.value is LocalDate && dateTimeFormat != null -> DateTimeFormatter
             .ofPattern(dateTimeFormat)
-            .withZone(ZoneId.of("UTC"))
+            .withZone(UtcZoneId)
             .format((instant as LocalDate).atStartOfDay())
 
          typedInstance.value is LocalTime && dateTimeFormat != null -> DateTimeFormatter
             .ofPattern(dateTimeFormat)
             .format((instant as LocalTime))
 
-         else -> DateTimeFormatter
-            .ofPattern(typedInstance.type.format!!.first())
-            .withZone(ZoneId.of("UTC"))
-            .format(instant)
+         else -> {
+            val zoneId = zoneId(typedInstance)
+            typedInstance.type.format?.firstOrNull()?.let { firstFormat ->
+               DateTimeFormatter
+                  .ofPattern(firstFormat)
+                  .withZone(zoneId)
+                  .format(instant)
+            } ?: DateTimeFormatter.ISO_INSTANT.withZone(zoneId).format(instant)
+
+         }
       }
    }
 
    fun findFormatWith(searchPattern: String, formats: List<String>): String? {
       return formats.firstOrNull { it.contains(searchPattern) }
+   }
+
+   fun zoneId(typedInstance: TypedInstance): ZoneId {
+      return  try {
+         typedInstance.type.offset?.let {
+            ZoneOffset.ofTotalSeconds(it * 60).normalized()
+         } ?: UtcZoneId
+      } catch (e: Exception) {
+         log().warn("offset value of ${typedInstance.type.offset} not corresponds to a valid ZoneId, so using UTC instead, error => ${e.message}")
+         UtcZoneId
+      }
    }
 }
 
@@ -62,7 +82,7 @@ object RawObjectMapper : TypedInstanceMapper {
 object TypeNamedInstanceMapper : TypedInstanceMapper {
    private fun formatValue(typedInstance: TypedInstance): Any? {
       val type = typedInstance.type
-      val formattedValue = if (type.hasFormat && typedInstance.value != null && typedInstance.value !is String) {
+      val formattedValue = if ( (type.hasFormat || type.offset != null) && typedInstance.value != null && typedInstance.value !is String) {
          // I feel like this is a bad idea, as the typed value will no longer statisfy the type contract
          // This could cause casing exceptions elsewhere.
          TypeFormatter.applyFormat(typedInstance)

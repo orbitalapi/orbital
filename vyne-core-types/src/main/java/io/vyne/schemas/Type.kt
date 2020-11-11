@@ -106,6 +106,9 @@ data class Type(
    val isTypeAlias = aliasForTypeName != null
 
    @JsonView(TypeFullView::class)
+   val offset: Int? = taxiType.offset
+
+   @JsonView(TypeFullView::class)
    val format: List<String>? = taxiType.format
 
    @JsonView(TypeFullView::class)
@@ -123,7 +126,7 @@ data class Type(
 
    @get:JsonView(TypeFullView::class)
    val unformattedTypeName: QualifiedName? by lazy {
-      if (hasFormat) {
+      if (hasFormat || offset != null) {
          resolveUnderlyingFormattedType().qualifiedName
       } else null
    }
@@ -366,7 +369,7 @@ data class Type(
 
    // Don't call this directly, use resolveAliases()
    private fun resolveUnderlyingFormattedType(): Type {
-      if (this.format == null) {
+      if (this.format == null && this.offset == null) {
          return this
       }
       require(this.inherits.size <= 1) { "A formatted type should have at most 1 supertype" }
@@ -386,6 +389,14 @@ data class Type(
       //         }
       // In this scneario, we want to refer to the primitive, because there's no other option.
       if (superType.isPrimitive && this.format != superType.format) {
+         return superType
+      }
+
+      // Case for inline 'offset'
+      //  model OutputModel {
+      //            myField : Instant( @offset = 60 )
+      //         }
+      if (superType.isPrimitive && this.offset != superType.offset) {
          return superType
       }
       val resolvedSuperType = superType.resolveAliases()
