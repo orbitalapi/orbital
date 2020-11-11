@@ -77,4 +77,7 @@ interface CaskApi {
 
    @GetMapping("/api/casks/{caskMessageId}")
    fun getIngestionMessage(@PathVariable caskMessageId: String): ResponseEntity<Resource>
+
+   @DeleteMapping("/api/types/cask/{typeName}")
+   fun deleteCaskByTypeName(@PathVariable("typeName") typeName: String)
 }
