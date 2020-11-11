@@ -82,7 +82,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
    }
 
    private fun convertValue(discoveredValue: TypedInstance, targetType: Type): TypedInstance {
-      return if (discoveredValue is TypedValue && targetType.hasFormat && targetType.format != discoveredValue.type.format) {
+      return if (discoveredValue is TypedValue && ( (targetType.hasFormat && targetType.format != discoveredValue.type.format) || targetType.offset != discoveredValue.type.offset) ) {
          discoveredValue.copy(targetType)
       } else {
          discoveredValue

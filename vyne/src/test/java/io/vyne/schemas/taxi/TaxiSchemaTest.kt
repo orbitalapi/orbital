@@ -393,6 +393,7 @@ type Sample {
   "typeParameters" : [ ],
   "typeDoc" : "",
   "isTypeAlias" : false,
+  "offset" : null,
   "format" : null,
   "hasFormat" : false,
   "isCalculated" : false,
