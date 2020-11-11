@@ -142,5 +142,9 @@ class CaskRestController(private val caskService: CaskService,
       builder.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$fileName\"")
       return builder.body(resource)
    }
+
+   override fun deleteCaskByTypeName(typeName: String) {
+      caskService.deleteCaskByTypeName(typeName)
+   }
 }
 
