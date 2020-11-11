@@ -14,7 +14,16 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.functions.FunctionAccessor
-import lang.taxi.types.*
+import lang.taxi.types.Accessor
+import lang.taxi.types.ColumnAccessor
+import lang.taxi.types.ConditionalAccessor
+import lang.taxi.types.DestructuredAccessor
+import lang.taxi.types.FieldReferenceSelector
+import lang.taxi.types.JsonPathAccessor
+import lang.taxi.types.LiteralAccessor
+import lang.taxi.types.ReadFunction
+import lang.taxi.types.ReadFunctionFieldAccessor
+import lang.taxi.types.XpathAccessor
 import org.apache.commons.csv.CSVRecord
 import org.w3c.dom.Document
 
@@ -146,7 +155,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
    private fun parseJson(value: Any, targetType: Type, schema: Schema, accessor: JsonPathAccessor, source: DataSource): TypedInstance {
       return when (value) {
          is ObjectNode -> jsonParser.parseToType(targetType, accessor, value, schema, source)
-         is Map<*, *> -> extractFromMap(targetType, accessor, value, schema, source)
+         is Map<*, *> -> jsonParser.parseToType(targetType, accessor, value, schema, source)
          else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
    }
@@ -158,6 +167,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
       return when {
          expression.startsWith("$") -> {
             val valueAtJsonPath = try {
+               jsonParser.parseToType(targetType, accessor, value, schema, source)
                JsonPath.parse(value).read<Any>(expression)
             } catch (e: PathNotFoundException) {
                null
