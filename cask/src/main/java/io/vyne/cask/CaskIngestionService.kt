@@ -119,6 +119,7 @@ class CaskService(private val schemaProvider: SchemaProvider,
 
    fun deleteCask(tableName: String) {
       if (caskDAO.exists(tableName)) {
+         log().info("deleting cask for table name $tableName")
          caskDAO.deleteCask(tableName)
       }
    }
@@ -150,6 +151,13 @@ class CaskService(private val schemaProvider: SchemaProvider,
       return caskDAO.fetchRawCaskMessage(caskMessageId)?.let { (stream, contentType) ->
          ByteArrayResource(stream) to contentType
       } ?:  InputStreamResource(ByteArrayInputStream(ByteArray(0))) to null
+   }
+
+   fun deleteCaskByTypeName(typeName: String) {
+      log().info("Deleting cask for type => $typeName")
+      caskConfigRepository
+         .findAllByQualifiedTypeName(typeName)
+         .forEach { caskConfig -> this.deleteCask(caskConfig.tableName) }
    }
 }
 
