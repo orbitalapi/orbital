@@ -1,13 +1,16 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.functions.FunctionRegistry
 import io.vyne.models.json.Jackson
+import io.vyne.models.json.JsonParsedStructure
 import io.vyne.models.json.isJson
-import io.vyne.schemas.*
-import io.vyne.utils.log
+import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Field
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import lang.taxi.types.Accessor
 import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
@@ -29,8 +32,8 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
    }
    fun build(): TypedInstance {
       if (isJson(value)) {
-         val map = objectMapper.readValue<Any>(value as String)
-         return TypedInstance.from(type,map,schema, nullValues = nullValues, source = source)
+         val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
+         return TypedInstance.from(type,jsonParsedStructure,schema, nullValues = nullValues, source = source)
       }
 
       // TODO : Naieve first pass.

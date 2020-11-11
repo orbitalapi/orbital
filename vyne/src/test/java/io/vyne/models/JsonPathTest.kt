@@ -27,7 +27,7 @@ class JsonPathTest {
    }
 
    @Test
-   fun canReadJsonPathWithComplexArrayAccess() {
+   fun `when using an indefinite json path but expecting a single response then it is returned if only one item matches`() {
       // Usecase here is finding a specific array element.
       // Jsonpath doesn't support parent access, but Jayway's JsonPath issues page
       // suggests this approach.
