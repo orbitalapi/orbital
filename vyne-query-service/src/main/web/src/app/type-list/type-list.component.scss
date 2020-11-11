@@ -67,12 +67,12 @@
 }
 
 .badge {
-  background-color: rgba($vyne-lilac, 0.2);
-  color: $vyne-lilac;
-  font-weight: bold;
+  background-color: rgba($vyne-lilac, 0.1);
+  border: 1px solid rgba($vyne-lilac, 0.25);
+  color: scale-color($vyne-lilac, $lightness: -20%);
+  border-radius: 4px;
   padding: 2px 4px;
-  font-size: 0.7rem;
-  font-weight: bold;
+  font-size: 0.75rem;
 }
 
 .schema-member-container {

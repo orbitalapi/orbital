@@ -127,8 +127,6 @@ export class TypeLinkGraphComponent {
   private appendSchemaGraph(schemaGraph: SchemaGraph) {
     this.schemaGraph.add(schemaGraph);
     this.typeLinks = this.schemaGraph.toNodeSet();
-    console.log('Updated typeLinks.  Now:');
-    console.log(JSON.stringify(this.typeLinks));
   }
 
   onLegendLabelClick(event) {

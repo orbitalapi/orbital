@@ -1,7 +1,6 @@
 <div #chartOuterContianer class="chart-outer-container">
     <ngx-graph *ngIf="hasContent"
       class="chart-container" [links]="typeLinks.links"
-               (legendLabelClick)="onLegendLabelClick($event)"
                [nodes]="typeLinks.nodes"
                [autoZoom]="true"
                [autoCenter]="true"
@@ -46,7 +45,7 @@
           <svg:path class="line" stroke-width="2" marker-end="url(#arrow)">
           </svg:path>
           <svg:text class="edge-label" text-anchor="middle">
-            <textPath class="text-path" [attr.href]="'#' + link.id" [style.dominant-baseline]="link.dominantBaseline"
+            <textPath class="text-path" [style.dominant-baseline]="link.dominantBaseline"
                       startOffset="50%">
               {{link.label}}
             </textPath>

@@ -1,0 +1,29 @@
+@import "src/theme";
+
+:host {
+  width: 100%;
+}
+
+.filter-bar-background {
+  background-color: $light-purple-grey-100;
+  display: flex;
+  align-items: center;
+  border: 1px solid $vyne-lilac;
+  padding: 0.5rem 1rem;
+  min-height: 2rem;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+}
+
+.img-button {
+  opacity: 0.8;
+  width: 1rem;
+  margin-right: 1rem;
+  cursor: pointer;
+  &:hover {
+    opacity: 1;
+  }
+}

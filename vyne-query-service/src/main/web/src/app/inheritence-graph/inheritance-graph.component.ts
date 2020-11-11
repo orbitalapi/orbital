@@ -12,6 +12,7 @@ import {
 import {outerRectangle, innerRectangle} from '../type-viewer/type-link-graph/graph-utils';
 import * as shape from 'd3-shape';
 import {logger} from 'codelyzer/util/logger';
+import {Router} from '@angular/router';
 
 @Component({
   selector: 'app-inheritance-graph',
@@ -19,6 +20,9 @@ import {logger} from 'codelyzer/util/logger';
   templateUrl: 'inheritance-graph.html'
 })
 export class InheritanceGraphComponent {
+
+  constructor(private router: Router) {
+  }
 
   private _inheritable: Inheritable;
 
@@ -153,9 +157,7 @@ export class InheritanceGraphComponent {
 
 
   select($event: any) {
-    console.log('Node selected');
-    const href = '/types/' +  $event.subHeader + '.' + $event.label;
-    window.location.href = href;
+    this.router.navigate(['/types', $event.fullyQualifiedName]);
   }
 }
 

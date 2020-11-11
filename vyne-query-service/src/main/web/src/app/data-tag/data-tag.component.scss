@@ -1,0 +1,32 @@
+@import "src/theme";
+
+$tag-color: $vyne-blue;
+
+.data-tag {
+  width: fit-content;
+  background-color: rgba($tag-color, 0.05);
+  border: 1px solid rgba($tag-color, 0.3);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.4rem;
+  display: flex;
+  .key, .separator {
+    color: $tag-color;
+    font-weight: bold;
+  }
+
+}
+.single-value {
+  .value {
+    padding-left: 0.5rem;
+  }
+}
+.single-value, .multi-value, .key-value-pair {
+  display: flex;
+}
+.key-value-pair  {
+  margin-left: 0.5rem;
+  .value {
+    margin-left: 0.5px;
+  }
+}

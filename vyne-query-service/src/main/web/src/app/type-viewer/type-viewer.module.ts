@@ -15,10 +15,12 @@ import {PolicyManagerModule} from '../policy-manager/policy-manager.module';
 import {TocHostDirective} from './toc-host.directive';
 import {TypeViewerContainerComponent} from './type-viewer-container.component';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
+import {DataTagModule} from '../data-tag/data-tag.module';
 
 
 @NgModule({
   imports: [
+    DataTagModule,
     SearchModule,
     MatToolbarModule,
     CommonModule,

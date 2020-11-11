@@ -20,6 +20,8 @@ export class TypeViewerComponent {
 
   sources: VersionedSource[];
 
+  hasAnnotations = false;
+
   @Input()
   inheritanceView: Inheritable;
 
@@ -38,6 +40,7 @@ export class TypeViewerComponent {
     if (this.type) {
       this.schemaMember = SchemaMember.fromType(this.type);
       this.sources = this.schemaMember.sources;
+      this.hasAnnotations = this.type.metadata && this.type.metadata.length > 0;
     }
   }
 

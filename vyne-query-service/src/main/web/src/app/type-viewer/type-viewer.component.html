@@ -16,15 +16,14 @@
       <h1>{{type?.name?.name}}</h1>
       <span class="mono-badge">{{type?.name?.fullyQualifiedName}}</span>
     </div>
-
-
-    <!--    <section>-->
-    <!--      <h2>About this type</h2>-->
-    <!--      <p>{{description}}</p>-->
-    <!--    </section>-->
+    <div class="tags-display" *ngIf="hasAnnotations">
+      <app-data-tag *ngFor="let annotation of type?.metadata" [key]="annotation.name.shortDisplayName" [keyValuePairs]="annotation.params"></app-data-tag>
+    </div>
     <section>
       <app-description-editor-container [type]="type"></app-description-editor-container>
     </section>
+
+
     <app-inheritance-graph *ngIf="inheritanceView" [inheritable]="inheritanceView"></app-inheritance-graph>
     <section *ngIf="hasAttributes">
       <h2>Attributes</h2>

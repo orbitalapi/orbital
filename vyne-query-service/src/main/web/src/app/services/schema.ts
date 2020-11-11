@@ -52,7 +52,18 @@ export interface Type extends Documented {
   isParameterType: boolean;
   typeParameters: QualifiedName[];
   inheritsFrom: QualifiedName[];
+  metadata: Annotation[];
 }
+
+export interface Annotation {
+  name: QualifiedName;
+  params: KeyValueMap;
+}
+
+export interface KeyValueMap {
+  [key: string]: any;
+}
+
 
 export interface EnumValues {
   name: string;

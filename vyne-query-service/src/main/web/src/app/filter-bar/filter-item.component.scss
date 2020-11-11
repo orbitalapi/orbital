@@ -1,0 +1,25 @@
+@import "src/theme";
+
+.filter-item {
+  display: flex;
+  mat-form-field::ng-deep {
+    .mat-form-field-wrapper {
+      padding-bottom: 0;
+    }
+  }
+  div {
+    margin-right: 0.5rem;
+  }
+}
+
+.operation-select {
+  mat-form-field {
+    width: 5rem;
+  }
+}
+
+.subject-select, .criteria-select {
+  mat-form-field {
+    width: 25rem;
+  }
+}

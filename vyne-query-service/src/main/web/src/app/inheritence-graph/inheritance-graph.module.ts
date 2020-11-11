@@ -5,6 +5,7 @@ import {CommonModule} from '@angular/common';
 import {NgxGraphModule} from '@swimlane/ngx-graph';
 import { NgxChartsModule } from '@swimlane/ngx-charts';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {RouterModule} from '@angular/router';
 
 @NgModule({
   imports: [
@@ -12,7 +13,8 @@ import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
     CommonModule,
     NgxGraphModule,
     NgxChartsModule,
-    BrowserAnimationsModule
+    BrowserAnimationsModule,
+    RouterModule
   ],
   exports: [InheritanceGraphComponent],
   declarations: [InheritanceGraphComponent],
