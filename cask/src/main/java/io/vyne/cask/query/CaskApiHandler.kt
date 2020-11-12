@@ -2,8 +2,10 @@ package io.vyne.cask.query
 
 import arrow.core.Either
 import io.vyne.cask.CaskService
+import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.OperationAnnotation
 import io.vyne.cask.services.CaskServiceSchemaGenerator
+import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
@@ -26,7 +28,29 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val requestPath = request.path().replace(CaskServiceSchemaGenerator.CaskApiRootPath, "")
       val uriComponents = UriComponentsBuilder.fromUriString(requestPath).build()
       return when {
-         uriComponents.pathSegments.contains(OperationAnnotation.Between.annotation) -> findByBetween(request, requestPath, uriComponents)
+         uriComponents.pathSegments.contains("${OperationAnnotation.Between.annotation}${BetweenVariant.GteLte}") -> findByBetween(
+            request,
+            requestPath,
+            uriComponents
+         ) { versionedType: VersionedType, columnName: String, start: String, end: String ->
+            caskDAO.findBetween(versionedType, columnName, start, end, BetweenVariant.GteLte) }
+         uriComponents.pathSegments.contains("${OperationAnnotation.Between.annotation}${BetweenVariant.GtLte}") -> findByBetween(
+            request,
+            requestPath,
+            uriComponents
+         ) { versionedType: VersionedType, columnName: String, start: String, end: String ->
+            caskDAO.findBetween(versionedType, columnName, start, end, BetweenVariant.GtLte) }
+         uriComponents.pathSegments.contains("${OperationAnnotation.Between.annotation}${BetweenVariant.GtLt}") -> findByBetween(
+            request,
+            requestPath,
+            uriComponents
+         ) { versionedType: VersionedType, columnName: String, start: String, end: String ->
+            caskDAO.findBetween(versionedType, columnName, start, end, BetweenVariant.GtLt) }
+         uriComponents.pathSegments.contains(OperationAnnotation.Between.annotation) -> findByBetween(
+            request,
+            requestPath,
+            uriComponents
+         ) { versionedType: VersionedType, columnName: String, start: String, end: String -> caskDAO.findBetween(versionedType, columnName, start, end) }
          uriComponents.pathSegments.contains(OperationAnnotation.After.annotation) -> findByAfter(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains(OperationAnnotation.Before.annotation) -> findByBefore(request, requestPath, uriComponents)
          uriComponents.pathSegments.contains("findOneBy") -> findOneBy(request, requestPath, uriComponents)
@@ -139,7 +163,11 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       }
    }
 
-   fun findByBetween(request: ServerRequest, requestPath: String, uriComponents: UriComponents): Mono<ServerResponse> {
+   fun findByBetween(request: ServerRequest,
+                     requestPath: String,
+                     uriComponents: UriComponents,
+                     daoFunction: (versionedType: VersionedType, fieldName: String, start: String, end: String) -> List<Map<String, Any>>):
+      Mono<ServerResponse> {
       val fieldNameAndValues = fieldNameAndArgs(uriComponents, 4)
       val fieldName = fieldNameAndValues.first()
       val start = fieldNameAndValues[2]
@@ -153,7 +181,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          is Either.Right -> {
             ok()
                .contentType(MediaType.APPLICATION_JSON)
-               .body(BodyInserters.fromValue(caskDAO.findBetween(versionedType.b, fieldName, start, end)))
+               .body(BodyInserters.fromValue(daoFunction(versionedType.b, fieldName, start, end)))
          }
       }
    }

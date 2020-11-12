@@ -81,7 +81,10 @@ class CaskServiceSchemaGeneratorTest {
             BetweenTemporalOperationGenerator(operationGeneratorConfig),
             FindBySingleResultGenerator(operationGeneratorConfig),
             FindByMultipleGenerator(operationGeneratorConfig),
-            FindByIdGenerators(operationGeneratorConfig)),
+            FindByIdGenerators(operationGeneratorConfig),
+            GreaterThanStartLessThanEndOperationGenerator(operationGeneratorConfig),
+            GreaterThanStartLessThanOrEqualsToEndOperationGenerator(operationGeneratorConfig),
+            GreaterThanOrEqualsToStartLessThanOrEqualsToEndOperationGenerator(operationGeneratorConfig)),
          listOf(FindAllGenerator(), FindBetweenInsertedAtOperationGenerator(DefaultCaskTypeProvider())),
       "Datasource") to taxiSchema
    }
@@ -180,14 +183,14 @@ import TransactionEventDateTime
 namespace vyne.casks {
 
 
-
    @ServiceDiscoveryClient(serviceName = "cask")
    @Datasource
    service OrderWindowSummaryCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
       operation findAll(  ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/CaskInsertedAt/Between/{start}/{end}")
-      operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : vyne.cask.CaskInsertedAt, @PathVariable(name = "end") end : vyne.cask.CaskInsertedAt ) : OrderWindowSummary[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/symbol/{Symbol}")
+      operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : vyne.cask.CaskInsertedAt, @PathVariable(name = "end") end : vyne.cask.CaskInsertedAt ) : OrderWindowSummary[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/symbol/{Symbol}")
       operation findBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary[]( Symbol = symbol )
       @HttpOperation(method = "GET" , url = "/api/cask/findOneBy/OrderWindowSummary/symbol/{Symbol}")
       operation findOneBySymbol( @PathVariable(name = "symbol") symbol : Symbol ) : OrderWindowSummary
@@ -201,12 +204,24 @@ namespace vyne.casks {
       operation findByMaturityDateBefore( @PathVariable(name = "before") before : MaturityDate ) : OrderWindowSummary[]( MaturityDate < before )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/Between/{start}/{end}")
       operation findByMaturityDateBetween( @PathVariable(name = "start") start : MaturityDate, @PathVariable(name = "end") end : MaturityDate ) : OrderWindowSummary[]( MaturityDate >= start, MaturityDate < end )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/BetweenGtLt/{start}/{end}")
+      operation findByMaturityDateBetweenGtLt( @PathVariable(name = "start") start : MaturityDate, @PathVariable(name = "end") end : MaturityDate ) : OrderWindowSummary[]( MaturityDate > start, MaturityDate < end )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/BetweenGtLte/{start}/{end}")
+      operation findByMaturityDateBetweenGtLte( @PathVariable(name = "start") start : MaturityDate, @PathVariable(name = "end") end : MaturityDate ) : OrderWindowSummary[]( MaturityDate > start, MaturityDate <= end )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/BetweenGteLte/{start}/{end}")
+      operation findByMaturityDateBetweenGteLte( @PathVariable(name = "start") start : MaturityDate, @PathVariable(name = "end") end : MaturityDate ) : OrderWindowSummary[]( MaturityDate >= start, MaturityDate <= end )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/After/{after}")
       operation findByOrderDateTimeAfter( @PathVariable(name = "after") after : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime > after )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/Before/{before}")
       operation findByOrderDateTimeBefore( @PathVariable(name = "before") before : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime < before )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/Between/{start}/{end}")
       operation findByOrderDateTimeBetween( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime < end )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/BetweenGtLt/{start}/{end}")
+      operation findByOrderDateTimeBetweenGtLt( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime > start, TransactionEventDateTime < end )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/BetweenGtLte/{start}/{end}")
+      operation findByOrderDateTimeBetweenGtLte( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime > start, TransactionEventDateTime <= end )
+      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/BetweenGteLte/{start}/{end}")
+      operation findByOrderDateTimeBetweenGteLte( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime <= end )
    }
 }
 """.replace("\\s".toRegex(), "").should.equal(submittedSchemas[1].content.replace("\\s".toRegex(), ""))
@@ -287,6 +302,12 @@ namespace vyne.casks {
       operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : vyne.cask.CaskInsertedAt, @PathVariable(name = "end") end : vyne.cask.CaskInsertedAt ) : Simple[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
       @HttpOperation(method = "GET" , url = "/api/cask/Simple/logDatePlus/Between/{start}/{end}")
       operation findByLogDatePlusBetween( @PathVariable(name = "start") start : LogDatePlus, @PathVariable(name = "end") end : LogDatePlus ) : Simple[]( LogDatePlus >= start, LogDatePlus < end )
+      @HttpOperation(method = "GET" , url = "/api/cask/Simple/logDatePlus/BetweenGtLt/{start}/{end}")
+      operation findByLogDatePlusBetweenGtLt( @PathVariable(name = "start") start : LogDatePlus, @PathVariable(name = "end") end : LogDatePlus ) : Simple[]( LogDatePlus > start, LogDatePlus < end )
+      @HttpOperation(method = "GET" , url = "/api/cask/Simple/logDatePlus/BetweenGtLte/{start}/{end}")
+      operation findByLogDatePlusBetweenGtLte( @PathVariable(name = "start") start : LogDatePlus, @PathVariable(name = "end") end : LogDatePlus ) : Simple[]( LogDatePlus > start, LogDatePlus <= end )
+      @HttpOperation(method = "GET" , url = "/api/cask/Simple/logDatePlus/BetweenGteLte/{start}/{end}")
+      operation findByLogDatePlusBetweenGteLte( @PathVariable(name = "start") start : LogDatePlus, @PathVariable(name = "end") end : LogDatePlus ) : Simple[]( LogDatePlus >= start, LogDatePlus <= end )
    }
 }
       """.trimMargin().replace("\\s".toRegex(), "").should.equal(submittedSchemas[1].content.replace("\\s".toRegex(), ""))
