@@ -1,8 +1,10 @@
 package io.vyne.models.json
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
@@ -27,8 +29,7 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
             .mappingProvider(JacksonMappingProvider())
             .jsonProvider(JacksonJsonNodeJsonProvider())
       )
-
-
+      val objectMapper: ObjectMapper = jacksonObjectMapper()
    }
 
    fun parseToType(type: Type, accessor: JsonPathAccessor, record: Map<*, *>, schema: Schema, source: DataSource): TypedInstance {
@@ -66,6 +67,7 @@ class JsonAttributeAccessorParser(private val primitiveParser: PrimitiveParser =
    private fun parseJsonPathStyleExpression(record: Any, accessor: JsonPathAccessor, type: Type, schema: Schema, source: DataSource): Any? {
       val jsonSource = when (record) {
          is JsonParsedStructure -> record.jsonNode
+         is Map<*, *> -> objectMapper.valueToTree(record)
          else -> record
       }
       return try {
