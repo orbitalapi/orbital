@@ -79,7 +79,7 @@ class CaskServiceSchemaGenerator(
 
       return Service(
          qualifiedName = fullyQualifiedCaskServiceName(type),
-         operations = operations,
+         members = operations,
          compilationUnits = listOf(CompilationUnit.unspecified()),
          annotations = serviceAnnotations
       )

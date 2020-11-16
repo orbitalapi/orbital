@@ -79,6 +79,9 @@ interface TypedInstance {
 
       fun from(type: Type, value: Any?, schema: Schema, performTypeConversions: Boolean = true, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
          return when {
+            // Adding this error, as we have too many ways to parse json at the moment, and trying to enforce some singularity
+            // Also, raw JsonNode makes evaluating complex JsonPath expressions impossible, as we need the raw json string
+//            value is JsonNode -> error("Don't pass JsonNode here, use JsonParsedStructure instead")
             value is TypedInstance -> value
             value == null -> TypedNull.create(type)
             value is Collection<*> -> {

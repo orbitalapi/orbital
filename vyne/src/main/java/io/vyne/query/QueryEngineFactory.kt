@@ -2,7 +2,23 @@ package io.vyne.query
 
 import io.vyne.FactSetMap
 import io.vyne.formulas.CalculatorRegistry
-import io.vyne.query.graph.*
+import io.vyne.query.graph.AttributeOfEdgeEvaluator
+import io.vyne.query.graph.AttributeOfEvaluator
+import io.vyne.query.graph.CanPopulateEdgeEvaluator
+import io.vyne.query.graph.EdgeEvaluator
+import io.vyne.query.graph.ExtendsTypeEdgeEvaluator
+import io.vyne.query.graph.HasAttributeEdgeEvaluator
+import io.vyne.query.graph.HasAttributeEvaluator
+import io.vyne.query.graph.HasParamOfTypeEdgeEvaluator
+import io.vyne.query.graph.InstanceHasAttributeEdgeEvaluator
+import io.vyne.query.graph.IsInstanceOfEdgeEvaluator
+import io.vyne.query.graph.IsTypeOfEdgeEvaluator
+import io.vyne.query.graph.IsTypeOfEvaluator
+import io.vyne.query.graph.LinkEvaluator
+import io.vyne.query.graph.OperationParameterEdgeEvaluator
+import io.vyne.query.graph.OperationParameterEvaluator
+import io.vyne.query.graph.RequiresParameterEdgeEvaluator
+import io.vyne.query.graph.RequiresParameterEvaluator
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
@@ -44,7 +60,8 @@ interface QueryEngineFactory {
       }
 
       fun withOperationInvokers(invokers: List<OperationInvoker>): QueryEngineFactory {
-         val opInvocationEvaluator = OperationInvocationEvaluator(operationInvocationService(invokers))
+         val invocationService = operationInvocationService(invokers)
+         val opInvocationEvaluator = OperationInvocationEvaluator(invocationService)
          val edgeEvaluator = EdgeNavigator(edgeEvaluators(opInvocationEvaluator))
          val graphQueryStrategy = HipsterDiscoverGraphQueryStrategy(
             edgeEvaluator
@@ -56,7 +73,8 @@ interface QueryEngineFactory {
                ModelsScanStrategy(),
                ProjectionHeuristicsQueryStrategy(opInvocationEvaluator),
                //               PolicyAwareQueryStrategyDecorator(
-               DirectServiceInvocationStrategy(operationInvocationService(invokers)),
+               DirectServiceInvocationStrategy(invocationService),
+               QueryOperationInvocationStrategy(invocationService),
                //
                //              ),
                graphQueryStrategy,

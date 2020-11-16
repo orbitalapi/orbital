@@ -87,7 +87,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
 
          // ValueReader can be expensive if the value is an object,
          // so only use the valueReader early if the value is a map
-         value is Map<*, *> && valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
+         value is Map<*, *> && field.accessor == null && valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
          field.accessor != null -> {
             readAccessor(field.type, field.accessor, field.nullable)
          }

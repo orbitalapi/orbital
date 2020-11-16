@@ -1,5 +1,6 @@
 package io.vyne.models
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
@@ -24,6 +25,38 @@ class JsonPathTest {
       """.trimIndent())
       val instance = TypedInstance.from(taxi.type("Foo"), traderJson, schema = taxi, source = Provided) as TypedObject
       instance["limitValue"].value.should.equal(100.toBigDecimal())
+   }
+
+   @Test
+   fun `can parse json string from to a schema that mixes jsonpath and plain mappings`() {
+      val taxi = TaxiSchema.from("""
+         model Trade {
+            username : String
+            country : String by jsonPath("$.jurisdiction")
+            limit : Int by jsonPath("$.limit.value")
+         }
+      """.trimIndent())
+      val instance = TypedInstance.from(taxi.type("Trade"), traderJson, schema = taxi, source = Provided) as TypedObject
+      instance["username"].value.should.equal("EUR_Trader")
+      instance["country"].value.should.equal("EUR")
+      instance["limit"].value.should.equal(100)
+   }
+
+   @Test
+   fun `can parse json node from to a schema that mixes jsonpath and plain mappings`() {
+      // Note that Casks pre-parse json from string to jackson jsonNode, so this needs to pass
+      val taxi = TaxiSchema.from("""
+         model Trade {
+            username : String
+            country : String by jsonPath("$.jurisdiction")
+            limit : Int by jsonPath("$.limit.value")
+         }
+      """.trimIndent())
+      val jsonNode = jacksonObjectMapper().readTree(traderJson)
+      val instance = TypedInstance.from(taxi.type("Trade"), jsonNode, schema = taxi, source = Provided) as TypedObject
+      instance["username"].value.should.equal("EUR_Trader")
+      instance["country"].value.should.equal("EUR")
+      instance["limit"].value.should.equal(100)
    }
 
    @Test

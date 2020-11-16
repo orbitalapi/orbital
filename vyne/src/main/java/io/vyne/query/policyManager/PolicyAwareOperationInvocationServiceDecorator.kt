@@ -1,15 +1,19 @@
 package io.vyne.query.policyManager
 
-import io.vyne.models.*
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.query.QueryContext
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
-import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import lang.taxi.policies.OperationScope
 
 class PolicyAwareOperationInvocationServiceDecorator(private val operationService: OperationInvocationService, private val evaluator: PolicyEvaluator = PolicyEvaluator()) : OperationInvocationService {
-   override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+   override fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): TypedInstance {
       // For now, treating everything as external.
       // Need to update the query manager to differentiate between external
       // TODO: Get these from the operation (operationType) and query engine (scope)

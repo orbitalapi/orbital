@@ -5,6 +5,7 @@ import io.vyne.models.*
 import io.vyne.query.build.FirstNotEmptyPredicate
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
@@ -189,7 +190,7 @@ class FirstNotEmptyTest {
       val (vyne, stubs) = testVyne(schema)
       val product = TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
       var counter :Int = 0
-      val firstResponderReturnsNullHandler:StubResponseHandler = { operation: Operation, list: List<Pair<Parameter, TypedInstance>> ->
+      val firstResponderReturnsNullHandler:StubResponseHandler = { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
          if (counter == 0) {
             counter++
             TypedNull.create(schema.type("Product"))
@@ -238,7 +239,7 @@ class FirstNotEmptyTest {
       """.trimIndent())
       val (vyne, stubs) = testVyne(schema)
       var counter :Int = 0
-      val firstResponderReturnsNullHandler:StubResponseHandler = { operation: Operation, list: List<Pair<Parameter, TypedInstance>> ->
+      val firstResponderReturnsNullHandler:StubResponseHandler = { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
          if (counter == 0) {
             counter++
             // First time, return null in the name attribute
@@ -283,7 +284,7 @@ class FirstNotEmptyTest {
          }
       """.trimIndent())
       val (vyne, stubs) = testVyne(schema)
-      val firstResponderReturnsNullHandler:StubResponseHandler = { operation: Operation, inputs: List<Pair<Parameter, TypedInstance>> ->
+      val firstResponderReturnsNullHandler:StubResponseHandler = { operation: RemoteOperation, inputs: List<Pair<Parameter, TypedInstance>> ->
          val inputParam = inputs[0].second.value as String
          if (inputParam == "productA") {
             // First time, return null in the name attribute

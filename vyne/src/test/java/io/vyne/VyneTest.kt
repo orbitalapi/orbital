@@ -25,6 +25,7 @@ import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDeco
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.PropertyToParameterConstraint
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
@@ -89,6 +90,9 @@ fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
    return vyne to stubService
 }
 
+fun testVyne(vararg schemas:String): Pair<Vyne, StubService> {
+   return testVyne(TaxiSchema.fromStrings(schemas.toList()))
+}
 fun testVyne(schema: String) = testVyne(TaxiSchema.from(schema))
 
 class VyneTest {
@@ -250,7 +254,7 @@ class VyneTest {
          }
       """.trimIndent())
       stubService.addResponse("mockProduct", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             parameters.first().second.value.should.be.equal(919)
             return product
@@ -308,7 +312,7 @@ class VyneTest {
          }
       """.trimIndent())
       stubService.addResponse("mockProduct", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             parameters.first().second.value.should.be.equal("FX_T2")
             return product
@@ -970,7 +974,7 @@ service Broker2Service {
 
 
       stubInvocationService.addResponse("mockCountry", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             val countryCode = parameters.first().second.value!!.toString()
             return if (countryCode == "UK") {
                vyne.typedValue("Country", "United Kingdom")
@@ -1346,7 +1350,7 @@ service ClientService {
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubInvocationService)
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
       stubInvocationService.addResponse("findBetween", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
             parameters[0].second.value.should.be.equal(Instant.parse("2011-12-03T10:15:30Z"))
             parameters[1].second.value.should.be.equal(Instant.parse("2021-12-03T10:15:30Z"))

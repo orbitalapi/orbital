@@ -4,12 +4,15 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
+import io.vyne.queryDeclaration
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
+import io.vyne.schemas.OperationNames
 import io.vyne.schemas.TypeFullView
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
 import junit.framework.Assert.fail
+import lang.taxi.services.QueryOperationCapability
 import org.junit.Ignore
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -271,6 +274,26 @@ type Sample {
       schema.type("FirstName").inherits.should.have.size(1)
       schema.type("FirstName").inheritanceGraph.should.have.size(1)
       schema.type("GivenName").inheritanceGraph.map { it.name.fullyQualifiedName }.should.contain("Name")
+   }
+
+   @Test
+   fun mapsQueryOperationsCorrectly() {
+      val schema= TaxiSchema.from( """
+         type TraderId inherits String
+         model Trade {
+            traderId : TraderId
+         }
+         service TradeService {
+            ${queryDeclaration("tradeQuery", "Trade[]")}
+         }
+      """.trimIndent())
+      val service = schema.service("TradeService")
+      val queryOperation = service.queryOperation("tradeQuery")
+      queryOperation.name.should.equal("tradeQuery")
+      queryOperation.returnType.should.equal(schema.type("Trade[]"))
+      queryOperation.capabilities.should.equal(QueryOperationCapability.ALL)
+      queryOperation.grammar.should.equal("vyneQl")
+      queryOperation.qualifiedName.should.equal(OperationNames.qualifiedName("TradeService","tradeQuery"))
    }
 
    @Test

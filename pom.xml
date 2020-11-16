@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>0.9.10</taxi.version>
+      <taxi.version>0.10.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>

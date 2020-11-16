@@ -19,20 +19,20 @@ import io.vyne.cask.ingest.IngestionError
 import io.vyne.cask.ingest.IngestionErrorRepository
 import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.ingest.IngestionStream
+import io.vyne.cask.ingest.StreamSource
 import io.vyne.cask.upgrade.UpdatableSchemaProvider
 import io.vyne.schemas.VersionedType
+import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.log
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import org.apache.commons.csv.CSVFormat
+import org.apache.commons.io.IOUtils
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
@@ -41,7 +41,6 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.UnicastProcessor
 import java.io.File
-import java.lang.Exception
 import java.net.URI
 import java.time.Duration
 import javax.sql.DataSource
@@ -51,7 +50,7 @@ import javax.sql.DataSource
 @AutoConfigureEmbeddedDatabase(beanName = "dataSource")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @Import(StringToQualifiedNameConverter::class)
-abstract class BaseCaskIntegrationTest  {
+abstract class BaseCaskIntegrationTest {
 
    @Autowired
    lateinit var configRepository: CaskConfigRepository
@@ -64,13 +63,14 @@ abstract class BaseCaskIntegrationTest  {
 
    @Autowired
    lateinit var jdbcTemplate: JdbcTemplate
+
    @Autowired
    lateinit var ingestionErrorRepository: IngestionErrorRepository
    lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
    lateinit var caskDao: CaskDAO
    lateinit var caskConfigService: CaskConfigService
 
-   lateinit var schemaProvider:UpdatableSchemaProvider
+   lateinit var schemaProvider: UpdatableSchemaProvider
    lateinit var viewDefinitions: MutableList<CaskViewDefinition>
    lateinit var caskViewService: CaskViewService
    lateinit var ingestionEventHandler: IngestionEventHandler
@@ -80,13 +80,22 @@ abstract class BaseCaskIntegrationTest  {
       configRepository.findAll().forEach {
          try {
             caskDao.deleteCask(it.tableName)
-         } catch (e:Exception) {
-            log().error("Failed to delete cask ${it.tableName}",e)
+         } catch (e: Exception) {
+            log().error("Failed to delete cask ${it.tableName}", e)
          }
 
       }
-
    }
+
+   val taxiSchema: TaxiSchema
+      get() {
+         return schemaProvider.schema() as TaxiSchema
+      }
+
+   fun versionedType(name: String): VersionedType {
+      return taxiSchema.versionedType(name.fqn())
+   }
+
    @Before
    fun setup() {
       caskIngestionErrorProcessor = CaskIngestionErrorProcessor(ingestionErrorRepository)
@@ -111,24 +120,22 @@ abstract class BaseCaskIntegrationTest  {
          MessageIds.uniqueId(),
          ObjectMapper())
 
-      val pipeline = IngestionStream(
-         versionedType,
-         TypeDbWrapper(versionedType, taxiSchema),
-         pipelineSource)
-
-      val ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink())
-      caskDao.dropCaskRecordTable(versionedType)
-      caskDao.createCaskRecordTable(versionedType)
-      caskConfigService.createCaskConfig(versionedType)
-
-      ingester.ingest().collectList()
-         .doOnError { error ->
-            log().error("Error ", error)
-         }
-         .block(Duration.ofMillis(500))
+      ingest(pipelineSource, versionedType, taxiSchema)
    }
 
-   fun ingestCsvData(resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema) {
+   fun ingestJsonData(content: String, versionedType: VersionedType, taxiSchema: TaxiSchema, dropCaskFirst: Boolean = true) {
+      val pipelineSource = JsonStreamSource(
+         Flux.just(IOUtils.toInputStream(content)),
+         versionedType,
+         taxiSchema,
+         MessageIds.uniqueId(),
+         ObjectMapper())
+
+      ingest(pipelineSource, versionedType, taxiSchema, dropCaskFirst)
+   }
+
+
+   fun ingestCsvData(resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema, dropCaskFirst: Boolean = true) {
       val pipelineSource = CsvStreamSource(
          Flux.just(File(resource).inputStream()),
          versionedType,
@@ -137,15 +144,21 @@ abstract class BaseCaskIntegrationTest  {
          csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(),
          ingestionErrorProcessor = caskIngestionErrorProcessor)
 
+      ingest(pipelineSource, versionedType, taxiSchema, dropCaskFirst)
+   }
+
+   fun ingest(source: StreamSource, versionedType: VersionedType, taxiSchema: TaxiSchema, dropCaskFirst: Boolean = true) {
       val pipeline = IngestionStream(
          versionedType,
          TypeDbWrapper(versionedType, taxiSchema),
-         pipelineSource)
+         source)
 
       val ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink())
-      caskDao.dropCaskRecordTable(versionedType)
-      caskDao.createCaskRecordTable(versionedType)
-      caskConfigService.createCaskConfig(versionedType)
+      if (dropCaskFirst) {
+         caskDao.dropCaskRecordTable(versionedType)
+         caskDao.createCaskRecordTable(versionedType)
+         caskConfigService.createCaskConfig(versionedType)
+      }
 
       ingester.ingest().collectList()
          .doOnError { error ->
