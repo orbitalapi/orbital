@@ -13,7 +13,8 @@ import lang.taxi.types.Field
 import lang.taxi.types.Type
 import org.springframework.stereotype.Component
 
-@Component
+@Deprecated("Migrating to vyneQl endpoint")
+//@Component
 class BeforeTemporalOperationGenerator(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()): OperationGenerator {
    override fun generate(field: Field?, type: Type): Operation {
       val parameterType = TemporalFieldUtils.parameterType(field!!)
