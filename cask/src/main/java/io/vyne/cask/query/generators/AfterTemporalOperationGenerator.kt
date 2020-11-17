@@ -45,7 +45,7 @@ class AfterTemporalOperationGenerator(val operationGeneratorConfig: OperationGen
             operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
    }
 
-   override fun expectedAnnotationName(): OperationAnnotation {
+   fun expectedAnnotationName(): OperationAnnotation {
       return expectedAnnotationName
    }
 

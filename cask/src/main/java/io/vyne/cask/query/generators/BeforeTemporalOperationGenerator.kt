@@ -11,7 +11,6 @@ import lang.taxi.types.AttributePath
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.Type
-import org.springframework.stereotype.Component
 
 @Deprecated("Migrating to vyneQl endpoint")
 //@Component
@@ -42,7 +41,7 @@ class BeforeTemporalOperationGenerator(val operationGeneratorConfig: OperationGe
             operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
    }
 
-   override fun expectedAnnotationName(): OperationAnnotation {
+   fun expectedAnnotationName(): OperationAnnotation {
       return expectedAnnotationName
    }
 

@@ -54,7 +54,7 @@ open class BetweenTemporalOperationGenerator(val operationGeneratorConfig: Opera
       return restPath(typeQualifiedName, path, field)
    }
 
-   protected open \fun restPath(typeQualifiedName: QualifiedName, path: AttributePath, field: Field) =
+   protected open fun restPath(typeQualifiedName: QualifiedName, path: AttributePath, field: Field) =
       "${CaskServiceSchemaGenerator.CaskApiRootPath}${path.parts.joinToString("/")}/${field.name}/$expectedAnnotationName/{start}/{end}"
 
    protected open fun operationName(field: Field) = "findBy${field.name.capitalize()}$expectedAnnotationName"
@@ -71,7 +71,7 @@ open class BetweenTemporalOperationGenerator(val operationGeneratorConfig: Opera
             operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
    }
 
-   override fun expectedAnnotationName(): OperationAnnotation {
+   fun expectedAnnotationName(): OperationAnnotation {
       return expectedAnnotationName
    }
 }
