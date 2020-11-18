@@ -12,7 +12,7 @@ abstract class BaseOperationInvocationStrategy(
    private val invocationService: OperationInvocationService
 ) {
    protected fun invokeOperations(operations: Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>>, context: QueryContext, target: Set<QuerySpecTypeNode>): QueryStrategyResult {
-      val matchedNodes = operations.map { (queryNode, operationToParameters) ->
+      val matchedNodes = operations.mapNotNull { (queryNode, operationToParameters) ->
          invokeOperation(queryNode, operationToParameters, context, target)
       }.toMap()
 
@@ -20,17 +20,21 @@ abstract class BaseOperationInvocationStrategy(
    }
 
 
-
-   fun invokeOperation(queryNode: QuerySpecTypeNode, operationToParameters: Map<RemoteOperation, Map<Parameter, TypedInstance>>, context: QueryContext, target: Set<QuerySpecTypeNode>): Pair<QuerySpecTypeNode, TypedInstance?> {
+   private fun invokeOperation(queryNode: QuerySpecTypeNode, operationToParameters: Map<RemoteOperation, Map<Parameter, TypedInstance>>, context: QueryContext, target: Set<QuerySpecTypeNode>): Pair<QuerySpecTypeNode, TypedInstance?>? {
       val operationsToInvoke = when {
          operationToParameters.size > 1 && queryNode.mode != QueryMode.GATHER -> {
             log().warn("Running in query mode ${queryNode.mode} and multiple candidate operations detected - ${operationToParameters.keys.joinToString { it.name }} - this isn't supported yet, will just pick the first one")
             listOf(operationToParameters.keys.first())
          }
+         operationToParameters.isEmpty() -> emptyList()
          queryNode.mode == QueryMode.GATHER -> operationToParameters.keys.toList()
          else -> listOf(operationToParameters.keys.first())
       }
 
+      if (operationsToInvoke.isEmpty()) {
+         // Bail early
+         return null
+      }
 
       val serviceResults = operationsToInvoke.map { operation ->
          val parameters = operationToParameters.getValue(operation)
@@ -46,6 +50,7 @@ abstract class BaseOperationInvocationStrategy(
          )
          serviceResult
       }.flattenNestedTypedCollections(flattenedType = queryNode.type)
+
 
       val strategyResult = when {
          serviceResults.isEmpty() -> null

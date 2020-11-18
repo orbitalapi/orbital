@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
+import io.vyne.query.queryBuilders.VyneQlGrammar
 import io.vyne.queryDeclaration
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
@@ -278,7 +279,9 @@ type Sample {
 
    @Test
    fun mapsQueryOperationsCorrectly() {
-      val schema= TaxiSchema.from( """
+      val schema= TaxiSchema.fromStrings(
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
          type TraderId inherits String
          model Trade {
             traderId : TraderId

@@ -60,6 +60,21 @@ class JsonPathTest {
    }
 
    @Test
+   fun `can parse json string from a schema that uses legacy xpath style jsonPath mappings`() {
+      val taxi = TaxiSchema.from("""
+         model Trade {
+            username : String
+            country : String by jsonPath("/jurisdiction")
+            limit : Int by jsonPath("$.limit.value")
+         }
+      """.trimIndent())
+      val instance = TypedInstance.from(taxi.type("Trade"), traderJson, schema = taxi, source = Provided) as TypedObject
+      instance["username"].value.should.equal("EUR_Trader")
+      instance["country"].value.should.equal("EUR")
+      instance["limit"].value.should.equal(100)
+   }
+
+   @Test
    fun `when using an indefinite json path but expecting a single response then it is returned if only one item matches`() {
       // Usecase here is finding a specific array element.
       // Jsonpath doesn't support parent access, but Jayway's JsonPath issues page

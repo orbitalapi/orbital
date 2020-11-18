@@ -8,7 +8,8 @@ import org.junit.Test
 class VyneQueryTest {
    @Test
    fun willInvokeAQueryToDiscoverValues() {
-      val (vyne, stub) = testVyne("""
+      val (vyne, stub) = testVyne(VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
          type TraderId inherits String
          model Trade {
             traderId : TraderId

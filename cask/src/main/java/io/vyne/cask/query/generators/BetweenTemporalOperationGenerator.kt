@@ -71,7 +71,7 @@ open class BetweenTemporalOperationGenerator(val operationGeneratorConfig: Opera
             operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
    }
 
-   fun expectedAnnotationName(): OperationAnnotation {
+   override fun expectedAnnotationName(): OperationAnnotation {
       return expectedAnnotationName
    }
 }

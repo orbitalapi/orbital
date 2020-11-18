@@ -14,9 +14,10 @@ import io.vyne.schemas.QueryOperation
 object VyneQlGrammar {
    const val QUERY_TYPE_NAME = "vyne.vyneQl.VyneQlQuery"
    const val QUERY_TYPE_TAXI = """namespace vyne.vyneQl { type VyneQlQuery inherits String }"""
+   const val GRAMMAR_NAME = "vyneQl"
 }
 class VyneQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
-   override val supportedGrammars: List<String> = listOf("vyneQl")
+   override val supportedGrammars: List<String> = listOf(VyneQlGrammar.GRAMMAR_NAME)
    override fun buildQuery(spec: QuerySpecTypeNode, queryOperation: QueryOperation): Map<Parameter, TypedInstance> {
       val vyneQl = buildVyneQl(spec)
       val parameter = queryOperation.parameters.firstOrNull { it.type.name.fullyQualifiedName == VyneQlGrammar.QUERY_TYPE_NAME }
