@@ -2,8 +2,6 @@ package io.vyne.schemas
 
 import com.winterbe.expekt.should
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.testVyne
-import org.junit.Assert.*
 import org.junit.Test
 
 class TypeTest {
@@ -38,12 +36,18 @@ class TypeTest {
       // Inherited alias
       schema.type("FirstName").isPrimitive.should.be.`false`
 
+   }
+
+   @Test
+   fun arraysAreNotPrimitives() {
       // Array
       schema.type("NameList").isPrimitive.should.be.`false`
 
-      // Hmm... not sure bout this, I guess technicaly it is primitive, since it's
-      // Array<FirstName>, but that feels wrong
-      schema.type("FirstName[]").isPrimitive.should.be.`true`
+      // 19-Nov: This is a change - this used to return true, even though the alias (NameList)
+      // would return false.  Have updated this to be consistent, as part of a refactor of handling Array types
+      // within the grammar.  However, can revisit if this turns out to be problematic.
+      schema.type("FirstName[]").isPrimitive.should.be.`false`
+      schema.type("lang.taxi.Array<FirstName>").isPrimitive.should.be.`false`
    }
 
    @Test
