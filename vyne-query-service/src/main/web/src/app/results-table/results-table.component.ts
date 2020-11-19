@@ -107,6 +107,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
         const lastColumn = index === attributeNames.length - 1;
 
         return {
+          resizable: true,
           headerName: fieldName,
           field: fieldName,
           flex: (lastColumn) ? 1 : null,

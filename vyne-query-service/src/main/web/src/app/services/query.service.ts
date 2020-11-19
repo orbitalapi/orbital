@@ -3,7 +3,7 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
 
 import {environment} from 'src/environments/environment';
-import {DataSource, InstanceLikeOrCollection, QualifiedName, TypeNamedInstance} from './schema';
+import {DataSource, InstanceLikeOrCollection, QualifiedName, Type, TypeNamedInstance} from './schema';
 import {VyneServicesModule} from './vyne-services.module';
 
 @Injectable({
@@ -106,6 +106,7 @@ export interface QueryResult {
   queryResponseId: string;
   error?: string;
   responseStatus: ResponseStatus;
+  anonymousTypes: Type[];
 }
 
 

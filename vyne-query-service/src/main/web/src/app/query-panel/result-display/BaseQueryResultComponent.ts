@@ -76,7 +76,7 @@ export abstract class BaseQueryResultComponent {
     if (queryResult.resultMode === ResultMode.VERBOSE) {
       return null;
     } else {
-      return findType(this.schema, queryTypeName.parameterizedName);
+      return findType(this.schema, queryTypeName.parameterizedName, queryResult.anonymousTypes);
     }
   }
 
@@ -105,7 +105,7 @@ export abstract class BaseQueryResultComponent {
       return [];
     }
     return Object.keys((<QueryResult>this.result).results)
-      .map(elementTypeName => findType(this.schema, elementTypeName).name);
+      .map(elementTypeName => findType(this.schema, elementTypeName, (<QueryResult>this.result).anonymousTypes).name);
   }
 
   instanceClicked(event: InstanceSelectedEvent, queryRequestedTypeName: QualifiedName) {
