@@ -10,13 +10,14 @@ import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
 import org.junit.Test
 import java.time.Instant
-import java.time.ZonedDateTime
+import java.time.LocalDateTime
 
 class VyneQlSqlGeneratorTest {
    val schemaProvider = SimpleTaxiSchemaProvider("""
       type FirstName inherits String
       type Age inherits Int
-      type LastLoggedIn inherits Instant
+      type LoginTime inherits Instant
+      type LastLoggedIn inherits LoginTime
       model Person {
          firstName : FirstName
          age : Age
@@ -66,15 +67,20 @@ class VyneQlSqlGeneratorTest {
    @Test
    fun `params that are date time strings are parsed to instant`() {
       val statement = sqlGenerator.generateSql("findAll { Person[]( LastLoggedIn >= '2020-11-10T15:00:00Z' ) }")
-      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ?;""", listOf(ZonedDateTime.parse("2020-11-10T15:00:00Z")))
+      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ?;""", listOf(LocalDateTime.parse("2020-11-10T15:00:00Z")))
    }
 
    @Test
    fun `date time between params are parsed correctly`() {
-      val statement = sqlGenerator.generateSql("""findAll { Person[]( LastLoggedIn >= "2020-11-10T15:00:00Z",  LastLoggedIn < "2020-11-10T15:00:00Z"  ) }""")
-      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ?;""", listOf(ZonedDateTime.parse("2020-11-10T15:00:00Z")))
+      val statement = sqlGenerator.generateSql("""findAll { Person[]( LastLoggedIn >= "2020-10-10T15:00:00Z",  LastLoggedIn < "2020-11-10T15:00:00Z"  ) }""")
+      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00Z"), LocalDateTime.parse("2020-11-10T15:00:00Z")))
    }
 
+   @Test
+   fun `when querying using a base type, the field is resolved correctly`() {
+      val statement = sqlGenerator.generateSql("""findAll { Person[]( LoginTime >= "2020-10-10T15:00:00Z",  LoginTime < "2020-11-10T15:00:00Z"  ) }""")
+      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00Z"), LocalDateTime.parse("2020-11-10T15:00:00Z")))
+   }
 
    private fun SqlStatement.shouldEqual(sql: String, params: List<Any>) {
       this.sql.should.equal(sql)

@@ -2,6 +2,8 @@ package io.vyne.vyneql.compiler
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.left
+import arrow.core.right
 import io.vyne.VyneQLBaseListener
 import io.vyne.VyneQLParser
 import io.vyne.models.Provided
@@ -11,7 +13,16 @@ import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.vyneql.DiscoveryType
 import io.vyne.vyneql.QueryMode
 import io.vyne.vyneql.VyneQlQuery
-import lang.taxi.*
+import lang.taxi.CompilationError
+import lang.taxi.CompilationException
+import lang.taxi.NamespaceQualifiedTypeResolver
+import lang.taxi.Namespaces
+import lang.taxi.TaxiDocument
+import lang.taxi.TaxiParser
+import lang.taxi.Tokens
+import lang.taxi.searchUpForRule
+import lang.taxi.text
+import lang.taxi.types.ArrayType
 import lang.taxi.types.Arrays
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
@@ -21,7 +32,6 @@ import lang.taxi.utils.invertEitherList
 import lang.taxi.utils.wrapErrorsInList
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
-import java.lang.Exception
 
 class TokenProcessor(private val taxi: TaxiDocument, private val schema: Schema) : VyneQLBaseListener() {
    private val typeResolver: NamespaceQualifiedTypeResolver = object : NamespaceQualifiedTypeResolver {
@@ -29,8 +39,9 @@ class TokenProcessor(private val taxi: TaxiDocument, private val schema: Schema)
 
       override fun resolve(context: TaxiParser.TypeTypeContext) = error("Not supported")
 
-      override fun resolve(requestedTypeName: String, context: ParserRuleContext): Either<CompilationError, Type> {
+      override fun resolve(requestedTypeName: String, context: ParserRuleContext): Either<List<CompilationError>, Type> {
          return lookupTypeFromClassTypeContext(requestedTypeName, context)
+            .wrapErrorsInList()
             .map { taxi.type(it) }
       }
    }
@@ -165,7 +176,6 @@ class TokenProcessor(private val taxi: TaxiDocument, private val schema: Schema)
 
    private fun lookupType(typeType: VyneQLParser.TypeTypeContext): Either<CompilationError, QualifiedName> {
       val typeName: Either<CompilationError, QualifiedName> = when {
-         typeType.primitiveType() != null -> Either.right(PrimitiveType.fromDeclaration(typeType.primitiveType().text).toQualifiedName())
          typeType.classOrInterfaceType() != null -> lookupTypeFromClassTypeContext(typeType.classOrInterfaceType().text, typeType)
          else -> Either.left(CompilationError(typeType.start, "This scenario is not supported.  This is likely a bug in the VyneQL compiler, and should be reported"))
       }.map { qualifiedName ->
@@ -180,6 +190,10 @@ class TokenProcessor(private val taxi: TaxiDocument, private val schema: Schema)
 
    private fun lookupTypeFromClassTypeContext(requestedTypeName: String, context: ParserRuleContext): Either<CompilationError, QualifiedName> {
       // Handle the name doesn't need qualifying
+      when {
+         PrimitiveType.isPrimitiveType(requestedTypeName) -> return PrimitiveType.fromDeclaration(requestedTypeName).toQualifiedName().right()
+         ArrayType.isArrayTypeName(requestedTypeName) -> return buildArrayType(context)
+      }
       return if (taxi.containsType(requestedTypeName)) {
          Either.right(QualifiedName.from(requestedTypeName))
       } else {
@@ -198,6 +212,23 @@ class TokenProcessor(private val taxi: TaxiDocument, private val schema: Schema)
                   else -> Either.left(CompilationError(context.start, "Type $requestedTypeName could not be resolved - it could refer to any of ${matchesOnNameOnly.joinToString { it.qualifiedName }}. Use an import to disambiguate."))
                }
             }
+         }
+      }
+   }
+
+   private fun buildArrayType(context: ParserRuleContext): Either<CompilationError, QualifiedName> {
+      return when (context) {
+         is VyneQLParser.TypeTypeContext -> {
+            val argumentContexts = context.typeArguments().typeType()
+            val argumentType = when (argumentContexts.size) {
+               0 -> PrimitiveType.ANY.toQualifiedName().right()
+               1 -> lookupType(argumentContexts[0])
+               else -> CompilationError(context.start, "Arrays can only have a single paramter type").left()
+            }
+            argumentType.map { argumentTypeName -> ArrayType.of(taxi.type(argumentTypeName)).toQualifiedName() }
+         }
+         else -> {
+            TODO("Unhandled building array type from context type of ${context::class.simpleName}")
          }
       }
    }

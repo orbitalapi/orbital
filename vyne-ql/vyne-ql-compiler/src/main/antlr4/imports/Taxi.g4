@@ -39,8 +39,8 @@ toplevelObject
     |   typeAliasExtensionDeclaration
     |   serviceDeclaration
     |   policyDeclaration
-    |   fileResourceDeclaration
-//    |   annotationTypeDeclaration
+    |   functionDeclaration
+    |   annotationTypeDeclaration
     ;
 
 typeModifier
@@ -54,6 +54,7 @@ typeModifier
 
 typeDeclaration
     :  typeDoc? annotation* typeModifier* ('type'|'model') Identifier
+
         ('inherits' listOfInheritedTypes)?
         typeBody?
     ;
@@ -62,23 +63,59 @@ listOfInheritedTypes
     : typeType (',' typeType)*
     ;
 typeBody
-    :   '{' (typeMemberDeclaration | conditionalTypeStructureDeclaration)* '}'
+    :   '{' (typeMemberDeclaration | conditionalTypeStructureDeclaration | calculatedMemberDeclaration)* '}'
     ;
 
 typeMemberDeclaration
      :   typeDoc? annotation* fieldDeclaration
      ;
 
-conditionalTypeStructureDeclaration :
+annotationTypeDeclaration
+   : typeDoc? annotation* 'annotation' Identifier annotationTypeBody?;
+
+annotationTypeBody: '{' typeMemberDeclaration* '}';
+
+calculatedMemberDeclaration
+   : typeMemberDeclaration  'as'
+   (operatorExpression
+   |
+   calculatedExpression)
+   ;
+
+
+// THIS IS TO BE DEPRECRATED.  Use function infrastructrue, rather than adding new formulas
+calculatedExpression:
+           calculatedFormula '(' calculatedExpressionBody? ')'
+           ;
+
+// THIS IS TO BE DEPRECRATED.  Use function infrastructrue, rather than adding new formulas
+calculatedFormula:
+          'coalesce'
+          ;
+
+calculatedExpressionBody:
+         typeType (',' typeType)*
+         ;
+
+operatorExpression
+   : '(' typeType arithmaticOperator typeType ')'
+   ;
+
+fieldExpression
+   : '(' propertyToParameterConstraintLhs arithmaticOperator propertyToParameterConstraintLhs ')'
+   ;
+
+conditionalTypeStructureDeclaration
+    :
    '(' typeMemberDeclaration* ')' 'by' conditionalTypeConditionDeclaration
    ;
 
 conditionalTypeConditionDeclaration:
-// other types of condition declarations can go here.
-   conditionalTypeWhenDeclaration;
+   (fieldExpression |
+   conditionalTypeWhenDeclaration);
 
 conditionalTypeWhenDeclaration:
-   'when' '(' conditionalTypeWhenSelector ')' '{'
+   'when' ('(' conditionalTypeWhenSelector ')')? '{'
    conditionalTypeWhenCaseDeclaration*
    '}';
 
@@ -89,23 +126,42 @@ conditionalTypeWhenSelector:
 mappedExpressionSelector: // xpath('/foo/bar') : SomeType
    scalarAccessorExpression ':' typeType;
 
-fieldReferenceSelector:  Identifier;
+// field references must be prefixed by this. -- ie., this.firstName
+// this is to disambiguoate lookups by type -- ie., Name
+//
+// Note: Have had to relax the requirement for propertyFieldNameQualifier
+// to be mandatory, as this created bacwards comapatbility issues
+// in when() clauses
+fieldReferenceSelector: propertyFieldNameQualifier? Identifier;
+typeReferenceSelector: typeType;
 
 conditionalTypeWhenCaseDeclaration:
-   caseDeclarationMatchExpression '->' '{' caseFieldAssigningDeclaration*'}';
+   caseDeclarationMatchExpression '->' ( caseFieldAssignmentBlock |  caseScalarAssigningDeclaration);
+
+caseFieldAssignmentBlock:
+'{' caseFieldAssigningDeclaration*'}' ;
+
 
 caseDeclarationMatchExpression: // when( ... ) {
    Identifier  | //  someField -> ...
-   literal; //  'foo' -> ...
+   literal | //  'foo' -> ...
+   enumSynonymSingleDeclaration | // some.Enum.EnumValue -> ...
+   condition |
+   caseElseMatchExpression;
+
+caseElseMatchExpression: 'else';
 
 caseFieldAssigningDeclaration :  // dealtAmount ...  (could be either a destructirng block, or an assignment)
    Identifier (
       caseFieldDestructuredAssignment | // dealtAmount ( ...
-      ( '=' ( caseFieldReferenceAssignment | literal)) | // dealtAmount = ccy1Amount | dealtAmount = 'foo'
+      ( '=' caseScalarAssigningDeclaration ) | // dealtAmount = ccy1Amount | dealtAmount = 'foo'
       // TODO : How do we model Enum assignments here?
       // .. some enum assignment ..
       scalarAccessor
    );
+
+caseScalarAssigningDeclaration:
+   caseFieldReferenceAssignment | literal | scalarAccessorExpression;
 
 caseFieldDestructuredAssignment :  // dealtAmount ( ... )
      '(' caseFieldAssigningDeclaration* ')';
@@ -120,8 +176,7 @@ fieldDeclaration
   ;
 
 typeType
-    :   classOrInterfaceType listType? optionalType? parameterConstraint? aliasedType?
-    |   primitiveType listType? optionalType? parameterConstraint?
+    :   classOrInterfaceType typeArguments? listType? optionalType? parameterConstraint? aliasedType?
     ;
 
 accessor : scalarAccessor | objectAccessor;
@@ -134,6 +189,9 @@ scalarAccessorExpression
     : xpathAccessorDeclaration
     | jsonPathAccessorDeclaration
     | columnDefinition
+    | conditionalTypeConditionDeclaration
+    | defaultDefinition
+    | readFunction
     ;
 
 xpathAccessorDeclaration : 'xpath' '(' accessorExpression ')';
@@ -152,10 +210,16 @@ classOrInterfaceType
     :   Identifier /* typeArguments? */ ('.' Identifier /* typeArguments? */ )*
     ;
 
+typeArguments: '<' typeType (',' typeType)* '>';
 
+// A "lenient" enum will match on case insensitive values
 enumDeclaration
-    :    typeDoc? annotation* 'enum' classOrInterfaceType
-        '{' enumConstants? '}'
+    :    typeDoc? annotation* lenientKeyword? 'enum' classOrInterfaceType
+         (('inherits' enumInheritedType) | ('{' enumConstants? '}'))
+    ;
+
+enumInheritedType
+    : typeType
     ;
 
 enumConstants
@@ -163,7 +227,7 @@ enumConstants
     ;
 
 enumConstant
-    :   typeDoc? annotation* Identifier enumValue? enumSynonymDeclaration?
+    :   typeDoc? annotation*  defaultKeyword? Identifier enumValue? enumSynonymDeclaration?
     ;
 
 enumValue
@@ -215,19 +279,35 @@ elementValuePair
 
 elementValue
     :   literal
+    |    qualifiedName // Support enum references within annotations
     |   annotation
     ;
 
 serviceDeclaration
-    :   annotation* 'service' Identifier serviceBody
+    : typeDoc? annotation* 'service' Identifier serviceBody
     ;
 
 serviceBody
-    :   '{' serviceOperationDeclaration* '}'
+    :   '{' serviceBodyMember* '}'
     ;
+serviceBodyMember : serviceOperationDeclaration | queryOperationDeclaration;
+// Querying
+queryOperationDeclaration
+   :  typeDoc? annotation* queryGrammarName 'query' Identifier '(' operationParameterList ')' ':' typeType
+      'with' 'capabilities' '{' queryOperationCapabilities '}';
 
- serviceOperationDeclaration
-     :   annotation* operationScope? 'operation' operationSignature
+queryGrammarName : Identifier;
+queryOperationCapabilities: (queryOperationCapability (',' queryOperationCapability)*);
+
+queryOperationCapability:
+   queryFilterCapability | Identifier;
+
+queryFilterCapability: 'filter'( '(' filterCapability (',' filterCapability)* ')');
+
+filterCapability: EQ | NQ | IN | LIKE | GT | GE | LT | LE;
+
+serviceOperationDeclaration
+     : typeDoc? annotation* operationScope? 'operation' operationSignature
      ;
 
 operationSignature
@@ -246,9 +326,10 @@ operationParameterList
 operationParameter
 // Note that only one operationParameterConstraint can exist per parameter, but it can contain
 // multiple expressions
-     :   annotation* (parameterName)? typeType
+     :   annotation* (parameterName)? typeType varargMarker?
      ;
 
+varargMarker: '...';
 // Parameter names are optional.
 // But, they must be used to be referenced in return contracts
 parameterName
@@ -257,6 +338,7 @@ parameterName
 
 parameterConstraint
     :   '(' parameterConstraintExpressionList ')'
+    |   '(' temporalFormatList ')'
     ;
 
 
@@ -267,7 +349,19 @@ parameterConstraintExpressionList
 parameterConstraintExpression
     :  propertyToParameterConstraintExpression
     |  operationReturnValueOriginExpression
+    |  propertyFormatExpression
     ;
+
+// First impl.  This will get richer (',' StringLiteral)*
+propertyFormatExpression :
+   '@format' '=' StringLiteral;
+
+temporalFormatList :
+   ('@format' '=' '[' StringLiteral (',' StringLiteral)* ']')? ','? (instantOffsetExpression)?
+   ;
+
+instantOffsetExpression :
+   '@offset' '=' (IntegerLiteral | NegativeIntegerLiteral);
 
 // The return value will have a relationship to a property
 // received in an input (incl. nested properties)
@@ -291,6 +385,41 @@ propertyToParameterConstraintRhs : (literal | qualifiedName);
 
 propertyFieldNameQualifier : 'this' '.';
 
+condition : logical_expr ;
+logical_expr
+ : logical_expr '&&' logical_expr # LogicalExpressionAnd
+ | logical_expr '||' logical_expr  # LogicalExpressionOr
+ | comparison_expr               # ComparisonExpression
+ | logical_entity                # LogicalEntity
+ ;
+
+comparison_expr : comparison_operand comp_operator comparison_operand
+                    # ComparisonExpressionWithOperator
+                ;
+
+comparison_operand : arithmetic_expr
+                   ;
+
+comp_operator : GT
+              | GE
+              | LT
+              | LE
+              | EQ
+              | NQ
+              ;
+
+arithmetic_expr
+ :  numeric_entity                        # ArithmeticExpressionNumericEntity
+ ;
+
+logical_entity : (TRUE | FALSE) # LogicalConst
+               | propertyToParameterConstraintLhs     # LogicalVariable
+               ;
+
+numeric_entity : literal              # LiteralConst
+               | propertyToParameterConstraintLhs           # NumericVariable
+               ;
+
 comparisonOperator
    : '='
    | '>'
@@ -298,6 +427,15 @@ comparisonOperator
    | '<='
    | '<'
    ;
+
+arithmaticOperator
+   : '+'
+   | '-'
+   | '*'
+   | '/'
+   ;
+
+
 
 policyDeclaration
     :  annotation* 'policy' policyIdentifier 'against' typeType '{' policyRuleSet* '}';
@@ -334,15 +472,16 @@ policyExpression
     | literalArray
     | literal;
 
+
 callerIdentifer : 'caller' '.' typeType;
 thisIdentifier : 'this' '.' typeType;
 
 // TODO: Should consider revisiting this, so that operators are followed by valid tokens.
 // eg: 'in' must be followed by an array.  We could enforce this at the language, to simplify in Vyne
 policyOperator
-    : '='
-    | '!='
-    | 'in'
+    : EQ
+    | NQ
+    | IN
     ;
 
 literalArray
@@ -379,24 +518,40 @@ filterAttributeNameList
 //    : literal | literalArray;
 //
 
-// TODO : Revisit this syntax
-// I've decided not to make the parameters of the fileResource(...) part
-// the language, as this mirrors how we've done annotations.
-// Might revisit this later.
-// Also, originally this was more abstract, rather than being linked directly
-// to files.  However, not sure what tne other usecases are, so will revisit then.
-// Also: I feel like we need to roll this into the service / operation concepts somehow.
-// Having an entirely seperate concept for reading data from files vs getting data from
-// services seems wrong.
-fileResourceDeclaration : annotation* 'fileResource' '(' elementValuePairs ')' Identifier 'provides' 'rowsOf' typeType '{' sourceMapping* '}';
-
-// Make this more generic when needed, currently
-// only need to support files stored in columns
-sourceMapping : Identifier 'by' columnDefinition;
-
 columnDefinition : 'column' '(' columnIndex ')' ;
 
-columnIndex: IntegerLiteral;
+defaultDefinition: 'default' '(' literal ')';
+
+// "declare function" borrowed from typescript.
+// Note that taxi supports declaring a function, but won't provide
+// an implementation of it.  That'll be down to individual libraries
+// Note - intentional decision to enforce these functions to return something,
+// rather than permitting void return types.
+// This is because in a mapping declaration, functions really only have purpose if
+// they return things.
+functionDeclaration: 'declare' 'function' functionName '(' operationParameterList? ')' ':' typeType;
+
+// Deprecated, use functionDeclaration
+readFunction: functionName '(' formalParameterList? ')';
+//         'concat' |
+//         'leftAndUpperCase' |
+//         'midAndUpperCase'
+//         ;
+functionName: qualifiedName;
+formalParameterList
+    : parameter  (',' parameter)*
+    ;
+//    scalarAccessorExpression
+      //    : xpathAccessorDeclaration
+      //    | jsonPathAccessorDeclaration
+      //    | columnDefinition
+      //    | conditionalTypeConditionDeclaration
+      //    | defaultDefinition
+      //    | readFunction
+      //    ;
+parameter: literal |  scalarAccessorExpression | fieldReferenceSelector | typeReferenceSelector;
+
+columnIndex : IntegerLiteral | StringLiteral;
 
 expression
     :   primary
@@ -425,27 +580,28 @@ optionalType
    : '?'
    ;
 
-primitiveType
-    : primitiveTypeName
-    | 'lang.taxi.' primitiveTypeName
-    ;
+//primitiveType
+//    : primitiveTypeName
+//    | 'lang.taxi.' primitiveTypeName
+//    ;
+//
+//primitiveTypeName
+//    :   'Boolean'
+//    |   'String'
+//    |   'Int'
+//    |   'Double'
+//    |   'Decimal'
+////    The "full-date" notation of RFC3339, namely yyyy-mm-dd. Does not support time or time zone-offset notation.
+//    |   'Date'
+////    The "partial-time" notation of RFC3339, namely hh:mm:ss[.ff...]. Does not support date or time zone-offset notation.
+//    |   'Time'
+//// Combined date-only and time-only with a separator of "T", namely yyyy-mm-ddThh:mm:ss[.ff...]. Does not support a time zone offset.
+//    |   'DateTime'
+//// A timestamp, indicating an absolute point in time.  Includes timestamp.  Should be rfc3339 format.  (eg: 2016-02-28T16:41:41.090Z)
+//    |   'Instant'
+//    |  'Any'
+//    ;
 
-primitiveTypeName
-    :   'Boolean'
-    |   'String'
-    |   'Int'
-    |   'Double'
-    |   'Decimal'
-//    The "full-date" notation of RFC3339, namely yyyy-mm-dd. Does not support time or time zone-offset notation.
-    |   'Date'
-//    The "partial-time" notation of RFC3339, namely hh:mm:ss[.ff...]. Does not support date or time zone-offset notation.
-    |   'Time'
-// Combined date-only and time-only with a separator of "T", namely yyyy-mm-ddThh:mm:ss[.ff...]. Does not support a time zone offset.
-    |   'DateTime'
-// A timestamp, indicating an absolute point in time.  Includes timestamp.  Should be rfc3339 format.  (eg: 2016-02-28T16:41:41.090Z)
-    |   'Instant'
-    |  'Any'
-    ;
 // https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md#date
 literal
     :   IntegerLiteral
@@ -471,9 +627,10 @@ typeExtensionFieldDeclaration
     ;
 
 typeExtensionFieldTypeRefinement
-    : ':' typeType
+    : ':' typeType constantDeclaration?
     ;
 
+constantDeclaration : 'with' 'default' (literal | qualifiedName);
 // Typedoc is a special documentation block that wraps types.
 // It's treated as plain text, but we'll eventually support doc tools
 // that speak markdown.
@@ -482,6 +639,14 @@ typeDoc
  : '[[' ( ~']]' | '"' | '\'')* ']]';
 
 
+lenientKeyword: 'lenient';
+defaultKeyword: 'default';
+
+IN: 'in';
+LIKE: 'like';
+AND : 'and' ;
+OR  : 'or' ;
+
 Identifier
     :   Letter LetterOrDigit*
     | '`' ~('`')+ '`'
@@ -489,8 +654,8 @@ Identifier
 
 
 StringLiteral
-    :   '"' StringCharacters? '"'
-    |   '\'' StringCharacters? '\''
+    :   '"' (DoubleQuoteStringCharacter+)? '"'
+    |   '\'' (SingleQuoteStringCharacter+)? '\''
     ;
 
 
@@ -498,14 +663,16 @@ BooleanLiteral
     :   'true' | 'false'
     ;
 
+
 fragment
-StringCharacters
-    :   StringCharacter+
+DoubleQuoteStringCharacter
+    :   ~["\\]
+    |   EscapeSequence
     ;
 
 fragment
-StringCharacter
-    :   ~["\\]
+SingleQuoteStringCharacter
+    :   ~["'\\]
     |   EscapeSequence
     ;
 
@@ -536,6 +703,9 @@ LetterOrDigit
     |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
         [\uD800-\uDBFF] [\uDC00-\uDFFF]
     ;
+NegativeIntegerLiteral
+   : '-' IntegerLiteral
+   ;
 
 IntegerLiteral
     :   DecimalNumeral /* IntegerTypeSuffix? */
@@ -626,3 +796,22 @@ COMMENT
 LINE_COMMENT
     :   '//' ~[\r\n]* -> channel(HIDDEN)
     ;
+
+
+GT : '>' ;
+GE : '>=' ;
+LT : '<' ;
+LE : '<=' ;
+EQ : '=' ;
+NQ : '!=';
+
+TRUE  : 'true' ;
+FALSE : 'false' ;
+
+MULT  : '*' ;
+DIV   : '/' ;
+PLUS  : '+' ;
+MINUS : '-' ;
+
+LPAREN : '(' ;
+RPAREN : ')' ;

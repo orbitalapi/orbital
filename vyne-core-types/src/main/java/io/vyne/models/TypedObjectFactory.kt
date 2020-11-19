@@ -87,7 +87,12 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
 
          // ValueReader can be expensive if the value is an object,
          // so only use the valueReader early if the value is a map
-         value is Map<*, *> && field.accessor == null && valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
+
+         // MP 19-Nov: field.accessor null check had been added here to fix a bug, but I can't remember what it was.
+         // However, the impact of adding it is that when parsing TypedObjects from remote calls that have already been
+         // processed (and so the accessor isn't required) means that we fall through this check and try using the
+         // accessor, which will fail, as this isn't raw content anymore, it's parsed / processed.
+         value is Map<*, *>/* && field.accessor == null */ && valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
          field.accessor != null -> {
             readAccessor(field.type, field.accessor, field.nullable)
          }

@@ -71,6 +71,11 @@
          <artifactId>spring-boot-starter</artifactId>
       </dependency>
       <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>utils</artifactId>
+         <version>0.11.3-SNAPSHOT</version>
+      </dependency>
+      <dependency>
          <groupId>org.apache.commons</groupId>
          <artifactId>commons-csv</artifactId>
          <version>1.8</version>

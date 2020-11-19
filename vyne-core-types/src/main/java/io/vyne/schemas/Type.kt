@@ -10,6 +10,7 @@ import lang.taxi.Equality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
+import lang.taxi.types.ArrayType
 import lang.taxi.types.AttributePath
 import lang.taxi.types.EnumType
 import lang.taxi.types.Formula
@@ -31,7 +32,7 @@ typealias AttributeName = String
 data class Type(
    @JsonView(TypeLightView::class)
    val name: QualifiedName,
-   @JsonView(TypeFullView::class)
+   @JsonView(TypeLightView::class)
    val attributes: Map<AttributeName, Field> = emptyMap(),
 
    @JsonView(TypeFullView::class)
@@ -200,7 +201,7 @@ data class Type(
    val isCollection: Boolean by lazy {
       (listOfNotNull(this.name, this.aliasForTypeName) + this.inheritanceGraph.flatMap {
          listOfNotNull(it.name, it.aliasForTypeName)
-      }).any { it.parameterizedName.startsWith(lang.taxi.types.PrimitiveType.ARRAY.qualifiedName) }
+      }).any { it.parameterizedName.startsWith(ArrayType.NAME) }
    }
 
    @get:JsonIgnore
@@ -360,7 +361,7 @@ data class Type(
          // Ideally, we need better constructrs in the langauge to suport definint the primitve types.
          // For now, let's stop resolving aliases one step before the primitive
          when {
-            aliasForTypeName!!.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName -> resolvedFormattedType.aliasForType!!.resolveAliases()
+            aliasForTypeName!!.fullyQualifiedName == ArrayType.NAME -> resolvedFormattedType.aliasForType!!.resolveAliases()
             resolvedFormattedType.aliasForType!!.isPrimitive -> this
             else -> resolvedFormattedType.aliasForType!!.resolveAliases()
          }

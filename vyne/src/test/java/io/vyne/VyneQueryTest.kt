@@ -1,7 +1,10 @@
 package io.vyne
 
+import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.queryBuilders.VyneQlGrammar
+import io.vyne.schemas.fqn
+import io.vyne.utils.withoutWhitespace
 import lang.taxi.services.QueryOperationCapability
 import org.junit.Test
 
@@ -23,7 +26,22 @@ class VyneQueryTest {
       stub.addResponse("tradeQuery", response)
       val queryResult = vyne.query("findAll { Trade[]( TraderId = 'jimmy' ) }")
 
-      TODO()
+      queryResult.isFullyResolved.should.be.`true`
+      val resultList = queryResult.simpleResults["Trade[]".fqn().parameterizedName] as List<Map<String,Any>>
+      resultList.should.have.size(1)
+      resultList.first()["traderId"].should.equal("jimmy")
+
+      val invocations = stub.invocations["tradeQuery"]!!
+      invocations.should.have.size(1)
+      val vyneQlQuery = invocations.first().value!! as String
+
+      val expectedVyneQl = """findAll { lang.taxi.Array<Trade>(
+          TraderId = 'jimmy'
+         )
+      }"""
+      vyneQlQuery.withoutWhitespace()
+         .should.equal(expectedVyneQl.withoutWhitespace())
+
    }
 }
 

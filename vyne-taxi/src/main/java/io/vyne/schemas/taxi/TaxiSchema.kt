@@ -206,7 +206,8 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
    }
 
    private fun getTaxiPrimitiveTypes(): Set<Type> {
-      return PrimitiveType.values().map { taxiPrimitive ->
+      val taxiTypes = PrimitiveType.values().toList() + ArrayType.untyped()
+      return taxiTypes.map { taxiPrimitive ->
          Type(
             taxiPrimitive.qualifiedName.fqn(),
             modifiers = parseModifiers(taxiPrimitive),

@@ -11,7 +11,8 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    val schema = """
       type FirstName inherits String
       type Age inherits Int
-      type LastLoggedIn inherits Instant
+      type LastLoggedIn inherits LoginTime
+      type LoginTime inherits Instant
       model Person {
          firstName : FirstName
          age : Age
@@ -92,6 +93,13 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    @Test
    fun `can find with date between`() {
       val response = service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""")
+
+      response.should.have.size(1)
+      response.map { it["firstName"]}.should.have.elements("Jack")
+   }
+   @Test
+   fun `can query with an abstract property type`() {
+      val response = service.submitVyneQlQuery("""findAll { Person[]( LoginTime > "2020-11-15T00:00:00Z", LoginTime <= "2020-11-15T23:59:59Z" ) }""")
 
       response.should.have.size(1)
       response.map { it["firstName"]}.should.have.elements("Jack")

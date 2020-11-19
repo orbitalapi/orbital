@@ -6,7 +6,7 @@ import io.vyne.models.json.isJson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import lang.taxi.types.PrimitiveType
+import lang.taxi.types.ArrayType
 
 
 interface TypedInstance {
@@ -109,7 +109,7 @@ interface TypedInstance {
          return if (type.isCollection) {
             type.collectionType ?: error("Type should return a collection when isCollection is true.")
          } else {
-            log().warn("Collection type could not be determined - expected to find ${PrimitiveType.ARRAY.qualifiedName}, but found ${type.fullyQualifiedName}")
+            log().warn("Collection type could not be determined - expected to find ${ArrayType.qualifiedName}, but found ${type.fullyQualifiedName}")
             type
          }
       }
