@@ -2,17 +2,26 @@ package io.vyne.vyneql.compiler
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.left
+import arrow.core.right
 import io.vyne.VyneQLBaseListener
 import io.vyne.VyneQLParser
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.Schema
 import io.vyne.schemas.toVyneQualifiedName
+import io.vyne.vyneql.AnonymousFieldDefinition
+import io.vyne.vyneql.AnonymousTypeDefinition
+import io.vyne.vyneql.ComplexFieldDefinition
 import io.vyne.vyneql.DiscoveryType
+import io.vyne.vyneql.ProjectedType
 import io.vyne.vyneql.QueryMode
+import io.vyne.vyneql.SelfReferencedFieldDefinition
+import io.vyne.vyneql.SimpleAnonymousFieldDefinition
 import io.vyne.vyneql.VyneQlQuery
 import lang.taxi.*
 import lang.taxi.types.Arrays
+import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
@@ -103,7 +112,7 @@ class TokenProcessor(private val taxi: TaxiDocument, private val schema: Schema)
          parseQueryTypeList(ctx.queryTypeList())
             .flatMap { typesToDiscover ->
 
-               parseTypeToProject(ctx.queryProjection())
+               parseTypeToProject(ctx.queryProjection(), typesToDiscover)
                   .wrapErrorsInList()
                   .map { typeToProject ->
                      VyneQlQuery(
@@ -140,12 +149,192 @@ class TokenProcessor(private val taxi: TaxiDocument, private val schema: Schema)
 
    }
 
-   private fun parseTypeToProject(queryProjection: VyneQLParser.QueryProjectionContext?): Either<CompilationError, QualifiedName?> {
+   private fun parseTypeToProject(queryProjection: VyneQLParser.QueryProjectionContext?,
+                                  typesToDiscover: List<DiscoveryType>): Either<CompilationError, ProjectedType?> {
       if (queryProjection == null) {
          return Either.right(null)
       }
-      return lookupType(queryProjection.typeType())
+
+      val projectionType = queryProjection.typeType()
+      val anonymousProjectionType = queryProjection.anonymousTypeDefinition()
+
+
+      if (anonymousProjectionType != null && projectionType == null && typesToDiscover.size > 1) {
+         return Either.left(CompilationError(queryProjection.start,
+            "When anonymous projected type is defined without an explicit based discoverable type sizes should be 1"))
+      }
+
+      if (projectionType != null && projectionType.listType() == null && anonymousProjectionType == null && typesToDiscover.size == 1 && typesToDiscover.first().type.parameters.isNotEmpty()) {
+         return Either.left(CompilationError(queryProjection.start,
+            "projection type is a list but the type to discover is not, both should either be list or single entity."))
+      }
+
+      if (anonymousProjectionType != null && anonymousProjectionType.listType() == null && typesToDiscover.size == 1 && typesToDiscover.first().type.parameters.isNotEmpty()) {
+         return Either.left(CompilationError(queryProjection.start,
+            "projection type is a list but the type to discover is not, both should either be list or single entity."))
+      }
+
+      return when {
+         projectionType == null && anonymousProjectionType != null -> {
+            val compilationErrorOrFields = anonymousProjectionType.anonymousField().map { toAnonymousFieldDefinition(it, queryProjection, typesToDiscover) }
+            val fieldDefinitions = mutableListOf<AnonymousFieldDefinition>()
+            compilationErrorOrFields.forEach { compilationErrorOrField ->
+               when (compilationErrorOrField) {
+                  is Either.Left -> {
+                     return compilationErrorOrField.a.left()
+                  }
+                  is Either.Right -> fieldDefinitions.add(compilationErrorOrField.b)
+               }
+            }
+            return ProjectedType.fomAnonymousTypeOnly(AnonymousTypeDefinition(anonymousProjectionType.listType() != null, fieldDefinitions.toList())).right()
+         }
+
+         projectionType != null && anonymousProjectionType == null -> {
+            lookupType(projectionType).map { qualifiedName -> ProjectedType.fromConcreteTypeOnly(qualifiedName) }
+
+         }
+
+         projectionType != null && anonymousProjectionType != null -> {
+            val concreteProjectionType = lookupType(projectionType)
+            val compilationErrorOrFields = anonymousProjectionType.anonymousField().map { toAnonymousFieldDefinition(it, queryProjection, typesToDiscover) }
+            val fieldDefinitions = mutableListOf<AnonymousFieldDefinition>()
+            compilationErrorOrFields.forEach { compilationErrorOrField ->
+               when (compilationErrorOrField) {
+                  is Either.Left -> {
+                     return compilationErrorOrField.a.left()
+                  }
+                  is Either.Right -> fieldDefinitions.add(compilationErrorOrField.b)
+               }
+            }
+
+            if (concreteProjectionType is Either.Left) {
+               return concreteProjectionType.a.left()
+            }
+
+            return concreteProjectionType.map {
+               ProjectedType(it,
+                  AnonymousTypeDefinition(anonymousProjectionType.listType() != null, fieldDefinitions.toList()))
+            }
+         }
+
+         else -> Either.left(CompilationError(queryProjection.start,
+            "Unexpected as definition"))
+      }
    }
+
+   private fun toAnonymousFieldDefinition(anonymousFieldContext: VyneQLParser.AnonymousFieldContext,
+                                          queryProjection: VyneQLParser.QueryProjectionContext,
+                                          typesToDiscover: List<DiscoveryType>):
+      Either<CompilationError, AnonymousFieldDefinition> {
+
+      return when {
+         anonymousFieldContext.Identifier() != null -> fromAnonymousFieldContext(anonymousFieldContext, typesToDiscover)
+         anonymousFieldContext.anonymousFieldDeclaration() != null -> {
+            val fieldDeclaration = anonymousFieldContext.anonymousFieldDeclaration()
+            lookupType(fieldDeclaration.typeType()).map {
+               SimpleAnonymousFieldDefinition(fieldName = fieldDeclaration.Identifier().text, fieldType = it)
+            }
+         }
+         anonymousFieldContext.anonymousFieldDeclarationWithSelfReference() != null ->
+            fromAnonymousFieldDeclarationWithSelfReference(anonymousFieldContext, queryProjection, typesToDiscover)
+
+         anonymousFieldContext.anonymousComplexFieldDeclaration() != null ->
+            fromAnonymousComplexFieldDeclaration(anonymousFieldContext, queryProjection, typesToDiscover)
+
+         else -> Either.left(CompilationError(anonymousFieldContext.start,
+            "Unexpected as definition"))
+      }
+   }
+
+   private fun fromAnonymousComplexFieldDeclaration(
+      anonymousFieldContext: VyneQLParser.AnonymousFieldContext,
+      queryProjection: VyneQLParser.QueryProjectionContext,
+      typesToDiscover: List<DiscoveryType>): Either<CompilationError, AnonymousFieldDefinition> {
+      //    salesPerson {
+      //        firstName : FirstName
+      //        lastName : LastName
+      //    }(from this.salesUtCode)
+      val complexFieldDefinition = anonymousFieldContext.anonymousComplexFieldDeclaration()
+      val fieldName = complexFieldDefinition.Identifier().first() // e.g. 'salesPerson'
+      val typeFieldReference = complexFieldDefinition.Identifier().last() // e.g. 'salesUtCode'
+      val referenceFieldContainingTypeName = if (queryProjection.typeType() == null) {
+         val firstTypeToDiscover = typesToDiscover.first().type
+         if (firstTypeToDiscover.parameters.isEmpty()) firstTypeToDiscover.fullyQualifiedName else firstTypeToDiscover.parameters.first().fullyQualifiedName
+      } else {
+         queryProjection.typeType().text
+      }
+
+      return when (val sourceType = fromTypeFromClassTypeContext(referenceFieldContainingTypeName, anonymousFieldContext)) {
+         is Either.Left -> sourceType.a.left()
+         is Either.Right -> {
+            val subFieldDefinitionOrErrors = complexFieldDefinition
+               .Identifier()
+               .subList(1, complexFieldDefinition.Identifier().lastIndex)
+               .mapIndexed { index, identifierNode ->
+                  val typeType = complexFieldDefinition.typeType(index)
+                  lookupType(typeType).map {
+                     SimpleAnonymousFieldDefinition(fieldName = identifierNode.text, fieldType = it)
+                  }
+               }
+
+            val simpleAnonymousTypeDefinitions = mutableListOf<SimpleAnonymousFieldDefinition>()
+            subFieldDefinitionOrErrors.forEach { compilationErrorOrField ->
+               when (compilationErrorOrField) {
+                  is Either.Left -> {
+                     return compilationErrorOrField.a.left()
+                  }
+                  is Either.Right -> simpleAnonymousTypeDefinitions.add(compilationErrorOrField.b)
+               }
+            }
+            ComplexFieldDefinition(fieldName.text, typeFieldReference.text, sourceType.b.toQualifiedName(), simpleAnonymousTypeDefinitions).right()
+         }
+      }
+   }
+
+   private fun fromAnonymousFieldDeclarationWithSelfReference(
+      anonymousFieldContext: VyneQLParser.AnonymousFieldContext,
+      queryProjection: VyneQLParser.QueryProjectionContext,
+      typesToDiscover: List<DiscoveryType>): Either<CompilationError, AnonymousFieldDefinition> {
+      // traderEmail : EmailAddress(from this.traderUtCode)
+      val fieldDeclarationWithSelfReference = anonymousFieldContext.anonymousFieldDeclarationWithSelfReference()
+      val fieldName = fieldDeclarationWithSelfReference.Identifier().first()
+      val fieldType = fieldDeclarationWithSelfReference.typeType()
+      val typeFieldReference = fieldDeclarationWithSelfReference.Identifier(1)
+      val referenceFieldContainingTypeName = if (queryProjection.typeType() == null) {
+         val firstTypeToDiscover = typesToDiscover.first().type
+         if (firstTypeToDiscover.parameters.isEmpty()) firstTypeToDiscover.fullyQualifiedName else firstTypeToDiscover.parameters.first().fullyQualifiedName
+      } else {
+         queryProjection.typeType().text
+      }
+
+      return when (val sourceType = fromTypeFromClassTypeContext(referenceFieldContainingTypeName, anonymousFieldContext)) {
+         is Either.Left -> sourceType.a.left()
+         is Either.Right -> {
+            lookupType(fieldType).map { fieldTypeQualifiedName ->
+               SelfReferencedFieldDefinition(fieldName.text, fieldTypeQualifiedName, typeFieldReference.text, sourceType.b.toQualifiedName())
+            }
+         }
+      }
+   }
+
+   private fun fromAnonymousFieldContext(anonymousFieldContext: VyneQLParser.AnonymousFieldContext, typesToDiscover: List<DiscoveryType>): Either<CompilationError, AnonymousFieldDefinition> {
+      val fieldName = anonymousFieldContext.Identifier().text
+      val firstType = typesToDiscover.first().type
+      val firstTypeName = if (firstType.parameters.isEmpty()) firstType.fullyQualifiedName else firstType.parameters.first().fullyQualifiedName
+      return when (val sourceType = fromTypeFromClassTypeContext(firstTypeName, anonymousFieldContext)) {
+         is Either.Left -> sourceType.a.left()
+         is Either.Right -> {
+            val objectType = sourceType.b as ObjectType
+            if (objectType.hasField(fieldName)) {
+               SimpleAnonymousFieldDefinition(fieldName = fieldName, fieldType = objectType.field(fieldName).type.toQualifiedName()).right()
+            } else {
+               CompilationError(anonymousFieldContext.start,
+                  "$fieldName is not part of ${objectType.toQualifiedName()}").left()
+            }
+         }
+      }
+   }
+
 
    private fun parseQueryTypeList(queryTypeList: VyneQLParser.QueryTypeListContext): Either<List<CompilationError>, List<DiscoveryType>> {
       return queryTypeList.typeType().map { queryType ->
@@ -199,6 +388,16 @@ class TokenProcessor(private val taxi: TaxiDocument, private val schema: Schema)
                }
             }
          }
+      }
+   }
+
+   private fun fromTypeFromClassTypeContext(requestedTypeName: String, context: ParserRuleContext): Either<CompilationError, Type> {
+      val imports = context.importsInFile().filter { it.typeName == requestedTypeName }
+      val fullyQualifiedTypeName = if (imports.size == 1) imports.first().fullyQualifiedName else requestedTypeName
+      return if (taxi.containsType(fullyQualifiedTypeName)) {
+         Either.right(taxi.type(fullyQualifiedTypeName))
+      } else {
+         Either.left(CompilationError(context.start, "Type $requestedTypeName could not be resolved - so can't interpret anonymous projection definition."))
       }
    }
 

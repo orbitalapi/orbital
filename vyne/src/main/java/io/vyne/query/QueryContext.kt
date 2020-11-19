@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.collect.HashMultimap
 import io.vyne.models.*
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
+import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
@@ -21,6 +22,7 @@ import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.schemas.*
 import io.vyne.utils.log
 import io.vyne.utils.timed
+import io.vyne.vyneql.ProjectedType
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
@@ -70,7 +72,8 @@ data class QueryResult(
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
    override val queryResponseId: String = UUID.randomUUID().toString(),
-   val truncated: Boolean = false
+   val truncated: Boolean = false,
+   val anonymousTypes: Set<Type> = setOf()
 ) : QueryResponse {
 
    val duration = profilerOperation?.duration
@@ -320,12 +323,12 @@ data class QueryContext(
       return this
    }
 
-   fun projectResultsTo(name: QualifiedName): QueryContext {
-      return projectResultsTo(schema.type(name))
+   fun projectResultsTo(projectedType: ProjectedType): QueryContext {
+      return projectResultsTo(projectedTo(projectedType, schema))
    }
 
    fun projectResultsTo(targetType: String): QueryContext {
-      return projectResultsTo(schema.type(targetType))
+      return projectResultsTo(ProjectedType.fromConcreteTypeOnly(lang.taxi.types.QualifiedName.from(targetType)))
    }
 
    private fun projectResultsTo(targetType: Type): QueryContext {

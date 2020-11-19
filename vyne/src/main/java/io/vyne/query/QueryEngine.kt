@@ -150,7 +150,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          QueryResult(
             mapOf(querySpecTypeNode to result),
             emptySet(),
-            profilerOperation = context.profiler.root
+            profilerOperation = context.profiler.root,
+            anonymousTypes = context.schema.typeCache.anonymousTypes()
          )
       } else {
          QueryResult(
@@ -288,7 +289,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             results = acc.results + queryResult.results,
             unmatchedNodes = acc.unmatchedNodes + queryResult.unmatchedNodes,
             path = null,
-            profilerOperation = queryResult.profilerOperation
+            profilerOperation = queryResult.profilerOperation,
+            anonymousTypes = acc.anonymousTypes + acc.anonymousTypes
          )
       }
       return result

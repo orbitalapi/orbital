@@ -55,7 +55,9 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
 
    fun query(vyneQl: VyneQlQuery): QueryResult {
       var queryContext = query(additionalFacts = vyneQl.facts.values.toSet())
-      queryContext = vyneQl.projectedType?.let { queryContext.projectResultsTo(it.toVyneQualifiedName()) } ?: queryContext
+      queryContext = vyneQl.projectedType?.let {
+         queryContext.projectResultsTo(it)
+      } ?: queryContext
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
       val queryExpressions = vyneQl.typesToFind.map { discoveryType ->
