@@ -1,8 +1,9 @@
 package io.vyne.cask.query.vyneql
 
+import io.vyne.http.HttpHeaders
 import io.vyne.vyneql.VyneQLQueryString
+import org.springframework.http.ResponseEntity
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -16,9 +17,9 @@ class VyneQlQueryService(private val jdbcTemplate: JdbcTemplate,
    }
 
    @PostMapping(REST_ENDPOINT)
-   fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString): List<Map<String, Any>> {
+   fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString): ResponseEntity<List<Map<String, Any>>> {
       val statement = sqlGenerator.generateSql(query)
-      return if (statement.params.isEmpty()) {
+      val result =  if (statement.params.isEmpty()) {
          jdbcTemplate.queryForList(
             statement.sql
          )
@@ -28,6 +29,11 @@ class VyneQlQueryService(private val jdbcTemplate: JdbcTemplate,
             *statement.params.toTypedArray()
          )
       }
+
+      return ResponseEntity
+         .ok()
+         .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
+         .body(result)
    }
 
 }

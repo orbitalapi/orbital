@@ -77,27 +77,31 @@ interface TypedInstance {
          return TypedObject(type, typedAttributes, source)
       }
 
-      fun from(type: Type, value: Any?, schema: Schema, performTypeConversions: Boolean = true, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
+      /**
+       * Parses a TypedInstance
+       *
+       * @param evaluateAccessors Determines if accessors defined in the schema should be evaluated.  Normally
+       * this should be true.  However, for content served from a cask, the content is already preparsed, and so
+       * does not need accessors to be evaluated.
+       */
+      fun from(type: Type, value: Any?, schema: Schema, performTypeConversions: Boolean = true, nullValues: Set<String> = emptySet(), source: DataSource, evaluateAccessors:Boolean = true): TypedInstance {
          return when {
-            // Adding this error, as we have too many ways to parse json at the moment, and trying to enforce some singularity
-            // Also, raw JsonNode makes evaluating complex JsonPath expressions impossible, as we need the raw json string
-//            value is JsonNode -> error("Don't pass JsonNode here, use JsonParsedStructure instead")
             value is TypedInstance -> value
             value == null -> TypedNull.create(type)
             value is Collection<*> -> {
                val collectionMemberType = getCollectionType(type)
-               TypedCollection.arrayOf(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema, performTypeConversions, source = source) })
+               TypedCollection.arrayOf(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema, performTypeConversions, source = source, evaluateAccessors = evaluateAccessors) })
             }
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions, source)
             }
             // This is here primarily for readability.  We could just let this fall through to below.
-            isJson(value) -> TypedObjectFactory(type, value, schema, nullValues, source).build()
+            isJson(value) -> TypedObjectFactory(type, value, schema, nullValues, source, evaluateAccessors = evaluateAccessors).build()
 
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
             // Must be a CSV ish type value.
             type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema, source)
-            else -> TypedObject.fromValue(type, value, schema, nullValues, source = source)
+            else -> TypedObject.fromValue(type, value, schema, nullValues, source = source, evaluateAccessors = evaluateAccessors)
          }
       }
 

@@ -3,7 +3,6 @@ package io.vyne.spring.invokers
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
 import io.vyne.models.UndefinedSource
 import io.vyne.query.OperationType
 import io.vyne.query.ProfilerOperation
@@ -11,7 +10,6 @@ import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
@@ -113,8 +111,13 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       // TODO : Handle scenario where we get a 2xx response, but no body
       log().debug("Result of ${operation.name} was $result")
       val resultBody = result.body
+      val isPreparsed = result.headers[io.vyne.http.HttpHeaders.CONTENT_PREPARSED].let {headerValues ->
+         headerValues != null && headerValues.isNotEmpty() && headerValues.first() == true.toString()
+      }
+      // If the content has been pre-parsed upstream, we don't evaluate accessors
+      val evaluateAccessors = !isPreparsed
       val dataSource = remoteCallDataLineage(parameters, remoteCall)
-      return TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema(), source = dataSource)
+      return TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema(), source = dataSource, evaluateAccessors = evaluateAccessors)
    }
 
    private fun remoteCallDataLineage(parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall): DataSource {

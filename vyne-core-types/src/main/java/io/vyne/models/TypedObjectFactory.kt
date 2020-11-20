@@ -15,8 +15,14 @@ import lang.taxi.types.Accessor
 import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
 
-
-class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet(), val source:DataSource, private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper, private val functionRegistry:FunctionRegistry = FunctionRegistry.default) {
+/**
+ * Constructs a TypedObject
+ *
+ * @param evaluateAccessors Determines if accessors defined in the schema should be evaluated.  Normally
+ * this should be true.  However, for content served from a cask, the content is already preparsed, and so
+ * does not need accessors to be evaluated.
+ */
+class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet(), val source:DataSource, private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper, private val functionRegistry:FunctionRegistry = FunctionRegistry.default, private val evaluateAccessors:Boolean = true) {
    private val valueReader = ValueReader()
    private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry) }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
@@ -33,7 +39,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
    fun build(): TypedInstance {
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
-         return TypedInstance.from(type,jsonParsedStructure,schema, nullValues = nullValues, source = source)
+         return TypedInstance.from(type,jsonParsedStructure,schema, nullValues = nullValues, source = source, evaluateAccessors = evaluateAccessors)
       }
 
       // TODO : Naieve first pass.
@@ -71,6 +77,13 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
 
 
    private fun buildField(field: Field, attributeName: AttributeName): TypedInstance {
+      // We don't always want to use accessors.
+      // When parsing content from a cask, which has already been processed, what we
+      // receive is a TypedObject.  The accessors should be ignored in this scenario.
+      // By default, we want to cosndier them.
+      val considerAccessor = field.accessor != null && evaluateAccessors
+
+
       // Questionable design choice: Favour directly supplied values over accessors and conditions.
       // The idea here is that when we're reading from a file or non parsed source, we need
       // to know how to construct the instance.
@@ -81,7 +94,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
       // Note - revisit if this proves to be problematic.
       return when {
          // Cheaper readers first
-         value is CSVRecord && field.accessor is ColumnAccessor -> {
+         value is CSVRecord && field.accessor is ColumnAccessor && considerAccessor -> {
             readAccessor(field.type, field.accessor, field.nullable)
          }
 
@@ -92,9 +105,9 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
          // However, the impact of adding it is that when parsing TypedObjects from remote calls that have already been
          // processed (and so the accessor isn't required) means that we fall through this check and try using the
          // accessor, which will fail, as this isn't raw content anymore, it's parsed / processed.
-         value is Map<*, *>/* && field.accessor == null */ && valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
-         field.accessor != null -> {
-            readAccessor(field.type, field.accessor, field.nullable)
+         value is Map<*, *> && !considerAccessor && valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
+         considerAccessor -> {
+            readAccessor(field.type, field.accessor!!, field.nullable)
          }
          field.readCondition != null -> {
             conditionalFieldSetEvaluator.evaluate(field.readCondition, attributeName, schema.type(field.type))
