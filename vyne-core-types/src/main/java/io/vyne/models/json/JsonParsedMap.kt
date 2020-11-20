@@ -3,6 +3,8 @@ package io.vyne.models.json
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.jayway.jsonpath.JsonPath
+import java.io.InputStream
 
 
 interface JsonParsedStructure {
@@ -11,6 +13,12 @@ interface JsonParsedStructure {
    val jsonNode: JsonNode
 
    companion object {
+      fun from(stream:InputStream, mapper:ObjectMapper):JsonParsedStructure {
+         // reading the full stream into memory could cause problems with large json structures.
+         // But, things like JsonPath need
+         val jsonSource = JsonPath.parse(stream)
+         TODO()
+      }
       fun from(source: String, mapper: ObjectMapper): JsonParsedStructure {
          val mapped = mapper.readValue<Any>(source)
          return when (mapped) {

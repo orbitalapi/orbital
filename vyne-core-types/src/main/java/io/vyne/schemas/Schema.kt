@@ -99,10 +99,13 @@ interface Schema {
       return service.hasOperation(operationName)
    }
 
-   fun operation(operationName: QualifiedName): Pair<Service, Operation> {
+   fun remoteOperation(operationName: QualifiedName): Pair<Service,RemoteOperation> {
       val (serviceName, operationName) = OperationNames.serviceAndOperation(operationName)
       val service = service(serviceName)
-      return service to service.operation(operationName)
+      return service to service.remoteOperation(operationName)
+   }
+   fun operation(operationName: QualifiedName): Pair<Service, Operation> {
+      return remoteOperation(operationName) as Pair<Service,Operation>
    }
 
    fun attribute(attributeName: String): Pair<Type, Type> {

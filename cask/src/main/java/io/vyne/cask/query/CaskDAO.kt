@@ -59,9 +59,10 @@ class CaskDAO(
    private val caskMessageRepository: CaskMessageRepository,
    private val caskConfigRepository: CaskConfigRepository,
    private val objectMapper: ObjectMapper = jacksonObjectMapper(),
-   private val queryOptions:CaskQueryOptions = CaskQueryOptions()
+   private val queryOptions: CaskQueryOptions = CaskQueryOptions()
 ) {
    val postgresDdlGenerator = PostgresDdlGenerator()
+
    init {
       log().info("Cask running with query options: \n$queryOptions")
    }
@@ -114,7 +115,7 @@ class CaskDAO(
             val originalTypeSchema = schemaProvider.schema()
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-            val findByArg = jdbcQueryArgumentType(fieldType, arg)
+            val findByArg = castArgumentToJdbcType(fieldType, arg)
             jdbcTemplate.queryForList(findByQuery(tableName, columnName), findByArg)
          }
       }
@@ -126,7 +127,7 @@ class CaskDAO(
             val originalTypeSchema = schemaProvider.schema()
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-            val findOneArg = jdbcQueryArgumentType(fieldType, arg)
+            val findOneArg = castArgumentToJdbcType(fieldType, arg)
             try {
                jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg)
             } catch (exception: Exception) {
@@ -169,7 +170,7 @@ class CaskDAO(
             val originalTypeSchema = schemaProvider.schema()
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-            val findMultipleArg = jdbcQueryArgumentsType(fieldType, inputValues)
+            val findMultipleArg = castArgumentsToJdbcType(fieldType, inputValues)
 
             val inPhrase = inputValues.joinToString(",") { "?" }
             val argTypes = inputValues.map { Types.VARCHAR }.toTypedArray().toIntArray()
@@ -190,29 +191,29 @@ class CaskDAO(
             doForAllTablesOfType(versionedType) { tableName ->
                jdbcTemplate.queryForList(
                   betweenQueryForCaskInsertedAt(tableName, variant),
-                  jdbcQueryArgumentType(PrimitiveType.INSTANT, start),
-                  jdbcQueryArgumentType(PrimitiveType.INSTANT, end))
+                  castArgumentToJdbcType(PrimitiveType.INSTANT, start),
+                  castArgumentToJdbcType(PrimitiveType.INSTANT, end))
             }
          } else {
             val field = fieldForColumnName(versionedType, columnName)
             doForAllTablesOfType(versionedType) { tableName ->
                jdbcTemplate.queryForList(
                   betweenQueryForField(tableName, columnName, variant),
-                  jdbcQueryArgumentType(field, start),
-                  jdbcQueryArgumentType(field, end))
+                  castArgumentToJdbcType(field, start),
+                  castArgumentToJdbcType(field, end))
             }
          }
       }
    }
 
-   private fun betweenQueryForField(tableName: String, columnName: String, variant: BetweenVariant? = null) = when(variant) {
+   private fun betweenQueryForField(tableName: String, columnName: String, variant: BetweenVariant? = null) = when (variant) {
       BetweenVariant.GtLt -> findBetweenQueryGtLt(tableName, columnName)
       BetweenVariant.GtLte -> findBetweenQueryGtLte(tableName, columnName)
       BetweenVariant.GteLte -> findBetweenQueryGteLte(tableName, columnName)
       else -> findBetweenQuery(tableName, columnName)
    }
 
-   private fun betweenQueryForCaskInsertedAt(tableName: String, variant: BetweenVariant? = null) = when(variant) {
+   private fun betweenQueryForCaskInsertedAt(tableName: String, variant: BetweenVariant? = null) = when (variant) {
       BetweenVariant.GtLt -> findBetweenGtLtCaskInsertedAtQuery(tableName)
       BetweenVariant.GtLte -> findBetweenGtLteCaskInsertedAtQuery(tableName)
       BetweenVariant.GteLte -> findBetweenGteLteCaskInsertedAtQuery(tableName)
@@ -234,7 +235,7 @@ class CaskDAO(
          doForAllTablesOfType(versionedType) { tableName ->
             jdbcTemplate.queryForList(
                findAfterQuery(tableName, columnName),
-               jdbcQueryArgumentType(field, after))
+               castArgumentToJdbcType(field, after))
          }
       }
    }
@@ -245,7 +246,7 @@ class CaskDAO(
          doForAllTablesOfType(versionedType) { tableName ->
             jdbcTemplate.queryForList(
                findBeforeQuery(tableName, columnName),
-               jdbcQueryArgumentType(field, before))
+               castArgumentToJdbcType(field, before))
          }
       }
    }
@@ -254,25 +255,6 @@ class CaskDAO(
       val originalTypeSchema = schemaProvider.schema()
       val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
       return (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-   }
-
-   private fun jdbcQueryArgumentsType(field: Field, args: List<String>) = args.map { jdbcQueryArgumentType(field, it) }
-
-   private fun jdbcQueryArgumentType(field: Field, arg: String) = jdbcQueryArgumentType (field.type.basePrimitive, arg)
-
-   private fun jdbcQueryArgumentType(primitiveType: PrimitiveType?, arg: String) = when (primitiveType) {
-      PrimitiveType.STRING -> arg
-      PrimitiveType.ANY -> arg
-      PrimitiveType.DECIMAL -> arg.toBigDecimal()
-      PrimitiveType.DOUBLE -> arg.toBigDecimal()
-      PrimitiveType.INTEGER -> arg.toBigDecimal()
-      PrimitiveType.BOOLEAN -> arg.toBoolean()
-      PrimitiveType.LOCAL_DATE -> arg.toLocalDate()
-      // TODO TIME db column type
-      //PrimitiveType.TIME -> arg.toTime()
-      PrimitiveType.INSTANT -> arg.toLocalDateTime()
-
-      else -> TODO("type ${primitiveType?.name} not yet mapped")
    }
 
    companion object {
@@ -300,6 +282,31 @@ class CaskDAO(
          }
          return indexTables[0] + " " +
             indexTables.drop(1).joinToString(separator = " ") { "full outer join $it on 0 = 1" }
+      }
+
+      fun castArgumentsToJdbcType(field: Field, args: List<String>) = args.map { castArgumentToJdbcType(field, it) }
+
+      fun castArgumentToJdbcType(field: Field, arg: String): Any {
+         return field.type.basePrimitive?.let {
+            castArgumentToJdbcType(it, arg)
+         }
+            ?: error("Field ${field.name} has a non-primitive type ${field.type.qualifiedName}.  Non-primitive types are not currently supported")
+
+      }
+
+      fun castArgumentToJdbcType(primitiveType: PrimitiveType, arg: String): Any = when (primitiveType) {
+         PrimitiveType.STRING -> arg
+         PrimitiveType.ANY -> arg
+         PrimitiveType.DECIMAL -> arg.toBigDecimal()
+         PrimitiveType.DOUBLE -> arg.toBigDecimal()
+         PrimitiveType.INTEGER -> arg.toInt()
+         PrimitiveType.BOOLEAN -> arg.toBoolean()
+         PrimitiveType.LOCAL_DATE -> arg.toLocalDate()
+         // TODO TIME db column type
+         //PrimitiveType.TIME -> arg.toTime()
+         PrimitiveType.INSTANT -> arg.toLocalDateTime()
+
+         else -> TODO("type ${primitiveType.name} not yet mapped")
       }
    }
 
@@ -353,16 +360,16 @@ class CaskDAO(
    }
 
    fun fetchRawCaskMessage(caskMessageId: String): Pair<ByteArray, ContentType?>? {
-     return caskMessageRepository.findByIdOrNull(caskMessageId)?.let { caskMessage ->
-        caskMessage.messageContentId?.let { largeObjectId ->
-           largeObjectDataSource.connection.use { connection ->
-              connection.autoCommit = false
-              val pgConn = connection.unwrap(PGConnection::class.java)
-              val largeObjectManager = pgConn.largeObjectAPI
-              val largeObject = largeObjectManager.open(largeObjectId, LargeObjectManager.READ)
-              IOUtils.toByteArray(largeObject.inputStream) to caskMessage.messageContentType
-           }
-        }
+      return caskMessageRepository.findByIdOrNull(caskMessageId)?.let { caskMessage ->
+         caskMessage.messageContentId?.let { largeObjectId ->
+            largeObjectDataSource.connection.use { connection ->
+               connection.autoCommit = false
+               val pgConn = connection.unwrap(PGConnection::class.java)
+               val largeObjectManager = pgConn.largeObjectAPI
+               val largeObject = largeObjectManager.open(largeObjectId, LargeObjectManager.READ)
+               IOUtils.toByteArray(largeObject.inputStream) to caskMessage.messageContentType
+            }
+         }
       }
    }
 

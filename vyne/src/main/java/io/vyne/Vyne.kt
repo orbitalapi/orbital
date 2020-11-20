@@ -1,12 +1,26 @@
 package io.vyne
 
-import io.vyne.models.*
+import com.google.common.annotations.VisibleForTesting
+import io.vyne.models.TypedInstance
 import io.vyne.models.json.addKeyValuePair
-import io.vyne.query.*
+import io.vyne.query.ConstrainedTypeNameQueryExpression
+import io.vyne.query.Query
+import io.vyne.query.QueryContext
+import io.vyne.query.QueryEngineFactory
+import io.vyne.query.QueryExpression
+import io.vyne.query.QueryMode
+import io.vyne.query.QueryResult
+import io.vyne.query.StatefulQueryEngine
+import io.vyne.query.TypeNameQueryExpression
 import io.vyne.query.graph.Algorithms
-import io.vyne.schemas.*
+import io.vyne.schemas.CompositeSchema
+import io.vyne.schemas.Policy
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiConstraintConverter
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
+import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
 import io.vyne.vyneql.VyneQLQueryString
 import io.vyne.vyneql.VyneQlCompiler
@@ -54,16 +68,25 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    }
 
    fun query(vyneQl: VyneQlQuery): QueryResult {
+      val (queryContext, expression) = buildContextAndExpression(vyneQl)
+      return when (vyneQl.queryMode) {
+         io.vyne.vyneql.QueryMode.FIND_ALL -> queryContext.findAll(expression)
+         io.vyne.vyneql.QueryMode.FIND_ONE -> queryContext.find(expression)
+      }
+   }
+
+   @VisibleForTesting
+   internal fun buildContextAndExpression(vyneQl: VyneQlQuery): Pair<QueryContext, QueryExpression> {
       var queryContext = query(additionalFacts = vyneQl.facts.values.toSet())
       queryContext = vyneQl.projectedType?.let {
-         queryContext.projectResultsTo(it)
+         queryContext.projectResultsTo(it) // Merge conflict, was : it.toVyneQualifiedName()
       } ?: queryContext
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
       val queryExpressions = vyneQl.typesToFind.map { discoveryType ->
          val targetType = schema.type(discoveryType.type.toVyneQualifiedName())
          val expression = if (discoveryType.constraints.isNotEmpty()) {
-            val constraints = constraintProvider.buildOutputConstraints(targetType,discoveryType.constraints)
+            val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)
             ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)
          } else {
             TypeNameQueryExpression(discoveryType.type.toVyneQualifiedName().parameterizedName)
@@ -76,10 +99,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
          TODO("Handle multiple target types in VyneQL")
       }
       val expression = queryExpressions.first()
-      return when(vyneQl.queryMode) {
-         io.vyne.vyneql.QueryMode.FIND_ALL -> queryContext.findAll(expression)
-         io.vyne.vyneql.QueryMode.FIND_ONE -> queryContext.find(expression)
-      }
+      return Pair(queryContext, expression)
    }
 
    fun query(

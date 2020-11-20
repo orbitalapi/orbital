@@ -171,6 +171,6 @@ type Client {
 
       val client2 = clients[1] as TypedObject
       expect(client2["clientId"]!!.value).to.equal("mert")
-
    }
+
 }

@@ -12,6 +12,7 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
 import org.junit.Test
 import java.math.BigDecimal
 
@@ -103,7 +104,7 @@ service Broker1Service {
 
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("getData", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             return vyne.addJsonModel("ServiceData", """
                {
                    "field": "This is Provided By External Service"
@@ -113,7 +114,7 @@ service Broker1Service {
       })
 
       stubService.addResponse("findAll", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             return vyne.addJsonModel("Order[]", """
                [
                {
@@ -185,19 +186,19 @@ service UserService {
 
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
             return vyne.addJsonModel("Broker1Order[]", generateBroker1OrdersWithTraderId(noOfRecords))
          }
       })
       stubService.addResponse("getBroker2Orders", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
             return vyne.addJsonModel("Broker2Order[]", "[]")
          }
       })
       stubService.addResponse("getUserNameFromId", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val userId = parameters[0].second.value as String
             val userName = when (userId) {
@@ -315,13 +316,13 @@ service InstrumentService {
 
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
             return vyne.addJsonModel("Broker1Order[]", generateBroker1Orders(noOfRecords))
          }
       })
       stubService.addResponse("getInstrument", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val instrumentId = parameters[0].second.value as String
             val (instrumentDescription, instrumentType) = when (instrumentId) {
@@ -442,14 +443,14 @@ service Broker1Service {
       val orders = generateBroker1Orders(noOfRecords)
       val trades = generateOneBroker1TradeForEachOrder(noOfRecords)
       stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
             return vyne.parseJsonModel("Broker1Order[]", orders)
          }
       })
 
       stubService.addResponse("getBroker1Trades", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             return vyne.parseJsonModel("Broker1Trade[]", trades)
          }
@@ -457,7 +458,7 @@ service Broker1Service {
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
       stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val orderIds = parameters[0].second.value as List<TypedValue>
             val buf = StringBuilder("[")
@@ -475,7 +476,7 @@ service Broker1Service {
 
       var findOneByOrderIdInvocationCount = 0
       stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val orderId = parameters[0].second.value as String
             findOneByOrderIdInvocationCount++
@@ -523,7 +524,7 @@ service Broker1Service {
       // 1 order will have 3 corresponding trades whereas the other order has none..
       val orders = generateBroker1Orders(numberOfOrders + 1)
       stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
             return vyne.parseJsonModel("Broker1Order[]", orders)
          }
@@ -531,7 +532,7 @@ service Broker1Service {
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
       stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val orderIds = parameters[0].second.value as List<TypedValue>
             val buf = StringBuilder("[")
@@ -549,7 +550,7 @@ service Broker1Service {
 
       var findOneByOrderIdInvocationCount = 0
       stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val orderId = parameters[0].second.value as String
             findOneByOrderIdInvocationCount++
@@ -600,7 +601,7 @@ service Broker1Service {
       // 1 order will have 3 corresponding trades whereas the other order has none..
       val orders = generateBroker1Orders(numberOfOrders + 1)
       stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
             return vyne.parseJsonModel("Broker1Order[]", orders)
          }
@@ -608,7 +609,7 @@ service Broker1Service {
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
       stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val orderIds = parameters[0].second.value as List<TypedValue>
             val buf = StringBuilder("[")
@@ -626,7 +627,7 @@ service Broker1Service {
 
       var findOneByOrderIdInvocationCount = 0
       stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val orderId = parameters[0].second.value as String
             findOneByOrderIdInvocationCount++
@@ -637,7 +638,7 @@ service Broker1Service {
 
       //find by order Id and project
       stubService.addResponse("findSingleByOrderID", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             return if (parameters.first().second.value == "broker1Order0") {
                vyne.parseJsonModel("Broker1Order", generateBroker1Order(0))
@@ -663,7 +664,7 @@ service Broker1Service {
       // 1 order will have 3 corresponding trades whereas the other order has none..
       val orders = generateBroker1Orders(numberOfOrders + 1)
       stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
             return vyne.parseJsonModel("Broker1Order[]", orders)
          }
@@ -671,7 +672,7 @@ service Broker1Service {
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
       stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val orderIds = parameters[0].second.value as List<TypedValue>
             val buf = StringBuilder("[")
@@ -689,7 +690,7 @@ service Broker1Service {
 
       var findOneByOrderIdInvocationCount = 0
       stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val orderId = parameters[0].second.value as String
             findOneByOrderIdInvocationCount++
@@ -700,7 +701,7 @@ service Broker1Service {
 
       //find by order Id and project
       stubService.addResponse("findSingleByOrderID", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             return if (parameters.first().second.value == "broker1Order0") {
                vyne.parseJsonModel("Broker1Order", generateBroker1Order(0))
@@ -728,7 +729,7 @@ service Broker1Service {
          .append("]")
          .toString()
       stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(2)
             return vyne.parseJsonModel("Broker1Order[]", orders)
          }
@@ -736,7 +737,7 @@ service Broker1Service {
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
       stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val orderIds = parameters[0].second.value as List<TypedValue>
             val buf = StringBuilder("[")
@@ -754,7 +755,7 @@ service Broker1Service {
 
       var findOneByOrderIdInvocationCount = 0
       stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             parameters.should.have.size(1)
             val orderId = parameters[0].second.value as String
             findOneByOrderIdInvocationCount++
@@ -884,7 +885,7 @@ service Broker1Service {
          """.trimIndent()))
 
       stubService.addResponse("getCountry", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             val countryCode = parameters.first().second.value!!.toString()
             return if (countryCode == "UK") {
                vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
@@ -1072,7 +1073,7 @@ service Broker1Service {
          """.trimIndent()))
 
       stubService.addResponse("getCountry", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             getCountryInvoked = true
             val countryCode = parameters.first().second.value!!.toString()
             return if (countryCode == "UK") {

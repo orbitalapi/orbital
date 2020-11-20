@@ -12,12 +12,12 @@ import io.vyne.vyneql.SimpleAnonymousFieldDefinition
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
 import lang.taxi.sources.SourceCode
+import lang.taxi.types.ArrayType
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ObjectTypeDefinition
-import lang.taxi.types.PrimitiveType
 import java.security.SecureRandom
-import java.util.Base64
+import java.util.*
 
 
 object ProjectionAnonymousTypeProvider {
@@ -72,9 +72,9 @@ object ProjectionAnonymousTypeProvider {
 
       schema.typeCache.registerAnonymousType(type)
       return if (isList) {
-         val arrayType = schema.type(PrimitiveType.ARRAY.qualifiedName)
+         val arrayType = schema.type(ArrayType.NAME)
          arrayType.copy(
-            name = QualifiedName(PrimitiveType.ARRAY.qualifiedName, listOf(anonymousTypeName.fqn())),
+            name = QualifiedName(ArrayType.NAME, listOf(anonymousTypeName.fqn())),
             typeParametersTypeNames = listOf(anonymousTypeName.fqn()))
       } else {
          type

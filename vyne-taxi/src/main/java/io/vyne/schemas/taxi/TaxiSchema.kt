@@ -2,7 +2,6 @@ package io.vyne.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
-import io.vyne.models.functions.stdlib.StdLib
 import io.vyne.schemas.DefaultTypeCache
 import io.vyne.schemas.DeferredConstraintProvider
 import io.vyne.schemas.EnumValue
@@ -15,6 +14,7 @@ import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Policy
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.QueryOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
@@ -37,7 +37,7 @@ import java.nio.file.Path
 class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val sources: List<VersionedSource>) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
-   override val policies : Set<Policy>
+   override val policies: Set<Policy>
 
    private val equality = Equality(this, TaxiSchema::document, TaxiSchema::sources)
    override fun equals(other: Any?): Boolean {
@@ -77,21 +77,23 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
 
    private fun parseServices(document: TaxiDocument): Set<Service> {
       return document.services.map { taxiService ->
-         // hahahaha
          Service(QualifiedName(taxiService.qualifiedName),
+            queryOperations = taxiService.queryOperations.map { queryOperation ->
+               val returnType = this.type(queryOperation.returnType.toVyneQualifiedName())
+               QueryOperation(
+                  parameters = queryOperation.parameters.map { taxiParam -> parseOperationParameter(taxiParam) },
+                  qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, queryOperation.name),
+                  metadata = parseAnnotationsToMetadata(queryOperation.annotations),
+                  grammar = queryOperation.grammar,
+                  returnType = returnType,
+                  capabilities = queryOperation.capabilities,
+                  typeDoc = queryOperation.typeDoc
+               )
+            },
             operations = taxiService.operations.map { taxiOperation ->
                val returnType = this.type(taxiOperation.returnType.toVyneQualifiedName())
                Operation(OperationNames.qualifiedName(taxiService.qualifiedName, taxiOperation.name),
-                  taxiOperation.parameters.map { taxiParam ->
-                     val vyneQualifiedName = taxiParam.type.toVyneQualifiedName()
-                     val type = this.type(vyneQualifiedName)
-                     Parameter(
-                        type = type,
-                        name = taxiParam.name,
-                        metadata = parseAnnotationsToMetadata(taxiParam.annotations),
-                        constraints = constraintConverter.buildConstraints(type, taxiParam.constraints)
-                     )
-                  },
+                  taxiOperation.parameters.map { taxiParam -> parseOperationParameter(taxiParam) },
                   operationType = taxiOperation.scope,
                   returnType = returnType,
                   metadata = parseAnnotationsToMetadata(taxiOperation.annotations),
@@ -105,6 +107,17 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
             sourceCode = taxiService.compilationUnits.toVyneSources(),
             typeDoc = taxiService.typeDoc)
       }.toSet()
+   }
+
+   private fun parseOperationParameter(taxiParam: lang.taxi.services.Parameter): Parameter {
+      val vyneQualifiedName = taxiParam.type.toVyneQualifiedName()
+      val type = this.type(vyneQualifiedName)
+      return Parameter(
+         type = type,
+         name = taxiParam.name,
+         metadata = parseAnnotationsToMetadata(taxiParam.annotations),
+         constraints = constraintConverter.buildConstraints(type, taxiParam.constraints)
+      )
    }
 
    private fun parseAnnotationsToMetadata(annotations: List<Annotation>): List<Metadata> {
@@ -140,7 +153,7 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
                         formula = field.formula,
                         nullable = field.nullable,
                         metadata = parseAnnotationsToMetadata(field.annotations)
-                        )
+                     )
                   }
                }.toMap()
                val modifiers = parseModifiers(taxiType)
@@ -193,7 +206,8 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
    }
 
    private fun getTaxiPrimitiveTypes(): Set<Type> {
-      return PrimitiveType.values().map { taxiPrimitive ->
+      val taxiTypes = PrimitiveType.values().toList() + ArrayType.untyped()
+      return taxiTypes.map { taxiPrimitive ->
          Type(
             taxiPrimitive.qualifiedName.fqn(),
             modifiers = parseModifiers(taxiPrimitive),
@@ -231,12 +245,12 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
 
    companion object {
       const val LANGUAGE = "Taxi"
-      fun forPackageAtPath(path: Path):TaxiSchema {
+      fun forPackageAtPath(path: Path): TaxiSchema {
          return from(TaxiSourcesLoader.loadPackage(path).versionedSources())
       }
 
       fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
-         val doc = Compiler(sources.map { CharStreams.fromString(it.content,it.name) }, imports.map { it.document }).compile()
+         val doc = Compiler(sources.map { CharStreams.fromString(it.content, it.name) }, imports.map { it.document }).compile()
          // stdLib is always included.
          // Could make this optional in future if needed
 
@@ -249,6 +263,12 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
          return from(listOf(source), importSources)
       }
 
+      fun fromStrings(vararg taxi:String, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
+         return fromStrings(taxi.toList(), importSources)
+      }
+      fun fromStrings(taxi:List<String>, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
+         return from (taxi.map { VersionedSource.sourceOnly(it) }, importSources)
+      }
       fun from(taxi: String, sourceName: String = "<unknown>", version: String = VersionedSource.DEFAULT_VERSION.toString(), importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
          return from(VersionedSource(sourceName, version, taxi), importSources)
       }
@@ -269,7 +289,7 @@ private fun lang.taxi.types.Type.toVyneQualifiedName(): QualifiedName {
 
 private fun lang.taxi.sources.SourceCode.toVyneSource(): VersionedSource {
    // TODO : Find the version.
-   return VersionedSource(this.sourceName,VersionedSource.DEFAULT_VERSION.toString(),this.content)
+   return VersionedSource(this.sourceName, VersionedSource.DEFAULT_VERSION.toString(), this.content)
 }
 
 private fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<VersionedSource> {

@@ -343,9 +343,15 @@ export class SchemaMember {
     public readonly member: Type | Service | Operation,
     public readonly sources: VersionedSource[]
   ) {
-    this.attributeNames = kind === SchemaMemberType.TYPE
-      ? Object.keys((member as Type).attributes)
-      : [];
+    try {
+      this.attributeNames = kind === SchemaMemberType.TYPE
+        ? Object.keys((member as Type).attributes)
+        : [];
+    } catch (error) {
+      debugger;
+    }
+
+
   }
 
   attributeNames: string[];

@@ -3,13 +3,22 @@ package io.vyne.queryService
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.queryService.policies.PolicyDto
-import io.vyne.queryService.schemas.*
+import io.vyne.queryService.schemas.SchemaImportRequest
+import io.vyne.queryService.schemas.SchemaImportService
+import io.vyne.queryService.schemas.SchemaPreview
+import io.vyne.queryService.schemas.SchemaPreviewRequest
+import io.vyne.queryService.schemas.SchemaUpdatedNotification
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemaStore.VersionedSourceProvider
 import io.vyne.schemas.Schema
 import lang.taxi.generators.SourceFormatter
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 
 @RestController
@@ -51,6 +60,7 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
    }
 
    @GetMapping(path = ["/api/types"])
+//   @JsonView(TypeLightView::class)
    fun getTypes(): Schema {
       return schemaProvider.schema()
    }

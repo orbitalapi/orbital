@@ -43,8 +43,8 @@ data class TypedObject(
          return TypedObject(type, typedAttributes, source)
       }
 
-      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource): TypedInstance {
-         return TypedObjectFactory(type, value, schema, nullValues, source).build()
+      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource, evaluateAccessors:Boolean = true): TypedInstance {
+         return TypedObjectFactory(type, value, schema, nullValues, source, evaluateAccessors = evaluateAccessors).build()
       }
    }
 

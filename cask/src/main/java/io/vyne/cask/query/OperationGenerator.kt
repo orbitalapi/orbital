@@ -2,6 +2,7 @@ package io.vyne.cask.query
 
 import io.vyne.cask.query.generators.OperationAnnotation
 import lang.taxi.services.Operation
+import lang.taxi.services.ServiceMember
 import lang.taxi.types.Field
 import lang.taxi.types.Type
 
@@ -12,6 +13,9 @@ interface OperationGenerator {
 }
 
 interface DefaultOperationGenerator {
-   fun generate(returnType: Type): Operation
+   fun canGenerate(returnType: Type): Boolean {
+      return true
+   }
+   fun generate(returnType: Type): ServiceMember
 
 }

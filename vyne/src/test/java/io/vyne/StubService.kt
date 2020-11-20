@@ -5,13 +5,13 @@ import io.vyne.query.ProfilerOperation
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 
-typealias StubResponseHandler = (Operation, List<Pair<Parameter, TypedInstance>>) -> TypedInstance
+typealias StubResponseHandler = (RemoteOperation, List<Pair<Parameter, TypedInstance>>) -> TypedInstance
 
 class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapOf(), val handlers: MutableMap<String, StubResponseHandler> = mutableMapOf()) : OperationInvoker {
    constructor(vararg responses: Pair<String, TypedInstance>) : this(responses.toMap().toMutableMap())
@@ -23,7 +23,7 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
    }
    val invocations = mutableMapOf<String, List<TypedInstance>>()
 
-   override fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profiler: ProfilerOperation): TypedInstance {
+   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profiler: ProfilerOperation): TypedInstance {
       log().info("Invoking ${service.name} -> ${operation.name}(${parameters.map { it.first.name }})")
       val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
          val metadata = operation.metadata("StubResponse")
@@ -54,7 +54,7 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
       return this
    }
 
-   override fun canSupport(service: Service, operation: Operation): Boolean {
+   override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       // TODO : why did I need to do this?
       // This was working by using annotations on the method to indicate that there was a stub response
       // Why do I care about that?  I could just use the method name as a default?!

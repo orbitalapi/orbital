@@ -3,13 +3,12 @@ package io.vyne.cask.services
 import io.vyne.cask.ddl.TypeMigration
 import io.vyne.cask.query.DefaultOperationGenerator
 import io.vyne.cask.query.OperationGenerator
-import io.vyne.cask.query.generators.OperationAnnotation
 import io.vyne.cask.types.allFields
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.VersionedType
 import lang.taxi.TaxiDocument
-import lang.taxi.services.Operation
 import lang.taxi.services.Service
+import lang.taxi.services.ServiceMember
 import lang.taxi.types.Annotation
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
@@ -69,8 +68,10 @@ class CaskServiceSchemaGenerator(
    }
 
    private fun generateCaskService(fields: List<Field>, type: Type): Service {
-      var operations: MutableList<Operation> = mutableListOf()
-      val defaultOperations = defaultOperationGenerators.map {defaultOperationGenerators -> defaultOperationGenerators.generate(type) }
+      val operations: MutableList<ServiceMember> = mutableListOf()
+      val defaultOperations = defaultOperationGenerators
+         .filter { it.canGenerate(type) }
+         .map {defaultOperationGenerators -> defaultOperationGenerators.generate(type) }
       operations.addAll(defaultOperations)
       fields.flatMap { field ->
          operations.addAll(operationGenerators
@@ -81,7 +82,7 @@ class CaskServiceSchemaGenerator(
 
       return Service(
          qualifiedName = fullyQualifiedCaskServiceName(type),
-         operations = operations,
+         members = operations,
          compilationUnits = listOf(CompilationUnit.unspecified()),
          annotations = serviceAnnotations
       )

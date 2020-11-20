@@ -321,6 +321,25 @@ object VyneQlGrammarSpek : Spek({
          )
       }
 
+      it("should handle queries of array types with long syntax") {
+         val src = """
+            import foo.Order
+
+            findAll { lang.taxi.Array<Order> }
+         """.trimIndent()
+         val query = VyneQlCompiler(src,taxi).query()
+         query.typesToFind[0].type.parameterizedName.should.equal("lang.taxi.Array<foo.Order>")
+      }
+      it("should handle queries of array types with short syntax") {
+         val src = """
+            import foo.Order
+
+            findAll { Order[] }
+         """.trimIndent()
+         val query = VyneQlCompiler(src,taxi).query()
+         query.typesToFind[0].type.parameterizedName.should.equal("lang.taxi.Array<foo.Order>")
+      }
+
       it("Should Allow anonymous type with complex field definitions referencing projected type") {
          val src = """
             import foo.Order

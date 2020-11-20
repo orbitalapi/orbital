@@ -9,8 +9,6 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import reactor.core.publisher.Flux
 import java.io.InputStream
-import java.nio.file.Files
-import java.nio.file.Path
 
 class JsonStreamSource(private val input: Flux<InputStream>,
                        private val versionedType: VersionedType,
@@ -23,7 +21,9 @@ class JsonStreamSource(private val input: Flux<InputStream>,
    override val stream: Flux<InstanceAttributeSet>
       get() {
          return input
-            .map { stream -> timed("JsonStreamSource.read") { objectMapper.readTree(stream) } }
+            .map { stream -> timed("JsonStreamSource.read") {
+               objectMapper.readTree(stream) }
+            }
             .filter { record -> !record.isEmpty }
             .map { record ->
                // when

@@ -10,13 +10,24 @@ import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
-import io.vyne.cask.query.generators.*
+import io.vyne.cask.query.generators.FindAllGenerator
+import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
+import io.vyne.cask.query.generators.FindByFieldIdOperationGenerator
+import io.vyne.cask.query.generators.FindByIdGenerators
+import io.vyne.cask.query.generators.FindByMultipleGenerator
+import io.vyne.cask.query.generators.FindBySingleResultGenerator
+import io.vyne.cask.query.generators.InsertedAtGreaterThanOrEqualsToStartLessThanOrEqualsToEndOperationGenerator
+import io.vyne.cask.query.generators.InsertedAtGreaterThanStartLessThanEndOperationGenerator
+import io.vyne.cask.query.generators.InsertedAtGreaterThanStartLessThanOrEqualsToEndOperationGenerator
+import io.vyne.cask.query.generators.OperationAnnotation
+import io.vyne.cask.query.generators.OperationGeneratorConfig
+import io.vyne.cask.query.generators.VyneQlOperationGenerator
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
-import lang.taxi.types.PrimitiveType
+import io.vyne.utils.withoutWhitespace
 import org.junit.Test
 
 class CaskServiceSchemaGeneratorTest {
@@ -50,23 +61,7 @@ class CaskServiceSchemaGeneratorTest {
 
    """.trimIndent()
 
-   @Test
-   fun `schemas with formatted date types generate valid schemas`() {
-      val schema = """
-         model Trade {
-            @Before
-            tradeDate : Instant( @format = 'yyyy-mm-ddThh:mm:ss' )
-         }
-      """.trimIndent()
-      val (serviceSchemaGenerator,taxiSchema) = schemaGeneratorFor(schema, OperationGeneratorConfig(emptyList()))
-
-      // When
-      val generated = serviceSchemaGenerator.generateSchema(CaskTaxiPublicationRequest(taxiSchema.versionedType("Trade".fqn())))
-      val operation = generated.services.first().operation("findByTradeDateBefore")
-      operation.parameters.first().type.qualifiedName.should.equal(PrimitiveType.INSTANT.qualifiedName)
-   }
-
-   private fun schemaGeneratorFor(schema: String, operationGeneratorConfig: OperationGeneratorConfig): Pair<CaskServiceSchemaGenerator,TaxiSchema> {
+   private fun schemaGeneratorFor(schema: String, operationGeneratorConfig: OperationGeneratorConfig): Pair<CaskServiceSchemaGenerator, TaxiSchema> {
       val typeSchema = lang.taxi.Compiler(schema).compile()
       val taxiSchema = TaxiSchema(typeSchema, listOf())
       val sources = taxiSchema.sources.map { ParsedSource(it) }
@@ -76,17 +71,12 @@ class CaskServiceSchemaGeneratorTest {
          caskServiceSchemaWriter,
          listOf(
             FindByFieldIdOperationGenerator(operationGeneratorConfig),
-            AfterTemporalOperationGenerator(operationGeneratorConfig),
-            BeforeTemporalOperationGenerator(operationGeneratorConfig),
-            BetweenTemporalOperationGenerator(operationGeneratorConfig),
             FindBySingleResultGenerator(operationGeneratorConfig),
             FindByMultipleGenerator(operationGeneratorConfig),
-            FindByIdGenerators(operationGeneratorConfig),
-            GreaterThanStartLessThanEndOperationGenerator(operationGeneratorConfig),
-            GreaterThanStartLessThanOrEqualsToEndOperationGenerator(operationGeneratorConfig),
-            GreaterThanOrEqualsToStartLessThanOrEqualsToEndOperationGenerator(operationGeneratorConfig)),
+            FindByIdGenerators(operationGeneratorConfig)),
          listOf(
             FindAllGenerator(),
+            VyneQlOperationGenerator(DefaultCaskTypeProvider()),
             FindBetweenInsertedAtOperationGenerator(DefaultCaskTypeProvider()),
             InsertedAtGreaterThanStartLessThanEndOperationGenerator(DefaultCaskTypeProvider()),
             InsertedAtGreaterThanStartLessThanOrEqualsToEndOperationGenerator(DefaultCaskTypeProvider()),
@@ -134,17 +124,18 @@ type OrderWindowSummaryCsv {
       // Then
       verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
       val submittedSchemas = schemas.firstValue
-      submittedSchemas.size.should.equal(3)
+      submittedSchemas.size.should.equal(4)
+      submittedSchemas[2].name.should.equal("vyne.casks.OrderWindowSummaryCsv")
+      submittedSchemas[2].version.should.equal("1.0.1")
       """
          namespace vyne.cask {
             type CaskInsertedAt inherits lang.taxi.Instant
-
-
          }
       """.trimIndent()
-      submittedSchemas[0].content.replace("\\s".toRegex(), "")
+         .withoutWhitespace()
+         .should.equal(submittedSchemas[1].content.withoutWhitespace())
       """
-         import OrderWindowSummaryCsv
+import OrderWindowSummaryCsv
 import vyne.cask.CaskInsertedAt
 import Symbol
 
@@ -152,14 +143,13 @@ namespace vyne.cask {
    type OrderWindowSummaryCsv inherits OrderWindowSummaryCsv {
       caskInsertedAt : CaskInsertedAt
    }
-
-
 }
-      """.trimIndent()
-      submittedSchemas[1].content.replace("\\s".toRegex(), "")
-      submittedSchemas[2].name.should.equal("vyne.casks.OrderWindowSummaryCsv1")
-      submittedSchemas[2].version.should.equal("1.0.1")
-      """
+
+      """.trimIndent().withoutWhitespace()
+         .should.equal(submittedSchemas[2].content.withoutWhitespace())
+      submittedSchemas[3].name.should.equal("vyne.casks.OrderWindowSummaryCsv1")
+      submittedSchemas[3].version.should.equal("1.0.1")
+      val expectedSchema = """
 import OrderWindowSummaryCsv
 import vyne.cask.CaskInsertedAt
 import Symbol
@@ -167,12 +157,15 @@ import Symbol
 namespace vyne.casks {
 
 
-
    @ServiceDiscoveryClient(serviceName = "cask")
    @Datasource
    service OrderWindowSummaryCsvCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummaryCsv")
       operation findAll(  ) : OrderWindowSummaryCsv[]
+      @HttpOperation(method = "POST", url = "/api/vyneQl")
+      vyneQl query vyneQlQueryOrderWindowSummaryCsv(@RequestBody body: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<OrderWindowSummaryCsv> with capabilities {
+         filter(=,!=,in,like,>,<,>=,<=)
+      }
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummaryCsv/CaskInsertedAt/Between/{start}/{end}")
       operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : vyne.cask.CaskInsertedAt, @PathVariable(name = "end") end : vyne.cask.CaskInsertedAt ) : vyne.cask.OrderWindowSummaryCsv[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummaryCsv/CaskInsertedAt/BetweenGtLt/{start}/{end}")
@@ -185,8 +178,8 @@ namespace vyne.casks {
       operation findSingleBySymbol( @PathVariable(name = "id") id : Symbol ) : OrderWindowSummaryCsv( Symbol = id )
    }
 }
-
-""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[2].content.replace("\\s".toRegex(), ""))
+"""
+         expectedSchema.withoutWhitespace().should.equal(submittedSchemas[3].content.withoutWhitespace())
    }
 
    @Test
@@ -204,7 +197,7 @@ namespace vyne.casks {
       // Then
       verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
       val submittedSchemas = schemas.firstValue
-      submittedSchemas.size.should.equal(3)
+      submittedSchemas.size.should.equal(4)
       """
          namespace vyne.cask {
             type CaskInsertedAt inherits lang.taxi.Instant
@@ -212,14 +205,13 @@ namespace vyne.casks {
 
          }
       """.trimIndent()
-         .replace("\\s".toRegex(), "")
-         .should.equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
+         .withoutWhitespace()
+         .should.equal(submittedSchemas[1].content.withoutWhitespace())
       """
-         import OrderWindowSummary
+import OrderWindowSummary
 import vyne.cask.CaskInsertedAt
 import Symbol
-import MaturityDate
-import TransactionEventDateTime
+import lang.taxi.Array
 
 namespace vyne.cask {
    type OrderWindowSummary inherits OrderWindowSummary {
@@ -227,19 +219,17 @@ namespace vyne.cask {
    }
 
 
-}
-      """.trimIndent()
-         .replace("\\s".toRegex(), "")
-         .should.equal(submittedSchemas[1].content.replace("\\s".toRegex(), ""))
+}""".trimIndent()
+         .withoutWhitespace()
+         .should.equal(submittedSchemas[2].content.withoutWhitespace())
 
-      submittedSchemas[2].name.should.equal("vyne.casks.OrderWindowSummary1")
-      submittedSchemas[2].version.should.equal("1.0.1")
+      submittedSchemas[3].name.should.equal("vyne.casks.OrderWindowSummary1")
+      submittedSchemas[3].version.should.equal("1.0.1")
       """
 import OrderWindowSummary
 import vyne.cask.CaskInsertedAt
 import Symbol
-import MaturityDate
-import TransactionEventDateTime
+import lang.taxi.Array
 
 namespace vyne.casks {
 
@@ -249,6 +239,10 @@ namespace vyne.casks {
    service OrderWindowSummaryCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
       operation findAll(  ) : OrderWindowSummary[]
+      @HttpOperation(method = "POST", url = "/api/vyneQl")
+      vyneQl query vyneQlQueryOrderWindowSummary(@RequestBody body: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<OrderWindowSummary> with capabilities {
+         filter(=,!=,in,like,>,<,>=,<=)
+      }
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/CaskInsertedAt/Between/{start}/{end}")
       operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : vyne.cask.CaskInsertedAt, @PathVariable(name = "end") end : vyne.cask.CaskInsertedAt ) : vyne.cask.OrderWindowSummary[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
       @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/CaskInsertedAt/BetweenGtLt/{start}/{end}")
@@ -265,33 +259,10 @@ namespace vyne.casks {
       operation findMultipleBySymbol( @RequestBody symbol : Symbol[] ) : OrderWindowSummary[]
       @HttpOperation(method = "GET" , url = "/api/cask/findSingleBy/OrderWindowSummary/symbol/{id}")
       operation findSingleBySymbol( @PathVariable(name = "id") id : Symbol ) : OrderWindowSummary( Symbol = id )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/After/{after}")
-      operation findByMaturityDateAfter( @PathVariable(name = "after") after : MaturityDate ) : OrderWindowSummary[]( MaturityDate > after )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/Before/{before}")
-      operation findByMaturityDateBefore( @PathVariable(name = "before") before : MaturityDate ) : OrderWindowSummary[]( MaturityDate < before )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/Between/{start}/{end}")
-      operation findByMaturityDateBetween( @PathVariable(name = "start") start : MaturityDate, @PathVariable(name = "end") end : MaturityDate ) : OrderWindowSummary[]( MaturityDate >= start, MaturityDate < end )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/BetweenGtLt/{start}/{end}")
-      operation findByMaturityDateBetweenGtLt( @PathVariable(name = "start") start : MaturityDate, @PathVariable(name = "end") end : MaturityDate ) : OrderWindowSummary[]( MaturityDate > start, MaturityDate < end )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/BetweenGtLte/{start}/{end}")
-      operation findByMaturityDateBetweenGtLte( @PathVariable(name = "start") start : MaturityDate, @PathVariable(name = "end") end : MaturityDate ) : OrderWindowSummary[]( MaturityDate > start, MaturityDate <= end )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/maturityDate/BetweenGteLte/{start}/{end}")
-      operation findByMaturityDateBetweenGteLte( @PathVariable(name = "start") start : MaturityDate, @PathVariable(name = "end") end : MaturityDate ) : OrderWindowSummary[]( MaturityDate >= start, MaturityDate <= end )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/After/{after}")
-      operation findByOrderDateTimeAfter( @PathVariable(name = "after") after : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime > after )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/Before/{before}")
-      operation findByOrderDateTimeBefore( @PathVariable(name = "before") before : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime < before )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/Between/{start}/{end}")
-      operation findByOrderDateTimeBetween( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime < end )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/BetweenGtLt/{start}/{end}")
-      operation findByOrderDateTimeBetweenGtLt( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime > start, TransactionEventDateTime < end )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/BetweenGtLte/{start}/{end}")
-      operation findByOrderDateTimeBetweenGtLte( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime > start, TransactionEventDateTime <= end )
-      @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/BetweenGteLte/{start}/{end}")
-      operation findByOrderDateTimeBetweenGteLte( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime ) : OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime <= end )
    }
 }
-""".replace("\\s".toRegex(), "").should.equal(submittedSchemas[2].content.replace("\\s".toRegex(), ""))
+
+""".withoutWhitespace().should.equal(submittedSchemas[3].content.withoutWhitespace())
    }
 
    @Test
@@ -306,13 +277,13 @@ namespace vyne.casks {
          VersionedSource(
             CaskServiceSchemaGenerator.caskServiceSchemaName(versionedType),
             "1.0.1",
-         "namespace vyne.casks\nservice OrderWindowSummaryCaskService {}"))
+            "namespace vyne.casks\nservice OrderWindowSummaryCaskService {}"))
       val sources = taxiSchema.sources.map { ParsedSource(it) } + caskServiceSource
       whenever(schemaProvider.schemaSet()).thenReturn(SchemaSet.fromParsed(sources, 1))
 
       // When
- //     serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
- //     serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
+      //     serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
+      //     serviceSchemaGenerator.onIngesterInitialised(IngestionInitialisedEvent(this, versionedType))
 
       // Then
       verify(schemaStoreClient, times(0)).submitSchemas(any())
@@ -349,7 +320,7 @@ namespace vyne.casks {
       // Then
       verify(schemaStoreClient, times(1)).submitSchemas(schemas.capture())
       val submittedSchemas = schemas.firstValue
-      submittedSchemas.size.should.equal(3)
+      submittedSchemas.size.should.equal(4)
       """
          namespace vyne.cask {
             type CaskInsertedAt inherits lang.taxi.Instant
@@ -358,32 +329,28 @@ namespace vyne.casks {
          }
       """.trimIndent()
          .trimMargin()
-         .replace("\\s".toRegex(), "")
+         .withoutWhitespace()
          .should
-         .equal(submittedSchemas[0].content.replace("\\s".toRegex(), ""))
+         .equal(submittedSchemas[1].content.withoutWhitespace())
       """
-         import Simple
+import Simple
 import vyne.cask.CaskInsertedAt
-import LogDatePlus
 
 namespace vyne.cask {
    type Simple inherits Simple {
       caskInsertedAt : CaskInsertedAt
    }
-
-
 }
       """.trimIndent()
          .trimMargin()
-         .replace("\\s".toRegex(), "")
+         .withoutWhitespace()
          .should
-         .equal(submittedSchemas[1].content.replace("\\s".toRegex(), ""))
-      submittedSchemas[2].name.should.equal("vyne.casks.Simple1")
-      submittedSchemas[2].version.should.equal("1.0.1")
+         .equal(submittedSchemas[2].content.withoutWhitespace())
+      submittedSchemas[3].name.should.equal("vyne.casks.Simple1")
+      submittedSchemas[3].version.should.equal("1.0.1")
       """
 import Simple
 import vyne.cask.CaskInsertedAt
-import LogDatePlus
 
 namespace vyne.casks {
 
@@ -393,6 +360,10 @@ namespace vyne.casks {
    service SimpleCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/Simple")
       operation findAll(  ) : Simple[]
+      @HttpOperation(method = "POST", url = "/api/vyneQl")
+      vyneQl query vyneQlQuerySimple(@RequestBody body: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<Simple> with capabilities {
+         filter(=,!=,in,like,>,<,>=,<=)
+      }
       @HttpOperation(method = "GET" , url = "/api/cask/Simple/CaskInsertedAt/Between/{start}/{end}")
       operation findByCaskInsertedAtBetween( @PathVariable(name = "start") start : vyne.cask.CaskInsertedAt, @PathVariable(name = "end") end : vyne.cask.CaskInsertedAt ) : vyne.cask.Simple[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt < end )
       @HttpOperation(method = "GET" , url = "/api/cask/Simple/CaskInsertedAt/BetweenGtLt/{start}/{end}")
@@ -401,16 +372,9 @@ namespace vyne.casks {
       operation findByCaskInsertedAtBetweenGtLte( @PathVariable(name = "start") start : vyne.cask.CaskInsertedAt, @PathVariable(name = "end") end : vyne.cask.CaskInsertedAt ) : vyne.cask.Simple[]( vyne.cask.CaskInsertedAt > start, vyne.cask.CaskInsertedAt <= end )
       @HttpOperation(method = "GET" , url = "/api/cask/Simple/CaskInsertedAt/BetweenGteLte/{start}/{end}")
       operation findByCaskInsertedAtBetweenGteLte( @PathVariable(name = "start") start : vyne.cask.CaskInsertedAt, @PathVariable(name = "end") end : vyne.cask.CaskInsertedAt ) : vyne.cask.Simple[]( vyne.cask.CaskInsertedAt >= start, vyne.cask.CaskInsertedAt <= end )
-      @HttpOperation(method = "GET" , url = "/api/cask/Simple/logDatePlus/Between/{start}/{end}")
-      operation findByLogDatePlusBetween( @PathVariable(name = "start") start : LogDatePlus, @PathVariable(name = "end") end : LogDatePlus ) : Simple[]( LogDatePlus >= start, LogDatePlus < end )
-      @HttpOperation(method = "GET" , url = "/api/cask/Simple/logDatePlus/BetweenGtLt/{start}/{end}")
-      operation findByLogDatePlusBetweenGtLt( @PathVariable(name = "start") start : LogDatePlus, @PathVariable(name = "end") end : LogDatePlus ) : Simple[]( LogDatePlus > start, LogDatePlus < end )
-      @HttpOperation(method = "GET" , url = "/api/cask/Simple/logDatePlus/BetweenGtLte/{start}/{end}")
-      operation findByLogDatePlusBetweenGtLte( @PathVariable(name = "start") start : LogDatePlus, @PathVariable(name = "end") end : LogDatePlus ) : Simple[]( LogDatePlus > start, LogDatePlus <= end )
-      @HttpOperation(method = "GET" , url = "/api/cask/Simple/logDatePlus/BetweenGteLte/{start}/{end}")
-      operation findByLogDatePlusBetweenGteLte( @PathVariable(name = "start") start : LogDatePlus, @PathVariable(name = "end") end : LogDatePlus ) : Simple[]( LogDatePlus >= start, LogDatePlus <= end )
    }
 }
-      """.trimMargin().replace("\\s".toRegex(), "").should.equal(submittedSchemas[2].content.replace("\\s".toRegex(), ""))
+      """.trimMargin().withoutWhitespace()
+         .should.equal(submittedSchemas[3].content.withoutWhitespace())
    }
 }
