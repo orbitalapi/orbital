@@ -14,11 +14,13 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.functions.FunctionExpressionAccessor
 import lang.taxi.types.Accessor
 import lang.taxi.types.ColumnAccessor
 import lang.taxi.types.ConditionalAccessor
 import lang.taxi.types.DestructuredAccessor
 import lang.taxi.types.FieldReferenceSelector
+import lang.taxi.types.FormulaOperator
 import lang.taxi.types.JsonPathAccessor
 import lang.taxi.types.LiteralAccessor
 import lang.taxi.types.ReadFunction
@@ -57,6 +59,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
          is FunctionAccessor -> evaluateFunctionAccessor(value, targetType, schema, accessor, nullValues, source)
          is FieldReferenceSelector -> evaluateFieldReference(value, targetType, schema, accessor, nullValues, source)
          is LiteralAccessor -> return TypedInstance.from(targetType, accessor.value, schema, source = source)
+         is FunctionExpressionAccessor -> evaluateFunctionExpressionAccessor(value, targetType, schema, accessor, nullValues, source)
          else -> {
             log().warn("Unexpected Accessor value $accessor")
             TODO()
@@ -90,6 +93,25 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
       val allInputs = declaredInputs + declaredVarArgs
 
       return functionRegistry.invoke(accessor.function, allInputs, schema)
+   }
+
+   private fun evaluateFunctionExpressionAccessor(value: Any, targetType: Type, schema: Schema, accessor: FunctionExpressionAccessor, nullValues: Set<String>, source: DataSource): TypedInstance {
+      val functionResult = this.evaluateFunctionAccessor(value, targetType, schema, accessor.functionAccessor, nullValues, source)
+      val operator = accessor.operator
+      val operand = accessor.operand
+      val functionValue = functionResult.value ?: return functionResult
+
+      return when(operator) {
+         FormulaOperator.Add -> {
+            when(functionValue) {
+               is Int -> TypedInstance.from(targetType, functionValue.plus(operand as Int), schema, source = source)
+               is String -> TypedInstance.from(targetType, "$functionValue$operand", schema, source = source)
+               else -> error("unexpected function expression function return value $functionValue, $operator, $operand")
+            }
+         }
+         FormulaOperator.Subtract ->  TypedInstance.from(targetType, (functionValue as Int).minus(operand as Int), schema, source = source)
+         else -> error("unexpected function expression function return value $functionValue, $operator, $operand")
+      }
    }
 
    private fun evaluateReadFunctionAccessor(value: Any, targetType: Type, schema: Schema, accessor: ReadFunctionFieldAccessor, nullValues: Set<String>, source: DataSource): TypedInstance {

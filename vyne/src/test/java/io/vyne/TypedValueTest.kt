@@ -13,6 +13,7 @@ import org.junit.Test
 import org.mockito.Mockito.mock
 import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
 
 class TypedValueTest {
    @Test
@@ -74,5 +75,16 @@ class TypedValueTest {
       val schema = TaxiSchema.from("")
       val instance = TypedInstance.from(schema.type(PrimitiveType.DOUBLE), "2.512E+03", schema, source = Provided)
       instance.value.should.equal(2512.0)
+   }
+
+   @Test
+   fun canParseDateOnly() {
+      val schema = TaxiSchema.from("""
+         type MaturityDateDate inherits Date(@format = "yyyy-MM-dd", @format = "dd/MM/yyyy HH:mm")
+      """.trimIndent())
+      val instance = TypedInstance.from(schema.type("MaturityDateDate"), "09/04/2025 00:00", schema, source = Provided)
+      val date = instance.value as LocalDate
+      date.should.equal(LocalDate.of(2025, 4, 9))
+
    }
 }
