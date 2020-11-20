@@ -67,19 +67,19 @@ class VyneQlSqlGeneratorTest {
    @Test
    fun `params that are date time strings are parsed to instant`() {
       val statement = sqlGenerator.generateSql("findAll { Person[]( LastLoggedIn >= '2020-11-10T15:00:00Z' ) }")
-      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ?;""", listOf(LocalDateTime.parse("2020-11-10T15:00:00Z")))
+      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ?;""", listOf(LocalDateTime.parse("2020-11-10T15:00:00")))
    }
 
    @Test
    fun `date time between params are parsed correctly`() {
       val statement = sqlGenerator.generateSql("""findAll { Person[]( LastLoggedIn >= "2020-10-10T15:00:00Z",  LastLoggedIn < "2020-11-10T15:00:00Z"  ) }""")
-      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00Z"), LocalDateTime.parse("2020-11-10T15:00:00Z")))
+      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00"), LocalDateTime.parse("2020-11-10T15:00:00")))
    }
 
    @Test
    fun `when querying using a base type, the field is resolved correctly`() {
       val statement = sqlGenerator.generateSql("""findAll { Person[]( LoginTime >= "2020-10-10T15:00:00Z",  LoginTime < "2020-11-10T15:00:00Z"  ) }""")
-      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00Z"), LocalDateTime.parse("2020-11-10T15:00:00Z")))
+      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00"), LocalDateTime.parse("2020-11-10T15:00:00")))
    }
 
    private fun SqlStatement.shouldEqual(sql: String, params: List<Any>) {

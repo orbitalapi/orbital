@@ -1,9 +1,12 @@
 package io.vyne.cask.query
 
-import com.nhaarman.mockitokotlin2.*
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules
+import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
-import com.zaxxer.hikari.HikariDataSource
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
@@ -11,9 +14,7 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
 import org.springframework.jdbc.core.JdbcTemplate
 import java.math.BigDecimal
 import java.time.Instant
@@ -112,7 +113,7 @@ class CaskDAOTest {
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_de3f20 WHERE "close" = ?""")
-      argsCaptor.firstValue.should.equal(BigDecimal("1"))
+      argsCaptor.firstValue.should.equal(1)
    }
 
    @Test

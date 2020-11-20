@@ -42,42 +42,42 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
 
    @Test
    fun findMatchingNoCriteriaReturnsEmptyList() {
-      val response = service.submitVyneQlQuery("""findAll { Person[]( FirstName = "Nobody" ) }""")
+      val response = service.submitVyneQlQuery("""findAll { Person[]( FirstName = "Nobody" ) }""").body
 
       response.should.be.empty
    }
 
    @Test
    fun canExecuteFindAll() {
-      val response = service.submitVyneQlQuery("""findAll { Person[] }""")
+      val response = service.submitVyneQlQuery("""findAll { Person[] }""").body
 
       response.should.have.size(3)
       response.map { it["firstName"]}.should.have.elements("Jimmy","Jack","John")
    }
    @Test
    fun `can find with greater than number`() {
-      val response = service.submitVyneQlQuery("""findAll { Person[]( Age > 33 ) }""")
+      val response = service.submitVyneQlQuery("""findAll { Person[]( Age > 33 ) }""").body
 
       response.should.have.size(2)
       response.map { it["firstName"]}.should.have.elements("Jimmy","John")
    }
    @Test
    fun `can find with greater then or equal number`() {
-      val response = service.submitVyneQlQuery("""findAll { Person[]( Age >= 35 ) }""")
+      val response = service.submitVyneQlQuery("""findAll { Person[]( Age >= 35 ) }""").body
 
       response.should.have.size(2)
       response.map { it["firstName"]}.should.have.elements("Jimmy", "John")
    }
    @Test
    fun `can find with less than number`() {
-      val response = service.submitVyneQlQuery("""findAll { Person[]( Age < 33 ) }""")
+      val response = service.submitVyneQlQuery("""findAll { Person[]( Age < 33 ) }""").body
 
       response.should.have.size(1)
       response.map { it["firstName"]}.should.have.elements("Jack")
    }
    @Test
    fun `can find with less or equal than number`() {
-      val response = service.submitVyneQlQuery("""findAll { Person[]( Age <= 35 ) }""")
+      val response = service.submitVyneQlQuery("""findAll { Person[]( Age <= 35 ) }""").body
 
       response.should.have.size(2)
       response.map { it["firstName"]}.should.have.elements("Jack", "Jimmy")
@@ -85,21 +85,21 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
 
    @Test
    fun `can find with date after`() {
-      val response = service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > '2020-11-01T00:00:00Z' ) }""")
+      val response = service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > '2020-11-01T00:00:00Z' ) }""").body
 
       response.should.have.size(2)
       response.map { it["firstName"]}.should.have.elements("Jack","Jimmy")
    }
    @Test
    fun `can find with date between`() {
-      val response = service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""")
+      val response = service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body
 
       response.should.have.size(1)
       response.map { it["firstName"]}.should.have.elements("Jack")
    }
    @Test
    fun `can query with an abstract property type`() {
-      val response = service.submitVyneQlQuery("""findAll { Person[]( LoginTime > "2020-11-15T00:00:00Z", LoginTime <= "2020-11-15T23:59:59Z" ) }""")
+      val response = service.submitVyneQlQuery("""findAll { Person[]( LoginTime > "2020-11-15T00:00:00Z", LoginTime <= "2020-11-15T23:59:59Z" ) }""").body
 
       response.should.have.size(1)
       response.map { it["firstName"]}.should.have.elements("Jack")
