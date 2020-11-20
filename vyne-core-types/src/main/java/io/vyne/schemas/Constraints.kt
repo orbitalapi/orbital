@@ -16,7 +16,11 @@ interface ConstraintEvaluation {
       get() = this.violation == null
 }
 
-data class DefaultConstraintEvaluation(override val evaluatedValue: TypedInstance, override val violation: ConstraintViolation? = null) : ConstraintEvaluation
+data class DefaultConstraintEvaluation(override val evaluatedValue: TypedInstance, override val violation: ConstraintViolation? = null) : ConstraintEvaluation {
+   override fun toString(): String {
+      return "DefaultConstraintEvaluation - evaluatedValue: ${evaluatedValue.typeName} ${evaluatedValue.toRawObject()} , violation: $violation"
+   }
+}
 
 data class ConstraintEvaluations(val evaluatedValue: TypedInstance, val evaluations: List<ConstraintEvaluation>) : List<ConstraintEvaluation> by evaluations {
    val violationCount = evaluations.count { !it.isValid }

@@ -183,6 +183,8 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
 
    @Test
    fun `Can downcast incoming Instant as Date or Time`() {
+      //dateOnly: Date(@format = "yyyy-MM-dd'T'HH:mm:ss") by column(1)
+
       val source = """DateOnly,TimeOnly
          |2013-06-30T00:00:00,2013-05-30T00:00:00
          |2013-06-30T00:00:00,2013-05-30T00:00:00""".trimMargin()

@@ -2,7 +2,11 @@ package io.vyne.schemas
 
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-import lang.taxi.services.operations.constraints.*
+import lang.taxi.services.operations.constraints.ConstantValueExpression
+import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
+import lang.taxi.services.operations.constraints.PropertyIdentifier
+import lang.taxi.services.operations.constraints.RelativeValueExpression
+import lang.taxi.services.operations.constraints.ValueExpression
 
 object ReplaceValueUpdater : ConstraintViolationValueUpdater {
    override fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance = updatedValue
@@ -37,6 +41,9 @@ class ReplaceFieldValueUpdater(private val originalValue: TypedInstance, val ide
  * and therefore cannot be used
  */
 data class ExpectedConstantValueMismatch(private val evaluatedInstance: TypedInstance, private val requiredType: Type, private val property: PropertyIdentifier, private val expectedValue: TypedInstance, val actualValue: TypedInstance, override val updater: ConstraintViolationValueUpdater) : ConstraintViolation {
+   override fun toString(): String {
+      return super.toString()
+   }
    override fun provideResolutionAdvice(operation: Operation, contract: OperationContract): ResolutionAdvice? {
       // TODO : This coupling is dangerous.  But, need to consider an abstraction
       // that allow deducing the same answer without the constraint being aware of contracts
@@ -44,7 +51,9 @@ data class ExpectedConstantValueMismatch(private val evaluatedInstance: TypedIns
 
       if (contract.returnType.fullyQualifiedName == this.requiredType.fullyQualifiedName
          && contract.containsConstraint(ReturnValueDerivedFromParameterConstraint::class.java)
-         && contract.containsConstraint(PropertyToParameterConstraint::class.java) { it.propertyIdentifier == this.property }
+         && contract.containsConstraint(PropertyToParameterConstraint::class.java) {
+            it.propertyIdentifier == this.property
+         }
       ) {
 
          val constraintViolatingParam = contract.constraint(ReturnValueDerivedFromParameterConstraint::class.java).propertyIdentifier to evaluatedInstance

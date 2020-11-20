@@ -31,7 +31,7 @@ class FindBetweenInsertedAtOperationGenerator(private val defaultCaskTypeProvide
          listOf(HttpOperations.pathVariable(TemporalFieldUtils.End))
       )
       val (greaterThanEqualConstraint, lessThanConstraint) = constraints(insertedAtType)
-      val returnType = TemporalFieldUtils.collectionTypeOf(type)
+      val returnType = TemporalFieldUtils.collectionTypeOf(defaultCaskTypeProvider.withDefaultCaskTaxiType(type))
       return Operation(
          name = operationName(),
          parameters = listOf(startParameter, endParameter),

@@ -26,6 +26,7 @@ class CaskServiceSchemaGenerator(
    private val caskServiceSchemaWriter: CaskServiceSchemaWriter,
    private val operationGenerators: List<OperationGenerator>,
    private val defaultOperationGenerators: List<DefaultOperationGenerator>,
+   private val defaultCaskTypeProvider: DefaultCaskTypeProvider,
    @Value("\${cask.service.annotations:#{null}}") private val caskServiceAnnotations: String? = null,
    @Value("\${spring.application.name}") private val appName: String = "cask"
    ) {
@@ -39,8 +40,9 @@ class CaskServiceSchemaGenerator(
       val taxiType = request.type.taxiType
       // TODO Handle Type Migration.
       val fields = typeMigration?.fields ?: request.type.allFields()
+      val withCaskInsertedAtType = defaultCaskTypeProvider.withDefaultCaskTaxiType(taxiType)
       return if (taxiType is ObjectType) {
-         val typesToRegister = if (request.registerType) setOf(taxiType) else emptySet()
+         val typesToRegister = if (request.registerType) setOf(taxiType, withCaskInsertedAtType) else setOf(withCaskInsertedAtType)
          TaxiDocument(services = setOf(generateCaskService(fields, taxiType)), types = typesToRegister)
       } else {
          TODO("Type ${taxiType::class.simpleName} not yet supported")

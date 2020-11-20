@@ -14,9 +14,7 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import org.junit.Test
-import java.time.Instant
-import java.time.ZoneId
-
+import java.math.BigDecimal
 
 class VyneProjectionTest {
    val testSchema = """
@@ -1168,6 +1166,196 @@ service Broker1Service {
          listOf(
             mapOf("myField" to "$outputInstant1" ),
             mapOf("myField" to "$outputInstant2")
+         )
+      )
+   }
+
+   @Test
+   fun `Calculated fields should be correctly set in projected type`() {
+      val (vyne, stubService) = testVyne("""
+         type QtyFill inherits Decimal
+         type UnitMultiplier inherits Decimal
+         type FilledNotional inherits Decimal
+
+         model InputModel {
+           multiplier: UnitMultiplier by default(2)
+           qtyFill: QtyFill
+         }
+
+         model OutputModel {
+            qtyHit : QtyFill?
+            unitMultiplier: UnitMultiplier?
+            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getInputData(): InputModel[]
+         }
+      """.trimIndent())
+
+      stubService.addResponse("getInputData", vyne.parseJsonModel("InputModel[]", """
+         [
+            { "qtyFill": 200, "multiplier": 2 }
+         ]
+         """.trimIndent()))
+      val result =  vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
+         listOf(
+            mapOf(
+               "qtyHit" to BigDecimal("200"),
+               "unitMultiplier" to BigDecimal("2"),
+               "filledNotional" to BigDecimal("400")
+            )
+         )
+      )
+   }
+
+   @Test
+   fun `should project to anonymous type extending discovery type`() {
+      val (vyne, stubService) = testVyne("""
+         type QtyFill inherits Decimal
+         type UnitMultiplier inherits Decimal
+         type FilledNotional inherits Decimal
+         type InputId inherits String
+
+         model InputModel {
+           multiplier: UnitMultiplier by default(2)
+           qtyFill: QtyFill
+           id: InputId
+         }
+
+         model OutputModel {
+            qtyHit : QtyFill?
+            unitMultiplier: UnitMultiplier?
+            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getInputData(): InputModel[]
+         }
+      """.trimIndent())
+
+      stubService.addResponse("getInputData", vyne.parseJsonModel("InputModel[]", """
+         [
+            { "qtyFill": 200, "multiplier": 2, "id": "input1" },
+            { "qtyFill": 200, "multiplier": 2, "id": "input2" },
+            { "qtyFill": 200, "multiplier": 2, "id": "input3" }
+         ]
+         """.trimIndent()))
+      val result =  vyne.query("""
+            findAll {
+                InputModel[]
+              } as {
+                 id
+               }[]
+            """.trimIndent())
+
+      result.resultMap.values.first().should.be.equal(
+         listOf(
+            mapOf("id" to "input1"), mapOf("id" to "input2"), mapOf("id" to "input3")
+         )
+      )
+   }
+
+   @Test
+   fun `should project to anonymous type extending discovery type II`() {
+      val (vyne, stubService) = testVyne("""
+         type QtyFill inherits Decimal
+         type UnitMultiplier inherits Decimal
+         type FilledNotional inherits Decimal
+         type InputId inherits String
+
+         model InputModel {
+           multiplier: UnitMultiplier by default(2)
+           qtyFill: QtyFill
+           id: InputId
+         }
+
+         model OutputModel {
+            qtyHit : QtyFill?
+            unitMultiplier: UnitMultiplier?
+            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getInputData(): InputModel[]
+         }
+      """.trimIndent())
+
+      stubService.addResponse("getInputData", vyne.parseJsonModel("InputModel[]", """
+         [
+            { "qtyFill": 200, "multiplier": 1, "id": "input1" },
+            { "qtyFill": 200, "multiplier": 2, "id": "input2" },
+            { "qtyFill": 200, "multiplier": 3, "id": "input3" }
+         ]
+         """.trimIndent()))
+      val result =  vyne.query("""
+            findAll {
+                InputModel[]
+              } as {
+                 id
+                 multiplier: UnitMultiplier
+               }[]
+            """.trimIndent())
+
+      result.resultMap.values.first().should.be.equal(
+         listOf(
+            mapOf("id" to "input1", "multiplier" to BigDecimal("1")),
+            mapOf("id" to "input2", "multiplier" to BigDecimal("2")),
+            mapOf("id" to "input3", "multiplier" to BigDecimal("3"))
+         )
+      )
+   }
+
+   @Test
+   fun `should project to anonymous type extending discovery type III`() {
+      val (vyne, stubService) = testVyne("""
+         type QtyFill inherits Decimal
+         type UnitMultiplier inherits Decimal
+         type FilledNotional inherits Decimal
+         type InputId inherits String
+
+         model InputModel {
+           multiplier: UnitMultiplier by default(2)
+           qtyFill: QtyFill
+           id: InputId
+         }
+
+         model OutputModel {
+            qtyHit : QtyFill?
+            unitMultiplier: UnitMultiplier?
+            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getInputData(): InputModel[]
+         }
+      """.trimIndent())
+
+      stubService.addResponse("getInputData", vyne.parseJsonModel("InputModel[]", """
+         [
+            { "qtyFill": 200, "multiplier": 1, "id": "input1" },
+            { "qtyFill": 200, "multiplier": 2, "id": "input2" },
+            { "qtyFill": 200, "multiplier": 3, "id": "input3" }
+         ]
+         """.trimIndent()))
+      val result =  vyne.query("""
+            findAll {
+                InputModel[]
+              } as OutputModel {
+                 inputId: InputId
+               }[]
+            """.trimIndent())
+
+      result.resultMap.values.first().should.be.equal(
+         listOf(
+            mapOf("qtyHit" to BigDecimal("200"), "unitMultiplier" to BigDecimal("1"), "filledNotional" to BigDecimal("200"), "inputId" to "input1"),
+            mapOf("qtyHit" to BigDecimal("200"), "unitMultiplier" to BigDecimal("2"),  "filledNotional" to BigDecimal("400"), "inputId" to "input2"),
+            mapOf("qtyHit" to BigDecimal("200"), "unitMultiplier" to BigDecimal("3"),  "filledNotional" to BigDecimal("600"), "inputId" to "input3")
          )
       )
    }

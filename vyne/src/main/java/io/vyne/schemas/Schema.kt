@@ -25,6 +25,7 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
    private val cache: MutableMap<QualifiedName, Type> = mutableMapOf()
    private val defaultValueCache: MutableMap<QualifiedName, Map<AttributeName, TypedInstance>?> = mutableMapOf()
    private var shortNames: Map<String, Type> = emptyMap()
+   private val anonymousTypes: MutableMap<QualifiedName, Type> = mutableMapOf()
 
    init {
       log().info("DefaultTypeCache initialized")
@@ -96,11 +97,14 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
       return this.cache[name]
          ?: this.shortNames[name.fullyQualifiedName]
          ?: parameterisedType(name)
+         ?: fromDynamicTypes(name)
          ?: throw IllegalArgumentException("Type ${name.parameterizedName} was not found within this schema, and is not a valid short name")
 //      }
 
 //      return type(name.fullyQualifiedName)
    }
+
+   private fun fromDynamicTypes(name: QualifiedName): Type? = anonymousTypes[name]
 
    // TODO implement some caching
    private fun parameterisedType(name: QualifiedName): Type? {
@@ -122,6 +126,7 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
 
    override fun hasType(name: QualifiedName): Boolean {
       if (cache.containsKey(name)) return true
+      if (anonymousTypes.containsKey(name)) return true
       if (name.parameters.isNotEmpty()) {
          return hasType(name.fullyQualifiedName) // this is the base type
             && name.parameters.all { hasType(it) }
@@ -131,6 +136,14 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
 
    override fun defaultValues(name: QualifiedName): Map<AttributeName, TypedInstance>? {
       return defaultValueCache[name]
+   }
+
+   override fun registerAnonymousType(anonymousType: Type) {
+      this.anonymousTypes[anonymousType.qualifiedName] = anonymousType
+   }
+
+   override fun anonymousTypes(): Set<Type> {
+      return this.anonymousTypes.values.toSet()
    }
 
    override fun hasType(name: String): Boolean {

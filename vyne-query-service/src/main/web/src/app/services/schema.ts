@@ -114,7 +114,7 @@ export interface ParsedSource {
   isValid: boolean;
 }
 
-function buildArrayType(schema: TypeCollection, typeName: string): Type {
+function buildArrayType(schema: TypeCollection, typeName: string, anonymousTypes: Type[] = []): Type {
   if (schema.constructedArrayTypes === undefined) {
     schema.constructedArrayTypes = {};
   }
@@ -130,7 +130,7 @@ function buildArrayType(schema: TypeCollection, typeName: string): Type {
   const arrayType = schema.types.find(t => t.name.parameterizedName === 'lang.taxi.Array');
   const name = QualifiedName.from(arrayType.name.fullyQualifiedName);
   name.parameterizedName = typeName;
-  const paramType = findType(schema, innerType);
+  const paramType = findType(schema, innerType, anonymousTypes);
   name.parameters = [paramType.name];
   name.shortDisplayName = paramType.name.shortDisplayName + '[]';
   name.longDisplayName = paramType.name.longDisplayName + '[]';
@@ -147,17 +147,28 @@ function buildArrayType(schema: TypeCollection, typeName: string): Type {
   return result;
 }
 
-export function findType(schema: TypeCollection, typeName: string): Type {
+export function findType(schema: TypeCollection, typeName: string, anonymousTypes: Type[] = []): Type {
+  if (schema.anonymousTypes === undefined) {
+    schema.anonymousTypes = {};
+  }
   if (typeName === 'lang.taxi.Array') {
     console.warn('A search was performed for a raw array.  Favour parameterizedName over QualifiedName to avoid this');
   }
   // TODO : Actual support for generics
   if (typeName.startsWith('lang.taxi.Array<')) {
-    return buildArrayType(schema, typeName);
+    return buildArrayType(schema, typeName, anonymousTypes);
   }
-  const name = schema.types.find(t => t.name.parameterizedName === typeName);
+  let name = schema.types.find(t => t.name.parameterizedName === typeName);
   if (!name) {
-    throw new Error(`No type name ${typeName} was found`);
+    name = schema.anonymousTypes[typeName];
+    if (!name) {
+      name = anonymousTypes.find(anonymousType => anonymousType.name.fullyQualifiedName === typeName);
+      if (!name) {
+        throw new Error(`No type name ${typeName} was found`);
+      } else {
+        schema.anonymousTypes[typeName] = name;
+      }
+    }
   }
   return name;
 }
@@ -165,6 +176,7 @@ export function findType(schema: TypeCollection, typeName: string): Type {
 export interface TypeCollection {
   types: Array<Type>;
   constructedArrayTypes?: { [key: string]: Type };
+  anonymousTypes?: { [key: string]: Type };
 }
 
 export interface Schema extends TypeCollection {
