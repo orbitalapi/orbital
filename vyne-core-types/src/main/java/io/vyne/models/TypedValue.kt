@@ -173,6 +173,10 @@ data class TypedValue private constructor(override val type: Type, override val 
                                           override val source: DataSource) : TypedInstance {
    private val equality = Equality(this, TypedValue::type, TypedValue::value)
    private val hash : Int by lazy { equality.hash() }
+   override fun toString(): String {
+      return "TypedValue(type=${type.qualifiedName.longDisplayName}, value=$value)"
+   }
+
    companion object {
       private val conversionService by lazy {
          ConversionService.newDefaultConverter()

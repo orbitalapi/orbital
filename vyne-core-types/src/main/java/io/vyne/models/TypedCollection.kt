@@ -1,6 +1,5 @@
 package io.vyne.models
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.Equality
@@ -9,6 +8,9 @@ import lang.taxi.Equality
 data class TypedCollection(override val type: Type, override val value: List<TypedInstance>,
                            override val source: DataSource = MixedSources) : List<TypedInstance> by value, TypedInstance {
    private val equality = Equality(this, TypedCollection::type, TypedCollection::value)
+   override fun toString(): String {
+      return "TypedCollection(type=${type.qualifiedName.longDisplayName}, value=$value)"
+   }
    init {
       require(type.isCollection) {
          "Type ${type.name} was passed to TypedCollection, but it is not a collection type.  Call TypedCollection.arrayOf(...) instead"
