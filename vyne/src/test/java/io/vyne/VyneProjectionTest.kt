@@ -2,11 +2,7 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.Provided
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
@@ -138,8 +134,8 @@ service Broker1Service {
          } as Target[]""".trimIndent())
       result.isFullyResolved.should.be.`true`
       val results = result.resultMap[result.resultMap.keys.first()] as List<Map<String, Any>>
-      results.first().should.contain(Pair("field2" ,"This is Provided By External Service"))
-      results[1].should.contain(Pair("field2" ,"This is Provided By External Service"))
+      results.first().should.contain(Pair("field2", "This is Provided By External Service"))
+      results[1].should.contain(Pair("field2", "This is Provided By External Service"))
    }
 
    @Test
@@ -794,6 +790,7 @@ service Broker1Service {
       findOneByOrderIdInvocationCount.should.equal(0)
       getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
    }
+
    private fun generateBroker1Trades(orderId: String, index: Int, buf: StringBuilder, tradeId: Int? = null, price: String? = null): StringBuilder {
       val brokerTraderId = tradeId?.let { "trade_id_$it" } ?: "trade_id_$index"
       val brokerTradeNo = tradeId?.let { "trade_no_$it" } ?: "trade_no_$index"
@@ -896,7 +893,7 @@ service Broker1Service {
       })
 
       // act
-      val result =  vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
 
       // assert
       result.resultMap.get("lang.taxi.Array<ClientAndCountry>").should.be.equal(
@@ -976,7 +973,7 @@ service Broker1Service {
                "tradeId": "Trade_0"
             }]
          """.trimIndent()))
-      val result =  vyne.query("""findAll { Order[] } as Report[]""".trimIndent())
+      val result = vyne.query("""findAll { Order[] } as Report[]""".trimIndent())
       result.isFullyResolved.should.be.`true`
       result.resultMap.get("lang.taxi.Array<Report>").should.be.equal(
          listOf(
@@ -989,6 +986,7 @@ service Broker1Service {
          )
       )
    }
+
 
    @Test
    fun `can use calculated fields on output models`() {
@@ -1085,12 +1083,12 @@ service Broker1Service {
       })
 
       // act
-      val result =  vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
 
       // assert
       result.resultMap["lang.taxi.Array<ClientAndCountry>"].should.be.equal(
          listOf(
-            mapOf("personName" to "Jimmy" ,"countryName" to null),
+            mapOf("personName" to "Jimmy", "countryName" to null),
             mapOf("personName" to "Devrim", "countryName" to null) // See TypedObjectFactory.build() for discussion on returning nulls
          )
       )
