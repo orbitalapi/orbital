@@ -1,7 +1,13 @@
 package io.vyne.cask.ddl.views
 
 import io.vyne.utils.log
-import lang.taxi.types.*
+import lang.taxi.types.CalculatedFieldSetExpression
+import lang.taxi.types.ConditionalAccessor
+import lang.taxi.types.Field
+import lang.taxi.types.FieldReferenceSelector
+import lang.taxi.types.ObjectType
+import lang.taxi.types.QualifiedName
+import lang.taxi.types.Type
 
 /**
  * Handles resolution of duplicate fields present
@@ -64,8 +70,8 @@ class CaskViewFieldFilter(private val viewName: QualifiedName, private val types
             val expression = accessor.expression as CalculatedFieldSetExpression
             accessor.copy(expression =
             expression.copy(
-               operand1 = FieldReferenceSelector(renameField(owningType, expression.operand1.fieldName)),
-               operand2 = FieldReferenceSelector(renameField(owningType, expression.operand2.fieldName))
+               operand1 = FieldReferenceSelector(renameField(owningType, expression.operand1.fieldName), accessor.returnType),
+               operand2 = FieldReferenceSelector(renameField(owningType, expression.operand2.fieldName), accessor.returnType)
             )
             )
          }

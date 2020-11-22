@@ -6,7 +6,6 @@ import io.vyne.models.*
 import io.vyne.models.json.addJsonModel
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
-import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import org.junit.Test
@@ -407,8 +406,8 @@ model Order {}
 model Trade {}
 
 type extension CommonOrder {
-   identifierType: IdentifierClass with default 'ISIN'
-   direction: Direction with default Direction.SELL
+   identifierType: IdentifierClass by default('ISIN')
+   direction: Direction by default (Direction.SELL)
 }
 
 // Broker specific types
