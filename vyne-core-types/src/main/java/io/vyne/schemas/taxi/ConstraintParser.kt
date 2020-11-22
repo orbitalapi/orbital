@@ -1,6 +1,5 @@
 package io.vyne.schemas.taxi
 
-import io.vyne.models.TypedInstance
 import io.vyne.schemas.*
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.ReturnValueDerivedFromParameterConstraint

@@ -54,7 +54,6 @@
       <module>pipelines</module>
       <module>cask-api</module>
       <module>vyne-ql</module>
-      <module>vyne-taxi</module>
       <module>test-cli</module>
    </modules>
 
