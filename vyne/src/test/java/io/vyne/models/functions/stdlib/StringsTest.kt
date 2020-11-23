@@ -5,6 +5,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.testVyne
 import org.junit.Test
 
 class StringsTest {
@@ -143,4 +144,38 @@ class StringsTest {
       trade["ccy1"].value.should.equal("gbp")
    }
 
+   @Test
+   fun `length should return string length and subtract the return value`() {
+      val schema = TaxiSchema.from("""
+         model Trade {
+            symbol : String
+            direction : String by right(this.symbol, length(this.symbol) - 3)
+         }
+      """.trimIndent())
+      val json = """{
+         |"symbol" : "12345Buy"
+         |}
+      """.trimMargin()
+      val trade = TypedInstance.from(schema.type("Trade"), json, schema, source = Provided) as TypedObject
+      trade["direction"].value.should.equal("Buy")
+   }
+
+   @Test
+   fun `find is supported`() {
+      val (vyne, _) = testVyne("""
+         model FindModel {
+            symbol : String by column(1)
+            symbolPrefix: Int by find(column(1), "BOBUY")
+            identifierValue : String? by when (this.symbolPrefix) {
+               -1 -> column(1)
+               else -> right(column(1),length(this.symbol) - 5)
+            }
+         }""")
+      fun csv(symbol: String) = """$symbol"""
+      val fooWithSymbol = TypedInstance.from(vyne.type("FindModel"), csv("BOBUY12345"), vyne.schema, source = Provided) as TypedObject
+      fooWithSymbol["identifierValue"].value.should.equal("12345")
+
+      val fooWithIsin = TypedInstance.from(vyne.type("FindModel"), csv("1111111"), vyne.schema, source = Provided) as TypedObject
+      fooWithIsin["identifierValue"].value.should.equal("1111111")
+   }
 }
