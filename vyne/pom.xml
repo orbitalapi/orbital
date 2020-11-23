@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.11.3-SNAPSHOT</version>
+      <version>0.12.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -30,11 +30,6 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>cask-api</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne-taxi</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -73,7 +68,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
-         <version>0.11.3-SNAPSHOT</version>
+         <version>0.12.0-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>org.apache.commons</groupId>
