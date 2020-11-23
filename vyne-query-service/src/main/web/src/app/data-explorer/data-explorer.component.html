@@ -5,7 +5,9 @@
 </mat-toolbar>
 
 <mat-sidenav-container [hasBackdrop]="false">
-  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">
+  <mat-drawer #drawer  mode="over" position="end"
+              class="full-height-sidebar"
+              [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">
     <div class="drawer-content">
       <app-typed-instance-panel-container
         [instance]="selectedTypeInstance"

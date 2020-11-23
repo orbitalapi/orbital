@@ -99,11 +99,26 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    }
    @Test
    fun `can query with an abstract property type`() {
-      val response = service.submitVyneQlQuery("""findAll { Person[]( LoginTime > "2020-11-15T00:00:00Z", LoginTime <= "2020-11-15T23:59:59Z" ) }""").body
+      val response = service.submitVyneQlQuery("""findAll { Person[]( LoginTime > "2020-11-15T00:00:00", LoginTime <= "2020-11-15T23:59:59" ) }""").body
 
       response.should.have.size(1)
       response.map { it["firstName"]}.should.have.elements("Jack")
    }
 
+   @Test
+   fun `can query date without timezone information provided`() {
+      val response = service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00", LastLoggedIn <= "2020-11-15T23:59:59" ) }""").body
+
+      response.should.have.size(1)
+      response.map { it["firstName"]}.should.have.elements("Jack")
+   }
+
+   @Test
+   fun `can query date with zulu timezone information provided`() {
+      val response = service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body
+
+      response.should.have.size(1)
+      response.map { it["firstName"]}.should.have.elements("Jack")
+   }
 
 }

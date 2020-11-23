@@ -1,5 +1,13 @@
 import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
-import {findType, Schema, Type, InstanceLike, getTypeName, TypeNamedInstance} from '../services/schema';
+import {
+  findType,
+  Schema,
+  Type,
+  InstanceLike,
+  getTypeName,
+  TypeNamedInstance,
+  isUntypedInstance, asNearestTypedInstance
+} from '../services/schema';
 import {
   VyneHttpServiceError,
   ParsedTypeInstance,
@@ -252,11 +260,17 @@ export class DataExplorerComponent {
   }
 
   onInstanceClicked(event: InstanceSelectedEvent) {
-    this.shouldTypedInstancePanelBeVisible = true;
-    this.selectedTypeInstance = event;
-    const instanceTypeName = getTypeName(event);
-    this.selectedTypeInstanceType = findType(this.schema, instanceTypeName);
-    console.log('clicked: ' + JSON.stringify(event));
+    if (isUntypedInstance(event.selectedTypeInstance) && event.selectedTypeInstance.nearestType !== null) {
+      const typedInstance = asNearestTypedInstance(event.selectedTypeInstance);
+      this.shouldTypedInstancePanelBeVisible = true;
+      this.selectedTypeInstance = typedInstance;
+      this.selectedTypeInstanceType = typedInstance.type;
+    } else if (event.selectedTypeInstanceType !== null) {
+      this.shouldTypedInstancePanelBeVisible = true;
+      this.selectedTypeInstance = event.selectedTypeInstance as InstanceLike;
+      this.selectedTypeInstanceType = event.selectedTypeInstanceType;
+    }
+
   }
 
   onTypeNameChanged($event: string) {

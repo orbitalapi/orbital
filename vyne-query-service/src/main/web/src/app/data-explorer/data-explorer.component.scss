@@ -7,6 +7,10 @@
   height: 100%;
 }
 
+.full-height-sidebar {
+  // Make the rhs content sidebar full-height
+  height: 100% !important;
+}
 mat-sidenav-container {
   flex-grow: 1;
 }

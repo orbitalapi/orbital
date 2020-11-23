@@ -348,7 +348,7 @@ export class SchemaMember {
         ? Object.keys((member as Type).attributes)
         : [];
     } catch (error) {
-      debugger;
+      console.error(error);
     }
 
 
@@ -467,6 +467,17 @@ function collectionMemberTypeFromArray(name: QualifiedName, schema: Schema, defa
 export interface UntypedInstance {
   value: any;
   type: UnknownType;
+  nearestType: Type | null;
+}
+
+export function asNearestTypedInstance(untypedInstance: UntypedInstance): TypedInstance {
+  if (untypedInstance.nearestType === null) {
+    throw new Error('NearestType must be populated in order to cast to TypedInstance');
+  }
+  return {
+    value: untypedInstance.value,
+    type: untypedInstance.nearestType
+  } as TypedInstance;
 }
 
 export enum UnknownType {
