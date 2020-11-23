@@ -21,6 +21,7 @@ import {ExportFileService} from '../services/export.file.service';
 import {DownloadFileType} from '../query-panel/result-display/result-container.component';
 import {MatDialog} from '@angular/material/dialog';
 import {TestSpecFormComponent} from './test-spec-form.component';
+import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 
 @Component({
   selector: 'app-data-explorer',
@@ -250,7 +251,7 @@ export class DataExplorerComponent {
     this.parseCsvContentIfPossible();
   }
 
-  onInstanceClicked(event: InstanceLike) {
+  onInstanceClicked(event: InstanceSelectedEvent) {
     this.shouldTypedInstancePanelBeVisible = true;
     this.selectedTypeInstance = event;
     const instanceTypeName = getTypeName(event);

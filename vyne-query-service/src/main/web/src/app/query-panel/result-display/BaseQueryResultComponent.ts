@@ -48,6 +48,15 @@ export abstract class BaseQueryResultComponent {
 
   protected abstract updateDataSources();
 
+
+  get lastQueryResultAsSuccess(): QueryResult | null {
+    if (isQueryResult(this.result)) {
+      return this.result;
+    } else {
+      return null;
+    }
+  }
+
   get error(): string {
     const queryResult = <QueryResult>this.result;
     return queryResult.error ? queryResult.error : '';

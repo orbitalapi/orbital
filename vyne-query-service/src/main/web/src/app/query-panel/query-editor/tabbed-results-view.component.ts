@@ -7,6 +7,8 @@ import {DownloadClickedEvent} from '../../object-view/object-view-container.comp
 @Component({
   selector: 'app-tabbed-results-view',
   template: `
+    <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0" [queryResult]="lastQueryResultAsSuccess">
+    </app-error-panel>
     <mat-tab-group mat-align-tabs="start" style="height: 100%">
       <mat-tab label="Query results">
         <ng-template matTabContent>
