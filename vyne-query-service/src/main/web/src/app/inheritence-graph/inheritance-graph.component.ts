@@ -12,6 +12,7 @@ import {
 import {outerRectangle, innerRectangle} from '../type-viewer/type-link-graph/graph-utils';
 import * as shape from 'd3-shape';
 import {logger} from 'codelyzer/util/logger';
+import {Router} from '@angular/router';
 
 @Component({
   selector: 'app-inheritance-graph',
@@ -23,6 +24,9 @@ export class InheritanceGraphComponent {
   private _inheritable: Inheritable;
 
   schemaGraph: SchemaNodeSet = this.emptyGraph();
+
+  constructor(private router: Router) {
+  }
 
   curve = shape.curveBundle.beta(1);
   colors = {
@@ -153,9 +157,8 @@ export class InheritanceGraphComponent {
 
 
   select($event: any) {
-    console.log('Node selected');
-    const href = '/types/' +  $event.subHeader + '.' + $event.label;
-    window.location.href = href;
+    const typeName = $event.fullyQualifiedName;
+    this.router.navigate(['/types', typeName]);
   }
 }
 

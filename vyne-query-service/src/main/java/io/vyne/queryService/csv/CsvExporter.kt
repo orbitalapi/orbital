@@ -4,7 +4,7 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
-import lang.taxi.types.PrimitiveType
+import lang.taxi.types.ArrayType
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVPrinter
 import java.io.StringWriter
@@ -50,7 +50,7 @@ fun toCsv(results: Map<String, Any?>, schema: Schema): ByteArray {
 
 fun getRowType(key: String, schema: Schema): Type {
    val typeName = key.fqn()
-   val rowTypeName = if (typeName.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName) {
+   val rowTypeName = if (typeName.fullyQualifiedName == ArrayType.NAME) {
       if (typeName.parameters.size == 1) {
          typeName.parameters.first()
       } else {

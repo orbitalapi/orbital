@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.11.2</version>
+      <version>0.12.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -19,11 +19,6 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne-taxi</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>

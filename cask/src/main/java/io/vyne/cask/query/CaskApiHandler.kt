@@ -5,6 +5,7 @@ import io.vyne.cask.CaskService
 import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.OperationAnnotation
 import io.vyne.cask.services.CaskServiceSchemaGenerator
+import io.vyne.http.HttpHeaders
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import org.springframework.core.ParameterizedTypeReference
@@ -14,7 +15,9 @@ import org.springframework.web.reactive.function.BodyExtractors
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
-import org.springframework.web.reactive.function.server.ServerResponse.*
+import org.springframework.web.reactive.function.server.ServerResponse.badRequest
+import org.springframework.web.reactive.function.server.ServerResponse.notFound
+import org.springframework.web.reactive.function.server.ServerResponse.ok
 import org.springframework.web.util.UriComponents
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Mono
@@ -72,6 +75,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             val record = caskDAO.findAll(versionedType.b)
             return ok()
                .contentType(MediaType.APPLICATION_JSON)
+               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
                .body(BodyInserters.fromValue(record))
          }
       }
@@ -97,6 +101,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             is Either.Right -> {
                ok()
                   .contentType(MediaType.APPLICATION_JSON)
+                  .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
                   .body(BodyInserters.fromValue(caskDAO.findMultiple(versionedType.b, fieldName, inputArray)))
             }
          }
@@ -116,6 +121,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          is Either.Right -> {
             ok()
                .contentType(MediaType.APPLICATION_JSON)
+               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
                .body(BodyInserters.fromValue(caskDAO.findBy(versionedType.b, fieldName, findByValue)))
          }
       }
@@ -140,6 +146,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          is Either.Right -> {
             ok()
                .contentType(MediaType.APPLICATION_JSON)
+               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
                .body(BodyInserters.fromValue(caskDAO.findBefore(versionedType.b, fieldName, before)))
          }
       }
@@ -158,6 +165,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          is Either.Right -> {
             ok()
                .contentType(MediaType.APPLICATION_JSON)
+               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
                .body(BodyInserters.fromValue(caskDAO.findAfter(versionedType.b, fieldName, after)))
          }
       }
@@ -181,6 +189,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          is Either.Right -> {
             ok()
                .contentType(MediaType.APPLICATION_JSON)
+               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
                .body(BodyInserters.fromValue(daoFunction(versionedType.b, fieldName, start, end)))
          }
       }
@@ -211,6 +220,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             } else {
                return ok()
                   .contentType(MediaType.APPLICATION_JSON)
+                  .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
                   .body(BodyInserters.fromValue(record))
             }
          }

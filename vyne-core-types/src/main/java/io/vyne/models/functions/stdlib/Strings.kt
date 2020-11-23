@@ -18,7 +18,9 @@ object Strings {
       Concat,
       Uppercase,
       Lowercase,
-      Trim
+      Trim,
+      Length,
+      Find
 //      Coalesce
    )
 }
@@ -94,6 +96,27 @@ object Lowercase : FunctionInvoker {
       val input: String = inputValues[0].valueAs<String>()
       val result =  input.toLowerCase()
       return TypedInstance.from(schema.type("String"), result, schema, source = Calculated)
+   }
+}
+
+object Length: FunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Length.name
+
+   override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
+      val input = inputValues[0].valueAs<String>()
+      return TypedInstance.from(schema.type("Int"), input.length, schema, source = Calculated)
+   }
+
+}
+
+object Find: FunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Find.name
+
+   override fun invoke(inputValues: List<TypedInstance>, schema: Schema): TypedInstance {
+      val input = inputValues[0].valueAs<String?>()
+      val searchString = inputValues[1].valueAs<String>()
+      val intVal =  input?.indexOf(searchString) ?: -1
+      return TypedInstance.from(schema.type("Int"), intVal, schema, source = Calculated)
    }
 }
 

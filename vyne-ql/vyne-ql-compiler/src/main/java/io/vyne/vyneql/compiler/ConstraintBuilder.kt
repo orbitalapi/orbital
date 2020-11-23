@@ -2,14 +2,16 @@ package io.vyne.vyneql.compiler
 
 import arrow.core.Either
 import io.vyne.VyneQLParser
-import lang.taxi.*
+import lang.taxi.CompilationError
+import lang.taxi.NamespaceQualifiedTypeResolver
+import lang.taxi.TaxiDocument
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraintAst
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraintProvider
 import lang.taxi.types.AttributePath
 import lang.taxi.types.Type
+import lang.taxi.utils.flattenErrors
 import lang.taxi.utils.invertEitherList
-import org.antlr.v4.runtime.ParserRuleContext
 
 class ConstraintBuilder(schema:TaxiDocument, private val typeResolver: NamespaceQualifiedTypeResolver) {
    private val propertyToParameterConstraintProvider = PropertyToParameterConstraintProvider()
@@ -20,7 +22,7 @@ class ConstraintBuilder(schema:TaxiDocument, private val typeResolver: Namespace
       val constraints: Either<List<CompilationError>, List<Constraint>> = parameterConstraintExpressionList.parameterConstraintExpression().map { constraintExpression ->
          val ast = parseToAst(constraintExpression.propertyToParameterConstraintExpression())
          propertyToParameterConstraintProvider.build(ast, type, typeResolver, constraintExpression)
-      }.invertEitherList()
+      }.invertEitherList().flattenErrors()
       return constraints
    }
 

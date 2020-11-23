@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.11.2</version>
+      <version>0.12.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -30,11 +30,6 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>cask-api</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne-taxi</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -69,6 +64,11 @@
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>utils</artifactId>
+         <version>0.12.0</version>
       </dependency>
       <dependency>
          <groupId>org.apache.commons</groupId>

@@ -27,8 +27,8 @@ FROM postgres:12.3
 RUN echo "deb http://deb.debian.org/debian/ sid main" >> /etc/apt/sources.list
 RUN set -eux; \
    apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update; \
-    apt-get install -y openjdk-8-jre-headless; \
-    apt-get install -y --no-install-recommends locales; rm -rf /var/lib/apt/lists/*; \
+    apt-get install -y openjdk-8-jre-headless -o APT::Immediate-Configure=0; \
+    apt-get install -y --no-install-recommends locales -o APT::Immediate-Configure=0; rm -rf /var/lib/apt/lists/*; \
     localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8; \
     apt-get clean
 

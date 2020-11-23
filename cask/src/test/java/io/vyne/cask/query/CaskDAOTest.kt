@@ -1,9 +1,12 @@
 package io.vyne.cask.query
 
-import com.nhaarman.mockitokotlin2.*
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules
+import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
-import com.zaxxer.hikari.HikariDataSource
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskStatus
@@ -11,12 +14,11 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
 import org.springframework.jdbc.core.JdbcTemplate
 import java.math.BigDecimal
 import java.time.Instant
+import java.time.ZonedDateTime
 
 class CaskDAOTest {
    private val mockJdbcTemplate = mock<JdbcTemplate>()
@@ -112,7 +114,7 @@ class CaskDAOTest {
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_de3f20 WHERE "close" = ?""")
-      argsCaptor.firstValue.should.equal(BigDecimal("1"))
+      argsCaptor.firstValue.should.equal(1)
    }
 
    @Test
@@ -197,5 +199,24 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(2)).queryForList(statementCaptor.capture(), argCaptor.capture())
+   }
+
+   @Test
+   fun `can parse date time strings to correct local date time`() {
+      "2020-11-15T00:00:00".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+      "2020-11-15T00:00:00Z".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+
+      "2020-11-15T00:00:00.000".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+      "2020-11-15T00:00:00.000Z".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+
+      "2020-11-15T00:00:00+02:00".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-14T22:00:00Z").toLocalDateTime())
+      "2020-11-15T00:00:00.000+02:00".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-14T22:00:00Z").toLocalDateTime())
+
    }
 }

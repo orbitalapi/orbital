@@ -32,6 +32,7 @@ import {CounterTimerComponent} from './query-editor/counter-timer.component';
 import {TabbedResultsViewComponent} from './query-editor/tabbed-results-view.component';
 import {CallExplorerModule} from './taxi-viewer/call-explorer/call-explorer.module';
 import {AngularSplitModule} from 'angular-split';
+import {ErrorPanelComponent} from './error-panel/error-panel.component';
 
 @NgModule({
   imports: [
@@ -65,7 +66,8 @@ import {AngularSplitModule} from 'angular-split';
   exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent],
   declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent,
     VyneQueryViewerComponent, QueryEditorComponent, BottomBarComponent, CounterTimerComponent,
-    TabbedResultsViewComponent],
+    TabbedResultsViewComponent,
+    ErrorPanelComponent],
   providers: [],
 })
 export class QueryPanelModule {

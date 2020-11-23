@@ -48,6 +48,15 @@ export abstract class BaseQueryResultComponent {
 
   protected abstract updateDataSources();
 
+
+  get lastQueryResultAsSuccess(): QueryResult | null {
+    if (isQueryResult(this.result)) {
+      return this.result;
+    } else {
+      return null;
+    }
+  }
+
   get error(): string {
     const queryResult = <QueryResult>this.result;
     return queryResult.error ? queryResult.error : '';
@@ -76,7 +85,7 @@ export abstract class BaseQueryResultComponent {
     if (queryResult.resultMode === ResultMode.VERBOSE) {
       return null;
     } else {
-      return findType(this.schema, queryTypeName.parameterizedName);
+      return findType(this.schema, queryTypeName.parameterizedName, queryResult.anonymousTypes);
     }
   }
 
@@ -105,7 +114,7 @@ export abstract class BaseQueryResultComponent {
       return [];
     }
     return Object.keys((<QueryResult>this.result).results)
-      .map(elementTypeName => findType(this.schema, elementTypeName).name);
+      .map(elementTypeName => findType(this.schema, elementTypeName, (<QueryResult>this.result).anonymousTypes).name);
   }
 
   instanceClicked(event: InstanceSelectedEvent, queryRequestedTypeName: QualifiedName) {

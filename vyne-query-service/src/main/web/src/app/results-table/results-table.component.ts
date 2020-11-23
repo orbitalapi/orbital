@@ -107,6 +107,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
         const lastColumn = index === attributeNames.length - 1;
 
         return {
+          resizable: true,
           headerName: fieldName,
           field: fieldName,
           flex: (lastColumn) ? 1 : null,
@@ -154,7 +155,8 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     const cellInstance = this.unwrap(rowInstance, $event.colDef.field);
     const untypedCellInstance: UntypedInstance = {
       value: cellInstance,
-      type: UnknownType.UnknownType
+      type: UnknownType.UnknownType,
+      nearestType: this.getTypeForAttribute($event.colDef.field)
     };
     this.instanceClicked.emit(new InstanceSelectedEvent(untypedCellInstance, null, nodeId));
   }

@@ -1,10 +1,10 @@
 <div #chartOuterContianer class="chart-outer-container">
   <ngx-graph class="chart-container" [links]="schemaGraph.links"
              [nodes]="schemaGraph.nodes"
-             [enableZoom]="false"
-             [panningEnabled]="false"
+             [enableZoom]="true"
+             [panningEnabled]="true"
              [autoCenter]="false"
-             [draggingEnabled]="false"
+             [draggingEnabled]="true"
              [scheme]="colorScheme" [orientation]="orientation"
              [curve]="curve" (select)="select($event)">
     <ng-template #defsTemplate>

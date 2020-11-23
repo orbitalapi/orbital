@@ -8,6 +8,7 @@ import io.vyne.models.csv.CsvImporterUtil
 import io.vyne.models.json.addJsonModel
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.Benchmark
 import org.junit.Ignore
@@ -1860,7 +1861,7 @@ OPTL
       val (vyne, stubService) = testVyne(schemaStr)
       //findAll
       stubService.addResponse("findAll", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             return vyne.addJsonModel("broker.orders.Order[]", returnJson)
          }
       })
@@ -1877,7 +1878,7 @@ OPTL
       val (vyne, stubService) = testVyne(schema)
       //findAll
       stubService.addResponse("findAll", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             return vyne.addJsonModel("icap.orders.Order[]", returnJson)
          }
       })
@@ -1894,7 +1895,7 @@ OPTL
       val (vyne, stubService) = testVyne(schema)
       //findAll
       stubService.addResponse("findAll", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             return vyne.addJsonModel("icap.orders.Order[]", twoItems)
          }
       })
@@ -1911,7 +1912,7 @@ OPTL
       val (vyne, stubService) = testVyne(schemaStr)
       //findAll
       stubService.addResponse("findAll", object : StubResponseHandler {
-         override fun invoke(operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {
             return vyne.addJsonModel("broker.orders.Order[]", twoItems)
          }
       })

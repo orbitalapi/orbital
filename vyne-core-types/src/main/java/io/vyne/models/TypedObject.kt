@@ -1,6 +1,5 @@
 package io.vyne.models
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
@@ -44,11 +43,14 @@ data class TypedObject(
          return TypedObject(type, typedAttributes, source)
       }
 
-      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource): TypedInstance {
-         return TypedObjectFactory(type, value, schema, nullValues, source).build()
+      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource, evaluateAccessors:Boolean = true): TypedInstance {
+         return TypedObjectFactory(type, value, schema, nullValues, source, evaluateAccessors = evaluateAccessors).build()
       }
    }
 
+   override fun toString(): String {
+      return "TypedObject(type=${type.qualifiedName.longDisplayName}, value=$suppliedValue)"
+   }
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = hash
 

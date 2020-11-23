@@ -4,7 +4,11 @@ import com.vladmihalcea.hibernate.type.array.ListArrayType
 import io.vyne.schemas.VersionedType
 import org.hibernate.annotations.TypeDef
 import java.time.Instant
-import javax.persistence.*
+import javax.persistence.Column
+import javax.persistence.Entity
+import javax.persistence.EnumType
+import javax.persistence.Enumerated
+import javax.persistence.Id
 
 @Entity(name = "cask_config")
 @TypeDef(name = "list-array", typeClass = ListArrayType::class)

@@ -45,7 +45,7 @@ type UpsertTestMultiPk {
       model ModelWithDefaults {
          field1: String by column("FIRST_COLUMN")
          defaultString: String by default("Default String")
-         defaultDecimal: Decimal by default("1000000.0")
+         defaultDecimal: Decimal by default(1000000.0)
       }
 
    """.trimIndent()
@@ -68,7 +68,7 @@ type UpsertTestMultiPk {
       model ModelWithDefaultsConcat {
          field1: String by column("FIRST_COLUMN")
          defaultString: String by default("Default String")
-         defaultDecimal: Decimal by default("1000000.0")
+         defaultDecimal: Decimal by default(1000000.0)
          concatField: String by concat(column("FIRST_COLUMN"), "-", column("SECOND_COLUMN"), "-", column("THIRD_COLUMN"))
       }
    """.trimIndent()

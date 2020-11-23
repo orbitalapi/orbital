@@ -5,7 +5,7 @@
    <parent>
       <artifactId>vyne-ql</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.11.2</version>
+      <version>0.12.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -29,11 +29,6 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-core-types</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne-taxi</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -93,6 +88,15 @@
                   </goals>
                </execution>
             </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+               <includes>
+                  <include>**/*Spek.*</include>
+               </includes>
+            </configuration>
          </plugin>
       </plugins>
    </build>

@@ -15,6 +15,7 @@ import org.hamcrest.BaseMatcher
 import org.hamcrest.Description
 import org.hamcrest.Matcher
 import org.junit.Test
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.ExpectedCount
@@ -24,7 +25,6 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers.method
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators
 import org.springframework.web.client.RestTemplate
-import kotlin.math.exp
 
 class RestTemplateInvokerTest {
    val taxiDef = """
@@ -221,5 +221,92 @@ namespace vyne {
          paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
       ), QueryProfiler()) as TypedObject
 
+   }
+
+   @Test
+   fun `when invoking a service with preparsed content then accessors are not evaluated`() {
+      val restTemplate = RestTemplate()
+      val server = MockRestServiceServer.bindTo(restTemplate).build()
+      val responseJson = """{
+         |"id" : 100,
+         |"name" : "Fluffy"
+         |}
+      """.trimMargin()
+      val headers = HttpHeaders()
+      headers.set(io.vyne.http.HttpHeaders.CONTENT_PREPARSED, true.toString())
+      server.expect(ExpectedCount.once(), requestTo("http://pets.com/pets"))
+         .andExpect(method(HttpMethod.GET))
+         .andRespond(MockRestResponseCreators
+            .withSuccess(responseJson, MediaType.APPLICATION_JSON)
+            .headers(headers)
+         )
+
+      // Note: The jsonPaths are supposed to ignored, because the content is preparsed
+      val schema = TaxiSchema.from("""
+         service PetService {
+            @HttpOperation(method = "GET",url = "http://pets.com/pets")
+            operation getBestPet():Animal
+         }
+         model Animal {
+            id : String by jsonPath("$.animalsId")
+            name : String by jsonPath("$.animalName")
+         }
+      """)
+
+      val schemaProvider = SchemaProvider.from(schema)
+      val service = schema.service("PetService")
+      val operation = service.operation("getBestPet")
+
+      val response = RestTemplateInvoker(
+         restTemplate = restTemplate,
+         serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
+         enableDataLineageForRemoteCalls = true,
+         schemaProvider = schemaProvider)
+         .invoke(service, operation, emptyList(), QueryProfiler()) as TypedObject
+
+      response["id"].value.should.equal("100")
+      response["name"].value.should.equal("Fluffy")
+   }
+
+   @Test
+   fun `when invoking a service without preparsed content then accessors are not evaluated`() {
+      val restTemplate = RestTemplate()
+      val server = MockRestServiceServer.bindTo(restTemplate).build()
+      val responseJson = """{
+         |"animalsId" : 100,
+         |"animalName" : "Fluffy"
+         |}
+      """.trimMargin()
+      server.expect(ExpectedCount.once(), requestTo("http://pets.com/pets"))
+         .andExpect(method(HttpMethod.GET))
+         .andRespond(MockRestResponseCreators
+            .withSuccess(responseJson, MediaType.APPLICATION_JSON)
+         )
+
+      // Note: The jsonPaths are supposed to ignored, because the content is preparsed
+      val schema = TaxiSchema.from("""
+         service PetService {
+            @HttpOperation(method = "GET",url = "http://pets.com/pets")
+            operation getBestPet():Animal
+         }
+         model Animal {
+            id : String by jsonPath("$.animalsId")
+            name : String by jsonPath("$.animalName")
+         }
+      """)
+
+      val schemaProvider = SchemaProvider.from(schema)
+      val service = schema.service("PetService")
+      val operation = service.operation("getBestPet")
+
+      val response = RestTemplateInvoker(
+         restTemplate = restTemplate,
+         serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
+         enableDataLineageForRemoteCalls = true,
+         schemaProvider = schemaProvider)
+         .invoke(service, operation, emptyList(), QueryProfiler()) as TypedObject
+
+      response["id"].value.should.equal("100")
+      response["name"].value.should.equal("Fluffy")
    }
 }

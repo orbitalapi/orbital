@@ -5,13 +5,37 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-
-  .content {
-    flex-grow: 1;
-    margin: 2rem;
-  }
 }
 
+.full-height-sidebar {
+  // Make the rhs content sidebar full-height
+  height: 100% !important;
+}
+mat-sidenav-container {
+  flex-grow: 1;
+}
+
+.content {
+  // This has been a real pain.
+  // Sizing this to 100% causes vertical scrollbars to appear,
+  // and seems to size without considering the toolbar (ie., it
+  // appears we get a height that is toolbarHeight too high.
+  //Usng this approach seems to work.
+  height: calc(100% - #{$toolbar-height});
+  display: flex;
+  flex-direction: column;
+  margin: 2rem;
+}
+
+.mat-tab-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+app-object-view-container {
+  flex-grow: 1;
+  margin: 1rem 0;
+}
 app-data-source-toolbar {
   display: block;
   margin-bottom: 2rem;
@@ -20,10 +44,6 @@ app-data-source-toolbar {
 .drawer-content {
   margin: 2rem 3rem;
   width: min-content;
-}
-
-.object-view-wrapper {
-  margin: 1rem 0;
 }
 
 mat-tab-group {

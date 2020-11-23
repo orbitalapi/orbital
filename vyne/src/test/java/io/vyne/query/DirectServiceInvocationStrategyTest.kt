@@ -5,6 +5,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.Operation
 import io.vyne.schemas.PropertyToParameterConstraint
+import io.vyne.schemas.RemoteOperation
 import io.vyne.testVyne
 import lang.taxi.Operator
 import lang.taxi.services.operations.constraints.ConstantValueExpression
@@ -124,11 +125,11 @@ class DirectServiceInvocationStrategyTest {
       candidates.should.be.empty
    }
 
-   private fun getCandidatesFor(typeName: String): List<Operation> {
+   private fun getCandidatesFor(typeName: String): List<RemoteOperation> {
       return getCandidatesFor(TypeNameQueryExpression(typeName))
    }
 
-   private fun getCandidatesFor(expression: QueryExpression): List<Operation> {
+   private fun getCandidatesFor(expression: QueryExpression): List<RemoteOperation> {
       val (vyne, stub) = testVyne(schema)
       val strategy = DirectServiceInvocationStrategy(stub.toOperationInvocationService())
       val queryContext = vyne.query()

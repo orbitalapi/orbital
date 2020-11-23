@@ -1,20 +1,21 @@
 package io.vyne.spring.invokers
 
 import io.vyne.schemas.Operation
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.spring.*
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.web.util.UriComponentsBuilder
 
 interface ServiceUrlResolver {
-   fun canResolve(service: Service, operation: Operation): Boolean
-   fun makeAbsolute(url: String, service: Service, operation: Operation): String
+   fun canResolve(service: Service, operation: RemoteOperation): Boolean
+   fun makeAbsolute(url: String, service: Service, operation: RemoteOperation): String
 }
 
 class ServiceDiscoveryClientUrlResolver(val discoveryClient: ServiceDiscoveryClient = NoOpServiceDiscoveryClient()) : ServiceUrlResolver {
-   override fun canResolve(service: Service, operation: Operation): Boolean = service.isServiceDiscoveryClient()
+   override fun canResolve(service: Service, operation: RemoteOperation): Boolean = service.isServiceDiscoveryClient()
 
-   override fun makeAbsolute(url: String, service: Service, operation: Operation): String {
+   override fun makeAbsolute(url: String, service: Service, operation: RemoteOperation): String {
       val serviceName = service.serviceDiscoveryClientName()
       return UriComponentsBuilder
          .fromUriString(discoveryClient.resolve(serviceName))
@@ -25,11 +26,11 @@ class ServiceDiscoveryClientUrlResolver(val discoveryClient: ServiceDiscoveryCli
 }
 
 class AbsoluteUrlResolver() : ServiceUrlResolver {
-   override fun canResolve(service: Service, operation: Operation): Boolean {
+   override fun canResolve(service: Service, operation: RemoteOperation): Boolean {
       return operation.hasHttpMetadata() && operation.isHttpOperation()
    }
 
-   override fun makeAbsolute(url: String, service: Service, operation: Operation): String {
+   override fun makeAbsolute(url: String, service: Service, operation: RemoteOperation): String {
       return url;
    }
 }

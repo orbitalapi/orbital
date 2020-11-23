@@ -1,4 +1,5 @@
 server:
+   error.include-message: always
    port: 8800
 
 spring.datasource:

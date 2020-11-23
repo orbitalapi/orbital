@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.11.2</version>
+      <version>0.12.0</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -73,12 +73,6 @@
          <groupId>com.fasterxml.jackson.module</groupId>
          <artifactId>jackson-module-kotlin</artifactId>
       </dependency>
-      <dependency>
-         <groupId>lang.taxi</groupId>
-         <artifactId>package-repository-api</artifactId>
-         <version>${taxi.version}</version>
-      </dependency>
-
       <dependency>
          <groupId>com.nhaarman.mockitokotlin2</groupId>
          <artifactId>mockito-kotlin</artifactId>

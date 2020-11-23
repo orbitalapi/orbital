@@ -2,6 +2,8 @@ package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
+import lang.taxi.services.FilterCapability
+import lang.taxi.services.QueryOperationCapability
 
 
 typealias OperationName = String
@@ -73,30 +75,71 @@ data class Parameter(val type: Type,
    }
 }
 
-data class Operation(val qualifiedName: QualifiedName, val parameters: List<Parameter>,
-                     val returnType: Type,
+data class Operation(override val qualifiedName: QualifiedName,
+                     override val parameters: List<Parameter>,
+                     override val returnType: Type,
    // similar to scope in taxi - ie., read / write
-                     val operationType:String? = null,
+                     override val operationType: String? = null,
                      override val metadata: List<Metadata> = emptyList(),
-                     val contract: OperationContract = OperationContract(returnType),
+                     override val contract: OperationContract = OperationContract(returnType),
                      @get:JsonIgnore
                      val sources: List<VersionedSource>,
-                     val typeDoc: String? = null) : MetadataTarget, SchemaMember {
-   val name: String = OperationNames.operationName(qualifiedName)
+                     val typeDoc: String? = null) : MetadataTarget, SchemaMember, RemoteOperation {
 
-   fun parameter(name:String):Parameter? {
+   fun parameter(name: String): Parameter? {
       return this.parameters.firstOrNull { it.name == name }
    }
 }
 
+interface RemoteOperation : MetadataTarget {
+   val qualifiedName: QualifiedName
+   val parameters: List<Parameter>
+   val returnType: Type
+   val contract: OperationContract
+
+   val operationType: String?
+
+   val name: String
+      get() = OperationNames.operationName(qualifiedName)
+}
+
+data class QueryOperation(override val qualifiedName: QualifiedName,
+                          override val parameters: List<Parameter>,
+                          override val returnType: Type,
+                          override val metadata: List<Metadata> = emptyList(),
+                          val grammar: String,
+                          val capabilities: List<QueryOperationCapability>,
+                          val typeDoc: String? = null
+) : MetadataTarget, SchemaMember, RemoteOperation {
+   override val contract = OperationContract(returnType)
+   override val operationType: String? = null
+   private val filterCapability: FilterCapability? = capabilities
+      .filterIsInstance<FilterCapability>()
+      .firstOrNull()
+
+   val hasFilterCapability = this.filterCapability != null
+   val supportedFilterOperations = filterCapability?.supportedOperations ?: emptyList()
+
+
+}
+
 data class Service(val name: QualifiedName,
                    val operations: List<Operation>,
+                   val queryOperations: List<QueryOperation>,
                    override val metadata: List<Metadata> = emptyList(),
                    @get:JsonIgnore
                    val sourceCode: List<VersionedSource>,
                    val typeDoc: String? = null) : MetadataTarget, SchemaMember {
+   fun queryOperation(name: String): QueryOperation {
+      return this.queryOperations.first { it.name == name }
+   }
+
    fun operation(name: String): Operation {
       return this.operations.first { it.name == name }
+   }
+   fun remoteOperation(name:String):RemoteOperation {
+      return this.queryOperations.firstOrNull { it.name == name }
+         ?: this.operations.first { it.name == name }
    }
 
    fun hasOperation(name: String): Boolean {

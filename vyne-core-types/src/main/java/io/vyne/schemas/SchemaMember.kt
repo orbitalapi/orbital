@@ -10,6 +10,7 @@ interface SchemaMember {
             is Type -> this.name
             is Service -> this.name
             is Operation -> this.qualifiedName
+            is QueryOperation -> this.qualifiedName
             else -> error("Unhandled SchemaMember type : ${this.javaClass.name}")
          }
       }

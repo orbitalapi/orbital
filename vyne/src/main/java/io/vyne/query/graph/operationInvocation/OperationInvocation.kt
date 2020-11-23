@@ -2,9 +2,26 @@ package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
-import io.vyne.query.*
-import io.vyne.query.graph.*
-import io.vyne.schemas.*
+import io.vyne.query.ProfilerOperation
+import io.vyne.query.QueryContext
+import io.vyne.query.QueryResult
+import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.SearchFailedException
+import io.vyne.query.graph.EdgeEvaluator
+import io.vyne.query.graph.EvaluatableEdge
+import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.EvaluatedLink
+import io.vyne.query.graph.LinkEvaluator
+import io.vyne.query.graph.ParameterFactory
+import io.vyne.schemas.ConstraintEvaluations
+import io.vyne.schemas.Link
+import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Service
+import io.vyne.schemas.fqn
 import io.vyne.utils.log
 import org.springframework.stereotype.Component
 
@@ -12,18 +29,18 @@ import org.springframework.stereotype.Component
  * The parent to OperationInvokers
  */
 interface OperationInvocationService {
-   fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): TypedInstance
+   fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): TypedInstance
 }
 
 interface OperationInvoker {
-   fun canSupport(service: Service, operation: Operation): Boolean
+   fun canSupport(service: Service, operation: RemoteOperation): Boolean
 
    // TODO : This should return some form of reactive type.
-   fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance
+   fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance
 }
 
 class DefaultOperationInvocationService(private val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
-   override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+   override fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): TypedInstance {
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
@@ -110,7 +127,7 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       if (context.hasOperationResult(edge)) {
          val cachedResult = context.getOperationResult(edge)
-         cachedResult?.let { context.addFact(it)  }
+         cachedResult?.let { context.addFact(it) }
          return edge.success(cachedResult)
       }
 

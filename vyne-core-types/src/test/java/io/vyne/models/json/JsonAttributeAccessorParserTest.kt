@@ -1,24 +1,18 @@
 package io.vyne.models.json
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
 import io.vyne.models.PrimitiveParser
 import io.vyne.models.Provided
-import io.vyne.schemas.Type
-import lang.taxi.types.JsonPathAccessor
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedObject
+import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
+import java.time.LocalDate
 
 /**
  * Parses a single attribute at defined xpath accessor
@@ -38,139 +32,149 @@ class JsonAttributeAccessorParserTest() {
 
    @Test
    fun parseInteger() {
-      val accessor = JsonPathAccessor("/age")
+      val schema = TaxiSchema.from("""
+         model Foo {
+            age : Int by jsonPath("/age")
+         }
+      """.trimIndent()
 
-      val node = objectMapper.readTree(""" {  "age": 1 } """) as ObjectNode
-
-
-      parser.parseToType(mock(), accessor, node, mock(), Provided)
-
-      verify(primitiveParser).parse(eq(1), any(), eq(Provided))
+      )
+      val instance = TypedInstance.from(schema.type("Foo"), """{ "age": 1 } """, schema, source = Provided) as TypedObject
+      instance["age"].value.should.equal(1)
    }
 
    @Test
    fun parseDouble() {
-      val accessor = JsonPathAccessor("/age")
+      val schema = TaxiSchema.from("""
+         model Foo {
+            age : Decimal by jsonPath("/age")
+         }
+      """.trimIndent()
 
-      val node = objectMapper.readTree(""" {  "age": 1.609 } """) as ObjectNode
-
-
-      parser.parseToType(mock(), accessor, node, mock(), Provided)
-
-      verify(primitiveParser).parse(eq(1.609), any(), eq(Provided))
+      )
+      val instance = TypedInstance.from(schema.type("Foo"), """{ "age": 1.609 } """, schema, source = Provided) as TypedObject
+      instance["age"].value.should.equal(1.609.toBigDecimal())
    }
 
    @Test
    fun parseIntegerAsString() {
-      val accessor = JsonPathAccessor("/age")
+      val schema = TaxiSchema.from("""
+         model Foo {
+            age : Int by jsonPath("/age")
+         }
+      """.trimIndent()
 
-      val node = objectMapper.readTree(""" {  "age": "1" } """) as ObjectNode
-
-      parser.parseToType(mock(), accessor, node, mock(), Provided)
-
-      verify(primitiveParser).parse(eq("1"), any(), eq(Provided))
+      )
+      val instance = TypedInstance.from(schema.type("Foo"), """{ "age": "1" } """, schema, source = Provided) as TypedObject
+      instance["age"].value.should.equal(1)
 
    }
 
    @Test
    fun parseFieldDoesntExist() {
-      val accessor = JsonPathAccessor("/year")
+      val schema = TaxiSchema.from("""
+         model Foo {
+            age : Int by jsonPath("/year")
+         }
+      """.trimIndent()
 
-      val node = objectMapper.readTree(""" {  "age": "1" } """) as ObjectNode
-
-      val value = parser.parseToType(mock(), accessor, node, mock(), Provided)
-      value.value.should.be.`null`
-
+      )
+      val instance = TypedInstance.from(schema.type("Foo"), """{ "age": 1 } """, schema, source = Provided) as TypedObject
+      instance["age"].value.should.be.`null`
    }
 
    @Test
    fun parseEnum() {
-      val accessor = JsonPathAccessor("/country")
+      val schema = TaxiSchema.from("""
+         enum Country { France }
+         model Foo {
+            country : Country by jsonPath("/country")
+         }
+      """.trimIndent()
 
-      val node = objectMapper.readTree(""" {  "country": "France" } """) as ObjectNode
-
-      val enumMock = mock<Type>()
-      doReturn(true).whenever(enumMock).isEnum
-      parser.parseToType(enumMock, accessor, node, mock(), Provided)
-
-      verify(primitiveParser).parse(eq("France"), any(), eq(Provided))
-
+      )
+      val instance = TypedInstance.from(schema.type("Foo"), """{  "country": "France" }""", schema, source = Provided) as TypedObject
+      instance["country"].value.should.equal("France")
    }
 
    @Test
+   @Ignore("Parsing empty string to enums isn't supported")
    fun parseEmptyEnum() {
-      val accessor = JsonPathAccessor("/country")
+      val schema = TaxiSchema.from("""
+         enum Country { France }
+         model Foo {
+            country : Country by jsonPath("/country")
+         }
+      """.trimIndent()
 
-      val node = objectMapper.readTree(""" {  "country": "" } """) as ObjectNode
-
-      val enumMock = mock<Type>()
-      doReturn(true).whenever(enumMock).isEnum
-
-      val instance = parser.parseToType(enumMock, accessor, node, mock(), Provided)
-      instance.value.should.be.`null`
-
-      verify(primitiveParser, never()).parse(any(), any(), eq(Provided))
-
+      )
+      val instance = TypedInstance.from(schema.type("Foo"), """{  "country": "" }""", schema, source = Provided) as TypedObject
    }
 
    @Test
    fun jsonPathParseInteger() {
-      val accessor = JsonPathAccessor("$.age")
+      val schema = TaxiSchema.from("""
+         model Foo {
+            age : Int by jsonPath("$.age")
+         }
+      """.trimIndent()
 
-      val node = objectMapper.readTree(""" {  "age": 1 } """) as ObjectNode
-
-      parser.parseToType(mock(), accessor, node, mock(), Provided)
-
-      verify(primitiveParser).parse(eq(1), any(), eq(Provided))
+      )
+      val instance = TypedInstance.from(schema.type("Foo"), """{ "age": 1 } """, schema, source = Provided) as TypedObject
+      instance["age"].value.should.equal(1)
    }
 
    @Test
    fun jsonPathParseDouble() {
-      val accessor = JsonPathAccessor("$.age")
+      val schema = TaxiSchema.from("""
+         model Foo {
+            age : Decimal by jsonPath("$.age")
+         }
+      """.trimIndent()
 
-      val node = objectMapper.readTree(""" {  "age": 1.609 } """) as ObjectNode
-
-
-      parser.parseToType(mock(), accessor, node, mock(), Provided)
-
-      verify(primitiveParser).parse(eq(1.609), any(), eq(Provided))
+      )
+      val instance = TypedInstance.from(schema.type("Foo"), """{ "age": 1.609 } """, schema, source = Provided) as TypedObject
+      instance["age"].value.should.equal(1.609.toBigDecimal())
    }
 
    @Test
    fun jsonPathParseIntegerAsString() {
-      val accessor = JsonPathAccessor("$.age")
+      val schema = TaxiSchema.from("""
+         model Foo {
+            age : Int by jsonPath("$.age")
+         }
+      """.trimIndent()
 
-      val node = objectMapper.readTree(""" {  "age": "1" } """) as ObjectNode
-
-      parser.parseToType(mock(), accessor, node, mock(), Provided)
-
-      verify(primitiveParser).parse(eq("1"), any(), eq(Provided))
-
+      )
+      val instance = TypedInstance.from(schema.type("Foo"), """{ "age": "1" } """, schema, source = Provided) as TypedObject
+      instance["age"].value.should.equal(1)
    }
 
    @Test
    fun jsonPathParseFieldDoesntExist() {
-      val accessor = JsonPathAccessor("$.year")
+      val schema = TaxiSchema.from("""
+         model Foo {
+            age : Int by jsonPath("$.year")
+         }
+      """.trimIndent()
 
-      val node = objectMapper.readTree(""" {  "age": "1" } """) as ObjectNode
-
-      val value = parser.parseToType(mock(), accessor, node, mock(), Provided)
-      value.value.should.be.`null`
-
+      )
+      val instance = TypedInstance.from(schema.type("Foo"), """{ "age": 1 } """, schema, source = Provided) as TypedObject
+      instance["age"].value.should.be.`null`
    }
 
    @Test
    fun jsonPathParseEnum() {
-      val accessor = JsonPathAccessor("$.country")
+      val schema = TaxiSchema.from("""
+         enum Country { France }
+         model Foo {
+            country : Country by jsonPath("$.country")
+         }
+      """.trimIndent()
 
-      val node = objectMapper.readTree(""" {  "country": "France" } """) as ObjectNode
-
-      val enumMock = mock<Type>()
-      doReturn(true).whenever(enumMock).isEnum
-      parser.parseToType(enumMock, accessor, node, mock(), Provided)
-
-      verify(primitiveParser).parse(eq("France"), any(), eq(Provided))
-
+      )
+      val instance = TypedInstance.from(schema.type("Foo"), """{  "country": "France" }""", schema, source = Provided) as TypedObject
+      instance["country"].value.should.equal("France")
 
    }
 
@@ -224,35 +228,33 @@ class JsonAttributeAccessorParserTest() {
          }
       """.trimIndent()
 
-      val typeRef: TypeReference<HashMap<String?, Any?>?> = object : TypeReference<HashMap<String?, Any?>?>() {}
-      val map = objectMapper.readValue(json, typeRef)
-      val accessor = JsonPathAccessor("$.annaJson.Attributes.ReferenceRate")
-      val referenceRateMock = mock<Type>()
-      doReturn(false).whenever(referenceRateMock).isEnum
-      parser.parseToType(referenceRateMock, accessor, map!!, mock(), Provided)
-      verify(primitiveParser).parse(eq("EUR-EURIBOR-Reuters"), any(), eq(Provided))
-
-      parser.parseToType(referenceRateMock, JsonPathAccessor("$.annaJson.Attributes.ExpiryDate "), map!!, mock(), Provided)
-      verify(primitiveParser).parse(eq("2022-09-13"), any(), eq(Provided))
-
-      parser.parseToType(referenceRateMock, JsonPathAccessor("$.annaJson.Attributes.NotionalCurrency "), map!!, mock(), Provided)
-      verify(primitiveParser).parse(eq("EUR"), any(), eq(Provided))
+      val schema = TaxiSchema.from("""
+         model Foo {
+            referenceRate : String by jsonPath("$.annaJson.Attributes.ReferenceRate")
+            expiryDate : Date by jsonPath("$.annaJson.Attributes.ExpiryDate")
+            notionalCurrency : String by jsonPath("$.annaJson.Attributes.NotionalCurrency")
+         }
+      """.trimIndent())
+      val instance = TypedInstance.from(schema.type("Foo"), json, schema, source = Provided) as TypedObject
+      instance["referenceRate"].value.should.equal("EUR-EURIBOR-Reuters")
+      instance["expiryDate"].value.should.equal(LocalDate.parse("2022-09-13"))
+      instance["notionalCurrency"].value.should.equal("EUR")
    }
 
    @Test
    @Ignore("Is this valid?  Passing empty string is not a valid enum value.")
    fun jsonPathParseEmptyEnum() {
-      val accessor = JsonPathAccessor("$.country")
-
-      val node = objectMapper.readTree(""" {  "country": "" } """) as ObjectNode
-
-      val enumMock = mock<Type>()
-      doReturn(true).whenever(enumMock).isEnum
-
-      val instance = parser.parseToType(enumMock, accessor, node, mock(), Provided)
-      instance.value.should.be.`null`
-
-      verify(primitiveParser, never()).parse(any(), any(), eq(Provided))
+//      val accessor = JsonPathAccessor("$.country")
+//
+//      val node = objectMapper.readTree(""" {  "country": "" } """) as ObjectNode
+//
+//      val enumMock = mock<Type>()
+//      doReturn(true).whenever(enumMock).isEnum
+//
+//      val instance = parser.parseToType(enumMock, accessor, node, mock(), Provided)
+//      instance.value.should.be.`null`
+//
+//      verify(primitiveParser, never()).parse(any(), any(), eq(Provided))
 
    }
 

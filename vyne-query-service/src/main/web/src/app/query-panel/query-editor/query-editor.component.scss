@@ -14,30 +14,7 @@
 }
 
 .mat-tab-header {
-  border-bottom: 0px;
-}
-
-$warning: #DD8902;
-.unmatched-nodes-alert {
-  display: flex;
-  background-color: rgba($warning, 0.15);
-  border: 2px solid rgba($warning, 0.8);
-  margin: 1rem;
-  border-radius: 4px;
-  color: darken($warning, 20%);
-  padding: 1rem;
-  align-items: center;
-  font-size: 0.9rem;
-
-  ul {
-    margin: 0.5rem 0;
-  }
-
-  img {
-    width: 48px;
-    margin-right: 1.5rem;
-  }
-
+  border-bottom: 0;
 }
 
 .code-viewer-container {

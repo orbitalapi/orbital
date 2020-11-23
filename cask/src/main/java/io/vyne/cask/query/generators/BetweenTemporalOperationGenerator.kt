@@ -1,9 +1,9 @@
 package io.vyne.cask.query.generators
 
-import io.vyne.cask.services.CaskServiceSchemaGenerator
 import io.vyne.cask.query.OperationGenerator
 import io.vyne.cask.query.generators.TemporalFieldUtils.collectionTypeOf
 import io.vyne.cask.query.generators.TemporalFieldUtils.parameterType
+import io.vyne.cask.services.CaskServiceSchemaGenerator
 import lang.taxi.Operator
 import lang.taxi.services.Operation
 import lang.taxi.services.OperationContract
@@ -14,15 +14,15 @@ import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
-import org.springframework.stereotype.Component
 
 // For Temporal fields, it creates the following operation:
 //  @HttpOperation(method = "GET" , url = "/api/cask/OrderWindowSummary/orderDateTime/Between/{start}/{end}")
 //  operation findByOrderDateTimeBetween( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime )
 //  : OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime < end )
 //
-@Component
-class BetweenTemporalOperationGenerator(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()) : OperationGenerator {
+@Deprecated("Migrating to vyneQl endpoint")
+//@Component
+open class BetweenTemporalOperationGenerator(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()) : OperationGenerator {
    protected val expectedAnnotationName = OperationAnnotation.Between
    override fun generate(field: Field?, type: Type): Operation {
       val parameterType = parameterType(field!!)
@@ -54,12 +54,12 @@ class BetweenTemporalOperationGenerator(val operationGeneratorConfig: OperationG
       return restPath(typeQualifiedName, path, field)
    }
 
-   protected fun restPath(typeQualifiedName: QualifiedName, path: AttributePath, field: Field) =
+   protected open fun restPath(typeQualifiedName: QualifiedName, path: AttributePath, field: Field) =
       "${CaskServiceSchemaGenerator.CaskApiRootPath}${path.parts.joinToString("/")}/${field.name}/$expectedAnnotationName/{start}/{end}"
 
-   protected fun operationName(field: Field) = "findBy${field.name.capitalize()}$expectedAnnotationName"
+   protected open fun operationName(field: Field) = "findBy${field.name.capitalize()}$expectedAnnotationName"
 
-   protected fun constraints(field: Field): BetweenConstraints {
+   protected open fun constraints(field: Field): BetweenConstraints {
       return BetweenConstraints(
          startConstraint = TemporalFieldUtils.constraintFor(field, Operator.GREATER_THAN_OR_EQUAL_TO, TemporalFieldUtils.Start),
          endConstraint = TemporalFieldUtils.constraintFor(field, Operator.LESS_THAN, TemporalFieldUtils.End))
@@ -81,7 +81,8 @@ class BetweenTemporalOperationGenerator(val operationGeneratorConfig: OperationG
 //  operation findByOrderDateTimeBetween( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime )
 //  : OrderWindowSummary[]( TransactionEventDateTime > start, TransactionEventDateTime < end )
 //
-@Component
+@Deprecated("Migrating to vyneQl endpoint")
+//@Component
 class GreaterThanStartLessThanEndOperationGenerator(operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()): BetweenTemporalOperationGenerator(operationGeneratorConfig) {
    override fun constraints(field: Field): BetweenConstraints {
       return BetweenConstraints(
@@ -99,7 +100,8 @@ class GreaterThanStartLessThanEndOperationGenerator(operationGeneratorConfig: Op
 //  operation findByOrderDateTimeBetween( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime )
 //  : OrderWindowSummary[]( TransactionEventDateTime > start, TransactionEventDateTime <= end )
 //
-@Component
+@Deprecated("Migrating to vyneQl endpoint")
+//@Component
 class GreaterThanStartLessThanOrEqualsToEndOperationGenerator(operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()): BetweenTemporalOperationGenerator(operationGeneratorConfig) {
    override fun constraints(field: Field): BetweenConstraints {
       return BetweenConstraints(
@@ -116,7 +118,8 @@ class GreaterThanStartLessThanOrEqualsToEndOperationGenerator(operationGenerator
 //  operation findByOrderDateTimeBetween( @PathVariable(name = "start") start : TransactionEventDateTime, @PathVariable(name = "end") end : TransactionEventDateTime )
 //  : OrderWindowSummary[]( TransactionEventDateTime >= start, TransactionEventDateTime <= end )
 //
-@Component
+@Deprecated("Migrating to vyneQl endpoint")
+//@Component
 class GreaterThanOrEqualsToStartLessThanOrEqualsToEndOperationGenerator(operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()): BetweenTemporalOperationGenerator(operationGeneratorConfig) {
    override fun constraints(field: Field): BetweenConstraints {
       return BetweenConstraints(

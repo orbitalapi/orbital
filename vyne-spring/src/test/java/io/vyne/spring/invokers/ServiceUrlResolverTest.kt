@@ -21,7 +21,8 @@ class ServiceUrlResolverTest {
 
    private val serviceDiscoveryClientName = "bar-service"
    private val service = Service("fooService".fqn(),
-      listOf(),
+      operations = listOf(),
+      queryOperations = listOf(),
       metadata = listOf(Metadata("ServiceDiscoveryClient".fqn(), mapOf("serviceName" to serviceDiscoveryClientName))),
       sourceCode = listOf())
 
