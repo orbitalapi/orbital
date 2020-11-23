@@ -18,6 +18,7 @@ import org.junit.Test
 import org.springframework.jdbc.core.JdbcTemplate
 import java.math.BigDecimal
 import java.time.Instant
+import java.time.ZonedDateTime
 
 class CaskDAOTest {
    private val mockJdbcTemplate = mock<JdbcTemplate>()
@@ -198,5 +199,24 @@ class CaskDAOTest {
       val statementCaptor = argumentCaptor<String>()
       val argCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(2)).queryForList(statementCaptor.capture(), argCaptor.capture())
+   }
+
+   @Test
+   fun `can parse date time strings to correct local date time`() {
+      "2020-11-15T00:00:00".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+      "2020-11-15T00:00:00Z".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+
+      "2020-11-15T00:00:00.000".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+      "2020-11-15T00:00:00.000Z".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+
+      "2020-11-15T00:00:00+02:00".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-14T22:00:00Z").toLocalDateTime())
+      "2020-11-15T00:00:00.000+02:00".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-14T22:00:00Z").toLocalDateTime())
+
    }
 }

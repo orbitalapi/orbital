@@ -38,7 +38,11 @@ import java.sql.Types
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
 
@@ -47,9 +51,11 @@ fun String.toLocalDate(): LocalDate {
 }
 
 fun String.toLocalDateTime(): LocalDateTime {
-   // Vyne is passing with the Zone information.
-   return ZonedDateTime.parse(this).toLocalDateTime()
+   return ZonedDateTime.parse(this, CaskDAO.DATE_TIME_FORMATTER)
+      .withZoneSameInstant(ZoneOffset.UTC)
+      .toLocalDateTime()
 }
+
 
 @Component
 class CaskDAO(
@@ -308,6 +314,13 @@ class CaskDAO(
 
          else -> TODO("type ${primitiveType.name} not yet mapped")
       }
+
+      val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatterBuilder()
+         .parseLenient()
+         .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
+         .appendFraction(ChronoField.MILLI_OF_SECOND, 1, 4, true)
+         .appendPattern("[XXX]")
+         .parseDefaulting(ChronoField.MILLI_OF_SECOND, 0).parseDefaulting(ChronoField.OFFSET_SECONDS, ZoneOffset.UTC.totalSeconds.toLong()).toFormatter()
    }
 
    // ############################

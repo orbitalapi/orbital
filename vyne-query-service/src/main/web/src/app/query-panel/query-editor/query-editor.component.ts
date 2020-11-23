@@ -43,6 +43,14 @@ export class QueryEditorComponent implements OnInit {
   query: string;
   lastQueryResult: QueryResult | QueryFailure;
 
+  get lastQueryResultAsSuccess(): QueryResult | null {
+    if (isQueryResult(this.lastQueryResult)) {
+      return this.lastQueryResult;
+    } else {
+      return null;
+    }
+  }
+
   lastErrorMessage: string | null;
 
   loading = false;
