@@ -36,7 +36,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
          attributeName to lazy { buildField(field, attributeName) }
       }.toMap()
    }
-   fun build(): TypedInstance {
+   fun build( decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap}): TypedInstance {
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
          return TypedInstance.from(type,jsonParsedStructure,schema, nullValues = nullValues, source = source, evaluateAccessors = evaluateAccessors)
@@ -52,7 +52,7 @@ class TypedObjectFactory(private val type: Type, private val value: Any, interna
          attributeName to getOrBuild(attributeName)
       }.toMap()
 
-      return TypedObject(type, mappedAttributes, source)
+      return TypedObject(type, decorator(mappedAttributes), source)
    }
 
    private fun getOrBuild(attributeName: AttributeName): TypedInstance {

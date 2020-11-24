@@ -989,7 +989,7 @@ service Broker1Service {
 
    @Test
    fun `can use calculated fields on output models`() {
-      val (vyne,_) = testVyne("""
+      val (vyne, _) = testVyne("""
          type Quantity inherits Int
          type Value inherits Int
          type Cost inherits Int
@@ -1008,9 +1008,10 @@ service Broker1Service {
       val output = result["Output"] as TypedObject
       output["cost"].value.should.equal(200)
    }
+
    @Test
    fun `can use when by`() {
-      val (vyne,_) = testVyne("""
+      val (vyne, _) = testVyne("""
          model Input {
             str: String
             value : Decimal?
@@ -1122,10 +1123,10 @@ service Broker1Service {
             { "inputField": "$inputInstant2" }
          ]
          """.trimIndent()))
-      val result =  vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
       result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
          listOf(
-            mapOf("myField" to "$outputInstant1" ),
+            mapOf("myField" to "$outputInstant1"),
             mapOf("myField" to "$outputInstant2")
          )
       )
@@ -1158,10 +1159,10 @@ service Broker1Service {
             { "inputField": "$inputInstant2" }
          ]
          """.trimIndent()))
-      val result =  vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
       result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
          listOf(
-            mapOf("myField" to "$outputInstant1" ),
+            mapOf("myField" to "$outputInstant1"),
             mapOf("myField" to "$outputInstant2")
          )
       )
@@ -1196,7 +1197,7 @@ service Broker1Service {
             { "qtyFill": 200, "multiplier": 2 }
          ]
          """.trimIndent()))
-      val result =  vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
       result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
          listOf(
             mapOf(
@@ -1241,7 +1242,7 @@ service Broker1Service {
             { "qtyFill": 200, "multiplier": 2, "id": "input3" }
          ]
          """.trimIndent()))
-      val result =  vyne.query("""
+      val result = vyne.query("""
             findAll {
                 InputModel[]
               } as {
@@ -1263,11 +1264,15 @@ service Broker1Service {
          type UnitMultiplier inherits Decimal
          type FilledNotional inherits Decimal
          type InputId inherits String
+         type TraderId inherits String
+         type TraderName inherits String
+         type TraderSurname inherits String
 
          model InputModel {
            multiplier: UnitMultiplier by default(2)
            qtyFill: QtyFill
            id: InputId
+           traderId: TraderId
          }
 
          model OutputModel {
@@ -1276,33 +1281,58 @@ service Broker1Service {
             filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
          }
 
+          model TraderInfo {
+            @Id
+            traderId: TraderId
+            traderName: TraderName
+            traderSurname: TraderSurname
+         }
+
          @Datasource
          service MultipleInvocationService {
             operation getInputData(): InputModel[]
+         }
+
+         service TraderService {
+            operation getTrader(TraderId): TraderInfo
          }
       """.trimIndent())
 
       stubService.addResponse("getInputData", vyne.parseJsonModel("InputModel[]", """
          [
-            { "qtyFill": 200, "multiplier": 1, "id": "input1" },
-            { "qtyFill": 200, "multiplier": 2, "id": "input2" },
-            { "qtyFill": 200, "multiplier": 3, "id": "input3" }
+            { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },
+            { "qtyFill": 200, "multiplier": 2, "id": "input2", "traderId": "tId2" },
+            { "qtyFill": 200, "multiplier": 3, "id": "input3", "traderId": "tId3" }
          ]
          """.trimIndent()))
-      val result =  vyne.query("""
+
+      stubService.addResponse("getTrader", object : StubResponseHandler {
+         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            return when (p2.first().second.value) {
+               "tId1" -> vyne.parseJsonModel("TraderInfo", """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}""")
+               "tId2" -> vyne.parseJsonModel("TraderInfo", """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}""")
+               "tId3" -> vyne.parseJsonModel("TraderInfo", """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}""")
+               else -> TypedNull.create(vyne.type("TraderInfo"))
+
+            }
+         }
+
+      })
+      val result = vyne.query("""
             findAll {
                 InputModel[]
               } as {
                  id
                  multiplier: UnitMultiplier
+                 traderName: TraderName (from this.traderId)
                }[]
             """.trimIndent())
 
       result.resultMap.values.first().should.be.equal(
          listOf(
-            mapOf("id" to "input1", "multiplier" to BigDecimal("1")),
-            mapOf("id" to "input2", "multiplier" to BigDecimal("2")),
-            mapOf("id" to "input3", "multiplier" to BigDecimal("3"))
+            mapOf("id" to "input1", "multiplier" to BigDecimal("1"), "traderName" to "Butch"),
+            mapOf("id" to "input2", "multiplier" to BigDecimal("2"), "traderName" to "Sundance"),
+            mapOf("id" to "input3", "multiplier" to BigDecimal("3"), "traderName" to "Travis")
          )
       )
    }
@@ -1314,6 +1344,9 @@ service Broker1Service {
          type UnitMultiplier inherits Decimal
          type FilledNotional inherits Decimal
          type InputId inherits String
+         type TraderId inherits String
+         type TraderName inherits String
+         type TraderSurname inherits String
 
          model InputModel {
            multiplier: UnitMultiplier by default(2)
@@ -1325,11 +1358,23 @@ service Broker1Service {
             qtyHit : QtyFill?
             unitMultiplier: UnitMultiplier?
             filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+            traderId: TraderId by default("id1")
+         }
+
+         model TraderInfo {
+            @Id
+            traderId: TraderId
+            traderName: TraderName
+            traderSurname: TraderSurname
          }
 
          @Datasource
          service MultipleInvocationService {
             operation getInputData(): InputModel[]
+         }
+
+         service TraderService {
+            operation getTrader(TraderId): TraderInfo
          }
       """.trimIndent())
 
@@ -1340,23 +1385,235 @@ service Broker1Service {
             { "qtyFill": 200, "multiplier": 3, "id": "input3" }
          ]
          """.trimIndent()))
-      val result =  vyne.query("""
+
+      stubService.addResponse("getTrader", vyne.parseJsonModel("TraderInfo",
+         """
+         {
+            "traderId": "id1",
+            "traderName": "John",
+            "traderSurname" : "Doe"
+         }
+      """.trimIndent()))
+      val result = vyne.query("""
             findAll {
                 InputModel[]
               } as OutputModel {
                  inputId: InputId
+                 traderName: TraderName (from this.traderId)
                }[]
             """.trimIndent())
 
       result.resultMap.values.first().should.be.equal(
          listOf(
-            mapOf("qtyHit" to BigDecimal("200"), "unitMultiplier" to BigDecimal("1"), "filledNotional" to BigDecimal("200"), "inputId" to "input1"),
-            mapOf("qtyHit" to BigDecimal("200"), "unitMultiplier" to BigDecimal("2"),  "filledNotional" to BigDecimal("400"), "inputId" to "input2"),
-            mapOf("qtyHit" to BigDecimal("200"), "unitMultiplier" to BigDecimal("3"),  "filledNotional" to BigDecimal("600"), "inputId" to "input3")
+            mapOf(
+               "qtyHit" to BigDecimal("200"),
+               "unitMultiplier" to BigDecimal("1"),
+               "filledNotional" to BigDecimal("200"),
+               "traderId" to "id1",
+               "inputId" to "input1",
+               "traderName" to "John"
+            ),
+            mapOf(
+               "qtyHit" to BigDecimal("200"),
+               "unitMultiplier" to BigDecimal("2"),
+               "filledNotional" to BigDecimal("400"),
+               "traderId" to "id1",
+               "inputId" to "input2",
+               "traderName" to "John"
+            ),
+            mapOf(
+               "qtyHit" to BigDecimal("200"),
+               "unitMultiplier" to BigDecimal("3"),
+               "filledNotional" to BigDecimal("600"),
+               "traderId" to "id1",
+               "inputId" to "input3",
+               "traderName" to "John"
+            )
          )
       )
    }
 
+   @Test
+   fun `should project to anonymous type extending discovery type IV`() {
+      val (vyne, stubService) = testVyne("""
+         type QtyFill inherits Decimal
+         type UnitMultiplier inherits Decimal
+         type FilledNotional inherits Decimal
+         type InputId inherits String
+         type TraderId inherits String
+         type TraderName inherits String
+         type TraderSurname inherits String
+
+         model InputModel {
+           multiplier: UnitMultiplier by default(2)
+           qtyFill: QtyFill
+           id: InputId
+         }
+
+         model OutputModel {
+            qtyHit : QtyFill?
+            unitMultiplier: UnitMultiplier?
+            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+            traderId: TraderId by default("id1")
+         }
+
+         model TraderInfo {
+            @Id
+            traderId: TraderId
+            traderName: TraderName
+            traderSurname: TraderSurname
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getInputData(): InputModel[]
+         }
+
+         service TraderService {
+            operation getTrader(TraderId): TraderInfo
+         }
+      """.trimIndent())
+
+      stubService.addResponse("getInputData", vyne.parseJsonModel("InputModel[]", """
+         [
+            { "qtyFill": 200, "multiplier": 1, "id": "input1" },
+            { "qtyFill": 200, "multiplier": 2, "id": "input2" },
+            { "qtyFill": 200, "multiplier": 3, "id": "input3" }
+         ]
+         """.trimIndent()))
+
+      stubService.addResponse("getTrader", vyne.parseJsonModel("TraderInfo",
+         """
+         {
+            "traderId": "id1",
+            "traderName": "John",
+            "traderSurname" : "Doe"
+         }
+      """.trimIndent()))
+      val result = vyne.query("""
+            findAll {
+                InputModel[]
+              } as OutputModel {
+                 inputId: InputId
+                 trader {
+                    name: TraderName
+                    surname: TraderSurname
+                 } (from this.traderId)
+               }[]
+            """.trimIndent())
+
+      result.resultMap.values.first().should.be.equal(
+         listOf(
+            mapOf(
+               "qtyHit" to BigDecimal("200"),
+               "unitMultiplier" to BigDecimal("1"),
+               "filledNotional" to BigDecimal("200"),
+               "traderId" to "id1",
+               "inputId" to "input1",
+               "trader" to mapOf("name" to "John", "surname" to "Doe")
+            ),
+            mapOf(
+               "qtyHit" to BigDecimal("200"),
+               "unitMultiplier" to BigDecimal("2"),
+               "filledNotional" to BigDecimal("400"),
+               "traderId" to "id1",
+               "inputId" to "input2",
+               "trader" to mapOf("name" to "John", "surname" to "Doe")
+            ),
+            mapOf(
+               "qtyHit" to BigDecimal("200"),
+               "unitMultiplier" to BigDecimal("3"),
+               "filledNotional" to BigDecimal("600"),
+               "traderId" to "id1",
+               "inputId" to "input3",
+               "trader" to mapOf("name" to "John", "surname" to "Doe")
+            )
+         )
+      )
+   }
+
+   @Test
+   fun `should project to anonymous type extending discovery type V`() {
+      val (vyne, stubService) = testVyne("""
+         type QtyFill inherits Decimal
+         type UnitMultiplier inherits Decimal
+         type FilledNotional inherits Decimal
+         type InputId inherits String
+         type TraderId inherits String
+         type TraderName inherits String
+         type TraderSurname inherits String
+
+         model InputModel {
+           multiplier: UnitMultiplier by default(2)
+           qtyFill: QtyFill
+           id: InputId
+           traderId: TraderId
+         }
+
+         model OutputModel {
+            qtyHit : QtyFill?
+            unitMultiplier: UnitMultiplier?
+            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+         }
+
+          model TraderInfo {
+            @Id
+            traderId: TraderId
+            traderName: TraderName
+            traderSurname: TraderSurname
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getInputData(): InputModel[]
+         }
+
+         service TraderService {
+            operation getTrader(TraderId): TraderInfo
+         }
+      """.trimIndent())
+
+      stubService.addResponse("getInputData", vyne.parseJsonModel("InputModel[]", """
+         [
+            { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },
+            { "qtyFill": 200, "multiplier": 2, "id": "input2", "traderId": "tId2" },
+            { "qtyFill": 200, "multiplier": 3, "id": "input3", "traderId": "tId3" }
+         ]
+         """.trimIndent()))
+
+      stubService.addResponse("getTrader", object : StubResponseHandler {
+         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            return when (p2.first().second.value) {
+               "tId1" -> vyne.parseJsonModel("TraderInfo", """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}""")
+               "tId2" -> vyne.parseJsonModel("TraderInfo", """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}""")
+               "tId3" -> vyne.parseJsonModel("TraderInfo", """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}""")
+               else -> TypedNull.create(vyne.type("TraderInfo"))
+
+            }
+         }
+
+      })
+      val result = vyne.query("""
+            findAll {
+                InputModel[]
+              } as {
+                 id
+                 multiplier: UnitMultiplier
+                 trader {
+                    name: TraderName
+                    surname: TraderSurname
+                 } (from this.traderId)
+               }[]
+            """.trimIndent())
+
+      result.resultMap.values.first().should.be.equal(
+         listOf(
+            mapOf("id" to "input1", "multiplier" to BigDecimal("1"), "trader" to  mapOf("name" to "Butch", "surname" to "Cassidy")),
+            mapOf("id" to "input2", "multiplier" to BigDecimal("2"), "trader" to  mapOf("name" to "Sundance", "surname" to "Kidd")),
+            mapOf("id" to "input3", "multiplier" to BigDecimal("3"), "trader" to  mapOf("name" to "Travis", "surname" to "Bickle"))
+         )
+      )
+   }
 
    @Test
    fun `avoid recursive parameter discovery`() {
@@ -1418,7 +1675,6 @@ service Broker1Service {
             mapOf("isin" to null)
          )
       )
-
    }
 }
 
