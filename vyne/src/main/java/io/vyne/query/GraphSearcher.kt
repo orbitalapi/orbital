@@ -7,6 +7,7 @@ import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
+import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
@@ -14,7 +15,12 @@ import io.vyne.utils.log
 import java.util.concurrent.TimeUnit
 
 // This class is not optimized.  Need to investigate how to speed it up.
-class GraphSearcher(private val startFact: Element, private val targetFact: Element, private val targetType: Type, private val graphBuilder: VyneGraphBuilder, private val buildSpec: TypedInstanceValidPredicate) {
+class GraphSearcher(
+   private val startFact: Element,
+   private val targetFact: Element,
+   private val targetType: Type,
+   private val graphBuilder: VyneGraphBuilder,
+   private val invocationConstraints: InvocationConstraints) {
 
    private val graphBuilderTimes = mutableListOf<Long>()
    private val graphSearchTimes = mutableListOf<Long>()
@@ -37,14 +43,13 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
       return PathPrevaliationResult.EVALUATE
    }
 
-   fun search(knownFacts: Set<TypedInstance>, excludedServices: Set<QualifiedName>, evaluator: PathEvaluator): TypedInstance? {
+   fun search(knownFacts: Set<TypedInstance>, excludedServices: Set<QualifiedName>, excludedOperations: Set<Operation>, evaluator: PathEvaluator): TypedInstance? {
       // TODO : EEEK!  We should be adding the instances, not the types.
       // This will cause problems when we have multiple facts of the same type,
       // as one may result in a happy path, and the other might not.
 //      val factTypes = knownFacts.map { it.type }.toSet()
 
-      // Can probably remove
-      val excludedOperations = mutableSetOf<QualifiedName>()
+      val excludedOperationsNames =excludedOperations.map { it.qualifiedName }.toSet()
       val excludedInstance = mutableSetOf<TypedInstance>()
       val excludedEdges = mutableListOf<EvaluatableEdge>()
 
@@ -55,7 +60,7 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
          val facts = if (excludedInstance.isEmpty()) { knownFacts } else { knownFacts.filterNot { excludedInstance.contains(it) } }
          // Note: I think we can migrate to using exclusively excludedEdges (Not using excludedOperations
          // and excludedInstances)..as it should be a more powerful abstraction
-         val proposedPath = findPath(facts, excludedOperations, excludedEdges, excludedServices)
+         val proposedPath = findPath(facts, excludedOperationsNames, excludedEdges, excludedServices)
          return if (proposedPath == null) {
             null
          } else {
@@ -78,7 +83,7 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
          val evaluatedPath = evaluator(nextPath)
          val (pathEvaluatedSuccessfully, resultValue) = wasSuccessful(evaluatedPath)
          if (pathEvaluatedSuccessfully) {
-            if (buildSpec.isValid(resultValue)) {
+            if (invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)) {
                return resultValue
             } else {
 
@@ -112,7 +117,7 @@ class GraphSearcher(private val startFact: Element, private val targetFact: Elem
    }
 
    private fun appendIgnorableEdges(evaluatedPath: List<PathEvaluation>, excludedEdges: MutableList<EvaluatableEdge>): Boolean {
-      val edgesToExclude = pathExclusionCalculator.findEdgesToExclude(evaluatedPath, buildSpec)
+      val edgesToExclude = pathExclusionCalculator.findEdgesToExclude(evaluatedPath, invocationConstraints)
       if (edgesToExclude.size > 1) {
          log().warn("Found ${edgesToExclude.size} edges to exclude.  Currently, that's unexpected, but not neccessarily wrong.  This should be investigated")
       }

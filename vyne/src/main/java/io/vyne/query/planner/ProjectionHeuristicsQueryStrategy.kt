@@ -27,10 +27,11 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
       .weakKeys()
       .build<Type, ProjectionHeuristicsGraphSearchResult>()
 
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryStrategyResult {
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       if (!context.isProjecting) {
          return QueryStrategyResult.empty()
       }
+      val spec = invocationConstraints.typedInstanceValidPredicate
       val targetType = target.first().type
       val searchResult: ProjectionHeuristicsGraphSearchResult = cache.get(targetType) {
          fetchFromGraph(target, context, spec)

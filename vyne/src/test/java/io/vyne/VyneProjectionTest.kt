@@ -1356,5 +1356,69 @@ service Broker1Service {
          )
       )
    }
+
+
+   @Test
+   fun `avoid recursive parameter discovery`() {
+      val (vyne, stubService) = testVyne("""
+         type Isin inherits String
+         type Ric inherits String
+         type InstrumentIdentifierType inherits String
+         type InputId inherits String
+
+
+         model InputModel {
+           id: InputId
+           ric : Ric?
+         }
+
+         model OutputModel {
+            isin: Isin
+
+         }
+
+         parameter model InstrumentReferenceRequest {
+             Identifier : Ric?
+             IdentifierType: InstrumentIdentifierType?
+         }
+
+         parameter model InstrumentReferenceResponse {
+             ricCode : Ric?
+             instrumentType: InstrumentIdentifierType?
+             isin: Isin
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getInputData(): InputModel[]
+         }
+
+         service InstrumentService {
+             operation getInstrumentFromRic( @RequestBody request:InstrumentReferenceRequest) :  InstrumentReferenceResponse
+         }
+      """.trimIndent())
+
+      stubService.addResponse("getInputData", vyne.parseJsonModel("InputModel[]", """
+         [
+            {  "id": "input1", "ric": "ric1" },
+            {  "id": "input2" },
+            {  "id": "input3" }
+         ]
+         """.trimIndent()))
+      val result =  vyne.query("""
+            findAll {
+                InputModel[]
+              } as OutputModel []
+            """.trimIndent())
+
+      result.resultMap.values.first().should.be.equal(
+         listOf(
+            mapOf("isin" to null),
+            mapOf("isin" to null),
+            mapOf("isin" to null)
+         )
+      )
+
+   }
 }
 

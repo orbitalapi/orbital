@@ -16,7 +16,8 @@ import org.springframework.stereotype.Component
  */
 @Component
 class ModelsScanStrategy : QueryStrategy {
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+      val spec = invocationConstraints.typedInstanceValidPredicate
       if (context.debugProfiling) {// enable profiling via context.debugProfiling=true flag
          return context.startChild(this, "scan for matches", OperationType.LOOKUP) { operation ->
             scanForMatches(target, context, spec)

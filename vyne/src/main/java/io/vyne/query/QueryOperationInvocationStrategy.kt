@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component
 @Component
 class QueryOperationInvocationStrategy(invocationService: OperationInvocationService,
                                        private val queryBuilders: List<QueryGrammarQueryBuilder> = listOf(VyneQlGrammarQueryBuilder())) : QueryStrategy, BaseOperationInvocationStrategy(invocationService) {
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryStrategyResult {
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       val candidateOperations = lookForCandidateQueryOperations(context, target)
       return invokeOperations(candidateOperations, context, target)
    }
