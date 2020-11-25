@@ -18,8 +18,9 @@ import kotlin.math.min
  */
 class PathExclusionCalculator {
 
-   fun findEdgesToExclude(evaluatedPath: List<PathEvaluation>, spec: TypedInstanceValidPredicate): Set<EvaluatableEdge> {
+   fun findEdgesToExclude(evaluatedPath: List<PathEvaluation>, invocationConstraints: InvocationConstraints): Set<EvaluatableEdge> {
       // These are a bunch of specific use cases that we've found that are useful to exclude
+      val spec = invocationConstraints.typedInstanceValidPredicate
       return listOfNotNull(
          operationThrewError(evaluatedPath, spec),
          instanceWhichProvidedInvalidMember(evaluatedPath, spec),

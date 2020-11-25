@@ -12,6 +12,7 @@ import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.formulas.CalculatorRegistry
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
+import io.vyne.schemas.Operation
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
@@ -94,14 +95,14 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
       val (_, operation) = context.schema.operation(operationReference.fqn())
       val paramType = operation.parameters[paramIndex].type
 
-      val discoveredParam = parameterFactory.discover(paramType, context)
+      val discoveredParam = parameterFactory.discover(paramType, context, operation)
       return EvaluatedEdge.success(edge, instanceOfType(discoveredParam.type), discoveredParam)
 //      val paramType = context.schema.type(edge.vertex2.value as String)
    }
 }
 
 class ParameterFactory {
-   fun discover(paramType: Type, context: QueryContext): TypedInstance {
+   fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): TypedInstance {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
       if (hasValue(firstLevelDiscovery)) {
@@ -128,8 +129,7 @@ class ParameterFactory {
       }
 
       // This is a parameter type.  Try to construct an instance
-      val requestObject = attemptToConstruct(paramType, context)
-      return requestObject
+      return attemptToConstruct(paramType, context, operation)
    }
 
    private fun hasValue(instance: TypedInstance?): Boolean {
@@ -147,7 +147,11 @@ class ParameterFactory {
       }
    }
 
-   private fun attemptToConstruct(paramType: Type, context: QueryContext, typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
+   private fun attemptToConstruct(
+      paramType: Type,
+      context: QueryContext,
+      operation: Operation?,
+      typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
       val fields = paramType.attributes.map { (attributeName, field) ->
          val attributeType = context.schema.type(field.type.name)
 
@@ -160,7 +164,8 @@ class ParameterFactory {
          // First, look in the context to see if it's there.
          if (attributeValue == null) {
             // ... if not, try and find the value in the graph
-            val queryResult = context.find(QuerySpecTypeNode(attributeType))
+            context.excludedServices
+            val queryResult = context.find(QuerySpecTypeNode(attributeType),  operation?.let { setOf(it) } ?: setOf(operation!!))
             if (queryResult.isFullyResolved) {
                attributeValue = queryResult[attributeType] ?:
                   // TODO : This might actually be legal, as it could be valid for a value to resolve to null
@@ -169,7 +174,7 @@ class ParameterFactory {
                // ... finally, try constructing the value...
                if (!attributeType.isScalar && !typesCurrentlyUnderConstruction.contains(attributeType)) {
                   log().debug("Parameter of type {} not present within the context.  Attempting to construct one.", attributeType.name.fullyQualifiedName)
-                  val constructedType = attemptToConstruct(attributeType, context, typesCurrentlyUnderConstruction = typesCurrentlyUnderConstruction + attributeType)
+                  val constructedType = attemptToConstruct(attributeType, context, typesCurrentlyUnderConstruction = typesCurrentlyUnderConstruction + attributeType, operation = operation)
                   log().debug("Parameter of type {} constructed: {}", constructedType, attributeType.name.fullyQualifiedName)
                   attributeValue = constructedType
                }

@@ -18,7 +18,7 @@ class ModelsScanStrategyTest {
    "isicCode" : "retailer"
 }"""
       vyne.addJsonModel("vyne.example.Client", json)
-      val result = ModelsScanStrategy().invoke(TestSchema.typeNode("vyne.example.ClientId"), vyne.query(), AlwaysGoodSpec)
+      val result = ModelsScanStrategy().invoke(TestSchema.typeNode("vyne.example.ClientId"), vyne.query(), InvocationConstraints.withAlwaysGoodPredicate)
       expect(result.matchedNodes).size.to.equal(1)
       expect(result.matchedNodes.entries.first().key.type.name.fullyQualifiedName).to.equal("vyne.example.ClientId")
       expect(result.matchedNodes.entries.first().value!!.value).to.equal("123")
@@ -29,7 +29,7 @@ class ModelsScanStrategyTest {
       val json = """{ "name" : "Jimmy's Choos" }"""
       vyne.addJsonModel("vyne.example.Client", json)
       vyne.queryEngine()
-      val result = ModelsScanStrategy().invoke(TestSchema.typeNode("vyne.example.ClientId"), vyne.query(), AlwaysGoodSpec)
+      val result = ModelsScanStrategy().invoke(TestSchema.typeNode("vyne.example.ClientId"), vyne.query(), InvocationConstraints.withAlwaysGoodPredicate)
       expect(result.matchedNodes).to.be.empty
    }
 

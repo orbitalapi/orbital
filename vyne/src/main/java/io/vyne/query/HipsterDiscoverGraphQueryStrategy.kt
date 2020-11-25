@@ -89,12 +89,12 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       .maximumSize(500)
       .build<SearchCacheKey, WeightedNode<Relationship, Element, Double>>()
 
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
 
-      return find(target, context, spec)
+      return find(target, context, invocationConstraints)
    }
 
-   fun find(targets: Set<QuerySpecTypeNode>, context: QueryContext, spec:TypedInstanceValidPredicate): QueryStrategyResult {
+   fun find(targets: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       // Note : There is an existing, working impl. of this in QueryEngine (the OrientDB approach),
       // but I haven't gotten around to copying it yet.
       if (targets.size != 1) TODO("Support for target sets not yet built")
@@ -111,7 +111,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       val targetElement = type(target.type)
 
       // search from every fact in the context
-      val lastResult: TypedInstance? = find(targetElement, context, spec)
+      val lastResult: TypedInstance? = find(targetElement, context, invocationConstraints)
       return if (lastResult != null) {
          QueryStrategyResult(mapOf(target to lastResult))
       } else {
@@ -119,7 +119,7 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       }
    }
 
-   internal fun find(targetElement: Element, context: QueryContext, spec:TypedInstanceValidPredicate):TypedInstance? {
+   internal fun find(targetElement: Element, context: QueryContext, invocationConstraints: InvocationConstraints):TypedInstance? {
       // Take a copy, as the set is mutable, and performing a search is a
       // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
       val currentFacts = context.facts.toSet()
@@ -131,8 +131,8 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
             val startFact =  providedInstance(fact)
 
             val targetType = context.schema.type(targetElement.value as String)
-            val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema), spec)
-            val searchResult = searcher.search(currentFacts, context.excludedServices.toSet()) { pathToEvaluate ->
+            val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema), invocationConstraints)
+            val searchResult = searcher.search(currentFacts, context.excludedServices.toSet(), invocationConstraints.excludedOperations) { pathToEvaluate ->
                evaluatePath(pathToEvaluate,context)
             }
             searchResult
