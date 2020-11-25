@@ -144,7 +144,7 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
             if (edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type)) {
                edge.previousValue
             } else {
-               val paramInstance = parameterFactory.discover(requiredParam.type, context)
+               val paramInstance = parameterFactory.discover(requiredParam.type, context, operation)
                context.addFact(paramInstance)
                paramInstance
             }

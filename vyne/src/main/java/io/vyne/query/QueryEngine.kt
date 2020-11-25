@@ -7,6 +7,7 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
+import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
@@ -24,6 +25,7 @@ interface QueryEngine {
    fun find(queryString: QueryExpression, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
    fun find(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
    fun find(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   fun find(target: QuerySpecTypeNode, context: QueryContext, excludedOperations: Set<Operation>, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
 
    fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult
 
@@ -278,6 +280,20 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
    }
 
+   override fun find(
+      target: QuerySpecTypeNode,
+      context: QueryContext,
+      excludedOperations: Set<Operation>,
+      spec: TypedInstanceValidPredicate): QueryResult {
+      try {
+         return doFind(target, context, spec, excludedOperations)
+      } catch (e: Exception) {
+         log().error("Search failed with exception:", e)
+         throw SearchRuntimeException(e, context.profiler.root)
+      }
+   }
+
+
 
    private fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
       // TODO : BIG opportunity to optimize this by evaluating multiple querySpecNodes at once.
@@ -296,7 +312,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return result
    }
 
-   private fun doFind(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
+   private fun doFind(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate, excludedOperations: Set<Operation> = emptySet()): QueryResult {
 
       val matchedNodes = mutableMapOf<QuerySpecTypeNode, TypedInstance?>()
 
@@ -315,7 +331,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
          val queryStrategy = strategyIterator.next()
          timed(name = "Strategy ${queryStrategy::class.java.name} ${target.type.name}", timeUnit = TimeUnit.MICROSECONDS, log = false) {
-            val strategyResult = invokeStrategy(context, queryStrategy, querySet, target, spec)
+            val strategyResult = invokeStrategy(context, queryStrategy, querySet, target, InvocationConstraints(spec, excludedOperations))
             // Note : We should add this additional data to the context too,
             // so that it's available for future query strategies to use.
             context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
@@ -348,14 +364,19 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       )
    }
 
-   private fun invokeStrategy(context: QueryContext, queryStrategy: QueryStrategy, querySet: Set<QuerySpecTypeNode>, target: QuerySpecTypeNode, spec: TypedInstanceValidPredicate): QueryStrategyResult {
+   private fun invokeStrategy(
+      context: QueryContext,
+      queryStrategy: QueryStrategy,
+      querySet: Set<QuerySpecTypeNode>,
+      target: QuerySpecTypeNode,
+      invocationConstraints: InvocationConstraints): QueryStrategyResult {
       return if (context.debugProfiling) {
          context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) { op ->
             op.addContext("Search target", querySet.map { it.type.fullyQualifiedName })
-            queryStrategy.invoke(setOf(target), context, spec)
+            queryStrategy.invoke(setOf(target), context, invocationConstraints)
          }
       } else {
-         return queryStrategy.invoke(setOf(target), context, spec)
+         return queryStrategy.invoke(setOf(target), context, invocationConstraints)
       }
    }
 }

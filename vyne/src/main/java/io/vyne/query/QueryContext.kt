@@ -231,6 +231,7 @@ data class QueryContext(
    fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
    fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
    fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
+   fun find(target: QuerySpecTypeNode, excludedOperations: Set<Operation>): QueryResult = queryEngine.find(target, this, excludedOperations)
 
    fun build(typeName: QualifiedName): QueryResult = build(typeName.fullyQualifiedName)
    fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
@@ -430,7 +431,6 @@ data class QueryContext(
       val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, operation.previousValue)
       return getTopLevelContext().operationCache[key] != null
    }
-
 }
 
 

@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class DirectServiceInvocationStrategy(invocationService: OperationInvocationService) : QueryStrategy, BaseOperationInvocationStrategy(invocationService) {
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryStrategyResult {
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       return if (context.debugProfiling) {
          context.startChild(this, "look for candidate services", OperationType.LOOKUP) { profilerOperation ->
             val operations = lookForCandidateServices(context, target)
