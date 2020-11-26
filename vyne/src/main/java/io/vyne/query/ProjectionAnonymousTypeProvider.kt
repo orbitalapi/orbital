@@ -1,13 +1,16 @@
 package io.vyne.query
 
 import io.vyne.schemas.Field
+import io.vyne.schemas.FieldSource
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.vyneql.AnonymousTypeDefinition
+import io.vyne.vyneql.ComplexFieldDefinition
 import io.vyne.vyneql.ProjectedType
+import io.vyne.vyneql.SelfReferencedFieldDefinition
 import io.vyne.vyneql.SimpleAnonymousFieldDefinition
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
@@ -37,7 +40,10 @@ object ProjectionAnonymousTypeProvider {
          projectedType.concreteTypeName == null && projectedType.anonymousTypeDefinition != null -> {
             val anonymousTypeDefinition = projectedType.anonymousTypeDefinition!!
             validateAnonymousTypeDefinition(anonymousTypeDefinition)
-            val fieldDefinitions = fieldDefinitions(anonymousTypeDefinition)
+            val fieldDefinitions =
+               simpleAnonymousFieldDefinitions(anonymousTypeDefinition)
+                  .plus(selfReferencedAnonymousFieldDefinitions(anonymousTypeDefinition))
+                  .plus(complexAnonymousFieldDefinitions(anonymousTypeDefinition, schema))
             anonymousType(fieldDefinitions, anonymousTypeName, schema, anonymousTypeDefinition.isList)
          }
 
@@ -51,7 +57,11 @@ object ProjectionAnonymousTypeProvider {
             val anonymousTypeDefinition = projectedType.anonymousTypeDefinition!!
             validateAnonymousTypeDefinition(anonymousTypeDefinition)
             val concreteProjectionType = schema.type(projectedType.concreteTypeName!!.toVyneQualifiedName())
-            val fieldDefinitions = concreteProjectionType.attributes.plus(fieldDefinitions(anonymousTypeDefinition))
+            val fieldDefinitions = concreteProjectionType
+               .attributes
+               .plus(simpleAnonymousFieldDefinitions(anonymousTypeDefinition))
+               .plus(selfReferencedAnonymousFieldDefinitions(anonymousTypeDefinition, anonymousTypeName.fqn()))
+               .plus(complexAnonymousFieldDefinitions(anonymousTypeDefinition, schema, anonymousTypeName.fqn()))
             anonymousType(fieldDefinitions, anonymousTypeName, schema, anonymousTypeDefinition.isList)
          }
 
@@ -60,7 +70,7 @@ object ProjectionAnonymousTypeProvider {
    }
 
    private fun anonymousType(fieldDefinitions: Map<String, Field>, anonymousTypeName: String, schema: Schema, isList: Boolean): Type {
-     val type = Type(
+      val type = Type(
          anonymousTypeName.fqn(),
          fieldDefinitions,
          sources = listOf(),
@@ -81,46 +91,95 @@ object ProjectionAnonymousTypeProvider {
       }
    }
 
-   private fun fieldDefinitions(anonymousTypeDefinition: AnonymousTypeDefinition): Map<String, Field> {
-      return anonymousTypeDefinition.fields.map {
-         val simpleAnonymousFieldDefinition = it as SimpleAnonymousFieldDefinition
-         simpleAnonymousFieldDefinition.fieldName to Field(
-            simpleAnonymousFieldDefinition.fieldType.toVyneQualifiedName(),
-            modifiers = listOf(),
-            accessor = null,
-            readCondition = null,
-            typeDoc = null
-         )
-      }.toMap()
+   // Processes anonymous field definitions like:
+   // inputId: InputId
+   // or
+   // orderId
+   private fun simpleAnonymousFieldDefinitions(anonymousTypeDefinition: AnonymousTypeDefinition): Map<String, Field> {
+      return anonymousTypeDefinition
+         .fields
+         .filterIsInstance<SimpleAnonymousFieldDefinition>()
+         .map { simpleAnonymousFieldDefinition -> simpleAnonymousFieldDefinitionToField(simpleAnonymousFieldDefinition) }
+         .toMap()
+   }
+
+   // Processes anonymous field definitions like:
+   // traderName: TraderName (from this.traderId)
+   private fun selfReferencedAnonymousFieldDefinitions(anonymousTypeDefinition: AnonymousTypeDefinition, sourceTypeName: QualifiedName? = null): Map<String, Field> {
+      return anonymousTypeDefinition
+         .fields
+         .filterIsInstance<SelfReferencedFieldDefinition>()
+         .map { selfReferencedFieldDefinition ->
+            selfReferencedFieldDefinition.fieldName to Field(
+               selfReferencedFieldDefinition.fieldType.toVyneQualifiedName(),
+               modifiers = listOf(),
+               accessor = null,
+               readCondition = null,
+               typeDoc = null,
+               sourcedBy = FieldSource(
+                  selfReferencedFieldDefinition.referenceFieldName,
+                  selfReferencedFieldDefinition.fieldType.toVyneQualifiedName(),
+                  sourceTypeName ?: selfReferencedFieldDefinition.referenceFieldContainingType.toVyneQualifiedName()
+               )
+            )
+         }.toMap()
+   }
+
+   // Processes anonymous field definitions like:
+   // salesPerson {
+   //       firstName : FirstName
+   //       lastName : LastName
+   //   }(from this.salesUtCode)
+   private fun complexAnonymousFieldDefinitions(
+      anonymousTypeDefinition: AnonymousTypeDefinition,
+      schema: Schema,
+      sourceTypeName: QualifiedName? = null): Map<String, Field> {
+      return anonymousTypeDefinition
+         .fields
+         .filterIsInstance<ComplexFieldDefinition>()
+         .map { complexFieldDefinition ->
+            val anonymousTypeNameForComplexField = anonymousTypeName()
+            val attributeMap = complexFieldDefinition.fieldDefinitions.map { simpleAnonymousFieldDefinitionToField(it) }.toMap()
+            val anonymousTypeForComplexField = anonymousType(attributeMap, anonymousTypeNameForComplexField,  schema, false)
+            complexFieldDefinition.fieldName to Field(
+               anonymousTypeForComplexField.qualifiedName,
+               modifiers = listOf(),
+               accessor = null,
+               readCondition = null,
+               typeDoc = null,
+               sourcedBy = FieldSource(
+                  complexFieldDefinition.referenceFieldName,
+                  anonymousTypeForComplexField.qualifiedName,
+                  sourceTypeName ?: complexFieldDefinition.referenceFieldContainingType.toVyneQualifiedName()
+               )
+            )
+         }.toMap()
+
+   }
+
+   private fun simpleAnonymousFieldDefinitionToField(simpleAnonymousFieldDefinition: SimpleAnonymousFieldDefinition): Pair<String, Field> {
+      return simpleAnonymousFieldDefinition.fieldName to Field(
+         simpleAnonymousFieldDefinition.fieldType.toVyneQualifiedName(),
+         modifiers = listOf(),
+         accessor = null,
+         readCondition = null,
+         typeDoc = null
+      )
    }
 
    private fun validateAnonymousTypeDefinition(anonymousTypeDefinition: AnonymousTypeDefinition) {
-      // Currently we only support:
-      // Case for:
-      // findAll { foo[] } as {
-      // field1
-      // field2
-      // field3
-      // field4: somenamespace.AnotherType
-      // }[]
-      //
-      // or
-      //
-      // findAll { foo[] }
-      // as bar[] {
-      //    field1
-      //    field2: mynamespace.mytype
-      //}[]
-      if (anonymousTypeDefinition.fields.any { it !is SimpleAnonymousFieldDefinition }) {
+      if (anonymousTypeDefinition.fields.any { it !is SimpleAnonymousFieldDefinition && it !is SelfReferencedFieldDefinition && it !is ComplexFieldDefinition }) {
          throw CompilationException(CompilationError(0, 0, "only simple anonymous field definitions supported currently!"))
       }
    }
+
    private fun anonymousTypeName() = AnonymousTypeNameGenerator.generate()
 }
 
 object AnonymousTypeNameGenerator {
    private val random: SecureRandom = SecureRandom()
    private val encoder: Base64.Encoder = Base64.getUrlEncoder().withoutPadding()
+
    // This is both shorter than a UUID (e.g. Xl3S2itovd5CDS7cKSNvml4_ODA)  and also more secure having 160 bits of entropy.
    fun generate(): String {
       val buffer = ByteArray(20)
