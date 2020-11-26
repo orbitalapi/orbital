@@ -6,7 +6,7 @@
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.11.0</version>
+   <version>0.11.0.1</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -463,7 +463,7 @@
             <activeByDefault>false</activeByDefault>
          </activation>
          <properties>
-            <docker.tag.latest>latest</docker.tag.latest>
+            <docker.tag.latest>0.11.0.patch</docker.tag.latest>
          </properties>
       </profile>
    </profiles>

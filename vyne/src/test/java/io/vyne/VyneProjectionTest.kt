@@ -1095,5 +1095,75 @@ service Broker1Service {
       )
       getCountryInvoked.should.be.`false`
    }
+
+   @Test
+   fun `invalid post operation caching`() {
+      val (vyne, stubService) = testVyne("""
+         type Isin inherits String
+         type Ric inherits String
+         type InstrumentIdentifierType inherits String
+         type InputId inherits String
+
+
+         model InputModel {
+           id: InputId
+           ric : Ric?
+           instrumentType: InstrumentIdentifierType? by default("Ric")
+         }
+
+         model OutputModel {
+            isin: Isin
+         }
+
+         parameter model InstrumentReferenceRequest {
+             Identifier : Ric?
+             IdentifierType: InstrumentIdentifierType?
+         }
+
+         parameter model InstrumentReferenceResponse {
+             isin: Isin
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getInputData(): InputModel[]
+         }
+
+         service InstrumentService {
+             operation getInstrumentFromRic( @RequestBody request:InstrumentReferenceRequest) :  InstrumentReferenceResponse
+         }
+      """.trimIndent())
+
+      stubService.addResponse("getInputData", vyne.parseJsonModel("InputModel[]", """
+         [
+            {  "id": "input1", "ric": "ric1", "instrumentType": "ric" },
+            {  "id": "input2", "ric": "ric2", "instrumentType": "ric" },
+            {  "id": "input3", "ric": "ric3", "instrumentType": "ric" }
+         ]
+         """.trimIndent()))
+
+      stubService.addResponse("getInstrumentFromRic", object: StubResponseHandler {
+         override fun invoke(p1: Operation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            val isinValue = "${(p2.first().second as TypedObject).value.values.map { it.value }.joinToString ("_")}"
+            return  vyne.parseJsonModel("InstrumentReferenceResponse", """
+             {"isin": "$isinValue"}
+          """.trimIndent())
+         }
+      })
+      val result =  vyne.query("""
+            findAll {
+                InputModel[]
+              } as OutputModel []
+            """.trimIndent())
+
+      result.resultMap.values.first().should.be.equal(
+         listOf(
+            mapOf("isin" to "ric1_ric"),
+            mapOf("isin" to "ric2_ric"),
+            mapOf("isin" to "ric3_ric")
+         )
+      )
+
+   }
 }
 

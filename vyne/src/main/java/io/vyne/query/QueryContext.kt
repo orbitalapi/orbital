@@ -393,7 +393,7 @@ data class QueryContext(
    data class ServiceInvocationCacheKey(
       private val vertex1: Element,
       private val vertex2: Element,
-      private val invocationParameter: TypedInstance?)
+      private val invocationParameter: Set<TypedInstance?>)
 
    private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
    val excludedServices: MutableSet<QualifiedName> = mutableSetOf()
@@ -402,8 +402,8 @@ data class QueryContext(
       return parent?.getTopLevelContext() ?: this
    }
 
-   fun addOperationResult(operation: EvaluatableEdge, result: TypedInstance): TypedInstance {
-      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, operation.previousValue)
+   fun addOperationResult(operation: EvaluatableEdge, result: TypedInstance, callArgs: Set<TypedInstance?>): TypedInstance {
+      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
       val (service, _) = OperationNames.serviceAndOperation(operation.vertex1.valueAsQualifiedName())
       val invokedService = schema.services.firstOrNull { it.name.fullyQualifiedName == service }
       onServiceInvoked((invokedService))
@@ -418,13 +418,13 @@ data class QueryContext(
       }
    }
 
-   fun getOperationResult(operation: EvaluatableEdge): TypedInstance? {
-      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, operation.previousValue)
+   fun getOperationResult(operation: EvaluatableEdge, callArgs: Set<TypedInstance?>): TypedInstance? {
+      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
       return getTopLevelContext().operationCache[key]
    }
 
-   fun hasOperationResult(operation: EvaluatableEdge): Boolean {
-      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, operation.previousValue)
+   fun hasOperationResult(operation: EvaluatableEdge,  callArgs: Set<TypedInstance?>): Boolean {
+      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
       return getTopLevelContext().operationCache[key] != null
    }
 
