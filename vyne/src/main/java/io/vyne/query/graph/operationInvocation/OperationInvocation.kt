@@ -125,11 +125,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
 @Component
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
-      if (context.hasOperationResult(edge)) {
-         val cachedResult = context.getOperationResult(edge)
-         cachedResult?.let { context.addFact(it) }
-         return edge.success(cachedResult)
-      }
+
 
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
       val (service, operation) = context.schema.operation(operationName)
@@ -156,14 +152,22 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
          }
       }
 
+      val callArgs = parameterValues.toSet()
+      if (context.hasOperationResult(edge, callArgs)) {
+         val cachedResult = context.getOperationResult(edge, callArgs)
+         cachedResult?.let { context.addFact(it) }
+         return edge.success(cachedResult)
+      }
+
       return try {
-         val result: TypedInstance = invocationService.invokeOperation(service, operation, parameterValues.toSet(), context)
+
+         val result: TypedInstance = invocationService.invokeOperation(service, operation, callArgs, context)
          if (result is TypedNull) {
             log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
          } else {
             context.addFact(result)
          }
-         context.addOperationResult(edge, result)
+         context.addOperationResult(edge, result, callArgs)
          edge.success(result)
          // Don't add nulls
       } catch (exception: Exception) {
