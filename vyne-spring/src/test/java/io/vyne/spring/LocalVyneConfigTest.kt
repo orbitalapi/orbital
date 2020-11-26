@@ -5,6 +5,7 @@ import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.map.listener.EntryAddedListener
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.VyneCacheConfiguration
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.Schema
@@ -15,6 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -30,8 +32,17 @@ import kotlin.concurrent.thread
 
 
 @RunWith(SpringJUnit4ClassRunner::class)
+@EnableConfigurationProperties(VyneCacheConfiguration::class)
 @ContextConfiguration(classes = [PropertyConfig::class, LocalVyneConfigTest.vyneConfigWithLocalSchemaStore::class])
-@TestPropertySource(properties = ["vyne.schema.name=testSchema", "vyne.schema.version=0.1.0", "spring.application.name=vyneTest"])
+@TestPropertySource(properties = [
+   "vyne.schema.name=testSchema",
+   "vyne.schema.version=0.1.0",
+   "spring.application.name=vyneTest",
+   "vyne.graph.vyneGraphBuilderCache.baseSchemaCacheSize=100",
+   "vyne.graph.vyneGraphBuilderCache.graphWithFactTypesCacheSize=100",
+   "vyne.graph.vyneGraphBuilderCache.baseSchemaGraphCacheSize=100",
+   "vyne.graph.vyneDiscoverGraphQuery.schemaGraphCacheSize=5",
+   "vyne.graph.vyneDiscoverGraphQuery.searchPathExclusionsCacheSize=300000"])
 class LocalVyneConfigTest {
 
    @Autowired
@@ -75,9 +86,18 @@ class LocalVyneConfigTest {
 }
 
 @RunWith(SpringJUnit4ClassRunner::class)
+@EnableConfigurationProperties(VyneCacheConfiguration::class)
 @ContextConfiguration(classes = [PropertyConfig::class, DistributedVyneConfigTest.vyneConfigWithDistributedSchemaStore::class])
-@TestPropertySource(properties = ["vyne.schema.name=testSchema", "vyne.schema.version=0.1.0", "spring.application.name=vyneTest",
-"vyne.schme.publish.on.samethread=true"])
+@TestPropertySource(properties = [
+   "vyne.schema.name=testSchema",
+   "vyne.schema.version=0.1.0",
+   "spring.application.name=vyneTest",
+   "vyne.schme.publish.on.samethread=true",
+   "vyne.graph.vyneGraphBuilderCache.baseSchemaCacheSize=100",
+   "vyne.graph.vyneGraphBuilderCache.graphWithFactTypesCacheSize=100",
+   "vyne.graph.vyneGraphBuilderCache.baseSchemaGraphCacheSize=100",
+   "vyne.graph.vyneDiscoverGraphQuery.schemaGraphCacheSize=5",
+   "vyne.graph.vyneDiscoverGraphQuery.searchPathExclusionsCacheSize=300000"])
 @DirtiesContext
 class DistributedVyneConfigTest {
 
@@ -116,8 +136,17 @@ class DistributedVyneConfigTest {
 
 
 @RunWith(SpringJUnit4ClassRunner::class)
+@EnableConfigurationProperties(VyneCacheConfiguration::class)
 @ContextConfiguration(classes = [PropertyConfig::class, LocalVyneClassPathSchemaFileConfigTest.vyneConfigWithLocalClassPathSchemaFile::class])
-@TestPropertySource(properties = ["vyne.schema.name=testSchema", "vyne.schema.version=0.1.0", "spring.application.name=vyneTest"])
+@TestPropertySource(properties = [
+   "vyne.schema.name=testSchema",
+   "vyne.schema.version=0.1.0",
+   "spring.application.name=vyneTest",
+   "vyne.graph.vyneGraphBuilderCache.baseSchemaCacheSize=100",
+   "vyne.graph.vyneGraphBuilderCache.graphWithFactTypesCacheSize=100",
+   "vyne.graph.vyneGraphBuilderCache.baseSchemaGraphCacheSize=100",
+   "vyne.graph.vyneDiscoverGraphQuery.schemaGraphCacheSize=5",
+   "vyne.graph.vyneDiscoverGraphQuery.searchPathExclusionsCacheSize=300000"])
 class LocalVyneClassPathSchemaFileConfigTest {
 
    @Autowired
@@ -153,6 +182,8 @@ class LocalVyneClassPathSchemaFileConfigTest {
    }
 
 
+
+
    @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED, schemaFile = "foo.taxi")
    @EnableAutoConfiguration
    @EnableVyne
@@ -161,8 +192,18 @@ class LocalVyneClassPathSchemaFileConfigTest {
 
 
 @RunWith(SpringJUnit4ClassRunner::class)
+@EnableConfigurationProperties(VyneCacheConfiguration::class)
 @ContextConfiguration(classes = [PropertyConfig::class, LocalVyneAnnotationControllerContextPathTest.vyneConfig::class])
-@TestPropertySource(properties = ["vyne.schema.name=testSchema", "vyne.schema.version=0.1.0", "spring.application.name=vyneTest", "server.servlet.context-path=/test-microservice"])
+@TestPropertySource(properties = [
+   "vyne.schema.name=testSchema",
+   "vyne.schema.version=0.1.0",
+   "spring.application.name=vyneTest",
+   "server.servlet.context-path=/test-microservice",
+   "vyne.graph.vyneGraphBuilderCache.baseSchemaCacheSize=100",
+   "vyne.graph.vyneGraphBuilderCache.graphWithFactTypesCacheSize=100",
+   "vyne.graph.vyneGraphBuilderCache.baseSchemaGraphCacheSize=100",
+   "vyne.graph.vyneDiscoverGraphQuery.schemaGraphCacheSize=5",
+   "vyne.graph.vyneDiscoverGraphQuery.searchPathExclusionsCacheSize=300000"])
 class LocalVyneAnnotationControllerContextPathTest {
 
    @Autowired
@@ -183,10 +224,13 @@ class LocalVyneAnnotationControllerContextPathTest {
 
    }
 
+
    @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISABLED)
    @EnableAutoConfiguration()
    @EnableVyne
-   class vyneConfig {}
+   class vyneConfig {
+
+   }
 
 }
 

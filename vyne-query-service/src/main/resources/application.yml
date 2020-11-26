@@ -28,6 +28,14 @@ vyne:
          corePoolSize: 5
          maxPoolSize: 15
          queueCapacity: 50
+   graph:
+      vyneGraphBuilderCache:
+         baseSchemaCacheSize: 100
+         graphWithFactTypesCacheSize: 100
+         baseSchemaGraphCacheSize: 100
+      vyneDiscoverGraphQuery:
+         schemaGraphCacheSize: 5
+         searchPathExclusionsCacheSize: 200000
 
 feign:
    client:

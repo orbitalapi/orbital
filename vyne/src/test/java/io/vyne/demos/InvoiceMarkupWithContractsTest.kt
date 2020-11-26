@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import io.vyne.StubService
 import io.vyne.Vyne
+import io.vyne.VyneCacheConfiguration
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.json.parseJsonModel
@@ -117,7 +118,7 @@ namespace io.osmosis.demos.creditInc.isic {
    @Test
    fun runTest() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
       val vyne = Vyne(queryEngineFactory).addSchema(schema)
 
       val invoiceJson = """

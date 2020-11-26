@@ -2,6 +2,7 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.MapperFeature
 import com.netflix.discovery.EurekaClient
+import io.vyne.VyneCacheConfiguration
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
 import io.vyne.query.VyneJacksonModule
@@ -37,7 +38,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import javax.inject.Provider
 
 @SpringBootApplication
-@EnableConfigurationProperties(QueryServerConfig::class)
+@EnableConfigurationProperties(QueryServerConfig::class, VyneCacheConfiguration::class)
 @EnableVyneEmbeddedSearch
 @VyneSchemaPublisher
 @EnableFeignClients(clients = [CaskApi::class])
