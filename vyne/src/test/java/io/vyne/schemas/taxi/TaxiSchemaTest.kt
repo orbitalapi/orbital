@@ -347,6 +347,7 @@ type Sample {
       "nullable" : false,
       "typeDisplayName" : "CustomerEmailAddress",
       "metadata" : [ ],
+      "sourcedBy" : null,
       "constraints" : [ ]
     },
     "id" : {
@@ -365,6 +366,7 @@ type Sample {
       "nullable" : false,
       "typeDisplayName" : "CustomerId",
       "metadata" : [ ],
+      "sourcedBy" : null,
       "constraints" : [ ]
     },
     "name" : {
@@ -383,6 +385,7 @@ type Sample {
       "nullable" : false,
       "typeDisplayName" : "CustomerName",
       "metadata" : [ ],
+      "sourcedBy" : null,
       "constraints" : [ ]
     },
     "postcode" : {
@@ -401,6 +404,7 @@ type Sample {
       "nullable" : false,
       "typeDisplayName" : "Postcode",
       "metadata" : [ ],
+      "sourcedBy" : null,
       "constraints" : [ ]
     }
   },
