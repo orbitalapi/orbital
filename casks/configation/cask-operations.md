@@ -44,9 +44,9 @@ operation findSingleByOrderID(
 
 It is exepcted \(but not enforced\) that `@Id` based queries return a single result.  However, this is not strictly enforced during ingestion.  The behaviour for how to handle multiple records is defined through configuration.
 
-  See this section of [Configuration](configation.md#query-behaviours).
+  See this section of [Configuration](./#query-behaviours).
 
-{% page-ref page="configation.md" %}
+{% page-ref page="./" %}
 
 ### @PrimaryKey
 

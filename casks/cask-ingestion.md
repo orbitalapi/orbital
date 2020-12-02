@@ -4,7 +4,7 @@ description: >-
   query-able API in Vyne.
 ---
 
-# Cask Ingestion API
+# Ingesting data into a cask
 
 Cask offers two APIs:
 

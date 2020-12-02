@@ -1,26 +1,27 @@
 ---
 description: >-
-  Cask server is as service that ingests data in various input formats, projects
-  them to a taxi type (e.g. Trade or Order) and exposes automatically queryable
-  API in Vyne.
+  Casks are a place to store file based data, and make it queryable
+  semantically.
 ---
 
-# Cask Server
+# Overview
 
-## Prerequisites
+> #### Prerequisites:
+>
+> * Running Vyne query server
+> * A schema server
 
-* Running Eureka server
-* Running Vyne query server
-* Taxi schema for ingested data
+Not all data is housed behind a microservice or API. Sometimes, you receive data that you simply want to store and query later.  It could be an end-of-day feed, a stream of data from a 3rd party, or even static reference data.
 
-## Benefits of using Cask
+Casks provide a way of ingesting data in a variety of different formats, applying a Taxi schema, and making it available to query semantically.  Cask services also handle the generation of RESTful API's, and publishing the schema up to Vyne, meaning the data becomes discoverable in Vyne queries.
 
-Casks provide a simple way of storing data and making it queryable using semantic discovery
+Data can be ingested in any of the following formats:
 
-Casks ingest your data \(e.g. list of Orders\), add semantic description \(e.g. Taxi Order type\), store it and automatically expose set of operations via Vyne query API. Among many operations the newly created api will support:
+* CSV
+* JSON
+* XML
 
-* querying by all type fields \(e.g. findByOrderId\),
-* querying by date ranges e.g. findOrdersBetween\(start:OrderDate, end:OrderDate\).
+
 
 ## Example Cask Schema
 
