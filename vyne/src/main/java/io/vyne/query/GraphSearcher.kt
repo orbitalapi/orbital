@@ -151,7 +151,7 @@ class GraphSearcher(
    private fun selectResultValue(evaluatedPath: List<PathEvaluation>): TypedInstance? {
       // If the last node in the evaluated path is the type we're after, use that.
       val lastEdgeResult = evaluatedPath.last().resultValue
-      if (lastEdgeResult != null && lastEdgeResult.type.matches(targetType)) {
+      if (lastEdgeResult != null && targetType.matches(lastEdgeResult.type)) {
          return lastEdgeResult
       }
 
