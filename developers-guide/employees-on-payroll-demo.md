@@ -570,7 +570,7 @@ docker run -p 9022:9022 --env PROFILE=embedded-discovery,inmemory-query-history,
 {% endtab %}
 
 {% tab title="Linux" %}
-To laucnh Vyne within docker on Linux is super easy, just run:
+To launch Vyne within docker on Linux is super easy, just run:
 
 ```text
 docker run --rm --net=host --env PROFILE=embedded-discovery,inmemory-query-history,distributed-schema vyneco/vyne
