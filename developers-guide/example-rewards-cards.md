@@ -27,8 +27,6 @@ It's assumed that you've gotten the Vyne query server up & running, and taken a 
 
 {% page-ref page="../running-the-vyne-server.md" %}
 
-{% page-ref page="basic-walkthrough-hello-world.md" %}
-
 ## Our model & topology
 
 Our model is pretty basic - 3 classes, from 3 different services.

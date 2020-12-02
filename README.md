@@ -16,8 +16,6 @@ Also, these docs are evolving.  Please bear with us while we work to document Vy
 A good starting point is working through the examples.
 {% endhint %}
 
-{% page-ref page="developers-guide/basic-walkthrough-hello-world.md" %}
-
 ## Maven setup
 
 To grab our artifacts, you'll need the following repository info in your maven build.
