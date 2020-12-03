@@ -33,7 +33,6 @@
   * [Sample docker-compose](deployment/sample-docker-compose.md)
   * [\(deprecated\) Advanced configuration](deployment/advanced-configuration.md)
 * [Glossary](glossary.md)
-* [Untitled](untitled.md)
 * [Testing with vynetest](testing-with-vynetest.md)
 * [Developers Guide](developers-guide/README.md)
   * [Setting up Vyne locally](developers-guide/setting-up-vyne-locally.md)

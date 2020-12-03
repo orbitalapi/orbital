@@ -5,7 +5,7 @@ Download and install [Visual Studio Code](https://code.visualstudio.com/download
 ### Installing the Taxi extension
 
 {% hint style="info" %}
-In a hurry?  Type Ctrl+X, and then pase `taxi-language` and install
+In a hurry?  Type Ctrl+X, and then paste `taxi-language` and install
 {% endhint %}
 
 The taxi extension lets assists you in editing taxi files.  It features:

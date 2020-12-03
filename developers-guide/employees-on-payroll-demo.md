@@ -9,7 +9,7 @@ description: >-
 
 ## Getting started with Vyne
 
-Once we've [set-up Vyne locally](), we can start building services that can leverage Vyne's automated integration. 
+Once we've [set-up Vyne locally](setting-up-vyne-locally.md), we can start building services that can leverage Vyne's automated integration. 
 
 We are going to be building a Spring application based on an HR system. We'll keep the demo app itself really simple, and focus on the Vyne integration.  
 
