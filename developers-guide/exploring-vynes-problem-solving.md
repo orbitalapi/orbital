@@ -22,6 +22,8 @@ Vyne uses Taxi to allow services to describe constraints they have on input para
 
 These are the classes & services we'll be using for this demo:
 
+{% tabs %}
+{% tab title="Kotlin" %}
 ```kotlin
 @Service
 class TradeValueRuleService { 
@@ -43,15 +45,62 @@ data class TradeValueRuleRequest(
 @DataType
 typealias TradeValue = Money
 
-@DataType("io.vyne.Money")
+@DataType("demo.Money")
 @ParameterType
 data class Money(
    val currency: Currency,
-   val value: MoneyAmount)
+   val value: MoneyAmount
+   )
+   
 ```
+{% endtab %}
+
+{% tab title="Java" %}
+```java
+@Service
+public class TradeValueRuleService {
+    @Operation
+    @PostMapping("/rules/traderLimits")
+    TradeValueRuleResponse evalute(@RequestBody TradeValueRuleRequest request) {
+        // Not shown
+    }
+}
+
+@DataType("demo.TradeValueRuleRequest")
+@ParameterType
+public class TradeValueRuleRequest {
+    @Constraint("currency = 'USD'")
+    private final Money tradeValue;
+    private final TraderMaxTradeValue traderLimit;
+
+    public TradeValueRuleRequest(Money tradeValue, TraderMaxTradeValue traderLimit) {
+        this.tradeValue = tradeValue;
+        this.traderLimit = traderLimit;
+    }
+}
+
+@DataType("demo.Money")
+@ParameterType
+public class Money {
+    @DataType("demo.Currency")
+    private final Currency currency;
+    @DataType("demo.Value")
+    private final MoneyAmount value;
+
+    public Money(Currency currency, MoneyAmount value) {
+        this.currency = currency;
+        this.value = value;
+    }
+}
+
+```
+{% endtab %}
+{% endtabs %}
 
 This service evaluates a rule to do with TradeValue.  The actual implementation of the rule isn't as interesting as the contract itself - let's take a look in closer detail:
 
+{% tabs %}
+{% tab title="Kotlin" %}
 ```kotlin
 @Operation
 fun evaluate(@RequestBody request: TradeValueRuleRequest):TradeValueRuleResponse {}
@@ -62,6 +111,29 @@ data class TradeValueRuleRequest(
    val traderLimit: TraderMaxTradeValue
 )
 ```
+{% endtab %}
+
+{% tab title="Java" %}
+```java
+@Operation
+TradeValueRuleResponse evalute(@RequestBody TradeValueRuleRequest request) {}
+
+@DataType("demo.TradeValueRuleRequest")
+@ParameterType
+public class TradeValueRuleRequest {
+    @Constraint("currency = 'USD'")
+    private final Money tradeValue;
+    private final TraderMaxTradeValue traderLimit;
+
+    public TradeValueRuleRequest(Money tradeValue, TraderMaxTradeValue traderLimit) {
+        this.tradeValue = tradeValue;
+        this.traderLimit = traderLimit;
+    }
+}
+
+```
+{% endtab %}
+{% endtabs %}
 
 Our `Operation` takes a `TradeValueRequest` as it's parameter - which in turn, declares a constraint on the `tradeValue` parameter - the currency of the tradeValue must be expressed in USD.
 
@@ -87,14 +159,25 @@ Contracts on Operations describe what functionality an operation provides.  It's
 
 Over in another service, we have a RateConverterService, which has the following operation:
 
+{% tabs %}
+{% tab title="Kotlin" %}
 ```kotlin
-   @PostMapping("/tradeValues/{targetCurrency}")
-   @ResponseContract(basedOn = "source",
-      constraints = ResponseConstraint("currency = targetCurrency")
-   )
-   @Operation
-   fun convert(@PathVariable("targetCurrency") targetCurrency: Currency, @RequestBody source: TradeValue): TradeValue {
+@PostMapping("/tradeValues/{targetCurrency}")
+@ResponseContract(basedOn = "source", constraints = ResponseConstraint("currency = targetCurrency"))
+@Operation
+fun convert(@PathVariable("targetCurrency") targetCurrency: Currency, @RequestBody source: TradeValue): TradeValue {
 ```
+{% endtab %}
+
+{% tab title="Java" %}
+```java
+@PostMapping("/tradeValues/{targetCurrency}")
+@ResponseContract(basedOn = "source", constraints = new ResponseConstraint("currency = targetCurrency"))
+@Operation
+TradeValue convert(@PathVariable("targetCurrency") Currency targetCurrency, @RequestBody TradeValue source) {}
+```
+{% endtab %}
+{% endtabs %}
 
 The `@ResponseContract` on this operation tells use that it returns a `TradeValue`, that is based on the `source` parameter, but with it's `currency` value updated to the `targetCurrency` provided in the request.
 
