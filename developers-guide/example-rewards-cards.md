@@ -140,7 +140,7 @@ Note that we've declared the input as `CustomerEmailAddress`, rather than just `
 
 By using Kotlin' type aliases, we're able to keep the code cleaner too - adding the `@DataType` annotation to the typealias means we only have to declare it once.  Vyne will look up the underlying data type whenever it sees the alias used.
 
-{% page-ref page="../running-a-local-taxonomy-editor-environment/microtypes.md" %}
+{% page-ref page="../core-concepts/microtypes.md" %}
 
 Here are the three services in full - they all follow a similar pattern. There are both Kotlin \(.kt\) and Java \(.java\) examples below:
 

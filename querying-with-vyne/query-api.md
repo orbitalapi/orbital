@@ -2,7 +2,7 @@
 description: Vyne offers two REST apis for querying data. Simple Query and VyneQL.
 ---
 
-# Query API
+# Rest API
 
 All the examples here are based on the [Sample Instrument Service]().
 

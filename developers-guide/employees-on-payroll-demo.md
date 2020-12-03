@@ -597,7 +597,7 @@ Above we can see what the type of an employee email is, as well as functions it'
 
 ### Querying
 
-Vyne offers couple of ways of querying, for a full list refer to [Query Api](../running-a-local-taxonomy-editor-environment/query-api.md) section.
+Vyne offers couple of ways of querying, for a full list refer to [Query Api](../querying-with-vyne/query-api.md) section.
 
 #### Querying all Employees
 

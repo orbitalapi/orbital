@@ -147,7 +147,7 @@ To see the full list go to [http://localhost:9022/schema-explorer](http://localh
 
 ## Querying Data
 
-{% page-ref page="../running-a-local-taxonomy-editor-environment/query-api.md" %}
+{% page-ref page="../querying-with-vyne/query-api.md" %}
 
 For this demo we going to use VyneQL.
 

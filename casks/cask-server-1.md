@@ -67,7 +67,7 @@ service OrderCaskService {
 
 ```
 
-All the Cask data can be accessed via [Query Api](../running-a-local-taxonomy-editor-environment/query-api.md).
+All the Cask data can be accessed via [Query Api](../querying-with-vyne/query-api.md).
 
 
 
