@@ -13,7 +13,7 @@ In this guide, we're working with our imaginary marketing department, and using 
 
 ![](../.gitbook/assets/carbon-11-.png)
 
-We'll build a deployment with three services, then use Vyne to query data from them.  Our services are built in Kotlin, using Spring Boot.
+We'll build a deployment with three services, then use Vyne to query data from them.  Our services are built in Kotlin and Java, using Spring Boot.
 
 We'll see how Vyne enables us to discover & fetch data declaratively, using Vyne's API library, without having to write any integration code.
 
@@ -69,40 +69,71 @@ Here are our services:
 
 ## Defining the services
 
-The first service we'll define is the Customer service - which simply takes a `CustomerId` and returns a `Customer`.  Here's the relevant extract:
+The first service we'll define is the Customer service - which simply takes a `CustomerEmail` and returns a `Customer`.  Here's the relevant extract:
 
 {% tabs %}
 {% tab title="Kotlin" %}
 ```kotlin
-@GetMapping("/customers/email/{email}")
-fun getCustomerByEmail(@PathVariable("email") customerEmail: CustomerEmailAddress): Customer {
-// Not shown.
-}
-
 @DataType("demo.CustomerId")
 typealias CustomerId = Int
-
+@DataType("demo.CustomerName")
+typealias CustomerName = String
 @DataType("demo.CustomerEmailAddress")
 typealias CustomerEmailAddress = String
 
 @DataType("demo.Customer")
 data class Customer(
         val id: CustomerId,
-        val name: String,
+        val name: CustomerName,
         val emailAddress: CustomerEmailAddress
 )
+
+@Operation
+@GetMapping("/customers/email/{email}")
+fun getCustomerByEmail(@PathVariable("email") customerEmail: CustomerEmailAddress): Customer {
+    // Not shown
+}
+
 ```
 {% endtab %}
 
 {% tab title="Java" %}
-Java examples coming soon.
+```java
+@DataType("demo.Customer")
+public class Customer {
+
+    @DataType("demos.CustomerId")
+    private final Integer id;
+    @DataType("demos.CustomerName")
+    private final String name;
+    @DataType("demos.CustomerEmailAddress")
+    private final String emailAddress;
+
+    public Customer(Integer id, String name, String emailAddress) {
+        this.id = id;
+        this.name = name;
+        this.emailAddress = emailAddress;
+    }
+}
+
+@RestController
+@Service
+class Customers {
+
+    @Operation
+    @GetMapping("customers/email/{email}")
+    Optional<Customer> getCustomerByEmail(@PathVariable("email") String email) {
+        // Not shown
+    }
+}
+```
 {% endtab %}
 {% endtabs %}
 
-There's a few points of interest there - let's drill down:
+There's a few points of interest there in the Kotlin code - let's drill down:
 
 ```kotlin
-fun getCustomer(customerEmail: CustomerEmailAddress)
+fun getCustomerByEmail(customerEmail: CustomerEmailAddress)
 ```
 
 Note that we've declared the input as `CustomerEmailAddress`, rather than just `String`.  A typealias marks that `CustomerEmailAddress = String`.  However, to Vyne, these distinctions are important -- it's these aliases that Vyne uses for building connections.
@@ -111,7 +142,7 @@ By using Kotlin' type aliases, we're able to keep the code cleaner too - adding 
 
 {% page-ref page="../running-a-local-taxonomy-editor-environment/microtypes.md" %}
 
-Here are the three services in full - they all follow a similar pattern:
+Here are the three services in full - they all follow a similar pattern. There are both Kotlin \(.kt\) and Java \(.java\) examples below:
 
 {% tabs %}
 {% tab title="CustomerService.kt" %}
@@ -119,6 +150,7 @@ Here are the three services in full - they all follow a similar pattern:
 @RestController
 @Service
 class CustomerService {
+    
     private val customers = listOf(
             Customer(1, "Jimmy", "jimmy@demo.com"),
             Customer(2, "Peter", "peter@demo.com"),
@@ -140,27 +172,27 @@ class CustomerService {
 
 @DataType("demo.CustomerId")
 typealias CustomerId = Int
-
 @DataType("demo.CustomerEmailAddress")
 typealias CustomerEmailAddress = String
-
-@DataType
-typealias EmailAddress = String
+@DataType("demo.CustomerName")
+typealias CustomerName = String
 
 @DataType("demo.Customer")
 data class Customer(
         val id: CustomerId,
-        val name: String,
+        val name: CustomerName,
         val emailAddress: CustomerEmailAddress
 )
+
 ```
 {% endtab %}
 
 {% tab title="MarketingService.kt" %}
-```text
+```kotlin
 @RestController
 @Service
 class MarketingService {
+
     val customerRecords = listOf(
             CustomerMarketingRecord(1, "4005-2003-2330-1002"),
             CustomerMarketingRecord(2, "4002-0230-9979-2004"),
@@ -177,16 +209,14 @@ class MarketingService {
 
 @DataType("demo.CustomerId")
 typealias CustomerId = Int
-
 @DataType("demo.RewardsCardNumber")
 typealias RewardsCardNumber = String
 
-@DataType
+@DataType("demo.CustomerMarketingRecord")
 data class CustomerMarketingRecord(
         val id: CustomerId,
         val rewardsCardNumber: RewardsCardNumber
 )
-
 
 ```
 {% endtab %}
@@ -196,6 +226,7 @@ data class CustomerMarketingRecord(
 @RestController
 @Service
 class RewardsBalanceService {
+
     val balances = listOf(
             RewardsAccountBalance("4005-2003-2330-1002", BigDecimal("2300")),
             RewardsAccountBalance("4002-0230-9979-2004", BigDecimal("2050")),
@@ -209,18 +240,150 @@ class RewardsBalanceService {
     }
 }
 
+@DataType("demo.RewardsCardNumber")
+typealias RewardsCardNumber = String
+@DataType("demo.RewardsBalance")
+typealias RewardsBalance = BigDecimal
+
 @DataType("demo.RewardsAccountBalance")
 data class RewardsAccountBalance(
         val cardNumber: RewardsCardNumber,
         val balance: RewardsBalance
 )
 
-@DataType("demo.RewardsCardNumber")
-typealias RewardsCardNumber = String
+```
+{% endtab %}
+{% endtabs %}
 
-@DataType("demo.RewardsBalance")
-typealias RewardsBalance = BigDecimal
+{% tabs %}
+{% tab title="CustomerService.java" %}
+```java
+@RestController
+@Service
+public class CustomerService {
 
+    private final List<Customer> customers = new ArrayList<>();
+
+    public CustomerService() {
+        customers.add(new Customer(1, "Jimmy", "jimmy@demo.com"));
+        customers.add(new Customer(2, "Peter", "peter@demo.com"));
+        customers.add(new Customer(3, "Steve", "steve@demo.com"));
+    }
+
+    @Operation
+    @GetMapping("customers/email/{email}")
+    Optional<Customer> getCustomerByEmail(@PathVariable("email") String email) {
+        return customers.stream().filter(customer -> customer.getEmailAddress().equals(email)).findFirst();
+    }
+
+    @Operation
+    @GetMapping("customers/{id}")
+    Optional<Customer> getCustomer(@PathVariable("id") Integer id) {
+        return customers.stream().filter(customer -> customer.getId().equals(id)).findFirst();
+    }
+}
+
+@DataType("demo.Customer")
+public class Customer {
+
+    @DataType("demos.CustomerId")
+    private final Integer id;
+    @DataType("demos.CustomerName")
+    private final String name;
+    @DataType("demos.CustomerEmailAddress")
+    private final String emailAddress;
+
+    public Customer(Integer id, String name, String emailAddress) {
+        this.id = id;
+        this.name = name;
+        this.emailAddress = emailAddress;
+    }
+}
+
+```
+{% endtab %}
+
+{% tab title="MarketingService.java" %}
+```java
+@RestController
+@Service
+public class MarketingService {
+
+    private final List<CustomerMarketingRecord> customerRecords = new ArrayList<>();
+
+    public MarketingService() {
+        customerRecords.add(new CustomerMarketingRecord(1, "4005-2003-2330-1002"));
+        customerRecords.add(new CustomerMarketingRecord(2, "4002-0230-9979-2004"));
+        customerRecords.add(new CustomerMarketingRecord(3, "4974-2847-2994-2003"));
+    }
+
+    @Operation
+    @GetMapping("marketing/{customerId}")
+    Optional<CustomerMarketingRecord> getMarketingDetailsForCustomer(@PathVariable("customerId") Integer customerId) {
+        return customerRecords.stream().filter(records -> records.getCustomerId().equals(customerId)).findFirst();
+    }
+
+}
+
+@DataType("demo.CustomerMarketingRecord")
+public class CustomerMarketingRecord {
+
+    @DataType("demo.CustomerId")
+    private final Integer customerId;
+    @DataType("demo.RewardsCardNumber")
+    private final String rewardsCardNumber;
+
+    public CustomerMarketingRecord(Integer customerId, String rewardsCardNumber) {
+        this.customerId = customerId;
+        this.rewardsCardNumber = rewardsCardNumber;
+    }
+
+    public Integer getCustomerId() {
+        return customerId;
+    }
+}
+
+```
+{% endtab %}
+
+{% tab title="RewardsBalanceService.java" %}
+```java
+@RestController
+@Service
+public class RewardsBalanceService {
+
+    private final List<RewardsAccountBalance> balances = new ArrayList<>();
+
+    public RewardsBalanceService() {
+        balances.add(new RewardsAccountBalance("4005-2003-2330-1002", BigDecimal.valueOf(2300)));
+        balances.add(new RewardsAccountBalance("4002-0230-9979-2004", BigDecimal.valueOf(2050)));
+        balances.add(new RewardsAccountBalance("4974-2847-2994-2003", BigDecimal.valueOf(10020)));
+    }
+
+    @Operation
+    @GetMapping("/balances/{cardNumber}")
+    Optional<RewardsAccountBalance> getRewardsBalance(@PathVariable("cardNumber") String cardNumber) {
+        return balances.stream().filter(balances -> balances.getRewardsCardNumber().equals(cardNumber)).findFirst();
+    }
+}
+
+@DataType("demo.RewardsAccountBalance")
+public class RewardsAccountBalance {
+
+    @DataType("demo.RewardsCardNumber")
+    private final String rewardsCardNumber;
+    @DataType("demo.RewardsBalance")
+    private final BigDecimal rewardsBalance;
+
+    public RewardsAccountBalance(String rewardsCardNumber, BigDecimal rewardsBalance) {
+        this.rewardsCardNumber = rewardsCardNumber;
+        this.rewardsBalance = rewardsBalance;
+    }
+
+    public String getRewardsCardNumber() {
+        return rewardsCardNumber;
+    }
+}
 
 ```
 {% endtab %}
@@ -273,17 +436,34 @@ When this runs, a class called `TypeAliases` is created in our package.
 
 At runtime, we need to register the captured metadata, so that Vyne and Taxi can leverage it.  
 
-This is a simple 1-line addition in the start of our application's main method:
+This is a simple 1-line addition in the start of our application's main method. This is only applicable in Kotlin,  the Java code will remain the same:
 
+{% tabs %}
+{% tab title="Kotlin" %}
+```kotlin
+open class RewardsBalanceApp {
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            // Add this
+            TypeAliasRegistry.register(TypeAliases::class.java)
+            runApplication<RewardsBalanceApp>(*args)
+        }
+    }
+}
+```
+{% endtab %}
+
+{% tab title="Java" %}
 ```java
 public class RewardsBalanceApp {
     public static void main(String[] args) {
-        // This line...
-        TypeAliasRegistry.register(TypeAliases.class);
         SpringApplication.run(RewardsBalanceApp.class, args);
     }
 }
 ```
+{% endtab %}
+{% endtabs %}
 
 {% hint style="info" %}
 Note:  We're working on making this more seamless, especially when working in an app with `@EnableVyne` annotations.  Take a look at [this issue](https://gitlab.com/vyne/vyne/issues/20) to track progress.
@@ -343,6 +523,8 @@ Also, we want to access some of the types from our other services we just author
 Adding dependencies on other services \(or even shared model libraries\) isn't mandatory - and in many scenarios, isn't really recommended.  Other approaches are discussed below.
 {% endhint %}
 
+{% tabs %}
+{% tab title="Kotlin" %}
 ```kotlin
 @SpringBootApplication
 @EnableEurekaClient
@@ -353,8 +535,8 @@ class RewardsQueryFacadeApp {
         @JvmStatic
         fun main(args: Array<String>) {
             TypeAliasRegistry.register(
-                    io.vyne.demos.rewards.TypeAliases::class
-                    , io.vyne.demos.rewards.balances.TypeAliases::class)
+                    io.vyne.demos.rewards.TypeAliases::class,
+                    io.vyne.demos.rewards.balances.TypeAliases::class)
             SpringApplication.run(RewardsQueryFacadeApp::class.java, *args)
         }
     }
@@ -372,7 +554,47 @@ class QueryController(val vyne: VyneClient) {
 
 @DataType
 data class Customer(val customerEmail: CustomerEmailAddress)
+
 ```
+{% endtab %}
+
+{% tab title="Java" %}
+```java
+@SpringBootApplication
+@EnableEurekaClient
+@EnableVyneClient
+@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
+public class RewardsQueryFacadeApp {
+    public static void main(String[] args) {
+        SpringApplication.run(HrDemoApplication.class, args);
+    }
+}
+
+@RestController
+class QueryController(VyneClient vyne) {
+
+    @GetMapping("/balances/{customerEmail}")
+    BigDecimal getCustomerPointsBalance(@PathVariable("customerEmail") CustomerEmailAddress email) {
+        AccountBalance accountBalance = vyne.given(Customer(email))
+                .discover<RewardsAccountBalance>()!!
+        return accountBalance.balance
+    }
+}
+
+@DataType("demo.Customer")
+public class Customer {
+    
+    @DataType("demo.CustomerEmailAddress")
+    private final String emailAddress;
+    
+    public Customer(String emailAddress) {
+        this.emailAddress = emailAddress;
+    }
+}
+
+```
+{% endtab %}
+{% endtabs %}
 
 Let's look at the bits that are interesting here.
 
@@ -382,7 +604,7 @@ Let's look at the bits that are interesting here.
 
 This takes care of the spring wiring to provide us with an injectable `VyneClient` instance - the client we use for running a query.  We also use the `TypeAliasRegistry.register(...)` to wire up our type aliases, just as before.
 
-This is the interesting bit:
+This is the interesting bit from the Kotlin snippet:
 
 ```kotlin
  val accountBalance = vyne.given(Customer(email))
@@ -407,6 +629,8 @@ The integration we just built is adaptive.  As the services upgrade or change, t
 
 Let's make some breaking changes to our Customer service.  First, we'll change the structure of the `Customer` class, by nesting the `CustomerId` property in another type:
 
+{% tabs %}
+{% tab title="Kotlin" %}
 ```kotlin
 @DataType("demo.Customer")
 data class Customer(
@@ -421,6 +645,8 @@ data class Customer(
 @ParameterType
 data class Identity(val customerNumber: CustomerId)
 ```
+{% endtab %}
+{% endtabs %}
 
 Note the `@ParameterType`?  This is part of Taxi's language that instructs tooling it's safe to construct these objects if required.  Read me about ParameterType's [here](https://docs.taxilang.org/taxi-language#parameter-types).
 
