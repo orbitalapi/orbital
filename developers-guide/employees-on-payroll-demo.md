@@ -392,12 +392,12 @@ In order to leverage this Taxi metadata at runtime, we need to call `TypeAliasRe
 @SpringBootApplication
 @EnableEurekaClient
 @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.EUREKA)
-open class HRApplication{
+open class HrApplication{
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
             TypeAliasRegistry.register(TypeAliases::class.java)
-            runApplication<HRApplication>(*args)
+            runApplication<HrApplication>(*args)
         }
     }
 }
