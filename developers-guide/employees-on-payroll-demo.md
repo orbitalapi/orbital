@@ -552,6 +552,10 @@ docker run -p 9022:9022 --env PROFILE=embedded-discovery,inmemory-query-history,
 
 Now, run your app and it will have successfully joined the Vyne cluster!
 
+{% hint style="info" %}
+Heads up! When you're sharing schemas using polling, it can take 20-30 seconds on restart for everything to sync up. An alternative approach is to use Vyne's multicasting setup to share schemas. That takes a little more setup to get going, but makes updates instant. To learn how to get multicasting working locally, follow [this](setting-up-vyne-using-multicasting.md) guide
+{% endhint %}
+
 ## Exploring our data using the Vyne UI
 
 Now that we have a service exposed to Vyne, we're going to explore some of the data it's publishing through Vyne's query service.
