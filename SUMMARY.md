@@ -37,8 +37,6 @@
 * [Testing with vynetest](testing-with-vynetest.md)
 * [Developers Guide](developers-guide/README.md)
   * [Setting up Vyne locally](developers-guide/setting-up-vyne-locally-1.md)
-  * [Setting up Vyne locally](developers-guide/setting-up-vyne-locally.md)
-  * [Setting up Vyne using Multicasting](developers-guide/setting-up-vyne-using-multicasting.md)
   * [Hello World](developers-guide/employees-on-payroll-demo.md)
   * [Walkthrough - Adaptive Integration](developers-guide/example-rewards-cards.md)
   * [Automated problem solving with Constraints & Contracts](developers-guide/exploring-vynes-problem-solving.md)

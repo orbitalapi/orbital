@@ -9,7 +9,7 @@ description: >-
 
 ## Getting started with Vyne
 
-Once we've [set-up Vyne locally](setting-up-vyne-locally.md), we can start building services that can leverage Vyne's automated integration. 
+Once we've [set-up Vyne locally](), we can start building services that can leverage Vyne's automated integration. 
 
 We are going to be building a Spring application based on an HR system. We'll keep the demo app itself really simple, and focus on the Vyne integration.  
 
@@ -542,7 +542,7 @@ Be sure that the `@Service` annotation belongs to the taxi `lang.taxi.annotation
 
 ## Starting Vyne in Docker
 
-For this step to work we need a running Vyne instance. If you don't have it please follow instructions of how [set-up Vyne locally](setting-up-vyne-locally.md).
+For this step to work we need a running Vyne instance. If you don't have it please follow instructions of how [set-up Vyne locally]().
 
 To launch Vyne, run:
 
@@ -553,7 +553,7 @@ docker run -p 9022:9022 --env PROFILE=embedded-discovery,inmemory-query-history,
 Now, run your app and it will have successfully joined the Vyne cluster!
 
 {% hint style="info" %}
-Heads up! When you're sharing schemas using polling, it can take 20-30 seconds on restart for everything to sync up. An alternative approach is to use Vyne's multicasting setup to share schemas. That takes a little more setup to get going, but makes updates instant. To learn how to get multicasting working locally, follow [this](setting-up-vyne-using-multicasting.md) guide
+Heads up! When you're sharing schemas using polling, it can take 20-30 seconds on restart for everything to sync up. An alternative approach is to use Vyne's multicasting setup to share schemas. That takes a little more setup to get going, but makes updates instant. To learn how to get multicasting working locally, follow [this]() guide
 {% endhint %}
 
 ## Exploring our data using the Vyne UI

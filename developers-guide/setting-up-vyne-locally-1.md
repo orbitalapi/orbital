@@ -91,68 +91,23 @@ With Vyne you can transform and enrich streaming data using our pipelines, eithe
 
 Vyne needs services to provide API schemas \(Taxi\) so that it can understand the data they provide, and the APIs that they publish.
 
+There are different ways to configure services and Vyne to share schema data - Distributed or Centralised. - which we discuss in detail in [Publishing & sharing schemas](../overview/publishing-and-sharing-schemas.md).
 
+{% page-ref page="../overview/publishing-and-sharing-schemas.md" %}
 
-Vyne provides automated API integration - in order for Vyne to work it's magic, the Microservices that we'll integrate with need to publish schemas that describe their API's to Vyne.  There's a few ways to acheive this.  
+### Using HTTP polling to share API schemas
 
-The simplest to get started when running locally, is to use Vyne's embedded Eureka instance.  This ships by default inside of Vyne, and provides all the neccessary bits to get provides both Service Discovery, and an easy place for Vyne to 
+The examples so far have leveraged a centralised, polling mechanism, with the Vyne stack running inside docker containers, and developer services \(the one's you build\) running locally.
 
-### Using Eureka
+![Using HTTP Polling to distribute schema changes locally](../.gitbook/assets/documentation-images-10-.png)
 
-We use [Eureka for service discovery](https://spring.io/guides/gs/service-registration-and-discovery/). This brings in some extra steps if you work on Windows/Mac, however if you are on Linux it's simple to get a Docker container running.
+This is the easiest way to get started, and it's how Vyne ships out-of-the-box.  However, the drawback of this approach is that as services start and stop, there can be a lag for everything to sync up, which can be frustrating.
 
-#### Benefits of Eureka
+### Using TCP multicasting to share API schemas
 
-* Simpler network configuration, and uses simple HTTP\(s\) traffic to share schema data
-* Works well in containerised environments with virtual network layers
+An alternative approach is to use TCP multicasting to share services. This makes updates instant between services as they start and stop, but requires a little extra config.
 
-#### Drawbacks of Eureka
-
-* Slower change detection, as updates are found by polling
-* Service discovery container must support embedding additional metadata, otherwise requires an additional runtime component to aggregate schemas
-
-#### Getting Eureka running
-
-To do this on Windows/Mac, we need to change the way we distribute our schemas. In your main class, change `@VyneSchemaPublisher` to use `EUREKA` instead of `DISTRIBUTED`. Once this is done we can run the commands below and our app will have successfully joined the Vyne cluster.
-
-If you are on a Linux machine, you don't need to make any of the above changes.
-
-{% tabs %}
-{% tab title="Windows/Mac" %}
-Run:
-
-```text
-docker run -p 9022:9022 --env PROFILE=embedded-discovery,inmemory-query-history,eureka-schema vyneco/vyne
-```
-{% endtab %}
-
-{% tab title="Linux" %}
-Run:
-
-```text
-docker run --rm --net=host --env PROFILE=embedded-discovery,inmemory-query-history,distributed-schema vyneco/vyne
-```
-{% endtab %}
-{% endtabs %}
-
-You now have Vyne up and running using Eureka, welldone!
-
-## More Vyne - Docker compose
-
-We have looked at getting Vyne running for a simple API integration, but there is another way to do this. We can use Multicast instead of Eureka. Using Multicast the services are grouped together in a cluster and made discoverable to Vyne. 
-
-This is a better approach because it has much better restart times as schemas are updated as soon as the service comes online. It will also give us access to more advanced features that Vyne has to offer. Features such as git-backed schemas, streaming data pipelines, and querying flat-file data. 
-
-This does involve a few more steps compared to the above integration, but it's definitely worth it. 
-
-#### Benefits of Multicast
-
-* Updates to schemas are instant
-* Reduces dependency on centralised infrastructure
-
-#### Drawbacks of Multicast
-
-* Requires the network layer to support Multicast. Of note, this is not supported by default in orchestrated containerised environments \(such as Docker Swarm and Kubernetes\).
+![](../.gitbook/assets/documentation-images-11-.png)
 
 #### Getting Multicast running
 
