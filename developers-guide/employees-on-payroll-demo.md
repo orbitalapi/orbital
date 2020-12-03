@@ -467,7 +467,7 @@ Now that we have created our types, we can expose our endpoints:
 ```kotlin
 @RestController
 @Service
-class HREmployees {
+class HrEmployees {
 
     private var employees = listOf(
             Employee(1, "Dave", "dave@vyne.com", "Developer"),
@@ -501,7 +501,7 @@ class HREmployees {
 ```java
 @RestController
 @Service
-class HREmployees {
+class HrEmployees {
 
     private final List<Employee> employees = new ArrayList<>();
 
