@@ -25,8 +25,6 @@ This walkthrough doesn't have the full code for the three services - we just hig
 
 It's assumed that you've gotten the Vyne query server up & running, and taken a walk through the basic Hello World.  If not, now's a good time to do so.
 
-{% page-ref page="../running-the-vyne-server.md" %}
-
 ## Our model & topology
 
 Our model is pretty basic - 3 classes, from 3 different services.

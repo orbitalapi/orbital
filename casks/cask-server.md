@@ -2,8 +2,6 @@
 
 To run cask you need a running instance of Vyne server:
 
-{% page-ref page="../running-the-vyne-server.md" %}
-
 ## Prerequisites
 
 * Eureka Server \(for components discovery\)

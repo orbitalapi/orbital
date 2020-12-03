@@ -2,7 +2,7 @@
 
 This page describes additional configuration that is supported by all the Vyne components including:
 
-* [Query Server](../running-the-vyne-server.md)
+* [Query Server]()
 * [Casks](../casks/)
 * [Schema Server](../schema-server.md)
 * [Pipeline Orchestrator](../pipelines/pipeline-orchestrator.md)
