@@ -41,5 +41,3 @@
   * [Automated problem solving with Constraints & Contracts](developers-guide/exploring-vynes-problem-solving.md)
   * [Polymorphic service discovery](developers-guide/polymorphic-behaviour-discovery.md)
 
-## Examples
-
