@@ -103,53 +103,53 @@ Kotlin isn't mandatory for Vyne or Spring boot, we just love it.  We've provided
 
 ```markup
 <build>
-        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
-        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
-        <plugins>
-            <plugin>
-                <artifactId>kotlin-maven-plugin</artifactId>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <version>${kotlin.version}</version>
-                <executions>
-                    <execution>
-                        <id>kapt</id>
-                        <goals>
-                            <goal>kapt</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>src/main/kotlin</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>compile</id>
-                        <phase>process-sources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>src/main/kotlin</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
+    <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
+    <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
+    <plugins>
+        <plugin>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <version>${kotlin.version}</version>
+            <executions>
+                <execution>
+                    <id>kapt</id>
+                    <goals>
+                        <goal>kapt</goal>
+                    </goals>
+                    <configuration>
+                        <sourceDirs>
+                            <sourceDir>src/main/kotlin</sourceDir>
+                        </sourceDirs>
+                    </configuration>
+                </execution>
+                <execution>
+                    <id>compile</id>
+                    <phase>process-sources</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                    <configuration>
+                        <sourceDirs>
+                            <sourceDir>src/main/kotlin</sourceDir>
+                        </sourceDirs>
+                    </configuration>
+                </execution>
 
-                    <execution>
-                        <id>test-compile</id>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>src/test/kotlin</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+                <execution>
+                    <id>test-compile</id>
+                    <goals>
+                        <goal>test-compile</goal>
+                    </goals>
+                    <configuration>
+                        <sourceDirs>
+                            <sourceDir>src/test/kotlin</sourceDir>
+                        </sourceDirs>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
 ```
 
 ## Our demo application
@@ -176,9 +176,9 @@ open class HrApplication{
 {% tab title="Java" %}
 ```java
 @SpringBootApplication
-public class HrDemoApplication {
+public class HrApplication {
     public static void main(String[] args) {
-        SpringApplication.run(HrDemoApplication.class, args);
+        SpringApplication.run(HrApplication.class, args);
     }
 }
 ```
@@ -219,26 +219,14 @@ public class Employee {
         this.employeeEmail = employeeEmail;
         this.employeeJobTitle = employeeJobTitle;
     }
-
-    public Integer getEmployeeId() {
-        return employeeId;
-    }
-
-    public String getEmployeeName() {
-        return employeeName;
-    }
-
-    public String getEmployeeEmail() {
-        return employeeEmail;
-    }
-
-    public String getEmployeeJobTitle() {
-        return employeeJobTitle;
-    }
 }
 ```
 {% endtab %}
 {% endtabs %}
+
+{% hint style="info" %}
+We have not shown the getters in the above java code to remove noise, but they are required.
+{% endhint %}
 
 ### Generating a schema
 
@@ -403,7 +391,7 @@ In order to leverage this Taxi metadata at runtime, we need to call `TypeAliasRe
 ```kotlin
 @SpringBootApplication
 @EnableEurekaClient
-@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
+@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.EUREKA)
 open class HRApplication{
     companion object {
         @JvmStatic
@@ -421,9 +409,9 @@ open class HRApplication{
 @SpringBootApplication
 @EnableEurekaClient
 @VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
-public class HrDemoApplication {
+public class HrApplication {
     public static void main(String[] args) {
-        SpringApplication.run(HrDemoApplication.class, args);
+        SpringApplication.run(HrApplication.class, args);
     }
 }
 ```
@@ -431,10 +419,6 @@ public class HrDemoApplication {
 {% endtabs %}
 
 Here, we added Spring support for Vyne using the `@VyneSchemaPublisher` annotation, and we wired up the TypeAlias metadata from our previous step with `TypeAlliasRegistry.register( ... )`.
-
-{% hint style="info" %}
-In the above snippet, we're using the  `DISTRIBUTED` method to allow Vyne to share it's schemas. If you are running on Windows or Mac and have launched Vyne in a docker container, you will need to use `EUREKA` to distribute your schemas, we will talk about this a little bit later.
-{% endhint %}
 
 ### Spring Boot configuration
 
@@ -484,6 +468,12 @@ Now that we have created our types, we can expose our endpoints:
 @RestController
 @Service
 class HREmployees {
+
+    private var employees = listOf(
+            Employee(1, "Dave", "dave@vyne.com", "Developer"),
+            Employee(2, "Ivan", "ivan@vyne.com", "Developer"),
+            Employee(3, "Mark", "mark@vyne.com", "Architect")
+    )
 
     @Operation
     @GetMapping("/employees")
@@ -554,31 +544,13 @@ Be sure that the `@Service` annotation belongs to the taxi `lang.taxi.annotation
 
 For this step to work we need a running Vyne instance. If you don't have it please follow instructions of how [set-up Vyne locally](setting-up-vyne-locally.md).
 
-{% tabs %}
-{% tab title="Windows / Mac" %}
-If you're on Windows / Mac, there are docker limitations that prevent Vyne's distributed schema publication from operating. In order to get around this, we need to use `EUREKA` to publish our schema. In Spring Boot main, van `@VyneSchemaPublisher` to look like this: 
-
-```
-@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.EUREKA)
-```
-
-From a console, start Vyne inside docker with the following command:
+To launch Vyne, run:
 
 ```text
 docker run -p 9022:9022 --env PROFILE=embedded-discovery,inmemory-query-history,eureka-schema vyneco/vyne
 ```
-{% endtab %}
 
-{% tab title="Linux" %}
-To launch Vyne within docker on Linux is super easy, just run:
-
-```text
-docker run --rm --net=host --env PROFILE=embedded-discovery,inmemory-query-history,distributed-schema vyneco/vyne
-```
-{% endtab %}
-{% endtabs %}
-
-Your app has now successfully joined the Vyne cluster!
+Now, run your app and it will have successfully joined the Vyne cluster!
 
 ## Exploring our data using the Vyne UI
 
