@@ -1,0 +1,22 @@
+@import "src/theme";
+
+.page-content {
+  font-family: $font-sans-docs;
+  display: flex;
+}
+
+.documentation {
+  flex-grow: 1;
+  table {
+    width: 100%;
+  }
+}
+
+
+.page-heading {
+  h1 {
+    margin-bottom: 0;
+    font-weight: 700;
+  }
+  margin-bottom: 2rem;
+}

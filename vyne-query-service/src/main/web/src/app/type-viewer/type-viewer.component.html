@@ -2,13 +2,6 @@
   <span>Type Explorer</span>
   <span class="toolbar-spacer"></span>
   <app-search-bar-container></app-search-bar-container>
-
-  <!--  <button mat-button>Create</button>-->
-  <!--<mat-form-field class="search-bar" floatLabel="never">-->
-  <!--<mat-icon matPrefix>search</mat-icon>-->
-  <!--<mat-label>Search</mat-label>-->
-  <!---->
-  <!--</mat-form-field>-->
 </mat-toolbar>
 <div class="page-content" appTocHost tocTag="h2" (contentsChanged)="contents = $event">
   <div class="documentation" *ngIf="type">

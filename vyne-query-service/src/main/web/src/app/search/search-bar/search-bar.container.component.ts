@@ -16,9 +16,7 @@ import {TypesService} from "../../services/types.service";
 })
 export class SearchBarContainerComponent {
 
-  constructor(private typesService: TypesService, private service: SearchService, private router: Router) {
-    this.typesService.getTypes()
-      .subscribe(next => this.schema = next);
+  constructor(private service: SearchService, private router: Router) {
   }
 
   searchResults: Observable<SearchResult[]> = of([]);
@@ -30,12 +28,6 @@ export class SearchBarContainerComponent {
   }
 
   navigateToMember(memberName: QualifiedName) {
-    // In case of a change in types, type we were receiving from service was undefined for the changed type.
-    // By refreshing types when encountering 'undefined', we resolve this problem.
-    if (!this.schema.types.find(type => type.name === memberName)) {
-      this.typesService.getTypes(true);
-    }
     this.router.navigate(['/types', memberName.fullyQualifiedName]);
-
   }
 }

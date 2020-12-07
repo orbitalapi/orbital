@@ -77,9 +77,7 @@ export class TypesService {
   }
 
   getType(qualifiedName: string): Observable<Type> {
-    return this.getTypes().pipe(
-      map(schema => schema.types.find(t => t.name.fullyQualifiedName === qualifiedName))
-    );
+    return this.http.get<Type>(`${environment.queryServiceUrl}/api/types/${qualifiedName}`);
   }
 
   parse(content: string, type: Type): Observable<ParsedTypeInstance> {

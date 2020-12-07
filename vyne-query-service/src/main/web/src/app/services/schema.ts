@@ -35,7 +35,14 @@ export interface Documented {
   typeDoc: string | null;
 }
 
-export interface Type extends Documented {
+export interface Named {
+  name: QualifiedName;
+}
+
+export interface NamedAndDocumented extends Documented, Named {
+}
+
+export interface Type extends Documented, Named {
   name: QualifiedName;
   attributes: FieldMap;
   collectionType: Type | null;
@@ -64,6 +71,8 @@ export interface EnumValues {
 export interface Field extends Documented {
   type: QualifiedName;
   modifiers: Array<Modifier>;
+  defaultValue?: any;
+  nullable?: boolean;
 }
 
 
@@ -189,7 +198,7 @@ export interface Schema extends TypeCollection {
 }
 
 export interface Parameter {
-  type: Type;
+  type: QualifiedName;
   name: string;
   metadata: Array<Metadata>;
   constraints: Array<any>;
@@ -197,26 +206,44 @@ export interface Parameter {
 
 export interface Metadata {
   name: QualifiedName;
-  params: Map<string, any>;
+  params: { [index: string]: any };
 }
 
 
-export interface Operation {
+export interface Operation extends SchemaMemberNamed {
   name: string;
+  qualifiedName: QualifiedName;
   parameters: Array<Parameter>;
-  returnType: Type;
+  returnType: QualifiedName;
   metadata: Array<Metadata>;
   contract: OperationContract;
-  sources: VersionedSource[];
+  // sources: VersionedSource[];
+  typeDoc?: string;
+  operationType: string | null;
+}
+
+export interface Service extends SchemaMemberNamed, Named, Documented {
+  qualifiedName: string; // This is messy, and needs fixing up.
+  operations: Operation[];
+  queryOperations: QueryOperation[];
+  metadata: Metadata[];
+  // Source not currently loaded for services, will load async
+  // sourceCode: VersionedSource;
+}
+
+export interface QueryOperation {
+  name: QualifiedName;
+  parameters: Parameter[];
+  returnType: QualifiedName;
+  metadata: Metadata[];
+  grammar: string;
+  capabilities: any[];
   typeDoc?: string;
 }
 
-export interface Service {
-  name: QualifiedName;
-  operations: Array<Operation>;
-  metadata: Array<Metadata>;
-  sourceCode: VersionedSource;
-  typeDoc?: string;
+// Matches SchemaMember.kt, but we already have a class called SchemaMember
+export interface SchemaMemberNamed {
+  memberQualifiedName: QualifiedName;
 }
 
 export interface Pipeline {
@@ -246,7 +273,7 @@ export function isMappedSynonym(candidate): candidate is MappedSynonym {
 }
 
 export interface OperationContract {
-  returnType: Type;
+  returnType: QualifiedName;
   constraints: Array<any>;
 }
 
@@ -378,7 +405,7 @@ export class SchemaMember {
       SchemaMemberType.OPERATION,
       null,
       operation,
-      operation.sources
+      [] // sources not currently returned for operations. Will load these async in the future
     );
   }
 
@@ -424,6 +451,8 @@ export interface VersionedSource {
   name: string;
   version: string;
   content: string;
+  id?: string;
+  contentHash?: string;
 }
 
 

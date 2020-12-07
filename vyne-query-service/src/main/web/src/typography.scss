@@ -1,12 +1,13 @@
 @import "fonts";
 @import "theme-colors";
 
-$mono: 'Source Sans Pro', monospace;
+$body-font: 'nunito-sans';
+$mono: 'jetbrains-mono', monospace;
 // Fonts used in documentation heavy pages
-$font-sans-docs: 'Open Sans',system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
+$font-sans-docs: $body-font /*'Open Sans'*/,system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
 // Fonts used throughout the app
-$font-sans: 'Nunito', $font-sans-docs;
-$font-sans-alt: Hind,system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
+$font-sans: $body-font, $font-sans-docs;
+$font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
 .mono {
   font-family: $mono;
 }

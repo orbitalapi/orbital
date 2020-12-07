@@ -12,6 +12,7 @@ import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemaStore.VersionedSourceProvider
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import lang.taxi.generators.SourceFormatter
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -57,6 +58,12 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
       } else {
          emptyList()
       }
+   }
+
+   @GetMapping(path = ["/api/types/{typeName}"])
+   fun getType(@PathVariable typeName: String): Type {
+      return schemaProvider.schema()
+         .type(typeName)
    }
 
    @GetMapping(path = ["/api/types"])

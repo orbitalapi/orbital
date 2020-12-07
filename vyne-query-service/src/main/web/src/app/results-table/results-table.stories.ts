@@ -1,8 +1,7 @@
 import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
-import {findType, Schema, TypeCollection, TypedInstance} from '../services/schema';
-import {TypeNamedInstance} from '../services/query.service';
+import {findType, TypeCollection, TypedInstance, TypeNamedInstance} from '../services/schema';
 import {testSchema} from '../object-view/test-schema';
 import {ResultsTableModule} from './results-table.module';
 
