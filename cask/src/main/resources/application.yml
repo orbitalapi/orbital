@@ -7,6 +7,8 @@ spring.datasource:
    username: "vynedb"
    password: "vynedb"
    driver: "org.postgresql.Driver"
+   hikari:
+     maximum-pool-size: 20
 
 spring:
    main:
