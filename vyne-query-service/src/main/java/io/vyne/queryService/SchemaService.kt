@@ -11,7 +11,9 @@ import io.vyne.queryService.schemas.SchemaUpdatedNotification
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemaStore.VersionedSourceProvider
+import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import lang.taxi.generators.SourceFormatter
 import org.springframework.web.bind.annotation.GetMapping
@@ -66,11 +68,25 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
          .type(typeName)
    }
 
+   @GetMapping(path = ["/api/services/{serviceName}"])
+   fun getService(@PathVariable("serviceName") serviceName: String): Service {
+      return schemaProvider.schema()
+         .service(serviceName)
+   }
+
+   @GetMapping(path = ["/api/services/{serviceName}/{operationName}"])
+   fun getOperation(@PathVariable("serviceName") serviceName: String,
+                    @PathVariable("operationName") operationName:String): Operation {
+      return schemaProvider.schema()
+         .service(serviceName)
+         .operation(operationName)
+   }
    @GetMapping(path = ["/api/types"])
 //   @JsonView(TypeLightView::class)
    fun getTypes(): Schema {
       return schemaProvider.schema()
    }
+
 
    @GetMapping(path = ["/api/types/{typeName}/policies"])
    fun getPolicies(@PathVariable("typeName") typeName: String): List<PolicyDto> {

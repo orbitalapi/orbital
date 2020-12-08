@@ -37,12 +37,19 @@ import {InjectableRxStompConfig, RxStompService, rxStompServiceFactory} from '@s
 import {RxStompConfig} from './stomp-config';
 import {SchemaNotificationService} from './services/schema-notification.service';
 import {MatNativeDateModule} from '@angular/material/core';
+import {ServiceViewContainerComponent} from './service-view/service-view-container.component';
+import {OperationViewComponent} from './operation-view/operation-view.component';
+import {ServiceViewModule} from './service-view/service-view.module';
+import {OperationViewModule} from './operation-view/operation-view.module';
+import {OperationViewContainerComponent} from './operation-view/operation-view-container.component';
 
 export const routerModule = RouterModule.forRoot(
   [
     {path: '', redirectTo: 'types', pathMatch: 'full'},
     {path: 'types', component: TypeListComponent},
     {path: 'types/:typeName', component: TypeViewerContainerComponent},
+    {path: 'services/:serviceName', component: ServiceViewContainerComponent},
+    {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent},
     {path: 'query-wizard', component: QueryPanelComponent},
     {path: 'data-explorer', component: DataExplorerComponent},
     {path: 'schema-explorer', component: SchemaExplorerComponent},
@@ -80,6 +87,8 @@ export const routerModule = RouterModule.forRoot(
     DataExplorerModule,
     SearchModule,
     SchemaExplorerModule,
+    ServiceViewModule,
+    OperationViewModule,
     CodeViewerModule,
     QueryPanelModule,
     QueryHistoryModule,

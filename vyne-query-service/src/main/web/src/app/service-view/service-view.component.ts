@@ -1,12 +1,30 @@
 import {Component, Input} from '@angular/core';
-import {QualifiedName, Service} from '../services/schema';
+import {Operation, QualifiedName, Service} from '../services/schema';
 
-interface OperationSummary {
+export interface OperationSummary {
   name: string;
   typeDoc: string | null;
   url: string;
   method: string;
   returnType: QualifiedName;
+  serviceName: string;
+}
+
+export function toOperationSummary(operation: Operation): OperationSummary {
+  const httpOperationMetadata = operation.metadata.find(metadata => metadata.name.fullyQualifiedName === 'HttpOperation');
+  const method = httpOperationMetadata.params['method'];
+  const url = httpOperationMetadata.params['url'];
+
+  const nameParts = operation.qualifiedName.fullyQualifiedName.split('@@');
+  const serviceName = nameParts[0];
+  return {
+    name: operation.name,
+    method: method,
+    url: url,
+    typeDoc: operation.typeDoc,
+    returnType: operation.returnType,
+    serviceName
+  } as OperationSummary;
 }
 
 @Component({
@@ -40,7 +58,7 @@ interface OperationSummary {
                 <td [ngClass]="getMethodClass(operation.method)">
                   <span class="http-method" [ngClass]="getMethodClass(operation.method)">{{ operation.method }}</span>
                 </td>
-                <td>{{ operation.name }}</td>
+                <td><a [routerLink]="[operation.name]">{{ operation.name }}</a></td>
                 <td>{{ operation.typeDoc }}</td>
                 <td><span class="mono-badge">{{ operation.returnType.shortDisplayName }}</span></td>
                 <td><span class="url">{{ operation.url }}</span></td>
@@ -48,6 +66,7 @@ interface OperationSummary {
             </table>
           </div>
         </section>
+
       </div>
     </div>
 
@@ -74,33 +93,26 @@ export class ServiceViewComponent {
   }
 
   private buildOperationSummary() {
-    this.operationSummaries = this.service.operations.map(operation => {
-      const httpOperationMetadata = operation.metadata.find(metadata => metadata.name.fullyQualifiedName === 'HttpOperation');
-      const method = httpOperationMetadata.params['method'];
-      const url = httpOperationMetadata.params['url'];
-
-      return {
-        name: operation.name,
-        method: method,
-        url: url,
-        typeDoc: operation.typeDoc,
-        returnType: operation.returnType
-      } as OperationSummary;
-    });
+    this.operationSummaries = this.service.operations.map(operation => toOperationSummary(operation));
   }
 
   getMethodClass(method: string) {
-    switch (method.toUpperCase()) {
-      case 'GET':
-        return 'get-method';
-      case 'POST':
-        return 'post-method';
-      case 'PUT':
-        return 'put-method';
-      case 'DELETE':
-        return 'delete-method';
-      default:
-        return 'other-method';
-    }
+    return methodClassFromName(method);
+  }
+}
+
+
+export function methodClassFromName(method: string) {
+  switch (method.toUpperCase()) {
+    case 'GET':
+      return 'get-method';
+    case 'POST':
+      return 'post-method';
+    case 'PUT':
+      return 'put-method';
+    case 'DELETE':
+      return 'delete-method';
+    default:
+      return 'other-method';
   }
 }

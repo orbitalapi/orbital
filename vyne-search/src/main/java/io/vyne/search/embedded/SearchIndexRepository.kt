@@ -49,6 +49,7 @@ class SearchIndexRepository(private val indexWriter:IndexWriter, private val sea
             when (searchField.highlightMethod) {
                SearchField.HighlightMethod.HIGHLIGHTER -> highlightResult(highlighter, searchField, fieldContents)
                SearchField.HighlightMethod.SUBSTRING -> highlightResultWithSubstring(fieldContents, term, searchField)
+               SearchField.HighlightMethod.NONE -> null
             }
          }.distinct()
          SearchResult(
@@ -56,6 +57,7 @@ class SearchIndexRepository(private val indexWriter:IndexWriter, private val sea
             doc.getField(SearchField.TYPEDOC.fieldName)?.stringValue(),
             doc.getField(SearchField.FIELD_ON_TYPE.fieldName)?.stringValue(),
             searchMatches,
+            SearchEntryType.fromName(doc.getField(SearchField.MEMBER_TYPE.fieldName)?.stringValue()),
             hit.score
          )
       }
@@ -103,7 +105,14 @@ class SearchIndexRepository(private val indexWriter:IndexWriter, private val sea
    }
 }
 
-data class SearchResult(val qualifiedName: QualifiedName, val typeDoc: String?, val matchedFieldName:String?, val matches: List<SearchMatch>, val score: Float)
+data class SearchResult(
+   val qualifiedName: QualifiedName,
+   val typeDoc: String?,
+   val matchedFieldName: String?,
+   val matches: List<SearchMatch>,
+   val memberType:SearchEntryType,
+   val score: Float
+)
 
 data class SearchMatch(val field: SearchField, val highlightedMatch: String)
 

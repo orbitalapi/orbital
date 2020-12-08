@@ -1,23 +1,23 @@
 import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
-import {ServiceViewModule} from './service-view.module';
-import {service} from './service-schema';
+import {service} from '../service-view/service-schema';
+import {OperationViewModule} from './operation-view.module';
 import {RouterTestingModule} from '@angular/router/testing';
 
-storiesOf('Service view', module)
+storiesOf('Operation view', module)
   .addDecorator(
     moduleMetadata({
       declarations: [],
-      imports: [CommonModule, BrowserModule, ServiceViewModule, RouterTestingModule]
+      imports: [CommonModule, BrowserModule, OperationViewModule, RouterTestingModule]
     })
-  ).add('Service view', () => {
+  ).add('Operation view', () => {
   return {
     template: `<div style="padding: 40px; width: 100%; height: 100%" >
-    <app-service-view [service]="service"></app-service-view>
+    <app-operation-view [operation]="operation"></app-operation-view>
     </div>`,
     props: {
-      service: service
+      operation: service.operations[0]
     }
   };
 });

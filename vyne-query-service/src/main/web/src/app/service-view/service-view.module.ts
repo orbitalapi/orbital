@@ -7,6 +7,7 @@ import {ServiceViewContainerComponent} from './service-view-container.component'
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {DescriptionEditorModule} from '../type-viewer/description-editor/description-editor.module';
+import {RouterModule} from '@angular/router';
 
 @NgModule({
   imports: [
@@ -14,7 +15,8 @@ import {DescriptionEditorModule} from '../type-viewer/description-editor/descrip
     SearchModule,
     CommonModule,
     BrowserModule,
-    DescriptionEditorModule
+    DescriptionEditorModule,
+    RouterModule
   ],
   exports: [ServiceViewContainerComponent, ServiceViewComponent],
   declarations: [ServiceViewComponent, ServiceViewContainerComponent],

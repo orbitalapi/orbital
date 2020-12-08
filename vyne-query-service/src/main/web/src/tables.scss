@@ -19,30 +19,32 @@
     background-color: rgba($vyne-lilac, 0.15);
   }
 
-  a {
-    position: relative;
-    display: inline-block;
-    outline: none;
-    color: #404d5b;
-    vertical-align: bottom;
-    text-decoration: none;
-    white-space: nowrap;
-
-    // This is to force the border-bottom to render closer to the text
-    line-height: 0.4rem;
-    padding: 0.6rem 0.1rem 0.3rem;
-  }
-
-  a {
-    border-bottom: 1px solid rgba($vyne-lilac,0.4);
-    font-weight: 500;
-    -webkit-transition: background-color 0.3s, border-color 0.3s;
-    transition: background-color 0.3s, border-color 0.3s;
-  }
-
-  a:focus, a:hover {
-    border-color: rgba(52,73,94,0);
-    background-color: rgba($grey-3,0.1);
-  }
+  @include links();
+  // Migrated to mono badge, as I think that's the only place this is used.
+  //a {
+  //  position: relative;
+  //  display: inline-block;
+  //  outline: none;
+  //  color: #404d5b;
+  //  vertical-align: bottom;
+  //  text-decoration: none;
+  //  white-space: nowrap;
+  //
+  //  // This is to force the border-bottom to render closer to the text
+  //  line-height: 0.4rem;
+  //  padding: 0.6rem 0.1rem 0.3rem;
+  //}
+  //
+  //a {
+  //  border-bottom: 1px solid rgba($vyne-lilac,0.4);
+  //  font-weight: 500;
+  //  -webkit-transition: background-color 0.3s, border-color 0.3s;
+  //  transition: background-color 0.3s, border-color 0.3s;
+  //}
+  //
+  //a:focus, a:hover {
+  //  border-color: rgba(52,73,94,0);
+  //  background-color: rgba($grey-3,0.1);
+  //}
 
 }

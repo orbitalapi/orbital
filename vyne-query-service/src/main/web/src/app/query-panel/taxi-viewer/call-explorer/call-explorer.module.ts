@@ -1,6 +1,6 @@
 import {NgModule} from '@angular/core';
 import {CallExplorerComponent} from './call-explorer.component';
-import {OperationViewComponent} from './operation-view.component';
+import {CallExplorerOperationViewComponent} from './call-explorer-operation-view.component';
 import {SequenceDiagramModule} from '../sequence-diagram/sequence-diagram.module';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatIconModule} from '@angular/material/icon';
@@ -23,8 +23,8 @@ import {MatButtonModule} from '@angular/material/button';
         MatTooltipModule,
         MatButtonModule,
     ],
-  exports: [CallExplorerComponent, OperationViewComponent],
-  declarations: [CallExplorerComponent, OperationViewComponent],
+  exports: [CallExplorerComponent, CallExplorerOperationViewComponent],
+  declarations: [CallExplorerComponent, CallExplorerOperationViewComponent],
   providers: [],
 })
 export class CallExplorerModule {

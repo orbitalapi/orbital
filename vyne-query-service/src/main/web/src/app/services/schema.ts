@@ -384,14 +384,21 @@ export class SchemaMember {
   attributeNames: string[];
 
   static fromService(service: Service): SchemaMember[] {
-    return service.operations.map(operation => {
+    const serviceMember = new SchemaMember(
+      service.name,
+      SchemaMemberType.SERVICE,
+      null,
+      service,
+      []
+    );
+    const operations = service.operations.map(operation => {
       return this.fromOperation(operation, service);
     });
-
+    return [serviceMember].concat(operations);
   }
 
   private static fromOperation(operation: Operation, service: Service) {
-    const qualifiedName = service.name.fullyQualifiedName + ' #' + operation.name;
+    const qualifiedName = service.name.fullyQualifiedName + ' / ' + operation.name;
     return new SchemaMember(
       {
         name: operation.name,

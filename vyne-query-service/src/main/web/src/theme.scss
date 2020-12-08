@@ -14,6 +14,7 @@ $toolbar-height: 5rem;
   background-color: $body-bg;
   height: 100%;
 }
+
 .mat-toolbar {
   position: sticky;
   top: 0;
@@ -55,10 +56,32 @@ $light-grey-3: mat-color($vyne-grey-blue-palette, 200);
 
 $border-dark: $light-grey-2;
 $borer-light: $light-purple-grey-300;
-$border-highlight: rgba($vyne-lilac,0.6);
+$border-highlight: rgba($vyne-lilac, 0.6);
 
 //background-color: rgba($vyne-lilac, 0.1);
 
 //  color: $vyne-lilac;
 //  border: 1px solid rgba($vyne-lilac,0.6);
 //  background-color: rgba($vyne-lilac, 0.1);
+
+.error-message-box {
+  display: flex;
+  background-color: rgba($warning-2, 0.15);
+  border: 2px solid rgba($warning-2, 0.8);
+  margin: 1rem;
+  border-radius: 4px;
+  color: darken($warning-2, 20%);
+  padding: 1rem;
+  align-items: center;
+  font-size: 0.9rem;
+
+  ul {
+    margin: 0.5rem 0;
+  }
+
+  img {
+    width: 48px;
+    margin-right: 1.5rem;
+  }
+
+}

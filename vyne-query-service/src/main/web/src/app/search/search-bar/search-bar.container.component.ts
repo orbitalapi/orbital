@@ -1,9 +1,8 @@
-import {Component, OnInit} from '@angular/core';
+import {Component} from '@angular/core';
 import {SearchResult, SearchService} from '../search.service';
 import {Observable, of} from 'rxjs';
 import {Router} from '@angular/router';
-import {QualifiedName, Schema, SchemaMember} from '../../services/schema';
-import {TypesService} from "../../services/types.service";
+import {QualifiedName, Schema} from '../../services/schema';
 
 
 @Component({
@@ -27,7 +26,23 @@ export class SearchBarContainerComponent {
     this.searchResults = this.service.search($event);
   }
 
-  navigateToMember(memberName: QualifiedName) {
-    this.router.navigate(['/types', memberName.fullyQualifiedName]);
+  navigateToMember(searchResult: SearchResult) {
+    const qualifiedName = searchResult.qualifiedName.fullyQualifiedName;
+    switch (searchResult.memberType) {
+      case 'SERVICE':
+        this.router.navigate(['/services', qualifiedName]);
+        break;
+      case 'OPERATION':
+        const parts = qualifiedName.split('@@');
+        const serviceName = parts[0];
+        const operationName = parts[1];
+        this.router.navigate(['/services', serviceName, operationName]);
+        break;
+      default:
+      case 'TYPE':
+        this.router.navigate(['/types', qualifiedName]);
+        break;
+    }
+
   }
 }
