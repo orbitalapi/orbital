@@ -60,4 +60,22 @@ class CaskUpgraderServiceWatcherTest {
       latch.await(1, TimeUnit.SECONDS).should.be.`true`
 
    }
+
+   @Test
+   fun `Upgrade Thread pool Size should be set appropriately`() {
+      CaskUpgraderServiceWatcher(caskConfigRepository,caskDAO, upgraderService, eventPublisher)
+         .calculateUpgradeThreadPoolSize(10).should.equal(2)
+
+      CaskUpgraderServiceWatcher(caskConfigRepository,caskDAO, upgraderService, eventPublisher, 10)
+         .calculateUpgradeThreadPoolSize(10).should.equal(5)
+
+      CaskUpgraderServiceWatcher(caskConfigRepository,caskDAO, upgraderService, eventPublisher, 10)
+         .calculateUpgradeThreadPoolSize(2).should.equal(2)
+
+      CaskUpgraderServiceWatcher(caskConfigRepository,caskDAO, upgraderService, eventPublisher, 50)
+         .calculateUpgradeThreadPoolSize(1).should.equal(1)
+
+      CaskUpgraderServiceWatcher(caskConfigRepository,caskDAO, upgraderService, eventPublisher, 1)
+         .calculateUpgradeThreadPoolSize(100).should.equal(1)
+   }
 }

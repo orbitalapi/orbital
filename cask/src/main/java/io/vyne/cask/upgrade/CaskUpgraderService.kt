@@ -67,7 +67,7 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
                   false
                }
                caskMessage.messageContentId == null -> {
-                  log().warn("Cannot reprocess message ${caskMessage.messageContentId} as it's content was not stored")
+                  log().warn("Cannot reprocess message with type ${caskMessage.messageContentType} as it's content was not stored")
                   false
                }
                else -> true
