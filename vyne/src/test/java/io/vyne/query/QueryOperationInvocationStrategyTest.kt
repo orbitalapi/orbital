@@ -46,6 +46,65 @@ class QueryOperationInvocationStrategyTest {
    }
 
    @Test
+   fun `when querying for base type, services retuning subtype are considered`() {
+      val schema = TaxiSchema.fromStrings(
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
+         type TraderName inherits String
+         model Trade {}
+         model FxTrade inherits Trade {
+            trader : TraderName
+         }
+         model IrsTrade inherits Trade {
+            trader : TraderName
+         }
+         service FxTradeService {
+            ${queryDeclaration("fxTradeQuery", "FxTrade[]")}
+         }
+         service IrsTradeService {
+            ${queryDeclaration("irsTradeQuery", "IrsTrade[]")}
+         }
+      """.trimIndent())
+      val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName = 'Jimmy' ) }", schema)
+      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
+      candidates.should.have.size(2)
+   }
+
+   @Test
+   fun `when querying for base type with query params, services retuning subtype but do not contain query param are not considered`() {
+      val schema = TaxiSchema.fromStrings(
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
+         type TraderName inherits String
+         model Trade {}
+         model FxTrade inherits Trade {
+            trader : TraderName
+         }
+
+         // BondTrade does not expose a TraderName, so in query filtering on TraderName, it should not
+         // be invoked
+         model BondTrade inherits Trade {
+         }
+         model IrsTrade inherits Trade {
+            trader : TraderName
+         }
+         service BondTradeService {
+            ${queryDeclaration("bondTradeQuery", "BondTrade[]")}
+         }
+         service FxTradeService {
+            ${queryDeclaration("fxTradeQuery", "FxTrade[]")}
+         }
+         service IrsTradeService {
+            ${queryDeclaration("irsTradeQuery", "IrsTrade[]")}
+         }
+      """.trimIndent())
+      val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName = 'Jimmy' ) }", schema)
+      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
+      candidates.should.have.size(2)
+   }
+
+
+   @Test
    fun invokesRemoteServiceWithCorrectParams() {
       val (vyne, stub) = testVyne(schema)
 
