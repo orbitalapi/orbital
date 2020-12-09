@@ -25,6 +25,9 @@ import io.vyne.utils.log
 import io.vyne.vyneql.VyneQLQueryString
 import io.vyne.vyneql.VyneQlCompiler
 import io.vyne.vyneql.VyneQlQuery
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 enum class NodeTypes {
    ATTRIBUTE,
@@ -45,7 +48,25 @@ interface ModelContainer : SchemaContainer {
    fun addModel(model: TypedInstance, factSetId: FactSetId = FactSets.DEFAULT): ModelContainer
 }
 
-class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFactory, private val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) : ModelContainer {
+data class ExecutableQuery(
+   val queryContext: QueryContext,
+   val query: VyneQLQueryString,
+   val result: CompletableFuture<QueryResult>
+) {
+   val queryId: String = queryContext.queryContextId
+   val f = result.isDone
+}
+
+class Vyne(
+   schemas: List<Schema>,
+   private val queryEngineFactory: QueryEngineFactory,
+   private val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder(),
+   private val executorService: ExecutorService = DEFAULT_EXECUTOR
+) : ModelContainer {
+   companion object {
+      val DEFAULT_EXECUTOR = Executors.newFixedThreadPool(10)
+   }
+
    private val schemas = mutableListOf<Schema>()
 
    private val factSets: FactSetMap = FactSetMap.create()
@@ -73,6 +94,18 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
          io.vyne.vyneql.QueryMode.FIND_ALL -> queryContext.findAll(expression)
          io.vyne.vyneql.QueryMode.FIND_ONE -> queryContext.find(expression)
       }
+   }
+
+   fun queryAsync(vyneQlQuery: VyneQLQueryString): ExecutableQuery {
+      val vyneQuery = VyneQlCompiler(vyneQlQuery, this.schema.taxi).query()
+      val (queryContext, expression) = buildContextAndExpression(vyneQuery)
+
+      val supplier: () -> QueryResult = when (vyneQuery.queryMode) {
+         io.vyne.vyneql.QueryMode.FIND_ALL -> {           { queryContext.findAll(expression)         } }
+         io.vyne.vyneql.QueryMode.FIND_ONE ->  {           {  queryContext.find(expression)    }     }
+      }
+      val future = CompletableFuture.supplyAsync(supplier)
+      return ExecutableQuery(queryContext, vyneQlQuery, future)
    }
 
    @VisibleForTesting

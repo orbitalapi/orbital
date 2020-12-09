@@ -12,6 +12,8 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import io.vyne.utils.timed
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 
@@ -79,7 +81,11 @@ class StatefulQueryEngine(
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
 // The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
+abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, executor:Executor = DEFAULT_EXECUTOR) : QueryEngine {
+
+   companion object {
+      val DEFAULT_EXECUTOR = Executors.newFixedThreadPool(5)
+   }
 
    private val queryParser = QueryParser(schema)
    override fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult {
@@ -97,6 +103,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    // some, but not all, of the facts up front, and then use Vyne to polyfill.
    // Build starts by using facts known in it's current context to build the target type
    override fun build(query: QueryExpression, context: QueryContext): QueryResult {
+
+
       // Note - this should be trivial to expand to TypeListQueryExpression too
       val typeNameQueryExpression = when (query) {
          is TypeNameQueryExpression -> query
@@ -195,13 +203,24 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val targetCollectionType = targetType.resolveAliases().typeParameters[0]
       return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
          val inboundFactList = (context.facts.first() as TypedCollection).value
+         context.setApproximateProjectionSize(inboundFactList.size)
          log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
-         val transformed = inboundFactList.mapNotNull { it -> mapTo(targetCollectionType, it, context) }
+         val transformed = inboundFactList
+            .stream()
+            .map { mapTo(targetCollectionType, it, context) }
+            .filter { it != null }
+            .map { instance ->
+               context.publishPartialResult(instance!!)
+               instance
+            }
+            .collect(Collectors.toList())
+
          return@timed when {
             transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
             else -> TypedCollection.from(flattenResult(transformed))
          }
       }
+
    }
 
    private fun mapSingleToCollection(targetType: Type, context: QueryContext): TypedInstance? {
@@ -214,6 +233,10 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             .stream()
             .map { mapTo(targetCollectionType, it, context) }
             .filter { it != null }
+            .map { instance ->
+               context.publishPartialResult(instance!!)
+               instance
+            }
             .collect(Collectors.toList())
 
          return@timed when {
@@ -287,7 +310,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          throw SearchRuntimeException(e, context.profiler.root)
       }
    }
-
 
 
    private fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {

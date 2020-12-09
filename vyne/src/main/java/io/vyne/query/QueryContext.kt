@@ -26,7 +26,10 @@ import io.vyne.vyneql.ProjectedType
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
+import reactor.core.publisher.Sinks
+import java.time.Instant
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -219,11 +222,39 @@ data class QueryContext(
    val debugProfiling: Boolean = false,
    val parent: QueryContext? = null) : ProfilerOperation by profiler {
 
+   val queryContextId: String = UUID.randomUUID().toString()
+
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
    private var projectResultsTo: Type? = null
    private var inMemoryStream: List<TypedInstance>? = null
+
+   val executionStartTime: Instant = Instant.now()
+
+   /**
+    * An approximate size of the number of projections expected
+    * for this query.
+    * Note that inputs may project to null, or for some other reason
+    * not emit a result, so this size is an approximation.
+    */
+   var projectionSize: Int? = null
+      private set;
+
+   private val publishedResultCount = AtomicInteger(0);
+   private val resultSink = Sinks.many().replay().all<TypedInstance>()
+
+   fun setApproximateProjectionSize(size: Int) {
+      this.projectionSize = size
+   }
+
+   fun publishPartialResult(instance: TypedInstance) {
+      val emittedCount = publishedResultCount.incrementAndGet()
+      val targetSize = projectionSize?.toString() ?: "unknown"
+      log().info("Query $queryContextId published $emittedCount of approx. $targetSize")
+      resultSink.tryEmitNext(instance)
+   }
+
 
    override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
    fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
@@ -428,7 +459,7 @@ data class QueryContext(
       return getTopLevelContext().operationCache[key]
    }
 
-   fun hasOperationResult(operation: EvaluatableEdge,  callArgs: Set<TypedInstance?>): Boolean {
+   fun hasOperationResult(operation: EvaluatableEdge, callArgs: Set<TypedInstance?>): Boolean {
       val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
       return getTopLevelContext().operationCache[key] != null
    }
