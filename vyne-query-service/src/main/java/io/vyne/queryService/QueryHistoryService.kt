@@ -7,6 +7,7 @@ import io.vyne.query.ProfilerOperationDTO
 import io.vyne.query.QueryResponse
 import io.vyne.schemas.QualifiedName
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
@@ -18,6 +19,11 @@ import kotlin.streams.toList
 @RestController
 class QueryHistoryService(private val history: QueryHistory, private val queryHistoryExporter: QueryHistoryExporter) {
    private val truncationThreshold = 10
+
+   @DeleteMapping("/api/query/history")
+   fun clearHistory() {
+      history.clear()
+   }
 
    @GetMapping("/api/query/history")
    fun listHistory(): List<QueryHistoryRecordSummary<Any>> {

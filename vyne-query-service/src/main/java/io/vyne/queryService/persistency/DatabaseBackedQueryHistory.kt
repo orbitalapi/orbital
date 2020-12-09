@@ -3,7 +3,8 @@ package io.vyne.queryService.persistency
 import io.r2dbc.postgresql.codec.Json
 import io.r2dbc.spi.ConnectionFactory
 import io.vyne.models.TypeNamedInstance
-import io.vyne.queryService.*
+import io.vyne.queryService.QueryHistory
+import io.vyne.queryService.QueryHistoryRecord
 import io.vyne.queryService.persistency.entity.QueryHistoryRecordEntity
 import io.vyne.queryService.persistency.entity.QueryHistoryRecordRepository
 import io.vyne.utils.log
@@ -17,6 +18,9 @@ class DatabaseBackedQueryHistory(private val repository: QueryHistoryRecordRepos
                                  private val connectionFactory: ConnectionFactory,
                                  private val queryHistoryRecordReadingConverter: QueryHistoryRecordReadingConverter
 ) : QueryHistory {
+   override fun clear() {
+      log().info("Clearing of history on db not yet implemented")
+   }
    override fun add(record: QueryHistoryRecord<out Any>) {
       repository
          .save(QueryHistoryRecordEntity(queryId = record.id, record = record, timestamp = record.timestamp))
