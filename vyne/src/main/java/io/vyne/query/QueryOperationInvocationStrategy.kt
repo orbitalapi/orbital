@@ -11,7 +11,9 @@ import io.vyne.schemas.PropertyToParameterConstraint
 import io.vyne.schemas.QueryOperation
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.utils.log
+import lang.taxi.Operator
 import org.springframework.stereotype.Component
 
 @Component
@@ -33,9 +35,9 @@ class QueryOperationInvocationStrategy(invocationService: OperationInvocationSer
       val result = schema.services
          .flatMap { it.queryOperations }
          .asSequence()
-         .filter { it.returnType == target.type }
+         .filter { (it.returnType == target.type) || isCovariance (it.returnType, target.type) }
          .filter { it.hasFilterCapability }
-         .filter { queryServiceSatisfiesConstraints(it, target.dataConstraints) }
+         .filter { queryServiceSatisfiesConstraints(schema, it, target.dataConstraints, isCovariance (it.returnType, target.type)) }
          .mapNotNull { queryOperation ->
             val grammarBuilder = this.queryBuilders.firstOrNull { it.canSupport(queryOperation.grammar) };
             if (grammarBuilder == null) {
@@ -46,13 +48,28 @@ class QueryOperationInvocationStrategy(invocationService: OperationInvocationSer
             }
          }
          .map { (queryOperation, grammarBuilder) ->
-            (queryOperation as RemoteOperation) to grammarBuilder.buildQuery(target, queryOperation)
+            if (isCovariance(queryOperation.returnType, target.type)) {
+               (queryOperation as RemoteOperation) to grammarBuilder.buildQuery(
+                  target.copy(type = queryOperation.returnType), queryOperation)
+            }
+            else {
+               (queryOperation as RemoteOperation) to grammarBuilder.buildQuery(target, queryOperation)
+            }
          }
          .toList().toMap()
       return result
    }
 
-   private fun queryServiceSatisfiesConstraints(queryOperation: QueryOperation, dataConstraints: List<OutputConstraint>): Boolean {
+   private fun isCovariance(operationReturnType: Type, targetType: Type): Boolean {
+      return  operationReturnType.isCollection && targetType.isCollection &&
+         operationReturnType.typeParameters[0].inheritsFrom(targetType.typeParameters[0])
+   }
+
+   private fun queryServiceSatisfiesConstraints(
+      schema: Schema,
+      queryOperation: QueryOperation,
+      dataConstraints: List<OutputConstraint>,
+      isCovariant: Boolean): Boolean {
       // bail early
       if (dataConstraints.isEmpty()) {
          return true
@@ -61,13 +78,30 @@ class QueryOperationInvocationStrategy(invocationService: OperationInvocationSer
       // For now, we're only looking at filter operations.  Revisit when we get to aggregations.
       return dataConstraints.all { constraint ->
          when (constraint) {
-            is PropertyToParameterConstraint -> queryOperation.supportedFilterOperations.contains(constraint.operator)
+            is PropertyToParameterConstraint -> if (isCovariant) {
+               queryOperation.supportedFilterOperations.contains(constraint.operator)
+                  && validateSupportedFilterOperations(schema, queryOperation.supportedFilterOperations, constraint, queryOperation.returnType)
+            } else {queryOperation.supportedFilterOperations.contains(constraint.operator)}
             else -> {
                // TODO : Implement support for the other constraints if/when they become
                log().warn("Support for data constraint of type ${constraint::class.simpleName} is not yet implemented, so query operations cannot be invoked for this query.")
                false
             }
          }
+      }
+   }
+
+   fun validateSupportedFilterOperations(
+      schema: Schema,
+      operations: List<Operator>,
+      propertyToParameterConstraint: PropertyToParameterConstraint,
+      operationReturnType: Type): Boolean {
+      val propertyConstraintTaxiType =  propertyToParameterConstraint.propertyIdentifier.taxi
+      val propertyConstraintVyneType = schema.type(propertyConstraintTaxiType)
+      val operationReturnParameterisedType = if (operationReturnType.isCollection) operationReturnType.typeParameters[0] else operationReturnType
+      return operationReturnParameterisedType.attributes.values.any { field ->
+         val fieldVyneType = schema.type(field.type)
+         fieldVyneType == propertyConstraintVyneType || propertyConstraintVyneType.inheritsFrom(fieldVyneType)
       }
    }
 

@@ -10,6 +10,7 @@ import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
 import org.junit.Test
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class VyneQlSqlGeneratorTest {
@@ -18,10 +19,14 @@ class VyneQlSqlGeneratorTest {
       type Age inherits Int
       type LoginTime inherits Instant
       type LastLoggedIn inherits LoginTime
+      type BaseDate inherits Date
+      type InheritedDate inherits BaseDate
+      type BirthDate inherits InheritedDate
       model Person {
          firstName : FirstName
          age : Age
          lastLogin : LastLoggedIn
+         birthDate: BirthDate
       }
    """)
 
@@ -80,6 +85,12 @@ class VyneQlSqlGeneratorTest {
    fun `when querying using a base type, the field is resolved correctly`() {
       val statement = sqlGenerator.generateSql("""findAll { Person[]( LoginTime >= "2020-10-10T15:00:00Z",  LoginTime < "2020-11-10T15:00:00Z"  ) }""")
       statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00"), LocalDateTime.parse("2020-11-10T15:00:00")))
+   }
+
+   @Test
+   fun `when querying using a grand-base type, the field is resolved correctly`() {
+      val statement = sqlGenerator.generateSql("""findAll { Person[]( BaseDate >= "2020-10-10",  BaseDate < "2020-11-10"  ) }""")
+      statement.shouldEqual("""SELECT * from person WHERE "birthDate" >= ? AND "birthDate" < ?;""", listOf(LocalDate.parse("2020-10-10"), LocalDate.parse("2020-11-10")))
    }
 
    private fun SqlStatement.shouldEqual(sql: String, params: List<Any>) {
