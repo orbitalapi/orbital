@@ -11,10 +11,11 @@ export class CallExplorerComponent {
 
   constructor() {
   }
+
   selectedChart: 'sequence' | 'graph' = 'sequence';
 
   @Input()
-  queryResult:  QueryResult | QueryFailure;
+  queryResult: QueryResult | QueryFailure;
 
   selectedOperation: any;
 

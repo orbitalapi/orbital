@@ -2,8 +2,7 @@ import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {ObjectViewComponent} from './object-view.component';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
-import {findType, Schema, TypeCollection, TypedInstance} from '../services/schema';
-import {TypeNamedInstance} from '../services/query.service';
+import {findType, Schema, TypeCollection, TypedInstance, TypeNamedInstance} from '../services/schema';
 import {testSchema} from './test-schema';
 import {ObjectViewModule} from './object-view.module';
 

@@ -3,7 +3,7 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
 
 import {environment} from 'src/environments/environment';
-import {DataSource, InstanceLikeOrCollection, QualifiedName, Type, TypeNamedInstance} from './schema';
+import {DataSource, InstanceLikeOrCollection, QualifiedName, Type, TypedInstance, TypeNamedInstance} from './schema';
 import {VyneServicesModule} from './vyne-services.module';
 
 @Injectable({
@@ -40,6 +40,10 @@ export class QueryService {
   getQueryProfile(queryId: string): Observable<ProfilerOperation> {
     return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`);
   }
+
+  invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
+    return this.http.post<TypedInstance>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`, parameters);
+  }
 }
 
 export class Query {
@@ -71,7 +75,6 @@ export interface QueryResultNodeDetail {
   typeName: QualifiedName;
   source: DataSource;
 }
-
 
 
 export function isOperationResult(source: DataSource): source is OperationResultDataSource {

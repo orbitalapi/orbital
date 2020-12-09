@@ -1,0 +1,53 @@
+@import "src/styles";
+@import "src/page-styles";
+@import "src/tables";
+@import "src/toolbar";
+@import "src/app/service-view/service-view-common-styles";
+
+.parameter-list {
+  @include vyne-table()
+}
+
+.button-row {
+  margin-top: 2rem;
+  display: flex;
+}
+
+.http-method {
+  margin-right: 1rem;
+}
+
+.http-box {
+  border: 1px solid rgba($vyne-lilac, 0.15);
+  box-sizing: content-box;
+  width: fit-content;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+input {
+  border-radius: 4px;
+  background-color: rgba(white, 0.5);
+  border: 1px solid rgba($vyne-lilac, 0.35);;
+  padding: 0.7rem;
+}
+
+.spacer {
+  margin-right: 2rem;
+}
+
+.badges {
+  .separator-slash {
+    margin: 0 0.5rem;
+  }
+}
+
+.documentation {
+  display: flex;
+  flex-direction: column;
+}
+
+app-object-view-container {
+  flex-grow: 1;
+  margin-top: 1rem;
+}

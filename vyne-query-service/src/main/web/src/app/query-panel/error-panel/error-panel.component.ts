@@ -4,7 +4,7 @@ import {QueryResult} from '../../services/query.service';
 @Component({
   selector: 'app-error-panel',
   template: `
-    <div class="unmatched-nodes-alert" *ngIf="queryResult?.unmatchedNodes?.length > 0">
+    <div class="error-message-box" *ngIf="queryResult?.unmatchedNodes?.length > 0">
       <img src="assets/img/no-path.svg">
       <div>
         <span>Vyne wasn't able to find a way to load the following type(s):</span>
