@@ -31,8 +31,41 @@ class Ingester(
    //   4. receive InstanceAttributeSet
    //   ...
    //   N receive CommitTransaction
-
    fun ingest(): Flux<InstanceAttributeSet> {
+      // Here we split the paths that uses jdbcTemplate (for upserting) and pgBulk library.
+      // to ensure that we don't initialise pgBulk library path fpr upsert case.
+      // Otherwise, pgBulk library grabs an unused connection from the connection pool
+      return if (this.hasPrimaryKey) {
+         this.ingestThroughUpsert()
+      } else {
+         this.ingestThroughBulkCopy()
+      }
+   }
+
+   private fun ingestThroughUpsert(): Flux<InstanceAttributeSet> {
+      val table = ingestionStream.dbWrapper.rowWriterTable
+      return ingestionStream
+         .feed
+         .stream
+         .doOnError {
+            log().error("Closing DB connection for ${table.table}", it)
+            ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
+         }.doOnEach { signal ->
+            signal.get()?.let { instance ->
+               ingestionStream.dbWrapper.upsert(jdbcTemplate,instance)
+            }
+         }.onErrorMap {
+            ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
+            if (it.cause is PSQLException) {
+               it.cause
+            } else {
+               it
+            }
+
+         }
+   }
+
+   private fun ingestThroughBulkCopy(): Flux<InstanceAttributeSet> {
       val connection = jdbcTemplate.dataSource!!.connection
       val pgConnection = connection.unwrap(PGConnection::class.java)
       val table = ingestionStream.dbWrapper.rowWriterTable
@@ -71,12 +104,8 @@ class Ingester(
          }
          .doOnEach { signal ->
             signal.get()?.let { instance ->
-               if (this.hasPrimaryKey) {
-                  ingestionStream.dbWrapper.upsert(jdbcTemplate,instance)
-               } else {
-                  writer.startRow { rowWriter ->
-                     ingestionStream.dbWrapper.write(rowWriter, instance)
-                  }
+               writer.startRow { rowWriter ->
+                  ingestionStream.dbWrapper.write(rowWriter, instance)
                }
             }
          }.doOnError {
@@ -88,6 +117,7 @@ class Ingester(
             ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
          }
    }
+
 
 
    private fun hasPrimaryKey(type: ObjectType): Boolean {

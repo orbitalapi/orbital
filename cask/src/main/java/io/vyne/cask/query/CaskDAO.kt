@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import java.io.InputStream
 import java.sql.Connection
+import java.sql.Timestamp
 import java.sql.Types
 import java.time.Instant
 import java.time.LocalDate
@@ -362,12 +363,26 @@ class CaskDAO(
             val insertedAt = Instant.now()
 
             val messageObjectId = persistMessageAsLargeObject(connection, input)
-
             val parametersJson = objectMapper.writeValueAsString(parameters)
-
-            val caskMessage = caskMessageRepository.save(CaskMessage(id, qualifiedTypeName, messageObjectId, insertedAt, contentType, parametersJson))
-            connection.commit()
-            caskMessage
+            // Don't use spring repository here as:
+            // 1. it opens up a new connection
+            // 2. large object insertion and corresponding cask_message table insertion must be transactional.
+            ////val caskMessage = caskMessageRepository.save(CaskMessage(id, qualifiedTypeName, messageObjectId, insertedAt, contentType, parametersJson))
+            val caskMessageInsertInto = connection.prepareStatement(CaskMessage.insertInto)
+            caskMessageInsertInto.setString(1, id)
+            caskMessageInsertInto.setString(2, qualifiedTypeName)
+            caskMessageInsertInto.setLong(3, messageObjectId)
+            caskMessageInsertInto.setTimestamp(4, Timestamp.from(insertedAt))
+            caskMessageInsertInto.setString(5, contentType.name)
+            caskMessageInsertInto.setString(6, parametersJson)
+            caskMessageInsertInto.executeUpdate()
+            try {
+               connection.commit()
+            } catch (e: Exception) {
+               log().error("Error in creating cask message", e)
+               connection.rollback()
+            }
+            CaskMessage(id, qualifiedTypeName, messageObjectId, insertedAt, contentType, parametersJson)
          }
       }
    }
@@ -400,7 +415,7 @@ class CaskDAO(
       }
    }
 
-   private fun persistMessageAsLargeObject(conn: Connection, input: Flux<InputStream>): Long? {
+   private fun persistMessageAsLargeObject(conn: Connection, input: Flux<InputStream>): Long {
       val pgConn = conn.unwrap(PGConnection::class.java)
       val largeObjectManager = pgConn.largeObjectAPI
       val objectId = largeObjectManager.createLO(LargeObjectManager.READWRITE)

@@ -177,5 +177,29 @@ class StringsTest {
 
       val fooWithIsin = TypedInstance.from(vyne.type("FindModel"), csv("1111111"), vyne.schema, source = Provided) as TypedObject
       fooWithIsin["identifierValue"].value.should.equal("1111111")
+      fooWithIsin["identifierValue"].typeName.should.equal("lang.taxi.String")
+   }
+
+   @Test
+   fun `concat should yield correct return type`() {
+      val schema= TaxiSchema.from("""
+         type ResetFrequencyStr inherits String
+         type ResetLength inherits Int
+         type ResetTerm inherits String
+
+         model SomeModel {
+            attReferenceRateTermValue : ResetLength?
+            attReferenceRateTermUnit : ResetTerm?
+            attResetFrequencyStr : ResetFrequencyStr? by concat (this.attReferenceRateTermValue, this.attReferenceRateTermUnit)
+         }
+      """.trimIndent())
+      val json = """{
+         |"attReferenceRateTermValue" : 3,
+         |"attReferenceRateTermUnit" : "Month"
+         |}
+      """.trimMargin()
+      val person = TypedInstance.from(schema.type("SomeModel"), json, schema, source = Provided) as TypedObject
+      person["attResetFrequencyStr"].value.should.equal("3Month")
+      person["attResetFrequencyStr"].typeName.should.equal("ResetFrequencyStr")
    }
 }

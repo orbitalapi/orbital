@@ -17,6 +17,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.schemas.fqn
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import io.vyne.utils.Benchmark
+import io.zonky.test.db.flyway.BlockingDataSourceWrapper
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.io.FileUtils
 import org.flywaydb.core.Flyway
@@ -24,10 +25,12 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.postgresql.util.PSQLException
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
+import reactor.test.StepVerifier
 import java.io.InputStream
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -123,7 +126,29 @@ class DataIngestionTests : BaseCaskIntegrationTest() {
       (result[1]["v1"] as BigDecimal).setScale(1).should.equal(BigDecimal("6.6"))
 
       caskDao.createCaskRecordTable(type)
+   }
 
+   @Test
+   fun `Can retrieve SQL Exception`() {
+      val source = """Id,Name,t1,v1
+         |1,Joe,1900-01-01 11:12:13,3.14
+         |2,Herb,2010-02-03 21:22:23,1.8
+         |1,Django,2000-01-01 01:02:03,6.6""".trimMargin()
+      val schema = TestSchema.schemaUpsertTest
+      val type = schema.versionedType("UpsertTestSinglePk".fqn())
+
+      val input: Flux<InputStream> = Flux.just(source.byteInputStream())
+      val pipelineSource = CsvStreamSource(input, type, schema, MessageIds.uniqueId(), csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(), ingestionErrorProcessor = caskIngestionErrorProcessor)
+      val pipeline = IngestionStream(type, TypeDbWrapper(type, schema), pipelineSource)
+
+      caskDao = CaskDAO(jdbcTemplate, SimpleTaxiSchemaProvider(TestSchema.upsertTest), dataSource, caskMessageRepository, configRepository)
+      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
+      caskDao.dropCaskRecordTable(type)
+
+      ingester.ingest()
+      StepVerifier
+         .create(ingester.ingest())
+         .expectError(PSQLException::class.java)
    }
 
    @Test

@@ -28,6 +28,9 @@ data class CaskMessage(
    companion object {
       const val INSERTED_AT_COLUMN = "insertedat"
       const val ID_COLUMN = "id"
+      const val insertInto = """INSERT INTO cask_message(id, qualifiedtypename, messageid, insertedat, contenttype, ingestionparams)
+         VALUES (?,?,?,?,?,?)
+      """
    }
 }
 
