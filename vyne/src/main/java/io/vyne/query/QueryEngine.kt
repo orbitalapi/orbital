@@ -81,7 +81,7 @@ class StatefulQueryEngine(
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
 // The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, executor:Executor = DEFAULT_EXECUTOR) : QueryEngine {
+abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>, executor: Executor = DEFAULT_EXECUTOR) : QueryEngine {
 
    companion object {
       val DEFAULT_EXECUTOR = Executors.newFixedThreadPool(5)
@@ -215,6 +215,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             }
             .collect(Collectors.toList())
 
+         context.endResultStream()
          return@timed when {
             transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
             else -> TypedCollection.from(flattenResult(transformed))
@@ -238,7 +239,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                instance
             }
             .collect(Collectors.toList())
-
+         context.endResultStream()
          return@timed when {
             transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
             else -> TypedCollection.from(flattenResult(transformed))
@@ -373,12 +374,18 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
       return if (!context.isProjecting && context.projectResultsTo() != null) {
          projectTo(context.projectResultsTo()!!, context)
-      } else QueryResult(
-         matchedNodes,
-         unresolvedNodes().toSet(),
-         path = null,
-         profilerOperation = context.profiler.root
-      )
+      } else {
+         matchedNodes.values
+            .filterNotNull()
+            .forEach { context.publishPartialResult(it) }
+         context.endResultStream()
+         QueryResult(
+            matchedNodes,
+            unresolvedNodes().toSet(),
+            path = null,
+            profilerOperation = context.profiler.root
+         )
+      }
    }
 
    private fun invokeStrategy(

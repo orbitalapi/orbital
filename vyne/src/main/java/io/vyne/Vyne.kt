@@ -1,5 +1,6 @@
 package io.vyne
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.annotations.VisibleForTesting
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.addKeyValuePair
@@ -25,6 +26,7 @@ import io.vyne.utils.log
 import io.vyne.vyneql.VyneQLQueryString
 import io.vyne.vyneql.VyneQlCompiler
 import io.vyne.vyneql.VyneQlQuery
+import reactor.core.publisher.Flux
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -49,12 +51,23 @@ interface ModelContainer : SchemaContainer {
 }
 
 data class ExecutableQuery(
+   @get:JsonIgnore
    val queryContext: QueryContext,
    val query: VyneQLQueryString,
+   @get:JsonIgnore
+   val parsedQuery: VyneQlQuery,
+   @get:JsonIgnore
    val result: CompletableFuture<QueryResult>
 ) {
+   fun resultStream(): Flux<TypedInstance> {
+      return queryContext.resultStream
+   }
+
    val queryId: String = queryContext.queryContextId
-   val f = result.isDone
+   val startTime = queryContext.executionStartTime
+
+   val estimatedProjectionCount = queryContext.projectionSize
+   val completedProjections = queryContext.completedProjections
 }
 
 class Vyne(
@@ -97,15 +110,19 @@ class Vyne(
    }
 
    fun queryAsync(vyneQlQuery: VyneQLQueryString): ExecutableQuery {
-      val vyneQuery = VyneQlCompiler(vyneQlQuery, this.schema.taxi).query()
+      val vyneQuery: VyneQlQuery = VyneQlCompiler(vyneQlQuery, this.schema.taxi).query()
       val (queryContext, expression) = buildContextAndExpression(vyneQuery)
 
       val supplier: () -> QueryResult = when (vyneQuery.queryMode) {
-         io.vyne.vyneql.QueryMode.FIND_ALL -> {           { queryContext.findAll(expression)         } }
-         io.vyne.vyneql.QueryMode.FIND_ONE ->  {           {  queryContext.find(expression)    }     }
+         io.vyne.vyneql.QueryMode.FIND_ALL -> {
+            { queryContext.findAll(expression) }
+         }
+         io.vyne.vyneql.QueryMode.FIND_ONE -> {
+            { queryContext.find(expression) }
+         }
       }
       val future = CompletableFuture.supplyAsync(supplier)
-      return ExecutableQuery(queryContext, vyneQlQuery, future)
+      return ExecutableQuery(queryContext, vyneQlQuery, vyneQuery, future)
    }
 
    @VisibleForTesting

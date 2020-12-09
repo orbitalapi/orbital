@@ -103,6 +103,40 @@ class VyneQueryIntegrationTest {
    }
 
    @Test
+   fun `streaming json response`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+
+      val entity = HttpEntity("findAll { User[] }", headers)
+
+      val response = restTemplate.exchange("/api/vyneql/async?resultMode=SIMPLE", HttpMethod.POST, entity, String::class.java)
+
+      response.statusCodeValue.should.be.equal(200)
+      response.headers["Content-Type"].should.equal(listOf(MediaType.APPLICATION_JSON_VALUE))
+
+      val responseBody = response.body
+      responseBody.should.equal("""[{"typeName":"io.vyne.queryService.User","value":{"userId":{"typeName":"io.vyne.queryService.UserId","value":"1010"},"userName":{"typeName":"io.vyne.queryService.Username","value":"jean-pierre"}}},{"typeName":"io.vyne.queryService.User","value":{"userId":{"typeName":"io.vyne.queryService.UserId","value":"2020"},"userName":{"typeName":"io.vyne.queryService.Username","value":"jean-paul"}}},{"typeName":"io.vyne.queryService.User","value":{"userId":{"typeName":"io.vyne.queryService.UserId","value":"3030"},"userName":{"typeName":"io.vyne.queryService.Username","value":"jean-jacques"}}}]""")
+   }
+
+   @Test
+   fun `streaming json response with projection`() {
+      val headers = HttpHeaders()
+      headers.contentType = MediaType.APPLICATION_JSON
+      headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
+
+      val entity = HttpEntity("findAll { User[] } as Username[]", headers)
+
+      val response = restTemplate.exchange("/api/vyneql/async?resultMode=SIMPLE", HttpMethod.POST, entity, String::class.java)
+
+      response.statusCodeValue.should.be.equal(200)
+      response.headers["Content-Type"].should.equal(listOf(MediaType.APPLICATION_JSON_VALUE))
+
+      val responseBody = response.body
+      responseBody.should.equal("""[{"typeName":"io.vyne.queryService.Username","value":"jean-pierre"},{"typeName":"io.vyne.queryService.Username","value":"jean-paul"},{"typeName":"io.vyne.queryService.Username","value":"jean-jacques"}]""")
+   }
+
+   @Test
    fun `Simple JSON POST request should answer json`() {
       val headers = HttpHeaders()
       headers.contentType = MediaType.APPLICATION_JSON

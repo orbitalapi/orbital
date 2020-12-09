@@ -26,6 +26,7 @@ import io.vyne.vyneql.ProjectedType
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.time.Instant
 import java.util.*
@@ -151,6 +152,7 @@ data class QueryResult(
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
    enum class ResponseStatus {
+      RUNNING,
       COMPLETED,
 
       // Ie., the query didn't error, but not everything was resolved
@@ -242,7 +244,15 @@ data class QueryContext(
       private set;
 
    private val publishedResultCount = AtomicInteger(0);
+   val completedProjections: Int
+      get() {
+         return publishedResultCount.get()
+      }
    private val resultSink = Sinks.many().replay().all<TypedInstance>()
+   val resultStream: Flux<TypedInstance>
+      get() {
+         return resultSink.asFlux()
+      }
 
    fun setApproximateProjectionSize(size: Int) {
       this.projectionSize = size
@@ -253,6 +263,10 @@ data class QueryContext(
       val targetSize = projectionSize?.toString() ?: "unknown"
       log().info("Query $queryContextId published $emittedCount of approx. $targetSize")
       resultSink.tryEmitNext(instance)
+   }
+
+   fun endResultStream() {
+      resultSink.tryEmitComplete()
    }
 
 
