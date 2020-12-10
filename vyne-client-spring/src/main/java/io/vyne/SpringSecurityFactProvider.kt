@@ -22,5 +22,4 @@ class SpringUserDetailsFactConverter : AuthenticationFactConverter {
       val user = authentication.principal as User
       return Fact("io.vyne.Username", user.username, FactSets.CALLER)
    }
-
 }

@@ -8,13 +8,13 @@ import {environment} from 'src/environments/environment';
 import {map} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
-  Message,
+  Message, Operation,
   ParsedSource,
   QualifiedName,
   Schema,
   SchemaGraph,
   SchemaGraphNode,
-  SchemaSpec,
+  SchemaSpec, Service,
   Type,
   TypedInstance,
   TypeNamedInstance,
@@ -77,9 +77,15 @@ export class TypesService {
   }
 
   getType(qualifiedName: string): Observable<Type> {
-    return this.getTypes().pipe(
-      map(schema => schema.types.find(t => t.name.fullyQualifiedName === qualifiedName))
-    );
+    return this.http.get<Type>(`${environment.queryServiceUrl}/api/types/${qualifiedName}`);
+  }
+
+  getService(qualifiedName: string): Observable<Service> {
+    return this.http.get<Service>(`${environment.queryServiceUrl}/api/services/${qualifiedName}`);
+  }
+
+  getOperation(serviceName: string, operationName: string): Observable<Operation> {
+    return this.http.get<Operation>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`);
   }
 
   parse(content: string, type: Type): Observable<ParsedTypeInstance> {

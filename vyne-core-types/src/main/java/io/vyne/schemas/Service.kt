@@ -1,6 +1,7 @@
 package io.vyne.schemas
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.VersionedSource
 import lang.taxi.services.FilterCapability
 import lang.taxi.services.QueryOperationCapability
@@ -66,10 +67,12 @@ object OperationNames {
 }
 
 
-data class Parameter(val type: Type,
-                     val name: String? = null,
-                     override val metadata: List<Metadata> = emptyList(),
-                     val constraints: List<InputConstraint> = emptyList()) : MetadataTarget {
+data class Parameter(
+   @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
+   val type: Type,
+   val name: String? = null,
+   override val metadata: List<Metadata> = emptyList(),
+   val constraints: List<InputConstraint> = emptyList()) : MetadataTarget {
    fun isNamed(name: String): Boolean {
       return this.name != null && this.name == name
    }
@@ -77,6 +80,7 @@ data class Parameter(val type: Type,
 
 data class Operation(override val qualifiedName: QualifiedName,
                      override val parameters: List<Parameter>,
+                     @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
                      override val returnType: Type,
    // similar to scope in taxi - ie., read / write
                      override val operationType: String? = null,
@@ -105,6 +109,7 @@ interface RemoteOperation : MetadataTarget {
 
 data class QueryOperation(override val qualifiedName: QualifiedName,
                           override val parameters: List<Parameter>,
+                          @get:JsonSerialize(using = TypeAsNameJsonSerializer::class)
                           override val returnType: Type,
                           override val metadata: List<Metadata> = emptyList(),
                           val grammar: String,
@@ -137,7 +142,8 @@ data class Service(val name: QualifiedName,
    fun operation(name: String): Operation {
       return this.operations.first { it.name == name }
    }
-   fun remoteOperation(name:String):RemoteOperation {
+
+   fun remoteOperation(name: String): RemoteOperation {
       return this.queryOperations.firstOrNull { it.name == name }
          ?: this.operations.first { it.name == name }
    }
@@ -150,7 +156,9 @@ data class Service(val name: QualifiedName,
 }
 
 
-data class OperationContract(val returnType: Type, val constraints: List<OutputConstraint> = emptyList()) {
+data class OperationContract(
+   @JsonSerialize(using = TypeAsNameJsonSerializer::class)
+   val returnType: Type, val constraints: List<OutputConstraint> = emptyList()) {
    fun containsConstraint(clazz: Class<out OutputConstraint>): Boolean {
       return constraints.filterIsInstance(clazz)
          .isNotEmpty()

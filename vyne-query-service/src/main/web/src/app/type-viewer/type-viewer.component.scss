@@ -1,23 +1,10 @@
 @import "src/theme";
 @import "src/toolbar";
+@import "src/page-styles";
 :host {
   background-color: $body-bg;
   display: block;
 }
-.page-content {
-  font-family: $font-sans-docs;
-  display: flex;
-}
-
-.documentation {
-  flex-grow: 1;
-  table {
-    width: 100%;
-  }
-}
-
-
-
 .spacer {
   flex-grow: 1;
 }
@@ -25,12 +12,9 @@
 .spacer-gap {
   width: 4rem;
 }
+// Deprecated, use page-heading
 .type-name {
-  h1 {
-    margin-bottom: 0;
-    font-weight: 700;
-  }
-  margin-bottom: 2rem;
+  @extend .page-heading
 }
 
 app-type-link-graph-container {

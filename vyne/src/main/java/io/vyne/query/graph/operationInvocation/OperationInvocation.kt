@@ -15,7 +15,6 @@ import io.vyne.query.graph.LinkEvaluator
 import io.vyne.query.graph.ParameterFactory
 import io.vyne.schemas.ConstraintEvaluations
 import io.vyne.schemas.Link
-import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
@@ -23,6 +22,7 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 
 /**
@@ -197,4 +197,4 @@ class SearchRuntimeException(exception: Exception, operation: ProfilerOperation)
 
 class UnresolvedOperationParametersException(message: String, evaluatedPath: List<EvaluatedEdge>, operation: ProfilerOperation) : SearchFailedException(message, evaluatedPath, operation)
 
-class OperationInvocationException(message: String) : RuntimeException(message)
+class OperationInvocationException(message: String, val httpStatus:HttpStatus) : RuntimeException(message)

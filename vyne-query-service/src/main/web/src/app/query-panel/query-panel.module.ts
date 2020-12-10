@@ -63,7 +63,7 @@ import {ErrorPanelComponent} from './error-panel/error-panel.component';
     CallExplorerModule,
     AngularSplitModule.forChild()
   ],
-  exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent],
+    exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent, ErrorPanelComponent],
   declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent,
     VyneQueryViewerComponent, QueryEditorComponent, BottomBarComponent, CounterTimerComponent,
     TabbedResultsViewComponent,

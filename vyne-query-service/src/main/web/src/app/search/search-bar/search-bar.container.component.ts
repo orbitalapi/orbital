@@ -1,9 +1,8 @@
-import {Component, OnInit} from '@angular/core';
+import {Component} from '@angular/core';
 import {SearchResult, SearchService} from '../search.service';
 import {Observable, of} from 'rxjs';
 import {Router} from '@angular/router';
-import {QualifiedName, Schema, SchemaMember} from '../../services/schema';
-import {TypesService} from "../../services/types.service";
+import {QualifiedName, Schema} from '../../services/schema';
 
 
 @Component({
@@ -16,9 +15,7 @@ import {TypesService} from "../../services/types.service";
 })
 export class SearchBarContainerComponent {
 
-  constructor(private typesService: TypesService, private service: SearchService, private router: Router) {
-    this.typesService.getTypes()
-      .subscribe(next => this.schema = next);
+  constructor(private service: SearchService, private router: Router) {
   }
 
   searchResults: Observable<SearchResult[]> = of([]);
@@ -29,13 +26,23 @@ export class SearchBarContainerComponent {
     this.searchResults = this.service.search($event);
   }
 
-  navigateToMember(memberName: QualifiedName) {
-    // In case of a change in types, type we were receiving from service was undefined for the changed type.
-    // By refreshing types when encountering 'undefined', we resolve this problem.
-    if (!this.schema.types.find(type => type.name === memberName)) {
-      this.typesService.getTypes(true);
+  navigateToMember(searchResult: SearchResult) {
+    const qualifiedName = searchResult.qualifiedName.fullyQualifiedName;
+    switch (searchResult.memberType) {
+      case 'SERVICE':
+        this.router.navigate(['/services', qualifiedName]);
+        break;
+      case 'OPERATION':
+        const parts = qualifiedName.split('@@');
+        const serviceName = parts[0];
+        const operationName = parts[1];
+        this.router.navigate(['/services', serviceName, operationName]);
+        break;
+      default:
+      case 'TYPE':
+        this.router.navigate(['/types', qualifiedName]);
+        break;
     }
-    this.router.navigate(['/types', memberName.fullyQualifiedName]);
 
   }
 }

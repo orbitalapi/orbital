@@ -1,0 +1,50 @@
+@import "src/theme";
+
+@mixin vyne-table($bg-color-even: rgba($vyne-lilac, 0.05)) {
+  border-collapse: collapse;
+  width: 100%;
+
+  th {
+    border-bottom: solid 1px rgba($vyne-lilac, 0.3);
+    font-family: $font-sans-alt;
+    text-align: left;
+  }
+  td {
+    border: none;
+    border-bottom: solid 1px rgba($vyne-lilac, 0.3);
+    padding: 0.5rem 3rem 0.5rem 0.5rem;
+  }
+
+  tr:nth-child(even) {
+    background-color: rgba($vyne-lilac, 0.15);
+  }
+
+  @include links();
+  // Migrated to mono badge, as I think that's the only place this is used.
+  //a {
+  //  position: relative;
+  //  display: inline-block;
+  //  outline: none;
+  //  color: #404d5b;
+  //  vertical-align: bottom;
+  //  text-decoration: none;
+  //  white-space: nowrap;
+  //
+  //  // This is to force the border-bottom to render closer to the text
+  //  line-height: 0.4rem;
+  //  padding: 0.6rem 0.1rem 0.3rem;
+  //}
+  //
+  //a {
+  //  border-bottom: 1px solid rgba($vyne-lilac,0.4);
+  //  font-weight: 500;
+  //  -webkit-transition: background-color 0.3s, border-color 0.3s;
+  //  transition: background-color 0.3s, border-color 0.3s;
+  //}
+  //
+  //a:focus, a:hover {
+  //  border-color: rgba(52,73,94,0);
+  //  background-color: rgba($grey-3,0.1);
+  //}
+
+}

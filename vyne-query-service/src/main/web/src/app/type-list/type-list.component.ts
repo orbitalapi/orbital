@@ -82,7 +82,20 @@ export class TypeListComponent implements OnInit {
 
 
   navigateToMember(member: SchemaMember) {
-    this.router.navigate(['/types', member.name.fullyQualifiedName]);
+    switch (member.kind) {
+      case SchemaMemberType.SERVICE:
+        this.router.navigate(['/services', member.name.fullyQualifiedName]);
+        break;
+      case SchemaMemberType.OPERATION:
+        const parts = member.name.fullyQualifiedName.split('/');
+        const serviceName = parts[0].trim();
+        const operationName = parts[1].trim();
+        this.router.navigate(['/services', serviceName, operationName]);
+        break;
+      default:
+        this.router.navigate(['/types', member.name.fullyQualifiedName]);
+    }
+
   }
 
   refresh() {

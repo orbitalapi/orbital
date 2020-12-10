@@ -8,6 +8,7 @@ import {QualifiedName} from '../../services/schema';
 import {SearchResultListComponent} from './search-result-list.component';
 
 const typeDocSearchResult: SearchResult = {
+  memberType: 'TYPE',
   qualifiedName: QualifiedName.from('taxi.demo.Person'),
   typeDoc: 'A human being, who knows and understands the value of the earlier seasons of community',
   matches: [
@@ -15,6 +16,7 @@ const typeDocSearchResult: SearchResult = {
   ]
 };
 const typeNameSearchResult: SearchResult = {
+  memberType: 'TYPE',
   qualifiedName: QualifiedName.from('taxi.demo.Person'),
   typeDoc: 'A human being, who knows and understands the value of the earlier seasons of community',
   matches: [
@@ -22,6 +24,7 @@ const typeNameSearchResult: SearchResult = {
   ]
 };
 const typeQualifiedNameSearchResult: SearchResult = {
+  memberType: 'TYPE',
   qualifiedName: QualifiedName.from('taxi.demo.Person'),
   typeDoc: 'A human being, who knows and understands the value of the earlier seasons of community',
   matches: [

@@ -38,7 +38,7 @@ export class SearchBarComponent {
   searchResults$: Observable<SearchResult[]>;
 
   @Output()
-  select = new EventEmitter<QualifiedName>();
+  select = new EventEmitter<SearchResult>();
 
 
   searchFn() {
@@ -62,7 +62,7 @@ export class SearchBarComponent {
 
   onSelect($event: any | null) {
     if ($event) {
-      this.select.emit($event.qualifiedName);
+      this.select.emit($event);
     }
 
   }
