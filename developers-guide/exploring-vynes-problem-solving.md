@@ -35,23 +35,20 @@ class TradeValueRuleService {
 }
    
 @DataType
+typealias TradeValue = Money
+@DataType
 @ParameterType
 data class TradeValueRuleRequest(
    @Constraint("currency = 'USD'")
    val tradeValue: TradeValue,
    val traderLimit: TraderMaxTradeValue
 )
-
-@DataType
-typealias TradeValue = Money
-
 @DataType("demo.Money")
 @ParameterType
 data class Money(
    val currency: Currency,
    val value: MoneyAmount
-   )
-   
+)
 ```
 {% endtab %}
 
@@ -78,7 +75,6 @@ public class TradeValueRuleRequest {
         this.traderLimit = traderLimit;
     }
 }
-
 @DataType("demo.Money")
 @ParameterType
 public class Money {
@@ -92,7 +88,6 @@ public class Money {
         this.value = value;
     }
 }
-
 ```
 {% endtab %}
 {% endtabs %}
@@ -130,7 +125,6 @@ public class TradeValueRuleRequest {
         this.traderLimit = traderLimit;
     }
 }
-
 ```
 {% endtab %}
 {% endtabs %}
