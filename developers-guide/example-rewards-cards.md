@@ -25,13 +25,11 @@ This walkthrough doesn't have the full code for the three services - we just hig
 
 It's assumed that you've gotten the Vyne query server up & running, and taken a walk through the basic Hello World.  If not, now's a good time to do so.
 
+{% page-ref page="employees-on-payroll-demo.md" %}
+
 ## Our model & topology
 
-Our model is pretty basic - 3 classes, from 3 different services.
-
-![](https://yuml.me/vyne/Customer-Marketing.png)
-
-Our task is to get the account balance for a customer, using their email address.
+Our model is pretty basic - 3 classes, from 3 different services. Our task is to get the account balance for a customer, using their email address.
 
 Here are our services:
 
@@ -74,11 +72,10 @@ The first service we'll define is the Customer service - which simply takes a `C
 ```kotlin
 @DataType("demo.CustomerId")
 typealias CustomerId = Int
-@DataType("demo.CustomerName")
-typealias CustomerName = String
 @DataType("demo.CustomerEmailAddress")
 typealias CustomerEmailAddress = String
-
+@DataType("demo.CustomerName")
+typealias CustomerName = String
 @DataType("demo.Customer")
 data class Customer(
         val id: CustomerId,
@@ -88,10 +85,8 @@ data class Customer(
 
 @Operation
 @GetMapping("/customers/email/{email}")
-fun getCustomerByEmail(@PathVariable("email") customerEmail: CustomerEmailAddress): Customer {
-    // Not shown
-}
-
+fun getCustomerByEmail(@PathVariable("email") email: CustomerEmailAddress) =
+    customers.first { it.email == email }
 ```
 {% endtab %}
 
@@ -131,7 +126,7 @@ class Customers {
 There's a few points of interest there in the Kotlin code - let's drill down:
 
 ```kotlin
-fun getCustomerByEmail(customerEmail: CustomerEmailAddress)
+fun getCustomerByEmail(email: CustomerEmailAddress)
 ```
 
 Note that we've declared the input as `CustomerEmailAddress`, rather than just `String`.  A typealias marks that `CustomerEmailAddress = String`.  However, to Vyne, these distinctions are important -- it's these aliases that Vyne uses for building connections.
@@ -140,7 +135,7 @@ By using Kotlin' type aliases, we're able to keep the code cleaner too - adding 
 
 {% page-ref page="../core-concepts/microtypes.md" %}
 
-Here are the three services in full - they all follow a similar pattern. There are both Kotlin \(.kt\) and Java \(.java\) examples below:
+Here are the three services in full - they all follow a similar pattern. There are both Kotlin and Java examples below:
 
 {% tabs %}
 {% tab title="CustomerService.kt" %}
@@ -148,7 +143,7 @@ Here are the three services in full - they all follow a similar pattern. There a
 @RestController
 @Service
 class CustomerService {
-    
+
     private val customers = listOf(
             Customer(1, "Jimmy", "jimmy@demo.com"),
             Customer(2, "Peter", "peter@demo.com"),
@@ -156,16 +151,17 @@ class CustomerService {
     )
 
     @Operation
-    @GetMapping("/customers/email/{email}")
-    fun getCustomerByEmail(@PathVariable("email") customerEmail: CustomerEmailAddress): Customer {
-        return customers.first { it.emailAddress == customerEmail }
-    }
-
-    @Operation
     @GetMapping("/customers/{id}")
     fun getCustomer(@PathVariable("id") customerId: CustomerId): Customer {
         return customers.first { it.id == customerId }
     }
+
+    @Operation
+    @GetMapping("/customers/email/{email}")
+    fun getCustomerByEmail(@PathVariable("email") email: CustomerEmailAddress): Customer {
+        return customers.first { it.email == email }
+    }
+
 }
 
 @DataType("demo.CustomerId")
@@ -179,9 +175,8 @@ typealias CustomerName = String
 data class Customer(
         val id: CustomerId,
         val name: CustomerName,
-        val emailAddress: CustomerEmailAddress
+        val email: CustomerEmailAddress
 )
-
 ```
 {% endtab %}
 
@@ -209,13 +204,11 @@ class MarketingService {
 typealias CustomerId = Int
 @DataType("demo.RewardsCardNumber")
 typealias RewardsCardNumber = String
-
 @DataType("demo.CustomerMarketingRecord")
 data class CustomerMarketingRecord(
         val id: CustomerId,
         val rewardsCardNumber: RewardsCardNumber
 )
-
 ```
 {% endtab %}
 
@@ -242,13 +235,11 @@ class RewardsBalanceService {
 typealias RewardsCardNumber = String
 @DataType("demo.RewardsBalance")
 typealias RewardsBalance = BigDecimal
-
 @DataType("demo.RewardsAccountBalance")
 data class RewardsAccountBalance(
         val cardNumber: RewardsCardNumber,
         val balance: RewardsBalance
 )
-
 ```
 {% endtab %}
 {% endtabs %}
@@ -297,7 +288,6 @@ public class Customer {
         this.emailAddress = emailAddress;
     }
 }
-
 ```
 {% endtab %}
 
@@ -320,7 +310,6 @@ public class MarketingService {
     Optional<CustomerMarketingRecord> getMarketingDetailsForCustomer(@PathVariable("customerId") Integer customerId) {
         return customerRecords.stream().filter(records -> records.getCustomerId().equals(customerId)).findFirst();
     }
-
 }
 
 @DataType("demo.CustomerMarketingRecord")
@@ -340,7 +329,6 @@ public class CustomerMarketingRecord {
         return customerId;
     }
 }
-
 ```
 {% endtab %}
 
@@ -382,7 +370,6 @@ public class RewardsAccountBalance {
         return rewardsCardNumber;
     }
 }
-
 ```
 {% endtab %}
 {% endtabs %}
@@ -401,7 +388,6 @@ However, in order to get them working, there's a little additional setup we need
 
 We need to leverage Taxi's annotation processor in order to capture the annotations present on the TypeAlias.   We need to add the annotation processor to the `kapt` section of our `kotlin-maven-plugin` in the build:
 
-{% code title="pom.xml" %}
 ```markup
 <plugin>
     <artifactId>kotlin-maven-plugin</artifactId>
@@ -426,7 +412,6 @@ We need to leverage Taxi's annotation processor in order to capture the annotati
     </executions>
 </plugin>
 ```
-{% endcode %}
 
 When this runs, a class called `TypeAliases` is created in our package.
 
@@ -443,7 +428,7 @@ open class RewardsBalanceApp {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            // Add this
+            // Add this line below
             TypeAliasRegistry.register(TypeAliases::class.java)
             runApplication<RewardsBalanceApp>(*args)
         }
@@ -488,7 +473,7 @@ You should see a result, with our points balance & card number.  Also, you can s
 
 ![](../.gitbook/assets/image%20%286%29.png)
 
-## Querying programatically
+## Querying programmatically
 
 Let's execute the same query, but through Vyne's API:   To do this, we'll use a new spring boot microservice to run our queries.
 
@@ -527,7 +512,7 @@ Adding dependencies on other services \(or even shared model libraries\) isn't m
 @SpringBootApplication
 @EnableEurekaClient
 @EnableVyneClient
-@EnableVyne(remoteSchemaStore = RemoteSchemaStoreType.HAZELCAST)
+@VyneSchemaPublisher(publicationMethod = SchemaPublicationMethod.DISTRIBUTED)
 class RewardsQueryFacadeApp {
     companion object {
         @JvmStatic
@@ -589,7 +574,6 @@ public class Customer {
         this.emailAddress = emailAddress;
     }
 }
-
 ```
 {% endtab %}
 {% endtabs %}
@@ -642,6 +626,7 @@ data class Customer(
 @DataType
 @ParameterType
 data class Identity(val customerNumber: CustomerId)
+
 ```
 {% endtab %}
 {% endtabs %}
@@ -650,6 +635,8 @@ Note the `@ParameterType`?  This is part of Taxi's language that instructs tooli
 
 And now, let's remove the `GET` request we had, and require callers to pass us a search object:
 
+{% tabs %}
+{% tab title="Kotlin" %}
 ```kotlin
 // Comment out the existing operation...
 //    @Operation
@@ -657,13 +644,33 @@ And now, let's remove the `GET` request we had, and require callers to pass us a
 //    fun getCustomer(@PathVariable("id") customerId: CustomerId): Customer {
 //    }
 
-// And replace it with out 'upgrade'...    
+// And replace it with...    
 @Operation
 @PostMapping("/customers/identityQuery")
 fun findCustomer(@RequestBody identity: Identity): Customer {
     return customers[identity.customerNumber] ?: throw error("Customer with id ${identity.customerNumber} not found")
 }
 ```
+{% endtab %}
+
+{% tab title="Java" %}
+```java
+// Comment out the existing operation...
+//    @Operation
+//    @GetMapping("customers/{id}")
+//    Optional<Customer> getCustomer(@PathVariable("id") Integer id) {
+//       return customers.stream().filter(customer -> customer.getId().equals(id)).findFirst();
+//    }
+
+// And replace it with...    
+@Operation
+@PostMapping("customers/identityQuery")
+Optional<Customer> getCustomer(@RequestBody Indentity indentity) {
+    return customers.stream().filter(customer -> customer.getIdentity().equals(indentity).findFirst();
+}
+```
+{% endtab %}
+{% endtabs %}
 
 So, that's two breaking changes we've introduced - Refactored the model \(including several name changes\), and replaced a method.  In a traditional integration scenario, these would require updates to the consumers of the API.  
 
@@ -677,7 +684,7 @@ As you can see, Vyne has changed it's call to the CustomerService to a POST, con
 
 ## Summary
 
-In this walkthrough, we've created some simple microservice API's, used Vyne's programattic `VyneClient` query API, and seen how Vyne adjusts it's integrations when API's around it change.
+In this walkthrough, we've created some simple microservice API's, used Vyne's programmatic `VyneClient` query API, and seen how Vyne adjusts it's integrations when API's around it change.
 
 Next up, take a look at one of our more advanced walkthroughs, to see how Vyne can problem solve, using service contracts and constraints.
 
