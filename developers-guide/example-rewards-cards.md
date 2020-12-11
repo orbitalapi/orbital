@@ -466,7 +466,7 @@ Let's run a query - remember, our task is to find the balance of a rewards card 
 
 Fill out the form, and select "Submit query"
 
-![](../.gitbook/assets/image%20%2837%29.png)
+![](../.gitbook/assets/rewards-balance-service-query-wizard.png)
 
   
 You should see a result, with our points balance & card number.  Also, you can see the route that Vyne took to gather this data:
