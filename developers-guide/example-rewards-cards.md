@@ -458,7 +458,7 @@ Read more about registering type aliases in the [Taxi documentation](https://doc
 
 Let's start the services up, and run a query.  After launching your services, head to [http://localhost:9022](http://localhost:9022), and you should see our types present in the explorer:
 
-![](../.gitbook/assets/image%20%2836%29.png)
+![](../.gitbook/assets/rewards-balance-service-type-explorer.png)
 
 As we did in our Hello World walkthrough, you might want to explore some of the types.
 
