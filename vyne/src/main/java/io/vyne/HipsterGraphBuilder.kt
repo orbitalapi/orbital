@@ -37,7 +37,7 @@ import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.utils.log
 import io.vyne.utils.timed
-import java.util.*
+import java.util.concurrent.TimeUnit
 
 /**
  *
@@ -52,19 +52,13 @@ import java.util.*
 ` *
 </pre> *
  */
-class HipsterGraphBuilder<V, E> private constructor() {
+class HipsterGraphBuilder<V, E> private constructor(
+   private val existingConnections: MutableMap<Pair<V, V>, E> = mutableMapOf(),
+   private val connections: MutableMap<Connection<V, E>, Connection<V, E>> = mutableMapOf()) {
 
-   fun copy():HipsterGraphBuilder<V,E> {
-      val builder = HipsterGraphBuilder.create<V,E>()
-      builder.existingConnections.putAll(this.existingConnections)
-      builder.connections.addAll(this.connections)
-      return builder
-   }
+   fun copy():HipsterGraphBuilder<V,E> = create(this.existingConnections, this.connections)
 
-   private data class Connection<V,E>(val vertex1: V, val vertex2: V, val edge: E)
-
-   private val existingConnections = mutableMapOf<Pair<V,V>, E>()
-   private val connections = LinkedList<Connection<V,E>>()
+   data class Connection<V,E>(val vertex1: V, val vertex2: V, val edge: E)
 
    fun connect(vertex: V): Vertex1 {
       return Vertex1(vertex)
@@ -76,25 +70,33 @@ class HipsterGraphBuilder<V, E> private constructor() {
       return this
    }
 
-   fun createDirectedGraph(excludedEdges:List<EvaluatableEdge> = emptyList()): HipsterDirectedGraph<V, E> {
-      val graph = HashBasedHipsterDirectedGraph.create<V, E>()
+   fun createDirectedGraph(excludedEdges:List<EvaluatableEdge> = emptyList()): VyneHashBasedHipsterDirectedGraph<V, E> {
       val permittedConnections = filterToEligibleConnections(excludedEdges)
+      val graph = VyneHashBasedHipsterDirectedGraph.create<V, E>()
       permittedConnections.forEach { connection ->
          graph.add(connection.vertex1)
          graph.add(connection.vertex2)
          graph.connect(connection.vertex1!!, connection.vertex2!!, connection.edge)
       }
+//      graph.addVertexTimings.filter { it.second > 100 }.forEach { pair ->
+//         log().warn("addition of Vertex: ${pair.first} into graph took ${pair.second} microseconds")
+//      }
+//
+//      graph.connectTimings.filter { it.second > 100 }.forEach { pair ->
+//         log().warn("addition of Edge: ${pair.first} into graph took ${pair.second} microseconds")
+//      }
       return graph
    }
 
-   private fun filterToEligibleConnections(excludedEdges:List<EvaluatableEdge>) :List<Connection<V,E>>{
+   private fun filterToEligibleConnections(excludedEdges:List<EvaluatableEdge>) :Collection<Connection<V,E>>{
       // bail early if there's nothing to do.
       if (excludedEdges.isEmpty()) {
-         return connections
+         return connections.values
       }
       val edgesByFirstVertex = excludedEdges.groupBy { it.vertex1 }
 
       val permittedConnections = connections
+         .values
          .filter { connection ->
             if (connection.vertex1 !is Element) {
                return@filter true // This is simply to bypass the type checker.
@@ -111,7 +113,7 @@ class HipsterGraphBuilder<V, E> private constructor() {
 
    fun createUndirectedGraph(): HipsterGraph<V, E> {
       val graph = HashBasedHipsterGraph.create<V, E>()
-      for (c in connections) {
+      for (c in connections.values) {
          graph.add(c.vertex1)
          graph.add(c.vertex2)
          graph.connect(c.vertex1!!, c.vertex2!!, c.edge)
@@ -161,14 +163,14 @@ class HipsterGraphBuilder<V, E> private constructor() {
                // tODO : Create a multi-link relationship
             }
             val connection = Connection(vertex1, vertex2, edge)
-            val connectionIndex = connections.indexOf(connection)
-            if (connectionIndex != -1) {
+            val existingConnection = connections[connection]
+            if (existingConnection != null) {
                // Do nothing.
 //               connections[connectionIndex].edge = edge
             } else {
 //               connection.edge = edge
                existingConnections.put(vertexPair,edge)
-               connections.add(connection)
+               connections[connection] = connection
             }
             return this@HipsterGraphBuilder
          }
@@ -179,6 +181,11 @@ class HipsterGraphBuilder<V, E> private constructor() {
 
       fun <V, E> create(): HipsterGraphBuilder<V, E> {
          return HipsterGraphBuilder()
+      }
+
+      fun <V, E> create(existingConnections: MutableMap<Pair<V, V>, E>,
+                        connections: MutableMap<Connection<V, E>, Connection<V, E>>): HipsterGraphBuilder<V, E> {
+         return HipsterGraphBuilder(LinkedHashMap(existingConnections), LinkedHashMap(connections))
       }
    }
 

@@ -1,9 +1,11 @@
 package io.vyne.query.planner
 
 import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import es.usc.citius.hipster.algorithm.Hipster
 import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.model.impl.WeightedNode
+import io.vyne.VyneGraphBuilderCacheSettings
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
@@ -16,16 +18,28 @@ import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
 import io.vyne.schemas.Operation
 import io.vyne.schemas.OperationNames
 import io.vyne.schemas.Relationship
+import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import io.vyne.utils.timed
 import java.util.concurrent.TimeUnit
 
-class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator: OperationInvocationEvaluator) : QueryStrategy {
+class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator: OperationInvocationEvaluator,
+                                        private val vyneGraphBuilderCacheSettings: VyneGraphBuilderCacheSettings) : QueryStrategy {
    private val cache = CacheBuilder.newBuilder()
       .weakKeys()
       .build<Type, ProjectionHeuristicsGraphSearchResult>()
+
+   private val schemaGraphCache = CacheBuilder.newBuilder()
+      .maximumSize(5) // arbitary cache size, we can explore tuning this later
+      .weakKeys()
+      .build(object : CacheLoader<Schema, VyneGraphBuilder>() {
+         override fun load(schema: Schema): VyneGraphBuilder {
+            return VyneGraphBuilder(schema, vyneGraphBuilderCacheSettings)
+         }
+
+      })
 
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       if (!context.isProjecting) {
@@ -113,7 +127,8 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
    }
 
    private fun graphSearchResult(target: Set<QuerySpecTypeNode>, context: QueryContext): WeightedNode<Relationship, Element, Double>? {
-      val graph = VyneGraphBuilder(context.schema).build(types = context.facts.map { it.type }.toSet(), excludedServices = context.excludedServices.toSet())
+      val graphBuilder = schemaGraphCache.get(context.schema)
+      val graph = graphBuilder.build(types = context.facts.map { it.type }.toSet(), excludedServices = context.excludedServices.toSet())
       return context.facts.asSequence()
          .mapNotNull { fact ->
             val searchStart = instanceOfType(fact.type)

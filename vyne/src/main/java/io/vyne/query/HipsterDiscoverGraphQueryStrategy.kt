@@ -9,6 +9,8 @@ import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
 import es.usc.citius.hipster.model.problem.ProblemBuilder
+import io.vyne.VyneCacheConfiguration
+import io.vyne.VyneGraphBuilderCacheSettings
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
@@ -20,26 +22,12 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.describe
 import io.vyne.utils.log
+import lang.taxi.Equality
+import java.lang.StringBuilder
+import java.util.Collections
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
-
-//   fun evaluate(startNode: Element, relationship: Relationship, endNode: Element, queryContext: QueryContext): EvaluatedEdge {
-////      val relationship = edge.edgeValue
-//      val evaluator = evaluators[relationship] ?:
-//      error("No LinkEvaluator provided for relationship ${relationship.name}")
-//      val evaluationResult = queryContext.startChild(this, "Evaluating ${edge.description()} with evaluator ${evaluator.javaClass.simpleName}") {
-//         evaluator.evaluate(edge, queryContext)
-//      }
-//      log().debug("Evaluated ${evaluationResult.description()}")
-//      if (evaluationResult.wasSuccessful) {
-//         return evaluationResult
-//      } else {
-//         throw SearchFailedException("Could not evaluate edge $edge: ${evaluationResult.error!!}", queryContext.evaluatedPath(),queryContext.profiler.root)
-//      }
-//
-//      return evaluate(StubEdge(startNode, relationship, endNode), queryContext)
-//   }
 
    fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): EvaluatedEdge {
       val relationship = edge.relationship
@@ -53,41 +41,58 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
          evaluator.evaluate(edge, queryContext)
       }
       return evaluationResult
-//      if (evaluationResult.wasSuccessful) {
-//         return evaluationResult
-//      } else {
-//         throw SearchFailedException("Could not evaluate edge $edge: ${evaluationResult.error!!}", queryContext.evaluatedPath(), queryContext.profiler.root)
-//      }
    }
 }
 
+class SearchPathExclusionsMap<K,V>(private val maxEntries: Int): LinkedHashMap<K, V>() {
+   override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>?): Boolean {
+      return this.size > maxEntries
+   }
+}
 
-class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator) : QueryStrategy {
-
-   private data class SchemaFactSetCacheKey(val schema: Schema, val types: Set<Type>)
+class HipsterDiscoverGraphQueryStrategy(
+   private val edgeEvaluator: EdgeNavigator,
+   vyneCacheConfigration: VyneCacheConfiguration) : QueryStrategy {
 
    private val schemaGraphCache = CacheBuilder.newBuilder()
-      .maximumSize(5) // arbitary cache size, we can explore tuning this later
+      .maximumSize(vyneCacheConfigration.vyneDiscoverGraphQuery.schemaGraphCacheSize) // arbitary cache size, we can explore tuning this later
       .weakKeys()
       .build(object : CacheLoader<Schema, VyneGraphBuilder>() {
          override fun load(schema: Schema): VyneGraphBuilder {
-            return VyneGraphBuilder(schema)
+            return VyneGraphBuilder(schema, vyneCacheConfigration.vyneGraphBuilderCache)
          }
 
       })
 
-   private val schemaGraphFactSetCache = CacheBuilder.newBuilder()
-      .maximumSize(10)  // arbitary cache size, we can explore tuning this later
-      // I tried using weak keys here, and is caused frequent cache misses.
-      //.recordStats()
-      .build<Set<Type>, HipsterDirectedGraph<Element, Relationship>>()
+   private val searchPathExclusions = SearchPathExclusionsMap<SearchPathExclusionKey, SearchPathExclusionKey>(vyneCacheConfigration.vyneDiscoverGraphQuery.searchPathExclusionsCacheSize)
+   data class SearchPathExclusionKey(val startInstance: TypedInstance, val target: Element) {
+      private val equality = Equality(this, SearchPathExclusionKey::value, SearchPathExclusionKey::target)
+      private val hash:Int by lazy { equality.hash() }
+      override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+      override fun hashCode(): Int = hash
+      private val value: String = if (startInstance is TypedObject) {
+         val builder = StringBuilder()
+         val typeName = startInstance.typeName
+         builder.append(typeName)
+         startInstance.type.attributes.forEach { (attributeName, field) ->
+            when {
+               startInstance.hasAttribute(attributeName) && startInstance[attributeName].value != null && startInstance[attributeName].value != "" -> {
+                  builder.append(attributeName)
+               }
+               // Include calculated fields
+               field.formula != null -> {
+                  builder.append(attributeName)
+               }
+            }
+         }
+         builder.toString()
+      } else {
+         startInstance.typeName.plus(startInstance.value)
+      }
 
-   private data class SearchCacheKey(val from: Element, val to: Element)
+   }
 
-   private val graphSearchResultCache = CacheBuilder.newBuilder()
-      //.recordStats()
-      .maximumSize(500)
-      .build<SearchCacheKey, WeightedNode<Relationship, Element, Double>>()
+
 
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
 
@@ -123,103 +128,31 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       // Take a copy, as the set is mutable, and performing a search is a
       // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
       val currentFacts = context.facts.toSet()
-      val excludedServices = context.facts
-      return currentFacts
+      return  currentFacts
          .asSequence()
      //    .filter { it is TypedObject }
          .mapNotNull { fact ->
             val startFact =  providedInstance(fact)
-
             val targetType = context.schema.type(targetElement.value as String)
+            val exclusionKey = SearchPathExclusionKey(fact, targetElement)
+            if (searchPathExclusions.contains(exclusionKey)) {
+               // if  a previous search for given (searchNode, targetNode) yielded 'null' path, then
+               // don't search.
+               return@mapNotNull null
+            }
             val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema), invocationConstraints)
-            val searchResult = searcher.search(currentFacts, context.excludedServices.toSet(), invocationConstraints.excludedOperations) { pathToEvaluate ->
+            val searchResult = searcher.search(
+               currentFacts,
+               context.excludedServices.toSet(),
+               invocationConstraints.excludedOperations) { pathToEvaluate ->
                evaluatePath(pathToEvaluate,context)
             }
-            searchResult
+            if (searchResult.path == null) {
+               searchPathExclusions[exclusionKey] = exclusionKey
+            }
+            searchResult.typedInstance
          }
          .firstOrNull()
-
-
-
-   }
-
-//   internal fun search(start: Element, target: Element, queryContext: QueryContext, graph: HipsterDirectedGraph<Element, Relationship>): TypedInstance? {
-//      return if (queryContext.debugProfiling) {
-//         queryContext.startChild(this, "Searching for path ${start.valueAsQualifiedName().name} -> ${target.valueAsQualifiedName().name}", OperationType.GRAPH_TRAVERSAL) { op ->
-//            doSearch(start, target, graph, queryContext, op)
-//         }
-//      } else {
-//         doSearch(start, target, graph, queryContext)
-//      }
-//   }
-   private fun doSearch(start: Element, target: Element, graph: HipsterDirectedGraph<Element, Relationship>, queryContext: QueryContext, op: ProfilerOperation? = null): TypedInstance? {
-      val searchResult = graphSearch(start, target, graph)
-
-      if (searchResult.state() != target) {
-         // Search failed, and couldn't match the node
-         // TODO refactor logs
-         //log().debug("Search failed: $searchDescription. Nearest match was ${searchResult.state()}")
-         //log().debug("Search failed path: \n${searchResult.path().convertToVynePath(start, target).description.split(",").joinToString("\n")}")
-         return null
-      }
-
-      // TODO : validate this is a valid path
-      op?.let {
-         // Note: The below call is very expensive.  If it turns out we need it, we should
-         // do some work to optimize it.
-         //it.addContext("Current graph", graph.edgeDescriptions())
-         val searchDescription = "$start -> $target"
-         log().debug("Search {} found path: \n {}", searchDescription, searchResult.path().describe())
-         it.addContext("Discovered path", searchResult.path().describeLinks() )
-      }
-
-      val evaluatedPath = evaluatePath(searchResult, queryContext)
-      val resultValue = selectResultValue(evaluatedPath, queryContext, target)
-      return resultValue
-//      val path = searchResult.path().convertToVynePath(start, target)
-//      return if (resultValue != null) {
-//         resultValue /* to path */
-//      } else { // Search failed
-//         null
-//      }
-   }
-
-   private fun graphSearch(from: Element, to: Element, graph: HipsterDirectedGraph<Element, Relationship>): WeightedNode<Relationship, Element, Double> {
-      val result = graphSearchResultCache.get(SearchCacheKey(from, to)) {
-         val problem = GraphSearchProblem
-            .startingFrom(from).`in`(graph)
-            .extractCostFromEdges { 1.0 }
-           // .takeCostsFromEdges()
-            .build()
-         Hipster.createAStar(problem).search(to).goalNode
-      }
-      //log().debug("Graph search completed.  Cache results: ${graphSearchResultCache.stats()}")
-      return result
-   }
-
-   private fun selectResultValue(evaluatedPath: List<PathEvaluation>, queryContext: QueryContext, target: Element): TypedInstance? {
-      val targetType = queryContext.schema.type(target.value.toString())
-
-      // If the last node in the evaluated path is the type we're after, use that.
-      val lastEdgeResult = evaluatedPath.last().resultValue
-      if (lastEdgeResult != null && lastEdgeResult.type.matches(targetType)) {
-         return lastEdgeResult
-      }
-
-      if (lastEdgeResult != null && lastEdgeResult.type.isCalculated && targetType.matches(lastEdgeResult.type)) {
-         return lastEdgeResult
-      }
-
-      // Handles the case where the target type is an alias for a collection type.
-      if (lastEdgeResult != null &&
-         targetType.isCollection &&
-         targetType.isTypeAlias &&
-         targetType.typeParameters.isNotEmpty() &&
-         lastEdgeResult.type.matches(targetType.typeParameters.first())) {
-         return lastEdgeResult
-      }
-
-      return queryContext.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
    }
 
    private fun evaluatePath(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): List<PathEvaluation> {
@@ -271,36 +204,10 @@ class HipsterDiscoverGraphQueryStrategy(private val edgeEvaluator: EdgeNavigator
       val startingEdge = StartingEdge(firstFact, firstNode.state())
       return startingEdge
    }
-//   private fun evaluatePath(searchResult: Algorithm<EvaluateRelationshipAction, Element, WeightedNode<EvaluateRelationshipAction, Element, Double>>.SearchResult, queryContext: QueryContext): List<EvaluatedEdge> {
-//      // The actual result of this isn't directly used.  But the queryContext is updated with
-//      // nodes as they're discovered (eg., through service invocation)
-//      return searchResult.goalNode.path()
-//         .drop(1) // The first node has no action
-//         .map { weightedNode ->
-//            val startNode = weightedNode.previousNode().state()
-//            val endNode = weightedNode.state()
-//            val evaluationResult = edgeEvaluator.evaluate(startNode, weightedNode.action().relationship, endNode, queryContext)
-//            evaluationResult
-//         }.toList()
-//   }
-
-   private fun canBeEvaluated(edge: GraphEdge<Element, Relationship>, queryContext: QueryContext): Boolean {
-      if (edge.edgeValue !is Relationship) {
-         val message = "An invalid link has been created between ${edge.vertex1} -> ${edge.vertex2}, as the relationship type is Object.  Hipster4J does this when duplicate links are formed.  Re-check the graph builder to eliminate duplicate links"
-         throw IllegalStateException(message)
-      }
-      return when (edge.edgeValue) {
-//         Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE -> {
-//            val (declaringType, _) = queryContext.schema.attribute(edge.vertex2.value as String)
-//            queryContext.hasFactOfType(declaringType)
-//         }
-         else -> true
-      }
-   }
 }
 
 private fun List<WeightedNode<Relationship, Element, Double>>.toLinks(): List<Link> {
-   return this.mapIndexed { index, weightedNode ->
+   return this.mapIndexed { index, _ ->
       if (index == 0) {
          null
       } else {
@@ -319,34 +226,6 @@ private fun List<WeightedNode<Relationship, Element, Double>>.describe(): String
 private fun List<WeightedNode<Relationship, Element, Double>>.describeLinks(): List<String> {
    return this.toLinks().map { it.toString() }
 }
-
-private fun List<WeightedNode<Relationship, Element, Double>>.convertToVynePath(start: Element, target: Element): Path {
-   val links = this.mapIndexed { index, weightedNode ->
-      if (index == 0) {
-         null
-      } else {
-         val fromElement = this[index - 1].state()
-         val toElement = this[index].state()
-         val action = this[index].action()
-         Link(fromElement.valueAsQualifiedName(), action, toElement.valueAsQualifiedName(), this[index].cost.toInt())
-      }
-   }.toList().filterNotNull()
-   return Path(start.valueAsQualifiedName(), target.valueAsQualifiedName(), links)
-}
-//private fun List<WeightedNode<HipsterDiscoverGraphQueryStrategy.EvaluateRelationshipAction, Element, Double>>.convertToVynePath(start: Element, target: Element): Path {
-//   val links = this.mapIndexed { index, weightedNode ->
-//      if (index == 0) {
-//         null
-//      } else {
-//         val fromElement = this[index - 1].state()
-//         val toElement = this[index].state()
-//         val action = this[index].action()
-//         Link(fromElement.valueAsQualifiedName(), action.relationship, toElement.valueAsQualifiedName(), this[index].cost.toInt())
-//      }
-//   }.toList().filterNotNull()
-//   return Path(start.valueAsQualifiedName(), target.valueAsQualifiedName(), links)
-//}
-
 
 private fun Algorithm<*, Element, *>.SearchResult.recreatePath(start: Element, target: Element, graph: HipsterDirectedGraph<Element, Relationship>): Path {
    val path = this.getOptimalPaths()[0]

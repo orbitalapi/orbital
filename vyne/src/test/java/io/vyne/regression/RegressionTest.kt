@@ -8,6 +8,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
 import io.vyne.VersionedSource
 import io.vyne.Vyne
+import io.vyne.VyneCacheConfiguration
 import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
@@ -170,7 +171,7 @@ fun replayingVyne(schemas: List<VersionedSource>, testCase: VyneTestCase): Pair<
    val schema = schemas.joinToString("\n") { it.content }
    val taxiSchema = TaxiSchema.from(schema)
    val operationInvoker = ReplayingOperationInvoker(testCase.scenario.response.remoteCalls, taxiSchema)
-   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(operationInvoker)
+   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), operationInvoker)
    val vyne = Vyne(queryEngineFactory).addSchema(taxiSchema)
    return vyne to operationInvoker
 }

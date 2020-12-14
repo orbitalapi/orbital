@@ -289,8 +289,9 @@ data class QueryContext(
     * All other parameters (queryEngine, schema, etc) are retained
     */
    fun only(fact: TypedInstance): QueryContext {
-      val mutableFacts = resolveSynonyms(fact, schema).toMutableSet()
+      val mutableFacts = mutableSetOf<TypedInstance>()
       mutableFacts.add(fact)
+      mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
       val copiedContext = this.copy(facts = mutableFacts, parent = this)
       copiedContext.excludedServices.addAll(this.excludedServices)
       return copiedContext

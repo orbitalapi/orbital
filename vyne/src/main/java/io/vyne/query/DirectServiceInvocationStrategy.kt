@@ -1,13 +1,16 @@
 package io.vyne.query
 
+import com.google.common.cache.CacheBuilder
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
+import io.vyne.query.planner.ProjectionHeuristicsGraphSearchResult
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.PropertyToParameterConstraint
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.RelativeValueExpression
@@ -18,9 +21,14 @@ import org.springframework.stereotype.Component
  * Query strategy that will invoke services that return the requested type,
  * and do not require any parameters
  */
-@Component
 class DirectServiceInvocationStrategy(invocationService: OperationInvocationService) : QueryStrategy, BaseOperationInvocationStrategy(invocationService) {
+   private val operationsForTypeCache = CacheBuilder.newBuilder()
+      .weakKeys()
+      .build<Type, List<Operation>>()
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+      if (context.isProjecting) {
+         return QueryStrategyResult.empty()
+      }
       return if (context.debugProfiling) {
          context.startChild(this, "look for candidate services", OperationType.LOOKUP) { profilerOperation ->
             val operations = lookForCandidateServices(context, target)
@@ -58,8 +66,10 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
     * and the set of parameters that we have identified values for
     */
    internal fun getCandidateOperations(schema: Schema, target: QuerySpecTypeNode, requireAllParametersResolved: Boolean): Map<RemoteOperation, Map<Parameter, TypedInstance>> {
-      val operations = schema.operations
-         .filter { it.returnType.isAssignableTo(target.type) }
+      var operationsForType = operationsForTypeCache.get(target.type) {
+         schema.operations.filter { it.returnType.isAssignableTo(target.type) }
+      }
+      val operations = operationsForType
          .mapNotNull { operation ->
             val (satisfiesConstraints, operationParameters) = compareOperationContractToDataRequirementsAndFetchSearchParams(operation, target, schema)
             if (!satisfiesConstraints) {

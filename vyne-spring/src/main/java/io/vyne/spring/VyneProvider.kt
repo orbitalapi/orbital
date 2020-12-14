@@ -1,6 +1,7 @@
 package io.vyne.spring
 
 import io.vyne.Vyne
+import io.vyne.VyneCacheConfiguration
 import io.vyne.query.QueryEngineFactory
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.graph.operationInvocation.OperationInvoker
@@ -21,7 +22,10 @@ class SimpleVyneProvider(private val vyne: Vyne) : VyneProvider {
 
 }
 
-class VyneFactory(private val schemaProvider: SchemaSourceProvider, private val operationInvokers: List<OperationInvoker>) : FactoryBean<Vyne>, VyneProvider {
+class VyneFactory(
+   private val schemaProvider: SchemaSourceProvider,
+   private val operationInvokers: List<OperationInvoker>,
+   private val vyneCacheConfiguration: VyneCacheConfiguration) : FactoryBean<Vyne>, VyneProvider {
    override fun isSingleton() = true
    override fun getObjectType() = Vyne::class.java
 
@@ -34,7 +38,7 @@ class VyneFactory(private val schemaProvider: SchemaSourceProvider, private val 
 
    private fun buildVyne(): Vyne {
 
-      val vyne = Vyne(QueryEngineFactory.withOperationInvokers(operationInvokers.map { CacheAwareOperationInvocationDecorator(it) }))
+      val vyne = Vyne(QueryEngineFactory.withOperationInvokers(vyneCacheConfiguration, operationInvokers.map { CacheAwareOperationInvocationDecorator(it) }))
       vyne.addSchema(schemaProvider.schema())
 //      schemaProvider.schemaStrings().forEach { schema ->
 //         // TODO :  This is all a bit much ... going to a TaxiSchema and back again.
