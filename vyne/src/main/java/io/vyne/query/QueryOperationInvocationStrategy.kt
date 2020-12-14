@@ -16,9 +16,9 @@ import io.vyne.utils.log
 import lang.taxi.Operator
 import org.springframework.stereotype.Component
 
-@Component
 class QueryOperationInvocationStrategy(invocationService: OperationInvocationService,
                                        private val queryBuilders: List<QueryGrammarQueryBuilder> = listOf(VyneQlGrammarQueryBuilder())) : QueryStrategy, BaseOperationInvocationStrategy(invocationService) {
+   private val queryOperationMap = mutableMapOf<Type, List<QueryOperation>>()
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       val candidateOperations = lookForCandidateQueryOperations(context, target)
       return invokeOperations(candidateOperations, context, target)
@@ -32,12 +32,17 @@ class QueryOperationInvocationStrategy(invocationService: OperationInvocationSer
 
    @VisibleForTesting
    internal fun lookForCandidateQueryOperations(schema: Schema, target: QuerySpecTypeNode): Map<RemoteOperation, Map<Parameter, TypedInstance>> {
-      val result = schema.services
-         .flatMap { it.queryOperations }
-         .asSequence()
-         .filter { (it.returnType == target.type) || isCovariance (it.returnType, target.type) }
-         .filter { it.hasFilterCapability }
-         .filter { queryServiceSatisfiesConstraints(schema, it, target.dataConstraints, isCovariance (it.returnType, target.type)) }
+      var queryOperations = queryOperationMap[target.type]
+      if (queryOperations == null) {
+         queryOperations = schema.services
+            .flatMap { it.queryOperations }
+            .filter { (it.returnType == target.type) || isCovariance (it.returnType, target.type) }
+            .filter { it.hasFilterCapability }
+         queryOperationMap[target.type] = queryOperations
+      }
+
+     return queryOperations.let { queryOperations ->
+         queryOperations.filter { queryServiceSatisfiesConstraints(schema, it, target.dataConstraints, isCovariance (it.returnType, target.type)) }
          .mapNotNull { queryOperation ->
             val grammarBuilder = this.queryBuilders.firstOrNull { it.canSupport(queryOperation.grammar) };
             if (grammarBuilder == null) {
@@ -57,7 +62,7 @@ class QueryOperationInvocationStrategy(invocationService: OperationInvocationSer
             }
          }
          .toList().toMap()
-      return result
+      }
    }
 
    private fun isCovariance(operationReturnType: Type, targetType: Type): Boolean {
@@ -80,7 +85,7 @@ class QueryOperationInvocationStrategy(invocationService: OperationInvocationSer
          when (constraint) {
             is PropertyToParameterConstraint -> if (isCovariant) {
                queryOperation.supportedFilterOperations.contains(constraint.operator)
-                  && validateSupportedFilterOperations(schema, queryOperation.supportedFilterOperations, constraint, queryOperation.returnType)
+                  && validateSupportedFilterOperations(schema, constraint, queryOperation.returnType)
             } else {queryOperation.supportedFilterOperations.contains(constraint.operator)}
             else -> {
                // TODO : Implement support for the other constraints if/when they become
@@ -93,7 +98,6 @@ class QueryOperationInvocationStrategy(invocationService: OperationInvocationSer
 
    fun validateSupportedFilterOperations(
       schema: Schema,
-      operations: List<Operator>,
       propertyToParameterConstraint: PropertyToParameterConstraint,
       operationReturnType: Type): Boolean {
       val propertyConstraintTaxiType =  propertyToParameterConstraint.propertyIdentifier.taxi

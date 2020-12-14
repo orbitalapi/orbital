@@ -6,6 +6,8 @@ import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.models.TypedInstance
+import io.vyne.query.SearchResult.Companion.noPath
+import io.vyne.query.SearchResult.Companion.noResult
 import io.vyne.query.graph.*
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
@@ -32,8 +34,10 @@ class GraphSearcher(
 
    private enum class PathPrevaliationResult {
       EVALUATE,
+
       // We made some changes to the graph, so try again
       REQUERY,
+
       // Don't attempt this, but no point in requerying, as the graph is unchanged
       ABORT
    }
@@ -43,32 +47,37 @@ class GraphSearcher(
       return PathPrevaliationResult.EVALUATE
    }
 
-   fun search(knownFacts: Set<TypedInstance>, excludedServices: Set<QualifiedName>, excludedOperations: Set<Operation>, evaluator: PathEvaluator): TypedInstance? {
+   fun search(
+      knownFacts: Set<TypedInstance>,
+      excludedServices: Set<QualifiedName>,
+      excludedOperations: Set<Operation>,
+      evaluator: PathEvaluator): SearchResult {
       // TODO : EEEK!  We should be adding the instances, not the types.
       // This will cause problems when we have multiple facts of the same type,
       // as one may result in a happy path, and the other might not.
 //      val factTypes = knownFacts.map { it.type }.toSet()
 
-      val excludedOperationsNames =excludedOperations.map { it.qualifiedName }.toSet()
+      val excludedOperationsNames = excludedOperations.map { it.qualifiedName }.toSet()
       val excludedInstance = mutableSetOf<TypedInstance>()
       val excludedEdges = mutableListOf<EvaluatableEdge>()
 
-
-
-
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
-         val facts = if (excludedInstance.isEmpty()) { knownFacts } else { knownFacts.filterNot { excludedInstance.contains(it) } }
+         val facts = if (excludedInstance.isEmpty()) {
+            knownFacts
+         } else {
+            knownFacts.filterNot { excludedInstance.contains(it) }
+         }
          // Note: I think we can migrate to using exclusively excludedEdges (Not using excludedOperations
          // and excludedInstances)..as it should be a more powerful abstraction
          val proposedPath = findPath(facts, excludedOperationsNames, excludedEdges, excludedServices)
          return if (proposedPath == null) {
             null
          } else {
-            when (prevalidatePath(proposedPath,excludedEdges)) {
+            when (prevalidatePath(proposedPath, excludedEdges)) {
                PathPrevaliationResult.EVALUATE -> proposedPath
                PathPrevaliationResult.REQUERY -> buildNextPath()
                PathPrevaliationResult.ABORT -> null
-             }
+            }
          }
       }
 
@@ -78,42 +87,44 @@ class GraphSearcher(
          searchCount++
          if (searchCount > MAX_SEARCH_COUNT) {
             log().error("Search iterations exceeded max count. Stopping, lest we search forever in vein")
-            return null
+            return noResult(nextPath)
          }
          val evaluatedPath = evaluator(nextPath)
          val (pathEvaluatedSuccessfully, resultValue) = wasSuccessful(evaluatedPath)
          if (pathEvaluatedSuccessfully) {
             if (invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)) {
-               return resultValue
+               return SearchResult(resultValue, nextPath)
             } else {
-
                // Check to see if there are any nodes in the executed path
                // that we want to ignore and try a new search
                if (appendIgnorableEdges(evaluatedPath, excludedEdges)) {
-                  nextPath = buildNextPath()
+                  val alternativePath = buildNextPath()
+                  if (alternativePath == null) {
+                     return noResult(nextPath)
+                  } else {
+                     nextPath = alternativePath
+                  }
                } else {
                   log().info("Search found an instance which failed the provided spec, and couldn't find anything to exclude - giving up")
-                  return null
+                  return noResult(nextPath)
                }
             }
          } else {
-            val lastStep = evaluatedPath.lastEvaluatedEdge()
-            if (lastStep == null) {
-               // Giving up.  However, perhaps there are other opportunities here later.
-               return null
-            }
+            evaluatedPath.lastEvaluatedEdge()
+               ?: // Giving up.  However, perhaps there are other opportunities here later.
+               return SearchResult(null, nextPath)
             // Check to see if there are any nodes in the executed path
             // that we want to ignore and try a new search
             if (appendIgnorableEdges(evaluatedPath, excludedEdges)) {
                nextPath = buildNextPath()
             } else {
                log().info("Search found an instance which failed the provided spec, and couldn't find anything to exclude - giving up")
-               return null
+               return noResult(nextPath)
             }
          }
       }
       // There were no search paths to evaluate.  Just exit
-      return null
+      return noPath()
    }
 
    private fun appendIgnorableEdges(evaluatedPath: List<PathEvaluation>, excludedEdges: MutableList<EvaluatableEdge>): Boolean {
@@ -180,28 +191,23 @@ class GraphSearcher(
 //      return queryContext.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
    }
 
-//   private fun findPath(factTypes: Set<Type>, excludedOperations: Set<QualifiedName>): WeightedNode<Relationship, Element, Double>? {
-//      val graph = logTimeTo(graphBuilderTimes) {
-//         graphBuilder.build(factTypes, excludedOperations)
-//      }
-//      return findPath(graph)
-//   }
-
    private fun findPath(facts: Collection<TypedInstance>, excludedOperations: Set<QualifiedName>, excludedEdges: List<EvaluatableEdge>, excludedServices: Set<QualifiedName>): WeightedNode<Relationship, Element, Double>? {
       // logTimeTo eats up significant time, so commented out.
       //val graph = logTimeTo(graphBuilderTimes) {
       //
       //   graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
       // }
-      val graph = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
-      return findPath(graph)
+      val graphBuildResult  = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
+      val result = findPath(graphBuildResult.graph)
+      graphBuilder.prune(graphBuildResult)
+      return result
    }
 
    private fun findPath(graph: HipsterDirectedGraph<Element, Relationship>): WeightedNode<Relationship, Element, Double>? {
       val problem = GraphSearchProblem
-         .startingFrom(startFact).`in`(graph)
+         .startingFrom(startFact)
+         .`in`(graph)
          .extractCostFromEdges { 1.0 }
-         //.takeCostsFromEdges()
          .build()
       val executionPath = logTimeTo(graphSearchTimes) {
          Hipster.createAStar(problem).search(targetFact).goalNode
@@ -227,3 +233,10 @@ private fun List<PathEvaluation>.lastEvaluatedEdge(): EvaluatedEdge? {
    return this.last() as? EvaluatedEdge
 }
 typealias PathEvaluator = (WeightedNode<Relationship, Element, Double>) -> List<PathEvaluation>
+
+data class SearchResult(val typedInstance: TypedInstance?, val path: WeightedNode<Relationship, Element, Double>?) {
+   companion object {
+      fun noResult(path: WeightedNode<Relationship, Element, Double>?) = SearchResult(null, path)
+      fun noPath() = SearchResult(null, null)
+   }
+}

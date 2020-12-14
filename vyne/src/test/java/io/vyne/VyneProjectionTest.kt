@@ -1731,6 +1731,7 @@ service Broker1Service {
           """.trimIndent())
          }
       })
+
       val result =  vyne.query("""
             findAll {
                 InputModel[]

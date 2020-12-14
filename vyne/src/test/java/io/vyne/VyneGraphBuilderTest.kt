@@ -46,7 +46,7 @@ class VyneGraphBuilderTest {
       operation getCustomerByEmail(  CustomerEmailAddress ) : Customer
    }
       """.trimIndent()
-      val graph = VyneGraphBuilder(TaxiSchema.from(taxiDef)).buildDisplayGraph()
+      val graph = VyneGraphBuilder(TaxiSchema.from(taxiDef), VyneGraphBuilderCacheSettings(100L, 100L, 100L)).buildDisplayGraph()
       val edges = graph.outgoingEdgesOf(operation(OperationNames.displayName("CustomerService", "getCustomerByEmail")))
       edges.shouldContain(REQUIRES_PARAMETER, type("CustomerEmailAddress"))
 

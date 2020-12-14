@@ -85,7 +85,7 @@ service ClientService {
 
 fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
    val stubService = StubService()
-   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
    val vyne = Vyne(queryEngineFactory).addSchema(schema)
    return vyne to stubService
 }
@@ -246,7 +246,7 @@ class VyneTest {
       """.trimIndent())
 
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory, enumSchema)
       val product = vyne.parseJsonModel("companyX.Product", """
          {
@@ -304,7 +304,7 @@ class VyneTest {
       """.trimIndent())
 
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory, enumSchema)
       val product = vyne.parseJsonModel("companyY.Product", """
          {
@@ -330,7 +330,7 @@ class VyneTest {
    @Test
    fun shouldRetrievePropertyFromService() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
 
       val json = """
@@ -350,7 +350,7 @@ class VyneTest {
    @Test
    fun shouldBeAbleToQueryWithShortNames() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
 
       val json = """
@@ -370,7 +370,7 @@ class VyneTest {
    @Test
    fun shouldRetrievePropertyFromService_withMultipleAttributes_whenAttributesArePresentAsKeyValuePairs() {
       val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
       stubService.addResponse("creditRisk", TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100, source = Provided))
       vyne.addKeyValuePair("vyne.example.ClientId", "123")
@@ -962,7 +962,7 @@ service Broker2Service {
       val stubInvocationService = StubService()
 
       val cacheAwareInvocationService = CacheAwareOperationInvocationDecorator(stubInvocationService)
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(cacheAwareInvocationService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), cacheAwareInvocationService)
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
       stubInvocationService.addResponse("mockCustomers", vyne.parseJsonModel("Client[]", """
          [
@@ -1217,7 +1217,7 @@ service ClientService {
 }
 """.trimIndent()
       val stubInvocationService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubInvocationService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubInvocationService)
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
       val fqn = "vyne.example.TaxFileNumber"
       val accessibleTypes = vyne.accessibleFrom(fqn)
@@ -1243,7 +1243,7 @@ service ClientService {
       schemaBuilder.appendln("}")
 
       val stubInvocationService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubInvocationService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubInvocationService)
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(schemaBuilder.toString()))
 
       val fqn = "vyne.example.Type0"
@@ -1347,7 +1347,7 @@ service ClientService {
          }
       """.trimIndent()
       val stubInvocationService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubInvocationService)
+      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubInvocationService)
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
       stubInvocationService.addResponse("findBetween", object : StubResponseHandler {
          override fun invoke(operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>): TypedInstance {

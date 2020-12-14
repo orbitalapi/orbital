@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component
  * This is a first-pass query strategy, and will likely be removed in
  * favour of something more graph-based.
  */
-@Component
 class ModelsScanStrategy : QueryStrategy {
    override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       val spec = invocationConstraints.typedInstanceValidPredicate

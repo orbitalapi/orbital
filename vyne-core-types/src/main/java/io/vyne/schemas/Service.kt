@@ -3,6 +3,7 @@ package io.vyne.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.VersionedSource
+import lang.taxi.Equality
 import lang.taxi.services.FilterCapability
 import lang.taxi.services.QueryOperationCapability
 
@@ -89,6 +90,11 @@ data class Operation(override val qualifiedName: QualifiedName,
                      @get:JsonIgnore
                      val sources: List<VersionedSource>,
                      val typeDoc: String? = null) : MetadataTarget, SchemaMember, RemoteOperation {
+   private val equality = Equality(this, Operation::qualifiedName, Operation::returnType)
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
+   override fun hashCode(): Int  {
+     return equality.hash()
+   }
 
    fun parameter(name: String): Parameter? {
       return this.parameters.firstOrNull { it.name == name }

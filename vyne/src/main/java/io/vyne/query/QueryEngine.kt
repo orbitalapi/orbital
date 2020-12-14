@@ -196,12 +196,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
          val inboundFactList = (context.facts.first() as TypedCollection).value
          log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
-         val transformed = inboundFactList
-            .stream()
-            .map { mapTo(targetCollectionType, it, context) }
-            .filter { it != null }
-            .collect(Collectors.toList())
-
+         val transformed = inboundFactList.mapNotNull { it -> mapTo(targetCollectionType, it, context) }
          return@timed when {
             transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
             else -> TypedCollection.from(flattenResult(transformed))

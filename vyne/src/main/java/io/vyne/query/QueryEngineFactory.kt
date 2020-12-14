@@ -1,6 +1,8 @@
 package io.vyne.query
 
 import io.vyne.FactSetMap
+import io.vyne.VyneCacheConfiguration
+import io.vyne.VyneGraphBuilderCacheSettings
 import io.vyne.formulas.CalculatorRegistry
 import io.vyne.query.graph.AttributeOfEdgeEvaluator
 import io.vyne.query.graph.AttributeOfEvaluator
@@ -38,14 +40,18 @@ interface QueryEngineFactory {
    companion object {
       // Useful for testing
       fun noQueryEngine(): QueryEngineFactory {
-         return withOperationInvokers(emptyList())
+         return withOperationInvokers(
+            VyneCacheConfiguration.default(),
+            emptyList())
       }
 
       // Useful for testing.
       // For prod, use a spring-wired context,
       // which is sure to collect all strategies
       fun default(): QueryEngineFactory {
-         return withOperationInvokers(emptyList())
+         return withOperationInvokers(
+            VyneCacheConfiguration.default(),
+            emptyList())
       }
 
 //      fun jhipster(operationInvokers: List<OperationInvoker> = DefaultInvokers.invokers): JHipsterQueryEngineFactory {
@@ -55,30 +61,28 @@ interface QueryEngineFactory {
       // Useful for testing.
       // For prod, use a spring-wired context,
       // which is sure to collect all strategies
-      fun withOperationInvokers(vararg invokers: OperationInvoker): QueryEngineFactory {
-         return withOperationInvokers(invokers.toList())
+      fun withOperationInvokers(vyneCacheConfiguration: VyneCacheConfiguration, vararg invokers: OperationInvoker): QueryEngineFactory {
+         return withOperationInvokers(vyneCacheConfiguration, invokers.toList())
       }
 
-      fun withOperationInvokers(invokers: List<OperationInvoker>): QueryEngineFactory {
+      fun withOperationInvokers(vyneCacheConfiguration: VyneCacheConfiguration, invokers: List<OperationInvoker>): QueryEngineFactory {
          val invocationService = operationInvocationService(invokers)
          val opInvocationEvaluator = OperationInvocationEvaluator(invocationService)
          val edgeEvaluator = EdgeNavigator(edgeEvaluators(opInvocationEvaluator))
-         val graphQueryStrategy = HipsterDiscoverGraphQueryStrategy(
-            edgeEvaluator
-         )
+         val graphQueryStrategy = HipsterDiscoverGraphQueryStrategy(edgeEvaluator, vyneCacheConfiguration)
 
          return DefaultQueryEngineFactory(
             strategies = listOf(
                CalculatedFieldScanStrategy(CalculatorRegistry()),
                ModelsScanStrategy(),
-               ProjectionHeuristicsQueryStrategy(opInvocationEvaluator),
+               ProjectionHeuristicsQueryStrategy(opInvocationEvaluator, vyneCacheConfiguration.vyneGraphBuilderCache),
                //               PolicyAwareQueryStrategyDecorator(
                DirectServiceInvocationStrategy(invocationService),
                QueryOperationInvocationStrategy(invocationService),
                //
                //              ),
                graphQueryStrategy,
-               HipsterGatherGraphQueryStrategy(graphQueryStrategy))
+               HipsterGatherGraphQueryStrategy())
          )
       }
 
