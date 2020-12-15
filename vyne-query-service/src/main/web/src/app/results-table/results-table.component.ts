@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, Output} from '@angular/core';
 import {
   InstanceLike,
   InstanceLikeOrCollection, isTypedInstance, isTypedNull,
@@ -11,6 +11,9 @@ import {BaseTypedInstanceViewer} from '../object-view/BaseTypedInstanceViewer';
 import {CellClickedEvent, GridReadyEvent, ValueGetterParams} from 'ag-grid-community';
 import {TypeInfoHeaderComponent} from './type-info-header.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
+import {isNullOrUndefined} from 'util';
+import {SchemaNotificationService} from '../services/schema-notification.service';
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-results-table',
@@ -69,6 +72,11 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   columnDefs = [];
 
   rowData = [];
+
+  protected onSchemaChanged() {
+    super.onSchemaChanged();
+    this.rebuildGridData();
+  }
 
   private rebuildGridData() {
     if (!this.type || !this.instance) {
@@ -143,7 +151,15 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     } else if (isTypedNull(instance) || isTypeNamedNull(instance)) {
       return null;
     } else if (fieldName !== null) {
-      return instance[fieldName];
+      const fieldValue = instance[fieldName];
+      if (isNullOrUndefined(fieldValue)) {
+        return null;
+      } else {
+        // In the operation explorer, we can end up with typed instances
+        // at the field level, even if the top-level object isn't
+        // a typed instance.  We should fix that, but for now, just unwrap
+        return this.unwrap(instance[fieldName], null);
+      }
     } else {
       return instance;
     }

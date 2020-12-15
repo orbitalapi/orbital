@@ -9,6 +9,7 @@ import {
   Type, TypedObjectAttributes, TypeNamedInstance
 } from '../services/schema';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
+import {isNull, isNullOrUndefined} from 'util';
 
 
 export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
@@ -18,8 +19,21 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
   @Output()
   instanceClicked = new EventEmitter<InstanceSelectedEvent>();
 
+  private _schema: Schema;
+
   @Input()
-  schema: Schema;
+  public get schema(): Schema {
+    return this._schema;
+  }
+
+  public set schema(value: Schema) {
+    if (this.schema === value) {
+      return;
+    }
+    this._schema = value;
+    this.onSchemaChanged();
+  }
+
 
   protected fieldTypes = new Map<Field, Type>();
   protected _type: Type;
@@ -176,4 +190,13 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
     console.log(`viewer ${this.componentId} initialized`);
   }
 
+  protected onSchemaChanged() {
+    this._collectionMemberType = null;
+    if (!isNullOrUndefined(this._type)) {
+      this._type = findType(this.schema, this._type.name.parameterizedName);
+    }
+    if (!isNullOrUndefined(this._derivedType) && !isNullOrUndefined(this._instance)) {
+      this._derivedType = this.selectType(this._instance);
+    }
+  }
 }

@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Operation, Parameter, Schema, TypedInstance} from '../services/schema';
+import {Operation, Parameter, Schema, Type, TypedInstance} from '../services/schema';
 import {methodClassFromName, OperationSummary, toOperationSummary} from '../service-view/service-view.component';
 import {Fact} from '../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
@@ -63,8 +63,10 @@ import {HttpErrorResponse} from '@angular/common/http';
 
         <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
         <app-operation-error [operationError]="operationError" *ngIf="operationError"></app-operation-error>
-        <app-object-view-container *ngIf="operationResult" [schema]="schema" [instance]="operationResult">
-
+        <app-object-view-container *ngIf="operationResult"
+                                   [schema]="schema"
+                                   [instance]="operationResult"
+                                   [type]="operationResultType">
         </app-object-view-container>
       </div>
     </div>
@@ -86,6 +88,9 @@ export class OperationViewComponent {
 
   @Input()
   operationResult: TypedInstance;
+
+  @Input()
+  operationResultType: Type;
 
   @Input()
   operationError: HttpErrorResponse;

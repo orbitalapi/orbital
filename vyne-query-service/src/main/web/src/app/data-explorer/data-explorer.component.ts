@@ -30,6 +30,7 @@ import {DownloadFileType} from '../query-panel/result-display/result-container.c
 import {MatDialog} from '@angular/material/dialog';
 import {TestSpecFormComponent} from './test-spec-form.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
+import {SchemaNotificationService} from '../services/schema-notification.service';
 
 @Component({
   selector: 'app-data-explorer',
@@ -78,9 +79,15 @@ export class DataExplorerComponent {
   constructor(private typesService: TypesService,
               private caskService: CaskService,
               private exportFileService: ExportFileService,
-              private dialogService: MatDialog) {
+              private dialogService: MatDialog,
+              private schemaNotificationService: SchemaNotificationService) {
     this.typesService.getTypes()
-      .subscribe(next => this.schema = next);
+      .subscribe(next => {
+        console.log('Data explorer received a new schema');
+        this.schema = next;
+      });
+    this.schemaNotificationService.createSchemaNotificationsSubscription()
+      .subscribe(() => this.onSchemaUpdated());
     this.caskServiceUrl = environment.queryServiceUrl;
   }
 
@@ -151,7 +158,10 @@ export class DataExplorerComponent {
     this.parserErrorMessage = null;
     this.showTypeNamePanel(false);
     this.showGenerateSchemaPanel(false);
+  }
 
+  onSchemaUpdated() {
+    this.parseToTypedInstanceIfPossible();
   }
 
   showTypeNamePanel($event) {

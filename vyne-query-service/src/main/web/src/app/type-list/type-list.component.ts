@@ -14,8 +14,7 @@ import {SchemaNotificationService} from '../services/schema-notification.service
 export class TypeListComponent implements OnInit {
 
   constructor(private typeService: TypesService,
-              private router: Router,
-              private schemaNotificationService: SchemaNotificationService) {
+              private router: Router) {
   }
 
   schema: Schema;
@@ -25,10 +24,6 @@ export class TypeListComponent implements OnInit {
 
   ngOnInit() {
     this.loadTypes();
-    this.schemaNotificationService.createSchemaNotificationsSubscription()
-      .subscribe(() => {
-        this.loadTypes(true);
-      });
   }
 
   type(schemaMember: SchemaMember): Type {

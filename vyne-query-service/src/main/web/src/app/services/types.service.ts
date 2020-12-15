@@ -21,7 +21,7 @@ import {
   VersionedSource
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
-import {SchemaUpdatedNotification} from './schema-notification.service';
+import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -32,10 +32,18 @@ export class TypesService {
   private schemaSubject: Subject<Schema> = new ReplaySubject(1);
   private schemaRequest: Observable<Schema>;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private schemaNotificationService: SchemaNotificationService) {
     this.getTypes().subscribe(schema => {
       this.schema = schema;
     });
+    this.schemaNotificationService.createSchemaNotificationsSubscription()
+      .subscribe(() => {
+        this.getTypes(true)
+          .subscribe(schema => {
+            console.log('updating typeService schema');
+            this.schema = schema;
+          });
+      });
   }
 
   getRawSchema = (): Observable<string> => {
