@@ -5,7 +5,7 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.13.0</version>
+      <version>0.13.1</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -15,7 +15,7 @@
        <dependency>
           <groupId>io.vyne</groupId>
           <artifactId>vyne-ql-compiler</artifactId>
-          <version>0.13.0</version>
+          <version>0.13.1</version>
        </dependency>
        <dependency>
           <groupId>org.springframework.boot</groupId>

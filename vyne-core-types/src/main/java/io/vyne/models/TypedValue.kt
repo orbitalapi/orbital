@@ -2,6 +2,8 @@
 
 package io.vyne.models
 
+import com.fasterxml.jackson.datatype.jsr310.DecimalUtils
+import com.fasterxml.jackson.datatype.jsr310.deser.InstantDeserializer.FromDecimalArguments
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
@@ -20,7 +22,8 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
-import java.util.*
+import java.util.Locale
+import java.util.function.BiFunction
 
 interface ConversionService {
    fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: List<String>?): T
@@ -61,6 +64,12 @@ object VyneDefaultConversionService : ConversionService {
       // TODO Check this as it is a quick addition for the demo!
       service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate(); }
       service.addConverter(java.lang.Long::class.java, LocalDateTime::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDateTime(); }
+      service.addConverter(java.lang.Double::class.java, Instant::class.java) { instantAsSecondsAndNanoSeconds ->
+         val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
+         DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
+            Instant.ofEpochSecond(s, ns.toLong())
+         })
+      }
       service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName }
       service
    }
@@ -143,16 +152,16 @@ class StringToNumberConverter(override val next: ConversionService = NoOpConvers
             BigDecimal::class.java -> {
                val scientificValue = fromScientific(source)
                when {
-                   scientificValue != null -> {
-                      scientificValue as T
-                   }
-                   numberFormat is DecimalFormat -> {
-                      numberFormat.isParseBigDecimal = true
-                      numberFormat.parse(source) as T
-                   }
-                   else -> {
-                      TODO("Didn't receive a decimal formatter from the locale")
-                   }
+                  scientificValue != null -> {
+                     scientificValue as T
+                  }
+                  numberFormat is DecimalFormat -> {
+                     numberFormat.isParseBigDecimal = true
+                     numberFormat.parse(source) as T
+                  }
+                  else -> {
+                     TODO("Didn't receive a decimal formatter from the locale")
+                  }
                }
             }
             else -> next.convert(source, targetType, format)

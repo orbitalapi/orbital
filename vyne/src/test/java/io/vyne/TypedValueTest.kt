@@ -1,5 +1,6 @@
 package io.vyne
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
@@ -86,5 +87,16 @@ class TypedValueTest {
       val date = instance.value as LocalDate
       date.should.equal(LocalDate.of(2025, 4, 9))
 
+   }
+
+   @Test
+   fun `Can Handle Instants with microsecond resolution`() {
+      val schema = TaxiSchema.from("""
+         type KiwiDate inherits Instant(@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+      """.trimIndent())
+
+      val instance = TypedInstance.from(schema.type("KiwiDate"), 1608034621.123456, schema, source = Provided)
+      val instant = instance.value as Instant
+      instant.should.equal(Instant.parse("2020-12-15T12:17:01.123456Z"))
    }
 }
