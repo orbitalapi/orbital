@@ -1,7 +1,12 @@
 package io.vyne.cask
 
+import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.micrometer.core.aop.TimedAspect
 import io.micrometer.core.instrument.Meter
@@ -18,7 +23,6 @@ import io.vyne.cask.websocket.CaskWebsocketHandler
 import io.vyne.spring.VyneSchemaConsumer
 import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
-import org.hibernate.jpa.spi.HibernateEntityManagerImplementor
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
@@ -37,6 +41,8 @@ import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.codec.ServerCodecConfigurer
+import org.springframework.http.codec.json.Jackson2JsonDecoder
+import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
@@ -47,8 +53,9 @@ import org.springframework.web.reactive.socket.server.WebSocketService
 import org.springframework.web.reactive.socket.server.support.HandshakeWebSocketService
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter
 import org.springframework.web.reactive.socket.server.upgrade.TomcatRequestUpgradeStrategy
+import java.sql.Timestamp
 import java.time.Duration
-import java.util.*
+import java.util.TimeZone
 import javax.annotation.PostConstruct
 
 
@@ -87,10 +94,14 @@ class CaskApp {
 }
 
 @Configuration
-class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMessageBufferSize: Int) : WebFluxConfigurer {
-
+class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMessageBufferSize: Int, val objectMapper: ObjectMapper) : WebFluxConfigurer {
    override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
+      val sqlTimeStampSerialiserModule = SimpleModule()
+      sqlTimeStampSerialiserModule.addSerializer(java.sql.Timestamp::class.java, SqlTimeStampSerialiser())
+      objectMapper.registerModule(sqlTimeStampSerialiserModule)
       configurer.defaultCodecs().maxInMemorySize(maxTextMessageBufferSize)
+      configurer.defaultCodecs().jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper, APPLICATION_JSON))
+      configurer.defaultCodecs().jackson2JsonEncoder(Jackson2JsonEncoder(objectMapper, APPLICATION_JSON))
    }
 
 
@@ -141,6 +152,12 @@ class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMe
 
 }
 
+class SqlTimeStampSerialiser: StdSerializer<Timestamp>(Timestamp::class.java) {
+   private val instantSerialiser = InstantSerializer.INSTANCE
+   override fun serialize(value: Timestamp, generator: JsonGenerator, p2: SerializerProvider) {
+      instantSerialiser.serialize(value.toInstant(), generator, p2)
+   }
+}
 // Marker configration classes, to make app more testable
 
 @EnableDiscoveryClient

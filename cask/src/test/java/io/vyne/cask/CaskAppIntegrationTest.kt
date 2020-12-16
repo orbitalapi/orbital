@@ -4,15 +4,12 @@ import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
-import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.ingest.TestSchema.schemaWithConcatAndDefaultSource
 import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.services.CaskServiceBootstrap
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStoreClient
-import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.SchemaSetChangedEvent
-import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -42,9 +39,10 @@ import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 import java.net.URI
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.*
+import java.util.Date
 import javax.annotation.PreDestroy
 import javax.sql.DataSource
 
@@ -67,7 +65,6 @@ class CaskAppIntegrationTest {
 
    @Autowired
    lateinit var caskServiceBootstrap: CaskServiceBootstrap
-
 
    companion object {
       lateinit var pg: EmbeddedPostgres
@@ -385,6 +382,51 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
          .run { wsConnection.dispose() }
    }
 
+   @Test
+   fun `Can Query Cask Data with a field backed by database timestamp column`() {
+      // mock schema
+      schemaPublisher.submitSchema(
+         "test-schemas",
+         "1.0.0",
+         CoinbaseJsonOrderSchema.sourceV1.plus("""
+            model RfqDateModel {
+                changeDateTime : Instant? (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'") by column(1)
+            }
+         """.trimIndent()))
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      val caskRequest = """
+changeTime
+2020-12-11T08:08:13.1792973Z
+""".trimIndent()
+
+      client
+         .post()
+         .uri("/api/ingest/csv/RfqDateModel?debug=true&delimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 1 records"}""")
+
+
+      val result = client
+         .post()
+         .uri("/api/cask/findAll/RfqDateModel")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToFlux(String::class.java)
+         .blockFirst()
+
+      result.should.not.be.empty
+      val queryResult = result.drop(1).dropLast(1) // drop [ and ]
+      queryResult.should.startWith("""{"changeDateTime":1607674093.179297000,"caskmessageid":""")
+   }
+
    class MessagePublisher(val session: WebSocketSession, val messageContent: String, val schemaPublisher: SchemaPublisher,  val caskServiceBootstrap: CaskServiceBootstrap): Publisher<WebSocketMessage> {
       override fun subscribe(subscriber: Subscriber<in WebSocketMessage>) {
          subscriber.onSubscribe( object: Subscription {
@@ -421,4 +463,6 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
       val open: Double,
       val close: Double
    )
+
+   data class RfqDateModelDto(val changeDateTime: Instant)
 }
