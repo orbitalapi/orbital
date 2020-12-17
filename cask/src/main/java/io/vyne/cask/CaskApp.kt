@@ -43,6 +43,7 @@ import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.config.EnableWebFlux
@@ -94,8 +95,13 @@ class CaskApp {
 }
 
 @Configuration
-class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMessageBufferSize: Int, val objectMapper: ObjectMapper) : WebFluxConfigurer {
+class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMessageBufferSize: Int) : WebFluxConfigurer {
    override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
+      // Injecting ObjectMapper into this function doesn't work as for some reason the ObjectMapper in the spring context
+      // only contains the KotlinModule, so serialisation for JDK 8 temporal types got broken.
+      // Below is the way webflux encoders / decoders instantiate their ObjectMappers, and 'build()' function simply goes through
+      // the classpath and discovers all available Jackson modules in which case relevant JDK 8 jackson modules are discovered properly.
+      val objectMapper: ObjectMapper = Jackson2ObjectMapperBuilder.json().build()
       val sqlTimeStampSerialiserModule = SimpleModule()
       sqlTimeStampSerialiserModule.addSerializer(java.sql.Timestamp::class.java, SqlTimeStampSerialiser())
       objectMapper.registerModule(sqlTimeStampSerialiserModule)
