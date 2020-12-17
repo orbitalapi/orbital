@@ -203,10 +203,11 @@ class VyneConfigRegistrar : ImportBeanDefinitionRegistrar, EnvironmentAware {
 
    private fun configureEurekaSchemaStore(registry: BeanDefinitionRegistry, isVyneQueryServer: Boolean) {
       log().debug("Enabling Eureka based schema store")
-      registry.registerBeanDefinition(EurekaClientSchemaMetaPublisher::class.simpleName!!,
+      if (!isVyneQueryServer) {
+         registry.registerBeanDefinition(EurekaClientSchemaMetaPublisher::class.simpleName!!,
             BeanDefinitionBuilder.genericBeanDefinition(EurekaClientSchemaMetaPublisher::class.java)
-               .beanDefinition
-         )
+               .beanDefinition)
+      }
 
       if (isVyneQueryServer) {
          registry.registerBeanDefinition("RemoteTaxiSchemaProvider",

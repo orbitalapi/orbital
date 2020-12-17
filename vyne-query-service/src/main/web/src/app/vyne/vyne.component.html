@@ -12,6 +12,7 @@
         <span>Vyne</span>
       </div>
 
+
     </mat-toolbar>
     <mat-nav-list>
       <div *ngFor="let element of sidebarElements" class="navbar-route" [routerLink]="element.route"
@@ -21,6 +22,12 @@
           <span>{{element.title}}</span>
         </a>
         <!--        <a [routerLink]="element.route" routerLinkActive="active">{{element.title}}</a>-->
+      </div>
+      <div *ngIf="userInfo !== null && userInfo.userName !== null" class="navbar-route">
+        <a routerLink="logout" routerLinkActive="active" #rla="routerLinkActive">
+          <img src="assets/img/logout.svg">
+          <span>Logout</span>
+        </a>
       </div>
       <!--<a mat-list-item *ngFor="let element of sidebarElements" [routerLink]="element.route">{{ element.title }}</a>-->
     </mat-nav-list>
