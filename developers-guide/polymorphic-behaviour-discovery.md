@@ -4,7 +4,7 @@ description: >-
   runtime
 ---
 
-# Polymorphic service discovery
+# Discovering and calling services at runtime
 
 ## Overview
 
