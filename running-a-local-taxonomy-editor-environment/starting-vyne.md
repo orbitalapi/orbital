@@ -68,3 +68,7 @@ The path you specify should either be:
 * A directory containing taxi files
 * A directory containing a `taxi.conf` file 
 
+{% hint style="info" %}
+If you are setting `TAXONOMY_HOME` in the `.env` file, be sure not to place your path inside of quotation marks. However, if you must use quotation marks, be sure to double all your backslashes.
+{% endhint %}
+
