@@ -70,6 +70,20 @@ object VyneDefaultConversionService : ConversionService {
             Instant.ofEpochSecond(s, ns.toLong())
          })
       }
+      service.addConverter(java.lang.Double::class.java, LocalDateTime::class.java) { instantAsSecondsAndNanoSeconds ->
+         val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
+         val extractedInstant = DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
+            Instant.ofEpochSecond(s, ns.toLong())
+         })
+         extractedInstant.atZone(ZoneId.of("UTC")).toLocalDateTime()
+      }
+      service.addConverter(java.lang.Double::class.java, LocalDate::class.java) { instantAsSecondsAndNanoSeconds ->
+         val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
+         val extractedInstant = DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
+            Instant.ofEpochSecond(s, ns.toLong())
+         })
+         extractedInstant.atZone(ZoneId.of("UTC")).toLocalDate()
+      }
       service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName }
       service
    }

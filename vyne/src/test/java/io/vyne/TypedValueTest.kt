@@ -15,6 +15,7 @@ import org.mockito.Mockito.mock
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class TypedValueTest {
    @Test
@@ -98,5 +99,16 @@ class TypedValueTest {
       val instance = TypedInstance.from(schema.type("KiwiDate"), 1608034621.123456, schema, source = Provided)
       val instant = instance.value as Instant
       instant.should.equal(Instant.parse("2020-12-15T12:17:01.123456Z"))
+   }
+
+   @Test
+   fun `Can Handle Instants with microsecond resolution for DateTime types`() {
+      val schema = TaxiSchema.from("""
+         type KiwiDate inherits DateTime(@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+      """.trimIndent())
+
+      val instance = TypedInstance.from(schema.type("KiwiDate"), 1608034621.123456, schema, source = Provided)
+      val localDateTime = instance.value as LocalDateTime
+      localDateTime.should.equal(LocalDateTime.parse("2020-12-15T12:17:01.123456"))
    }
 }
