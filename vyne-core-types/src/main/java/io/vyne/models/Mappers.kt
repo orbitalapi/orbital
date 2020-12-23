@@ -3,11 +3,15 @@ package io.vyne.models
 import io.vyne.utils.log
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 import java.time.temporal.TemporalAccessor
+import javax.swing.text.DateFormatter
 
 private object TypeFormatter {
    val UtcZoneId = ZoneId.of("UTC")
@@ -25,16 +29,9 @@ private object TypeFormatter {
       }
 
 
-      return when {
-         typedInstance.value is LocalDate && dateTimeFormat != null -> DateTimeFormatter
-            .ofPattern(dateTimeFormat)
-            .withZone(UtcZoneId)
-            .format((instant as LocalDate).atStartOfDay())
-
-         typedInstance.value is LocalTime && dateTimeFormat != null -> DateTimeFormatter
-            .ofPattern(dateTimeFormat)
-            .format((instant as LocalTime))
-
+      return when (typedInstance.value) {
+         is LocalDate -> fromLocalDateToString(typedInstance, dateTimeFormat)
+         is LocalTime -> fromLocalDateTimeToString(typedInstance, dateTimeFormat)
          else -> {
             val zoneId = zoneId(typedInstance)
             typedInstance.type.format?.firstOrNull()?.let { firstFormat ->
@@ -43,9 +40,51 @@ private object TypeFormatter {
                   .withZone(zoneId)
                   .format(instant)
             } ?: DateTimeFormatter.ISO_INSTANT.withZone(zoneId).format(instant)
-
          }
       }
+   }
+
+   fun fromLocalDateToString(typedInstance: TypedInstance, dateTimeFormat: String?): String? {
+      return when {
+         typedInstance.value is LocalDate && dateTimeFormat != null -> DateTimeFormatter
+            .ofPattern(dateTimeFormat)
+            .withZone(UtcZoneId)
+            .format((typedInstance.value as LocalDate).atStartOfDay())
+         typedInstance.value is LocalDate && dateTimeFormat == null && typedInstance.type.format != null && typedInstance.type.format?.firstOrNull() != null -> {
+            val format = typedInstance.type.format!!.first()
+            val formatter =  if (format.contains("HH") || format.contains("hh")) {
+               DateTimeFormatter.ISO_DATE.withZone(UtcZoneId)
+
+            } else {
+               DateTimeFormatterBuilder()
+                  .appendPattern(format)
+                  .toFormatter()
+                  .withZone(UtcZoneId)
+            }
+            formatter.format(typedInstance.value as LocalDate)
+         }
+         else -> DateTimeFormatter.ISO_DATE.withZone(UtcZoneId).format(typedInstance.value as LocalDate)
+      }
+   }
+
+   fun fromLocalDateTimeToString(typedInstance: TypedInstance, dateTimeFormat: String?): String? {
+      val formatter = when {
+         typedInstance.value is LocalTime && dateTimeFormat != null -> DateTimeFormatter.ofPattern(dateTimeFormat)
+         typedInstance.value is LocalTime && dateTimeFormat == null && typedInstance.type.format != null && typedInstance.type.format?.firstOrNull() != null -> {
+            val format = typedInstance.type.format!!.first()
+            if (format.contains("yy")) {
+               DateTimeFormatter.ISO_TIME.withZone(UtcZoneId)
+            } else {
+               DateTimeFormatterBuilder()
+                  .appendPattern(format)
+                  .toFormatter()
+                  .withZone(UtcZoneId)
+            }
+
+         }
+         else -> DateTimeFormatter.ISO_TIME.withZone(UtcZoneId)
+      }
+      return formatter.format(typedInstance.value as LocalTime)
    }
 
    fun findFormatWith(searchPattern: String, formats: List<String>): String? {
@@ -53,7 +92,7 @@ private object TypeFormatter {
    }
 
    fun zoneId(typedInstance: TypedInstance): ZoneId {
-      return  try {
+      return try {
          typedInstance.type.offset?.let {
             ZoneOffset.ofTotalSeconds(it * 60).normalized()
          } ?: UtcZoneId
@@ -82,7 +121,7 @@ object RawObjectMapper : TypedInstanceMapper {
 object TypeNamedInstanceMapper : TypedInstanceMapper {
    private fun formatValue(typedInstance: TypedInstance): Any? {
       val type = typedInstance.type
-      val formattedValue = if ( (type.hasFormat || type.offset != null) && typedInstance.value != null && typedInstance.value !is String) {
+      val formattedValue = if ((type.hasFormat || type.offset != null) && typedInstance.value != null && typedInstance.value !is String) {
          // I feel like this is a bad idea, as the typed value will no longer statisfy the type contract
          // This could cause casing exceptions elsewhere.
          TypeFormatter.applyFormat(typedInstance)
