@@ -14,6 +14,7 @@ import org.skyscreamer.jsonassert.JSONAssert
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import kotlin.test.fail
 
 class TypedObjectTest {
@@ -275,6 +276,43 @@ class TypedObjectTest {
            "tradeDateDateTime":"15/07/2020 21:33:22"
          }
 
+         """.trimMargin()
+      JSONAssert.assertEquals(expectedJson, rawJson, true);
+   }
+
+   @Test
+   fun `Downcasted Dates can be unwrapped`() {
+      //eventDate : RfqEventDate? (@format = "dd/MMM/yyyy HH:mm:ss") by column("RFQ-Action Date")
+      val schema = TaxiSchema.from("""
+         type RfqEventDate inherits Date
+         type RfqEventTime inherits Time
+         type Rfq {
+            eventDate : RfqEventDate? (@format = "dd/MMM/yyyy HH:mm:ss")
+            eventTime: RfqEventTime (@format = "dd/MMM/yyyy HH:mm:ss")
+         }
+      """)
+      val rfqJson = """
+         {
+            "eventDate" : "12/Jun/2019 10:20:00",
+            "eventTime" : "12/Jun/2019 10:20:00"
+         }
+      """.trimIndent()
+      val rfq = JsonModelParser(schema).parse(schema.type("Rfq"), rfqJson, source = Provided) as TypedObject
+
+      // tradeDateInstant should be an instant
+      val eventDate = rfq["eventDate"].value as LocalDate
+      eventDate.should.equal(LocalDate.of(2019, 6, 12))
+      val eventTime = rfq["eventTime"].value as LocalTime
+      eventTime.should.equal(LocalTime.of(10, 20, 0))
+      val raw = rfq.toRawObject()
+
+      /// When we write it, the tradeDate should adhere to the format on the type
+      val rawJson = jacksonObjectMapper().writeValueAsString(raw)
+      val expectedJson = """
+         {
+           "eventDate" : "2019-06-12",
+           "eventTime" : "10:20:00"
+         }
          """.trimMargin()
       JSONAssert.assertEquals(expectedJson, rawJson, true);
    }
