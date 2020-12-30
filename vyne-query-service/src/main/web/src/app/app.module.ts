@@ -1,5 +1,5 @@
 import {BrowserModule} from '@angular/platform-browser';
-import {NgModule} from '@angular/core';
+import {ApplicationRef, DoBootstrap, NgModule, Optional} from '@angular/core';
 
 import {AppComponent} from './app.component';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
@@ -42,6 +42,10 @@ import {OperationViewComponent} from './operation-view/operation-view.component'
 import {ServiceViewModule} from './service-view/service-view.module';
 import {OperationViewModule} from './operation-view/operation-view.module';
 import {OperationViewContainerComponent} from './operation-view/operation-view-container.component';
+import {environment} from '../environments/environment';
+import {AuthModule} from './auth/auth.module';
+import {AuthService} from './auth/auth.service';
+import {LogoutComponent} from './auth/LogoutComponent';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -57,9 +61,19 @@ export const routerModule = RouterModule.forRoot(
     {path: 'query-history', component: QueryHistoryComponent},
     {path: 'cask-viewer', component: CaskViewerComponent},
     {path: 'query-history/:queryResponseId', component: QueryHistoryContainerComponent},
+    {path: 'logout', component: LogoutComponent}
   ],
   {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );
+
+const oauth2OidcModule =  [AuthModule];
+
+
+/*
+if (!environment.secure) {
+  oauth2OidcModule = [];
+}
+*/
 
 
 @NgModule({
@@ -93,8 +107,8 @@ export const routerModule = RouterModule.forRoot(
     QueryPanelModule,
     QueryHistoryModule,
     TypeListModule,
-    VyneModule
-
+    VyneModule,
+    ...oauth2OidcModule,
   ],
   providers: [
     TypesService,
@@ -112,7 +126,18 @@ export const routerModule = RouterModule.forRoot(
     }
   ],
   exports: [],
-  bootstrap: [AppComponent]
+  entryComponents: [AppComponent]
 })
-export class AppModule {
+export class AppModule implements DoBootstrap {
+  constructor(@Optional() private authService: AuthService) {}
+
+  ngDoBootstrap(appRef: ApplicationRef): void {
+    this.authService.bootstrapAuthService()
+      .then(() => {
+        appRef.bootstrap(AppComponent);
+      })
+      .catch(error => {
+        console.error(`[ngDoBootstrap] Problem while authService.bootstrapAuthService(): ${JSON.stringify(error)}`, error);
+      });
+  }
 }

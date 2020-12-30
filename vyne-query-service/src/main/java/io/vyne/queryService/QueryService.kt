@@ -9,6 +9,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
 import io.vyne.queryService.csv.toCsv
+import io.vyne.queryService.security.JwtTokenAuthenticationFactConverter
 import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
@@ -20,6 +21,8 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.OutputStream
@@ -89,6 +92,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
                          @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
                          @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String
    ):ResponseEntity<StreamingResponseBody>  {
+      log().info("Received Query From ${JwtTokenAuthenticationFactConverter.extractUserName()}")
       val body = StreamingResponseBody {outputStream ->
          vyneQLQuery(query, resultMode, contentType, outputStream)
       }
@@ -112,7 +116,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
    private fun vyneQLQuery(query: VyneQLQueryString, resultMode: ResultMode, contentType: String, outputStream: OutputStream):MimeTypeString {
       log().info("VyneQL query => $query")
       return timed("QueryService.submitVyneQlQuery") {
-         val vyne = vyneProvider.createVyne()
+         val vyne = vyneProvider.createVyne(JwtTokenAuthenticationFactConverter.callerFact())
          val response = try {
             vyne.query(query)
          } catch (e: CompilationException) {

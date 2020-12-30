@@ -1,0 +1,10 @@
+@startuml
+actor User
+User -> VyneQueryServer: User access Vyne Query Server
+VyneQueryServer -> OpenIDProvider: User's browser redirected to OpenID with an authentication request.
+OpenIDProvider -> User: OpenID interacts with the user for authentication
+User -> OpenIDProvider: User authenticates
+OpenIDProvider -> VyneQueryServer: User's browser redirected back to application with authorization code
+VyneQueryServer -> OpenIDProvider: Vyne Query Server sends token request to OpenId with the authorization code
+OpenIDProvider -> VyneQueryServer: OpenID Provider responds with an ID Token, access token and refresh token
+@enduml
