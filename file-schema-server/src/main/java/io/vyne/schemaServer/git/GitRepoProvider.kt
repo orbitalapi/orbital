@@ -2,6 +2,7 @@ package io.vyne.schemaServer.git
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
+import java.nio.file.Path
 
 @ConditionalOnProperty(
    name = ["taxi.gitCloningJobEnabled"],
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Component
 )
 @Component
 class GitRepoProvider {
-   fun provideRepo(rootPath: String, repoConfig: GitSchemaRepoConfig.GitRemoteRepo): GitRepo {
-      return GitRepo(rootPath, repoConfig)
+   fun provideRepo(rootPath: Path, repositoryConfig: GitRemoteRepository): GitRepo {
+      return GitRepo.forNameInRoot(rootPath, repositoryConfig)
    }
 }
