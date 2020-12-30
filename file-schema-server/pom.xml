@@ -11,6 +11,9 @@
 
    <artifactId>file-schema-server</artifactId>
 
+   <properties>
+      <jgit.version>5.7.0.202003110725-r</jgit.version>
+   </properties>
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
@@ -55,8 +58,20 @@
       <dependency>
          <groupId>org.eclipse.jgit</groupId>
          <artifactId>org.eclipse.jgit</artifactId>
-         <version>5.7.0.202003110725-r</version>
+         <version>${jgit.version}</version>
       </dependency>
+      <dependency>
+         <groupId>org.eclipse.jgit</groupId>
+         <artifactId>org.eclipse.jgit.http.server</artifactId>
+         <version>${jgit.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-servlet</artifactId>
+         <scope>test</scope>
+      </dependency>
+
       <dependency>
          <groupId>commons-io</groupId>
          <artifactId>commons-io</artifactId>

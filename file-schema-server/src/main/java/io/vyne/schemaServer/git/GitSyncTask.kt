@@ -21,10 +21,17 @@ class GitSyncTask(
    private val fileWatcher: FileWatcher,
    private val compilerService: CompilerService) {
 
+   private val rootDir: File
    private val inProgress = AtomicBoolean(false)
 
    init {
       log().info("Git sync job created: \n$gitSchemaRepoConfig")
+      if (gitSchemaRepoConfig.schemaLocalStorage != null) {
+         rootDir = File(gitSchemaRepoConfig.schemaLocalStorage)
+      } else {
+         error("taxi.gitCloningJobEnabled is set to true, but no schema storage location was provided.  Set taxi.schemaLocalStorage")
+      }
+
    }
 
    @Scheduled(fixedRateString = "\${taxi.gitCloningJobPeriodMs:300000}")
@@ -38,49 +45,49 @@ class GitSyncTask(
       fileWatcher.cancelWatch()
 
       try {
-         val rootDir = File(gitSchemaRepoConfig.schemaLocalStorage!!)
-         var recompile = false
-
          if (!rootDir.exists()) {
             rootDir.mkdir()
          }
 
-         gitSchemaRepoConfig.gitSchemaRepos.forEach { repoConfig ->
+         val syncTaskResults = gitSchemaRepoConfig.gitSchemaRepositories.map { repoConfig ->
             log().info("Synchronizing repository: ${repoConfig.name} - ${repoConfig.uri} / ${repoConfig.branch}")
-            val git = gitRepoProvider.provideRepo(rootDir.absolutePath, repoConfig)
+            val git = gitRepoProvider.provideRepo(rootDir.toPath(), repoConfig)
 
-            try {
-               git.use { gitRepo ->
-                  if (gitRepo.lsRemote() == OperationResult.FAILURE) {
-                     log().error("Synch error: Could not reach repository ${repoConfig.name} - ${repoConfig.uri} / ${repoConfig.branch}")
-                     return@forEach
-                  }
+            syncRepository(git, repoConfig)
+         }
 
-                  if (gitRepo.existsLocally()) {
-                     gitRepo.checkout()
-                     gitRepo.pull()
-                  } else {
-                     gitRepo.clone()
-                     gitRepo.checkout()
-                  }
-
-                  if (gitRepo.isUpdated()) {
-                     recompile = true
-                  }
-               }
-
-               if (recompile) {
-                  compilerService.recompile(false)
-               }
-            } catch (e: Exception) {
-               log().error("Synch error: ${repoConfig.name}\n${e.message}", e)
-            }
+         if (syncTaskResults.contains(OperationResult.SUCCESS_WITH_CHANGES)) {
+            compilerService.recompile(incrementVersion = false)
          }
       } catch (e: Exception) {
-         log().error("Synch error", e)
+         log().error("Sync error", e)
       } finally {
          fileWatcher.watch()
          inProgress.set(false)
       }
+   }
+
+   private fun syncRepository(git: GitRepo, repoConfig: GitRemoteRepository): OperationResult {
+      val result = try {
+         git.use { gitRepo ->
+            if (gitRepo.lsRemote() == OperationResult.FAILED) {
+               log().error("Sync error: Could not reach repository ${repoConfig.name} - ${repoConfig.uri} / ${repoConfig.branch}")
+               return OperationResult.FAILED
+            }
+
+            val operationResult = if (gitRepo.existsLocally()) {
+               gitRepo.checkout()
+               gitRepo.pull()
+            } else {
+               gitRepo.clone()
+               gitRepo.checkout()
+            }
+            operationResult
+         }
+      } catch (e: Exception) {
+         log().error("Sync error: ${repoConfig.name}\n${e.message}", e)
+         OperationResult.FAILED
+      }
+      return result
    }
 }
