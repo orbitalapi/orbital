@@ -1,26 +1,26 @@
 package io.vyne.queryService.schemas
 
-import io.vyne.FactSets
 import io.vyne.VersionedSource
-import io.vyne.query.Fact
+import io.vyne.queryService.security.VyneUser
 import lang.taxi.Compiler
 import lang.taxi.generators.SchemaWriter
 
+object VyneTypes {
+   const val NAMESPACE = "io.vyne"
+}
 object VyneQueryBuiltInTypesProvider {
    private const val schemaName = "io.vyne.types"
-   const val vyneNamespace = "io.vyne"
-   const val vyneUserNameType = "Username"
-   private val taxiDocument = Compiler("""
-      namespace $vyneNamespace {
-         type $vyneUserNameType inherits String
-     }
-      """.trimIndent()).compile()
+
+   private val builtInTypesSource = listOf(
+      VyneUser.USERNAME_TYPEDEF
+   ).joinToString("\n")
+   private val taxiDocument = Compiler(builtInTypesSource).compile()
    val versionedSources = SchemaWriter()
       .generateSchemas(listOf(taxiDocument))
       .mapIndexed { index, generatedSchema ->
-      val versionedSourceName = if (index > 0) schemaName + index else schemaName
-      VersionedSource(versionedSourceName, "1.0.0", generatedSchema)
-   }
+         val versionedSourceName = if (index > 0) schemaName + index else schemaName
+         VersionedSource(versionedSourceName, "1.0.0", generatedSchema)
+      }
 
-   fun vyneUserNameCallerFact(userName: String) = Fact("$vyneNamespace.$vyneUserNameType", userName, FactSets.CALLER)
+
 }

@@ -11,8 +11,19 @@ data class KeycloakServerProperties(
    val adminUser: AdminUser,
    val realmUsers: List<RealmUser>)
 
+/**
+ * Used for statically configured users, generally for test/demo
+ * purposes.  Not suitable for actual users.
+ */
 @ConstructorBinding
 data class AdminUser(val username: String, val password: String)
 
+/**
+ * Used for statically configured users, generally for test/demo
+ * purposes.  Not suitable for actual users.
+ */
 @ConstructorBinding
-data class RealmUser(val username: String, val password: String)
+data class RealmUser(val username: String,
+                     val password: String,
+                     val email: String
+)

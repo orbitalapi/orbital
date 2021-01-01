@@ -157,16 +157,22 @@ export class QueryEditorComponent implements OnInit {
             errorResponse.error.message,
             errorResponse.error.profilerOperation,
             errorResponse.error.remoteCalls);
-          this.queryResultUpdated.emit(this.lastQueryResult);
-          this.loadingChanged.emit(false);
-          this.currentState = 'Error';
-        } else {
 
+        } else {
           // There was an unhandled error...
           console.error('An unhandled error occurred:');
           console.error(JSON.stringify(error));
-
+          const errorMessage = 'Something went wrong - this looks like a bug in Vyne, not your query: '
+            + errorResponse.message + '\n' + errorResponse.error.message;
+          this.lastQueryResult = new QueryFailure(
+            errorMessage,
+            null, []);
+          this.queryResultUpdated.emit(this.lastQueryResult);
         }
+        this.queryResultUpdated.emit(this.lastQueryResult);
+        this.loadingChanged.emit(false);
+        this.currentState = 'Error';
+        this.lastErrorMessage = this.lastQueryResult.message;
       }
     );
   }

@@ -1,12 +1,8 @@
-<mat-toolbar color="primary" style="z-index: 999">
-  <span>Query History</span>
-  <div class="toolbar-spacer"></div>
+<app-header-bar title="Query History">
   <span>
     <button mat-stroked-button (click)="loadData()">Refresh</button>
   </span>
-  <app-search-bar-container></app-search-bar-container>
-</mat-toolbar>
-
+</app-header-bar>
 <mat-sidenav-container [hasBackdrop]="true">
   <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">
     <div class="drawer-content">

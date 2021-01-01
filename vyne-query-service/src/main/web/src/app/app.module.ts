@@ -38,14 +38,11 @@ import {RxStompConfig} from './stomp-config';
 import {SchemaNotificationService} from './services/schema-notification.service';
 import {MatNativeDateModule} from '@angular/material/core';
 import {ServiceViewContainerComponent} from './service-view/service-view-container.component';
-import {OperationViewComponent} from './operation-view/operation-view.component';
 import {ServiceViewModule} from './service-view/service-view.module';
 import {OperationViewModule} from './operation-view/operation-view.module';
 import {OperationViewContainerComponent} from './operation-view/operation-view-container.component';
-import {environment} from '../environments/environment';
 import {AuthModule} from './auth/auth.module';
 import {AuthService} from './auth/auth.service';
-import {LogoutComponent} from './auth/LogoutComponent';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -61,7 +58,6 @@ export const routerModule = RouterModule.forRoot(
     {path: 'query-history', component: QueryHistoryComponent},
     {path: 'cask-viewer', component: CaskViewerComponent},
     {path: 'query-history/:queryResponseId', component: QueryHistoryContainerComponent},
-    {path: 'logout', component: LogoutComponent}
   ],
   {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );

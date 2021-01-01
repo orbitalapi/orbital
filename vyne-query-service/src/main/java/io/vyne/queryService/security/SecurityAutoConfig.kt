@@ -4,7 +4,6 @@ import io.vyne.queryService.schemas.VyneQueryBuiltInTypesProvider
 import io.vyne.schemaStore.SchemaPublisher
 import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-import org.springframework.boot.autoconfigure.web.ServerProperties
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.ApplicationListener
 import org.springframework.context.annotation.Bean
@@ -19,16 +18,23 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 @Configuration
 @EnableWebSecurity
 @Import(value = [SecurityAutoConfiguration::class, ManagementWebSecurityAutoConfiguration::class])
-class SecurityAutoConfig: WebSecurityConfigurerAdapter() {
+class SecurityAutoConfig : WebSecurityConfigurerAdapter() {
    override fun configure(http: HttpSecurity) {
       http
+         .csrf().ignoringAntMatchers("/eureka/**").and()
          .cors()
          .and()
          .authorizeRequests()
          .antMatchers(
-            "/api/security/config", // End Point for UI to fetch OpenIdp Connect related settings.
-            "/api/schemas", // End point for Cask and other vyne based services to fetch the schema in EUREKA schema discovery mode.
-            "/",
+            "/api/security/config",
+            "/api/schemas"
+         ).permitAll() // End point for Cask and other vyne based services to fetch the schema in EUREKA schema discovery mode.
+         .antMatchers("/api/**").authenticated() // All other api endpoints must be authenticated
+         .antMatchers(
+            "/**", // Allow access to any, to support html5 ui routes (eg /types/foo.bar.Baz)
+            "/eureka/**",
+            "/eureka/",
+            "/eureka",
             "/assets/**",
             "/index.html",
             "/*.js",
@@ -43,6 +49,7 @@ class SecurityAutoConfig: WebSecurityConfigurerAdapter() {
          .oauth2ResourceServer()
          .jwt()
    }
+
    @Bean
    fun onApplicationReadyEventListener(schemaPublisher: SchemaPublisher): ApplicationListener<ApplicationReadyEvent?>? {
       return ApplicationListener { evt: ApplicationReadyEvent? ->

@@ -4,17 +4,13 @@ import io.vyne.jwt.auth.config.KeycloakServerProperties
 import io.vyne.jwt.auth.config.RegularJsonConfigProviderFactory
 import io.vyne.jwt.auth.config.log
 import org.keycloak.Config
-import org.keycloak.credential.CredentialAuthentication
-import org.keycloak.credential.PasswordCredentialProvider
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
 import org.keycloak.models.UserCredentialModel
 import org.keycloak.representations.idm.RealmRepresentation
-import org.keycloak.representations.idm.UserRepresentation
 import org.keycloak.services.managers.ApplianceBootstrap
 import org.keycloak.services.managers.RealmManager
 import org.keycloak.services.resources.KeycloakApplication
-import org.keycloak.storage.UserStorageManager
 import org.keycloak.util.JsonSerialization
 import org.springframework.core.io.ClassPathResource
 import org.springframework.core.io.Resource
@@ -58,7 +54,7 @@ class EmbeddedKeycloakApplication: KeycloakApplication() {
          val lessonRealmImportFile: Resource = ClassPathResource(keycloakServerProperties.realmImportFile)
          val realmRepresentation = JsonSerialization.readValue(lessonRealmImportFile.inputStream, RealmRepresentation::class.java)
          val realmModel = manager.importRealm(realmRepresentation)
-         addUsers(realmModel, session)
+         addStaticallyConfiguredUsers(realmModel, session)
          session.transactionManager
             .commit()
       } catch (ex: java.lang.Exception) {
@@ -69,7 +65,7 @@ class EmbeddedKeycloakApplication: KeycloakApplication() {
       session.close()
    }
 
-   private fun addUsers(realmModel: RealmModel, session: KeycloakSession) {
+   private fun addStaticallyConfiguredUsers(realmModel: RealmModel, session: KeycloakSession) {
       val existingUserNames = session.users().getUsers(realmModel).map { it.username }
       session.userCredentialManager()
       keycloakServerProperties
@@ -78,6 +74,7 @@ class EmbeddedKeycloakApplication: KeycloakApplication() {
          .map { realmUser ->
             val user = session.users().addUser(realmModel, realmUser.username)
             user.isEnabled = true
+            user.email = realmUser.email
             session
                .userCredentialManager()
                .updateCredential(realmModel, user, UserCredentialModel.password(realmUser.password))
