@@ -55,6 +55,7 @@
       <module>cask-api</module>
       <module>vyne-ql</module>
       <module>test-cli</module>
+      <module>jwt-auth-server</module>
    </modules>
 
    <scm>

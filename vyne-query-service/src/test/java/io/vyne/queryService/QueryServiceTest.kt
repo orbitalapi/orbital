@@ -13,7 +13,6 @@ import kotlin.test.assertEquals
 class QueryServiceTest : BaseQueryServiceTest() {
 
 
-
    @Test
    fun `submitQueryJsonSimple`() {
 

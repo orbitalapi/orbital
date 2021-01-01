@@ -14,6 +14,7 @@ import {MatCardModule} from '@angular/material/card';
 import {MatInputModule} from '@angular/material/input';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {MatIconModule} from '@angular/material/icon';
+import {HeaderBarModule} from '../header-bar/header-bar.module';
 
 @NgModule({
   imports: [
@@ -29,7 +30,8 @@ import {MatIconModule} from '@angular/material/icon';
     MatCardModule,
     MatInputModule,
     TypeAutocompleteModule,
-    MatIconModule
+    MatIconModule,
+    HeaderBarModule
   ],
   exports: [TypeListComponent],
   declarations: [TypeListComponent, FilterTypesComponent],

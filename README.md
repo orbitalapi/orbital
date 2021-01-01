@@ -93,3 +93,12 @@ Optional services
 | :---: | :---: |
 | eureka | 8761 |  
 | config-service | 8888 | 
+
+## OpenId Connect Integration
+
+To enable Authentication through OpenId Connect:
+
+* Run vyne-query-service with 'secure' profile.
+* Run jwt-auth-server
+* Login to UI with one of the users defined in jwt-auth-server application.yml
+* See [security flow](./security.puml)

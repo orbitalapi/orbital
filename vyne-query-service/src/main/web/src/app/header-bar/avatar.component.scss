@@ -1,0 +1,17 @@
+.menu-header {
+  span {
+    display: block;
+  }
+  font-size: 0.85rem;
+  padding: 0 16px 0.5rem;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+
+mat-icon.avatar {
+  transform: scale(1.5);
+}
+img.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <artifactId>platform</artifactId>
+      <groupId>io.vyne</groupId>
+      <version>0.13.4-SNAPSHOT</version>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>jwt-auth-server</artifactId>
+
+   <properties>
+      <keycloak.version>11.0.3</keycloak.version>
+      <!-- these should be updated together with Keycloak -->
+      <!-- check keycloak-dependencies-server-all effective pom -->
+      <infinispan.version>10.1.8.Final</infinispan.version>
+      <resteasy.version>3.12.1.Final</resteasy.version>
+   </properties>
+   <dependencies>
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-web</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-actuator</artifactId>
+      </dependency>
+
+      <!-- persistence -->
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-data-jpa</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>com.h2database</groupId>
+         <artifactId>h2</artifactId>
+         <scope>runtime</scope>
+      </dependency>
+
+      <!-- Keycloak server -->
+
+      <dependency>
+         <groupId>org.jboss.resteasy</groupId>
+         <artifactId>resteasy-jackson2-provider</artifactId>
+         <version>${resteasy.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.keycloak</groupId>
+         <artifactId>keycloak-dependencies-server-all</artifactId>
+         <version>${keycloak.version}</version>
+         <type>pom</type>
+         <exclusions>
+            <exclusion>
+               <groupId>org.slf4j</groupId>
+               <artifactId>slf4j-log4j12</artifactId>
+            </exclusion>
+            <exclusion>
+               <groupId>log4j</groupId>
+               <artifactId>log4j</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+
+   </dependencies>
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>${kotlin.version}</version>
+            <configuration>
+               <compilerPlugins>
+                  <!-- Or "spring" for the Spring support -->
+                  <plugin>spring</plugin>
+                  <plugin>jpa</plugin>
+                  <plugin>no-arg</plugin>
+               </compilerPlugins>
+
+            </configuration>
+
+            <dependencies>
+               <dependency>
+                  <groupId>org.jetbrains.kotlin</groupId>
+                  <artifactId>kotlin-maven-allopen</artifactId>
+                  <version>${kotlin.version}</version>
+               </dependency>
+               <dependency>
+                  <groupId>org.jetbrains.kotlin</groupId>
+                  <artifactId>kotlin-maven-noarg</artifactId>
+                  <version>${kotlin.version}</version>
+               </dependency>
+            </dependencies>
+         </plugin>
+         <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+               <addResources>true</addResources>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+               <excludes>
+                  <exclude>**/*LiveTest.java</exclude>
+               </excludes>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+
+            <configuration>
+               <images>
+                  <image>
+                     <name>vyneco/${project.artifactId}:${project.version}</name>
+                     <build>
+                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
+                        <tags>
+                           <tag>${docker.tag.latest}</tag>
+                           <tag>${docker.tag.numbered}</tag>
+                        </tags>
+                     </build>
+                  </image>
+               </images>
+            </configuration>
+
+            <!-- Connect start/stop to pre- and
+                 post-integration-test phase, respectively if you want to start
+                 your docker containers during integration tests -->
+            <executions>
+               <execution>
+                  <id>deploy</id>
+                  <phase>deploy</phase>
+                  <goals>
+                     <!-- "build" should be used to create the images with the
+                          artifact -->
+                     <goal>build</goal>
+                     <goal>push</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+</project>

@@ -7,8 +7,19 @@ import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
-import io.vyne.query.*
+import io.vyne.query.Fact
+import io.vyne.query.HistoryQueryResponse
+import io.vyne.query.ProfilerOperation
+import io.vyne.query.Query
+import io.vyne.query.QueryMode
+import io.vyne.query.QueryResponse
+import io.vyne.query.QueryResult
+import io.vyne.query.ResultMode
+import io.vyne.query.SearchFailedException
 import io.vyne.queryService.csv.toCsv
+import io.vyne.queryService.security.VyneUser
+import io.vyne.queryService.security.facts
+import io.vyne.queryService.security.toVyneUser
 import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
@@ -20,14 +31,21 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.security.core.Authentication
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.OutputStream
 import java.util.*
 
 const val TEXT_CSV = "text/csv"
-const val TEXT_CSV_UTF_8="$TEXT_CSV;charset=UTF-8"
+const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
 private typealias MimeTypeString = String
+
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 data class FailedSearchResponse(val message: String,
                                 @field:JsonIgnore // this sends too much information - need to build a lightweight version
@@ -69,12 +87,12 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
    fun submitQuery(@RequestBody query: Query,
                    @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
                    @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String
-   ):ResponseEntity<StreamingResponseBody> {
+   ): ResponseEntity<StreamingResponseBody> {
 
       val body = StreamingResponseBody { outputStream ->
          query(query, contentType, outputStream, resultMode)
       }
-      val responseContentType = when(contentType) {
+      val responseContentType = when (contentType) {
          TEXT_CSV -> TEXT_CSV_UTF_8
          else -> contentType
       }
@@ -87,12 +105,14 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
    @PostMapping("/api/vyneql", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
    fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString,
                          @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
-                         @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String
-   ):ResponseEntity<StreamingResponseBody>  {
-      val body = StreamingResponseBody {outputStream ->
-         vyneQLQuery(query, resultMode, contentType, outputStream)
+                         @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+                         auth: Authentication? = null
+   ): ResponseEntity<StreamingResponseBody> {
+      val user = auth?.toVyneUser()
+      val body = StreamingResponseBody { outputStream ->
+         vyneQLQuery(query, resultMode, contentType, outputStream, user)
       }
-      val responseContentType = when(contentType) {
+      val responseContentType = when (contentType) {
          TEXT_CSV -> TEXT_CSV_UTF_8
          else -> contentType
       }
@@ -103,16 +123,21 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
    }
 
 
-   private fun query(query: Query, contentType: String, outputStream: OutputStream, resultMode: ResultMode):MimeTypeString {
+   private fun query(query: Query, contentType: String, outputStream: OutputStream, resultMode: ResultMode): MimeTypeString {
       val response = executeQuery(query)
       history.add(RestfulQueryHistoryRecord(query, response.historyRecord()))
       return serialise(response, contentType, outputStream, resultMode)
    }
 
-   private fun vyneQLQuery(query: VyneQLQueryString, resultMode: ResultMode, contentType: String, outputStream: OutputStream):MimeTypeString {
+   private fun vyneQLQuery(query: VyneQLQueryString,
+                           resultMode: ResultMode,
+                           contentType: String,
+                           outputStream: OutputStream,
+                           vyneUser: VyneUser? = null
+   ): MimeTypeString {
       log().info("VyneQL query => $query")
       return timed("QueryService.submitVyneQlQuery") {
-         val vyne = vyneProvider.createVyne()
+         val vyne = vyneProvider.createVyne(vyneUser.facts())
          val response = try {
             vyne.query(query)
          } catch (e: CompilationException) {
@@ -138,7 +163,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
     * content type.
     * Returns the MediaType that was ultimately selected
     */
-   private fun serialise(queryResponse: QueryResponse, contentType: String, outputStream: OutputStream, resultMode: ResultMode):MimeTypeString {
+   private fun serialise(queryResponse: QueryResponse, contentType: String, outputStream: OutputStream, resultMode: ResultMode): MimeTypeString {
       return when (queryResponse) {
          is QueryResult -> {
             when (resultMode) {
@@ -163,14 +188,14 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       generateResponseJson(firstResult, outputStream, resultMode)
    }
 
-   private fun generateResponseJson(response: Any, outputStream: OutputStream, resultMode:ResultMode) {
+   private fun generateResponseJson(response: Any, outputStream: OutputStream, resultMode: ResultMode) {
       // We handle the serialization here, and return a string, rather than
       // letting Spring handle it.
       // This is because the LineageGraphSerializationModule() is stateful, and
       // shares references during serialization.  Therefore, it's not threadsafe, so
       // we create an instance per response.
       objectMapper
- //        .copy()
+         //        .copy()
 //         .registerModule(LineageGraphSerializationModule())
          .writerWithDefaultPrettyPrinter()
          .with(ContextAttributes.getEmpty()

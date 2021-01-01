@@ -1,6 +1,5 @@
 package io.vyne.queryService.schemas
 
-import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import org.springframework.context.event.EventListener
@@ -11,8 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 @Component
 @RestController
 class SchemaChangeNotificationService(
-   val stompTemplate: SimpMessagingTemplate,
-   val schemaProvider: SchemaStore
+   val stompTemplate: SimpMessagingTemplate
 ) {
    @EventListener
    fun onSchemaSetChanged(event: SchemaSetChangedEvent) {
