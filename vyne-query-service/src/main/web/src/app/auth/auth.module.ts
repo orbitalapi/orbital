@@ -3,12 +3,11 @@ import {HttpClient, HttpClientModule} from '@angular/common/http';
 import {NgModule} from '@angular/core';
 import {AuthService} from './auth.service';
 import {OAuthModule} from 'angular-oauth2-oidc';
-import {LogoutComponent} from './LogoutComponent';
 import {MatDialogModule} from '@angular/material/dialog';
 import {CaskConfirmDialogComponent} from '../cask-viewer/cask-confirm-dialog.component';
 
 @NgModule({
-  imports:      [
+  imports: [
     MatDialogModule,
     CommonModule,
     HttpClientModule,
@@ -18,8 +17,8 @@ import {CaskConfirmDialogComponent} from '../cask-viewer/cask-confirm-dialog.com
       }
     })
   ],
-  declarations: [LogoutComponent],
-  providers:    [AuthService],
+  declarations: [],
+  providers: [AuthService],
   entryComponents: [CaskConfirmDialogComponent]
 })
 export class AuthModule {

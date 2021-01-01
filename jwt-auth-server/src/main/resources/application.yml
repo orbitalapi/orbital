@@ -15,8 +15,10 @@ keycloak:
       realmImportFile: vyne-realm.json
       realmUsers:
          -
-            username: user1
+            username: marty
+            email: marty@vyne.co
             password: test
          -
-            username: user2
+            username: serhat
+            email: serhat@vyne.co
             password: test
