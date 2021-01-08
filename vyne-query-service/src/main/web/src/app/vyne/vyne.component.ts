@@ -8,6 +8,7 @@ import {SchemaNotificationService} from '../services/schema-notification.service
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {SystemAlert} from '../system-alert/system-alert.component';
 import {TypesService} from '../services/types.service';
+import {VyneUser, UserInfoService} from '../services/user-info.service';
 
 @Component({
   selector: 'vyne-app',
@@ -69,6 +70,7 @@ export class VyneComponent implements OnInit {
   });
 
   appInfo: AppInfo;
+  userInfo: VyneUser | null = null;
   alerts: SystemAlert[] = [];
 
   constructor(private breakpointObserver: BreakpointObserver,
@@ -79,6 +81,7 @@ export class VyneComponent implements OnInit {
               private snackbar: MatSnackBar) {
     appInfoService.getAppInfo()
       .subscribe(info => this.appInfo = info);
+
 
     // When the user navigates using the router, scroll back to the top.
     // Won't always be appropriate, (ie., when there are anchor links),

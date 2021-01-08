@@ -6,7 +6,7 @@
    <groupId>io.vyne</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.13.3</version>
+   <version>0.13.4</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -55,6 +55,7 @@
       <module>cask-api</module>
       <module>vyne-ql</module>
       <module>test-cli</module>
+      <module>jwt-auth-server</module>
    </modules>
 
    <scm>

@@ -1,5 +1,7 @@
 package io.vyne.schemaStore.eureka
 
+import arrow.core.Either
+import arrow.core.right
 import com.google.common.hash.Hasher
 import com.google.common.hash.Hashing
 import com.netflix.appinfo.InstanceInfo
@@ -8,11 +10,14 @@ import com.netflix.discovery.shared.Application
 import com.netflix.niws.loadbalancer.EurekaNotificationServerListUpdater
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
+import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SchemaStore
+import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import io.vyne.utils.timed
+import lang.taxi.CompilationException
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
@@ -73,10 +78,10 @@ internal data class SourceDelta(
  */
 class EurekaClientSchemaConsumer(
    clientProvider: Provider<EurekaClient>,
-   private val schemaStore: LocalValidatingSchemaStoreClient,
+   val schemaStore: LocalValidatingSchemaStoreClient,
    private val eventPublisher: ApplicationEventPublisher,
    private val restTemplate: RestTemplate = RestTemplate(),
-   private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1)) : SchemaStore {
+   private val refreshExecutorService: ExecutorService = Executors.newFixedThreadPool(1)) : SchemaStore, SchemaPublisher {
 
    private var sources = mutableListOf<SourcePublisherRegistration>()
    private val client = clientProvider.get()
@@ -330,5 +335,12 @@ class EurekaClientSchemaConsumer(
 
    override val generation: Int
       get() = this.schemaStore.generation
+
+   override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
+      refreshExecutorService.submit {
+         schemaStore.submitSchemas(versionedSources)
+      }
+      return schemaStore.schemaSet().schema.right()
+   }
 }
 

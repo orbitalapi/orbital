@@ -17,28 +17,30 @@ import {CovalentHighlightModule} from '@covalent/highlight';
 import {MatListModule} from '@angular/material/list';
 import {MatIconModule} from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import {HeaderBarModule} from '../header-bar/header-bar.module';
 
 
 
 @NgModule({
-  imports: [
-    BrowserModule,
-    CommonModule,
-    MatMenuModule,
-    MatButtonModule,
-    SearchModule,
-    MatToolbarModule,
-    CodeViewerModule,
-    MatProgressBarModule,
-    MatStepperModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    ReactiveFormsModule,
-    CovalentHighlightModule,
-    MatListModule,
-    MatIconModule,
-    MatInputModule,
-  ],
+    imports: [
+        BrowserModule,
+        CommonModule,
+        MatMenuModule,
+        MatButtonModule,
+        SearchModule,
+        MatToolbarModule,
+        CodeViewerModule,
+        MatProgressBarModule,
+        MatStepperModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        ReactiveFormsModule,
+        CovalentHighlightModule,
+        MatListModule,
+        MatIconModule,
+        MatInputModule,
+        HeaderBarModule,
+    ],
   exports: [SchemaExplorerComponent, NewSchemaWizardComponent],
   declarations: [SchemaExplorerComponent, NewSchemaWizardComponent],
   providers: [],

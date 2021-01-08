@@ -17,6 +17,7 @@ import { QueryListComponent } from './query-list.component';
 import {MatIconModule} from '@angular/material/icon';
 import { QueryHistoryCardComponent } from './query-history-card.component';
 import {QueryPanelModule} from '../query-panel/query-panel.module';
+import {HeaderBarModule} from '../header-bar/header-bar.module';
 
 @NgModule({
     imports: [
@@ -31,7 +32,8 @@ import {QueryPanelModule} from '../query-panel/query-panel.module';
         MatSidenavModule,
         TypedInstancePanelModule,
         ScrollingModule,
-        QueryPanelModule
+        QueryPanelModule,
+        HeaderBarModule
     ],
   exports: [QueryHistoryComponent, QueryListComponent],
   declarations: [QueryHistoryComponent, VyneqlRecordComponent, RestfulRecordComponent, QueryHistoryContainerComponent, QueryListComponent, QueryHistoryCardComponent],
