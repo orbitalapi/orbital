@@ -53,6 +53,7 @@ class SearchPathExclusionsMap<K,V>(private val maxEntries: Int): LinkedHashMap<K
 class HipsterDiscoverGraphQueryStrategy(
    private val edgeEvaluator: EdgeNavigator,
    vyneCacheConfigration: VyneCacheConfiguration) : QueryStrategy {
+   private val searchPathExclusionsCacheSize = vyneCacheConfigration.vyneDiscoverGraphQuery.searchPathExclusionsCacheSize
 
    private val schemaGraphCache = CacheBuilder.newBuilder()
       .maximumSize(vyneCacheConfigration.vyneDiscoverGraphQuery.schemaGraphCacheSize) // arbitary cache size, we can explore tuning this later
@@ -64,32 +65,12 @@ class HipsterDiscoverGraphQueryStrategy(
 
       })
 
-   private val searchPathExclusions = SearchPathExclusionsMap<SearchPathExclusionKey, SearchPathExclusionKey>(vyneCacheConfigration.vyneDiscoverGraphQuery.searchPathExclusionsCacheSize)
+   private val searchPathExclusions = SearchPathExclusionsMap<SearchPathExclusionKey, SearchPathExclusionKey>(searchPathExclusionsCacheSize)
    data class SearchPathExclusionKey(val startInstance: TypedInstance, val target: Element) {
-      private val equality = Equality(this, SearchPathExclusionKey::value, SearchPathExclusionKey::target)
+      private val equality = Equality(this, SearchPathExclusionKey::startInstance, SearchPathExclusionKey::target)
       private val hash:Int by lazy { equality.hash() }
       override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
       override fun hashCode(): Int = hash
-      private val value: String = if (startInstance is TypedObject) {
-         val builder = StringBuilder()
-         val typeName = startInstance.typeName
-         builder.append(typeName)
-         startInstance.type.attributes.forEach { (attributeName, field) ->
-            when {
-               startInstance.hasAttribute(attributeName) && startInstance[attributeName].value != null && startInstance[attributeName].value != "" -> {
-                  builder.append(attributeName)
-               }
-               // Include calculated fields
-               field.formula != null -> {
-                  builder.append(attributeName)
-               }
-            }
-         }
-         builder.toString()
-      } else {
-         startInstance.typeName.plus(startInstance.value)
-      }
-
    }
 
 
@@ -135,7 +116,7 @@ class HipsterDiscoverGraphQueryStrategy(
             val startFact =  providedInstance(fact)
             val targetType = context.schema.type(targetElement.value as String)
             val exclusionKey = SearchPathExclusionKey(fact, targetElement)
-            if (searchPathExclusions.contains(exclusionKey)) {
+            if (searchPathExclusionsCacheSize > 0 && searchPathExclusions.contains(exclusionKey)) {
                // if  a previous search for given (searchNode, targetNode) yielded 'null' path, then
                // don't search.
                return@mapNotNull null
@@ -147,7 +128,7 @@ class HipsterDiscoverGraphQueryStrategy(
                invocationConstraints.excludedOperations) { pathToEvaluate ->
                evaluatePath(pathToEvaluate,context)
             }
-            if (searchResult.path == null) {
+            if (searchPathExclusionsCacheSize > 0 && searchResult.path == null) {
                searchPathExclusions[exclusionKey] = exclusionKey
             }
             searchResult.typedInstance
