@@ -5,6 +5,7 @@
   line-height: 1.5rem;
   font-size: 1rem;
 
+
   .type-name {
     border: 1px solid $light-purple-grey-300;
     background-color: $light-purple-grey;
@@ -16,4 +17,9 @@
 .timestamp-row {
   font-size: 0.8rem;
   color: $dark-grey-1;
+}
+
+.clipped {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
