@@ -1372,6 +1372,77 @@ service ClientService {
               }
               """.trimIndent())
    }
+
+   @Test
+   fun `data integration with inheritance`() {
+      val (vyne, stubs) = testVyne("""
+         namespace Foo {
+           type Isin inherits String
+         }
+
+         namespace Bar {
+            type PUID inherits String
+            type Isin inherits String
+            type ProductIsin inherits Isin
+            type InstrumentIsin inherits ProductIsin
+
+            parameter model PuidRequest {
+                isin: Isin
+            }
+
+            model PuidResponse {
+                puid: PUID
+            }
+
+            service ProductService {
+               operation getPUID(PuidRequest) :  PuidResponse
+            }
+         }
+      """.trimIndent())
+
+       stubs.addResponse("getPUID") { operation, parameters ->
+          val isinArgValue = parameters.first().second.value as Map<String, TypedValue>
+          val response = """{
+         |"puid": "${isinArgValue["isin"]?.value.toString()}"
+         |}
+          """.trimMargin()
+          TypedInstance.from(vyne.type("PuidResponse"), response, vyne.schema, source = Provided)
+      }
+      val queryResult1 = vyne.query("""
+         given {
+            isin: Bar.ProductIsin = "US500769FH22"
+         } findOne {
+            PuidResponse
+         }
+      """.trimIndent())
+      queryResult1.isFullyResolved.should.be.`true`
+      val puidResponse1 = queryResult1["Bar.PuidResponse"] as TypedObject
+      puidResponse1["puid"].value.should.equal("US500769FH22")
+
+      val queryResult2 = vyne.query("""
+         given {
+            isin: Bar.InstrumentIsin = "US500769FH23"
+         } findOne {
+            PuidResponse
+         }
+      """.trimIndent())
+      queryResult2.isFullyResolved.should.be.`true`
+      val puidResponse2 = queryResult2["Bar.PuidResponse"] as TypedObject
+      puidResponse2["puid"].value.should.equal("US500769FH23")
+
+      val queryResult3 = vyne.query("""
+         given {
+            isin: Bar.Isin = "US500769FH24"
+         } findOne {
+            PuidResponse
+         }
+      """.trimIndent())
+      queryResult3.isFullyResolved.should.be.`true`
+      val puidResponse3 = queryResult3["Bar.PuidResponse"] as TypedObject
+      puidResponse3["puid"].value.should.equal("US500769FH24")
+
+   }
+
 }
 
 fun Vyne.typedValue(typeName: String, value: Any, source: DataSource = Provided): TypedInstance {
