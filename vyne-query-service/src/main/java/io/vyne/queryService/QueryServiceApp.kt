@@ -25,6 +25,8 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
+import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.cloud.client.loadbalancer.LoadBalanced
 import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
@@ -85,6 +87,12 @@ class QueryServiceApp {
             MapperFeature.DEFAULT_VIEW_INCLUSION
          )
       }
+   }
+
+   @Bean
+   @LoadBalanced
+   fun restTemplate(builder:RestTemplateBuilder):RestTemplate {
+      return builder.build()
    }
 
    @Autowired

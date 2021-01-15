@@ -23,12 +23,12 @@ export class VyneComponent implements OnInit {
 
   sidebarElements: SidebarElement[] = [
     {
-      title: 'Type explorer',
+      title: 'Data catalog',
       icon: 'assets/img/class.svg',
       // icon: 'explore',
       // icon: 'outline-explore.svg',
       // iconActive: 'outline-explore-active.svg',
-      route: 'types'
+      route: 'catalog'
     },
     {
       title: 'Schema explorer',

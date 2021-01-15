@@ -6,3 +6,7 @@
 .operation-list {
   @include vyne-table()
 }
+
+app-description-editor-container {
+  margin-top: 2rem;
+}

@@ -1,30 +1,10 @@
 package io.vyne.schemaServer.git
 
 import com.winterbe.expekt.should
-import org.apache.commons.io.FileUtils
-import org.junit.After
-import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 
-class GitRepoTest {
+class GitRepoTest : TestWithGitServer() {
 
-   @Rule
-   @JvmField
-   val folder = TemporaryFolder()
-
-   lateinit var server: TestGitServer
-
-   @Before
-   fun setup() {
-      server = TestGitServer.createStarted()
-   }
-
-   @After
-   fun tearDown() {
-      server.stop()
-   }
 
    @Test
    fun `will clone from remote repo`() {
@@ -32,6 +12,11 @@ class GitRepoTest {
       val result = repo.clone()
       result.should.equal(OperationResult.SUCCESS_WITH_CHANGES)
       folder.root.toPath().resolve("testfile").toFile().exists().should.be.`true`
+   }
+
+   @Test
+   fun `can commit file changes in nested directory and push`() {
+
    }
 
    @Test
@@ -47,19 +32,12 @@ class GitRepoTest {
       pushResult.should.equal(OperationResult.SUCCESS_WITHOUT_CHANGES)
 
       // Now delete and clone again to ensure it's on the remote
-      FileUtils.forceDelete(folder.root)
-      FileUtils.forceMkdir(folder.root)
+      resetCheckoutFolder()
 
       gitRepoFromServer().clone()
 
       folder.root.toPath().resolve("dummy.txt").toFile().exists().should.be.`true`
    }
 
-   private fun gitRepoFromServer(): GitRepo {
-      return GitRepo(folder.root.toPath(), GitRemoteRepository(
-         "TestRepo",
-         server.uri,
-         "master"
-      ))
-   }
+
 }

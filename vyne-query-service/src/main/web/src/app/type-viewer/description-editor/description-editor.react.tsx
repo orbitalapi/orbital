@@ -34,7 +34,9 @@ export class ReactEditor extends React.Component<EditorState, any> {
           theme={this.vyneEditorTheme}
           placeholder={this.props.placeholder}
           defaultValue={this.props.initialState}
-          onChange={value => this.props.changes$.next(value)}
+          onChange={value => {
+            this.props.changes$.next(value);
+          }}
         />
       </div>
     );

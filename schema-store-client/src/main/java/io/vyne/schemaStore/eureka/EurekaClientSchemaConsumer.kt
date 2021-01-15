@@ -2,12 +2,12 @@ package io.vyne.schemaStore.eureka
 
 import arrow.core.Either
 import arrow.core.right
-import com.google.common.hash.Hasher
 import com.google.common.hash.Hashing
 import com.netflix.appinfo.InstanceInfo
 import com.netflix.discovery.EurekaClient
 import com.netflix.discovery.shared.Application
 import com.netflix.niws.loadbalancer.EurekaNotificationServerListUpdater
+import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
 import io.vyne.schemaStore.SchemaPublisher
@@ -16,7 +16,6 @@ import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
-import io.vyne.utils.timed
 import lang.taxi.CompilationException
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpMethod
@@ -336,6 +335,9 @@ class EurekaClientSchemaConsumer(
    override val generation: Int
       get() = this.schemaStore.generation
 
+   override fun validateSchemas(versionedSources: List<VersionedSource>): Either<Pair<CompilationException, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>> {
+      return schemaStore.validateSchemas(versionedSources)
+   }
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
       refreshExecutorService.submit {
          schemaStore.submitSchemas(versionedSources)

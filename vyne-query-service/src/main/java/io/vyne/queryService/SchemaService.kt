@@ -3,10 +3,6 @@ package io.vyne.queryService
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.queryService.policies.PolicyDto
-import io.vyne.queryService.schemas.SchemaImportRequest
-import io.vyne.queryService.schemas.SchemaImportService
-import io.vyne.queryService.schemas.SchemaPreview
-import io.vyne.queryService.schemas.SchemaPreviewRequest
 import io.vyne.queryService.schemas.SchemaUpdatedNotification
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.SchemaStore
@@ -18,15 +14,11 @@ import io.vyne.schemas.Type
 import lang.taxi.generators.SourceFormatter
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import reactor.core.publisher.Mono
 
 @RestController
 class SchemaService(private val schemaProvider: SchemaSourceProvider,
-                    private val importer: SchemaImportService,
                     private val schemaStore: SchemaStore,
                     private val config: QueryServerConfig) {
    @GetMapping(path = ["/api/schemas/raw"])
@@ -138,18 +130,8 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider,
    // TODO : What's the relationship between this and the schema-store-api?
    // SHould probably either align the two api's or remove one.
    // Looks like schema-store-api isn't used anywhere.
-   @PostMapping(path = ["/api/schemas"])
-   fun submitSchema(@RequestBody request: SchemaImportRequest): Mono<VersionedSource> {
-      if (!config.newSchemaSubmissionEnabled) {
-         throw OperationNotPermittedException()
-      }
-      return importer.import(request)
-   }
 
-   @PostMapping(path = ["/api/schemas/preview"])
-   fun previewSchema(@RequestBody request: SchemaPreviewRequest): Mono<SchemaPreview> {
-      return importer.preview(request)
-   }
+
 
 }
 

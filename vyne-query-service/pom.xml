@@ -16,6 +16,11 @@
    <dependencies>
       <dependency>
          <groupId>io.vyne</groupId>
+         <artifactId>vyne-security</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
          <artifactId>vyne-search</artifactId>
          <version>${project.version}</version>
       </dependency>

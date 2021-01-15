@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {IHeaderAngularComp} from 'ag-grid-angular';
 import {IHeaderParams} from 'ag-grid-community';
-import {QualifiedName} from '../services/schema';
+import {QualifiedName, Type} from '../services/schema';
 
 @Component({
   selector: 'app-type-info-header',
@@ -29,4 +29,5 @@ export class TypeInfoHeaderComponent implements IHeaderAngularComp {
 export interface TypeInfoHeaderData {
   typeName: QualifiedName;
   fieldName: string;
+  type: Type;
 }

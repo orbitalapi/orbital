@@ -1,7 +1,12 @@
 package io.vyne.schemaStore
 
 import arrow.core.Either
-import com.hazelcast.core.*
+import com.hazelcast.core.EntryEvent
+import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.core.IMap
+import com.hazelcast.core.MemberAttributeEvent
+import com.hazelcast.core.MembershipEvent
+import com.hazelcast.core.MembershipListener
 import com.hazelcast.map.EntryBackupProcessor
 import com.hazelcast.map.EntryProcessor
 import com.hazelcast.map.listener.EntryAddedListener
@@ -122,6 +127,9 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
          return generationCounter.get().toInt()
       }
 
+   override fun validateSchemas(versionedSources: List<VersionedSource>): Either<Pair<CompilationException, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>> {
+      return schemaValidator.validate(schemaSet(), versionedSources)
+   }
 
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
       val validationResult = schemaValidator.validate(schemaSet(), versionedSources)

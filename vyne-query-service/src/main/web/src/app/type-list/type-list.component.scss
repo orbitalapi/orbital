@@ -149,6 +149,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 0.75rem;
   max-width: 700px; // An arbitary number because spanning forever looked poo. A better strategy is clearly needed
 
   .summary {

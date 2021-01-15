@@ -17,7 +17,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 @Profile("secure")
 @Configuration
 @EnableWebSecurity
-@Import(value = [SecurityAutoConfiguration::class, ManagementWebSecurityAutoConfiguration::class])
+@Import(value = [SecurityAutoConfiguration::class, ManagementWebSecurityAutoConfiguration::class, AuthenticationToVyneUserConverter::class])
 class SecurityAutoConfig : WebSecurityConfigurerAdapter() {
    override fun configure(http: HttpSecurity) {
       http

@@ -115,6 +115,9 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
    fun removeSourceAndRecompile(schemaId:SchemaId) {
       this.removeSourceAndRecompile(listOf(schemaId))
    }
+   override fun validateSchemas(versionedSources: List<VersionedSource>): Either<Pair<CompilationException, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>> {
+      return schemaValidator.validate(schemaSet(), versionedSources)
+   }
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
       val validationResult = schemaValidator.validate(schemaSet(), versionedSources)
       val (parsedSources, returnValue) = when (validationResult) {

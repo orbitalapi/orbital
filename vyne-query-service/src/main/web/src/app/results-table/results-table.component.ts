@@ -20,7 +20,7 @@ import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isNullOrUndefined} from 'util';
 import {SchemaNotificationService} from '../services/schema-notification.service';
 import {Subscription} from 'rxjs';
-import {CaskService} from "../services/cask.service";
+import {CaskService} from '../services/cask.service';
 
 @Component({
   selector: 'app-results-table',
@@ -32,7 +32,6 @@ import {CaskService} from "../services/cask.service";
       [columnDefs]="columnDefs"
       (gridReady)="onGridReady($event)"
       (firstDataRendered)="onFirstDataRendered($event)"
-      (cellClicked)="onCellClicked($event)"
     >
     </ag-grid-angular>
   `,
@@ -46,6 +45,9 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   @Output()
   instanceClicked = new EventEmitter<InstanceSelectedEvent>();
+
+  @Output()
+  drillToFieldClicked = new EventEmitter<string>();
 
   @Input()
     // tslint:disable-next-line:no-inferrable-types
@@ -78,6 +80,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       return;
     }
     this._type = value;
+    super.type = value;
     this.rebuildGridData();
   }
 
@@ -125,6 +128,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       const attributeNames = this.getAttributes(this.type);
       const caskMessageIdFieldName = 'caskMessageId';
       const columnDefinitions = attributeNames.map((fieldName, index) => {
+        const fieldType = this.getTypeForAttribute(fieldName);
         const lastColumn = index === attributeNames.length - 1;
         return fieldName !== caskMessageIdFieldName ? {
             resizable: true,
@@ -134,10 +138,36 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
             headerComponentFramework: TypeInfoHeaderComponent,
             headerComponentParams: {
               fieldName: fieldName,
-              typeName: this.getTypeForAttribute(fieldName).name
+              typeName: fieldType.name,
+              type: fieldType
+            },
+            cellStyle: () => {
+              if (fieldType.isScalar) {
+                return null;
+              } else {
+                return {textAlign: 'center'};
+              }
             },
             valueGetter: (params: ValueGetterParams) => {
-              return this.unwrap(params.data, fieldName);
+              if (fieldType.isScalar) {
+                return this.unwrap(params.data, fieldName);
+              } else {
+                return '...';
+              }
+            },
+            tooltipValueGetter: () => {
+              if (fieldType.isScalar) {
+                return null;
+              } else {
+                return `Click to drill in to field "${fieldName}"`;
+              }
+            },
+            onCellClicked: (params: CellClickedEvent) => {
+              if (fieldType.isScalar) {
+                this.onGridCellClicked(params);
+              } else {
+                this.drillDownToField(fieldName, fieldType, params);
+              }
             }
           } :
           {
@@ -202,7 +232,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     }
   }
 
-  onCellClicked($event: CellClickedEvent) {
+  private onGridCellClicked($event: CellClickedEvent) {
     const rowInstance: InstanceLike = $event.data;
     const nodeId = this.isArray ? `[${$event.rowIndex}].${$event.colDef.field}` : $event.colDef.field;
     const cellInstance = this.unwrap(rowInstance, $event.colDef.field);
@@ -215,11 +245,16 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   }
 
   onGridReady(event: GridReadyEvent) {
-   // event.api.sizeColumnsToFit();
+    // event.api.sizeColumnsToFit();
   }
 
   onFirstDataRendered(params: FirstDataRenderedEvent) {
     const colIds = params.columnApi.getAllColumns().map(c => c.getId());
     params.columnApi.autoSizeColumns(colIds);
   }
+
+  private drillDownToField(fieldName: string, fieldType: Type, params: CellClickedEvent) {
+    this.drillToFieldClicked.emit(fieldName);
+  }
+
 }
