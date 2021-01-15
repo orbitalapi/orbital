@@ -44,7 +44,21 @@ class LocalFileServiceTest {
       fileService().writeContents(path("../foo.taxi"), "hello")
    }
 
-   fun fileService(extensions: List<String> = listOf("taxi")): LocalFileService {
+   @Test
+   fun `can create file in nested directory`() {
+      fileService().writeContents(path("src/foo/bar/baz/foo.taxi"), "hello")
+      val file = path("src/foo/bar/baz/foo.taxi").toFile()
+      file.exists().should.be.`true`
+      file.readText().should.equal("hello")
+
+      // Now that the directory exists, add another file, to ensure the mkdirs() calls don't fail
+      fileService().writeContents(path("src/foo/bar/baz/floop.taxi"), "hello")
+      val floopFile = path("src/foo/bar/baz/floop.taxi").toFile()
+      floopFile.exists().should.be.`true`
+      floopFile.readText().should.equal("hello")
+   }
+
+   private fun fileService(extensions: List<String> = listOf("taxi")): LocalFileService {
       return LocalFileService(folder.root.toPath(), extensions)
    }
 }

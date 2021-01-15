@@ -17,10 +17,10 @@ import io.vyne.query.QueryResult
 import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
 import io.vyne.queryService.csv.toCsv
-import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
-import io.vyne.queryService.security.toVyneUser
 import io.vyne.schemas.Schema
+import io.vyne.security.VyneUser
+import io.vyne.security.toVyneUser
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import io.vyne.utils.orElse

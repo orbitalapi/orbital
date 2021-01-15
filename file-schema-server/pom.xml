@@ -61,6 +61,24 @@
          <version>${jgit.version}</version>
       </dependency>
       <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-security</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.security</groupId>
+         <artifactId>spring-security-oauth2-resource-server</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.security</groupId>
+         <artifactId>spring-security-oauth2-jose</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne-security</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
          <groupId>org.eclipse.jgit</groupId>
          <artifactId>org.eclipse.jgit.http.server</artifactId>
          <version>${jgit.version}</version>

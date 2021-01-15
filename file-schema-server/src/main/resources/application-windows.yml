@@ -14,5 +14,5 @@ taxi:
 #         branch: master
 #         sshPrivateKeyPath: C:\Users\Devrim\.ssh\id_rsa
 #         sshPassPhrase: 123456
-#   gitCloningJobEnabled: true
-#   gitCloningJobPeriodMs: 300000
+#   git-sync-enabled: true
+#   git-sync-period-ms: 300000

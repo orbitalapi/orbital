@@ -1,8 +1,8 @@
 package io.vyne.schemaStore.eureka
 
 import arrow.core.Either
-import arrow.core.right
 import com.netflix.appinfo.ApplicationInfoManager
+import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemas.Schema
@@ -10,7 +10,6 @@ import io.vyne.schemas.SimpleSchema
 import io.vyne.utils.log
 import lang.taxi.CompilationException
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -21,6 +20,10 @@ class EurekaClientSchemaMetaPublisher(
    @Value("\${server.servlet.context-path:}") private val contextPath: String
 ) : SchemaPublisher {
    private var sources: List<VersionedSource> = emptyList()
+
+   override fun validateSchemas(versionedSources: List<VersionedSource>): Either<Pair<CompilationException, List<ParsedSource>>, Pair<Schema, List<ParsedSource>>> {
+      TODO("Validation of schemas with EurekaClientSchemaMetaPublisher is not supported")
+   }
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
       val servletContextTaxiPath = contextPath + taxiRestPath
       log().info("Registering schema at endpoint $servletContextTaxiPath")

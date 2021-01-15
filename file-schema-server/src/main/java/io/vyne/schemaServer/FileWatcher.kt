@@ -5,8 +5,16 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import java.nio.file.*
-import java.util.concurrent.*
+import java.nio.file.ClosedWatchServiceException
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardWatchEventKinds
+import java.nio.file.WatchKey
+import java.nio.file.WatchService
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
@@ -140,7 +148,7 @@ class FileWatcher(@Value("\${taxi.schema-local-storage}") private val schemaLoca
             key.reset()
          }
       } catch (e: ClosedWatchServiceException) {
-         log().warn("Keys is closed. ${e.message}")
+         log().info("Watch service was closed.  This could be because a git sync is about to start. ${e.message.orEmpty()}")
       } catch (e: Exception) {
          log().error("Error in watch service: ${e.message}")
       }

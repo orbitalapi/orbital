@@ -1,4 +1,14 @@
-import {Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output, QueryList,
+  ViewChild, ViewChildren
+} from '@angular/core';
 import {Documented, Type} from '../../services/schema';
 import * as ReactDOM from 'react-dom';
 import {ContentSupplier, ReactEditorWrapper} from './description-editor.react';
@@ -27,10 +37,11 @@ import {BehaviorSubject} from 'rxjs';
   `,
   styleUrls: ['./description-editor.component.scss']
 })
-export class DescriptionEditorComponent implements OnInit, OnDestroy {
+export class DescriptionEditorComponent implements OnDestroy {
+
   private _documentationSource: Documented;
 
-  private changeEventCount: number;
+  private changeEventCount: number = 0;
   private lastChangeEvent: ContentSupplier;
 
   // Editing is disabled by default, as we don't currently have
@@ -40,7 +51,7 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   // field on a type.  We'll need to do something where we start with the
   // markdown renderer, and then swap to the rich editor when we enter an
   // edit mode.
-  private _editable = false;
+  private _editable = true;
 
   @Input()
   get editable(): boolean {
@@ -54,12 +65,8 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
     }
     this._editable = value;
     if (this.editable) {
+      this.changeEventCount = 0;
       this.resetEditor();
-      this.changes$.subscribe(next => {
-        console.log('Has changes');
-        this.changeEventCount++;
-        // this.lastChangeEvent = next;
-      });
     } else {
       if (wasEditable) {
         this.destroyEditor();
@@ -97,27 +104,40 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   constructor() {
   }
 
-  @ViewChild('container', {static: true}) containerRef: ElementRef;
+  private _containerRef: ElementRef;
 
-  ngOnInit() {
+  @ViewChild('container', {static: false})
+  get containerRef(): ElementRef {
+    return this._containerRef;
+  }
 
+  set containerRef(value: ElementRef) {
+    if (value === this._containerRef) {
+      return;
+    }
+    this._containerRef = value;
+    console.log('Markdown editor reference changed, resetting editor state');
+    this.resetEditor();
   }
 
   private resetEditor() {
     if (!this._editable) {
       return;
     }
-    if (!this.containerRef) {
+    if (!this._containerRef) {
       console.error('ContainerRef not set - this looks like an angular lifecycle problem');
       return;
     }
-    this.changeEventCount = 0;
-    ReactEditorWrapper.initialize(this.containerRef,
+    ReactEditorWrapper.initialize(this._containerRef,
       {
         changes$: this.changes$,
         initialState: this.initialState,
         placeholder: this.placeholder
       });
+    this.changes$.subscribe(next => {
+      this.changeEventCount++;
+      this.lastChangeEvent = next;
+    });
   }
 
   ngOnDestroy() {
@@ -127,7 +147,7 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   }
 
   private destroyEditor() {
-    ReactDOM.unmountComponentAtNode(this.containerRef.nativeElement);
+    ReactDOM.unmountComponentAtNode(this._containerRef.nativeElement);
   }
 
   private get initialState(): string {
@@ -141,4 +161,5 @@ export class DescriptionEditorComponent implements OnInit, OnDestroy {
   saveChanges() {
     this.save.emit(this.lastChangeEvent());
   }
+
 }
