@@ -1,9 +1,13 @@
 package io.vyne
 
 import com.winterbe.expekt.should
-import io.vyne.models.*
+import io.vyne.models.Provided
+import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedObject
+import io.vyne.models.json.parseJsonModel
 import io.vyne.query.build.FirstNotEmptyPredicate
-import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
@@ -14,15 +18,18 @@ import java.time.LocalDate
 class FirstNotEmptyTest {
 
    private val emptySchema = TaxiSchema.from("")
+
    @Test
    fun buildSpecMatchesWhenAnnotationIsPresent() {
-      val type = TaxiSchema.from("""
+      val type = TaxiSchema.from(
+         """
          model TradeOutput {
             isin : String
             @FirstNotEmpty
             productName : String
          }
-      """.trimIndent()).type("TradeOutput")
+      """.trimIndent()
+      ).type("TradeOutput")
       FirstNotEmptyPredicate.provide(type.attribute("isin")).should.be.`null`
       FirstNotEmptyPredicate.provide(type.attribute("productName")).should.not.be.`null`
    }
@@ -33,6 +40,7 @@ class FirstNotEmptyTest {
          instance(PrimitiveType.STRING, "")
       ).should.equal(false)
    }
+
    @Test
    fun buildSpecRejectsWhitepaceString() {
       FirstNotEmptyPredicate.isValid(
@@ -63,7 +71,8 @@ class FirstNotEmptyTest {
 
    @Test
    fun `when projecting and value is provided as null we do not attempt further discovery`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          model TradeInput {
             isin : Isin as String
             productName : ProductName as String
@@ -79,9 +88,11 @@ class FirstNotEmptyTest {
             isin : Isin
             productName : ProductName
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val (vyne, stubs) = testVyne(schema)
-      val product = TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+      val product =
+         TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
       stubs.addResponse("lookupProduct", product)
       val inputJson = """{
          |"isin" : "1234",
@@ -93,9 +104,11 @@ class FirstNotEmptyTest {
       val output = result["TradeOutput"] as TypedObject
       output["productName"].value.should.be.`null`
    }
+
    @Test
    fun `when projecting and value is tagged @FirstNotEmpty not provided on input, but is discoverable from a service, we discover it`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          model TradeInput {
             isin : Isin as String
             productName : ProductName as String
@@ -113,9 +126,11 @@ class FirstNotEmptyTest {
             @FirstNotEmpty
             productName : ProductName
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val (vyne, stubs) = testVyne(schema)
-      val product = TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+      val product =
+         TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
       stubs.addResponse("lookupProduct", product)
       val inputJson = """{
          |"isin" : "1234",
@@ -130,7 +145,8 @@ class FirstNotEmptyTest {
 
    @Test
    fun `FirstNotEmpty discovery works on formatted types`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          type ExpiryDate inherits Date
          model TradeInput {
             isin : Isin as String
@@ -149,9 +165,11 @@ class FirstNotEmptyTest {
             @FirstNotEmpty
             expiryDate : ExpiryDate(@format = "yyyy-MM-dd")
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val (vyne, stubs) = testVyne(schema)
-      val product = TypedInstance.from(schema.type("Product"), """{ "expires": "1979-05-10" } """, schema, source = Provided)
+      val product =
+         TypedInstance.from(schema.type("Product"), """{ "expires": "1979-05-10" } """, schema, source = Provided)
       stubs.addResponse("lookupDate", product)
       val inputJson = """{
          |"isin" : "1234"
@@ -165,7 +183,8 @@ class FirstNotEmptyTest {
 
    @Test
    fun `when value is tagged @FirstNotEmpty and multiple services expose it, if first service returns null, subsequent services are called`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          model TradeInput {
             isin : Isin as String
             productName : ProductName as String
@@ -186,18 +205,21 @@ class FirstNotEmptyTest {
             @FirstNotEmpty
             productName : ProductName
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val (vyne, stubs) = testVyne(schema)
-      val product = TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
-      var counter :Int = 0
-      val firstResponderReturnsNullHandler:StubResponseHandler = { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
-         if (counter == 0) {
-            counter++
-            TypedNull.create(schema.type("Product"))
-         } else {
-            product
+      val product =
+         TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+      var counter: Int = 0
+      val firstResponderReturnsNullHandler: StubResponseHandler =
+         { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
+            if (counter == 0) {
+               counter++
+               TypedNull.create(schema.type("Product"))
+            } else {
+               product
+            }
          }
-      }
       stubs.addResponse("lookupProductA", firstResponderReturnsNullHandler)
       stubs.addResponse("lookupProductB", firstResponderReturnsNullHandler)
       val inputJson = """{
@@ -211,11 +233,83 @@ class FirstNotEmptyTest {
       output["productName"].value.should.equal("ice cream")
    }
 
+   @Test
+   fun `when type is present twice on a model through inheritence and one value is populated, then it is returned`() {
+      val (vyne, stub) = testVyne(
+         """
+         type Name inherits String
+         type Id inherits Int
+         model NamedThing {
+            name : Name
+         }
+         model Person inherits NamedThing {
+            firstName : Name
+         }
+         model OutputModel {
+            @FirstNotEmpty
+            discoveredName : Name
+         }
+      """.trimIndent()
+      )
+      val personWithBaseTypeName = vyne.parseJsonModel("Person", """{ "firstName" : null, "name" : "Jimmy" }""")
+      vyne.from(personWithBaseTypeName).build("OutputModel").let { queryResult ->
+         val outputModel = queryResult["OutputModel"] as TypedObject
+         outputModel["discoveredName"].value.should.equal("Jimmy")
+      }
+
+      val personWithFirstName = vyne.parseJsonModel("Person", """{ "firstName" : "Jimmy" , "name" : null }""")
+      vyne.from(personWithFirstName).build("OutputModel").let { queryResult ->
+         val outputModel = queryResult["OutputModel"] as TypedObject
+         outputModel["discoveredName"].value.should.equal("Jimmy")
+      }
+   }
+
+   @Test
+   fun `when type is present twice on a model through inheritence but only one value is populated, and the model is returned from a service, then it is returned`() {
+      val (vyne, stub) = testVyne(
+         """
+         type Name inherits String
+         type Id inherits Int
+         model NamedThing {
+            name : Name
+         }
+         model Person inherits NamedThing {
+            firstName : Name
+         }
+         model OutputModel {
+            @FirstNotEmpty
+            discoveredName : Name
+         }
+         service PersonIdService {
+            operation findAllIds():Id[]
+         }
+         service PersonService {
+            operation findPerson(Id):Person
+         }
+      """.trimIndent()
+      )
+      stub.addResponse("findAllIds", TypedCollection.from(listOf(1, 2).map { vyne.typedValue("Id", it) }))
+
+      val personWithBaseTypeName = vyne.parseJsonModel("Person", """{ "firstName" : null, "name" : "Jimmy Name" }""")
+      val personWithFirstName = vyne.parseJsonModel("Person", """{ "firstName" : "Jimmy FirstName" , "name" : null }""")
+      stub.addResponse("findPerson") { remoteOperation, params ->
+         val (_, personId) = params[0]
+         when (personId.value) {
+            1 -> personWithBaseTypeName
+            2 -> personWithFirstName
+            else -> error("Expected Id of 1 or 2")
+         }
+      }
+      // Query against baseTypeName
+      val result = vyne.query("findAll { Id[] } as OutputModel[]")
+      TODO()
+   }
 
 
    @Test
    fun `when value is tagged @FirstNotEmpty and multiple services expose it, if first service returns a value but the attribute is null, subsequent services are called`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          model TradeInput {
             isin : Isin as String
             productName : ProductName as String
@@ -236,18 +330,20 @@ class FirstNotEmptyTest {
             @FirstNotEmpty
             productName : ProductName
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val (vyne, stubs) = testVyne(schema)
-      var counter :Int = 0
-      val firstResponderReturnsNullHandler:StubResponseHandler = { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
-         if (counter == 0) {
-            counter++
-            // First time, return null in the name attribute
-            TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided)
-         } else {
-            TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+      var counter: Int = 0
+      val firstResponderReturnsNullHandler: StubResponseHandler =
+         { operation: RemoteOperation, list: List<Pair<Parameter, TypedInstance>> ->
+            if (counter == 0) {
+               counter++
+               // First time, return null in the name attribute
+               TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided)
+            } else {
+               TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+            }
          }
-      }
       stubs.addResponse("lookupProductA", firstResponderReturnsNullHandler)
       stubs.addResponse("lookupProductB", firstResponderReturnsNullHandler)
       val inputJson = """{
@@ -264,7 +360,8 @@ class FirstNotEmptyTest {
 
    @Test
    fun `when projecting a collection and operation fails for first entry but succeeds for second then value is still populated`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          model TradeInput {
             isin : Isin as String
             productName : ProductName as String
@@ -282,17 +379,19 @@ class FirstNotEmptyTest {
             @FirstNotEmpty
             productName : ProductName
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val (vyne, stubs) = testVyne(schema)
-      val firstResponderReturnsNullHandler:StubResponseHandler = { operation: RemoteOperation, inputs: List<Pair<Parameter, TypedInstance>> ->
-         val inputParam = inputs[0].second.value as String
-         if (inputParam == "productA") {
-            // First time, return null in the name attribute
-            TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided)
-         } else {
-            TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+      val firstResponderReturnsNullHandler: StubResponseHandler =
+         { operation: RemoteOperation, inputs: List<Pair<Parameter, TypedInstance>> ->
+            val inputParam = inputs[0].second.value as String
+            if (inputParam == "productA") {
+               // First time, return null in the name attribute
+               TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided)
+            } else {
+               TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+            }
          }
-      }
       stubs.addResponse("lookupProduct", firstResponderReturnsNullHandler)
       val inputJson = """[{
          |"isin" : "productA",
@@ -316,7 +415,7 @@ class FirstNotEmptyTest {
    }
 
 
-   private fun instance(type:PrimitiveType, value:Any?):TypedInstance {
+   private fun instance(type: PrimitiveType, value: Any?): TypedInstance {
       return if (value == null) {
          TypedNull.create(emptySchema.type(type.qualifiedName))
       } else {
