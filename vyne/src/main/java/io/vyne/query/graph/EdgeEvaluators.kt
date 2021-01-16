@@ -2,6 +2,7 @@ package io.vyne.query.graph
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import es.usc.citius.hipster.graph.GraphEdge
+import io.vyne.formulas.CalculatorRegistry
 import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -10,7 +11,6 @@ import io.vyne.query.CalculatedFieldScanStrategy
 import io.vyne.query.FactDiscoveryStrategy
 import io.vyne.query.QueryContext
 import io.vyne.query.QuerySpecTypeNode
-import io.vyne.formulas.CalculatorRegistry
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Relationship
@@ -277,7 +277,11 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
          return calculatedValue ?: edge.failure(null)
       }
       val attribute = previousObject[attributeName]
-      return edge.success(attribute)
+      return if (attribute is TypedNull) {
+         edge.failure(null)
+      } else {
+         edge.success(attribute)
+      }
    }
 }
 
