@@ -1,11 +1,13 @@
 package io.vyne.pipelines.runner
 
+import io.vyne.VyneCacheConfiguration
 import io.vyne.pipelines.orchestrator.events.PipelineEventsApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
 import io.vyne.spring.EnableVyne
 import io.vyne.spring.VyneSchemaPublisher
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.annotation.Bean
@@ -18,6 +20,8 @@ import org.springframework.context.annotation.Bean
 @VyneSchemaPublisher
 @EnableVyne
 @EnableFeignClients(basePackageClasses = [PipelineEventsApi::class])
+// TODO investigate why the Runner requires Vyne.
+@EnableConfigurationProperties(VyneCacheConfiguration::class)
 class PipelineRunnerApp {
 
    companion object {
