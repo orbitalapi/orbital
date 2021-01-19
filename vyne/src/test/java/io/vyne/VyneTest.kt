@@ -1328,6 +1328,39 @@ service ClientService {
    }
 
    @Test
+   fun `when service returns object with some null values and some populated values then the populated values are used for discovery`() {
+      val (vyne,stub) = testVyne("""
+         type FirstName inherits String
+         type LastName inherits String
+         type PersonId inherits Int
+         type PersonAge inherits Int
+         model Person {
+            personId : PersonId
+            firstName : FirstName
+            lastName : LastName
+            personAge : PersonAge
+         }
+         model OutputModel {
+            personId : PersonId
+            firstName : FirstName
+            lastName : LastName
+            personAge : PersonAge
+         }
+         service PersonService {
+            operation findPerson(PersonId):Person
+         }
+      """.trimIndent())
+      stub.addResponse("findPerson", vyne.parseJsonModel("Person", """{
+         | "personId" : 1,
+         | "firstName" : "Jimmy",
+         | "lastName" : null,
+         | "personAge" : 23
+         | }
+      """.trimMargin()))
+      val queryResult = vyne.query("given { personId : PersonId = 1} findOne { Person } as OutputModel")
+      TODO()
+   }
+   @Test
    fun `vyne should accept Instant parameters that are in ISO format`() {
       val testSchema = """
          type alias Symbol as String
