@@ -317,4 +317,5 @@ class TypedObjectTest {
       JSONAssert.assertEquals(expectedJson, rawJson, true);
    }
 
+
 }
