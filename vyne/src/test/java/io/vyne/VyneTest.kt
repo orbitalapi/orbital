@@ -1452,7 +1452,7 @@ service ClientService {
    }
 
    @Test
-   fun `when service returns object with some null values and some populated values then the populated values are used for discovery`() {
+   fun `testing nulls on responses - when service returns object that is partially populated then the populated values are used for discovery`() {
       val (vyne, stub) = testVyne(
          """
          type FirstName inherits String
