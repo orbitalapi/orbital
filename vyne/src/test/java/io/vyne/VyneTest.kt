@@ -1696,6 +1696,39 @@ service ClientService {
 
    }
 
+   @Test
+   fun `can use a derived field as an input for discovery`() {
+      val (vyne,stub) = testVyne("""
+         type Name inherits String
+         type FirstName inherits Name
+         type NickName inherits Name
+         type UserName inherits Name
+         type Age inherits Int
+         service NameService {
+            operation findAgeByName(UserName):Age
+         }
+         model InputModel {
+            firstName : FirstName?
+            nickName : NickName?
+         }
+         model OutputModel {
+            firstName : FirstName?
+            nickName : NickName?
+
+            userName : UserName by when {
+               this.firstName != null -> firstName
+               else -> nickName
+            }
+
+            age : Age
+         }
+         """)
+      stub.addResponse("findAgeByName", vyne.typedValue("Age", 28))
+      val result = vyne.from(vyne.parseJsonModel("InputModel", """{ "firstName" : "jimmy" , "nickName" : "J-Dawg" }"""))
+         .build("OutputModel")
+      TODO()
+   }
+
 }
 
 fun Vyne.typedValue(typeName: String, value: Any, source: DataSource = Provided): TypedInstance {

@@ -42,7 +42,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       return;
     }
     this._dataSource = value;
-    this.schemaGraph = this.buildGraph(this.instance);
+    this.schemaGraph = this.buildFullGraph(this.instance);
   }
 
   @Input()
@@ -55,12 +55,16 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       return;
     }
     this._instance = value;
-    this.schemaGraph = this.buildGraph(this.instance);
+    this.schemaGraph = this.buildFullGraph(this.instance);
   }
 
   schemaGraph: SchemaNodeSet = this.emptyGraph();
 
-  private buildGraph(node: LineageElement, linkTo: SchemaGraphNode = null): SchemaNodeSet {
+  private buildFullGraph(startNode: LineageElement): SchemaNodeSet {
+    return this.buildGraph(startNode)
+  }
+
+  private buildGraph(node: LineageElement, linkTo: SchemaGraphNode = null, nodesUnderConstruction: LineageElement[] = []): SchemaNodeSet {
     if (!node || !this.dataSource) {
       return this.emptyGraph();
     }
@@ -70,6 +74,9 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       return this.emptyGraph();
     }
     const self = this;
+    if (nodesUnderConstruction.includes(node)) {
+      return this.emptyGraph()
+    }
 
     function nodeId(instance: any, generator: () => string): string {
       if (!instance[LineageDisplayComponent.NODE_ID]) {
@@ -158,6 +165,8 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       this.appendNodeSet(dataSourceNodes, nodeSet);
     }
 
+    nodesUnderConstruction.push(node)
+
     if (isTypeNamedInstance(node)) {
       const typedInstanceNode = instanceToNode(node);
       nodes.push(typedInstanceNode);
@@ -192,15 +201,17 @@ export class LineageDisplayComponent extends BaseGraphComponent {
           if (Array.isArray(param.value)) {
             inputNode = collectionToNode(param.value);
           } else {
-            inputNode = instanceToNode(param.value);
+            const inputNodes = this.buildGraph(param.value, remoteCallNode, nodesUnderConstruction)
+            this.appendNodeSet(inputNodes, nodeSet)
+            // inputNode = instanceToNode(param.value);
           }
 
-          nodes.push(inputNode);
-          links.push({
-            source: inputNode.nodeId,
-            target: remoteCallNode.nodeId,
-            label: 'input'
-          });
+          // nodes.push(inputNode);
+          // links.push({
+          //   source: inputNode.nodeId,
+          //   target: remoteCallNode.nodeId,
+          //   label: 'input'
+          // });
         });
       }
     } else if (isMappedSynonym(node)) {
