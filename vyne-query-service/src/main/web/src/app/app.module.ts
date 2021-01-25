@@ -43,6 +43,7 @@ import {OperationViewModule} from './operation-view/operation-view.module';
 import {OperationViewContainerComponent} from './operation-view/operation-view-container.component';
 import {AuthModule} from './auth/auth.module';
 import {AuthService} from './auth/auth.service';
+import { ClarityModule } from '@clr/angular';
 
 export const routerModule = RouterModule.forRoot(
   [
@@ -105,6 +106,7 @@ if (!environment.secure) {
     TypeListModule,
     VyneModule,
     ...oauth2OidcModule,
+    ClarityModule,
   ],
   providers: [
     TypesService,

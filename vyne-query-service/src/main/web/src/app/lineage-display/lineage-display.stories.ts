@@ -27,5 +27,22 @@ storiesOf('Lineage display', module)
       }
     }
   };
-});
+})
+  .add('timeline', () => {
+    return {
+      template: `<div style="padding: 40px">
+    <app-lineage-timeline
+    [dataSource]="lineageGraph"
+    [instance]="typeNamedInstance"
+    ></app-lineage-timeline>
+    </div>`,
+      props: {
+        lineageGraph: LINEAGE_GRAPH,
+        typeNamedInstance: {
+          'typeName': 'demo.RewardsBalance',
+          'value': 2300
+        }
+      }
+    };
+  });
 

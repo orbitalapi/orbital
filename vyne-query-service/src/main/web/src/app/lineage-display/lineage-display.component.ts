@@ -201,17 +201,17 @@ export class LineageDisplayComponent extends BaseGraphComponent {
           if (Array.isArray(param.value)) {
             inputNode = collectionToNode(param.value);
           } else {
-            const inputNodes = this.buildGraph(param.value, remoteCallNode, nodesUnderConstruction)
-            this.appendNodeSet(inputNodes, nodeSet)
-            // inputNode = instanceToNode(param.value);
+            inputNode = instanceToNode(param.value);
           }
+          nodes.push(inputNode);
+          links.push({
+            source: inputNode.nodeId,
+            target: remoteCallNode.nodeId,
+            label: 'input'
+          });
+          const inputNodes = this.buildGraph(param.value, inputNode, [])
+          this.appendNodeSet(inputNodes, nodeSet)
 
-          // nodes.push(inputNode);
-          // links.push({
-          //   source: inputNode.nodeId,
-          //   target: remoteCallNode.nodeId,
-          //   label: 'input'
-          // });
         });
       }
     } else if (isMappedSynonym(node)) {
