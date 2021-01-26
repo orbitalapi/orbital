@@ -13,6 +13,7 @@ import {SearchInput} from './search-input';
       style="width: 100%; height: 100vh;"
       id="caskIngestionErrorsGrid"
       class="ag-theme-alpine"
+      [enableCellTextSelection]="true"
       [components]="components"
       [columnDefs]="columnDefs"
       [defaultColDef]="defaultColDef"
