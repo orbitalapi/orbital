@@ -116,7 +116,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
   }
 
   set type(value: Type) {
-    super.type = value;
+    super.setType(value);
   }
 
   @Input()
@@ -172,8 +172,8 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
     }
 
 
-    let newDrilledType = super.type;
-    let newDrilledInstance = super.instance;
+    let newDrilledType = super._type;
+    let newDrilledInstance = super._instance;
     this.drilledFields.forEach(drilledFieldName => {
       newDrilledType = getDrilledType(newDrilledType, drilledFieldName, this.schema);
       newDrilledInstance = drillInstance(newDrilledInstance, drilledFieldName, newDrilledType);

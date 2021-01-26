@@ -80,7 +80,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       return;
     }
     this._type = value;
-    super.type = value;
+    super.setType(value);
     this.rebuildGridData();
   }
 

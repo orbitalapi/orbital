@@ -98,6 +98,11 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
   }
 
   set type(value: Type) {
+    // Workaround for subtyping issues in typescript with getters / setters
+    this.setType(value);
+  }
+
+  protected setType(value: Type) {
     this._type = value;
     this._collectionMemberType = null;
     this._derivedType = null;
