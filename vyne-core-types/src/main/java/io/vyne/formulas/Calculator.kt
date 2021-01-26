@@ -146,7 +146,7 @@ internal class NumberCalculator : Calculator {
    private fun divideNumbers(values: List<Any>): Any? {
       return values.reduce { acc, next ->
          when (acc) {
-            is Int -> acc / next as Int
+            is Int -> acc.toBigDecimal().divide((next as Int).toBigDecimal())
             is Double -> acc / next as Double
             is Float -> acc / next as Float
             is BigDecimal -> acc.divide(next as BigDecimal, 15, RoundingMode.HALF_UP).stripTrailingZeros()

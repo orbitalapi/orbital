@@ -86,7 +86,7 @@ data class QueryResult(
       // TODO : THis should consider inheritence, rather than strict equals
       return this.results.filterKeys { it.type.name.parameterizedName == requestedParameterizedName }
          .values
-         .first()
+         .firstOrNull() ?: error("No result was present with typeName '$typeName'")
    }
 
    operator fun get(type: Type): TypedInstance? {
