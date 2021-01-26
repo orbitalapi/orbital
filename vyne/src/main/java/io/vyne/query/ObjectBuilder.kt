@@ -10,7 +10,6 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.types.ObjectType
-import org.w3c.dom.Attr
 
 class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
    private val buildSpecProvider = TypedInstancePredicateFactory()
@@ -60,7 +59,16 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                if (nonNullMatches.size == 1) {
                   return nonNullMatches.first()
                }
-               log().error("Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${instance.map { Pair(it.typeName, it.value) }.joinToString()}")
+               log().error(
+                  "Found ${instance.size} instances of ${targetType.fullyQualifiedName}. Values are ${
+                     instance.map {
+                        Pair(
+                           it.typeName,
+                           it.value
+                        )
+                     }.joinToString()
+                  }"
+               )
                // HACK : How do we handle this?
                return if (nonNullMatches.isNotEmpty()) {
                   nonNullMatches.first()
@@ -113,7 +121,8 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
                      val fieldInstanceValidPredicate = buildSpecProvider.provide(field)
                      val targetAttributeType = context.schema.type(field.type)
                      val returnTypedNull = true
-                     when (val value = sourceObjectType.getAttributeIdentifiedByType(targetAttributeType, returnTypedNull)) {
+                     when (val value =
+                        sourceObjectType.getAttributeIdentifiedByType(targetAttributeType, returnTypedNull)) {
                         is TypedNull -> missingAttributes[attributeName] = field
                         else -> {
                            val attributeSatisfiesPredicate = fieldInstanceValidPredicate.isValid(value)
@@ -156,7 +165,12 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          }
       }
 
-      return TypedObjectFactory(targetType, populatedValues, context.schema, source = MixedSources).build { attributeMap ->
+      return TypedObjectFactory(
+         targetType,
+         populatedValues,
+         context.schema,
+         source = MixedSources
+      ).build { attributeMap ->
          forSourceValues(sourcedByAttributes, attributeMap, targetType)
       }
    }
@@ -164,17 +178,23 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
    private fun forSourceValues(
       sourcedByAttributes: Map<AttributeName, Field>,
       attributeMap: Map<AttributeName, TypedInstance>,
-      targetType: Type):
-       Map<AttributeName, TypedInstance> {
+      targetType: Type
+   ):
+      Map<AttributeName, TypedInstance> {
       val sourcedValues = sourcedByAttributes.mapNotNull { (attributeName, field) ->
          val sourcedBy = field.sourcedBy!!
          if (sourcedBy.sourceType != targetType.qualifiedName) {
-            val sourceFact = this.context.facts.firstOrNull { fact -> fact.typeName == sourcedBy.sourceType.fullyQualifiedName && fact is TypedObject}
+            val sourceFact =
+               this.context.facts.firstOrNull { fact -> fact.typeName == sourcedBy.sourceType.fullyQualifiedName && fact is TypedObject }
             sourceFact?.let { typedInstance -> fromDiscoveryType(typedInstance, sourcedBy, attributeName) }
          } else {
             attributeMap[sourcedBy.attributeName]?.let { source ->
                source.value?.let { _ ->
-                  ObjectBuilder(this.queryEngine, this.context.only(source), this.context.schema.type(sourcedBy.attributeType))
+                  ObjectBuilder(
+                     this.queryEngine,
+                     this.context.only(source),
+                     this.context.schema.type(sourcedBy.attributeType)
+                  )
                      .build()?.let {
                         return@mapNotNull attributeName to it
                      }
@@ -190,11 +210,19 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
    }
 
-   private fun fromDiscoveryType(typedInstance: TypedInstance, sourcedBy: FieldSource, attributeName: AttributeName): Pair<AttributeName, TypedInstance>? {
+   private fun fromDiscoveryType(
+      typedInstance: TypedInstance,
+      sourcedBy: FieldSource,
+      attributeName: AttributeName
+   ): Pair<AttributeName, TypedInstance>? {
       val typedObject = typedInstance as TypedObject
       typedObject[sourcedBy.attributeName]?.let { source ->
          source.value?.let { _ ->
-            ObjectBuilder(this.queryEngine, this.context.only(source), this.context.schema.type(sourcedBy.attributeType))
+            ObjectBuilder(
+               this.queryEngine,
+               this.context.only(source),
+               this.context.schema.type(sourcedBy.attributeType)
+            )
                .build()?.let {
                   return attributeName to it
                }

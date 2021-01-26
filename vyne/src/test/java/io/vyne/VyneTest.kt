@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.DataSource
+import io.vyne.models.FailedEvaluation
 import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
@@ -1576,8 +1577,51 @@ service ClientService {
    }
 
    @Test
+   fun `if query processing throws exception on attribute query should continue and use null for value`() {
+      val (vyne, stubs) = testVyne(
+         """
+            type Quantity inherits Int
+            type Price inherits Int
+
+            model Order {
+               quantity : Quantity
+               price : Price
+            }
+            model Output {
+               quantity : Quantity
+               price : Price
+               averagePrice : Decimal by (this.price / this.quantity)
+            }
+            service OrderService {
+               operation listOrders():Order[]
+            }
+         """.trimIndent()
+      )
+      // The below responseJson will trigger a divide-by-zero
+      val responseJson = """[
+         |{ "quantity" : 0 , "price" : 2 }
+         |]""".trimMargin()
+      stubs.addResponse(
+         "listOrders", vyne.parseJsonModel(
+            "Order[]", """[
+         |{ "quantity" : 0 , "price" : 2 }
+         |]""".trimMargin()
+         )
+      )
+
+      val queryResult = vyne.query("findAll { Order[] } as Output[]")
+      val outputCollection = queryResult["Output[]"] as TypedCollection
+      val outputModel = outputCollection[0] as TypedObject
+      outputModel["averagePrice"].value.should.be.`null`
+      val source = outputModel["averagePrice"].source
+      require(source is FailedEvaluation)
+      source.message.should.equal("Failed to evaluation expression (this.price / this.quantity) - Division by zero")
+   }
+
+   @Test
    fun `data integration with inheritance`() {
-      val (vyne, stubs) = testVyne("""
+      val (vyne, stubs) = testVyne(
+         """
          namespace Foo {
            type Isin inherits String
          }
@@ -1600,45 +1644,52 @@ service ClientService {
                operation getPUID(PuidRequest) :  PuidResponse
             }
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
 
-       stubs.addResponse("getPUID") { operation, parameters ->
-          val isinArgValue = parameters.first().second.value as Map<String, TypedValue>
-          val response = """{
+      stubs.addResponse("getPUID") { operation, parameters ->
+         val isinArgValue = parameters.first().second.value as Map<String, TypedValue>
+         val response = """{
          |"puid": "${isinArgValue["isin"]?.value.toString()}"
          |}
           """.trimMargin()
-          TypedInstance.from(vyne.type("PuidResponse"), response, vyne.schema, source = Provided)
+         TypedInstance.from(vyne.type("PuidResponse"), response, vyne.schema, source = Provided)
       }
-      val queryResult1 = vyne.query("""
+      val queryResult1 = vyne.query(
+         """
          given {
             isin: Bar.ProductIsin = "US500769FH22"
          } findOne {
             PuidResponse
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       queryResult1.isFullyResolved.should.be.`true`
       val puidResponse1 = queryResult1["Bar.PuidResponse"] as TypedObject
       puidResponse1["puid"].value.should.equal("US500769FH22")
 
-      val queryResult2 = vyne.query("""
+      val queryResult2 = vyne.query(
+         """
          given {
             isin: Bar.InstrumentIsin = "US500769FH23"
          } findOne {
             PuidResponse
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       queryResult2.isFullyResolved.should.be.`true`
       val puidResponse2 = queryResult2["Bar.PuidResponse"] as TypedObject
       puidResponse2["puid"].value.should.equal("US500769FH23")
 
-      val queryResult3 = vyne.query("""
+      val queryResult3 = vyne.query(
+         """
          given {
             isin: Bar.Isin = "US500769FH24"
          } findOne {
             PuidResponse
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       queryResult3.isFullyResolved.should.be.`true`
       val puidResponse3 = queryResult3["Bar.PuidResponse"] as TypedObject
       puidResponse3["puid"].value.should.equal("US500769FH24")
