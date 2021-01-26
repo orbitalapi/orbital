@@ -51,7 +51,7 @@ export class DescriptionEditorComponent implements OnDestroy {
   // field on a type.  We'll need to do something where we start with the
   // markdown renderer, and then swap to the rich editor when we enter an
   // edit mode.
-  private _editable = true;
+  private _editable = false;
 
   @Input()
   get editable(): boolean {
