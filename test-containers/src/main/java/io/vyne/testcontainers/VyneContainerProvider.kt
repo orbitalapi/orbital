@@ -1,0 +1,88 @@
+package io.vyne.testcontainers
+
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.testcontainers.CommonSettings.actuatorHealthEndPoint
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy
+import org.testcontainers.utility.DockerImageName
+import java.time.Duration
+import java.util.function.Predicate
+
+object VyneContainerProvider {
+   @JvmStatic
+   val VyneQueryServerImage: DockerImageName = DockerImageName.parse("vyneco/vyne")
+
+   @JvmStatic
+   val CaskImage: DockerImageName = DockerImageName.parse("vyneco/cask")
+
+   @JvmStatic
+   val FileSchemaServer: DockerImageName = DockerImageName.parse("vyneco/file-schema-server")
+
+   @JvmStatic
+   val Eureka: DockerImageName = DockerImageName.parse("vyneco/eureka")
+   fun vyneQueryServer(block: VyneContainer.() -> Unit = {}) = vyneQueryServer(CommonSettings.latest, block)
+   fun vyneQueryServer(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
+      val container = VyneContainer(VyneQueryServerImage.withTag(imageTag))
+      container.setWaitStrategy(
+         HttpWaitStrategy()
+            .forPath(actuatorHealthEndPoint)
+            .forStatusCode(200)
+            .forResponsePredicate(ActuatorHealthStatusPredicate)
+            .withStartupTimeout(Duration.ofMinutes(container.startUpTimeOutInMinutes)))
+      block(container)
+      return container
+   }
+
+   fun cask(block: VyneContainer.() -> Unit = {}) = cask(CommonSettings.latest, block)
+   fun cask(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
+      val caskServer = VyneContainer(CaskImage.withTag(imageTag))
+      caskServer.setWaitStrategy(
+         HttpWaitStrategy()
+            .forPath(actuatorHealthEndPoint)
+            .forStatusCode(200)
+            .forResponsePredicate(ActuatorHealthStatusPredicate)
+            .withStartupTimeout(Duration.ofMinutes(caskServer.startUpTimeOutInMinutes)))
+      block(caskServer)
+      return caskServer
+   }
+
+   fun fileSchemaServer(block: VyneContainer.() -> Unit = {}) = fileSchemaServer(CommonSettings.latest, block)
+   fun fileSchemaServer(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
+      val fileSchemaServer = VyneContainer(FileSchemaServer.withTag(imageTag))
+      fileSchemaServer.setWaitStrategy(
+         HttpWaitStrategy()
+            .forPath(actuatorHealthEndPoint)
+            .forStatusCode(200)
+            .forResponsePredicate(ActuatorHealthStatusPredicate)
+            .withStartupTimeout(Duration.ofMinutes(fileSchemaServer.startUpTimeOutInMinutes)))
+      block(fileSchemaServer)
+      return fileSchemaServer
+   }
+
+   fun eureka(block: VyneContainer.() -> Unit = {}) = eureka(CommonSettings.latest, block)
+   fun eureka(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
+      val eurekaContainer = VyneContainer(Eureka.withTag(imageTag))
+      eurekaContainer.setWaitStrategy(
+         HttpWaitStrategy()
+            .forPath("/eureka/apps")
+            .forStatusCode(200)
+            .withStartupTimeout(Duration.ofMinutes(eurekaContainer.startUpTimeOutInMinutes)))
+      block(eurekaContainer)
+      return eurekaContainer
+   }
+}
+
+object ActuatorHealthStatusPredicate : Predicate<String> {
+   private val objectMapper = jacksonObjectMapper()
+   private val typeRef: TypeReference<Map<String, Any?>?> = object : TypeReference<Map<String, Any?>?>() {}
+   private const val statusField = "status"
+   private const val upValue = "UP"
+   override fun test(response: String): Boolean {
+      return try {
+         val actuatorHealthResponse = objectMapper.readValue(response, typeRef)
+         actuatorHealthResponse?.get(statusField) == upValue
+      } catch (e: Exception) {
+         false
+      }
+   }
+}
