@@ -4,7 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.DataSource
-import io.vyne.models.FailedEvaluation
+import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
@@ -1614,8 +1614,9 @@ service ClientService {
       val outputModel = outputCollection[0] as TypedObject
       outputModel["averagePrice"].value.should.be.`null`
       val source = outputModel["averagePrice"].source
-      require(source is FailedEvaluation)
-      source.message.should.equal("Failed to evaluation expression (this.price / this.quantity) - Division by zero")
+      require(source is FailedEvaluatedExpression)
+      source.expressionTaxi.should.equal("(this.price / this.quantity)")
+      source.errorMessage.should.equal("Division by zero")
    }
 
    @Test
@@ -1694,6 +1695,40 @@ service ClientService {
       val puidResponse3 = queryResult3["Bar.PuidResponse"] as TypedObject
       puidResponse3["puid"].value.should.equal("US500769FH24")
 
+   }
+
+   @Test
+   @Ignore("not yet implemented")
+   fun `can use a derived field as an input for discovery`() {
+      val (vyne,stub) = testVyne("""
+         type Name inherits String
+         type FirstName inherits Name
+         type NickName inherits Name
+         type UserName inherits Name
+         type Age inherits Int
+         service NameService {
+            operation findAgeByName(UserName):Age
+         }
+         model InputModel {
+            firstName : FirstName?
+            nickName : NickName?
+         }
+         model OutputModel {
+            firstName : FirstName?
+            nickName : NickName?
+
+            userName : UserName by when {
+               this.firstName != null -> firstName
+               else -> nickName
+            }
+
+            age : Age
+         }
+         """)
+      stub.addResponse("findAgeByName", vyne.typedValue("Age", 28))
+      val result = vyne.from(vyne.parseJsonModel("InputModel", """{ "firstName" : "jimmy" , "nickName" : "J-Dawg" }"""))
+         .build("OutputModel")
+      TODO()
    }
 
 }

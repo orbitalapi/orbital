@@ -1,20 +1,26 @@
 import {Component, Input} from '@angular/core';
-import {isOperationResult, OperationResultDataSource, RemoteCall,} from '../services/query.service';
+import {
+  EvaluatedExpressionDataSource, FailedEvaluatedExpressionDataSource,
+  isEvaluatedExpressionDataSource, isFailedEvaluatedExpressionDataSource,
+  isOperationResult,
+  OperationResultDataSource,
+  RemoteCall,
+} from '../services/query.service';
 
 import {
   DataSource,
   isMappedSynonym,
   isTypedCollection,
   isTypeNamedInstance,
-  isUntypedInstance,
+  isUntypedInstance, ReferenceOrInstance, ReferenceRepository,
   SchemaGraphLink,
-  SchemaGraphNode,
+  SchemaGraphNode, SchemaGraphNodeType,
   SchemaNodeSet,
   TypeNamedInstance
 } from '../services/schema';
 import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
 import {Subject} from 'rxjs';
-import {isNullOrUndefined} from 'util';
+import {isNullOrUndefined, isString} from 'util';
 
 type LineageElement = TypeNamedInstance | TypeNamedInstance[] | DataSource;
 
@@ -31,6 +37,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
   graphNodesChanged = new Subject<boolean>()
 
+  private remoteCallRepository = new ReferenceRepository<RemoteCall>()
 
   @Input()
   get dataSource(): DataSource {
@@ -42,7 +49,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       return;
     }
     this._dataSource = value;
-    this.schemaGraph = this.buildGraph(this.instance);
+    this.schemaGraph = this.buildFullGraph(this.instance);
   }
 
   @Input()
@@ -55,12 +62,16 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       return;
     }
     this._instance = value;
-    this.schemaGraph = this.buildGraph(this.instance);
+    this.schemaGraph = this.buildFullGraph(this.instance);
   }
 
   schemaGraph: SchemaNodeSet = this.emptyGraph();
 
-  private buildGraph(node: LineageElement, linkTo: SchemaGraphNode = null): SchemaNodeSet {
+  private buildFullGraph(startNode: LineageElement): SchemaNodeSet {
+    return this.buildGraph(startNode)
+  }
+
+  private buildGraph(node: LineageElement, linkTo: SchemaGraphNode = null, nodesUnderConstruction: LineageElement[] = []): SchemaNodeSet {
     if (!node || !this.dataSource) {
       return this.emptyGraph();
     }
@@ -70,6 +81,9 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       return this.emptyGraph();
     }
     const self = this;
+    if (nodesUnderConstruction.includes(node)) {
+      return this.emptyGraph()
+    }
 
     function nodeId(instance: any, generator: () => string): string {
       if (!instance[LineageDisplayComponent.NODE_ID]) {
@@ -123,9 +137,21 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       const instanceId = nodeId(dataSource, () => dataSource.dataSourceName + new Date().getTime());
       let label: string;
       let subHeader = 'Fixed';
+      let type: SchemaGraphNodeType = 'DATASOURCE';
       switch (dataSource.dataSourceName) {
         case 'Provided':
           label = 'Provided as input';
+          break;
+        case 'Evaluated expression':
+          const evaluatedExpression = dataSource as EvaluatedExpressionDataSource;
+          subHeader = 'Evaluated expression'
+          label = evaluatedExpression.expressionTaxi;
+          break;
+        case 'Failed evaluated expression':
+          const failedEvaluatedExpression = dataSource as FailedEvaluatedExpressionDataSource;
+          subHeader = `Error in expression: ${failedEvaluatedExpression.errorMessage}`
+          label = failedEvaluatedExpression.expressionTaxi;
+          type = 'ERROR'
           break;
         case 'Mapped':
           label = dataSource.dataSourceName;
@@ -139,10 +165,10 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       return {
         id: instanceId,
         nodeId: instanceId,
-        subHeader: 'Fixed',
+        subHeader: subHeader,
         label: label,
         value: dataSource,
-        type: 'DATASOURCE'
+        type: type
       };
     }
 
@@ -157,6 +183,8 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       const dataSourceNodes = this.buildGraph(source, typedInstanceNode);
       this.appendNodeSet(dataSourceNodes, nodeSet);
     }
+
+    nodesUnderConstruction.push(node)
 
     if (isTypeNamedInstance(node)) {
       const typedInstanceNode = instanceToNode(node);
@@ -179,7 +207,8 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       }
 
     } else if (isOperationResult(node)) {
-      const remoteCallNode = remoteCallToNode(node.remoteCall, node);
+      const remoteCall = this.remoteCallRepository.getInstance(node.remoteCall);
+      const remoteCallNode = remoteCallToNode(remoteCall, node);
       if (remoteCallNode.nodeId !== linkTo.nodeId) {
         nodes.push(remoteCallNode);
         links.push({
@@ -188,19 +217,21 @@ export class LineageDisplayComponent extends BaseGraphComponent {
           label: 'provided'
         });
         node.inputs.forEach(param => {
-          var inputNode = undefined;
+          let inputNode = undefined;
           if (Array.isArray(param.value)) {
             inputNode = collectionToNode(param.value);
           } else {
             inputNode = instanceToNode(param.value);
           }
-
           nodes.push(inputNode);
           links.push({
             source: inputNode.nodeId,
             target: remoteCallNode.nodeId,
             label: 'input'
           });
+          const inputNodes = this.buildGraph(param.value, inputNode, [])
+          this.appendNodeSet(inputNodes, nodeSet)
+
         });
       }
     } else if (isMappedSynonym(node)) {
@@ -211,6 +242,26 @@ export class LineageDisplayComponent extends BaseGraphComponent {
         source: inputNode.nodeId,
         target: linkTo.nodeId,
         label: 'Is synonym of'
+      })
+    } else if (isEvaluatedExpressionDataSource(node) || isFailedEvaluatedExpressionDataSource(node)) {
+      const expressionDataSource = node as EvaluatedExpressionDataSource;
+      const dataSourceNode = dataSourceToNode(expressionDataSource);
+      nodes.push(dataSourceNode)
+      links.push({
+        source: dataSourceNode.nodeId,
+        target: linkTo.nodeId,
+        label: 'returned'
+      })
+      expressionDataSource.inputs.forEach(param => {
+        const inputNode = instanceToNode(param);
+        nodes.push(inputNode);
+        links.push({
+          source: inputNode.nodeId,
+          target: dataSourceNode.nodeId,
+          label: 'input'
+        });
+        const inputNodes = this.buildGraph(param, inputNode, []);
+        this.appendNodeSet(inputNodes, nodeSet);
       })
     } else {
       const dataSource = node as DataSource;
@@ -241,15 +292,16 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
   serviceName(node: SchemaGraphNode): string {
     const dataSource = node.value as OperationResultDataSource;
-    const remoteCall = dataSource.remoteCall;
+    const remoteCall = this.remoteCallRepository.getInstance(dataSource.remoteCall);
     const parts = remoteCall.service.split('.')
     return parts[parts.length - 1];
   }
 
   operationName(node): string {
     const dataSource = node.value as OperationResultDataSource;
-    const remoteCall = dataSource.remoteCall;
+    const remoteCall = this.remoteCallRepository.getInstance(dataSource.remoteCall);
     return remoteCall.operation
   }
 
 }
+

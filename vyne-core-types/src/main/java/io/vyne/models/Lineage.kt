@@ -65,7 +65,17 @@ object Provided : DataSource {
 }
 
 object Calculated : DataSource {
-   override val name: String
-      get() = "Calculated"
+   override val name: String = "Calculated"
+}
 
+data class EvaluatedExpression(val expressionTaxi: String, val inputs: List<TypedInstance>) : DataSource {
+   override val name: String = "Evaluated expression"
+}
+
+data class FailedEvaluatedExpression(
+   val expressionTaxi: String,
+   val inputs: List<TypedInstance>,
+   val errorMessage: String
+) : DataSource {
+   override val name: String = "Failed evaluated expression"
 }

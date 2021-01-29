@@ -43,6 +43,7 @@ class VyneQueryTest {
          .should.equal(expectedVyneQl.withoutWhitespace())
 
    }
+
 }
 
 fun queryDeclaration(queryName: String, returnTypeName: String, capabilities: List<QueryOperationCapability> = QueryOperationCapability.ALL): String {
