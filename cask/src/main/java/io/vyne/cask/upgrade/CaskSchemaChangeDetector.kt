@@ -6,7 +6,6 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.query.CaskConfigService
 import io.vyne.cask.query.CaskDAO
-import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
@@ -22,6 +21,9 @@ class CaskSchemaChangeDetector(private val caskConfigRepository: CaskConfigRepos
                                private val caskViewService: CaskViewService
 ) {
 
+   fun findCasksTaggedAsMigrating():List<CaskConfig> {
+      return caskConfigRepository.findAllByStatus(CaskStatus.MIGRATING)
+   }
    internal fun markModifiedCasksAsRequiringUpgrading(schema: Schema): List<CaskNeedingUpgrade> {
       val tablesToUpgrade = findCasksRequiringUpgrading(schema)
       return tablesToUpgrade.mapNotNull { caskToUpgrade ->

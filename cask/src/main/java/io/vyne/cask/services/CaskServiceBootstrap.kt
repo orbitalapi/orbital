@@ -19,6 +19,9 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 
+// This class needs refactoring and splitting out.
+// It has poor test coverage, and too many responsibilities, but they
+// seem fairly intertwined.
 @Service
 class CaskServiceBootstrap constructor(
    private val caskServiceSchemaGenerator: CaskServiceSchemaGenerator,
@@ -36,20 +39,24 @@ class CaskServiceBootstrap constructor(
    @EventListener
    fun regenerateCasksOnSchemaChange(event: SchemaSetChangedEvent) {
       log().info("Schema changed, checking for upgrade work required")
-      val casksNeedingUpgrading = changeDetector.markModifiedCasksAsRequiringUpgrading(event.newSchemaSet.schema)
+      log().info("Looking for any active casks that require migrating")
+      val taggedCasks = changeDetector.markModifiedCasksAsRequiringUpgrading(event.newSchemaSet.schema)
+      if (taggedCasks.isNotEmpty()) {
+         log().info("The following casks were newly tagged as needing migrating: ${taggedCasks.joinToString { it.config.qualifiedTypeName }}")
+      }
+
+      // Look for casks needing upgrading independent of the casks we just tagged.
+      // This catches any migrations that were tagged in a previous startup attempt, but didn't migrate
+      // completely.
+      // This was added after db connection errors left partially migrated casks.
+      val casksNeedingUpgrading = changeDetector.findCasksTaggedAsMigrating()
 
       if (casksNeedingUpgrading.isNotEmpty()) {
+         log().info("The following casks were found as needing migrating: ${casksNeedingUpgrading.joinToString { it.qualifiedTypeName }}")
          // Stop polling for new schema changes till we finish upgrade operation.
          eventPublisher.publishEvent(ControlSchemaPollEvent(false))
          eventPublisher.publishEvent(CaskUpgradesRequiredEvent())
       }
-
-      // Look for cask views that need rebuilding
-      //val newCaskViewConfigs = this.generateCaskViews()
-      //val caskVersionedViewTypes = findTypesToRegister(newCaskViewConfigs.toMutableList())
-      //if (caskVersionedViewTypes.isNotEmpty()) {
-       //  caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedViewTypes)
-     // }
 
       when {
          casksNeedingUpgrading.isNotEmpty() -> {
