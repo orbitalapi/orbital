@@ -4,8 +4,6 @@ import {NgxGraphModule} from '@swimlane/ngx-graph';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {LineageTimelineComponent} from './lineage-timeline.component';
-import {ClarityModule} from '@clr/angular';
 
 
 @NgModule({
@@ -13,11 +11,10 @@ import {ClarityModule} from '@clr/angular';
     NgxGraphModule,
     CommonModule,
     BrowserModule,
-    BrowserAnimationsModule,
-    ClarityModule,
+    BrowserAnimationsModule
   ],
-  exports: [LineageDisplayComponent, LineageTimelineComponent],
-  declarations: [LineageDisplayComponent, LineageTimelineComponent],
+  exports: [LineageDisplayComponent],
+  declarations: [LineageDisplayComponent],
   providers: [],
 })
 export class LineageDisplayModule {

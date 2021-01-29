@@ -1,5 +1,5 @@
 import {PrimitiveTypeNames} from './taxi';
-import {isNullOrUndefined} from 'util';
+import {isNullOrUndefined, isString} from 'util';
 
 export class QualifiedName {
   name: string;
@@ -277,11 +277,12 @@ export interface OperationContract {
   constraints: Array<any>;
 }
 
+export type SchemaGraphNodeType = 'TYPE' | 'MEMBER' | 'OPERATION' | 'DATASOURCE' | 'ERROR' | 'VYNE' | 'CALLER';
 
 export interface SchemaGraphNode {
   id: string;
   label: string;
-  type: string; // Consider adding the enum ElementType here
+  type: SchemaGraphNodeType;
   nodeId: string;
   subHeader?: string | null;
   value?: any | null;
@@ -574,6 +575,36 @@ export interface TypeNamedInstance {
   source?: DataSource;
 }
 
+export type Reference = String;
+
+export interface Proxyable {
+  '@id': string;
+}
+
+/**
+ * Type used when Jackson's @JsonIdentityInfo is attached to an object.
+ * Jackson will send the actual POJO the first time it serializes the entity,
+ * and a reference to it after that.
+ *
+ * To use this, when accessing a property that returns a proxyable object, use
+ * a ReferenceRepository to ask for the object - which will return the instance.
+ *
+ */
+export type ReferenceOrInstance<T extends Proxyable> = T | Reference;
+
+export class ReferenceRepository<T extends Proxyable> {
+  private instances = new Map<string, T>();
+
+  getInstance(ref: ReferenceOrInstance<T>): T {
+    if (isString(ref)) {
+      return this.instances.get(ref);
+    } else {
+      const typedRef = ref as T;
+      this.instances.set(ref['@id'], typedRef);
+      return typedRef;
+    }
+  }
+}
 
 export interface DataSourceReference {
   dataSourceIndex: number;
@@ -603,4 +634,6 @@ export type DataSourceType =
   | 'Operation result'
   | 'Defined in schema'
   | 'Undefined source'
+  | 'Failed evaluated expression'
+  | 'Evaluated expression'
   | 'Multiple sources';

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.DataSource
-import io.vyne.models.FailedEvaluation
+import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
@@ -1614,8 +1614,9 @@ service ClientService {
       val outputModel = outputCollection[0] as TypedObject
       outputModel["averagePrice"].value.should.be.`null`
       val source = outputModel["averagePrice"].source
-      require(source is FailedEvaluation)
-      source.message.should.equal("Failed to evaluation expression (this.price / this.quantity) - Division by zero")
+      require(source is FailedEvaluatedExpression)
+      source.expressionTaxi.should.equal("(this.price / this.quantity)")
+      source.errorMessage.should.equal("Division by zero")
    }
 
    @Test
@@ -1697,6 +1698,7 @@ service ClientService {
    }
 
    @Test
+   @Ignore("not yet implemented")
    fun `can use a derived field as an input for discovery`() {
       val (vyne,stub) = testVyne("""
          type Name inherits String

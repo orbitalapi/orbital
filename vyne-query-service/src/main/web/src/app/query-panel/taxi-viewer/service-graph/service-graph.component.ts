@@ -10,7 +10,7 @@ import {QueryResult} from '../../../services/query.service';
 })
 export class ServiceGraphComponent implements AfterViewInit {
 
-  @ViewChild('chartOuterContianer', {static:true})
+  @ViewChild('chartOuterContianer', {static: true})
   chartContainer: ElementRef;
 
   private _queryResult: QueryResult;
@@ -76,13 +76,13 @@ export class ServiceGraphComponent implements AfterViewInit {
     const vyneNode: SchemaGraphNode = {
       id: 'vyne',
       nodeId: 'vyne',
-      type: 'vyne',
+      type: 'VYNE',
       label: 'Vyne'
     };
     const callerNode: SchemaGraphNode = {
       id: 'caller',
       nodeId: 'caller',
-      type: 'caller',
+      type: 'CALLER',
       label: 'Query client'
     };
 
@@ -107,7 +107,7 @@ export class ServiceGraphComponent implements AfterViewInit {
           label: QualifiedName.nameOnly(remoteCall.operationQualifiedName) + '.' + remoteCall.operation,
           returnType: `${remoteCall.responseTypeName}`,
           nodeId: index.toString(),
-          type: 'operation'
+          type: 'OPERATION'
         },
         link: {
           label: `${remoteCall.method} (${remoteCall.durationMs}ms)`,

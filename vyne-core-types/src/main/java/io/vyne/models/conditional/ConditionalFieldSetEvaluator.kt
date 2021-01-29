@@ -4,6 +4,7 @@ import io.vyne.models.FailedEvaluation
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObjectFactory
+import io.vyne.models.safeTaxi
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Type
 import io.vyne.utils.log
@@ -29,8 +30,8 @@ class ConditionalFieldSetEvaluator(private val factory: TypedObjectFactory) {
          }
       } catch (e:Exception) {
          val exceptionMessage = e.message ?: "A ${e::class.simpleName} exception was thrown"
-         val message = "Failed to evaluation expression ${readCondition.asTaxi()} - $exceptionMessage"
-         log().error(message, e)
+         val message = "Failed to evaluation expression ${readCondition.safeTaxi()}.  Will return null, and continue processing.  Details are captured in the lineage for this value - $exceptionMessage"
+         log().warn(message, e)
          TypedNull.create(targetType, FailedEvaluation(message))
       }
    }
