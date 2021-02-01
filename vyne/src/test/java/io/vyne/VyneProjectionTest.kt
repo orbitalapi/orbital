@@ -1922,6 +1922,10 @@ service Broker1Service {
 
          }
 
+         // The request contains a parameter that is present on the response.
+         // Therefore, in order to construct the request, the response can be invoked.
+         // This leads to circular logic, which causes a stack overflow.
+         // This test asserts that behaviour is prevented.
          parameter model InstrumentReferenceRequest {
              Identifier : Ric?
              IdentifierType: InstrumentIdentifierType?

@@ -5,7 +5,6 @@ import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.PathEvaluation
 import io.vyne.schemas.Relationship
 import io.vyne.utils.log
-import javax.management.relation.Relation
 import kotlin.math.min
 
 /**
@@ -18,28 +17,42 @@ import kotlin.math.min
  */
 class PathExclusionCalculator {
 
-   fun findEdgesToExclude(evaluatedPath: List<PathEvaluation>, invocationConstraints: InvocationConstraints): Set<EvaluatableEdge> {
+   fun findEdgesToExclude(
+      evaluatedPath: List<PathEvaluation>,
+      invocationConstraints: InvocationConstraints
+   ): Set<EvaluatableEdge> {
       // These are a bunch of specific use cases that we've found that are useful to exclude
       val spec = invocationConstraints.typedInstanceValidPredicate
       return listOfNotNull(
-         operationThrewError(evaluatedPath, spec),
-         instanceWhichProvidedInvalidMember(evaluatedPath, spec),
-         instanceWhichProviedInvalidInheritedMember(evaluatedPath, spec),
-         operation(evaluatedPath,spec)
+         operationThrewError(evaluatedPath, spec)
+
+         // 1-Feb-21: Removed in favour of using transition cost for previously visited nodes.
+//         instanceWhichProvidedInvalidMember(evaluatedPath, spec),
+
+         // 1-Feb-21: Removed in favour of using transition cost for previously visited nodes.
+//         instanceWhichProviedInvalidInheritedMember(evaluatedPath, spec),
+
+         // 1-Feb-21: Removed in favour of using transition cost for previously visited nodes.
+//         operation(evaluatedPath,spec)
+
+//          Excluded prior to 1-Feb-21.
 //         operationReturnedResultWhichFailsPredicateTest(evaluatedPath, spec),
 //         operationReturnedResultWithAttributeWhichFailsPredicateTest(evaluatedPath, spec)
 
       ).flatten().toSet()
    }
 
-   private fun operation(evaluatedPath: List<PathEvaluation>, predicate: TypedInstanceValidPredicate):List<EvaluatableEdge> {
+   private fun operation(
+      evaluatedPath: List<PathEvaluation>,
+      predicate: TypedInstanceValidPredicate
+   ): List<EvaluatableEdge> {
       // This is a risky approach, simply excluding operations.
       // However, we found that the number of permutations that the graph can take to
       // evaluate an operation can be pretty tricky to predict in advance, and brtittle
       // Therefore, we're currently excluding "the nearest" operation, so that the
       // graph can try again.
-      val distanceToSearch = min(10,evaluatedPath.size - 1)
-      val edgeToExclude = (0 .. distanceToSearch).asSequence()
+      val distanceToSearch = min(10, evaluatedPath.size - 1)
+      val edgeToExclude = (0..distanceToSearch).asSequence()
          .mapNotNull { index ->
             val evaluation = evaluatedPath.fromEnd(index)
             // This was an operation
@@ -51,14 +64,17 @@ class PathExclusionCalculator {
          }
          .firstOrNull()
       return if (edgeToExclude != null) {
-         log().info("Excluding operation from current node search:  ${edgeToExclude.description()}")
+         log().info("Excluding operation from current node search:  ${edgeToExclude.description}")
          listOf(edgeToExclude.edge)
       } else {
          emptyList()
       }
    }
 
-   private fun operationThrewError(evaluatedPath: List<PathEvaluation>, predicate: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+   private fun operationThrewError(
+      evaluatedPath: List<PathEvaluation>,
+      predicate: TypedInstanceValidPredicate
+   ): List<EvaluatableEdge> {
       val pathEndedWithOperationThatFailed = evaluatedPath.endsWith(
          Relationship.PROVIDES
       )
@@ -73,7 +89,10 @@ class PathExclusionCalculator {
       }
    }
 
-   private fun operationReturnedResultWithAttributeWhichFailsPredicateTest(evaluatedPath: List<PathEvaluation>, predicate: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+   private fun operationReturnedResultWithAttributeWhichFailsPredicateTest(
+      evaluatedPath: List<PathEvaluation>,
+      predicate: TypedInstanceValidPredicate
+   ): List<EvaluatableEdge> {
       val trimmedEvaluatedPath = evaluatedPath.excluding(Relationship.EXTENDS_TYPE)
 
       // These are the paths that can be walked when identifying
@@ -111,7 +130,8 @@ class PathExclusionCalculator {
          return emptyList()
       }
       val nodeIndexToRemove = matchingCandidatePath.size - 1
-      val operationEvaluation = getAsOperationEvaluation(trimmedEvaluatedPath.fromEnd(nodeIndexToRemove)) ?: return emptyList()
+      val operationEvaluation =
+         getAsOperationEvaluation(trimmedEvaluatedPath.fromEnd(nodeIndexToRemove)) ?: return emptyList()
       if (operationEvaluation.edge.relationship != Relationship.PROVIDES) {
          log().error("We should be excluding a PROVIDES relationship")
       }
@@ -130,7 +150,10 @@ class PathExclusionCalculator {
       return pathEvaluation
    }
 
-   private fun operationReturnedResultWhichFailsPredicateTest(evaluatedPath: List<PathEvaluation>, predicate: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+   private fun operationReturnedResultWhichFailsPredicateTest(
+      evaluatedPath: List<PathEvaluation>,
+      predicate: TypedInstanceValidPredicate
+   ): List<EvaluatableEdge> {
       val pathEndedByEvaluatingResultFromOperation = evaluatedPath.endsWith(
          Relationship.PROVIDES,
          Relationship.INSTANCE_HAS_ATTRIBUTE
@@ -150,7 +173,10 @@ class PathExclusionCalculator {
       }
    }
 
-   private fun instanceWhichProviedInvalidInheritedMember(evaluatedPath: List<PathEvaluation>, spec: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+   private fun instanceWhichProviedInvalidInheritedMember(
+      evaluatedPath: List<PathEvaluation>,
+      spec: TypedInstanceValidPredicate
+   ): List<EvaluatableEdge> {
       // This path deals sepcifically with an inhertited / formatted type
       // that fails the predicate test.
       val pathEndedBySelectingValueFromInstance = evaluatedPath.endsWith(
@@ -175,15 +201,18 @@ class PathExclusionCalculator {
       }
    }
 
-   private fun instanceWhichProvidedInvalidMember(evaluatedPath: List<PathEvaluation>, spec: TypedInstanceValidPredicate): List<EvaluatableEdge> {
+   private fun instanceWhichProvidedInvalidMember(
+      evaluatedPath: List<PathEvaluation>,
+      spec: TypedInstanceValidPredicate
+   ): List<EvaluatableEdge> {
       // Look for a recent (ie., near the end of the path) instance
       // which provided a value that failed our search criteria spec
       val pathWithRelevantNodes = evaluatedPath.excluding(Relationship.EXTENDS_TYPE)
       val pathEndedBySelectingValueFromInstance = pathWithRelevantNodes.endsWith(
-            Relationship.INSTANCE_HAS_ATTRIBUTE,
-            Relationship.IS_ATTRIBUTE_OF,
-            Relationship.IS_INSTANCE_OF
-         )
+         Relationship.INSTANCE_HAS_ATTRIBUTE,
+         Relationship.IS_ATTRIBUTE_OF,
+         Relationship.IS_INSTANCE_OF
+      )
       val selectedInstanceFailedTest = !spec.isValid(evaluatedPath.last().resultValue)
       return if (pathEndedBySelectingValueFromInstance && selectedInstanceFailedTest) {
          val evaluation = pathWithRelevantNodes.fromEnd(2)
@@ -225,6 +254,7 @@ private fun List<PathEvaluation>.endsWith(relationships: List<Relationship>): Bo
       .all { it }
 
 }
+
 private fun List<PathEvaluation>.endsWith(vararg relationships: Relationship): Boolean {
-  return this.endsWith(relationships.toList())
+   return this.endsWith(relationships.toList())
 }

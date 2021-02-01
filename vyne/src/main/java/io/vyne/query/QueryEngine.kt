@@ -25,7 +25,7 @@ interface QueryEngine {
    fun find(queryString: QueryExpression, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
    fun find(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
    fun find(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
-   fun find(target: QuerySpecTypeNode, context: QueryContext, excludedOperations: Set<Operation>, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   fun find(target: QuerySpecTypeNode, context: QueryContext, excludedOperations: Set<SearchGraphExclusion<Operation>>, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
 
    fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult
 
@@ -278,7 +278,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    override fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
-      excludedOperations: Set<Operation>,
+      excludedOperations: Set<SearchGraphExclusion<Operation>>,
       spec: TypedInstanceValidPredicate): QueryResult {
       try {
          return doFind(target, context, spec, excludedOperations)
@@ -307,7 +307,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return result
    }
 
-   private fun doFind(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate, excludedOperations: Set<Operation> = emptySet()): QueryResult {
+   private fun doFind(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate, excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()): QueryResult {
 
       val matchedNodes = mutableMapOf<QuerySpecTypeNode, TypedInstance?>()
 

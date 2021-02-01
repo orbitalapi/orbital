@@ -265,7 +265,7 @@ class FirstNotEmptyTest {
    }
 
    @Test
-   fun `when type is present twice on a model through inheritence but only one value is populated, and the model is returned from a service, then it is returned`() {
+   fun `when type is present twice on a model through inheritence but only one value is populated, and the model is returned from a service, then the values from the service are present on query results`() {
       val (vyne, stub) = testVyne(
          """
          type Name inherits String
@@ -277,6 +277,7 @@ class FirstNotEmptyTest {
             firstName : Name
          }
          model OutputModel {
+            id : Id
             @FirstNotEmpty
             discoveredName : Name
          }
@@ -290,7 +291,7 @@ class FirstNotEmptyTest {
       )
       stub.addResponse("findAllIds", TypedCollection.from(listOf(1, 2).map { vyne.typedValue("Id", it) }))
 
-      val personWithBaseTypeName = vyne.parseJsonModel("Person", """{ "firstName" : null, "name" : "Jimmy Name" }""")
+      val personWithBaseTypeName = vyne.parseJsonModel("Person", """{ "firstName" : null, "name" : "Jimmy BaseName" }""")
       val personWithFirstName = vyne.parseJsonModel("Person", """{ "firstName" : "Jimmy FirstName" , "name" : null }""")
       stub.addResponse("findPerson") { remoteOperation, params ->
          val (_, personId) = params[0]
@@ -300,9 +301,15 @@ class FirstNotEmptyTest {
             else -> error("Expected Id of 1 or 2")
          }
       }
-      // Query against baseTypeName
       val result = vyne.query("findAll { Id[] } as OutputModel[]")
-      TODO()
+      val resultCollection = result["OutputModel[]"] as TypedCollection
+      resultCollection.should.have.size(2)
+
+      // There are two Name types present - Name (the base type), and FirstName (the subtype).
+      // Person1 has their Name (basetype) populated in the service response
+      resultCollection[0].toRawObject().should.equal(mapOf("id" to 1, "discoveredName" to "Jimmy BaseName"))
+      // Person2 has their FirstName (subtype) populated in the service response.
+      resultCollection[1].toRawObject().should.equal(mapOf("id" to 2, "discoveredName" to "Jimmy FirstName"))
    }
 
 

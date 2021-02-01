@@ -7,7 +7,6 @@ import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.VyneCacheConfiguration
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
 import io.vyne.query.graph.*
 import io.vyne.schemas.Link
 import io.vyne.schemas.Path
@@ -156,6 +155,9 @@ class HipsterDiscoverGraphQueryStrategy(
                log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried")
             }
             val evaluationResult = edgeEvaluator.evaluate(evaluatableEdge, queryContext)
+            if (evaluatableEdge.relationship == Relationship.PROVIDES) {
+               log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}")
+            }
             evaluationResult
          }
 
