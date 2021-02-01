@@ -3,8 +3,8 @@ package io.vyne
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.Provided
 import io.vyne.models.EvaluatedExpression
+import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
@@ -1924,6 +1924,10 @@ service Broker1Service {
 
          }
 
+         // The request contains a parameter that is present on the response.
+         // Therefore, in order to construct the request, the response can be invoked.
+         // This leads to circular logic, which causes a stack overflow.
+         // This test asserts that behaviour is prevented.
          parameter model InstrumentReferenceRequest {
              Identifier : Ric?
              IdentifierType: InstrumentIdentifierType?

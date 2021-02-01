@@ -26,7 +26,7 @@ object AlwaysGoodSpec : TypedInstanceValidPredicate {
    override fun isValid(typedInstance: TypedInstance?) = true
 }
 
-data class InvocationConstraints(val typedInstanceValidPredicate: TypedInstanceValidPredicate, val excludedOperations: Set<Operation> = emptySet()) {
+data class InvocationConstraints(val typedInstanceValidPredicate: TypedInstanceValidPredicate, val excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()) {
    companion object  {
      val  withAlwaysGoodPredicate: InvocationConstraints = InvocationConstraints(AlwaysGoodSpec)
    }

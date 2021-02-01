@@ -7,13 +7,23 @@ import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.vyne.DisplayGraphBuilder
 import io.vyne.HipsterGraphBuilder
-import io.vyne.VyneCacheConfiguration
 import io.vyne.VyneGraphBuilderCacheSettings
 import io.vyne.VyneHashBasedHipsterDirectedGraph
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-import io.vyne.schemas.*
-import org.springframework.stereotype.Component
+import io.vyne.query.SearchGraphExclusion
+import io.vyne.query.excludedValues
+import io.vyne.schemas.AttributeName
+import io.vyne.schemas.Field
+import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.ParamNames
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
+import io.vyne.schemas.fqn
 
 enum class ElementType {
    TYPE,
@@ -177,11 +187,11 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       return GraphBuildResult(baseGraph, addedVertices, removedEdges)
    }
 
-   fun build(types: Set<Type> = emptySet(), excludedOperations: Set<QualifiedName> = emptySet(), excludedServices: Set<QualifiedName> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
+   fun build(types: Set<Type> = emptySet(), excludedOperations: Set<SearchGraphExclusion<QualifiedName>> = emptySet(), excludedServices: Set<SearchGraphExclusion<QualifiedName>> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
       val builder = baseSchemaCache.get(excludedOperations.hashCode()) {
          val instance = HipsterGraphBuilder.create<Element, Relationship>()
          appendTypes(instance, schema)
-         appendServices(instance, schema, excludedOperations, excludedServices)
+         appendServices(instance, schema, excludedOperations.excludedValues(), excludedServices.excludedValues())
          instance
       }
 
