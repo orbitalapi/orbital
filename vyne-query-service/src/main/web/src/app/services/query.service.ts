@@ -3,7 +3,15 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
 
 import {environment} from 'src/environments/environment';
-import {DataSource, InstanceLikeOrCollection, QualifiedName, Type, TypedInstance, TypeNamedInstance} from './schema';
+import {
+  DataSource,
+  InstanceLikeOrCollection, Proxyable,
+  QualifiedName,
+  ReferenceOrInstance,
+  Type,
+  TypedInstance,
+  TypeNamedInstance
+} from './schema';
 import {VyneServicesModule} from './vyne-services.module';
 
 @Injectable({
@@ -82,8 +90,25 @@ export function isOperationResult(source: DataSource): source is OperationResult
 }
 
 export interface OperationResultDataSource extends DataSource {
-  remoteCall: RemoteCall;
+  remoteCall: ReferenceOrInstance<RemoteCall>;
   inputs: OperationParam[];
+}
+
+export function isEvaluatedExpressionDataSource(source: DataSource): source is EvaluatedExpressionDataSource {
+  return source.dataSourceName === 'Evaluated expression';
+}
+
+export interface EvaluatedExpressionDataSource extends DataSource {
+  expressionTaxi: string;
+  inputs: TypeNamedInstance[];
+}
+
+export function isFailedEvaluatedExpressionDataSource(source: DataSource): source is FailedEvaluatedExpressionDataSource {
+  return source.dataSourceName === 'Failed evaluated expression';
+}
+
+export interface FailedEvaluatedExpressionDataSource extends EvaluatedExpressionDataSource {
+  errorMessage: string;
 }
 
 export interface OperationParam {
@@ -113,7 +138,7 @@ export interface QueryResult {
 }
 
 
-export interface RemoteCall {
+export interface RemoteCall extends Proxyable {
   service: string;
   address: string;
   operation: string;

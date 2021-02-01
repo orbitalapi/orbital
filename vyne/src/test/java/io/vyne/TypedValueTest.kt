@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedValue
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -16,6 +17,7 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 class TypedValueTest {
    @Test
@@ -34,6 +36,27 @@ class TypedValueTest {
       val instance = TypedInstance.from(schema.type("KiwiDate"), "28/04/19T22:00:00", schema, source = Provided)
       val instant = instance.value as Instant
       instant.should.equal(Instant.parse("2019-04-28T22:00:00Z"))
+
+   }
+
+   @Test
+   fun timeformat() {
+      val schema = TaxiSchema.from("""
+         type OrderEventTime inherits Time
+         model TestTime {
+            orderTime: OrderEventTime ( @format = "HH.mm.s")
+         }
+
+      """.trimIndent())
+      val value = """
+         {
+            "orderTime": "00.00.6"
+         }
+      """.trimIndent()
+      val instance = TypedInstance.from(schema.type("TestTime"), value, schema, source = Provided)
+      val orderTime = instance.value as Map<String, TypedValue>
+      val time = orderTime["orderTime"]?.value as LocalTime
+      time.should.equal(LocalTime.of(0, 0, 6))
 
    }
 

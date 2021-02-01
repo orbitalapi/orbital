@@ -1,8 +1,11 @@
-import {Component, EventEmitter, Input, OnDestroy, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {
   InstanceLike,
-  InstanceLikeOrCollection, isTypedInstance, isTypedNull,
-  isTypeNamedInstance, isTypeNamedNull,
+  InstanceLikeOrCollection,
+  isTypedInstance,
+  isTypedNull,
+  isTypeNamedInstance,
+  isTypeNamedNull,
   Type,
   UnknownType,
   UntypedInstance
@@ -18,8 +21,6 @@ import {
 import {TypeInfoHeaderComponent} from './type-info-header.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isNullOrUndefined} from 'util';
-import {SchemaNotificationService} from '../services/schema-notification.service';
-import {Subscription} from 'rxjs';
 import {CaskService} from '../services/cask.service';
 
 @Component({
@@ -28,6 +29,7 @@ import {CaskService} from '../services/cask.service';
     <ag-grid-angular
       class="ag-theme-alpine"
       headerHeight="65"
+      [enableCellTextSelection]="true"
       [rowData]="rowData"
       [columnDefs]="columnDefs"
       (gridReady)="onGridReady($event)"

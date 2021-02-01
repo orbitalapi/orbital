@@ -4,6 +4,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
+import io.vyne.models.EvaluatedExpression
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
@@ -1371,6 +1373,51 @@ service Broker1Service {
             )
          )
       )
+   }
+
+   @Test
+   fun `when calculating fields then lineage is set on output`() {
+      val (vyne, stubs) = testVyne(
+         """
+            type Quantity inherits Int
+            type Price inherits Int
+
+            model Order {
+               quantity : Quantity
+               price : Price
+            }
+            model Output {
+               quantity : Quantity
+               price : Price
+               averagePrice : Decimal by (this.price / this.quantity)
+            }
+            service OrderService {
+               operation listOrders():Order[]
+            }
+         """.trimIndent()
+      )
+      // The below responseJson will trigger a divide-by-zero
+      val responseJson = """[
+         |{ "quantity" : 0 , "price" : 2 }
+         |]""".trimMargin()
+      stubs.addResponse(
+         "listOrders", vyne.parseJsonModel(
+            "Order[]", """[
+         |{ "quantity" : 100 , "price" : 2 },
+         |{ "quantity" : 0 , "price" : 2 }
+         |]""".trimMargin()
+         )
+      )
+
+      val queryResult = vyne.query("findAll { Order[] } as Output[]")
+      val outputCollection = queryResult["Output[]"] as TypedCollection
+      val outputModel = outputCollection[0] as TypedObject
+      val averagePrice = outputModel["averagePrice"]
+      averagePrice.value.should.equal(0.02.toBigDecimal())
+      val averagePriceDataSource = averagePrice.source as EvaluatedExpression
+      averagePriceDataSource.expressionTaxi.should.equal("(this.price / this.quantity)")
+      averagePriceDataSource.inputs[0].value.should.equal(2)
+      averagePriceDataSource.inputs[0].source.should.equal(Provided)
    }
 
    @Test

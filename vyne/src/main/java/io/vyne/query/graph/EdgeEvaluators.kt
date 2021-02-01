@@ -153,7 +153,7 @@ class ParameterFactory {
       operation: Operation?,
       typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
       val fields = paramType.attributes.map { (attributeName, field) ->
-         val attributeType = context.schema.type(field.type.name)
+         val attributeType = context.schema.type(field.type.fullyQualifiedName)
 
          // THIS IS WHERE I'M UP TO.
          // Try restructing this to a strategy approach.

@@ -26,6 +26,9 @@ object UndefinedSource : DataSource {
    override val name: String = "Undefined source"
 }
 
+data class FailedEvaluation(val message: String) : DataSource {
+   override val name: String = "Failed evaluation"
+}
 
 /**
  * Indicates that the value was defined in a schema - ie., in Taxi, or
@@ -61,8 +64,18 @@ object Provided : DataSource {
    override val name: String = "Provided"
 }
 
-object Calculated: DataSource {
-   override val name: String
-      get() = "Calculated"
+object Calculated : DataSource {
+   override val name: String = "Calculated"
+}
 
+data class EvaluatedExpression(val expressionTaxi: String, val inputs: List<TypedInstance>) : DataSource {
+   override val name: String = "Evaluated expression"
+}
+
+data class FailedEvaluatedExpression(
+   val expressionTaxi: String,
+   val inputs: List<TypedInstance>,
+   val errorMessage: String
+) : DataSource {
+   override val name: String = "Failed evaluated expression"
 }

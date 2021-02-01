@@ -70,6 +70,7 @@ class GitSyncTask(
                } else {
                   gitRepo.checkout()
                   gitRepo.pull()
+
                }
 
             } else {

@@ -6,6 +6,8 @@ import io.vyne.cask.MessageIds
 import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.api.csv.CsvFormatFactory
 import io.vyne.schemas.fqn
+import io.vyne.schemas.taxi.TaxiSchema
+import org.apache.commons.io.IOUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -57,6 +59,36 @@ class CsvIngestionTest {
          .collectList()
          .block()
       results.should.have.size(3)
+   }
+
+   @Test
+   fun `model with optional field defined but column not present in the source ingests as null`() {
+      val schema = TaxiSchema.from("""model Person {
+         | firstName : String by column("firstName")
+         | middleName : String? by column("middleName")
+         | lastName : String by column("lastName")
+         | }
+      """)
+      val versionedType = schema.versionedType("Person".fqn())
+      val mapper = CsvStreamMapper(versionedType, schema)
+
+      val writer = CsvBinaryWriter(bytesPerColumn = 30, shouldLogIndividualWriteTime = false,
+         format = CsvFormatFactory.fromParameters(CsvIngestionParameters(firstRecordAsHeader = true, containsTrailingDelimiters = true))
+      )
+      val file = folder.newFile()
+
+      val csv = """firstName,lastName
+         |marty,pitt
+         |charlie,pitt
+      """.trimMargin()
+      val results = writer.convert(IOUtils.toInputStream(csv), file.toPath())
+         .map { mapper.map(it, logMappingTime = false, messageId = MessageIds.uniqueId()) }
+         .collectList()
+         .block()
+      results.should.have.size(2)
+      results[0].attributes["firstName"]!!.value.should.equal("marty")
+      results[0].attributes["middleName"]!!.value.should.be.`null`
+      results[0].attributes["lastName"]!!.value.should.equal("pitt")
    }
 
    @Test
