@@ -25,32 +25,34 @@ import {AgGridModule} from 'ag-grid-angular';
 import {ReactiveFormsModule} from '@angular/forms';
 import {FormsModule} from '@angular/forms';
 import { CaskIngestionErrorsGridComponent } from './cask-ingestion-errors/cask-ingestion-errors-grid/cask-ingestion-errors-grid.component';
+import {HeaderBarModule} from '../header-bar/header-bar.module';
 
 
 @NgModule({
-  imports: [
-    BrowserModule,
-    CommonModule,
-    MatButtonModule,
-    MatCardModule,
-    BrowserAnimationsModule,
-    MatExpansionModule,
-    MatToolbarModule,
-    VyneServicesModule,
-    SearchModule,
-    CodeViewerModule,
-    MatTooltipModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatDatepickerModule,
-    MatIconModule,
-    MatButtonModule,
-    MatInputModule,
-    AgGridModule,
-    ReactiveFormsModule,
-    FormsModule
-  ],
+    imports: [
+        BrowserModule,
+        CommonModule,
+        MatButtonModule,
+        MatCardModule,
+        BrowserAnimationsModule,
+        MatExpansionModule,
+        MatToolbarModule,
+        VyneServicesModule,
+        SearchModule,
+        CodeViewerModule,
+        MatTooltipModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatDatepickerModule,
+        MatIconModule,
+        MatButtonModule,
+        MatInputModule,
+        AgGridModule,
+        ReactiveFormsModule,
+        FormsModule,
+        HeaderBarModule
+    ],
   exports: [CaskViewerComponent, CaskRowComponent, CaskDetailsComponent],
   declarations: [CaskViewerComponent, CaskRowComponent, CaskDetailsComponent, CaskConfirmDialogComponent, CaskSourceViewerComponent, CaskIngestionErrorsSearchPanelComponent, CaskIngestionErrorsComponent, CaskIngestionErrorsGridComponent],
   providers: [],

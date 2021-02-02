@@ -60,3 +60,78 @@ export const LINEAGE_GRAPH = {
     }
   }], 'dataSourceName': 'Operation result'
 };
+
+
+export const LINEAGE_GRAPH_WITH_EVALUATED_EXPRESSION = {
+  'expressionTaxi': '(this.quantity / this.price)',
+  'inputs': [{
+    'value': 100,
+    'source': {
+      'remoteCall': {
+        '@id': '5b441990-289c-4569-8ad2-6ba5c42e0dc6',
+        'service': 'vyne.casks.OrderCaskService',
+        'addresss': 'http://192.168.5.73:8800/api/cask/findAll/Order',
+        'operation': 'findAll',
+        'responseTypeName': 'lang.taxi.Array<Order>',
+        'method': 'GET',
+        'requestBody': null,
+        'resultCode': 200,
+        'durationMs': 21,
+        'response': [{
+          'quantity': 100,
+          'price': 0.5,
+          'caskmessageid': 'd550910d-5c99-41ca-947a-cd50381c53c0'
+        }, {'quantity': 200, 'price': 0.0, 'caskmessageid': 'd550910d-5c99-41ca-947a-cd50381c53c0'}],
+        'operationQualifiedName': 'vyne.casks.OrderCaskService@@findAll'
+      }, 'inputs': [], 'dataSourceName': 'Operation result'
+    },
+    'typeName': 'OrderQuantity'
+  }, {
+    'value': 0.5,
+    'source': {
+      'remoteCall': '5b441990-289c-4569-8ad2-6ba5c42e0dc6',
+      'inputs': [],
+      'dataSourceName': 'Operation result'
+    },
+    'typeName': 'OrderPrice'
+  }],
+  'dataSourceName': 'Evaluated expression'
+};
+
+export const LINEAGE_GRAPH_WITH_FAILED_EXPRESSION = {
+  'expressionTaxi': '(this.quantity / this.price)',
+  'inputs': [{
+    'value': 200,
+    'source': {
+      'remoteCall': {
+        '@id': '5c05cc6f-1955-4733-a684-c57e2b52a284',
+        'service': 'vyne.casks.OrderCaskService',
+        'addresss': 'http://localhost:8800/api/cask/findAll/Order',
+        'operation': 'findAll',
+        'responseTypeName': 'lang.taxi.Array<Order>',
+        'method': 'GET',
+        'requestBody': null,
+        'resultCode': 200,
+        'durationMs': 334,
+        'response': [{
+          'quantity': 100,
+          'price': 0.5,
+          'caskmessageid': 'd550910d-5c99-41ca-947a-cd50381c53c0'
+        }, {'quantity': 200, 'price': 0.0, 'caskmessageid': 'd550910d-5c99-41ca-947a-cd50381c53c0'}],
+        'operationQualifiedName': 'vyne.casks.OrderCaskService@@findAll',
+        'responseTypeDisplayName': 'Order[]'
+      }, 'inputs': [], 'dataSourceName': 'Operation result'
+    },
+    'typeName': 'OrderQuantity'
+  }, {
+    'value': 0.0,
+    'source': {
+      'remoteCall': '5c05cc6f-1955-4733-a684-c57e2b52a284',
+      'inputs': [],
+      'dataSourceName': 'Operation result'
+    },
+    'typeName': 'OrderPrice'
+  }],
+  'errorMessage': '/ by zero',
+  'dataSourceName': 'Failed evaluated expression'
+};

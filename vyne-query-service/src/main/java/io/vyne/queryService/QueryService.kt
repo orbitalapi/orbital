@@ -19,7 +19,19 @@ import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
 import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
+import io.vyne.query.Fact
+import io.vyne.query.HistoryQueryResponse
+import io.vyne.query.ProfilerOperation
+import io.vyne.query.Query
+import io.vyne.query.QueryMode
+import io.vyne.query.QueryResponse
+import io.vyne.query.QueryResult
+import io.vyne.query.ResultMode
+import io.vyne.query.SearchFailedException
 import io.vyne.queryService.csv.toCsv
+import io.vyne.queryService.security.VyneUser
+import io.vyne.queryService.security.facts
+import io.vyne.queryService.security.toVyneUser
 import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
@@ -32,6 +44,13 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
@@ -110,11 +129,17 @@ class QueryService(
    @PostMapping("/api/vyneql/async", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
    fun submitVyneQlQueryAsync(@RequestBody query: VyneQLQueryString,
                               @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
-                              @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String
+                              @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+                              auth: Authentication? = null
    ): ResponseEntity<StreamingResponseBody> {
       log().info("VyneQL query => $query")
+      val user = auth?.toVyneUser()
+
       val vyne = vyneProvider.createVyne()
       val futureQuery: ExecutableQuery = try {
+//          val body = StreamingResponseBody { outputStream ->
+//         vyneQLQuery(query, resultMode, contentType, outputStream, user)
+//      }
          vyne.queryAsync(query)
       } catch (e: CompilationException) {
          throw e
@@ -163,10 +188,12 @@ class QueryService(
    @PostMapping("/api/vyneql", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
    fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString,
                          @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
-                         @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String
+                         @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+                         auth: Authentication? = null
    ): ResponseEntity<StreamingResponseBody> {
+      val user = auth?.toVyneUser()
       val body = StreamingResponseBody { outputStream ->
-         vyneQLQuery(query, resultMode, contentType, outputStream)
+         vyneQLQuery(query, resultMode, contentType, outputStream, user)
       }
       val responseContentType = when (contentType) {
          TEXT_CSV -> TEXT_CSV_UTF_8
@@ -185,10 +212,15 @@ class QueryService(
       return serialise(response, contentType, outputStream, resultMode)
    }
 
-   private fun vyneQLQuery(query: VyneQLQueryString, resultMode: ResultMode, contentType: String, outputStream: OutputStream): MimeTypeString {
+   private fun vyneQLQuery(query: VyneQLQueryString,
+                           resultMode: ResultMode,
+                           contentType: String,
+                           outputStream: OutputStream,
+                           vyneUser: VyneUser? = null
+   ): MimeTypeString {
       log().info("VyneQL query => $query")
       return timed("QueryService.submitVyneQlQuery") {
-         val vyne = vyneProvider.createVyne()
+         val vyne = vyneProvider.createVyne(vyneUser.facts())
          val response = try {
             vyne.query(query)
          } catch (e: CompilationException) {

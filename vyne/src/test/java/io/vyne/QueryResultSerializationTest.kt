@@ -18,6 +18,7 @@ class QueryResultSerializationTest {
 }
    """.trimIndent()
 
+
    @Test
    fun given_queryResultWithObjectResponse_then_itIsSerializedAsTypeNamedInstance() {
       val (vyne, _) = testVyne(taxiDef)

@@ -1,5 +1,7 @@
 package io.vyne.query
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo
+import com.fasterxml.jackson.annotation.ObjectIdGenerators
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.schemas.OperationNames
@@ -7,6 +9,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.QualifiedNameAsStringSerializer
 
+@JsonIdentityInfo(generator = ObjectIdGenerators.UUIDGenerator::class)
 data class RemoteCall(
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
@@ -25,5 +28,7 @@ data class RemoteCall(
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
    val operationQualifiedName: QualifiedName = OperationNames.qualifiedName(service.fullyQualifiedName, operation)
+
+   val responseTypeDisplayName:String = responseTypeName.longDisplayName
 }
 

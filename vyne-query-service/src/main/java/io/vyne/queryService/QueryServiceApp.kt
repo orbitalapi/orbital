@@ -148,10 +148,6 @@ class QueryServiceApp {
    }
 }
 
-object AuthHeaders {
-   val AUTH_HEADER_NAME = "Authorization"
-}
-
 @ConfigurationProperties(prefix = "vyne")
 class QueryServerConfig {
    var newSchemaSubmissionEnabled: Boolean = false

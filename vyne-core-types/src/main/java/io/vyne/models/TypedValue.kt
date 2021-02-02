@@ -3,7 +3,6 @@
 package io.vyne.models
 
 import com.fasterxml.jackson.datatype.jsr310.DecimalUtils
-import com.fasterxml.jackson.datatype.jsr310.deser.InstantDeserializer.FromDecimalArguments
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
@@ -22,7 +21,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
-import java.util.Locale
+import java.util.*
 import java.util.function.BiFunction
 
 interface ConversionService {
@@ -69,6 +68,20 @@ object VyneDefaultConversionService : ConversionService {
          DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
             Instant.ofEpochSecond(s, ns.toLong())
          })
+      }
+      service.addConverter(java.lang.Double::class.java, LocalDateTime::class.java) { instantAsSecondsAndNanoSeconds ->
+         val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
+         val extractedInstant = DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
+            Instant.ofEpochSecond(s, ns.toLong())
+         })
+         extractedInstant.atZone(ZoneId.of("UTC")).toLocalDateTime()
+      }
+      service.addConverter(java.lang.Double::class.java, LocalDate::class.java) { instantAsSecondsAndNanoSeconds ->
+         val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
+         val extractedInstant = DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
+            Instant.ofEpochSecond(s, ns.toLong())
+         })
+         extractedInstant.atZone(ZoneId.of("UTC")).toLocalDate()
       }
       service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName }
       service
@@ -237,3 +250,5 @@ data class TypedValue private constructor(override val type: Type, override val 
 }
 
 class DataParsingException(message: String, exception: Exception) : RuntimeException(message)
+
+

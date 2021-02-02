@@ -1,9 +1,5 @@
-<mat-toolbar color="primary" style="z-index: 999">
-  <span>Query wizard</span>
-  <span class="toolbar-spacer"></span>
-  <app-search-bar-container></app-search-bar-container>
-</mat-toolbar>
-
+<app-header-bar title="Query wizard">
+</app-header-bar>
 <mat-sidenav-container [hasBackdrop]="true">
   <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">
     <div class="drawer-content">

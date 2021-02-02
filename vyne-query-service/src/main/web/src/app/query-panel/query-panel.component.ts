@@ -22,7 +22,9 @@ export class QueryPanelComponent extends BaseQueryResultDisplayComponent {
   constructor(private router: Router, queryService: QueryService, typeService: TypesService) {
     super(queryService, typeService);
     // https://angular.io/api/router/NavigationExtras#state
-    const navigationState = this.router.getCurrentNavigation().extras.state;
+    const navigationState = this.router.getCurrentNavigation() && this.router.getCurrentNavigation().extras
+      ? this.router.getCurrentNavigation().extras.state
+      : null;
     this.routeQuery = navigationState ? navigationState.query : undefined;
     this.selectedIndex = this.routeQuery ? (isVyneQlQueryHistoryRecord(this.routeQuery) ? 1 : 0) : 0;
   }

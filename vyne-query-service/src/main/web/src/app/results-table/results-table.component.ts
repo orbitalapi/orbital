@@ -1,19 +1,27 @@
-import {Component, EventEmitter, Input, OnDestroy, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {
   InstanceLike,
-  InstanceLikeOrCollection, isTypedInstance, isTypedNull,
-  isTypeNamedInstance, isTypeNamedNull,
+  InstanceLikeOrCollection,
+  isTypedInstance,
+  isTypedNull,
+  isTypeNamedInstance,
+  isTypeNamedNull,
   Type,
   UnknownType,
   UntypedInstance
 } from '../services/schema';
 import {BaseTypedInstanceViewer} from '../object-view/BaseTypedInstanceViewer';
-import {CellClickedEvent, GridReadyEvent, ValueGetterParams} from 'ag-grid-community';
+import {
+  CellClickedEvent,
+  FirstDataRenderedEvent,
+  GridReadyEvent,
+  ICellRendererFunc,
+  ValueGetterParams
+} from 'ag-grid-community';
 import {TypeInfoHeaderComponent} from './type-info-header.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isNullOrUndefined} from 'util';
-import {SchemaNotificationService} from '../services/schema-notification.service';
-import {Subscription} from 'rxjs';
+import {CaskService} from '../services/cask.service';
 
 @Component({
   selector: 'app-results-table',
@@ -21,9 +29,11 @@ import {Subscription} from 'rxjs';
     <ag-grid-angular
       class="ag-theme-alpine"
       headerHeight="65"
+      [enableCellTextSelection]="true"
       [rowData]="rowData"
       [columnDefs]="columnDefs"
       (gridReady)="onGridReady($event)"
+      (firstDataRendered)="onFirstDataRendered($event)"
       (cellClicked)="onCellClicked($event)"
     >
     </ag-grid-angular>
@@ -31,6 +41,10 @@ import {Subscription} from 'rxjs';
   styleUrls: ['./results-table.component.scss']
 })
 export class ResultsTableComponent extends BaseTypedInstanceViewer {
+
+  constructor(private service: CaskService) {
+    super();
+  }
 
   @Output()
   instanceClicked = new EventEmitter<InstanceSelectedEvent>();
@@ -111,25 +125,50 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       }];
     } else {
       const attributeNames = this.getAttributes(this.type);
-      this.columnDefs = attributeNames.map((fieldName, index) => {
+      const caskMessageIdFieldName = 'caskMessageId';
+      const columnDefinitions = attributeNames.map((fieldName, index) => {
         const lastColumn = index === attributeNames.length - 1;
-
-        return {
-          resizable: true,
-          headerName: fieldName,
-          field: fieldName,
-          flex: (lastColumn) ? 1 : null,
-          headerComponentFramework: TypeInfoHeaderComponent,
-          headerComponentParams: {
-            fieldName: fieldName,
-            typeName: this.getTypeForAttribute(fieldName).name
-          },
-          valueGetter: (params: ValueGetterParams) => {
-            return this.unwrap(params.data, fieldName);
-          }
-        };
+        return fieldName !== caskMessageIdFieldName ? {
+            resizable: true,
+            headerName: fieldName,
+            field: fieldName,
+            // flex: (lastColumn) ? 1 : null,
+            headerComponentFramework: TypeInfoHeaderComponent,
+            headerComponentParams: {
+              fieldName: fieldName,
+              typeName: this.getTypeForAttribute(fieldName).name
+            },
+            valueGetter: (params: ValueGetterParams) => {
+              return this.unwrap(params.data, fieldName);
+            }
+          } :
+          {
+            resizable: true,
+            headerName: fieldName,
+            field: fieldName,
+            // flex: (lastColumn) ? 1 : null,
+            headerComponentFramework: TypeInfoHeaderComponent,
+            headerComponentParams: {
+              fieldName: fieldName,
+              typeName: this.getTypeForAttribute(fieldName).name
+            },
+            valueGetter: (params: ValueGetterParams) => {
+              return this.unwrap(params.data, fieldName);
+            },
+            cellRenderer: this.downloadLinkRender()
+          };
       });
+      this.columnDefs = columnDefinitions;
     }
+  }
+
+  private downloadLinkRender(): ICellRendererFunc {
+    const urlFunc = this.service.downloadIngestedMessageUrl;
+    return function (params) {
+      const keyData = params && params.data && params.data.caskMessageId ? params.data.caskMessageId : '';
+      const newLink = `<a href="${urlFunc(keyData)}" target="_blank">${keyData}</a>`;
+      return newLink;
+    };
   }
 
   private getAttributes(type: Type): string[] {
@@ -178,6 +217,11 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   }
 
   onGridReady(event: GridReadyEvent) {
-    // event.api.setGridAutoHeight(true);
+   // event.api.sizeColumnsToFit();
+  }
+
+  onFirstDataRendered(params: FirstDataRenderedEvent) {
+    const colIds = params.columnApi.getAllColumns().map(c => c.getId());
+    params.columnApi.autoSizeColumns(colIds);
   }
 }

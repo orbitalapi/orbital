@@ -9,6 +9,7 @@ import io.vyne.cask.config.CaskQueryOptions
 import io.vyne.cask.config.FindOneMatchesManyBehaviour
 import io.vyne.cask.config.QueryMatchesNoneBehaviour
 import io.vyne.cask.ddl.PostgresDdlGenerator
+import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.VIEW_PREFIX
 import io.vyne.cask.ingest.CaskMessage
@@ -274,10 +275,10 @@ class CaskDAO(
       fun findBetweenQueryGtLte(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ? AND "$columnName" <= ?"""
       fun findBetweenQueryGteLte(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" <= ?"""
 
-      fun findBetweenCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
-      fun findBetweenGtLtCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
-      fun findBetweenGtLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
-      fun findBetweenGteLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+      fun findBetweenCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
+      fun findBetweenGtLtCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
+      fun findBetweenGtLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+      fun findBetweenGteLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
 
       fun findAfterQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ?"""
       fun findBeforeQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" < ?"""
