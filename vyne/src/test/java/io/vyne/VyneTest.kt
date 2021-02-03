@@ -99,6 +99,127 @@ fun testVyne(vararg schemas: String): Pair<Vyne, StubService> {
 fun testVyne(schema: String) = testVyne(TaxiSchema.from(schema))
 
 class VyneTest {
+
+   @Test
+   fun `multiple path discovery`() {
+      val (vyne, stubs) = testVyne("""
+         type AssetClass inherits String
+         type Puid inherits Int
+         type InstrumentId inherits String
+         type CfiCode inherits String
+         type Isin inherits String
+         model Output {
+            assetClass: AssetClass
+            @FirstNotEmpty puid: Puid
+         }
+
+         model Input {
+            instrumentId: InstrumentId
+         }
+
+         model Instrument {
+            instrumentId: InstrumentId
+            cifCode: CfiCode
+            isin: Isin
+         }
+
+         model CfiToPuid {
+            cifCode: CfiCode
+            puid: Puid
+         }
+
+         model Product {
+            puid: Puid
+            assetClass: AssetClass
+         }
+
+         model AnnaResponse {
+            isin : Isin
+            derClassificationType : CfiCode
+         }
+
+         service InstrumentService {
+            @StubOperation("findByInstrumentId")
+            operation findByInstrumentId(InstrumentId):Instrument
+         }
+
+         service CfiToPuidCaskService {
+            @StubOperation("findByCfiCode")
+            operation findByCfiCode(CfiCode):CfiToPuid
+         }
+
+         service ProductService {
+            @StubOperation("findByPuid")
+            operation findByPuid(Puid):Product
+         }
+
+         service AnnaService {
+            @StubOperation("findByIsin")
+            operation findByIsin(Isin):AnnaResponse
+         }
+
+         service InputService {
+           @StubOperation("findAll")
+            operation findAll(): Input[]
+         }
+      """.trimIndent())
+
+      val inputJson = """[{"instrumentId" : "InstrumentId"}]""".trimMargin()
+      val inputs = TypedInstance.from(vyne.type("Input[]"), inputJson, vyne.schema, source = Provided)
+      val instrument = """{
+         |"instrumentId": "InstrumentId",
+         |"cifCode": "XXXX",
+         |"isin": "Isin"
+         |}
+      """.trimMargin()
+
+      stubs.addResponse("findAll", inputs)
+
+      stubs.addResponse(
+         "findByInstrumentId",
+         TypedInstance.from(vyne.type("Instrument"), instrument, vyne.schema, source = Provided)
+      )
+
+      stubs.addResponse("findByCfiCode") { operation, parameters ->
+         val cfiCode = parameters[0].second
+         if (cfiCode.value != "XXXX") {
+            val response = """{
+               |"puid" : 519,
+               |"cfiCode" : "$cfiCode"
+               |}
+            """.trimMargin()
+            TypedInstance.from(vyne.type("Product"), response, vyne.schema, source = Provided)
+         } else {
+           throw IllegalArgumentException()
+         }
+      }
+
+      stubs.addResponse(
+         "findByPuid",
+         TypedInstance.from(vyne.type("Product"), """{
+            |"puid": 519,
+            |"assetClass": "assetClass"
+            |}""".trimMargin(), vyne.schema, source = Provided)
+      )
+
+      stubs.addResponse(
+         "findByIsin",
+         TypedInstance.from(vyne.type("Product"), """{
+            |"isin": "Isin",
+            |"derClassificationType": "SCABC"
+            |}""".trimMargin(), vyne.schema, source = Provided)
+      )
+
+      val queryResult = vyne.query("""
+         findAll { Input[] }  as Output[]
+      """.trimIndent())
+      queryResult.isFullyResolved.should.be.`true`
+      val results = queryResult["lang.taxi.Array<Output>"] as TypedCollection
+      val firstResult = results[0] as TypedObject
+      firstResult["puid"].value.should.not.be.`null`
+      firstResult["assetClass"].value.should.not.be.`null`
+   }
+
    @Test
    fun `when a provided object has a typed null for a value, it shouldnt be used as an input`() {
       val (vyne, stubs) = testVyne(
