@@ -23,6 +23,7 @@ class PathExclusionCalculator {
    ): Set<EvaluatableEdge> {
       // These are a bunch of specific use cases that we've found that are useful to exclude
       val spec = invocationConstraints.typedInstanceValidPredicate
+      return emptySet()
       return listOfNotNull(
          operationThrewError(evaluatedPath, spec)
 

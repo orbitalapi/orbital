@@ -10,6 +10,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.SearchResult.Companion.noPath
 import io.vyne.query.SearchResult.Companion.noResult
 import io.vyne.query.graph.Element
+import io.vyne.query.graph.ElementType
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.PathEvaluation
@@ -48,6 +49,10 @@ class GraphSearcher(
       ABORT
    }
 
+   val searchDescription: String by lazy {
+      "Search ${this.startFact.label()} to ${this.targetFact.label()}"
+   }
+
    private fun prevalidatePath(
       proposedPath: WeightedNode<Relationship, Element, Double>,
       excludedEdges: MutableList<EvaluatableEdge>
@@ -72,7 +77,9 @@ class GraphSearcher(
       val excludedEdges = mutableListOf<EvaluatableEdge>()
       val evaluatedPaths = EvaluatedPathSet()
 
+      var searchCount = 0
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
+         log().info("$searchDescription: Attempting to build search path $searchCount")
          val facts = if (excludedInstance.isEmpty()) {
             knownFacts
          } else {
@@ -85,7 +92,7 @@ class GraphSearcher(
          return when {
             proposedPath == null -> null
             evaluatedPaths.containsPath(proposedPath) -> {
-               log().debug("The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again.")
+               log().info("The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again.")
                null
             }
             else -> {
@@ -98,16 +105,18 @@ class GraphSearcher(
          }
       }
 
-      var searchCount = 0
       var nextPath = buildNextPath()
       while (nextPath != null) {
-         evaluatedPaths.addPath(nextPath)
+         evaluatedPaths.addProposedPath(nextPath)
+         // COMMENT THIS OUT:
+         log().info("$searchDescription - attempting path ${nextPath.pathHashExcludingWeights()}: \n${nextPath.pathDescription()}")
          searchCount++
          if (searchCount > MAX_SEARCH_COUNT) {
             log().error("Search iterations exceeded max count. Stopping, lest we search forever in vein")
             return noResult(nextPath)
          }
          val evaluatedPath = evaluator(nextPath)
+         evaluatedPaths.addEvaluatedPath(evaluatedPath)
          val (pathEvaluatedSuccessfully, resultValue) = wasSuccessful(evaluatedPath)
          val resultSatisfiesConstraints =
             pathEvaluatedSuccessfully && invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)
@@ -120,6 +129,7 @@ class GraphSearcher(
       }
       // There were no search paths to evaluate.  Just exit
       //log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
+      log().info("$searchDescription ended - no more paths to evaluate")
       return noPath()
    }
 
@@ -236,7 +246,9 @@ class GraphSearcher(
 
 
       val executionPath = logTimeTo(graphSearchTimes) {
-         Hipster.createAStar(problem).search(targetFact).goalNode
+         Hipster
+            .createDijkstra(problem)
+            .search(targetFact).goalNode
       }
 
 
@@ -276,12 +288,14 @@ data class SearchResult(val typedInstance: TypedInstance?, val path: WeightedNod
  * the same path.
  */
 class EvaluatedPathSet {
-   private val paths: MutableMap<Int, WeightedNode<Relationship, Element, Double>> = mutableMapOf()
+   private val proposedPaths: MutableMap<Int, WeightedNode<Relationship, Element, Double>> = mutableMapOf()
    private val transitionCount: MutableMap<HashableTransition, Int> = mutableMapOf()
+   private val evaluatedPaths: MutableList<List<PathEvaluation>> = mutableListOf()
+   private val evaluatedOperations: MutableList<EvaluatedEdge> = mutableListOf()
 
-   fun addPath(path: WeightedNode<Relationship, Element, Double>): Int {
+   fun addProposedPath(path: WeightedNode<Relationship, Element, Double>): Int {
       val hash = path.pathHashExcludingWeights()
-      paths[hash] = path
+      proposedPaths[hash] = path
 
       updateTransitionCount(path)
       return hash
@@ -303,7 +317,7 @@ class EvaluatedPathSet {
 
    fun containsPath(path: WeightedNode<Relationship, Element, Double>): Boolean {
       val hash = path.pathHashExcludingWeights()
-      return paths.containsKey(hash)
+      return proposedPaths.containsKey(hash)
    }
 
    /**
@@ -313,10 +327,56 @@ class EvaluatedPathSet {
     * In future, we can tweak this weighting based on action and the outcome of the evaluation
     */
    fun visitedCountAsCost(fromState: Element, action: Relationship, toState: Element): Double {
-      val transition = HashableTransition(fromState, action, toState)
-      val travsersedCount = transitionCount.getOrDefault(transition, 0)
-      // Add one, as this visit, if performed, will be previous number of visits + 1.
-      return (travsersedCount + 1) * 1.0
+      val TRAVERSAL_PENALTY = 100
+      // We only actually increment the cost of service calls. Everything else stays the same.
+      return if (fromState.elementType == ElementType.OPERATION && action == Relationship.PROVIDES) {
+
+         // If the evaluatedOperations isn't empty, this isn't our first try to build a path.
+         //
+         val cost = if (this.evaluatedOperations.isNotEmpty()) {
+            val previousAttempts =
+               this.evaluatedOperations.filter { it.edge.vertex1 == fromState && it.edge.vertex2 == toState }
+            val costOfServiceAttempt = if (previousAttempts.isNotEmpty()) {
+               if (previousAttempts.all { it.wasSuccessful }) {
+                  100.0
+               } else {
+                  100.0
+               }
+//               previousAttempts.sumBy {
+//                  // Assign a 'cost' that makes previously attempted approaches 'more expensive'.
+//                  // The cost is higher if we've tried something before and it wasn't successful
+//                  if (it.wasSuccessful) 5 else 10
+//               }.toDouble()
+            } else {
+               // This is an approach we haven't tried before.  Assign a negative cost, so that
+               // this approach becomes more attractive.
+               -50.0
+            }
+            costOfServiceAttempt
+         } else {
+            // This is the first attempt to build a path.
+            // Right now, all services are equal
+            100.0
+         }
+         return cost
+//         val transition = HashableTransition(fromState, action, toState)
+//         val travsersedCount = transitionCount.getOrDefault(transition, 0)
+//
+//         // We penalize previous visits as TRAVERSAL_PENALTY
+//         val traversalCost = (travsersedCount * TRAVERSAL_PENALTY).toDouble()
+//            .coerceAtLeast(1.0)
+//         traversalCost
+      } else {
+         50.0
+      }
+
+   }
+
+   fun addEvaluatedPath(evaluatedPath: List<PathEvaluation>) {
+      this.evaluatedPaths.add(evaluatedPath)
+      val operations = evaluatedPath.filterIsInstance<EvaluatedEdge>()
+         .filter { it.edge.vertex1.elementType == ElementType.OPERATION && it.edge.relationship == Relationship.PROVIDES }
+      this.evaluatedOperations.addAll(operations)
    }
 
    /**
@@ -335,4 +395,18 @@ fun WeightedNode<Relationship, Element, Double>.hashExcludingWeight(): Int {
 
 fun WeightedNode<Relationship, Element, Double>.pathHashExcludingWeights(): Int {
    return this.path().map { it.hashExcludingWeight() }.hashCode()
+}
+
+fun WeightedNode<Relationship, Element, Double>.pathDescription(): String {
+   return this.path()
+      .joinToString("\n") { it.nodeDescription() }
+}
+
+fun WeightedNode<Relationship, Element, Double>.nodeDescription(): String {
+   return if (this.previousNode() == null) {
+      "Start : ${this.state()}"
+   } else {
+      // "${edge.vertex1} -[${edge.edgeValue}]-> ${edge.vertex2}"
+      "${this.previousNode().state().label()} -[${this.action()}]-> ${this.state().label()} (cost: ${this.cost})"
+   }
 }

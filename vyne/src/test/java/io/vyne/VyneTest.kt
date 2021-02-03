@@ -109,7 +109,7 @@ class VyneTest {
          type CfiCode inherits String
          type Isin inherits String
          model Output {
-            assetClass: AssetClass
+            @FirstNotEmpty assetClass: AssetClass
             @FirstNotEmpty puid: Puid
          }
 
