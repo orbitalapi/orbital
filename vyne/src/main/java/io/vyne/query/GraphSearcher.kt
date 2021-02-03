@@ -119,7 +119,7 @@ class GraphSearcher(
          }
       }
       // There were no search paths to evaluate.  Just exit
-      log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
+      //log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
       return noPath()
    }
 
