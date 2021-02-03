@@ -4,6 +4,27 @@ import {BrowserModule} from '@angular/platform-browser';
 import {QueryHistoryModule} from './query-history.module';
 import {ResponseStatus, VyneQlQueryHistorySummary} from '../services/query.service';
 import {RouterTestingModule} from '@angular/router/testing';
+import {RunningQueryStatus} from '../services/active-queries-notification-service';
+
+const activeQueries = new Map<string, RunningQueryStatus>();
+activeQueries.set('123', {
+  queryId: '123',
+  vyneQlQuery: 'findAll { foo.bar.baz }',
+  completedProjections: 3,
+  estimatedProjectionCount: 8,
+  startTime: new Date(),
+  running: true,
+  responseTypeName: 'com.foo.Bar'
+});
+activeQueries.set('456', {
+  queryId: '456',
+  vyneQlQuery: 'findAll { foo.bar.baz }',
+  completedProjections: 0,
+  startTime: new Date(),
+  estimatedProjectionCount: null,
+  running: true,
+  responseTypeName: 'com.foo.Bar'
+});
 
 storiesOf('Query History', module)
   .addDecorator(
@@ -14,9 +35,26 @@ storiesOf('Query History', module)
   ).add('Query cards', () => {
   return {
     template: `<div style="padding: 40px; width: 100%;">
-<app-query-list [historyRecords]="historyRecords"></app-query-list>
+<app-query-list [historyRecords]="historyRecords" [activeQueries]="activeQueries"></app-query-list>
 </div>`,
     props: {
+      activeQueries: [
+        {
+          queryId: '123',
+          vyneQlQuery: 'findAll { foo.bar.baz }',
+          completedProjections: 3,
+          estimatedProjectionCount: 8,
+          startTime: new Date(),
+          running: true
+        },
+        {
+          queryId: '456',
+          vyneQlQuery: 'findAll { foo.bar.baz }',
+          completedProjections: 0,
+          startTime: new Date(),
+          running: true
+        }
+      ] as RunningQueryStatus[],
       historyRecords: [
         {
           durationMs: 20300,

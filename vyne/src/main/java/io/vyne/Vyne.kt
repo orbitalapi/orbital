@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.annotations.VisibleForTesting
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.addKeyValuePair
@@ -16,6 +17,8 @@ import io.vyne.query.TypeNameQueryExpression
 import io.vyne.query.graph.Algorithms
 import io.vyne.schemas.CompositeSchema
 import io.vyne.schemas.Policy
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.QualifiedNameAsStringSerializer
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
@@ -27,6 +30,7 @@ import io.vyne.vyneql.VyneQLQueryString
 import io.vyne.vyneql.VyneQlCompiler
 import io.vyne.vyneql.VyneQlQuery
 import reactor.core.publisher.Flux
+import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -50,6 +54,17 @@ interface ModelContainer : SchemaContainer {
    fun addModel(model: TypedInstance, factSetId: FactSetId = FactSets.DEFAULT): ModelContainer
 }
 
+data class RunningQueryStatus(
+   val queryId: String,
+   val vyneQlQuery: VyneQLQueryString,
+   @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
+   val responseTypeName: QualifiedName,
+   val completedProjections: Int,
+   val estimatedProjectionCount: Int?,
+   val startTime: Instant,
+   val running: Boolean
+)
+
 data class ExecutableQuery(
    @get:JsonIgnore
    val queryContext: QueryContext,
@@ -63,11 +78,56 @@ data class ExecutableQuery(
       return queryContext.resultStream
    }
 
+   /**
+    * Returns a flux that emits an updated query status each time
+    * the result stream emits a new message
+    */
+   fun currentStatusStream(): Flux<RunningQueryStatus> {
+      return Flux.from(queryContext.resultStream)
+         .map { currentStatus() }
+   }
+
+   fun currentStatus(): RunningQueryStatus {
+      val responseTypeName = when {
+         parsedQuery.projectedType == null -> parsedQuery.typesToFind[0].type
+         parsedQuery.projectedType?.concreteTypeName != null -> parsedQuery.projectedType!!.concreteTypeName!!
+         parsedQuery.projectedType?.anonymousTypeDefinition != null -> {
+            TODO("Serhat, what do I put here?  How do I find the name of the anonymous type?")
+         }
+         else -> error("Could not find response type name from VyneQl query")
+      }
+      return RunningQueryStatus(
+         this.queryId,
+         this.query,
+         responseTypeName.toVyneQualifiedName(),
+         this.completedProjections,
+         this.estimatedProjectionCount,
+         this.startTime,
+         running = (!result.isDone && !result.isCancelled && !result.isCompletedExceptionally)
+      )
+   }
+
+   fun stop(): Boolean {
+      // This doesn't actually have any effect on the currently executing query - it just
+      // marks the result as cancelled.
+      // See https://stackoverflow.com/a/23329340/59015
+//      this.result.cancel(true)
+      this.queryContext.requestCancel()
+      return this.queryContext.isCancelRequested
+
+   }
+
    val queryId: String = queryContext.queryContextId
    val startTime = queryContext.executionStartTime
 
-   val estimatedProjectionCount = queryContext.projectionSize
-   val completedProjections = queryContext.completedProjections
+   val estimatedProjectionCount: Int?
+      get() {
+         return queryContext.projectionSize
+      }
+   val completedProjections: Int
+      get() {
+         return queryContext.completedProjections
+      }
 }
 
 class Vyne(
@@ -89,7 +149,8 @@ class Vyne(
 
    fun queryEngine(
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
-      additionalFacts: Set<TypedInstance> = emptySet()): StatefulQueryEngine {
+      additionalFacts: Set<TypedInstance> = emptySet()
+   ): StatefulQueryEngine {
       val factSetForQueryEngine: FactSetMap = FactSetMap.create()
       factSetForQueryEngine.putAll(this.factSets.filterFactSets(factSetIds))
       factSetForQueryEngine.putAll(FactSets.DEFAULT, additionalFacts)
@@ -154,7 +215,8 @@ class Vyne(
 
    fun query(
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
-      additionalFacts: Set<TypedInstance> = emptySet()): QueryContext {
+      additionalFacts: Set<TypedInstance> = emptySet()
+   ): QueryContext {
       // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
       // what is asked for, but only providing the desired factSets to the queryContext.
       // This is because the context only evalutates the factSets that are provided,
@@ -173,7 +235,10 @@ class Vyne(
 
 
    //   fun queryContext(): QueryContext = QueryContext(schema, facts, this)
-   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) : this(emptyList(), queryEngineFactory)
+   constructor(queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default()) : this(
+      emptyList(),
+      queryEngineFactory
+   )
 
    override fun addModel(model: TypedInstance, factSetId: FactSetId): Vyne {
       log().debug("Added model instance to factSet $factSetId: ${model.type.fullyQualifiedName}")

@@ -21,6 +21,16 @@
   font-size: 0.9rem;
 }
 
+.progress {
+  margin-left: 2rem;
+  margin-right: 3rem;
+  display: flex;
+  align-items: center;
+  mat-progress-bar {
+    width: 250px;
+    margin-right: 1rem;
+  }
+}
 .running-timer {
   color: #e3b963;
   font-size: 0.9rem;

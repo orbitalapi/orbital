@@ -13,6 +13,7 @@ import {ExportFileService} from '../services/export.file.service';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
 import {TypesService} from '../services/types.service';
 import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
+import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
 
 
 @Component({
@@ -26,10 +27,15 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
 
   constructor(queryService: QueryService,
               typeService: TypesService,
+              private activeQueryNotificationService: ActiveQueriesNotificationService,
               private router: Router,
               private fileService: ExportFileService) {
     super(queryService, typeService);
+    this.activeQueryNotificationService.createActiveQueryNotificationSubscription()
+      .subscribe(next => this.handleActiveQueryUpdate(next));
   }
+
+  activeQueries: Map<string, RunningQueryStatus> = new Map<string, RunningQueryStatus>();
 
   profileLoading = false;
   profilerOperation: ProfilerOperation;
@@ -120,5 +126,20 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
     const queryResponseId = (<QueryResult>this.activeRecord.response).queryResponseId;
     this.fileService.downloadQueryHistory(queryResponseId, event.format);
   }
-}
 
+  private handleActiveQueryUpdate(next: RunningQueryStatus) {
+    if (next.running) {
+      this.activeQueries.set(next.queryId, next);
+    } else {
+      this.activeQueries.delete(next.queryId);
+    }
+
+  }
+
+  cancelActiveQuery($event: RunningQueryStatus) {
+    this.queryService.cancelQuery($event.queryId)
+      .subscribe(() => {
+        console.log(`Query ${$event.queryId} cancelled`);
+      });
+  }
+}

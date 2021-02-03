@@ -30,6 +30,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Stream
 import kotlin.streams.toList
@@ -233,6 +234,23 @@ data class QueryContext(
    private var inMemoryStream: List<TypedInstance>? = null
 
    val executionStartTime: Instant = Instant.now()
+
+   private val cancelled = AtomicBoolean(false)
+   /**
+    * Requests that the currently running query cancel.
+    * Because of limitations of CompletableFuture and cancel(), this will not stop immediately,
+    * but on the next cancel check - which varies based on how the query is executing
+    */
+   fun requestCancel() {
+      this.cancelled.set(true)
+      log().info("Query context ${this.queryContextId} tagged as cancelled.")
+   }
+
+   val isCancelRequested:Boolean
+   get() {
+      return cancelled.get()
+   }
+
 
    /**
     * An approximate size of the number of projections expected

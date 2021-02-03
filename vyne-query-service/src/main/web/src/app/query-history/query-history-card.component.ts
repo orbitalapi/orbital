@@ -18,9 +18,7 @@ import {Router} from '@angular/router';
                               [factTypeNames]="getFactTypeNames(historyRecord)"></app-restful-record>
         </div>
         <div *ngSwitchCase="'VyneQlQuery'">
-          <app-vyneql-record [historyRecord]="historyRecord">
-
-          </app-vyneql-record>
+          <app-vyneql-record [query]="vyneQl(historyRecord).query"></app-vyneql-record>
         </div>
 
       </div>
@@ -41,7 +39,7 @@ import {Router} from '@angular/router';
 
       <div class="timestamp-row">
         <span>{{historyRecord.timestamp | amTimeAgo}}</span>
-        <img src="assets/img/repeat.svg" class="repeatIcon" (click)="queryAgain()" *ngIf="recordType === 'VyneQlQuery'">
+        <mat-icon class="clock-icon" (click)="queryAgain()" *ngIf="recordType === 'VyneQlQuery'">replay</mat-icon>
       </div>
     </div>
   `,
@@ -51,6 +49,11 @@ export class QueryHistoryCardComponent {
   duration: string;
   private _historyRecord: QueryHistorySummary;
   recordType: QueryType;
+
+  // casting functions to get around template issues
+  vyneQl(record: QueryHistorySummary): VyneQlQueryHistorySummary {
+    return record as VyneQlQueryHistorySummary;
+  }
 
   @Input()
   get historyRecord(): QueryHistorySummary {

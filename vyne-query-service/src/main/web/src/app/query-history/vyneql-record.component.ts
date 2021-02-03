@@ -7,7 +7,7 @@ import {Timespan} from '../query-panel/query-editor/counter-timer.component';
   selector: 'app-vyneql-record',
   template: `
     <div class="history-item">
-      <code>{{ historyRecord.query }}</code>
+      <code>{{ query }}</code>
     </div>
   `,
   styleUrls: ['./vyneql-record.component.scss']
@@ -15,5 +15,5 @@ import {Timespan} from '../query-panel/query-editor/counter-timer.component';
 export class VyneqlRecordComponent {
 
   @Input()
-  historyRecord: VyneQlQueryHistorySummary;
+  query: string;
 }

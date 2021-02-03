@@ -18,7 +18,7 @@ class ExecutingQueryRepositoryTest {
 
    @Before
    fun setup() {
-      this.repository = ExecutingQueryRepository()
+      this.repository = ExecutingQueryRepository(InMemoryQueryHistory())
    }
 
    @Test

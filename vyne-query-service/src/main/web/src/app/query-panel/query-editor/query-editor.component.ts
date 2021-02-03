@@ -24,6 +24,12 @@ import {
 import {ExportFileService} from '../../services/export.file.service';
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
+import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
+import {findType, InstanceLike, Schema, Type} from '../../services/schema';
+import {isNullOrUndefined} from 'util';
+import {Subscription} from 'rxjs';
+import {TypesService} from '../../services/types.service';
+import {Observable, Subject} from 'rxjs/index';
 
 declare const monaco: any; // monaco
 
@@ -43,6 +49,16 @@ export class QueryEditorComponent implements OnInit {
   query: string;
   lastQueryResult: QueryResult | QueryFailure;
 
+  partialResultType: Type | null = null;
+  queryStatus: RunningQueryStatus | null = null;
+  partialResults$: Subject<InstanceLike>;
+  queryStatusSubscription: Subscription | null = null;
+  queryResultsSubscription: Subscription | null = null;
+
+  get showPartialResults(): boolean {
+    return (this.loading && !isNullOrUndefined(this.queryStatus));
+  }
+
   get lastQueryResultAsSuccess(): QueryResult | null {
     if (isQueryResult(this.lastQueryResult)) {
       return this.lastQueryResult;
@@ -55,6 +71,7 @@ export class QueryEditorComponent implements OnInit {
 
   loading = false;
 
+  schema: Schema;
   currentState: QueryState = 'Editing';
 
   @Output()
@@ -67,7 +84,11 @@ export class QueryEditorComponent implements OnInit {
 
   constructor(private monacoLoaderService: MonacoEditorLoaderService,
               private queryService: QueryService,
-              private fileService: ExportFileService) {
+              private fileService: ExportFileService,
+              private queryResultService: ActiveQueriesNotificationService,
+              private typeService: TypesService) {
+    this.typeService.getTypes()
+      .subscribe(schema => this.schema = schema);
     this.monacoLoaderService.isMonacoLoaded.pipe(
       filter(isLoaded => isLoaded),
       take(1),
@@ -125,29 +146,45 @@ export class QueryEditorComponent implements OnInit {
     }, 10);
   }
 
+  unsubscribeQueryResults() {
+    if (!isNullOrUndefined(this.queryResultsSubscription)) {
+      this.queryResultsSubscription.unsubscribe();
+    }
+    if (!isNullOrUndefined(this.queryStatusSubscription)) {
+      this.queryStatusSubscription.unsubscribe();
+    }
+  }
+
   submitQuery() {
     this.currentState = 'Running';
     this.lastQueryResult = null;
     this.loading = true;
     this.loadingChanged.emit(true);
 
-    this.queryService.submitVyneQlQuery(this.query, ResultMode.SIMPLE).subscribe(
-      result => {
-        this.loading = false;
-        this.lastQueryResult = result;
-        this.queryResultUpdated.emit(this.lastQueryResult);
-        this.loadingChanged.emit(false);
+    this.partialResults$ = new Subject();
+    this.queryStatus = null;
 
-        if (this.lastQueryResult.responseStatus === ResponseStatus.COMPLETED) {
-          this.currentState = 'Result';
-        } else if (this.lastQueryResult.responseStatus === ResponseStatus.INCOMPLETE) {
-          this.currentState = 'Result';
-        } else {
-          this.currentState = 'Error';
-          if (isQueryFailure(this.lastQueryResult)) {
-            this.lastErrorMessage = this.lastQueryResult.message;
-          }
-        }
+    this.unsubscribeQueryResults();
+
+    this.queryService.submitVyneQlQueryAsync(this.query).subscribe(
+      result => {
+        const unqiueConsumerId = new Date().getTime();
+        this.queryStatusSubscription = this.queryResultService.getQueryStatusStream(result.queryId)
+          .subscribe(next => {
+            this.queryStatus = next;
+            if (this.partialResultType === null) {
+              this.partialResultType = findType(this.schema, next.responseTypeName);
+            }
+
+            if (!this.queryStatus.running) {
+              this.handleQueryFinished(this.queryStatus);
+            }
+          });
+        this.queryResultsSubscription = this.queryResultService.getQueryResultStream(result.queryId, unqiueConsumerId)
+          .subscribe(resultValue => {
+            this.partialResults$.next(resultValue);
+          });
+
       },
       error => {
         this.loading = false;
@@ -187,4 +224,30 @@ export class QueryEditorComponent implements OnInit {
   }
 
 
+  private handleQueryFinished(queryStatus: RunningQueryStatus) {
+    this.queryService.getHistoryRecord(queryStatus.queryId)
+      .subscribe(historyRecord => {
+        this.lastQueryResult = historyRecord.response;
+        this.queryResultUpdated.emit(this.lastQueryResult);
+        this.loading = false;
+        this.loadingChanged.emit(false);
+        if (this.lastQueryResult.responseStatus === ResponseStatus.COMPLETED) {
+          this.currentState = 'Result';
+        } else if (this.lastQueryResult.responseStatus === ResponseStatus.INCOMPLETE) {
+          this.currentState = 'Result';
+        } else {
+          this.currentState = 'Error';
+          if (isQueryFailure(this.lastQueryResult)) {
+            this.lastErrorMessage = this.lastQueryResult.message;
+          }
+        }
+      });
+  }
+
+  cancelQuery() {
+    this.queryService.cancelQuery(this.queryStatus.queryId)
+      .subscribe(next => {
+
+      });
+  }
 }

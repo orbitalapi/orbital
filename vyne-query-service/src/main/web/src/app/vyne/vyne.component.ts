@@ -9,6 +9,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {SystemAlert} from '../system-alert/system-alert.component';
 import {TypesService} from '../services/types.service';
 import {VyneUser, UserInfoService} from '../services/user-info.service';
+import {ActiveQueriesNotificationService} from '../services/active-queries-notification-service';
 
 @Component({
   selector: 'vyne-app',
@@ -77,6 +78,7 @@ export class VyneComponent implements OnInit {
               private appInfoService: AppInfoService,
               private router: Router,
               private schemaNotificationService: SchemaNotificationService,
+              private activeQueryNotificationService: ActiveQueriesNotificationService,
               private typeService: TypesService,
               private snackbar: MatSnackBar) {
     appInfoService.getAppInfo()
@@ -95,6 +97,11 @@ export class VyneComponent implements OnInit {
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe(() => {
         document.querySelector('.mat-sidenav-content').scrollTop = 0;
+      });
+
+    this.activeQueryNotificationService.createActiveQueryNotificationSubscription()
+      .subscribe(update => {
+        console.log('Query update received:  ' + JSON.stringify(update));
       });
 
     this.schemaNotificationService.createSchemaNotificationsSubscription()

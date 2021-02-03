@@ -24,11 +24,21 @@ storiesOf('Query panel', module)
         <app-query-editor-bottom-bar currentState="Editing"></app-query-editor-bottom-bar>
         <app-query-editor-bottom-bar currentState="Running" [queryStarted]="queryStartDate"></app-query-editor-bottom-bar>
         <app-query-editor-bottom-bar currentState="Running" [queryStarted]="aMinuteAgo"></app-query-editor-bottom-bar>
+        <app-query-editor-bottom-bar currentState="Running" [runningQueryStatus]="runningQueryStatus" [queryStarted]="aMinuteAgo"></app-query-editor-bottom-bar>
         <app-query-editor-bottom-bar currentState="Error" error="A query failed to execute."></app-query-editor-bottom-bar>
     </div>`,
       props: {
         queryStartDate: new Date(),
-        aMinuteAgo: new Date(new Date().getTime() - (1000 * 60))
+        aMinuteAgo: new Date(new Date().getTime() - (1000 * 60)),
+        runningQueryStatus: {
+          queryId: '123',
+          vyneQlQuery: 'findAll { foo.bar.baz }',
+          completedProjections: 3,
+          estimatedProjectionCount: 8,
+          startTime: new Date(),
+          running: true,
+          responseTypeName: 'com.foo.Bar'
+        }
       }
     };
   });

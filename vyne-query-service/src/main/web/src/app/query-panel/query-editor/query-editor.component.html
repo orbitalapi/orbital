@@ -10,6 +10,8 @@
         (executeQuery)="submitQuery()"
         [currentState]="currentState"
         [error]="lastErrorMessage"
+        [runningQueryStatus]="queryStatus"
+        (cancelQuery)="cancelQuery()"
       >
       </app-query-editor-bottom-bar>
     </div>
@@ -17,6 +19,17 @@
   <as-split-area size="*">
     <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0" [queryResult]="lastQueryResultAsSuccess">
     </app-error-panel>
+    <div *ngIf="showPartialResults" class="partial-results-panel">
+      <div>This query is currently executing.  Partial results are shown below</div>
+      <app-results-table
+        [instances$]="partialResults$"
+        [type]="partialResultType"
+        [schema]="schema"
+        [selectable]="false"
+      >
+
+      </app-results-table>
+    </div>
     <app-tabbed-results-view *ngIf="lastQueryResult"
                              [result]="lastQueryResult"
                              (instanceSelected)="instanceSelected.emit($event)"

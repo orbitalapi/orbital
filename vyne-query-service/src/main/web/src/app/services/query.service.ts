@@ -13,6 +13,7 @@ import {
   TypeNamedInstance
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
+import {RunningQueryStatus} from './active-queries-notification-service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -25,9 +26,26 @@ export class QueryService {
     return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query);
   }
 
-  submitVyneQlQuery(query: String, resultMode: ResultMode = ResultMode.VERBOSE): Observable<QueryResult> {
+  submitVyneQlQueryAsync(query: string): Observable<RunningQueryStatus> {
+    const headers = new HttpHeaders().set('Content-Type', 'application/json');
+    return this.http.post<RunningQueryStatus>(`${environment.queryServiceUrl}/api/vyneql/async`, query, {headers});
+  }
+
+  submitVyneQlQuery(query: string, resultMode: ResultMode = ResultMode.VERBOSE): Observable<QueryResult> {
     const headers = new HttpHeaders().set('Content-Type', 'application/json');
     return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}`, query, {headers});
+  }
+
+  getActiveQueries(): Observable<RunningQueryStatus[]> {
+    return this.http.get<RunningQueryStatus[]>(`${environment.queryServiceUrl}/api/query/active`);
+  }
+
+  getActiveQuery(queryId: string): Observable<RunningQueryStatus> {
+    return this.http.get<RunningQueryStatus>(`${environment.queryServiceUrl}/api/query/active/${queryId}`);
+  }
+
+  cancelQuery(queryId: string): Observable<any> {
+    return this.http.delete(`${environment.queryServiceUrl}/api/query/active/${queryId}`);
   }
 
   getHistoryRecord(queryId: string): Observable<QueryHistoryRecord> {
@@ -232,4 +250,3 @@ export function isRestQueryHistoryRecord(value: QueryHistoryRecord): value is Re
 export function isRestQueryHistorySummaryRecord(value: QueryHistorySummary): value is RestfulQueryHistorySummary {
   return (value as RestfulQueryHistorySummary).query.queryMode !== undefined;
 }
-

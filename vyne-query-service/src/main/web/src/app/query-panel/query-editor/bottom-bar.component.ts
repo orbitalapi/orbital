@@ -1,4 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {RunningQueryStatus} from '../../services/active-queries-notification-service';
+import {isNullOrUndefined} from 'util';
 
 @Component({
   selector: 'app-query-editor-bottom-bar',
@@ -12,6 +14,15 @@ import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
         <img class="loading-spinner" src="assets/img/loading-spinner-yellow.svg">
         <span>Running...&nbsp;</span>
         <app-counter-timer *ngIf="queryStarted" [startDate]="queryStarted"></app-counter-timer>
+        <div class="progress" *ngIf="queryStarted && percentComplete > 0">
+          <mat-progress-bar mode="determinate" [value]="percentComplete"></mat-progress-bar>
+          <span>{{ runningQueryStatus.completedProjections}} of {{ runningQueryStatus.estimatedProjectionCount}}
+            records</span>
+        </div>
+        <button mat-stroked-button *ngIf="currentState === 'Running' && runningQueryStatus" color="accent"
+            (click)="cancelQuery.emit()"
+        >Cancel</button>
+
       </div>
       <div class="error-message" *ngIf="currentState === 'Error'">
         <span>{{ error }}</span>
@@ -30,6 +41,22 @@ export class BottomBarComponent {
 
   @Output()
   executeQuery = new EventEmitter<void>();
+
+  @Output()
+  cancelQuery = new EventEmitter();
+
+  @Input()
+  runningQueryStatus: RunningQueryStatus | null;
+
+  get percentComplete(): number | null {
+    if (!this.runningQueryStatus) {
+      return null;
+    }
+    if (isNullOrUndefined(this.runningQueryStatus.estimatedProjectionCount)) {
+      return null;
+    }
+    return (this.runningQueryStatus.completedProjections / this.runningQueryStatus.estimatedProjectionCount) * 100;
+  }
 
   @Input()
   queryStarted: Date;

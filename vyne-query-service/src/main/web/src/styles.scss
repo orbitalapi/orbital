@@ -43,8 +43,8 @@ $custom-typography: mat-typography-config(
 // Define the palettes for your theme using the Material Design palettes available in palette.scss
 // (imported above). For each palette, you can optionally specify a default, lighter, and darker
 // hue. Available color palettes: https://material.io/design/color/
-$vyne-app-primary: mat-palette($vyne-grey-blue-palette, 700, 800, 600);
-$vyne-app-accent: mat-palette($vyne-grey-blue-palette, A400, A200, A700);
+$vyne-app-primary: mat-palette($vyne-grey-blue-palette,  A400, A100, A700);
+$vyne-app-accent: mat-palette($vyne-grey-blue-palette, A400, A100, A700);
 
 // The warn palette is optional (defaults to red).
 $vyne-app-warn: mat-palette($mat-red);

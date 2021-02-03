@@ -68,11 +68,11 @@ abstract class BaseQueryServiceTest {
 
    @Before
    open fun setup() {
-      executingQueryRepository = ExecutingQueryRepository()
       val (vyne, stubService) = testVyne(testSchema)
       this.stubService = stubService
       this.vyne = vyne
       queryHistory = InMemoryQueryHistory()
+      executingQueryRepository = ExecutingQueryRepository(queryHistory)
       val mockVyneFactory = mock<VyneFactory>()
       whenever(mockVyneFactory.createVyne()).thenReturn(vyne)
       queryService = QueryService(mockVyneFactory, queryHistory, Jackson2ObjectMapperBuilder().build(), executingQueryRepository)
