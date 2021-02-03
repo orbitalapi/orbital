@@ -3,28 +3,18 @@ package io.vyne.query
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import es.usc.citius.hipster.algorithm.Algorithm
-import es.usc.citius.hipster.algorithm.Hipster
-import es.usc.citius.hipster.graph.GraphEdge
-import es.usc.citius.hipster.graph.GraphSearchProblem
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.model.impl.WeightedNode
-import es.usc.citius.hipster.model.problem.ProblemBuilder
 import io.vyne.VyneCacheConfiguration
-import io.vyne.VyneGraphBuilderCacheSettings
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
 import io.vyne.query.graph.*
 import io.vyne.schemas.Link
 import io.vyne.schemas.Path
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
 import io.vyne.schemas.describe
 import io.vyne.utils.log
 import lang.taxi.Equality
-import java.lang.StringBuilder
-import java.util.Collections
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
@@ -165,6 +155,9 @@ class HipsterDiscoverGraphQueryStrategy(
                log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried")
             }
             val evaluationResult = edgeEvaluator.evaluate(evaluatableEdge, queryContext)
+            if (evaluatableEdge.relationship == Relationship.PROVIDES) {
+               log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}")
+            }
             evaluationResult
          }
 
