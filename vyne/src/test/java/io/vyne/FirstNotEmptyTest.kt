@@ -289,7 +289,8 @@ class FirstNotEmptyTest {
          }
       """.trimIndent()
       )
-      stub.addResponse("findAllIds", TypedCollection.from(listOf(1, 2).map { vyne.typedValue("Id", it) }))
+//      stub.addResponse("findAllIds", TypedCollection.from(listOf(1, 2).map { vyne.typedValue("Id", it) }))
+      stub.addResponse("findAllIds", TypedCollection.from(listOf(1,2).map { vyne.typedValue("Id", it) }))
 
       val personWithBaseTypeName = vyne.parseJsonModel("Person", """{ "firstName" : null, "name" : "Jimmy BaseName" }""")
       val personWithFirstName = vyne.parseJsonModel("Person", """{ "firstName" : "Jimmy FirstName" , "name" : null }""")
