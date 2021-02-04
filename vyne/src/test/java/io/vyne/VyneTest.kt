@@ -101,8 +101,9 @@ fun testVyne(schema: String) = testVyne(TaxiSchema.from(schema))
 class VyneTest {
 
    @Test
-   fun `multiple path discovery`() {
-      val (vyne, stubs) = testVyne("""
+   fun `when one operation failed but another path is present with different inputs then the different path is tried`() {
+      val (vyne, stubs) = testVyne(
+         """
          type AssetClass inherits String
          type Puid inherits Int
          type InstrumentId inherits String
@@ -143,6 +144,10 @@ class VyneTest {
             operation findByInstrumentId(InstrumentId):Instrument
          }
 
+         // This is the service that will conditionally fail.
+         // There are two paths to finding inputs.
+         // The first (shorter) path will fail, and we want
+         // to ensure that the second longer path is also evaluated.
          service CfiToPuidCaskService {
             @StubOperation("findByCfiCode")
             operation findByCfiCode(CfiCode):CfiToPuid
@@ -162,7 +167,17 @@ class VyneTest {
            @StubOperation("findAll")
             operation findAll(): Input[]
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
+
+      // This test contains an operation (CfiToPuidCaskService.findByCfiCode)
+      // which has two different paths for evaluation.
+      // The first (shorter path) gets it's input from
+      // InstrumentService -> cfiCode -> CfiToPuidCaskService@@findByCfiCode
+      // We've set that path to fail.
+      // The second path is:
+      // InstrumentService -> isin -> AnnaService -> cfiCode -> CfiToPuidCaskService
+      // That path, if evaluated, will succeed
 
       val inputJson = """[{"instrumentId" : "InstrumentId"}]""".trimMargin()
       val inputs = TypedInstance.from(vyne.type("Input[]"), inputJson, vyne.schema, source = Provided)
@@ -190,29 +205,36 @@ class VyneTest {
             """.trimMargin()
             TypedInstance.from(vyne.type("Product"), response, vyne.schema, source = Provided)
          } else {
-           throw IllegalArgumentException()
+            throw IllegalArgumentException()
          }
       }
 
       stubs.addResponse(
          "findByPuid",
-         TypedInstance.from(vyne.type("Product"), """{
+         TypedInstance.from(
+            vyne.type("Product"), """{
             |"puid": 519,
             |"assetClass": "assetClass"
-            |}""".trimMargin(), vyne.schema, source = Provided)
+            |}""".trimMargin(), vyne.schema, source = Provided
+         )
       )
 
-      stubs.addResponse(
-         "findByIsin",
-         TypedInstance.from(vyne.type("Product"), """{
+      val annaResponse = vyne.parseJsonModel(
+         "AnnaResponse", """{
             |"isin": "Isin",
             |"derClassificationType": "SCABC"
-            |}""".trimMargin(), vyne.schema, source = Provided)
+            |}""".trimMargin()
+      )
+      stubs.addResponse(
+         "findByIsin",
+         annaResponse
       )
 
-      val queryResult = vyne.query("""
+      val queryResult = vyne.query(
+         """
          findAll { Input[] }  as Output[]
-      """.trimIndent())
+      """.trimIndent()
+      )
       queryResult.isFullyResolved.should.be.`true`
       val results = queryResult["lang.taxi.Array<Output>"] as TypedCollection
       val firstResult = results[0] as TypedObject
@@ -1821,7 +1843,8 @@ service ClientService {
    @Test
    @Ignore("not yet implemented")
    fun `can use a derived field as an input for discovery`() {
-      val (vyne,stub) = testVyne("""
+      val (vyne, stub) = testVyne(
+         """
          type Name inherits String
          type FirstName inherits Name
          type NickName inherits Name
@@ -1845,7 +1868,8 @@ service ClientService {
 
             age : Age
          }
-         """)
+         """
+      )
       stub.addResponse("findAgeByName", vyne.typedValue("Age", 28))
       val result = vyne.from(vyne.parseJsonModel("InputModel", """{ "firstName" : "jimmy" , "nickName" : "J-Dawg" }"""))
          .build("OutputModel")
