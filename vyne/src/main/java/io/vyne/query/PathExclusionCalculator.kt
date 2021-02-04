@@ -12,7 +12,10 @@ import kotlin.math.min
  * possible to try to find an alternative route, by excluding edges which were
  * troublesome.
  *
- * This is an experiment
+ * This is an experiment.
+ *
+ * MP 4-Feb:  This approach has been phased out in favour of EvluatedPathCostCalculator,
+ * which allows edges to stay considered, but are weighted more heavily if they perform badly.
  *
  */
 class PathExclusionCalculator {
@@ -21,9 +24,10 @@ class PathExclusionCalculator {
       evaluatedPath: List<PathEvaluation>,
       invocationConstraints: InvocationConstraints
    ): Set<EvaluatableEdge> {
+      return emptySet()
       // These are a bunch of specific use cases that we've found that are useful to exclude
       val spec = invocationConstraints.typedInstanceValidPredicate
-      return emptySet()
+
       return listOfNotNull(
          operationThrewError(evaluatedPath, spec)
 

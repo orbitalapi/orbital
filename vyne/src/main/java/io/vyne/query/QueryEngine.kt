@@ -340,7 +340,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             }
          }
       }
-      if (unresolvedNodes().isNotEmpty()) {
+      val currentlyUnresolvedNodes = unresolvedNodes()
+      if (currentlyUnresolvedNodes.isNotEmpty()) {
          // Commenting out, creates noise and even with debug off it creates the underlying string from unresolved nodes
          // log().debug("The following nodes weren't matched: ${unresolvedNodes().joinToString(", ")}")
       }
@@ -353,7 +354,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          projectTo(context.projectResultsTo()!!, context)
       } else QueryResult(
          matchedNodes,
-         unresolvedNodes().toSet(),
+         currentlyUnresolvedNodes.toSet(),
          path = null,
          profilerOperation = context.profiler.root
       )

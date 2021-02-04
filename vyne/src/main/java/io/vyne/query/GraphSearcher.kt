@@ -130,9 +130,16 @@ class GraphSearcher(
          if (!pathEvaluatedSuccessfully) {
             log().info("$searchDescription - path $nextPathId failed - last error was $errorMessage")
          }
+
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
+            log().info("$searchDescription - path $nextPathId succeeded with value $resultValue")
             return SearchResult(resultValue, nextPath)
-         } else {
+         } else  {
+            if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
+               log().info("$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching")
+            } else {
+               log().info("$searchDescription - path $nextPathId did not complete successfully, will continue searching")
+            }
             appendIgnorableEdges(evaluatedPath, excludedEdges)
             nextPath = buildNextPath()
          }

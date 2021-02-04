@@ -20,17 +20,53 @@ class EvaluatedPathSet {
    private val evaluatedPaths: MutableList<List<PathEvaluation>> = mutableListOf()
    private val evaluatedOperations: MutableList<EvaluatedEdge> = mutableListOf()
    private val penalizedEdges: MutableList<PenalizedEdge> = mutableListOf()
+   private val transitionCount: MutableMap<HashableTransition, Int> = mutableMapOf()
+
+
+   companion object {
+      private val PENALTY_COST = 100.0
+   }
 
    fun addProposedPath(path: WeightedNode<Relationship, Element, Double>): Int {
       val hash = path.pathHashExcludingWeights()
       proposedPaths[hash] = path
+
+      updateTransitionCount(path)
+
       return hash
    }
 
 
+   /**
+    * Counts the number of times a specific transition has appeared in the evaluated paths
+    */
+   private fun updateTransitionCount(node: WeightedNode<Relationship, Element, Double>) {
+      node.path()
+         .filter { it.previousNode() != null }
+         .map { HashableTransition(it.previousNode().state(), it.action(), it.state()) }
+         .forEach { transition ->
+            transitionCount.compute(transition) { _, currentCount ->
+               currentCount?.plus(1) ?: 1
+            }
+         }
+   }
+
    fun containsPath(path: WeightedNode<Relationship, Element, Double>): Boolean {
       val hash = path.pathHashExcludingWeights()
       return proposedPaths.containsKey(hash)
+   }
+
+   /**
+    * Uses the number of times a specific transition has been used as a cost for evalation.
+    * This appraoch ensures that if a transition has been evaluated previously, it is less favoured
+    * from another transition.
+    * In future, we can tweak this weighting based on action and the outcome of the evaluation
+    */
+   private fun visitedCountAsCost(fromState: Element, action: Relationship, toState: Element): Double {
+      val transition = HashableTransition(fromState, action, toState)
+      val travsersedCount = transitionCount.getOrDefault(transition, 0)
+      // Add one, as this visit, if performed, will be previous number of visits + 1.
+      return (travsersedCount + 1) * 1.0
    }
 
    /**
@@ -39,17 +75,27 @@ class EvaluatedPathSet {
     * GO TO YOUR ROOM.
     */
    fun calculateTransitionCost(fromState: Element, action: Relationship, toState: Element): Double {
+      // If we haven't done anything before, everything is equal
       if (evaluatedPaths.isEmpty()) {
          return 1.0
       }
-      val PENALTY_COST = 100.0
-      val edgeIsPenalized = this.penalizedEdges.any {
+
+
+      val penalizedEdge: PenalizedEdge? = this.penalizedEdges.filter {
          it.matches(fromState, action, toState)
-      }
-      return if (edgeIsPenalized) {
-         PENALTY_COST
+      }.maxBy { it.penalty }
+      return if (penalizedEdge != null) {
+         penalizedEdge.penalty
       } else {
-         1.0
+         // If the edge hasn't been explitily penalized, we still apply a heavier
+         // weighting to paths we've walked before.
+         // This is to ensure that when multiple valid paths are present without having
+         // incurred an explicitly defined penalty (ie., for a service that returned a bad value),
+         // that new paths can still emerge.
+         // For example - For a service that returned a value with two matching
+         // fields, this ensures that the path selector to both fields gets given a chance
+         // to be evaluated
+         visitedCountAsCost(fromState, action, toState)
       }
 
       // Design note:
@@ -78,7 +124,6 @@ class EvaluatedPathSet {
       // I've split the implementation up to allow us to provide other weighting strategies here too in future.
 
 
-
    }
 
    fun addEvaluatedPath(evaluatedPath: List<PathEvaluation>) {
@@ -91,38 +136,53 @@ class EvaluatedPathSet {
    }
 
    private fun findEdgesToPenalize(evaluatedPath: List<PathEvaluation>): List<PenalizedEdge> {
-      return findInputToFailedOperation(evaluatedPath)
+      return listOf(
+         findPenaltiesForFailedOperation(evaluatedPath)
+      ).flatten()
    }
+
+
 
    /**
     * This looks for a failed operation call, then backtracks to find the provider
     * of the inputs.
     *
-    * We penalize the input, not the operation, so that the graph will try to find
+    * We penalize the input, as well as the operation, so that the graph will try to find
     * another way to supply different inputs to the operation
     */
-   private fun findInputToFailedOperation(evaluatedPath: List<PathEvaluation>): List<PenalizedEdge> {
+   private fun findPenaltiesForFailedOperation(evaluatedPath: List<PathEvaluation>): List<PenalizedEdge> {
       val indexOfFailedOperation = evaluatedPath.indexOfFirst {
          it is EvaluatedEdge &&
             !it.wasSuccessful &&
             it.edge.vertex1.elementType == ElementType.OPERATION
       }
       if (indexOfFailedOperation == -1) return emptyList()
+      val failedOperationEdge = evaluatedPath[indexOfFailedOperation] as EvaluatedEdge
+      val failedOperationPenalty = PenalizedEdge(
+         failedOperationEdge,
+         evaluatedPath,
+         "Operation failed with error ${failedOperationEdge.error}",
+         penalty = PENALTY_COST
+      )
       // This finds the PROVIDED_INSTANCE_MEMBER edge which was used to populate the input
       // parameter onto the operation.
       val indexOfParameterInput = (indexOfFailedOperation downTo 0)
-         .first { index ->
+         .firstOrNull { index ->
             val edge = evaluatedPath[index]
             edge is EvaluatedEdge &&
                edge.edge.vertex1.elementType == ElementType.PROVIDED_INSTANCE_MEMBER
          }
-      if (indexOfParameterInput == -1) return emptyList()
-      return listOf(
+      val failedInputPenalty = if (indexOfParameterInput != null) {
          PenalizedEdge(
             evaluatedPath[indexOfParameterInput] as EvaluatedEdge,
             evaluatedPath,
-            "Input into a failed operation"
+            "Input into a failed operation",
+            penalty = PENALTY_COST
          )
+      } else null
+      return listOfNotNull(
+         failedOperationPenalty,
+         failedInputPenalty
       )
    }
 
@@ -141,7 +201,8 @@ data class PenalizedEdge(
    val originatingPath: List<PathEvaluation>,
    // This reason isn't used except by engineers trying to work out
    // what the fuck is going on.
-   val reason: String
+   val reason: String,
+   val penalty: Double
 ) {
    fun matches(fromState: Element, action: Relationship, toState: Element): Boolean {
       return this.evaluatedEdge.edge.vertex1 == fromState
@@ -149,3 +210,5 @@ data class PenalizedEdge(
          && this.evaluatedEdge.edge.vertex2 == toState
    }
 }
+
+

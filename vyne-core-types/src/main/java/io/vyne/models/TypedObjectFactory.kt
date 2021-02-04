@@ -22,7 +22,16 @@ import org.apache.commons.csv.CSVRecord
  * this should be true.  However, for content served from a cask, the content is already preparsed, and so
  * does not need accessors to be evaluated.
  */
-class TypedObjectFactory(private val type: Type, private val value: Any, internal val schema: Schema, val nullValues: Set<String> = emptySet(), val source:DataSource, private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper, private val functionRegistry:FunctionRegistry = FunctionRegistry.default, private val evaluateAccessors:Boolean = true) {
+class TypedObjectFactory(
+   private val type: Type,
+   private val value: Any,
+   internal val schema: Schema,
+   val nullValues: Set<String> = emptySet(),
+   val source: DataSource,
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
+   private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
+   private val evaluateAccessors: Boolean = true
+) {
    private val valueReader = ValueReader()
    private val accessorReader: AccessorReader by lazy { AccessorReader(this, this.functionRegistry) }
    private val conditionalFieldSetEvaluator = ConditionalFieldSetEvaluator(this)
