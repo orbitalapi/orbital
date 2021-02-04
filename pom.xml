@@ -56,6 +56,7 @@
       <module>vyne-ql</module>
       <module>test-cli</module>
       <module>jwt-auth-server</module>
+       <module>test-containers</module>
    </modules>
 
    <scm>
@@ -464,6 +465,16 @@
          </activation>
          <properties>
             <docker.tag.latest>latest</docker.tag.latest>
+         </properties>
+      </profile>
+      <profile>
+         <id>alpha-release</id>
+         <activation>
+            <activeByDefault>false</activeByDefault>
+         </activation>
+         <properties>
+            <docker.tag.latest>latest-alpha</docker.tag.latest>
+            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}</docker.tag.numbered>
          </properties>
       </profile>
    </profiles>

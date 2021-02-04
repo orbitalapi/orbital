@@ -50,7 +50,7 @@ interface QueryEngine {
    fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
-      excludedOperations: Set<Operation>,
+      excludedOperations: Set<SearchGraphExclusion<Operation>>,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): QueryResult
 
@@ -368,7 +368,7 @@ abstract class BaseQueryEngine(
    override fun find(
       target: QuerySpecTypeNode,
       context: QueryContext,
-      excludedOperations: Set<Operation>,
+      excludedOperations: Set<SearchGraphExclusion<Operation>>,
       spec: TypedInstanceValidPredicate
    ): QueryResult {
       try {
@@ -411,7 +411,7 @@ abstract class BaseQueryEngine(
       target: QuerySpecTypeNode,
       context: QueryContext,
       spec: TypedInstanceValidPredicate,
-      excludedOperations: Set<Operation> = emptySet()
+      excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()
    ): QueryResult {
 
       val matchedNodes = mutableMapOf<QuerySpecTypeNode, TypedInstance?>()
