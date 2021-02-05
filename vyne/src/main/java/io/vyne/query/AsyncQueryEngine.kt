@@ -40,7 +40,12 @@ class AsyncQueryEngine(private val queryEngine: QueryEngine, private val executo
       }
    }
 
-   fun find(target: QuerySpecTypeNode, context: QueryContext, excludedOperations: Set<Operation>, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): Future<QueryResult> {
+   fun find(
+      target: QuerySpecTypeNode,
+      context: QueryContext,
+      excludedOperations: Set<SearchGraphExclusion<Operation>>,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): Future<QueryResult> {
       return executor.submit<QueryResult> {
          queryEngine.find(target, context, excludedOperations, spec)
       }

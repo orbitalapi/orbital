@@ -8,6 +8,7 @@ import io.vyne.utils.orElse
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.util.concurrent.CompletableFuture
 
 @Component
 class ExecutingQueryRepository(
@@ -15,7 +16,7 @@ class ExecutingQueryRepository(
 ) {
    private val runningQueries: MutableMap<String, ExecutableQuery> = mutableMapOf()
    private val statusUpdateSink = Sinks.many().multicast().onBackpressureBuffer<RunningQueryStatus>()
-   fun submit(executableQuery: ExecutableQuery) {
+   fun submit(executableQuery: ExecutableQuery): CompletableFuture<QueryResult> {
       log().info("Adding query ${executableQuery.queryId} to list of running queries")
       this.runningQueries[executableQuery.queryId] = executableQuery
       this.sendStatus(executableQuery)
@@ -34,6 +35,7 @@ class ExecutingQueryRepository(
                }
             }
          }
+      return executableQuery.result
    }
 
    fun get(queryId: String):ExecutableQuery {

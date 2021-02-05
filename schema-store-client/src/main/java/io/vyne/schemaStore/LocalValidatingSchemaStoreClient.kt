@@ -5,10 +5,8 @@ import io.vyne.ParsedSource
 import io.vyne.SchemaId
 import io.vyne.VersionedSource
 import io.vyne.schemas.Schema
-import io.vyne.schemas.SchemaSetChangedEvent
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
-import org.springframework.context.ApplicationEventPublisher
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -88,9 +86,8 @@ operation findByDateBetween...
 }
 
  */
-class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValidator = TaxiSchemaValidator(),
-                                       private val eventPublisher: ApplicationEventPublisher
-                                       ) : SchemaStoreClient {
+class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValidator = TaxiSchemaValidator()) :
+   SchemaStoreClient {
    private val generationCounter = AtomicInteger(0)
    private val schemaSetHolder = mutableMapOf<SchemaSetCacheKey, SchemaSet>()
    private val schemaSourcesMap = mutableMapOf<String, ParsedSource>()
@@ -154,7 +151,6 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
          when {
             current == null -> {
                log().info("Persisting first schema to cache: $result")
-               SchemaSetChangedEvent.generateFor(null,result)?.let { eventPublisher.publishEvent(it) }
                result
             }
             current.generation >= result.generation -> {
@@ -163,7 +159,6 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
             }
             else -> {
                log().info("Updating schema cache with $result")
-               SchemaSetChangedEvent.generateFor(current,result)?.let { eventPublisher.publishEvent(it) }
                result
             }
          }

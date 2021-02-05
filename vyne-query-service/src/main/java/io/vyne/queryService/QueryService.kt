@@ -191,7 +191,9 @@ class QueryService(
       return timed("QueryService.submitVyneQlQuery") {
          val vyne = vyneProvider.createVyne(vyneUser.facts())
          val response = try {
-            vyne.query(query)
+            val futureQuery = vyne.queryAsync(query)
+            executingQueryRepository.submit(futureQuery)
+               .get()
          } catch (e: CompilationException) {
             FailedSearchResponse(
                message = e.message!!, // Message contains the error messages from the compiler
