@@ -17,7 +17,11 @@ import io.vyne.schemas.VersionedType
 import reactor.core.publisher.Flux
 import java.io.InputStream
 
-data class JsonWebsocketRequest(override val parameters: JsonIngestionParameters, override val versionedType: VersionedType, private val objectMapper: ObjectMapper) : CaskIngestionRequest {
+data class JsonWebsocketRequest(
+   override val parameters: JsonIngestionParameters,
+   override val versionedType: VersionedType,
+   private val objectMapper: ObjectMapper
+) : CaskIngestionRequest {
    override val contentType = ContentType.json
    override val debug: Boolean = parameters.debug
    override val nullValues: Set<String> = emptySet()
@@ -37,7 +41,8 @@ data class JsonWebsocketRequest(override val parameters: JsonIngestionParameters
 data class CsvWebsocketRequest(
    override val parameters: CsvIngestionParameters,
    override val versionedType: VersionedType,
-   private val caskIngestionErrorProcessor: CaskIngestionErrorProcessor) : CaskIngestionRequest {
+   private val caskIngestionErrorProcessor: CaskIngestionErrorProcessor
+) : CaskIngestionRequest {
    override val contentType = ContentType.csv
    override val debug: Boolean = parameters.debug
    override val nullValues: Set<String> = parameters.nullValue
@@ -51,14 +56,17 @@ data class CsvWebsocketRequest(
          input, type, schema,
          messageId = messageId,
          csvFormat = this.csvFormat,
-         nullValues =  parameters.nullValue,
+         nullValues = parameters.nullValue,
          ignoreContentBefore = parameters.ignoreContentBefore,
          ingestionErrorProcessor = caskIngestionErrorProcessor
       )
    }
 }
 
-data class XmlWebsocketRequest(override val parameters: XmlIngestionParameters, override val versionedType: VersionedType): CaskIngestionRequest {
+data class XmlWebsocketRequest(
+   override val parameters: XmlIngestionParameters,
+   override val versionedType: VersionedType
+) : CaskIngestionRequest {
    override val contentType = ContentType.xml
    override val debug: Boolean = parameters.debug
    override val nullValues: Set<String> = emptySet()

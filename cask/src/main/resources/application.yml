@@ -1,6 +1,9 @@
 server:
    error.include-message: always
    port: 8800
+spring.kafka.consumer:
+   group-id: "cask"
+   auto-offset-reset: "earliest"
 
 spring.datasource:
    url: "jdbc:postgresql://localhost:5432/vynedb"

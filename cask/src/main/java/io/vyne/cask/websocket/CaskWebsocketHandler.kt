@@ -1,6 +1,8 @@
 package io.vyne.cask.websocket
 
-import arrow.core.*
+import arrow.core.Either
+import arrow.core.flatMap
+import arrow.core.getOrHandle
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
@@ -76,7 +78,7 @@ class CaskWebsocketHandler(
          // Percentiles are configured globally for all the timers, see CaskApp
          .metrics()
          .map { message ->
-            log().info("Ingesting message from sessionId=${session.id}")
+//            log().info("Ingesting message from sessionId=${session.id}")
             val messageId = UUID.randomUUID().toString()
             try {
                caskService
@@ -85,7 +87,7 @@ class CaskWebsocketHandler(
                   .map { "Successfully ingested $it records" }
                   .subscribe(
                      { result ->
-                        log().info("$result from sessionId=${session.id}")
+//                        log().info("$result from sessionId=${session.id}")
                         if (request.debug) {
                            outputSink.next(successResponse(session, result))
                         }

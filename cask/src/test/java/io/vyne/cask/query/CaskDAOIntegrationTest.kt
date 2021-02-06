@@ -6,15 +6,10 @@ import io.vyne.cask.api.ContentType
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.schemas.fqn
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
-import org.springframework.test.context.junit4.SpringRunner
-import reactor.core.publisher.Flux
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.time.Instant
@@ -68,7 +63,7 @@ class CaskDAOIntegrationTest : BaseCaskIntegrationTest() {
       val messageId = UUID.randomUUID().toString()
 
       // act
-      caskDao.createCaskMessage(versionedType, messageId, Flux.just(ByteArrayInputStream("Data to ingest".toByteArray(Charsets.UTF_8))), ContentType.json, emptyMap<String,Any>())
+      caskDao.createCaskMessage(versionedType, messageId, ByteArrayInputStream("Data to ingest".toByteArray(Charsets.UTF_8)), ContentType.json, emptyMap<String,Any>())
 
       // assert
       val caskMessages = caskMessageRepository.findAll()

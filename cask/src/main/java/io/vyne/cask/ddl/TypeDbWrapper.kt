@@ -14,7 +14,7 @@ data class TypeMigration(
    val predecessorType: VersionedType
 )
 
-class TypeDbWrapper(val type: VersionedType, schema: Schema) {
+data class TypeDbWrapper(val type: VersionedType, val schema: Schema) {
    fun write(rowWriter: SimpleRow, attributeSet: InstanceAttributeSet) {
       columns.map { column ->
          val value = column.readValue(attributeSet)

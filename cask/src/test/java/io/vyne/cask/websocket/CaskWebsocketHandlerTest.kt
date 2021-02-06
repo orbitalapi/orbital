@@ -15,10 +15,16 @@ import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
-import io.vyne.cask.ingest.*
+import io.vyne.cask.ingest.CaskIngestionErrorProcessor
+import io.vyne.cask.ingest.CaskMessage
+import io.vyne.cask.ingest.Ingester
+import io.vyne.cask.ingest.IngesterFactory
+import io.vyne.cask.ingest.IngestionError
+import io.vyne.cask.ingest.IngestionErrorRepository
+import io.vyne.cask.ingest.IngestionInitialisedEvent
+import io.vyne.cask.ingest.IngestionStream
 import io.vyne.cask.query.CaskDAO
 import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import org.junit.Before
@@ -32,7 +38,6 @@ import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import java.io.ByteArrayInputStream
 import java.io.InputStream
-import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 
@@ -116,7 +121,7 @@ class CaskWebsocketHandlerTest {
       val session = MockWebSocketSession(uri = "/cask/OrderWindowSummary", input = sessionInput)
       val captor = argumentCaptor<IngestionInitialisedEvent>()
       val versionedType = argumentCaptor<VersionedType>()
-      val inputStream = argumentCaptor<Flux<InputStream>>()
+      val inputStream = argumentCaptor<InputStream>()
       val messageId = argumentCaptor<String>()
 
       wsHandler.handle(session).block()

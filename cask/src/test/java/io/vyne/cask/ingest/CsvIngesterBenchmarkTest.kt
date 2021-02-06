@@ -20,7 +20,6 @@ import org.apache.commons.csv.CSVFormat
 import org.junit.Ignore
 import org.junit.Test
 import reactor.core.publisher.Flux
-import reactor.core.publisher.UnicastProcessor
 import java.io.File
 import java.io.InputStream
 import java.math.BigDecimal
@@ -47,7 +46,9 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
             TypeDbWrapper(type, schema),
             pipelineSource)
 
-         ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink())
+         ingester = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
+            .create(pipeline)
+
          ingestionEventHandler.onIngestionInitialised(IngestionInitialisedEvent(this, type))
          ingester.ingest().collectList().block()
          stopwatch.stop()
@@ -92,7 +93,10 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
       val pipeline = IngestionStream(typeV3, TypeDbWrapper(typeV3, schemaV3), pipelineSource)
     //  val queryView = QueryView(jdbcTemplate)
 
-      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
+      ingester = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
+         .create(pipeline)
+
+//      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       ingestionEventHandler.onIngestionInitialised(event = IngestionInitialisedEvent(this, typeV3))
       ingester.ingest().collectList().block()
 

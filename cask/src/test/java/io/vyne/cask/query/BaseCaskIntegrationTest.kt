@@ -14,8 +14,7 @@ import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.CaskMessageRepository
-import io.vyne.cask.ingest.Ingester
-import io.vyne.cask.ingest.IngestionError
+import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionErrorRepository
 import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.ingest.IngestionStream
@@ -39,7 +38,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
-import reactor.core.publisher.UnicastProcessor
 import java.io.File
 import java.net.URI
 import java.time.Duration
@@ -153,7 +151,8 @@ abstract class BaseCaskIntegrationTest {
          TypeDbWrapper(versionedType, taxiSchema),
          source)
 
-      val ingester = Ingester(jdbcTemplate, pipeline, UnicastProcessor.create<IngestionError>().sink())
+      val ingester = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
+         .create(pipeline)
       if (dropCaskFirst) {
          caskDao.dropCaskRecordTable(versionedType)
          caskDao.createCaskRecordTable(versionedType)
