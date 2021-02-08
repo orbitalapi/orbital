@@ -17,7 +17,6 @@ import {MatCheckboxModule} from '@angular/material/checkbox';
 import {CsvViewerComponent} from './csv-viewer.component';
 import {MatTableModule} from '@angular/material/table';
 import {MatInputModule} from '@angular/material/input';
-import {TypedInstancePanelComponent} from '../typed-instance-panel/typed-instance-panel.component';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {DescriptionEditorModule} from '../type-viewer/description-editor/description-editor.module';
 import {AttributeTableModule} from '../type-viewer/attribute-table/attribute-table.module';
@@ -44,8 +43,8 @@ import {TypeNamePanelComponent} from './type-name-panel/type-name-panel.componen
 import {SchemaGeneratorComponent} from './schema-generator-panel/schema-generator.component';
 import {GridHeaderActionsComponent} from './custom-csv-table-header';
 import {MatRadioModule} from '@angular/material/radio';
-import {TestSpecFormComponent} from './test-spec-form.component';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
+import {TestPackModuleModule} from '../test-pack-module/test-pack-module.module';
 
 @NgModule({
     imports: [
@@ -84,6 +83,7 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
         ReactiveFormsModule,
         MatRadioModule,
         HeaderBarModule,
+        TestPackModuleModule
     ],
   declarations: [
     DataSourceToolbarComponent,
@@ -96,8 +96,7 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
     CaskPanelComponent,
     AssignTypeToColumnDialogComponent,
     TypeNamePanelComponent,
-    SchemaGeneratorComponent,
-    TestSpecFormComponent
+    SchemaGeneratorComponent
   ],
   exports: [
     DataSourceToolbarComponent,
@@ -107,8 +106,7 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
   ],
   entryComponents: [
     AssignTypeToColumnDialogComponent,
-    GridHeaderActionsComponent,
-    TestSpecFormComponent
+    GridHeaderActionsComponent
   ]
 
 })

@@ -24,6 +24,7 @@ import {Type, InstanceLikeOrCollection} from '../services/schema';
         <mat-menu #menu="matMenu">
           <button mat-menu-item (click)="onDownloadClicked(downloadFileType.JSON)">as JSON</button>
           <button mat-menu-item (click)="onDownloadClicked(downloadFileType.CSV)">as CSV</button>
+          <button mat-menu-item (click)="onDownloadClicked(downloadFileType.TEST_CASE)">as Test Case</button>
         </mat-menu>
       </div>
       <div *ngIf="ready" class="display-wrapper">
@@ -80,6 +81,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
 
   private _localInstance: InstanceLikeOrCollection;
   private _localInstanceCopy: InstanceLikeOrCollection;
+  downloadRegressionPack: any;
 
   set instance(value: InstanceLikeOrCollection) {
     this._instance = value;

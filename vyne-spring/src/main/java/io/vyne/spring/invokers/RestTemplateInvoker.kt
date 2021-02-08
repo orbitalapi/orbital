@@ -1,5 +1,7 @@
 package io.vyne.spring.invokers
 
+import io.vyne.http.UriVariableProvider
+import io.vyne.http.UriVariableProvider.Companion.buildRequestBody
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
@@ -13,6 +15,7 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
+import io.vyne.schemas.httpOperationMetadata
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
 import io.vyne.utils.orElse
@@ -20,11 +23,8 @@ import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpRequest
-import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
@@ -62,11 +62,8 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance {
       log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}")
 
-      val annotation = operation.metadata("HttpOperation")
-      val httpMethod = HttpMethod.resolve(annotation.params["method"] as String)
-      val url = annotation.params["url"] as String
-
-
+      val (_, url, method) = operation.httpOperationMetadata()
+      val httpMethod = HttpMethod.resolve(method)
       val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
          val absoluteUrl = makeUrlAbsolute(service, operation, url)
          val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
@@ -136,31 +133,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    private fun makeUrlAbsolute(service: Service, operation: RemoteOperation, url: String): String {
       return this.serviceUrlResolvers.first { it.canResolve(service, operation) }.makeAbsolute(url, service, operation)
    }
-
-   private fun buildRequestBody(operation: RemoteOperation, parameters: List<TypedInstance>): Pair<HttpEntity<*>, Class<*>> {
-      if (operation.hasMetadata("HttpOperation")) {
-         // TODO Revisit as this is a quick hack to invoke services that returns simple/text
-         val httpOperation = operation.metadata("HttpOperation")
-         httpOperation.params["consumes"]?.let {
-            val httpHeaders = HttpHeaders()
-            httpHeaders.accept = mutableListOf(MediaType.parseMediaType(it as String))
-            return HttpEntity<String>(httpHeaders) to String::class.java
-         }
-      }
-      val requestBodyParamIdx = operation.parameters.indexOfFirst { it.hasMetadata("RequestBody") }
-      if (requestBodyParamIdx == -1) return HttpEntity.EMPTY to Any::class.java
-      // TODO : For now, only looking up param based on type.  This is obviously naieve, and should
-      // be improved, using name / position?  (note that parameters don't appear to be ordered in the list).
-
-      val requestBodyParamType = operation.parameters[requestBodyParamIdx].type
-      val requestBodyTypedInstance = parameters.first { it.type.name == requestBodyParamType.name }
-      return HttpEntity(requestBodyTypedInstance.toRawObject()) to Any::class.java
-
-   }
-
 }
-
-typealias ParameterValuePair = Pair<Parameter, TypedInstance>
 
 internal class CatchingErrorHandler : ResponseErrorHandler {
    override fun handleError(p0: ClientHttpResponse?) {

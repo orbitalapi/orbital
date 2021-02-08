@@ -26,6 +26,20 @@ export class ExportFileService {
     });
   }
 
+  downloadRegressionPack(id: string, regressionPackName: string): Observable<ArrayBuffer> {
+    return this.http.post(`${environment.queryServiceUrl}/api/query/history/${id}/regressionPack`,
+      {queryId: id, regressionPackName: regressionPackName},
+      {responseType: 'arraybuffer'}
+    );
+  }
+
+  downloadRegressionPackZipFile(id: string, regressionPackName: string) {
+     this.downloadRegressionPack(id, regressionPackName).subscribe(response => {
+       const blob: Blob = new Blob([response], {type: `application/zip; charset=utf-8`});
+       fileSaver.saveAs(blob, `${regressionPackName}.zip`);
+     });
+  }
+
 
   public detectCsvDelimiter = (input: string) => {
     const separators = [',', ';', '|', '\t'];
