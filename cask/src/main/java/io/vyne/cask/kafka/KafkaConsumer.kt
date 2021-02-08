@@ -13,7 +13,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
-import reactor.core.publisher.Flux
+import java.util.*
 
 @Component
 class KafkaConsumer(
@@ -21,19 +21,30 @@ class KafkaConsumer(
    @Qualifier("ingesterMapper") val mapper: ObjectMapper
 ) {
 
+
    @KafkaListener(topics = ["load-test"])
    fun consumeFromKafka(record: ConsumerRecord<String, String>) {
-      val typeName = "com.cacib.m2m.Dummy"
-      val versionedType = resolveType(typeName)
-      batchTimed("Ingest from Kafka") {
-         caskService.ingestRequest(
-            JsonWebsocketRequest(
-               JsonIngestionParameters(),
-               versionedType, mapper
-            ),
-            Flux.just(IOUtils.toInputStream(record.value()))
-         ).subscribe()
+      val response = batchTimed("Do nothing") {
+         val typeName = "com.cacib.m2m.Dummy"
+         val versionedType = resolveType(typeName)
+         val request = JsonWebsocketRequest(
+            JsonIngestionParameters(),
+            versionedType, mapper
+         )
+
+         val inputStream = IOUtils.toInputStream(record.value())
+         val id = UUID.randomUUID().toString()
+
+         batchTimed("Ingest from Kafka") {
+            caskService.ingestRequest(
+               request,
+               inputStream,
+               id
+            )
+         }
       }
+//
+
 
    }
 

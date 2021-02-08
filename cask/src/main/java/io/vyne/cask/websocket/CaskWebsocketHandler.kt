@@ -71,67 +71,69 @@ class CaskWebsocketHandler(
       // i don't like this, it's pretty ugly
       // partially because exceptions are thrown outside flux pipelines
       // we have to refactor code behind ingestion to fix this problem
-      session.receive()
-         .name("cask_ingestion_request")
-         // This will register timer with the above name
-         // Registry instance is auto-detected
-         // Percentiles are configured globally for all the timers, see CaskApp
-         .metrics()
-         .map { message ->
-//            log().info("Ingesting message from sessionId=${session.id}")
-            val messageId = UUID.randomUUID().toString()
-            try {
-               caskService
-                  .ingestRequest(currentRequest, Flux.just(message.payload.asInputStream()), messageId)
-                  .count()
-                  .map { "Successfully ingested $it records" }
-                  .subscribe(
-                     { result ->
-//                        log().info("$result from sessionId=${session.id}")
-                        if (request.debug) {
-                           outputSink.next(successResponse(session, result))
-                        }
-                     },
-                     { error ->
-                        log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
-                        if (error is PSQLException && error.sqlState == PSQLState.UNDEFINED_TABLE.state) {
-                           // Table not found - this should be due to schema change.
-                           // update CaskIngestionRequest with the new schema info and re-try.
-                           requestOrError(session).map {
-                              currentRequest = it
-                              reIngestRequest(currentRequest, message).block() // blocking is not nice, but this should happen very rare.
-                           }
-                        }
-                        outputSink.next(errorResponse(session, extractError(error)))
-                        caskIngestionErrorProcessor.sink().next(IngestionError.fromThrowable(error, messageId, request.versionedType))
-                     }
-                  )
-            } catch (error: Exception) {
-               log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
-               outputSink.next(errorResponse(session, extractError(error)))
-               caskIngestionErrorProcessor.sink().next(IngestionError.fromThrowable(error, messageId, request.versionedType))
-            }
-         }
-         .doOnComplete {
-            log().info("Closing sessionId=${session.id}")
-            output.onComplete()
-         }
-         .doOnError { error ->
-            log().error("Error ingesting message from sessionId=${session.id}", error)
-         }
-         .subscribe()
-
-      return session.send(output)
+//      session.receive()
+//         .name("cask_ingestion_request")
+//         // This will register timer with the above name
+//         // Registry instance is auto-detected
+//         // Percentiles are configured globally for all the timers, see CaskApp
+//         .metrics()
+//         .map { message ->
+//            val messageId = UUID.randomUUID().toString()
+//            try {
+//               caskService
+//                  .ingestRequest(currentRequest, message.payload.asInputStream(), messageId)
+//
+//                  .count()
+//                  .map { "Successfully ingested $it records" }
+//                  .subscribe(
+//                     { result ->
+////                        log().info("$result from sessionId=${session.id}")
+//                        if (request.debug) {
+//                           outputSink.next(successResponse(session, result))
+//                        }
+//                     },
+//                     { error ->
+//                        log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
+//                        if (error is PSQLException && error.sqlState == PSQLState.UNDEFINED_TABLE.state) {
+//                           // Table not found - this should be due to schema change.
+//                           // update CaskIngestionRequest with the new schema info and re-try.
+//                           requestOrError(session).map {
+//                              currentRequest = it
+//                              reIngestRequest(currentRequest, message).block() // blocking is not nice, but this should happen very rare.
+//                           }
+//                        }
+//                        outputSink.next(errorResponse(session, extractError(error)))
+//                        caskIngestionErrorProcessor.sink().next(IngestionError.fromThrowable(error, messageId, request.versionedType))
+//                     }
+//                  )
+//            } catch (error: Exception) {
+//               log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
+//               outputSink.next(errorResponse(session, extractError(error)))
+//               caskIngestionErrorProcessor.sink().next(IngestionError.fromThrowable(error, messageId, request.versionedType))
+//            }
+//         }
+//         .doOnComplete {
+//            log().info("Closing sessionId=${session.id}")
+//            output.onComplete()
+//         }
+//         .doOnError { error ->
+//            log().error("Error ingesting message from sessionId=${session.id}", error)
+//         }
+//         .subscribe()
+//
+//      return session.send(output)
+      TODO()
    }
 
    private fun reIngestRequest(request: CaskIngestionRequest, message: WebSocketMessage): Mono<CaskIngestionResponse> {
-      return caskService.ingestRequest(request, Flux.just(message.payload.asInputStream()))
-         .count()
-         .map { CaskIngestionResponse.success("Successfully ingested $it records") }
-         .onErrorResume {
-            log().error("Ingestion error", it)
-            Mono.just(CaskIngestionResponse.rejected(it.toString()))
-         }
+//      return caskService.ingestRequest(request, message.payload.asInputStream())
+//         .count()
+//         .map { CaskIngestionResponse.success("Successfully ingested $it records") }
+//         .onErrorResume {
+//            log().error("Ingestion error", it)
+//            Mono.just(CaskIngestionResponse.rejected(it.toString()))
+//         }
+      TODO()
    }
 
    private fun extractError(error: Throwable): String {

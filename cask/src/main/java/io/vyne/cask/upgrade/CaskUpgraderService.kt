@@ -93,7 +93,7 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
             ingesterFactory
                .create(ingestionStream)
                .ingest()
-               .subscribe()
+//               .subscribe()
          }
    }
 

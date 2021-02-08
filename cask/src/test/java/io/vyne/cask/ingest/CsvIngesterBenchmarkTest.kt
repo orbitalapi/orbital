@@ -6,13 +6,11 @@ import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.cask.CaskService
 import io.vyne.cask.MessageIds
-import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.cask.query.CaskDAO
-import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.schemas.fqn
 import io.vyne.spring.LocalResourceSchemaProvider
 import io.vyne.utils.Benchmark
@@ -50,7 +48,7 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
             .create(pipeline)
 
          ingestionEventHandler.onIngestionInitialised(IngestionInitialisedEvent(this, type))
-         ingester.ingest().collectList().block()
+         ingester.ingest().toList()
          stopwatch.stop()
 
          val rowCount = ingester.getRowCount()
@@ -62,7 +60,7 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
    @Test
    fun canIngestCsvToCask() {
       val source = Resources.getResource("Coinbase_BTCUSD_single.csv").toURI()
-      val input: Flux<InputStream> = Flux.just(File(source).inputStream())
+      val input = File(source).inputStream()
       val schemaProvider = LocalResourceSchemaProvider(Paths.get(Resources.getResource("schemas/coinbase").toURI()))
       val ingesterFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
       val caskDAO: CaskDAO = mock()
@@ -76,11 +74,11 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
       val type = caskService.resolveType("OrderWindowSummaryCsv").getOrElse {
          error("Type not found")
       }
-      caskService.ingestRequest(
-
-         CsvWebsocketRequest(CsvIngestionParameters(firstRecordAsHeader = true), type, caskIngestionErrorProcessor),
-         input
-      ).blockFirst()
+//      caskService.ingestRequest(
+//
+//         CsvWebsocketRequest(CsvIngestionParameters(firstRecordAsHeader = true), type, caskIngestionErrorProcessor),
+//         input
+//      ).blockFirst()
    }
 
    @Test
@@ -98,7 +96,7 @@ class CsvIngesterBenchmarkTest : BaseCaskIntegrationTest() {
 
 //      ingester = Ingester(jdbcTemplate, pipeline, caskIngestionErrorProcessor.sink())
       ingestionEventHandler.onIngestionInitialised(event = IngestionInitialisedEvent(this, typeV3))
-      ingester.ingest().collectList().block()
+      ingester.ingest().toList()
 
     //  val v3QueryStrategy = queryView.getQueryStrategy(typeV3)
     //  v3QueryStrategy.should.be.instanceof(TableQuerySpec::class.java)

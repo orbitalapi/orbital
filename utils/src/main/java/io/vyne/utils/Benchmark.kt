@@ -30,6 +30,6 @@ object Benchmark {
       val durations = executions.map { it.first }
       val collectionSize = executions.mapNotNull { if (it.second is Collection<*>) (it.second as Collection<*>).size else null }
       val avgSize = if (collectionSize.isNotEmpty()) " returning an average of ${collectionSize.average().roundToInt()} entries" else ""
-      log().info("Completed with average process time of ${durations.average().toBigDecimal().setScale(2, RoundingMode.HALF_EVEN)}ms$avgSize")
+      log().info("Completed $iterations iterations with average process time of ${durations.average().toBigDecimal().setScale(2, RoundingMode.HALF_EVEN)}ms$avgSize (${durations.sum()}ms total)")
    }
 }

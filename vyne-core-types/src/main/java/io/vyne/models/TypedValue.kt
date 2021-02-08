@@ -154,11 +154,14 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
 }
 
 class StringToNumberConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
+   companion object {
+      // This is a suprisingly slow operation, cache it.
+      private val numberFormat: NumberFormat = NumberFormat.getInstance()
+   }
    override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
       if (source !is String) {
          return next.convert(source, targetType, format)
       } else {
-         val numberFormat = NumberFormat.getInstance()
          return when (targetType) {
             Int::class.java -> fromScientific(source)?.toInt() as T ?: numberFormat.parse(source).toInt() as T
             Double::class.java -> fromScientific(source)?.toDouble() as T ?: numberFormat.parse(source).toDouble() as T

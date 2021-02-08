@@ -63,7 +63,7 @@ class CaskRestController(private val caskService: CaskService,
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = CsvWebsocketRequest(parameters, versionedType, caskIngestionErrorProcessor)
          // TODO : Input should be an InputStream already.
-         val inputStream = Flux.just(input.byteInputStream() as InputStream)
+         val inputStream = input.byteInputStream() as InputStream
          // TODO : How to avoid this blocking?
          ingestRequest(request, inputStream).block()
       }.getOrHandle { error ->
@@ -81,8 +81,7 @@ class CaskRestController(private val caskService: CaskService,
       val xmlIngestionParameters = XmlIngestionParameters(debug, elementSelector)
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = XmlWebsocketRequest(xmlIngestionParameters, versionedType)
-         val inputStream = Flux.just(input.byteInputStream() as InputStream)
-         ingestRequest(request, inputStream).block()
+         ingestRequest(request, input.byteInputStream() as InputStream).block()
       }.getOrHandle { error ->
          CaskIngestionResponse.rejected(error.message)
       }
@@ -93,22 +92,23 @@ class CaskRestController(private val caskService: CaskService,
          val request = JsonWebsocketRequest(parameters, versionedType, mapper)
          val inputStream = Flux.just(input.byteInputStream() as InputStream)
          // TODO : How to avoid this blocking?
-         ingestRequest(request, inputStream).block()
+         ingestRequest(request, input.byteInputStream() as InputStream).block()
       }.getOrHandle { error ->
          CaskIngestionResponse.rejected(error.message)
       }
    }
 
-   private fun ingestRequest(request: CaskIngestionRequest, ingestionInput: Flux<InputStream>): Mono<CaskIngestionResponse> {
+   private fun ingestRequest(request: CaskIngestionRequest, ingestionInput: InputStream): Mono<CaskIngestionResponse> {
       applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, request.versionedType))
 
-      return caskService.ingestRequest(request, ingestionInput)
-         .count()
-         .map { CaskIngestionResponse.success("Successfully ingested $it records") }
-         .onErrorResume {
-            log().error("Ingestion error", it)
-            Mono.just(CaskIngestionResponse.rejected(it.toString()))
-         }
+      TODO()
+//      return caskService.ingestRequest(request, ingestionInput)
+//         .count()
+//         .map { CaskIngestionResponse.success("Successfully ingested $it records") }
+//         .onErrorResume {
+//            log().error("Ingestion error", it)
+//            Mono.just(CaskIngestionResponse.rejected(it.toString()))
+//         }
    }
 
    override fun getCasks() = caskService.getCasks()

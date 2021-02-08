@@ -40,7 +40,6 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import java.io.File
 import java.net.URI
-import java.time.Duration
 import javax.sql.DataSource
 
 @DataJpaTest(properties = ["spring.main.web-application-type=none"])
@@ -159,11 +158,11 @@ abstract class BaseCaskIntegrationTest {
          caskConfigService.createCaskConfig(versionedType)
       }
 
-      ingester.ingest().collectList()
-         .doOnError { error ->
-            log().error("Error ", error)
-         }
-         .block(Duration.ofMillis(500))
+      ingester.ingest().toList()
+//         .doOnError { error ->
+//            log().error("Error ", error)
+//         }
+//         .block(Duration.ofMillis(500))
    }
 
 

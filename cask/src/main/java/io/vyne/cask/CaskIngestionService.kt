@@ -3,6 +3,8 @@ package io.vyne.cask
 import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.convertValue
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import io.vyne.VersionedTypeReference
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.api.CaskDetails
@@ -29,8 +31,10 @@ import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.cask.websocket.XmlWebsocketRequest
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
+import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
+import org.springframework.context.event.EventListener
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.InputStreamResource
 import org.springframework.core.io.Resource
@@ -40,6 +44,7 @@ import org.springframework.util.MultiValueMap
 import reactor.core.publisher.Flux
 import java.io.ByteArrayInputStream
 import java.io.InputStream
+import java.time.Duration
 import java.time.Instant
 import java.util.*
 
@@ -59,89 +64,122 @@ class CaskService(
       val message: String
    }
 
+   @EventListener
+   fun handleSchemaSetChanged(event: SchemaSetChangedEvent) {
+      log().info("SchemaSetChanged - invalidating resolved type cache")
+      resolvedTypeCache.invalidateAll()
+      resolvedTypeCache.cleanUp()
+      cachingSchemaHolder.invalidateAll()
+      cachingSchemaHolder.cleanUp()
+      typeDbWrapperCache.invalidateAll()
+      typeDbWrapperCache.cleanUp()
+   }
+
+   private val resolvedTypeCache = CacheBuilder.newBuilder()
+      .build<String, Either<TypeError, VersionedType>>(object :
+         CacheLoader<String, Either<TypeError, VersionedType>>() {
+         override fun load(typeReference: String): Either<TypeError, VersionedType> {
+            val schema = schemaProvider.schema()
+            if (schema.types.isEmpty()) {
+               log().warn("Empty schema, no types defined? Check the configuration please!")
+               return Either.left(TypeError("Empty schema, no types defined."))
+            }
+
+            return try {
+               // Type[], Type of lang.taxi.Array<OrderSummary>
+               // schema.versionedType(lang.taxi.Array) throws error, investigate why
+               val versionedTypeReference = VersionedTypeReference.parse(typeReference)
+               Either.right(schema.versionedType(versionedTypeReference))
+            } catch (e: Exception) {
+               log().error("Type not found typeReference=${typeReference} errorMessage=${e.message}")
+               Either.left(TypeError("Type reference '${typeReference}' not found."))
+            }
+         }
+      })
+
+
+   private val typeDbWrapperCache = CacheBuilder
+      .newBuilder()
+      .expireAfterAccess(Duration.ofSeconds(5))
+      .build<TypeDbWrapperRequest, TypeDbWrapper>(object : CacheLoader<TypeDbWrapperRequest, TypeDbWrapper>() {
+         override fun load(key: TypeDbWrapperRequest): TypeDbWrapper {
+            return TypeDbWrapper(key.type, key.schema)
+         }
+      })
+
+   private val cachingSchemaHolder = CacheBuilder
+      .newBuilder()
+      .expireAfterAccess(Duration.ofSeconds(5))
+      .build<String, Schema>(object : CacheLoader<String, Schema>() {
+         override fun load(key: String): Schema {
+            log().info("Fetching schema from schemaProvider")
+            return schemaProvider.schema()
+         }
+      })
+
    data class TypeError(override val message: String) : CaskServiceError
    data class ContentTypeError(override val message: String) : CaskServiceError
 
    val supportedContentTypes: List<ContentType> = listOf(ContentType.json, ContentType.csv)
 
    fun resolveType(typeReference: String): Either<TypeError, VersionedType> {
-      val schema = schemaProvider.schema()
-      if (schema.types.isEmpty()) {
-         log().warn("Empty schema, no types defined? Check the configuration please!")
-         return Either.left(TypeError("Empty schema, no types defined."))
-      }
-
-      return try {
-         // Type[], Type of lang.taxi.Array<OrderSummary>
-         // schema.versionedType(lang.taxi.Array) throws error, investigate why
-         val versionedTypeReference = VersionedTypeReference.parse(typeReference)
-         Either.right(schema.versionedType(versionedTypeReference))
-      } catch (e: Exception) {
-         log().error("Type not found typeReference=${typeReference} errorMessage=${e.message}")
-         Either.left(TypeError("Type reference '${typeReference}' not found."))
-      }
+      return resolvedTypeCache.get(typeReference)
    }
 
    fun ingestRequest(
       request: CaskIngestionRequest,
-      input: Flux<InputStream>,
+      inputStream: InputStream,
       messageId: String = UUID.randomUUID().toString()
-   ): Flux<InstanceAttributeSet> {
-      val schema = schemaProvider.schema()
+   ): List<InstanceAttributeSet> {
+      val schema = cachingSchemaHolder.get("foo")
       val versionedType = request.versionedType
 
-      return input.flatMap { inputStream ->
          val messageSourceInputStream = SplittableInputStream.from(inputStream)
          val messagePayloadInputStream = messageSourceInputStream.split()
 
-         messageSourceWriter.writeMessageSource(StoreCaskRawMessageRequest(
-            messageId,
-            versionedType,
-            messageSourceInputStream,
-            request.contentType,
-            request.parameters
-         ))
-
-//         persistMessageSource(
-//            messageSourceInputStream,
-//            messageId,
-//            versionedType,
-//            request.contentType,
-//            request.parameters
-//         )
-         val streamSource: StreamSource = request.buildStreamSource(
+         messageSourceWriter.writeMessageSource(
+            StoreCaskRawMessageRequest(
+               messageId,
+               versionedType,
+               messageSourceInputStream,
+               request.contentType,
+               request.parameters
+            )
+         )
+//         Flux.empty<InstanceAttributeSet>()
+//
+//
+      val streamSource: StreamSource = batchTimed("build stream source") {
+         request.buildStreamSource(
             input = messagePayloadInputStream,
             type = versionedType,
             schema = schema,
             messageId = messageId
          )
-         val ingestionStream = IngestionStream(
-            versionedType,
-            TypeDbWrapper(versionedType, schema),
-            streamSource
-         )
+      }
 
+      val dbWrapper = typeDbWrapperCache.get(TypeDbWrapperRequest(versionedType,schema))
+      val ingestionStream = IngestionStream(
+         versionedType,
+         dbWrapper,
+         streamSource
+      )
+//      return streamSource.records
+
+
+      val result = batchTimed("IngesterFactory.ingest") {
          ingesterFactory
             .create(ingestionStream)
             .ingest()
-
+            .toList()
       }
+      return result
+//         .ingest()
+//         .collectList()
+//         .block()
+//      Flux.empty<InstanceAttributeSet>()
 
 
-   }
-
-   private fun persistMessageSource(
-      messageSourceInputStream: InputStream,
-      messageId: String,
-      versionedType: VersionedType,
-      contentType: ContentType,
-      parameters: Any
-   ) {
-      val message =
-         caskDAO.createCaskMessage(versionedType, messageId, messageSourceInputStream, contentType, parameters)
-      if (message.messageContentId == null) {
-         log().warn("Failed to persist message content for message ${message.id}.  Will continue to ingest, but this message will not be replayable")
-      }
    }
 
    fun getCasks(): List<CaskConfig> {
@@ -224,7 +262,9 @@ class CaskService(
 
 interface CaskIngestionRequest {
    fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, messageId: String): StreamSource
-   fun buildStreamSource(input: InputStream, type: VersionedType, schema: Schema, messageId: String): StreamSource = buildStreamSource(Flux.just(input), type, schema, messageId)
+   fun buildStreamSource(input: InputStream, type: VersionedType, schema: Schema, messageId: String): StreamSource =
+      buildStreamSource(Flux.just(input), type, schema, messageId)
+
    val versionedType: VersionedType
    val contentType: ContentType
 
@@ -270,3 +310,5 @@ private fun MultiValueMap<String, String?>.toMapOfListWhereMultiple(): Map<Strin
       }
    }.toMap()
 }
+
+private data class TypeDbWrapperRequest(val type: VersionedType, val schema: Schema)

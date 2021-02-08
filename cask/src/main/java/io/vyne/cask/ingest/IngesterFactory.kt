@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.RemovalNotification
 import de.bytefish.pgbulkinsert.row.SimpleRowWriter
+import io.vyne.cask.batchTimed
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.utils.log
 import org.postgresql.PGConnection
@@ -68,12 +69,15 @@ class IngesterFactory(val jdbcTemplate: JdbcTemplate, val caskIngestionErrorProc
       })
 
    fun create(ingestionStream: IngestionStream): Ingester {
-      return Ingester(
-         jdbcTemplate,
-         ingestionStream,
-         caskIngestionErrorProcessor.sink(),
-         writerCache.get(ingestionStream.dbWrapper).sink
-      )
+      return batchTimed("Build ingester") {
+          Ingester(
+            jdbcTemplate,
+            ingestionStream,
+            caskIngestionErrorProcessor.sink(),
+            writerCache.get(ingestionStream.dbWrapper).sink
+         )
+      }
+
    }
 }
 

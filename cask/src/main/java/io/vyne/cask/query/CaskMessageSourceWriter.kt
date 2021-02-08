@@ -48,7 +48,7 @@ class CaskMessageSourceWriter(
          override fun load(key: VersionedType): CaskMessageSourceWriterConnection {
             log().info("Building new CaskMessageSourceWriter for type ${key.taxiType.qualifiedName}")
 
-            val sink = Sinks.many().multicast().onBackpressureBuffer<StoreCaskRawMessageRequest>()
+            val sink = Sinks.many().multicast().onBackpressureBuffer<StoreCaskRawMessageRequest>(2500)
             val flux = sink
                .asFlux()
                .publishOn(Schedulers.boundedElastic())
@@ -58,20 +58,24 @@ class CaskMessageSourceWriter(
             flux.bufferTimeout(500, Duration.ofSeconds(5))
                .subscribe { records ->
                   batchTimed("Writing raw message requests") {
-                     val stopwatch = Stopwatch.createStarted()
                      val connection = largeObjectDataSource.connection
                      connection.autoCommit = false
 
-                     val postgresConnection = connection.unwrap(PGConnection::class.java)
+                     try {
+                        val postgresConnection = connection.unwrap(PGConnection::class.java)
 
-                     records.forEach { storeRawMessageRequest ->
-                        val objectId = persistMessageAsLargeObject(postgresConnection, storeRawMessageRequest)
-                        writeCaskMessageRecord(connection, objectId, storeRawMessageRequest)
-                        writeCount.incrementAndGet()
+                        records.forEach { storeRawMessageRequest ->
+                           val objectId = persistMessageAsLargeObject(postgresConnection, storeRawMessageRequest)
+                           writeCaskMessageRecord(connection, objectId, storeRawMessageRequest)
+                           writeCount.incrementAndGet()
+                        }
+
+                        connection.commit()
+                        connection.close()
+                     } catch (e:Exception) {
+                        log().error("Failed to write batch of messages", e)
                      }
 
-                     connection.commit()
-                     connection.close()
 
 //                     log().info(
 //                        "Flushing ${records.size} raw message requests (${writeCount.get()} total) took ${
@@ -91,7 +95,7 @@ class CaskMessageSourceWriter(
 
    fun writeMessageSource(request: StoreCaskRawMessageRequest) {
       this.writerCache.get(request.versionedType).sink.emitNext(request) {signalType: SignalType, emitResult: Sinks.EmitResult ->
-         log().error("Failed to store raw message for request ${request.id}")
+         log().error("Failed to store raw message for request ${request.id}: $emitResult")
          false // don't retry
       }
    }

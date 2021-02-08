@@ -30,6 +30,10 @@ fun <T> batchTimed(name:String, timeUnit: TimeUnit = TimeUnit.MILLISECONDS, coun
    return result
 }
 
+fun <T> xbatchTimed(name:String, timeUnit: TimeUnit = TimeUnit.MILLISECONDS, count:Int = 50 , resetOnCount:Boolean = false,  block: () -> T):T {
+   return block()
+}
+
 private object TimerCounters {
    val counters = mutableMapOf<String,SamplingRecorder>()
 }

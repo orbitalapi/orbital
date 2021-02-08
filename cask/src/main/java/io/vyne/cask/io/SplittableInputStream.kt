@@ -1,7 +1,8 @@
 package io.vyne.cask.io
 
 import java.io.InputStream
-import kotlin.math.max
+import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * Allows a single InputStream to have multiple consumers.
@@ -11,6 +12,10 @@ import kotlin.math.max
  * Taken from https://stackoverflow.com/a/30262036
  *
  */
+object TimeLog {
+   var totalTime: Long = 0L;
+}
+
 internal class SplittableInputStream private constructor(
    private val multiSource: MultiplexedSource,
    private val myId: Int
@@ -43,14 +48,19 @@ internal class SplittableInputStream private constructor(
       // Make room for more data (and drop data that has been read by
       // all readers)
       private fun readjustBuffer() {
-         val from: Int = readPositions.min() ?: 0
-         val to: Int = readPositions.max() ?: 0
-         val newLength = max((to - from) * 2, MIN_BUF)
+         val from: Int = Collections.min(readPositions) //xbatchTimed("from/min") { readPositions.min() ?: 0 }
+         val to: Int = Collections.max(readPositions) //xbatchTimed("to/max")  { readPositions.max() ?: 0 }
+         // Performance: Copying the buffers is (relatively) expensive
+         // So only buffer in chunks of BUFFERED_CHUNK_SIZE
+         if (to % BUFFER_CHUNK_SIZE != 0) return
+         val newLength = Math.max((to - from) * 2, MIN_BUF)
          val newBuf = IntArray(newLength)
          System.arraycopy(buffer, from, newBuf, 0, to - from)
          for (i in readPositions.indices) readPositions[i] = readPositions[i] - from
          writePosition -= from
          buffer = newBuf
+         buffer = buffer
+
       }
 
       // Read and advance position for given reader
@@ -68,7 +78,8 @@ internal class SplittableInputStream private constructor(
       }
 
       companion object {
-         var MIN_BUF = 4096
+         const val MIN_BUF = 4096
+         const val BUFFER_CHUNK_SIZE = 2048
       }
 
 

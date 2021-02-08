@@ -1,12 +1,11 @@
 package io.vyne.cask.ingest
 
+import io.vyne.cask.batchTimed
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import lang.taxi.types.ObjectType
-import org.postgresql.util.PSQLException
 import org.springframework.jdbc.core.JdbcTemplate
-import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Sinks
 
@@ -32,7 +31,7 @@ class Ingester(
    //   4. receive InstanceAttributeSet
    //   ...
    //   N receive CommitTransaction
-   fun ingest(): Flux<InstanceAttributeSet> {
+   fun ingest(): Iterable<InstanceAttributeSet> {
       // Here we split the paths that uses jdbcTemplate (for upserting) and pgBulk library.
       // to ensure that we don't initialise pgBulk library path fpr upsert case.
       // Otherwise, pgBulk library grabs an unused connection from the connection pool
@@ -43,42 +42,43 @@ class Ingester(
       }
    }
 
-   private fun ingestThroughUpsert(): Flux<InstanceAttributeSet> {
-      val table = ingestionStream.dbWrapper.rowWriterTable
-      return ingestionStream
-         .feed
-         .stream
-         .doOnError {
-            log().error("Closing DB connection for ${table.table}", it)
-            ingestionErrorSink.next(
-               IngestionError.fromThrowable(
-                  it,
-                  this.ingestionStream.feed.messageId,
-                  this.ingestionStream.dbWrapper.type
-               )
-            )
-         }.doOnEach { signal ->
-            signal.get()?.let { instance ->
-               ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
-            }
-         }.onErrorMap {
-            ingestionErrorSink.next(
-               IngestionError.fromThrowable(
-                  it,
-                  this.ingestionStream.feed.messageId,
-                  this.ingestionStream.dbWrapper.type
-               )
-            )
-            if (it.cause is PSQLException) {
-               it.cause
-            } else {
-               it
-            }
-
-         }
+   private fun ingestThroughUpsert(): Iterable<InstanceAttributeSet> {
+      TODO()
+//      val table = ingestionStream.dbWrapper.rowWriterTable
+//      return ingestionStream
+//         .feed
+//         .stream
+//         .doOnError {
+//            log().error("Closing DB connection for ${table.table}", it)
+//            ingestionErrorSink.next(
+//               IngestionError.fromThrowable(
+//                  it,
+//                  this.ingestionStream.feed.messageId,
+//                  this.ingestionStream.dbWrapper.type
+//               )
+//            )
+//         }.doOnEach { signal ->
+//            signal.get()?.let { instance ->
+//               ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
+//            }
+//         }.onErrorMap {
+//            ingestionErrorSink.next(
+//               IngestionError.fromThrowable(
+//                  it,
+//                  this.ingestionStream.feed.messageId,
+//                  this.ingestionStream.dbWrapper.type
+//               )
+//            )
+//            if (it.cause is PSQLException) {
+//               it.cause
+//            } else {
+//               it
+//            }
+//
+//         }
    }
 
-   private fun ingestThroughBulkCopy(): Flux<InstanceAttributeSet> {
+   private fun ingestThroughBulkCopy(): Iterable<InstanceAttributeSet> {
 //      val connection = jdbcTemplate.dataSource!!.connection
 //      val pgConnection = connection.unwrap(PGConnection::class.java)
 //      val table = ingestionStream.dbWrapper.rowWriterTable
@@ -103,7 +103,18 @@ class Ingester(
 //            return Flux.error(e)
 //         }
 //      log().debug("Opening DB connection for ${table.table}")
-      return ingestionStream.feed.stream
+      batchTimed("Write records") {
+         ingestionStream.feed.records
+            .forEach {
+               sink.emitNext(it, Sinks.EmitFailureHandler { signalType, emitResult ->
+                  log().error("Failed to persist signal $signalType: $emitResult")
+                  false // don't retry
+               })
+            }
+      }
+
+      return ingestionStream.feed.records
+
 //         .doOnError {
 //            log().error("Closing DB connection for ${table.table}", it)
 ////            writer.close()
@@ -115,34 +126,36 @@ class Ingester(
 ////            writer.close()
 ////            connection.close()
 //         }
-         .doOnEach { signal ->
-            signal.get()?.let {
-               sink.emitNext(it, Sinks.EmitFailureHandler { signalType, emitResult ->
-                  log().error("Failed to persist signal $signalType: $emitResult")
-                  false // don't retry
-               })
-            }
+//         .doOnEach { signal ->
+//            signal.get()?.let {
+//               sink.emitNext(it, Sinks.EmitFailureHandler { signalType, emitResult ->
+//                  log().error("Failed to persist signal $signalType: $emitResult")
+//                  false // don't retry
+//               })
+//            }
 //            sink.next(signal.get())
 //            signal.get()?.let { instance ->
 //               rowWriter.startRow { row ->
 //                  ingestionStream.dbWrapper.write(row, instance)
 //               }
 //            }
-         }.doOnError {
-            //invoked when pgbulkinsert throws.
+//         }.doOnError {
+      //invoked when pgbulkinsert throws.
 //            if (!connection.isClosed) {
 //               log().error("Closing DB connection for ${table.table}", it)
 //               connection.close()
 //            }
 //            ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
-         }
+//   }?
    }
 
 
    private fun hasPrimaryKey(type: ObjectType): Boolean {
-      return type.definition?.fields
-         ?.flatMap { it -> it.annotations }
-         ?.any { a -> a.name == "PrimaryKey" } ?: false
+      return batchTimed("hasPrimaryKey") {
+         type.definition?.fields
+            ?.flatMap { it -> it.annotations }
+            ?.any { a -> a.name == "PrimaryKey" } ?: false
+      }
    }
 
    fun getRowCount(): Int {

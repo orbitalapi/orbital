@@ -35,6 +35,15 @@ data class JsonWebsocketRequest(
          objectMapper
       )
    }
+   override fun buildStreamSource(input: InputStream, type: VersionedType, schema: Schema,messageId: String): StreamSource {
+      return JsonStreamSource(
+         input,
+         versionedType,
+         schema,
+         messageId,
+         objectMapper
+      )
+   }
 }
 
 
