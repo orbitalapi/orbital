@@ -32,6 +32,7 @@ class CalculatorTest {
          TestScenario(1.5, 4, FormulaOperator.Multiply, 6.0.toBigDecimal()),
          TestScenario(2L, 4.0, FormulaOperator.Multiply, 8.0.toBigDecimal()),
          TestScenario(4, 0.55003, FormulaOperator.Divide, 7.272330600149083.toBigDecimal()),
+         TestScenario(3,2, FormulaOperator.Divide, 1.5.toBigDecimal()),
 
 
          TestScenario(BigDecimal.TEN, BigDecimal.valueOf(5), FormulaOperator.Multiply, BigDecimal.valueOf(50)),

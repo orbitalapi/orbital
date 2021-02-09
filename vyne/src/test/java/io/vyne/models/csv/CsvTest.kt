@@ -51,11 +51,6 @@ type alias PersonList as Person[]
    }
 
    @Test
-   fun parsesTradeRecordsCsv() {
-
-   }
-
-   @Test
    fun canBuildListFromCsvDataWIthMultipleRecords() {
       val src = """type alias FirstName as String
 type alias LastName as String

@@ -27,6 +27,7 @@ export interface HeaderTypes {
     <ag-grid-angular
       style="width: 100%; height: 60vh;"
       class="ag-theme-alpine"
+      [enableCellTextSelection]="true"
       [rowData]="data"
       [columnDefs]="columnDefs">
     </ag-grid-angular>

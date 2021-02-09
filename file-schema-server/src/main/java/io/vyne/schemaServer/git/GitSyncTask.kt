@@ -62,6 +62,7 @@ class GitSyncTask(
                   } else {
                      gitRepo.clone()
                      gitRepo.checkout()
+                     recompile = true
                   }
 
                   if (gitRepo.isUpdated()) {

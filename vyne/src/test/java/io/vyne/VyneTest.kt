@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.DataSource
+import io.vyne.models.FailedEvaluatedExpression
 import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
@@ -98,6 +99,149 @@ fun testVyne(vararg schemas: String): Pair<Vyne, StubService> {
 fun testVyne(schema: String) = testVyne(TaxiSchema.from(schema))
 
 class VyneTest {
+
+   @Test
+   fun `when one operation failed but another path is present with different inputs then the different path is tried`() {
+      val (vyne, stubs) = testVyne(
+         """
+         type AssetClass inherits String
+         type Puid inherits Int
+         type InstrumentId inherits String
+         type CfiCode inherits String
+         type Isin inherits String
+         model Output {
+            @FirstNotEmpty assetClass: AssetClass
+            @FirstNotEmpty puid: Puid
+         }
+
+         model Input {
+            instrumentId: InstrumentId
+         }
+
+         model Instrument {
+            instrumentId: InstrumentId
+            cifCode: CfiCode
+            isin: Isin
+         }
+
+         model CfiToPuid {
+            cifCode: CfiCode
+            puid: Puid
+         }
+
+         model Product {
+            puid: Puid
+            assetClass: AssetClass
+         }
+
+         model AnnaResponse {
+            isin : Isin
+            derClassificationType : CfiCode
+         }
+
+         service InstrumentService {
+            @StubOperation("findByInstrumentId")
+            operation findByInstrumentId(InstrumentId):Instrument
+         }
+
+         // This is the service that will conditionally fail.
+         // There are two paths to finding inputs.
+         // The first (shorter) path will fail, and we want
+         // to ensure that the second longer path is also evaluated.
+         service CfiToPuidCaskService {
+            @StubOperation("findByCfiCode")
+            operation findByCfiCode(CfiCode):CfiToPuid
+         }
+
+         service ProductService {
+            @StubOperation("findByPuid")
+            operation findByPuid(Puid):Product
+         }
+
+         service AnnaService {
+            @StubOperation("findByIsin")
+            operation findByIsin(Isin):AnnaResponse
+         }
+
+         service InputService {
+           @StubOperation("findAll")
+            operation findAll(): Input[]
+         }
+      """.trimIndent()
+      )
+
+      // This test contains an operation (CfiToPuidCaskService.findByCfiCode)
+      // which has two different paths for evaluation.
+      // The first (shorter path) gets it's input from
+      // InstrumentService -> cfiCode -> CfiToPuidCaskService@@findByCfiCode
+      // We've set that path to fail.
+      // The second path is:
+      // InstrumentService -> isin -> AnnaService -> cfiCode -> CfiToPuidCaskService
+      // That path, if evaluated, will succeed
+
+      val inputJson = """[{"instrumentId" : "InstrumentId"}]""".trimMargin()
+      val inputs = TypedInstance.from(vyne.type("Input[]"), inputJson, vyne.schema, source = Provided)
+      val instrument = """{
+         |"instrumentId": "InstrumentId",
+         |"cifCode": "XXXX",
+         |"isin": "Isin"
+         |}
+      """.trimMargin()
+
+      stubs.addResponse("findAll", inputs)
+
+      stubs.addResponse(
+         "findByInstrumentId",
+         TypedInstance.from(vyne.type("Instrument"), instrument, vyne.schema, source = Provided)
+      )
+
+      stubs.addResponse("findByCfiCode") { operation, parameters ->
+         val cfiCode = parameters[0].second
+         if (cfiCode.value != "XXXX") {
+            val response = """{
+               |"puid" : 519,
+               |"cfiCode" : "$cfiCode"
+               |}
+            """.trimMargin()
+            TypedInstance.from(vyne.type("Product"), response, vyne.schema, source = Provided)
+         } else {
+            throw IllegalArgumentException()
+         }
+      }
+
+      stubs.addResponse(
+         "findByPuid",
+         TypedInstance.from(
+            vyne.type("Product"), """{
+            |"puid": 519,
+            |"assetClass": "assetClass"
+            |}""".trimMargin(), vyne.schema, source = Provided
+         )
+      )
+
+      val annaResponse = vyne.parseJsonModel(
+         "AnnaResponse", """{
+            |"isin": "Isin",
+            |"derClassificationType": "SCABC"
+            |}""".trimMargin()
+      )
+      stubs.addResponse(
+         "findByIsin",
+         annaResponse
+      )
+
+      val queryResult = vyne.query(
+         """
+         findAll { Input[] }  as Output[]
+      """.trimIndent()
+      )
+      queryResult.isFullyResolved.should.be.`true`
+      val results = queryResult["lang.taxi.Array<Output>"] as TypedCollection
+      val firstResult = results[0] as TypedObject
+      firstResult["puid"].value.should.not.be.`null`
+      firstResult["assetClass"].value.should.not.be.`null`
+   }
+
    @Test
    fun `when a provided object has a typed null for a value, it shouldnt be used as an input`() {
       val (vyne, stubs) = testVyne(
@@ -1576,8 +1720,52 @@ service ClientService {
    }
 
    @Test
+   fun `if query processing throws exception on attribute query should continue and use null for value`() {
+      val (vyne, stubs) = testVyne(
+         """
+            type Quantity inherits Int
+            type Price inherits Int
+
+            model Order {
+               quantity : Quantity
+               price : Price
+            }
+            model Output {
+               quantity : Quantity
+               price : Price
+               averagePrice : Decimal by (this.price / this.quantity)
+            }
+            service OrderService {
+               operation listOrders():Order[]
+            }
+         """.trimIndent()
+      )
+      // The below responseJson will trigger a divide-by-zero
+      val responseJson = """[
+         |{ "quantity" : 0 , "price" : 2 }
+         |]""".trimMargin()
+      stubs.addResponse(
+         "listOrders", vyne.parseJsonModel(
+            "Order[]", """[
+         |{ "quantity" : 0 , "price" : 2 }
+         |]""".trimMargin()
+         )
+      )
+
+      val queryResult = vyne.query("findAll { Order[] } as Output[]")
+      val outputCollection = queryResult["Output[]"] as TypedCollection
+      val outputModel = outputCollection[0] as TypedObject
+      outputModel["averagePrice"].value.should.be.`null`
+      val source = outputModel["averagePrice"].source
+      require(source is FailedEvaluatedExpression)
+      source.expressionTaxi.should.equal("(this.price / this.quantity)")
+      source.errorMessage.should.equal("Division by zero")
+   }
+
+   @Test
    fun `data integration with inheritance`() {
-      val (vyne, stubs) = testVyne("""
+      val (vyne, stubs) = testVyne(
+         """
          namespace Foo {
            type Isin inherits String
          }
@@ -1600,49 +1788,92 @@ service ClientService {
                operation getPUID(PuidRequest) :  PuidResponse
             }
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
 
-       stubs.addResponse("getPUID") { operation, parameters ->
-          val isinArgValue = parameters.first().second.value as Map<String, TypedValue>
-          val response = """{
+      stubs.addResponse("getPUID") { operation, parameters ->
+         val isinArgValue = parameters.first().second.value as Map<String, TypedValue>
+         val response = """{
          |"puid": "${isinArgValue["isin"]?.value.toString()}"
          |}
           """.trimMargin()
-          TypedInstance.from(vyne.type("PuidResponse"), response, vyne.schema, source = Provided)
+         TypedInstance.from(vyne.type("PuidResponse"), response, vyne.schema, source = Provided)
       }
-      val queryResult1 = vyne.query("""
+      val queryResult1 = vyne.query(
+         """
          given {
             isin: Bar.ProductIsin = "US500769FH22"
          } findOne {
             PuidResponse
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       queryResult1.isFullyResolved.should.be.`true`
       val puidResponse1 = queryResult1["Bar.PuidResponse"] as TypedObject
       puidResponse1["puid"].value.should.equal("US500769FH22")
 
-      val queryResult2 = vyne.query("""
+      val queryResult2 = vyne.query(
+         """
          given {
             isin: Bar.InstrumentIsin = "US500769FH23"
          } findOne {
             PuidResponse
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       queryResult2.isFullyResolved.should.be.`true`
       val puidResponse2 = queryResult2["Bar.PuidResponse"] as TypedObject
       puidResponse2["puid"].value.should.equal("US500769FH23")
 
-      val queryResult3 = vyne.query("""
+      val queryResult3 = vyne.query(
+         """
          given {
             isin: Bar.Isin = "US500769FH24"
          } findOne {
             PuidResponse
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       queryResult3.isFullyResolved.should.be.`true`
       val puidResponse3 = queryResult3["Bar.PuidResponse"] as TypedObject
       puidResponse3["puid"].value.should.equal("US500769FH24")
 
+   }
+
+   @Test
+   @Ignore("not yet implemented")
+   fun `can use a derived field as an input for discovery`() {
+      val (vyne, stub) = testVyne(
+         """
+         type Name inherits String
+         type FirstName inherits Name
+         type NickName inherits Name
+         type UserName inherits Name
+         type Age inherits Int
+         service NameService {
+            operation findAgeByName(UserName):Age
+         }
+         model InputModel {
+            firstName : FirstName?
+            nickName : NickName?
+         }
+         model OutputModel {
+            firstName : FirstName?
+            nickName : NickName?
+
+            userName : UserName by when {
+               this.firstName != null -> firstName
+               else -> nickName
+            }
+
+            age : Age
+         }
+         """
+      )
+      stub.addResponse("findAgeByName", vyne.typedValue("Age", 28))
+      val result = vyne.from(vyne.parseJsonModel("InputModel", """{ "firstName" : "jimmy" , "nickName" : "J-Dawg" }"""))
+         .build("OutputModel")
+      TODO()
    }
 
 }

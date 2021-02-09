@@ -3,7 +3,11 @@ import {ObjectViewComponent} from '../object-view/object-view.component';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {LineageDisplayModule} from './lineage-display.module';
-import {LINEAGE_GRAPH} from './lineage-data';
+import {
+  LINEAGE_GRAPH,
+  LINEAGE_GRAPH_WITH_EVALUATED_EXPRESSION,
+  LINEAGE_GRAPH_WITH_FAILED_EXPRESSION
+} from './lineage-data';
 
 storiesOf('Lineage display', module)
   .addDecorator(
@@ -27,5 +31,41 @@ storiesOf('Lineage display', module)
       }
     }
   };
-});
+})
+  .add('evaluated expression', () => {
+    return {
+      template: `<div style="padding: 40px">
+    <app-lineage-display
+    [dataSource]="lineageGraph"
+    [instance]="typeNamedInstance"
+    ></app-lineage-display>
+    </div>`,
+      props: {
+        lineageGraph: LINEAGE_GRAPH_WITH_EVALUATED_EXPRESSION,
+        typeNamedInstance: {
+          'typeName': 'demo.RewardsBalance',
+          'value': 2300
+        }
+      }
+    };
+
+  })
+  .add('failed expression', () => {
+    return {
+      template: `<div style="padding: 40px">
+    <app-lineage-display
+    [dataSource]="lineageGraph"
+    [instance]="typeNamedInstance"
+    ></app-lineage-display>
+    </div>`,
+      props: {
+        lineageGraph: LINEAGE_GRAPH_WITH_FAILED_EXPRESSION,
+        typeNamedInstance: {
+          'typeName': 'demo.RewardsBalance',
+          'value': 2300
+        }
+      }
+    };
+
+  });
 
