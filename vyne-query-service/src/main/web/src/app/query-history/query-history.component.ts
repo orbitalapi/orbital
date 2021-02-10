@@ -132,6 +132,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
       this.activeQueries.set(next.queryId, next);
     } else {
       this.activeQueries.delete(next.queryId);
+      this.loadData();
     }
 
   }

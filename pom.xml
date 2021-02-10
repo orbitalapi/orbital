@@ -180,6 +180,9 @@
 
    <dependencyManagement>
       <dependencies>
+         <!-- Beware that Pipeline Runner needs to stay on Dysprosium-SRx to remain compatible with Spring Boot 2.3 and
+         webflux.  When we upgrade Spring Boot globally to the 2.4.x release line, we can also remove project-specific
+         versions of reactor -->
          <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-bom</artifactId>

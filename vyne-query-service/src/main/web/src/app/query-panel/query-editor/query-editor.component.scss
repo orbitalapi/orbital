@@ -74,6 +74,11 @@ app-tabbed-results-view {
 
 .partial-results-panel {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  .partial-results-header {
+    margin: 1rem;
+  }
   app-results-table {
     height: 100%;
   }

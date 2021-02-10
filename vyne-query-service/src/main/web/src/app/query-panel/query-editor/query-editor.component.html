@@ -20,7 +20,7 @@
     <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0" [queryResult]="lastQueryResultAsSuccess">
     </app-error-panel>
     <div *ngIf="showPartialResults" class="partial-results-panel">
-      <div>This query is currently executing.  Partial results are shown below</div>
+      <div class="partial-results-header">This query is currently executing.  Partial results are shown below</div>
       <app-results-table
         [instances$]="partialResults$"
         [type]="partialResultType"
