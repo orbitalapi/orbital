@@ -5,20 +5,26 @@ import io.vyne.models.DataSource
 import io.vyne.models.DataSourceIncludedView
 import io.vyne.query.ProfilerOperationDTO
 import io.vyne.query.QueryResponse
+import io.vyne.query.history.QueryHistoryRecord
 import io.vyne.schemas.QualifiedName
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.client.HttpClientErrorException
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import reactor.core.publisher.Mono
 import java.time.Instant
 import kotlin.streams.toList
 
 @RestController
-class QueryHistoryService(private val history: QueryHistory, private val queryHistoryExporter: QueryHistoryExporter) {
-   private val truncationThreshold = 10
+class QueryHistoryService(
+   private val history: QueryHistory,
+   private val queryHistoryExporter: QueryHistoryExporter,
+   private val regressionPackProvider: RegressionPackProvider) {
 
    @DeleteMapping("/api/query/history")
    fun clearHistory() {
@@ -82,7 +88,15 @@ class QueryHistoryService(private val history: QueryHistory, private val queryHi
          queryHistoryExporter.export(it.response.results, exportType)
       }
    }
+
+   @PostMapping("/api/query/history/{id}/regressionPack")
+   fun getRegressionPack(@RequestBody request: RegressionPackRequest): Mono<StreamingResponseBody> {
+      return regressionPackProvider.createRegressionPack(request)
+   }
+
 }
+
+data class RegressionPackRequest(val queryId: String, val regressionPackName: String)
 
 data class QueryResultNodeDetail(
    val attributeName:String,

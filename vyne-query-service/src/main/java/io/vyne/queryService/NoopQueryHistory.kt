@@ -4,6 +4,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import io.vyne.query.history.QueryHistoryRecord
 
 @Component
 @ConditionalOnExpression("!\${vyne.query-history.enabled:true}")

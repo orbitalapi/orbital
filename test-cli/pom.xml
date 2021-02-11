@@ -66,6 +66,12 @@
          <artifactId>vyne</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <type>test-jar</type>
+         <version>${project.version}</version>
+      </dependency>
    </dependencies>
 
    <build>

@@ -3,8 +3,8 @@ package io.vyne.queryService.persistency
 import io.r2dbc.postgresql.codec.Json
 import io.r2dbc.spi.ConnectionFactory
 import io.vyne.models.TypeNamedInstance
+import io.vyne.query.history.QueryHistoryRecord
 import io.vyne.queryService.QueryHistory
-import io.vyne.queryService.QueryHistoryRecord
 import io.vyne.queryService.persistency.entity.QueryHistoryRecordEntity
 import io.vyne.queryService.persistency.entity.QueryHistoryRecordRepository
 import io.vyne.utils.log

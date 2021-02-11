@@ -40,7 +40,9 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.OutputStream
-import java.util.*
+import io.vyne.query.history.RestfulQueryHistoryRecord
+import io.vyne.query.history.VyneQlQueryHistoryRecord
+import java.util.UUID
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"

@@ -1,17 +1,13 @@
 package io.vyne.queryService
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.google.common.collect.EvictingQueue
-import io.vyne.query.HistoryQueryResponse
-import io.vyne.query.Query
+import io.vyne.query.history.QueryHistoryRecord
 import io.vyne.utils.log
-import io.vyne.vyneql.VyneQLQueryString
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.time.Instant
 
 interface QueryHistory {
    fun add(record: QueryHistoryRecord<out Any>)
@@ -51,40 +47,6 @@ class InMemoryQueryHistory(
    }
 }
 
-@JsonTypeInfo(
-   use = JsonTypeInfo.Id.CLASS,
-   include = JsonTypeInfo.As.PROPERTY,
-   property = "className")
-interface QueryHistoryRecord<T> {
-   val query: T
-   val response: HistoryQueryResponse
-   val timestamp: Instant
-   val id: String
-      get() {
-         return response.queryResponseId
-      }
 
-   fun withResponse(response: HistoryQueryResponse): QueryHistoryRecord<T>
-}
-
-data class VyneQlQueryHistoryRecord(
-   override val query: VyneQLQueryString,
-   override val response: HistoryQueryResponse,
-   override val timestamp: Instant = Instant.now()
-) : QueryHistoryRecord<VyneQLQueryString> {
-   override fun withResponse(historyQueryResponse: HistoryQueryResponse): QueryHistoryRecord<VyneQLQueryString> {
-      return copy(response = historyQueryResponse)
-   }
-}
-
-data class RestfulQueryHistoryRecord(
-   override val query: Query,
-   override val response: HistoryQueryResponse,
-   override val timestamp: Instant = Instant.now()
-) : QueryHistoryRecord<Query> {
-   override fun withResponse(historyQueryResponse: HistoryQueryResponse): QueryHistoryRecord<Query> {
-      return copy(response = historyQueryResponse)
-   }
-}
 
 

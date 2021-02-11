@@ -76,7 +76,7 @@
          <version>1.8</version>
       </dependency>
       <dependency>
-         <!-- Hipster provides implementations of graph search algorithims -->
+         <!-- Hipster provides implementations of graph search algorithms -->
          <groupId>es.usc.citius.hipster</groupId>
          <artifactId>hipster-core</artifactId>
          <version>1.0.1</version>
