@@ -99,6 +99,149 @@ fun testVyne(vararg schemas: String): Pair<Vyne, StubService> {
 fun testVyne(schema: String) = testVyne(TaxiSchema.from(schema))
 
 class VyneTest {
+
+   @Test
+   fun `when one operation failed but another path is present with different inputs then the different path is tried`() {
+      val (vyne, stubs) = testVyne(
+         """
+         type AssetClass inherits String
+         type Puid inherits Int
+         type InstrumentId inherits String
+         type CfiCode inherits String
+         type Isin inherits String
+         model Output {
+            @FirstNotEmpty assetClass: AssetClass
+            @FirstNotEmpty puid: Puid
+         }
+
+         model Input {
+            instrumentId: InstrumentId
+         }
+
+         model Instrument {
+            instrumentId: InstrumentId
+            cifCode: CfiCode
+            isin: Isin
+         }
+
+         model CfiToPuid {
+            cifCode: CfiCode
+            puid: Puid
+         }
+
+         model Product {
+            puid: Puid
+            assetClass: AssetClass
+         }
+
+         model AnnaResponse {
+            isin : Isin
+            derClassificationType : CfiCode
+         }
+
+         service InstrumentService {
+            @StubOperation("findByInstrumentId")
+            operation findByInstrumentId(InstrumentId):Instrument
+         }
+
+         // This is the service that will conditionally fail.
+         // There are two paths to finding inputs.
+         // The first (shorter) path will fail, and we want
+         // to ensure that the second longer path is also evaluated.
+         service CfiToPuidCaskService {
+            @StubOperation("findByCfiCode")
+            operation findByCfiCode(CfiCode):CfiToPuid
+         }
+
+         service ProductService {
+            @StubOperation("findByPuid")
+            operation findByPuid(Puid):Product
+         }
+
+         service AnnaService {
+            @StubOperation("findByIsin")
+            operation findByIsin(Isin):AnnaResponse
+         }
+
+         service InputService {
+           @StubOperation("findAll")
+            operation findAll(): Input[]
+         }
+      """.trimIndent()
+      )
+
+      // This test contains an operation (CfiToPuidCaskService.findByCfiCode)
+      // which has two different paths for evaluation.
+      // The first (shorter path) gets it's input from
+      // InstrumentService -> cfiCode -> CfiToPuidCaskService@@findByCfiCode
+      // We've set that path to fail.
+      // The second path is:
+      // InstrumentService -> isin -> AnnaService -> cfiCode -> CfiToPuidCaskService
+      // That path, if evaluated, will succeed
+
+      val inputJson = """[{"instrumentId" : "InstrumentId"}]""".trimMargin()
+      val inputs = TypedInstance.from(vyne.type("Input[]"), inputJson, vyne.schema, source = Provided)
+      val instrument = """{
+         |"instrumentId": "InstrumentId",
+         |"cifCode": "XXXX",
+         |"isin": "Isin"
+         |}
+      """.trimMargin()
+
+      stubs.addResponse("findAll", inputs)
+
+      stubs.addResponse(
+         "findByInstrumentId",
+         TypedInstance.from(vyne.type("Instrument"), instrument, vyne.schema, source = Provided)
+      )
+
+      stubs.addResponse("findByCfiCode") { operation, parameters ->
+         val cfiCode = parameters[0].second
+         if (cfiCode.value != "XXXX") {
+            val response = """{
+               |"puid" : 519,
+               |"cfiCode" : "$cfiCode"
+               |}
+            """.trimMargin()
+            TypedInstance.from(vyne.type("Product"), response, vyne.schema, source = Provided)
+         } else {
+            throw IllegalArgumentException()
+         }
+      }
+
+      stubs.addResponse(
+         "findByPuid",
+         TypedInstance.from(
+            vyne.type("Product"), """{
+            |"puid": 519,
+            |"assetClass": "assetClass"
+            |}""".trimMargin(), vyne.schema, source = Provided
+         )
+      )
+
+      val annaResponse = vyne.parseJsonModel(
+         "AnnaResponse", """{
+            |"isin": "Isin",
+            |"derClassificationType": "SCABC"
+            |}""".trimMargin()
+      )
+      stubs.addResponse(
+         "findByIsin",
+         annaResponse
+      )
+
+      val queryResult = vyne.query(
+         """
+         findAll { Input[] }  as Output[]
+      """.trimIndent()
+      )
+      queryResult.isFullyResolved.should.be.`true`
+      val results = queryResult["lang.taxi.Array<Output>"] as TypedCollection
+      val firstResult = results[0] as TypedObject
+      firstResult["puid"].value.should.not.be.`null`
+      firstResult["assetClass"].value.should.not.be.`null`
+   }
+
    @Test
    fun `when a provided object has a typed null for a value, it shouldnt be used as an input`() {
       val (vyne, stubs) = testVyne(
@@ -1700,7 +1843,8 @@ service ClientService {
    @Test
    @Ignore("not yet implemented")
    fun `can use a derived field as an input for discovery`() {
-      val (vyne,stub) = testVyne("""
+      val (vyne, stub) = testVyne(
+         """
          type Name inherits String
          type FirstName inherits Name
          type NickName inherits Name
@@ -1724,7 +1868,8 @@ service ClientService {
 
             age : Age
          }
-         """)
+         """
+      )
       stub.addResponse("findAgeByName", vyne.typedValue("Age", 28))
       val result = vyne.from(vyne.parseJsonModel("InputModel", """{ "firstName" : "jimmy" , "nickName" : "J-Dawg" }"""))
          .build("OutputModel")

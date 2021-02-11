@@ -310,7 +310,7 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
 
             }
          }
-         return calculatedValue ?: edge.failure(null)
+         return calculatedValue ?: edge.failure(null, failureReason = "Attribute $attributeName on type $typeName evaluated to null")
       }
       val attribute = previousObject[attributeName]
       return edge.success(attribute)

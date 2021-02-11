@@ -14,6 +14,8 @@ import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.PathEvaluation
 import io.vyne.query.graph.VyneGraphBuilder
+import io.vyne.query.graph.pathDescription
+import io.vyne.query.graph.pathHashExcludingWeights
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
@@ -48,6 +50,10 @@ class GraphSearcher(
       ABORT
    }
 
+   val searchDescription: String by lazy {
+      "Search ${this.startFact.label()} to ${this.targetFact.label()}"
+   }
+
    private fun prevalidatePath(
       proposedPath: WeightedNode<Relationship, Element, Double>,
       excludedEdges: MutableList<EvaluatableEdge>
@@ -72,7 +78,9 @@ class GraphSearcher(
       val excludedEdges = mutableListOf<EvaluatableEdge>()
       val evaluatedPaths = EvaluatedPathSet()
 
+      var searchCount = 0
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
+         log().info("$searchDescription: Attempting to build search path $searchCount")
          val facts = if (excludedInstance.isEmpty()) {
             knownFacts
          } else {
@@ -82,10 +90,11 @@ class GraphSearcher(
          // and excludedInstances)..as it should be a more powerful abstraction
          val proposedPath =
             findPath(facts, excludedOperationsNames, excludedEdges, excludedServices.excludedValues(), evaluatedPaths)
+
          return when {
             proposedPath == null -> null
             evaluatedPaths.containsPath(proposedPath) -> {
-               log().debug("The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again.")
+               log().info("The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again.")
                null
             }
             else -> {
@@ -98,28 +107,46 @@ class GraphSearcher(
          }
       }
 
-      var searchCount = 0
       var nextPath = buildNextPath()
       while (nextPath != null) {
-         evaluatedPaths.addPath(nextPath)
+         val nextPathId = nextPath.pathHashExcludingWeights()
+         evaluatedPaths.addProposedPath(nextPath)
+
+         log().info("$searchDescription - attempting path $nextPathId")
+         if (log().isDebugEnabled) {
+            log().debug("$searchDescription - attempting path $nextPathId: \n${nextPath.pathDescription()}")
+         }
+
          searchCount++
          if (searchCount > MAX_SEARCH_COUNT) {
             log().error("Search iterations exceeded max count. Stopping, lest we search forever in vein")
             return noResult(nextPath)
          }
          val evaluatedPath = evaluator(nextPath)
-         val (pathEvaluatedSuccessfully, resultValue) = wasSuccessful(evaluatedPath)
+         evaluatedPaths.addEvaluatedPath(evaluatedPath)
+         val (pathEvaluatedSuccessfully, resultValue, errorMessage) = wasSuccessful(evaluatedPath)
          val resultSatisfiesConstraints =
             pathEvaluatedSuccessfully && invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)
+         if (!pathEvaluatedSuccessfully) {
+            log().info("$searchDescription - path $nextPathId failed - last error was $errorMessage")
+         }
+
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
+            log().info("$searchDescription - path $nextPathId succeeded with value $resultValue")
             return SearchResult(resultValue, nextPath)
-         } else {
+         } else  {
+            if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
+               log().info("$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching")
+            } else {
+               log().info("$searchDescription - path $nextPathId did not complete successfully, will continue searching")
+            }
             appendIgnorableEdges(evaluatedPath, excludedEdges)
             nextPath = buildNextPath()
          }
       }
       // There were no search paths to evaluate.  Just exit
       //log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
+      log().info("$searchDescription ended - no more paths to evaluate")
       return noPath()
    }
 
@@ -146,7 +173,7 @@ class GraphSearcher(
       log().info("Graph search took $totalCost ms, ${buildCost}ms in ${graphBuilderTimes.size} build operations, and ${searchCost}ms in ${graphSearchTimes.size} searches")
    }
 
-   private fun wasSuccessful(evaluatedPath: List<PathEvaluation>): Pair<Boolean, TypedInstance?> {
+   private fun wasSuccessful(evaluatedPath: List<PathEvaluation>): Triple<Boolean, TypedInstance?, String?> {
       val lastEdge = evaluatedPath.last()
       val success = lastEdge is EvaluatedEdge && lastEdge.wasSuccessful
       val resultValue = if (success) {
@@ -154,7 +181,13 @@ class GraphSearcher(
       } else {
          null
       }
-      return success to resultValue
+      val errorMessage = if (!success) {
+         val evaluatedEdge = lastEdge as EvaluatedEdge
+         evaluatedEdge.error
+      } else {
+         null
+      }
+      return Triple(success, resultValue, errorMessage)
    }
 
 
@@ -229,14 +262,16 @@ class GraphSearcher(
             }
          }
          .useCostFunction { transition ->
-            evaluatedEdges.visitedCountAsCost(transition.fromState, transition.action, transition.state)
+            evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state)
 
          }
          .build()
 
 
       val executionPath = logTimeTo(graphSearchTimes) {
-         Hipster.createAStar(problem).search(targetFact).goalNode
+         Hipster
+            .createDijkstra(problem)
+            .search(targetFact).goalNode
       }
 
 
@@ -267,72 +302,4 @@ data class SearchResult(val typedInstance: TypedInstance?, val path: WeightedNod
       fun noResult(path: WeightedNode<Relationship, Element, Double>?) = SearchResult(null, path)
       fun noPath() = SearchResult(null, null)
    }
-}
-
-/**
- * Contains a set of paths that have already been evaluated.
- * The path is hashed excluding the weight of each visited node, as the
- * weight may change as a result of previous visits - however the path itself is still
- * the same path.
- */
-class EvaluatedPathSet {
-   private val paths: MutableMap<Int, WeightedNode<Relationship, Element, Double>> = mutableMapOf()
-   private val transitionCount: MutableMap<HashableTransition, Int> = mutableMapOf()
-
-   fun addPath(path: WeightedNode<Relationship, Element, Double>): Int {
-      val hash = path.pathHashExcludingWeights()
-      paths[hash] = path
-
-      updateTransitionCount(path)
-      return hash
-   }
-
-   /**
-    * Counts the number of times a specific transition has appeared in the evaluated paths
-    */
-   private fun updateTransitionCount(node: WeightedNode<Relationship, Element, Double>) {
-      node.path()
-         .filter { it.previousNode() != null }
-         .map { HashableTransition(it.previousNode().state(), it.action(), it.state()) }
-         .forEach { transition ->
-            transitionCount.compute(transition) { _, currentCount ->
-               currentCount?.plus(1) ?: 1
-            }
-         }
-   }
-
-   fun containsPath(path: WeightedNode<Relationship, Element, Double>): Boolean {
-      val hash = path.pathHashExcludingWeights()
-      return paths.containsKey(hash)
-   }
-
-   /**
-    * Uses the number of times a specific transition has been used as a cost for evalation.
-    * This appraoch ensures that if a transition has been evaluated previously, it is less favoured
-    * from another transition.
-    * In future, we can tweak this weighting based on action and the outcome of the evaluation
-    */
-   fun visitedCountAsCost(fromState: Element, action: Relationship, toState: Element): Double {
-      val transition = HashableTransition(fromState, action, toState)
-      val travsersedCount = transitionCount.getOrDefault(transition, 0)
-      // Add one, as this visit, if performed, will be previous number of visits + 1.
-      return (travsersedCount + 1) * 1.0
-   }
-
-   /**
-    * Models a transition of [from]-[relationship]->[to] which can be consistently hashed.
-    */
-   data class HashableTransition(
-      val from: Element,
-      val relationship: Relationship,
-      val to: Element
-   )
-}
-
-fun WeightedNode<Relationship, Element, Double>.hashExcludingWeight(): Int {
-   return setOf(this.action()?.hashCode() ?: 0, this.state()?.hashCode() ?: 0).hashCode()
-}
-
-fun WeightedNode<Relationship, Element, Double>.pathHashExcludingWeights(): Int {
-   return this.path().map { it.hashExcludingWeight() }.hashCode()
 }
