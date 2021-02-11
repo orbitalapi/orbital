@@ -15,24 +15,26 @@ import {MatInputModule} from '@angular/material/input';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {MatIconModule} from '@angular/material/icon';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
+import {ScrollingModule} from '@angular/cdk/scrolling';
 
 @NgModule({
-  imports: [
-    MatToolbarModule,
-    MatButtonModule,
-    SearchModule,
-    CommonModule,
-    BrowserModule,
-    CovalentHighlightModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatCardModule,
-    MatInputModule,
-    TypeAutocompleteModule,
-    MatIconModule,
-    HeaderBarModule
-  ],
+    imports: [
+        MatToolbarModule,
+        MatButtonModule,
+        SearchModule,
+        CommonModule,
+        BrowserModule,
+        CovalentHighlightModule,
+        ReactiveFormsModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatCardModule,
+        MatInputModule,
+        TypeAutocompleteModule,
+        MatIconModule,
+        HeaderBarModule,
+        ScrollingModule
+    ],
   exports: [TypeListComponent],
   declarations: [TypeListComponent, FilterTypesComponent],
   providers: [],
