@@ -26,7 +26,7 @@ build-jvm:
    except:
       - tags
       - develop
-      - master
+      - 0.13.8.patch
    cache:
       paths:
          - .m2/repository
@@ -52,7 +52,7 @@ build-ui:
    except:
       - tags
       - develop
-      - master
+      - 0.13.8.patch
    cache:
       paths:
          - vyne-query-service/src/main/web/node
@@ -84,7 +84,7 @@ build-publish-release:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - 'mvn $MAVEN_CLI_OPTS -DskipTests clean deploy -P release'
    only:
-      - master
+      - 0.13.8.patch
    artifacts:
       paths:
          - "test-cli/target/*.zip"
