@@ -21,7 +21,8 @@ class DatabaseBackedQueryHistory(private val repository: QueryHistoryRecordRepos
    override fun clear() {
       log().info("Clearing of history on db not yet implemented")
    }
-   override fun add(record: QueryHistoryRecord<out Any>) {
+   override fun add(recordProvider: () -> QueryHistoryRecord<out Any>) {
+      val record = recordProvider()
       repository
          .save(QueryHistoryRecordEntity(queryId = record.id, record = record, timestamp = record.timestamp))
          .subscribeOn(Schedulers.parallel())

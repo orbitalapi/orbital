@@ -125,7 +125,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
    private fun query(query: Query, contentType: String, outputStream: OutputStream, resultMode: ResultMode): MimeTypeString {
       val response = executeQuery(query)
-      history.add(RestfulQueryHistoryRecord(query, response.historyRecord()))
+      history.add { RestfulQueryHistoryRecord(query, response.historyRecord()) }
       return serialise(response, contentType, outputStream, resultMode)
    }
 
@@ -151,8 +151,10 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
             // happens when Schema is empty
             FailedSearchResponse(e.message!!, null)
          }
-         val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
-         history.add(record)
+         val recordProvider = {
+            VyneQlQueryHistoryRecord(query, response.historyRecord())
+         }
+         history.add(recordProvider)
 
          serialise(response, contentType, outputStream, resultMode)
       }
