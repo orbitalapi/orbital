@@ -10,7 +10,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 interface QueryHistory {
-   fun add(record: QueryHistoryRecord<out Any>)
+   fun add(recordProvider: () -> QueryHistoryRecord<out Any>)
    fun list(): Flux<QueryHistoryRecord<out Any>>
    fun get(id: String): Mono<QueryHistoryRecord<out Any>>
    fun clear()
@@ -22,7 +22,8 @@ class InMemoryQueryHistory(
    @Value("\${vyne.query-history.in-memory-limit:10}") val historySize: Int = 10
 ) : QueryHistory {
    private val queries = EvictingQueue.create<QueryHistoryRecord<out Any>>(historySize)
-   override fun add(record: QueryHistoryRecord<out Any>) {
+   override fun add(recordProvider: () -> QueryHistoryRecord<out Any>) {
+      val record = recordProvider()
       this.queries.add(record);
       log().info("Saving to query history /query/history/${record.id}/profile")
    }
