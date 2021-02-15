@@ -6,8 +6,8 @@ import io.vyne.query.QueryResult
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import org.springframework.stereotype.Component
+import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
 import java.util.concurrent.CompletableFuture
 
 @Component
@@ -15,7 +15,10 @@ class ExecutingQueryRepository(
    val queryHistory: QueryHistory
 ) {
    private val runningQueries: MutableMap<String, ExecutableQuery> = mutableMapOf()
-   private val statusUpdateSink = Sinks.many().multicast().onBackpressureBuffer<RunningQueryStatus>()
+   private val statusUpdateEmitter = EmitterProcessor.create<RunningQueryStatus>()
+   private val statusUpdateSink = statusUpdateEmitter.sink()
+   // After upgrading to reactor 2020.x:
+//   private val statusUpdateSink = Sinks.many().multicast().onBackpressureBuffer<RunningQueryStatus>()
    fun submit(executableQuery: ExecutableQuery): CompletableFuture<QueryResult> {
       log().info("Adding query ${executableQuery.queryId} to list of running queries")
       this.runningQueries[executableQuery.queryId] = executableQuery
@@ -44,7 +47,9 @@ class ExecutingQueryRepository(
 
    val statusUpdates: Flux<RunningQueryStatus>
       get() {
-         return statusUpdateSink.asFlux()
+         return statusUpdateEmitter
+         // after upgrading to reactor 2020.x
+//         return statusUpdateSink.asFlux()
       }
 
    private fun removeCompletedQuery(executableQuery: ExecutableQuery) {
@@ -58,10 +63,12 @@ class ExecutingQueryRepository(
 
    private fun sendStatus(status: RunningQueryStatus) {
       log().debug("Sending query status update on query ${status.queryId}")
-      statusUpdateSink.emitNext(status) { signalType, emitResult ->
-         log().warn("Failed to emit update on executable query ${status.queryId} - $emitResult")
-         false
-      }
+      // after upgrading to reactor 2020.x
+//      statusUpdateSink.emitNext(status) { signalType, emitResult ->
+//         log().warn("Failed to emit update on executable query ${status.queryId} - $emitResult")
+//         false
+//      }
+      statusUpdateSink.next(status)
    }
 
    fun list(): List<ExecutableQuery> {

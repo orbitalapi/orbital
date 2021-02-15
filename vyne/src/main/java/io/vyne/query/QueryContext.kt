@@ -26,8 +26,8 @@ import io.vyne.vyneql.ProjectedType
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
+import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -238,6 +238,7 @@ data class QueryContext(
    val executionStartTime: Instant = Instant.now()
 
    private val cancelled = AtomicBoolean(false)
+
    /**
     * Requests that the currently running query cancel.
     * Because of limitations of CompletableFuture and cancel(), this will not stop immediately,
@@ -248,10 +249,10 @@ data class QueryContext(
       log().info("Query context ${this.queryContextId} tagged as cancelled.")
    }
 
-   val isCancelRequested:Boolean
-   get() {
-      return cancelled.get()
-   }
+   val isCancelRequested: Boolean
+      get() {
+         return cancelled.get()
+      }
 
 
    /**
@@ -268,10 +269,15 @@ data class QueryContext(
       get() {
          return publishedResultCount.get()
       }
-   private val resultSink = Sinks.many().replay().all<TypedInstance>()
+//   Can't use sinks until migrating to Spring Boot 2.4
+//   private val resultSink = Sinks.many().replay().all<TypedInstance>()
+
+   private val resultEmitter = EmitterProcessor.create<TypedInstance>()
+   private val resultSink = resultEmitter.sink()
    val resultStream: Flux<TypedInstance>
       get() {
-         return resultSink.asFlux()
+         return resultEmitter
+//         return resultSink.asFlux()
       }
 
    fun setApproximateProjectionSize(size: Int) {
@@ -282,11 +288,15 @@ data class QueryContext(
       val emittedCount = publishedResultCount.incrementAndGet()
       val targetSize = projectionSize?.toString() ?: "unknown"
       log().info("Query $queryContextId published $emittedCount of approx. $targetSize")
-      resultSink.tryEmitNext(instance)
+      resultSink.next(instance)
+      // After upgrading to reactor 2020.x:
+      //      resultSink.tryEmitNext(instance)
    }
 
    fun endResultStream() {
-      resultSink.tryEmitComplete()
+      resultSink.complete()
+      // After upgrading to reactor 2020.x:
+//      resultSink.tryEmitComplete()
    }
 
 
