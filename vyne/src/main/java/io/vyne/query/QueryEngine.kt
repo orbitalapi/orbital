@@ -257,15 +257,20 @@ abstract class BaseQueryEngine(
          context.setApproximateProjectionSize(inboundFactList.size)
          log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
          val transformed = inboundFactList
-            .stream()
-            .takeWhile { !context.isCancelRequested }
-            .map { mapTo(targetCollectionType, it, context) }
-            .filter { it != null }
+            .mapNotNull {
+               // Once the cancel has been requested, we keep iterating, but don't do any work.
+               // Originally was using takeWhile { !context.isCancelRequested }
+               // over a stream, however this lead to some compilation changes
+               if (!context.isCancelRequested) {
+                  mapTo(targetCollectionType, it, context)
+               } else {
+                  null
+               }
+            }
             .map { instance ->
-               context.publishPartialResult(instance!!)
+               context.publishPartialResult(instance)
                instance
             }
-            .collect(Collectors.toList())
 
          context.endResultStream()
          return@timed when {

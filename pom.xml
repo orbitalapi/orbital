@@ -56,7 +56,7 @@
       <module>vyne-ql</module>
       <module>test-cli</module>
       <module>jwt-auth-server</module>
-       <module>test-containers</module>
+      <module>test-containers</module>
    </modules>
 
    <scm>
@@ -180,13 +180,15 @@
 
    <dependencyManagement>
       <dependencies>
-         <!-- Beware that Pipeline Runner needs to stay on Dysprosium-SRx to remain compatible with Spring Boot 2.3 and
-         webflux.  When we upgrade Spring Boot globally to the 2.4.x release line, we can also remove project-specific
-         versions of reactor -->
+         <!-- We really want to move to 2020.0.x (or later), but there are issues in cask and pipelines that
+         conflict in the version of spring webflux / netty.
+         When we upgrade the stack to Spring Boot 2.4.x release line (or later), then we can upgrade wholesale.
+         -->
          <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-bom</artifactId>
-            <version>2020.0.2</version>
+            <!--                  <version>2020.0.2</version>-->
+            <version>Dysprosium-SR6</version>
             <type>pom</type>
             <scope>import</scope>
          </dependency>
@@ -300,7 +302,8 @@
                <commitMessages>
                   <releaseStartMessage>Update versions for release @{version}</releaseStartMessage>
                   <releaseFinishMessage>Update for next development version @{version}</releaseFinishMessage>
-                  <releaseVersionUpdateMessage>Update for next development version @{version}</releaseVersionUpdateMessage>
+                  <releaseVersionUpdateMessage>Update for next development version @{version}
+                  </releaseVersionUpdateMessage>
                </commitMessages>
                <!-- Configure branches -->
                <gitFlowConfig>
@@ -458,7 +461,9 @@
          </activation>
          <properties>
             <docker.tag.latest>latest-snapshot</docker.tag.latest>
-            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}</docker.tag.numbered>
+            <docker.tag.numbered>
+               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-BETA-${buildNumber}
+            </docker.tag.numbered>
          </properties>
       </profile>
       <profile>
@@ -477,7 +482,9 @@
          </activation>
          <properties>
             <docker.tag.latest>latest-alpha</docker.tag.latest>
-            <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}</docker.tag.numbered>
+            <docker.tag.numbered>
+               ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}
+            </docker.tag.numbered>
          </properties>
       </profile>
    </profiles>
