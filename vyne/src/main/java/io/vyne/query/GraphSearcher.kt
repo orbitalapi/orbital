@@ -21,6 +21,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 
 // This class is not optimized.  Need to investigate how to speed it up.
@@ -38,6 +39,7 @@ class GraphSearcher(
 
    companion object {
       const val MAX_SEARCH_COUNT = 100
+      val logger = KotlinLogging.logger { }
    }
 
    private enum class PathPrevaliationResult {
@@ -80,7 +82,7 @@ class GraphSearcher(
 
       var searchCount = 0
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
-         log().info("$searchDescription: Attempting to build search path $searchCount")
+         logger.debug { "$searchDescription: Attempting to build search path $searchCount" }
          val facts = if (excludedInstance.isEmpty()) {
             knownFacts
          } else {
@@ -94,7 +96,7 @@ class GraphSearcher(
          return when {
             proposedPath == null -> null
             evaluatedPaths.containsPath(proposedPath) -> {
-               log().info("The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again.")
+               logger.debug { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
                null
             }
             else -> {
@@ -107,15 +109,12 @@ class GraphSearcher(
          }
       }
 
-      var nextPath = buildNextPath()
+      var nextPath: WeightedNode<Relationship, Element, Double>? = buildNextPath()
       while (nextPath != null) {
          val nextPathId = nextPath.pathHashExcludingWeights()
          evaluatedPaths.addProposedPath(nextPath)
 
-         log().info("$searchDescription - attempting path $nextPathId")
-         if (log().isDebugEnabled) {
-            log().debug("$searchDescription - attempting path $nextPathId: \n${nextPath.pathDescription()}")
-         }
+         logger.debug { "$searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
 
          searchCount++
          if (searchCount > MAX_SEARCH_COUNT) {
@@ -128,25 +127,25 @@ class GraphSearcher(
          val resultSatisfiesConstraints =
             pathEvaluatedSuccessfully && invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)
          if (!pathEvaluatedSuccessfully) {
-            log().info("$searchDescription - path $nextPathId failed - last error was $errorMessage")
+            logger.info { "$searchDescription - path $nextPathId failed - last error was $errorMessage" }
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
-            log().info("$searchDescription - path $nextPathId succeeded with value $resultValue")
+            logger.info { "$searchDescription - path $nextPathId succeeded with value $resultValue" }
             return SearchResult(resultValue, nextPath)
-         } else  {
+         } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
-               log().info("$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching")
+               logger.debug { "$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching" }
             } else {
-               log().info("$searchDescription - path $nextPathId did not complete successfully, will continue searching")
+               logger.debug { "$searchDescription - path $nextPathId did not complete successfully, will continue searching" }
+
             }
             appendIgnorableEdges(evaluatedPath, excludedEdges)
             nextPath = buildNextPath()
          }
       }
       // There were no search paths to evaluate.  Just exit
-      //log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
-      log().info("$searchDescription ended - no more paths to evaluate")
+      logger.debug { "$searchDescription ended - no more paths to evaluate" }
       return noPath()
    }
 
@@ -170,7 +169,7 @@ class GraphSearcher(
       val buildCost = graphBuilderTimes.sum()
       val searchCost = graphSearchTimes.sum()
       val totalCost = buildCost + searchCost
-      log().info("Graph search took $totalCost ms, ${buildCost}ms in ${graphBuilderTimes.size} build operations, and ${searchCost}ms in ${graphSearchTimes.size} searches")
+      logger.info { "Graph search took $totalCost ms, ${buildCost}ms in ${graphBuilderTimes.size} build operations, and ${searchCost}ms in ${graphSearchTimes.size} searches" }
    }
 
    private fun wasSuccessful(evaluatedPath: List<PathEvaluation>): Triple<Boolean, TypedInstance?, String?> {
@@ -275,7 +274,7 @@ class GraphSearcher(
       }
 
 
-      log().debug("Generated path with hash ${executionPath.pathHashExcludingWeights()}")
+      logger.debug { "Generated path with hash ${executionPath.pathHashExcludingWeights()}" }
       return if (executionPath.state() != targetFact) {
          null
       } else {

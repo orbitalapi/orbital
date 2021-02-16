@@ -59,6 +59,7 @@ logging:
       com.netflix: WARN
       com.hazelcast: WARN
       io.vyne: INFO
+      io.vyne.query: INFO
       org.apache.catalina: WARN
 eureka:
    client:

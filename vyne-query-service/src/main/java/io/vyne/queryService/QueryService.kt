@@ -135,7 +135,14 @@ class QueryService(
       val futureQuery: ExecutableQuery = try {
          vyne.queryAsync(query)
       } catch (e: CompilationException) {
-         throw e
+         val response = FailedSearchResponse(
+            message = e.message!!, // Message contains the error messages from the compiler
+            profilerOperation = null
+         )
+         val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
+         history.add(record)
+
+         throw BadSearchRequestException(response)
       }
       executingQueryRepository.submit(futureQuery)
 
@@ -303,3 +310,15 @@ class QueryService(
       }
    }
 }
+
+/**
+ * There's a few inconsistent ways we're returning errors back to the client, depending on the HTTP execution
+ * style we're using.
+ * This is an exception that wraps a FailedSearchResponse.
+ * In time, we should pick a style and standardise on it.
+ */
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+class BadSearchRequestException(
+   val response: FailedSearchResponse
+) : RuntimeException(response.message)
+

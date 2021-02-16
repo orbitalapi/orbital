@@ -26,7 +26,7 @@ import io.vyne.vyneql.ProjectedType
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
-import reactor.core.publisher.EmitterProcessor
+import reactor.core.publisher.DirectProcessor
 import reactor.core.publisher.Flux
 import java.time.Instant
 import java.util.*
@@ -272,7 +272,13 @@ data class QueryContext(
 //   Can't use sinks until migrating to Spring Boot 2.4
 //   private val resultSink = Sinks.many().replay().all<TypedInstance>()
 
-   private val resultEmitter = EmitterProcessor.create<TypedInstance>()
+   private val resultEmitter = DirectProcessor.create<TypedInstance>()
+
+   // An emitter that doesn't disconnect, even if there's no subscribers.
+   private val multicastResultEmitter = resultEmitter
+      .publish()
+      .refCount(1 /*, Duration.ofDays(999) */)
+
    private val resultSink = resultEmitter.sink()
    val resultStream: Flux<TypedInstance>
       get() {

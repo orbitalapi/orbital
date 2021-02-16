@@ -189,11 +189,11 @@ export class QueryEditorComponent implements OnInit {
       error => {
         this.loading = false;
         const errorResponse = error as HttpErrorResponse;
-        if (errorResponse.error && (errorResponse.error as any).hasOwnProperty('profilerOperation')) {
+        if (errorResponse.error && (errorResponse.error as any).hasOwnProperty('message')) {
           this.lastQueryResult = new QueryFailure(
             errorResponse.error.message,
-            errorResponse.error.profilerOperation,
-            errorResponse.error.remoteCalls);
+            errorResponse.error.profilerOperation || null,
+            errorResponse.error.remoteCalls || []);
 
         } else {
           // There was an unhandled error...
