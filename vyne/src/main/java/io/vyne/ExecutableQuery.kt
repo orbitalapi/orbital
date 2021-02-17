@@ -44,8 +44,7 @@ data class ExecutableQuery(
     * the result stream emits a new message
     */
    fun currentStatusStream(): Flux<RunningQueryStatus> {
-      return Flux.from(queryContext.resultStream)
-         .map { currentStatus() }
+      return queryContext.resultStream.map { currentStatus() }
    }
 
    fun currentStatus(): RunningQueryStatus {

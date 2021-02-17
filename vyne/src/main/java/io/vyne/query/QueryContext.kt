@@ -282,7 +282,7 @@ data class QueryContext(
    private val resultSink = resultEmitter.sink()
    val resultStream: Flux<TypedInstance>
       get() {
-         return resultEmitter
+         return multicastResultEmitter
 //         return resultSink.asFlux()
       }
 

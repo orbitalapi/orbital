@@ -257,6 +257,7 @@ abstract class BaseQueryEngine(
          context.setApproximateProjectionSize(inboundFactList.size)
          log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
          val transformed = inboundFactList
+            .asSequence()
             .mapNotNull {
                // Once the cancel has been requested, we keep iterating, but don't do any work.
                // Originally was using takeWhile { !context.isCancelRequested }
@@ -270,7 +271,7 @@ abstract class BaseQueryEngine(
             .map { instance ->
                context.publishPartialResult(instance)
                instance
-            }
+            }.toList()
 
          context.endResultStream()
          return@timed when {
