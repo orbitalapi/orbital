@@ -1,9 +1,17 @@
 @import "src/theme";
 @import "src/toolbar";
 :host {
-  background-color: $body-bg;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
+
+.container {
+  height: 100%;
+  display: flex;
+  flex-grow: 1;
+}
+
 
 ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
   color: rgba($body, 0.6);
@@ -53,6 +61,7 @@
 
 .search-result {
   padding: 8px;
+  margin: 0 1rem;
   border: 1px solid transparent;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 
@@ -158,4 +167,10 @@
     text-overflow: ellipsis;
   }
 
+}
+
+// https://stackoverflow.com/a/54890012
+// Make the virtual scroll element size 100% vertically
+.cdk-viewport-list {
+  flex-grow: 1;
 }
