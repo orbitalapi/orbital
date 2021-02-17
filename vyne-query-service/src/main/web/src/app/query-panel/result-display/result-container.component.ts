@@ -9,7 +9,7 @@ import * as fileSaver from 'file-saver';
 import {Router} from '@angular/router';
 import {BaseQueryResultComponent} from './BaseQueryResultComponent';
 
-export enum DownloadFileType {JSON = 'JSON', CSV = 'CSV'}
+export enum DownloadFileType {JSON = 'JSON', CSV = 'CSV', TEST_CASE = 'ZIP'}
 
 @Component({
   selector: 'query-result-container',

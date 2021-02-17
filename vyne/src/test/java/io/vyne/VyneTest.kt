@@ -1841,6 +1841,39 @@ service ClientService {
    }
 
    @Test
+   fun `GATHER strategy should respect the constraints in Query`() {
+      val (vyne, stubs) = testVyne(
+         """
+         namespace Bar {
+            type Isin inherits String
+            model Order {
+               isin: Isin
+            }
+
+            service OrderService {
+              operation findAll(): Order[]
+              operation findOrder(): Order
+            }
+         }
+      """.trimIndent()
+      )
+      stubs.addResponse("findAll", { remoteOperation, list ->
+         fail("should not call findAll")
+      })
+
+      stubs.addResponse("findOrder", { remoteOperation, list ->
+         fail("should not call findOrder")
+      })
+
+      vyne.query("""
+            findAll {
+    Bar.Order[](Isin= 'IT0000312312')
+    }
+      """.trimIndent())
+
+   }
+
+   @Test
    @Ignore("not yet implemented")
    fun `can use a derived field as an input for discovery`() {
       val (vyne, stub) = testVyne(

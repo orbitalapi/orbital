@@ -182,3 +182,13 @@ data class OperationContract(
       return constraints.filterIsInstance(clazz).first()
    }
 }
+
+
+fun RemoteOperation.httpOperationMetadata(): VyneHttpOperation {
+   val annotation = metadata("HttpOperation")
+   val url = annotation.params["url"] as String
+   val method = annotation.params["method"] as String
+   return VyneHttpOperation(httpOperationMetadata = annotation, url = url, method = method)
+}
+
+data class VyneHttpOperation(val httpOperationMetadata: Metadata, val url: String, val method: String)

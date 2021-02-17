@@ -1,6 +1,7 @@
 package io.vyne.query
 
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import org.junit.Before
 import org.junit.Test
 import java.time.Clock
@@ -11,6 +12,7 @@ class QueryProfilerTest {
 
    lateinit var profiler: QueryProfiler
    lateinit var clock: ManualClock
+
    @Before
    fun setup() {
       clock = ManualClock(Instant.now())
@@ -37,7 +39,30 @@ class QueryProfilerTest {
       val firstChild = operations.first().children.first()
       expect(firstChild.operationName).to.equal("Child")
       expect(firstChild.result!!.value).to.equal("Child Completed")
+   }
 
+   @Test
+   fun `Profile Record should stop properly even if wrapped operation throws`() {
+      val result = try {
+         profiler.startChild("Test", "First", OperationType.GRAPH_TRAVERSAL) { rec ->
+            clock.advanceMillis(10)
+            rec.startChild("Test", "Child", OperationType.GRAPH_TRAVERSAL) {
+               clock.advanceMillis(20)
+               "Child Completed"
+            }
+            clock.advanceMillis(10)
+            throw IllegalArgumentException("Parent completed with Error")
+         }
+      } catch (e: Exception) { }
+
+      val operations = profiler.children
+      result.should.equal(result)
+      expect(operations).to.have.size(1)
+      expect(operations.first().operationName).to.equal("First")
+      expect(operations.first().children).to.have.size(1)
+      val firstChild = operations.first().children.first()
+      expect(firstChild.operationName).to.equal("Child")
+      expect(firstChild.result!!.value).to.equal("Child Completed")
    }
 
    @Test
@@ -98,7 +123,7 @@ class QueryProfilerTest {
       val grandChild1 = profiler.startChild("test", "grandChild1", OperationType.GRAPH_TRAVERSAL)
       clock.advanceMillis(10)
 
-      val greatGrandChild = profiler.startChild("test","greatGrandchild",OperationType.REMOTE_CALL)
+      val greatGrandChild = profiler.startChild("test", "greatGrandchild", OperationType.REMOTE_CALL)
       clock.advanceMillis(30)
 
       greatGrandChild.stop()

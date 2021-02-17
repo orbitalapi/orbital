@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
 
 
-class TypeNamedInstanceDeserializer : JsonDeserializer<TypeNamedInstance>() {
+open class TypeNamedInstanceDeserializer : JsonDeserializer<TypeNamedInstance>() {
    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): TypeNamedInstance {
       val rawMap = p.readValueAs(Any::class.java)
       val deserialized = when (rawMap) {
@@ -25,7 +25,7 @@ class TypeNamedInstanceDeserializer : JsonDeserializer<TypeNamedInstance>() {
       return deserialized as TypeNamedInstance
    }
 
-   private fun deserializeValue(value: Any): Any {
+   protected fun deserializeValue(value: Any): Any {
       return when (value) {
          is List<*> -> value.map { deserializeValue(it as Any) }
          is Map<*, *> -> deserializeMap(value as Map<Any, Any>)
@@ -33,7 +33,7 @@ class TypeNamedInstanceDeserializer : JsonDeserializer<TypeNamedInstance>() {
       }
    }
 
-   private fun deserializeMap(rawMap: Map<Any, Any>): Any {
+   protected open fun deserializeMap(rawMap: Map<Any, Any>): Any {
       val isTypeNamedInstance = rawMap.containsKey("typeName") && rawMap.containsKey("value")
       if (isTypeNamedInstance) {
          val typeName = rawMap.getValue("typeName") as String
