@@ -38,11 +38,13 @@ $grey-3: #12345f;
 
 // Colors from a pallete here:
 // https://coolors.co/60b609-274060-54457f-282a3a-e66641
-$vyne-green: rgba(96, 182, 9, 1);
-$color2: rgba(39, 64, 96, 1);
+$vyne-green: rgb(96, 182, 9);
+$color2: rgb(39, 64, 96);
 $color3: rgba(84, 69, 127, 1);
 $color4: rgba(40, 42, 58, 1);
 $color5: rgba(230, 102, 65, 1);
+
+$midnight-grey: #0c1826;
 
 $dark-blue-1: #1d2539;
 //$dark-blue-1: #171F46;
@@ -83,53 +85,10 @@ $vyne-grey-blue-palette: (
   A400 : $vyne-primary,
   A700 : darken($vyne-primary, 30%),
   contrast: (
-    50 : #000000,
-    100 : #000000,
-    200 : #000000,
-    300 : #000000,
-    400 : #000000,
-    500 : #ffffff,
-    600 : #ffffff,
-    700 : #ffffff,
-    800 : #ffffff,
-    900 : #ffffff,
-    A100 : #000000,
-    A200 : #000000,
-    A400 : #000000,
-    A700 : #000000,
-  )
-);
-
-$vyne-green-palette: (
-  50 : #e4f7f0,
-  100 : #bcead9,
-  200 : #8fdcc0,
-  300 : #62cea6,
-  400 : #40c493,
-  500 : #1eb980,
-  600 : #1ab278,
-  700 : #16aa6d,
-  800 : #12a263,
-  900 : #0a9350,
-  A100 : #c1ffde,
-  A200 : #8effc3,
-  A400 : #5bffa7,
-  A700 : #41ff9a,
-  contrast: (
-    50 : #000000,
-    100 : #000000,
-    200 : #000000,
-    300 : #000000,
-    400 : #000000,
-    500 : #000000,
-    600 : #ffffff,
-    700 : #ffffff,
-    800 : #ffffff,
-    900 : #ffffff,
-    A100 : #000000,
-    A200 : #000000,
-    A400 : #000000,
-    A700 : #000000,
+    A100 : #AFDFFF,
+    A200 : #7CCBFF,
+    A400 : $whiteish, // This is the colour used for button text against a primary button, (A400), so ensure good contrast
+    A700 : #30ACFF,
   )
 );
 

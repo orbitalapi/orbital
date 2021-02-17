@@ -88,7 +88,7 @@ export class TypeListComponent implements OnInit {
         this.router.navigate(['/services', serviceName, operationName]);
         break;
       default:
-        this.router.navigate(['/types', member.name.fullyQualifiedName]);
+        this.router.navigate(['/catalog', member.name.fullyQualifiedName]);
     }
 
   }
