@@ -68,7 +68,8 @@ class CaskServiceBootstrap constructor(
             regenerateCaskServicesAsync()
          }
          else -> {
-            log().info("Upgrade check completed, nothing to do.")
+            log().info("No action found for schema change event, checking view based casks as the last resort...")
+            this.generateCaskViews()
          }
       }
 
