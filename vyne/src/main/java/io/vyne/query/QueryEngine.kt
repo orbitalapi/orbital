@@ -200,8 +200,8 @@ abstract class BaseQueryEngine(
             // This allows query and response to use the same id, which makes
             // async lookups easier, as there's one less thing to resolve.
             // However, if this breaks stuff, revert to UUID as it was before.
-            queryResponseId = context.queryContextId
-
+            queryResponseId = context.queryContextId,
+            wasCancelled = context.isCancelRequested
          )
       } else {
          QueryResult(
@@ -212,7 +212,8 @@ abstract class BaseQueryEngine(
             // This allows query and response to use the same id, which makes
             // async lookups easier, as there's one less thing to resolve.
             // However, if this breaks stuff, revert to UUID as it was before.
-            queryResponseId = context.queryContextId
+            queryResponseId = context.queryContextId,
+            wasCancelled = context.isCancelRequested
          )
       }
    }
@@ -406,8 +407,8 @@ abstract class BaseQueryEngine(
             // This allows query and response to use the same id, which makes
             // async lookups easier, as there's one less thing to resolve.
             // However, if this breaks stuff, revert to UUID as it was before.
-            queryResponseId = context.queryContextId
-
+            queryResponseId = context.queryContextId,
+            wasCancelled = context.isCancelRequested
          )
       }
       return result
@@ -482,7 +483,8 @@ abstract class BaseQueryEngine(
             // This allows query and response to use the same id, which makes
             // async lookups easier, as there's one less thing to resolve.
             // However, if this breaks stuff, revert to UUID as it was before.
-            queryResponseId = context.queryContextId
+            queryResponseId = context.queryContextId,
+            wasCancelled = context.isCancelRequested
          )
       }
    }

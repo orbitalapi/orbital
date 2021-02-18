@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
+import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringSerializer
@@ -23,8 +24,13 @@ data class RunningQueryStatus(
    val completedProjections: Int,
    val estimatedProjectionCount: Int?,
    val startTime: Instant,
-   val running: Boolean
-)
+   val running: Boolean,
+   val state: QueryResponse.ResponseStatus
+) {
+   enum class RunningQuerySTate {
+
+   }
+}
 
 data class ExecutableQuery(
    @get:JsonIgnore
@@ -63,7 +69,14 @@ data class ExecutableQuery(
          this.completedProjections,
          this.estimatedProjectionCount,
          this.startTime,
-         running = (!result.isDone && !result.isCancelled && !result.isCompletedExceptionally)
+         running = (!result.isDone && !result.isCancelled && !result.isCompletedExceptionally),
+         state = when {
+            // Check for isCompletedExceptionally before calling result.get() to avoid exceptions
+            result.isCompletedExceptionally -> QueryResponse.ResponseStatus.ERROR
+            result.isDone -> result.get().responseStatus
+            result.isCancelled -> QueryResponse.ResponseStatus.CANCELLED
+            else -> QueryResponse.ResponseStatus.RUNNING
+         }
       )
    }
 

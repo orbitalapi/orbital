@@ -13,6 +13,7 @@ import io.vyne.models.*
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
 import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
 import io.vyne.query.QueryResponse.ResponseStatus
+import io.vyne.query.QueryResponse.ResponseStatus.CANCELLED
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
 import io.vyne.query.graph.Element
@@ -78,13 +79,18 @@ data class QueryResult(
    override val profilerOperation: ProfilerOperation? = null,
    override val queryResponseId: String = UUID.randomUUID().toString(),
    val truncated: Boolean = false,
-   val anonymousTypes: Set<Type> = setOf()
+   val anonymousTypes: Set<Type> = setOf(),
+   val wasCancelled: Boolean = false
 ) : QueryResponse {
 
    val duration = profilerOperation?.duration
 
    override val isFullyResolved = unmatchedNodes.isEmpty()
-   override val responseStatus: ResponseStatus = if (isFullyResolved) COMPLETED else INCOMPLETE
+   override val responseStatus: ResponseStatus = when {
+      wasCancelled -> CANCELLED
+      isFullyResolved -> COMPLETED
+      else -> INCOMPLETE
+   }
 
    operator fun get(typeName: String): TypedInstance? {
       val requestedParameterizedName = typeName.fqn().parameterizedName
@@ -100,6 +106,7 @@ data class QueryResult(
          .first()
    }
 
+
    @JsonProperty("unmatchedNodes")
    val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
 
@@ -112,10 +119,10 @@ data class QueryResult(
    }
 
    // The result map is structured so the key is the thing that was asked for, and the value
-   // is a TypeNamedInstance of the result.
-   // By including the type in both places, it allows for polymorphic return types.
-   // Also, the reason we're using Any for the value is that the result could be a
-   // TypedInstnace, a map of TypedInstnaces, or a collection of TypedInstances.
+// is a TypeNamedInstance of the result.
+// By including the type in both places, it allows for polymorphic return types.
+// Also, the reason we're using Any for the value is that the result could be a
+// TypedInstnace, a map of TypedInstnaces, or a collection of TypedInstances.
    @get:JsonIgnore
    val simpleResults: Map<String, Any?> by lazy {
       val converter = TypedInstanceConverter(RawObjectMapper)
@@ -160,14 +167,18 @@ interface QueryResponse {
       // Ie., the query didn't error, but not everything was resolved
       INCOMPLETE,
       ERROR,
+      CANCELLED,
    }
 
    val responseStatus: ResponseStatus
    val queryResponseId: String
 
+   val message: String?
+      get() = null
+
    @get:JsonProperty("fullyResolved")
    val isFullyResolved: Boolean
-   val profilerOperation: ProfilerOperation?
+   val profilerOperation: ProfilerRecord?
    val remoteCalls: List<RemoteCall>
       get() = collateRemoteCalls(this.profilerOperation)
 
@@ -182,7 +193,7 @@ interface QueryResponse {
    fun historyRecord(): HistoryQueryResponse
 }
 
-fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
+fun collateRemoteCalls(profilerOperation: ProfilerRecord?): List<RemoteCall> {
    if (profilerOperation == null) return emptyList()
    return profilerOperation.remoteCalls + profilerOperation.children.flatMap { collateRemoteCalls(it) }
 }

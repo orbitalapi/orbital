@@ -1,5 +1,7 @@
 package io.vyne.queryService
 
+import com.google.common.cache.Cache
+import com.google.common.cache.CacheBuilder
 import io.vyne.ExecutableQuery
 import io.vyne.RunningQueryStatus
 import io.vyne.query.QueryResult
@@ -7,9 +9,11 @@ import io.vyne.query.SearchFailedException
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import lang.taxi.CompilationException
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import reactor.core.publisher.DirectProcessor
 import reactor.core.publisher.Flux
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 
@@ -19,8 +23,18 @@ class ExecutingQueryRepository(
 ) {
    private val runningQueries: MutableMap<String, ExecutableQuery> = mutableMapOf()
    private val statusUpdateEmitter = DirectProcessor.create<RunningQueryStatus>()
-//   private val multicastEmitter = statusUpdateEmitter.publish().refCount(1, Duration.ofDays(999))
+
+   //   private val multicastEmitter = statusUpdateEmitter.publish().refCount(1, Duration.ofDays(999))
    private val statusUpdateSink = statusUpdateEmitter.sink()
+
+   /**
+    * We hold the results of completed queries briefly to prevent race conditions
+    * where the UI asks for feedback on a query that completed very quickly.
+    */
+   private val completedQueryHoldingPen: Cache<String, RunningQueryStatus> =
+      CacheBuilder.newBuilder()
+         .expireAfterAccess(Duration.ofSeconds(10))
+         .build<String, RunningQueryStatus>()
 
    // After upgrading to reactor 2020.x:
 //   private val statusUpdateSink = Sinks.many().multicast().onBackpressureBuffer<RunningQueryStatus>()
@@ -42,6 +56,7 @@ class ExecutingQueryRepository(
                   handleQueryError(throwable, executableQuery)
 
                   removeCompletedQuery(executableQuery)
+                  this.sendStatus(executableQuery)
                }
             }
          }
@@ -80,7 +95,14 @@ class ExecutingQueryRepository(
    }
 
    fun get(queryId: String): ExecutableQuery {
-      return runningQueries[queryId] ?: throw NotFoundException("No query with id $queryId was found")
+      return tryGet(queryId) ?: throw NotFoundException("No query with id $queryId was found")
+   }
+   fun tryGet(queryId: String):ExecutableQuery? {
+      return runningQueries[queryId]
+   }
+
+   fun getCompletedQueryState(queryId: String):RunningQueryStatus? {
+      return this.completedQueryHoldingPen.getIfPresent(queryId)
    }
 
    val statusUpdates: Flux<RunningQueryStatus>
@@ -90,8 +112,14 @@ class ExecutingQueryRepository(
 //         return statusUpdateSink.asFlux()
       }
 
+   @Scheduled(fixedRate = 30_000)
+   fun clearCompletedQueryCache() {
+      this.completedQueryHoldingPen.cleanUp()
+   }
+
    private fun removeCompletedQuery(executableQuery: ExecutableQuery) {
       runningQueries.remove(executableQuery.queryId)
+      this.completedQueryHoldingPen.put(executableQuery.queryId, executableQuery.currentStatus())
       sendStatus(executableQuery)
    }
 

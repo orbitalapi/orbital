@@ -50,9 +50,11 @@ private typealias MimeTypeString = String
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 data class FailedSearchResponse(
-   val message: String,
+   override val message: String,
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation?,
+   // Allow the usage of a UUID here, as a query can fail before the UUID has been assigned (eg.,
+   // for compilation errors)
    override val queryResponseId: String = UUID.randomUUID().toString(),
    val results: Map<String, Any?> = mapOf()
 

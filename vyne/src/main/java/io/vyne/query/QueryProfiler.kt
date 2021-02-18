@@ -93,19 +93,10 @@ enum class OperationType(
    REMOTE_CALL(false)
 }
 
-interface ProfilerOperation {
-   fun startChild(ownerInstance: Any, name: String, type: OperationType): ProfilerOperation = startChild(ownerInstance::class.java.simpleName, name, type)
-   fun startChild(clazz: Class<Any>, name: String, type: OperationType): ProfilerOperation = startChild(clazz.simpleName, name, type)
-   fun startChild(componentName: String, operationName: String, type: OperationType): ProfilerOperation
-
-   fun <R> startChild(ownerInstance: Any, name: String, type: OperationType, closure: (ProfilerOperation) -> R): R = startChild(ownerInstance::class.java.simpleName, name, type, closure)
-   fun <R> startChild(clazz: Class<Any>, name: String, type: OperationType, closure: (ProfilerOperation) -> R): R = startChild(clazz.simpleName, name, type, closure)
-   fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R
-   fun stop(result: Any? = null)
-
+interface ProfilerRecord {
    val componentName: String
    val operationName: String
-   val children: List<ProfilerOperation>
+   val children: List<ProfilerRecord>
    val result: Result?
    val type: OperationType
 
@@ -134,21 +125,36 @@ interface ProfilerOperation {
 
    val vyneCost: Long
       get() = timings.filterKeys { it.isInternal }.values.sum()
+   val description: String
+      get() {
+         return "$componentName.$operationName"
+      }
+}
+interface ProfilerOperation : ProfilerRecord {
+   fun startChild(ownerInstance: Any, name: String, type: OperationType): ProfilerOperation = startChild(ownerInstance::class.java.simpleName, name, type)
+   fun startChild(clazz: Class<Any>, name: String, type: OperationType): ProfilerOperation = startChild(clazz.simpleName, name, type)
+   fun startChild(componentName: String, operationName: String, type: OperationType): ProfilerOperation
+
+   fun <R> startChild(ownerInstance: Any, name: String, type: OperationType, closure: (ProfilerOperation) -> R): R = startChild(ownerInstance::class.java.simpleName, name, type, closure)
+   fun <R> startChild(clazz: Class<Any>, name: String, type: OperationType, closure: (ProfilerOperation) -> R): R = startChild(clazz.simpleName, name, type, closure)
+   fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R
+   fun stop(result: Any? = null)
+
+
 
    fun addContext(key: String, value: Any?)
 
    fun addRemoteCall(remoteCall: RemoteCall)
 
-   val description: String
-      get() {
-         return "$componentName.$operationName"
-      }
+
 
    fun toDto(): ProfilerOperationDTO {
       return ProfilerOperationDTO(
          componentName,
          operationName,
-         children.map { it.toDto() },
+         children.map { child ->
+            if (child is ProfilerOperation) child.toDto() else child
+         } ,
          result,
          type,
          duration,
@@ -158,16 +164,17 @@ interface ProfilerOperation {
    }
 }
 
-data class ProfilerOperationDTO(val componentName: String,
-                           val operationName: String,
-                           val children: List<ProfilerOperationDTO> = listOf(),
-                           val result: Result?,
-                           val type: OperationType,
-                           val duration: Long,
-                           val remoteCalls: List<RemoteCall> = listOf(),
-                           val context: Map<String, Any?> = mapOf(),
-                           val timings: Map<OperationType, Long> = mapOf()) {
-   val description: String
+data class ProfilerOperationDTO(
+                           override val componentName: String,
+                           override val operationName: String,
+                           override val children: List<ProfilerRecord> = listOf(),
+                           override val result: Result?,
+                           override val type: OperationType,
+                           override val duration: Long,
+                           override val remoteCalls: List<RemoteCall> = listOf(),
+                           override val context: Map<String, Any?> = mapOf(),
+                           override val timings: Map<OperationType, Long> = mapOf()) : ProfilerRecord {
+   override val description: String
       get() {
          return "$componentName.$operationName"
       }
