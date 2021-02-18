@@ -12,6 +12,7 @@ class VyneProjectionBatchingTests {
    val schema = TaxiSchema.from(
       """
          model Client {
+            @Id
             clientId : ClientId as Int
             clientName : ClientName as String
          }

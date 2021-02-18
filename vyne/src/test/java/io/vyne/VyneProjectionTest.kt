@@ -14,8 +14,10 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 import java.math.BigDecimal
+import kotlin.test.fail
 
 class VyneProjectionTest {
    val testSchema = """
@@ -50,6 +52,7 @@ type Broker1Order inherits Order {
 
 type Broker1Trade inherits Trade {
    broker1TradeID: TradeId
+   @Id
    broker1OrderID: OrderId
    broker1Price: Price
    broker1TradeNo: TradeNo
@@ -69,8 +72,8 @@ service Broker1Service {
 
    @Test
    fun `project by enriching from other services`() {
-      val schema = """
-         type Id inherits String
+      val schemaStr = """
+         type Symbol inherits String
          type Field1 inherits String
          type ParentType inherits String
          type ChildType inherits ParentType
@@ -78,16 +81,18 @@ service Broker1Service {
          type ProvidedByService inherits String
 
          model ServiceData {
+            @Id
+            input : ChildType
             field: ProvidedByService
          }
 
          model Target {
-               id: Id
+               id: Symbol
                field1: Field1
                field2: ProvidedByService
          }
          model Order {
-            id: Id
+            id: Symbol
             field1: Field1
             child: ChildType
          }
@@ -102,20 +107,16 @@ service Broker1Service {
          }
 
       """.trimIndent()
-
+      val schema = TaxiSchema.from(schemaStr)
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("getData", object : StubResponseHandler {
          override fun invoke(
             operation: RemoteOperation,
             parameters: List<Pair<Parameter, TypedInstance>>
          ): TypedInstance {
-            return vyne.addJsonModel(
-               "ServiceData", """
-               {
+            return TypedInstance.from(schema.type("ServiceData"), """{
                    "field": "This is Provided By External Service"
-               }
-            """.trimIndent()
-            )
+               }""", schema, source = Provided)
          }
       })
 
@@ -124,8 +125,7 @@ service Broker1Service {
             operation: RemoteOperation,
             parameters: List<Pair<Parameter, TypedInstance>>
          ): TypedInstance {
-            return vyne.addJsonModel(
-               "Order[]", """
+            return TypedInstance.from(schema.type("Order[]"), """
                [
                {
                    "id": "id1",
@@ -138,8 +138,7 @@ service Broker1Service {
                    "child": "Child 2"
                }
                ]
-            """.trimIndent()
-            )
+            """.trimIndent(), schema, source = Provided)
          }
       })
 
@@ -222,8 +221,7 @@ service UserService {
             parameters: List<Pair<Parameter, TypedInstance>>
          ): TypedInstance {
             parameters.should.have.size(1)
-            val userId = parameters[0].second.value as String
-            val userName = when (userId) {
+            val userName = when (val userId = parameters[0].second.value as String) {
                "trader0" -> "John Smith"
                "trader1" -> "Mike Brown"
                else -> TODO("Unknown userId=$userId")
@@ -287,6 +285,7 @@ type InstrumentDescription inherits String
 
 // common types
 type Instrument {
+   @Id
    id: InstrumentId
    instrument_type: InstrumentType
    description: InstrumentDescription
@@ -970,6 +969,7 @@ service Broker1Service {
             country : CountryCode as String
          }
          model Country {
+             @Id
              countryCode : CountryCode
              countryName : CountryName as String
          }
@@ -987,13 +987,13 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(testSchema)
       stubService.addResponse(
          "getCustomers", vyne.parseJsonModel(
-            "Client[]", """
+         "Client[]", """
          [
             { name : "Jimmy", country : "UK" },
             { name : "Devrim", country : "TR" }
          ]
          """.trimIndent()
-         )
+      )
       )
 
       stubService.addResponse("getCountry", object : StubResponseHandler {
@@ -1014,7 +1014,7 @@ service Broker1Service {
       val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
 
       // assert
-      result.resultMap.get("lang.taxi.Array<ClientAndCountry>").should.be.equal(
+      result.resultMap["lang.taxi.Array<ClientAndCountry>"].should.be.equal(
          listOf(
             mapOf("personName" to "Jimmy", "countryName" to "United Kingdom"),
             mapOf("personName" to "Devrim", "countryName" to null)
@@ -1038,11 +1038,13 @@ service Broker1Service {
             instrumentId: InstrumentId
          }
          model Instrument {
+             @Id
              instrumentId: InstrumentId
              maturityDate: MaturityDate
              name: InstrumentName
          }
          model Trade {
+            @Id
             orderId: OrderId
             maturityDate: MaturityDate
             tradeId: TradeId
@@ -1068,7 +1070,7 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(testSchema)
       stubService.addResponse(
          "getOrders", vyne.parseJsonModel(
-            "Order[]", """
+         "Order[]", """
          [
             {
                "orderId": "orderId_0",
@@ -1077,31 +1079,31 @@ service Broker1Service {
             }
          ]
          """.trimIndent()
-         )
+      )
       )
 
       stubService.addResponse(
          "getInstrument", vyne.parseJsonModel(
-            "Instrument", """
+         "Instrument", """
             {
                "maturityDate": "$maturityDate",
                "instrumentId": "Instrument_0",
                "name": "2040-11-20 0.1 Bond"
             }
          """.trimIndent()
-         )
+      )
       )
 
       stubService.addResponse(
          "getTrades", vyne.parseJsonModel(
-            "Trade[]", """
+         "Trade[]", """
             [{
                "maturityDate": "$maturityDate",
                "orderId": "orderId_0",
                "tradeId": "Trade_0"
             }]
          """.trimIndent()
-         )
+      )
       )
       val result = vyne.query("""findAll { Order[] } as Report[]""".trimIndent())
       result.isFullyResolved.should.be.`true`
@@ -1201,13 +1203,13 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(testSchema)
       stubService.addResponse(
          "getCustomers", vyne.parseJsonModel(
-            "Client[]", """
+         "Client[]", """
          [
             { name : "Jimmy", country : "UK" },
             { name : "Devrim", country : "TR" }
          ]
          """.trimIndent()
-         )
+      )
       )
 
       stubService.addResponse("getCountry", object : StubResponseHandler {
@@ -1267,13 +1269,13 @@ service Broker1Service {
       val outputInstant2 = "2020-08-18T14:07:09.591+0100"
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-            "InputModel[]", """
+         "InputModel[]", """
          [
             { "inputField": "$inputInstant1" },
             { "inputField": "$inputInstant2" }
          ]
          """.trimIndent()
-         )
+      )
       )
       val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
       result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
@@ -1309,13 +1311,13 @@ service Broker1Service {
       val outputInstant2 = "2020-08-18T14:07:09.591+01"
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-            "InputModel[]", """
+         "InputModel[]", """
          [
             { "inputField": "$inputInstant1" },
             { "inputField": "$inputInstant2" }
          ]
          """.trimIndent()
-         )
+      )
       )
       val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
       result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
@@ -1354,12 +1356,12 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-            "InputModel[]", """
+         "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 2 }
          ]
          """.trimIndent()
-         )
+      )
       )
       val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
       result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
@@ -1400,11 +1402,11 @@ service Broker1Service {
          |]""".trimMargin()
       stubs.addResponse(
          "listOrders", vyne.parseJsonModel(
-            "Order[]", """[
+         "Order[]", """[
          |{ "quantity" : 100 , "price" : 2 },
          |{ "quantity" : 0 , "price" : 2 }
          |]""".trimMargin()
-         )
+      )
       )
 
       val queryResult = vyne.query("findAll { Order[] } as Output[]")
@@ -1448,14 +1450,14 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-            "InputModel[]", """
+         "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 2, "id": "input1" },
             { "qtyFill": 200, "multiplier": 2, "id": "input2" },
             { "qtyFill": 200, "multiplier": 2, "id": "input3" }
          ]
          """.trimIndent()
-         )
+      )
       )
       val result = vyne.query(
          """
@@ -1519,14 +1521,14 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-            "InputModel[]", """
+         "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },
             { "qtyFill": 200, "multiplier": 2, "id": "input2", "traderId": "tId2" },
             { "qtyFill": 200, "multiplier": 3, "id": "input3", "traderId": "tId3" }
          ]
          """.trimIndent()
-         )
+      )
       )
 
       stubService.addResponse("getTrader", object : StubResponseHandler {
@@ -1616,27 +1618,27 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-            "InputModel[]", """
+         "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1" },
             { "qtyFill": 200, "multiplier": 2, "id": "input2" },
             { "qtyFill": 200, "multiplier": 3, "id": "input3" }
          ]
          """.trimIndent()
-         )
+      )
       )
 
       stubService.addResponse(
          "getTrader", vyne.parseJsonModel(
-            "TraderInfo",
-            """
+         "TraderInfo",
+         """
          {
             "traderId": "id1",
             "traderName": "John",
             "traderSurname" : "Doe"
          }
       """.trimIndent()
-         )
+      )
       )
       val result = vyne.query(
          """
@@ -1724,27 +1726,27 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-            "InputModel[]", """
+         "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1" },
             { "qtyFill": 200, "multiplier": 2, "id": "input2" },
             { "qtyFill": 200, "multiplier": 3, "id": "input3" }
          ]
          """.trimIndent()
-         )
+      )
       )
 
       stubService.addResponse(
          "getTrader", vyne.parseJsonModel(
-            "TraderInfo",
-            """
+         "TraderInfo",
+         """
          {
             "traderId": "id1",
             "traderName": "John",
             "traderSurname" : "Doe"
          }
       """.trimIndent()
-         )
+      )
       )
       val result = vyne.query(
          """
@@ -1835,14 +1837,14 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-            "InputModel[]", """
+         "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },
             { "qtyFill": 200, "multiplier": 2, "id": "input2", "traderId": "tId2" },
             { "qtyFill": 200, "multiplier": 3, "id": "input3", "traderId": "tId3" }
          ]
          """.trimIndent()
-         )
+      )
       )
 
       stubService.addResponse("getTrader", object : StubResponseHandler {
@@ -1950,14 +1952,14 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-            "InputModel[]", """
+         "InputModel[]", """
          [
             {  "id": "input1", "ric": "ric1" },
             {  "id": "input2" },
             {  "id": "input3" }
          ]
          """.trimIndent()
-         )
+      )
       )
       val result = vyne.query(
          """
@@ -2018,14 +2020,14 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-            "InputModel[]", """
+         "InputModel[]", """
          [
             {  "id": "input1", "ric": "ric1", "instrumentType": "ric" },
             {  "id": "input2", "ric": "ric2", "instrumentType": "ric" },
             {  "id": "input3", "ric": "ric3", "instrumentType": "ric" }
          ]
          """.trimIndent()
-         )
+      )
       )
 
       stubService.addResponse("getInstrumentFromRic", object : StubResponseHandler {
@@ -2055,6 +2057,226 @@ service Broker1Service {
          )
       )
 
+   }
+
+   @Test
+   fun `If Vyne is enriching an entity, and a model returned from a service defines an Id field, then Vyne will only invoke that service the input parameter identifies the output model`() {
+      val testSchema = """
+         type UserId inherits String
+         type TradeId inherits String
+         type Isin inherits String
+         type TradePrice inherits Decimal
+         type TradeDate inherits Date
+
+         model Trade {
+           salesPersonId: UserId
+           @Id
+           tradeId: TradeId
+           isin: Isin
+           tradePrice: TradePrice
+         }
+
+          model Input {
+            userId: UserId
+            tradeId: TradeId
+          }
+
+          model Report {
+             tradePrice: TradePrice
+             tradeDate: TradeDate
+          }
+
+         @Datasource
+         service InputService {
+            operation findAll(): Input[]
+         }
+
+         service DataService {
+             operation findLatestTradeForSalesPerson(UserId) : Trade
+             operation findTrade(TradeId) : Trade
+         }
+
+
+      """.trimIndent()
+      val (vyne, stubService) = testVyne(testSchema)
+      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+         [
+            { userId : "userX",  tradeId: "InstrumentX" }
+         ]
+         """.trimIndent()))
+
+      stubService.addResponse("findLatestTradeForSalesPerson", object : StubResponseHandler {
+         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            fail("Should not be invoked")
+         }
+
+      })
+
+      var findTradeInvoked = false
+      stubService.addResponse("findTrade", object : StubResponseHandler {
+         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            findTradeInvoked = true
+            throw IllegalArgumentException()
+         }
+      })
+
+      // act
+      val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
+
+      // assert
+      findTradeInvoked.should.be.`true`
+      result.resultMap["lang.taxi.Array<Report>"].should.be.equal(
+         listOf(
+            mapOf("tradePrice" to null, "tradeDate" to null)
+         )
+      )
+   }
+
+   @Test
+   fun `If Vyne is enriching an entity, and a model returned from a service does not define an Id field, then Vyne will use any possible path to discover the inputs to call the service`() {
+      val testSchema = """
+         type ProductId inherits String
+         type AssetClass inherits String
+         type Isin inherits String
+         type OrderId inherits String
+         parameter model IsinDiscoveryRequest {
+             productId : ProductId?
+             assetClass : AssetClass?
+         }
+         model IsinDiscoveryResult {
+             isin : Isin
+         }
+
+         model Input {
+             orderId: OrderId
+             productId : ProductId?
+             assetClass : AssetClass?
+         }
+
+         model Output {
+            orderId: OrderId
+            isin : Isin
+         }
+
+         @Datasource
+         service InputService {
+            operation findAll(): Input[]
+         }
+
+         service DataService {
+            operation lookupIsin(IsinDiscoveryRequest):IsinDiscoveryResult
+         }
+
+      """.trimIndent()
+
+      val (vyne, stubService) = testVyne(testSchema)
+      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+         [
+            { orderId : "OrderX",  productId: "ProductX", assetClass: "AssetClassX" }
+         ]
+         """.trimIndent()))
+
+      stubService.addResponse("lookupIsin", vyne.parseJsonModel("IsinDiscoveryResult", """
+            { isin : "Isin1" }
+         """.trimIndent()))
+
+      val result = vyne.query("""findAll { Input[] } as Output[]""".trimIndent())
+
+      result.resultMap["lang.taxi.Array<Output>"].should.be.equal(
+         listOf(
+            mapOf("orderId" to "OrderX", "isin" to "Isin1")
+         )
+      )
+
+   }
+
+   @Test
+   fun `When an object has multiple independent fields that identify it, all these fields can be used for enrichment`() {
+      val testSchema = """
+         type UserId inherits String
+         type Type1TradeId inherits String
+         type Type2TradeId inherits String
+         type Isin inherits String
+         type TradePrice inherits Decimal
+         type TradeDate inherits Date
+
+         model Trade {
+           salesPersonId: UserId
+           @Id
+           tradeId1: Type1TradeId
+           @Id
+           tradeId2: Type2TradeId
+           isin: Isin
+           tradePrice: TradePrice
+         }
+
+          model Input {
+            userId: UserId
+            tradeId1: Type1TradeId?
+            tradeId2: Type2TradeId?
+          }
+
+          model Report {
+             tradePrice: TradePrice
+             tradeDate: TradeDate
+          }
+
+         @Datasource
+         service InputService {
+            operation findAll(): Input[]
+         }
+
+         service DataService {
+             operation findLatestTradeForSalesPerson(UserId) : Trade
+             operation findTradeByType1Id(Type1TradeId) : Trade
+             operation findTradeByType2Id(Type2TradeId) : Trade
+         }
+
+
+      """.trimIndent()
+      val (vyne, stubService) = testVyne(testSchema)
+      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+         [
+            { userId : "userX",  tradeId1: "InstrumentX" },
+            { userId : "userX",  tradeId2: "InstrumentY" }
+         ]
+         """.trimIndent()))
+
+      stubService.addResponse("findLatestTradeForSalesPerson", object : StubResponseHandler {
+         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            fail("Should not be invoked")
+         }
+
+      })
+
+      var findTradeByType1IdInvoked = false
+      stubService.addResponse("findTradeByType1Id", object : StubResponseHandler {
+         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            findTradeByType1IdInvoked = true
+            throw IllegalArgumentException()
+         }
+      })
+
+      var findTradeByType2IdInvoked = false
+      stubService.addResponse("findTradeByType2Id", object : StubResponseHandler {
+         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+            findTradeByType2IdInvoked = true
+            throw IllegalArgumentException()
+         }
+      })
+
+      // act
+      val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
+
+      // assert
+      findTradeByType1IdInvoked.should.be.`true`
+      findTradeByType2IdInvoked.should.be.`true`
+      result.resultMap["lang.taxi.Array<Report>"].should.be.equal(
+         listOf(
+            mapOf("tradePrice" to null, "tradeDate" to null),
+            mapOf("tradePrice" to null, "tradeDate" to null)
+         )
+      )
    }
 }
 
