@@ -40,7 +40,7 @@ export class SearchBarContainerComponent {
         break;
       default:
       case 'TYPE':
-        this.router.navigate(['/types', qualifiedName]);
+        this.router.navigate(['/catalog', qualifiedName]);
         break;
     }
 

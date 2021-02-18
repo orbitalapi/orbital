@@ -5,7 +5,7 @@ import {SearchModule} from '../search/search.module';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {MatButtonModule} from '@angular/material/button';
-import { FilterTypesComponent } from './filter-types/filter-types.component';
+import {FilterTypesComponent} from './filter-types/filter-types.component';
 import {CovalentHighlightModule} from '@covalent/highlight';
 import {ReactiveFormsModule} from '@angular/forms';
 import {MatFormFieldModule} from '@angular/material/form-field';

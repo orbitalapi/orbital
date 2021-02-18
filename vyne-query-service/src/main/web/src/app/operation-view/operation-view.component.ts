@@ -45,7 +45,7 @@ import {HttpErrorResponse} from '@angular/common/http';
               <tr *ngFor="let param of operation.parameters">
                 <td>{{ param.name }}</td>
                 <td><span class="mono-badge">
-                  <a [routerLink]="['/types',param.type.fullyQualifiedName]">{{ param.type.shortDisplayName}}</a>
+                  <a [routerLink]="['/catalog',param.type.fullyQualifiedName]">{{ param.type.shortDisplayName}}</a>
                 </span></td>
                 <td>-</td>
                 <td *ngIf="tryMode">

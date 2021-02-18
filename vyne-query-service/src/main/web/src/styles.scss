@@ -63,3 +63,8 @@ $vyne-app-theme: mat-light-theme($vyne-app-primary, $vyne-app-accent, $vyne-app-
 .mat-tab-body-wrapper{
   flex-grow: 1;
 }
+
+.mat-card-header-text {
+  // There's an annoying indent in the card headers that offsets things by 16px :(
+  margin: 0 !important;
+}

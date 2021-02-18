@@ -6,6 +6,7 @@ import io.vyne.ExecutableQuery
 import io.vyne.RunningQueryStatus
 import io.vyne.query.QueryResult
 import io.vyne.query.SearchFailedException
+import io.vyne.query.history.VyneQlQueryHistoryRecord
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import lang.taxi.CompilationException
@@ -48,7 +49,10 @@ class ExecutingQueryRepository(
             when {
                queryResult != null -> {
                   log().info("Query ${executableQuery.queryId} has completed, removing from list of running queries")
-                  queryHistory.add(VyneQlQueryHistoryRecord(executableQuery.query, queryResult.historyRecord()))
+                  queryHistory.add { VyneQlQueryHistoryRecord(
+                     executableQuery.query,
+                     queryResult.historyRecord()
+                  ) }
                   removeCompletedQuery(executableQuery)
                }
                throwable != null -> {
@@ -91,7 +95,7 @@ class ExecutingQueryRepository(
             profilerOperation = null
          )
       }
-      queryHistory.add(VyneQlQueryHistoryRecord(executableQuery.query, queryResult.historyRecord()))
+      queryHistory.add { VyneQlQueryHistoryRecord(executableQuery.query, queryResult.historyRecord()) }
    }
 
    fun get(queryId: String): ExecutableQuery {

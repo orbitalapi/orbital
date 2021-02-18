@@ -1,6 +1,5 @@
-package io.vyne.spring.invokers
+package io.vyne.http
 
-import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import io.vyne.models.Provided
 import io.vyne.models.TypedValue
@@ -47,3 +46,4 @@ class UriVariableProviderTest {
       return Type(name.fqn(), sources = emptyList(), typeDoc = null, taxiType = taxiType)
    }
 }
+

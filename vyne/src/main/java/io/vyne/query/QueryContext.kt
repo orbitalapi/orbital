@@ -394,6 +394,7 @@ data class QueryContext(
       mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
       val copiedContext = this.copy(facts = mutableFacts, parent = this)
       copiedContext.excludedServices.addAll(this.excludedServices)
+      copiedContext.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       return copiedContext
    }
 
@@ -510,6 +511,8 @@ data class QueryContext(
 
    private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
    val excludedServices: MutableSet<SearchGraphExclusion<QualifiedName>> = mutableSetOf()
+   val excludedOperations: MutableSet<Operation> = mutableSetOf()
+
 
    private fun getTopLevelContext(): QueryContext {
       return parent?.getTopLevelContext() ?: this

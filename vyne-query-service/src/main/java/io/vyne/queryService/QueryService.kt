@@ -18,6 +18,8 @@ import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
 import io.vyne.query.ResultMode
 import io.vyne.query.SearchFailedException
+import io.vyne.query.history.RestfulQueryHistoryRecord
+import io.vyne.query.history.VyneQlQueryHistoryRecord
 import io.vyne.queryService.csv.toCsv
 import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
@@ -141,8 +143,7 @@ class QueryService(
             message = e.message!!, // Message contains the error messages from the compiler
             profilerOperation = null
          )
-         val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
-         history.add(record)
+         history.add { VyneQlQueryHistoryRecord(query, response.historyRecord()) }
 
          throw BadSearchRequestException(response)
       }
@@ -185,7 +186,7 @@ class QueryService(
       resultMode: ResultMode
    ): MimeTypeString {
       val response = executeQuery(query)
-      history.add(RestfulQueryHistoryRecord(query, response.historyRecord()))
+      history.add { RestfulQueryHistoryRecord(query, response.historyRecord()) }
       return serialise(response, contentType, outputStream, resultMode)
    }
 
@@ -214,8 +215,10 @@ class QueryService(
             // happens when Schema is empty
             FailedSearchResponse(e.message!!, null)
          }
-         val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
-         history.add(record)
+         val recordProvider = {
+            VyneQlQueryHistoryRecord(query, response.historyRecord())
+         }
+         history.add(recordProvider)
 
          serialise(response, contentType, outputStream, resultMode)
       }

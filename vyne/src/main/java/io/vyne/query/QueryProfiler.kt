@@ -58,10 +58,15 @@ open class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), v
    override fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R {
       log().debug("Profiler start: {} / {}", componentName, operationName)
       val recorder = startChild(componentName, operationName, type)
-      val result = closure.invoke(recorder)
-      recorder.stop(result)
-      log().debug("Profiler stop: {} / {} ({}ms)", componentName, operationName, recorder.duration)
-      return result
+      return try {
+         val result = closure.invoke(recorder)
+         recorder.stop(result)
+         result
+      } catch (e: Exception) {
+         //stop must be called (see StackedOperation::stop) to handle profile operation recording properly even if 'closure' throws
+         recorder.stop(e)
+         throw e
+      }
    }
 
    private class StackedOperation(private val stack: Deque<ProfilerOperation>, private val operation: ProfilerOperation) : ProfilerOperation by operation {
@@ -78,7 +83,6 @@ open class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), v
 
 
 private typealias OperationId = String
-private typealias OperationName = String
 
 enum class OperationType(
    /**
@@ -189,9 +193,9 @@ data class Result(
 
    companion object {
       fun merge(resultA: Result?, resultB: Result?): Result? {
-         if (resultA == null && resultB == null) return null;
-         if (resultA != null && resultB == null) return resultA;
-         if (resultA == null && resultB != null) return resultB;
+         if (resultA == null && resultB == null) return null
+         if (resultA != null && resultB == null) return resultA
+         if (resultA == null && resultB != null) return resultB
 
          val values = listOfNotNull(resultA!!.value, resultB!!.value)
          val resultValue = when {
@@ -233,7 +237,7 @@ class DefaultProfilerOperation(override val componentName: String,
       }
 
    val name: String = "$componentName:$operationName"
-   val fullPath = "$path/$name"
+   private val fullPath = "$path/$name"
 
    val id: OperationId = UUID.randomUUID().toString()
 

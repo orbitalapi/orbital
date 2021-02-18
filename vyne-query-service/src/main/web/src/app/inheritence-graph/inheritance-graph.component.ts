@@ -158,7 +158,7 @@ export class InheritanceGraphComponent {
 
   select($event: any) {
     const typeName = $event.fullyQualifiedName;
-    this.router.navigate(['/types', typeName]);
+    this.router.navigate(['/catalog', typeName]);
   }
 }
 

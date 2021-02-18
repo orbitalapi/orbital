@@ -13,6 +13,9 @@ import {ExportFileService} from '../services/export.file.service';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
 import {TypesService} from '../services/types.service';
 import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
+import {DownloadFileType} from '../query-panel/result-display/result-container.component';
+import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
+import {MatDialog} from '@angular/material/dialog';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
 
 
@@ -29,7 +32,8 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
               typeService: TypesService,
               private activeQueryNotificationService: ActiveQueriesNotificationService,
               private router: Router,
-              private fileService: ExportFileService) {
+              private fileService: ExportFileService,
+              private dialogService: MatDialog) {
     super(queryService, typeService);
     this.activeQueryNotificationService.createActiveQueryNotificationSubscription()
       .subscribe(next => this.handleActiveQueryUpdate(next));
@@ -124,7 +128,21 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
 
   downloadQueryHistory(event: DownloadClickedEvent) {
     const queryResponseId = (<QueryResult>this.activeRecord.response).queryResponseId;
-    this.fileService.downloadQueryHistory(queryResponseId, event.format);
+    if (event.format === DownloadFileType.TEST_CASE) {
+      const dialogRef = this.dialogService.open(TestSpecFormComponent, {
+        width: '550px'
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result !== null) {
+          // noinspection UnnecessaryLocalVariableJS
+          const specName = result;
+          this.fileService.downloadRegressionPackZipFile(queryResponseId, specName);
+        }
+      });
+    } else {
+      this.fileService.downloadQueryHistory(queryResponseId, event.format);
+    }
   }
 
   private handleActiveQueryUpdate(next: RunningQueryStatus) {

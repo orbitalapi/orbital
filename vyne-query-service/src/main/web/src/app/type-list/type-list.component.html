@@ -1,29 +1,29 @@
-<app-header-bar title="Type Explorer">
+<app-header-bar title="Data Catalogue">
 </app-header-bar>
 <app-filter-types (filterChanged)="updateFilter($event)"></app-filter-types>
 <div class="cdk-viewport-container container">
   <cdk-virtual-scroll-viewport class="cdk-viewport-list" itemSize="64">
     <ng-container *cdkVirtualFor="let member of filteredMembers">
       <div class="search-result" (click)="navigateToMember(member)">
-        <div class="schema-member-container">
-          <div class="name-row">
-            <div class="member-qualified-name">
-              <div class="member-name">{{ member.name.name}}
-                <div class="badges">
-                  <span class="badge">{{ memberType(member) }}</span>
-                </div>
-              </div>
-              <div class="member-package">{{ member.name.fullyQualifiedName}}</div>
-            </div>
-            <div class="member-type-alias">
-              {{ member.aliasForType}}
+    <div class="schema-member-container">
+      <div class="name-row">
+        <div class="member-qualified-name">
+          <div class="member-name">{{ member.name.name}}
+            <div class="badges">
+              <span class="badge">{{ memberType(member) }}</span>
             </div>
           </div>
-          <div class="typedoc-row" *ngIf="member.member.typeDoc">
-            <span class="summary">{{member.member.typeDoc}}</span>
-          </div>
+          <div class="member-package">{{ member.name.fullyQualifiedName}}</div>
+        </div>
+        <div class="member-type-alias">
+          {{ member.aliasForType}}
         </div>
       </div>
+      <div class="typedoc-row" *ngIf="member.member.typeDoc">
+        <span class="summary">{{member.member.typeDoc}}</span>
+      </div>
+    </div>
+  </div>
     </ng-container>
   </cdk-virtual-scroll-viewport>
 

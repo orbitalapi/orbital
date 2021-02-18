@@ -30,6 +30,8 @@ import {isNullOrUndefined} from 'util';
 import {Subscription} from 'rxjs';
 import {TypesService} from '../../services/types.service';
 import {Observable, Subject} from 'rxjs/index';
+import {TestSpecFormComponent} from '../../test-pack-module/test-spec-form.component';
+import {MatDialog} from '@angular/material/dialog';
 
 declare const monaco: any; // monaco
 
@@ -85,6 +87,7 @@ export class QueryEditorComponent implements OnInit {
   constructor(private monacoLoaderService: MonacoEditorLoaderService,
               private queryService: QueryService,
               private fileService: ExportFileService,
+              private dialogService: MatDialog,
               private queryResultService: ActiveQueriesNotificationService,
               private typeService: TypesService) {
     this.typeService.getTypes()
@@ -220,7 +223,21 @@ export class QueryEditorComponent implements OnInit {
 
   public downloadQueryHistory(fileType: DownloadFileType) {
     const queryResponseId = (<QueryResult>this.lastQueryResult).queryResponseId;
-    this.fileService.downloadQueryHistory(queryResponseId, fileType);
+    if (fileType === DownloadFileType.TEST_CASE) {
+      const dialogRef = this.dialogService.open(TestSpecFormComponent, {
+        width: '550px'
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result !== null) {
+          // noinspection UnnecessaryLocalVariableJS
+          const specName = result;
+          this.fileService.downloadRegressionPackZipFile(queryResponseId, specName);
+        }
+      });
+    } else {
+      this.fileService.downloadQueryHistory(queryResponseId, fileType);
+    }
   }
 
 

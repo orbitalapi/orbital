@@ -18,7 +18,7 @@ class QueryHistoryServiceTest : BaseQueryServiceTest() {
    @Before
    override fun setup() {
       super.setup()
-      this.queryHistoryService = QueryHistoryService(queryHistory, mock {})
+      this.queryHistoryService = QueryHistoryService(queryHistory, mock {}, mock {})
    }
 
    @Test
