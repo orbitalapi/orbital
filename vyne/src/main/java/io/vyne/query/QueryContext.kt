@@ -304,7 +304,7 @@ data class QueryContext(
    fun publishPartialResult(instance: TypedInstance) {
       val emittedCount = publishedResultCount.incrementAndGet()
       val targetSize = projectionSize?.toString() ?: "unknown"
-      log().info("Query $queryContextId published $emittedCount of approx. $targetSize")
+      log().debug("Query $queryContextId published $emittedCount of approx. $targetSize")
       resultSink.next(instance)
       // After upgrading to reactor 2020.x:
       //      resultSink.tryEmitNext(instance)

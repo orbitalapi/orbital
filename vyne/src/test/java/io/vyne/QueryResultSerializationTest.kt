@@ -52,7 +52,8 @@ class QueryResultSerializationTest {
            "vyneCost" : 0,
            "timings" : { },
            "remoteCalls" : [ ],
-           "fullyResolved" : true
+           "fullyResolved" : true,
+           "wasCancelled" : false
          }
       """.trimIndent()
       val json = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(result)
@@ -92,7 +93,8 @@ class QueryResultSerializationTest {
   "remoteCalls" : [ ],
   "timings" : { },
   "vyneCost" : 0,
-  "fullyResolved" : true
+  "fullyResolved" : true,
+  "wasCancelled" : false
 }
       """.trimIndent()
 

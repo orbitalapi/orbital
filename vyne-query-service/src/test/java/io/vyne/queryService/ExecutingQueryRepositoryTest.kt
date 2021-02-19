@@ -5,10 +5,15 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.ExecutableQuery
+import io.vyne.RunningQueryStatus
+import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
+import io.vyne.schemas.fqn
 import io.vyne.utils.log
 import org.junit.Before
 import org.junit.Test
+import reactor.core.publisher.Flux
+import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
@@ -50,6 +55,19 @@ class ExecutingQueryRepositoryTest {
       val mock = mock<ExecutableQuery>();
       whenever(mock.queryId).thenReturn(queryId)
       whenever(mock.result).thenReturn(future)
+      whenever(mock.currentStatus()).thenReturn(
+         RunningQueryStatus(
+            queryId,
+            "findAll {}",
+            "com.Foo".fqn(),
+            0,
+            null,
+            Instant.now(),
+            running = true,
+            state = QueryResponse.ResponseStatus.RUNNING
+         )
+      )
+      whenever(mock.currentStatusStream()).thenReturn(Flux.empty())
       return mock
    }
 
