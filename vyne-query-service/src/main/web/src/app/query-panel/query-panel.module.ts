@@ -34,6 +34,7 @@ import {CallExplorerModule} from './taxi-viewer/call-explorer/call-explorer.modu
 import {AngularSplitModule} from 'angular-split';
 import {ErrorPanelComponent} from './error-panel/error-panel.component';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
+import {MatDialogModule} from '@angular/material/dialog';
 
 @NgModule({
     imports: [
@@ -63,7 +64,8 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
         MatProgressSpinnerModule,
         CallExplorerModule,
         AngularSplitModule.forChild(),
-        HeaderBarModule
+        HeaderBarModule,
+      MatDialogModule
     ],
     exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent, ErrorPanelComponent],
   declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent,

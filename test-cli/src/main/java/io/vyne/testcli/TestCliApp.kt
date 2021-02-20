@@ -1,6 +1,7 @@
 package io.vyne.testcli
 
 import io.vyne.testcli.commands.ExecuteTestCommand
+import io.vyne.testcli.commands.QueryTestCommand
 import picocli.CommandLine
 import picocli.CommandLine.Spec
 import kotlin.system.exitProcess
@@ -9,7 +10,8 @@ import kotlin.system.exitProcess
    name = "testcli",
    description = ["Vyne test cli"],
    subcommands = [
-      ExecuteTestCommand::class
+      ExecuteTestCommand::class,
+      QueryTestCommand::class
    ],
    versionProvider = VersionInfoProvider::class
 )

@@ -15,6 +15,10 @@ $toolbar-height: 5rem;
   height: 100%;
 }
 
+.mat-list-base {
+  // Remove top paddins so that the list items align with the header bar
+  padding-top: 0;
+}
 .mat-toolbar {
   position: sticky;
   top: 0;
@@ -22,15 +26,16 @@ $toolbar-height: 5rem;
   font-size: 1rem;
 
   &.mat-logo {
-    background-color: $dark-blue-1;
+    background-color: $midnight-grey;
     color: #fafafa;
     border-bottom: 1px solid rgba(0, 0, 0, 0.15);
   }
 
   &.mat-primary {
     background-color: $whiteish;
-    box-shadow: 0 2px 5px #dcdcdc;
+    //box-shadow: 0 2px 5px #dcdcdc;
     color: $dark-grey-3;
+    border-bottom: 1px solid rgba($midnight-grey, 0.15);
 
     span {
       font-size: 1rem;

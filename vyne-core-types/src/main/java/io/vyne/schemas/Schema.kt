@@ -52,6 +52,42 @@ interface Schema {
       }.toSet()
    }
 
+   // Find All operations that takes a single argument
+   // and the return type has a field with @Id annotation and with argument type.
+   // Example:
+   // model Instrument {
+   //     @Id
+   //     instrumentId: InstrumentId
+   //     isin: Isin
+   // }
+   //
+   // following operation should be returned by this function:
+   // operation(InstrumentId): Instrument
+   // whereas operation(Isin): Instrument should be filtered by this function.
+   fun operationsWithSingleIdArgumentForReturnType(): Set<Operation> {
+      return operationsWithSingleArgument().filter { (_, operation) ->
+         val argument = operation.parameters.first()
+         operation.returnType.attributes.values.firstOrNull { field ->
+            argument.type.name == field.type &&
+            field.metadata.firstOrNull { metadata -> metadata.name == VyneAnnotations.Id.annotation.fqn() } != null
+         } != null
+      }.map { it.second }.toSet()
+   }
+
+   fun excludedOperationsForEnrichment(): Set<Operation> {
+      return operationsWithSingleArgument().filterNot { (_, operation) ->
+         val argument = operation.parameters.first()
+            operation.returnType.isScalar ||
+            operation.returnType.attributes.values.all { field ->
+               field.metadata.firstOrNull { metadata -> metadata.name == VyneAnnotations.Id.annotation.fqn() } == null
+            } ||
+            operation.returnType.attributes.values.firstOrNull { field ->
+            argument.type.name == field.type &&
+               field.metadata.firstOrNull { metadata -> metadata.name == VyneAnnotations.Id.annotation.fqn() } != null
+         } != null
+      }.map { it.second }.toSet()
+   }
+
    fun operationsWithSingleArgument(): Set<Pair<Service, Operation>> {
       return services.flatMap { service ->
          service.operations.filter { operation ->  operation.parameters.size == 1  }

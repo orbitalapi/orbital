@@ -379,6 +379,8 @@ class FirstNotEmptyTest {
             operation lookupProduct(Isin):Product
          }
          model Product {
+            @Id
+            isin: Isin
             name : ProductName
          }
          model TradeOutput {

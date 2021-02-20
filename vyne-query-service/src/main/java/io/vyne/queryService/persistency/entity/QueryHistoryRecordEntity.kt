@@ -1,6 +1,6 @@
 package io.vyne.queryService.persistency.entity
 
-import io.vyne.queryService.QueryHistoryRecord
+import io.vyne.query.history.QueryHistoryRecord
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table

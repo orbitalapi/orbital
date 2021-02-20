@@ -18,6 +18,7 @@ import {MatIconModule} from '@angular/material/icon';
 import { QueryHistoryCardComponent } from './query-history-card.component';
 import {QueryPanelModule} from '../query-panel/query-panel.module';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
+import {MatDialogModule} from '@angular/material/dialog';
 
 @NgModule({
     imports: [
@@ -33,10 +34,17 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
         TypedInstancePanelModule,
         ScrollingModule,
         QueryPanelModule,
-        HeaderBarModule
+        HeaderBarModule,
+        MatDialogModule
     ],
   exports: [QueryHistoryComponent, QueryListComponent],
-  declarations: [QueryHistoryComponent, VyneqlRecordComponent, RestfulRecordComponent, QueryHistoryContainerComponent, QueryListComponent, QueryHistoryCardComponent],
+  declarations: [
+    QueryHistoryComponent,
+    VyneqlRecordComponent,
+    RestfulRecordComponent,
+    QueryHistoryContainerComponent,
+    QueryListComponent,
+    QueryHistoryCardComponent],
   providers: [],
 })
 export class QueryHistoryModule {

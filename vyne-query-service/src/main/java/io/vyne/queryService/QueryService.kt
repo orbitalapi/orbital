@@ -40,7 +40,9 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.OutputStream
-import java.util.*
+import io.vyne.query.history.RestfulQueryHistoryRecord
+import io.vyne.query.history.VyneQlQueryHistoryRecord
+import java.util.UUID
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
@@ -125,7 +127,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
    private fun query(query: Query, contentType: String, outputStream: OutputStream, resultMode: ResultMode): MimeTypeString {
       val response = executeQuery(query)
-      history.add(RestfulQueryHistoryRecord(query, response.historyRecord()))
+      history.add { RestfulQueryHistoryRecord(query, response.historyRecord()) }
       return serialise(response, contentType, outputStream, resultMode)
    }
 
@@ -151,8 +153,10 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
             // happens when Schema is empty
             FailedSearchResponse(e.message!!, null)
          }
-         val record = VyneQlQueryHistoryRecord(query, response.historyRecord())
-         history.add(record)
+         val recordProvider = {
+            VyneQlQueryHistoryRecord(query, response.historyRecord())
+         }
+         history.add(recordProvider)
 
          serialise(response, contentType, outputStream, resultMode)
       }

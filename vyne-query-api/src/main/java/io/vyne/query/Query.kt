@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.FactSetId
 import io.vyne.FactSets
@@ -93,3 +94,6 @@ enum class ResultMode(val viewClass: KClass<out ResultView>) {
 interface ResultView
 interface SimpleResultView : ResultView
 interface VerboseResultView : ResultView
+
+// Used Built-in regression pack.
+data class QueryHolder(val query: Any, val type: String = query::class.java.name)
