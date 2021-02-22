@@ -117,6 +117,13 @@ rubbish
 $caskRequest
       """.trimIndent()
 
+   val caskRequestWithPipeAsDelimiter = """
+Date|Symbol|Open|High|Low|Close
+2020-03-19|BTCUSD|6300|6330|6186.08|6235.2
+2020-03-19|NULL|6300|6330|6186.08|6235.2
+2020-03-19|BTCUSD|6300|6330|6186.08|6235.2
+2020-03-19|ETHUSD|6300|6330|6186.08|6235.2""".trimIndent()
+
    @Test
    fun canIngestContentViaWebsocketConnection() {
       // mock schema
@@ -249,6 +256,27 @@ FIRST_COLUMN,SECOND_COLUMN,THIRD_COLUMN
          .post()
          .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
          .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+
+      response.should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+   }
+
+   @Test
+   fun canIngestContentViaRestEndpointWithPipeDelimiter() {
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      val response = client
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?delimiter=|&firstRecordAsHeader=true&containsTrailingDelimiters=false")
+         .bodyValue(caskRequestWithPipeAsDelimiter)
          .retrieve()
          .bodyToMono(String::class.java)
          .block()
