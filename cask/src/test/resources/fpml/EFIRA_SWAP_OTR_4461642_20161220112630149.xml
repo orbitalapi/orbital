@@ -1,0 +1,2794 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FpML xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns="urn:cacibml:SFIM_FixedIncome_v1-1-0"
+      version="4-6"
+      service="SFIM_FixedIncomeService"
+      serviceVersion="2.2.33"
+      type="RT">
+  <trade>
+      <tradeHeader>
+         <partyTradeIdentifier xmlns="http://www.fpml.org/2009/FpML-4-6" id="Trd_CT_Company_4461642">
+            <partyReference href="CT_CAHKG_4461642"/>
+            <versionedTradeId>
+               <tradeId tradeIdScheme="OTR" id="TRD_4461642">4461642</tradeId>
+               <version>20161220112630149</version>
+            </versionedTradeId>
+            <linkId linkIdScheme="SMI">9685077C</linkId>
+            <linkId linkIdScheme="FixedRateDecompounding_Pay">Simple</linkId>
+            <linkId linkIdScheme="Event_Id">22412525</linkId>
+            <linkId linkIdScheme="Trade_Version">6</linkId>
+         </partyTradeIdentifier>
+         <partyTradeIdentifier xmlns="http://www.fpml.org/2009/FpML-4-6" id="Trd_CT_Cust_4461642">
+            <partyReference href="CT_CALYSEO_4461642"/>
+            <tradeId tradeIdScheme="CounterpartyReference" id="TRD_CUST_4461642">Unknown</tradeId>
+         </partyTradeIdentifier>
+         <partyTradeInformation xmlns="http://www.fpml.org/2009/FpML-4-6">
+            <partyReference href="CT_CAHKG_4461642"/>
+            <trader traderScheme="utUser">utabcd</trader>
+            <trader traderScheme="nameUser">DUPOND, Al</trader>
+            <executionDateTime>2016-12-20T01:53:55+01:00</executionDateTime>
+            <clearingEligibility eligibilityScheme="ClearingHouse">N</clearingEligibility>
+            <clearingEligibility eligibilityScheme="Parties">N</clearingEligibility>
+            <clearingEligibility eligibilityScheme="MarkitWire">N</clearingEligibility>
+            <clearingEligibility eligibilityScheme="PrivateRules">N</clearingEligibility>
+            <clearingEligibility eligibilityScheme="ClearingMandatory">N</clearingEligibility>
+         </partyTradeInformation>
+         <partyTradeInformation xmlns="http://www.fpml.org/2009/FpML-4-6">
+            <partyReference href="CT_CALYSEO_4461642"/>
+         </partyTradeInformation>
+         <tradeDate xmlns="http://www.fpml.org/2009/FpML-4-6">2016-12-20</tradeDate>
+         <tradeEventTypology>
+            <eventCategory>Correction</eventCategory>
+            <eventFamily>CorrectionEvent</eventFamily>
+            <eventType>CorrectionModification</eventType>
+            <agreementDate>2016-12-20</agreementDate>
+            <executionDateTime>2016-12-20T11:26:30.1338336+01:00</executionDateTime>
+         </tradeEventTypology>
+         <tradeCondition>
+            <APartyReference href="CT_CAHKG_4461642"/>
+            <BPartyReference href="CT_CALYSEO_4461642"/>
+            <exchangedProduct1>
+               <productReference href="PDT_4461642"/>
+               <quantity>2000000</quantity>
+               <valueDate>2016-12-20</valueDate>
+            </exchangedProduct1>
+            <exchangedProduct2>
+               <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+               <quantity>1674718.39609107</quantity>
+               <valueDate>2016-12-20</valueDate>
+            </exchangedProduct2>
+            <ATradeDirection>Buy</ATradeDirection>
+         </tradeCondition>
+         <tradeProcessingInfo>
+            <processingStatus>
+               <processingStatusCode codingScheme="TradeStatus_OT">Validated</processingStatusCode>
+               <userId idScheme="utUser">UTABCD</userId>
+            </processingStatus>
+         </tradeProcessingInfo>
+         <margin>
+            <marketer>UTABCD</marketer>
+            <dealQuality>NONE</dealQuality>
+         </margin>
+         <tradePartyInfo>
+            <partyReference href="CT_CAHKG_4461642"/>
+            <partyTradeProcessIndicator>true</partyTradeProcessIndicator>
+            <partyRole>Principal</partyRole>
+            <masterAgreement>
+               <masterAgreementType xmlns="http://www.fpml.org/2009/FpML-4-6"
+                                    masterAgreementTypeScheme="http://www.fpml.org/coding-scheme/master-agreement-type">AFB</masterAgreementType>
+            </masterAgreement>
+         </tradePartyInfo>
+         <tradePartyInfo>
+            <partyReference href="CT_CALYSEO_4461642"/>
+            <partyTradeProcessIndicator>false</partyTradeProcessIndicator>
+            <partyRole>Counterparty</partyRole>
+         </tradePartyInfo>
+         <otherTradeInfo>
+            <inputInfo>
+               <sourceApplicationId idScheme="application">OtFo</sourceApplicationId>
+               <inputUserIdentifier idScheme="utUser">UTABCD</inputUserIdentifier>
+               <inputTimeStamp>2016-12-20T11:22:58+01:00</inputTimeStamp>
+               <inputType>Modification</inputType>
+            </inputInfo>
+         </otherTradeInfo>
+         <asOfDate>2016-12-20</asOfDate>
+      </tradeHeader>
+      <swap xmlns="http://www.fpml.org/2009/FpML-4-6" id="PDT_4461642">
+         <productType productTypeScheme="http://www.fpml.org/coding-scheme/product-type-simple">SWAP</productType>
+         <productType productTypeScheme="SpecificFamilyCode">IRS</productType>
+         <productType productTypeScheme="unique-product-identifier">Single Currency Interest RateSwap</productType>
+         <productType productTypeScheme="SpecificTypeCode">IRS</productType>
+         <productType productTypeScheme="BaseProductType">InterestRate</productType>
+         <productType productTypeScheme="SubProductType">InterestRate</productType>
+         <productType productTypeScheme="ExoticType">NO</productType>
+         <productType productTypeScheme="CommercialName">Swap</productType>
+         <productType productTypeScheme="RiskPayOff">Swap</productType>
+         <productType productTypeScheme="CouponPayOff">Standard</productType>
+         <productType productTypeScheme="Index1Obs">Fixed</productType>
+         <productType productTypeScheme="Index1Pay">Fixed</productType>
+         <productType productTypeScheme="Index2Obs">XIbor</productType>
+         <productType productTypeScheme="Index2Pay">XIbor</productType>
+         <productType productTypeScheme="Currency">MonoCcy</productType>
+         <productId productIdScheme="ISDA">InterestRate:IRSwap:FixedFloat</productId>
+         <productId>SWAP_4461642</productId>
+         <swapStream id="Pay_4461642">
+            <payerPartyReference href="CT_CAHKG_4461642"/>
+            <receiverPartyReference href="CT_CALYSEO_4461642"/>
+            <calculationPeriodDates id="fixedCalcPeriodDates_Pay">
+               <effectiveDate>
+                  <unadjustedDate>2016-11-14</unadjustedDate>
+                  <dateAdjustments>
+                     <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                     <businessCenters>
+                        <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                        <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">USNY</businessCenter>
+                     </businessCenters>
+                  </dateAdjustments>
+               </effectiveDate>
+               <terminationDate>
+                  <unadjustedDate>2031-05-13</unadjustedDate>
+                  <dateAdjustments id="primary">
+                     <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                     <businessCenters>
+                        <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                        <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">USNY</businessCenter>
+                     </businessCenters>
+                  </dateAdjustments>
+               </terminationDate>
+               <calculationPeriodDatesAdjustments>
+                  <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                  <businessCenters>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">USNY</businessCenter>
+                  </businessCenters>
+               </calculationPeriodDatesAdjustments>
+               <calculationPeriodFrequency>
+                  <periodMultiplier>6</periodMultiplier>
+                  <period>M</period>
+                  <rollConvention>NONE</rollConvention>
+               </calculationPeriodFrequency>
+            </calculationPeriodDates>
+            <paymentDates id="PaymentPeriodDate_Pay_4461642">
+               <calculationPeriodDatesReference href="fixedCalcPeriodDates_Pay"/>
+               <paymentFrequency>
+                  <periodMultiplier>6</periodMultiplier>
+                  <period>M</period>
+               </paymentFrequency>
+               <payRelativeTo>CalculationPeriodEndDate</payRelativeTo>
+               <paymentDatesAdjustments>
+                  <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                  <businessCenters>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">USNY</businessCenter>
+                  </businessCenters>
+               </paymentDatesAdjustments>
+            </paymentDates>
+            <calculationPeriodAmount>
+               <calculation>
+                  <notionalSchedule id="notionalSchedulePay">
+                     <notionalStepSchedule>
+                        <initialValue>20000000</initialValue>
+                        <step>
+                           <stepDate>2016-11-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2017-05-15</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2017-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2018-05-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2018-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2019-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2019-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2020-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2020-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2021-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2021-11-15</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2022-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2022-11-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2023-05-15</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2023-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2024-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2024-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2025-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2025-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2026-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2026-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2027-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2027-11-15</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2028-05-15</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2028-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2029-05-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2029-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2030-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2030-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                     </notionalStepSchedule>
+                  </notionalSchedule>
+                  <fixedRateSchedule>
+                     <initialValue>0.018275</initialValue>
+                  </fixedRateSchedule>
+                  <dayCountFraction dayCountFractionScheme="http://www.fpml.org/coding-scheme/day-count-fraction">30/360</dayCountFraction>
+                  <accrualDayCountFraction dayCountFractionScheme="http://www.fpml.org/coding-scheme/day-count-fraction">30/360</accrualDayCountFraction>
+               </calculation>
+            </calculationPeriodAmount>
+            <principalExchanges id="PrincipalExchanges_Pay_4461642">
+               <initialExchange>false</initialExchange>
+               <finalExchange>false</finalExchange>
+               <intermediateExchange>false</intermediateExchange>
+            </principalExchanges>
+            <cashflows>
+               <cashflowsMatchParameters>true</cashflowsMatchParameters>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2017-05-15</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2016-11-14</adjustedStartDate>
+                     <adjustedEndDate>2017-05-15</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>181</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>183765.28</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2017-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2017-05-15</adjustedStartDate>
+                     <adjustedEndDate>2017-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>178</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>180719.44</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2018-05-14</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2017-11-13</adjustedStartDate>
+                     <adjustedEndDate>2018-05-14</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>181</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>183765.28</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2018-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2018-05-14</adjustedStartDate>
+                     <adjustedEndDate>2018-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>179</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>181734.72</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2019-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2018-11-13</adjustedStartDate>
+                     <adjustedEndDate>2019-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2019-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2019-05-13</adjustedStartDate>
+                     <adjustedEndDate>2019-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2020-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2019-11-13</adjustedStartDate>
+                     <adjustedEndDate>2020-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2020-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2020-05-13</adjustedStartDate>
+                     <adjustedEndDate>2020-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2021-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2020-11-13</adjustedStartDate>
+                     <adjustedEndDate>2021-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2021-11-15</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2021-05-13</adjustedStartDate>
+                     <adjustedEndDate>2021-11-15</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>182</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>184780.56</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2022-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2021-11-15</adjustedStartDate>
+                     <adjustedEndDate>2022-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>178</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>180719.44</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2022-11-14</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2022-05-13</adjustedStartDate>
+                     <adjustedEndDate>2022-11-14</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>181</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>183765.28</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2023-05-15</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2022-11-14</adjustedStartDate>
+                     <adjustedEndDate>2023-05-15</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>181</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>183765.28</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2023-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2023-05-15</adjustedStartDate>
+                     <adjustedEndDate>2023-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>178</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>180719.44</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2024-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2023-11-13</adjustedStartDate>
+                     <adjustedEndDate>2024-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2024-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2024-05-13</adjustedStartDate>
+                     <adjustedEndDate>2024-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2025-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2024-11-13</adjustedStartDate>
+                     <adjustedEndDate>2025-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2025-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2025-05-13</adjustedStartDate>
+                     <adjustedEndDate>2025-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2026-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2025-11-13</adjustedStartDate>
+                     <adjustedEndDate>2026-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2026-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2026-05-13</adjustedStartDate>
+                     <adjustedEndDate>2026-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2027-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2026-11-13</adjustedStartDate>
+                     <adjustedEndDate>2027-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2027-11-15</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2027-05-13</adjustedStartDate>
+                     <adjustedEndDate>2027-11-15</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>182</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>184780.56</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2028-05-15</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2027-11-15</adjustedStartDate>
+                     <adjustedEndDate>2028-05-15</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2028-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2028-05-15</adjustedStartDate>
+                     <adjustedEndDate>2028-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>178</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>180719.44</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2029-05-14</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2028-11-13</adjustedStartDate>
+                     <adjustedEndDate>2029-05-14</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>181</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>183765.28</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2029-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2029-05-14</adjustedStartDate>
+                     <adjustedEndDate>2029-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>179</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>181734.72</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2030-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2029-11-13</adjustedStartDate>
+                     <adjustedEndDate>2030-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2030-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2030-05-13</adjustedStartDate>
+                     <adjustedEndDate>2030-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2031-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_PAY"/>
+                     <adjustedStartDate>2030-11-13</adjustedStartDate>
+                     <adjustedEndDate>2031-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>180</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <fixedRate>0.018275</fixedRate>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>182750</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+            </cashflows>
+            <adjusted>true</adjusted>
+            <adjustedDetail>Adjusted</adjustedDetail>
+         </swapStream>
+         <swapStream id="Rec_4461642">
+            <payerPartyReference href="CT_CALYSEO_4461642"/>
+            <receiverPartyReference href="CT_CAHKG_4461642"/>
+            <calculationPeriodDates id="floatCalcPeriodDates_Receive">
+               <effectiveDate>
+                  <unadjustedDate>2016-11-14</unadjustedDate>
+                  <dateAdjustments>
+                     <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                     <businessCenters>
+                        <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                        <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">USNY</businessCenter>
+                     </businessCenters>
+                  </dateAdjustments>
+               </effectiveDate>
+               <terminationDate>
+                  <unadjustedDate>2031-05-13</unadjustedDate>
+                  <dateAdjustments id="primary2">
+                     <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                     <businessCenters>
+                        <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                        <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">USNY</businessCenter>
+                     </businessCenters>
+                  </dateAdjustments>
+               </terminationDate>
+               <calculationPeriodDatesAdjustments>
+                  <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                  <businessCenters>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">USNY</businessCenter>
+                  </businessCenters>
+               </calculationPeriodDatesAdjustments>
+               <calculationPeriodFrequency>
+                  <periodMultiplier>3</periodMultiplier>
+                  <period>M</period>
+                  <rollConvention>NONE</rollConvention>
+               </calculationPeriodFrequency>
+            </calculationPeriodDates>
+            <paymentDates id="PaymentPeriodDate_Receive_4461642">
+               <calculationPeriodDatesReference href="floatCalcPeriodDates_Receive"/>
+               <paymentFrequency>
+                  <periodMultiplier>3</periodMultiplier>
+                  <period>M</period>
+               </paymentFrequency>
+               <payRelativeTo>CalculationPeriodEndDate</payRelativeTo>
+               <paymentDatesAdjustments>
+                  <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                  <businessCenters>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">USNY</businessCenter>
+                  </businessCenters>
+               </paymentDatesAdjustments>
+            </paymentDates>
+            <resetDates id="resetDatesReceive">
+               <calculationPeriodDatesReference href="floatCalcPeriodDates_Receive"/>
+               <resetRelativeTo>CalculationPeriodStartDate</resetRelativeTo>
+               <fixingDates>
+                  <periodMultiplier>-2</periodMultiplier>
+                  <period>D</period>
+                  <dayType>Business</dayType>
+                  <businessDayConvention>NONE</businessDayConvention>
+                  <businessCenters>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                  </businessCenters>
+                  <dateRelativeTo href="resetDatesReceive"/>
+               </fixingDates>
+               <resetFrequency>
+                  <periodMultiplier>3</periodMultiplier>
+                  <period>M</period>
+               </resetFrequency>
+               <resetDatesAdjustments>
+                  <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                  <businessCenters>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                  </businessCenters>
+               </resetDatesAdjustments>
+            </resetDates>
+            <calculationPeriodAmount>
+               <calculation>
+                  <notionalSchedule id="notionalScheduleReceive">
+                     <notionalStepSchedule>
+                        <initialValue>20000000</initialValue>
+                        <step>
+                           <stepDate>2016-11-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2017-02-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2017-05-15</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2017-08-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2017-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2018-02-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2018-05-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2018-08-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2018-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2019-02-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2019-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2019-08-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2019-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2020-02-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2020-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2020-08-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2020-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2021-02-16</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2021-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2021-08-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2021-11-15</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2022-02-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2022-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2022-08-15</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2022-11-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2023-02-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2023-05-15</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2023-08-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2023-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2024-02-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2024-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2024-08-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2024-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2025-02-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2025-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2025-08-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2025-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2026-02-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2026-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2026-08-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2026-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2027-02-16</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2027-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2027-08-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2027-11-15</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2028-02-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2028-05-15</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2028-08-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2028-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2029-02-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2029-05-14</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2029-08-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2029-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2030-02-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2030-05-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2030-08-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2030-11-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <step>
+                           <stepDate>2031-02-13</stepDate>
+                           <stepValue>20000000</stepValue>
+                        </step>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                     </notionalStepSchedule>
+                  </notionalSchedule>
+                  <floatingRateCalculation id="REC_LIBOR3M">
+                     <floatingRateIndex floatingRateIndexScheme="http://www.fpml.org/coding-scheme/floating-rate-index">USD-LIBOR-BBA</floatingRateIndex>
+                     <indexTenor>
+                        <periodMultiplier>3</periodMultiplier>
+                        <period>M</period>
+                     </indexTenor>
+                     <spreadSchedule>
+                        <initialValue>0</initialValue>
+                     </spreadSchedule>
+                     <payoutSpreadSchedule>
+                        <initialValue>0</initialValue>
+                     </payoutSpreadSchedule>
+                  </floatingRateCalculation>
+                  <dayCountFraction dayCountFractionScheme="http://www.fpml.org/coding-scheme/day-count-fraction">ACT/360</dayCountFraction>
+                  <accrualDayCountFraction dayCountFractionScheme="http://www.fpml.org/coding-scheme/day-count-fraction">ACT/360</accrualDayCountFraction>
+               </calculation>
+            </calculationPeriodAmount>
+            <principalExchanges id="PrincipalExchanges_Receive_4461642">
+               <initialExchange>false</initialExchange>
+               <finalExchange>false</finalExchange>
+               <intermediateExchange>false</intermediateExchange>
+            </principalExchanges>
+            <cashflows>
+               <cashflowsMatchParameters>true</cashflowsMatchParameters>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2017-02-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2016-11-14</adjustedStartDate>
+                     <adjustedEndDate>2017-02-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.0090206</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2016-11-10</adjustedFixingDate>
+                           <observedRate>0.0090206</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>45604.14</amount>
+                     </forecastAmount>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2017-05-15</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2017-02-13</adjustedStartDate>
+                     <adjustedEndDate>2017-05-15</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.01037951</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2017-02-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>52474.17784047</amount>
+                     </forecastAmount>
+                     <forecastRate>0.01037951</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2017-08-14</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2017-05-15</adjustedStartDate>
+                     <adjustedEndDate>2017-08-14</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.01176123</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2017-05-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>59459.56708021</amount>
+                     </forecastAmount>
+                     <forecastRate>0.01176123</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2017-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2017-08-14</adjustedStartDate>
+                     <adjustedEndDate>2017-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.01346590</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2017-08-10</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>68077.60007166</amount>
+                     </forecastAmount>
+                     <forecastRate>0.01346590</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2018-02-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2017-11-13</adjustedStartDate>
+                     <adjustedEndDate>2018-02-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.01509348</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2017-11-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>77144.44514062</amount>
+                     </forecastAmount>
+                     <forecastRate>0.01509348</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2018-05-14</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2018-02-13</adjustedStartDate>
+                     <adjustedEndDate>2018-05-14</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>90</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.01648477</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2018-02-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>90</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>82423.85177148</amount>
+                     </forecastAmount>
+                     <forecastRate>0.01648477</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2018-08-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2018-05-14</adjustedStartDate>
+                     <adjustedEndDate>2018-08-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.01775634</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2018-05-10</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>89768.18276489</amount>
+                     </forecastAmount>
+                     <forecastRate>0.01775634</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2018-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2018-08-13</adjustedStartDate>
+                     <adjustedEndDate>2018-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.01898185</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2018-08-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>97018.36637478</amount>
+                     </forecastAmount>
+                     <forecastRate>0.01898185</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2019-02-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2018-11-13</adjustedStartDate>
+                     <adjustedEndDate>2019-02-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02019825</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2018-11-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>103235.49478275</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02019825</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2019-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2019-02-13</adjustedStartDate>
+                     <adjustedEndDate>2019-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>89</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02092999</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2019-02-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>89</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>103487.15134502</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02092999</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2019-08-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2019-05-13</adjustedStartDate>
+                     <adjustedEndDate>2019-08-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02172463</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2019-05-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>111037.01125626</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02172463</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2019-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2019-08-13</adjustedStartDate>
+                     <adjustedEndDate>2019-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02280451</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2019-08-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>116556.38378145</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02280451</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2020-02-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2019-11-13</adjustedStartDate>
+                     <adjustedEndDate>2020-02-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02326911</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2019-11-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>118930.98250390</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02326911</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2020-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2020-02-13</adjustedStartDate>
+                     <adjustedEndDate>2020-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>90</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02371927</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2020-02-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>90</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>118596.33871052</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02371927</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2020-08-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2020-05-13</adjustedStartDate>
+                     <adjustedEndDate>2020-08-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02458065</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2020-05-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>125634.43162249</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02458065</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2020-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2020-08-13</adjustedStartDate>
+                     <adjustedEndDate>2020-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02543309</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2020-08-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>129991.35922351</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02543309</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2021-02-16</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2020-11-13</adjustedStartDate>
+                     <adjustedEndDate>2021-02-16</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>95</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02542520</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2020-11-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>95</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>134188.56682814</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02542520</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2021-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2021-02-16</adjustedStartDate>
+                     <adjustedEndDate>2021-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>86</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02552938</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2021-02-12</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>86</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>121973.68560406</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02552938</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2021-08-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2021-05-13</adjustedStartDate>
+                     <adjustedEndDate>2021-08-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02616357</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2021-05-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>133724.90274911</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02616357</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2021-11-15</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2021-08-13</adjustedStartDate>
+                     <adjustedEndDate>2021-11-15</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>94</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02680872</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2021-08-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>94</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>140001.09381812</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02680872</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2022-02-14</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2021-11-15</adjustedStartDate>
+                     <adjustedEndDate>2022-02-14</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02683636</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2021-11-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>135672.70986652</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02683636</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2022-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2022-02-14</adjustedStartDate>
+                     <adjustedEndDate>2022-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>88</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02697191</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2022-02-10</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>88</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>131862.67432581</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02697191</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2022-08-15</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2022-05-13</adjustedStartDate>
+                     <adjustedEndDate>2022-08-15</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>94</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02748658</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2022-05-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>94</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>143541.03983305</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02748658</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2022-11-14</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2022-08-15</adjustedStartDate>
+                     <adjustedEndDate>2022-11-14</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02798844</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2022-08-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>141497.10999221</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02798844</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2023-02-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2022-11-14</adjustedStartDate>
+                     <adjustedEndDate>2023-02-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02784107</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2022-11-10</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>140752.09874848</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02784107</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2023-05-15</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2023-02-13</adjustedStartDate>
+                     <adjustedEndDate>2023-05-15</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02782482</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2023-02-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>140669.90365196</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02782482</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2023-08-14</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2023-05-15</adjustedStartDate>
+                     <adjustedEndDate>2023-08-14</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02821747</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2023-05-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>142654.96978840</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02821747</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2023-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2023-08-14</adjustedStartDate>
+                     <adjustedEndDate>2023-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02860046</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2023-08-10</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>144591.19404966</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02860046</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2024-02-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2023-11-13</adjustedStartDate>
+                     <adjustedEndDate>2024-02-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02852771</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2023-11-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>145808.28567506</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02852771</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2024-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2024-02-13</adjustedStartDate>
+                     <adjustedEndDate>2024-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>90</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02853992</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2024-02-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>90</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>142699.60495102</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02853992</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2024-08-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2024-05-13</adjustedStartDate>
+                     <adjustedEndDate>2024-08-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02885555</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2024-05-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>147483.91152181</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02885555</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2024-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2024-08-13</adjustedStartDate>
+                     <adjustedEndDate>2024-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02916399</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2024-08-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>149060.41007678</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02916399</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2025-02-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2024-11-13</adjustedStartDate>
+                     <adjustedEndDate>2025-02-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02904850</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2024-11-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>148470.12958143</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02904850</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2025-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2025-02-13</adjustedStartDate>
+                     <adjustedEndDate>2025-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>89</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02898626</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2025-02-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>89</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>143320.97533286</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02898626</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2025-08-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2025-05-13</adjustedStartDate>
+                     <adjustedEndDate>2025-08-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02923608</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2025-05-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>149428.85468277</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02923608</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2025-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2025-08-13</adjustedStartDate>
+                     <adjustedEndDate>2025-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02947944</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2025-08-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>150672.69277607</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02947944</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2026-02-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2025-11-13</adjustedStartDate>
+                     <adjustedEndDate>2026-02-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02937700</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2025-11-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>150149.12590813</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02937700</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2026-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2026-02-13</adjustedStartDate>
+                     <adjustedEndDate>2026-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>89</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02933184</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2026-02-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>89</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>145029.65982397</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02933184</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2026-08-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2026-05-13</adjustedStartDate>
+                     <adjustedEndDate>2026-08-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02953203</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2026-05-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>150941.49081300</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02953203</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2026-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2026-08-13</adjustedStartDate>
+                     <adjustedEndDate>2026-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02972586</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2026-08-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>151932.18944710</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02972586</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2027-02-16</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2026-11-13</adjustedStartDate>
+                     <adjustedEndDate>2027-02-16</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>95</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02947661</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2026-11-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>95</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>155571.01994332</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02947661</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2027-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2027-02-16</adjustedStartDate>
+                     <adjustedEndDate>2027-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>86</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02932933</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2027-02-12</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>86</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>140129.01533040</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02932933</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2027-08-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2027-05-13</adjustedStartDate>
+                     <adjustedEndDate>2027-08-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02948296</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2027-05-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>150690.69671807</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02948296</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2027-11-15</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2027-08-13</adjustedStartDate>
+                     <adjustedEndDate>2027-11-15</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>94</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02963346</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2027-08-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>94</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>154752.527507</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02963346</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2028-02-14</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2027-11-15</adjustedStartDate>
+                     <adjustedEndDate>2028-02-14</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02977208</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2027-11-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>150514.41689078</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02977208</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2028-05-15</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2028-02-14</adjustedStartDate>
+                     <adjustedEndDate>2028-05-15</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02990722</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2028-02-10</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>151197.62891862</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02990722</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2028-08-14</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2028-05-15</adjustedStartDate>
+                     <adjustedEndDate>2028-08-14</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.03003767</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2028-05-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>151857.08791840</amount>
+                     </forecastAmount>
+                     <forecastRate>0.03003767</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2028-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2028-08-14</adjustedStartDate>
+                     <adjustedEndDate>2028-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.03016348</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2028-08-10</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>152493.14841406</amount>
+                     </forecastAmount>
+                     <forecastRate>0.03016348</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2029-02-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2028-11-13</adjustedStartDate>
+                     <adjustedEndDate>2029-02-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02955948</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2028-11-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>151081.80186557</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02955948</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2029-05-14</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2029-02-13</adjustedStartDate>
+                     <adjustedEndDate>2029-05-14</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>90</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02913698</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2029-02-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>90</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>145684.88945359</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02913698</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2029-08-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2029-05-14</adjustedStartDate>
+                     <adjustedEndDate>2029-08-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>91</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02921898</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2029-05-10</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>91</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>147718.17057436</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02921898</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2029-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2029-08-13</adjustedStartDate>
+                     <adjustedEndDate>2029-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02929852</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2029-08-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>149748.01078208</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02929852</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2030-02-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2029-11-13</adjustedStartDate>
+                     <adjustedEndDate>2030-02-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02937397</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2029-11-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>150133.60405089</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02937397</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2030-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2030-02-13</adjustedStartDate>
+                     <adjustedEndDate>2030-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>89</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02944136</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2030-02-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>89</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>145571.17204000</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02944136</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2030-08-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2030-05-13</adjustedStartDate>
+                     <adjustedEndDate>2030-08-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02951280</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2030-05-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>150843.21365921</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02951280</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2030-11-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2030-08-13</adjustedStartDate>
+                     <adjustedEndDate>2030-11-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02957861</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2030-08-09</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>151179.56489263</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02957861</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2031-02-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2030-11-13</adjustedStartDate>
+                     <adjustedEndDate>2031-02-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>92</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02964128</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2030-11-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>92</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>151499.89907828</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02964128</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+               <paymentCalculationPeriod>
+                  <adjustedPaymentDate>2031-05-13</adjustedPaymentDate>
+                  <calculationPeriod>
+                     <discountCurveReference href="DISC_REC"/>
+                     <adjustedStartDate>2031-02-13</adjustedStartDate>
+                     <adjustedEndDate>2031-05-13</adjustedEndDate>
+                     <calculationPeriodNumberOfDays>89</calculationPeriodNumberOfDays>
+                     <notionalAmount>20000000</notionalAmount>
+                     <floatingRateDefinition>
+                        <forwardCurveReference href="FWD_REC_LIBOR3M"/>
+                        <calculatedRate>0.02969628</calculatedRate>
+                        <rateObservation>
+                           <adjustedFixingDate>2031-02-11</adjustedFixingDate>
+                           <observedRate>0</observedRate>
+                           <observationWeight>89</observationWeight>
+                        </rateObservation>
+                        <floatingRateMultiplier>1</floatingRateMultiplier>
+                        <rateCalculation>REC_LIBOR3M</rateCalculation>
+                        <payoutSpread>0</payoutSpread>
+                     </floatingRateDefinition>
+                     <forecastAmount>
+                        <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+                        <amount>146831.58847431</amount>
+                     </forecastAmount>
+                     <forecastRate>0.02969628</forecastRate>
+                  </calculationPeriod>
+               </paymentCalculationPeriod>
+            </cashflows>
+            <adjusted>true</adjusted>
+            <adjustedDetail>Adjusted</adjustedDetail>
+         </swapStream>
+         <earlyTerminationProvision>
+            <optionalEarlyTerminationParameters>
+               <earliestExerciseDateTenor>
+                  <periodMultiplier>1</periodMultiplier>
+                  <period>D</period>
+               </earliestExerciseDateTenor>
+               <exerciseFrequency>
+                  <periodMultiplier>5</periodMultiplier>
+                  <period>Y</period>
+               </exerciseFrequency>
+            </optionalEarlyTerminationParameters>
+            <optionalEarlyTermination>
+               <pricedBreakClause>false</pricedBreakClause>
+               <bermudaExercise id="bermudaExercise0_4461642">
+                  <bermudaExerciseDates>
+                     <relativeDates>
+                        <periodMultiplier>-10</periodMultiplier>
+                        <period>D</period>
+                        <dayType>Business</dayType>
+                        <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                        <businessCenters>
+                           <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                           <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">KRSE</businessCenter>
+                           <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">USNY</businessCenter>
+                        </businessCenters>
+                        <dateRelativeTo href="cashSettlementPayment0"/>
+                     </relativeDates>
+                  </bermudaExerciseDates>
+                  <earliestExerciseTime>
+                     <hourMinuteTime>09:00:00</hourMinuteTime>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                  </earliestExerciseTime>
+                  <expirationTime>
+                     <hourMinuteTime>11:00:00</hourMinuteTime>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                  </expirationTime>
+               </bermudaExercise>
+               <followUpConfirmation>false</followUpConfirmation>
+               <calculationAgent>
+                  <calculationAgentPartyReference href="CT_CAHKG_4461642"/>
+               </calculationAgent>
+               <cashSettlement>
+                  <cashSettlementValuationTime>
+                     <hourMinuteTime>11:00:00</hourMinuteTime>
+                     <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                  </cashSettlementValuationTime>
+                  <cashSettlementValuationDate>
+                     <periodMultiplier>-10</periodMultiplier>
+                     <period>D</period>
+                     <dayType>Business</dayType>
+                     <businessDayConvention>NONE</businessDayConvention>
+                     <businessCenters>
+                        <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                        <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">KRSE</businessCenter>
+                        <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">USNY</businessCenter>
+                     </businessCenters>
+                     <dateRelativeTo href="cashSettlementPayment0"/>
+                  </cashSettlementValuationDate>
+                  <cashSettlementPaymentDate id="cashSettlementPayment0">
+                     <adjustableDates>
+                        <unadjustedDate>2026-05-13</unadjustedDate>
+                        <unadjustedDate>2031-05-13</unadjustedDate>
+                        <dateAdjustments>
+                           <businessDayConvention>MODFOLLOWING</businessDayConvention>
+                           <businessCenters>
+                              <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">GBLO</businessCenter>
+                              <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">KRSE</businessCenter>
+                              <businessCenter businessCenterScheme="http://www.fpml.org/coding-scheme/business-center">USNY</businessCenter>
+                           </businessCenters>
+                        </dateAdjustments>
+                     </adjustableDates>
+                  </cashSettlementPaymentDate>
+                  <cashPriceMethod>
+                     <cashSettlementCurrency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</cashSettlementCurrency>
+                     <quotationRateType>ExercisingPartyPays</quotationRateType>
+                  </cashPriceMethod>
+               </cashSettlement>
+            </optionalEarlyTermination>
+         </earlyTerminationProvision>
+         <additionalPayment href="DISC_REC">
+            <payerPartyReference href="CT_CAHKG_4461642"/>
+            <receiverPartyReference href="CT_CALYSEO_4461642"/>
+            <paymentAmount>
+               <currency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</currency>
+               <amount>24</amount>
+            </paymentAmount>
+            <adjustedPaymentDate>2016-12-22</adjustedPaymentDate>
+            <paymentType>Commission</paymentType>
+         </additionalPayment>
+      </swap>
+  </trade>
+  <valuationSet id="NPV">
+      <name xmlns="http://www.fpml.org/2009/FpML-4-6">RiskValuationEOD</name>
+      <assetValuation xmlns="http://www.fpml.org/2009/FpML-4-6">
+         <objectReference href="PDT_4461642"/>
+         <yieldCurveValuation id="DISC_PAY">
+            <discountFactorCurve>
+               <curveId curveScheme="CARD">USD-EUR-EURIBOR-3M</curveId>
+               <curveCurrency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</curveCurrency>
+            </discountFactorCurve>
+         </yieldCurveValuation>
+         <yieldCurveValuation id="DISC_REC">
+            <discountFactorCurve>
+               <curveId curveScheme="CARD">USD-EUR-EURIBOR-3M</curveId>
+               <curveCurrency currencyScheme="http://www.fpml.org/ext/iso4217-2001-08-15">USD</curveCurrency>
+            </discountFactorCurve>
+         </yieldCurveValuation>
+         <yieldCurveValuation id="FWD_PAY">
+            <forwardCurve>
+               <curveId curveScheme="ISDA">FIXED</curveId>
+            </forwardCurve>
+         </yieldCurveValuation>
+         <yieldCurveValuation id="FWD_REC_LIBOR3M">
+            <forwardCurve>
+               <curveId curveScheme="ISDA">USD-LIBOR-3M</curveId>
+            </forwardCurve>
+         </yieldCurveValuation>
+      </assetValuation>
+  </valuationSet>
+  <party id="CT_CAHKG_4461642">
+      <partyId idScheme="RICOS_SC">SC0000000011</partyId>
+      <partyId idScheme="RICOS">0000000071</partyId>
+      <partyId idScheme="RTS">0000000001</partyId>
+      <partyShortName>sname</partyShortName>
+      <partyName>name</partyName>
+      <analyticalStructureInfo>
+         <legalEntityNature>AFFILIATE</legalEntityNature>
+         <organizationalBusinessUnitCode>0010</organizationalBusinessUnitCode>
+         <cdrId>70585</cdrId>
+         <frontOfficePortfolioCode>CAHKG</frontOfficePortfolioCode>
+         <backOfficePortfolioCode codingScheme="newEdge">M570</backOfficePortfolioCode>
+      </analyticalStructureInfo>
+  </party>
+  <party id="CT_CALYSEO_4461642">
+      <partyId idScheme="RICOS_SC">SC0000000123</partyId>
+      <partyId idScheme="RICOS">0000000188</partyId>
+      <partyId idScheme="RTS">0000000044</partyId>
+      <partyId idScheme="RLC">0000000044</partyId>
+      <partyShortName>snameEO</partyShortName>
+      <partyName>longname</partyName>
+  </party>
+</FpML>

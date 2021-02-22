@@ -1,6 +1,7 @@
 package io.vyne.cask.query
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.nhaarman.mockitokotlin2.mock
 import io.vyne.cask.MessageIds
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.StringToQualifiedNameConverter
@@ -34,12 +35,15 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.context.annotation.Import
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import reactor.core.publisher.Flux
+import reactor.core.scheduler.Scheduler
+import reactor.core.scheduler.Schedulers
 import java.io.File
 import java.net.URI
+import java.time.Duration
 import javax.sql.DataSource
 
 @DataJpaTest(properties = ["spring.main.web-application-type=none"])
@@ -59,6 +63,9 @@ abstract class BaseCaskIntegrationTest {
    lateinit var dataSource: DataSource
 
    @Autowired
+   lateinit var namedParamJdbcTemplate: NamedParameterJdbcTemplate
+
+   @Autowired
    lateinit var jdbcTemplate: JdbcTemplate
 
    @Autowired
@@ -71,6 +78,8 @@ abstract class BaseCaskIntegrationTest {
    lateinit var viewDefinitions: MutableList<CaskViewDefinition>
    lateinit var caskViewService: CaskViewService
    lateinit var ingestionEventHandler: IngestionEventHandler
+
+   lateinit var ingesterFactory: IngesterFactory
 
    @After
    fun tearDown() {
@@ -95,70 +104,129 @@ abstract class BaseCaskIntegrationTest {
 
    @Before
    fun setup() {
+      // Quirky call to doSetup() to allow subclasses to override, and junit to call setup()
+      this.doSetup()
+   }
+
+   // By default, don't buffer/batch inserts and upserts, as it makes testing unpredictable.  For performance tests, these values need to be tweaked
+   fun doSetup(
+      ingesterBufferSize: Int = 0,
+      ingesterBufferTimeout: Duration = Duration.ZERO,
+      scheduler: Scheduler = Schedulers.immediate()
+   ) {
       caskIngestionErrorProcessor = CaskIngestionErrorProcessor(ingestionErrorRepository)
       schemaProvider = UpdatableSchemaProvider.withSource(CoinbaseJsonOrderSchema.sourceV1)
-      caskDao = CaskDAO(jdbcTemplate, schemaProvider, dataSource, caskMessageRepository, configRepository)
+      caskDao = CaskDAO(
+         namedParamJdbcTemplate.jdbcTemplate,
+         schemaProvider,
+         dataSource,
+         caskMessageRepository,
+         configRepository
+      )
       caskConfigService = CaskConfigService(configRepository)
       viewDefinitions = mutableListOf()
       caskViewService = CaskViewService(
          CaskViewBuilderFactory(configRepository, schemaProvider),
          configRepository,
-         jdbcTemplate,
+         namedParamJdbcTemplate.jdbcTemplate,
          CaskViewConfig(viewDefinitions)
       )
       ingestionEventHandler = IngestionEventHandler(caskConfigService, caskDao)
+      ingesterFactory = IngesterFactory(
+         namedParamJdbcTemplate,
+         CaskIngestionErrorProcessor(mock { }),
+         bufferSize = ingesterBufferSize,
+         bufferTimeout = ingesterBufferTimeout,
+         scheduler = scheduler
+      )
    }
 
-   fun ingestJsonData(resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema) {
+   fun ingestJsonData(
+      resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema, bufferSize: Int = 0,
+      bufferTimeout: Duration = Duration.ZERO
+   ) {
       val pipelineSource = JsonStreamSource(
-         Flux.just(File(resource).inputStream()),
+         File(resource).inputStream(),
          versionedType,
          taxiSchema,
          MessageIds.uniqueId(),
-         ObjectMapper())
+         ObjectMapper()
+      )
 
-      ingest(pipelineSource, versionedType, taxiSchema)
+      ingest(
+         pipelineSource,
+         versionedType,
+         taxiSchema,
+         dropCaskFirst = true,
+         bufferSize = bufferSize,
+         bufferTimeout = bufferTimeout
+      )
    }
 
-   fun ingestJsonData(content: String, versionedType: VersionedType, taxiSchema: TaxiSchema, dropCaskFirst: Boolean = true) {
+   fun ingestJsonData(
+      content: String,
+      versionedType: VersionedType,
+      taxiSchema: TaxiSchema,
+      dropCaskFirst: Boolean = true,
+      bufferSize: Int = 0,
+      bufferTimeout: Duration = Duration.ZERO
+   ) {
       val pipelineSource = JsonStreamSource(
-         Flux.just(IOUtils.toInputStream(content)),
+         IOUtils.toInputStream(content),
          versionedType,
          taxiSchema,
          MessageIds.uniqueId(),
-         ObjectMapper())
+         ObjectMapper()
+      )
 
-      ingest(pipelineSource, versionedType, taxiSchema, dropCaskFirst)
+      ingest(pipelineSource, versionedType, taxiSchema, dropCaskFirst, bufferSize, bufferTimeout)
    }
 
 
-   fun ingestCsvData(resource: URI, versionedType: VersionedType, taxiSchema: TaxiSchema, dropCaskFirst: Boolean = true) {
+   fun ingestCsvData(
+      resource: URI,
+      versionedType: VersionedType,
+      taxiSchema: TaxiSchema,
+      dropCaskFirst: Boolean = true,
+      bufferSize: Int = 0,
+      bufferTimeout: Duration = Duration.ZERO
+   ) {
       val pipelineSource = CsvStreamSource(
-         Flux.just(File(resource).inputStream()),
+         File(resource).inputStream(),
          versionedType,
          taxiSchema,
          MessageIds.uniqueId(),
          csvFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(),
-         ingestionErrorProcessor = caskIngestionErrorProcessor)
+         ingestionErrorProcessor = caskIngestionErrorProcessor
+      )
 
-      ingest(pipelineSource, versionedType, taxiSchema, dropCaskFirst)
+      ingest(pipelineSource, versionedType, taxiSchema, dropCaskFirst, bufferSize, bufferTimeout)
    }
 
-   fun ingest(source: StreamSource, versionedType: VersionedType, taxiSchema: TaxiSchema, dropCaskFirst: Boolean = true) {
+   fun ingest(
+      source: StreamSource,
+      versionedType: VersionedType,
+      taxiSchema: TaxiSchema,
+      dropCaskFirst: Boolean = true,
+      bufferSize: Int = 0,
+      bufferTimeout: Duration = Duration.ZERO
+   ) {
       val pipeline = IngestionStream(
          versionedType,
          TypeDbWrapper(versionedType, taxiSchema),
-         source)
+         source
+      )
 
-      val ingester = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
-         .create(pipeline)
+      val ingester =
+         IngesterFactory.singleThreaded(namedParamJdbcTemplate, caskIngestionErrorProcessor, bufferSize, bufferTimeout)
+            .create(pipeline)
       if (dropCaskFirst) {
          caskDao.dropCaskRecordTable(versionedType)
          caskDao.createCaskRecordTable(versionedType)
          caskConfigService.createCaskConfig(versionedType)
       }
 
-      ingester.ingest().toList()
+      ingester.ingest()
 //         .doOnError { error ->
 //            log().error("Error ", error)
 //         }

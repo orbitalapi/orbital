@@ -31,10 +31,12 @@ import java.io.InputStream
 import java.nio.charset.Charset
 
 @RestController
-class CaskRestController(private val caskService: CaskService,
-                         private val applicationEventPublisher: ApplicationEventPublisher,
-                         private val caskIngestionErrorProcessor: CaskIngestionErrorProcessor,
-                         @Qualifier("ingesterMapper") private val mapper: ObjectMapper) : CaskApi {
+class CaskRestController(
+   private val caskService: CaskService,
+   private val applicationEventPublisher: ApplicationEventPublisher,
+   private val caskIngestionErrorProcessor: CaskIngestionErrorProcessor,
+   @Qualifier("ingesterMapper") private val mapper: ObjectMapper
+) : CaskApi {
 
    // Workaround for feign not supporting pojos for RequestParam
    override fun ingestCsv(
@@ -58,7 +60,11 @@ class CaskRestController(private val caskService: CaskService,
       return ingestCsv(typeReference, parameters, input)
    }
 
-   private fun ingestCsv(typeReference: String, parameters: CsvIngestionParameters, input: String): CaskIngestionResponse {
+   private fun ingestCsv(
+      typeReference: String,
+      parameters: CsvIngestionParameters,
+      input: String
+   ): CaskIngestionResponse {
       log().info("New csv ingestion request for type $typeReference with config $parameters")
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = CsvWebsocketRequest(parameters, versionedType, caskIngestionErrorProcessor)
@@ -77,7 +83,12 @@ class CaskRestController(private val caskService: CaskService,
       return ingestJson(typeReference, parameters, input)
    }
 
-   override fun ingestXml(typeReference: String, debug: Boolean, elementSelector: String?, input: String): CaskIngestionResponse {
+   override fun ingestXml(
+      typeReference: String,
+      debug: Boolean,
+      elementSelector: String?,
+      input: String
+   ): CaskIngestionResponse {
       val xmlIngestionParameters = XmlIngestionParameters(debug, elementSelector)
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = XmlWebsocketRequest(xmlIngestionParameters, versionedType)
@@ -87,7 +98,11 @@ class CaskRestController(private val caskService: CaskService,
       }
    }
 
-   private fun ingestJson(typeReference: String, parameters: JsonIngestionParameters, input: String): CaskIngestionResponse {
+   private fun ingestJson(
+      typeReference: String,
+      parameters: JsonIngestionParameters,
+      input: String
+   ): CaskIngestionResponse {
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = JsonWebsocketRequest(parameters, versionedType, mapper)
          val inputStream = Flux.just(input.byteInputStream() as InputStream)
@@ -101,33 +116,40 @@ class CaskRestController(private val caskService: CaskService,
    private fun ingestRequest(request: CaskIngestionRequest, ingestionInput: InputStream): Mono<CaskIngestionResponse> {
       applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, request.versionedType))
 
-      TODO()
-//      return caskService.ingestRequest(request, ingestionInput)
-//         .count()
-//         .map { CaskIngestionResponse.success("Successfully ingested $it records") }
-//         .onErrorResume {
-//            log().error("Ingestion error", it)
-//            Mono.just(CaskIngestionResponse.rejected(it.toString()))
-//         }
+      return try {
+         val ingested = caskService.ingestRequest(request, ingestionInput);
+         // TODO : We're not really getting any benefit from Mono here, should look to remove it.
+         Mono.just(CaskIngestionResponse.success("Successfully ingested $ingested records"))
+      } catch (exception: Exception) {
+         log().error(
+            "An error occurred processing ingestion request for type ${request.versionedType.fullyQualifiedName}",
+            exception
+         )
+         Mono.just(CaskIngestionResponse.rejected(exception.message ?: "No error message provided"))
+      }
    }
 
    override fun getCasks() = caskService.getCasks()
    override fun getCaskDetails(tableName: String) = caskService.getCaskDetails(tableName)
    override fun deleteCask(tableName: String) = caskService.deleteCask(tableName)
    override fun emptyCask(tableName: String) = caskService.emptyCask(tableName)
-   override fun getCaskIngestionErrors(tableName: String, request: CaskIngestionErrorsRequestDto): CaskIngestionErrorDtoPage {
+   override fun getCaskIngestionErrors(
+      tableName: String,
+      request: CaskIngestionErrorsRequestDto
+   ): CaskIngestionErrorDtoPage {
       log().info("Searching ingestion errors for $tableName with criteria $request")
       return caskService.caskIngestionErrorsFor(
          tableName,
          request.pageNumber,
          request.pageSize,
          request.searchStart,
-         request.searchEnd)
+         request.searchEnd
+      )
    }
 
    override fun getIngestionMessage(caskMessageId: String): ResponseEntity<Resource> {
       val (resource, contentType) = caskService.caskIngestionMessage(caskMessageId)
-      val (mediaType, fileName) = when(contentType) {
+      val (mediaType, fileName) = when (contentType) {
          ContentType.xml -> MediaType.APPLICATION_XML to "$caskMessageId.xml"
          ContentType.csv -> MediaType("text", "csv", Charset.forName("utf-8")) to "$caskMessageId.csv"
          ContentType.json -> MediaType.APPLICATION_JSON to "$caskMessageId.json"

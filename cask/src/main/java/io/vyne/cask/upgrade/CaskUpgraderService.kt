@@ -24,26 +24,28 @@ import io.vyne.schemas.fqn
 import io.vyne.utils.log
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
-import reactor.core.publisher.Flux
 import java.io.InputStream
 
 @Component
-class CaskUpgraderService(private val caskDAO: CaskDAO,
-                          private val schemaProvider: SchemaProvider,
-                          private val ingesterFactory: IngesterFactory,
-                          private val configRepository: CaskConfigRepository,
-                          private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-                          private val applicationEventPublisher: ApplicationEventPublisher,
-                          private val caskIngestionErrorProcessor: CaskIngestionErrorProcessor
+class CaskUpgraderService(
+   private val caskDAO: CaskDAO,
+   private val schemaProvider: SchemaProvider,
+   private val ingesterFactory: IngesterFactory,
+   private val configRepository: CaskConfigRepository,
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
+   private val applicationEventPublisher: ApplicationEventPublisher,
+   private val caskIngestionErrorProcessor: CaskIngestionErrorProcessor,
+   private val batchSize: Int = 500
 ) {
-   fun upgradeAll(casks:List<CaskNeedingUpgrade>) {
+   fun upgradeAll(casks: List<CaskNeedingUpgrade>) {
       casks.forEach { upgrade(it.config) }
    }
+
    fun upgrade(config: CaskConfig) {
       log().info("Starting to upgrade cask ${config.tableName}")
       val schema = try {
-          schemaProvider.schema()
-      } catch (exception:Exception) {
+         schemaProvider.schema()
+      } catch (exception: Exception) {
          log().warn("Unable to upgrade cask ${config.tableName}, as the schema is invalid.  Will try later", exception)
          return
       }
@@ -53,13 +55,16 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
       // tagged for upgrade, and now.
       val targetType = schema.versionedType(config.qualifiedTypeName.fqn())
       val messageIds = caskDAO.findMessageIdsToReplay(config.tableName, config.replacedByTableName!!)
+      log().info("Migrating ${messageIds.size} message from ${config.tableName} to ${config.replacedByTableName} in batch sizes of $batchSize")
       // Window size of 50 is arbitary, and we can tune later
-      Flux.fromIterable(messageIds)
-         .buffer(50)
-         .flatMapIterable { batchOfIds ->
+      messageIds.windowed(batchSize, partialWindows = true)
+         .asSequence()
+         .map { batchOfIds ->
             val messages = caskDAO.getCaskMessages(batchOfIds)
+            log().info("Migrating from ${config.tableName} to ${config.replacedByTableName} : Found ${messages.size} messages to migrate from batch of ${batchOfIds.size} ids")
             messages
          }
+         .flatten()
          .filter { caskMessage ->
             when {
                caskMessage.messageContentType == null -> {
@@ -75,29 +80,37 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
          }
          .map { caskMessage ->
             val inputStream = caskDAO.getMessageContent(caskMessage.messageContentId!!)
-            val streamSource = buildStreamSource(caskMessage.messageContentType!!, targetType, caskMessage.id, inputStream, caskMessage.ingestionParams)
+            val streamSource = buildStreamSource(
+               caskMessage.messageContentType!!,
+               targetType,
+               caskMessage.id,
+               inputStream,
+               caskMessage.ingestionParams
+            )
             IngestionStream(
                targetType,
                TypeDbWrapper(targetType, schema),
-               streamSource)
+               streamSource
+            )
+         }.forEach { ingestionStream: IngestionStream ->
 
-         }
-         .filter { it != null }
-         .map { it!! }
-         .doOnComplete {
-            log().info("Upgrade of cask table ${config.tableName} is complete, marking as replaced")
-            configRepository.save(config.copy(status = CaskStatus.REPLACED))
-            applicationEventPublisher.publishEvent(CaskUpgradeCompletedEvent(config.tableName))
-         }
-         .subscribe { ingestionStream: IngestionStream ->
-            ingesterFactory
+            val ingested = ingesterFactory
                .create(ingestionStream)
                .ingest()
-//               .subscribe()
+            log().info("Migrated $ingested messages from ${config.tableName} to ${config.replacedByTableName}")
          }
+      log().info("Upgrade of cask table ${config.tableName} is complete, marking as replaced")
+      configRepository.save(config.copy(status = CaskStatus.REPLACED))
+      applicationEventPublisher.publishEvent(CaskUpgradeCompletedEvent(config.tableName))
    }
 
-   private fun buildStreamSource(contentType: ContentType, versionedType: VersionedType, messageId: String, inputStream: Flux<InputStream>, messageParams: String?): StreamSource {
+   private fun buildStreamSource(
+      contentType: ContentType,
+      versionedType: VersionedType,
+      messageId: String,
+      inputStream: InputStream,
+      messageParams: String?
+   ): StreamSource {
       return when (contentType) {
          ContentType.json -> JsonStreamSource(
             inputStream,
@@ -113,7 +126,12 @@ class CaskUpgraderService(private val caskDAO: CaskDAO,
          }
          ContentType.xml -> {
             val parameters = tryParseXmlMessageParams(messageParams)
-            XmlWebsocketRequest(parameters, versionedType).buildStreamSource(inputStream, versionedType, schemaProvider.schema(), messageId)
+            XmlWebsocketRequest(parameters, versionedType).buildStreamSource(
+               inputStream,
+               versionedType,
+               schemaProvider.schema(),
+               messageId
+            )
          }
       }
    }

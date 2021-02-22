@@ -11,7 +11,6 @@ import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import reactor.core.publisher.Flux
 import java.io.File
 
 
@@ -30,13 +29,13 @@ class JsonIngesterBenchmarkTest {
       Benchmark.benchmark("ingest JSON to db") { stopwatch ->
 
          val pipelineSource = JsonStreamSource(
-            Flux.just(File(resource).inputStream()),
+            File(resource).inputStream(),
             versionedType,
             taxiSchema,
             MessageIds.uniqueId(),
             ObjectMapper())
 
-         pipelineSource.stream.blockLast()
+         pipelineSource.sequence().toList()
 
          stopwatch.stop()
 

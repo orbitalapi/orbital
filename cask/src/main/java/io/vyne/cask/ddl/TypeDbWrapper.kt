@@ -28,6 +28,10 @@ data class TypeDbWrapper(val type: VersionedType, val schema: Schema) {
    }
 
    private val postgresDdlGenerator = PostgresDdlGenerator()
+   val upsertStatement: PostgresDdlGenerator.UpsertStatement by lazy {
+      postgresDdlGenerator.generateUpsertWithPlaceholders(this.type)
+   }
+
    val columns = PostgresDdlGenerator().generateDdl(type, schema).columns
    val tableName = PostgresDdlGenerator.tableName(type)
    val rowWriterTable = SimpleRowWriter.Table(tableName, *columns.map { it.name }.toTypedArray())

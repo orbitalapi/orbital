@@ -5,7 +5,6 @@ import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import org.w3c.dom.Document
 import org.w3c.dom.NodeList
-import reactor.core.publisher.Flux
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 import javax.xml.parsers.DocumentBuilderFactory
@@ -26,24 +25,23 @@ class XmlDocumentProvider(private val elementSelector: String? = null) {
          }
       })
 
-   fun parseXmlStream(input: Flux<InputStream>): Flux<Document> {
-      return input
-         .map { stream -> builder.parse(stream) }
-         .map { document ->
-            // when
-            when (elementSelector) {
-               null -> listOf(document)
-               else -> {
-                  val xpath = xpathCache.get(elementSelector)
-                  val result = xpath.evaluate(document, XPathConstants.NODESET) as NodeList
-                  (0 until result.length).map {
-                     val elementDocument = builder.newDocument()
-                     val individualDocumentContent = elementDocument.importNode(result.item(it), true)
-                     elementDocument.appendChild(individualDocumentContent)
-                     elementDocument
-                  }
-               }
+   fun parseXmlStream(input: InputStream): List<Document> {
+      // TODO : This is a very heavy way of parsing XML content, we need
+      // to evaluate a streaming approch now-ish.
+      val document = builder.parse(input)
+      return when (elementSelector) {
+         null -> listOf(document)
+         else -> {
+            val xpath = xpathCache.get(elementSelector)
+            val result = xpath.evaluate(document, XPathConstants.NODESET) as NodeList
+            (0 until result.length).map {
+               val elementDocument = builder.newDocument()
+               val individualDocumentContent = elementDocument.importNode(result.item(it), true)
+               elementDocument.appendChild(individualDocumentContent)
+               elementDocument
             }
-         }.flatMapIterable { it }
+         }
+      }
+
    }
 }

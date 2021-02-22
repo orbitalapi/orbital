@@ -9,7 +9,6 @@ import io.vyne.utils.log
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import reactor.core.publisher.Flux
 import java.io.File
 
 class JsonStreamMapperTest {
@@ -26,11 +25,10 @@ class JsonStreamMapperTest {
 
       // Ingest it a few times to get an average performance
       Benchmark.benchmark("can_ingestAndMapToTypedInstance") {
-         val stream = JsonStreamSource(Flux.just(File(resource).inputStream()), versionedType, schema, MessageIds.uniqueId(), ObjectMapper())
+         val stream = JsonStreamSource(File(resource).inputStream(), versionedType, schema, MessageIds.uniqueId(), ObjectMapper())
          val noOfMappedRows = stream
-            .stream
+            .sequence()
             .count()
-            .block()
 
          log().info("Mapped ${noOfMappedRows} rows to typed instance")
       }

@@ -7,7 +7,6 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.Benchmark.benchmark
 import org.apache.commons.io.IOUtils
 import org.junit.Test
-import reactor.core.publisher.Flux
 import java.util.*
 
 class JsonStreamSourceTest {
@@ -20,13 +19,12 @@ class JsonStreamSourceTest {
       benchmark("JsonStreamSource stream benchmark", 100, 5000) {
          val id = UUID.randomUUID().toString()
          val result = JsonStreamSource(
-            Flux.just(IOUtils.toInputStream(JsonDeserializationTest.source)),
+            IOUtils.toInputStream(JsonDeserializationTest.source),
             type,
             schema,
             id,
             objectMapper
-         ).stream.collectList()
-            .block()
+         ).sequence().toList()
          true
       }
    }

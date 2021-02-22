@@ -20,7 +20,6 @@ import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionErrorRepository
 import io.vyne.cask.ingest.IngestionStream
-import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.ingest.StreamSource
 import io.vyne.cask.io.SplittableInputStream
 import io.vyne.cask.query.CaskDAO
@@ -41,7 +40,6 @@ import org.springframework.core.io.Resource
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
 import org.springframework.util.MultiValueMap
-import reactor.core.publisher.Flux
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.time.Duration
@@ -54,12 +52,9 @@ class CaskService(
    private val ingesterFactory: IngesterFactory,
    private val caskConfigRepository: CaskConfigRepository,
    private val caskDAO: CaskDAO,
-   private val ingestionErrorRepository: IngestionErrorRepository
+   private val ingestionErrorRepository: IngestionErrorRepository,
+   private val messageSourceWriter: CaskMessageSourceWriter = CaskMessageSourceWriter(caskDAO.largeObjectDataSource)
 ) {
-
-   // TODO : Inject this
-   val messageSourceWriter = CaskMessageSourceWriter(caskDAO.largeObjectDataSource)
-
    interface CaskServiceError {
       val message: String
    }
@@ -130,22 +125,22 @@ class CaskService(
       request: CaskIngestionRequest,
       inputStream: InputStream,
       messageId: String = UUID.randomUUID().toString()
-   ): List<InstanceAttributeSet> {
+   ): Int {
       val schema = cachingSchemaHolder.get("foo")
       val versionedType = request.versionedType
 
-         val messageSourceInputStream = SplittableInputStream.from(inputStream)
-         val messagePayloadInputStream = messageSourceInputStream.split()
+      val messageSourceInputStream = SplittableInputStream.from(inputStream)
+      val messagePayloadInputStream = messageSourceInputStream.split()
 
-         messageSourceWriter.writeMessageSource(
-            StoreCaskRawMessageRequest(
-               messageId,
-               versionedType,
-               messageSourceInputStream,
-               request.contentType,
-               request.parameters
-            )
+      messageSourceWriter.writeMessageSource(
+         StoreCaskRawMessageRequest(
+            messageId,
+            versionedType,
+            messageSourceInputStream,
+            request.contentType,
+            request.parameters
          )
+      )
 //         Flux.empty<InstanceAttributeSet>()
 //
 //
@@ -158,7 +153,7 @@ class CaskService(
          )
       }
 
-      val dbWrapper = typeDbWrapperCache.get(TypeDbWrapperRequest(versionedType,schema))
+      val dbWrapper = typeDbWrapperCache.get(TypeDbWrapperRequest(versionedType, schema))
       val ingestionStream = IngestionStream(
          versionedType,
          dbWrapper,
@@ -167,19 +162,11 @@ class CaskService(
 //      return streamSource.records
 
 
-      val result = batchTimed("IngesterFactory.ingest") {
+      return batchTimed("IngesterFactory.ingest") {
          ingesterFactory
             .create(ingestionStream)
             .ingest()
-            .toList()
       }
-      return result
-//         .ingest()
-//         .collectList()
-//         .block()
-//      Flux.empty<InstanceAttributeSet>()
-
-
    }
 
    fun getCasks(): List<CaskConfig> {
@@ -261,9 +248,7 @@ class CaskService(
 }
 
 interface CaskIngestionRequest {
-   fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, messageId: String): StreamSource
-   fun buildStreamSource(input: InputStream, type: VersionedType, schema: Schema, messageId: String): StreamSource =
-      buildStreamSource(Flux.just(input), type, schema, messageId)
+   fun buildStreamSource(input: InputStream, type: VersionedType, schema: Schema, messageId: String): StreamSource
 
    val versionedType: VersionedType
    val contentType: ContentType

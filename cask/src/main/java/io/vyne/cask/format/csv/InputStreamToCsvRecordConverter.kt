@@ -8,7 +8,6 @@ import io.vyne.utils.log
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
-import reactor.core.publisher.Flux
 import java.io.InputStream
 import java.time.Instant
 
@@ -17,20 +16,18 @@ import java.time.Instant
 class InputStreamToCsvRecordConverter(
    private val format: CSVFormat = CsvFormatFactory.default()) {
 
-   fun convert(input: InputStream, messageId: String, ingestionErrorProcessor: CaskIngestionErrorProcessor, versionedType: VersionedType): Flux<CSVRecord> {
-      return Flux.create<CSVRecord> { emitter ->
-         val parser = format.parse(input.bufferedReader())
-         parser.forEach { record ->
+   fun convert(input: InputStream, messageId: String, ingestionErrorProcessor: CaskIngestionErrorProcessor, versionedType: VersionedType): Sequence<CSVRecord> {
+      val parser = format.parse(input.bufferedReader())
+      return parser.iterator()
+         .asSequence()
+         .filter { record ->
             if (!conformsWithHeader(record, parser)) {
                logRecordMalformedError(record, parser, messageId, ingestionErrorProcessor, versionedType)
+               false
             } else {
-               //timed("CsvBinaryWriter.parse", shouldLogIndividualWriteTime , TimeUnit.NANOSECONDS) { // commenting out as it generates lots of noise in tests
-               emitter.next(record)
+               true
             }
-
          }
-         emitter.complete()
-      }
    }
 
    private fun logRecordMalformedError(record: CSVRecord, parser: CSVParser, messageId: String, ingestionErrorProcessor: CaskIngestionErrorProcessor, versionedType: VersionedType) {

@@ -10,6 +10,7 @@ import io.vyne.cask.config.FindOneMatchesManyBehaviour
 import io.vyne.cask.config.QueryMatchesNoneBehaviour
 import io.vyne.cask.ddl.PostgresDdlGenerator
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
+import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.tableName
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.VIEW_PREFIX
 import io.vyne.cask.ingest.CaskMessage
@@ -32,7 +33,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import reactor.core.publisher.Flux
 import java.io.InputStream
 import java.sql.Connection
 import java.sql.Timestamp
@@ -440,16 +440,13 @@ class CaskDAO(
    }
 
 
-   fun getMessageContent(largeObjectId: Long): Flux<InputStream> {
-      return Flux.create<InputStream> { emitter ->
-         largeObjectDataSource.connection.use { connection ->
-            connection.autoCommit = false
-            val pgConn = connection.unwrap(PGConnection::class.java)
-            val largeObjectManager = pgConn.largeObjectAPI
-            val largeObject = largeObjectManager.open(largeObjectId)
-            emitter.next(largeObject.inputStream)
-            emitter.complete()
-         }
+   fun getMessageContent(largeObjectId: Long): InputStream {
+      largeObjectDataSource.connection.use { connection ->
+         connection.autoCommit = false
+         val pgConn = connection.unwrap(PGConnection::class.java)
+         val largeObjectManager = pgConn.largeObjectAPI
+         val largeObject = largeObjectManager.open(largeObjectId)
+         return largeObject.inputStream
       }
    }
 
@@ -502,6 +499,10 @@ class CaskDAO(
    // ############################
    fun countCaskRecords(tableName: String): Int {
       return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM $tableName", Int::class.java)
+   }
+
+   fun countCaskRecords(type: VersionedType): Int {
+      return countCaskRecords(tableName(type))
    }
 
    // ############################

@@ -53,7 +53,7 @@ class CaskWebsocketHandlerTest {
 
    class IngesterFactoryMock(val ingester: Ingester) : IngesterFactory(mock(), mock()) {
       override fun create(ingestionStream: IngestionStream): Ingester {
-         whenever(ingester.ingest()).thenReturn(ingestionStream.feed.records)
+         whenever(ingester.ingest()).thenReturn(ingestionStream.feed.sequence().count())
          return ingester
       }
    }

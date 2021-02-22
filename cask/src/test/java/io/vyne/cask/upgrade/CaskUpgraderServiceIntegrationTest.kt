@@ -1,11 +1,14 @@
 package io.vyne.cask.upgrade
 
 import com.google.common.io.Resources
+import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.cask.CaskService
+import io.vyne.cask.api.CaskStatus
+import io.vyne.cask.api.CsvIngestionParameters
 import io.vyne.cask.ddl.caskRecordTable
 import io.vyne.cask.ddl.views.CaskViewDefinition
 import io.vyne.cask.ddl.views.JoinExpression
@@ -13,6 +16,8 @@ import io.vyne.cask.ddl.views.ViewJoin
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.query.BaseCaskIntegrationTest
+import io.vyne.cask.query.CaskMessageSourceWriter
+import io.vyne.cask.websocket.CsvWebsocketRequest
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.SchemaStore
@@ -22,6 +27,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.QualifiedName
 import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.TimeUnit
 
 // Note : These tests must not be transactional, as the create tables
 // happen outside of the transaction, meaning they can't be seen.
@@ -32,14 +38,23 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
 
    lateinit var caskService: CaskService
 
-
    @Before
    override fun setup() {
       super.setup()
-      val ingestorFactory = IngesterFactory(jdbcTemplate, caskIngestionErrorProcessor)
+      val ingestorFactory = IngesterFactory.singleThreaded(namedParamJdbcTemplate, caskIngestionErrorProcessor)
       changeDetector = CaskSchemaChangeDetector(configRepository, caskConfigService, caskDao, caskViewService)
-      caskUpgrader = CaskUpgraderService(caskDao, schemaProvider, ingestorFactory, configRepository, applicationEventPublisher = mock { }, caskIngestionErrorProcessor = caskIngestionErrorProcessor)
-      caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository)
+      caskUpgrader = CaskUpgraderService(
+         caskDao,
+         schemaProvider,
+         ingestorFactory,
+         configRepository,
+         applicationEventPublisher = mock { },
+         caskIngestionErrorProcessor = caskIngestionErrorProcessor
+      )
+      val caskMessageSourceWriter = CaskMessageSourceWriter.singleThreaded(
+         caskDao.largeObjectDataSource
+      )
+      caskService = CaskService(schemaProvider, ingestorFactory, configRepository, caskDao, ingestionErrorRepository, caskMessageSourceWriter)
    }
 
    @Test
@@ -53,35 +68,36 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
 
       // Ingest the data
       // We're using the service to ensure the message record is created
-      TODO()
-//      caskService.ingestRequest(CsvWebsocketRequest(
-//         CsvIngestionParameters(),
-//         versionedType,
-//         caskIngestionErrorProcessor
-//      ), source.openStream()).blockLast(Duration.ofSeconds(2L))
-//
-//      val originalRecords = caskDao.findAll(versionedType)
-//      originalRecords.should.have.size(10)
-//      val originalRecord = originalRecords.first()
-//      originalRecord.should.have.keys("symbol", "open", "close", "caskmessageid")
-//      originalRecord.keys.should.have.size(4)
-//
-//      schemaProvider.updateSource(CoinbaseOrderSchema.sourceV2)
-//      // Now trigger a migration to the next schema version
-//      val tablesToMigrate = changeDetector.markModifiedCasksAsRequiringUpgrading(CoinbaseOrderSchema.schemaV2)
-//      tablesToMigrate.should.have.size(1)
-//
-//      val caskNeedingUpgrade = tablesToMigrate[0]
-//      caskUpgrader.upgrade(caskNeedingUpgrade.config)
-//
-//      val upgradedRecords = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable())
-//      upgradedRecords.should.have.size(10)
-//
-//      val upgradedRecord = upgradedRecords.first()
-//      upgradedRecord.should.have.keys("symbol", "open", "high", "close", "caskmessageid")
-//
-//      val deprecatedCask = configRepository.findByTableName(caskNeedingUpgrade.config.tableName)!!
-//      deprecatedCask.status.should.equal(CaskStatus.REPLACED)
+      caskService.ingestRequest(
+         CsvWebsocketRequest(
+            CsvIngestionParameters(),
+            versionedType,
+            caskIngestionErrorProcessor
+         ), source.openStream()
+      )
+
+      val originalRecords = caskDao.findAll(versionedType)
+      originalRecords.should.have.size(10)
+      val originalRecord = originalRecords.first()
+      originalRecord.should.have.keys("symbol", "open", "close", "caskmessageid")
+      originalRecord.keys.should.have.size(4)
+
+      schemaProvider.updateSource(CoinbaseOrderSchema.sourceV2)
+      // Now trigger a migration to the next schema version
+      val tablesToMigrate = changeDetector.markModifiedCasksAsRequiringUpgrading(CoinbaseOrderSchema.schemaV2)
+      tablesToMigrate.should.have.size(1)
+
+      val caskNeedingUpgrade = tablesToMigrate[0]
+      caskUpgrader.upgrade(caskNeedingUpgrade.config)
+
+      val upgradedRecords = caskDao.findAll(tablesToMigrate.first().newType.caskRecordTable())
+      upgradedRecords.should.have.size(10)
+
+      val upgradedRecord = upgradedRecords.first()
+      upgradedRecord.should.have.keys("symbol", "open", "high", "close", "caskmessageid")
+
+      val deprecatedCask = configRepository.findByTableName(caskNeedingUpgrade.config.tableName)!!
+      deprecatedCask.status.should.equal(CaskStatus.REPLACED)
    }
 
    @Test // This test adds columns with pk's and annotations
@@ -93,11 +109,18 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       caskDao.createCaskRecordTable(versionedType)
       caskConfigService.createCaskConfig(versionedType)
 
-//      caskService.ingestRequest(CsvWebsocketRequest(
-//         CsvIngestionParameters(),
-//         versionedType,
-//         caskIngestionErrorProcessor
-//      ), source.openStream()).blockLast(Duration.ofSeconds(2L))
+      caskService.ingestRequest(
+         CsvWebsocketRequest(
+            CsvIngestionParameters(),
+            versionedType,
+            caskIngestionErrorProcessor
+         ), source.openStream()
+      )
+
+      await().atMost(5, TimeUnit.SECONDS).until {
+         val count = caskDao.countCaskRecords(versionedType)
+         count.should.equal(4)
+      }
 
       schemaProvider.updateSource(CoinbaseOrderSchema.personSourceV2)
       // Now trigger a migration to the next schema version
@@ -131,16 +154,18 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       val schema = schemaProvider.updateSource(CoinbaseOrderSchema.personAndOrderSourceV1)
       val orderType = schema.versionedType("coinbase.OrderWindowSummary".fqn())
       val personType = schema.versionedType("demo.Person".fqn())
-      viewDefinitions.add(CaskViewDefinition(
-         QualifiedName.from("OrderWithPerson"),
-         join = ViewJoin(
-            kind = ViewJoin.ViewJoinKind.INNER,
-            left = QualifiedName.from(personType.fullyQualifiedName),
-            right = QualifiedName.from(orderType.fullyQualifiedName),
-            // Note: THis join doesn't generate any rows, but that's not the purpose of this test
-            joinOn = listOf(JoinExpression("id", "symbol"))
+      viewDefinitions.add(
+         CaskViewDefinition(
+            QualifiedName.from("OrderWithPerson"),
+            join = ViewJoin(
+               kind = ViewJoin.ViewJoinKind.INNER,
+               left = QualifiedName.from(personType.fullyQualifiedName),
+               right = QualifiedName.from(orderType.fullyQualifiedName),
+               // Note: THis join doesn't generate any rows, but that's not the purpose of this test
+               joinOn = listOf(JoinExpression("id", "symbol"))
+            )
          )
-      ))
+      )
       // At this stage, creation of the view should fail, as the underlying tables don't exist
       caskViewService.generateViews().should.be.empty
 
@@ -148,22 +173,26 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       // First, create a table with the original schema
       val personSource = Resources.getResource("Person_date_time.csv")
       caskDao.createCaskRecordTable(personType)
-//      caskConfigService.createCaskConfig(personType)
-//      caskService.ingestRequest(CsvWebsocketRequest(
-//         CsvIngestionParameters(),
-//         personType,
-//         caskIngestionErrorProcessor
-//      ), personSource.openStream()).blockLast(Duration.ofSeconds(2L))
-//
-//      // First, create a table with the original schema
-//      val orderSource = Resources.getResource("Coinbase_BTCUSD_10_records.csv")
-//      caskDao.createCaskRecordTable(orderType)
-//      caskConfigService.createCaskConfig(orderType)
-//      caskService.ingestRequest(CsvWebsocketRequest(
-//         CsvIngestionParameters(),
-//         orderType,
-//         caskIngestionErrorProcessor
-//      ), orderSource.openStream()).blockLast(Duration.ofSeconds(2L))
+      caskConfigService.createCaskConfig(personType)
+      caskService.ingestRequest(
+         CsvWebsocketRequest(
+            CsvIngestionParameters(),
+            personType,
+            caskIngestionErrorProcessor
+         ), personSource.openStream()
+      )
+
+      // First, create a table with the original schema
+      val orderSource = Resources.getResource("Coinbase_BTCUSD_10_records.csv")
+      caskDao.createCaskRecordTable(orderType)
+      caskConfigService.createCaskConfig(orderType)
+      caskService.ingestRequest(
+         CsvWebsocketRequest(
+            CsvIngestionParameters(),
+            orderType,
+            caskIngestionErrorProcessor
+         ), orderSource.openStream()
+      )
 
       // Now, creation of the views should succeed
       caskViewService.generateViews().should.have.size(1)
@@ -187,7 +216,7 @@ class CaskUpgraderServiceIntegrationTest : BaseCaskIntegrationTest() {
       configRepository.findAllByQualifiedTypeName("OrderWithPerson").should.be.empty
       try {
          jdbcTemplate.queryForObject("select count(*) from v_OrderWithPerson", Int::class.java)
-      } catch (exception:Exception) {
+      } catch (exception: Exception) {
          // View shouldn't exist anymore
          exception.message.should.contain("""relation "v_orderwithperson" does not exist""")
       }

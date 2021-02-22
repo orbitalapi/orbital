@@ -1,6 +1,7 @@
 package io.vyne.cask.query
 
 import com.google.common.io.Resources
+import com.jayway.awaitility.Awaitility
 import com.winterbe.expekt.should
 import io.vyne.cask.api.ContentType
 import io.vyne.cask.format.csv.CoinbaseOrderSchema
@@ -12,8 +13,10 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.time.Duration
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 //@Ignore
 class CaskDAOIntegrationTest : BaseCaskIntegrationTest() {
@@ -29,9 +32,10 @@ class CaskDAOIntegrationTest : BaseCaskIntegrationTest() {
       val versionedType = taxiSchema.versionedType("OrderWindowSummary".fqn())
       val resource = Resources.getResource("Coinbase_BTCUSD.json").toURI()
 
-      ingestJsonData(resource, versionedType, taxiSchema)
+      ingestJsonData(resource, versionedType, taxiSchema, bufferSize = 10000, bufferTimeout = Duration.ofMillis(500))
 
-      caskDao.findBy(versionedType, "symbol", "BTCUSD").size.should.equal(10061)
+      Awaitility.await().atMost(5L, TimeUnit.SECONDS).until { caskDao.findBy(versionedType, "symbol", "BTCUSD").size.should.equal(10061)  }
+
       caskDao.findBy(versionedType, "open", "6300").size.should.equal(7)
       caskDao.findBy(versionedType, "close", "6330").size.should.equal(9689)
       caskDao.findBy(versionedType, "orderDate", "2020-03-19").size.should.equal(10061)

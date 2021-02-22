@@ -14,7 +14,6 @@ import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.StreamSource
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
-import reactor.core.publisher.Flux
 import java.io.InputStream
 
 data class JsonWebsocketRequest(
@@ -26,16 +25,12 @@ data class JsonWebsocketRequest(
    override val debug: Boolean = parameters.debug
    override val nullValues: Set<String> = emptySet()
 
-   override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema,messageId: String): StreamSource {
-      return JsonStreamSource(
-         input,
-         versionedType,
-         schema,
-         messageId,
-         objectMapper
-      )
-   }
-   override fun buildStreamSource(input: InputStream, type: VersionedType, schema: Schema,messageId: String): StreamSource {
+   override fun buildStreamSource(
+      input: InputStream,
+      type: VersionedType,
+      schema: Schema,
+      messageId: String
+   ): StreamSource {
       return JsonStreamSource(
          input,
          versionedType,
@@ -60,7 +55,12 @@ data class CsvWebsocketRequest(
    }
    val ignoreContentBefore = parameters.ignoreContentBefore
 
-   override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, messageId:String): StreamSource {
+   override fun buildStreamSource(
+      input: InputStream,
+      type: VersionedType,
+      schema: Schema,
+      messageId: String
+   ): StreamSource {
       return CsvStreamSource(
          input, type, schema,
          messageId = messageId,
@@ -79,7 +79,12 @@ data class XmlWebsocketRequest(
    override val contentType = ContentType.xml
    override val debug: Boolean = parameters.debug
    override val nullValues: Set<String> = emptySet()
-   override fun buildStreamSource(input: Flux<InputStream>, type: VersionedType, schema: Schema, messageId:String): StreamSource {
+   override fun buildStreamSource(
+      input: InputStream,
+      type: VersionedType,
+      schema: Schema,
+      messageId: String
+   ): StreamSource {
       return XmlStreamSource(input, type, schema, messageId, parameters.elementSelector)
    }
 }

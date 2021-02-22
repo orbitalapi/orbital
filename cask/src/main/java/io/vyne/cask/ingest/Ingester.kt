@@ -15,11 +15,14 @@ data class IngestionStream(
    val feed: StreamSource
 )
 
+typealias InstanceAttributeSetSinkProvider = () -> Sinks.Many<InstanceAttributeSet>
+
 class Ingester(
    private val jdbcTemplate: JdbcTemplate,
    private val ingestionStream: IngestionStream,
    private val ingestionErrorSink: FluxSink<IngestionError>,
-   private val sink: Sinks.Many<InstanceAttributeSet>
+   private val bulkCopyInsertSinkProvider: InstanceAttributeSetSinkProvider,
+   private val upsertSinkProvider: InstanceAttributeSetSinkProvider
 ) {
 
    private val hasPrimaryKey = hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
@@ -31,19 +34,55 @@ class Ingester(
    //   4. receive InstanceAttributeSet
    //   ...
    //   N receive CommitTransaction
-   fun ingest(): Iterable<InstanceAttributeSet> {
+
+   /**
+    * Returns the list of ingested elements.
+    * Do not call this in production, as can lead to large ingestion sets being held
+    * in memory.
+    */
+   fun ingestAndCollect(): List<InstanceAttributeSet> {
+      return buildIngestionSequence().toList()
+   }
+
+   // Returns the count of ingested records.
+   // We don't return the actual records, so as to keep data streaming as much as possible,
+   // and to minimize memory requirements
+   fun ingest(): Int {
+      return buildIngestionSequence().count()
+   }
+
+   private fun buildIngestionSequence(): Sequence<InstanceAttributeSet> {
       // Here we split the paths that uses jdbcTemplate (for upserting) and pgBulk library.
       // to ensure that we don't initialise pgBulk library path fpr upsert case.
       // Otherwise, pgBulk library grabs an unused connection from the connection pool
-      return if (this.hasPrimaryKey) {
-         this.ingestThroughUpsert()
+
+      val sink = if (this.hasPrimaryKey) {
+         upsertSinkProvider()
       } else {
-         this.ingestThroughBulkCopy()
+         bulkCopyInsertSinkProvider()
       }
+      return ingestionStream.feed.sequence()
+         .map { instanceAttributeSet ->
+            sink.emitNext(instanceAttributeSet) { signalType, emitResult ->
+               log().error("Failed to persist signal $signalType: $emitResult")
+               false // don't retry
+            }
+            instanceAttributeSet
+         }
+
    }
 
-   private fun ingestThroughUpsert(): Iterable<InstanceAttributeSet> {
-      TODO()
+   private fun ingestThroughUpsert(): Int {
+      val sink = upsertSinkProvider()
+      return ingestionStream.feed.sequence()
+         .map { instanceAttributeSet ->
+            sink.emitNext(instanceAttributeSet) { signalType, emitResult ->
+               log().error("Failed to persist signal $signalType: $emitResult")
+               false // don't retry
+            }
+            instanceAttributeSet
+         }
+         .count()
 //      val table = ingestionStream.dbWrapper.rowWriterTable
 //      return ingestionStream
 //         .feed
@@ -79,6 +118,7 @@ class Ingester(
    }
 
    private fun ingestThroughBulkCopy(): Iterable<InstanceAttributeSet> {
+      val sink = bulkCopyInsertSinkProvider()
 //      val connection = jdbcTemplate.dataSource!!.connection
 //      val pgConnection = connection.unwrap(PGConnection::class.java)
 //      val table = ingestionStream.dbWrapper.rowWriterTable
@@ -103,17 +143,16 @@ class Ingester(
 //            return Flux.error(e)
 //         }
 //      log().debug("Opening DB connection for ${table.table}")
-      batchTimed("Write records") {
-         ingestionStream.feed.records
-            .forEach {
-               sink.emitNext(it, Sinks.EmitFailureHandler { signalType, emitResult ->
+      return batchTimed("Write records") {
+         ingestionStream.feed.sequence()
+            .map { instanceAttributeSet ->
+               sink.emitNext(instanceAttributeSet) { signalType, emitResult ->
                   log().error("Failed to persist signal $signalType: $emitResult")
                   false // don't retry
-               })
+               }
+               instanceAttributeSet
             }
-      }
-
-      return ingestionStream.feed.records
+      }.toList()
 
 //         .doOnError {
 //            log().error("Closing DB connection for ${table.table}", it)

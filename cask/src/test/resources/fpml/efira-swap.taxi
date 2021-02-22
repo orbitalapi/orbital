@@ -1,0 +1,25 @@
+type FrontOfficePortfolioCode inherits String
+type LgdRate inherits Decimal
+type ClearingStatus inherits String
+type UnadjustedDate inherits String
+type StepValue inherits String
+type CashflowsMatchParameters inherits Boolean
+type FxLinkedNotionalSchedule inherits String
+type PartyId inherits String
+type SwapAgentId inherits String
+type AdjustedStartDate inherits String
+type ForecastAmount inherits String
+
+model Swap {
+   frontOfficePortfolioCode : FrontOfficePortfolioCode? by xpath("//party[@id =//tradeHeader/tradePartyInfo[partyRole = 'Principal']/partyReference/@href]/analyticalStructureInfo/frontOfficePortfolioCode")
+   lgdRate : LgdRate? by xpath("/FpML/trade/tradeHeader/otherTradeInfo/lgdRate")
+   clearingStatus : ClearingStatus? by xpath("//FpML/trade/tradeHeader/partyTradeInformation/clearingStatus[@clearingStatusScheme = 'http://www.fpml.org/coding-scheme/clearing-status']")
+   unadjustedDate : UnadjustedDate? by xpath("//swap/swapStream[1]/calculationPeriodDates/terminationDate/unadjustedDate")
+   stepValue : StepValue? by xpath("//swap/swapStream[1]/calculationPeriodAmount/calculation/notionalSchedule/notionalStepSchedule/step/stepValue")
+   cashflowsMatchParameters : CashflowsMatchParameters? by xpath("//swap/swapStream[1]/cashflows/cashflowsMatchParameters")
+   fxLinkedNotionalSchedule : FxLinkedNotionalSchedule? by xpath("//swap/swapStream[1]/calculationPeriodAmount/calculation/fxLinkedNotionalSchedule")
+   partyId : PartyId? by xpath("//party[@id=//tradeHeader/tradePartyInfo[partyRole='Counterparty']/partyReference/@href]/partyId[@idScheme = 'SUBRICOS']")
+   swapAgentId : SwapAgentId? by xpath("//tradeHeader/partyTradeIdentifier[partyReference/@href = //tradeHeader/tradePartyInfo[partyRole = 'Principal' ]/partyReference/@href]/linkId[@linkIdScheme = 'SwapAgentId']")
+   adjustedStartDate : AdjustedStartDate? by xpath("/FpML/trade/swap/swapStream[@id='Pay_4461642']/cashflows/paymentCalculationPeriod[5]/calculationPeriod/adjustedStartDate")
+   forecastAmount : ForecastAmount? by xpath("/FpML/trade/swap/swapStream[@id='Pay_4461642']/cashflows/paymentCalculationPeriod[10]/calculationPeriod/forecastAmount/amount")
+}

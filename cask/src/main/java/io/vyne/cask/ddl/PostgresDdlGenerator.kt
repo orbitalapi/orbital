@@ -3,6 +3,7 @@ package io.vyne.cask.ddl
 import de.bytefish.pgbulkinsert.pgsql.constants.DataType
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.VersionedSource
+import io.vyne.cask.annotations.Annotations
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_DDL
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
 import io.vyne.cask.ingest.InstanceAttributeSet
@@ -11,13 +12,23 @@ import io.vyne.cask.types.allFields
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
-import lang.taxi.types.*
+import lang.taxi.types.EnumType
+import lang.taxi.types.Field
+import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
+import lang.taxi.types.Type
 import lang.taxi.utils.quoted
 import org.springframework.jdbc.core.JdbcTemplate
-import java.lang.StringBuilder
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
+import org.springframework.jdbc.core.namedparam.SqlParameterSource
 import java.math.BigDecimal
 import java.sql.Timestamp
-import java.time.*
+import java.sql.Types
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 
 data class TableMetadata(
@@ -114,8 +125,6 @@ fun VersionedType.caskRecordTable(): String {
 }
 
 class PostgresDdlGenerator {
-   private val _primaryKey = "PrimaryKey"
-   private val _indexed = "Indexed"
 
    companion object {
       const val MESSAGE_ID_COLUMN_NAME = "caskmessageid"
@@ -132,6 +141,7 @@ class PostgresDdlGenerator {
          require(tableName.length <= POSTGRES_MAX_NAME_LENGTH) { "Generated tableName $tableName exceeds Postgres max of 31 characters" }
          return tableName.toLowerCase()
       }
+
       fun toColumnName(field: Field) = field.name.quoted()
    }
 
@@ -139,11 +149,67 @@ class PostgresDdlGenerator {
       return "DROP TABLE IF EXISTS ${tableName(versionedType)};"
    }
 
+   data class UpsertStatement(
+      val sqlStatement: String,
+      private val parameterSourceProvider: (InstanceAttributeSet) -> SqlParameterSource
+   ) {
+      fun toParameterSource(attributeSet: InstanceAttributeSet): SqlParameterSource =
+         parameterSourceProvider(attributeSet)
+   }
+
+   private data class FieldWrapper(val name: String, val isPrimaryKey: Boolean) {
+
+      val quotedFieldName = name.quoted()
+      val placeholderName = ":$name"
+      val updateStatementWithPlaceholder = "$quotedFieldName = $placeholderName"
+
+      companion object {
+         fun forField(field: Field): FieldWrapper =
+            FieldWrapper(field.name, field.annotations.any { it.name == Annotations.PRIMARY_KEY })
+      }
+   }
+
+   fun generateUpsertWithPlaceholders(versionedType: VersionedType): UpsertStatement {
+      val tableName = tableName(versionedType)
+      val fields = versionedType.allFields().sortedBy { it.name }
+         .map { FieldWrapper.forField(it) }
+         .plus(FieldWrapper(MESSAGE_ID_COLUMN_NAME, isPrimaryKey = false))
+      // TODO : Why are we using this logic if there is no pk?
+      if (fields.none { it.isPrimaryKey }) {
+         error("Bomb triggered - why are we using upsert logic without a pk?")
+      }
+
+      val fieldNameList = fields.joinToString { it.quotedFieldName }
+      val placeholderNameList = fields.joinToString { it.placeholderName }
+      val primaryKeyNameList = fields.filter { it.isPrimaryKey }.joinToString { it.quotedFieldName }
+      val nonPkUpdateClauseList = fields.filter { !it.isPrimaryKey }.joinToString { it.updateStatementWithPlaceholder }
+
+      val statement = """
+         INSERT INTO $tableName ( $fieldNameList )
+         VALUES ( $placeholderNameList )
+         ON CONFLICT ( $primaryKeyNameList )
+         DO UPDATE SET $nonPkUpdateClauseList
+      """.trimIndent()
+
+      val parameterSourceProvider = { instanceAttributeSet: InstanceAttributeSet ->
+         val parameterSource = MapSqlParameterSource()
+         versionedType.allFields().map { field -> field to generateValueForField(field, instanceAttributeSet) }
+            .forEach { (field, value) ->
+               val primitiveType = getPrimitiveType(field, field.type)
+               val dbType = getDbTypeForField(primitiveType)
+               parameterSource.addValue(field.name, value, dbType.sqlType, dbType.postgresTypeName)
+            }
+         parameterSource.addValue(MESSAGE_ID_COLUMN_NAME, instanceAttributeSet.messageId, Types.VARCHAR)
+         parameterSource
+      }
+      return UpsertStatement(statement, parameterSourceProvider)
+   }
+
    fun generateUpsertDml(versionedType: VersionedType, instance: InstanceAttributeSet): String {
       val tableName = tableName(versionedType)
       val fields = versionedType.allFields().sortedBy { it.name }
       val primaryKeyFields = (versionedType.taxiType as ObjectType).definition!!.fields
-         .filter { it.annotations.any { a -> a.name == _primaryKey } }
+         .filter { it.annotations.any { a -> a.name == Annotations.PRIMARY_KEY } }
       val fieldsExcludingPk = fields.minus(primaryKeyFields)
       val values: Map<String, Any> = fields.mapNotNull {
          val generateValueForField = generateValueForField(it, instance)
@@ -154,7 +220,7 @@ class PostgresDdlGenerator {
          }
       }.toMap()
 
-      val fieldNameList = fields.joinToString(", ") { "\"${it.name}\"" } +  ", ${MESSAGE_ID_COLUMN_NAME.quoted()}"
+      val fieldNameList = fields.joinToString(", ") { "\"${it.name}\"" } + ", ${MESSAGE_ID_COLUMN_NAME.quoted()}"
 
       val fieldValueLIst = fields.joinToString(", ") { values[it.name].toString() } + ", '${instance.messageId}'"
       val primaryKeyFieldsList = primaryKeyFields.joinToString(", ") { "\"${it.name}\"" }
@@ -163,7 +229,7 @@ class PostgresDdlGenerator {
 
       val upsertConflictStatement = if (hasPrimaryKey) {
          val nonPkFieldsAndValues = fieldsExcludingPk.joinToString(", ") { "\"${it.name}\" = ${values[it.name]}" } +
-           ", ${MESSAGE_ID_COLUMN_NAME.quoted()} = '${instance.messageId}'"
+            ", ${MESSAGE_ID_COLUMN_NAME.quoted()} = '${instance.messageId}'"
          """ON CONFLICT ( $primaryKeyFieldsList )
             |DO UPDATE SET $nonPkFieldsAndValues""".trimMargin()
       } else ""
@@ -196,7 +262,8 @@ class PostgresDdlGenerator {
    private fun generateObjectDdl(
       type: ObjectType,
       versionedType: VersionedType,
-      fields: List<Field>): TableGenerationStatement {
+      fields: List<Field>
+   ): TableGenerationStatement {
       val columns = fields.map { generateColumnForField(it) } + MessageIdColumn
       val tableName = tableName(versionedType)
       val ddl = """${generateCaskTableDdl(versionedType, fields)}
@@ -222,7 +289,8 @@ class PostgresDdlGenerator {
    private fun generateTableIndexesDdl(tableName: String, fields: List<Field>): String {
       val result = StringBuilder()
       // TODO We can not have a field declared as both a PK and a unique constraint. Perhaps we should handle that on taxi side too.
-      val indexedColumns = fields.filter { col -> col.annotations.any { it.name == _indexed } && !col.annotations.any { it.name == _primaryKey} }
+      val indexedColumns =
+         fields.filter { col -> col.annotations.any { it.name == Annotations.INDEXED } && !col.annotations.any { it.name == Annotations.PRIMARY_KEY } }
       indexedColumns.forEach {
          result.appendln("""CREATE INDEX IF NOT EXISTS idx_${tableName}_${it.name} ON ${tableName}("${it.name}");""")
       }
@@ -248,23 +316,23 @@ class PostgresDdlGenerator {
 
    private fun getPrimitiveType(field: Field, type: Type): PrimitiveType {
       return when {
-          PrimitiveType.isAssignableToPrimitiveType(type) -> {
-             PrimitiveType.getUnderlyingPrimitive(type)
-          }
-          type is EnumType -> {
-             PrimitiveType.STRING
-          }
-          type.inheritsFrom.size == 1 -> {
-             getPrimitiveType(field, type.inheritsFrom.first())
-          }
-          else -> {
-             TODO("Unable to generate column for field=${field}, type=${type}") //To change body of created functions use File | Settings | File Templates.
-          }
+         PrimitiveType.isAssignableToPrimitiveType(type) -> {
+            PrimitiveType.getUnderlyingPrimitive(type)
+         }
+         type is EnumType -> {
+            PrimitiveType.STRING
+         }
+         type.inheritsFrom.size == 1 -> {
+            getPrimitiveType(field, type.inheritsFrom.first())
+         }
+         else -> {
+            TODO("Unable to generate column for field=${field}, type=${type}") //To change body of created functions use File | Settings | File Templates.
+         }
       }
    }
 
    private fun generatePrimaryKey(fields: List<Field>, tableName: String): String {
-      val pks = fields.filter { it.annotations.any { a -> a.name == _primaryKey } }
+      val pks = fields.filter { it.annotations.any { a -> a.name == Annotations.PRIMARY_KEY } }
 
       if (pks.isNotEmpty()) {
          return """,
@@ -273,26 +341,68 @@ class PostgresDdlGenerator {
       return ""
    }
 
-   private fun generateColumnForField(field: Field, primitiveType: PrimitiveType): PostgresColumn {
+   private fun getDbTypeForField(primitiveType: PrimitiveType): DbTypeName {
+      return when (primitiveType) {
+         PrimitiveType.STRING -> ScalarTypes.varchar()
+         PrimitiveType.ANY -> ScalarTypes.varchar()
+         PrimitiveType.DECIMAL -> ScalarTypes.numeric()
+         PrimitiveType.DOUBLE -> ScalarTypes.numeric()
+         PrimitiveType.INTEGER -> ScalarTypes.INTEGER
+         PrimitiveType.BOOLEAN -> ScalarTypes.BOOLEAN
+         PrimitiveType.LOCAL_DATE -> ScalarTypes.DATE
+         PrimitiveType.DATE_TIME -> ScalarTypes.TIMESTAMP
+         PrimitiveType.INSTANT -> ScalarTypes.TIMESTAMP
+         PrimitiveType.TIME -> ScalarTypes.TIME
+         else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
+      }
+   }
+
+   private fun getWriterForField(field: Field, primitiveType: PrimitiveType): RowWriter {
       val columnName = toColumnName(field)
-      val p: Pair<String, RowWriter> = when (primitiveType) {
-         PrimitiveType.STRING -> ScalarTypes.varchar() to { row, v -> row.setText(columnName, v.toString()) }
-         PrimitiveType.ANY -> ScalarTypes.varchar() to { row, v -> row.setText(columnName, v.toString()) }
-         PrimitiveType.DECIMAL -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, positiveScaledBigDecimal(v as BigDecimal)) }
-         PrimitiveType.DOUBLE -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, positiveScaledBigDecimal(v as BigDecimal)) }
-         PrimitiveType.INTEGER -> ScalarTypes.integer() to { row, v -> row.setInteger(columnName, v as Int) }
-         PrimitiveType.BOOLEAN -> ScalarTypes.boolean() to { row, v -> row.setBoolean(columnName, v as Boolean) }
-         PrimitiveType.LOCAL_DATE -> ScalarTypes.date() to { row, v -> row.setDate(columnName, v as LocalDate) }
-         PrimitiveType.DATE_TIME -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, v as LocalDateTime) }
-         PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC")))}
-         PrimitiveType.TIME -> ScalarTypes.time() to { row, v -> row.setValue(columnName, DataType.Time, (v as LocalTime))
+      return when (primitiveType) {
+         PrimitiveType.STRING -> { row, v -> row.setText(columnName, v.toString()) }
+         PrimitiveType.ANY -> { row, v -> row.setText(columnName, v.toString()) }
+         PrimitiveType.DECIMAL -> { row, v ->
+            row.setNumeric(
+               columnName,
+               positiveScaledBigDecimal(v as BigDecimal)
+            )
+         }
+         PrimitiveType.DOUBLE -> { row, v ->
+            row.setNumeric(
+               columnName,
+               positiveScaledBigDecimal(v as BigDecimal)
+            )
+         }
+         PrimitiveType.INTEGER -> { row, v -> row.setInteger(columnName, v as Int) }
+         PrimitiveType.BOOLEAN -> { row, v -> row.setBoolean(columnName, v as Boolean) }
+         PrimitiveType.LOCAL_DATE -> { row, v -> row.setDate(columnName, v as LocalDate) }
+         PrimitiveType.DATE_TIME -> { row, v ->
+            row.setTimeStamp(
+               columnName,
+               v as LocalDateTime
+            )
+         }
+         PrimitiveType.INSTANT -> { row, v ->
+            row.setTimeStamp(
+               columnName,
+               LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC"))
+            )
+         }
+         PrimitiveType.TIME -> { row, v ->
+            row.setValue(columnName, DataType.Time, (v as LocalTime))
          }
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
-      val (postgresType, writer) = p
+   }
+
+   private fun generateColumnForField(field: Field, primitiveType: PrimitiveType): PostgresColumn {
+      val columnName = toColumnName(field)
+      val postgresType = getDbTypeForField(primitiveType)
+      val writer = getWriterForField(field, primitiveType)
       val nullable = "" //if (field.nullable) "" else " NOT NULL"
 
-      return FieldBasedColumn(columnName, field, "$columnName $postgresType$nullable", writer)
+      return FieldBasedColumn(columnName, field, "$columnName ${postgresType.postgresTypeName}$nullable", writer)
    }
 
    // pgbulkinsert library does not handle BigDecimal's with negative scale.
@@ -314,12 +424,16 @@ class PostgresDdlGenerator {
          PrimitiveType.INSTANT,
          PrimitiveType.TIME,
          PrimitiveType.ANY -> {
-            val value = instance.attributes.getValue(field.name).value
-            if (value == null) {
-               value
-            } else {
-               "'${instance.attributes.getValue(field.name).value}'"
-            }
+            // These values used to be quoted.
+            // However, in moving to NamedParameterJdbcTemplate it seems this isn't needed anymore.
+            // If everything looks ok, we can remove this code later.
+            instance.attributes.getValue(field.name).value
+//            val value = instance.attributes.getValue(field.name).value
+//            if (value == null) {
+//               value
+//            } else {
+//               "'${instance.attributes.getValue(field.name).value}'"
+//            }
          }
          PrimitiveType.DECIMAL,
          PrimitiveType.DOUBLE,
@@ -329,24 +443,26 @@ class PostgresDdlGenerator {
    }
 }
 
+data class DbTypeName(val postgresTypeName: String, val sqlType: Int)
 private object ScalarTypes {
-   fun varchar(size: Int = 255) = "VARCHAR($size)"
-   fun numeric(precision: Int = 30, scale: Int = 15) = "NUMERIC($precision,$scale)"
-   fun integer() = "INTEGER"
-   fun boolean() = "BOOLEAN"
-   fun timestamp() = "TIMESTAMP"
-   fun time() = "TIME"
-   fun date() = "DATE"
+   fun varchar(size: Int = 255) = DbTypeName("VARCHAR($size)", Types.VARCHAR)
+   fun numeric(precision: Int = 30, scale: Int = 15) = DbTypeName("NUMERIC($precision,$scale)", Types.NUMERIC)
+   val INTEGER = DbTypeName("INTEGER", Types.INTEGER)
+   val BOOLEAN = DbTypeName("BOOLEAN", Types.BOOLEAN)
+   val TIMESTAMP = DbTypeName("TIMESTAMP", Types.TIMESTAMP)
+   val TIME = DbTypeName("TIME", Types.TIME)
+   val DATE = DbTypeName("DATE", Types.DATE)
 }
 
 typealias RowWriter = (rowWriter: SimpleRow, value: Any) -> Unit
 
 interface PostgresColumn {
-   val name:String
+   val name: String
    val sql: String
    fun write(rowWriter: SimpleRow, value: Any)
    fun readValue(attributeSet: InstanceAttributeSet): Any?
 }
+
 object MessageIdColumn : PostgresColumn {
    override val name: String = MESSAGE_ID_COLUMN_NAME.quoted()
    override val sql: String = MESSAGE_ID_COLUMN_DDL
@@ -354,12 +470,18 @@ object MessageIdColumn : PostgresColumn {
       rowWriter.setVarChar(name, value.toString())
    }
 
-   override fun readValue(attributeSet: InstanceAttributeSet): Any? {
+   override fun readValue(attributeSet: InstanceAttributeSet): Any {
       return attributeSet.messageId
    }
 
 }
-data class FieldBasedColumn(override val name: String, private val field: Field, override val sql: String, private val writer: RowWriter):PostgresColumn {
+
+data class FieldBasedColumn(
+   override val name: String,
+   private val field: Field,
+   override val sql: String,
+   private val writer: RowWriter
+) : PostgresColumn {
    override fun write(rowWriter: SimpleRow, value: Any) {
       writer(rowWriter, value)
    }

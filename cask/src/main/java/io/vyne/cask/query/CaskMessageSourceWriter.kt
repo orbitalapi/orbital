@@ -14,9 +14,9 @@ import io.vyne.utils.log
 import org.apache.commons.io.IOUtils
 import org.postgresql.PGConnection
 import org.postgresql.largeobject.LargeObjectManager
-import org.springframework.stereotype.Component
 import reactor.core.publisher.SignalType
 import reactor.core.publisher.Sinks
+import reactor.core.scheduler.Scheduler
 import reactor.core.scheduler.Schedulers
 import java.io.InputStream
 import java.sql.Connection
@@ -27,11 +27,24 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import javax.sql.DataSource
 
-@Component
 class CaskMessageSourceWriter(
    private val largeObjectDataSource: DataSource,
-   private val objectMapper: ObjectMapper = jacksonObjectMapper()
+   private val objectMapper: ObjectMapper = jacksonObjectMapper(),
+   bufferSize: Int = 500,
+   bufferTimeout: Duration = Duration.ofSeconds(5),
+   scheduler: Scheduler = Schedulers.boundedElastic()
 ) {
+   companion object {
+      fun singleThreaded(
+         largeObjectDataSource: DataSource,
+         objectMapper: ObjectMapper = jacksonObjectMapper(),
+         bufferSize: Int = 0,
+         bufferTimeout: Duration = Duration.ZERO
+
+      ) =
+         CaskMessageSourceWriter(largeObjectDataSource, objectMapper, bufferSize, bufferTimeout, Schedulers.immediate())
+   }
+
    private val writerCache = CacheBuilder
       .newBuilder()
       .expireAfterAccess(1, TimeUnit.SECONDS)
@@ -39,8 +52,6 @@ class CaskMessageSourceWriter(
          val typeName = notification.key.type.taxiType.qualifiedName
          log().info("Cask message source writer for type $typeName is being closed")
          val stopwatch = Stopwatch.createStarted()
-//         notification.value.connection.commit()
-//         notification.value.connection.close()
          log().info("Closing message source writer for type $typeName took ${stopwatch.elapsed(TimeUnit.MILLISECONDS)}ms")
       }
       .build<VersionedType, CaskMessageSourceWriterConnection>(object :
@@ -51,11 +62,12 @@ class CaskMessageSourceWriter(
             val sink = Sinks.many().multicast().onBackpressureBuffer<StoreCaskRawMessageRequest>(2500)
             val flux = sink
                .asFlux()
-               .publishOn(Schedulers.boundedElastic())
+               .publishOn(scheduler)
 
             val writeCount = AtomicInteger(0)
-
-            flux.bufferTimeout(500, Duration.ofSeconds(5))
+            val bufferedFlux =
+               if (bufferTimeout.isZero) flux.map { listOf(it) } else flux.bufferTimeout(bufferSize, bufferTimeout)
+            bufferedFlux
                .subscribe { records ->
                   batchTimed("Writing raw message requests") {
                      val connection = largeObjectDataSource.connection
@@ -72,20 +84,10 @@ class CaskMessageSourceWriter(
 
                         connection.commit()
                         connection.close()
-                     } catch (e:Exception) {
+                     } catch (e: Exception) {
                         log().error("Failed to write batch of messages", e)
                      }
-
-
-//                     log().info(
-//                        "Flushing ${records.size} raw message requests (${writeCount.get()} total) took ${
-//                           stopwatch.elapsed(
-//                              TimeUnit.MILLISECONDS
-//                           )
-//                        }ms"
-//                     )
                   }
-
 
 
                }
@@ -94,7 +96,7 @@ class CaskMessageSourceWriter(
       })
 
    fun writeMessageSource(request: StoreCaskRawMessageRequest) {
-      this.writerCache.get(request.versionedType).sink.emitNext(request) {signalType: SignalType, emitResult: Sinks.EmitResult ->
+      this.writerCache.get(request.versionedType).sink.emitNext(request) { signalType: SignalType, emitResult: Sinks.EmitResult ->
          log().error("Failed to store raw message for request ${request.id}: $emitResult")
          false // don't retry
       }
