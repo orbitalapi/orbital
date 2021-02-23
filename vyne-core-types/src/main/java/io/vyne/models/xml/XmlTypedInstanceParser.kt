@@ -9,7 +9,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import io.vyne.utils.batchTimed
+import io.vyne.utils.xbatchTimed
 import lang.taxi.types.XpathAccessor
 import org.apache.commons.io.IOUtils
 import org.w3c.dom.Document
@@ -47,9 +47,9 @@ class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = Prim
       source: DataSource,
       nullable: Boolean
    ): TypedInstance {
-      val result = batchTimed("XmlTypeInstanceParser:parse") {
+      val result = xbatchTimed("XmlTypeInstanceParser:parse") {
          val xpath = xpathCache.get(accessor.expression)
-         val result = batchTimed("Evaluate xpath ${accessor.expression}") {
+         val result = xbatchTimed("Evaluate xpath ${accessor.expression}") {
             xpath.evaluate(xml)
          }
 
