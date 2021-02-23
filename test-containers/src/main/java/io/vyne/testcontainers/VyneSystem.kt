@@ -38,7 +38,8 @@ data class VyneSystem(
    val eurekaServer: VyneContainer,
    val vyneQueryServer: VyneContainer,
    val fileSchemaServer: VyneContainer,
-   val caskServer: VyneContainer) : AutoCloseable {
+   val caskServer: VyneContainer,
+   val network: Network) : AutoCloseable {
 
    fun start(vyneSystemVerifier: VyneSystemVerifier = EurekaBasedSystemVerifier()) {
       eurekaServer.start()
@@ -107,7 +108,7 @@ data class VyneSystem(
             }
          }
 
-         return VyneSystem(eureka, vyneQueryServer, fileSchemaServer, cask)
+         return VyneSystem(eureka, vyneQueryServer, fileSchemaServer, cask, vyneNetwork)
       }
 
 
