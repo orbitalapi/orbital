@@ -7,9 +7,9 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.RemovalNotification
 import io.vyne.cask.api.ContentType
-import io.vyne.cask.batchTimed
 import io.vyne.cask.ingest.CaskMessage
 import io.vyne.schemas.VersionedType
+import io.vyne.utils.batchTimed
 import io.vyne.utils.log
 import org.apache.commons.io.IOUtils
 import org.postgresql.PGConnection

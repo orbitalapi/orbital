@@ -1,6 +1,6 @@
 package io.vyne.cask.ingest
 
-import io.vyne.cask.batchTimed
+import io.vyne.utils.batchTimed
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component

@@ -78,7 +78,7 @@ class XmlStreamSourceTest {
       )
       val versionedType = schema.versionedType(VersionedTypeReference.parse("Swap"))
       val resource = Resources.getResource("fpml/EFIRA_SWAP_OTR_4461642_20161220112630149.xml").toURI()
-      benchmark("Ingest complex XML document", warmup = 50, iterations = 500) {
+      benchmark("Ingest complex XML document", warmup = 10, iterations = 100) {
          val stream = XmlStreamSource(
             File(resource).inputStream(),
             versionedType,

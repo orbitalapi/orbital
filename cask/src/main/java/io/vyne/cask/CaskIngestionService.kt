@@ -32,6 +32,7 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.VersionedType
+import io.vyne.utils.batchTimed
 import io.vyne.utils.log
 import org.springframework.context.event.EventListener
 import org.springframework.core.io.ByteArrayResource

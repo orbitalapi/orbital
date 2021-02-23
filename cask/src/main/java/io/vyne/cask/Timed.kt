@@ -22,32 +22,6 @@ fun <T> timed(name: String, log: Boolean = true, timeUnit: TimeUnit = TimeUnit.M
     return response
 }
 
-fun <T> batchTimed(name:String, timeUnit: TimeUnit = TimeUnit.MILLISECONDS, count:Int = 50 , resetOnCount:Boolean = false,  block: () -> T):T {
-   val recorder = TimerCounters.counters.getOrPut(name, { SamplingRecorder(name, count, resetOnCount) })
-   val stopwatch = Stopwatch.createStarted()
-   val result = block()
-   recorder.record(stopwatch.elapsed(timeUnit))
-   return result
-}
-
-fun <T> xbatchTimed(name:String, timeUnit: TimeUnit = TimeUnit.MILLISECONDS, count:Int = 50 , resetOnCount:Boolean = false,  block: () -> T):T {
-   return block()
-}
-
-private object TimerCounters {
-   val counters = mutableMapOf<String,SamplingRecorder>()
-}
-data class SamplingRecorder(val name:String, val logOnCount:Int, val resetAfterLog:Boolean = false) {
-   private val samples:MutableList<Long> = mutableListOf()
-
-   fun record(value:Long) {
-      samples.add(value)
-      if (samples.size % logOnCount == 0) {
-         log().info("Mean of $name at ${samples.size} : ${samples.average()}ms  (${samples.sum()}ms total)")
-         if (resetAfterLog) { samples.clear() }
-      }
-   }
-}
 
 fun Stopwatch.duration(timeUnit: TimeUnit): String {
     val suffix = when (timeUnit) {

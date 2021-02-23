@@ -4,9 +4,9 @@ import arrow.core.getOrHandle
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.JsonIngestionParameters
-import io.vyne.cask.batchTimed
 import io.vyne.cask.websocket.JsonWebsocketRequest
 import io.vyne.schemas.VersionedType
+import io.vyne.utils.batchTimed
 import io.vyne.utils.log
 import org.apache.commons.io.IOUtils
 import org.apache.kafka.clients.consumer.ConsumerRecord

@@ -1,12 +1,12 @@
 package io.vyne.cask.format.json
 
 import com.fasterxml.jackson.databind.JsonNode
-import io.vyne.cask.batchTimed
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
+import io.vyne.utils.batchTimed
 import java.util.concurrent.TimeUnit
 
 class JsonStreamMapper(private val versionedType: VersionedType, private val schema: Schema) {

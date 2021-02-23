@@ -3,6 +3,8 @@ package io.vyne.utils.xml
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
+import io.vyne.utils.batchTimed
+import io.vyne.utils.timed
 import org.w3c.dom.Document
 import org.w3c.dom.NodeList
 import java.io.InputStream
@@ -20,26 +22,32 @@ class XmlDocumentProvider(private val elementSelector: String? = null) {
       .expireAfterAccess(5, TimeUnit.MINUTES)
       .build(object : CacheLoader<String, XPathExpression>() {
          override fun load(key: String): XPathExpression {
-            val xpath = xpathFactory.newXPath()
-            return xpath.compile(key)
+            return timed("xpath compilation") {
+               val xpath = xpathFactory.newXPath()
+               xpath.compile(key)
+            }
+
          }
       })
 
    fun parseXmlStream(input: InputStream): List<Document> {
       // TODO : This is a very heavy way of parsing XML content, we need
       // to evaluate a streaming approch now-ish.
-      val document = builder.parse(input)
+      val document = batchTimed("XmlDocumentProvider.builder.parse") { builder.parse(input) }
       return when (elementSelector) {
          null -> listOf(document)
          else -> {
-            val xpath = xpathCache.get(elementSelector)
-            val result = xpath.evaluate(document, XPathConstants.NODESET) as NodeList
-            (0 until result.length).map {
-               val elementDocument = builder.newDocument()
-               val individualDocumentContent = elementDocument.importNode(result.item(it), true)
-               elementDocument.appendChild(individualDocumentContent)
-               elementDocument
+            batchTimed("xpath stuff") {
+               val xpath = xpathCache.get(elementSelector)
+               val result = xpath.evaluate(document, XPathConstants.NODESET) as NodeList
+               (0 until result.length).map {
+                  val elementDocument = builder.newDocument()
+                  val individualDocumentContent = elementDocument.importNode(result.item(it), true)
+                  elementDocument.appendChild(individualDocumentContent)
+                  elementDocument
+               }
             }
+
          }
       }
 

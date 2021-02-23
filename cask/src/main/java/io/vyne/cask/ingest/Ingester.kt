@@ -1,8 +1,8 @@
 package io.vyne.cask.ingest
 
-import io.vyne.cask.batchTimed
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.schemas.VersionedType
+import io.vyne.utils.batchTimed
 import io.vyne.utils.log
 import lang.taxi.types.ObjectType
 import org.springframework.jdbc.core.JdbcTemplate

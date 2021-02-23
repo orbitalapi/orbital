@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 class XmlStreamMapper(private val versionedType: VersionedType, private val schema: Schema) {
    fun map(document: Document, messagedId:String): InstanceAttributeSet {
-      val instance = timed("XmlStreamMapper.map", false, timeUnit = TimeUnit.MILLISECONDS) {
+      val instance = timed("XmlStreamMapper.map", true, timeUnit = TimeUnit.MILLISECONDS) {
          TypedInstance.from(versionedType.type, document, schema, source = Provided)
       }
 
