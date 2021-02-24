@@ -11,6 +11,7 @@ import io.vyne.utils.log
 import org.apache.commons.io.IOUtils
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
@@ -23,14 +24,14 @@ import java.util.*
    matchIfMissing = false)
 class KafkaConsumer(
    val caskService: CaskService,
-   @Qualifier("ingesterMapper") val mapper: ObjectMapper
+   @Qualifier("ingesterMapper") val mapper: ObjectMapper,
+   @Value("\${cask.kafka.type-name}") private val typeName: String
 ) {
 
 
    @KafkaListener(topics = ["#{'\${cask.kafka.topic}'.split(',')}"])
    fun consumeFromKafka(record: ConsumerRecord<String, String>) {
       val response = batchTimed("Do nothing") {
-         val typeName = "com.cacib.m2m.Dummy"
          val versionedType = resolveType(typeName)
          val request = JsonWebsocketRequest(
             JsonIngestionParameters(),
@@ -48,8 +49,6 @@ class KafkaConsumer(
             )
          }
       }
-//
-
 
    }
 

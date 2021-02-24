@@ -11,6 +11,11 @@
 
    <artifactId>cask</artifactId>
 
+   <properties>
+      <dockerImageName>vyneco/${project.artifactId}:${project.version}</dockerImageName>
+      <dockerFilePath>${project.basedir}/Dockerfile</dockerFilePath>
+   </properties>
+
     <dependencies>
        <dependency>
           <groupId>io.vyne</groupId>
@@ -237,9 +242,9 @@
                 <configuration>
                     <images>
                         <image>
-                            <name>vyneco/${project.artifactId}:${project.version}</name>
+                            <name>${dockerImageName}</name>
                             <build>
-                                <dockerFile>${project.basedir}/Dockerfile</dockerFile>
+                                <dockerFile>${dockerFilePath}</dockerFile>
                                <tags>
                                   <tag>${docker.tag.latest}</tag>
                                   <tag>${docker.tag.numbered}</tag>

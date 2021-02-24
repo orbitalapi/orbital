@@ -9,4 +9,5 @@ cask:
    kafka:
       enabled: true
       topic: foo
+      type-name: com.cacib.m2m.Dummy
 

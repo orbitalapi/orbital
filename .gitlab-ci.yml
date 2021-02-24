@@ -65,6 +65,16 @@ build-ui:
          - "vyne-query-service/target/classes/static"
       expire_in: 1 hours
 
+cask-only-docker:
+   resource_group: docker_release
+   stage: build
+   script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests clean install'
+      - cd cask
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests -DdockerFilePath=DockerfileCaskOnly -DdockerImageName=vyneco/caskOnly -Ddocker.tag.latest=latest-manual -Ddocker.tag.numbered=$CI_BUILD_ID deploy'
+   when: manual
+
 build-publish-snapshot:
    resource_group: docker_release
    stage: deploy
