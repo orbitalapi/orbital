@@ -1,0 +1,12 @@
+spring:
+   kafka:
+      consumer:
+         bootstrap-servers: localhost:9092
+         group-id: "cask"
+         auto-offset-reset: earliest
+
+cask:
+   kafka:
+      enabled: true
+      topic: foo
+

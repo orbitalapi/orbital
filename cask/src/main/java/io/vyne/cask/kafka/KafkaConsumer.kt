@@ -11,18 +11,23 @@ import io.vyne.utils.log
 import org.apache.commons.io.IOUtils
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
 import java.util.*
 
 @Component
+@ConditionalOnProperty(
+   value= ["cask.kafka.enabled"],
+   havingValue = "true",
+   matchIfMissing = false)
 class KafkaConsumer(
    val caskService: CaskService,
    @Qualifier("ingesterMapper") val mapper: ObjectMapper
 ) {
 
 
-   @KafkaListener(topics = ["load-test"])
+   @KafkaListener(topics = ["#{'\${cask.kafka.topic}'.split(',')}"])
    fun consumeFromKafka(record: ConsumerRecord<String, String>) {
       val response = batchTimed("Do nothing") {
          val typeName = "com.cacib.m2m.Dummy"

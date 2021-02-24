@@ -234,11 +234,9 @@ class FileToTypeParserService(val schemaProvider: SchemaProvider, val objectMapp
       try {
          return IOUtils.toInputStream(rawContent).use {
             XmlDocumentProvider(elementSelector)
-               .parseXmlStream(Flux.just(it))
+               .parseXmlStream(it)
                .map { document -> TypedInstance.from(targetType, document, schema, source = Provided) }
                .map { typedInstance -> ParsedTypeInstance(typedInstance)  }
-               .collectList()
-               .block()
          }
       } catch (e: Exception) {
          throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
