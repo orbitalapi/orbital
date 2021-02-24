@@ -159,26 +159,7 @@ class VyneContainer(
       }
    }
 
-   fun ensurePipelineRunner(retryCountLimit: Int = 5,
-                            waitInMillisecondsBetweenRetries: Long = 30000L) {
-      Unreliables.retryUntilSuccess(retryCountLimit) {
-         Timeouts.doWithTimeout(1, TimeUnit.MINUTES) {
-            val response = Request
-               .get("http://localhost:${this.firstMappedPort}/api/runners")
-               .setHeader("Content-Type", "application/json")
-               .execute()
-            if (response.returnResponse().code != 200) {
-               Thread.sleep(waitInMillisecondsBetweenRetries)
-               throw IllegalStateException("no runners found!")
-            }
 
-            val pipelinesResponse = response.returnContent().asString()
-            if (pipelinesResponse == null || !pipelinesResponse.contains("instanceId")) {
-               throw IllegalStateException("no runners found!")
-            }
-         }
-      }
-   }
    fun getActuatorHealthStatus(): String {
       val exposedPort = this.firstMappedPort
       return Request

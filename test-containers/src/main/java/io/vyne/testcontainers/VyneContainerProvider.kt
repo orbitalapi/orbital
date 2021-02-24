@@ -105,12 +105,6 @@ object VyneContainerProvider {
       block(pipelineRunnerApp)
       return pipelineRunnerApp
    }
-
-   fun Kafka(imageTag: DockerImageTag = CommonSettings.latest, block: VyneContainer.() -> Unit = {}): VyneContainer {
-      val kafka = VyneContainer(Kafka.withTag(imageTag))
-      block(kafka)
-      return kafka
-   }
 }
 
 object ActuatorHealthStatusPredicate : Predicate<String> {
