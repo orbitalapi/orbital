@@ -39,6 +39,8 @@ data class VyneSystem(
    val vyneQueryServer: VyneContainer,
    val fileSchemaServer: VyneContainer,
    val caskServer: VyneContainer,
+   val pipelineOrchestrator: VyneContainer,
+   val pipelineRunner: VyneContainer,
    val network: Network) : AutoCloseable {
 
    fun start(vyneSystemVerifier: VyneSystemVerifier = EurekaBasedSystemVerifier()) {
@@ -108,7 +110,27 @@ data class VyneSystem(
             }
          }
 
-         return VyneSystem(eureka, vyneQueryServer, fileSchemaServer, cask, vyneNetwork)
+         val pipelineOrchestrator = VyneContainerProvider.pipelineOrchestrator(tag) {
+            addExposedPort(CommonSettings.PipelineOrchestratorDefaultPort)
+            withNetwork(vyneNetwork)
+            withOption("$eurekaServerUri=$eurekaUri")
+            if (alwaysPullImages) {
+               withImagePullPolicy(PullPolicy.alwaysPull())
+            }
+         }
+
+         val pipelineRunnerApp = VyneContainerProvider.pipelineRunnerApp(tag) {
+            withEurekaPublicationMethod()
+            addExposedPort(CommonSettings.PipelineRunnerDefaultPort)
+            withNetwork(vyneNetwork)
+            withOption("$eurekaServerUri=$eurekaUri")
+            if (alwaysPullImages) {
+               withImagePullPolicy(PullPolicy.alwaysPull())
+            }
+         }
+
+
+         return VyneSystem(eureka, vyneQueryServer, fileSchemaServer, cask, pipelineOrchestrator, pipelineRunnerApp, vyneNetwork)
       }
 
 
@@ -148,11 +170,12 @@ data class VyneSystem(
    }
 
    override fun close() {
-      eurekaServer.close()
+      pipelineRunner.close()
+      pipelineOrchestrator.close()
       caskServer.close()
       fileSchemaServer.close()
       vyneQueryServer.close()
-
+      eurekaServer.close()
    }
 }
 

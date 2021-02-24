@@ -24,8 +24,11 @@ class EurekaBasedSystemVerifier(
             val vyneQueryServerEurekaApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultQueryServerName }
             val fileSchemaServerEurekaApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultFileSchemaServerName }
             val caskServerEurekaApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultCaskServerName }
+            val pipelineOrchestratorApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultPipelineOrchestratorName }
+            val pipelineRunnerApp = eurekaApps.registeredApplications.firstOrNull { it.name == CommonSettings.defaultPipelineRunnerApp }
             val vyneAppsRegistered = vyneQueryServerEurekaApp != null && fileSchemaServerEurekaApp != null &&
-               caskServerEurekaApp != null && verifyFileSchemaServerPublishedInitialSchema(fileSchemaServerEurekaApp)
+               caskServerEurekaApp != null && pipelineOrchestratorApp != null &&  pipelineRunnerApp != null &&
+               verifyFileSchemaServerPublishedInitialSchema(fileSchemaServerEurekaApp)
             if (!vyneAppsRegistered) {
                Thread.sleep(waitInMillisecondsBetweenRetries)
                throw IllegalStateException("${eurekaApps.registeredApplications.map { it.name }} are only registered to Eureka")
