@@ -13,7 +13,8 @@
 
    <properties>
       <dockerImageName>vyneco/${project.artifactId}:${project.version}</dockerImageName>
-      <dockerFilePath>${project.basedir}/Dockerfile</dockerFilePath>
+      <dockerFileName>Dockerfile</dockerFileName>
+      <dockerFilePath>${project.basedir}/${dockerFileName}</dockerFilePath>
    </properties>
 
     <dependencies>

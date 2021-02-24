@@ -72,7 +72,7 @@ cask-only-docker:
       - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - 'mvn $MAVEN_CLI_OPTS -DskipTests clean install'
       - cd cask
-      - 'mvn $MAVEN_CLI_OPTS -DskipTests -DdockerFilePath=DockerfileCaskOnly -DdockerImageName=vyneco/caskonly -Ddocker.tag.latest=latest-manual -Ddocker.tag.numbered=$CI_BUILD_ID docker:build docker:push'
+      - 'mvn $MAVEN_CLI_OPTS -DskipTests -DdockerFileName=DockerfileCaskOnly -DdockerImageName=vyneco/caskonly -Ddocker.tag.latest=latest-manual -Ddocker.tag.numbered=$CI_BUILD_ID docker:build docker:push'
    when: manual
 
 build-publish-snapshot:
