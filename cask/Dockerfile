@@ -24,7 +24,7 @@
 FROM postgres:12.3
 
 # install jdk 8 runtime
-RUN echo "deb http://deb.debian.org/debian/ sid main" >> /etc/apt/sources.list
+RUN echo "deb http://deb.debian.org/debian/ stretch main" >> /etc/apt/sources.list
 RUN set -eux; \
    apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update; \
     apt-get install -y openjdk-8-jre-headless -o APT::Immediate-Configure=0; \
