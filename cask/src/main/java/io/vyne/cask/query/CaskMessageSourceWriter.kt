@@ -59,7 +59,11 @@ class CaskMessageSourceWriter(
          override fun load(key: VersionedType): CaskMessageSourceWriterConnection {
             log().info("Building new CaskMessageSourceWriter for type ${key.taxiType.qualifiedName}")
 
-            val sink = Sinks.many().multicast().onBackpressureBuffer<StoreCaskRawMessageRequest>(2500)
+            val sink = Sinks
+               .unsafe()
+               .many()
+               .multicast()
+               .onBackpressureBuffer<StoreCaskRawMessageRequest>(2500)
             val flux = sink
                .asFlux()
                .publishOn(scheduler)

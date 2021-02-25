@@ -8,6 +8,10 @@ spring:
 cask:
    kafka:
       enabled: true
-      topic: foo
-      type-name: com.cacib.m2m.Dummy
+      topic: ingestion-test
+      consumer-count: 6
+      type-name: Swap
+      # json or xml
+      ingestion-type: xml
+
 

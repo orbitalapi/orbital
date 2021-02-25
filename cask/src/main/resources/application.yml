@@ -3,7 +3,7 @@ server:
    port: 8800
 
 spring.datasource:
-   url: "jdbc:postgresql://localhost:5432/vynedb"
+   url: "jdbc:postgresql://localhost:5432/vynedb-regression"
    username: "vynedb"
    password: "vynedb"
    driver: "org.postgresql.Driver"

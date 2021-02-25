@@ -9,6 +9,7 @@ import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.utils.log
 import org.postgresql.PGConnection
 import org.springframework.jdbc.core.JdbcTemplate
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Scheduler
 import reactor.core.scheduler.Schedulers
@@ -43,7 +44,13 @@ class BulkInsertIngestorFactory(
          override fun load(key: TypeDbWrapper): ConnectionAndWriter {
             log().info("Building new RowWriter for type ${key.type.taxiType.qualifiedName}")
 
-            val sink = Sinks.many().multicast().onBackpressureBuffer<InstanceAttributeSet>()
+            val sink = Sinks
+               .unsafe()
+               .many()
+               .multicast()
+               .onBackpressureBuffer<InstanceAttributeSet>()
+
+
             val flux = sink
                .asFlux()
                .publishOn(scheduler)
