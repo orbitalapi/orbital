@@ -48,7 +48,8 @@ class BulkInsertIngestorFactory(
                .unsafe()
                .many()
                .multicast()
-               .onBackpressureBuffer<InstanceAttributeSet>()
+               // TODO Check back pressure size.
+               .onBackpressureBuffer<InstanceAttributeSet>(Int.MAX_VALUE)
 
 
             val flux = sink

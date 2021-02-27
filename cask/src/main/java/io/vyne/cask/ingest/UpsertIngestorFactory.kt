@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.RemovalNotification
 import io.vyne.cask.ddl.TypeDbWrapper
+import io.vyne.cask.query.StoreCaskRawMessageRequest
 import io.vyne.utils.log
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.jdbc.core.namedparam.SqlParameterSource
@@ -42,7 +43,13 @@ class UpsertIngestorFactory(
          override fun load(typeDbWrapper: TypeDbWrapper): ConnectionAndWriter {
             log().info("Building new RowWriter for type ${typeDbWrapper.type.taxiType.qualifiedName}")
 
-            val sink = Sinks.many().multicast().onBackpressureBuffer<InstanceAttributeSet>()
+            val sink = Sinks
+               .unsafe()
+               .many()
+               .multicast()
+               // TODO Check back pressure size.
+               .onBackpressureBuffer<InstanceAttributeSet>(Int.MAX_VALUE)
+
             val flux = sink
                .asFlux()
                .publishOn(scheduler)
