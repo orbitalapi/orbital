@@ -19,24 +19,28 @@ import javax.xml.xpath.XPathExpression
 import javax.xml.xpath.XPathFactory
 
 class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = PrimitiveParser()) {
-   private val factory = DocumentBuilderFactory.newInstance()
-   private val builder = factory.newDocumentBuilder()
-   private val xpathFactory = XPathFactory.newInstance()
-   private val documentCache: LoadingCache<String, Document> = CacheBuilder.newBuilder()
-      .expireAfterAccess(2, TimeUnit.SECONDS)
-      .build(object : CacheLoader<String, Document>() {
-         override fun load(key: String): Document {
-            return builder.parse(IOUtils.toInputStream(key))
-         }
-      })
-   private val xpathCache: LoadingCache<String, XPathExpression> = CacheBuilder.newBuilder()
-      .expireAfterAccess(5, TimeUnit.MINUTES)
-      .build(object : CacheLoader<String, XPathExpression>() {
-         override fun load(key: String): XPathExpression {
-            val xpath = xpathFactory.newXPath()
-            return xpath.compile(key)
-         }
-      })
+   companion object {
+      private val factory = DocumentBuilderFactory.newInstance()
+      private val builder = factory.newDocumentBuilder()
+      private val xpathFactory = XPathFactory.newInstance()
+      private val documentCache: LoadingCache<String, Document> = CacheBuilder.newBuilder()
+         .expireAfterAccess(10, TimeUnit.SECONDS)
+         .build(object : CacheLoader<String, Document>() {
+            override fun load(key: String): Document {
+               return builder.parse(IOUtils.toInputStream(key))
+            }
+         })
+      private val xpathCache: LoadingCache<String, XPathExpression> = CacheBuilder.newBuilder()
+         .expireAfterAccess(5, TimeUnit.MINUTES)
+         .build(object : CacheLoader<String, XPathExpression>() {
+            override fun load(key: String): XPathExpression {
+               val xpath = xpathFactory.newXPath()
+               return xpath.compile(key)
+            }
+         })
+   }
+
+
 
 
    fun parse(

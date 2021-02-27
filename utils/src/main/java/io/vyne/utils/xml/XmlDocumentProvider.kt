@@ -15,21 +15,22 @@ import javax.xml.xpath.XPathExpression
 import javax.xml.xpath.XPathFactory
 
 class XmlDocumentProvider(private val elementSelector: String? = null) {
-   private val factory = DocumentBuilderFactory.newInstance()
-   private val builder = factory.newDocumentBuilder()
-   private val xpathFactory = XPathFactory.newInstance()
-   private val xpathCache: LoadingCache<String, XPathExpression> = CacheBuilder.newBuilder()
-      .expireAfterAccess(5, TimeUnit.MINUTES)
-      .build(object : CacheLoader<String, XPathExpression>() {
-         override fun load(key: String): XPathExpression {
-            return timed("xpath compilation") {
-               val xpath = xpathFactory.newXPath()
-               xpath.compile(key)
+   companion object {
+      private val factory = DocumentBuilderFactory.newInstance()
+      private val builder = factory.newDocumentBuilder()
+      private val xpathFactory = XPathFactory.newInstance()
+      private val xpathCache: LoadingCache<String, XPathExpression> = CacheBuilder.newBuilder()
+         .expireAfterAccess(5, TimeUnit.MINUTES)
+         .build(object : CacheLoader<String, XPathExpression>() {
+            override fun load(key: String): XPathExpression {
+               return timed("xpath compilation") {
+                  val xpath = xpathFactory.newXPath()
+                  xpath.compile(key)
+               }
+
             }
-
-         }
-      })
-
+         })
+   }
    fun parseXmlStream(input: InputStream): List<Document> {
       // TODO : This is a very heavy way of parsing XML content, we need
       // to evaluate a streaming approch now-ish.

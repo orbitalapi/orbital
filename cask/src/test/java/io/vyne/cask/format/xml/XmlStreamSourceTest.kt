@@ -10,12 +10,17 @@ import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.Benchmark
 import io.vyne.utils.Benchmark.benchmark
 import io.vyne.utils.log
+import lang.taxi.types.ObjectType
+import lang.taxi.types.XpathAccessor
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.stream.XMLInputFactory
+import javax.xml.xpath.XPathFactory
 
 class XmlStreamSourceTest {
    @Rule
@@ -30,13 +35,14 @@ class XmlStreamSourceTest {
       val resource = Resources.getResource("Coinbase_BTCUSD.xml").toURI()
 
       // Ingest it a few times to get an average performance
-      Benchmark.benchmark("Can ingest list of orders provided in a single xml document", 10 ,10) {
+      Benchmark.benchmark("Can ingest list of orders provided in a single xml document", 10, 10) {
          val stream = XmlStreamSource(
             File(resource).inputStream(),
             versionedType,
             schema,
             MessageIds.uniqueId(),
-            "root/Order")
+            "root/Order"
+         )
          val noOfMappedRows = stream
             .sequence().count()
 
@@ -85,7 +91,49 @@ class XmlStreamSourceTest {
             schema,
             MessageIds.uniqueId()
          )
-         stream.sequence().first()
+         val result = stream.sequence().first()
+         true
       }
+   }
+
+   @Test
+   fun onlyEvaluatingXpathNoTaxiParsing() {
+      val schema = TaxiSchema.from(
+         Resources.getResource("fpml/efira-swap.taxi").readText()
+      )
+      val versionedType = schema.versionedType(VersionedTypeReference.parse("Swap"))
+
+      val factory = DocumentBuilderFactory.newInstance()
+      val builder = factory.newDocumentBuilder()
+      val xpathFactory = XPathFactory.newInstance()
+
+      val xpaths = (versionedType.taxiType as ObjectType)
+         .allFields
+         .mapNotNull { it.accessor }
+         .filterIsInstance<XpathAccessor>()
+         .map {
+            val xpath = xpathFactory.newXPath()
+            xpath.compile(it.expression)
+         }
+
+      benchmark("only xpath parsing", iterations = 500) {
+         val doc = builder.parse(Resources.getResource("fpml/EFIRA_SWAP_OTR_4461642_20161220112630149.xml").openStream())
+         xpaths.map { it.evaluate(doc) }
+      }
+   }
+
+   @Test
+   fun testStreamingXml() {
+      val resource = Resources.getResource("fpml/EFIRA_SWAP_OTR_4461642_20161220112630149.xml")
+      val xmlInputFactory = XMLInputFactory.newInstance()
+
+      benchmark("Just read", iterations = 100) {
+         val reader = xmlInputFactory.createXMLEventReader(resource.openStream())
+         while (reader.hasNext()) {
+            reader.next()
+         }
+      }
+
+
    }
 }
