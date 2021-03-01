@@ -17,7 +17,7 @@ import javax.xml.xpath.XPathFactory
 class XmlDocumentProvider(private val elementSelector: String? = null) {
    companion object {
       private val factory = DocumentBuilderFactory.newInstance()
-      private val builder = factory.newDocumentBuilder()
+//      private val builder = factory.newDocumentBuilder()
       private val xpathFactory = XPathFactory.newInstance()
       private val xpathCache: LoadingCache<String, XPathExpression> = CacheBuilder.newBuilder()
          .expireAfterAccess(5, TimeUnit.MINUTES)
@@ -31,6 +31,7 @@ class XmlDocumentProvider(private val elementSelector: String? = null) {
             }
          })
    }
+   private val builder = factory.newDocumentBuilder()
    fun parseXmlStream(input: InputStream): List<Document> {
       // TODO : This is a very heavy way of parsing XML content, we need
       // to evaluate a streaming approch now-ish.

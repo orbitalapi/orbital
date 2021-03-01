@@ -8,9 +8,9 @@ spring:
 cask:
    kafka:
       enabled: true
-      topic: otc-swap-2
+      topic: fpml
       consumer-count: 6
-      type-name: Swap
+      type-name: loadtest.Swap
       # json or xml
       ingestion-type: xml
 

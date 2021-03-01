@@ -17,10 +17,10 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 @ConditionalOnProperty("cask.kafka.enabled", matchIfMissing = false)
 class KafkaConfig {
 
-   @Value("spring.kafka.consumer.bootstrap-servers")
+   @Value("\${spring.kafka.consumer.bootstrap-servers}")
    lateinit var bootstrapAddress: String
 
-   @Value("spring.kafka.consumer.group-id")
+   @Value("\${spring.kafka.consumer.group-id}")
    lateinit var groupId: String
 
    @Bean
@@ -28,8 +28,8 @@ class KafkaConfig {
       val props = mapOf<String, Any>(
          ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapAddress,
          ConsumerConfig.GROUP_ID_CONFIG to groupId,
-         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class,
-         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class
+         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java
       )
       return DefaultKafkaConsumerFactory(props)
    }
