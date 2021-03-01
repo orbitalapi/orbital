@@ -4,8 +4,9 @@ import com.google.common.base.Stopwatch
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.RemovalNotification
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.ddl.TypeDbWrapper
-import io.vyne.cask.query.StoreCaskRawMessageRequest
+import io.vyne.cask.metrics.Meters
 import io.vyne.utils.log
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.jdbc.core.namedparam.SqlParameterSource
@@ -20,7 +21,8 @@ class UpsertIngestorFactory(
    val namedJdbcTemplate: NamedParameterJdbcTemplate,
    bufferSize: Int = 500,
    bufferTimeout: Duration = Duration.ofSeconds(5),
-   scheduler: Scheduler = Schedulers.boundedElastic()
+   scheduler: Scheduler = Schedulers.boundedElastic(),
+   meterRegistry: MeterRegistry? = null
 ) {
    fun cleanUpCaches() {
       this.writerCache.cleanUp()
@@ -41,8 +43,8 @@ class UpsertIngestorFactory(
       }
       .build<TypeDbWrapper, ConnectionAndWriter>(object : CacheLoader<TypeDbWrapper, ConnectionAndWriter>() {
          override fun load(typeDbWrapper: TypeDbWrapper): ConnectionAndWriter {
-            log().info("Building new RowWriter for type ${typeDbWrapper.type.taxiType.qualifiedName}")
-
+            val timer = meterRegistry?.timer(Meters.UPSERT_PERSIST)
+            val upsertCounter = meterRegistry?.counter(Meters.PERSISTED_COUNT)
             val sink = Sinks
                .unsafe()
                .many()
@@ -68,6 +70,10 @@ class UpsertIngestorFactory(
                      upsertStatement.sqlStatement,
                      parameterSources
                   )
+                  timer?.let {
+                     timer.record(stopwatch.elapsed())
+                  }
+                  upsertCounter?.increment(records.size.toDouble())
                   log().info(
                      "Flushing ${records.size} records (${writeCount.get()} total) took ${
                         stopwatch.elapsed(

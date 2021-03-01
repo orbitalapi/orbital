@@ -56,6 +56,19 @@
           <artifactId>flyway-core</artifactId>
           <version>6.4.3</version>
        </dependency>
+       <dependency>
+          <groupId>io.micrometer</groupId>
+          <artifactId>micrometer-core</artifactId>
+       </dependency>
+       <dependency>
+          <groupId>io.micrometer</groupId>
+          <artifactId>micrometer-registry-prometheus</artifactId>
+       </dependency>
+       <dependency>
+          <groupId>io.github.mweirauch</groupId>
+          <artifactId>micrometer-jvm-extras</artifactId>
+          <version>0.2.2</version>
+       </dependency>
 
        <!-- Spring boot actuator/micrometer/prometheus dependencies -->
        <dependency>

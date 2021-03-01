@@ -3,12 +3,14 @@ package io.vyne.models.xml
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.models.DataSource
 import io.vyne.models.PrimitiveParser
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.batchTimed
 import io.vyne.utils.xbatchTimed
 import lang.taxi.types.XpathAccessor
 import org.apache.commons.io.IOUtils
@@ -53,7 +55,7 @@ class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = Prim
    ): TypedInstance {
       val result = xbatchTimed("XmlTypeInstanceParser:parse") {
          val xpath = xpathCache.get(accessor.expression)
-         val result = xbatchTimed("Evaluate xpath ${accessor.expression}") {
+         val result = batchTimed("Evaluate xpath ${accessor.expression}") {
             xpath.evaluate(xml)
          }
 

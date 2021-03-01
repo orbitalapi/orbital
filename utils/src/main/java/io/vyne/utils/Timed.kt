@@ -1,12 +1,14 @@
 package io.vyne.utils
 
 import com.google.common.base.Stopwatch
-import java.util.Queue
+import io.micrometer.core.instrument.MeterRegistry
+import mu.KotlinLogging
+import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.TimeUnit
 
 object Timer {
-   val log = Timer.log()
+   val log = KotlinLogging.logger {}
 }
 
 fun <T> xtimed(name: String, log: Boolean = false, timeUnit: TimeUnit = TimeUnit.MILLISECONDS, block: () -> T): T {
@@ -17,7 +19,7 @@ fun <T> timed(name: String, log: Boolean = true, timeUnit: TimeUnit = TimeUnit.M
    return if (log) {
       val stopwatch = Stopwatch.createStarted()
       val response = block()
-      Timer.log.info("$name completed in ${stopwatch.duration(timeUnit)}")
+      Timer.log.info { "$name completed in ${stopwatch.duration(timeUnit)}" }
       response
    } else {
       block()
@@ -42,15 +44,33 @@ fun Stopwatch.duration(timeUnit: TimeUnit): String {
 }
 
 
-fun <T> batchTimed(name: String, timeUnit: TimeUnit = TimeUnit.MILLISECONDS, count: Int = 50, resetOnCount: Boolean = false, block: () -> T): T {
+fun <T> batchTimed(
+   name: String,
+   timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
+   count: Int = 50,
+   resetOnCount: Boolean = false,
+   meterRegistry: MeterRegistry? = null,
+   tags:Array<String> = emptyArray(),
+   block: () -> T
+): T {
    val recorder = TimerCounters.counters.getOrPut(name, { SamplingRecorder(name, count, resetOnCount) })
    val stopwatch = Stopwatch.createStarted()
    val result = block()
+   val elapsed = stopwatch.stop()
+   meterRegistry?.let {
+      meterRegistry.timer(name, *tags).record(stopwatch.elapsed())
+   }
    recorder.record(stopwatch.elapsed(timeUnit))
    return result
 }
 
-fun <T> xbatchTimed(name: String, timeUnit: TimeUnit = TimeUnit.MILLISECONDS, count: Int = 50, resetOnCount: Boolean = false, block: () -> T): T {
+fun <T> xbatchTimed(
+   name: String,
+   timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
+   count: Int = 50,
+   resetOnCount: Boolean = false,
+   block: () -> T
+): T {
    return block()
 }
 

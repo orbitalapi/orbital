@@ -5,11 +5,12 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.RemovalNotification
 import de.bytefish.pgbulkinsert.row.SimpleRowWriter
+import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.cask.ddl.TypeDbWrapper
+import io.vyne.cask.metrics.Meters
 import io.vyne.utils.log
 import org.postgresql.PGConnection
 import org.springframework.jdbc.core.JdbcTemplate
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Scheduler
 import reactor.core.scheduler.Schedulers
@@ -21,7 +22,8 @@ class BulkInsertIngestorFactory(
    val jdbcTemplate: JdbcTemplate,
    bufferSize: Int = 500,
    bufferTimeout: Duration = Duration.ofSeconds(5),
-   scheduler: Scheduler = Schedulers.boundedElastic()
+   scheduler: Scheduler = Schedulers.boundedElastic(),
+   meterRegistry: MeterRegistry? = null
 ) {
    fun cleanUpCaches() {
       this.writerCache.cleanUp()
@@ -43,6 +45,8 @@ class BulkInsertIngestorFactory(
       .build<TypeDbWrapper, ConnectionAndWriter>(object : CacheLoader<TypeDbWrapper, ConnectionAndWriter>() {
          override fun load(key: TypeDbWrapper): ConnectionAndWriter {
             log().info("Building new RowWriter for type ${key.type.taxiType.qualifiedName}")
+            val timer = meterRegistry?.timer(Meters.INSERT_PERSIST)
+            val upsertCounter = meterRegistry?.counter(Meters.PERSISTED_COUNT)
 
             val sink = Sinks
                .unsafe()
@@ -76,6 +80,8 @@ class BulkInsertIngestorFactory(
                   }
                   writer.close()
                   connection.close()
+                  timer?.record(stopwatch.elapsed())
+                  upsertCounter?.increment(records.size.toDouble())
                   log().info(
                      "Flushing ${records.size} records (${writeCount.get()} total) took ${
                         stopwatch.elapsed(
