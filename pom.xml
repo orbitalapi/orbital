@@ -270,6 +270,11 @@
             <artifactId>springfox-swagger-ui</artifactId>
             <version>${swagger.springfox.version}</version>
          </dependency>
+         <dependency>
+            <groupId>com.ximpleware</groupId>
+            <artifactId>vtd-xml</artifactId>
+            <version>2.13.4</version>
+         </dependency>
       </dependencies>
    </dependencyManagement>
 
