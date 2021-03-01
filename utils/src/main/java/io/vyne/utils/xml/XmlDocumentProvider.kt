@@ -3,6 +3,9 @@ package io.vyne.utils.xml
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
+import com.ximpleware.AutoPilot
+import com.ximpleware.VTDGen
+import com.ximpleware.VTDNav
 import io.vyne.utils.batchTimed
 import io.vyne.utils.timed
 import org.w3c.dom.Document
@@ -32,6 +35,40 @@ class XmlDocumentProvider(private val elementSelector: String? = null) {
          })
    }
    private val builder = factory.newDocumentBuilder()
+
+   fun parseXmlStreamToVTDNav(input: InputStream): List<VTDNav> {
+      // TODO : This is a very heavy way of parsing XML content, we need
+      // to evaluate a streaming approch now-ish.
+      return when (elementSelector) {
+         null -> {
+            val doc = VTDGen()
+            doc.setDoc(input.readBytes())
+            doc.parse(true)
+            listOf(doc.nav)
+         }
+         else -> {
+            batchTimed("xpath stuff") {
+               val doc = VTDGen()
+               doc.setDoc(input.readBytes())
+               doc.parse(true)
+               val navigator = doc.nav
+               val ap = AutoPilot(navigator)
+               ap.selectXPath(elementSelector)
+               val navigatorList = mutableListOf<VTDNav>()
+               var index: Int
+               while ({ index = ap.evalXPath(); index }() != -1) {
+                  val subElementBytes = navigator.elementFragmentNs.toBytes()
+                  val subDoc = VTDGen()
+                  subDoc.setDoc(subElementBytes)
+                  subDoc.parse(true)
+                  navigatorList.add(subDoc.nav)
+               }
+               navigatorList
+            }
+         }
+      }
+   }
+
    fun parseXmlStream(input: InputStream): List<Document> {
       // TODO : This is a very heavy way of parsing XML content, we need
       // to evaluate a streaming approch now-ish.
@@ -49,9 +86,7 @@ class XmlDocumentProvider(private val elementSelector: String? = null) {
                   elementDocument
                }
             }
-
          }
       }
-
    }
 }

@@ -27,6 +27,10 @@
          <version>0.9.0</version>
       </dependency>
       <dependency>
+         <groupId>com.ximpleware</groupId>
+         <artifactId>vtd-xml</artifactId>
+      </dependency>
+      <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
          <version>${project.version}</version>

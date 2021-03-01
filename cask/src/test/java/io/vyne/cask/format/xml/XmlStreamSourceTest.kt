@@ -34,21 +34,24 @@ class XmlStreamSourceTest {
       val versionedType = schema.versionedType(VersionedTypeReference.parse(typeReference))
       val resource = Resources.getResource("Coinbase_BTCUSD.xml").toURI()
 
-      // Ingest it a few times to get an average performance
-      Benchmark.benchmark("Can ingest list of orders provided in a single xml document", 10, 10) {
-         val stream = XmlStreamSource(
-            File(resource).inputStream(),
-            versionedType,
-            schema,
-            MessageIds.uniqueId(),
-            "root/Order"
-         )
-         val noOfMappedRows = stream
-            .sequence().count()
+      val stream = XmlStreamSource(
+         File(resource).inputStream(),
+         versionedType,
+         schema,
+         MessageIds.uniqueId(),
+         "/root/Order")
 
-         noOfMappedRows.should.equal(10061)
-         log().info("Mapped ${noOfMappedRows} rows to typed instance")
-      }
+      val instanceAttributes = stream
+         .sequence()
+         .toList()
+
+      val firstOpen = instanceAttributes.first().attributes["open"] as TypedValue
+      firstOpen.value.should.equal(BigDecimal("6300"))
+
+
+      val lastOpen = instanceAttributes.last().attributes["open"] as TypedValue
+      lastOpen.value.should.equal(BigDecimal("9000"))
+
    }
 
    @Test

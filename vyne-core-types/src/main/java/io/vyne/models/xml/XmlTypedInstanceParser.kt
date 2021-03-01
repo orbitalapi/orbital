@@ -3,6 +3,8 @@ package io.vyne.models.xml
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
+import com.ximpleware.AutoPilot
+import com.ximpleware.VTDNav
 import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.models.DataSource
 import io.vyne.models.PrimitiveParser
@@ -77,6 +79,22 @@ class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = Prim
       return result
    }
 
+
+
+   fun parse(value: VTDNav, type: Type, accessor: XpathAccessor, schema: Schema, source: DataSource, nullable: Boolean): TypedInstance {
+      val ap = AutoPilot(value)
+      ap.selectXPath(accessor.expression)
+      val result = batchTimed("Evaluate xpath ${accessor.expression}") {
+         ap.evalXPathToString()
+      }
+
+     return if (result.isEmpty()) {
+         //xpath evaluate returns empty string if there is no match.
+         TypedNull.create(type, source)
+      } else {
+         primitiveParser.parse(result, type, source)
+      }
+   }
 
    fun parse(
       xml: String,

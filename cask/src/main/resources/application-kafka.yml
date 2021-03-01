@@ -2,8 +2,9 @@ spring:
    kafka:
       consumer:
          bootstrap-servers: localhost:9092
-         group-id: "cask"
+         group-id: vynemon1
          auto-offset-reset: earliest
+
 
 cask:
    kafka:
