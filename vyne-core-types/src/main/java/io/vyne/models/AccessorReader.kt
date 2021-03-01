@@ -3,6 +3,7 @@ package io.vyne.models
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
+import com.ximpleware.VTDNav
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.csv.CsvAttributeAccessorParser
 import io.vyne.models.functions.FunctionRegistry
@@ -282,6 +283,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
             source = source
          )
          is Document -> xmlParser.parse(value, targetType, accessor, schema, source, nullable)
+         is VTDNav -> xmlParser.parse(value, targetType, accessor, schema, source, nullable)
          else -> TODO("Value=${value} targetType=${targetType} accessor={$accessor} not supported!")
       }
    }
