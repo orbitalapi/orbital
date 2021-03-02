@@ -47,7 +47,7 @@ class KafkaConsumer(
          publishedIngestionInitialisedEvent.set(true)
       }
 
-      val response = batchTimed(Meters.INGEST_FROM_KAFKA, meterRegistry = meterRegistry, tags = arrayOf("kafka-topic",record.topic())) {
+      val response = batchTimed(Meters.INGEST_FROM_KAFKA, meterRegistry = meterRegistry, tags = arrayOf("kafka-topic",record.topic()), resetOnCount = true) {
          val versionedType = resolveType(typeName)
          val request = when(ingestionType) {
             "xml" -> XmlWebsocketRequest(XmlIngestionParameters(), versionedType)

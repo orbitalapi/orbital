@@ -5,7 +5,6 @@ import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.ximpleware.AutoPilot
 import com.ximpleware.VTDNav
-import io.micrometer.core.instrument.MeterRegistry
 import io.vyne.models.DataSource
 import io.vyne.models.PrimitiveParser
 import io.vyne.models.TypedInstance
@@ -57,9 +56,7 @@ class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = Prim
    ): TypedInstance {
       val result = xbatchTimed("XmlTypeInstanceParser:parse") {
          val xpath = xpathCache.get(accessor.expression)
-         val result = batchTimed("Evaluate xpath ${accessor.expression}") {
-            xpath.evaluate(xml)
-         }
+         val result = xpath.evaluate(xml)
 
          if (result.isEmpty()) {
             //xpath evaluate returns empty string if there is no match.
@@ -82,9 +79,9 @@ class XmlTypedInstanceParser(private val primitiveParser: PrimitiveParser = Prim
 
 
    fun parse(value: VTDNav, type: Type, accessor: XpathAccessor, schema: Schema, source: DataSource, nullable: Boolean): TypedInstance {
-      val ap = AutoPilot(value)
-      ap.selectXPath(accessor.expression)
-      val result = batchTimed("Evaluate xpath ${accessor.expression}") {
+      val result = batchTimed("Evaluate xpath") {
+         val ap = AutoPilot(value)
+         ap.selectXPath(accessor.expression)
          ap.evalXPathToString()
       }
 

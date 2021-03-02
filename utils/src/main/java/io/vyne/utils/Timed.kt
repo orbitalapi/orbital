@@ -48,7 +48,7 @@ fun <T> batchTimed(
    name: String,
    timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
    count: Int = 50,
-   resetOnCount: Boolean = false,
+   resetOnCount: Boolean = true,
    meterRegistry: MeterRegistry? = null,
    tags:Array<String> = emptyArray(),
    block: () -> T

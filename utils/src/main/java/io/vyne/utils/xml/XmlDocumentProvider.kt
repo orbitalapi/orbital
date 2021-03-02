@@ -41,10 +41,12 @@ class XmlDocumentProvider(private val elementSelector: String? = null) {
       // to evaluate a streaming approch now-ish.
       return when (elementSelector) {
          null -> {
-            val doc = VTDGen()
-            doc.setDoc(input.readBytes())
-            doc.parse(true)
-            listOf(doc.nav)
+            batchTimed("Parse inputStream to Xml VTD") {
+               val doc = VTDGen()
+               doc.setDoc(input.readBytes())
+               doc.parse(true)
+               listOf(doc.nav)
+            }
          }
          else -> {
             batchTimed("xpath stuff") {
