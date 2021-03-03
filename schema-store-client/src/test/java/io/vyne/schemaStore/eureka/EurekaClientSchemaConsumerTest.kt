@@ -10,10 +10,13 @@ import com.netflix.discovery.shared.Application
 import com.netflix.discovery.shared.Applications
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.times
+import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.LocalValidatingSchemaStoreClient
+import io.vyne.schemas.SchemaSetChangedEvent
 import org.junit.Before
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
@@ -68,7 +71,7 @@ class EurekaClientSchemaConsumerTest {
          listOf(Pair(instanceInfo, listOf(productVersionedSource, orderVersionedSource))))
 
       // When
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(2)
       val orderSource = eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.first {it.name == "order.taxi"}
@@ -77,7 +80,7 @@ class EurekaClientSchemaConsumerTest {
       instanceInfo.metadata.remove("vyne.sources.product.taxi___0.0.1") // remove one of the files.
       setTaxiSchemasRestResponse(server, listOf(Pair(instanceInfo, listOf(orderVersionedSource))))
       // When
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(1)
       val remainingSource = eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.first()
@@ -100,7 +103,7 @@ class EurekaClientSchemaConsumerTest {
       val (eurekaEventListener, server, eurekaClientSchemaConsumer) = initialise(listOf(instanceInfo),
          listOf(Pair(instanceInfo, listOf(productVersionedSource))))
       // When
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(1)
 
@@ -117,7 +120,7 @@ class EurekaClientSchemaConsumerTest {
       setTaxiSchemasRestResponse(server, listOf(Pair(instanceInfo, listOf(updatedProductVersionedSource))))
       instanceInfo.metadata["vyne.sources.product.taxi___0.0.1"] = "2caef"
       // When
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(1)
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.first().content.should.equal(updatedProductVersionedSource.content)
@@ -148,7 +151,7 @@ class EurekaClientSchemaConsumerTest {
          listOf(Pair(instanceInfo1, listOf(productVersionedSource)), Pair(instanceInfo2, listOf(orderVersionedSource))))
 
       // When
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(2)
 
@@ -158,7 +161,7 @@ class EurekaClientSchemaConsumerTest {
       instanceInfo1.metadata["vyne.sources.product.taxi___0.0.2"] = "47df0b"
       setTaxiSchemasRestResponse(server, listOf(Pair(instanceInfo1, listOf(updatedProductVersionedSource))))
       // Whens
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(2)
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.map { it.version }.should.contain("0.0.2")
@@ -186,14 +189,14 @@ class EurekaClientSchemaConsumerTest {
          listOf(Pair(instanceInfo, listOf())))
 
       // When
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.should.be.empty
 
       // One of the files deleted
       //instanceInfo.metadata.remove("vyne.sources.product.taxi___0.0.1") // remove one of the files.
       setTaxiSchemasRestResponse(server, listOf(Pair(instanceInfo, listOf(productVersionedSource, orderVersionedSource))))
       // When
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(2)
    }
@@ -225,7 +228,7 @@ class EurekaClientSchemaConsumerTest {
          listOf(Pair(instanceInfo, listOf())))
 
       // When
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.should.be.empty
 
       val application = Application(instanceInfo.appName, listOf(instanceInfo))
@@ -235,7 +238,7 @@ class EurekaClientSchemaConsumerTest {
 
       // Application A metadata removed from Eureka
       whenever(mockEurekaClient.applications).thenReturn(Applications())
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
 
       // A new instance of Application A started on a different port.
       val updatedInstanceInfo = instanceInfo("file-schema-server", mapOf("vyne.sources.product.taxi___0.0.1" to "47df0b", "vyne.sources.order.taxi___0.0.1" to "12321"), 12345)
@@ -244,7 +247,7 @@ class EurekaClientSchemaConsumerTest {
       whenever(mockEurekaClient.applications).thenReturn(updatedEurekaApp)
       setTaxiSchemasRestResponse(server, listOf(Pair(updatedInstanceInfo, listOf(productVersionedSource, orderVersionedSource))))
       // When
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(2)
    }
@@ -275,7 +278,7 @@ class EurekaClientSchemaConsumerTest {
          listOf(Pair(instanceInfo, listOf())))
 
       // When
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.should.be.empty
 
       val application = Application(instanceInfo.appName, listOf(instanceInfo))
@@ -290,16 +293,67 @@ class EurekaClientSchemaConsumerTest {
       whenever(mockEurekaClient.applications).thenReturn(updatedEurekaApp)
       setTaxiSchemasRestResponse(server, listOf(Pair(updatedInstanceInfo, listOf(productVersionedSource, orderVersionedSource))))
       // When
-      eurekaEventListener!!.onEvent(CacheRefreshedEvent())
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.size.should.equal(1)
       eurekaClientSchemaConsumer.schemaSet().taxiSchemas.first().sources.size.should.equal(2)
    }
 
+   @Test
+   fun `Should Multiple Registrations on Eureka`() {
+      // Test Scenario:
+      // Application A has two instances registered  on Eureka
+      // registrations are as follows:
+      // host1:port1 and host2:port2
+      // When eureka metadata is refreshed and Eureka reports instance registrations of A as:
+      // host2:port2 and host1:port1
+      // this should noe trigger any schema recompilation.
+      // Given
+      val fileSchemaServerInstance1Info = instanceInfo("file-schema-server",
+         mapOf("vyne.sources.product.taxi___0.0.1" to "47df0b", "vyne.sources.order.taxi___0.0.1" to "12321"), 12346, "schemaServer1")
+      val fileSchemaServerInstance2Info = instanceInfo("file-schema-server",
+         mapOf("vyne.sources.product.taxi___0.0.1" to "47df0b", "vyne.sources.order.taxi___0.0.1" to "12321"), 12345, "schemaServer2")
 
-   private fun instanceInfo(appName: String, sourceMap: Map<String, String>, port: Int = 1234) = InstanceInfo
+      val productVersionedSource = VersionedSource(name = "product.taxi", version = "0.0.1", content = """
+         namespace foo.bar {
+             model Product {
+                 id: String
+              }
+         }
+      """.trimIndent())
+      val orderVersionedSource = VersionedSource(name = "order.taxi", version = "0.0.1", content = """
+         namespace foo.bar {
+             model Order {
+                 orderId: String
+              }
+         }
+      """.trimIndent())
+      val (eurekaEventListener, server, eurekaClientSchemaConsumer) = initialise(listOf(fileSchemaServerInstance1Info, fileSchemaServerInstance2Info),
+         listOf(Pair(fileSchemaServerInstance1Info, listOf(productVersionedSource, orderVersionedSource)), Pair(fileSchemaServerInstance2Info, listOf(productVersionedSource, orderVersionedSource))))
+
+
+      // When
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
+      val application = Application(fileSchemaServerInstance1Info.appName, listOf(fileSchemaServerInstance1Info, fileSchemaServerInstance2Info))
+      eurekaApplications.registeredApplications.forEach {
+         eurekaApplications.removeApplication(application)
+      }
+
+      //  Application A metadata removed from Eureka & A new instance of Application A started on a different port.
+      val updatedEurekaApp = Applications()
+      updatedEurekaApp.addApplication( Application(fileSchemaServerInstance1Info.appName, listOf(fileSchemaServerInstance2Info, fileSchemaServerInstance1Info)))
+      whenever(mockEurekaClient.applications).thenReturn(updatedEurekaApp)
+      setTaxiSchemasRestResponse(server, listOf(Pair(fileSchemaServerInstance1Info, listOf(productVersionedSource, orderVersionedSource)),
+         Pair(fileSchemaServerInstance2Info, listOf(productVersionedSource, orderVersionedSource))))
+      // When
+      eurekaEventListener.onEvent(CacheRefreshedEvent())
+      verify(mockApplicationEventPublisher, times(1)).publishEvent(any<SchemaSetChangedEvent>())
+   }
+
+
+   private fun instanceInfo(appName: String, sourceMap: Map<String, String>, port: Int = 1234, instanceId: String = "instanceId") = InstanceInfo
       .Builder
       .newBuilder()
-      .setInstanceId("instanceId")
+      .setInstanceId(instanceId)
       .setAppName(appName)
       .setHostName("localhost")
       .setPort(port)
@@ -309,8 +363,14 @@ class EurekaClientSchemaConsumerTest {
    private fun initialise(instanceInfos: List<InstanceInfo>,
                           initialVersionedSources: List<Pair<InstanceInfo, List<VersionedSource>>>): Triple<EurekaEventListener, MockRestServiceServer, EurekaClientSchemaConsumer> {
       instanceInfos.forEach { instanceInfo ->
-         val application = Application(instanceInfo.appName, listOf(instanceInfo))
-         eurekaApplications.addApplication(application)
+         val existingApplication = eurekaApplications.registeredApplications.firstOrNull { it.name == instanceInfo.appName }
+         if (existingApplication == null) {
+            val application = Application(instanceInfo.appName, listOf(instanceInfo))
+            eurekaApplications.addApplication(application)
+         }
+         else {
+            existingApplication.addInstance(instanceInfo)
+         }
       }
 
       val restTemplate = RestTemplate()

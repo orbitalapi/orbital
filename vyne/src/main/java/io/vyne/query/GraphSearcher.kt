@@ -80,7 +80,7 @@ class GraphSearcher(
 
       var searchCount = 0
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
-         log().info("$searchDescription: Attempting to build search path $searchCount")
+         log().trace("$searchDescription: Attempting to build search path $searchCount")
          val facts = if (excludedInstance.isEmpty()) {
             knownFacts
          } else {
@@ -113,8 +113,8 @@ class GraphSearcher(
          evaluatedPaths.addProposedPath(nextPath)
 
          log().info("$searchDescription - attempting path $nextPathId")
-         if (log().isDebugEnabled) {
-            log().debug("$searchDescription - attempting path $nextPathId: \n${nextPath.pathDescription()}")
+         if (log().isTraceEnabled) {
+            log().trace("$searchDescription - attempting path $nextPathId: \n${nextPath.pathDescription()}")
          }
 
          searchCount++
@@ -146,7 +146,7 @@ class GraphSearcher(
       }
       // There were no search paths to evaluate.  Just exit
       //log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
-      log().info("$searchDescription ended - no more paths to evaluate")
+      log().trace("$searchDescription ended - no more paths to evaluate")
       return noPath()
    }
 
