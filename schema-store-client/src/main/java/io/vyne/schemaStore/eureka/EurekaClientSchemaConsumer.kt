@@ -32,7 +32,7 @@ internal data class SourcePublisherRegistration(
    val sourceUrls: List<String>,
    val availableSources: List<VersionedSourceReference>
 ) {
-   val nameAndUrl = "$applicationName@[${sourceUrls.joinToString(",")}]"
+   val nameAndUrl = "$applicationName@[${ sourceUrls.sortedDescending().joinToString(",")}]"
    val sourceHash by lazy {
       val hasher = Hashing.sha256().newHasher()
       availableSources.forEach { hasher.putString(it.sourceIdContentHash, Charset.defaultCharset()) }
@@ -266,6 +266,10 @@ class EurekaClientSchemaConsumer(
          previousKnownSources.any { previousSource ->
             val isChanged = currentSource.applicationName == previousSource.applicationName &&
                ((currentSource.availableSources.hashCode() != previousSource.availableSources.hashCode()) || (currentSource.nameAndUrl != previousSource.nameAndUrl) )
+            if (isChanged) {
+               log().warn("currentSource: ${currentSource.applicationName}, ${currentSource.availableSources.hashCode()}, ${currentSource.nameAndUrl}")
+               log().warn("previousSource: ${previousSource.applicationName}, ${previousSource.availableSources.hashCode()}, ${previousSource.nameAndUrl}")
+            }
             isChanged
          }
       } + unhealthySources).distinct()
