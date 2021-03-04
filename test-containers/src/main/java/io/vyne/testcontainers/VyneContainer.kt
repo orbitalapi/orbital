@@ -159,6 +159,7 @@ class VyneContainer(
       }
    }
 
+
    fun getActuatorHealthStatus(): String {
       val exposedPort = this.firstMappedPort
       return Request

@@ -20,6 +20,8 @@ import io.vyne.testcontainers.CommonSettings.defaultQueryServerName
 import io.vyne.testcontainers.CommonSettings.eurekaServerUri
 import io.vyne.testcontainers.CommonSettings.fileSchemaServerSchemaPath
 import io.vyne.testcontainers.CommonSettings.latest
+import org.apache.hc.client5.http.fluent.Request
+import org.apache.hc.core5.http.ContentType
 import org.rnorth.ducttape.timeouts.Timeouts
 import org.rnorth.ducttape.unreliables.Unreliables
 import org.testcontainers.containers.BindMode
@@ -29,6 +31,7 @@ import org.testcontainers.images.PullPolicy
 import org.testcontainers.images.builder.Transferable
 import org.testcontainers.utility.MountableFile
 import java.io.BufferedReader
+import java.io.InputStream
 import java.io.InputStreamReader
 import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit
@@ -38,14 +41,71 @@ data class VyneSystem(
    val eurekaServer: VyneContainer,
    val vyneQueryServer: VyneContainer,
    val fileSchemaServer: VyneContainer,
-   val caskServer: VyneContainer) : AutoCloseable {
+   val caskServer: VyneContainer,
+   val pipelineOrchestrator: VyneContainer,
+   val pipelineRunner: VyneContainer,
+   val network: Network) : AutoCloseable {
 
    fun start(vyneSystemVerifier: VyneSystemVerifier = EurekaBasedSystemVerifier()) {
       eurekaServer.start()
       vyneQueryServer.start()
       fileSchemaServer.start()
       caskServer.start()
+      pipelineOrchestrator.start()
+      pipelineRunner.start()
       vyneSystemVerifier.verify(this)
+   }
+
+   fun ensurePipelineRunner(retryCountLimit: Int = 5,
+                            waitInMillisecondsBetweenRetries: Long = 30000L) {
+      Unreliables.retryUntilSuccess(retryCountLimit) {
+         Timeouts.doWithTimeout(1, TimeUnit.MINUTES) {
+            val response = Request
+               .get("http://localhost:${this.pipelineOrchestrator.firstMappedPort}/api/runners")
+               .setHeader("Content-Type", "application/json")
+               .execute()
+            if (response.returnResponse().code != 200) {
+               Thread.sleep(waitInMillisecondsBetweenRetries)
+               throw IllegalStateException("no runners found!")
+            }
+
+            val pipelinesResponse = response.returnContent().asString()
+            if (pipelinesResponse == null || !pipelinesResponse.contains("instanceId")) {
+               throw IllegalStateException("no runners found!")
+            }
+         }
+      }
+   }
+
+   fun createPipeline(pipelineDefinitionJson: InputStream): Int {
+      val request = Request
+         .post("http://localhost:${this.pipelineOrchestrator.firstMappedPort}/api/runners")
+         .bodyStream(pipelineDefinitionJson)
+         .setHeader("Accept", "application/json, text/javascript, */*")
+         .setHeader("Content-Type", "application/json")
+
+      return request.execute().returnResponse().code
+   }
+
+   fun isPipelineRunning(retryCountLimit: Int = 5,
+                         waitInMillisecondsBetweenRetries: Long = 30000L) {
+      Unreliables.retryUntilSuccess(retryCountLimit) {
+         Timeouts.doWithTimeout(1, TimeUnit.MINUTES) {
+            val response = Request
+               .get("http://localhost:${this.pipelineOrchestrator.firstMappedPort}/api/pipelines")
+               .setHeader("Content-Type", "application/json")
+               .execute()
+            if (response.returnResponse().code != 200) {
+               Thread.sleep(waitInMillisecondsBetweenRetries)
+               throw IllegalStateException("no runners found!")
+            }
+
+            val pipelinesResponse = response.returnContent().asString()
+            if (pipelinesResponse == null || !pipelinesResponse.contains("RUNNING")) {
+               throw IllegalStateException("no pipeline is running!")
+            }
+         }
+      }
    }
 
    companion object {
@@ -107,7 +167,27 @@ data class VyneSystem(
             }
          }
 
-         return VyneSystem(eureka, vyneQueryServer, fileSchemaServer, cask)
+         val pipelineOrchestrator = VyneContainerProvider.pipelineOrchestrator(tag) {
+            addExposedPort(CommonSettings.PipelineOrchestratorDefaultPort)
+            withNetwork(vyneNetwork)
+            withOption("$eurekaServerUri=$eurekaUri")
+            if (alwaysPullImages) {
+               withImagePullPolicy(PullPolicy.alwaysPull())
+            }
+         }
+
+         val pipelineRunnerApp = VyneContainerProvider.pipelineRunnerApp(tag) {
+            withEurekaPublicationMethod()
+            addExposedPort(CommonSettings.PipelineRunnerDefaultPort)
+            withNetwork(vyneNetwork)
+            withOption("$eurekaServerUri=$eurekaUri")
+            if (alwaysPullImages) {
+               withImagePullPolicy(PullPolicy.alwaysPull())
+            }
+         }
+
+
+         return VyneSystem(eureka, vyneQueryServer, fileSchemaServer, cask, pipelineOrchestrator, pipelineRunnerApp, vyneNetwork)
       }
 
 
@@ -147,11 +227,12 @@ data class VyneSystem(
    }
 
    override fun close() {
-      eurekaServer.close()
+      pipelineRunner.close()
+      pipelineOrchestrator.close()
       caskServer.close()
       fileSchemaServer.close()
       vyneQueryServer.close()
-
+      eurekaServer.close()
    }
 }
 

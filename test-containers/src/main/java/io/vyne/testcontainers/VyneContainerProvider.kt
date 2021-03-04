@@ -19,6 +19,15 @@ object VyneContainerProvider {
    val FileSchemaServer: DockerImageName = DockerImageName.parse("vyneco/file-schema-server")
 
    @JvmStatic
+   val PipelineOrchestrator: DockerImageName = DockerImageName.parse("vyneco/pipelines-orchestrator")
+
+   @JvmStatic
+   val PipelineRunnerApp: DockerImageName = DockerImageName.parse("vyneco/pipeline-runner-app")
+
+   @JvmStatic
+   val Kafka: DockerImageName = DockerImageName.parse("lensesio/fast-data-dev")
+
+   @JvmStatic
    val Eureka: DockerImageName = DockerImageName.parse("vyneco/eureka")
    fun vyneQueryServer(block: VyneContainer.() -> Unit = {}) = vyneQueryServer(CommonSettings.latest, block)
    fun vyneQueryServer(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
@@ -69,6 +78,32 @@ object VyneContainerProvider {
             .withStartupTimeout(Duration.ofMinutes(eurekaContainer.startUpTimeOutInMinutes)))
       block(eurekaContainer)
       return eurekaContainer
+   }
+
+   fun pipelineOrchestrator(block: VyneContainer.() -> Unit = {}) = pipelineOrchestrator(CommonSettings.latest, block)
+   fun pipelineOrchestrator(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
+      val pipelineOrchestrator = VyneContainer(PipelineOrchestrator.withTag(imageTag))
+      pipelineOrchestrator.setWaitStrategy(
+         HttpWaitStrategy()
+            .forPath(actuatorHealthEndPoint)
+            .forStatusCode(200)
+            .forResponsePredicate(ActuatorHealthStatusPredicate)
+            .withStartupTimeout(Duration.ofMinutes(pipelineOrchestrator.startUpTimeOutInMinutes)))
+      block(pipelineOrchestrator)
+      return pipelineOrchestrator
+   }
+
+   fun pipelineRunnerApp(block: VyneContainer.() -> Unit = {}) = pipelineRunnerApp(CommonSettings.latest, block)
+   fun pipelineRunnerApp(imageTag: DockerImageTag, block: VyneContainer.() -> Unit = {}): VyneContainer {
+      val pipelineRunnerApp = VyneContainer(PipelineRunnerApp.withTag(imageTag))
+      pipelineRunnerApp.setWaitStrategy(
+         HttpWaitStrategy()
+            .forPath(actuatorHealthEndPoint)
+            .forStatusCode(200)
+            .forResponsePredicate(ActuatorHealthStatusPredicate)
+            .withStartupTimeout(Duration.ofMinutes(pipelineRunnerApp.startUpTimeOutInMinutes)))
+      block(pipelineRunnerApp)
+      return pipelineRunnerApp
    }
 }
 

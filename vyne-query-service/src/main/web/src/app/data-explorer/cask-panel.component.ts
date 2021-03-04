@@ -1,4 +1,5 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
+import { HttpParameterCodec } from '@angular/common/http';
 import {CsvOptions, XmlIngestionParameters} from '../services/types.service';
 import {CaskService} from '../services/cask.service';
 
@@ -62,9 +63,9 @@ export class CaskPanelComponent {
     let caskUrl = `${this.caskServiceUrl}/api/ingest/${this.format}/${this.targetTypeName}`;
     if (this.format === 'csv') {
       const csvOptions = this.csvOptions;
-      const nullValueArg = (this.csvOptions.nullValueTag) ? `&nullValue=${csvOptions.nullValueTag}` : '';
-      const ignoreContentBeforeArg = (this.csvOptions.ignoreContentBefore) ? `&ignoreContentBefore=${csvOptions.ignoreContentBefore}` : '';
-      const csvOptionsQueryString = `?delimiter=${csvOptions.separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}` +
+      const nullValueArg = (this.csvOptions.nullValueTag) ? `&nullValue=${encodeURIComponent(csvOptions.nullValueTag)}` : '';
+      const ignoreContentBeforeArg = (this.csvOptions.ignoreContentBefore) ? `&ignoreContentBefore=${encodeURIComponent(csvOptions.ignoreContentBefore)}` : '';
+      const csvOptionsQueryString = `?delimiter=${encodeURIComponent(csvOptions.separator)}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}` +
         `&containsTrailingDelimiters=${csvOptions.containsTrailingDelimiters}${nullValueArg}${ignoreContentBeforeArg}`;
       caskUrl += csvOptionsQueryString;
     } else if (this.format === 'xml') {

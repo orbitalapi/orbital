@@ -77,7 +77,7 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
          }
 
 
-      } ?: error("No matching cases found")
+      } ?: error("No matching cases found in when clause")
 
    }
 

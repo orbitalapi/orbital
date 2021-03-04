@@ -11,6 +11,7 @@ import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.caskRecordTable
+import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.schemaStore.SchemaSet
@@ -54,7 +55,6 @@ class CaskServiceBootstrapTest {
       verify(caskServiceSchemaGenerator,timeout(1000).times(1)).generateAndPublishServices(listOf(CaskTaxiPublicationRequest(versionedType)))
    }
 
-   @Ignore("this needs investigation - can't work out why it's failing")
    @Test
    fun `Regenerate cask services when schema changes`() {
       // prepare
@@ -77,6 +77,37 @@ class CaskServiceBootstrapTest {
 
       // assert
       verify(caskServiceSchemaGenerator, timeout(1000).times(1)).generateAndPublishServices(listOf(CaskTaxiPublicationRequest(versionedTypeV2)))
+   }
+
+   @Test
+   fun `View based casks should be checked for regeneration upon schema update`() {
+      // prepare
+      val schemaV1 = "type Order {}"
+      val taxiSchemaV1 = TaxiSchema.from(schemaV1, "order.taxi", "1.0.1")
+      val versionedTypeV1 = taxiSchemaV1.versionedType("Order".fqn())
+      val caskConfigV1 = CaskConfig("Order_hash1", "Order", "hash1", emptyList(), emptyList(), null, Instant.now())
+      val schemaProviderV1 = VersionedSchemaProvider(versionedTypeV1.sources)
+      whenever(caskConfigRepository.findAll()).thenReturn(mutableListOf(caskConfigV1))
+      val mockCaskViewService = mock<CaskViewService>()
+
+      // simulate schema change
+      val versionedSource1 = VersionedSource("order.taxi", "1.0.0", schemaV1)
+      val caskServiceAdded = VersionedSource("vyne.casks.Order", "1.1.1", "")
+      val oldSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1)), 1)
+      val newSchemaSet = SchemaSet.fromParsed(listOf(ParsedSource(versionedSource1), ParsedSource(caskServiceAdded)), 2)
+      val event = SchemaSetChangedEvent(oldSchemaSet, newSchemaSet)
+
+      // act
+      val caskBootstrapper = CaskServiceBootstrap(caskServiceSchemaGenerator, schemaProviderV1, caskConfigRepository, mockCaskViewService, CaskServiceRegenerationRunner(), changeDetector, ingestionEventHandler, eventPublisher)
+      caskBootstrapper.regenerateCasksOnSchemaChange(event)
+
+      // assert
+      verify(caskServiceSchemaGenerator, timeout(5000).times(1)).generateAndPublishServices(any())
+
+      // send the same schema change event again, this time view creation code should be triggered.
+      caskBootstrapper.regenerateCasksOnSchemaChange(event)
+      verify(mockCaskViewService, times(2)).generateViews()
+
    }
 
    @Test
