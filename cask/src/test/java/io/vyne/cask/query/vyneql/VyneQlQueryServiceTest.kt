@@ -28,7 +28,7 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
       schemaProvider.updateSource(schema)
       val schema = schemaProvider.schema() as TaxiSchema
       val person = schema.versionedType("Person".fqn())
-      service = VyneQlQueryService(jdbcTemplate, VyneQlSqlGenerator(
+      service = VyneQlQueryService(jdbcStreamingTemplate, VyneQlSqlGenerator(
          schemaProvider, configRepository
       ))
       val json =

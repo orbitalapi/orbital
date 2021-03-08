@@ -3,6 +3,7 @@ package io.vyne.cask.query
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.cask.MessageIds
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ddl.views.CaskViewBuilderFactory
@@ -63,6 +64,9 @@ abstract class BaseCaskIntegrationTest {
 
    @Autowired
    lateinit var jdbcTemplate: JdbcTemplate
+
+   @Autowired
+   lateinit var jdbcStreamingTemplate: JdbcStreamingTemplate
 
    @Autowired
    lateinit var ingestionErrorRepository: IngestionErrorRepository
