@@ -1,5 +1,6 @@
 package io.vyne.cask.query.vyneql
 
+import io.vyne.cask.config.JdbcStream
 import io.vyne.http.HttpHeaders
 import io.vyne.utils.log
 import io.vyne.vyneql.VyneQLQueryString
@@ -10,7 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-class VyneQlQueryService(private val jdbcTemplate: JdbcTemplate,
+class VyneQlQueryService(private val jdbcStream: JdbcStream,
+                         private val jdbcTemplate: JdbcTemplate,
                          private val sqlGenerator: VyneQlSqlGenerator) {
 
    companion object {
@@ -23,6 +25,7 @@ class VyneQlQueryService(private val jdbcTemplate: JdbcTemplate,
       val statement = sqlGenerator.generateSql(query)
       log().info("Generated sql statement: $statement")
       val result =  if (statement.params.isEmpty()) {
+         jdbcStream.
          jdbcTemplate.queryForList(
             statement.sql
          )
