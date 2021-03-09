@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
+import reactor.kotlin.core.publisher.toMono
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -37,13 +38,16 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
     * @return List of results
     */
    @PostMapping(value = [REST_ENDPOINT], produces = [MediaType.APPLICATION_JSON_VALUE])
-   fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString): ResponseEntity<List<Map<String, Any>>> {
+   suspend fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString): ResponseEntity<Mono<List<Map<String, Any>>>> {
       log().info("Received VyneQl query: $query")
+
+      val resultsDeferred = resultStreamAsync(query)
+      val results = resultsDeferred.await().toList()
 
       return ResponseEntity
          .ok()
          .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-         .body( resultStream(query).toList() )
+         .body( results.toMono() )
    }
 
    /**
@@ -61,17 +65,23 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
    suspend fun submitVyneQlQueryStreamingResponse(@RequestBody query: VyneQLQueryString): ResponseEntity<Flux<Map<String, Any>>> {
       log().info("Received VyneQl query for streaming response: $query")
 
+      val countResultsDeferred = countResultsAsync(query)
+      val resultsDeferred = resultStreamAsync(query)
+
+      val count = countResultsDeferred.await()
+      val results = resultsDeferred.await()
+
       return ResponseEntity
          .ok()
          .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-         .header(HttpHeaders.STREAM_RECORD_COUNT, withContext(Dispatchers.Default) { countResults(query) }.toString())
-         .body( resultStream(query).toFlux() )
+         .header(HttpHeaders.STREAM_RECORD_COUNT, count.toString())
+         .body( results.toFlux() )
    }
 
-   private fun resultStream(query: VyneQLQueryString): Stream<Map<String, Any>> {
+   private fun resultStreamAsync(query: VyneQLQueryString): Deferred<Stream<Map<String, Any>>> = GlobalScope.async {
       val statement = sqlGenerator.generateSql(query)
       log().info("Generated sql statement: $statement")
-      return if (statement.params.isEmpty()) {
+      if (statement.params.isEmpty()) {
          jdbcStreamTemplate.queryForStream(
             statement.sql,
             ColumnMapRowMapper()
@@ -85,9 +95,9 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
       }
    }
 
-   private suspend fun countResults(query: VyneQLQueryString): Int {
+   private fun countResultsAsync(query: VyneQLQueryString): Deferred<Int> = GlobalScope.async {
       val statement = sqlGenerator.generateSqlCountRecords(query)
-      return if (statement.params.isEmpty()) {
+      if (statement.params.isEmpty()) {
          jdbcStreamTemplate.queryForObject(statement.sql, Int::class.java)
       } else {
          jdbcStreamTemplate.queryForObject(statement.sql, Int::class.java, *statement.params.toTypedArray())
