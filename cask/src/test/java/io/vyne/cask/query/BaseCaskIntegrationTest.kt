@@ -50,7 +50,7 @@ import javax.sql.DataSource
 @RunWith(SpringRunner::class)
 @AutoConfigureEmbeddedDatabase(beanName = "dataSource")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Import(StringToQualifiedNameConverter::class)
+@Import(StringToQualifiedNameConverter::class, JdbcStreamingTemplate::class)
 abstract class BaseCaskIntegrationTest {
 
    @Autowired
