@@ -1,6 +1,5 @@
 package io.vyne.cask.query.vyneql
 
-import com.winterbe.expekt.should
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
