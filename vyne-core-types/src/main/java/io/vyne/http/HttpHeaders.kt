@@ -8,5 +8,6 @@ object HttpHeaders  {
     * Consumers should not evaluate accessors when parsing this content.
     */
    const val CONTENT_PREPARSED = "x-vyne-content-preparsed"
+   const val STREAM_RECORD_COUNT = "x-vyne-content-record-count"
 
 }

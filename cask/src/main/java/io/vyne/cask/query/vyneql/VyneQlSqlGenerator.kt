@@ -31,7 +31,17 @@ class VyneQlSqlGenerator(
    private val schemaProvider: SchemaProvider,
    private val configRepository: CaskConfigRepository
 ) {
+
+
    fun generateSql(queryString: VyneQLQueryString): SqlStatement {
+      return generateSqlWithSelect(queryString, "*")
+   }
+
+   fun generateSqlCountRecords(queryString: VyneQLQueryString): SqlStatement {
+      return generateSqlWithSelect(queryString, "count(*)")
+   }
+
+   private fun generateSqlWithSelect(queryString: VyneQLQueryString, select: String): SqlStatement {
       val vyneSchema = schemaProvider.schema()
       val taxiSchema = vyneSchema.taxi
       val query = VyneQlCompiler(queryString, taxiSchema)
@@ -50,12 +60,14 @@ class VyneQlSqlGenerator(
       val whereClause = if (criteria.isNotEmpty()) {
          "WHERE ${criteria.joinToString(" AND ") { it.sql }}"
       } else ""
+
       return SqlStatement(
-         sql = """SELECT * from ${config.tableName} $whereClause""".trim() + ";",
+         sql = """SELECT ${select} from ${config.tableName} $whereClause""".trim() + ";",
          params = criteria.flatMap { it.params }
       )
 
    }
+
 
    private fun constraintToCriteria(constraint: Constraint, collectionType: ObjectType, schema: Schema): SqlStatement {
       return when (constraint) {

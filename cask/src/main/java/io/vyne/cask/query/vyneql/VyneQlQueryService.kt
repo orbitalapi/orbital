@@ -4,6 +4,7 @@ import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.http.HttpHeaders
 import io.vyne.utils.log
 import io.vyne.vyneql.VyneQLQueryString
+import kotlinx.coroutines.*
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.jdbc.core.ColumnMapRowMapper
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import java.util.stream.Stream
 import kotlin.streams.toList
@@ -56,11 +58,13 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
     * @return Flux of results
     */
    @PostMapping(value = [REST_ENDPOINT], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-   fun submitVyneQlQueryStreamingResponse(@RequestBody query: VyneQLQueryString): ResponseEntity<Flux<Map<String, Any>>> {
+   suspend fun submitVyneQlQueryStreamingResponse(@RequestBody query: VyneQLQueryString): ResponseEntity<Flux<Map<String, Any>>> {
       log().info("Received VyneQl query for streaming response: $query")
+
       return ResponseEntity
          .ok()
          .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
+         .header(HttpHeaders.STREAM_RECORD_COUNT, withContext(Dispatchers.Default) { countResults(query) }.toString())
          .body( resultStream(query).toFlux() )
    }
 
@@ -78,6 +82,15 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
             ColumnMapRowMapper(),
             *statement.params.toTypedArray()
          )
+      }
+   }
+
+   private suspend fun countResults(query: VyneQLQueryString): Int {
+      val statement = sqlGenerator.generateSqlCountRecords(query)
+      return if (statement.params.isEmpty()) {
+         jdbcStreamTemplate.queryForObject(statement.sql, Int::class.java)
+      } else {
+         jdbcStreamTemplate.queryForObject(statement.sql, Int::class.java, *statement.params.toTypedArray())
       }
    }
 
