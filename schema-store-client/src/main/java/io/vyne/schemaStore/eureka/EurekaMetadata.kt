@@ -15,5 +15,7 @@ object EurekaMetadata {
    fun fromXML(input: String): String {
       return input.replace(COLON_REPLACER, COLON).replace(FWD_SL_REPLACER, FWD_SL)
    }
+
+   fun isVyneMetadata(metadataKey: String) = metadataKey.startsWith("vyne")
 }
 

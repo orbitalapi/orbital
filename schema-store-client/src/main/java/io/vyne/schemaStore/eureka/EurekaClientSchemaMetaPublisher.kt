@@ -1,16 +1,15 @@
 package io.vyne.schemaStore.eureka
 
 import arrow.core.Either
-import arrow.core.right
 import com.netflix.appinfo.ApplicationInfoManager
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaPublisher
+import io.vyne.schemaStore.eureka.EurekaMetadata.isVyneMetadata
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SimpleSchema
 import io.vyne.utils.log
 import lang.taxi.CompilationException
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -44,8 +43,8 @@ class EurekaClientSchemaMetaPublisher(
       // applicationInfoManager.registerAppMetadata(latestMetadata)
       // as above call 'appends latestMetadata' into the existing application metadata, rather than replacing it.
 
-      // Clear the existing metadata.
-      applicationInfoManager.info.metadata.clear()
+      // Clear the existing vyne related metadata.
+      applicationInfoManager.info.metadata.entries.removeAll { (key, _) -> isVyneMetadata(key)  }
       // and set the metadata
       applicationInfoManager.registerAppMetadata(latestMetadata)
 
