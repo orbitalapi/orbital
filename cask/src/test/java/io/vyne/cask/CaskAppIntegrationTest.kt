@@ -31,7 +31,6 @@ import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
-import org.springframework.test.web.reactive.server.FluxExchangeResult
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.returnResult
 import org.springframework.web.reactive.function.client.WebClient
@@ -465,7 +464,7 @@ changeTime
 
 
    @Test
-   fun canVyneQLQueryForListResponseAndStreamed() {
+   fun canVyneQLQueryForListResponse() {
       // mock schema
       schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
 
@@ -496,6 +495,28 @@ changeTime
          .jsonPath("$.length()").isEqualTo(4)
 
 
+   }
+
+   @Test
+   fun canVyneQLQueryForStreamedResponse() {
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      client
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+
+
       val result = webTestClient
          .post()
          .uri(VyneQlQueryService.REST_ENDPOINT)
@@ -506,11 +527,11 @@ changeTime
          .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
          .returnResult<Any>()
 
-        StepVerifier.create(result.getResponseBody())
-           .expectSubscription()
-           .expectNextCount(4)
-           .thenCancel()
-           .verify()
+      StepVerifier.create(result.getResponseBody())
+         .expectSubscription()
+         .expectNextCount(4)
+         .thenCancel()
+         .verify()
 
 
    }
