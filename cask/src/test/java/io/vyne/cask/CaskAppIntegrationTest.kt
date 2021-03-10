@@ -6,6 +6,7 @@ import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.ingest.TestSchema.schemaWithConcatAndDefaultSource
 import io.vyne.cask.query.generators.OperationGeneratorConfig
+import io.vyne.cask.query.vyneql.VyneQlQueryService
 import io.vyne.cask.services.CaskServiceBootstrap
 import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStoreClient
@@ -26,9 +27,11 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
+import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
@@ -65,6 +68,9 @@ class CaskAppIntegrationTest {
 
    @Autowired
    lateinit var caskServiceBootstrap: CaskServiceBootstrap
+
+   @Autowired
+   lateinit var webTestClient: WebTestClient
 
    companion object {
       lateinit var pg: EmbeddedPostgres
@@ -454,6 +460,59 @@ changeTime
       val queryResult = result.drop(1).dropLast(1) // drop [ and ]
       queryResult.should.startWith("""{"changeDateTime":1607674093.179297000,"caskmessageid":""")
    }
+
+
+   @Test
+   fun canVyneQLQueryForListResponseAndStreamed() {
+      // mock schema
+      schemaPublisher.submitSchema("test-schemas", "1.0.0", CoinbaseJsonOrderSchema.sourceV1)
+
+      val client = WebClient
+         .builder()
+         .baseUrl("http://localhost:${randomServerPort}")
+         .build()
+
+      client
+         .post()
+         .uri("/api/ingest/csv/OrderWindowSummaryCsv?debug=true&delimiter=,")
+         .bodyValue(caskRequest)
+         .retrieve()
+         .bodyToMono(String::class.java)
+         .block()
+         .should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
+
+      webTestClient
+         .post()
+         .uri(VyneQlQueryService.REST_ENDPOINT)
+         .contentType(MediaType.APPLICATION_JSON)
+         .accept(MediaType.APPLICATION_JSON)
+         .bodyValue("""findAll { OrderWindowSummaryCsv[] }""")
+         .exchange()
+         .expectStatus().isOk()
+         .expectHeader().contentType(MediaType.APPLICATION_JSON)
+         .expectBody()
+         .jsonPath("$.length()").isEqualTo(4)
+
+
+      val result = webTestClient
+         .post()
+         .uri(VyneQlQueryService.REST_ENDPOINT)
+         .accept(MediaType.valueOf(MediaType.TEXT_EVENT_STREAM_VALUE))
+         .bodyValue("""findAll { OrderWindowSummaryCsv[] }""")
+         .exchange()
+         .expectStatus().isOk()
+         .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
+         .returnResult<Any>()
+
+        StepVerifier.create(result.getResponseBody())
+           .expectSubscription()
+           .expectNextCount(4)
+           .thenCancel()
+           .verify()
+
+
+   }
+
 
    class MessagePublisher(val session: WebSocketSession, val messageContent: String, val schemaPublisher: SchemaPublisher,  val caskServiceBootstrap: CaskServiceBootstrap): Publisher<WebSocketMessage> {
       override fun subscribe(subscriber: Subscriber<in WebSocketMessage>) {

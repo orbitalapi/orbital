@@ -7,6 +7,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
+import reactor.test.StepVerifier
 
 class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    val schema = """
@@ -45,9 +46,9 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    @Test
    fun findMatchingNoCriteriaReturnsEmptyList() {
       val response = runBlocking { service.submitVyneQlQuery("""findAll { Person[]( FirstName = "Nobody" ) }""").body.block() }
-
       response.should.be.empty
    }
+
 
    @Test
    fun canExecuteFindAll() {
@@ -122,7 +123,6 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
       response.should.have.size(1)
       response.map { it["firstName"]}.should.have.elements("Jack")
    }
-
 
 
 }

@@ -74,7 +74,7 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
       return ResponseEntity
          .ok()
          .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-         .header(HttpHeaders.STREAM_RECORD_COUNT, count.toString())
+         .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, count.toString())
          .body( results.toFlux() )
    }
 
