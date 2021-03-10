@@ -117,10 +117,18 @@
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
         </dependency>
-        <dependency>
+       <dependency>
             <groupId>io.projectreactor.kotlin</groupId>
             <artifactId>reactor-kotlin-extensions</artifactId>
         </dependency>
+       <dependency>
+          <groupId>org.jetbrains.kotlinx</groupId>
+          <artifactId>kotlinx-coroutines-core</artifactId>
+       </dependency>
+       <dependency>
+          <groupId>org.jetbrains.kotlinx</groupId>
+          <artifactId>kotlinx-coroutines-reactor</artifactId>
+       </dependency>
        <dependency>
           <groupId>net.logstash.logback</groupId>
           <artifactId>logstash-logback-encoder</artifactId>
