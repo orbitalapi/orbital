@@ -2,9 +2,11 @@ package io.vyne.cask
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.winterbe.expekt.should
+import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.ingest.TestSchema.schemaWithConcatAndDefaultSource
+import io.vyne.cask.query.CaskDAO
 import io.vyne.cask.query.generators.OperationGeneratorConfig
 import io.vyne.cask.query.vyneql.VyneQlQueryService
 import io.vyne.cask.services.CaskServiceBootstrap
@@ -12,10 +14,7 @@ import io.vyne.schemaStore.SchemaPublisher
 import io.vyne.schemaStore.SchemaStoreClient
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.*
 import org.junit.runner.RunWith
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
@@ -33,6 +32,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.returnResult
+import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
@@ -72,6 +72,24 @@ class CaskAppIntegrationTest {
 
    @Autowired
    lateinit var webTestClient: WebTestClient
+
+   @Autowired
+   lateinit var caskDao: CaskDAO
+
+   @Autowired
+   lateinit var configRepository: CaskConfigRepository
+
+   @After
+   fun tearDown() {
+      configRepository.findAll().forEach {
+         try {
+            caskDao.deleteCask(it.tableName)
+         } catch (e: Exception) {
+            log().error("Failed to delete cask ${it.tableName}", e)
+         }
+
+      }
+   }
 
    companion object {
       lateinit var pg: EmbeddedPostgres
@@ -470,6 +488,10 @@ changeTime
 
       val client = WebClient
          .builder()
+         .exchangeStrategies(ExchangeStrategies
+            .builder()
+            .codecs { configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }
+            .build())
          .baseUrl("http://localhost:${randomServerPort}")
          .build()
 
@@ -482,7 +504,14 @@ changeTime
          .block()
          .should.be.equal("""{"result":"SUCCESS","message":"Successfully ingested 4 records"}""")
 
-      webTestClient
+
+      val body = webTestClient
+         .mutate()
+         .exchangeStrategies(ExchangeStrategies
+            .builder()
+            .codecs { configurer -> configurer.defaultCodecs().maxInMemorySize(Int.MAX_VALUE) }
+            .build())
+         .build()
          .post()
          .uri(VyneQlQueryService.REST_ENDPOINT)
          .contentType(MediaType.APPLICATION_JSON)
@@ -494,8 +523,8 @@ changeTime
          .expectBody()
          .jsonPath("$.length()").isEqualTo(4)
 
-
    }
+
 
    @Test
    fun canVyneQLQueryForStreamedResponse() {
