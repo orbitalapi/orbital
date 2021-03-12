@@ -23,6 +23,7 @@ import io.vyne.query.QueryResult
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.TypeNameQueryExpression
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
+import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.PropertyToParameterConstraint
@@ -90,6 +91,12 @@ fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
    val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
    val vyne = Vyne(queryEngineFactory).addSchema(schema)
    return vyne to stubService
+}
+
+fun testVyne(schema: TaxiSchema, invokers:List<OperationInvoker>): Vyne {
+   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), invokers)
+   val vyne = Vyne(queryEngineFactory).addSchema(schema)
+   return vyne
 }
 
 fun testVyne(vararg schemas: String): Pair<Vyne, StubService> {

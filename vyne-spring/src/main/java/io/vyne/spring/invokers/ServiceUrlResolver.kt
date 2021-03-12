@@ -1,15 +1,25 @@
 package io.vyne.spring.invokers
 
-import io.vyne.schemas.Operation
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
-import io.vyne.spring.*
+import io.vyne.spring.hasHttpMetadata
+import io.vyne.spring.isHttpOperation
+import io.vyne.spring.isServiceDiscoveryClient
+import io.vyne.spring.serviceDiscoveryClientName
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.web.util.UriComponentsBuilder
 
 interface ServiceUrlResolver {
    fun canResolve(service: Service, operation: RemoteOperation): Boolean
    fun makeAbsolute(url: String, service: Service, operation: RemoteOperation): String
+
+   companion object {
+      val DEFAULT = listOf(
+         // Let the service discovery resolver go first
+         ServiceDiscoveryClientUrlResolver(),
+         AbsoluteUrlResolver()
+      )
+   }
 }
 
 class ServiceDiscoveryClientUrlResolver(val discoveryClient: ServiceDiscoveryClient = NoOpServiceDiscoveryClient()) : ServiceUrlResolver {
