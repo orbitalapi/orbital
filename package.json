@@ -1,0 +1,39 @@
+{
+  "name": "vyne-docs",
+  "private": true,
+  "description": "Vyne documentation site",
+  "version": "0.1.0",
+  "author": "Cris Shaki",
+  "dependencies": {
+    "gatsby": "^2.26.1",
+    "gatsby-theme-apollo-docs": "^4.6.5",
+    "prop-types": "^15.7.2",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-icons": "^4.2.0"
+  },
+  "devDependencies": {
+    "opencollective-postinstall": "^2.0.3",
+    "prettier": "2.2.1"
+  },
+  "keywords": [
+    "gatsby"
+  ],
+  "license": "0BSD",
+  "scripts": {
+    "build": "gatsby build",
+    "develop": "gatsby develop",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "start": "npm run develop",
+    "serve": "gatsby serve",
+    "clean": "gatsby clean",
+    "test": "echo \"Write tests! -> https://gatsby.dev/unit-testing\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gatsbyjs/gatsby-starter-default"
+  },
+  "bugs": {
+    "url": "https://github.com/gatsbyjs/gatsby/issues"
+  }
+}
