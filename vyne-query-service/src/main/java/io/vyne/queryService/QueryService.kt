@@ -25,7 +25,6 @@ import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import io.vyne.utils.timed
-import io.vyne.vyneql.VyneQLQueryString
 import lang.taxi.CompilationException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -42,6 +41,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.io.OutputStream
 import io.vyne.query.history.RestfulQueryHistoryRecord
 import io.vyne.query.history.VyneQlQueryHistoryRecord
+import lang.taxi.types.TaxiQLQueryString
 import java.util.UUID
 
 const val TEXT_CSV = "text/csv"
@@ -105,7 +105,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
 
    @PostMapping("/api/vyneql", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
-   fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString,
+   fun submitVyneQlQuery(@RequestBody query: TaxiQLQueryString,
                          @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
                          @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
                          auth: Authentication? = null
@@ -131,7 +131,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       return serialise(response, contentType, outputStream, resultMode)
    }
 
-   private fun vyneQLQuery(query: VyneQLQueryString,
+   private fun vyneQLQuery(query: TaxiQLQueryString,
                            resultMode: ResultMode,
                            contentType: String,
                            outputStream: OutputStream,

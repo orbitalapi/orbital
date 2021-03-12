@@ -87,8 +87,8 @@
     "remoteCalls" : [ {
       "@id" : "dbf7734e-bdb3-4a32-8718-41f3fb31aac0",
       "service" : "vyne.casks.bank.order.OrderCaskService",
-      "addresss" : "http://192.168.1.124:8800/api/cask/findAll/bank/order/Order",
-      "operation" : "findAll",
+      "addresss" : "http://192.168.1.124:8800/api/cask/getAll/bank/order/Order",
+      "operation" : "getAll",
       "responseTypeName" : "lang.taxi.Array<bank.order.Order>",
       "method" : "GET",
       "requestBody" : null,
@@ -111,7 +111,7 @@
         "utCode" : "SXT",
         "caskmessageid" : "20b43fc1-8fc6-41f9-b2b7-0f23ac2871c5"
       } ],
-      "operationQualifiedName" : "vyne.casks.bank.order.OrderCaskService@@findAll",
+      "operationQualifiedName" : "vyne.casks.bank.order.OrderCaskService@@getAll",
       "responseTypeDisplayName" : "bank.order.Order[]"
     }, {
       "@id" : "631f2a2e-6335-4e9e-84af-545c5e6df26e",
