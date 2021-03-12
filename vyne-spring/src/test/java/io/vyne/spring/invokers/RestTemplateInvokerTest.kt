@@ -25,6 +25,7 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers.method
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.WebClient
 
 class RestTemplateInvokerTest {
    val taxiDef = """
@@ -104,6 +105,7 @@ namespace vyne {
    @Test
    fun `When invoked a service that returns a list property mapped to a taxi array`() {
       val restTemplate = RestTemplate()
+      val webClient = WebClient.builder().build()
       val server = MockRestServiceServer.bindTo(restTemplate).build()
 
       server.expect(ExpectedCount.once(), requestTo("http://clientService/clients/notional"))
@@ -132,7 +134,7 @@ namespace vyne {
       val service = schema.service("vyne.ClientDataService")
       val operation = service.operation("getContactsForClient")
 
-      val response = RestTemplateInvoker(restTemplate = restTemplate, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true)
+      val response = RestTemplateInvoker(restTemplate = restTemplate, webClient = webClient, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true)
          .invoke(service, operation, listOf(
          paramAndType("vyne.ClientName", "notional", schema)
       ), QueryProfiler()) as TypedObject
@@ -144,6 +146,7 @@ namespace vyne {
    @Test
    fun when_invokingService_then_itGetsInvokedCorrectly() {
       val restTemplate = RestTemplate()
+      val webClient = WebClient.builder().build()
       val server = MockRestServiceServer.bindTo(restTemplate).build()
 
       server.expect(ExpectedCount.once(), requestTo("http://mockService/costs/myClientId/doCalculate"))
@@ -154,7 +157,7 @@ namespace vyne {
       val service = schema.service("vyne.CreditCostService")
       val operation = service.operation("calculateCreditCosts")
 
-      val response = RestTemplateInvoker(restTemplate = restTemplate, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true).invoke(service, operation, listOf(
+      val response = RestTemplateInvoker(restTemplate = restTemplate, webClient = webClient, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true).invoke(service, operation, listOf(
          paramAndType("vyne.ClientId", "myClientId", schema),
          paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
       ), QueryProfiler()) as TypedObject
@@ -170,6 +173,7 @@ namespace vyne {
    @Test
    fun `attributes returned from service not defined in type are ignored`() {
       val restTemplate = RestTemplate()
+      val webClient = WebClient.builder().build()
       val server = MockRestServiceServer.bindTo(restTemplate).build()
       val responseJson = """{
          |"id" : 100,
@@ -186,6 +190,7 @@ namespace vyne {
 
       val invoker = RestTemplateInvoker(
          restTemplate = restTemplate,
+         webClient = webClient,
          serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
          enableDataLineageForRemoteCalls = true,
          schemaProvider = SchemaProvider.from(schema))
@@ -204,6 +209,7 @@ namespace vyne {
       // https://gitlab.com/vyne/vyne/issues/49
 
       val restTemplate = RestTemplate()
+      val webClient = WebClient.builder().build()
       val server = MockRestServiceServer.bindTo(restTemplate).build()
       server.expect(ExpectedCount.once(), requestTo("http://pets.com/pets/100"))
          .andExpect(method(HttpMethod.GET))
@@ -215,6 +221,7 @@ namespace vyne {
 
       val response = RestTemplateInvoker(
          restTemplate = restTemplate,
+         webClient = webClient,
          serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
          enableDataLineageForRemoteCalls = true,
          schemaProvider = SchemaProvider.from(schema)).invoke(service, operation, listOf(
@@ -226,6 +233,7 @@ namespace vyne {
    @Test
    fun `when invoking a service with preparsed content then accessors are not evaluated`() {
       val restTemplate = RestTemplate()
+      val webClient = WebClient.builder().build()
       val server = MockRestServiceServer.bindTo(restTemplate).build()
       val responseJson = """{
          |"id" : 100,
@@ -259,6 +267,7 @@ namespace vyne {
 
       val response = RestTemplateInvoker(
          restTemplate = restTemplate,
+         webClient = webClient,
          serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
          enableDataLineageForRemoteCalls = true,
          schemaProvider = schemaProvider)
@@ -271,6 +280,7 @@ namespace vyne {
    @Test
    fun `when invoking a service without preparsed content then accessors are not evaluated`() {
       val restTemplate = RestTemplate()
+      val webClient = WebClient.builder().build()
       val server = MockRestServiceServer.bindTo(restTemplate).build()
       val responseJson = """{
          |"animalsId" : 100,
@@ -301,6 +311,7 @@ namespace vyne {
 
       val response = RestTemplateInvoker(
          restTemplate = restTemplate,
+         webClient = webClient,
          serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
          enableDataLineageForRemoteCalls = true,
          schemaProvider = schemaProvider)

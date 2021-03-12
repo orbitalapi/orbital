@@ -68,7 +68,7 @@ class HttpSchemaStore(private val httpVersionedSchemaProvider: HttpVersionedSche
             val oldSchemaSet = this.schemaSet()
             localValidatingSchemaStoreClient.submitSchemas(versionedSources)
             SchemaSetChangedEvent.generateFor(oldSchemaSet, this.schemaSet())?.let {
-               log().info("Updated to SchemaSet ${schemaSet().id}, generation $generation, ${schemaSet().size()} schemas, ${schemaSet().sources.map { it.source.id }}")
+               //log().info("Updated to SchemaSet ${schemaSet().id}, generation $generation, ${schemaSet().size()} schemas, ${schemaSet().sources.map { it.source.id }}")
                eventPublisher.publishEvent(it)
             }
          } else {

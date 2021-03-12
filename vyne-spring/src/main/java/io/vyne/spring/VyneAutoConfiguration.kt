@@ -63,6 +63,7 @@ import org.springframework.core.env.Environment
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.type.AnnotationMetadata
 import org.springframework.core.type.filter.AnnotationTypeFilter
+import org.springframework.web.reactive.function.client.WebClient
 import java.util.*
 
 const val VYNE_SCHEMA_PUBLICATION_METHOD = "vyne.schema.publicationMethod"
@@ -84,10 +85,11 @@ class VyneAutoConfiguration {
    @Bean
    fun restTemplateOperationInvoker(schemaProvider: SchemaProvider,
                                     restTemplateBuilder: RestTemplateBuilder,
+                                    webClientBuilder: WebClient.Builder,
                                     serviceUrlResolvers: List<ServiceUrlResolver>,
                                     @Value("\${vyne.data-lineage.remoteCalls.enabled:false}") enableDataLineageForRemoteCalls: Boolean
    ): RestTemplateInvoker {
-      return RestTemplateInvoker(schemaProvider, restTemplateBuilder, serviceUrlResolvers, enableDataLineageForRemoteCalls)
+      return RestTemplateInvoker(schemaProvider, restTemplateBuilder, webClientBuilder, serviceUrlResolvers, enableDataLineageForRemoteCalls)
    }
 
    @Bean

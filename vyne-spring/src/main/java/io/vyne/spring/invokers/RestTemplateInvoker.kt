@@ -31,22 +31,25 @@ import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.ClientHttpResponse
 import org.springframework.web.client.ResponseErrorHandler
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.WebClient
 
 
 class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                           val restTemplate: RestTemplate,
+                          val webClient: WebClient,
                           private val serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
                           private val enableDataLineageForRemoteCalls: Boolean) : OperationInvoker {
 
    @Autowired
    constructor(schemaProvider: SchemaProvider,
                restTemplateBuilder: RestTemplateBuilder,
+               webClientBuilder: WebClient.Builder,
                serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
                @Value("\${vyne.data-lineage.remoteCalls.enabled:false}") enableDataLineageForRemoteCalls: Boolean)
       : this(schemaProvider, restTemplateBuilder
       .errorHandler(CatchingErrorHandler())
       .additionalInterceptors(LoggingRequestInterceptor())
-      .build(), serviceUrlResolvers, enableDataLineageForRemoteCalls)
+      .build(), webClientBuilder.build(), serviceUrlResolvers, enableDataLineageForRemoteCalls)
 
    private val uriVariableProvider = UriVariableProvider()
 
@@ -65,6 +68,9 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       val (_, url, method) = operation.httpOperationMetadata()
       val httpMethod = HttpMethod.resolve(method)
       val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
+
+
+
          val absoluteUrl = makeUrlAbsolute(service, operation, url)
          val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
 
