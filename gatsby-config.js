@@ -53,9 +53,9 @@ module.exports = {
             "developers-guide/setting-up-vyne-using-multicasting",
           ],
           "Querying with vyne": [
-            "querying-wtih-vyne/README",
-            "querying-wtih-vyne/query-api",
-            "querying-wtih-vyne/vyneql",
+            "querying-with-vyne/README",
+            "querying-with-vyne/query-api",
+            "querying-with-vyne/vyneql",
           ],
           "Core Concepts": ["core-concepts/README", "core-concepts/microtypes"],
           "Running a local taxonomy editor environment": [

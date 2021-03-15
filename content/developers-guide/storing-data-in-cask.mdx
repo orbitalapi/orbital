@@ -3,6 +3,7 @@ title: Storing data in Cask
 description: Casks provide lightweight data-as-a-service for static data.  Let's explore.
 ---
 
+import { Link } from "gatsby"
 import { Hint } from '../components/hint'
 
 <Hint>
@@ -35,15 +36,15 @@ For this guide, we'll be running a few components in Vyne - Vyne itself, our Cas
 
 ![](/assets/documentation-images-15-.png)
 
-To get started locally, <Link to="setting-up-vyne-locally#ingesting-and-querying-file-based-data">this guide</Link> has all the steps you'll need.
+To get started locally, <Link to="../setting-up-vyne-locally#ingesting-and-querying-file-based-data">this guide</Link> has all the steps you'll need.
 
 ## Writing our csv
 
 We are going to have two files, one containing customer data and the other containing purchase records. The files we are producing are downloaded below:
 
-<a href="/assets/customers.csv">customers.csv</a>
+[customers.csv](/assets/customers.csv)
 
-<a href="/assets/purchases.csv">purchases.csv</a>
+[purchases.csv](/assets/purchases.csv)
 
 Inside the csv files, the data will look like this:
 
@@ -73,7 +74,7 @@ Taxi allows for modelling any type of data - not just data returned from service
 
 You'll note that we're using Semantic types \(`CustomerId`, `FirstName`, `LastName`\), rather than primitives. Semantic types are big part of building with Vyne.  By providing rich type information, Vyne is able to build links between data and services, and automate the integration of our services.
 
-Read more about semantic types <Link to="../../overview/semantic-data-intro.md">here</Link>.
+Read more about semantic types <Link to="../../overview/semantic-data-intro">here</Link>.
 
 <Hint>
 If you're typing this out, we recommend using [Visual Studio Code](https://code.visualstudio.com/), along with the great Taxi plugin \([taxi-language-server](https://marketplace.visualstudio.com/items?itemName=taxi-lang.taxi-language-server)\).  It provides as-you-type compilation, auto completion, and a bunch of other handy dev tools.
@@ -129,9 +130,7 @@ TAXONOMY_HOME=path/to/taxi/files
 {% endtab %}
 {% endtabs %}
 
-To learn more about starting Vyne and using Visual Studio Code follow the link below:
-
-{% page-ref page="../running-a-local-taxonomy-editor-environment/starting-vyne.md" %}
+To learn more about starting Vyne and using Visual Studio Code click <Link to="../../running-a-local-taxonomy-editor-environment/starting-vyne">here</Link>.
 
 ## Loading csv data into Vyne
 
@@ -157,7 +156,7 @@ Above we can see another view of this data once we add a model to it. If we clic
 
 We want to be able to store this data and now query it, in order to do this we are going to use a cask. The process of publishing this data into a cask is simple. In the image above you can see there is a 'Store this data in a cask' drop down menu, if you select that you should see this:
 
-![](../.gitbook/assets/storing-cask-posting.png)
+![](/assets/storing-cask-posting.png)
 
 Anyone can post data into a cask by publishing it to a URL. All we need to do is press 'Send' and the data will be published into a cask. You should see a `SUCCESS` message pop up.
 
@@ -234,7 +233,7 @@ We are now able to select any of the above operations and we can run them throug
 
 Let's invoke this service - all we need to do is select 'Try it out', and then select 'Submit'. Vyne will return all our customer data that is stored in our cask. We should be greeted with a table displaying our data:
 
-![](../.gitbook/assets/find-all-customer-data.png)
+![](/assets/find-all-customer-data.png)
 
 Now that we've seen how the data is accessed through REST API's, let's write some queries, and get Vyne doing the work for us.
 
@@ -252,15 +251,13 @@ Let's write the following query:
 findAll { CustomerRecords[] }
 ```
 
-{% page-ref page="../querying-with-vyne/" %}
-
 This will return all our customers from our csv that are stored in cask. It will look something like this:
 
 ![](/assets/storing-cask-find-all-table.png)
 
 This data is also available in json format by going into the 'Profiler' tab and selecting the call made to retrieve the data. This json data can be downloaded by click the 'Download' button.
 
-You can find out more about our query syntax at <Link to="../querying-with-vyne/">Querying with Vyne</Link>.
+You can find out more about our query syntax at <Link to="../../querying-with-vyne/README">Querying with Vyne</Link>.
 
 ## Discovering links between our data
 

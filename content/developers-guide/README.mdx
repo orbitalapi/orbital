@@ -11,7 +11,7 @@ import { Link } from "gatsby"
 
 ![](https://img.shields.io/badge/dynamic/xml.svg?label=Latest&url=http%3A%2F%2Frepo.vyne.co%2Frelease%2Fio%2Fvyne%2Fplatform%2Fmaven-metadata.xml&query=%2F%2Frelease&colorB=green&prefix=v&style=for-the-badge&logo=kotlin&logoColor=white)
 
-Once you've <Link to="setting-up-vyne-locally">set-up Vyne locally</Link>, we can start building services that can leverage Vyne's automated integration. Vyne is built with Spring Boot, and though it's not a requirement to use spring boot, it's the easiest way to get going.
+Once you've <Link to="../setting-up-vyne-locally">set-up Vyne locally</Link>, we can start building services that can leverage Vyne's automated integration. Vyne is built with Spring Boot, and though it's not a requirement to use spring boot, it's the easiest way to get going.
 
 All the steps below are based on our [instrument-service](https://gitlab.com/vyne/demos/-/tree/master/finance/instrument-service) demo project. It contains only what's needed to expose Vyne service so please use it as a template.
 
@@ -286,9 +286,9 @@ class InstrumentService {
 
 ## Starting instrument service
 
-For this step to work we need a running Vyne instance. If you don't have it please follow instructions of how [set-up Vyne locally](setting-up-vyne-locally.md).
+For this step to work we need a running Vyne instance. If you don't have it please follow instructions of how <Link to="../setting-up-vyne-locally">set-up Vyne locally</Link>.
 
-For the app to connect to Vyne we need to specify hazelcast.config location \(refer to [set-up Vyne locally](setting-up-vyne-locally.md)\)
+For the app to connect to Vyne we need to specify hazelcast.config location \(refer to <Link to="../setting-up-vyne-locally">set-up Vyne locally</Link>\)
 
 This is to allow your app to join the Hazelcast cluster created by Vyne.
 
@@ -344,7 +344,7 @@ When you navigate to [http://localhost:9022/schema-explorer](http://localhost:90
 
 ### Querying
 
-Vyne offers couple of ways of querying, for a full list refer to [Query Api](../running-a-local-taxonomy-editor-environment/query-api.md) section.
+Vyne offers couple of ways of querying, for a full list refer to <Link to="../../querying-with-vyne/query-api">Query Api</Link> section.
 
 #### Querying all instruments
 

@@ -5,9 +5,11 @@ description: >-
   runtime
 ---
 
+import { Link } from "gatsby"
+
 ## Overview
 
-Vyne lets you look up & invoke services at runtime.  In this walkthrough, we'll continue with our compliance engine from our [previous example](exploring-vynes-problem-solving.md), and deploy a new rule, observing how Vyne automatically adjusts to include it our calls.
+Vyne lets you look up & invoke services at runtime.  In this walkthrough, we'll continue with our compliance engine from our <Link to="../exploring-vynes-problem-solving">previous</Link>, and deploy a new rule, observing how Vyne automatically adjusts to include it our calls.
 
 ## Vyne.gather\(\) - Invoking services by Type
 
@@ -17,8 +19,8 @@ We've already used this approach in our previous example, but let's take a deepe
 
 First, we defined an interface called `RuleEvaluationResult`.  Here's the definition in both Kotlin and Taxi:
 
-{% tabs %}
-{% tab title="Taxi" %}
+<!--{% tabs %}-->
+<!--{% tab title="Taxi" %}-->
 ```text
 type RuleEvaluationResult {
     message : String
@@ -26,9 +28,9 @@ type RuleEvaluationResult {
     status : RagStatus
 }
 ```
-{% endtab %}
+<!--{% endtab %}-->
 
-{% tab title="Kotlin" %}
+<!--{% tab title="Kotlin" %}-->
 ```kotlin
 interface RuleEvaluationResult {
     val ruleId: String
@@ -36,13 +38,13 @@ interface RuleEvaluationResult {
     val message: String
 }
 ```
-{% endtab %}
-{% endtabs %}
+<!--{% endtab %}-->
+<!--{% endtabs %}-->
 
 We then defined some services that return implementations of this interface:
 
-{% tabs %}
-{% tab title="Taxi" %}
+<!--{% tabs %}-->
+<!--{% tab title="Taxi" %}-->
 ```text
 type JurisdictionRuleResponse inherits RuleEvaluationResult {}
 type NotionalLimitRuleResponse inherits RuleEvaluationResult {}
@@ -52,9 +54,9 @@ operation evaluate(JurisdictionRuleRequest):JurisdictionRuleResponse {}
 operation evaluate(NotionalLimitRuleRequest):NotionalLimitRuleResponse {}
 operation evaluate(TradeValueRuleRequest):TradeValueRuleResponse {}
 ```
-{% endtab %}
+<!--{% endtab %}-->
 
-{% tab title="Kotlin" %}
+<!--{% tab title="Kotlin" %}-->
 ```kotlin
 @DataType
 data class JurisdictionRuleResponse(
@@ -87,8 +89,8 @@ data class TradeValueRuleResponse(
 fun evaluate(@RequestBody request: TradeValueRuleRequest):TradeValueRuleResponse {}
 
 ```
-{% endtab %}
-{% endtabs %}
+<!--{% endtab %}-->
+<!--{% endtabs %}-->
 
 To invoke these services, we simply asked Vyne to find us all the implementations `RuleEvaluationResult`:
 

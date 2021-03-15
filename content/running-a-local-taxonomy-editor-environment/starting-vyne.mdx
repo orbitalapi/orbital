@@ -3,7 +3,8 @@ title: Starting Vyne
 description: Learn how to run Vyne
 ---
 
-import { Hint } from "gatsby"
+import { Link } from "gatsby"
+import { Hint } from "../components/hint"
 
 A docker-compose sets up all the services you need.
 
@@ -35,9 +36,7 @@ Wait a bit, and then navigate to [http://localhost:9022](http://localhost:9022).
 
 By default, this environment will serve the schemas in the `./schemas` subdirectory in the folder you're working from.
 
-There's a sample file in there to get you started. You can delete the contents of that directory, and use Visual Studio code to author your own taxonomy files.
-
-{% page-ref page="setting-up-visual-studio-code.md" %}
+There's a sample file in there to get you started. You can delete the contents of that directory, and use <Link to="../setting-up-visual-studio-code">Visual Studio code</Link> to author your own taxonomy files.
 
 #### Setting your own schema location
 

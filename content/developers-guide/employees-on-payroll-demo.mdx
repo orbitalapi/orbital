@@ -6,13 +6,14 @@ description: >-
   service in the Vyne UI.
 ---
 
+import { Link } from "gatsby"
 import { Hint, Discourage } from "../components/hint"
 
 ## Getting started with Vyne
 
-Once we've [set-up Vyne locally](setting-up-vyne-locally.md), we can start building services that can leverage Vyne's automated integration. 
+Once we've <Link to="../setting-up-vyne-locally">set-up Vyne locally</Link>, we can start building services that can leverage Vyne's automated integration.
 
-We are going to be building a Spring application based on an HR system. We'll keep the demo app itself really simple, and focus on the Vyne integration.  
+We are going to be building a Spring application based on an HR system. We'll keep the demo app itself really simple, and focus on the Vyne integration.
 
 We will be exploring how Vyne dynamically calls services based on what it knows \(input\) and what we want to discover \(output\). Vyne has some fairly advanced features, but we'll keep this demo focussed on a simple service-to-service integration.
 
@@ -20,7 +21,7 @@ We will be exploring how Vyne dynamically calls services based on what it knows 
 
 ### Dependencies
 
-Our project will need the following dependencies: 
+Our project will need the following dependencies:
 
 ```markup
 <parent>
@@ -72,9 +73,9 @@ Our project will need the following dependencies:
     </dependencies>
 ```
 
-In this example we use [Eureka for service discovery](https://spring.io/guides/gs/service-registration-and-discovery/).  \(hence the dependency on `spring-cloud-starter-netflix-erueka-client`\). 
+In this example we use [Eureka for service discovery](https://spring.io/guides/gs/service-registration-and-discovery/). \(hence the dependency on `spring-cloud-starter-netflix-erueka-client`\).
 
-Service discovery isn't directly related to Vyne, but it's a necessary component in the world of microservices, and Vyne uses service discovery to find the microservices that it calls.  Given it's such a core component of microservices, Vyne comes bundled with an optional built-in service discovery component called "Eureka", which we'll be using throughout this demo.
+Service discovery isn't directly related to Vyne, but it's a necessary component in the world of microservices, and Vyne uses service discovery to find the microservices that it calls. Given it's such a core component of microservices, Vyne comes bundled with an optional built-in service discovery component called "Eureka", which we'll be using throughout this demo.
 
 ### Repositories
 
@@ -99,7 +100,8 @@ Vyne and Taxi are not available in Maven Central, so we need to add the followin
 Our demo project uses kotlin, so we going to use kotlin-maven-plugin to build it and to generate taxi types. Your source directory may differ depending on your structure. For example, it might be `src/main/java` instead of `src/main/kotlin`.
 
 <Hint>
-Kotlin isn't mandatory for Vyne or Spring boot, we just love it.  We've provided code samples in both Kotlin and Java throughout.
+  Kotlin isn't mandatory for Vyne or Spring boot, we just love it. We've
+  provided code samples in both Kotlin and Java throughout.
 </Hint>
 
 ```markup
@@ -159,8 +161,9 @@ Kotlin isn't mandatory for Vyne or Spring boot, we just love it.  We've provided
 
 This is a basic Spring Boot main class for our HR Demo.
 
-<!--{% tabs %}
-{% tab title="Kotlin" %}
+<!--{% tabs %}-->
+<!--{% tab title="Kotlin" %}-->
+
 ```kotlin
 @SpringBootApplication
 open class HrApplication{
@@ -172,9 +175,11 @@ open class HrApplication{
     }
 }
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+<!--{% endtab %}-->
+
+<!--{% tab title="Java" %}-->
+
 ```java
 @SpringBootApplication
 public class HrApplication {
@@ -183,13 +188,15 @@ public class HrApplication {
     }
 }
 ```
-{% endtab %}
-{% endtabs %}
+
+<!--{% endtab %}-->
+<!--{% endtabs %}-->
 
 ### Defining our domain model
 
-{% tabs %}
-{% tab title="Kotlin" %}
+<!--{% tabs %}-->
+<!--{% tab title="Kotlin" %}-->
+
 ```kotlin
 typealias EmployeeId = Int
 typealias EmployeeName = String
@@ -203,9 +210,11 @@ data class Employee(
         val jobTitle: EmployeeJobTitle
 )
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+<!--{% endtab %}-->
+
+<!--{% tab title="Java" %}-->
+
 ```java
 public class Employee {
 
@@ -222,25 +231,28 @@ public class Employee {
     }
 }
 ```
-{% endtab %}
-{% endtabs %}-->
+
+<!--{% endtab %}-->
+<!--{% endtabs %}-->
 
 <Hint>
-We have not shown the getters in the above java code to remove noise, but they are required.
+  We have not shown the getters in the above java code to remove noise, but they
+  are required.
 </Hint>
 
 ### Generating a schema
 
-Now it's time to build a schema which we can later publish to Vyne.  We'll configure our application to publish a schema to Vyne on startup which describes the data our service exposes, and what information it's services need.
+Now it's time to build a schema which we can later publish to Vyne. We'll configure our application to publish a schema to Vyne on startup which describes the data our service exposes, and what information it's services need.
 
-Vyne uses a schema language called Taxi. Taxi is similar to Swagger / RAML, but more advanced. Taxi is a standalone, open source project.  You can find more information about Taxi [here](https://docs.taxilang.org).
+Vyne uses a schema language called Taxi. Taxi is similar to Swagger / RAML, but more advanced. Taxi is a standalone, open source project. You can find more information about Taxi [here](https://docs.taxilang.org).
 
-There are lots of ways to create your Taxi schemas, in our demo we are choosing to generate our Taxi schema from our code, by adding annotations to our service and model.   Alternatively, you could choose to bundle a hand-written schema in the project, which is covered in a later post.
+There are lots of ways to create your Taxi schemas, in our demo we are choosing to generate our Taxi schema from our code, by adding annotations to our service and model. Alternatively, you could choose to bundle a hand-written schema in the project, which is covered in a later post.
 
-In order to add Taxi annotations, we need to add a dependency on the Taxi annotation processor, and wire it into our build.  Add the following snippet into the  `pom.xml` file:  
+In order to add Taxi annotations, we need to add a dependency on the Taxi annotation processor, and wire it into our build. Add the following snippet into the `pom.xml` file:
 
-<!--{% tabs %}
-{% tab title="pom.xml \(just the interesting bit\)" %}
+<!--{% tabs %}-->
+<!--{% tab title="pom.xml \(just the interesting bit\)" %}-->
+
 ```markup
 <annotationProcessorPaths>
     <annotationProcessorPath>
@@ -250,9 +262,11 @@ In order to add Taxi annotations, we need to add a dependency on the Taxi annota
     </annotationProcessorPath>
 </annotationProcessorPaths>
 ```
-{% endtab %}
 
-{% tab title="pom.xml \(the whole <build> section\)" %}
+<!--{% endtab %}-->
+
+<!--{% tab title="pom.xml \(the whole <build> section\)" %}-->
+
 ```markup
 <build>
     <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
@@ -309,23 +323,25 @@ In order to add Taxi annotations, we need to add a dependency on the Taxi annota
     </plugins>
 </build>
 ```
-{% endtab %}
-{% endtabs %}
--->
+
+<!--{% endtab %}-->
+<!--{% endtabs %}-->
 
 ### Adding Taxi annotations
 
-Once we have refreshed Maven, we can add our Taxi annotations.  
+Once we have refreshed Maven, we can add our Taxi annotations.
 
-Taxi uses the idea of semantic types in place of primitives.  \(i.e. instead of everything being a `String` or `Number`, we use more descriptive types, like `EmployeeName` and `EmployeeEmail`.  The actual names for the type can be anything we choose, but these become important when we're asking for data later.
+Taxi uses the idea of semantic types in place of primitives. \(i.e. instead of everything being a `String` or `Number`, we use more descriptive types, like `EmployeeName` and `EmployeeEmail`. The actual names for the type can be anything we choose, but these become important when we're asking for data later.
 
 <Hint>
-We have not shown the Getters here to reduce noise, but standard practices apply. The Getters are necessary in the controller which you will see later on.
+  We have not shown the Getters here to reduce noise, but standard practices
+  apply. The Getters are necessary in the controller which you will see later
+  on.
 </Hint>
 
-<!--
-{% tabs %}
-{% tab title="Kotlin" %}
+<!--{% tabs %}-->
+<!--{% tab title="Kotlin" %}-->
+
 ```kotlin
 @DataType("demo.employee.EmployeeId")
 typealias EmployeeId = Int
@@ -344,9 +360,11 @@ data class Employee(
         val jobTitle: EmployeeJobTitle
 )
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+<!--{% endtab %}-->
+
+<!--{% tab title="Java" %}-->
+
 ```java
 @DataType("demo.Employee")
 public class Employee {
@@ -368,9 +386,9 @@ public class Employee {
     }
 }
 ```
-{% endtab %}
-{% endtabs %}
--->
+
+<!--{% endtab %}-->
+<!--{% endtabs %}-->
 
 Now, run a maven compile, which will let the annotation processor kick in.
 
@@ -378,7 +396,7 @@ Now, run a maven compile, which will let the annotation processor kick in.
 
 #### What just happened?
 
-The Kotlin annotation processor plugin has generated some additional metadata to allow us to use `@DataType` annotations on kotlin `typealias` types.  This is a workaround for a [Kotlin limitation](https://youtrack.jetbrains.com/issue/KT-21489).  
+The Kotlin annotation processor plugin has generated some additional metadata to allow us to use `@DataType` annotations on kotlin `typealias` types. This is a workaround for a [Kotlin limitation](https://youtrack.jetbrains.com/issue/KT-21489).
 
 So, the `taxi-annotation-processor` we wired in earlier generates additional metadata at compile time that we can wire in at runtime.
 
@@ -388,10 +406,12 @@ Finally, let's configure our application to publish the taxi schema on startup.
 Vyne uses Taxi to describe our data in our services. There are lots of ways to create your Taxi schemas, in our demo we are choosing to generate our Taxi schema from our code. In order to support Taxi generation on primitive types Taxi has an annotation processor that we can hook into our build.
 
 In order to leverage this Taxi metadata at runtime, we need to call `TypeAliasRegistry.register()`
+
 </Hint>
 
-<!--{% tabs %}
-{% tab title="Kotlin" %}
+<!--{% tabs %}-->
+<!--{% tab title="Kotlin" %}-->
+
 ```kotlin
 @SpringBootApplication
 @EnableEurekaClient
@@ -406,9 +426,11 @@ open class HrApplication{
     }
 }
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+<!--{% endtab %}-->
+
+<!--{% tab title="Java" %}-->
+
 ```java
 @SpringBootApplication
 @EnableEurekaClient
@@ -419,14 +441,15 @@ public class HrApplication {
     }
 }
 ```
-{% endtab %}
-{% endtabs %}-->
+
+<!--{% endtab %}-->
+<!--{% endtabs %}-->
 
 Here, we added Spring support for Vyne using the `@VyneSchemaPublisher` annotation, and we wired up the TypeAlias metadata from our previous step with `TypeAlliasRegistry.register( ... )`.
 
 ### Spring Boot configuration
 
-In `application.yml` __we will need to add: 
+In `application.yml` \_\_we will need to add:
 
 ```yaml
 spring:
@@ -466,8 +489,9 @@ vyne:
 
 Now that we have created our types, we can expose our endpoints:
 
-<!--{% tabs %}
-{% tab title="Kotlin" %}
+<!--{% tabs %}-->
+<!--{% tab title="Kotlin" %}-->
+
 ```kotlin
 @RestController
 @Service
@@ -499,9 +523,11 @@ class HrEmployees {
 
 }
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+<!--{% endtab %}-->
+
+<!--{% tab title="Java" %}-->
+
 ```java
 @RestController
 @Service
@@ -535,18 +561,20 @@ class HrEmployees {
 
 }
 ```
-{% endtab %}
-{% endtabs %}-->
+
+<!--{% endtab %}-->
+<!--{% endtabs %}-->
 
 `@Service` and `@Operation` are the only Vyne specific code above. These annotations allow our service and our endpoints to be exposed to Vyne.
 
 <Discourage>
-Be sure that the `@Service` annotation belongs to the taxi `lang.taxi.annotations` package, and not Spring's `@Service` annotation.
+  Be sure that the `@Service` annotation belongs to the taxi
+  `lang.taxi.annotations` package, and not Spring's `@Service` annotation.
 </Discourage>
 
 ## Starting Vyne in Docker
 
-For this step to work we need a running Vyne instance. If you don't have it please follow instructions of how [set-up Vyne locally]().
+For this step to work we need a running Vyne instance. If you don't have it please follow instructions of how <Link to="../setting-up-vyne-locally">set-up Vyne locally</Link>.
 
 To launch Vyne, run:
 
@@ -557,7 +585,11 @@ docker run -p 9022:9022 --env PROFILE=embedded-discovery,inmemory-query-history,
 Now, run your app and it will have successfully joined the Vyne cluster!
 
 <Hint>
-Heads up! When you're sharing schemas using polling, it can take 20-30 seconds on restart for everything to sync up. An alternative approach is to use Vyne's multicasting setup to share schemas. That takes a little more setup to get going, but makes updates instant. To learn how to get multicasting working locally, follow [this]() guide
+  Heads up! When you're sharing schemas using polling, it can take 20-30 seconds
+  on restart for everything to sync up. An alternative approach is to use Vyne's
+  multicasting setup to share schemas. That takes a little more setup to get
+  going, but makes updates instant. To learn how to get multicasting working
+  locally, follow [this]() guide
 </Hint>
 
 ## Exploring our data using the Vyne UI
@@ -568,14 +600,14 @@ First, let's take a look around Vyne's UI:
 
 ### Vyne schema-explorer
 
-Vyne schema-explorer shows all the services discover-able through Vyne. 
+Vyne schema-explorer shows all the services discover-able through Vyne.
 
 When you navigate to [http://localhost:9022/schema-explorer](http://localhost:9022/schema-explorer) you should see:
 
-* vyne-hr-demo
-* version 1.0
-* all our Taxi Types
-* three REST endpoints
+- vyne-hr-demo
+- version 1.0
+- all our Taxi Types
+- three REST endpoints
 
 ![](/assets/vyne-payroll-demo-query-wizard%20%284%29.png)
 
@@ -589,28 +621,28 @@ If we click into one of the types, in the case we will click into Employee, ther
 
 ![](/assets/vyne-payroll-demo-type-eplorer-employee.png)
 
-As we can see, the type explorer provides us with information on the employee. We are able to see which methods return an employee, as well as the attributes an employee has. 
+As we can see, the type explorer provides us with information on the employee. We are able to see which methods return an employee, as well as the attributes an employee has.
 
-This provides us a visualisation of the full data mesh that Vyne is building, based on the schemas that services are publishing.  As more services come online and publish their schemas, new connections are added, and the graph gets richer.
+This provides us a visualisation of the full data mesh that Vyne is building, based on the schemas that services are publishing. As more services come online and publish their schemas, new connections are added, and the graph gets richer.
 
 Lets look at one more example:
 
 ![](/assets/vyne-payroll-demo-type-eplorer-employee-email.png)
 
-Above we can see what the type of an employee email is, as well as functions it's used it. We can also see how the `EmployeeEmail` is constructed in the source code. 
+Above we can see what the type of an employee email is, as well as functions it's used it. We can also see how the `EmployeeEmail` is constructed in the source code.
 
 ### Querying
 
-Vyne offers couple of ways of querying, for a full list refer to [Query Api](../querying-with-vyne/query-api.md) section.
+Vyne offers couple of ways of querying, for a full list refer to <Link to="../../querying-with-vyne/query-api">Query Api</Link> section.
 
 #### Querying all Employees
 
 Vyne UI offers an easy way for testing your services. To query for all the employees:
 
-* navigate to [http://localhost:9022/query-wizard](http://localhost:9022/query-wizard)
-* select type to discover 'demo.Employee'
-* select 'Find as array' checkbox - this allows us to bring back all employees
-* click Submit Query
+- navigate to [http://localhost:9022/query-wizard](http://localhost:9022/query-wizard)
+- select type to discover 'demo.Employee'
+- select 'Find as array' checkbox - this allows us to bring back all employees
+- click Submit Query
 
 ![](/assets/vyne-payroll-demo-query-wizard.png)
 
@@ -622,10 +654,10 @@ Now that we've seen Vyne discover all the employees, let's try bring back only o
 
 Navigate to [http://localhost:9022/query-wizard](http://localhost:9022/query-wizard)
 
-* click 'Add new fact' button
-* add Id value '1'
-* select type to discover 'demo.Employee'
-* click 'Submit query' button
+- click 'Add new fact' button
+- add Id value '1'
+- select type to discover 'demo.Employee'
+- click 'Submit query' button
 
 ![](/assets/vyne-payroll-demo-query-wizard-by-id%20%281%29.png)
 
@@ -637,11 +669,11 @@ You can see the path taken under the Calls header. Vyne made a `GET` request on 
 
 ## Summary
 
-Congratulations!  You made it!
+Congratulations! You made it!
 
 In this tutorial we've covered:
 
-* Building a vanilla Spring Boot microservice
-* Generating a Taxi schema from our code and publishing it to Vyne
-* Exploring our schema within Vyne's UI
-* Executing simple queries from Vyne's UI
+- Building a vanilla Spring Boot microservice
+- Generating a Taxi schema from our code and publishing it to Vyne
+- Exploring our schema within Vyne's UI
+- Executing simple queries from Vyne's UI

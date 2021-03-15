@@ -3,6 +3,9 @@ title: Publishing & sharing schemas
 description: Learn how Vyne builds its schema from available services
 ---
 
+import { Link } from 'gatsby'
+import { Hint } from '../components/hint'
+
 ## Overview
 
 Vyne works by building up a federated schema of the services available, the data they offer, and the inputs they require.
@@ -53,7 +56,9 @@ This way, services and Vyne are free to re\(start\) in any order, and simply con
 
 ### Distributed
 
-> Currently supported on the JVM only, though support for JS and .NET is planned.  Get in touch if this is an important feature for you.
+<Hint>
+Currently supported on the JVM only, though support for JS and .NET is planned.  Get in touch if this is an important feature for you.
+</Hint>
 
 When configured to run in distributed mode, the services form a shared cluster of schema metadata - removing the need for a centralised schema service.
 
@@ -61,7 +66,7 @@ In this scenario, services discover each other using Multicast, and form a clust
 
 This has the benefit of much faster restart times, as schemas are served and updated as soon as the service comes online.   
 
-In addition to running as a distributed schema store, this model can optionally support running Vyne entirely embedded within services, removing the need for a centralised Vyne service entirely.  This is discussed in more detail in [Deployment Configurations](deployment-configurations.md).
+In addition to running as a distributed schema store, this model can optionally support running Vyne entirely embedded within services, removing the need for a centralised Vyne service entirely.  This is discussed in more detail in <Link to="../deployment-configurations">Deployment Configurations</Link>.
 
 ![](/assets/documentation-images-3-.png)
 
