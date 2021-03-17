@@ -5,6 +5,7 @@ description: >-
   adapt data when constraints aren't satisfied.
 ---
 
+import { Tabs, TabsContent } from "../components/tabs"
 import { Hint } from "../components/hint"
 
 ## Overview
@@ -23,18 +24,19 @@ Vyne uses Taxi to allow services to describe constraints they have on input para
 
 These are the classes & services we'll be using for this demo:
 
-{% tabs %}
-{% tab title="Kotlin" %}
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
+
 ```kotlin
 @Service
-class TradeValueRuleService { 
+class TradeValueRuleService {
    @Operation
    @PostMapping("/rules/traderLimits")
    fun evaluate(@RequestBody request: TradeValueRuleRequest):TradeValueRuleResponse {
       // Not shown
    }
 }
-   
+
 @DataType
 typealias TradeValue = Money
 @DataType
@@ -51,9 +53,11 @@ data class Money(
    val value: MoneyAmount
 )
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+</TabsContent>
+
+<TabsContent>
+
 ```java
 @Service
 public class TradeValueRuleService {
@@ -90,13 +94,15 @@ public class Money {
     }
 }
 ```
-{% endtab %}
-{% endtabs %}
+
+</TabsContent>
+</Tabs>
 
 This service evaluates a rule to do with TradeValue.  The actual implementation of the rule isn't as interesting as the contract itself - let's take a look in closer detail:
 
-{% tabs %}
-{% tab title="Kotlin" %}
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
+
 ```kotlin
 @Operation
 fun evaluate(@RequestBody request: TradeValueRuleRequest):TradeValueRuleResponse {}
@@ -107,9 +113,11 @@ data class TradeValueRuleRequest(
    val traderLimit: TraderMaxTradeValue
 )
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+</TabsContent>
+
+<TabsContent>
+
 ```java
 @Operation
 TradeValueRuleResponse evalute(@RequestBody TradeValueRuleRequest request) {}
@@ -127,8 +135,9 @@ public class TradeValueRuleRequest {
     }
 }
 ```
-{% endtab %}
-{% endtabs %}
+
+</TabsContent>
+</Tabs>
 
 Our `Operation` takes a `TradeValueRequest` as it's parameter - which in turn, declares a constraint on the `tradeValue` parameter - the currency of the tradeValue must be expressed in USD.
 
@@ -154,25 +163,29 @@ Contracts on Operations describe what functionality an operation provides.  It's
 
 Over in another service, we have a RateConverterService, which has the following operation:
 
-{% tabs %}
-{% tab title="Kotlin" %}
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
+
 ```kotlin
 @PostMapping("/tradeValues/{targetCurrency}")
 @ResponseContract(basedOn = "source", constraints = ResponseConstraint("currency = targetCurrency"))
 @Operation
 fun convert(@PathVariable("targetCurrency") targetCurrency: Currency, @RequestBody source: TradeValue): TradeValue {
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+</TabsContent>
+
+<TabsContent>
+
 ```java
 @PostMapping("/tradeValues/{targetCurrency}")
 @ResponseContract(basedOn = "source", constraints = new ResponseConstraint("currency = targetCurrency"))
 @Operation
 TradeValue convert(@PathVariable("targetCurrency") Currency targetCurrency, @RequestBody TradeValue source) {}
 ```
-{% endtab %}
-{% endtabs %}
+
+</TabsContent>
+</Tabs>
 
 The `@ResponseContract` on this operation tells use that it returns a `TradeValue`, that is based on the `source` parameter, but with it's `currency` value updated to the `targetCurrency` provided in the request.
 

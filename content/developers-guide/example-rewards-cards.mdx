@@ -7,6 +7,7 @@ description: >-
 ---
 
 import { Hint } from "../components/hint"
+import { Tabs, TabsContent } from "../components/tabs"
 
 ## Overview
 
@@ -78,8 +79,9 @@ Here are our services:
 
 The first service we'll define is the Customer service - which simply takes a `CustomerEmail` and returns a `Customer`. Here's the relevant extract:
 
-<!--{% tabs %}
-{% tab title="Kotlin" %}
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
+
 ```kotlin
 @DataType("demo.CustomerId")
 typealias CustomerId = Int
@@ -99,9 +101,11 @@ data class Customer(
 fun getCustomerByEmail(@PathVariable("email") email: CustomerEmailAddress) =
     customers.first { it.email == email }
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+</TabsContent>
+
+<TabsContent>
+
 ```java
 @DataType("demo.Customer")
 public class Customer {
@@ -131,8 +135,9 @@ class Customers {
     }
 }
 ```
-{% endtab %}
-{% endtabs %}-->
+
+</TabsContent>
+</Tabs>
 
 There's a few points of interest there in the Kotlin code - let's drill down:
 
@@ -146,8 +151,9 @@ By using Kotlin' type aliases, we're able to keep the code cleaner too - adding 
 
 Here are the three services in full - they all follow a similar pattern. There are both Kotlin and Java examples below:
 
-<!--{% tabs %}
-{% tab title="CustomerService.kt" %}
+<Tabs tabsNav={["CustomerService.kt", "MarketingService.kt", "RewardsBalanceService.kt"]}>
+<TabsContent>
+
 ```kotlin
 @RestController
 @Service
@@ -187,9 +193,11 @@ data class Customer(
         val email: CustomerEmailAddress
 )
 ```
-{% endtab %}
 
-{% tab title="MarketingService.kt" %}
+</TabsContent>
+
+<TabsContent>
+
 ```kotlin
 @RestController
 @Service
@@ -219,9 +227,11 @@ data class CustomerMarketingRecord(
         val rewardsCardNumber: RewardsCardNumber
 )
 ```
-{% endtab %}
 
-{% tab title="RewardsBalanceService.kt" %}
+</TabsContent>
+
+<TabsContent>
+
 ```kotlin
 @RestController
 @Service
@@ -250,11 +260,13 @@ data class RewardsAccountBalance(
         val balance: RewardsBalance
 )
 ```
-{% endtab %}
-{% endtabs %}-->
 
-<!--{% tabs %}
-{% tab title="CustomerService.java" %}
+</TabsContent>
+</Tabs>
+
+<Tabs tabsNav={["CustomerService.java", "MarketingService.java", "RewardsBalanceService.java"]}>
+<TabsContent>
+
 ```java
 @RestController
 @Service
@@ -298,9 +310,11 @@ public class Customer {
     }
 }
 ```
-{% endtab %}
 
-{% tab title="MarketingService.java" %}
+</TabsContent>
+
+<TabsContent>
+
 ```java
 @RestController
 @Service
@@ -339,9 +353,11 @@ public class CustomerMarketingRecord {
     }
 }
 ```
-{% endtab %}
 
-{% tab title="RewardsBalanceService.java" %}
+</TabsContent>
+
+<TabsContent>
+
 ```java
 @RestController
 @Service
@@ -380,8 +396,9 @@ public class RewardsAccountBalance {
     }
 }
 ```
-{% endtab %}
-{% endtabs %}-->
+
+</TabsContent>
+</Tabs>
 
 <Hint>
   Be sure to use the full code from the[ Gitlab
@@ -432,8 +449,9 @@ At runtime, we need to register the captured metadata, so that Vyne and Taxi can
 
 This is a simple 1-line addition in the start of our application's main method. This is only applicable in Kotlin, the Java code will remain the same:
 
-<!--{% tabs %}
-{% tab title="Kotlin" %}
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
+
 ```kotlin
 open class RewardsBalanceApp {
     companion object {
@@ -446,9 +464,11 @@ open class RewardsBalanceApp {
     }
 }
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+</TabsContent>
+
+<TabsContent>
+
 ```java
 public class RewardsBalanceApp {
     public static void main(String[] args) {
@@ -456,8 +476,9 @@ public class RewardsBalanceApp {
     }
 }
 ```
-{% endtab %}
-{% endtabs %}-->
+
+</TabsContent>
+</Tabs>
 
 <Hint>
   Note: We're working on making this more seamless, especially when working in
@@ -520,8 +541,9 @@ Also, we want to access some of the types from our other services we just author
   are discussed below.
 </Hint>
 
-<!--{% tabs %}
-{% tab title="Kotlin" %}
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
+
 ```kotlin
 @SpringBootApplication
 @EnableEurekaClient
@@ -553,9 +575,11 @@ class QueryController(val vyne: VyneClient) {
 data class Customer(val customerEmail: CustomerEmailAddress)
 
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+</TabsContent>
+
+<TabsContent>
+
 ```java
 @SpringBootApplication
 @EnableEurekaClient
@@ -589,8 +613,9 @@ public class Customer {
     }
 }
 ```
-{% endtab %}
-{% endtabs %}-->
+
+</TabsContent>
+</Tabs>
 
 Let's look at the bits that are interesting here.
 
@@ -626,8 +651,9 @@ The integration we just built is adaptive. As the services upgrade or change, th
 
 Let's make some breaking changes to our Customer service. First, we'll change the structure of the `Customer` class, by nesting the `CustomerId` property in another type:
 
-<!--{% tabs %}
-{% tab title="Kotlin" %}
+<Tabs tabsNav={["Kotlin"]}>
+<TabsContent>
+
 ```kotlin
 @DataType("demo.Customer")
 data class Customer(
@@ -643,15 +669,17 @@ data class Customer(
 data class Identity(val customerNumber: CustomerId)
 
 ```
-{% endtab %}
-{% endtabs %}-->
+
+</TabsContent>
+</Tabs>
 
 Note the `@ParameterType`? This is part of Taxi's language that instructs tooling it's safe to construct these objects if required. Read me about ParameterType's [here](https://docs.taxilang.org/taxi-language#parameter-types).
 
 And now, let's remove the `GET` request we had, and require callers to pass us a search object:
 
-<!--{% tabs %}
-{% tab title="Kotlin" %}
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
+
 ```kotlin
 // Comment out the existing operation...
 //    @Operation
@@ -666,9 +694,11 @@ fun findCustomer(@RequestBody identity: Identity): Customer {
     return customers[identity.customerNumber] ?: throw error("Customer with id ${identity.customerNumber} not found")
 }
 ```
-{% endtab %}
 
-{% tab title="Java" %}
+</TabsContent>
+
+<TabsContent>
+
 ```java
 // Comment out the existing operation...
 //    @Operation
@@ -684,8 +714,9 @@ Optional<Customer> getCustomer(@RequestBody Indentity indentity) {
     return customers.stream().filter(customer -> customer.getIdentity().equals(indentity).findFirst();
 }
 ```
-{% endtab %}
-{% endtabs %}-->
+
+</TabsContent>
+</Tabs>
 
 So, that's two breaking changes we've introduced - Refactored the model \(including several name changes\), and replaced a method. In a traditional integration scenario, these would require updates to the consumers of the API.
 

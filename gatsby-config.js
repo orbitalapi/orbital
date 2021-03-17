@@ -34,7 +34,7 @@ module.exports = {
           textLeftOffset: 80,
         },
         sidebarCategories: {
-          null: ["index", "schema-server", "glossary", "testing-with-vynetest"],
+          null: ["index", "glossary", "testing-with-vynetest"],
           Overview: [
             "overview/README",
             "overview/deployment-configurations",
@@ -58,6 +58,7 @@ module.exports = {
             "querying-with-vyne/vyneql",
           ],
           "Core Concepts": ["core-concepts/README", "core-concepts/microtypes"],
+          "Schema Server": ["schema-server"],
           "Running a local taxonomy editor environment": [
             "running-a-local-taxonomy-editor-environment/README",
             "running-a-local-taxonomy-editor-environment/starting-vyne",

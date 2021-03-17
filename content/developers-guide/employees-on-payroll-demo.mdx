@@ -8,6 +8,7 @@ description: >-
 
 import { Link } from "gatsby"
 import { Hint, Discourage } from "../components/hint"
+import { Tabs, TabsContent } from "../components/tabs"
 
 ## Getting started with Vyne
 
@@ -161,8 +162,8 @@ Our demo project uses kotlin, so we going to use kotlin-maven-plugin to build it
 
 This is a basic Spring Boot main class for our HR Demo.
 
-<!--{% tabs %}-->
-<!--{% tab title="Kotlin" %}-->
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
 
 ```kotlin
 @SpringBootApplication
@@ -176,9 +177,9 @@ open class HrApplication{
 }
 ```
 
-<!--{% endtab %}-->
+</TabsContent>
 
-<!--{% tab title="Java" %}-->
+<TabsContent>
 
 ```java
 @SpringBootApplication
@@ -189,13 +190,13 @@ public class HrApplication {
 }
 ```
 
-<!--{% endtab %}-->
-<!--{% endtabs %}-->
+</TabsContent>
+</Tabs>
 
 ### Defining our domain model
 
-<!--{% tabs %}-->
-<!--{% tab title="Kotlin" %}-->
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
 
 ```kotlin
 typealias EmployeeId = Int
@@ -211,9 +212,9 @@ data class Employee(
 )
 ```
 
-<!--{% endtab %}-->
+</TabsContent>
 
-<!--{% tab title="Java" %}-->
+<TabsContent>
 
 ```java
 public class Employee {
@@ -232,8 +233,8 @@ public class Employee {
 }
 ```
 
-<!--{% endtab %}-->
-<!--{% endtabs %}-->
+</TabsContent>
+</Tabs>
 
 <Hint>
   We have not shown the getters in the above java code to remove noise, but they
@@ -250,8 +251,8 @@ There are lots of ways to create your Taxi schemas, in our demo we are choosing 
 
 In order to add Taxi annotations, we need to add a dependency on the Taxi annotation processor, and wire it into our build. Add the following snippet into the `pom.xml` file:
 
-<!--{% tabs %}-->
-<!--{% tab title="pom.xml \(just the interesting bit\)" %}-->
+<Tabs tabsNav={["pom.xml (just the interesting bit)", "pom.xml (the whole <build> section)"]}>
+<TabsContent>
 
 ```markup
 <annotationProcessorPaths>
@@ -263,9 +264,9 @@ In order to add Taxi annotations, we need to add a dependency on the Taxi annota
 </annotationProcessorPaths>
 ```
 
-<!--{% endtab %}-->
+</TabsContent>
 
-<!--{% tab title="pom.xml \(the whole <build> section\)" %}-->
+<TabsContent>
 
 ```markup
 <build>
@@ -324,8 +325,8 @@ In order to add Taxi annotations, we need to add a dependency on the Taxi annota
 </build>
 ```
 
-<!--{% endtab %}-->
-<!--{% endtabs %}-->
+</TabsContent>
+</Tabs>
 
 ### Adding Taxi annotations
 
@@ -339,8 +340,8 @@ Taxi uses the idea of semantic types in place of primitives. \(i.e. instead of e
   on.
 </Hint>
 
-<!--{% tabs %}-->
-<!--{% tab title="Kotlin" %}-->
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
 
 ```kotlin
 @DataType("demo.employee.EmployeeId")
@@ -361,9 +362,9 @@ data class Employee(
 )
 ```
 
-<!--{% endtab %}-->
+</TabsContent>
 
-<!--{% tab title="Java" %}-->
+<TabsContent>
 
 ```java
 @DataType("demo.Employee")
@@ -387,8 +388,8 @@ public class Employee {
 }
 ```
 
-<!--{% endtab %}-->
-<!--{% endtabs %}-->
+</TabsContent>
+</Tabs>
 
 Now, run a maven compile, which will let the annotation processor kick in.
 
@@ -409,8 +410,8 @@ In order to leverage this Taxi metadata at runtime, we need to call `TypeAliasRe
 
 </Hint>
 
-<!--{% tabs %}-->
-<!--{% tab title="Kotlin" %}-->
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
 
 ```kotlin
 @SpringBootApplication
@@ -427,9 +428,9 @@ open class HrApplication{
 }
 ```
 
-<!--{% endtab %}-->
+</TabsContent>
 
-<!--{% tab title="Java" %}-->
+<TabsContent>
 
 ```java
 @SpringBootApplication
@@ -442,8 +443,8 @@ public class HrApplication {
 }
 ```
 
-<!--{% endtab %}-->
-<!--{% endtabs %}-->
+</TabsContent>
+</Tabs>
 
 Here, we added Spring support for Vyne using the `@VyneSchemaPublisher` annotation, and we wired up the TypeAlias metadata from our previous step with `TypeAlliasRegistry.register( ... )`.
 
@@ -489,8 +490,8 @@ vyne:
 
 Now that we have created our types, we can expose our endpoints:
 
-<!--{% tabs %}-->
-<!--{% tab title="Kotlin" %}-->
+<Tabs tabsNav={["Kotlin", "Java"]}>
+<TabsContent>
 
 ```kotlin
 @RestController
@@ -524,9 +525,9 @@ class HrEmployees {
 }
 ```
 
-<!--{% endtab %}-->
+</TabsContent>
 
-<!--{% tab title="Java" %}-->
+<TabsContent>
 
 ```java
 @RestController
@@ -562,8 +563,8 @@ class HrEmployees {
 }
 ```
 
-<!--{% endtab %}-->
-<!--{% endtabs %}-->
+</TabsContent>
+</Tabs>
 
 `@Service` and `@Operation` are the only Vyne specific code above. These annotations allow our service and our endpoints to be exposed to Vyne.
 

@@ -5,6 +5,7 @@ description: Casks provide lightweight data-as-a-service for static data.  Let's
 
 import { Link } from "gatsby"
 import { Hint } from '../components/hint'
+import { Tabs, TabsContent } from '../components/tabs'
 
 <Hint>
 Time required: 15 minutes
@@ -18,15 +19,15 @@ For this example, we're going to use two csv reports from a pretend shop - one o
 
 ## What is a Cask?
 
-Casks are a lightweight way of storing any data \(csv, json, xml\), and exposing it via a REST service.  
+Casks are a lightweight way of storing any data \(csv, json, xml\), and exposing it via a REST service.
 
-When data is stored in a cask, it's stored with a type, making it discoverable using Vyne's data discovery mechanisms.  
+When data is stored in a cask, it's stored with a type, making it discoverable using Vyne's data discovery mechanisms.
 
 This makes casks a great way to get started rapidly with storing and querying semantic data
 
 ## Starting Vyne
 
-For this guide, we'll be running a few components in Vyne - Vyne itself, our Cask server, and a local schema publisher.  
+For this guide, we'll be running a few components in Vyne - Vyne itself, our Cask server, and a local schema publisher.
 
 | Component | Usage |
 | :--- | :--- |
@@ -42,33 +43,37 @@ To get started locally, <Link to="../setting-up-vyne-locally#ingesting-and-query
 
 We are going to have two files, one containing customer data and the other containing purchase records. The files we are producing are downloaded below:
 
-<a href="/assets/customers.csv" target="_blank" download>customers.csv</a>&nbsp;<a href="/assets/purchases.csv" target="_blank" download>purchases.csv</a>
+<a href="/assets/customers.csv" download>customers.csv</a>&nbsp;<a href="/assets/purchases.csv" download>purchases.csv</a>
 
 Inside the csv files, the data will look like this:
 
-{% tabs %}
-{% tab title="customers.csv" %}
+<Tabs tabsNav={["customers.csv", "purchases.csv"]}>
+<TabsContent>
+
 ```text
 customerId,firstName,lastName
 01,steve,darcy
 02,dave,jasper
 03,mark,spencer
 ```
-{% endtab %}
 
-{% tab title="purchases.csv" %}
+</TabsContent>
+
+<TabsContent>
+
 ```text
 customerId,itemName,itemPrice
 01,macbook,2500
 02,windows,1200
 03,linux,1900
 ```
-{% endtab %}
-{% endtabs %}
+
+</TabsContent>
+</Tabs>
 
 ## Writing our Taxi
 
-Taxi allows for modelling any type of data - not just data returned from services.  So, it's a great way of describing the contract of our CSV files.  Below, we've created two models - `CustomerRecord` and `PurchaseRecord`. 
+Taxi allows for modelling any type of data - not just data returned from services.  So, it's a great way of describing the contract of our CSV files.  Below, we've created two models - `CustomerRecord` and `PurchaseRecord`.
 
 You'll note that we're using Semantic types \(`CustomerId`, `FirstName`, `LastName`\), rather than primitives. Semantic types are big part of building with Vyne.  By providing rich type information, Vyne is able to build links between data and services, and automate the integration of our services.
 
@@ -78,8 +83,9 @@ Read more about semantic types <Link to="../../overview/semantic-data-intro">her
 If you're typing this out, we recommend using [Visual Studio Code](https://code.visualstudio.com/), along with the great Taxi plugin \([taxi-language-server](https://marketplace.visualstudio.com/items?itemName=taxi-lang.taxi-language-server)\).  It provides as-you-type compilation, auto completion, and a bunch of other handy dev tools.
 </Hint>
 
-{% tabs %}
-{% tab title="CustomerRecord.taxi" %}
+<Tabs tabsNav={["CustomerRecord.taxi", "PurchaseRecord.taxi"]}>
+<TabsContent>
+
 ```text
 type CustomerId inherits Int
 type FirstName inherits String
@@ -91,9 +97,11 @@ model CustomerRecord {
     lastName : LastName by column("lastName")
 }
 ```
-{% endtab %}
 
-{% tab title="PurchaseRecord.taxi" %}
+</TabsContent>
+
+<TabsContent>
+
 ```text
 type CustomerId inherits Int
 type ItemName inherits String
@@ -105,8 +113,9 @@ model PurchaseRecord {
     itemPrice: ItemPrice by column("itemPrice")
 }
 ```
-{% endtab %}
-{% endtabs %}
+
+</TabsContent>
+</Tabs>
 
 <Hint>
 When saving these taxi files, ensure they are named ending with `.taxi` and that they are saved inside `/schemas` which can be found in `vyne-taxonomy-environment`.  Or, ensure that you have set `TAXONOMY_HOME` in the `.env` file to the path to your taxi files. To clone this repo go [here](https://gitlab.com/vyne/vyne-taxonomy-environment).
@@ -114,19 +123,23 @@ When saving these taxi files, ensure they are named ending with `.taxi` and that
 
 The `.env` file will look something like this:
 
-{% tabs %}
-{% tab title="/schemas" %}
+<Tabs tabsNav={["/schemas", "/custom-path"]}>
+<TabsContent>
+
 ```text
 TAXONOMY_HOME=/schemas
 ```
-{% endtab %}
 
-{% tab title="/custom-path" %}
+</TabsContent>
+
+<TabsContent>
+
 ```text
 TAXONOMY_HOME=path/to/taxi/files
 ```
-{% endtab %}
-{% endtabs %}
+
+</TabsContent>
+</Tabs>
 
 To learn more about starting Vyne and using Visual Studio Code click <Link to="../../running-a-local-taxonomy-editor-environment/starting-vyne">here</Link>.
 
@@ -213,7 +226,7 @@ In here, you will see there is a cask for `CustomerRecord` and `PurchaseRecord`.
 
 ### Exploring cask data through REST API's
 
-In addition to storing the data, Cask has built a number of RESTful API's for us to query and access the data. 
+In addition to storing the data, Cask has built a number of RESTful API's for us to query and access the data.
 
 Ultimately, we'll let Vyne do the work to fetch data from these REST API's, but it's useful to take a look at what's been generated to help understand what's going on.
 
@@ -221,7 +234,7 @@ Let's start by finding our new service in the Type Explorer. Head over to the Ty
 
 ![](/assets/storing-cask-showing-service.png)
 
-Select the `CustomerRecordCaskService` to see all the different calls we can make. 
+Select the `CustomerRecordCaskService` to see all the different calls we can make.
 
 ![](/assets/storing-cask-type-explorer%20%282%29.png)
 
@@ -237,9 +250,9 @@ Now that we've seen how the data is accessed through REST API's, let's write som
 
 ## Query builder
 
-The query builder allows us to write queries about our data, decoupled from the services that provide them.  Our queries stay focussed on the information we want to discover, rather than the API's that service them.  
+The query builder allows us to write queries about our data, decoupled from the services that provide them.  Our queries stay focussed on the information we want to discover, rather than the API's that service them.
 
-This is really powerful, as it means that as service API's change, or are replaced, our query code does not need to change.  
+This is really powerful, as it means that as service API's change, or are replaced, our query code does not need to change.
 
 The query builder can be found at [http://localhost:9022/query-wizard](http://localhost:9022/query-wizard).
 
@@ -319,4 +332,3 @@ Let's take a look at what has happened in the last 15 minutes:
 * Written taxi schemas that represents our data
 * Created restful services that sit over our cask
 * Queried our data and seen how Vyne links the services together
-

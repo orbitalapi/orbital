@@ -5,6 +5,7 @@ description: >-
   runtime
 ---
 
+import { Tabs, TabsContent } from "../components/tabs"
 import { Link } from "gatsby"
 
 ## Overview
@@ -19,18 +20,20 @@ We've already used this approach in our previous example, but let's take a deepe
 
 First, we defined an interface called `RuleEvaluationResult`.  Here's the definition in both Kotlin and Taxi:
 
-<!--{% tabs %}-->
-<!--{% tab title="Taxi" %}-->
-```text
+<Tabs tabsNav={["Taxi", "Kotlin"]}>
+<TabsContent>
+
+```markup
 type RuleEvaluationResult {
     message : String
     ruleId : String
     status : RagStatus
 }
 ```
-<!--{% endtab %}-->
+</TabsContent>
 
-<!--{% tab title="Kotlin" %}-->
+<TabsContent>
+
 ```kotlin
 interface RuleEvaluationResult {
     val ruleId: String
@@ -38,14 +41,16 @@ interface RuleEvaluationResult {
     val message: String
 }
 ```
-<!--{% endtab %}-->
-<!--{% endtabs %}-->
+
+</TabsContent>
+</Tabs>
 
 We then defined some services that return implementations of this interface:
 
-<!--{% tabs %}-->
-<!--{% tab title="Taxi" %}-->
-```text
+<Tabs tabsNav={["Taxi", "Kotlin"]}>
+<TabsContent>
+
+```markup
 type JurisdictionRuleResponse inherits RuleEvaluationResult {}
 type NotionalLimitRuleResponse inherits RuleEvaluationResult {}
 type TradeValueRuleResponse inherits RuleEvaluationResult P{
@@ -54,9 +59,11 @@ operation evaluate(JurisdictionRuleRequest):JurisdictionRuleResponse {}
 operation evaluate(NotionalLimitRuleRequest):NotionalLimitRuleResponse {}
 operation evaluate(TradeValueRuleRequest):TradeValueRuleResponse {}
 ```
-<!--{% endtab %}-->
 
-<!--{% tab title="Kotlin" %}-->
+</TabsContent>
+
+<TabsContent>
+
 ```kotlin
 @DataType
 data class JurisdictionRuleResponse(
@@ -89,8 +96,9 @@ data class TradeValueRuleResponse(
 fun evaluate(@RequestBody request: TradeValueRuleRequest):TradeValueRuleResponse {}
 
 ```
-<!--{% endtab %}-->
-<!--{% endtabs %}-->
+
+</TabsContent>
+</Tabs>
 
 To invoke these services, we simply asked Vyne to find us all the implementations `RuleEvaluationResult`:
 

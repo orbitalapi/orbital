@@ -5,6 +5,7 @@ description: >-
   service integrating with Vyne.
 ---
 
+import { Tabs, TabsContent } from "../components/tabs"
 import { Link } from "gatsby"
 
 ## Getting started
@@ -292,8 +293,9 @@ For the app to connect to Vyne we need to specify hazelcast.config location \(re
 
 This is to allow your app to join the Hazelcast cluster created by Vyne.
 
-{% tabs %}
-{% tab title="Command line" %}
+<Tabs tabsNav={["Command Line", "Intellij"]}>
+<TabsContent>
+
 Open command line prompt and navigate to your demo app, e.g.
 
 cd ...demo/finance/instrument-service
@@ -303,18 +305,21 @@ and type in the following maven command:
 ```markup
 mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Dhazelcast.config=../../vyne-docker-stack/hazelcast.yml"
 ```
-{% endtab %}
 
-{% tab title="Intellij" %}
-Before starting the app append this system property 
+</TabsContent>
+
+<TabsContent>
+
+Before starting the app append this system property
 
 ```markup
 -Dhazelcast.config=...path\to\demos\vyne-docker-stack\hazelcast.yml
 ```
 
 ![](/assets/image%20%287%29.png)
-{% endtab %}
-{% endtabs %}
+
+</TabsContent>
+</Tabs>
 
 If everything went smoothly you should see in the console log no exceptions and the following statement:
 

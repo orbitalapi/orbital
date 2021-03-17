@@ -5,6 +5,7 @@ description: Learn how to run Vyne
 
 import { Link } from "gatsby"
 import { Hint } from "../components/hint"
+import { Tabs, TabsContent } from "../components/tabs"
 
 A docker-compose sets up all the services you need.
 
@@ -47,31 +48,31 @@ Check it out somewhere, then **either**:
 - Update the `TAXONOMY_HOME` set in the `.env` file
 - **Or** set a `TAXONOMY_HOME` environment variable:
 
-{% tabs %}
-{% tab title="Linux & Mac" %}
+<Tabs tabsNav={["Linux & Mac", "Windows CMD", "Windows Powershell"]}>
+<TabsContent>
 
 ```bash
 export TAXONOMY_HOME=/path/to/project
 ```
 
-{% endtab %}
+</TabsContent>
 
-{% tab title="Windows CMD" %}
+<TabsContent>
 
 ```bash
 C:> set TAXONOMY_HOME="c:\path\to\project"
 ```
 
-{% endtab %}
+</TabsContent>
 
-{% tab title="Windows Powershell" %}
+<TabsContent>
 
 ```bash
 PS C:> $env:TAXONOMY_HOME="c:\path\to\project"
 ```
 
-{% endtab %}
-{% endtabs %}
+</TabsContent>
+</Tabs>
 
 The path you specify should either be:
 
