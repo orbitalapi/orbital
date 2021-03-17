@@ -1,29 +1,59 @@
 import React, { useState, useEffect } from "react"
 import { v4 as uuidv4 } from "uuid"
 import { MDXProvider } from "@mdx-js/react"
-import tw, { styled } from "twin.macro"
+import styled from "@emotion/styled"
 
-const classCommons = ` py-4 px-6 block hover:text-blue-500 focus:outline-none`
-const ContainerDiv = tw.div`bg-white mt-5 mb-4`
-const TabsNav = tw.nav`flex flex-col sm:flex-row`
+const ContainerDiv = styled.div`
+  background: #fff;
+  margin-top: 1.25rem;
+  margin-bottom: 1rem;
+`
+const TabsNav = styled.nav`
+  display: flex;
+  flex-direction: row;
+`
+//`flex flex-col sm:flex-row`
 const TabsButton = styled.button`
   ${({ isActive }) => [
-    !isActive && `
-      color: #text-gray-600;
-      background: rgba(244,246,248, 0.2);
-      border: 1px solid #f4f6f8;`,
+    `display: block;
+     color: rgb(90, 98, 112);
+     box-sizing: border-box;
+     padding: 1rem 1.5rem;
+     margin: 0;
+     outline: none;
+     border: none;
+     box-shadow: none;
+     -webkit-appearance: none;
+     -moz-appearance: none;
+
+     &:focus {
+      outline: none;
+     }
+
+     &:hover {
+      cursor: pointer;
+      color: rgba(59,130,246,0.5);
+     }`,
+    !isActive &&
+      `background: rgba(244,246,248, 0.2);
+     border: 1px solid #f4f6f8;`,
     isActive &&
-      `color: #text-gray-600;
-      background: #F4F6F8;
-      border-color: #F4F6F8;
-      border-bottom: 2px solid rgb(56,132,255);`,
-    tw`${classCommons}`,
-    isActive && tw`${classCommons} border-b-2 font-bold`,
+      `background: #F4F6F8;
+       border-top: none;
+       border-bottom: 2px solid rgb(56,132,255);
+       font-weight: 700;`,
   ]}
 `
 const Content = styled.div`
+  display: flex;
+  flex-direction: column;
   background: #f4f6f8;
-  ${tw`flex py-5 px-4 overflow-x-scroll`}
+  overflow-x: scroll;
+  padding: 1.25rem 1rem;
+
+  & div[class*="Header"] {
+    background: rgba(255, 255, 255, 0.8);
+  }
 `
 export function TabsContent({ children }) {
   return (
@@ -60,7 +90,9 @@ export function Tabs({ tabsNav, children }) {
           ))}
       </TabsNav>
       <div className="panels-container">
-        {activeTab && ((activeTab.length > 1 && children[activeTab.indexOf(true)]) || children)}
+        {activeTab &&
+          ((activeTab.length > 1 && children[activeTab.indexOf(true)]) ||
+            children)}
       </div>
     </ContainerDiv>
   )

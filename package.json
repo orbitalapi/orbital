@@ -16,9 +16,7 @@
   "devDependencies": {
     "@babel/plugin-transform-spread": "^7.12.1",
     "opencollective-postinstall": "^2.0.3",
-    "prettier": "2.2.1",
-    "tailwindcss": "^2.0.3",
-    "twin.macro": "^2.3.0"
+    "prettier": "2.2.1"
   },
   "keywords": [
     "gatsby"
