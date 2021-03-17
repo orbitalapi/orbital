@@ -1,5 +1,6 @@
 package io.vyne.spring.invokers
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.http.UriVariableProvider
 import io.vyne.http.UriVariableProvider.Companion.buildRequestBody
 import io.vyne.models.DataSource
@@ -101,7 +102,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
             .uri(absoluteUrl, uriVariables)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(requestBody.first.body)
-            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
+            .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
             .exchange()
             .metrics()
             .publishOn(Schedulers.elastic())
@@ -115,8 +116,9 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                   } else {
                      // Assume the response is application/json
 
-                     clientResponse.bodyToMono(typeReference<List<String>>())
-                        .flatMapMany { Flux.fromIterable(it) }
+                     clientResponse.bodyToMono(typeReference<List<Object>>())
+                        //TODO This is not right we should marshall to a list of T, not, Object then back to String
+                        .flatMapMany { Flux.fromIterable(it) }.map { jacksonObjectMapper().writeValueAsString(it) }
                   }
                   )
 
@@ -152,8 +154,6 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                )
             )
       }
-
-      httpResult.doOnNext { println("Emitted response:") }.blockLast()
 
       return httpResult.asFlow()
 
