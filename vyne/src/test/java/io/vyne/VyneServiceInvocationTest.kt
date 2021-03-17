@@ -3,6 +3,7 @@ package io.vyne
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 class VyneServiceInvocationTest  {
@@ -54,7 +55,7 @@ class VyneServiceInvocationTest  {
       val trade = TypedInstance.from(vyne.type("Trade"), tradeJson,vyne.schema, source = Provided)
 
       stub.addResponse("findAllTrades", TypedCollection.from(listOf(trade)))
-      vyne.query("""findAll { Trade[] } as Output[]""")
+      runBlocking {vyne.query("""findAll { Trade[] } as Output[]""")}
 
    }
 }

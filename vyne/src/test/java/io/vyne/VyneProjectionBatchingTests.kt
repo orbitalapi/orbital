@@ -4,6 +4,7 @@ import com.winterbe.expekt.should
 import io.vyne.models.*
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
 
@@ -61,7 +62,7 @@ class VyneProjectionBatchingTests {
          val clients = clientIds.map { buildClient(it.value as Int) }
          TypedCollection.from(clients)
       }
-      val result = vyne.from(orders).build("OutputModel[]")
+      val result = runBlocking {vyne.from(orders).build("OutputModel[]")}
 
       stub.invocations["findClients"].should.have.size(1)
       // there should be no calls to the findSingle endpoint, as they were all resolved
@@ -90,7 +91,7 @@ class VyneProjectionBatchingTests {
             .map { buildClient(it.value as Int) }
          TypedCollection.from(clients)
       }
-      val result = vyne.from(orders).build("OutputModel[]")
+      val result = runBlocking {vyne.from(orders).build("OutputModel[]")}
       val output = result["OutputModel[]"] as TypedCollection
 
       val orderId2 =  output.orderWithId(2)
@@ -123,7 +124,7 @@ class VyneProjectionBatchingTests {
             }
          TypedCollection.from(clients)
       }
-      val result = vyne.from(orders).build("OutputModel[]")
+      val result = runBlocking {vyne.from(orders).build("OutputModel[]")}
       val output = result["OutputModel[]"] as TypedCollection
       val orderId2 = output.first { (it as TypedObject)["orderId"].value == 2 } as TypedObject
       // The value should still have been populated

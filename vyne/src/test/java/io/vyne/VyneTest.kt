@@ -30,6 +30,7 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.runBlocking
 import lang.taxi.Operator
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
@@ -230,11 +231,11 @@ class VyneTest {
          annaResponse
       )
 
-      val queryResult = vyne.query(
+      val queryResult = runBlocking {vyne.query(
          """
          findAll { Input[] }  as Output[]
       """.trimIndent()
-      )
+      )}
       queryResult.isFullyResolved.should.be.`true`
       val results = queryResult["lang.taxi.Array<Output>"] as TypedCollection
       val firstResult = results[0] as TypedObject
@@ -243,7 +244,7 @@ class VyneTest {
    }
 
    @Test
-   fun `when a provided object has a typed null for a value, it shouldnt be used as an input`() {
+   suspend fun `when a provided object has a typed null for a value, it shouldnt be used as an input`() {
       val (vyne, stubs) = testVyne(
          """
          model Order {
@@ -348,7 +349,7 @@ class VyneTest {
       )
       stubs.addResponse("securityDescription", stubResponse)
       vyne.addKeyValuePair("vyne.tests.Isin", "foo")
-      val result = vyne.query().build("vyne.tests.RequiredOutput")
+      val result = runBlocking {vyne.query().build("vyne.tests.RequiredOutput")}
       result.isFullyResolved.should.be.`true`
       val rawResult = result["vyne.tests.RequiredOutput"]!!.toRawObject()
       val resultJson = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(rawResult)
@@ -371,7 +372,7 @@ class VyneTest {
    "isicCode" : "retailer"
 }"""
       vyne.addJsonModel("vyne.example.Client", json)
-      val result = vyne.query().find("vyne.example.ClientName")
+      val result = runBlocking {vyne.query().find("vyne.example.ClientName")}
       expect(result.results.size).to.equal(1)
       expect(result["vyne.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
    }
@@ -424,7 +425,7 @@ class VyneTest {
       })
       val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema, source = Provided)
       vyne.addModel(instance)
-      val queryResult = vyne.query().find("companyX.Product")
+      val queryResult = runBlocking {vyne.query().find("companyX.Product")}
       expect(queryResult.results.size).to.equal(1)
       val attributeMap = queryResult["companyX.Product"]!!.value as Map<String, TypedValue>
       expect((attributeMap["name"] ?: error("")).value).to.equal("USD/GBP")
@@ -490,7 +491,7 @@ class VyneTest {
       val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema, source = Provided)
       vyne.addModel(instance)
 
-      val queryResult = vyne.query().find("companyY.Product")
+      val queryResult = runBlocking {vyne.query().find("companyY.Product")}
       expect(queryResult.results.size).to.equal(1)
       val attributeMap = queryResult["companyY.Product"]!!.value as Map<String, TypedValue>
       expect((attributeMap["name"] ?: error("")).value).to.equal("USD/GBP")
@@ -511,7 +512,7 @@ class VyneTest {
       val client = vyne.parseJsonModel("vyne.example.Client", json)
       stubService.addResponse("mockClient", client)
       vyne.addKeyValuePair("vyne.example.TaxFileNumber", "123")
-      val result: QueryResult = vyne.query().find("vyne.example.ClientName")
+      val result: QueryResult = runBlocking {vyne.query().find("vyne.example.ClientName")}
       expect(result.results.size).to.equal(1)
       expect(result["vyne.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
    }
@@ -531,7 +532,7 @@ class VyneTest {
       val client = vyne.parseJsonModel("Client", json)
       stubService.addResponse("mockClient", client)
       vyne.addKeyValuePair("vyne.example.TaxFileNumber", "123")
-      val result: QueryResult = vyne.query().find("ClientName")
+      val result: QueryResult = runBlocking {vyne.query().find("ClientName")}
       expect(result.results.size).to.equal(1)
       expect(result["vyne.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
    }
@@ -547,7 +548,7 @@ class VyneTest {
       )
       vyne.addKeyValuePair("vyne.example.ClientId", "123")
       vyne.addKeyValuePair("vyne.example.InvoiceValue", 1000)
-      val result: QueryResult = vyne.query().find("vyne.example.CreditRisk")
+      val result: QueryResult = runBlocking {vyne.query().find("vyne.example.CreditRisk") }
       expect(result.results.size).to.equal(1)
       expect(result["vyne.example.CreditRisk"]!!.value).to.equal(100)
       val paramsPassedToService: List<TypedInstance> = stubService.invocations["creditRisk"]!!
@@ -593,7 +594,7 @@ class VyneTest {
 
       //When....
       val result: QueryResult = try {
-         vyne.query().find("vyne.example.CreditRisk")
+         runBlocking {vyne.query().find("vyne.example.CreditRisk")}
       } catch (e: Exception) {
          fail()
       }
@@ -643,7 +644,7 @@ class VyneTest {
       val invoiceInstance = vyne.parseJsonModel(typeName = "vyne.example.Invoice", json = invoice)
       // The below line isn't implemented, and isn't trivial to do so, as it involves us remodelleding
       // the query api to provide an explicit start point.
-      val result = vyne.from(invoiceInstance).find("vyne.example.ClientName")
+      val result = runBlocking {vyne.from(invoiceInstance).find("vyne.example.ClientName")}
       expect(result["vyne.example.ClientName"]!!.value).to.equal("Jimmy's Choos")
    }
 
@@ -667,7 +668,7 @@ class VyneTest {
       val (vyne, stubService) = testVyne(schema)
       val tradeValue = vyne.parseJsonModel("TradeValue", """{ "amount" : "$2.00" }""")
       stubService.addResponse("holdFunds", vyne.typedValue("HoldReceipt", "held-123"))
-      val result = vyne.query(additionalFacts = setOf(tradeValue)).find("HoldReceipt")
+      val result = runBlocking {vyne.query(additionalFacts = setOf(tradeValue)).find("HoldReceipt")}
 
       expect(result.isFullyResolved).to.be.`true`
       expect(result["HoldReceipt"]!!.value).to.equal("held-123")
@@ -685,7 +686,7 @@ class VyneTest {
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("singleEmail", vyne.typedValue("EmailAddress", "foo@foo.com"))
 
-      val result = vyne.query().find("EmailAddress")
+      val result = runBlocking {vyne.query().find("EmailAddress")}
 
       expect(result.isFullyResolved).to.be.`true`
       expect(result["EmailAddress"]!!.value).to.equal("foo@foo.com")
@@ -707,7 +708,7 @@ class VyneTest {
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("emails", vyne.typedValue("EmailAddress[]", listOf("foo@foo.com", "bar@foo.com")))
 
-      val result = vyne.query().find("EmailAddress[]")
+      val result = runBlocking {vyne.query().find("EmailAddress[]")}
 
       expect(result.isFullyResolved).to.be.`true`
       expect(result.resultMap["EmailAddress[]".fqn().parameterizedName]).to.equal(listOf("foo@foo.com", "bar@foo.com"))
@@ -729,13 +730,13 @@ class VyneTest {
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("emails", vyne.typedValue("EmailAddresses", listOf("foo@foo.com", "bar@foo.com")))
 
-      val result = vyne.query().find("EmailAddresses")
+      val result = runBlocking {vyne.query().find("EmailAddresses")}
 
       expect(result.isFullyResolved).to.be.`true`
       expect(result.resultMap["EmailAddresses".fqn().parameterizedName]).to.equal(listOf("foo@foo.com", "bar@foo.com"))
 
       // Discovery by the aliases type name should work too
-      val resultFromAliasName = vyne.query().find("EmailAddress[]")
+      val resultFromAliasName = runBlocking {vyne.query().find("EmailAddress[]")}
       expect(resultFromAliasName.isFullyResolved).to.be.`true`
       expect(resultFromAliasName.resultMap["EmailAddress[]".fqn().parameterizedName]).to.equal(
          listOf(
@@ -775,8 +776,8 @@ class VyneTest {
       )
 
       listOf("CustomerList", "Customer[]").forEach { typeToDiscover ->
-         val result = vyne.query(additionalFacts = setOf(vyne.typedValue("Region", "UK")))
-            .find(typeToDiscover)
+         val result = runBlocking {vyne.query(additionalFacts = setOf(vyne.typedValue("Region", "UK")))
+            .find(typeToDiscover)}
          result.isFullyResolved.should.equal(true)
          val resultList = result[typeToDiscover] as List<*>
          resultList.should.have.size(2)
@@ -798,7 +799,7 @@ class VyneTest {
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("findPetById", vyne.typedValue("Pet", mapOf("id" to 100)))
       vyne.addKeyValuePair("lang.taxi.Int", 100)
-      val result = vyne.query().find("Pet")
+      val result = runBlocking {vyne.query().find("Pet")}
 
       expect(result.isFullyResolved).to.be.`true`
       val params = stubService.invocations["findPetById"]!!.get(0)
@@ -850,7 +851,7 @@ type LegacyTradeNotification {
       val instance =
          TypedInstance.from(vyne.schema.type("LegacyTradeNotification"), xml, vyne.schema, source = Provided)
       vyne.addModel(instance)
-      val queryResult = vyne.query().find("NearLegNotional")
+      val queryResult = runBlocking {vyne.query().find("NearLegNotional")}
       TODO()
    }
 
@@ -909,7 +910,7 @@ service Broker2Service {
       )
 
       // act
-      val result = vyne.query().findAll("Order[]")
+      val result = runBlocking {vyne.query().findAll("Order[]")}
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -947,7 +948,7 @@ service Broker2Service {
       )
 
       // act
-      val result = vyne.query().findAll(
+      val result = runBlocking {vyne.query().findAll(
          ConstrainedTypeNameQueryExpression(
             "Order[]", listOf(
                PropertyToParameterConstraint(
@@ -962,7 +963,7 @@ service Broker2Service {
                )
             )
          )
-      )
+      )}
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -994,13 +995,13 @@ service Broker2Service {
          """.trimIndent()
          )
       )
-      val result = vyne.query(
+      val result = runBlocking {vyne.query(
          """
          findAll {
             Order[]( OrderDate >="2020-01-01", OrderDate < "2020-01-02" )
          }
       """.trimIndent()
-      )
+      )}
       expect(result.isFullyResolved).to.be.`true`
       stubService.invocations.should.have.size(2)
       val orders = result["Order[]"] as List<TypedInstance>
@@ -1031,7 +1032,7 @@ service Broker2Service {
       )
 
       // act
-      val result = vyne.query().projectResultsTo("CommonOrder[]").findAll("Order[]")
+      val result = runBlocking {vyne.query().projectResultsTo("CommonOrder[]").findAll("Order[]")}
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -1066,11 +1067,11 @@ service Broker2Service {
       )
 
       // act
-      val result = vyne.query(
+      val result = runBlocking {vyne.query(
          """
          findAll { Order[] } as CommonOrder[]
       """.trimIndent()
-      )
+      )}
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -1105,7 +1106,7 @@ service Broker2Service {
       )
 
       // act
-      val result = vyne.query().findAll("Order[]")
+      val result = runBlocking {vyne.query().findAll("Order[]")}
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -1130,7 +1131,7 @@ service Broker2Service {
       """.trimIndent()
       val (vyne, _) = testVyne(schema)
       vyne.addJsonModel("Source", """{ "eventDate" : "05/28/20T13:44:23.000Z" }""")
-      val result = vyne.query().build("Target")
+      val result = runBlocking {vyne.query().build("Target")}
       result.isFullyResolved.should.be.`true`
       (result["Target"]!!.toRawObject() as Map<*, *>).get("eventDate").should.equal("2020-05-28T13:44:23.000Z")
    }
@@ -1148,7 +1149,7 @@ service Broker2Service {
       """.trimIndent()
       val (vyne, _) = testVyne(schema)
       vyne.addJsonModel("Source", """{ "eventDate" : "05/28/20T13:44:23.000Z" }""")
-      val result = vyne.query("""findOne { Source } as Target""")
+      val result = runBlocking {vyne.query("""findOne { Source } as Target""")}
       result.isFullyResolved.should.be.`true`
       (result["Target"]!!.toRawObject() as Map<*, *>).get("eventDate").should.equal("05-28-20T13:44:23.000Z")
    }
@@ -1166,7 +1167,7 @@ service Broker2Service {
       """.trimIndent()
       val (vyne, _) = testVyne(schema)
       vyne.addJsonModel("Source[]", """[{ "eventDate" : "05/28/20T13:44:23.000Z" }]""")
-      val result = vyne.query("""findOne { Source[] } as Target[]""")
+      val result = runBlocking {vyne.query("""findOne { Source[] } as Target[]""")}
       result.isFullyResolved.should.be.`true`
       val map = result.verboseResults["lang.taxi.Array<Target>"] as List<TypeNamedInstance>
       val firstEntry = map.first().value as Map<String, TypeNamedInstance>
@@ -1270,7 +1271,7 @@ service Broker2Service {
       )
 
       // When
-      val result = vyne.query().build("common.CommonOrder")
+      val result = runBlocking {vyne.query().build("common.CommonOrder")}
 
       // Then
       val rawResult = result.results.values.first()!!.toRawObject()
@@ -1309,14 +1310,14 @@ service Broker2Service {
       val (vyne, stubService) = testVyne(lenientEnumSchema)
 
       fun query(factJson: String): TypedObject {
-         return vyne
+         return runBlocking {vyne
             .query(
                additionalFacts = setOf(
                   vyne.parseJsonModel("BankX.BankOrder", factJson)
                )
             )
             .build("common.CommonOrder")
-            .get("common.CommonOrder") as TypedObject
+            .get("common.CommonOrder") as TypedObject}
       }
       // When
       query(""" { "buySellIndicator" : "BUY" } """)["direction"].value.should.equal("BankBuys")
@@ -1354,14 +1355,14 @@ service Broker2Service {
       val (vyne, stubService) = testVyne(lenientEnumSchema)
 
       fun query(factJson: String): TypedObject {
-         return vyne
+         return runBlocking {vyne
             .query(
                additionalFacts = setOf(
                   vyne.parseJsonModel("BankX.BankOrder", factJson)
                )
             )
             .build("common.CommonOrder")
-            .get("common.CommonOrder") as TypedObject
+            .get("common.CommonOrder") as TypedObject}
       }
       // When
       query(""" { "buySellIndicator" : "BUY" } """)["direction"].value.should.equal("bankbuys")
@@ -1380,7 +1381,7 @@ service Broker2Service {
       )
 
       // When
-      val result = vyne.query(""" findOne { BankOrder[] } as  CommonOrder[] """)
+      val result = runBlocking {vyne.query(""" findOne { BankOrder[] } as  CommonOrder[] """)}
 
       // Then
       val results = result.results.values.first()!! as TypedCollection
@@ -1395,13 +1396,13 @@ service Broker2Service {
 
       // Query by enum value
       val factValue = vyne.parseJsonModel("BankDirection", """ { "name": "bankbuys" } """)
-      val resultValue = vyne.query(additionalFacts = setOf(factValue)).build("BankOrder")
+      val resultValue = runBlocking {vyne.query(additionalFacts = setOf(factValue)).build("BankOrder")}
       val rawResultValue = resultValue.results.values.first()!!.toRawObject()
       rawResultValue.should.equal(mapOf("buySellIndicator" to "buy"))
 
       // Query by enum name
       val factName = vyne.parseJsonModel("BankDirection", """ { "name": "BankSell" } """)
-      val resultName = vyne.query(additionalFacts = setOf(factName)).build("BankOrder")
+      val resultName = runBlocking {vyne.query(additionalFacts = setOf(factName)).build("BankOrder")}
       val rawResultName = resultName.results.values.first()!!.toRawObject()
       rawResultName.should.equal(mapOf("buySellIndicator" to "SELL"))
    }
@@ -1440,7 +1441,7 @@ service Broker2Service {
       )
 
       // When
-      val result = vyne.query().build("common.CommonOrder")
+      val result = runBlocking {vyne.query().build("common.CommonOrder")}
 
       // Then
       val rawResult = result.results.values.first()!!.toRawObject()
@@ -1555,11 +1556,11 @@ service ClientService {
 //            TypedNull(vyne.type("User"))
          }
       }
-      val resultEven = vyne.query(additionalFacts = setOf(vyne.parseKeyValuePair("UserId", 2))).find("UserName")
+      val resultEven = runBlocking {vyne.query(additionalFacts = setOf(vyne.parseKeyValuePair("UserId", 2))).find("UserName")}
       resultEven.isFullyResolved.should.be.`true`
       resultEven["UserName"]!!.value.should.equal("Jimmy Even")
 
-      val resultOdd = vyne.query(additionalFacts = setOf(vyne.parseKeyValuePair("UserId", 3))).find("UserName")
+      val resultOdd = runBlocking {vyne.query(additionalFacts = setOf(vyne.parseKeyValuePair("UserId", 3))).find("UserName")}
       resultOdd.isFullyResolved.should.be.`true`
       resultOdd["UserName"]!!.value.should.equal("Jimmy Odd")
    }
@@ -1587,7 +1588,7 @@ service ClientService {
       val inputJson = """{ "firstName" : "Jimmy", "lastName" : "Pitt" }"""
       val user = TypedInstance.from(vyne.type("InputModel"), inputJson, vyne.schema, source = Provided)
       stub.addResponse("findUsers", TypedCollection.from(listOf(user)))
-      val queryResult = vyne.query("findAll { InputModel[] } as OutputModel[]")
+      val queryResult = runBlocking {vyne.query("findAll { InputModel[] } as OutputModel[]")}
       val firstEntity = (queryResult["OutputModel[]"] as TypedCollection).first() as TypedObject
       firstEntity["username"].value.should.equal("JimmyPitt")
       firstEntity["favouriteCoffee"].value.should.equal("Latte")
@@ -1655,7 +1656,7 @@ service ClientService {
          )
       )
       val queryResult =
-         vyne.query("""given { email : EmailAddress = "jimmy@demo.com" } findOne { Person } as OutputModel""")
+         runBlocking {vyne.query("""given { email : EmailAddress = "jimmy@demo.com" } findOne { Person } as OutputModel""")}
       queryResult.simpleResults["OutputModel"].should.equal(
          mapOf(
             "personId" to 1,
@@ -1710,13 +1711,13 @@ service ClientService {
             )
          }
       })
-      vyne.query(
+      runBlocking {vyne.query(
          """
               findAll {
                  OrderWindowSummary[] ( TransactionEventDateTime  >= "2011-12-03T10:15:30", TransactionEventDateTime < "2021-12-03T10:15:30" )
               }
               """.trimIndent()
-      )
+      )}
    }
 
    @Test
@@ -1752,7 +1753,7 @@ service ClientService {
          )
       )
 
-      val queryResult = vyne.query("findAll { Order[] } as Output[]")
+      val queryResult = runBlocking {vyne.query("findAll { Order[] } as Output[]")}
       val outputCollection = queryResult["Output[]"] as TypedCollection
       val outputModel = outputCollection[0] as TypedObject
       outputModel["averagePrice"].value.should.be.`null`
@@ -1799,7 +1800,7 @@ service ClientService {
           """.trimMargin()
          TypedInstance.from(vyne.type("PuidResponse"), response, vyne.schema, source = Provided)
       }
-      val queryResult1 = vyne.query(
+      val queryResult1 = runBlocking {vyne.query(
          """
          given {
             isin: Bar.ProductIsin = "US500769FH22"
@@ -1807,12 +1808,12 @@ service ClientService {
             PuidResponse
          }
       """.trimIndent()
-      )
+      )}
       queryResult1.isFullyResolved.should.be.`true`
       val puidResponse1 = queryResult1["Bar.PuidResponse"] as TypedObject
       puidResponse1["puid"].value.should.equal("US500769FH22")
 
-      val queryResult2 = vyne.query(
+      val queryResult2 = runBlocking {vyne.query(
          """
          given {
             isin: Bar.InstrumentIsin = "US500769FH23"
@@ -1820,12 +1821,12 @@ service ClientService {
             PuidResponse
          }
       """.trimIndent()
-      )
+      )}
       queryResult2.isFullyResolved.should.be.`true`
       val puidResponse2 = queryResult2["Bar.PuidResponse"] as TypedObject
       puidResponse2["puid"].value.should.equal("US500769FH23")
 
-      val queryResult3 = vyne.query(
+      val queryResult3 = runBlocking {vyne.query(
          """
          given {
             isin: Bar.Isin = "US500769FH24"
@@ -1833,7 +1834,7 @@ service ClientService {
             PuidResponse
          }
       """.trimIndent()
-      )
+      )}
       queryResult3.isFullyResolved.should.be.`true`
       val puidResponse3 = queryResult3["Bar.PuidResponse"] as TypedObject
       puidResponse3["puid"].value.should.equal("US500769FH24")
@@ -1865,11 +1866,11 @@ service ClientService {
          fail("should not call findOrder")
       })
 
-      vyne.query("""
+      runBlocking {vyne.query("""
             findAll {
     Bar.Order[](Isin= 'IT0000312312')
     }
-      """.trimIndent())
+      """.trimIndent())}
 
    }
 
@@ -1904,8 +1905,8 @@ service ClientService {
          """
       )
       stub.addResponse("findAgeByName", vyne.typedValue("Age", 28))
-      val result = vyne.from(vyne.parseJsonModel("InputModel", """{ "firstName" : "jimmy" , "nickName" : "J-Dawg" }"""))
-         .build("OutputModel")
+      val result = runBlocking {vyne.from(vyne.parseJsonModel("InputModel", """{ "firstName" : "jimmy" , "nickName" : "J-Dawg" }"""))
+         .build("OutputModel")}
       TODO()
    }
 

@@ -11,6 +11,8 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
 import io.vyne.schemas.httpOperationMetadata
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import org.springframework.http.HttpEntity
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
@@ -25,7 +27,7 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
    override fun invoke(service: Service,
                        operation: RemoteOperation,
                        parameters: List<Pair<Parameter, TypedInstance>>,
-                       profilerOperation: ProfilerOperation): TypedInstance {
+                       profilerOperation: ProfilerOperation): Flow<TypedInstance> {
       val (_, url, _) = operation.httpOperationMetadata()
       val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
       val path = UriComponentsBuilder.newInstance()
@@ -35,7 +37,7 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
       val requestBody = UriVariableProvider.buildRequestBody(operation, parameters.map { it.second })
       val recordedCall = findRecordedCall(operation, path, requestBody) ?: error("Expected a matching recorded call")
       val responseType = schema.type(recordedCall.responseTypeName)
-      return TypedInstance.from(responseType, recordedCall.response, schema, source = Provided, evaluateAccessors = false)
+      return flow { TypedInstance.from(responseType, recordedCall.response, schema, source = Provided, evaluateAccessors = false) }
    }
 
    private fun findRecordedCall(operation: RemoteOperation): RemoteCall? {

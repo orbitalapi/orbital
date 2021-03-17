@@ -8,6 +8,7 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 class VynePolicyTest {
@@ -166,7 +167,7 @@ namespace test {
       stubService.addResponse("findClient", clientHandler(vyne))
 
       val context = vyne.queryEngine().queryContext()
-      context.find("test.Trade[]")
+      runBlocking {context.find("test.Trade[]")}
 
       expect(stubService.invocations["tokenToUserId"]).to.have.size(1)
       expect(stubService.invocations["findUser"]).to.have.size(1)
@@ -185,7 +186,7 @@ namespace test {
       stubService.addResponse("findClient", vyne.parseJsonModel("test.Client", desk1Client))
       // Trade1 is filtered because our user doesn't have a desk id.
       val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
-      val queryResult = context.find("test.Trade")
+      val queryResult = runBlocking {context.find("test.Trade")}
 
       val trade = queryResult["test.Trade"]
       expect(trade).instanceof(TypedNull::class.java)
@@ -205,7 +206,7 @@ namespace test {
 
       // Trade2 is filtered because our trader belongs to a different desl
       val context = vyne.queryEngine().queryContext()
-      val queryResult = context.find("test.Trade[]")
+      val queryResult = runBlocking {context.find("test.Trade[]")}
 
       val tradeCollection = queryResult["test.Trade[]"] as TypedCollection
 
@@ -239,7 +240,7 @@ namespace test {
 
       // Trade1 is filtered because our user doesn't have a desk id.
       val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
-      val queryResult = context.find("test.Trade")
+      val queryResult = runBlocking {context.find("test.Trade")}
 
       val trade = queryResult["test.Trade"]
       expect(trade).instanceof(TypedInstance::class.java)
@@ -263,7 +264,7 @@ namespace test {
 
       // Trade1 is filtered because our user doesn't have a desk id.
       val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 1)))
-      val queryResult = context.find("test.TradeWrapper")
+      val queryResult = runBlocking {context.find("test.TradeWrapper")}
 
       val trade = queryResult["test.TradeWrapper"]
       expect(trade).instanceof(TypedObject::class.java)
@@ -285,7 +286,7 @@ namespace test {
 
       // Trade2 is masked because our users deskId doesn't match
       val context = vyne.queryEngine().queryContext(additionalFacts = setOf(vyne.typedValue("TradeId", 2)))
-      val queryResult = context.find("test.Trade")
+      val queryResult = runBlocking {context.find("test.Trade")}
 
       val trade = queryResult["test.Trade"] as TypedObject
       val counterParty = trade["counterParty"]

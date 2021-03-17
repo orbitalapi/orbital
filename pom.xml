@@ -47,12 +47,12 @@
       <module>schema-store-client</module>
       <module>schema-store-api</module>
       <module>vyne-spring-schemaStore</module>
-      <!-- <module>vyne-query-service</module> -->
+      <module>vyne-query-service</module>
       <module>vyne-client</module>
       <module>vyne-query-api</module>
       <module>vyne-client-spring</module>
       <module>file-schema-server</module>
-      <module>pipelines</module>
+     <!--  <module>pipelines</module> -->
       <module>cask-api</module>
       <module>vyne-ql</module>
       <module>test-cli</module>
@@ -289,6 +289,13 @@
             <artifactId>kotlinx-coroutines-reactor</artifactId>
             <version>${kotlin.coroutines.version}</version>
          </dependency>
+
+         <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-reactive</artifactId>
+            <version>${kotlin.coroutines.version}</version>
+         </dependency>
+
       </dependencies>
    </dependencyManagement>
 

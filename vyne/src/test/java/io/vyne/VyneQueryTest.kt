@@ -5,6 +5,7 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.query.queryBuilders.VyneQlGrammar
 import io.vyne.schemas.fqn
 import io.vyne.utils.withoutWhitespace
+import kotlinx.coroutines.runBlocking
 import lang.taxi.services.QueryOperationCapability
 import org.junit.Test
 
@@ -24,7 +25,7 @@ class VyneQueryTest {
 
       val response = vyne.parseJsonModel("Trade[]", """[ { "traderId" : "jimmy" } ]""")
       stub.addResponse("tradeQuery", response)
-      val queryResult = vyne.query("findAll { Trade[]( TraderId = 'jimmy' ) }")
+      val queryResult = runBlocking {vyne.query("findAll { Trade[]( TraderId = 'jimmy' ) }")}
 
       queryResult.isFullyResolved.should.be.`true`
       val resultList = queryResult.simpleResults["Trade[]".fqn().parameterizedName] as List<Map<String,Any>>

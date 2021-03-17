@@ -3,6 +3,7 @@ package io.vyne
 import com.winterbe.expekt.expect
 import io.vyne.models.TypedCollection
 import io.vyne.models.json.addJsonModel
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 class TypeInheritenceQueryTest {
@@ -30,7 +31,7 @@ type FxSwap {
 }
       """.trimIndent()
       vyne.addJsonModel("FxSwap", json)
-      val discovered = vyne.query().findAll("Notional")
+      val discovered = runBlocking { vyne.query().findAll("Notional") }
       expect(discovered.isFullyResolved).to.be.`true`
       expect(discovered.results).to.have.size(1)
       val collection = discovered["Notional"] as TypedCollection

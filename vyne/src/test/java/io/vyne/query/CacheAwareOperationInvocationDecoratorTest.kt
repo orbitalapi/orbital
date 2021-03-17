@@ -14,6 +14,7 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
+import kotlinx.coroutines.flow.flow
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
 
@@ -39,7 +40,7 @@ class CacheAwareOperationInvocationDecoratorTest {
             second = TypedInstance.from(type, null, mock(), source = Provided)
          )
       )
-      whenever(mockOperationInvoker.invoke(any(), any(), any(), any())).thenReturn(mockedTypeInstance)
+      whenever(mockOperationInvoker.invoke(any(), any(), any(), any())).thenReturn( flow { mockedTypeInstance })
       cacheAware.invoke(service, operation, params, mockProfilerOperation)
       cacheAware.invoke(service, operation, params, mockProfilerOperation)
       verify(mockOperationInvoker, times(1)).invoke(service, operation, params, mockProfilerOperation)

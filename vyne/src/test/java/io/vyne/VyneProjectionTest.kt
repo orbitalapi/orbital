@@ -15,6 +15,7 @@ import io.vyne.models.json.parseKeyValuePair
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.math.BigDecimal
 import kotlin.test.fail
@@ -142,12 +143,12 @@ service Broker1Service {
          }
       })
 
-      val result = vyne.query(
+      val result = runBlocking {vyne.query(
          """
          findAll {
             Order[]
          } as Target[]""".trimIndent()
-      )
+      )}
       result.isFullyResolved.should.be.`true`
       val results = result.resultMap[result.resultMap.keys.first()] as List<Map<String, Any>>
       results.first().should.contain(Pair("field2", "This is Provided By External Service"))
@@ -231,12 +232,12 @@ service UserService {
       })
 
       // act
-      val result = vyne.query(
+      val result = runBlocking {vyne.query(
          """
          findAll {
             Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30")
          } as CommonOrder[]""".trimIndent()
-      )
+      )}
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -370,7 +371,7 @@ service InstrumentService {
 
       // act
       val result =
-         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+         runBlocking {vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())}
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -542,7 +543,7 @@ service Broker1Service {
 
       // act
       val result =
-         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+         runBlocking {vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())}
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -620,7 +621,7 @@ service Broker1Service {
 
       // act
       val result =
-         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+         runBlocking {vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())}
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -721,7 +722,7 @@ service Broker1Service {
       })
 
       val findByOrderIdResult =
-         vyne.query("""findAll { Order (OrderId = "broker1Order0") } as CommonOrder[]""".trimIndent())
+         runBlocking {vyne.query("""findAll { Order (OrderId = "broker1Order0") } as CommonOrder[]""".trimIndent())}
       expect(findByOrderIdResult.isFullyResolved).to.be.`true`
       val findByOrderIdResultList =
          findByOrderIdResult.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
@@ -798,7 +799,7 @@ service Broker1Service {
          }
       })
       // find by a non-existing order Id and project
-      val noResult = vyne.query("""findAll { Order (OrderId = "MY SPECIAL ORDER ID") } as CommonOrder[]""".trimIndent())
+      val noResult = runBlocking {vyne.query("""findAll { Order (OrderId = "MY SPECIAL ORDER ID") } as CommonOrder[]""".trimIndent())}
       val noResultList = noResult.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
       noResultList.should.be.empty
    }
@@ -861,7 +862,7 @@ service Broker1Service {
 
       // act
       val result =
-         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+         runBlocking {vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())}
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -1011,7 +1012,7 @@ service Broker1Service {
       })
 
       // act
-      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+      val result = runBlocking {vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())}
 
       // assert
       result.resultMap["lang.taxi.Array<ClientAndCountry>"].should.be.equal(
@@ -1105,7 +1106,7 @@ service Broker1Service {
          """.trimIndent()
       )
       )
-      val result = vyne.query("""findAll { Order[] } as Report[]""".trimIndent())
+      val result = runBlocking {vyne.query("""findAll { Order[] } as Report[]""".trimIndent())}
       result.isFullyResolved.should.be.`true`
       result.resultMap.get("lang.taxi.Array<Report>").should.be.equal(
          listOf(
@@ -1140,7 +1141,7 @@ service Broker1Service {
       """.trimIndent()
       )
       val input = vyne.parseJsonModel("Input", """{ "qty" : 100, "value" : 2 }""", source = Provided)
-      val result = vyne.from(input).build("Output")
+      val result = runBlocking {vyne.from(input).build("Output")}
       val output = result["Output"] as TypedObject
       output["cost"].value.should.equal(200)
    }
@@ -1170,7 +1171,7 @@ service Broker1Service {
       """.trimIndent()
       )
       val input = vyne.parseJsonModel("Input", """{ "value": 100, "str": "Percentage" }""", source = Provided)
-      val result = vyne.from(input).build("SampleType")
+      val result = runBlocking {vyne.from(input).build("SampleType")}
       val output = result["SampleType"] as TypedObject
       output["priceType"].value.should.equal("Percentage")
    }
@@ -1228,7 +1229,7 @@ service Broker1Service {
       })
 
       // act
-      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+      val result = runBlocking {vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())}
 
       // assert
       result.resultMap["lang.taxi.Array<ClientAndCountry>"].should.be.equal(
@@ -1277,7 +1278,7 @@ service Broker1Service {
          """.trimIndent()
       )
       )
-      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      val result = runBlocking {vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())}
       result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
          listOf(
             mapOf("myField" to "$outputInstant1"),
@@ -1319,7 +1320,7 @@ service Broker1Service {
          """.trimIndent()
       )
       )
-      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      val result = runBlocking {vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())}
       result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
          listOf(
             mapOf("myField" to "$outputInstant1"),
@@ -1363,7 +1364,7 @@ service Broker1Service {
          """.trimIndent()
       )
       )
-      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      val result = runBlocking {vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())}
       result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
          listOf(
             mapOf(
@@ -1409,7 +1410,7 @@ service Broker1Service {
       )
       )
 
-      val queryResult = vyne.query("findAll { Order[] } as Output[]")
+      val queryResult = runBlocking {vyne.query("findAll { Order[] } as Output[]")}
       val outputCollection = queryResult["Output[]"] as TypedCollection
       val outputModel = outputCollection[0] as TypedObject
       val averagePrice = outputModel["averagePrice"]
@@ -1459,7 +1460,7 @@ service Broker1Service {
          """.trimIndent()
       )
       )
-      val result = vyne.query(
+      val result = runBlocking {vyne.query(
          """
             findAll {
                 InputModel[]
@@ -1467,7 +1468,7 @@ service Broker1Service {
                  id
                }[]
             """.trimIndent()
-      )
+      )}
 
       result.resultMap.values.first().should.be.equal(
          listOf(
@@ -1552,7 +1553,7 @@ service Broker1Service {
          }
 
       })
-      val result = vyne.query(
+      val result = runBlocking {vyne.query(
          """
             findAll {
                 InputModel[]
@@ -1562,7 +1563,7 @@ service Broker1Service {
                  traderName: TraderName (from this.traderId)
                }[]
             """.trimIndent()
-      )
+      )}
 
       result.resultMap.values.first().should.be.equal(
          listOf(
@@ -1640,7 +1641,7 @@ service Broker1Service {
       """.trimIndent()
       )
       )
-      val result = vyne.query(
+      val result = runBlocking {vyne.query(
          """
             findAll {
                 InputModel[]
@@ -1649,7 +1650,7 @@ service Broker1Service {
                  traderName: TraderName (from this.traderId)
                }[]
             """.trimIndent()
-      )
+      )}
 
       result.resultMap.values.first().should.be.equal(
          listOf(
@@ -1748,7 +1749,7 @@ service Broker1Service {
       """.trimIndent()
       )
       )
-      val result = vyne.query(
+      val result = runBlocking {vyne.query(
          """
             findAll {
                 InputModel[]
@@ -1760,7 +1761,7 @@ service Broker1Service {
                  } (from this.traderId)
                }[]
             """.trimIndent()
-      )
+      )}
 
       result.resultMap.values.first().should.be.equal(
          listOf(
@@ -1868,7 +1869,7 @@ service Broker1Service {
          }
 
       })
-      val result = vyne.query(
+      val result = runBlocking {vyne.query(
          """
             findAll {
                 InputModel[]
@@ -1881,7 +1882,7 @@ service Broker1Service {
                  } (from this.traderId)
                }[]
             """.trimIndent()
-      )
+      )}
 
       result.resultMap.values.first().should.be.equal(
          listOf(
@@ -1961,13 +1962,13 @@ service Broker1Service {
          """.trimIndent()
       )
       )
-      val result = vyne.query(
+      val result = runBlocking {vyne.query(
          """
             findAll {
                 InputModel[]
               } as OutputModel []
             """.trimIndent()
-      )
+      )}
 
       result.resultMap.values.first().should.be.equal(
          listOf(
@@ -2041,13 +2042,13 @@ service Broker1Service {
          }
       })
 
-      val result = vyne.query(
+      val result = runBlocking {vyne.query(
          """
             findAll {
                 InputModel[]
               } as OutputModel []
             """.trimIndent()
-      )
+      )}
 
       result.resultMap.values.first().should.be.equal(
          listOf(
@@ -2121,7 +2122,7 @@ service Broker1Service {
       })
 
       // act
-      val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
+      val result = runBlocking {vyne.query("""findAll { Input[] } as Report[]""".trimIndent())}
 
       // assert
       findTradeInvoked.should.be.`true`
@@ -2180,7 +2181,7 @@ service Broker1Service {
             { isin : "Isin1" }
          """.trimIndent()))
 
-      val result = vyne.query("""findAll { Input[] } as Output[]""".trimIndent())
+      val result = runBlocking {vyne.query("""findAll { Input[] } as Output[]""".trimIndent())}
 
       result.resultMap["lang.taxi.Array<Output>"].should.be.equal(
          listOf(
@@ -2266,7 +2267,7 @@ service Broker1Service {
       })
 
       // act
-      val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
+      val result = runBlocking {vyne.query("""findAll { Input[] } as Report[]""".trimIndent())}
 
       // assert
       findTradeByType1IdInvoked.should.be.`true`

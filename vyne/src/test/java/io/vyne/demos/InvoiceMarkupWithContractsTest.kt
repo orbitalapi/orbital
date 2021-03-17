@@ -12,6 +12,7 @@ import io.vyne.models.json.parseKeyValuePair
 import io.vyne.query.QueryEngineFactory
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.math.BigDecimal
 
@@ -150,7 +151,7 @@ namespace io.osmosis.demos.creditInc.isic {
       stubService.addResponse("convertRates", vyne.parseJsonModel("vyne.creditInc.Money", rateConversionResponse))
 
       val invoice = vyne.parseJsonModel("vyne.creditInc.Invoice", invoiceJson)
-      val result = vyne.query(additionalFacts = setOf(invoice)).find("vyne.creditInc.CreditRiskCost")
+      val result = runBlocking {vyne.query(additionalFacts = setOf(invoice)).find("vyne.creditInc.CreditRiskCost")}
 // This is the expected (raw) solution -- other searches exist within this path:
 //      Search Type_instance(vyne.creditInc.Invoice) -> Type(vyne.creditInc.CreditRiskCost) found path:
 //      vyne.creditInc.Invoice -[Instance has attribute]-> vyne.creditInc.Invoice/amount

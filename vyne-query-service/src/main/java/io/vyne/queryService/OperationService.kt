@@ -11,6 +11,8 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -37,7 +39,7 @@ class OperationService(private val operationInvoker: OperationInvoker, private v
       val (service, operation) = lookupOperation(serviceName, operationName)
       val parameterTypedInstances = mapFactsToParameters(operation, facts)
       try {
-         val operationResult = operationInvoker.invoke(service, operation, parameterTypedInstances, DefaultProfilerOperation.root())
+         val operationResult = runBlocking { operationInvoker.invoke(service, operation, parameterTypedInstances, DefaultProfilerOperation.root()).first() }
          return ResponseEntity.ok(operationResult)
       } catch (e: OperationInvocationException) {
          throw ResponseStatusException(e.httpStatus, e.message)

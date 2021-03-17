@@ -228,21 +228,23 @@ data class QueryContext(
    private var inMemoryStream: List<TypedInstance>? = null
 
    override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
-   fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
+   suspend fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
 
-   fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
-   fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
-   fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
-   fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<Operation>>): QueryResult =
+   suspend fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
+   suspend fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
+   suspend fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
+   suspend fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<Operation>>): QueryResult =
       queryEngine.find(target, this, excludedOperations)
 
-   fun build(typeName: QualifiedName): QueryResult = build(typeName.fullyQualifiedName)
-   fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
-   fun build(expression: QueryExpression): QueryResult =
-      timed("QueryContext.build") { queryEngine.build(expression, this) }
+   suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.fullyQualifiedName)
+   suspend fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
+   suspend fun build(expression: QueryExpression): QueryResult =
+      //timed("QueryContext.build") {
+         queryEngine.build(expression, this)
+      //}
 
-   fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
-   fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
+   suspend fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
+   suspend fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
 
    fun parseQuery(typeName: String) = queryEngine.parse(TypeNameQueryExpression(typeName))
    fun parseQuery(expression: QueryExpression) = queryEngine.parse(expression)

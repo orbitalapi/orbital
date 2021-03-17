@@ -21,7 +21,7 @@ data class ExecutionScope(val operationType: String?, val operationScope: Operat
 
 class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator = PolicyStatementEvaluator(), private val defaultInstruction: Instruction = PermitInstruction) {
 
-   fun evaluate(instance: TypedInstance, context: QueryContext, operationScope: ExecutionScope): Instruction {
+   suspend fun evaluate(instance: TypedInstance, context: QueryContext, operationScope: ExecutionScope): Instruction {
       val schema = context.schema
       val policyType = getPolicyType(instance, context)
       val policies = findPolicies(schema, policyType)
@@ -44,7 +44,7 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
       }
    }
 
-   private fun evaluate(policy: Policy, instance: TypedInstance, context: QueryContext, executionScope: ExecutionScope): Instruction {
+   private suspend fun evaluate(policy: Policy, instance: TypedInstance, context: QueryContext, executionScope: ExecutionScope): Instruction {
       log().debug("Evaluating policy ${policy.name.fullyQualifiedName} for executionScope $executionScope")
       val ruleSets = policy.ruleSets
          //.filter { policy -> policy.scope.appliesTo(executionScope.operationType, executionScope.operationScope) }
@@ -53,9 +53,10 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
          return defaultInstruction
       }
       val ruleSet = RuleSetSelector().select(executionScope, ruleSets)
-      return context.startChild(this, "Evaluate policy ${policy.name} ruleSet ${ruleSet.scope}", OperationType.POLICY_EVALUATION) {
+      //return context.startChild(this, "Evaluate policy ${policy.name} ruleSet ${ruleSet.scope}", OperationType.POLICY_EVALUATION) {
+
          val statementInstruction = statementEvaluator.evaluate(ruleSet, instance, context)
-         if (statementInstruction == null) {
+         return if (statementInstruction == null) {
             log().debug("Finished evaluating policy ${policy.name.fullyQualifiedName} for executionScope of $executionScope - no instruction matched, so using default instruction of $defaultInstruction")
             context.addAppliedInstruction(policy, defaultInstruction)
             defaultInstruction
@@ -64,7 +65,8 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
             context.addAppliedInstruction(policy, statementInstruction)
             statementInstruction
          }
-      }
+
+      //}
    }
 
 

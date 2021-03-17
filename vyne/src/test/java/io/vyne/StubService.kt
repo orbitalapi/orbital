@@ -10,6 +10,8 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.utils.log
 import io.vyne.utils.orElse
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 typealias StubResponseHandler = (RemoteOperation, List<Pair<Parameter, TypedInstance>>) -> TypedInstance
 
@@ -23,7 +25,7 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
    }
    val invocations = mutableMapOf<String, List<TypedInstance>>()
 
-   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profiler: ProfilerOperation): TypedInstance {
+   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profiler: ProfilerOperation): Flow<TypedInstance> {
       val paramDescription = parameters.joinToString { "${it.second.type.name.shortDisplayName} = ${it.second.value}" }
       log().info("Invoking ${service.name} -> ${operation.name}($paramDescription)")
       val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
@@ -39,9 +41,9 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
       }
 
       return if (responses.containsKey(stubResponseKey)) {
-         responses[stubResponseKey]!!
+         flow { responses[stubResponseKey]!! }
       } else {
-         handlers[stubResponseKey]!!.invoke(operation, parameters)
+         flow { handlers[stubResponseKey]!!.invoke(operation, parameters) }
       }
    }
 

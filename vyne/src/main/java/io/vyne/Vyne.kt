@@ -62,12 +62,12 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
-   fun query(vyneQlQuery: VyneQLQueryString): QueryResult {
+   suspend fun query(vyneQlQuery: VyneQLQueryString): QueryResult {
       val vyneQuery = VyneQlCompiler(vyneQlQuery, this.schema.taxi).query()
       return query(vyneQuery)
    }
 
-   fun query(vyneQl: VyneQlQuery): QueryResult {
+   suspend fun query(vyneQl: VyneQlQuery): QueryResult {
       val (queryContext, expression) = buildContextAndExpression(vyneQl)
       return when (vyneQl.queryMode) {
          io.vyne.vyneql.QueryMode.FIND_ALL -> queryContext.findAll(expression)
@@ -169,7 +169,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return schema.policy(type)
    }
 
-   fun execute(query: Query): QueryResult {
+   suspend fun execute(query: Query): QueryResult {
       query.facts.forEach { fact -> this.addKeyValuePair(fact.typeName, fact.value, fact.factSetId) }
       return when (query.queryMode) {
          QueryMode.DISCOVER -> this.query().find(query.expression)

@@ -2,6 +2,7 @@ package io.vyne
 
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.math.BigDecimal
 
@@ -46,11 +47,11 @@ class HipsterDiscoverGraphQueryStrategyTest {
               {"instrumentNotionalValue": 100}
          """.trimIndent()))
 
-      val result =  vyne.query("""
+      val result =  runBlocking {vyne.query("""
             findAll {
                 Input[]
               } as Output[]
-            """.trimIndent())
+            """.trimIndent()) }
 
       result.resultMap.values.first().should.be.equal(
          listOf(
@@ -98,11 +99,11 @@ class HipsterDiscoverGraphQueryStrategyTest {
               {"instrumentNotionalValue": 100}
          """.trimIndent()))
 
-      val result =  vyne.query("""
+      val result =  runBlocking {vyne.query("""
             findAll {
                 Input[]
               } as Output[]
-            """.trimIndent())
+            """.trimIndent())}
 
       result.resultMap.values.first().should.be.equal(
          listOf(
@@ -151,11 +152,11 @@ class HipsterDiscoverGraphQueryStrategyTest {
               {"instrumentNotionalValue": 100}
          """.trimIndent()))
 
-      val result =  vyne.query("""
+      val result =  runBlocking {vyne.query("""
             findAll {
                 Input[]
               } as Output[]
-            """.trimIndent())
+            """.trimIndent())}
 
       result.resultMap.values.first().should.be.equal(
          listOf(

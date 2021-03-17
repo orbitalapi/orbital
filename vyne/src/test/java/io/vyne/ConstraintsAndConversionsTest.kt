@@ -9,6 +9,7 @@ import io.vyne.query.QueryEngineFactory
 import io.vyne.query.QueryResult
 import io.vyne.query.StatefulQueryEngine
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 class ConstraintsAndConversionsTest {
@@ -55,7 +56,7 @@ service MyService {
       val queryEngine = vyne.queryEngine()
       queryEngine.addModel(money(5, "USD", vyne))
       queryEngine.addModel(vyne.parseKeyValuePair("ClientId","1234"))
-      val result = queryEngine.queryContext().find("ClientRisk")
+      val result = runBlocking { queryEngine.queryContext().find("ClientRisk") }
 
       expect(stubService.invocations).to.contain.keys("convertCurrency")
       expect(stubService.invocations).to.contain.keys("calculateRiskForClient")
@@ -77,7 +78,7 @@ service MyService {
 
       val queryEngine = vyne.queryEngine()
       queryEngine.addModel(money(5, "USD", vyne))
-      val result = queryEngine.queryContext().find("Risk")
+      val result = runBlocking { queryEngine.queryContext().find("Risk") }
 
       expect(stubService.invocations).to.contain.keys("convertCurrency")
       expect(stubService.invocations).to.contain.keys("calculateRisk")
@@ -114,7 +115,7 @@ service TestService {
 
       val queryEngine = vyne.queryEngine()
       queryEngine.addModel(vyne.parseKeyValuePair("UkSic2003","SickOf2003"))
-      val result: QueryResult = queryEngine.queryContext().find("Foo")
+      val result: QueryResult = runBlocking { queryEngine.queryContext().find("Foo") }
 
       expect(result["Foo"]!!.value).to.equal("Hello")
       // Assert correct params were passed
@@ -146,7 +147,7 @@ service TestService {
 
       val queryEngine: StatefulQueryEngine = vyne.queryEngine()
       queryEngine.addModel(vyne.parseKeyValuePair("UkSic2003","SickOf2003"))
-      val result: QueryResult = queryEngine.queryContext().find("Foo")
+      val result: QueryResult = runBlocking { queryEngine.queryContext().find("Foo") }
 
       expect(result["Foo"]!!.value).to.equal("Hello")
       // Assert correct params were passed

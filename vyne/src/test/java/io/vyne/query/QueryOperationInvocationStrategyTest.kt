@@ -8,6 +8,7 @@ import io.vyne.queryDeclaration
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import io.vyne.vyneql.VyneQlCompiler
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 
@@ -112,7 +113,7 @@ class QueryOperationInvocationStrategyTest {
          """
             [ { "firstName" : "Jimmy" } ]
          """.trimIndent()))
-      val result = vyne.query("findAll { Person[]( FirstName = 'Jimmy' ) }")
+      val result = runBlocking {vyne.query("findAll { Person[]( FirstName = 'Jimmy' ) }")}
       result.isFullyResolved.should.be.`true`
 
       stub.invocations.should.have.size(1)

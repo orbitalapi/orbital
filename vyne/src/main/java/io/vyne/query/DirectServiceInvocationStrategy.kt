@@ -25,15 +25,15 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
    private val operationsForTypeCache = CacheBuilder.newBuilder()
       .weakKeys()
       .build<Type, List<Operation>>()
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+   override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       if (context.isProjecting) {
          return QueryStrategyResult.empty()
       }
       return if (context.debugProfiling) {
-         context.startChild(this, "look for candidate services", OperationType.LOOKUP) { profilerOperation ->
+         //context.startChild(this, "look for candidate services", OperationType.LOOKUP) { profilerOperation ->
             val operations = lookForCandidateServices(context, target)
             invokeOperations(operations, context, target)
-         }
+         //}
       } else {
          val operations = lookForCandidateServices(context, target)
          return invokeOperations(operations, context, target)

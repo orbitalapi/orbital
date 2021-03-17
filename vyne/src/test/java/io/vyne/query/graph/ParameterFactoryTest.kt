@@ -5,6 +5,7 @@ import io.vyne.Vyne
 import io.vyne.models.TypedNull
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 
@@ -25,14 +26,14 @@ class ParameterFactoryTest {
    @Test
    fun findsParameterInContext() {
       vyne.addKeyValuePair("FirstName", "Jimmy")
-      val result = ParameterFactory().discover(vyne.type("FirstName"), vyne.query().queryEngine.queryContext())
+      val result = runBlocking {ParameterFactory().discover(vyne.type("FirstName"), vyne.query().queryEngine.queryContext())}
       result.value.should.equal("Jimmy")
    }
 
    @Test(expected = UnresolvedOperationParametersException::class)
    fun typedNullsAreNotReturned() {
       vyne.addModel(TypedNull.create(vyne.type("FirstName")))
-      ParameterFactory().discover(vyne.type("FirstName"), vyne.query().queryEngine.queryContext())
+      runBlocking {ParameterFactory().discover(vyne.type("FirstName"), vyne.query().queryEngine.queryContext())}
    }
 
    @Test(expected = UnresolvedOperationParametersException::class)
@@ -40,6 +41,6 @@ class ParameterFactoryTest {
    // re implementation.
    fun emptyStringsAreNotReturned() {
       vyne.addKeyValuePair("FirstName", "")
-      ParameterFactory().discover(vyne.type("FirstName"), vyne.query().queryEngine.queryContext())
+      runBlocking {ParameterFactory().discover(vyne.type("FirstName"), vyne.query().queryEngine.queryContext())}
    }
 }

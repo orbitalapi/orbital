@@ -14,19 +14,26 @@ import io.vyne.schemas.Relationship
 import io.vyne.schemas.Schema
 import io.vyne.schemas.describe
 import io.vyne.utils.log
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import lang.taxi.Equality
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
 
-   fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): EvaluatedEdge {
+   suspend fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): Flow<EvaluatedEdge> {
       val relationship = edge.relationship
       val evaluator = evaluators[relationship]
          ?: error("No LinkEvaluator provided for relationship ${relationship.name}")
       val evaluationResult = if (queryContext.debugProfiling) {
-         queryContext.startChild(this, "Evaluating ${edge.description} with evaluator ${evaluator.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) {
-            evaluator.evaluate(edge, queryContext)
-         }
+
+         //TODO
+         //queryContext.startChild(this, "Evaluating ${edge.description} with evaluator ${evaluator.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) {
+         evaluator.evaluate(edge, queryContext)
+         //}
+
       } else {
          evaluator.evaluate(edge, queryContext)
       }
@@ -65,7 +72,7 @@ class HipsterDiscoverGraphQueryStrategy(
 
 
 
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+   override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
 
       return find(target, context, invocationConstraints)
    }
@@ -145,6 +152,7 @@ class HipsterDiscoverGraphQueryStrategy(
                true
             }
          }
+
          .mapIndexedTo(evaluatedEdges) { index, weightedNode ->
             // Note re index:  We dropped 1, so indexes are out-by-one.
             // Normally the lastValue would be index-1, but here, it's just index.
@@ -154,10 +162,16 @@ class HipsterDiscoverGraphQueryStrategy(
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
                log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried")
             }
-            val evaluationResult = edgeEvaluator.evaluate(evaluatableEdge, queryContext)
+
+            var evaluationResult: EvaluatedEdge
+            runBlocking {
+                evaluationResult = edgeEvaluator.evaluate(evaluatableEdge, queryContext).first()
+            }
+
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
                log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}")
             }
+
             evaluationResult
          }
 

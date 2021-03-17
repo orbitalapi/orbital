@@ -19,6 +19,8 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.utils.assertingThat
 import io.vyne.utils.log
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import lang.taxi.types.PrimitiveType
 
 
@@ -73,16 +75,16 @@ data class EvaluatableEdge(
 
 interface EdgeEvaluator {
    val relationship: Relationship
-   fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge
+   suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): Flow<EvaluatedEdge>
 }
 
 class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = ParameterFactory()) : EdgeEvaluator {
    override val relationship: Relationship = Relationship.REQUIRES_PARAMETER
 
-   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): Flow<EvaluatedEdge> {
       if (edge.target.elementType == ElementType.PARAMETER) {
          // Pass through, the next vertex should be the param type
-         return EvaluatedEdge.success(edge, edge.vertex2, edge.previousValue)
+         return flow { EvaluatedEdge.success(edge, edge.vertex2, edge.previousValue) }
       }
       assert(
          edge.vertex2.elementType == ElementType.TYPE,
@@ -99,13 +101,13 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
       val paramType = operation.parameters[paramIndex].type
 
       val discoveredParam = parameterFactory.discover(paramType, context, operation)
-      return EvaluatedEdge.success(edge, instanceOfType(discoveredParam.type), discoveredParam)
+      return flow { EvaluatedEdge.success(edge, instanceOfType(discoveredParam.type), discoveredParam) }
 //      val paramType = context.schema.type(edge.vertex2.value as String)
    }
 }
 
 class ParameterFactory {
-   fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): TypedInstance {
+   suspend fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): TypedInstance {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
       if (hasValue(firstLevelDiscovery)) {
@@ -155,7 +157,7 @@ class ParameterFactory {
       }
    }
 
-   private fun attemptToConstruct(
+   private suspend fun attemptToConstruct(
       paramType: Type,
       context: QueryContext,
       operation: Operation?,
@@ -259,8 +261,8 @@ data class EvaluatedEdge(
 }
 
 abstract class PassThroughEdgeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
-   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
-      return edge.success(edge.previousValue)
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): Flow<EvaluatedEdge> {
+      return flow { edge.success(edge.previousValue) }
    }
 }
 
@@ -273,12 +275,12 @@ class CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPUL
 class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_TYPE)
 
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
-   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): Flow<EvaluatedEdge> {
       val previousValue =
          requireNotNull(edge.previousValue) { "Cannot evaluate $relationship when previous value was null.  Work with me here!" }
 
       if (previousValue is TypedNull) {
-         return edge.failure(previousValue)
+         return flow { edge.failure(previousValue) }
       }
 
       require(previousValue is TypedObject) {
@@ -287,7 +289,7 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
 
       // TypedObject has no attributes - service returned no value, returning failure response
       if (previousValue.isEmpty()) {
-         return edge.failure(null)
+         return flow { edge.failure(null) }
       }
 
       val previousObject = previousValue as TypedObject
@@ -310,10 +312,10 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
 
             }
          }
-         return calculatedValue ?: edge.failure(null, failureReason = "Attribute $attributeName on type $typeName evaluated to null")
+         return flow { calculatedValue } ?: flow {edge.failure(null, failureReason = "Attribute $attributeName on type $typeName evaluated to null") }
       }
       val attribute = previousObject[attributeName]
-      return edge.success(attribute)
+      return flow {edge.success(attribute) }
 
       // 1-Feb: This code used to be here - but unsure when it was authored, or why.
       // However, it breaks tests as when we receive a response with a null value, we tag this

@@ -8,6 +8,7 @@ import io.vyne.models.json.JsonModelParser
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -200,7 +201,7 @@ class TypedObjectTest {
       val (vyne,_) = testVyne(schema)
       val json = """{ "name" : "Bernstein", "isAlive" : false }"""
       val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
-      val buildResult = vyne.query().addFact(instance).build("OutputPerson")
+      val buildResult = runBlocking {vyne.query().addFact(instance).build("OutputPerson")}
       val output = buildResult["OutputPerson"] as TypedObject
       output["livingOrDead"].value!!.should.equal("Dead")
    }
@@ -227,7 +228,7 @@ class TypedObjectTest {
       val (vyne,_) = testVyne(schema)
       val json = """{ "name" : "Bernstein", "living" : false }"""
       val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
-      val buildResult = vyne.query().addFact(instance).build("OutputPerson")
+      val buildResult = runBlocking {vyne.query().addFact(instance).build("OutputPerson")}
       val output = buildResult["OutputPerson"] as TypedObject
       output["livingOrDead"].value!!.should.equal("Dead")
    }

@@ -42,6 +42,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.io.OutputStream
 import io.vyne.query.history.RestfulQueryHistoryRecord
 import io.vyne.query.history.VyneQlQueryHistoryRecord
+import kotlinx.coroutines.runBlocking
 import java.util.UUID
 
 const val TEXT_CSV = "text/csv"
@@ -141,7 +142,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       return timed("QueryService.submitVyneQlQuery") {
          val vyne = vyneProvider.createVyne(vyneUser.facts())
          val response = try {
-            vyne.query(query)
+            runBlocking {  vyne.query(query) }
          } catch (e: CompilationException) {
             FailedSearchResponse(
                message = e.message!!, // Message contains the error messages from the compiler
@@ -220,9 +221,9 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
          // but the queryEngine contains all the factSets, so we can expand this later.
          val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT))
          when (query.queryMode) {
-            QueryMode.DISCOVER -> queryContext.find(query.expression)
-            QueryMode.GATHER -> queryContext.findAll(query.expression)
-            QueryMode.BUILD -> queryContext.build(query.expression)
+            QueryMode.DISCOVER ->  runBlocking {queryContext.find(query.expression) }
+            QueryMode.GATHER ->  runBlocking {queryContext.findAll(query.expression) }
+            QueryMode.BUILD ->  runBlocking {queryContext.build(query.expression) }
          }
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation)

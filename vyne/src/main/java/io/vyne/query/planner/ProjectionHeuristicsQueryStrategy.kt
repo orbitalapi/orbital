@@ -41,7 +41,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
 
       })
 
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+   override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       if (!context.isProjecting) {
          return QueryStrategyResult.empty()
       }
@@ -118,7 +118,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
       return timed("fetch from Graph", log = false) {
          graphSearchResult(target, context)?.let { firstMatch ->
             findFetchManyOperation(firstMatch, context)?.let { (candidateService, candidateOperation, joinType) ->
-               return@timed processRemoteCallResults(candidateOperation, candidateService, context, joinType, spec)
+               // TODO ACOWAN return@timed processRemoteCallResults(candidateOperation, candidateService, context, joinType, spec)
             }
          }
          // else
@@ -162,7 +162,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
       return null
    }
 
-   private fun processRemoteCallResults(candidateOperation: Operation, candidateService: Service, context: QueryContext, joinType: Type, spec: TypedInstanceValidPredicate): ProjectionHeuristicsGraphSearchResult {
+   private suspend fun processRemoteCallResults(candidateOperation: Operation, candidateService: Service, context: QueryContext, joinType: Type, spec: TypedInstanceValidPredicate): ProjectionHeuristicsGraphSearchResult {
       val firstOperationArgumentType = candidateOperation.parameters.first().type
       context.parent?.let { parentQueryContext ->
          // Using AlwaysGood build spec because at the time of writing we're not passing specs this deep.

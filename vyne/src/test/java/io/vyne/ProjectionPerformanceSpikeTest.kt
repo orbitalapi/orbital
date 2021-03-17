@@ -11,6 +11,7 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.Benchmark
+import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
 import java.io.File
@@ -1866,10 +1867,10 @@ OPTL
          }
       })
 
-      val result = vyne.query("""
+      val result = runBlocking {vyne.query("""
          findAll {
             broker.orders.Order[]
-         } as broker.orders.Report[]""".trimIndent())
+         } as broker.orders.Report[]""".trimIndent())}
       result.isFullyResolved.should.be.`true`
    }
 
@@ -1883,10 +1884,10 @@ OPTL
          }
       })
 
-      val result = vyne.query("""
+      val result = runBlocking {vyne.query("""
          findAll {
             icap.orders.Order[]
-         } as cacib.imad.Order[]""".trimIndent())
+         } as cacib.imad.Order[]""".trimIndent())}
       result.isFullyResolved.should.be.`true`
    }
 
@@ -1900,10 +1901,10 @@ OPTL
          }
       })
 
-      val result = vyne.query("""
+      val result = runBlocking {vyne.query("""
          findAll {
             icap.orders.Order[]
-         } as cacib.imad.Order[]""".trimIndent())
+         } as cacib.imad.Order[]""".trimIndent())}
       result.isFullyResolved.should.be.`true`
    }
 
@@ -1917,10 +1918,10 @@ OPTL
          }
       })
 
-      val result = vyne.query("""
+      val result = runBlocking {vyne.query("""
          findAll {
             broker.orders.Order[]
-         } as broker.orders.Report[]""".trimIndent())
+         } as broker.orders.Report[]""".trimIndent()) }
       result.isFullyResolved.should.be.`true`
    }
 
@@ -1932,8 +1933,8 @@ OPTL
       val csv = Paths.get("/home/marty/Documents/demo-files/all_sb2.csv").toFile().readText()
       val orders = TypedCollection.from(CsvImporterUtil.parseCsvToType(csv, CsvIngestionParameters(), schema, "bgc.orders.Order")
          .map { it.instance })
-      Benchmark.benchmark("Projecting orders", warmup = 5, iterations = 10) {
-         vyne.from(orders).build("cacib.imad.Order[]")
+       Benchmark.benchmark("Projecting orders", warmup = 5, iterations = 10) {
+          runBlocking {vyne.from(orders).build("cacib.imad.Order[]")}
       }
    }
 }

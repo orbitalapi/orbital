@@ -10,10 +10,14 @@ import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.runBlocking
 import lang.taxi.policies.OperationScope
 
 class PolicyAwareOperationInvocationServiceDecorator(private val operationService: OperationInvocationService, private val evaluator: PolicyEvaluator = PolicyEvaluator()) : OperationInvocationService {
-   override fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+   override suspend fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): Flow<TypedInstance> {
       // For now, treating everything as external.
       // Need to update the query manager to differentiate between external
       // TODO: Get these from the operation (operationType) and query engine (scope)
@@ -28,13 +32,12 @@ class PolicyAwareOperationInvocationServiceDecorator(private val operationServic
       // have access to the data yet, so rules aren't easily expressable.
       // Service / operation level security is likely best handled as a specific service / operation
       // level concern, outside of Vyne on the service itself.
-      val result = operationService.invokeOperation(service, operation, preferredParams, context, providedParamValues)
-
+      val result = operationService.invokeOperation(service, operation, preferredParams, context, providedParamValues).first()
       val processed = process(result, context, executionScope)
-      return processed
+      return flow { processed }
    }
 
-   private fun process(value: TypedInstance, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
+   private suspend fun process(value: TypedInstance, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
       val processedValue = applyPolicyInstruction(value, context, executionScope)
 
       return when (processedValue) {
@@ -46,20 +49,20 @@ class PolicyAwareOperationInvocationServiceDecorator(private val operationServic
       }
    }
 
-   private fun processCollection(collection: TypedCollection, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
+   private suspend fun processCollection(collection: TypedCollection, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
       val processedValues = collection.map { process(it, context, executionScope) }
          .filter { it !is TypedNull }
       return TypedCollection(collection.type, processedValues)
    }
 
-   private fun processTypedObject(typedObject: TypedObject, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
+   private suspend fun processTypedObject(typedObject: TypedObject, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
       val processedAttributes = typedObject.value.map { (propertyName, value) ->
          propertyName to process(value, context, executionScope)
       }.toMap()
       return TypedObject(typedObject.type, processedAttributes, typedObject.source)
    }
 
-   private fun applyPolicyInstruction(value: TypedInstance, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
+   private suspend fun applyPolicyInstruction(value: TypedInstance, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
       val instruction = evaluator.evaluate(value, context, executionScope)
       val processed = InstructionExecutors.get(instruction).execute(instruction, value)
       return processed

@@ -11,6 +11,7 @@ import io.vyne.query.build.FirstNotEmptyPredicate
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.runBlocking
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
 import java.time.LocalDate
@@ -100,7 +101,7 @@ class FirstNotEmptyTest {
          |}
       """.trimMargin()
       vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
-      val result = vyne.query().build("TradeOutput")
+      val result = runBlocking { vyne.query().build("TradeOutput") }
       val output = result["TradeOutput"] as TypedObject
       output["productName"].value.should.be.`null`
    }
@@ -138,7 +139,7 @@ class FirstNotEmptyTest {
          |}
       """.trimMargin()
       vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
-      val result = vyne.query().build("TradeOutput")
+      val result = runBlocking { vyne.query().build("TradeOutput") }
       val output = result["TradeOutput"] as TypedObject
       output["productName"].value.should.equal("ice cream")
    }
@@ -176,7 +177,7 @@ class FirstNotEmptyTest {
          |}
       """.trimMargin()
       vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
-      val result = vyne.query().build("TradeOutput")
+      val result = runBlocking { vyne.query().build("TradeOutput") }
       val output = result["TradeOutput"] as TypedObject
       output["expiryDate"].value.should.equal(LocalDate.parse("1979-05-10"))
    }
@@ -228,7 +229,7 @@ class FirstNotEmptyTest {
          |}
       """.trimMargin()
       vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
-      val result = vyne.query().build("TradeOutput")
+      val result = runBlocking { vyne.query().build("TradeOutput") }
       val output = result["TradeOutput"] as TypedObject
       output["productName"].value.should.equal("ice cream")
    }
@@ -252,16 +253,17 @@ class FirstNotEmptyTest {
       """.trimIndent()
       )
       val personWithBaseTypeName = vyne.parseJsonModel("Person", """{ "firstName" : null, "name" : "Jimmy" }""")
-      vyne.from(personWithBaseTypeName).build("OutputModel").let { queryResult ->
+
+      runBlocking { vyne.from(personWithBaseTypeName).build("OutputModel").let { queryResult ->
          val outputModel = queryResult["OutputModel"] as TypedObject
          outputModel["discoveredName"].value.should.equal("Jimmy")
-      }
+      } }
 
       val personWithFirstName = vyne.parseJsonModel("Person", """{ "firstName" : "Jimmy" , "name" : null }""")
-      vyne.from(personWithFirstName).build("OutputModel").let { queryResult ->
+      runBlocking {vyne.from(personWithFirstName).build("OutputModel").let { queryResult ->
          val outputModel = queryResult["OutputModel"] as TypedObject
          outputModel["discoveredName"].value.should.equal("Jimmy")
-      }
+      }}
    }
 
    @Test
@@ -302,7 +304,7 @@ class FirstNotEmptyTest {
             else -> error("Expected Id of 1 or 2")
          }
       }
-      val result = vyne.query("findAll { Id[] } as OutputModel[]")
+      val result = runBlocking { vyne.query("findAll { Id[] } as OutputModel[]") }
       val resultCollection = result["OutputModel[]"] as TypedCollection
       resultCollection.should.have.size(2)
 
@@ -360,7 +362,7 @@ class FirstNotEmptyTest {
          |}
       """.trimMargin()
       vyne.addModel(TypedInstance.from(schema.type("TradeInput"), inputJson, schema, source = Provided))
-      val result = vyne.query().build("TradeOutput")
+      val result = runBlocking { vyne.query().build("TradeOutput") }
       val output = result["TradeOutput"] as TypedObject
       output["productName"].value.should.equal("ice cream")
    }
@@ -414,7 +416,7 @@ class FirstNotEmptyTest {
       """.trimMargin()
       val inputModel = TypedInstance.from(schema.type("TradeInput[]"), inputJson, schema, source = Provided)
       vyne.addModel(inputModel)
-      val result = vyne.query().build("TradeOutput[]")
+      val result = runBlocking { vyne.query().build("TradeOutput[]") }
       val output = result["TradeOutput[]"] as TypedCollection
       val transformedProductA = output.first { (it as TypedObject)["isin"].value == "productA" } as TypedObject
       val transformedProductB = output.first { (it as TypedObject)["isin"].value == "productB" } as TypedObject

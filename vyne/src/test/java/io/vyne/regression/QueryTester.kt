@@ -22,6 +22,7 @@ import io.vyne.query.VyneJacksonModule
 import io.vyne.query.history.QueryHistoryRecord
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
+import kotlinx.coroutines.runBlocking
 import java.io.File
 
 /**
@@ -90,10 +91,10 @@ class QueryTester {
       val (vyne, _) = replayingVyne(schemas, testCase)
       val queryResult = when (testCase.scenario.query) {
          is Query -> {
-            vyne.execute(testCase.scenario.query as Query)
+            runBlocking {vyne.execute(testCase.scenario.query as Query)}
          }
          is String -> {
-            vyne.query(testCase.scenario.query as String)
+            runBlocking {vyne.query(testCase.scenario.query as String)}
          }
          else -> {
             throw UnsupportedOperationException("Unsupported Query Type!")

@@ -12,5 +12,5 @@ data class QueryStrategyResult(
 }
 
 interface QueryStrategy {
-   fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult
+   suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult
 }

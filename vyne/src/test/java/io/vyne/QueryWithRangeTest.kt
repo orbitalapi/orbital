@@ -5,6 +5,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.ConstrainedTypeNameQueryExpression
 import io.vyne.schemas.PropertyToParameterConstraint
+import kotlinx.coroutines.runBlocking
 import lang.taxi.Operator
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
@@ -32,7 +33,7 @@ class QueryWithRangeTest {
       stub.addResponse("findTrades", TypedInstance.from(vyne.type("Trade[]"), emptyList<Any>(), vyne.schema, source = Provided))
 
       // We need simpler api for expressing date ranges
-      vyne.query().find(ConstrainedTypeNameQueryExpression("Trade[]", listOf(
+      runBlocking {vyne.query().find(ConstrainedTypeNameQueryExpression("Trade[]", listOf(
          PropertyToParameterConstraint(
             PropertyTypeIdentifier(QualifiedName.from("TradeDate")),
             Operator.GREATER_THAN_OR_EQUAL_TO,
@@ -43,7 +44,7 @@ class QueryWithRangeTest {
             Operator.LESS_THAN,
             ConstantValueExpression(Instant.parse("2020-05-10T11:00:00Z"))
          )
-      )))
+      )))}
 
       // See also DirectServiceInvocationStrategyTest
       stub.invocations["findTrades"].should.have.size(2)

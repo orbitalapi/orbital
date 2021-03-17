@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import arrow.core.extensions.list.monad.flatMap
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
@@ -7,20 +8,24 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactor.asFlux
+import reactor.core.publisher.Mono
+import java.util.stream.Collectors
 
 abstract class BaseOperationInvocationStrategy(
    private val invocationService: OperationInvocationService
 ) {
-   protected fun invokeOperations(operations: Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>>, context: QueryContext, target: Set<QuerySpecTypeNode>): QueryStrategyResult {
-      val matchedNodes = operations.mapNotNull { (queryNode, operationToParameters) ->
-         invokeOperation(queryNode, operationToParameters, context, target)
+   protected suspend fun invokeOperations(operations: Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>>, context: QueryContext, target: Set<QuerySpecTypeNode>): QueryStrategyResult {
+      val matchedNodes = operations.mapNotNull { (queryNode, operationToParameters) -> invokeOperation(queryNode, operationToParameters, context, target)
       }.toMap()
 
       return QueryStrategyResult(matchedNodes)
    }
 
 
-   private fun invokeOperation(queryNode: QuerySpecTypeNode, operationToParameters: Map<RemoteOperation, Map<Parameter, TypedInstance>>, context: QueryContext, target: Set<QuerySpecTypeNode>): Pair<QuerySpecTypeNode, TypedInstance?>? {
+   private suspend fun invokeOperation(queryNode: QuerySpecTypeNode, operationToParameters: Map<RemoteOperation, Map<Parameter, TypedInstance>>, context: QueryContext, target: Set<QuerySpecTypeNode>): Pair<QuerySpecTypeNode, TypedInstance?>? {
       val operationsToInvoke = when {
          operationToParameters.size > 1 && queryNode.mode != QueryMode.GATHER -> {
             log().warn("Running in query mode ${queryNode.mode} and multiple candidate operations detected - ${operationToParameters.keys.joinToString { it.name }} - this isn't supported yet, will just pick the first one")
@@ -41,15 +46,18 @@ abstract class BaseOperationInvocationStrategy(
          val (service, _) = context.schema.remoteOperation(operation.qualifiedName)
          // Adding logging as seeing too many http calls.
          log().info("As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked")
-         val serviceResult = invocationService.invokeOperation(
+
+         val lst = invocationService.invokeOperation(
             service,
             operation,
             context = context,
             preferredParams = emptySet(),
             providedParamValues = parameters.toList()
-         )
-         serviceResult
-      }.flattenNestedTypedCollections(flattenedType = queryNode.type)
+         ).asFlux().collectList().block()
+
+         lst.toList().get(0)
+
+      }//.flattenNestedTypedCollections(flattenedType = queryNode.type)
 
 
       val strategyResult = when {
@@ -62,6 +70,7 @@ abstract class BaseOperationInvocationStrategy(
    }
 }
 
+/*
 private fun List<TypedInstance>.flattenNestedTypedCollections(flattenedType: Type): List<TypedInstance> {
    return if (this.all { it is TypedCollection }) {
       val values = this.flatMap { (it as TypedCollection).value }
@@ -70,3 +79,5 @@ private fun List<TypedInstance>.flattenNestedTypedCollections(flattenedType: Typ
       this
    }
 }
+
+ */

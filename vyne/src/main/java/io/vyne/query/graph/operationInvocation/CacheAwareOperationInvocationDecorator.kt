@@ -7,6 +7,8 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.utils.log
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvoker) : OperationInvoker {
 
@@ -20,17 +22,18 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
       return invoker.canSupport(service, operation)
    }
 
-   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance {
+   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): Flow<TypedInstance> {
       val key = generateCacheKey(service, operation, parameters)
+
       val result = cachedResults.getIfPresent(key)
 
       if (result != null) {
-         return result
+         return flow { result }
       }
 
       val previousError = cachedErrors.getIfPresent(key)
       if (previousError != null) {
-//         log().warn("Last attempt to invoke operation with key $key resulted in exception ${previousError::class.simpleName}  - ${previousError.message}.  Not attempting, and will rethrow error")
+         log().warn("Last attempt to invoke operation with key $key resulted in exception ${previousError::class.simpleName}  - ${previousError.message}.  Not attempting, and will rethrow error")
          throw previousError
       }
 
@@ -43,7 +46,8 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
       }
 
 
-      cachedResults.put(key, value)
+      //cachedResults.put(key, value)
+
       return value
 
    }
