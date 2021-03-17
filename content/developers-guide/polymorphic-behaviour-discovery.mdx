@@ -5,6 +5,7 @@ description: >-
   runtime
 ---
 
+import {MultiCodeBlock} from 'gatsby-theme-apollo-docs';
 import { Tabs, TabsContent } from "../components/tabs"
 import { Link } from "gatsby"
 
@@ -20,19 +21,15 @@ We've already used this approach in our previous example, but let's take a deepe
 
 First, we defined an interface called `RuleEvaluationResult`.  Here's the definition in both Kotlin and Taxi:
 
-<Tabs tabsNav={["Taxi", "Kotlin"]}>
-<TabsContent>
+<MultiCodeBlock>
 
-```markup
+```taxi
 type RuleEvaluationResult {
     message : String
     ruleId : String
     status : RagStatus
 }
 ```
-</TabsContent>
-
-<TabsContent>
 
 ```kotlin
 interface RuleEvaluationResult {
@@ -42,15 +39,13 @@ interface RuleEvaluationResult {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 We then defined some services that return implementations of this interface:
 
-<Tabs tabsNav={["Taxi", "Kotlin"]}>
-<TabsContent>
+<MultiCodeBlock>
 
-```markup
+```taxi
 type JurisdictionRuleResponse inherits RuleEvaluationResult {}
 type NotionalLimitRuleResponse inherits RuleEvaluationResult {}
 type TradeValueRuleResponse inherits RuleEvaluationResult P{
@@ -59,10 +54,6 @@ operation evaluate(JurisdictionRuleRequest):JurisdictionRuleResponse {}
 operation evaluate(NotionalLimitRuleRequest):NotionalLimitRuleResponse {}
 operation evaluate(TradeValueRuleRequest):TradeValueRuleResponse {}
 ```
-
-</TabsContent>
-
-<TabsContent>
 
 ```kotlin
 @DataType
@@ -97,8 +88,7 @@ fun evaluate(@RequestBody request: TradeValueRuleRequest):TradeValueRuleResponse
 
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 To invoke these services, we simply asked Vyne to find us all the implementations `RuleEvaluationResult`:
 

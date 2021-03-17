@@ -5,6 +5,7 @@ description: >-
   adapt data when constraints aren't satisfied.
 ---
 
+import { MultiCodeBlock } from 'gatsby-theme-apollo-docs';
 import { Tabs, TabsContent } from "../components/tabs"
 import { Hint } from "../components/hint"
 
@@ -24,8 +25,7 @@ Vyne uses Taxi to allow services to describe constraints they have on input para
 
 These are the classes & services we'll be using for this demo:
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 @Service
@@ -53,10 +53,6 @@ data class Money(
    val value: MoneyAmount
 )
 ```
-
-</TabsContent>
-
-<TabsContent>
 
 ```java
 @Service
@@ -95,13 +91,11 @@ public class Money {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 This service evaluates a rule to do with TradeValue.  The actual implementation of the rule isn't as interesting as the contract itself - let's take a look in closer detail:
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 @Operation
@@ -113,10 +107,6 @@ data class TradeValueRuleRequest(
    val traderLimit: TraderMaxTradeValue
 )
 ```
-
-</TabsContent>
-
-<TabsContent>
 
 ```java
 @Operation
@@ -136,8 +126,7 @@ public class TradeValueRuleRequest {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 Our `Operation` takes a `TradeValueRequest` as it's parameter - which in turn, declares a constraint on the `tradeValue` parameter - the currency of the tradeValue must be expressed in USD.
 
@@ -163,8 +152,7 @@ Contracts on Operations describe what functionality an operation provides.  It's
 
 Over in another service, we have a RateConverterService, which has the following operation:
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 @PostMapping("/tradeValues/{targetCurrency}")
@@ -173,10 +161,6 @@ Over in another service, we have a RateConverterService, which has the following
 fun convert(@PathVariable("targetCurrency") targetCurrency: Currency, @RequestBody source: TradeValue): TradeValue {
 ```
 
-</TabsContent>
-
-<TabsContent>
-
 ```java
 @PostMapping("/tradeValues/{targetCurrency}")
 @ResponseContract(basedOn = "source", constraints = new ResponseConstraint("currency = targetCurrency"))
@@ -184,8 +168,7 @@ fun convert(@PathVariable("targetCurrency") targetCurrency: Currency, @RequestBo
 TradeValue convert(@PathVariable("targetCurrency") Currency targetCurrency, @RequestBody TradeValue source) {}
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 The `@ResponseContract` on this operation tells use that it returns a `TradeValue`, that is based on the `source` parameter, but with it's `currency` value updated to the `targetCurrency` provided in the request.
 

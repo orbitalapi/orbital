@@ -9,6 +9,7 @@ description: >-
 import { Link } from "gatsby"
 import { Hint, Discourage } from "../components/hint"
 import { Tabs, TabsContent } from "../components/tabs"
+import { MultiCodeBlock } from 'gatsby-theme-apollo-docs';
 
 ## Getting started with Vyne
 
@@ -162,8 +163,7 @@ Our demo project uses kotlin, so we going to use kotlin-maven-plugin to build it
 
 This is a basic Spring Boot main class for our HR Demo.
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 @SpringBootApplication
@@ -177,10 +177,6 @@ open class HrApplication{
 }
 ```
 
-</TabsContent>
-
-<TabsContent>
-
 ```java
 @SpringBootApplication
 public class HrApplication {
@@ -190,13 +186,12 @@ public class HrApplication {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
+
 
 ### Defining our domain model
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 typealias EmployeeId = Int
@@ -211,10 +206,6 @@ data class Employee(
         val jobTitle: EmployeeJobTitle
 )
 ```
-
-</TabsContent>
-
-<TabsContent>
 
 ```java
 public class Employee {
@@ -233,8 +224,7 @@ public class Employee {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 <Hint>
   We have not shown the getters in the above java code to remove noise, but they
@@ -340,8 +330,7 @@ Taxi uses the idea of semantic types in place of primitives. \(i.e. instead of e
   on.
 </Hint>
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 @DataType("demo.employee.EmployeeId")
@@ -361,10 +350,6 @@ data class Employee(
         val jobTitle: EmployeeJobTitle
 )
 ```
-
-</TabsContent>
-
-<TabsContent>
 
 ```java
 @DataType("demo.Employee")
@@ -388,8 +373,7 @@ public class Employee {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 Now, run a maven compile, which will let the annotation processor kick in.
 
@@ -410,8 +394,7 @@ In order to leverage this Taxi metadata at runtime, we need to call `TypeAliasRe
 
 </Hint>
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 @SpringBootApplication
@@ -428,10 +411,6 @@ open class HrApplication{
 }
 ```
 
-</TabsContent>
-
-<TabsContent>
-
 ```java
 @SpringBootApplication
 @EnableEurekaClient
@@ -443,8 +422,7 @@ public class HrApplication {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 Here, we added Spring support for Vyne using the `@VyneSchemaPublisher` annotation, and we wired up the TypeAlias metadata from our previous step with `TypeAlliasRegistry.register( ... )`.
 
@@ -490,8 +468,7 @@ vyne:
 
 Now that we have created our types, we can expose our endpoints:
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 @RestController
@@ -524,10 +501,6 @@ class HrEmployees {
 
 }
 ```
-
-</TabsContent>
-
-<TabsContent>
 
 ```java
 @RestController
@@ -563,8 +536,7 @@ class HrEmployees {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 `@Service` and `@Operation` are the only Vyne specific code above. These annotations allow our service and our endpoints to be exposed to Vyne.
 

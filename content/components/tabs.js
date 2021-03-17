@@ -4,10 +4,14 @@ import { MDXProvider } from "@mdx-js/react"
 import tw, { styled } from "twin.macro"
 
 const classCommons = ` py-4 px-6 block hover:text-blue-500 focus:outline-none`
-const ContainerDiv = tw.div`bg-white mb-4`
+const ContainerDiv = tw.div`bg-white mt-5 mb-4`
 const TabsNav = tw.nav`flex flex-col sm:flex-row`
 const TabsButton = styled.button`
   ${({ isActive }) => [
+    !isActive && `
+      color: #text-gray-600;
+      background: rgba(244,246,248, 0.2);
+      border: 1px solid #f4f6f8;`,
     isActive &&
       `color: #text-gray-600;
       background: #F4F6F8;
@@ -57,8 +61,6 @@ export function Tabs({ tabsNav, children }) {
       </TabsNav>
       <div className="panels-container">
         {activeTab && ((activeTab.length > 1 && children[activeTab.indexOf(true)]) || children)}
-        {/*<TabsContent isActive>Panel one conten here</TabsContent>
-        <MDXProvider></MDXProvider>*/}
       </div>
     </ContainerDiv>
   )

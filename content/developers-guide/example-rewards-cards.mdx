@@ -6,6 +6,7 @@ description: >-
   API, and see how Vyne adapts on the fly
 ---
 
+import {MultiCodeBlock} from 'gatsby-theme-apollo-docs';
 import { Hint } from "../components/hint"
 import { Tabs, TabsContent } from "../components/tabs"
 
@@ -79,8 +80,7 @@ Here are our services:
 
 The first service we'll define is the Customer service - which simply takes a `CustomerEmail` and returns a `Customer`. Here's the relevant extract:
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 @DataType("demo.CustomerId")
@@ -101,10 +101,6 @@ data class Customer(
 fun getCustomerByEmail(@PathVariable("email") email: CustomerEmailAddress) =
     customers.first { it.email == email }
 ```
-
-</TabsContent>
-
-<TabsContent>
 
 ```java
 @DataType("demo.Customer")
@@ -136,8 +132,7 @@ class Customers {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 There's a few points of interest there in the Kotlin code - let's drill down:
 
@@ -449,8 +444,7 @@ At runtime, we need to register the captured metadata, so that Vyne and Taxi can
 
 This is a simple 1-line addition in the start of our application's main method. This is only applicable in Kotlin, the Java code will remain the same:
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 open class RewardsBalanceApp {
@@ -465,10 +459,6 @@ open class RewardsBalanceApp {
 }
 ```
 
-</TabsContent>
-
-<TabsContent>
-
 ```java
 public class RewardsBalanceApp {
     public static void main(String[] args) {
@@ -477,8 +467,7 @@ public class RewardsBalanceApp {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 <Hint>
   Note: We're working on making this more seamless, especially when working in
@@ -541,8 +530,7 @@ Also, we want to access some of the types from our other services we just author
   are discussed below.
 </Hint>
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 @SpringBootApplication
@@ -575,10 +563,6 @@ class QueryController(val vyne: VyneClient) {
 data class Customer(val customerEmail: CustomerEmailAddress)
 
 ```
-
-</TabsContent>
-
-<TabsContent>
 
 ```java
 @SpringBootApplication
@@ -614,8 +598,7 @@ public class Customer {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 Let's look at the bits that are interesting here.
 
@@ -677,8 +660,7 @@ Note the `@ParameterType`? This is part of Taxi's language that instructs toolin
 
 And now, let's remove the `GET` request we had, and require callers to pass us a search object:
 
-<Tabs tabsNav={["Kotlin", "Java"]}>
-<TabsContent>
+<MultiCodeBlock>
 
 ```kotlin
 // Comment out the existing operation...
@@ -694,10 +676,6 @@ fun findCustomer(@RequestBody identity: Identity): Customer {
     return customers[identity.customerNumber] ?: throw error("Customer with id ${identity.customerNumber} not found")
 }
 ```
-
-</TabsContent>
-
-<TabsContent>
 
 ```java
 // Comment out the existing operation...
@@ -715,8 +693,7 @@ Optional<Customer> getCustomer(@RequestBody Indentity indentity) {
 }
 ```
 
-</TabsContent>
-</Tabs>
+</MultiCodeBlock>
 
 So, that's two breaking changes we've introduced - Refactored the model \(including several name changes\), and replaced a method. In a traditional integration scenario, these would require updates to the consumers of the API.
 

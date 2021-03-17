@@ -8,8 +8,9 @@ const divCommons = {
   fontSize: "1.125rem",
   lineHeight: 1.7,
   padding: "24px 24px 24px 50px",
-  marginBottom: "1.45rem",
   backgroundColor: "#F5F7F9",
+  marginTop: "1.5rem",
+  marginBottom: "1.5rem",
 }
 
 const floatingCommons = {
