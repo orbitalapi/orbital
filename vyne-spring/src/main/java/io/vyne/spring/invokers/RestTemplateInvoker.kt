@@ -20,6 +20,7 @@ import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
@@ -116,7 +117,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                   } else {
                      // Assume the response is application/json
 
-                     clientResponse.bodyToMono(typeReference<List<Object>>())
+                     clientResponse.bodyToMono(typeReference<List<Any>>())
                         //TODO This is not right we should marshall to a list of T, not, Object then back to String
                         .flatMapMany { Flux.fromIterable(it) }.map { jacksonObjectMapper().writeValueAsString(it) }
                   }
@@ -155,7 +156,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
             )
       }
 
-      return httpResult.asFlow()
+      return httpResult.asFlow().onEach { log().debug("Emitting TypedInstance ${it}") }
 
    }
 
@@ -170,7 +171,6 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       // If the content has been pre-parsed upstream, we don't evaluate accessors
       val evaluateAccessors = !isPreparsed
       val dataSource = remoteCallDataLineage(parameters, remoteCall)
-      println("Attempting to marshall result to TypedInstance ${result}")
       return TypedInstance.from(operation.returnType.collectionType!!, result, schemaProvider.schema(), source = dataSource, evaluateAccessors = evaluateAccessors)
    }
 
