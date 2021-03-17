@@ -51,7 +51,7 @@ const Content = styled.div`
   overflow-x: scroll;
   padding: 1.25rem 1rem;
 
-  & div[class*="Header"] {
+  & div:nth-last-of-type(2) {
     background: rgba(255, 255, 255, 0.8);
   }
 `
