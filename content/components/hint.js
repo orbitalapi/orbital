@@ -6,7 +6,7 @@ import styled from "@emotion/styled"
 const divCommons = `
   position: relative;
   font-size: 1.125rem;
-  padding: 50px 50px;
+  padding: 30px 50px;
   background-color: #F5F7F9;
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
@@ -15,7 +15,7 @@ const divCommons = `
 const floatingCommons = {
   display: "block",
   position: "absolute",
-  top: 50,
+  top: 30,
   left: 16,
   fontSize: 24,
   padding: 0,
