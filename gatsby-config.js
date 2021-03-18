@@ -69,7 +69,7 @@ module.exports = {
           ],
           Casks: [
             "casks/README",
-            "casks/casks-server-1",
+            "casks/cask-server-1",
             "casks/cask-ingestion",
             "casks/configuration/README",
             "casks/configuration/cask-operations",
