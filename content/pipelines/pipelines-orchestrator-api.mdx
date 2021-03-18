@@ -6,11 +6,11 @@ description: >-
 ---
 
 import { MultiCodeBlock } from "gatsby-theme-apollo-docs"
-import { HttpButton } from "../components/http-buttons"
+import { HeadingWrapper, HttpButton } from "../components/http-buttons"
 
 A Swagger UI is available at `http://pipelies-orchestrator:9600/swagger-ui.html`
 
-## <HttpButton /> Get Piplines
+## <HeadingWrapper><HttpButton /> Get Piplines</HeadingWrapper>
 
 `http://pipelines-orchestrator:9600/api/pipelines`
 
@@ -39,7 +39,7 @@ Retrieve all the scheduled/running pipelines
 
 </MultiCodeBlock>
 
-## <HttpButton isPost={true} /> Submit a pipeline
+## <HeadingWrapper><HttpButton isPost={true} /> Submit a pipeline</HeadingWrapper>
 
 `http://pipelines-orchestrator:9600/api/pipelines`
 
@@ -68,7 +68,7 @@ pipelineDescription  `string`  The pipeline description
 
 </MultiCodeBlock>
 
-## <HttpButton /> Get the Runners
+## <HeadingWrapper><HttpButton /> Get the Runners</HeadingWrapper>
 
 `http://pipelines-orchestrator:9600/api/runners`
 

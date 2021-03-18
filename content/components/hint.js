@@ -6,7 +6,7 @@ import styled from "@emotion/styled"
 const divCommons = `
   position: relative;
   font-size: 1.125rem;
-  padding: 30px 50px;
+  padding: 1.5rem 2.8rem;
   background-color: #F5F7F9;
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
@@ -15,9 +15,9 @@ const divCommons = `
 const floatingCommons = {
   display: "block",
   position: "absolute",
-  top: 30,
-  left: 16,
-  fontSize: 24,
+  top: "1.5rem",
+  left: "1rem",
+  fontSize: "1.45rem",
   padding: 0,
 }
 
@@ -56,6 +56,7 @@ export function Prefer({ props }) {
     </div>
   )
 }
+
 export function Discourage({ type, ...props }) {
   return (
     <DiscourageDiv>
@@ -66,6 +67,7 @@ export function Discourage({ type, ...props }) {
     </DiscourageDiv>
   )
 }
+
 export function Hint({ type, ...props }) {
   return (
     <HintDiv>
