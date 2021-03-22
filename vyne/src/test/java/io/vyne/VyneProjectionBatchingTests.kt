@@ -8,6 +8,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
 
+/*
 class VyneProjectionBatchingTests {
 
    val schema = TaxiSchema.from(
@@ -138,3 +139,4 @@ class VyneProjectionBatchingTests {
 private fun TypedCollection.orderWithId(id: Int) :TypedObject {
  return  this.first { (it as TypedObject)["orderId"].value == id } as TypedObject
 }
+*/

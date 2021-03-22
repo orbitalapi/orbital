@@ -9,6 +9,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 
+/*
 class ParameterFactoryTest {
 
    lateinit var vyne: Vyne
@@ -44,3 +45,4 @@ class ParameterFactoryTest {
       runBlocking {ParameterFactory().discover(vyne.type("FirstName"), vyne.query().queryEngine.queryContext())}
    }
 }
+*/

@@ -4,14 +4,14 @@ import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.queryBuilders.VyneQlGrammar
-import io.vyne.queryDeclaration
+//import io.vyne.queryDeclaration
 import io.vyne.schemas.taxi.TaxiSchema
-import io.vyne.testVyne
+//import io.vyne.testVyne
 import io.vyne.vyneql.VyneQlCompiler
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
-
+/*
 class QueryOperationInvocationStrategyTest {
    val schema = TaxiSchema.fromStrings(
       VyneQlGrammar.QUERY_TYPE_TAXI,
@@ -132,3 +132,4 @@ fun getQuerySpecNode(vyneQl: String, schema: TaxiSchema): QuerySpecTypeNode {
    return querySpecNodes.first()
 
 }
+*/

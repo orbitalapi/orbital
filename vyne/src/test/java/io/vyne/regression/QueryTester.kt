@@ -44,6 +44,8 @@ import java.io.File
  *
  * Find the entry you wan
  */
+
+/*
 class QueryTester {
    private val objectMapper: ObjectMapper = jacksonObjectMapper()
       .registerModule(VyneJacksonModule())
@@ -171,3 +173,4 @@ class NullAwareTypeNamedInstanceDeserialiser : TypeNamedInstanceDeserializer() {
 
 @JsonDeserialize(using = NullAwareTypeNamedInstanceDeserialiser::class)
 class TypeNamedInstanceMixIn
+*/

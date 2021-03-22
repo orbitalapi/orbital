@@ -42,6 +42,7 @@ import java.time.Instant
 import java.time.LocalDate
 import kotlin.test.fail
 
+/*
 object TestSchema {
    val taxiDef = """
 namespace vyne.example
@@ -1920,3 +1921,4 @@ fun Vyne.typedValue(typeName: String, value: Any, source: DataSource = Provided)
 
 data class Edge(val operation: Operation)
 data class Vertex(val type: Type)
+*/

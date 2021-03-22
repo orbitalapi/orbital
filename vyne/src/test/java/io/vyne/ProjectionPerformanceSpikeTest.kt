@@ -16,7 +16,7 @@ import org.junit.Ignore
 import org.junit.Test
 import java.io.File
 import java.nio.file.Paths
-
+/*
 @Ignore("This test requires access to client specific content, which is not checked in.  Keeping the test here, as its useful for spiking perf improvements.")
 class ProjectionPerformanceSpikeTest {
    val twoItems = """
@@ -1938,3 +1938,4 @@ OPTL
       }
    }
 }
+*/

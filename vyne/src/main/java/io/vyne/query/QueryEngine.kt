@@ -1,6 +1,5 @@
 package io.vyne.query
 
-import arrow.core.extensions.set.foldable.get
 import io.vyne.*
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -12,13 +11,8 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import io.vyne.utils.timed
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.flow.cache
-import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
-import kotlin.coroutines.CoroutineContext
 
 
 open class SearchFailedException(message: String, val evaluatedPath: List<EvaluatedEdge>, val profilerOperation: ProfilerOperation) : RuntimeException(message)

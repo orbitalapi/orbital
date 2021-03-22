@@ -11,6 +11,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
+/*
 class VynePolicyTest {
 
    // alt: process using SomeProcessor
@@ -315,3 +316,4 @@ namespace test {
 //   }
 
 }
+*/

@@ -8,6 +8,7 @@ import io.vyne.query.QuerySpecTypeNode
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 
+/*
 class QueryResultSerializationTest {
 
    val taxiDef = """
@@ -100,3 +101,4 @@ class QueryResultSerializationTest {
       JSONAssert.assertEquals(expected, json, true)
    }
 }
+*/

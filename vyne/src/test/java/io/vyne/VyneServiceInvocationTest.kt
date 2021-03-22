@@ -5,7 +5,7 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
-
+/*
 class VyneServiceInvocationTest  {
 
    @Test
@@ -59,3 +59,4 @@ class VyneServiceInvocationTest  {
 
    }
 }
+*/

@@ -15,7 +15,7 @@ import io.vyne.utils.log
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.math.BigDecimal
-
+/*
 class InvoiceMarkupWithContractsTest {
    val taxiDef = """
 namespace vyne.creditInc {
@@ -202,3 +202,4 @@ fun containsArg(args: Collection<TypedInstance>, type: String, value: Any): Bool
 }
 
 typealias TypeName = String
+*/

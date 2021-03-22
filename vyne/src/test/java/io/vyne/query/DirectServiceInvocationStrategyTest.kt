@@ -6,7 +6,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.schemas.Operation
 import io.vyne.schemas.PropertyToParameterConstraint
 import io.vyne.schemas.RemoteOperation
-import io.vyne.testVyne
+//import io.vyne.testVyne
 import kotlinx.coroutines.runBlocking
 import lang.taxi.Operator
 import lang.taxi.services.operations.constraints.ConstantValueExpression
@@ -14,7 +14,7 @@ import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.QualifiedName
 import org.junit.Test
 import java.time.Instant
-
+/*
 class DirectServiceInvocationStrategyTest {
    val schema = """
       type Trade {
@@ -138,3 +138,4 @@ class DirectServiceInvocationStrategyTest {
          .flatMap { (_, operationMap) -> operationMap.keys.toList() }
    }
 }
+*/

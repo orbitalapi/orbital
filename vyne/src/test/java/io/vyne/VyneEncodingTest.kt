@@ -6,7 +6,7 @@ import io.vyne.models.json.parseJsonModel
 import lang.taxi.CompilationException
 import org.junit.Test
 
-
+/*
 class VyneEncodingTest {
 
    @Test
@@ -74,4 +74,4 @@ class VyneEncodingTest {
    }
 
 }
-
+*/

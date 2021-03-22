@@ -19,9 +19,10 @@ import io.vyne.schemas.httpOperationMetadata
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
 import io.vyne.utils.orElse
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactive.collect
+import kotlinx.coroutines.runBlocking
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -35,11 +36,13 @@ import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.ClientHttpResponse
 import org.springframework.web.client.ResponseErrorHandler
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.DefaultUriBuilderFactory
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.util.retry.Retry
 import java.time.Duration
@@ -82,27 +85,31 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
       val (_, url, method) = operation.httpOperationMetadata()
       val httpMethod = HttpMethod.resolve(method)
-      val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
+      //val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
 
          val absoluteUrl = makeUrlAbsolute(service, operation, url)
          val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
 
          log().debug("Operation ${operation.name} resolves to $absoluteUrl")
-         httpInvokeOperation.addContext("AbsoluteUrl", absoluteUrl)
+         //httpInvokeOperation.addContext("AbsoluteUrl", absoluteUrl)
 
          val requestBody = buildRequestBody(operation, parameters.map { it.second })
-         httpInvokeOperation.addContext("Service", service)
-         httpInvokeOperation.addContext("Operation", operation)
+         //httpInvokeOperation.addContext("Service", service)
+         //httpInvokeOperation.addContext("Operation", operation)
 
          val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl,uriVariables)
 
 
          //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
-         webClient
+         val requset = webClient
             .method(httpMethod)
             .uri(absoluteUrl, uriVariables)
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(requestBody.first.body)
+            if (requestBody.first.hasBody()) {
+               requset.bodyValue(requestBody.first.body)
+            }
+
+         val results = requset
             .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
             .exchange()
             .metrics()
@@ -134,7 +141,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                         httpMethod.name,
                         requestBody.first.body,
                         clientResponse.rawStatusCode(),
-                        httpInvokeOperation.duration,
+                        20,
                         it
                      )
 
@@ -145,20 +152,15 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                         remoteCall,
                         clientResponse.headers()
                      )
-
                   }
+            }
+      //}
 
-            }.retryWhen(
-               Retry.backoff(
-                  3,
-                  Duration.ofMillis(100)
-               )
-            )
-      }
-
-      return httpResult.asFlow().onEach { log().debug("Emitting TypedInstance ${it}") }
+      return results.asFlow()
 
    }
+
+
 
    private fun handleSuccessfulHttpResponse(result: String, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall, headers: ClientResponse.Headers): TypedInstance {
       // TODO : Handle scenario where we get a 2xx response, but no body

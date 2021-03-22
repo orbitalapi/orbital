@@ -199,11 +199,11 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
             // happens when Schema is empty
             FailedSearchResponse(e.message!!, null)
          }
-         val recordProvider = {
-            VyneQlQueryHistoryRecord(query, response.historyRecord())
-         }
-         history.add(recordProvider)
-
+         //val recordProvider = {
+         //   VyneQlQueryHistoryRecord(query, response.historyRecord())
+         //}
+         //history.add(recordProvider)
+         println("Returnign a response now")
          return serialise(response, contentType, outputStream, resultMode)
       //}
    }
@@ -214,6 +214,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
     * Returns the MediaType that was ultimately selected
     */
    private suspend fun serialise(queryResponse: QueryResponse, contentType: String, outputStream: OutputStream, resultMode: ResultMode): MimeTypeString {
+      println("Starting to serialise a response")
       return when (queryResponse) {
          is QueryResult -> {
             when (resultMode) {
@@ -224,12 +225,19 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
                      else -> toJson(mapOf(queryResponse.type.toString() to queryResponse.simpleResults?.toList()), outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
                   }
                }
+
                // Any other result mode is json
-               else -> generateResponseJson(queryResponse, outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
+               else -> {
+                  println("Some other response")
+                  generateResponseJson(queryResponse.results?.toList(), outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
+               }
             }
          }
          // Any Query failure is json
-         else -> generateResponseJson(queryResponse, outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
+         else -> {
+            println("Not a queryResult")
+            generateResponseJson(queryResponse, outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
+         }
       }
    }
 
@@ -238,12 +246,14 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       generateResponseJson(firstResult, outputStream, resultMode)
    }
 
-   private fun generateResponseJson(response: Any, outputStream: OutputStream, resultMode: ResultMode) {
+   private fun generateResponseJson(response: Any?, outputStream: OutputStream, resultMode: ResultMode) {
       // We handle the serialization here, and return a string, rather than
       // letting Spring handle it.
       // This is because the LineageGraphSerializationModule() is stateful, and
       // shares references during serialization.  Therefore, it's not threadsafe, so
       // we create an instance per response.
+      println("In generateResponseJson")
+      println("Results ${response}")
       objectMapper
          //        .copy()
 //         .registerModule(LineageGraphSerializationModule())

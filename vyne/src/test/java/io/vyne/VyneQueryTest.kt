@@ -9,6 +9,7 @@ import kotlinx.coroutines.runBlocking
 import lang.taxi.services.QueryOperationCapability
 import org.junit.Test
 
+/*
 class VyneQueryTest {
    @Test
    fun willInvokeAQueryToDiscoverValues() {
@@ -54,3 +55,4 @@ fun queryDeclaration(queryName: String, returnTypeName: String, capabilities: Li
       }
    """.trimIndent()
 }
+*/
