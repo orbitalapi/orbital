@@ -14,12 +14,12 @@ import io.vyne.queryService.persistency.QueryHistoryRecordReadingConverter
 import io.vyne.queryService.persistency.QueryHistoryRecordWritingConverter
 import io.vyne.queryService.persistency.ReactiveDatabaseSupport
 import io.vyne.schemas.fqn
-import io.vyne.testVyne
+//import io.vyne.testVyne
 import org.junit.Before
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import org.skyscreamer.jsonassert.JSONCompareMode
-
+/*
 class QueryHistorySerializationTest {
 
    private lateinit var objectMapper: ObjectMapper
@@ -434,3 +434,5 @@ class QueryHistorySerializationTest {
 //   }
 
 }
+
+ */

@@ -9,13 +9,13 @@ import io.vyne.query.Query
 import io.vyne.query.QueryMode
 import io.vyne.query.TypeNameListQueryExpression
 import io.vyne.spring.VyneFactory
-import io.vyne.testVyne
+//import io.vyne.testVyne
 import org.junit.Before
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.ByteArrayOutputStream
-
+/*
 abstract class BaseQueryServiceTest {
    companion object {
       val testSchema = """
@@ -114,3 +114,4 @@ fun ResponseEntity<StreamingResponseBody>.contentString():String {
    this.body!!.writeTo(stream)
    return String(stream.toByteArray())
 }
+*/

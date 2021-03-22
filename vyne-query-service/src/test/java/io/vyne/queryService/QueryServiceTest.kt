@@ -9,7 +9,7 @@ import org.junit.Ignore
 import org.junit.Test
 import org.springframework.http.MediaType
 import kotlin.test.assertEquals
-
+/*
 class QueryServiceTest : BaseQueryServiceTest() {
 
 
@@ -172,4 +172,4 @@ orderId_1,pierre,
       response["message"].textValue().should.equal("The search failed with an exception: Found 2 instances of MaturityDate. Values are (TradeMaturityDate, 2026-12-01), (InstrumentMaturityDate, 2025-12-01)")
    }
 }
-
+*/
