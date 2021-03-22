@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import arrow.core.extensions.set.foldable.get
 import io.vyne.*
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -13,8 +14,11 @@ import io.vyne.schemas.Type
 import io.vyne.utils.log
 import io.vyne.utils.timed
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.cache
 import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
+import kotlin.coroutines.CoroutineContext
 
 
 open class SearchFailedException(message: String, val evaluatedPath: List<EvaluatedEdge>, val profilerOperation: ProfilerOperation) : RuntimeException(message)
@@ -132,16 +136,16 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
       val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
       val result: TypedInstance? = when {
-         isCollectionToCollectionTransformation -> {
-            mapCollectionToCollection(targetType, context)
-         }
+         //isCollectionToCollectionTransformation -> {
+         //   mapCollectionToCollection(targetType, context)
+         //}
          isCollectionsToCollectionTransformation -> {
             mapCollectionsToCollection(targetType, context)
          }
 
-         isSingleToCollectionTransform -> {
-            mapSingleToCollection(targetType, context)
-         }
+         //isSingleToCollectionTransform -> {
+            //mapSingleToCollection(targetType, context)
+         //}
          targetType.isCollection && context.facts.all { it is TypedNull } -> {
             TypedCollection.arrayOf(targetType.collectionType!!, emptyList())
          }
@@ -153,14 +157,16 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
       return if (result != null) {
          QueryResult(
-            mapOf(querySpecTypeNode to result),
+            querySpecTypeNode,
+            flow { result } ,
             emptySet(),
             profilerOperation = context.profiler.root,
             anonymousTypes = context.schema.typeCache.anonymousTypes()
          )
       } else {
          QueryResult(
-            emptyMap(),
+            querySpecTypeNode,
+            null,
             setOf(querySpecTypeNode),
             profilerOperation = context.profiler.root
          )
@@ -193,7 +199,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    }
 
    // This logic executes currently as part of projection from one collection to another
-   private fun mapCollectionToCollection(targetType: Type, context: QueryContext): TypedInstance? {
+   /*
+   private suspend fun mapCollectionToCollection(targetType: Type, context: QueryContext): TypedInstance? {
       require(targetType.resolveAliases().typeParameters.size == 1) { "Expected collection type to contain exactly 1 parameter" }
       val targetCollectionType = targetType.resolveAliases().typeParameters[0]
       return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
@@ -207,10 +214,13 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
    }
 
-   private fun mapSingleToCollection(targetType: Type, context: QueryContext): TypedInstance? {
+    */
+
+   /*
+   private suspend fun mapSingleToCollection(targetType: Type, context: QueryContext): TypedInstance? {
       require(targetType.resolveAliases().typeParameters.size == 1) { "Expected collection type to contain exactly 1 parameter" }
       val targetCollectionType = targetType.resolveAliases().typeParameters[0]
-      return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
+      //return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
 
          val inboundFactList = listOf(onlyTypedObject(context)!!)
          log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
@@ -223,12 +233,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             .filter { it != null }
             .collect(Collectors.toList())
 
-         return@timed when {
+         return when {
             transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
             else -> TypedCollection.from(flattenResult(transformed))
          }
-      }
+      //}
    }
+
+    */
 
    private fun flattenResult(result: List<TypedInstance?>): List<TypedInstance> {
       return result
@@ -241,15 +253,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          }
    }
 
-   private fun mapTo(targetType: Type, typedInstance: TypedInstance, context: QueryContext): TypedInstance? {
+   private suspend fun mapTo(targetType: Type, typedInstance: TypedInstance, context: QueryContext): TypedInstance? {
 
-      val transformationResult = runBlocking {
-         context.only(typedInstance).build(targetType.fullyQualifiedName)
-      }
+      val transformationResult = context.only(typedInstance).build(targetType.fullyQualifiedName)
 
       return if (transformationResult.isFullyResolved) {
-         require(transformationResult.results.size == 1) { "Expected only a single transformation result" }
-         val result = transformationResult.results.values.first()
+         val results = transformationResult.results?.toList()
+         require(results?.size == 1) { "Expected only a single transformation result" }
+         val result = results?.first()
          if (result == null) {
             log().warn("Transformation from $typedInstance to instance of ${targetType.fullyQualifiedName} was reported as sucessful, but result was null")
          }
@@ -300,81 +311,85 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    }
 
 
-
+   //TODO we still have places in the code that expect/consume a Set<QuerySpecTypeNode>
    private suspend fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
       // TODO : BIG opportunity to optimize this by evaluating multiple querySpecNodes at once.
       // Which would allow us to be smarter about results we collect from rest calls.
       // Optimize later.
-      val results = target.map { doFind(it, context, spec) }
-      val result = results.reduce { acc, queryResult ->
-         QueryResult(
-            results = acc.results + queryResult.results,
-            unmatchedNodes = acc.unmatchedNodes + queryResult.unmatchedNodes,
-            path = null,
-            profilerOperation = queryResult.profilerOperation,
-            anonymousTypes = acc.anonymousTypes + acc.anonymousTypes
-         )
-      }
-      return result
+      //target.get(0).map { doFind(it, context, spec) }
+
+      val queryResult = doFind(target.first(), context, spec)
+
+      return QueryResult(
+         type = target.first(),
+         results = queryResult.results,
+         unmatchedNodes = queryResult.unmatchedNodes,
+         path = null,
+         profilerOperation = queryResult.profilerOperation,
+         anonymousTypes = queryResult.anonymousTypes
+      )
+
    }
 
    private suspend fun doFind(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate, excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()): QueryResult {
 
-      val matchedNodes = mutableMapOf<QuerySpecTypeNode, TypedInstance?>()
-
       // Note: We used to take a set<QuerySpecTypeNode>, but currently only take a single.
       // We'll likely re-optimize to take multiple, but for now wrap in a set.
       // This can (and should) change in the future
-      val querySet = setOf(target)
+      //val querySet = setOf(target)
 
       // This is cheating, probably.
       // We only resolve top-level nodes, rather than traverse deeply.
-      fun unresolvedNodes(): List<QuerySpecTypeNode> {
-         return querySet.filterNot { matchedNodes.containsKey(it) }
-      }
+      //fun unresolvedNodes(): List<QuerySpecTypeNode> {
+      //   return querySet.filterNot { matchedNodes.containsKey(it) }
+      //}
 
-      val strategyIterator: Iterator<QueryStrategy> = strategies.iterator()
-      while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
-         val queryStrategy = strategyIterator.next()
-         //timed(name = "Strategy ${queryStrategy::class.java.name} ${target.type.name}", timeUnit = TimeUnit.MICROSECONDS, log = false) {
-            val strategyResult = invokeStrategy(context, queryStrategy, querySet, target, InvocationConstraints(spec, excludedOperations))
-            // Note : We should add this additional data to the context too,
-            // so that it's available for future query strategies to use.
-            context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
+      //TODO this is an awful way to check if a strategy has result and only emit the results from that stratrgy
+      val resultsFlow = flow {
+         var resultsRecivedFromStrategy = false
 
-            matchedNodes.putAll(strategyResult.matchedNodes)
+         for (queryStrategy in strategies) {
+            if (resultsRecivedFromStrategy) {
+               break
+            }
 
-            if (strategyResult.additionalData.isNotEmpty()) {
-               // Note: Maybe we should only start re-querying if unresolvedNodes() has content
-               log().debug("Discovered additional facts, adding to the context")
-               context.addFacts(strategyResult.additionalData)
+            val strategyResult = invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
+            if (strategyResult.hasMatchesNodes()) {
+               strategyResult.matchedNodes?.collect {
+                  resultsRecivedFromStrategy = true
+                  emit(it)
+               }
             }
          }
-      //}
-      val currentlyUnresolvedNodes = unresolvedNodes()
-      if (currentlyUnresolvedNodes.isNotEmpty()) {
-         // Commenting out, creates noise and even with debug off it creates the underlying string from unresolved nodes
-         // log().debug("The following nodes weren't matched: ${unresolvedNodes().joinToString(", ")}")
+
       }
+
+      // Note : We should add this additional data to the context too,
+      // so that it's available for future query strategies to use.
+      //context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
 
       // isProjecting is a (maybe) temporary little fix to allow projection
       // Without it, there's a stack overflow error as projectTo seems to call ObjectBuilder.build which calls projectTo again.
       // ... Investigate
-
-      return if (!context.isProjecting && context.projectResultsTo() != null) {
-         projectTo(context.projectResultsTo()!!, context)
-      } else QueryResult(
-         matchedNodes,
-         currentlyUnresolvedNodes.toSet(),
+      return QueryResult(
+         target,
+         resultsFlow.map{
+            if (context.projectResultsTo() != null) {
+               mapTo(context.projectResultsTo()!!, it, context)!! //TODO project TypedInstance to type context.projectResultsTo()
+            } else {
+               it
+            }
+         },
+         emptySet(),
          path = null,
          profilerOperation = context.profiler.root
       )
+
    }
 
    private suspend fun invokeStrategy(
       context: QueryContext,
       queryStrategy: QueryStrategy,
-      querySet: Set<QuerySpecTypeNode>,
       target: QuerySpecTypeNode,
       invocationConstraints: InvocationConstraints): QueryStrategyResult {
       return if (context.debugProfiling) {

@@ -8,6 +8,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.runBlocking
 
@@ -27,7 +28,7 @@ class ConstraintViolationResolver {
     * Resolves violations by leveraging providers in the graph.
     * If resolution of a violation is not possible, throws an exception
     */
-   suspend fun resolveViolations(evaluatedParameters: Map<Parameter, ConstraintEvaluations>, queryContext: QueryContext, operationEvaluator: OperationInvocationService): Map<Parameter, TypedInstance> {
+   suspend fun resolveViolations(evaluatedParameters: Flow<Pair<Parameter, ConstraintEvaluations>>, queryContext: QueryContext, operationEvaluator: OperationInvocationService): Flow<Pair<Parameter, TypedInstance>> {
       val resolvedParameters = evaluatedParameters.map { (param, evaluations) ->
          if (!evaluations.isValid) {
             val resolvedValue = resolveViolations(param, evaluations, queryContext, operationEvaluator)
@@ -35,7 +36,7 @@ class ConstraintViolationResolver {
          } else {
             param to evaluations.evaluatedValue
          }
-      }.toMap()
+      }
       return resolvedParameters
    }
 

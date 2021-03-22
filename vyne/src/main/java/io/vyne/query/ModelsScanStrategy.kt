@@ -1,6 +1,7 @@
 package io.vyne.query
 
 import io.vyne.schemas.Type
+import kotlinx.coroutines.flow.flow
 import org.springframework.stereotype.Component
 
 /**
@@ -37,7 +38,13 @@ class ModelsScanStrategy : QueryStrategy {
          .filter { it.second != null }
          .filter { spec.isValid(it.second!!) }
          .toMap()
-      return QueryStrategyResult(matches)
+         .map { it.value }
+
+      if (matches.isEmpty()) {
+         return QueryStrategyResult(null)
+      }
+
+      return QueryStrategyResult( flow {matches} )
    }
 }
 

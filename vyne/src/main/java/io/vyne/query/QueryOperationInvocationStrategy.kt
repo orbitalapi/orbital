@@ -13,6 +13,7 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import kotlinx.coroutines.flow.collect
 import lang.taxi.Operator
 import org.springframework.stereotype.Component
 
@@ -21,7 +22,8 @@ class QueryOperationInvocationStrategy(invocationService: OperationInvocationSer
    private val queryOperationMap = mutableMapOf<Type, List<QueryOperation>>()
    override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       val candidateOperations = lookForCandidateQueryOperations(context, target)
-      return invokeOperations(candidateOperations, context, target)
+      val result = invokeOperations(candidateOperations, context, target)
+      return result
    }
 
    private fun lookForCandidateQueryOperations(context: QueryContext, target: Set<QuerySpecTypeNode>): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {

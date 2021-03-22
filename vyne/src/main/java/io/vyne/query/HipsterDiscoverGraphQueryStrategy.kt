@@ -17,6 +17,7 @@ import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import lang.taxi.Equality
 
@@ -96,7 +97,7 @@ class HipsterDiscoverGraphQueryStrategy(
       // search from every fact in the context
       val lastResult: TypedInstance? = find(targetElement, context, invocationConstraints)
       return if (lastResult != null) {
-         QueryStrategyResult(mapOf(target to lastResult))
+         QueryStrategyResult( flow { mapOf(target to lastResult).map { it.value } })
       } else {
          QueryStrategyResult.empty()
       }

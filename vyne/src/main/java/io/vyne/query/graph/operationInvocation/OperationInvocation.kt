@@ -1,7 +1,6 @@
 package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryResult
@@ -22,11 +21,8 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 
@@ -44,18 +40,22 @@ interface OperationInvoker {
 }
 
 class DefaultOperationInvocationService(private val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
-   override suspend fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): Flow<TypedInstance> {
+   override suspend fun invokeOperation(
+      service: Service,
+      operation: RemoteOperation,
+      preferredParams: Set<TypedInstance>,
+      context: QueryContext,
+      providedParamValues: List<Pair<Parameter, TypedInstance>>
+   ): Flow<TypedInstance> {
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
       val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
-      val result: Flow<TypedInstance> = invoker.invoke(service, operation, resolvedParams, context)
-
-      return result
+      return invoker.invoke(service, operation, resolvedParams.toList(), context)
    }
 
-   private suspend fun gatherParameters(parameters: List<Parameter>, candidateParamValues: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): List<Pair<Parameter, TypedInstance>> {
+   private suspend fun gatherParameters(parameters: List<Parameter>, candidateParamValues: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): Flow<Pair<Parameter, TypedInstance>> {
       // NOTE : See DirectServiceInvocationStrategy, where we have an alternative approach for gatehring params.
       // Suggest merging that here.
 
@@ -81,7 +81,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
          }
 
       // Try to resolve any unresolved params
-      var resolvedParams = emptyMap<QuerySpecTypeNode, TypedInstance?>()
+      var resolvedParams : Flow<TypedInstance>? = flow {}
       if (unresolvedParams.isNotEmpty()) {
          log().debug("Querying to find params for Operation : ${unresolvedParams.map { it.type.fullyQualifiedName }}")
          val paramsToSearchFor = unresolvedParams.map { QuerySpecTypeNode(it.type) }.toSet()
@@ -95,15 +95,18 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       // Now, either all the params were available in the first pass,
       // or they've been subsequently resolved against the context / graph.
       // So, create a final list of values.
-      val parametersWithValues = parameterValuesOrQuerySpecs.map { (param, valueOrQuerySpec) ->
+
+      val parametersWithValues:Flow<Pair<Parameter, TypedInstance>> = parameterValuesOrQuerySpecs.map { (param, valueOrQuerySpec) ->
          when (valueOrQuerySpec) {
             is TypedInstance -> param to valueOrQuerySpec
-            is QuerySpecTypeNode -> param to resolvedParams[valueOrQuerySpec]!!
+            is QuerySpecTypeNode -> param to resolvedParams?.firstOrNull()!!
             else -> error("Unexpected type in parameterValuesOrQuerySpecs -> ${valueOrQuerySpec.javaClass.name}")
-         }
-      } + providedParamValues
 
-      return parametersWithValues
+         }
+      }.asFlow()
+
+      return flowOf(parametersWithValues, providedParamValues.asFlow()).flattenMerge()
+
    }
 
    /**
@@ -112,17 +115,19 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
     * If the contract is not satisfied, we attempt to satisfy the contract leveraging
     * the graph, and fail if the resolution was unsuccessful
     */
-   private suspend fun ensureParametersSatisfyContracts(parametersWithValues: List<Pair<Parameter, TypedInstance>>, context: QueryContext): List<Pair<Parameter, TypedInstance>> {
+   private suspend fun ensureParametersSatisfyContracts(parametersWithValues: Flow<Pair<Parameter, TypedInstance>>, context: QueryContext): Flow<Pair<Parameter, TypedInstance>> {
+
+
       val paramsToConstraintEvaluations = parametersWithValues.map { (paramSpec, paramValue) ->
          paramSpec to ConstraintEvaluations(paramValue,
             paramSpec.constraints.map { constraint ->
                constraint.evaluate(paramSpec.type, paramValue, context.schema)
             }
          )
-      }.toMap()
+      }
 
       val resolvedParameterValues = constraintViolationResolver.resolveViolations(paramsToConstraintEvaluations, context, this)
-      return resolvedParameterValues.toList()
+      return resolvedParameterValues
    }
 }
 
@@ -144,28 +149,28 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
             if (edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type)) {
                edge.previousValue
             } else {
-               val paramInstance = parameterFactory.discover(requiredParam.type, context, operation)
-               context.addFact(paramInstance)
+               val paramInstance = parameterFactory.discover(requiredParam.type, context, operation)!!
+               paramInstance.onEach { context.addFact(it) }
                paramInstance
             }
 
 
          } catch (e: Exception) {
             log().warn("Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}")
-            return flow { edge.failure(null) }
+            return flow {edge.failure(null)}
          }
       }
 
       val callArgs = parameterValues.toSet()
-      if (context.hasOperationResult(edge, callArgs)) {
+      if (context.hasOperationResult(edge, callArgs as Set<TypedInstance>)) {
          val cachedResult = context.getOperationResult(edge, callArgs)
          cachedResult?.let { context.addFact(it) }
-         return flow { edge.success(cachedResult) }
+         return  flow {edge.success(cachedResult)}
       }
 
       return try {
 
-         val result: Flow<TypedInstance> = invocationService.invokeOperation(service, operation, callArgs, context)
+         val result:Flow<TypedInstance>  = invocationService.invokeOperation(service, operation, callArgs, context)
 
          result.onEach {
             context.addFact(it)

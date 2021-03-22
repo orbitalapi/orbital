@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.collect.HashMultimap
 import io.vyne.models.*
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
@@ -21,14 +20,21 @@ import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.schemas.*
 import io.vyne.utils.log
-import io.vyne.utils.timed
 import io.vyne.vyneql.ProjectedType
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import java.util.*
 import java.util.stream.Stream
 import kotlin.streams.toList
+import java.io.PrintWriter
+
+import java.io.StringWriter
+
+
+
 
 /**
  * Defines a node within a QuerySpec that
@@ -64,8 +70,10 @@ class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QueryResult(
+   @field:JsonIgnore
+   val type:QuerySpecTypeNode,
    @field:JsonIgnore // we send a lightweight version below
-   val results: Map<QuerySpecTypeNode, TypedInstance?>,
+   val results: Flow<TypedInstance>?,
    @field:JsonIgnore // we send a lightweight version below
    val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
    val path: Path? = null,
@@ -81,18 +89,15 @@ data class QueryResult(
    override val isFullyResolved = unmatchedNodes.isEmpty()
    override val responseStatus: ResponseStatus = if (isFullyResolved) COMPLETED else INCOMPLETE
 
-   operator fun get(typeName: String): TypedInstance? {
+   // TODO Does this make sense given the anymore?
+   operator fun get(typeName: String): Flow<TypedInstance>? {
       val requestedParameterizedName = typeName.fqn().parameterizedName
       // TODO : THis should consider inheritence, rather than strict equals
-      return this.results.filterKeys { it.type.name.parameterizedName == requestedParameterizedName }
-         .values
-         .firstOrNull() ?: error("No result was present with typeName '$typeName'")
+      return this.results
    }
 
-   operator fun get(type: Type): TypedInstance? {
-      return this.results.filterKeys { it.type == type }
-         .values
-         .first()
+   operator fun get(type: Type): Flow<TypedInstance>? {
+      return this.results?.filter { it.type == type }
    }
 
    @JsonProperty("unmatchedNodes")
@@ -100,10 +105,11 @@ data class QueryResult(
 
    @get:JsonIgnore
    val verboseResults: Map<String, Any?> by lazy {
-      val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
-      this.results.map { (key, value) ->
-         key.type.name.parameterizedName to value?.let { converter.convert(it) }
-      }.toMap()
+   //   val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+   //   this.results.map { (key, value) ->
+   //      key.type.name.parameterizedName to value?.let { converter.convert(it) }
+   //   }.toMap()
+      mapOf("a" to "b")
    }
 
    // The result map is structured so the key is the thing that was asked for, and the value
@@ -111,30 +117,19 @@ data class QueryResult(
    // By including the type in both places, it allows for polymorphic return types.
    // Also, the reason we're using Any for the value is that the result could be a
    // TypedInstnace, a map of TypedInstnaces, or a collection of TypedInstances.
+
+
+
    @get:JsonIgnore
-   val simpleResults: Map<String, Any?> by lazy {
+   val simpleResults: Flow<TypedInstance>? by lazy {
       val converter = TypedInstanceConverter(RawObjectMapper)
-      this.results
-         .map { (key, value) -> key.type.name.parameterizedName to value?.let { converter.convert(it) } }
-         .toMap()
-   }
+      results
+    }
 
-   @get:JsonProperty("results")
-   @get:JsonSerialize(using = ResultModeAwareResultSerializer::class)
-   val resultModeAwareResults: QueryResultProvider
-      get() {
-         return QueryResultProvider({ verboseResults }, { simpleResults })
-      }
-
-
-   // For backwards compatability
-   @get:JsonIgnore
-   @delegate:JsonIgnore
-   val resultMap: Map<String, Any?> by lazy { simpleResults }
 
    override fun historyRecord(): HistoryQueryResponse {
       return HistoryQueryResponse(
-         verboseResults,
+         null, // TODO Should a historyRecord contain results ?
          unmatchedNodeNames,
          this.isFullyResolved,
          queryResponseId,

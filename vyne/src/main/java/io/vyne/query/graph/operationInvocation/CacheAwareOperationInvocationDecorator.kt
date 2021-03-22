@@ -8,7 +8,9 @@ import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.runBlocking
 
 class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvoker) : OperationInvoker {
 
@@ -44,9 +46,6 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
          cachedErrors.put(key,exception)
          throw exception
       }
-
-
-      //cachedResults.put(key, value)
 
       return value
 

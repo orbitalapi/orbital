@@ -9,6 +9,8 @@ import io.vyne.schemas.FieldSource
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import lang.taxi.types.ObjectType
 
@@ -82,7 +84,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
 
       return if (targetType.isScalar) {
-         findScalarInstance(targetType, spec)
+         findScalarInstance(targetType, spec)?.firstOrNull()
       } else {
          buildObjectInstance(targetType, spec)
       }
@@ -234,7 +236,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       return null
    }
 
-   private suspend fun findScalarInstance(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
+   private suspend fun findScalarInstance(targetType: Type, spec: TypedInstanceValidPredicate): Flow<TypedInstance>? {
       // Try searching for it.
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {
@@ -244,7 +246,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          return null
       }
       return if (result.isFullyResolved) {
-         result[targetType] ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
+         result.results ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
       } else {
          null
       }

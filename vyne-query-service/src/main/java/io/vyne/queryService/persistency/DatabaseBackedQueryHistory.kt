@@ -45,7 +45,7 @@ class DatabaseBackedQueryHistory(private val repository: QueryHistoryRecordRepos
       val subItems : MutableMap<String, TypeNamedInstance> = mutableMapOf()
       return repository.findByQueryId(id).map { fromDb ->
          val results = fromDb.record.response.results
-         if (results.size == 1 &&
+         if (results?.size == 1 &&
             results.values.first() != null &&
             results.values.first() is List<*>) {
             val typeNamedInstanceList =  results.values.first() as List<Map<String, Any?>>?

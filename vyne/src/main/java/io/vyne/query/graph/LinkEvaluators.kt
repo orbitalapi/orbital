@@ -11,6 +11,7 @@ import io.vyne.schemas.Link
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 
 
@@ -71,7 +72,7 @@ class RequiresParameterEvaluator : LinkEvaluator {
             if (!queryResult.isFullyResolved) {
                throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ", context.evaluatedPath(), context.profiler.root)
             } else {
-               attributeName to queryResult[attributeType]!!
+               attributeName to queryResult!!.results!!.first()
             }
          }
       }.toMap()

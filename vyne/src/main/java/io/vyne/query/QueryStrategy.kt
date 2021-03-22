@@ -1,11 +1,17 @@
 package io.vyne.query
 
 import io.vyne.models.TypedInstance
+import kotlinx.coroutines.flow.Flow
 
 data class QueryStrategyResult(
-   val matchedNodes: Map<QuerySpecTypeNode, TypedInstance?> = emptyMap(),
-   val additionalData: Set<TypedInstance> = emptySet()
+   val matchedNodes: Flow<TypedInstance>? = null
 ) {
+
+   //TODO - determine if the matchednodes flow will return any elements - a crude null check antipattern right now
+   fun hasMatchesNodes(): Boolean {
+      return matchedNodes != null
+   }
+
    companion object {
        fun empty():QueryStrategyResult = QueryStrategyResult()
    }

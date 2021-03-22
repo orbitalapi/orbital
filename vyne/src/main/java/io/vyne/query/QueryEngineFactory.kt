@@ -29,6 +29,8 @@ import io.vyne.query.planner.ProjectionHeuristicsQueryStrategy
 import io.vyne.query.policyManager.DatasourceAwareOperationInvocationServiceDecorator
 import io.vyne.query.policyManager.PolicyAwareOperationInvocationServiceDecorator
 import io.vyne.schemas.Schema
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
 
 
 interface QueryEngineFactory {

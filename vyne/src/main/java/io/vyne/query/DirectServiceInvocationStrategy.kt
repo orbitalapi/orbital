@@ -4,7 +4,6 @@ import com.google.common.cache.CacheBuilder
 import io.vyne.models.DefinedInSchema
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
-import io.vyne.query.planner.ProjectionHeuristicsGraphSearchResult
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.PropertyToParameterConstraint
@@ -14,7 +13,6 @@ import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.RelativeValueExpression
-import org.springframework.stereotype.Component
 
 // Note:  Currently tested via tests in VyneTest, no direct tests, but that'd be good to add.
 /**

@@ -63,19 +63,21 @@ class QueryHistoryService(
     *  * For array index access, use `[n]`
     *  * Otherwise, use the property name
     */
+
+   /*
    @GetMapping("/api/query/history/{id}/{queryType}/{nodeId}")
    @JsonView(DataSourceIncludedView::class)
    fun getNodeDetail(@PathVariable("id") queryId: String,
                      @PathVariable("queryType") queryType: String,
                      @PathVariable("nodeId") nodeId: String): Mono<QueryResultNodeDetail> {
       return history.get(queryId).map { historyRecord ->
-         val queryTypeResults = historyRecord.response.results[queryType] ?: throw HttpClientErrorException(
+         val queryTypeResults = historyRecord.response?.results?[queryType] ?: throw HttpClientErrorException(
             HttpStatus.BAD_REQUEST,"Type $queryType is not present within query result $queryId"
          )
          val nodeParts = nodeId.split(".")
          QueryHistoryResultNodeFinder.find(nodeParts,queryTypeResults, nodeId)
       }
-   }
+   }*/
 
    @GetMapping("/api/query/history/{id}/profile")
    fun getQueryProfile(@PathVariable("id") queryId: String): Mono<ProfilerOperationDTO?> {
@@ -85,7 +87,7 @@ class QueryHistoryService(
    @GetMapping("/api/query/history/{id}/{type}/export")
    fun getQueryExport(@PathVariable("id") queryId: String, @PathVariable("type") exportType: ExportType): Mono<ByteArray> {
       return history.get(queryId).map {
-         queryHistoryExporter.export(it.response.results, exportType)
+         queryHistoryExporter.export(it.response.results!!, exportType)
       }
    }
 
@@ -110,6 +112,6 @@ data class QueryHistoryRecordSummary<T>(
    val query: T,
    val responseStatus: QueryResponse.ResponseStatus,
    val durationMs: Long,
-   val recordSize: Int,
+   val recordSize: Int?,
    val timestamp: Instant
 )

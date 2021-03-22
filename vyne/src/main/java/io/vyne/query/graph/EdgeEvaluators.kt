@@ -20,7 +20,9 @@ import io.vyne.schemas.fqn
 import io.vyne.utils.assertingThat
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import lang.taxi.types.PrimitiveType
 
 
@@ -100,20 +102,21 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
       val (_, operation) = context.schema.operation(operationReference.fqn())
       val paramType = operation.parameters[paramIndex].type
 
-      val discoveredParam = parameterFactory.discover(paramType, context, operation)
-      return flow { EvaluatedEdge.success(edge, instanceOfType(discoveredParam.type), discoveredParam) }
-//      val paramType = context.schema.type(edge.vertex2.value as String)
+      return  parameterFactory.discover(paramType, context, operation).map {
+         EvaluatedEdge.success(edge, instanceOfType(it.type), it)
+      }
+
    }
 }
 
 class ParameterFactory {
-   suspend fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): TypedInstance {
+   suspend fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): Flow<TypedInstance> {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
       if (hasValue(firstLevelDiscovery)) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
          // TODO (2) : Fail if there are multiple instances
-         return firstLevelDiscovery!!
+         return flow {firstLevelDiscovery!!}
       }
 
       // Check to see if there's exactly one instance somewhere within the context
@@ -124,7 +127,7 @@ class ParameterFactory {
          context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
       if (hasValue(anyDepthOneDistinct)) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
-         return anyDepthOneDistinct!!
+         return flow {anyDepthOneDistinct!!}
       }
 
 //      if (startingPoint.type == paramType) {
@@ -139,7 +142,7 @@ class ParameterFactory {
       }
 
       // This is a parameter type.  Try to construct an instance
-      return attemptToConstruct(paramType, context, operation)
+      return flow { attemptToConstruct(paramType, context, operation) }
    }
 
    private fun hasValue(instance: TypedInstance?): Boolean {
@@ -171,7 +174,7 @@ class ParameterFactory {
          // Can we try searching within the context before we try constructing?
          // what are the impacts?
          var attributeValue: TypedInstance? =
-            context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+             context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
 
          // First, look in the context to see if it's there.
          if (attributeValue == null) {
@@ -182,7 +185,7 @@ class ParameterFactory {
             val excludedOperations = operation?.let { setOf(SearchGraphExclusion("Operation is excluded as we're searching for an input for it", it)) } ?: emptySet()
             val queryResult = context.find(QuerySpecTypeNode(attributeType), excludedOperations)
             if (queryResult.isFullyResolved) {
-               attributeValue = queryResult[attributeType] ?:
+               attributeValue = queryResult.results?.firstOrNull() ?:
                   // TODO : This might actually be legal, as it could be valid for a value to resolve to null
                   throw IllegalArgumentException("Expected queryResult to return attribute with type ${attributeType.fullyQualifiedName} but the returned value was null")
             } else {
@@ -219,7 +222,7 @@ class ParameterFactory {
          // else ... attributeValue != null -- we found it.  Good work team, move on.
          attributeName to attributeValue
       }.toMap()
-      return TypedObject(paramType, fields, MixedSources)
+      return  TypedObject(paramType, fields, MixedSources)
    }
 
 }
@@ -312,10 +315,10 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
 
             }
          }
-         return flow { calculatedValue } ?: flow {edge.failure(null, failureReason = "Attribute $attributeName on type $typeName evaluated to null") }
+         return flow { calculatedValue  ?: edge.failure(null, failureReason = "Attribute $attributeName on type $typeName evaluated to null") }
       }
       val attribute = previousObject[attributeName]
-      return flow {edge.success(attribute) }
+      return flow { edge.success(attribute) }
 
       // 1-Feb: This code used to be here - but unsure when it was authored, or why.
       // However, it breaks tests as when we receive a response with a null value, we tag this
