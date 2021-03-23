@@ -64,27 +64,39 @@ data class VyneSystem(
                .get("http://localhost:${this.pipelineOrchestrator.firstMappedPort}/api/runners")
                .setHeader("Content-Type", "application/json")
                .execute()
-            if (response.returnResponse().code != 200) {
-               Thread.sleep(waitInMillisecondsBetweenRetries)
+            var pipelinesResponse: String = ""
+            var returnCode = 0
+            response.handleResponse {
+               returnCode = it.code
+               pipelinesResponse = it.entity.content.reader().readText()
+            }
+            if (returnCode != 200) {
+               sleep(waitInMillisecondsBetweenRetries)
                throw IllegalStateException("no runners found!")
             }
-
-            val pipelinesResponse = response.returnContent().asString()
             if (pipelinesResponse == null || !pipelinesResponse.contains("instanceId")) {
+               sleep(waitInMillisecondsBetweenRetries)
                throw IllegalStateException("no runners found!")
             }
          }
       }
    }
 
-   fun createPipeline(pipelineDefinitionJson: InputStream): Int {
+   fun createPipeline(pipelineDefinitionJson: InputStream) {
       val request = Request
-         .post("http://localhost:${this.pipelineOrchestrator.firstMappedPort}/api/runners")
+         .post("http://localhost:${this.pipelineOrchestrator.firstMappedPort}/api/pipelines")
          .bodyStream(pipelineDefinitionJson)
          .setHeader("Accept", "application/json, text/javascript, */*")
          .setHeader("Content-Type", "application/json")
 
-      return request.execute().returnResponse().code
+      val response = request.execute()
+      response.handleResponse {
+         if (it.code != 200) {
+            val content = it.entity.content.reader().readText()
+            throw IllegalStateException("Failed to create a pipeline, response => $content")
+
+         }
+      }
    }
 
    fun isPipelineRunning(retryCountLimit: Int = 5,
@@ -95,13 +107,19 @@ data class VyneSystem(
                .get("http://localhost:${this.pipelineOrchestrator.firstMappedPort}/api/pipelines")
                .setHeader("Content-Type", "application/json")
                .execute()
-            if (response.returnResponse().code != 200) {
-               Thread.sleep(waitInMillisecondsBetweenRetries)
-               throw IllegalStateException("no runners found!")
+            var returnCode = 0
+            var pipelinesResponse: String = ""
+            response.handleResponse {
+               returnCode = it.code
+               pipelinesResponse = it.entity.content.reader().readText()
+            }
+            if (returnCode != 200) {
+               sleep(waitInMillisecondsBetweenRetries)
+               throw IllegalStateException("no pipeline is running!")
             }
 
-            val pipelinesResponse = response.returnContent().asString()
             if (pipelinesResponse == null || !pipelinesResponse.contains("RUNNING")) {
+               sleep(waitInMillisecondsBetweenRetries)
                throw IllegalStateException("no pipeline is running!")
             }
          }
