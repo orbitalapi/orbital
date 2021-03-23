@@ -1,9 +1,15 @@
 package io.vyne.cask.ddl.views
 
+import com.nhaarman.mockito_kotlin.eq
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.whenever
+import com.winterbe.expekt.should
 import io.vyne.VersionedSource
+import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
+import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -59,7 +65,12 @@ class SchemaBasedViewGeneratorTest {
            """.trimIndent())
       val taxiSchema = TaxiSchema.from(src)
       val schemaStore = SimpleSchemaStore()
+      repository = mock { }
+      whenever(repository.findAllByQualifiedTypeName(eq("OrderSent"))).thenReturn(
+         listOf(CaskConfig.forType(taxiSchema.versionedType("OrderSent".fqn()), "ordersent")
+         ))
       schemaStore.setSchemaSet(SchemaSet.from(listOf(src), 1))
-      SchemaBasedViewGenerator(repository, schemaStore).generateDdl(taxiSchema.document.views.first())
+      val output =  SchemaBasedViewGenerator(repository, schemaStore).generateDdl(taxiSchema.document.views.first())
+      output.size.should.not.equal(0)
    }
 }

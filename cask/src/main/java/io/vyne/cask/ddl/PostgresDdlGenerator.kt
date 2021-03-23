@@ -132,7 +132,10 @@ class PostgresDdlGenerator {
          require(tableName.length <= POSTGRES_MAX_NAME_LENGTH) { "Generated tableName $tableName exceeds Postgres max of 31 characters" }
          return tableName.toLowerCase()
       }
-      fun toColumnName(field: Field) = field.name.quoted()
+      fun toColumnName(field: Field) = toColumnName(field.name)
+      fun toColumnName(fieldName: String) = fieldName.quoted()
+      fun selectNullAs(fieldName: String) = "null as ${toColumnName(fieldName)}"
+      fun selectAs(sourceField: Field, targetFieldName: String) = "${toColumnName(sourceField)} as ${toColumnName(targetFieldName)}"
    }
 
    fun generateDrop(versionedType: VersionedType): String {

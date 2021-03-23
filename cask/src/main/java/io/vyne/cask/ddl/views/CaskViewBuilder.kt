@@ -39,8 +39,30 @@ class CaskViewBuilder(
 ) {
    companion object {
       const val VIEW_PREFIX = "v_"
-     fun dropViewStatement(viewTableName:String) =  """drop view if exists $viewTableName;"""
+      fun dropViewStatement(viewTableName: String) = """drop view if exists $viewTableName;"""
+      fun caskConfigsForQualifiedNames(qualifiedNames: List<QualifiedName>, caskConfigRepository: CaskConfigRepository): List<Pair<QualifiedName, CaskConfig>> {
+         return qualifiedNames.map { qualifiedName ->
+            qualifiedName to caskConfigRepository.findAllByQualifiedTypeName(qualifiedName.fullyQualifiedName)
+         }.map { (qualifiedName, configs) ->
+            val activeConfigs = configs.filter { it.status == CaskStatus.ACTIVE }
+            if (configs.isNotEmpty() && activeConfigs.isEmpty()) {
+               log().warn("Cask view for $qualifiedName cannot be created, as it has no active configs -- all are either replaced or migrating")
+            }
+            qualifiedName to activeConfigs
+         }.mapNotNull { (qualifiedName, configs) ->
+            if (configs.isEmpty()) {
+               log().error("Type ${qualifiedName.parameterizedName} does not have any cask configs assigned.  This can happen if a view is defined before a cask is generated.  This will prevent cask views being generated. ")
+               return@mapNotNull null
+            }
+            // MVP: Only support a single table (the most recently created)
+            // per config)
+            // In the future, as part of supporting upgrades/migrations,
+            // we need to expand this to support all versions
+            qualifiedName to configs.maxBy { it.insertedAt }!!
+         }
+      }
    }
+
    private val taxiWriter = SchemaWriter()
    private val tableConfigs: List<Pair<QualifiedName, CaskConfig>> by lazy { getCaskConfigs(viewSpec.join) }
    private val types: Map<QualifiedName, Type> by lazy { compileTypes(tableConfigs) }
@@ -242,25 +264,6 @@ class CaskViewBuilder(
    }
 
    private fun getCaskConfigs(join: ViewJoin): List<Pair<QualifiedName, CaskConfig>> {
-      return join.types.map { qualifiedName ->
-         qualifiedName to caskConfigRepository.findAllByQualifiedTypeName(qualifiedName.fullyQualifiedName)
-      }.map { (qualifiedName,configs) ->
-         val activeConfigs = configs.filter { it.status == CaskStatus.ACTIVE }
-         if (configs.isNotEmpty() && activeConfigs.isEmpty()) {
-            log().warn("Cask view for $qualifiedName cannot be created, as it has no active configs -- all are either replaced or migrating")
-         }
-         qualifiedName to activeConfigs
-      }.mapNotNull { (qualifiedName, configs) ->
-         if (configs.isEmpty()) {
-            log().error("Type ${qualifiedName.parameterizedName} does not have any cask configs assigned.  This can happen if a view is defined before a cask is generated.  This will prevent cask views being generated. ")
-            return@mapNotNull null
-         }
-         // MVP: Only support a single table (the most recently created)
-         // per config)
-         // In the future, as part of supporting upgrades/migrations,
-         // we need to expand this to support all versions
-         qualifiedName to configs.maxBy { it.insertedAt }!!
-      }
+      return caskConfigsForQualifiedNames(join.types, caskConfigRepository)
    }
-
 }
