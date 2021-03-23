@@ -7,7 +7,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.models.Provided
+import io.vyne.models.RawObjectMapper
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedInstanceConverter
 import io.vyne.query.Fact
 import io.vyne.query.HistoryQueryResponse
 import io.vyne.query.ProfilerOperation
@@ -128,46 +130,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
    @GetMapping("/api/test", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
    fun testTemplate(): Flow<String> {
-
       return (1..3).asFlow().map { it.toString() }
-
-      /*
-      val body = "<findAll { lang.taxi.Array<icap.orders.Order>(\n" +
-         "     cacib.orders.OrderEventDate < '2030-12-02'\n" +
-         "   )\n" +
-         "},[]>"
-
-
-
-      val results = WebClient.builder().build()
-         .post()
-         .uri("http://192.168.1.141:8800/api/vyneQl")
-         .contentType(MediaType.APPLICATION_JSON)
-         .bodyValue(body)
-         .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
-         .exchange()
-         .metrics()
-         //.publishOn(Schedulers.elastic())
-         .flatMapMany { clientResponse ->
-            (
-               if (clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON)
-                     .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
-               ) {
-                  clientResponse.bodyToFlux(String::class.java)
-               } else {
-                  // Assume the response is application/json
-
-                  clientResponse.bodyToMono(typeReference<List<Any>>())
-                     //TODO This is not right we should marshall to a list of T, not, Object then back to String
-                     .flatMapMany { Flux.fromIterable(it) }.map { jacksonObjectMapper().writeValueAsString(it) }
-               }
-               )
-         }
-      //}
-
-      return results.asFlow()
-
-       */
    }
 
 
@@ -203,7 +166,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
          //   VyneQlQueryHistoryRecord(query, response.historyRecord())
          //}
          //history.add(recordProvider)
-         println("Returnign a response now")
+
          return serialise(response, contentType, outputStream, resultMode)
       //}
    }
@@ -228,14 +191,17 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
                // Any other result mode is json
                else -> {
-                  println("Some other response")
-                  generateResponseJson(queryResponse.results?.toList(), outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
+                  val converter = TypedInstanceConverter(RawObjectMapper)
+                  generateResponseJson( mapOf("results" to queryResponse.results
+                     ?.toList()?.map { converter.convert(it) }),
+                     outputStream,
+                     resultMode
+                  ).let { MediaType.APPLICATION_JSON_VALUE }
                }
             }
          }
          // Any Query failure is json
          else -> {
-            println("Not a queryResult")
             generateResponseJson(queryResponse, outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
          }
       }
@@ -252,13 +218,11 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       // This is because the LineageGraphSerializationModule() is stateful, and
       // shares references during serialization.  Therefore, it's not threadsafe, so
       // we create an instance per response.
-      println("In generateResponseJson")
-      println("Results ${response}")
       objectMapper
          //        .copy()
 //         .registerModule(LineageGraphSerializationModule())
-         .writerWithDefaultPrettyPrinter()
-         .with(ContextAttributes.getEmpty()
+            .writerWithDefaultPrettyPrinter()
+            .with(ContextAttributes.getEmpty()
             .withSharedAttribute(ResultMode::class, resultMode)
          )
          .writeValue(outputStream, response)

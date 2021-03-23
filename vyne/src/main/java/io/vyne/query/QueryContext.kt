@@ -103,14 +103,6 @@ data class QueryResult(
    @JsonProperty("unmatchedNodes")
    val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
 
-   @get:JsonIgnore
-   val verboseResults: Map<String, Any?> by lazy {
-   //   val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
-   //   this.results.map { (key, value) ->
-   //      key.type.name.parameterizedName to value?.let { converter.convert(it) }
-   //   }.toMap()
-      mapOf("a" to "b")
-   }
 
    // The result map is structured so the key is the thing that was asked for, and the value
    // is a TypeNamedInstance of the result.
@@ -125,7 +117,6 @@ data class QueryResult(
       val converter = TypedInstanceConverter(RawObjectMapper)
       results
     }
-
 
    override fun historyRecord(): HistoryQueryResponse {
       return HistoryQueryResponse(
