@@ -101,6 +101,7 @@ data class QueryResult(
    @get:JsonIgnore
    val verboseResults: Map<String, Any?> by lazy {
       val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+
       this.results.map { (key, value) ->
          key.type.name.parameterizedName to value?.let { converter.convert(it) }
       }.toMap()
