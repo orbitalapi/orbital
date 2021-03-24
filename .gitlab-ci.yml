@@ -35,7 +35,7 @@ build-jvm:
       - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
       - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
-      - 'mvn $MAVEN_CLI_OPTS clean install -Dskip.npm -PrunBenchmarkTests'
+      - 'mvn $MAVEN_CLI_OPTS clean install -Dskip.npm -DskipTests'
    artifacts:
       paths:
          - "*/target"
