@@ -9,7 +9,7 @@ import com.winterbe.expekt.should
 import io.vyne.pipelines.PipelineTransportHealthMonitor
 import io.vyne.pipelines.orchestrator.events.PipelineEventsApi
 import io.vyne.pipelines.runner.jobs.PipelineStateManager
-import io.vyne.pipelines.runner.transport.kafka.AbstractKafkaTest
+//import io.vyne.pipelines.runner.transport.kafka.AbstractKafkaTest
 import io.vyne.schemas.fqn
 import org.junit.After
 import org.junit.Before
