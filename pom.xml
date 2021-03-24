@@ -52,7 +52,7 @@
       <module>vyne-query-api</module>
       <module>vyne-client-spring</module>
       <module>file-schema-server</module>
-     <!--  <module>pipelines</module> -->
+      <module>pipelines</module>
       <module>cask-api</module>
       <module>vyne-ql</module>
       <!-- <module>test-cli</module> -->
