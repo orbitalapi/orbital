@@ -134,7 +134,7 @@ namespace vyne {
       val service = schema.service("vyne.ClientDataService")
       val operation = service.operation("getContactsForClient")
 
-      val response = RestTemplateInvoker(restTemplate = restTemplate, webClient = webClient, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true)
+      val response = RestTemplateInvoker(webClient = webClient, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true)
          .invoke(service, operation, listOf(
          paramAndType("vyne.ClientName", "notional", schema)
       ), QueryProfiler()) as TypedObject
@@ -157,7 +157,7 @@ namespace vyne {
       val service = schema.service("vyne.CreditCostService")
       val operation = service.operation("calculateCreditCosts")
 
-      val response = RestTemplateInvoker(restTemplate = restTemplate, webClient = webClient, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true).invoke(service, operation, listOf(
+      val response = RestTemplateInvoker(webClient = webClient, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true).invoke(service, operation, listOf(
          paramAndType("vyne.ClientId", "myClientId", schema),
          paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
       ), QueryProfiler()) as TypedObject
@@ -189,7 +189,6 @@ namespace vyne {
       val operation = service.operation("getPetById")
 
       val invoker = RestTemplateInvoker(
-         restTemplate = restTemplate,
          webClient = webClient,
          serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
          enableDataLineageForRemoteCalls = true,
@@ -220,7 +219,6 @@ namespace vyne {
       val operation = service.operation("getPetById")
 
       val response = RestTemplateInvoker(
-         restTemplate = restTemplate,
          webClient = webClient,
          serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
          enableDataLineageForRemoteCalls = true,
@@ -266,7 +264,6 @@ namespace vyne {
       val operation = service.operation("getBestPet")
 
       val response = RestTemplateInvoker(
-         restTemplate = restTemplate,
          webClient = webClient,
          serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
          enableDataLineageForRemoteCalls = true,
@@ -310,7 +307,6 @@ namespace vyne {
       val operation = service.operation("getBestPet")
 
       val response = RestTemplateInvoker(
-         restTemplate = restTemplate,
          webClient = webClient,
          serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
          enableDataLineageForRemoteCalls = true,

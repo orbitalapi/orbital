@@ -7,7 +7,6 @@ import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.models.UndefinedSource
-import io.vyne.query.OperationType
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.OperationInvoker
@@ -21,50 +20,32 @@ import io.vyne.spring.isServiceDiscoveryClient
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactive.collect
-import kotlinx.coroutines.runBlocking
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
-import org.springframework.http.HttpRequest
 import org.springframework.http.MediaType
-import org.springframework.http.client.ClientHttpRequestExecution
-import org.springframework.http.client.ClientHttpRequestInterceptor
-import org.springframework.http.client.ClientHttpResponse
-import org.springframework.web.client.ResponseErrorHandler
-import org.springframework.web.client.RestTemplate
-import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.DefaultUriBuilderFactory
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
-import reactor.util.retry.Retry
-import java.time.Duration
 
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 class RestTemplateInvoker(val schemaProvider: SchemaProvider,
-                          val restTemplate: RestTemplate,
                           val webClient: WebClient,
                           private val serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
                           private val enableDataLineageForRemoteCalls: Boolean) : OperationInvoker {
 
    @Autowired
    constructor(schemaProvider: SchemaProvider,
-               restTemplateBuilder: RestTemplateBuilder,
                webClientBuilder: WebClient.Builder,
                serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
                @Value("\${vyne.data-lineage.remoteCalls.enabled:false}") enableDataLineageForRemoteCalls: Boolean)
-      : this(schemaProvider, restTemplateBuilder
-      .errorHandler(CatchingErrorHandler())
-      .additionalInterceptors(LoggingRequestInterceptor())
-      .build(), webClientBuilder.exchangeStrategies(
+      : this(schemaProvider, webClientBuilder.exchangeStrategies(
          ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
       ).build(), serviceUrlResolvers, enableDataLineageForRemoteCalls)
 
@@ -160,8 +141,6 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
    }
 
-
-
    private fun handleSuccessfulHttpResponse(result: String, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall, headers: ClientResponse.Headers): TypedInstance {
       // TODO : Handle scenario where we get a 2xx response, but no body
       log().debug("Result of ${operation.name} was $result")
@@ -195,21 +174,3 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    }
 }
 
-internal class CatchingErrorHandler : ResponseErrorHandler {
-   override fun handleError(p0: ClientHttpResponse?) {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-   }
-
-   override fun hasError(p0: ClientHttpResponse?): Boolean {
-      return false
-   }
-
-}
-
-internal class LoggingRequestInterceptor : ClientHttpRequestInterceptor {
-   override fun intercept(request: HttpRequest, body: ByteArray, execution: ClientHttpRequestExecution): ClientHttpResponse {
-      log().debug("Invoking ${request.method} on ${request.uri} with payload: ${String(body)}")
-      return execution.execute(request, body)
-   }
-
-}

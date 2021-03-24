@@ -17,40 +17,49 @@ import {VyneServicesModule} from './vyne-services.module';
 @Injectable({
   providedIn: VyneServicesModule
 })
+
 export class QueryService {
+
+  httpOptions = {
+    headers: new HttpHeaders({
+      'Content-Type':  'application/json',
+      'Accept': 'application/json'
+    })
+  };
+
   constructor(private http: HttpClient) {
+
   }
 
   submitQuery(query: Query): Observable<QueryResult> {
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query);
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query, this.httpOptions);
   }
 
   submitVyneQlQuery(query: String, resultMode: ResultMode = ResultMode.VERBOSE): Observable<QueryResult> {
-    const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}`, query, {headers});
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}`, query, this.httpOptions);
   }
 
   getHistoryRecord(queryId: string): Observable<QueryHistoryRecord> {
-    return this.http.get<QueryHistoryRecord>(`${environment.queryServiceUrl}/api/query/history/${queryId}`);
+    return this.http.get<QueryHistoryRecord>(`${environment.queryServiceUrl}/api/query/history/${queryId}`, this.httpOptions);
   }
 
   getHistory(): Observable<QueryHistorySummary[]> {
-    return this.http.get<QueryHistorySummary[]>(`${environment.queryServiceUrl}/api/query/history`);
+    return this.http.get<QueryHistorySummary[]>(`${environment.queryServiceUrl}/api/query/history`, this.httpOptions);
   }
 
   getQueryResultNodeDetail(queryId: string, requestedTypeInQuery: QualifiedName, nodeId: string): Observable<QueryResultNodeDetail> {
     const safeNodeId = encodeURI(nodeId);
     return this.http.get<QueryResultNodeDetail>(
-      `${environment.queryServiceUrl}/api/query/history/${queryId}/${requestedTypeInQuery.parameterizedName}/${safeNodeId}`
+      `${environment.queryServiceUrl}/api/query/history/${queryId}/${requestedTypeInQuery.parameterizedName}/${safeNodeId}`, this.httpOptions
     );
   }
 
   getQueryProfile(queryId: string): Observable<ProfilerOperation> {
-    return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`);
+    return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`, this.httpOptions);
   }
 
   invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
-    return this.http.post<TypedInstance>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`, parameters);
+    return this.http.post<TypedInstance>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`, parameters, this.httpOptions);
   }
 }
 
