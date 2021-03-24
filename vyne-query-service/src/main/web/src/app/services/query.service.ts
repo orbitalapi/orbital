@@ -39,6 +39,14 @@ export class QueryService {
     return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}`, query, this.httpOptions);
   }
 
+  submitVyneQlQueryStreaming(query: String, resultMode: ResultMode = ResultMode.VERBOSE): Observable<QueryResult> {
+    return Observable.create( observer => {
+
+    })
+
+    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}`, query, this.httpOptions);
+  }
+
   getHistoryRecord(queryId: string): Observable<QueryHistoryRecord> {
     return this.http.get<QueryHistoryRecord>(`${environment.queryServiceUrl}/api/query/history/${queryId}`, this.httpOptions);
   }
