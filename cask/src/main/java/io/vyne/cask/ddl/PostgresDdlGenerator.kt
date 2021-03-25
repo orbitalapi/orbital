@@ -145,7 +145,10 @@ class PostgresDdlGenerator {
          return tableName.toLowerCase()
       }
 
-      fun toColumnName(field: Field) = field.name.quoted()
+      fun toColumnName(field: Field) = toColumnName(field.name)
+      fun toColumnName(fieldName: String) = fieldName.quoted()
+      fun selectNullAs(fieldName: String) = "null as ${toColumnName(fieldName)}"
+      fun selectAs(sourceField: Field, targetFieldName: String) = "${toColumnName(sourceField)} as ${toColumnName(targetFieldName)}"
    }
 
    fun generateDrop(versionedType: VersionedType): String {

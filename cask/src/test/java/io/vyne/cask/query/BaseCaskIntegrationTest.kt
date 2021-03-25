@@ -10,6 +10,7 @@ import io.vyne.cask.ddl.views.CaskViewBuilderFactory
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.ddl.views.CaskViewDefinition
 import io.vyne.cask.ddl.views.CaskViewService
+import io.vyne.cask.ddl.views.SchemaBasedViewGenerator
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
@@ -111,7 +112,8 @@ abstract class BaseCaskIntegrationTest {
          CaskViewBuilderFactory(configRepository, schemaProvider),
          configRepository,
          jdbcTemplate,
-         CaskViewConfig(viewDefinitions)
+         CaskViewConfig(viewDefinitions),
+         SchemaBasedViewGenerator(configRepository, schemaProvider)
       )
       ingestionEventHandler = IngestionEventHandler(caskConfigService, caskDao)
    }

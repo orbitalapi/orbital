@@ -164,7 +164,7 @@ namespace vyne.casks {
    @Datasource
    service OrderWindowSummaryCsvCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummaryCsv")
-      operation findAll(  ) : OrderWindowSummaryCsv[]
+      operation getAll(  ) : OrderWindowSummaryCsv[]
       @HttpOperation(method = "POST", url = "/api/vyneQl")
       vyneQl query vyneQlQueryOrderWindowSummaryCsv(@RequestBody body: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<OrderWindowSummaryCsv> with capabilities {
          filter(=,!=,in,like,>,<,>=,<=)
@@ -244,7 +244,7 @@ namespace vyne.casks {
    @Datasource
    service OrderWindowSummaryCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/OrderWindowSummary")
-      operation findAll(  ) : OrderWindowSummary[]
+      operation getAll(  ) : OrderWindowSummary[]
       @HttpOperation(method = "POST", url = "/api/vyneQl")
       vyneQl query vyneQlQueryOrderWindowSummary(@RequestBody body: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<OrderWindowSummary> with capabilities {
          filter(=,!=,in,like,>,<,>=,<=)
@@ -368,7 +368,7 @@ namespace vyne.casks {
    @Datasource
    service SimpleCaskService {
       @HttpOperation(method = "GET" , url = "/api/cask/findAll/Simple")
-      operation findAll(  ) : Simple[]
+      operation getAll(  ) : Simple[]
       @HttpOperation(method = "POST", url = "/api/vyneQl")
       vyneQl query vyneQlQuerySimple(@RequestBody body: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<Simple> with capabilities {
          filter(=,!=,in,like,>,<,>=,<=)

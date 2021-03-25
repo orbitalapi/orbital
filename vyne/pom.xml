@@ -33,11 +33,6 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne-ql-compiler</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
          <groupId>lang.taxi</groupId>
          <artifactId>taxi-jvm-common</artifactId>
          <version>${taxi.version}</version>

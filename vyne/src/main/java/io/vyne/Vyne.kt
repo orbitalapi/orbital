@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.google.common.annotations.VisibleForTesting
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.query.ConstrainedTypeNameQueryExpression
@@ -22,9 +23,9 @@ import io.vyne.schemas.taxi.TaxiConstraintConverter
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
 import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
-import io.vyne.vyneql.VyneQLQueryString
-import io.vyne.vyneql.VyneQlCompiler
-import io.vyne.vyneql.VyneQlQuery
+import lang.taxi.Compiler
+import lang.taxi.query.TaxiQlQuery
+import lang.taxi.types.TaxiQLQueryString
 
 enum class NodeTypes {
    ATTRIBUTE,
@@ -62,28 +63,31 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
-   fun query(vyneQlQuery: VyneQLQueryString): QueryResult {
-      val vyneQuery = VyneQlCompiler(vyneQlQuery, this.schema.taxi).query()
+   fun query(vyneQlQuery: TaxiQLQueryString): QueryResult {
+      val vyneQuery = Compiler(source = vyneQlQuery, importSources = listOf(this.schema.taxi)).queries().first()
       return query(vyneQuery)
    }
 
-   fun query(vyneQl: VyneQlQuery): QueryResult {
-      val (queryContext, expression) = buildContextAndExpression(vyneQl)
-      return when (vyneQl.queryMode) {
-         io.vyne.vyneql.QueryMode.FIND_ALL -> queryContext.findAll(expression)
-         io.vyne.vyneql.QueryMode.FIND_ONE -> queryContext.find(expression)
+   fun query(taxiQl: TaxiQlQuery): QueryResult {
+      val (queryContext, expression) = buildContextAndExpression(taxiQl)
+      return when (taxiQl.queryMode) {
+         lang.taxi.types.QueryMode.FIND_ALL -> queryContext.findAll(expression)
+         lang.taxi.types.QueryMode.FIND_ONE -> queryContext.find(expression)
       }
    }
 
    @VisibleForTesting
-   internal fun buildContextAndExpression(vyneQl: VyneQlQuery): Pair<QueryContext, QueryExpression> {
-      var queryContext = query(additionalFacts = vyneQl.facts.values.toSet())
-      queryContext = vyneQl.projectedType?.let {
+   internal fun buildContextAndExpression(taxiQl: TaxiQlQuery): Pair<QueryContext, QueryExpression> {
+      val additionalFacts = taxiQl.facts.values.map { fact ->
+         TypedInstance.from(schema.type(fact.fqn.fullyQualifiedName), fact.value, schema, source = Provided)
+      }.toSet()
+      var queryContext = query(additionalFacts = additionalFacts)
+      queryContext = taxiQl.projectedType?.let {
          queryContext.projectResultsTo(it) // Merge conflict, was : it.toVyneQualifiedName()
       } ?: queryContext
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
-      val queryExpressions = vyneQl.typesToFind.map { discoveryType ->
+      val queryExpressions = taxiQl.typesToFind.map { discoveryType ->
          val targetType = schema.type(discoveryType.type.toVyneQualifiedName())
          val expression = if (discoveryType.constraints.isNotEmpty()) {
             val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)

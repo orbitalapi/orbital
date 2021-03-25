@@ -2,6 +2,8 @@ package io.vyne.cask.ddl.views
 
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.schemaStore.SchemaProvider
+import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
 import lang.taxi.types.QualifiedName
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -14,7 +16,8 @@ import java.lang.Exception
 class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
                       val caskConfigRepository: CaskConfigRepository,
                       val template: JdbcTemplate,
-                      val viewConfig: CaskViewConfig) {
+                      val viewConfig: CaskViewConfig,
+                      private val schemaBasedViewGenerator: SchemaBasedViewGenerator) {
 
    fun deleteView(viewConfig: CaskConfig):Boolean {
       log().info("Dropping view ${viewConfig.tableName}")
@@ -33,24 +36,33 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
       log().info("Generating view ${viewDefinition.typeName}")
       val builder = viewBuilderFactory.getBuilder(viewDefinition)
       val viewDdlStatements = builder.generateCreateView()
+      return generateView(viewDefinition.typeName, viewDdlStatements) {
+         builder.generateCaskConfig()
+      }
+   }
+
+   internal fun generateView(
+      typeName: QualifiedName,
+      viewDdlStatements: List<String>,
+      caskConfigGenerator: () -> CaskConfig) : CaskConfig? {
       if (viewDdlStatements.isEmpty()) {
-         log().warn("No viewDDL generated for ${viewDefinition.typeName}, not proceeding with view creation")
+         log().warn("No viewDDL generated for $typeName, not proceeding with view creation")
          return null
       }
       try {
          viewDdlStatements.forEach { ddl ->
-            log().info("View ${viewDefinition.typeName} executing generated DDL: \n$ddl")
+            log().info("View $typeName executing generated DDL: \n$ddl")
             template.execute(ddl)
          }
 
-         log().info("View ${viewDefinition.typeName} created successfully")
+         log().info("View $typeName created successfully")
 
-         log().info("Generating cask config for view ${viewDefinition.typeName}")
-         val caskConfig = builder.generateCaskConfig()
+         log().info("Generating cask config for view $typeName")
+         val caskConfig = caskConfigGenerator()
          if (!caskConfigRepository.findById(caskConfig.tableName).isPresent) {
             return caskConfigRepository.save(caskConfig)
          }
-         log().info("Cask Config for view ${viewDefinition.typeName} created successfully")
+         log().info("Cask Config for view $typeName created successfully")
          return null
       } catch (e: Exception) {
          log().error("Error in generating view", e)
@@ -60,7 +72,7 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
 
    fun generateViews(): List<CaskConfig> {
       log().info("Looking for views to generate")
-      return viewConfig.views.mapNotNull { viewDefinition ->
+      val configBasedViews =  viewConfig.views.mapNotNull { viewDefinition ->
          val caskTypeName = viewDefinition.typeName.fullyQualifiedName
          val existingViewCasks = caskConfigRepository.findAllByQualifiedTypeName(caskTypeName)
          if (existingViewCasks.isNotEmpty()) {
@@ -69,6 +81,27 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
          } else {
             log().info("Triggering generation of view $caskTypeName")
             generateView(viewDefinition)
+         }
+      }
+
+      val schemaBasedViews = generateSchemaBasedViews()
+      return configBasedViews + schemaBasedViews
+   }
+
+   private fun generateSchemaBasedViews(): List<CaskConfig> {
+      val taxiViews = schemaBasedViewGenerator.taxiViews()
+      return taxiViews.mapNotNull { view ->
+         val caskTypeName = view.qualifiedName
+         val existingViewCasks = caskConfigRepository.findAllByQualifiedTypeName(caskTypeName)
+         if (existingViewCasks.isNotEmpty()) {
+            log().info("Not regenerating view $caskTypeName as a cask already exists for this")
+            null
+         } else {
+            log().info("Triggering generation of view $caskTypeName")
+            val viewDdl = schemaBasedViewGenerator.generateDdl(view)
+            generateView(view.toQualifiedName(), viewDdl) {
+               schemaBasedViewGenerator.generateCaskConfig(view)
+            }
          }
       }
    }

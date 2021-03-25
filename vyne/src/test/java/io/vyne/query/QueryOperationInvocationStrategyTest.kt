@@ -7,7 +7,7 @@ import io.vyne.query.queryBuilders.VyneQlGrammar
 import io.vyne.queryDeclaration
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
-import io.vyne.vyneql.VyneQlCompiler
+import lang.taxi.Compiler
 import org.junit.Before
 import org.junit.Test
 
@@ -122,9 +122,9 @@ class QueryOperationInvocationStrategyTest {
 
 }
 
-fun getQuerySpecNode(vyneQl: String, schema: TaxiSchema): QuerySpecTypeNode {
+fun getQuerySpecNode(taxiQl: String, schema: TaxiSchema): QuerySpecTypeNode {
    val (vyne, _) = testVyne(schema)
-   val vyneQuery = VyneQlCompiler(vyneQl, schema.taxi).query()
+   val vyneQuery =  Compiler(source = taxiQl, importSources = listOf(schema.document)).queries().first()
    val (_, expression) = vyne.buildContextAndExpression(vyneQuery)
    val queryParser = QueryParser(schema)
    val querySpecNodes = queryParser.parse(expression)

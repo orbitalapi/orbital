@@ -20,6 +20,7 @@ import lang.taxi.types.ColumnAccessor
 import lang.taxi.types.ConditionalAccessor
 import lang.taxi.types.DestructuredAccessor
 import lang.taxi.types.FieldReferenceSelector
+import lang.taxi.types.FieldSourceAccessor
 import lang.taxi.types.FormulaOperator
 import lang.taxi.types.JsonPathAccessor
 import lang.taxi.types.LiteralAccessor
@@ -94,6 +95,7 @@ class AccessorReader(private val objectFactory: TypedObjectFactory, private val 
             nullValues,
             source
          )
+         is FieldSourceAccessor -> TypedNull.create(targetType, source)
          else -> {
             log().warn("Unexpected Accessor value $accessor")
             TODO()
