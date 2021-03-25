@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component
 class FindAllGenerator: DefaultOperationGenerator {
    override fun generate(type: Type): Operation {
       return Operation(
-         name = "findAll",
+         name = "getAll",
          parameters = emptyList(),
          annotations = listOf(Annotation("HttpOperation", mapOf("method" to "GET", "url" to getRestPath(type)))),
          returnType = TemporalFieldUtils.collectionTypeOf(type),

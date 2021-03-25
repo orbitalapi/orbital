@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>0.10.5</taxi.version>
+      <taxi.version>0.13.0</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -54,7 +54,6 @@
       <module>file-schema-server</module>
       <module>pipelines</module>
       <module>cask-api</module>
-      <module>vyne-ql</module>
       <module>test-cli</module>
       <module>jwt-auth-server</module>
        <module>test-containers</module>

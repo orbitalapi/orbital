@@ -103,7 +103,7 @@ service Broker1Service {
          }
 
          service OrderService {
-            operation findAll( ) : Order[]
+            operation `findAll`( ) : Order[]
          }
 
       """.trimIndent()
@@ -120,7 +120,7 @@ service Broker1Service {
          }
       })
 
-      stubService.addResponse("findAll", object : StubResponseHandler {
+      stubService.addResponse("`findAll`", object : StubResponseHandler {
          override fun invoke(
             operation: RemoteOperation,
             parameters: List<Pair<Parameter, TypedInstance>>
@@ -194,7 +194,7 @@ service UserService {
 }
 
 """.trimIndent()
-      val noOfRecords = 10_000
+      val noOfRecords = 100
 
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
@@ -1421,7 +1421,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `should project to anonymous type extending discovery type`() {
+   fun `should project to pure anonymous type with single field`() {
       val (vyne, stubService) = testVyne(
          """
          type QtyFill inherits Decimal
@@ -1477,7 +1477,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `should project to anonymous type extending discovery type II`() {
+   fun `should project to pure anonymous type with multiple fields`() {
       val (vyne, stubService) = testVyne(
          """
          type QtyFill inherits Decimal
@@ -1559,7 +1559,7 @@ service Broker1Service {
               } as {
                  id
                  multiplier: UnitMultiplier
-                 traderName: TraderName (from this.traderId)
+                 traderName: TraderName by (this.traderId)
                }[]
             """.trimIndent()
       )
@@ -1574,7 +1574,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `should project to anonymous type extending discovery type III`() {
+   fun `should project to anonymous type extending discovery type`() {
       val (vyne, stubService) = testVyne(
          """
          type QtyFill inherits Decimal
@@ -1646,7 +1646,7 @@ service Broker1Service {
                 InputModel[]
               } as OutputModel {
                  inputId: InputId
-                 traderName: TraderName (from this.traderId)
+                 traderName: TraderName by (this.traderId)
                }[]
             """.trimIndent()
       )
@@ -1682,7 +1682,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `should project to anonymous type extending discovery type IV`() {
+   fun `should project to anonymous extending the projectiont target type and containing an anonymously typed field`() {
       val (vyne, stubService) = testVyne(
          """
          type QtyFill inherits Decimal
@@ -1754,10 +1754,10 @@ service Broker1Service {
                 InputModel[]
               } as OutputModel {
                  inputId: InputId
-                 trader {
+                 trader: {
                     name: TraderName
                     surname: TraderSurname
-                 } (from this.traderId)
+                 } by (this.traderId)
                }[]
             """.trimIndent()
       )
@@ -1793,7 +1793,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `should project to anonymous type extending discovery type V`() {
+   fun `should project to anonymous type containing an anonymously typed field`() {
       val (vyne, stubService) = testVyne(
          """
          type QtyFill inherits Decimal
@@ -1875,10 +1875,10 @@ service Broker1Service {
               } as {
                  id
                  multiplier: UnitMultiplier
-                 trader {
+                 trader: {
                     name: TraderName
                     surname: TraderSurname
-                 } (from this.traderId)
+                 }  by (this.traderId)
                }[]
             """.trimIndent()
       )
@@ -2088,7 +2088,7 @@ service Broker1Service {
 
          @Datasource
          service InputService {
-            operation findAll(): Input[]
+            operation `findAll`(): Input[]
          }
 
          service DataService {
@@ -2099,7 +2099,7 @@ service Broker1Service {
 
       """.trimIndent()
       val (vyne, stubService) = testVyne(testSchema)
-      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+      stubService.addResponse("`findAll`", vyne.parseJsonModel("Input[]", """
          [
             { userId : "userX",  tradeId: "InstrumentX" }
          ]
@@ -2160,7 +2160,7 @@ service Broker1Service {
 
          @Datasource
          service InputService {
-            operation findAll(): Input[]
+            operation `findAll`(): Input[]
          }
 
          service DataService {
@@ -2170,7 +2170,7 @@ service Broker1Service {
       """.trimIndent()
 
       val (vyne, stubService) = testVyne(testSchema)
-      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+      stubService.addResponse("`findAll`", vyne.parseJsonModel("Input[]", """
          [
             { orderId : "OrderX",  productId: "ProductX", assetClass: "AssetClassX" }
          ]
@@ -2223,7 +2223,7 @@ service Broker1Service {
 
          @Datasource
          service InputService {
-            operation findAll(): Input[]
+            operation `findAll`(): Input[]
          }
 
          service DataService {
@@ -2235,7 +2235,7 @@ service Broker1Service {
 
       """.trimIndent()
       val (vyne, stubService) = testVyne(testSchema)
-      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+      stubService.addResponse("`findAll`", vyne.parseJsonModel("Input[]", """
          [
             { userId : "userX",  tradeId1: "InstrumentX" },
             { userId : "userX",  tradeId2: "InstrumentY" }

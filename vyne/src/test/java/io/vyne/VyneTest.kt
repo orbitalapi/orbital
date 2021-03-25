@@ -165,7 +165,7 @@ class VyneTest {
 
          service InputService {
            @StubOperation("findAll")
-            operation findAll(): Input[]
+            operation `findAll`(): Input[]
          }
       """.trimIndent()
       )
@@ -188,7 +188,7 @@ class VyneTest {
          |}
       """.trimMargin()
 
-      stubs.addResponse("findAll", inputs)
+      stubs.addResponse("`findAll`", inputs)
 
       stubs.addResponse(
          "findByInstrumentId",
@@ -1031,7 +1031,13 @@ service Broker2Service {
       )
 
       // act
-      val result = vyne.query().projectResultsTo("CommonOrder[]").findAll("Order[]")
+      val result1 = vyne.query().projectResultsTo("CommonOrder[]").findAll("Order[]")
+
+      val result = vyne.query(
+         """
+         findAll { Order[] } as CommonOrder[]
+      """.trimIndent()
+      )
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -1851,13 +1857,13 @@ service ClientService {
             }
 
             service OrderService {
-              operation findAll(): Order[]
+              operation `findAll`(): Order[]
               operation findOrder(): Order
             }
          }
       """.trimIndent()
       )
-      stubs.addResponse("findAll", { remoteOperation, list ->
+      stubs.addResponse("`findAll`", { remoteOperation, list ->
          fail("should not call findAll")
       })
 

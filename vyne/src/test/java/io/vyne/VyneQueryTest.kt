@@ -36,7 +36,7 @@ class VyneQueryTest {
       val vyneQlQuery = invocations.first().value!! as String
 
       val expectedVyneQl = """findAll { lang.taxi.Array<Trade>(
-          TraderId = 'jimmy'
+          TraderId = "jimmy"
          )
       }"""
       vyneQlQuery.withoutWhitespace()
