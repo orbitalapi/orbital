@@ -24,10 +24,17 @@
          <version>2.2.0</version>
          <scope>test</scope>
       </dependency>
-
       <dependency>
-         <groupId>org.springframework.cloud</groupId>
-         <artifactId>spring-cloud-starter-openfeign</artifactId>
+         <groupId>com.playtika.reactivefeign</groupId>
+         <artifactId>feign-reactor-webclient</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.playtika.reactivefeign</groupId>
+         <artifactId>feign-reactor-cloud</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>com.playtika.reactivefeign</groupId>
+         <artifactId>feign-reactor-spring-configuration</artifactId>
       </dependency>
       <dependency>
          <groupId>org.springframework.cloud</groupId>

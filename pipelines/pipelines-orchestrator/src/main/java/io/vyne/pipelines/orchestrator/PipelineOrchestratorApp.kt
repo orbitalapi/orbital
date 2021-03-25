@@ -11,7 +11,6 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
-import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -19,6 +18,7 @@ import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.client.RestTemplate
+import reactivefeign.spring.config.EnableReactiveFeignClients
 import springfox.documentation.builders.PathSelectors
 import springfox.documentation.builders.RequestHandlerSelectors
 import springfox.documentation.spi.DocumentationType
@@ -28,7 +28,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableFeignClients(basePackageClasses = [PipelineRunnerApi::class])
+@EnableReactiveFeignClients(basePackageClasses = [PipelineRunnerApi::class])
 @EnableScheduling
 @EnableSwagger2
 @EnableConfigurationProperties(PipelineConfigurationProperties::class)

@@ -63,7 +63,7 @@ class HttpSchemaStoreClient(private val schemaStoreService: SchemaStoreService,
    override fun submitSchemas(versionedSources: List<VersionedSource>): Either<CompilationException, Schema> {
       val result: SourceSubmissionResponse = retryTemplate.execute<SourceSubmissionResponse, Exception> { context: RetryContext ->
          log().info("Pushing ${versionedSources.size} schemas to store ${versionedSources.map { it.name }}")
-         schemaStoreService.submitSources(versionedSources)
+         schemaStoreService.submitSources(versionedSources).block()
       }
 
       if (result.isValid) {
@@ -93,7 +93,7 @@ class HttpSchemaStoreClient(private val schemaStoreService: SchemaStoreService,
 
    fun pollForSchemaUpdates() {
       try {
-         val schemaSet = schemaStoreService.listSchemas()
+         val schemaSet = schemaStoreService.listSchemas().block()
          SchemaSetChangedEvent.generateFor(this.schemaSet, schemaSet)?.let { event ->
             this.schemaSet = schemaSet
             this.generationCounter.incrementAndGet()

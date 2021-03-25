@@ -62,7 +62,7 @@ class HttpSchemaStore(private val httpVersionedSchemaProvider: HttpVersionedSche
             log().info("skipping poll from query-server as poll flag is false")
             return
          }
-         val versionedSources = httpVersionedSchemaProvider.getVersionedSchemas()
+         val versionedSources = httpVersionedSchemaProvider.getVersionedSchemas().block()
          log().trace("pulled ${versionedSources.size} sources from query-server")
          if (shouldRecompile(localValidatingSchemaStoreClient.schemaSet().allSources, versionedSources)) {
             val oldSchemaSet = this.schemaSet()

@@ -4,14 +4,7 @@ import arrow.core.getOrHandle
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.cask.CaskIngestionRequest
 import io.vyne.cask.CaskService
-import io.vyne.cask.api.CaskApi
-import io.vyne.cask.api.CaskIngestionErrorDtoPage
-import io.vyne.cask.api.CaskIngestionErrorsRequestDto
-import io.vyne.cask.api.CaskIngestionResponse
-import io.vyne.cask.api.ContentType
-import io.vyne.cask.api.CsvIngestionParameters
-import io.vyne.cask.api.JsonIngestionParameters
-import io.vyne.cask.api.XmlIngestionParameters
+import io.vyne.cask.api.*
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.cask.websocket.CsvWebsocketRequest
@@ -46,7 +39,7 @@ class CaskRestController(private val caskService: CaskService,
       containsTrailingDelimiters: Boolean,
       debug: Boolean,
       input: String
-   ): CaskIngestionResponse {
+   ): Mono<CaskIngestionResponse> {
       val parameters = CsvIngestionParameters(
          delimiter,
          firstRecordAsHeader,
@@ -55,7 +48,7 @@ class CaskRestController(private val caskService: CaskService,
          containsTrailingDelimiters,
          debug
       )
-      return ingestCsv(typeReference, parameters, input)
+      return Mono.just(ingestCsv(typeReference, parameters, input))
    }
 
    private fun ingestCsv(typeReference: String, parameters: CsvIngestionParameters, input: String): CaskIngestionResponse {
@@ -72,20 +65,20 @@ class CaskRestController(private val caskService: CaskService,
    }
 
    // Workaround for feign not supporting pojos for RequestParam
-   override fun ingestJson(typeReference: String, debug: Boolean, input: String): CaskIngestionResponse {
+   override fun ingestJson(typeReference: String, debug: Boolean, input: String): Mono<CaskIngestionResponse> {
       val parameters = JsonIngestionParameters(debug)
-      return ingestJson(typeReference, parameters, input)
+      return Mono.just(ingestJson(typeReference, parameters, input))
    }
 
-   override fun ingestXml(typeReference: String, debug: Boolean, elementSelector: String?, input: String): CaskIngestionResponse {
+   override fun ingestXml(typeReference: String, debug: Boolean, elementSelector: String?, input: String): Mono<CaskIngestionResponse> {
       val xmlIngestionParameters = XmlIngestionParameters(debug, elementSelector)
-      return caskService.resolveType(typeReference).map { versionedType ->
+      return Mono.just(caskService.resolveType(typeReference).map { versionedType ->
          val request = XmlWebsocketRequest(xmlIngestionParameters, versionedType)
          val inputStream = Flux.just(input.byteInputStream() as InputStream)
          ingestRequest(request, inputStream).block()
       }.getOrHandle { error ->
          CaskIngestionResponse.rejected(error.message)
-      }
+      })
    }
 
    private fun ingestJson(typeReference: String, parameters: JsonIngestionParameters, input: String): CaskIngestionResponse {
@@ -112,20 +105,20 @@ class CaskRestController(private val caskService: CaskService,
    }
 
    override fun getCasks() = Mono.just(caskService.getCasks())
-   override fun getCaskDetails(tableName: String) = caskService.getCaskDetails(tableName)
-   override fun deleteCask(tableName: String) = caskService.deleteCask(tableName)
-   override fun emptyCask(tableName: String) = caskService.emptyCask(tableName)
-   override fun getCaskIngestionErrors(tableName: String, request: CaskIngestionErrorsRequestDto): CaskIngestionErrorDtoPage {
+   override fun getCaskDetails(tableName: String): Mono<CaskDetails> = Mono.just(caskService.getCaskDetails(tableName))
+   override fun deleteCask(tableName: String): Mono<String> = Mono.just(caskService.deleteCask(tableName).toString())
+   override fun emptyCask(tableName: String): Mono<String> = Mono.just(caskService.emptyCask(tableName).toString())
+   override fun getCaskIngestionErrors(tableName: String, request: CaskIngestionErrorsRequestDto): Mono<CaskIngestionErrorDtoPage> {
       log().info("Searching ingestion errors for $tableName with criteria $request")
-      return caskService.caskIngestionErrorsFor(
+      return Mono.just(caskService.caskIngestionErrorsFor(
          tableName,
          request.pageNumber,
          request.pageSize,
          request.searchStart,
-         request.searchEnd)
+         request.searchEnd))
    }
 
-   override fun getIngestionMessage(caskMessageId: String): ResponseEntity<Resource> {
+   override fun getIngestionMessage(caskMessageId: String): Mono<String> {
       val (resource, contentType) = caskService.caskIngestionMessage(caskMessageId)
       val (mediaType, fileName) = when(contentType) {
          ContentType.xml -> MediaType.APPLICATION_XML to "$caskMessageId.xml"
@@ -140,11 +133,11 @@ class CaskRestController(private val caskService: CaskService,
             HttpHeaders.CONTENT_DISPOSITION
          )
       builder.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$fileName\"")
-      return builder.body(resource)
+      return Mono.just(builder.body(resource).toString())
    }
 
-   override fun deleteCaskByTypeName(typeName: String) {
-      caskService.deleteCaskByTypeName(typeName)
+   override fun deleteCaskByTypeName(typeName: String): Mono<String> {
+      return Mono.just(caskService.deleteCaskByTypeName(typeName).toString())
    }
 }
 

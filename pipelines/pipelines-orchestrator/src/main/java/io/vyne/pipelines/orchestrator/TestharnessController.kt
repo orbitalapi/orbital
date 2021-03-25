@@ -1,8 +1,8 @@
 package io.vyne.pipelines.orchestrator
 
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
-import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.*
+import reactor.core.publisher.Mono
 import springfox.documentation.annotations.ApiIgnore
 
 // Temporary Controller to send Kafka messages to runners.
@@ -24,7 +24,7 @@ class TestharnessController(val pipelineRunnerApi: PipelineRunnerApi) {
     @CrossOrigin
     fun sendKafkaMessage(@PathVariable("kafkaTopic") kafkaTopic: String,
                          @RequestParam("kafkaHost", defaultValue = "kafka:9092") kafkaHost: String,
-                         @RequestBody kafkaJsonMessage: String): OperationResult {
+                         @RequestBody kafkaJsonMessage: String): Mono<OperationResult> {
        return pipelineRunnerApi.submitMessage(kafkaTopic, kafkaHost, kafkaJsonMessage)
     }
 
