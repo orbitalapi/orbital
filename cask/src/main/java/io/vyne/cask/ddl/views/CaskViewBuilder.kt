@@ -61,6 +61,12 @@ class CaskViewBuilder(
             qualifiedName to configs.maxBy { it.insertedAt }!!
          }
       }
+
+      // Cask now exposes functionality to query given cask by cask_message.insertedAt column.
+      // This requires joining actual 'data' table to cask_message via  <data_table>.caskmessageid = cask_message.id.
+      // Therefore we need to create caskmessageid column in view as well. Below we simply set the value of caskmessageid column of the
+      // first table, but this is just an arbitraty decision for the moment as we can't come up with a better approach.
+      fun caskMessageIdColumn(tableName: String) = """${tableName.quoted()}.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} as ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}"""
    }
 
    private val taxiWriter = SchemaWriter()
@@ -98,7 +104,7 @@ class CaskViewBuilder(
             // This requires joining actual 'data' table to cask_message via  <data_table>.caskmessageid = cask_message.id.
             // Therefore we need to create caskmessageid column in view as well. Below we simply set the value of caskmessageid column of the
             // first table, but this is just an arbitraty decision for the moment as we can't come up with a better approach.
-            val caskMessageIdColumn = """${thisTableName.quoted()}.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} as ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}"""
+            val caskMessageIdColumn = caskMessageIdColumn(thisTableName)
             JoinTableSpec(thisTableName, fields.plus(caskMessageIdColumn))
          } else {
             val previousTypeName = join.types[index - 1]

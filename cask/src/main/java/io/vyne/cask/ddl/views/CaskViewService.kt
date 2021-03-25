@@ -6,6 +6,7 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
 import lang.taxi.types.QualifiedName
+import lang.taxi.types.View
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.jdbc.core.JdbcTemplate
@@ -59,9 +60,7 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
 
          log().info("Generating cask config for view $typeName")
          val caskConfig = caskConfigGenerator()
-         if (!caskConfigRepository.findById(caskConfig.tableName).isPresent) {
-            return caskConfigRepository.save(caskConfig)
-         }
+         return caskConfigRepository.save(caskConfig)
          log().info("Cask Config for view $typeName created successfully")
          return null
       } catch (e: Exception) {
@@ -91,18 +90,34 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
    private fun generateSchemaBasedViews(): List<CaskConfig> {
       val taxiViews = schemaBasedViewGenerator.taxiViews()
       return taxiViews.mapNotNull { view ->
+         val viewBodyDefinitions = view.viewBodyDefinitions
+         if (viewBodyDefinitions == null) {
+            log().warn("${view.toQualifiedName()} doesn't have a body definition so can't generate the corresponding SQL View and Vyne Type, skipping.")
+            return@mapNotNull null
+         }
+
          val caskTypeName = view.qualifiedName
          val existingViewCasks = caskConfigRepository.findAllByQualifiedTypeName(caskTypeName)
          if (existingViewCasks.isNotEmpty()) {
-            log().info("Not regenerating view $caskTypeName as a cask already exists for this")
-            null
-         } else {
-            log().info("Triggering generation of view $caskTypeName")
-            val viewDdl = schemaBasedViewGenerator.generateDdl(view)
-            generateView(view.toQualifiedName(), viewDdl) {
-               schemaBasedViewGenerator.generateCaskConfig(view)
+            //Check whether the view taxi definition is updated.
+            if (existingViewCasks.first().versionHash != view.definitionHash) {
+               log().info("Hash for a taxi view, ${caskTypeName} updated from ${existingViewCasks.first().versionHash} to ${view.definitionHash}, migrating the view")
+               triggerViewCreationForTaxiView(caskTypeName, view)
+            } else {
+               log().info("Not regenerating view $caskTypeName as a cask already exists and no hash code change in view definition for this")
+               null
             }
+         } else {
+            triggerViewCreationForTaxiView(caskTypeName, view)
          }
+      }
+   }
+
+   private fun triggerViewCreationForTaxiView(caskTypeName: String, view: View): CaskConfig? {
+      log().info("Triggering generation of view $caskTypeName")
+      val viewDdl = schemaBasedViewGenerator.generateDdl(view)
+      return generateView(view.toQualifiedName(), viewDdl) {
+         schemaBasedViewGenerator.generateCaskConfig(view)
       }
    }
 
