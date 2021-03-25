@@ -3,10 +3,13 @@ package io.vyne.queryService.security
 import io.vyne.queryService.schemas.VyneQueryBuiltInTypesProvider
 import io.vyne.schemaStore.SchemaPublisher
 import org.springframework.boot.actuate.autoconfigure.security.reactive.ReactiveManagementWebSecurityAutoConfiguration
+import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.ApplicationListener
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Profile
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -16,10 +19,11 @@ import org.springframework.security.config.web.server.ServerHttpSecurity
 
 import org.springframework.security.web.server.SecurityWebFilterChain
 
+
 @Profile("secure")
 @Configuration
 @EnableWebSecurity
-//@Import(value = [SecurityAutoConfiguration::class, ManagementWebSecurityAutoConfiguration::class])
+@Import(value = [SecurityAutoConfiguration::class, ManagementWebSecurityAutoConfiguration::class])
 class SecurityAutoConfig : WebSecurityConfigurerAdapter() {
    override fun configure(http: HttpSecurity) {
       http
@@ -63,6 +67,7 @@ class SecurityAutoConfig : WebSecurityConfigurerAdapter() {
 
 @Configuration
 @EnableWebFluxSecurity
+@Import(value = [SecurityAutoConfiguration::class, ManagementWebSecurityAutoConfiguration::class])
 class VyneInSecurityAutoConfig : ReactiveManagementWebSecurityAutoConfiguration() {
 
    @Bean
@@ -84,5 +89,6 @@ class VyneInSecurityAutoConfig : ReactiveManagementWebSecurityAutoConfiguration(
       }
    }
 }
+
 
 

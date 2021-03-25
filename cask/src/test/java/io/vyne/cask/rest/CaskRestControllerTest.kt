@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delet
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import reactor.core.publisher.Mono
 
 
 @RunWith(SpringRunner::class)
@@ -28,7 +29,7 @@ class CaskRestControllerTest {
 
    @Test
    fun `fetch cask configs`() {
-      whenever(service.getCasks()).thenReturn(listOf())
+      whenever(service.getCasks()).thenReturn(Mono.just(listOf()))
       mockMvc.perform(get("/api/casks")).andExpect(status().isOk).andExpect(content().json("[]"))
    }
 

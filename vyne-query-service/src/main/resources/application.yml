@@ -16,6 +16,8 @@ spring:
          request-timeout: 1800000
    main:
       web-application-type: reactive
+   codec:
+      max-in-memory-size: 100MB
 
 vyne:
    newSchemaSubmissionEnabled: true

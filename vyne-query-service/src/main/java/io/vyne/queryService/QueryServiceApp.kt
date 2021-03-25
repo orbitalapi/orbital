@@ -2,6 +2,8 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.MapperFeature
 import com.netflix.discovery.EurekaClient
+import feign.codec.Decoder
+import feign.codec.Encoder
 import io.vyne.VyneCacheConfiguration
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
@@ -15,6 +17,7 @@ import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
+import org.springframework.beans.factory.ObjectFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
@@ -36,12 +39,21 @@ import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import javax.inject.Provider
+import org.springframework.cloud.openfeign.support.SpringDecoder
+
+import org.springframework.boot.autoconfigure.http.HttpMessageConverters
+import org.springframework.cloud.openfeign.support.SpringEncoder
+
+import feign.form.spring.SpringFormEncoder
+import reactivefeign.spring.config.EnableReactiveFeignClients
+
 
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class, VyneCacheConfiguration::class)
 @EnableVyneEmbeddedSearch
 @VyneSchemaPublisher
-@EnableFeignClients(clients = [CaskApi::class])
+//@EnableFeignClients(clients = [CaskApi::class])
+@EnableReactiveFeignClients(clients = [CaskApi::class])
 @VyneQueryServer
 class QueryServiceApp {
 
@@ -145,6 +157,40 @@ class QueryServiceApp {
       //      }
 
 
+   }
+
+   //@Configuration
+   class FeignResponseDecoderConfig {
+
+      //private val messageConverters =
+      //   ObjectFactory { HttpMessageConverters() }
+
+      /**
+       * @return
+       */
+      //@Bean
+      //fun feignEncoder(): Encoder? {
+      //   return SpringEncoder(messageConverters)
+      //}
+
+      /**
+       * @return
+       */
+      //@Bean
+      //fun feignDecoder(): Decoder? {
+      //   return SpringDecoder(messageConverters)
+      //}
+
+      //@Bean
+      //fun feignDecoder(): Decoder {
+      //   val messageConverters: ObjectFactory<HttpMessageConverters> =
+      //      ObjectFactory<HttpMessageConverters> {
+      //         val converters =
+      //            HttpMessageConverters()
+      //         converters
+      //      }
+       //  return SpringDecoder(messageConverters)
+      //}
    }
 }
 

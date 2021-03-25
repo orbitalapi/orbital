@@ -111,7 +111,7 @@ class CaskRestController(private val caskService: CaskService,
          }
    }
 
-   override fun getCasks() = caskService.getCasks()
+   override fun getCasks() = Mono.just(caskService.getCasks())
    override fun getCaskDetails(tableName: String) = caskService.getCaskDetails(tableName)
    override fun deleteCask(tableName: String) = caskService.deleteCask(tableName)
    override fun emptyCask(tableName: String) = caskService.emptyCask(tableName)

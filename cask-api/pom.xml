@@ -34,10 +34,10 @@
           <groupId>org.springframework</groupId>
           <artifactId>spring-webflux</artifactId>
        </dependency>
-       <dependency>
+       <!-- <dependency>
           <groupId>org.springframework.cloud</groupId>
           <artifactId>spring-cloud-openfeign-core</artifactId>
-       </dependency>
+       </dependency> -->
        <dependency>
           <groupId>io.vyne</groupId>
           <artifactId>vyne-core-types</artifactId>
@@ -53,5 +53,21 @@
           <artifactId>hibernate-core</artifactId>
           <version>${hibernate.version}</version>
        </dependency>
+
+       <dependency>
+          <groupId>com.playtika.reactivefeign</groupId>
+          <artifactId>feign-reactor-webclient</artifactId>
+       </dependency>
+
+       <dependency>
+          <groupId>com.playtika.reactivefeign</groupId>
+          <artifactId>feign-reactor-cloud</artifactId>
+       </dependency>
+
+       <dependency>
+          <groupId>com.playtika.reactivefeign</groupId>
+          <artifactId>feign-reactor-spring-configuration</artifactId>
+       </dependency>
+
     </dependencies>
 </project>
