@@ -1,23 +1,35 @@
 package io.vyne.cask.ddl
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import de.bytefish.pgbulkinsert.pgsql.constants.DataType
 import de.bytefish.pgbulkinsert.row.SimpleRow
+import io.vyne.Jackson
 import io.vyne.VersionedSource
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_DDL
 import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.timed
 import io.vyne.cask.types.allFields
+import io.vyne.models.TypedInstance
 import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
-import lang.taxi.types.*
+import io.vyne.utils.isNonScalarObjectType
+import lang.taxi.types.EnumType
+import lang.taxi.types.Field
+import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
+import lang.taxi.types.Type
 import lang.taxi.utils.quoted
+import me.eugeniomarletti.kotlin.metadata.shadow.utils.addToStdlib.assertedCast
 import org.springframework.jdbc.core.JdbcTemplate
-import java.lang.StringBuilder
 import java.math.BigDecimal
 import java.sql.Timestamp
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 
 data class TableMetadata(
@@ -132,6 +144,7 @@ class PostgresDdlGenerator {
          require(tableName.length <= POSTGRES_MAX_NAME_LENGTH) { "Generated tableName $tableName exceeds Postgres max of 31 characters" }
          return tableName.toLowerCase()
       }
+
       fun toColumnName(field: Field) = field.name.quoted()
    }
 
@@ -154,7 +167,7 @@ class PostgresDdlGenerator {
          }
       }.toMap()
 
-      val fieldNameList = fields.joinToString(", ") { "\"${it.name}\"" } +  ", ${MESSAGE_ID_COLUMN_NAME.quoted()}"
+      val fieldNameList = fields.joinToString(", ") { "\"${it.name}\"" } + ", ${MESSAGE_ID_COLUMN_NAME.quoted()}"
 
       val fieldValueLIst = fields.joinToString(", ") { values[it.name].toString() } + ", '${instance.messageId}'"
       val primaryKeyFieldsList = primaryKeyFields.joinToString(", ") { "\"${it.name}\"" }
@@ -163,7 +176,7 @@ class PostgresDdlGenerator {
 
       val upsertConflictStatement = if (hasPrimaryKey) {
          val nonPkFieldsAndValues = fieldsExcludingPk.joinToString(", ") { "\"${it.name}\" = ${values[it.name]}" } +
-           ", ${MESSAGE_ID_COLUMN_NAME.quoted()} = '${instance.messageId}'"
+            ", ${MESSAGE_ID_COLUMN_NAME.quoted()} = '${instance.messageId}'"
          """ON CONFLICT ( $primaryKeyFieldsList )
             |DO UPDATE SET $nonPkFieldsAndValues""".trimMargin()
       } else ""
@@ -196,7 +209,8 @@ class PostgresDdlGenerator {
    private fun generateObjectDdl(
       type: ObjectType,
       versionedType: VersionedType,
-      fields: List<Field>): TableGenerationStatement {
+      fields: List<Field>
+   ): TableGenerationStatement {
       val columns = fields.map { generateColumnForField(it) } + MessageIdColumn
       val tableName = tableName(versionedType)
       val ddl = """${generateCaskTableDdl(versionedType, fields)}
@@ -222,7 +236,8 @@ class PostgresDdlGenerator {
    private fun generateTableIndexesDdl(tableName: String, fields: List<Field>): String {
       val result = StringBuilder()
       // TODO We can not have a field declared as both a PK and a unique constraint. Perhaps we should handle that on taxi side too.
-      val indexedColumns = fields.filter { col -> col.annotations.any { it.name == _indexed } && !col.annotations.any { it.name == _primaryKey} }
+      val indexedColumns =
+         fields.filter { col -> col.annotations.any { it.name == _indexed } && !col.annotations.any { it.name == _primaryKey } }
       indexedColumns.forEach {
          result.appendln("""CREATE INDEX IF NOT EXISTS idx_${tableName}_${it.name} ON ${tableName}("${it.name}");""")
       }
@@ -242,24 +257,33 @@ class PostgresDdlGenerator {
    }
 
    fun generateColumnForField(field: Field): PostgresColumn {
-      val primitiveType = getPrimitiveType(field, field.type)
-      return generateColumnForField(field, primitiveType)
+      return if (field.type.isNonScalarObjectType()) {
+         generateNonScalarObjectColumn(field, field.type)
+      } else {
+         val primitiveType = getPrimitiveType(field, field.type)
+         generateColumnForField(field, primitiveType)
+      }
+
+   }
+
+   private fun generateNonScalarObjectColumn(field: Field, type: Type): PostgresColumn {
+      return JsonbColumn(toColumnName(field), field)
    }
 
    private fun getPrimitiveType(field: Field, type: Type): PrimitiveType {
       return when {
-          PrimitiveType.isAssignableToPrimitiveType(type) -> {
-             PrimitiveType.getUnderlyingPrimitive(type)
-          }
-          type is EnumType -> {
-             PrimitiveType.STRING
-          }
-          type.inheritsFrom.size == 1 -> {
-             getPrimitiveType(field, type.inheritsFrom.first())
-          }
-          else -> {
-             TODO("Unable to generate column for field=${field}, type=${type}") //To change body of created functions use File | Settings | File Templates.
-          }
+         PrimitiveType.isAssignableToPrimitiveType(type) -> {
+            PrimitiveType.getUnderlyingPrimitive(type)
+         }
+         type is EnumType -> {
+            PrimitiveType.STRING
+         }
+         type.inheritsFrom.size == 1 -> {
+            getPrimitiveType(field, type.inheritsFrom.first())
+         }
+         else -> {
+            TODO("Unable to generate column for field=${field}, type=${type}") //To change body of created functions use File | Settings | File Templates.
+         }
       }
    }
 
@@ -278,14 +302,35 @@ class PostgresDdlGenerator {
       val p: Pair<String, RowWriter> = when (primitiveType) {
          PrimitiveType.STRING -> ScalarTypes.varchar() to { row, v -> row.setText(columnName, v.toString()) }
          PrimitiveType.ANY -> ScalarTypes.varchar() to { row, v -> row.setText(columnName, v.toString()) }
-         PrimitiveType.DECIMAL -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, positiveScaledBigDecimal(v as BigDecimal)) }
-         PrimitiveType.DOUBLE -> ScalarTypes.numeric() to { row, v -> row.setNumeric(columnName, positiveScaledBigDecimal(v as BigDecimal)) }
+         PrimitiveType.DECIMAL -> ScalarTypes.numeric() to { row, v ->
+            row.setNumeric(
+               columnName,
+               positiveScaledBigDecimal(v as BigDecimal)
+            )
+         }
+         PrimitiveType.DOUBLE -> ScalarTypes.numeric() to { row, v ->
+            row.setNumeric(
+               columnName,
+               positiveScaledBigDecimal(v as BigDecimal)
+            )
+         }
          PrimitiveType.INTEGER -> ScalarTypes.integer() to { row, v -> row.setInteger(columnName, v as Int) }
          PrimitiveType.BOOLEAN -> ScalarTypes.boolean() to { row, v -> row.setBoolean(columnName, v as Boolean) }
          PrimitiveType.LOCAL_DATE -> ScalarTypes.date() to { row, v -> row.setDate(columnName, v as LocalDate) }
-         PrimitiveType.DATE_TIME -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, v as LocalDateTime) }
-         PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v -> row.setTimeStamp(columnName, LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC")))}
-         PrimitiveType.TIME -> ScalarTypes.time() to { row, v -> row.setValue(columnName, DataType.Time, (v as LocalTime))
+         PrimitiveType.DATE_TIME -> ScalarTypes.timestamp() to { row, v ->
+            row.setTimeStamp(
+               columnName,
+               v as LocalDateTime
+            )
+         }
+         PrimitiveType.INSTANT -> ScalarTypes.timestamp() to { row, v ->
+            row.setTimeStamp(
+               columnName,
+               LocalDateTime.ofInstant((v as Instant), ZoneId.of("UTC"))
+            )
+         }
+         PrimitiveType.TIME -> ScalarTypes.time() to { row, v ->
+            row.setValue(columnName, DataType.Time, (v as LocalTime))
          }
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
@@ -342,11 +387,12 @@ private object ScalarTypes {
 typealias RowWriter = (rowWriter: SimpleRow, value: Any) -> Unit
 
 interface PostgresColumn {
-   val name:String
+   val name: String
    val sql: String
    fun write(rowWriter: SimpleRow, value: Any)
    fun readValue(attributeSet: InstanceAttributeSet): Any?
 }
+
 object MessageIdColumn : PostgresColumn {
    override val name: String = MESSAGE_ID_COLUMN_NAME.quoted()
    override val sql: String = MESSAGE_ID_COLUMN_DDL
@@ -359,7 +405,13 @@ object MessageIdColumn : PostgresColumn {
    }
 
 }
-data class FieldBasedColumn(override val name: String, private val field: Field, override val sql: String, private val writer: RowWriter):PostgresColumn {
+
+data class FieldBasedColumn(
+   override val name: String,
+   private val field: Field,
+   override val sql: String,
+   private val writer: RowWriter
+) : PostgresColumn {
    override fun write(rowWriter: SimpleRow, value: Any) {
       writer(rowWriter, value)
    }
@@ -369,3 +421,32 @@ data class FieldBasedColumn(override val name: String, private val field: Field,
    }
 }
 
+data class JsonbColumn(
+   override val name: String,
+   val field: Field,
+   val objectMapper: ObjectMapper = Jackson.objectMapper
+) : PostgresColumn {
+
+   override val sql: String = "$name jsonb"
+
+   override fun write(rowWriter: SimpleRow, value: Any) {
+      // TODO : This is really inefficient, as we've received a JSON string, parsed it to
+      // an object, and now we're writing it back out as a json string.
+      // We should find a way to skip the last serialization hop - although
+      // the json out is a subset of the json in.
+      val rawValue = if (value is Map<*, *>) {
+         value.mapValues { (entryKey, entryValue) ->
+            entryValue.assertedCast<TypedInstance> { "Expected to receive a Map<String,TypedInstance> in the JsonbColumn mapper, but got a map entry with value type of ${entryValue!!::class.simpleName}"  }
+               .toRawObject()
+         }
+      } else {
+         error("Expected to receive a Map<String,TypedInstance> in the JsonbColumn mapper, but got an instance of ${value::class.simpleName}")
+      }
+      val json = objectMapper.writeValueAsString(rawValue)
+      rowWriter.setJsonb(name, json)
+   }
+
+   override fun readValue(attributeSet: InstanceAttributeSet): Any? {
+      return attributeSet.attributes.getValue(field.name).value
+   }
+}

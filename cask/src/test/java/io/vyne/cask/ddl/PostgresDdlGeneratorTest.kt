@@ -127,6 +127,30 @@ type Person {
        generator.generateColumnForField(person.field("time")).sql
           .should.equal(""""time" TIME""")
     }
+
+   @Test
+   fun `generates nested data as jsonb`() {
+      val (_,taxi) = schema(""" type StreetName inherits String
+         type CityName inherits String
+         type Postcode inherits String
+         model GeographicRegion {
+            city : CityName
+            postCode : Postcode
+         }
+
+         model Address {
+            houseNumber : Int
+            streetName : StreetName
+            region : GeographicRegion
+         }
+         model Person {
+            name : String
+            address : Address
+         }""")
+      val person = taxi.objectType("Person")
+      generator.generateColumnForField(person.field("address")).sql
+         .should.equal(""""address" jsonb""")
+   }
 }
 
 fun schema(src: String): Pair<TaxiSchema, TaxiDocument> {

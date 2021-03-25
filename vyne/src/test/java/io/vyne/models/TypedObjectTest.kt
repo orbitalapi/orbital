@@ -64,7 +64,20 @@ class TypedObjectTest {
       val raw = trader.toRawObject()
       val rawJson = jacksonObjectMapper().writeValueAsString(raw)
       JSONAssert.assertEquals(traderJson, rawJson, false);
+   }
 
+   /**
+    * We parse json in two entry points - as a string and
+    * as a sequence of JsonNodes.
+    * When using the JsonNode approach, ensure everything converts correctly
+    */
+   @Test
+   fun `can parse json as JsonNode`() {
+      val jsonNode = jacksonObjectMapper().readTree(traderJson)
+      val trader = TypedInstance.from(schema.type("Trader"), jsonNode, schema, source = Provided)
+      val raw = trader.toRawObject()
+      val rawJson = jacksonObjectMapper().writeValueAsString(raw)
+      JSONAssert.assertEquals(traderJson, rawJson, false);
    }
 
    @Test

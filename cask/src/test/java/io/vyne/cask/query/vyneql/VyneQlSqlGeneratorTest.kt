@@ -14,7 +14,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 class VyneQlSqlGeneratorTest {
-   val schemaProvider = SimpleTaxiSchemaProvider("""
+   val schemaProvider = SimpleTaxiSchemaProvider(
+      """
       type FirstName inherits String
       type Age inherits Int
       type LoginTime inherits Instant
@@ -22,13 +23,28 @@ class VyneQlSqlGeneratorTest {
       type BaseDate inherits Date
       type InheritedDate inherits BaseDate
       type BirthDate inherits InheritedDate
+     type StreetName inherits String
+      type CityName inherits String
+      type Postcode inherits String
+      model GeographicRegion {
+         city : CityName
+         postCode : Postcode
+      }
+
+      model Address {
+         houseNumber : Int
+         streetName : StreetName
+         region : GeographicRegion
+      }
       model Person {
          firstName : FirstName
          age : Age
          lastLogin : LastLoggedIn
          birthDate: BirthDate
+         address : Address
       }
-   """)
+   """
+   )
 
    lateinit var caskConfigRepository: CaskConfigRepository
    lateinit var sqlGenerator: VyneQlSqlGenerator
@@ -36,12 +52,14 @@ class VyneQlSqlGeneratorTest {
    @Before
    fun setup() {
       caskConfigRepository = mock {
-         on { findAllByQualifiedTypeNameAndStatus(any(),any()) } doReturn listOf(CaskConfig(
-            tableName = "person",
-            qualifiedTypeName = "Person",
-            versionHash = "abcdef",
-            insertedAt = Instant.now()
-         ))
+         on { findAllByQualifiedTypeNameAndStatus(any(), any()) } doReturn listOf(
+            CaskConfig(
+               tableName = "person",
+               qualifiedTypeName = "Person",
+               versionHash = "abcdef",
+               insertedAt = Instant.now()
+            )
+         )
       }
       sqlGenerator = VyneQlSqlGenerator(schemaProvider, caskConfigRepository)
    }
@@ -57,6 +75,7 @@ class VyneQlSqlGeneratorTest {
       val statement = sqlGenerator.generateSql("findAll { Person[]( FirstName = 'Jimmy' ) }")
       statement.shouldEqual("""SELECT * from person WHERE "firstName" = ?;""", listOf("Jimmy"))
    }
+
    @Test
    fun generatesSqlForFindByNumberArg() {
       val statement = sqlGenerator.generateSql("findAll { Person[]( Age = 21 ) }")
@@ -72,25 +91,50 @@ class VyneQlSqlGeneratorTest {
    @Test
    fun `params that are date time strings are parsed to instant`() {
       val statement = sqlGenerator.generateSql("findAll { Person[]( LastLoggedIn >= '2020-11-10T15:00:00Z' ) }")
-      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ?;""", listOf(LocalDateTime.parse("2020-11-10T15:00:00")))
+      statement.shouldEqual(
+         """SELECT * from person WHERE "lastLogin" >= ?;""",
+         listOf(LocalDateTime.parse("2020-11-10T15:00:00"))
+      )
    }
 
    @Test
    fun `date time between params are parsed correctly`() {
-      val statement = sqlGenerator.generateSql("""findAll { Person[]( LastLoggedIn >= "2020-10-10T15:00:00Z",  LastLoggedIn < "2020-11-10T15:00:00Z"  ) }""")
-      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00"), LocalDateTime.parse("2020-11-10T15:00:00")))
+      val statement =
+         sqlGenerator.generateSql("""findAll { Person[]( LastLoggedIn >= "2020-10-10T15:00:00Z",  LastLoggedIn < "2020-11-10T15:00:00Z"  ) }""")
+      statement.shouldEqual(
+         """SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""",
+         listOf(LocalDateTime.parse("2020-10-10T15:00:00"), LocalDateTime.parse("2020-11-10T15:00:00"))
+      )
    }
 
    @Test
    fun `when querying using a base type, the field is resolved correctly`() {
-      val statement = sqlGenerator.generateSql("""findAll { Person[]( LoginTime >= "2020-10-10T15:00:00Z",  LoginTime < "2020-11-10T15:00:00Z"  ) }""")
-      statement.shouldEqual("""SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""", listOf(LocalDateTime.parse("2020-10-10T15:00:00"), LocalDateTime.parse("2020-11-10T15:00:00")))
+      val statement =
+         sqlGenerator.generateSql("""findAll { Person[]( LoginTime >= "2020-10-10T15:00:00Z",  LoginTime < "2020-11-10T15:00:00Z"  ) }""")
+      statement.shouldEqual(
+         """SELECT * from person WHERE "lastLogin" >= ? AND "lastLogin" < ?;""",
+         listOf(LocalDateTime.parse("2020-10-10T15:00:00"), LocalDateTime.parse("2020-11-10T15:00:00"))
+      )
    }
 
    @Test
    fun `when querying using a grand-base type, the field is resolved correctly`() {
-      val statement = sqlGenerator.generateSql("""findAll { Person[]( BaseDate >= "2020-10-10",  BaseDate < "2020-11-10"  ) }""")
-      statement.shouldEqual("""SELECT * from person WHERE "birthDate" >= ? AND "birthDate" < ?;""", listOf(LocalDate.parse("2020-10-10"), LocalDate.parse("2020-11-10")))
+      val statement =
+         sqlGenerator.generateSql("""findAll { Person[]( BaseDate >= "2020-10-10",  BaseDate < "2020-11-10"  ) }""")
+      statement.shouldEqual(
+         """SELECT * from person WHERE "birthDate" >= ? AND "birthDate" < ?;""",
+         listOf(LocalDate.parse("2020-10-10"), LocalDate.parse("2020-11-10"))
+      )
+   }
+
+   @Test
+   fun `can select from a json node`() {
+      val statement =
+         sqlGenerator.generateSql("""findAll { Person[]( CityName = "London" ) }""")
+      statement.shouldEqual(
+         """SELECT * from person WHERE "address" @> '{ "region" : { "city" : "London" } }';""",
+         emptyList()
+      )
    }
 
    private fun SqlStatement.shouldEqual(sql: String, params: List<Any>) {

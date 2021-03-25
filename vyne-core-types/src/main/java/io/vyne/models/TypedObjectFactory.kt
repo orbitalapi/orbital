@@ -1,5 +1,6 @@
 package io.vyne.models
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.models.conditional.ConditionalFieldSetEvaluator
 import io.vyne.models.functions.FunctionRegistry
@@ -11,6 +12,7 @@ import io.vyne.schemas.Field
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.isNonScalarObjectType
 import lang.taxi.types.Accessor
 import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
@@ -105,6 +107,18 @@ class TypedObjectFactory(
          // Cheaper readers first
          value is CSVRecord && field.accessor is ColumnAccessor && considerAccessor -> {
             readAccessor(field.type, field.accessor, field.nullable)
+         }
+
+         // Handle reading nested objects if parsing from a JsonNode.
+         // Parsing from actual json string is handled elsewhere
+         value is JsonNode && schema.type(field.type).taxiType.isNonScalarObjectType() -> {
+            return TypedObjectFactory(
+               schema.type(field.type),
+               value[attributeName],
+               schema,
+               nullValues,
+               source, objectMapper, functionRegistry, evaluateAccessors
+            ).build()
          }
 
          // ValueReader can be expensive if the value is an object,

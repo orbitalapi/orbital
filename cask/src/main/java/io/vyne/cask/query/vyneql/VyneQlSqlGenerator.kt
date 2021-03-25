@@ -19,6 +19,7 @@ import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.Field
+import lang.taxi.types.FieldReference
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
@@ -77,17 +78,38 @@ class VyneQlSqlGenerator(
    }
 
    private fun buildPropertyConstraintClause(constraint: PropertyToParameterConstraint, collectionType: ObjectType, schema: Schema): SqlStatement {
-      val (columnName,field) = propertyIdentifierToColumnName(constraint.propertyIdentifier, collectionType, schema)
-      val operator = constraint.operator.symbol
-      val expected = when(val constraintValue = constraint.expectedValue) {
-         is ConstantValueExpression -> CaskDAO.castArgumentToJdbcType(field,constraintValue.value.toString())
-         else -> TODO("Handling of constraint type ${constraintValue::class.simpleName} is not yet implemented")
-      }
-
-      return SqlStatement("\"$columnName\" $operator ?", listOf(expected))
-
+      val constraintBuilder = getConstraintBuilder(constraint.propertyIdentifier, collectionType, schema)
+      return constraintBuilder.build(constraint)
    }
 
+   private fun getConstraintBuilder(propertyIdentifier: PropertyIdentifier, collectionType: ObjectType, schema: Schema):ConstraintBuilder {
+      return when (propertyIdentifier) {
+         is PropertyTypeIdentifier -> {
+            val fieldReferences = collectionType.fieldReferencesAssignableTo(schema.type(propertyIdentifier.type.fullyQualifiedName).taxiType)
+            when (fieldReferences.size) {
+               0 ->  throw CaskBadRequestException("No fields on type ${collectionType.qualifiedName} found with type ${propertyIdentifier.taxi}")
+               1 -> {
+                  val fieldReference = fieldReferences.first()
+                  when (fieldReference.path.size) {
+                     0 -> error("FieldReference for ${propertyIdentifier.taxi} on type ${collectionType.qualifiedName} should not contain an empty path.")
+                     1 -> ColumnConstraintBuilder(fieldReference)
+                     else -> JsonConstraintBuilder(fieldReference)
+                  }
+               }
+               else -> throw CaskBadRequestException("Type ${propertyIdentifier.type} is ambiguous on type ${collectionType.qualifiedName} - there are multiple fields with this type: ${fieldReferences.joinToString { it.description }}")
+            }
+         }
+         is PropertyFieldNameIdentifier -> {
+            // TODO : MP - This isn't actually supported at the moment (the VyneQL compiler prevents
+            // this.fieldName qualifiers, for no good reason).
+            // When we come to handle this, check that the value of propertyIdentifier.name.path
+            // doesn't contain the  "this." prefix
+            val fieldName = propertyIdentifier.name.path
+            val field = collectionType.field(fieldName)
+            ColumnConstraintBuilder(FieldReference(collectionType, listOf(field)))
+         }
+      }
+   }
    private fun propertyIdentifierToColumnName(propertyIdentifier: PropertyIdentifier, collectionType: ObjectType, schema: Schema): Pair<ColumnName, Field> {
       return when (propertyIdentifier) {
          is PropertyTypeIdentifier -> {
@@ -142,5 +164,37 @@ class VyneQlSqlGenerator(
          throw CaskBadRequestException("VyneQl queries must be for array types - found $typeName, try $typeName[] ")
       }
       return discoveryType.type.parameters[0] to discoveryType
+   }
+}
+
+interface ConstraintBuilder {
+   fun build(constraint: PropertyToParameterConstraint): SqlStatement
+}
+
+class ColumnConstraintBuilder(private val fieldReference:FieldReference) : ConstraintBuilder {
+   init {
+       require(fieldReference.path.size == 1) {"ColumnConstraintBuilder should only be used with a path size of 1"}
+   }
+   override fun build(constraint: PropertyToParameterConstraint): SqlStatement {
+      val field = fieldReference.path.first()
+      val columnName = field.name
+      val operator = constraint.operator.symbol
+      val expected = when(val constraintValue = constraint.expectedValue) {
+         is ConstantValueExpression -> CaskDAO.castArgumentToJdbcType(field,constraintValue.value.toString())
+         else -> TODO("Handling of constraint type ${constraintValue::class.simpleName} is not yet implemented")
+      }
+
+      return SqlStatement("\"$columnName\" $operator ?", listOf(expected))
+
+   }
+}
+
+class JsonConstraintBuilder(private val fieldReference: FieldReference) : ConstraintBuilder {
+   init {
+      require(fieldReference.path.size > 1) {"JsonConstraintBuilder should only be used with a path size > 1"}
+   }
+
+   override fun build(constraint: PropertyToParameterConstraint): SqlStatement {
+      TODO("Not yet implemented")
    }
 }
