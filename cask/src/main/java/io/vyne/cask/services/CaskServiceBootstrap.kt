@@ -68,7 +68,14 @@ class CaskServiceBootstrap constructor(
             regenerateCaskServicesAsync()
          }
          else -> {
-            log().info("Upgrade check completed, nothing to do.")
+            log().info("No action found for schema change event, checking view based casks as the last resort...")
+            val generatedViewBasedConfigs = this.generateCaskViews()
+            if (generatedViewBasedConfigs.isNotEmpty()) {
+               val caskVersionedTypes = findTypesToRegister(generatedViewBasedConfigs)
+               if (caskVersionedTypes.isNotEmpty()) {
+                  caskServiceSchemaGenerator.generateAndPublishServices(caskVersionedTypes)
+               }
+            }
          }
       }
 

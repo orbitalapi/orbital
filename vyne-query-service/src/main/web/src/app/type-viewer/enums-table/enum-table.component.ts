@@ -32,6 +32,6 @@ export class EnumTableComponent {
   routerLinkFor(synonym: string): string[] {
     const parts = synonym.split('.');
     const enumName = parts.slice(0, parts.length - 1).join('.');
-    return ['/types', enumName];
+    return ['/catalog', enumName];
   }
 }

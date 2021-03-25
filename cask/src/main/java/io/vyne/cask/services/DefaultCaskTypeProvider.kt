@@ -9,6 +9,7 @@ import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ObjectTypeDefinition
 import lang.taxi.types.Type
+import lang.taxi.types.View
 import org.springframework.stereotype.Service
 
 @Service
@@ -34,8 +35,8 @@ class DefaultCaskTypeProvider {
          ObjectTypeDefinition(
             inheritsFrom = setOf(type),
             fields = setOf(
-               Field("caskInsertedAt", insertedAtType()),
-               Field("caskMessageId", caskMessageIdType())
+               Field(name = "caskInsertedAt", type = insertedAtType(), compilationUnit =  CompilationUnit.unspecified()),
+               Field(name = "caskMessageId", type = caskMessageIdType(), compilationUnit =  CompilationUnit.unspecified())
             ),
             compilationUnit = CompilationUnit.unspecified(),
             annotations = setOf(Annotation("Generated")),

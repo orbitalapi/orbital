@@ -321,7 +321,7 @@ class StringsTest {
          """
          model FindModel {
             symbol : String by column(1)
-            symbolPrefix: Int by find(column(1), "BOBUY")
+            symbolPrefix: Int by indexOf(column(1), "BOBUY")
             identifierValue : String? by when (this.symbolPrefix) {
                -1 -> column(1)
                else -> right(column(1),length(this.symbol) - 5)

@@ -49,6 +49,6 @@ export class AttributeTableComponent {
   routerLinkFor(attributeName: string): string[] {
     const attributeType = this.attributeType(attributeName);
     const typeToLinkTo = (attributeType.longDisplayName.endsWith('[]')) ? attributeType.parameters[0].fullyQualifiedName : attributeType.fullyQualifiedName;
-    return ['/types', typeToLinkTo];
+    return ['/catalog', typeToLinkTo];
   }
 }

@@ -115,7 +115,7 @@ class HipsterDiscoverGraphQueryStrategy(
             val searchResult = searcher.search(
                currentFacts,
                context.excludedServices.toSet(),
-               invocationConstraints.excludedOperations) { pathToEvaluate ->
+               invocationConstraints.excludedOperations.plus(context.excludedOperations.map { SearchGraphExclusion("@Id", it) })) { pathToEvaluate ->
                evaluatePath(pathToEvaluate,context)
             }
             if (searchPathExclusionsCacheSize > 0 && searchResult.path == null) {

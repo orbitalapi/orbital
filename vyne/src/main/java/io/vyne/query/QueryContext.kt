@@ -22,10 +22,10 @@ import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.schemas.*
 import io.vyne.utils.log
 import io.vyne.utils.timed
-import io.vyne.vyneql.ProjectedType
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.ProjectedType
 import java.util.*
 import java.util.stream.Stream
 import kotlin.streams.toList
@@ -101,6 +101,7 @@ data class QueryResult(
    @get:JsonIgnore
    val verboseResults: Map<String, Any?> by lazy {
       val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+
       this.results.map { (key, value) ->
          key.type.name.parameterizedName to value?.let { converter.convert(it) }
       }.toMap()
@@ -304,6 +305,7 @@ data class QueryContext(
       mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
       val copiedContext = this.copy(facts = mutableFacts, parent = this)
       copiedContext.excludedServices.addAll(this.excludedServices)
+      copiedContext.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       return copiedContext
    }
 
@@ -340,7 +342,7 @@ data class QueryContext(
    }
 
    fun projectResultsTo(targetType: String): QueryContext {
-      return projectResultsTo(ProjectedType.fromConcreteTypeOnly(lang.taxi.types.QualifiedName.from(targetType)))
+      return projectResultsTo(ProjectedType.fromConcreteTypeOnly(schema.taxi.type(targetType)))
    }
 
    private fun projectResultsTo(targetType: Type): QueryContext {
@@ -420,6 +422,8 @@ data class QueryContext(
 
    private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
    val excludedServices: MutableSet<SearchGraphExclusion<QualifiedName>> = mutableSetOf()
+   val excludedOperations: MutableSet<Operation> = mutableSetOf()
+
 
    private fun getTopLevelContext(): QueryContext {
       return parent?.getTopLevelContext() ?: this

@@ -3,12 +3,14 @@ package io.vyne.cask.query
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.cask.MessageIds
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.ddl.TypeDbWrapper
 import io.vyne.cask.ddl.views.CaskViewBuilderFactory
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.ddl.views.CaskViewDefinition
 import io.vyne.cask.ddl.views.CaskViewService
+import io.vyne.cask.ddl.views.SchemaBasedViewGenerator
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
@@ -49,7 +51,7 @@ import javax.sql.DataSource
 @RunWith(SpringRunner::class)
 @AutoConfigureEmbeddedDatabase(beanName = "dataSource")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Import(StringToQualifiedNameConverter::class)
+@Import(StringToQualifiedNameConverter::class, JdbcStreamingTemplate::class)
 abstract class BaseCaskIntegrationTest {
 
    @Autowired
@@ -63,6 +65,9 @@ abstract class BaseCaskIntegrationTest {
 
    @Autowired
    lateinit var jdbcTemplate: JdbcTemplate
+
+   @Autowired
+   lateinit var jdbcStreamingTemplate: JdbcStreamingTemplate
 
    @Autowired
    lateinit var ingestionErrorRepository: IngestionErrorRepository
@@ -107,7 +112,8 @@ abstract class BaseCaskIntegrationTest {
          CaskViewBuilderFactory(configRepository, schemaProvider),
          configRepository,
          jdbcTemplate,
-         CaskViewConfig(viewDefinitions)
+         CaskViewConfig(viewDefinitions),
+         SchemaBasedViewGenerator(configRepository, schemaProvider)
       )
       ingestionEventHandler = IngestionEventHandler(caskConfigService, caskDao)
    }

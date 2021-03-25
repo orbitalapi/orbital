@@ -46,9 +46,13 @@ import {AuthService} from './auth/auth.service';
 
 export const routerModule = RouterModule.forRoot(
   [
-    {path: '', redirectTo: 'types', pathMatch: 'full'},
-    {path: 'types', component: TypeListComponent},
-    {path: 'types/:typeName', component: TypeViewerContainerComponent},
+    {path: '', redirectTo: 'catalog', pathMatch: 'full'},
+    {path: 'types', redirectTo: 'catalog'},
+    {path: 'catalogue', redirectTo: 'catalog'},
+    {path: 'types/:typeName', redirectTo: 'catalog/:typeName'},
+    {path: 'catalogue/:typeName', redirectTo: 'catalog/:typeName'},
+    {path: 'catalog/:typeName', component: TypeViewerContainerComponent},
+    {path: 'catalog', component: TypeListComponent},
     {path: 'services/:serviceName', component: ServiceViewContainerComponent},
     {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent},
     {path: 'query-wizard', component: QueryPanelComponent},
