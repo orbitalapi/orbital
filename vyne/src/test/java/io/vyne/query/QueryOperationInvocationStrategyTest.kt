@@ -120,6 +120,43 @@ class QueryOperationInvocationStrategyTest {
    }
 
 
+   @Test
+   fun `will invoke query service if criteria is on nested field`() {
+      val schema = TaxiSchema.fromStrings(
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
+         model Trader {
+            name : TraderName
+         }
+         type TraderName inherits String
+         model Trade {}
+         model FxTrade inherits Trade {
+            trader : TraderName
+         }
+
+         // BondTrade does not expose a TraderName, so in query filtering on TraderName, it should not
+         // be invoked
+         model BondTrade inherits Trade {
+         }
+         // IrsTrade has a nested object with a trader name
+         model IrsTrade inherits Trade {
+            trader : Trader
+         }
+         service BondTradeService {
+            ${queryDeclaration("bondTradeQuery", "BondTrade[]")}
+         }
+         service FxTradeService {
+            ${queryDeclaration("fxTradeQuery", "FxTrade[]")}
+         }
+         service IrsTradeService {
+            ${queryDeclaration("irsTradeQuery", "IrsTrade[]")}
+         }
+      """.trimIndent())
+      val querySpecNode = getQuerySpecNode("findAll { Trade[]( TraderName = 'Jimmy' ) }", schema)
+      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode)
+      candidates.should.have.size(2)
+   }
+
 }
 
 fun getQuerySpecNode(taxiQl: String, schema: TaxiSchema): QuerySpecTypeNode {

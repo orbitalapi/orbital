@@ -13,6 +13,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.isNonScalarObjectType
+import io.vyne.utils.log
 import lang.taxi.types.Accessor
 import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVRecord
@@ -103,6 +104,7 @@ class TypedObjectFactory(
       // Therefore, if we've been directly supplied the value, use it.
       // Otherwise, look to leverage conditions.
       // Note - revisit if this proves to be problematic.
+      val fieldType = schema.type(field.type)
       return when {
          // Cheaper readers first
          value is CSVRecord && field.accessor is ColumnAccessor && considerAccessor -> {
@@ -111,14 +113,20 @@ class TypedObjectFactory(
 
          // Handle reading nested objects if parsing from a JsonNode.
          // Parsing from actual json string is handled elsewhere
-         value is JsonNode && schema.type(field.type).taxiType.isNonScalarObjectType() -> {
-            return TypedObjectFactory(
-               schema.type(field.type),
-               value[attributeName],
-               schema,
-               nullValues,
-               source, objectMapper, functionRegistry, evaluateAccessors
-            ).build()
+         value is JsonNode && fieldType.taxiType.isNonScalarObjectType() -> {
+            if (value[attributeName] == null) {
+               log().info("Attribute $attributeName was null when reading json of type ${type.fullyQualifiedName}")
+               TypedNull.create(fieldType, source)
+            } else {
+               TypedObjectFactory(
+                  fieldType,
+                  value[attributeName],
+                  schema,
+                  nullValues,
+                  source, objectMapper, functionRegistry, evaluateAccessors
+               ).build()
+            }
+
          }
 
          // ValueReader can be expensive if the value is an object,
@@ -133,18 +141,18 @@ class TypedObjectFactory(
             readAccessor(field.type, field.accessor!!, field.nullable)
          }
          field.readCondition != null -> {
-            conditionalFieldSetEvaluator.evaluate(field.readCondition, attributeName, schema.type(field.type))
+            conditionalFieldSetEvaluator.evaluate(field.readCondition, attributeName, fieldType)
          }
          // Not a map, so could be an object, try the value reader - but this is an expensive
          // call, so we defer to last-ish
          valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, field)
 
          // Is there a default?
-         field.defaultValue != null -> TypedValue.from(schema.type(field.type), field.defaultValue, ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)
+         field.defaultValue != null -> TypedValue.from(fieldType, field.defaultValue, ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)
 
          else -> {
            // log().debug("The supplied value did not contain an attribute of $attributeName and no accessors or strategies were found to read.  Will return null")
-            TypedNull.create(schema.type(field.type))
+            TypedNull.create(fieldType)
          }
       }
 

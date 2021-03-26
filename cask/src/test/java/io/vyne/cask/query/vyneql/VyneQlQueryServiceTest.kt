@@ -7,7 +7,6 @@ import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
-import reactor.test.StepVerifier
 
 class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    val schema = """
@@ -15,10 +14,24 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
       type Age inherits Int
       type LastLoggedIn inherits LoginTime
       type LoginTime inherits Instant
+      type StreetName inherits String
+      type CityName inherits String
+      type Postcode inherits String
+
+      model GeographicRegion {
+         city : CityName
+      }
+
+      model Address {
+         houseNumber : Int
+         streetName : StreetName
+         region : GeographicRegion
+      }
       model Person {
          firstName : FirstName
          age : Age
          lastLogin : LastLoggedIn
+         address : Address
       }
    """
 
@@ -35,9 +48,10 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
       ))
       val json =
          """[
-         { "firstName" : "Jimmy", "age" : 35, "lastLogin" : "2020-11-16T11:47:00Z" },
-         { "firstName" : "Jack", "age" : 32, "lastLogin" : "2020-11-15T11:47:00Z" },
-         { "firstName" : "John", "age" : 55, "lastLogin" : "2020-10-15T11:47:00Z" }]"""
+         { "firstName" : "Jimmy", "age" : 35, "lastLogin" : "2020-11-16T11:47:00Z" , "address" : { "houseNumber" : 23, "streetName" : "Main Street", "region" : {"city" : "London" } } },
+         { "firstName" : "Jack", "age" : 32, "lastLogin" : "2020-11-15T11:47:00Z" , "address" : { "houseNumber" : 55, "streetName" : "Second Street", "region" : {"city" : "London" } } },
+         { "firstName" : "John", "age" : 55, "lastLogin" : "2020-10-15T11:47:00Z"  , "address" : { "houseNumber" : 23, "streetName" : "Main Street", "region" : {"city" : "Bath" } } }
+         ]"""
 
       ingestJsonData(json, person, schema)
    }
@@ -124,5 +138,11 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
       response.map { it["firstName"]}.should.have.elements("Jack")
    }
 
+   @Test
+   fun `can query with json data for string match`() {
+      val response = runBlocking { service.submitVyneQlQuery("""findAll { Person[]( CityName = 'London' ) }""").body.block() }
+      response.should.have.size(2)
+      response.map { it["firstName"]}.should.have.elements("Jack", "Jack")
+   }
 
 }

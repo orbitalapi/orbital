@@ -22,10 +22,14 @@ import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.TaxiQLQueryString
+import lang.taxi.utils.quoted
+import lang.taxi.utils.quotedIfNecessary
+import lang.taxi.utils.takeHead
 import org.springframework.stereotype.Component
 
 data class SqlStatement(val sql: String, val params: List<Any>)
 typealias ColumnName = String
+
 @Component
 class VyneQlSqlGenerator(
    private val schemaProvider: SchemaProvider,
@@ -75,17 +79,26 @@ class VyneQlSqlGenerator(
       }
    }
 
-   private fun buildPropertyConstraintClause(constraint: PropertyToParameterConstraint, collectionType: ObjectType, schema: Schema): SqlStatement {
+   private fun buildPropertyConstraintClause(
+      constraint: PropertyToParameterConstraint,
+      collectionType: ObjectType,
+      schema: Schema
+   ): SqlStatement {
       val constraintBuilder = getConstraintBuilder(constraint.propertyIdentifier, collectionType, schema)
       return constraintBuilder.build(constraint)
    }
 
-   private fun getConstraintBuilder(propertyIdentifier: PropertyIdentifier, collectionType: ObjectType, schema: Schema):ConstraintBuilder {
+   private fun getConstraintBuilder(
+      propertyIdentifier: PropertyIdentifier,
+      collectionType: ObjectType,
+      schema: Schema
+   ): ConstraintBuilder {
       return when (propertyIdentifier) {
          is PropertyTypeIdentifier -> {
-            val fieldReferences = collectionType.fieldReferencesAssignableTo(schema.type(propertyIdentifier.type.fullyQualifiedName).taxiType)
+            val fieldReferences =
+               collectionType.fieldReferencesAssignableTo(schema.type(propertyIdentifier.type.fullyQualifiedName).taxiType)
             when (fieldReferences.size) {
-               0 ->  throw CaskBadRequestException("No fields on type ${collectionType.qualifiedName} found with type ${propertyIdentifier.taxi}")
+               0 -> throw CaskBadRequestException("No fields on type ${collectionType.qualifiedName} found with type ${propertyIdentifier.taxi}")
                1 -> {
                   val fieldReference = fieldReferences.first()
                   when (fieldReference.path.size) {
@@ -108,16 +121,22 @@ class VyneQlSqlGenerator(
          }
       }
    }
-   private fun propertyIdentifierToColumnName(propertyIdentifier: PropertyIdentifier, collectionType: ObjectType, schema: Schema): Pair<ColumnName, Field> {
+
+   private fun propertyIdentifierToColumnName(
+      propertyIdentifier: PropertyIdentifier,
+      collectionType: ObjectType,
+      schema: Schema
+   ): Pair<ColumnName, Field> {
       return when (propertyIdentifier) {
          is PropertyTypeIdentifier -> {
             val fields = collectionType.fieldsWithType(propertyIdentifier.type)
             when (fields.size) {
                0 -> {
-                  val fieldName = fieldsWithTypeConsideringFullInheritanceGraph(collectionType, propertyIdentifier, schema)
-                  fieldName to  collectionType.field(fieldName)
+                  val fieldName =
+                     fieldsWithTypeConsideringFullInheritanceGraph(collectionType, propertyIdentifier, schema)
+                  fieldName to collectionType.field(fieldName)
                }
-               1 ->  fields.first().name to fields.first()
+               1 -> fields.first().name to fields.first()
                else -> throw CaskBadRequestException("Type ${propertyIdentifier.type} is ambiguous on type ${collectionType.qualifiedName} - there are multiple fields with this type: ${fields.joinToString { it.name }}")
             }
          }
@@ -133,10 +152,16 @@ class VyneQlSqlGenerator(
       }
    }
 
-   private fun fieldsWithTypeConsideringFullInheritanceGraph(collectionType: ObjectType, propertyIdentifier: PropertyIdentifier, schema: Schema): AttributeName {
+   private fun fieldsWithTypeConsideringFullInheritanceGraph(
+      collectionType: ObjectType,
+      propertyIdentifier: PropertyIdentifier,
+      schema: Schema
+   ): AttributeName {
       val propertyVyneType = schema.type(propertyIdentifier.taxi)
       val collectionVyneType = schema.type(collectionType.qualifiedName)
-      val matchingAttributes = collectionVyneType.attributes.filter { (_, field) -> schema.type(field.type).inheritsFrom(propertyVyneType) }.mapNotNull { it.key }
+      val matchingAttributes =
+         collectionVyneType.attributes.filter { (_, field) -> schema.type(field.type).inheritsFrom(propertyVyneType) }
+            .mapNotNull { it.key }
       return when (matchingAttributes.size) {
          0 -> throw CaskBadRequestException("No fields on type ${collectionType.qualifiedName} found with type ${propertyIdentifier.taxi}")
          1 -> matchingAttributes.first()
@@ -144,6 +169,7 @@ class VyneQlSqlGenerator(
       }
 
    }
+
    //this.schemaProvider.schema().type("ion.orders.FormattedIonOrderEventDate_33231d").inheritsFrom(this.schemaProvider.schema().type("cacib.orders.OrderEventDate"))
    private fun getActiveConfig(collectionType: QualifiedName): CaskConfig {
       val configs = configRepository.findActiveTables(collectionType.fullyQualifiedName)
@@ -169,16 +195,17 @@ interface ConstraintBuilder {
    fun build(constraint: PropertyToParameterConstraint): SqlStatement
 }
 
-class ColumnConstraintBuilder(private val fieldReference:FieldReference) : ConstraintBuilder {
+class ColumnConstraintBuilder(private val fieldReference: FieldReference) : ConstraintBuilder {
    init {
-       require(fieldReference.path.size == 1) {"ColumnConstraintBuilder should only be used with a path size of 1"}
+      require(fieldReference.path.size == 1) { "ColumnConstraintBuilder should only be used with a path size of 1" }
    }
+
    override fun build(constraint: PropertyToParameterConstraint): SqlStatement {
       val field = fieldReference.path.first()
       val columnName = field.name
       val operator = constraint.operator.symbol
-      val expected = when(val constraintValue = constraint.expectedValue) {
-         is ConstantValueExpression -> CaskDAO.castArgumentToJdbcType(field,constraintValue.value.toString())
+      val expected = when (val constraintValue = constraint.expectedValue) {
+         is ConstantValueExpression -> CaskDAO.castArgumentToJdbcType(field, constraintValue.value.toString())
          else -> TODO("Handling of constraint type ${constraintValue::class.simpleName} is not yet implemented")
       }
 
@@ -189,10 +216,30 @@ class ColumnConstraintBuilder(private val fieldReference:FieldReference) : Const
 
 class JsonConstraintBuilder(private val fieldReference: FieldReference) : ConstraintBuilder {
    init {
-      require(fieldReference.path.size > 1) {"JsonConstraintBuilder should only be used with a path size > 1"}
+      require(fieldReference.path.size > 1) { "JsonConstraintBuilder should only be used with a path size > 1" }
    }
 
    override fun build(constraint: PropertyToParameterConstraint): SqlStatement {
-      TODO("Not yet implemented")
+      val ultimateConstraintField = fieldReference.path.last()
+      val expectedValue = when (val constraintValue = constraint.expectedValue) {
+         is ConstantValueExpression -> CaskDAO.castArgumentToJdbcType(
+            ultimateConstraintField,
+            constraintValue.value.toString()
+         )
+         else -> TODO("Handling of constraint type ${constraintValue::class.simpleName} is not yet implemented")
+      }
+      val (jsonFieldName, fieldPath) = fieldReference.path.takeHead()
+      val jsonExpression = fieldPath
+         .foldRightIndexed("") { index, field, acc ->
+            if (acc.isEmpty()) {
+               """{ ${field.name.quoted()} : ${expectedValue.quotedIfNecessary()} }"""
+            } else {
+               """{ ${field.name.quoted()} : $acc }"""
+            }
+         }
+      return SqlStatement(
+         "${jsonFieldName.name.quoted()} @> '$jsonExpression'",
+         emptyList()
+      )
    }
 }

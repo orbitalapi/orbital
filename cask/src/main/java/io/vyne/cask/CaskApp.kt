@@ -13,6 +13,7 @@ import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
+import io.vyne.cask.config.CaskPostgresJacksonModule
 import io.vyne.cask.config.CaskQueryOptions
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.query.CaskApiHandler
@@ -57,7 +58,7 @@ import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAd
 import org.springframework.web.reactive.socket.server.upgrade.TomcatRequestUpgradeStrategy
 import java.sql.Timestamp
 import java.time.Duration
-import java.util.TimeZone
+import java.util.*
 import javax.annotation.PostConstruct
 
 
@@ -85,6 +86,9 @@ class CaskApp {
       // Alternatively we could provide -Duser.timezone=UTC at startup
    }
 
+   @Bean
+   fun postgresJsonbJacksonModule() = CaskPostgresJacksonModule()
+
 
    @Bean
    @Qualifier("ingesterMapper")
@@ -106,6 +110,7 @@ class WebFluxWebConfig(@Value("\${cask.maxTextMessageBufferSize}") val maxTextMe
       val sqlTimeStampSerialiserModule = SimpleModule()
       sqlTimeStampSerialiserModule.addSerializer(java.sql.Timestamp::class.java, SqlTimeStampSerialiser())
       objectMapper.registerModule(sqlTimeStampSerialiserModule)
+      objectMapper.registerModule(CaskPostgresJacksonModule())
       configurer.defaultCodecs().maxInMemorySize(maxTextMessageBufferSize)
 
       configurer.defaultCodecs().jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper, APPLICATION_JSON))
