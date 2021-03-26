@@ -48,26 +48,26 @@ class CaskRestController(private val caskService: CaskService,
          containsTrailingDelimiters,
          debug
       )
-      return Mono.just(ingestCsv(typeReference, parameters, input))
+      return ingestCsv(typeReference, parameters, input)
    }
 
-   private fun ingestCsv(typeReference: String, parameters: CsvIngestionParameters, input: String): CaskIngestionResponse {
+   private fun ingestCsv(typeReference: String, parameters: CsvIngestionParameters, input: String): Mono<CaskIngestionResponse> {
       log().info("New csv ingestion request for type $typeReference with config $parameters")
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = CsvWebsocketRequest(parameters, versionedType, caskIngestionErrorProcessor)
          // TODO : Input should be an InputStream already.
          val inputStream = Flux.just(input.byteInputStream() as InputStream)
          // TODO : How to avoid this blocking?
-         ingestRequest(request, inputStream).block()
+         ingestRequest(request, inputStream)
       }.getOrHandle { error ->
-         CaskIngestionResponse.rejected(error.message)
+         Mono.just(CaskIngestionResponse.rejected(error.message))
       }
    }
 
    // Workaround for feign not supporting pojos for RequestParam
    override fun ingestJson(typeReference: String, debug: Boolean, input: String): Mono<CaskIngestionResponse> {
       val parameters = JsonIngestionParameters(debug)
-      return Mono.just(ingestJson(typeReference, parameters, input))
+      return ingestJson(typeReference, parameters, input)
    }
 
    override fun ingestXml(typeReference: String, debug: Boolean, elementSelector: String?, input: String): Mono<CaskIngestionResponse> {
@@ -81,14 +81,14 @@ class CaskRestController(private val caskService: CaskService,
       })
    }
 
-   private fun ingestJson(typeReference: String, parameters: JsonIngestionParameters, input: String): CaskIngestionResponse {
+   private fun ingestJson(typeReference: String, parameters: JsonIngestionParameters, input: String): Mono<CaskIngestionResponse> {
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = JsonWebsocketRequest(parameters, versionedType, mapper)
          val inputStream = Flux.just(input.byteInputStream() as InputStream)
          // TODO : How to avoid this blocking?
-         ingestRequest(request, inputStream).block()
+         ingestRequest(request, inputStream)
       }.getOrHandle { error ->
-         CaskIngestionResponse.rejected(error.message)
+         Mono.just(CaskIngestionResponse.rejected(error.message))
       }
    }
 

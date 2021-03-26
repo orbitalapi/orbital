@@ -216,8 +216,6 @@
             <artifactId>feign-reactor-spring-configuration</artifactId>
             <version>2.0.30</version>
          </dependency>
-
-         <!-- https://mvnrepository.com/artifact/io.r2dbc/r2dbc-bom -->
          <dependency>
             <groupId>io.r2dbc</groupId>
             <artifactId>r2dbc-bom</artifactId>

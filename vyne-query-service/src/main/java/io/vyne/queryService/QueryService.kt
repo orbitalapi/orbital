@@ -192,8 +192,14 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
                // If RAW result, we serialise depending on content type
                ResultMode.RAW -> {
                   return when (contentType) {
-                     TEXT_CSV -> outputStream.write(toCsv(mapOf(queryResponse.type.toString() to queryResponse.simpleResults?.toList()), vyneProvider.createVyne().schema)).let { TEXT_CSV }
-                     else -> toJson(mapOf(queryResponse.type.toString() to queryResponse.simpleResults?.toList()), outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
+                     TEXT_CSV -> outputStream.write(
+                        toCsv(
+                           mapOf(queryResponse.type.type.name.parameterizedName to queryResponse.simpleResults?.toList()?.map { typedInstanceConverter.convert(it)}), vyneProvider.createVyne().schema
+                        )
+                     ).let { TEXT_CSV }
+
+
+                     else -> toJson(mapOf(queryResponse.type.toString() to queryResponse.simpleResults?.toList()?.map { typedInstanceConverter.convert(it)}), outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
                   }
                }
                // Any other result mode is json

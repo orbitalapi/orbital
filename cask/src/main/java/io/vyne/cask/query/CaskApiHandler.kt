@@ -1,6 +1,7 @@
 package io.vyne.cask.query
 
 import arrow.core.Either
+import feign.template.UriUtils
 import io.vyne.cask.CaskService
 import io.vyne.cask.query.generators.BetweenVariant
 import io.vyne.cask.query.generators.OperationAnnotation
@@ -22,14 +23,18 @@ import org.springframework.web.util.UriComponents
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Mono
 import java.net.URLDecoder
+import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
+import java.nio.charset.StandardCharsets.UTF_8
 
 
 @Component
 class CaskApiHandler(private val caskService: CaskService, private val caskDAO: CaskDAO) {
    fun findBy(request: ServerRequest): Mono<ServerResponse> {
+
       val requestPath = request.path().replace(CaskServiceSchemaGenerator.CaskApiRootPath, "")
-      val uriComponents = UriComponentsBuilder.fromUriString(requestPath).build()
+      val uriComponents = UriComponentsBuilder.fromUriString(UriUtils.decode(requestPath, UTF_8)).build(true)
+
       return when {
          uriComponents.pathSegments.contains("${OperationAnnotation.Between.annotation}${BetweenVariant.GteLte}") -> findByBetween(
             request,
@@ -181,6 +186,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       val start = fieldNameAndValues[2]
       val end = fieldNameAndValues[3]
       val caskType = uriComponents.pathSegments.dropLast(4).joinToString(".")
+
       return when (val versionedType = caskService.resolveType(caskType)) {
          is Either.Left -> {
             log().info("The type failed to resolve for request $requestPath Error: ${versionedType.a.message}")
