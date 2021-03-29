@@ -21,16 +21,17 @@
   padding-bottom: 0.5rem;
 }
 
-.type-name.top-level {
-  font-size: 1.2rem;
-  margin-bottom: 1.2rem;
+.top-level {
+  .type-name {
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+  }
 }
 
 .type-name {
-  //@include mat-elevation(1);
-
   font-family: $mono;
   color: $vyne-lilac;
+  float: left;
   background-color: rgba($vyne-lilac, 0.1);
   font-size: 0.8rem;
 
@@ -63,6 +64,11 @@
   }
 }
 
+.downloadParsedDataButton {
+  float: right;
+  right: 0.4rem;
+}
+
 .typed-object-container {
   display: inline-table;
   border-collapse: collapse;
@@ -71,7 +77,7 @@
     display: table-row;
 
     &:not(:last-child) {
-      border-bottom: 1px solid $light-grey-2;
+      border-bottom: 1px solid $border-dark;
     }
 
     &.object-row {

@@ -7,12 +7,12 @@ import com.google.common.io.CharSource
 import io.vyne.models.DataSource
 import io.vyne.models.PrimitiveParser
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import lang.taxi.types.ColumnAccessor
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
-import java.lang.IllegalArgumentException
 import java.util.concurrent.TimeUnit
 
 internal object CsvDocumentCacheBuilder {
@@ -41,9 +41,12 @@ internal object CsvDocumentCacheBuilder {
  * Parses a single attribute, defined by a ColumnAccessor
  */
 class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = PrimitiveParser(), private val documentCache: LoadingCache<String, List<CSVRecord>> = CsvDocumentCacheBuilder.sharedDocumentCache) {
-   fun parse(content: String, type: Type, accessor: ColumnAccessor, schema: Schema, source:DataSource): TypedInstance {
+   fun parse(content: String, type: Type, accessor: ColumnAccessor, schema: Schema, source:DataSource, nullable: Boolean): TypedInstance {
       val csvRecords = documentCache.get(content)
-      val instances = csvRecords.map { record -> parseToType(type, accessor, record, schema, source = source) }
+      val instances = csvRecords.map { record -> parseToType(type, accessor, record, schema, source = source, nullable = nullable) }
+      if (instances.isEmpty()) {
+         return TypedNull.create(type)
+      }
       if (instances.size == 1) {
          return instances.first()
       } else {
@@ -52,16 +55,25 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
 
    }
 
-   fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource): TypedInstance {
+   fun parseToType(type: Type, accessor: ColumnAccessor, record: CSVRecord, schema: Schema, nullValues: Set<String> = emptySet(), source: DataSource, nullable: Boolean): TypedInstance {
       val value =
-         when(accessor.index) {
-            is Int -> record.get(accessor.index as Int - 1)
-            is String -> record.get((accessor.index as String).trim('"'))
+         when {
+            accessor.index is Int -> record.get(accessor.index!! as Int - 1)
+            accessor.index is String -> {
+               val columnName = (accessor.index as String).removeSurrounding("\"")
+               if (record.isMapped(columnName)) {
+                  record.get(columnName)
+               } else {
+                  null
+               }
+            }
+            accessor.defaultValue != null -> accessor.defaultValue!!
             else -> throw IllegalArgumentException("Index type must be either Int or String.")
          }
-      if (nullValues.isNotEmpty() && nullValues.contains(value)) {
-         return TypedInstance.from(type, null, schema, source = source);
+      if (value == null || nullable && ((nullValues.isNotEmpty() && nullValues.contains(value)) || (nullValues.isEmpty() && value.toString().isEmpty()))) {
+         return TypedInstance.from(type, null, schema, source = source)
       }
+
       try {
          return primitiveParser.parse(value, type, source)
       } catch (e: Exception) {

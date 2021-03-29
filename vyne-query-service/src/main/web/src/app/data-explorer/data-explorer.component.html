@@ -1,29 +1,39 @@
-<mat-toolbar color="primary">
-  <span>Data Explorer</span>
-  <span class="toolbar-spacer"></span>
-  <app-search-bar-container></app-search-bar-container>
-</mat-toolbar>
-
+<app-header-bar title="Data Explorer">
+</app-header-bar>
 <mat-sidenav-container [hasBackdrop]="false">
-  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel">
+  <mat-drawer #drawer  mode="over" position="end"
+              class="full-height-sidebar"
+              [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">
     <div class="drawer-content">
       <app-typed-instance-panel-container
         [instance]="selectedTypeInstance"
         [type]="selectedTypeInstanceType"
+        (hasTypedInstanceDrawerClosed)="onCloseTypedInstanceDrawer($event)"
       ></app-typed-instance-panel-container>
     </div>
   </mat-drawer>
   <div class="content">
     <app-data-source-toolbar [schema]="schema"
                              (cleared)="clearFile()"
+                             (isNewTypeClicked)="showTypeNamePanel($event)"
                              (fileDataSourceChanged)="onFileSelected($event)"
                              (selectedTypeChanged)="contentType = $event"
                              (csvOptionsChanged)="onCsvOptionsChanged($event)"
+                             (xmlOptionsChanged)="onXmlOptionsChanged($event)"
     ></app-data-source-toolbar>
 
     <div class="result-status error-display" *ngIf="parserErrorMessage">
       <i class="material-icons">error_outline</i>
       <span>{{ parserErrorMessage.message }}</span>
+    </div>
+    <div *ngIf="isTypeNamePanelOpen">
+      <app-type-name-panel (assignedTypeName)="onTypeNameChanged($event)"
+                           (isGenerateSchemaClicked)="showGenerateSchemaPanel($event)"></app-type-name-panel>
+    </div>
+
+    <div *ngIf="isGenerateSchemaPanelOpen">
+      <app-schema-generator [headersWithAssignedTypes]="headersWithAssignedTypes"
+                            [assignedTypeName]="assignedTypeName" #schemaGenerator></app-schema-generator>
     </div>
 
     <div class="cask-container" *ngIf="fileContents && contentType">
@@ -32,6 +42,7 @@
                       [caskServiceUrl]="caskServiceUrl"
                       [contents]="fileContents"
                       [targetTypeName]="contentType.name.fullyQualifiedName"
+                      [xmlIngestionParameters]="xmlIngestionParameters"
       ></app-cask-panel>
     </div>
     <mat-tab-group animationDuration="250ms"
@@ -39,20 +50,34 @@
                    (selectedTabChange)="onSelectedTabChanged($event)">
       <mat-tab label="Source" *ngIf="fileContents">
         <app-csv-viewer [source]="csvContents" *ngIf="isCsvContent"
-                        [firstRowAsHeaders]="csvOptions.firstRowAsHeader"
+                        [schema]="schema"
+                        [csvOptions]="csvOptions"
+                        (headerTypesChanged)="getHeadersWithAssignedTypes($event)"
+                        [isTypeNamePanelVisible]="isTypeNamePanelOpen"
+                        [isGenerateSchemaPanelVisible]="isGenerateSchemaPanelVisible"
+                        [firstRowAsHeaders]="csvOptions.firstRecordAsHeader"
         ></app-csv-viewer>
         <td-highlight lang="json" [content]="fileContents" *ngIf="!isCsvContent">
         </td-highlight>
       </mat-tab>
       <mat-tab label="Schema" *ngIf="contentType">
-        <app-code-viewer [sources]="contentType?.sources" #appCodeViewer></app-code-viewer>
+        <app-code-viewer *ngIf="activeTab === 1" [sources]="contentType?.sources" #appCodeViewer></app-code-viewer>
       </mat-tab>
       <mat-tab label="Parsed Data" *ngIf="parsedInstance">
-        <div class="object-view-wrapper">
-          <app-object-view *ngIf="parsedInstance" [schema]="schema"
-                           [selectable]="true"
-                           (instanceClicked)="onInstanceClicked($event)"
-                           [instance]="typeNamedInstance"></app-object-view>
+        <div class="mat-tab-content">
+          <div class="toolbar">
+            <button mat-stroked-button [matMenuTriggerFor]="menu"
+                    class="downloadParsedDataButton">Download
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="onDownloadParsedDataClicked()">Download content as Json</button>
+              <button mat-menu-item (click)="onDownloadTestSpecClicked()">Download test spec</button>
+            </mat-menu>
+          </div>
+          <app-object-view-container *ngIf="parsedInstance" [schema]="schema"
+                                     [selectable]="true"
+                                     (instanceClicked)="onInstanceClicked($event)"
+                                     [instance]="typeNamedInstance"></app-object-view-container>
         </div>
       </mat-tab>
     </mat-tab-group>

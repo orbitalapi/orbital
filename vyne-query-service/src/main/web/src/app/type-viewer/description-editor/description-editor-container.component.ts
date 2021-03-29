@@ -1,5 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {Type} from '../../services/schema';
+import {NamedAndDocumented, Type} from '../../services/schema';
 import {TypesService} from '../../services/types.service';
 import {MatSnackBar} from '@angular/material/snack-bar';
 
@@ -17,13 +17,13 @@ export class DescriptionEditorContainerComponent {
   originalTypeDoc: string | null;
   loading = false;
 
-  private _type: Type;
+  private _type: NamedAndDocumented;
   @Input()
-  get type(): Type {
+  get type(): NamedAndDocumented {
     return this._type;
   }
 
-  set type(value: Type) {
+  set type(value: NamedAndDocumented) {
     this._type = value;
     this.originalTypeDoc = this.type.typeDoc || null;
   }

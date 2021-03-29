@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.6.3-SNAPSHOT</version>
+      <version>0.15.1-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -23,14 +23,13 @@
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <!-- This might be a bad idea - it's just to access CsvImportParameters.
+      If this creates circular dependencies, or a mess, let's just refactor the
+      required classes elsewhere -->
+
       <dependency>
          <groupId>io.vyne</groupId>
-         <artifactId>vyne-taxi</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne-ql-compiler</artifactId>
+         <artifactId>cask-api</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -62,12 +61,17 @@
          <artifactId>spring-boot-starter</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.commons</groupId>
-         <artifactId>commons-csv</artifactId>
-         <version>1.4</version>
+         <groupId>io.vyne</groupId>
+         <artifactId>utils</artifactId>
+         <version>0.15.1-SNAPSHOT</version>
       </dependency>
       <dependency>
-         <!-- Hipster provides implementations of graph search algorithims -->
+         <groupId>org.apache.commons</groupId>
+         <artifactId>commons-csv</artifactId>
+         <version>1.8</version>
+      </dependency>
+      <dependency>
+         <!-- Hipster provides implementations of graph search algorithms -->
          <groupId>es.usc.citius.hipster</groupId>
          <artifactId>hipster-core</artifactId>
          <version>1.0.1</version>
@@ -77,6 +81,12 @@
                <artifactId>guava</artifactId>
             </exclusion>
          </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>taxi-writer</artifactId>
+         <version>${taxi.version}</version>
+         <scope>test</scope>
       </dependency>
    </dependencies>
    <build>

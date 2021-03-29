@@ -1,0 +1,198 @@
+{
+  "className" : "io.vyne.query.history.VyneQlQueryHistoryRecord",
+  "query" : "findAll {\n    bank.order.Order[]\n} as bank.order.Report[]",
+  "response" : {
+    "results" : {
+      "lang.taxi.Array<bank.order.Report>" : [ {
+        "typeName" : "bank.order.Report",
+        "value" : {
+          "isin" : {
+            "typeName" : "bank.instrument.Isin",
+            "value" : "isin1"
+          },
+          "utCode" : {
+            "typeName" : "bank.trader.UtCode",
+            "value" : "utcode1"
+          },
+          "puid" : {
+            "typeName" : "bank.instrument.Puid"
+          },
+          "traderName" : {
+            "typeName" : "bank.trader.TraderName",
+            "value" : "Marty Pitt"
+          }
+        }
+      }, {
+        "typeName" : "bank.order.Report",
+        "value" : {
+          "isin" : {
+            "typeName" : "bank.instrument.Isin",
+            "value" : "isin2"
+          },
+          "utCode" : {
+            "typeName" : "bank.trader.UtCode",
+            "value" : "utcode2"
+          },
+          "puid" : {
+            "typeName" : "bank.instrument.Puid"
+          },
+          "traderName" : {
+            "typeName" : "bank.trader.TraderName",
+            "value" : "John Doe"
+          }
+        }
+      }, {
+        "typeName" : "bank.order.Report",
+        "value" : {
+          "isin" : {
+            "typeName" : "bank.instrument.Isin",
+            "value" : "isin3"
+          },
+          "utCode" : {
+            "typeName" : "bank.trader.UtCode",
+            "value" : "utcode3"
+          },
+          "puid" : {
+            "typeName" : "bank.instrument.Puid"
+          },
+          "traderName" : {
+            "typeName" : "bank.trader.TraderName",
+            "value" : "Mary Jane"
+          }
+        }
+      }, {
+        "typeName" : "bank.order.Report",
+        "value" : {
+          "isin" : {
+            "typeName" : "bank.instrument.Isin",
+            "value" : "IT0000312312"
+          },
+          "utCode" : {
+            "typeName" : "bank.trader.UtCode",
+            "value" : "SXT"
+          },
+          "puid" : {
+            "typeName" : "bank.instrument.Puid"
+          },
+          "traderName" : {
+            "typeName" : "bank.trader.TraderName"
+          }
+        }
+      } ]
+    },
+    "unmatchedNodes" : [ ],
+    "fullyResolved" : true,
+    "queryResponseId" : "0b17b347-b2ad-445b-9d1f-472bbc138605",
+    "responseStatus" : "COMPLETED",
+    "remoteCalls" : [ {
+      "@id" : "dbf7734e-bdb3-4a32-8718-41f3fb31aac0",
+      "service" : "vyne.casks.bank.order.OrderCaskService",
+      "addresss" : "http://192.168.1.124:8800/api/cask/getAll/bank/order/Order",
+      "operation" : "getAll",
+      "responseTypeName" : "lang.taxi.Array<bank.order.Order>",
+      "method" : "GET",
+      "requestBody" : null,
+      "resultCode" : 200,
+      "durationMs" : 9,
+      "response" : [ {
+        "isin" : "isin1",
+        "utCode" : "utcode1",
+        "caskmessageid" : "f3fd8ce4-56a4-4229-92b6-e6552378b55c"
+      }, {
+        "isin" : "isin2",
+        "utCode" : "utcode2",
+        "caskmessageid" : "f3fd8ce4-56a4-4229-92b6-e6552378b55c"
+      }, {
+        "isin" : "isin3",
+        "utCode" : "utcode3",
+        "caskmessageid" : "f3fd8ce4-56a4-4229-92b6-e6552378b55c"
+      }, {
+        "isin" : "IT0000312312",
+        "utCode" : "SXT",
+        "caskmessageid" : "20b43fc1-8fc6-41f9-b2b7-0f23ac2871c5"
+      } ],
+      "operationQualifiedName" : "vyne.casks.bank.order.OrderCaskService@@getAll",
+      "responseTypeDisplayName" : "bank.order.Order[]"
+    }, {
+      "@id" : "631f2a2e-6335-4e9e-84af-545c5e6df26e",
+      "service" : "vyne.casks.bank.trader.UtCodeToTraderNameCaskService",
+      "addresss" : "http://192.168.1.124:8800/api/cask/findSingleBy/bank/trader/UtCodeToTraderName/utCode/utcode1",
+      "operation" : "findSingleByUtCode",
+      "responseTypeName" : "bank.trader.UtCodeToTraderName",
+      "method" : "GET",
+      "requestBody" : null,
+      "resultCode" : 200,
+      "durationMs" : 17,
+      "response" : {
+        "utCode" : "utcode1",
+        "traderName" : "Marty Pitt",
+        "caskmessageid" : "27fd6e39-5eab-4dcb-8968-8d5fbd04a5f5"
+      },
+      "operationQualifiedName" : "vyne.casks.bank.trader.UtCodeToTraderNameCaskService@@findSingleByUtCode",
+      "responseTypeDisplayName" : "bank.trader.UtCodeToTraderName"
+    }, {
+      "@id" : "7f7d0307-106e-4419-9149-abbe1ace7739",
+      "service" : "vyne.casks.bank.trader.UtCodeToTraderNameCaskService",
+      "addresss" : "http://192.168.1.124:8800/api/cask/findSingleBy/bank/trader/UtCodeToTraderName/utCode/utcode2",
+      "operation" : "findSingleByUtCode",
+      "responseTypeName" : "bank.trader.UtCodeToTraderName",
+      "method" : "GET",
+      "requestBody" : null,
+      "resultCode" : 200,
+      "durationMs" : 6,
+      "response" : {
+        "utCode" : "utcode2",
+        "traderName" : "John Doe",
+        "caskmessageid" : "27fd6e39-5eab-4dcb-8968-8d5fbd04a5f5"
+      },
+      "operationQualifiedName" : "vyne.casks.bank.trader.UtCodeToTraderNameCaskService@@findSingleByUtCode",
+      "responseTypeDisplayName" : "bank.trader.UtCodeToTraderName"
+    }, {
+      "@id" : "5a8eef8e-fbe5-4341-80c4-1330d3d004a1",
+      "service" : "vyne.casks.bank.trader.UtCodeToTraderNameCaskService",
+      "addresss" : "http://192.168.1.124:8800/api/cask/findSingleBy/bank/trader/UtCodeToTraderName/utCode/utcode3",
+      "operation" : "findSingleByUtCode",
+      "responseTypeName" : "bank.trader.UtCodeToTraderName",
+      "method" : "GET",
+      "requestBody" : null,
+      "resultCode" : 200,
+      "durationMs" : 6,
+      "response" : {
+        "utCode" : "utcode3",
+        "traderName" : "Mary Jane",
+        "caskmessageid" : "27fd6e39-5eab-4dcb-8968-8d5fbd04a5f5"
+      },
+      "operationQualifiedName" : "vyne.casks.bank.trader.UtCodeToTraderNameCaskService@@findSingleByUtCode",
+      "responseTypeDisplayName" : "bank.trader.UtCodeToTraderName"
+    }, {
+      "@id" : "bd5781f2-5aba-4371-86e0-2b90df319aca",
+      "service" : "vyne.casks.bank.trader.UtCodeToTraderNameCaskService",
+      "addresss" : "http://192.168.1.124:8800/api/cask/findSingleBy/bank/trader/UtCodeToTraderName/utCode/SXT",
+      "operation" : "findSingleByUtCode",
+      "responseTypeName" : "bank.trader.UtCodeToTraderName",
+      "method" : "GET",
+      "requestBody" : null,
+      "resultCode" : 404,
+      "durationMs" : 26,
+      "response" : {
+        "timestamp" : 1612853067380,
+        "path" : "/api/cask/findSingleBy/bank/trader/UtCodeToTraderName/utCode/SXT",
+        "status" : 404,
+        "error" : "Not Found",
+        "message" : "Call to findOne on bank.trader.UtCodeToTraderName by utCode returned 0 results.  Throwing a 404 exception.  You can configure this behaviour by setting cask.query-options.queryMatchesNoneBehaviour",
+        "requestId" : "332d97b6"
+      },
+      "operationQualifiedName" : "vyne.casks.bank.trader.UtCodeToTraderNameCaskService@@findSingleByUtCode",
+      "responseTypeDisplayName" : "bank.trader.UtCodeToTraderName"
+    } ],
+    "timings" : {
+      "REMOTE_CALL" : 72,
+      "ROOT" : 107
+    },
+    "error" : null,
+    "resultSize" : 4,
+    "durationMs" : 179
+  },
+  "timestamp" : "2021-02-09T06:44:27.391Z",
+  "id" : "0b17b347-b2ad-445b-9d1f-472bbc138605"
+}

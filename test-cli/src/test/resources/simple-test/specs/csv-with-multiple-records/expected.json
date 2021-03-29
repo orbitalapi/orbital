@@ -1,0 +1,28 @@
+[
+   {
+      "typeName": "vyne.demo.CsvPerson",
+      "value": {
+         "firstName": {
+            "typeName": "vyne.demo.FirstName",
+            "value": "Jimmy"
+         },
+         "lastName": {
+            "typeName": "vyne.demo.LastName",
+            "value": "Pitt"
+         }
+      }
+   },
+   {
+      "typeName": "vyne.demo.CsvPerson",
+      "value": {
+         "firstName": {
+            "typeName": "vyne.demo.FirstName",
+            "value": "Mini"
+         },
+         "lastName": {
+            "typeName": "vyne.demo.LastName",
+            "value": "Pitt"
+         }
+      }
+   }
+]

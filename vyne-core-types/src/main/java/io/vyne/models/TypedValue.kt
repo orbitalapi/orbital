@@ -2,6 +2,7 @@
 
 package io.vyne.models
 
+import com.fasterxml.jackson.datatype.jsr310.DecimalUtils
 import io.vyne.schemas.Type
 import lang.taxi.Equality
 import lang.taxi.jvm.common.PrimitiveTypes
@@ -10,13 +11,21 @@ import org.springframework.core.convert.ConverterNotFoundException
 import org.springframework.core.convert.support.DefaultConversionService
 import org.springframework.lang.Nullable
 import java.math.BigDecimal
-import java.time.*
+import java.text.DecimalFormat
+import java.text.NumberFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
-import java.util.Locale
+import java.util.*
+import java.util.function.BiFunction
 
 interface ConversionService {
-   fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: String?): T
+   fun <T> convert(@Nullable source: Any?, targetType: Class<T>, format: List<String>?): T
 
    companion object {
       val DEFAULT_CONVERTER by lazy { newDefaultConverter() }
@@ -27,7 +36,7 @@ interface ConversionService {
        * If you're not planning on customizing, use DEFAULT_CONVERTER
        */
       fun newDefaultConverter(): ConversionService {
-         return StringToIntegerConverter(
+         return StringToNumberConverter(
             FormattedInstantConverter(
                VyneDefaultConversionService
             )
@@ -40,7 +49,7 @@ interface ConversionService {
  * Used when you don't want to perform any conversions
  */
 object NoOpConversionService : ConversionService {
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
       return source!! as T
    }
 }
@@ -54,11 +63,31 @@ object VyneDefaultConversionService : ConversionService {
       // TODO Check this as it is a quick addition for the demo!
       service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate(); }
       service.addConverter(java.lang.Long::class.java, LocalDateTime::class.java) { s -> Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDateTime(); }
-      service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName}
+      service.addConverter(java.lang.Double::class.java, Instant::class.java) { instantAsSecondsAndNanoSeconds ->
+         val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
+         DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
+            Instant.ofEpochSecond(s, ns.toLong())
+         })
+      }
+      service.addConverter(java.lang.Double::class.java, LocalDateTime::class.java) { instantAsSecondsAndNanoSeconds ->
+         val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
+         val extractedInstant = DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
+            Instant.ofEpochSecond(s, ns.toLong())
+         })
+         extractedInstant.atZone(ZoneId.of("UTC")).toLocalDateTime()
+      }
+      service.addConverter(java.lang.Double::class.java, LocalDate::class.java) { instantAsSecondsAndNanoSeconds ->
+         val decimalValue = BigDecimal.valueOf(instantAsSecondsAndNanoSeconds.toDouble())
+         val extractedInstant = DecimalUtils.extractSecondsAndNanos(decimalValue, BiFunction { s: Long, ns: Int ->
+            Instant.ofEpochSecond(s, ns.toLong())
+         })
+         extractedInstant.atZone(ZoneId.of("UTC")).toLocalDate()
+      }
+      service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName }
       service
    }
 
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
       try {
          return innerConversionService.convert(source, targetType)!!
       } catch (e: ConverterNotFoundException) {
@@ -74,7 +103,7 @@ interface ForwardingConversionService : ConversionService {
 class FormattedInstantConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
    private fun <D> toTemporalObject(
       source: String,
-      format: String?,
+      format: List<String>?,
       doConvert: (source: String, formatter: DateTimeFormatter) -> D,
       optionalFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
    ): D {
@@ -86,15 +115,24 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
          else -> Locale.getDefault()
       }
 
-      val formatter = DateTimeFormatterBuilder()
-         .appendOptional(DateTimeFormatter.ofPattern(format, locale))
+      val formatterBuilder = DateTimeFormatterBuilder()
+      format.forEach { f ->
+         formatterBuilder.appendOptional(DateTimeFormatterBuilder()
+            .parseLenient()
+            .parseCaseInsensitive()
+            .appendPattern(f)
+            .toFormatter(locale))
+      }
+
+      val formatter = formatterBuilder
+         .parseLenient()
          .appendOptional(optionalFormatter)
          .toFormatter()
       return doConvert(source, formatter)
    }
 
 
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
       return when {
          source is String && targetType == Instant::class.java -> {
             toTemporalObject(source, format, LocalDateTime::parse).toInstant(ZoneOffset.UTC) as T  // TODO : We should be able to detect that from the format sometimes
@@ -115,24 +153,58 @@ class FormattedInstantConverter(override val next: ConversionService = NoOpConve
    }
 }
 
-class StringToIntegerConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
-   override fun <T> convert(source: Any?, targetType: Class<T>, format: String?): T {
-      return if (source is String && targetType == Int::class.java) {
-         BigDecimal(source).intValueExact() as T
+class StringToNumberConverter(override val next: ConversionService = NoOpConversionService) : ForwardingConversionService {
+   override fun <T> convert(source: Any?, targetType: Class<T>, format: List<String>?): T {
+      if (source !is String) {
+         return next.convert(source, targetType, format)
       } else {
-         next.convert(source, targetType, format)
+         val numberFormat = NumberFormat.getInstance()
+         return when (targetType) {
+            Int::class.java -> fromScientific(source)?.toInt() as T ?: numberFormat.parse(source).toInt() as T
+            Double::class.java -> fromScientific(source)?.toDouble() as T ?: numberFormat.parse(source).toDouble() as T
+            BigDecimal::class.java -> {
+               val scientificValue = fromScientific(source)
+               when {
+                  scientificValue != null -> {
+                     scientificValue as T
+                  }
+                  numberFormat is DecimalFormat -> {
+                     numberFormat.isParseBigDecimal = true
+                     numberFormat.parse(source) as T
+                  }
+                  else -> {
+                     TODO("Didn't receive a decimal formatter from the locale")
+                  }
+               }
+            }
+            else -> next.convert(source, targetType, format)
+         }
+      }
+   }
+
+   private fun fromScientific(source: String): BigDecimal? {
+      return if (source.contains("E") || source.contains("e")) {
+         BigDecimal(source)
+      } else {
+         null
       }
    }
 }
 
-data class TypedValue private constructor(override val type: Type, override val value: Any, override val source: DataSource) : TypedInstance {
+data class TypedValue private constructor(override val type: Type, override val value: Any,
+                                          override val source: DataSource) : TypedInstance {
    private val equality = Equality(this, TypedValue::type, TypedValue::value)
+   private val hash : Int by lazy { equality.hash() }
+   override fun toString(): String {
+      return "TypedValue(type=${type.qualifiedName.longDisplayName}, value=$value)"
+   }
+
    companion object {
       private val conversionService by lazy {
          ConversionService.newDefaultConverter()
       }
 
-      fun from(type: Type, value: Any, converter: ConversionService, source:DataSource): TypedValue {
+      fun from(type: Type, value: Any, converter: ConversionService, source: DataSource): TypedValue {
          if (!type.taxiType.inheritsFromPrimitive) {
             error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
          } else {
@@ -140,14 +212,14 @@ data class TypedValue private constructor(override val type: Type, override val 
                val valueToUse = converter.convert(value, PrimitiveTypes.getJavaType(type.taxiType.basePrimitive!!), type.format)
                return TypedValue(type, valueToUse, source)
             } catch (exception: Exception) {
-               throw DataParsingException("Failed to parse value $value to type ${type.fullyQualifiedName} - ${exception.message}", exception)
+               throw DataParsingException("Failed to parse value $value to type ${type.longDisplayName} - ${exception.message}", exception)
             }
          }
 
       }
 
       @Deprecated("Use conversionService approach")
-      fun from(type: Type, value: Any, performTypeConversions: Boolean = true, source:DataSource): TypedValue {
+      fun from(type: Type, value: Any, performTypeConversions: Boolean = true, source: DataSource): TypedValue {
          val conversionServiceToUse = if (performTypeConversions) {
             conversionService
          } else {
@@ -162,7 +234,7 @@ data class TypedValue private constructor(override val type: Type, override val 
    }
 
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-   override fun hashCode(): Int = equality.hash()
+   override fun hashCode(): Int = hash
 
    /**
     * Returns true if the two are equal, where the values are the same, and the underlying
@@ -178,3 +250,5 @@ data class TypedValue private constructor(override val type: Type, override val 
 }
 
 class DataParsingException(message: String, exception: Exception) : RuntimeException(message)
+
+

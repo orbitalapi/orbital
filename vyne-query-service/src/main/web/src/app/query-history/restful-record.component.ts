@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {RestfulQueryHistoryRecord} from '../services/query.service';
+import {RestfulQueryHistoryRecord, RestfulQueryHistorySummary} from '../services/query.service';
 
 @Component({
   selector: 'app-restful-record',
@@ -15,19 +15,13 @@ import {RestfulQueryHistoryRecord} from '../services/query.service';
         <span class="type-name">{{ expressionTypeName }}</span>
       </div>
     </div>
-    <div class="state-row">
-
-    </div>
-    <div class="timestamp-row">
-      <span>{{historyRecord.timestamp | amTimeAgo}}</span>
-    </div>
   `,
   styleUrls: ['./restful-record.component.scss']
 })
 export class RestfulRecordComponent {
 
   @Input()
-  historyRecord: RestfulQueryHistoryRecord;
+  historyRecord: RestfulQueryHistorySummary;
 
   @Input()
   expressionTypeName: string;

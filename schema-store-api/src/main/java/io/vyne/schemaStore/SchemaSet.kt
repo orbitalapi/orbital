@@ -126,13 +126,7 @@ data class SchemaSet private constructor(val sources: List<ParsedSource>, val ge
    private fun List<VersionedSource>.addIfNewer(source: VersionedSource):List<VersionedSource> {
       val existingSource = this.firstOrNull { it.name == source.name }
       return if (existingSource != null) {
-         if (existingSource.semver.compareWithBuildsTo(source.semver) >= 0) {
-            log().info("When adding ${source.id} version ${existingSource.id} was found, so not making any changes")
-            return this
-         } else {
-            log().info("Replacing ${existingSource.id} with ${source.id}")
-            this.subtract(listOf(existingSource)).toList() + source
-         }
+         this.subtract(listOf(existingSource)).toList() + source
       } else {
          this + source
       }

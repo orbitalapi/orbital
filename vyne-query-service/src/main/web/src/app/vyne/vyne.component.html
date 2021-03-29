@@ -8,9 +8,10 @@
     [opened]="!(isHandset$ | async)">
     <mat-toolbar color="logo">
       <div class="logo">
-        <img src="assets/img/vyne-logo-round.png">
-        <span>Vyne</span>
+        <img src="assets/img/vyne-logo-horizontal-gap.svg">
+<!--        <span>Vyne</span>-->
       </div>
+
 
     </mat-toolbar>
     <mat-nav-list>
@@ -22,6 +23,12 @@
         </a>
         <!--        <a [routerLink]="element.route" routerLinkActive="active">{{element.title}}</a>-->
       </div>
+      <div *ngIf="userInfo !== null && userInfo.username !== null" class="navbar-route">
+        <a routerLink="logout" routerLinkActive="active" #rla="routerLinkActive">
+          <img src="assets/img/logout.svg">
+          <span>Logout</span>
+        </a>
+      </div>
       <!--<a mat-list-item *ngFor="let element of sidebarElements" [routerLink]="element.route">{{ element.title }}</a>-->
     </mat-nav-list>
     <div class="appInfo">
@@ -32,6 +39,9 @@
     </div>
   </mat-sidenav>
   <mat-sidenav-content>
+    <div class="alerts-container">
+      <app-system-alert *ngFor="let alert of alerts" [alert]="alert"></app-system-alert>
+    </div>
     <router-outlet></router-outlet>
   </mat-sidenav-content>
 </mat-sidenav-container>

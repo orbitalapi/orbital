@@ -17,7 +17,7 @@ class QueryView(private val jdbcTemplate: JdbcTemplate) {
 
     fun prepare(strategy: DataQuerySpec, schema: TaxiSchema): Flux<InstanceAttributeSet> {
         return when (strategy) {
-            is UpgradeDataSourceSpec -> DataSourceUpgrader(schema, strategy, jdbcTemplate).execute()
+//            is UpgradeDataSourceSpec -> DataSourceUpgrader(schema, strategy, jdbcTemplate).execute()
             else -> Flux.empty()
         }
     }
@@ -25,7 +25,7 @@ class QueryView(private val jdbcTemplate: JdbcTemplate) {
     @VisibleForTesting
     fun destroy(strategy: DataQuerySpec, schema: TaxiSchema) {
         when (strategy) {
-            is UpgradeDataSourceSpec ->  DataSourceUpgrader(schema, strategy, jdbcTemplate).destroy()
+//            is UpgradeDataSourceSpec ->  DataSourceUpgrader(schema, strategy, jdbcTemplate).destroy()
             else -> TODO()
         }
     }
@@ -56,9 +56,7 @@ class QueryView(private val jdbcTemplate: JdbcTemplate) {
             versionHash = rs.getString(3),
             sourceSchemaIds = (rs.getArray(4).array as Array<String>).toList(),
             sources = (rs.getArray(5).array as Array<String>).toList(),
-            timestamp = rs.getTimestamp(6).toInstant(),
-            readCachePath = Paths.get(rs.getString(7)),
-            deltaAgainstTableName = rs.getString(8)
+            timestamp = rs.getTimestamp(6).toInstant()
          )
       }
    }

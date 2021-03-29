@@ -1,0 +1,39 @@
+@import "src/app/expand-panel/expand-panel";
+@import "src/theme";
+
+::ng-deep.mat-dialog-container {
+  background: #f5f6fa;
+}
+
+.add-type-dialog-content {
+  min-height: 20vh;
+  max-height: 80vh;
+  height: auto;
+  width: auto;
+  min-width: 40rem;
+}
+
+.add-format-text-field {
+  width: 100%;
+}
+
+.learn-more-button {
+  flex: .2
+}
+
+.type-info-text {
+  flex: .8;
+}
+
+.panel-hidden {
+  display: none;
+}
+
+.inherited-type-info-container {
+  display: flex;
+  position: sticky;
+  top: 0;
+  background: #f5f6fa;
+  z-index: 1000;
+}
+

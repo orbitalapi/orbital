@@ -16,6 +16,8 @@ data class CaskTransportOutputSpec(
    override val targetType: VersionedTypeReference
 ) : PipelineTransportSpec {
 
+   override val description: String = "Cask for $targetType"
+
    companion object {
       val specId = PipelineTransportSpecId(CaskTransport.TYPE, PipelineDirection.OUTPUT, CaskTransportOutputSpec::class.java)
    }

@@ -5,7 +5,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.6.3-SNAPSHOT</version>
+      <version>0.15.1-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -34,7 +34,7 @@
       <dependency>
          <groupId>org.apache.commons</groupId>
          <artifactId>commons-csv</artifactId>
-         <version>1.4</version>
+         <version>1.8</version>
       </dependency>
       <!-- Adding this being lazy - we need access to the ConversionService
       in TypedValue, that's the only reason.  Have added it in the weakest way
@@ -47,6 +47,11 @@
          <scope>provided</scope>
       </dependency>
 
+      <dependency>
+         <groupId>com.jayway.jsonpath</groupId>
+         <artifactId>json-path</artifactId>
+         <version>2.4.0</version>
+      </dependency>
       <dependency>
          <groupId>lang.taxi</groupId>
          <artifactId>core-types</artifactId>
@@ -68,12 +73,6 @@
          <groupId>com.fasterxml.jackson.module</groupId>
          <artifactId>jackson-module-kotlin</artifactId>
       </dependency>
-      <dependency>
-         <groupId>lang.taxi</groupId>
-         <artifactId>package-repository-api</artifactId>
-         <version>${taxi.version}</version>
-      </dependency>
-
       <dependency>
          <groupId>com.nhaarman.mockitokotlin2</groupId>
          <artifactId>mockito-kotlin</artifactId>

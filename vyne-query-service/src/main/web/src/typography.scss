@@ -1,14 +1,44 @@
 @import "fonts";
 @import "theme-colors";
 
-$mono: 'Source Sans Pro', monospace;
+$body-font: 'nunito-sans';
+$mono: 'jetbrains-mono', monospace;
 // Fonts used in documentation heavy pages
-$font-sans-docs: 'Open Sans',system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
+$font-sans-docs: $body-font /*'Open Sans'*/,system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
 // Fonts used throughout the app
-$font-sans: 'Nunito', $font-sans-docs;
-$font-sans-alt: Hind,system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
+$font-sans: $body-font, $font-sans-docs;
+$font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
 .mono {
   font-family: $mono;
+}
+
+
+@mixin links() {
+  a {
+    position: relative;
+    display: inline-block;
+    outline: none;
+    color: #404d5b;
+    vertical-align: bottom;
+    text-decoration: none;
+    white-space: nowrap;
+
+    // This is to force the border-bottom to render closer to the text
+    line-height: 0.4rem;
+    padding: 0.6rem 0.1rem 0.3rem;
+  }
+
+  a {
+    border-bottom: 1px solid rgba($vyne-lilac,0.4);
+    font-weight: 500;
+    -webkit-transition: background-color 0.3s, border-color 0.3s;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+
+  a:focus, a:hover {
+    border-color: rgba(52,73,94,0);
+    background-color: rgba($grey-3,0.1);
+  }
 }
 
 .mono-badge {
@@ -16,6 +46,7 @@ $font-sans-alt: Hind,system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,
   // Adding important here, as font sizes are getting
   // overridden by search in the toolbar.
   font-size: 0.85rem !important;
+  font-weight: 300;
   color: $vyne-lilac;
   border: 1px solid rgba($vyne-lilac,0.6);
   background-color: rgba($vyne-lilac, 0.1);
@@ -23,6 +54,8 @@ $font-sans-alt: Hind,system-ui,BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,
   padding: 0.2rem 0.4rem;
   display: inline-block;
   margin-top: 0.25rem;
+
+  @include links();
 }
 
 .font-sans-alt {

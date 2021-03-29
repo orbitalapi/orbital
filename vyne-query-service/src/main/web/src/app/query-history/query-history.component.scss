@@ -1,5 +1,4 @@
 @import "src/theme";
-@import "src/toolbar";
 
 .title-bar {
   background-color: $light-purple-grey;
@@ -50,26 +49,7 @@ mat-sidenav-container {
 
   .results-section {
     flex-grow: 1;
-    .results-container {
-      margin: 10px;
-    }
-  }
-}
-
-.list-container {
-  width: 400px;
-  height: 100%;
-  background-color: $light-purple-grey;
-  border-right: 1px solid $light-purple-grey-300;
-}
-
-.history-item {
-  cursor: pointer;
-  background-color: $grey-1;
-  padding: 10px 20px;
-  border-bottom: 1px solid $light-purple-grey-300;
-  &:hover {
-    background-color: rgba($dark-grey-2,0.1);
+    margin: 10px;
   }
 }
 

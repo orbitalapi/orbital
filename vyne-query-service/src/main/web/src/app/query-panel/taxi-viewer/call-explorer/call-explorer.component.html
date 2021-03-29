@@ -6,7 +6,7 @@
     </div>
     <div class="operation" *ngFor="let operation of queryResult?.remoteCalls" (click)="selectOperation(operation)">
       <div class="verb">{{ operation.method }}</div>
-      <div class="address">{{ getPathOnly(operation.addresss) }}</div>
+      <div class="address" [matTooltip]="getPathOnly(operation.addresss)">{{ getPathOnly(operation.addresss) }}</div>
     </div>
   </div>
   <div class="chart-container" *ngIf="!selectedOperation">
@@ -21,5 +21,5 @@
     <app-service-graph [result]="queryResult" *ngIf="selectedChart == 'graph'"></app-service-graph>
     <app-sequence-diagram [result]="queryResult" *ngIf="selectedChart == 'sequence'"></app-sequence-diagram>
   </div>
-  <app-operation-view [operation]="selectedOperation" *ngIf="selectedOperation" (close)="selectedOperation = null"></app-operation-view>
+  <app-call-explorer-operation-view [operation]="selectedOperation" *ngIf="selectedOperation" (close)="selectedOperation = null"></app-call-explorer-operation-view>
 </div>

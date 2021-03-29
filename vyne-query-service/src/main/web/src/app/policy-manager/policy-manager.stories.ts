@@ -1,5 +1,5 @@
 /* tslint:disable:max-line-length */
-import {storiesOf, moduleMetadata} from '@storybook/angular';
+import {moduleMetadata, storiesOf} from '@storybook/angular';
 import {PolicyEditorComponent} from './policy-editor.component';
 import {CaseConditionEditorComponent} from './case-condition-editor.component';
 import {ElseEditorComponent} from './else-editor.component';
@@ -10,7 +10,6 @@ import {PolicyManagerComponent} from './policy-manager.component';
 import {StatementDisplayComponent} from './statement-display.component';
 import {StatementEditorComponent} from './statement-editor.component';
 import {CommonModule} from '@angular/common';
-import {CovalentHighlightModule} from '@covalent/highlight';
 import {MatTabsModule} from '@angular/material/tabs';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {BrowserModule} from '@angular/platform-browser';
@@ -123,6 +122,7 @@ const type = {
   'isParameterType': false,
   'isClosed': false,
   'isPrimitive': false,
+  'basePrimitiveTypeName' : null,
   'fullyQualifiedName': 'demo.Customer',
   'memberQualifiedName': {
     'fullyQualifiedName': 'demo.Customer',

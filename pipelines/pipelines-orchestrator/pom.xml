@@ -5,7 +5,7 @@
    <parent>
       <artifactId>pipelines</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.6.3-SNAPSHOT</version>
+      <version>0.15.1-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -32,11 +32,6 @@
       <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-config</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>pipelines-orchestrator-api</artifactId>
-         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.springframework.boot</groupId>

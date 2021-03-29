@@ -8,19 +8,20 @@ import {environment} from 'src/environments/environment';
 import {map} from 'rxjs/operators';
 import {Policy} from '../policy-manager/policies';
 import {
-  Message,
+  Message, Operation,
   ParsedSource,
   QualifiedName,
   Schema,
   SchemaGraph,
   SchemaGraphNode,
-  SchemaSpec,
+  SchemaSpec, Service,
   Type,
   TypedInstance,
+  TypeNamedInstance,
   VersionedSource
 } from './schema';
-import {TypeNamedInstance} from './query.service';
 import {VyneServicesModule} from './vyne-services.module';
+import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -31,15 +32,27 @@ export class TypesService {
   private schemaSubject: Subject<Schema> = new ReplaySubject(1);
   private schemaRequest: Observable<Schema>;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private schemaNotificationService: SchemaNotificationService) {
     this.getTypes().subscribe(schema => {
       this.schema = schema;
     });
+    this.schemaNotificationService.createSchemaNotificationsSubscription()
+      .subscribe(() => {
+        this.getTypes(true)
+          .subscribe(schema => {
+            console.log('updating typeService schema');
+            this.schema = schema;
+          });
+      });
   }
 
   getRawSchema = (): Observable<string> => {
     return this.http
       .get<string>(`${environment.queryServiceUrl}/api/schemas/raw`);
+  }
+
+  getSchemaSummary(): Observable<SchemaUpdatedNotification> {
+    return this.http.get<SchemaUpdatedNotification>(`${environment.queryServiceUrl}/api/schemas/summary`);
   }
 
   getVersionedSchemas(): Observable<VersionedSource[]> {
@@ -72,9 +85,15 @@ export class TypesService {
   }
 
   getType(qualifiedName: string): Observable<Type> {
-    return this.getTypes().pipe(
-      map(schema => schema.types.find(t => t.name.fullyQualifiedName === qualifiedName))
-    );
+    return this.http.get<Type>(`${environment.queryServiceUrl}/api/types/${qualifiedName}`);
+  }
+
+  getService(qualifiedName: string): Observable<Service> {
+    return this.http.get<Service>(`${environment.queryServiceUrl}/api/services/${qualifiedName}`);
+  }
+
+  getOperation(serviceName: string, operationName: string): Observable<Operation> {
+    return this.http.get<Operation>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`);
   }
 
   parse(content: string, type: Type): Observable<ParsedTypeInstance> {
@@ -85,18 +104,34 @@ export class TypesService {
 
   parseCsvToType(content: string, type: Type, csvOptions: CsvOptions): Observable<ParsedTypeInstance[]> {
     const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const ignoreContentParam = csvOptions.ignoreContentBefore ? '&ignoreContentBefore='
+      + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedTypeInstance[]>(
       // tslint:disable-next-line:max-line-length
-      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}${nullValueParam}`,
+      `${environment.queryServiceUrl}/api/csv/parse?type=${type.name.fullyQualifiedName}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
       content);
   }
 
   parseCsv(content: string, csvOptions: CsvOptions): Observable<ParsedCsvContent> {
+    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const ignoreContentParam = csvOptions.ignoreContentBefore ?
+      '&ignoreContentBefore=' + encodeURIComponent(csvOptions.ignoreContentBefore)
+      : '';
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedCsvContent>(
-      `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRowAsHeader}`,
+      // tslint:disable-next-line:max-line-length
+      `${environment.queryServiceUrl}/api/csv?delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${nullValueParam}${ignoreContentParam}`,
       content);
+  }
+
+  parseXmlToType(content: string, type: Type, xmlIngestionParameters: XmlIngestionParameters): Observable<ParsedTypeInstance> {
+    const elementSelector = xmlIngestionParameters.elementSelector;
+    const url = elementSelector
+      ? `${environment.queryServiceUrl}/api/xml/parse?type=${type.name.fullyQualifiedName}`
+      + `&elementSelector=${encodeURIComponent(elementSelector)}`
+      : `${environment.queryServiceUrl}/api/xml/parse?type=${type.name.fullyQualifiedName}`;
+    return this.http.post<ParsedTypeInstance>(url, content);
   }
 
   private detectCsvDelimiter = (input: string) => {
@@ -106,7 +141,7 @@ export class TypesService {
       .reduce((prev, cur) =>
         prev === -1 || (cur !== -1 && cur < prev) ? cur : prev
       );
-    return (input[idx] || ',') ;
+    return (input[idx] || ',');
   }
 
   getTypes(refresh: boolean = false): Observable<Schema> {
@@ -195,7 +230,9 @@ export interface ParsedCsvContent {
 }
 
 export class CsvOptions {
-  constructor(public firstRowAsHeader: boolean = true, public separator: string = ',', public nullValueTag: string | null = null) {
+  constructor(public firstRecordAsHeader: boolean = true, public separator: string = ',', public nullValueTag: string | null = null,
+              public ignoreContentBefore: string | null = null,
+              public containsTrailingDelimiters: boolean = false) {
   }
 
   static isCsvContent(fileExtension: string): boolean {
@@ -212,3 +249,22 @@ export class CsvOptions {
     }
   }
 }
+
+export class XmlIngestionParameters {
+  constructor(public elementSelector: string | null = null) {
+  }
+
+  static isXmlContent(fileExtension: string): boolean {
+    if (!fileExtension) {
+      return false;
+    }
+    switch (fileExtension) {
+      case 'xml' :
+        return true;
+      default:
+        return false;
+    }
+  }
+}
+
+

@@ -18,16 +18,28 @@ class PrimitiveParser(private val conversionService: ConversionService = Convers
    }
 
    private fun parseEnum(value: Any, targetType: Type, source: DataSource): TypedInstance {
-
+      if (value is Boolean) {
+         return parseEnum(value.toString(), targetType, source)
+      }
       val enumType = targetType.taxiType as EnumType
+      val typedInstance = when {
+         enumType.resolvesToDefault(value) -> {
+            // An enum type has a default, and won't match the other values,
+            // so generate from the default
+            TypedValue.from(targetType, enumType.of(value).name, conversionService, source)
+         }
+         enumType.has(value) -> TypedValue.from(targetType, value, conversionService, source)
+         // TODO push this logic to taxi.
+         value.toString().toIntOrNull() != null -> enumType.values
+            .filter { it.value == value.toString().toIntOrNull() }
+            .map { TypedValue.from(targetType, value, conversionService, source) }
+            .firstOrNull()
+         else -> null
+      }
 
-      return if (enumType.has(value)) {
-         TypedValue.from(targetType, value, conversionService, source)
-      } else {
-         error("""
+      return typedInstance ?: error("""
    Unable to map Value=${value} to Enum Type=${targetType.fullyQualifiedName}, allowed values=${enumType.definition?.values?.map { it.name to it.value }}
             """)
-      }
 
    }
 }

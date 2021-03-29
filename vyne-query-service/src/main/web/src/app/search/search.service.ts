@@ -10,7 +10,10 @@ export interface SearchResult {
   qualifiedName: QualifiedName;
   typeDoc: string | null;
   matches: SearchMatch[];
+  memberType: SearchEntryType;
 }
+
+export type SearchEntryType = 'TYPE' | 'ATTRIBUTE' | 'POLICY' | 'SERVICE' | 'OPERATION' | 'UNKNOWN';
 
 export interface SearchMatch {
   field: SearchField;

@@ -1,48 +1,26 @@
-<mat-toolbar color="primary" style="z-index: 999">
-  <span>Query History</span>
-  <div class="toolbar-spacer"></div>
+<app-header-bar title="Query History">
   <span>
     <button mat-stroked-button (click)="loadData()">Refresh</button>
   </span>
-  <app-search-bar-container></app-search-bar-container>
-</mat-toolbar>
-
+</app-header-bar>
 <mat-sidenav-container [hasBackdrop]="true">
-  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel">
+  <mat-drawer #drawer mode="over" position="end" [(opened)]="showSidePanel && this.shouldTypedInstancePanelBeVisible">
     <div class="drawer-content">
       <app-typed-instance-panel-container
         [instance]="selectedTypeInstance"
+        (hasTypedInstanceDrawerClosed)="onCloseTypedInstanceDrawer($event)"
         [type]="selectedTypeInstanceType"
-        [lineageGraph]="activeRecord?.response?.lineageGraph"
+        [dataSource]="selectedTypeInstanceDataSource"
       ></app-typed-instance-panel-container>
     </div>
   </mat-drawer>
   <div class="container">
-    <div class="list-container">
-      <div class="history-item" *ngFor="let historyRecord of history" (click)="setActiveRecord(historyRecord)">
-        <div [ngSwitch]="queryType(historyRecord)">
-          <div *ngSwitchCase="'RestfulQuery'">
-            <app-restful-record [expressionTypeName]="expressionTypeName(historyRecord)"
-                                [historyRecord]="historyRecord"
-                                [factTypeNames]="getFactTypeNames(historyRecord)"></app-restful-record>
-          </div>
-          <div *ngSwitchCase="'VyneQlQuery'">
-            <app-vyneql-record [historyRecord]="historyRecord">
-
-            </app-vyneql-record>
-          </div>
-
-        </div>
-      </div>
-    </div>
-    <div class="results-section">
-      <div class="results-container">
-
-          <query-result-container [result]="activeRecord?.response"
-                                  [activeRecord]="activeRecord"
-                                  (instanceSelected)="onInstanceSelected($event)"
-          ></query-result-container>
-      </div>
+    <app-query-list [historyRecords]="history" (recordSelected)="setActiveRecord($event)"></app-query-list>
+    <div class="results-section" *ngIf="activeRecord">
+      <app-tabbed-results-view
+        [result]="activeRecord?.response"
+        (downloadClicked)="downloadQueryHistory($event)"
+        (instanceSelected)="onInstanceSelected($event)"></app-tabbed-results-view>
     </div>
 
   </div>

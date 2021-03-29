@@ -61,6 +61,9 @@ app-vyne-query-viewer {
 }
 
 .target-type-container {
+  // the box shadow is being cut off.
+  // Can tweak this if the overflow becomes a problem
+  overflow: visible;
   .mat-form-field {
     width: 100%;
   }

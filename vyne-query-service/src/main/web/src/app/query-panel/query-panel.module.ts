@@ -21,42 +21,57 @@ import {CovalentHighlightModule} from '@covalent/highlight';
 import {MatButtonModule} from '@angular/material/button';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
-import { QueryWizardComponent } from './query-wizard/query-wizard.component';
-import { QueryEditorComponent } from './query-editor/query-editor.component';
+import {QueryWizardComponent} from './query-wizard/query-wizard.component';
+import {QueryEditorComponent} from './query-editor/query-editor.component';
 import {MatTabsModule} from '@angular/material/tabs';
-import { CodeViewerModule } from '../code-viewer/code-viewer.module';
+import {CodeViewerModule} from '../code-viewer/code-viewer.module';
 import {MonacoEditorModule} from '@materia-ui/ngx-monaco-editor';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {BottomBarComponent} from './query-editor/bottom-bar.component';
+import {CounterTimerComponent} from './query-editor/counter-timer.component';
+import {TabbedResultsViewComponent} from './query-editor/tabbed-results-view.component';
+import {CallExplorerModule} from './taxi-viewer/call-explorer/call-explorer.module';
+import {AngularSplitModule} from 'angular-split';
+import {ErrorPanelComponent} from './error-panel/error-panel.component';
+import {HeaderBarModule} from '../header-bar/header-bar.module';
+import {MatDialogModule} from '@angular/material/dialog';
 
 @NgModule({
-  imports: [
-    BrowserModule,
-    CommonModule,
-    ResultViewerModule,
-    SearchModule,
-    TypeAutocompleteModule,
-    MatCheckboxModule,
-    MatFormFieldModule,
-    MatButtonModule,
-    MatSelectModule,
-    MatCardModule,
-    MatToolbarModule,
-    MatIconModule,
-    CovalentDynamicFormsModule,
-    FormsModule,
-    ReactiveFormsModule,
-    CovalentFileModule,
-    ObjectViewModule,
-    CovalentHighlightModule,
-    MatSidenavModule,
-    TypedInstancePanelModule,
-    MatTabsModule,
-    CodeViewerModule,
-    MonacoEditorModule,
-    MatProgressSpinnerModule,
-  ],
-  exports: [QueryPanelComponent],
-  declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent, VyneQueryViewerComponent, QueryEditorComponent],
+    imports: [
+        BrowserModule,
+        CommonModule,
+        ResultViewerModule,
+        SearchModule,
+        TypeAutocompleteModule,
+        MatCheckboxModule,
+        MatFormFieldModule,
+        MatButtonModule,
+        MatSelectModule,
+        MatCardModule,
+        MatToolbarModule,
+        MatIconModule,
+        CovalentDynamicFormsModule,
+        FormsModule,
+        ReactiveFormsModule,
+        CovalentFileModule,
+        ObjectViewModule,
+        CovalentHighlightModule,
+        MatSidenavModule,
+        TypedInstancePanelModule,
+        MatTabsModule,
+        CodeViewerModule,
+        MonacoEditorModule,
+        MatProgressSpinnerModule,
+        CallExplorerModule,
+        AngularSplitModule.forChild(),
+        HeaderBarModule,
+      MatDialogModule
+    ],
+    exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent, ErrorPanelComponent],
+  declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent,
+    VyneQueryViewerComponent, QueryEditorComponent, BottomBarComponent, CounterTimerComponent,
+    TabbedResultsViewComponent,
+    ErrorPanelComponent],
   providers: [],
 })
 export class QueryPanelModule {

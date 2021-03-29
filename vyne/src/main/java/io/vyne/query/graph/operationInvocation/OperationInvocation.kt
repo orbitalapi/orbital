@@ -1,27 +1,46 @@
 package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.TypedInstance
-import io.vyne.query.*
-import io.vyne.query.graph.*
-import io.vyne.schemas.*
+import io.vyne.models.TypedNull
+import io.vyne.query.ProfilerOperation
+import io.vyne.query.QueryContext
+import io.vyne.query.QueryResult
+import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.SearchFailedException
+import io.vyne.query.graph.EdgeEvaluator
+import io.vyne.query.graph.EvaluatableEdge
+import io.vyne.query.graph.EvaluatedEdge
+import io.vyne.query.graph.EvaluatedLink
+import io.vyne.query.graph.LinkEvaluator
+import io.vyne.query.graph.ParameterFactory
+import io.vyne.schemas.ConstraintEvaluations
+import io.vyne.schemas.Link
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.Relationship
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Service
+import io.vyne.schemas.fqn
 import io.vyne.utils.log
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 
 /**
  * The parent to OperationInvokers
  */
 interface OperationInvocationService {
-   fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): TypedInstance
+   fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()): TypedInstance
 }
 
 interface OperationInvoker {
-   fun canSupport(service: Service, operation: Operation): Boolean
+   fun canSupport(service: Service, operation: RemoteOperation): Boolean
+
    // TODO : This should return some form of reactive type.
-   fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance
+   fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance
 }
 
 class DefaultOperationInvocationService(private val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
-   override fun invokeOperation(service: Service, operation: Operation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+   override fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): TypedInstance {
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
@@ -32,7 +51,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       return result
    }
 
-   private fun gatherParameters(parameters: List<Parameter>, candidateParamValues: Set<TypedInstance>, context: QueryContext, providedParamValues:List<Pair<Parameter,TypedInstance>>): List<Pair<Parameter, TypedInstance>> {
+   private fun gatherParameters(parameters: List<Parameter>, candidateParamValues: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): List<Pair<Parameter, TypedInstance>> {
       // NOTE : See DirectServiceInvocationStrategy, where we have an alternative approach for gatehring params.
       // Suggest merging that here.
 
@@ -42,20 +61,20 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       // to query the engine for a value.
       val parameterValuesOrQuerySpecs: List<Pair<Parameter, Any>> = parameters
          // Filter out the params that we've already been provided
-         .filter { requiredParam -> providedParamValues.none { (providedParam,_) -> requiredParam == providedParam } }
+         .filter { requiredParam -> providedParamValues.none { (providedParam, _) -> requiredParam == providedParam } }
          .map { requiredParam ->
-         val preferredParam = candidateParamValues.firstOrNull { it.type.resolvesSameAs(requiredParam.type) }
-         when {
-            preferredParam != null -> requiredParam to preferredParam
-            preferredParamsByType.containsKey(requiredParam.type) -> requiredParam to preferredParamsByType.getValue(requiredParam.type)
-            context.hasFactOfType(requiredParam.type) -> requiredParam to context.getFact(requiredParam.type)
-            else -> {
-               val queryNode = QuerySpecTypeNode(requiredParam.type)
-               unresolvedParams.add(queryNode)
-               requiredParam to queryNode
+            val preferredParam = candidateParamValues.firstOrNull { it.type.resolvesSameAs(requiredParam.type) }
+            when {
+               preferredParam != null -> requiredParam to preferredParam
+               preferredParamsByType.containsKey(requiredParam.type) -> requiredParam to preferredParamsByType.getValue(requiredParam.type)
+               context.hasFactOfType(requiredParam.type) -> requiredParam to context.getFact(requiredParam.type)
+               else -> {
+                  val queryNode = QuerySpecTypeNode(requiredParam.type)
+                  unresolvedParams.add(queryNode)
+                  requiredParam to queryNode
+               }
             }
          }
-      }
 
       // Try to resolve any unresolved params
       var resolvedParams = emptyMap<QuerySpecTypeNode, TypedInstance?>()
@@ -106,33 +125,58 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
 @Component
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
-      if (context.hasOperationResult(edge)) {
-         val cachedResult = context.getOperationResult(edge)
-         return edge.success(cachedResult)
-      }
+
 
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
       val (service, operation) = context.schema.operation(operationName)
 
       // Discover parameters.
-      // Note: We can't always assume that the REQUIRES_PARAM relationship has taken care of this
-      // for us, as we don't know what path was travelled to arrive here.
-      // Therefore, just find all the params, and add them to the context.
-      // This will fail if a param is not discoverable
-      operation.parameters.forEach { requiredParam ->
-         val paramInstance = parameterFactory.discover(requiredParam.type, context)
-         context.addFact(paramInstance)
+
+      val parameterValues = operation.parameters.map { requiredParam ->
+
+         try {
+            // Note: We can't always assume that the inbound relationship has taken care of this
+            // for us, as we don't know what path was travelled to arrive here.
+            if (edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type)) {
+               edge.previousValue
+            } else {
+               val paramInstance = parameterFactory.discover(requiredParam.type, context, operation)
+               context.addFact(paramInstance)
+               paramInstance
+            }
+
+
+         } catch (e: Exception) {
+            log().warn("Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}")
+            return edge.failure(null)
+         }
       }
 
-      // VisitedNodes are better candidates for params, as they are more contextually relevant
-      val visitedInstanceNodes = context.collectVisitedInstanceNodes()
+      val callArgs = parameterValues.toSet()
+      if (context.hasOperationResult(edge, callArgs)) {
+         val cachedResult = context.getOperationResult(edge, callArgs)
+         cachedResult?.let { context.addFact(it) }
+         return edge.success(cachedResult)
+      }
 
+      return try {
 
-      val result: TypedInstance = invocationService.invokeOperation(service, operation, visitedInstanceNodes, context)
-      // Consider enhancing facts with the information how we derived them, e.g. via Operation so that can be used as cache?
-      context.addFact(result)
-      context.addOperationResult(edge, result)
-      return edge.success(result)
+         val result: TypedInstance = invocationService.invokeOperation(service, operation, callArgs, context)
+         if (result is TypedNull) {
+            log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
+         } else {
+            context.addFact(result)
+         }
+         context.addOperationResult(edge, result, callArgs)
+         edge.success(result)
+         // Don't add nulls
+      } catch (exception: Exception) {
+         // Operation invokers throw exceptions for failed invocations.
+         // Don't throw here, just report the failure
+         log().info("Operation ${operation.qualifiedName} failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected.")
+         edge.failure(null, failureReason = "Operation ${operation.qualifiedName} failed with exception ${exception.message}")
+      }
+
    }
 
    override val relationship: Relationship = Relationship.PROVIDES
@@ -153,4 +197,4 @@ class SearchRuntimeException(exception: Exception, operation: ProfilerOperation)
 
 class UnresolvedOperationParametersException(message: String, evaluatedPath: List<EvaluatedEdge>, operation: ProfilerOperation) : SearchFailedException(message, evaluatedPath, operation)
 
-class OperationInvocationException(message: String) : RuntimeException(message)
+class OperationInvocationException(message: String, val httpStatus:HttpStatus) : RuntimeException(message)

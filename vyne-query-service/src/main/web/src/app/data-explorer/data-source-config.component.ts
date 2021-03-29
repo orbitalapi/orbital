@@ -1,6 +1,7 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {UploadFile} from 'ngx-file-drop';
-import {CsvOptions} from '../services/types.service';
+import {CsvOptions, XmlIngestionParameters} from '../services/types.service';
+import {FormControl} from '@angular/forms';
 
 @Component({
   selector: 'app-data-source-config',
@@ -11,11 +12,11 @@ import {CsvOptions} from '../services/types.service';
     <span>{{ fileDataSource.relativePath }}</span>
     <app-file-extension-icon [extension]="extension"></app-file-extension-icon>
 
-    <button mat-icon-button class="configure-button" [matMenuTriggerFor]="configMenu" *ngIf="isCsvContent">
+    <button mat-icon-button class="configure-button" [matMenuTriggerFor]="configMenu" *ngIf="isRequireConfiguration">
       <img class="configure-icon" src="assets/img/more-dots.svg">
     </button>
     <mat-menu #configMenu="matMenu">
-      <div class="config-menu">
+      <div class="config-menu" (click)="$event.stopPropagation()" *ngIf="isCsvContent">
         <mat-form-field>
           <mat-label>Separator</mat-label>
           <mat-select [(ngModel)]="csvOptions.separator" (selectionChange)="updateCsvOptions()">
@@ -24,18 +25,39 @@ import {CsvOptions} from '../services/types.service';
             </mat-option>
           </mat-select>
         </mat-form-field>
-        <mat-checkbox [(ngModel)]="csvOptions.firstRowAsHeader" (change)="updateCsvOptions()">First row is header
-        </mat-checkbox>
-
         <mat-checkbox [(ngModel)]="useSpecialValueForNull" (change)="updateCsvOptions()"
                       (click)="$event.stopPropagation();">Use special value for null
         </mat-checkbox>
+        <mat-checkbox [(ngModel)]="dataContainsHeaders"
+                      (click)="onChangeDataContainsHeader($event)">Data contains headers
+        </mat-checkbox>
+        <mat-checkbox [(ngModel)]="csvOptions.containsTrailingDelimiters"
+                      (click)="onChangeDataContainsTrailingDelimiters($event)">Data contains trailing delimiters
+        </mat-checkbox>
+        <mat-checkbox [(ngModel)]="dataHasContentToIgnore"
+                      (click)="onChangeDataContainsHeader($event)">Data has prefix to ignore
+        </mat-checkbox>
+        <mat-form-field *ngIf="dataHasContentToIgnore" (click)="$event.stopPropagation()">
+          <mat-label>Ignore everything before</mat-label>
+          <input matInput placeholder="Start reading from this content"
+                 [(ngModel)]="csvOptions.ignoreContentBefore"
+                 (blur)="onContentPrefixChanged()"
+                 (click)="$event.stopPropagation();">
+        </mat-form-field>
         <mat-form-field *ngIf="useSpecialValueForNull" (click)="$event.stopPropagation();">
           <mat-label>Null tag</mat-label>
           <input matInput placeholder="Provide value to treat as null" [(ngModel)]="csvOptions.nullValueTag"
                  (click)="$event.stopPropagation();">
         </mat-form-field>
-
+      </div>
+      <div class="config-menu" (click)="$event.stopPropagation()" *ngIf="isXmlContent">
+        <mat-form-field  (click)="$event.stopPropagation()">
+          <mat-label>Collection selection xpath</mat-label>
+          <input matInput placeholder=""
+                 [(ngModel)]="xmlOptions.elementSelector"
+                 (blur)="onCollectionSelectionXPathChanged()"
+                 (click)="$event.stopPropagation();">
+        </mat-form-field>
       </div>
     </mat-menu>
   `,
@@ -45,6 +67,12 @@ export class DataSourceConfigComponent {
 
   private _fileDataSource: UploadFile;
   extension: string;
+  dataContainsHeaders = true;
+  dataHasContentToIgnore = false;
+
+  columnOne = new FormControl();
+  columnTwo = new FormControl();
+  xmlFileContainsCollection = false;
 
   get useSpecialValueForNull(): boolean {
     return this.csvOptions.nullValueTag !== null;
@@ -54,17 +82,30 @@ export class DataSourceConfigComponent {
     this.csvOptions.nullValueTag = (value) ? 'null' : null;
   }
 
-  get isCsvContent() {
+  get isCsvContent(): boolean {
     return CsvOptions.isCsvContent(this.extension);
+  }
+
+  get isXmlContent(): boolean {
+    return XmlIngestionParameters.isXmlContent(this.extension);
+  }
+
+  get isRequireConfiguration(): boolean {
+    return this.isCsvContent || this.isXmlContent;
   }
 
   @Output()
   clear = new EventEmitter<void>();
 
   csvOptions: CsvOptions = new CsvOptions();
+  xmlOptions: XmlIngestionParameters = new XmlIngestionParameters();
+  disabled = !this.csvOptions.firstRecordAsHeader;
 
   @Output()
   csvOptionsChanged = new EventEmitter<CsvOptions>();
+
+  @Output()
+  xmlOptionsChanged = new EventEmitter<XmlIngestionParameters>();
 
   separators = [
     {label: 'Comma ,', value: ','},
@@ -82,12 +123,54 @@ export class DataSourceConfigComponent {
     const parts = value.relativePath.split('.');
     this.extension = parts[parts.length - 1];
 
-    if (CsvOptions.isCsvContent(this.extension)) {
+    if (this.isCsvContent) {
       this.updateCsvOptions();
+    }
+
+    if (this.isXmlContent) {
+      this.updateXmlOptions();
     }
   }
 
   updateCsvOptions() {
     this.csvOptionsChanged.emit(this.csvOptions);
+  }
+
+  updateXmlOptions() {
+    this.xmlOptionsChanged.emit(this.xmlOptions);
+  }
+
+  submitColumnNamesForm($event) {
+    $event.stopPropagation();
+    this.updateCsvOptions();
+  }
+
+  onChangeFirstRowHasOffset($event) {
+    $event.stopPropagation();
+    this.csvOptions.firstRecordAsHeader = false;
+  }
+
+  onChangeFirstRowIsHeader($event) {
+    $event.stopPropagation();
+    this.csvOptions.firstRecordAsHeader = true;
+    this.updateCsvOptions();
+  }
+
+  onChangeDataContainsHeader($event) {
+    $event.stopPropagation();
+    this.csvOptions.firstRecordAsHeader = this.dataContainsHeaders;
+    this.updateCsvOptions();
+  }
+
+  onChangeDataContainsTrailingDelimiters($event) {
+    $event.stopPropagation();
+    this.updateCsvOptions();
+  }
+  onContentPrefixChanged() {
+    this.updateCsvOptions();
+  }
+  onCollectionSelectionXPathChanged($event) {
+    $event.stopPropagation();
+    this.updateXmlOptions();
   }
 }

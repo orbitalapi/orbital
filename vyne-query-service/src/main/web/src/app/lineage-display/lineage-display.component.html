@@ -5,7 +5,7 @@
              [panningEnabled]="true"
              [autoCenter]="true"
              [draggingEnabled]="true"
-             [orientation]="orientation"
+             orientation="LR"
              [update$]="graphNodesChanged"
              [curve]="curve" (select)="nodeSelected($event)">
 
@@ -20,7 +20,7 @@
 
     <ng-template #nodeTemplate let-node>
       <svg:g class="node" style="filter:url(#shadow)">
-        <svg:path [attr.d]="outerRectangle(node.width, node.height)" stroke="none" fill="white"></svg:path>
+        <svg:path [attr.d]="outerRectangle(node.width, node.height)" [attr.stroke]="getBorderColor(node)" stroke-width="0.5" [attr.fill]="getFill(node)"></svg:path>
         <svg:path [attr.d]="innerRectangle(4, node.height)" stroke="none" [attr.fill]="getStroke(node)"></svg:path>
         <!--          <svg:rect [attr.width]="node.width" [attr.height]="node.height"-->
         <!--                    stoke-width="2"-->

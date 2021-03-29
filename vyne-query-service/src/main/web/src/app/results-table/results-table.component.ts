@@ -1,19 +1,53 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Field, Schema, Type, TypedInstance} from '../services/schema';
-import {InstanceLike, InstanceLikeOrCollection} from '../object-view/object-view.component';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {
+  InstanceLike,
+  InstanceLikeOrCollection,
+  isTypedInstance,
+  isTypedNull,
+  isTypeNamedInstance,
+  isTypeNamedNull,
+  Type,
+  UnknownType,
+  UntypedInstance
+} from '../services/schema';
 import {BaseTypedInstanceViewer} from '../object-view/BaseTypedInstanceViewer';
-import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../services/query.service';
-import {CellClickedEvent, ValueGetterParams} from 'ag-grid-community';
+import {
+  CellClickedEvent,
+  FirstDataRenderedEvent,
+  GridReadyEvent,
+  ICellRendererFunc,
+  ValueGetterParams
+} from 'ag-grid-community';
+import {TypeInfoHeaderComponent} from './type-info-header.component';
+import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
+import {isNullOrUndefined} from 'util';
+import {CaskService} from '../services/cask.service';
 
 @Component({
   selector: 'app-results-table',
-  templateUrl: './results-table.component.html',
+  template: `
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      headerHeight="65"
+      [enableCellTextSelection]="true"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      (gridReady)="onGridReady($event)"
+      (firstDataRendered)="onFirstDataRendered($event)"
+      (cellClicked)="onCellClicked($event)"
+    >
+    </ag-grid-angular>
+  `,
   styleUrls: ['./results-table.component.scss']
 })
 export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
+  constructor(private service: CaskService) {
+    super();
+  }
+
   @Output()
-  instanceClicked = new EventEmitter<InstanceLike>();
+  instanceClicked = new EventEmitter<InstanceSelectedEvent>();
 
   @Input()
     // tslint:disable-next-line:no-inferrable-types
@@ -49,11 +83,15 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     this.rebuildGridData();
   }
 
-  columnDefs = [
-  ];
+  columnDefs = [];
 
-  rowData = [
-  ];
+  rowData = [];
+
+  protected onSchemaChanged() {
+    super.onSchemaChanged();
+    this.rebuildGridData();
+  }
+
   private rebuildGridData() {
     if (!this.type || !this.instance) {
       this.columnDefs = [];
@@ -61,29 +99,76 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       return;
     }
 
-    const attributeNames = this.getAttributes(this.type);
-    this.columnDefs = attributeNames.map(fieldName => {
-      return {
-        headerName: fieldName,
-        field: fieldName,
-        valueGetter: (params: ValueGetterParams) => {
-          return this.unwrap(params.data[fieldName]);
-        }
-      };
-    });
+    this.buildColumnDefinitions();
 
     const collection = (this.isArray) ? this.instance as InstanceLike[] : [this.instance];
     if (collection.length === 0) {
       this.rowData = [];
     } else {
-      if (isTypeNamedInstance(collection[0])) {
-        this.rowData = collection.map((instance: TypeNamedInstance) => instance.value);
-      } else if (isTypedInstance(collection[0])) {
-        this.rowData = collection.map((instance: TypedInstance) => instance.value);
-      } else {
-        this.rowData = collection;
-      }
+      this.rowData = collection;
     }
+  }
+
+  private buildColumnDefinitions() {
+    if (this.type.isScalar) {
+      this.columnDefs = [{
+        headerName: this.type.name.shortDisplayName,
+        flex: 1,
+        headerComponentFramework: TypeInfoHeaderComponent,
+        headerComponentParams: {
+          fieldName: this.type.name.shortDisplayName,
+          typeName: this.type.name
+        },
+        valueGetter: (params: ValueGetterParams) => {
+          return this.unwrap(this.instance, null);
+        }
+      }];
+    } else {
+      const attributeNames = this.getAttributes(this.type);
+      const caskMessageIdFieldName = 'caskMessageId';
+      const columnDefinitions = attributeNames.map((fieldName, index) => {
+        const lastColumn = index === attributeNames.length - 1;
+        return fieldName !== caskMessageIdFieldName ? {
+            resizable: true,
+            headerName: fieldName,
+            field: fieldName,
+            // flex: (lastColumn) ? 1 : null,
+            headerComponentFramework: TypeInfoHeaderComponent,
+            headerComponentParams: {
+              fieldName: fieldName,
+              typeName: this.getTypeForAttribute(fieldName).name
+            },
+            valueGetter: (params: ValueGetterParams) => {
+              return this.unwrap(params.data, fieldName);
+            }
+          } :
+          {
+            resizable: true,
+            headerName: fieldName,
+            field: fieldName,
+            // flex: (lastColumn) ? 1 : null,
+            headerComponentFramework: TypeInfoHeaderComponent,
+            headerComponentParams: {
+              fieldName: fieldName,
+              typeName: this.getTypeForAttribute(fieldName).name
+            },
+            valueGetter: (params: ValueGetterParams) => {
+              return this.unwrap(params.data, fieldName);
+            },
+            cellRenderer: this.downloadLinkRender()
+          };
+      });
+      this.columnDefs = columnDefinitions;
+    }
+  }
+
+  private downloadLinkRender(): ICellRendererFunc {
+    const urlFunc = this.service.downloadIngestedMessageUrl;
+    return function (params) {
+      const keyData = params && params.data && params.data.caskMessageId ? params.data.caskMessageId : '';
+      const newLink = `<a href="${urlFunc(keyData)}" target="_blank">${keyData}</a>`;
+      return newLink;
+    };
   }
 
   private getAttributes(type: Type): string[] {
@@ -94,24 +179,49 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     return Object.keys(itemType.attributes);
   }
 
-  private unwrap(instance: any): any {
-    if (isTypedInstance(instance)) {
-      return instance.value;
-    } else if (isTypeNamedInstance(instance)) {
-      return instance.value;
+  private unwrap(instance: any, fieldName: string | null): any {
+    if (isTypedInstance(instance) || isTypeNamedInstance(instance)) {
+      const object = instance.value;
+      if (fieldName === null) {
+        return object;
+      } else {
+        return this.unwrap(object[fieldName], null);
+      }
+    } else if (isTypedNull(instance) || isTypeNamedNull(instance)) {
+      return null;
+    } else if (fieldName !== null) {
+      const fieldValue = instance[fieldName];
+      if (isNullOrUndefined(fieldValue)) {
+        return null;
+      } else {
+        // In the operation explorer, we can end up with typed instances
+        // at the field level, even if the top-level object isn't
+        // a typed instance.  We should fix that, but for now, just unwrap
+        return this.unwrap(instance[fieldName], null);
+      }
     } else {
       return instance;
     }
   }
 
   onCellClicked($event: CellClickedEvent) {
-    const instance = $event.data[$event.colDef.field];
-    if (isTypeNamedInstance(instance)) {
-      this.instanceClicked.emit(instance);
-    } else if (isTypedInstance(instance)) {
-      this.instanceClicked.emit(instance);
-    } else {
-      console.log('Item clicked didn\'t have type data, so not emitting event');
-    }
+    const rowInstance: InstanceLike = $event.data;
+    const nodeId = this.isArray ? `[${$event.rowIndex}].${$event.colDef.field}` : $event.colDef.field;
+    const cellInstance = this.unwrap(rowInstance, $event.colDef.field);
+    const untypedCellInstance: UntypedInstance = {
+      value: cellInstance,
+      type: UnknownType.UnknownType,
+      nearestType: this.getTypeForAttribute($event.colDef.field)
+    };
+    this.instanceClicked.emit(new InstanceSelectedEvent(untypedCellInstance, null, nodeId));
+  }
+
+  onGridReady(event: GridReadyEvent) {
+   // event.api.sizeColumnsToFit();
+  }
+
+  onFirstDataRendered(params: FirstDataRenderedEvent) {
+    const colIds = params.columnApi.getAllColumns().map(c => c.getId());
+    params.columnApi.autoSizeColumns(colIds);
   }
 }

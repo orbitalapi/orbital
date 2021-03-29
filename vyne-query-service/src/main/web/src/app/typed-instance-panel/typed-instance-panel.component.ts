@@ -1,13 +1,14 @@
-import {Component, Input} from '@angular/core';
-import {QualifiedName, Type} from '../services/schema';
-import {InstanceLike} from '../object-view/object-view.component';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {QualifiedName, Type, InstanceLike, DataSource} from '../services/schema';
 import {Inheritable} from '../inheritence-graph/inheritance-graph.component';
-import {LineageGraph} from '../services/query.service';
 
 @Component({
   selector: 'app-typed-instance-panel',
   template: `
     <div class="container" *ngIf="type">
+    <span mat-icon-button class="clear-button" (click)=closeTypedInstanceDrawer()>
+      <img class="clear-icon" src="assets/img/clear-cross-circle.svg">
+    </span>
       <div class="type-name">
         <h2>{{instance?.value}}</h2>
         <h4>{{type?.name?.name}}</h4>
@@ -16,9 +17,9 @@ import {LineageGraph} from '../services/query.service';
       <section>
         <app-description-editor-container [type]="type"></app-description-editor-container>
       </section>
-      <section *ngIf="lineageGraph">
+      <section *ngIf="dataSource">
         <h3>Value lineage</h3>
-        <app-lineage-display [instance]="instance" [lineageGraph]="lineageGraph"></app-lineage-display>
+        <app-lineage-display [instance]="instance" [dataSource]="dataSource"></app-lineage-display>
       </section>
 
       <section *ngIf="inheritanceView">
@@ -59,7 +60,9 @@ export class TypedInstancePanelComponent {
   inheritanceView: Inheritable;
 
   @Input()
-  lineageGraph: LineageGraph;
+  dataSource: DataSource;
+
+  @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
 
   get hasDiscoverableTypes() {
     return this.discoverableTypes && this.discoverableTypes.length > 0;
@@ -84,4 +87,7 @@ export class TypedInstancePanelComponent {
     return [this.instance];
   }
 
+  closeTypedInstanceDrawer() {
+    this.hasTypedInstanceDrawerClosed.emit(false);
+  }
 }

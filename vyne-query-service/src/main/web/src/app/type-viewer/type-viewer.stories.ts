@@ -4,9 +4,9 @@ import {BrowserModule} from '@angular/platform-browser';
 import {RouterTestingModule} from '@angular/router/testing';
 import {AttributeTableComponent} from './attribute-table/attribute-table.component';
 import {TypeViewerComponent} from './type-viewer.component';
-import {MatToolbarModule} from "@angular/material/toolbar";
-import {ContentsTableComponent} from "./contents-table/contents-table.component";
-import {TocHostDirective} from "./toc-host.directive";
+import {MatToolbarModule} from '@angular/material/toolbar';
+import {ContentsTableComponent} from './contents-table/contents-table.component';
+import {TocHostDirective} from './toc-host.directive';
 
 const type = {
   'name': {

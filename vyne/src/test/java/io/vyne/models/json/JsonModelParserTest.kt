@@ -7,10 +7,12 @@ import com.winterbe.expekt.should
 import io.vyne.Vyne
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.QueryEngineFactory
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
+import java.math.BigDecimal
 
 class JsonModelParserTest {
    val taxiDef = """
@@ -32,6 +34,24 @@ type Client {
    address : Address
 }
 """
+
+   @Test
+   fun `string decimals are parsed to number types correctly`() {
+      val schema = TaxiSchema.from("""
+         model Foo {
+            decimal : Decimal
+            int : Int
+         }
+      """.trimIndent())
+      val instance = TypedInstance.from(schema.type("Foo"), """
+         {
+            "decimal" : "10.10",
+            "int" : "10"
+         }
+      """.trimIndent(), schema, source = Provided) as TypedObject
+      instance["decimal"].value.should.equal(BigDecimal("10.10"))
+      instance["int"].value.should.equal(10)
+   }
 
    @Test
    fun parsesJsonObjectToTypedObject() {
@@ -151,6 +171,6 @@ type Client {
 
       val client2 = clients[1] as TypedObject
       expect(client2["clientId"]!!.value).to.equal("mert")
-
    }
+
 }

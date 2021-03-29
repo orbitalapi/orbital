@@ -10,8 +10,13 @@ spring:
    application:
       name: query-service
    autoconfigure:
-      exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      exclude: org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+   mvc:
+      async:
+         request-timeout: 1800000
+
 vyne:
+   newSchemaSubmissionEnabled: true
    query-history:
       enabled: false
    data-lineage:
@@ -20,6 +25,19 @@ vyne:
    schema:
       publicationMethod: LOCAL # this exposes in memory schema store via http API, use only in Vyne settings
       pollInterval: 5s
+   mvc:
+      executor:
+         corePoolSize: 5
+         maxPoolSize: 15
+         queueCapacity: 50
+   graph:
+      vyneGraphBuilderCache:
+         baseSchemaCacheSize: 100
+         graphWithFactTypesCacheSize: 100
+         baseSchemaGraphCacheSize: 100
+      vyneDiscoverGraphQuery:
+         schemaGraphCacheSize: 5
+         searchPathExclusionsCacheSize: 200000
 
 feign:
    client:

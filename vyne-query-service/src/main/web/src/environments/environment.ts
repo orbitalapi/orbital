@@ -6,7 +6,9 @@ export const environment = {
   production: false,
   // Convention for relative urls:  Start with an /, but don't end with one
   queryServiceUrl: `//${window.location.host}`,
-  showPolicyManager: true
+  websocketUrl: `ws://${window.location.host}/stomp`,
+  showPolicyManager: true,
+  showGenerateSchema: true,
 };
 
 /*

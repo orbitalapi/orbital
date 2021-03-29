@@ -15,12 +15,12 @@ import lang.taxi.types.AttributePath
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.Type
-import org.springframework.stereotype.Component
 
-@Component
-class AfterTemporalOperationGenerator: OperationGenerator {
-   override fun generate(field: Field, type: Type): Operation {
-      val parameterType = TemporalFieldUtils.parameterType(field)
+@Deprecated("Migrating to vyneQl endpoint")
+//@Component
+class AfterTemporalOperationGenerator(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()): OperationGenerator {
+   override fun generate(field: Field?, type: Type): Operation {
+      val parameterType = TemporalFieldUtils.parameterType(field!!)
       val afterParameter = parameterFor(
          parameterType,
          TemporalFieldUtils.After,
@@ -28,7 +28,7 @@ class AfterTemporalOperationGenerator: OperationGenerator {
       val greaterThanConstraint = constraintFor(field, Operator.GREATER_THAN, TemporalFieldUtils.After)
       val returnType = collectionTypeOf(type)
       return Operation(
-         name = "findBy${field.name.capitalize()}${ExpectedAnnotationName}",
+         name = "findBy${field.name.capitalize()}${expectedAnnotationName}",
          parameters = listOf(afterParameter),
          annotations = listOf(Annotation("HttpOperation", mapOf("method" to "GET", "url" to getRestPath(type, field)))),
          returnType = returnType,
@@ -40,15 +40,22 @@ class AfterTemporalOperationGenerator: OperationGenerator {
    }
 
    override fun canGenerate(field: Field, type: Type): Boolean {
-      return validate(field) != null && annotationFor(field, ExpectedAnnotationName) != null
+      return validate(field) != null &&
+         (annotationFor(field, expectedAnnotationName.annotation) != null ||
+            operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
+   }
+
+   override fun expectedAnnotationName(): OperationAnnotation {
+      return expectedAnnotationName
    }
 
    companion object {
-      const val ExpectedAnnotationName = "After"
+      private val expectedAnnotationName = OperationAnnotation.After
+
       private fun getRestPath(type: Type, field: Field): String {
          val typeQualifiedName = type.toQualifiedName()
          val path = AttributePath.from(typeQualifiedName.toString())
-         return "${CaskServiceSchemaGenerator.CaskApiRootPath}${path.parts.joinToString("/")}/${field.name}/$ExpectedAnnotationName/{after}"
+         return "${CaskServiceSchemaGenerator.CaskApiRootPath}${path.parts.joinToString("/")}/${field.name}/$expectedAnnotationName/{after}"
       }
    }
 }

@@ -3,7 +3,7 @@ package io.vyne.queryService.persistency
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.r2dbc.postgresql.codec.Json
-import io.vyne.queryService.QueryHistoryRecord
+import io.vyne.query.history.QueryHistoryRecord
 import org.springframework.core.convert.converter.Converter
 import org.springframework.data.convert.ReadingConverter
 

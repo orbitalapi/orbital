@@ -46,7 +46,8 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
 
    private fun evaluate(policy: Policy, instance: TypedInstance, context: QueryContext, executionScope: ExecutionScope): Instruction {
       log().debug("Evaluating policy ${policy.name.fullyQualifiedName} for executionScope $executionScope")
-      val ruleSets = policy.ruleSets.filter { policy -> policy.scope.appliesTo(executionScope.operationType, executionScope.operationScope) }
+      val ruleSets = policy.ruleSets
+         //.filter { policy -> policy.scope.appliesTo(executionScope.operationType, executionScope.operationScope) }
       if (ruleSets.isEmpty()) {
          log().debug("No ruleset found for policy ${policy.name.fullyQualifiedName} with executionScope of $executionScope, so using default instruction of $defaultInstruction")
          return defaultInstruction

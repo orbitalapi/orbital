@@ -3,25 +3,43 @@ package io.vyne.models.conditional
 import io.vyne.models.*
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Type
-import io.vyne.schemas.asVyneTypeReference
 import io.vyne.schemas.toVyneQualifiedName
+import io.vyne.utils.log
 import lang.taxi.types.*
 
 class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
    fun evaluate(readCondition: WhenFieldSetCondition, attributeName: AttributeName?, targetType: Type): TypedInstance {
-      val selectorValue = evaluateSelector(readCondition.selectorExpression)
-      val caseBlock = selectCaseBlock(selectorValue, readCondition)
-      val assignmentExpression = if (attributeName != null) {
-         caseBlock.getAssignmentFor(attributeName)
-      } else {
-         caseBlock.getSingleAssignment()
+      return when (readCondition.selectorExpression) {
+         is EmptyReferenceSelector -> {
+            val assignmentExpression = evaluateLogicalWhenCases(readCondition, attributeName, targetType)
+            evaluateExpression(assignmentExpression.assignment, targetType)
+         }
+         else -> {
+            val selectorValue = evaluateSelector(readCondition.selectorExpression)
+            val caseBlock = selectCaseBlock(selectorValue, readCondition)
+            val assignmentExpression = if (attributeName != null) {
+               caseBlock.getAssignmentFor(attributeName)
+            } else {
+               caseBlock.getSingleAssignment()
+            }
+            val typedValue = evaluateExpression(assignmentExpression.assignment, targetType)
+            typedValue
+         }
       }
-      val typedValue = evaluateExpression(assignmentExpression.assignment, targetType)
-      return typedValue
+   }
+
+   private fun evaluateLogicalWhenCases(readCondition: WhenFieldSetCondition, attributeName: AttributeName?, targetType: Type): AssignmentExpression {
+      val retVal =  LogicalExpressionEvaluator.evaluate(readCondition.cases, factory, targetType)?.let {
+         if (attributeName != null) {
+            it.getAssignmentFor(attributeName)
+         } else {
+            it.getSingleAssignment()
+         }
+      }
+      return retVal ?: error("unexpected result when evaluating logical expressions for a when. ensure that your when clause has 'else' part.")
    }
 
    private fun evaluateExpression(assignment: ValueAssignment, type: Type): TypedInstance {
-//      val assignment = matchExpression.assignment
       return when (assignment) {
          is ScalarAccessorValueAssignment -> factory.readAccessor(type, assignment.accessor) // WTF? Why isn't the compiler working this out?
          is ReferenceAssignment -> factory.getValue(assignment.reference)
@@ -40,9 +58,12 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
             TypedInstance.from(enumType, assignment.enumValue.value, factory.schema, source = DefinedInSchema)
          }
          is NullAssignment -> {
-            TypedNull(type, source = DefinedInSchema)
+            TypedNull.create(type, source = DefinedInSchema)
          }
-         else -> TODO()
+         else -> {
+            log().warn("Unexpected assignment $assignment")
+            TODO()
+         }
       }
    }
 
@@ -56,7 +77,7 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
          }
 
 
-      } ?: error("No matching cases found")
+      } ?: error("No matching cases found in when clause")
 
    }
 
@@ -66,7 +87,11 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
          // Note - I'm assuming the literal value is the same type as what we're comparing to.
          // Reasonable for now, but suspect subtypes etc may cause complexity here I haven't considered
          is LiteralCaseMatchExpression -> TypedInstance.from(type, matchExpression.value, factory.schema, source = DefinedInSchema)
-         else -> TODO()
+         //is LogicalExpression ->
+         else -> {
+            log().warn("Unexpected match Expression $matchExpression")
+            TODO()
+         }
       }
    }
 
@@ -78,7 +103,7 @@ class WhenFieldSetConditionEvaluator(private val factory: TypedObjectFactory) {
             // method not found exceptions.
             // Probably just a local issue, can refactor later
             val typeReference = selectorExpression.declaredType.toQualifiedName().toVyneQualifiedName()
-            val instance = factory.readAccessor(typeReference, selectorExpression.accessor)
+            val instance = factory.readAccessor(typeReference, selectorExpression.accessor, nullable = false)
             instance
          }
          is FieldReferenceSelector -> {

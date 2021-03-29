@@ -31,6 +31,14 @@ export class CaskService {
   clearCask(tableName: string): Observable<CaskConfigRecord[]> {
     return this.http.put<any>(`${environment.queryServiceUrl}/api/casks/${tableName}`, null);
   }
+
+  fetchCaskIngestionErrors(tableName: string, content: CaskIngestionErrorsRequestDto): Observable<CaskIngestionErrorDtoPage> {
+    return this.http.post<CaskIngestionErrorDtoPage>(`${environment.queryServiceUrl}/api/casks/${tableName}/errors`, content);
+  }
+
+  downloadIngestedMessageUrl(caskMessageId: string) {
+    return `${environment.queryServiceUrl}/api/casks/${caskMessageId}`;
+  }
 }
 
 export interface CaskConfigRecord {
@@ -46,4 +54,26 @@ export interface CaskConfigRecord {
 
 export interface CaskConfigDetails {
   recordsNumber: number;
+  ingestionErrorsInLast24Hours: number;
+}
+
+export interface CaskIngestionErrorDto {
+  caskMessageId: string;
+  createdAt: string;
+  fqn: string;
+  error: string;
+}
+
+interface CaskIngestionErrorDtoPage {
+  items: CaskIngestionErrorDto[];
+  currentPage: number;
+  totalItem: number;
+  totalPages: number;
+}
+
+interface CaskIngestionErrorsRequestDto {
+  pageNumber: number;
+  pageSize: number;
+  searchStart: string;
+  searchEnd: string;
 }

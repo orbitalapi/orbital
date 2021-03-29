@@ -1,9 +1,21 @@
 package io.vyne.cask.query
 
-import io.vyne.cask.api.CaskConfig
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.cask.api.CaskStatus
+import io.vyne.cask.api.ContentType
+import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.config.CaskQueryOptions
+import io.vyne.cask.config.FindOneMatchesManyBehaviour
+import io.vyne.cask.config.QueryMatchesNoneBehaviour
 import io.vyne.cask.ddl.PostgresDdlGenerator
-import io.vyne.cask.ddl.TypeMigration
+import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
 import io.vyne.cask.ddl.caskRecordTable
+import io.vyne.cask.ddl.views.CaskViewBuilder.Companion.VIEW_PREFIX
+import io.vyne.cask.ingest.CaskMessage
+import io.vyne.cask.ingest.CaskMessageRepository
+import io.vyne.cask.query.generators.BetweenVariant
+import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
 import io.vyne.cask.timed
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.VersionedType
@@ -12,36 +24,56 @@ import io.vyne.utils.log
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.QualifiedName
+import org.apache.commons.io.IOUtils
+import org.postgresql.PGConnection
+import org.postgresql.largeobject.LargeObjectManager
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
-import java.nio.file.Path
-import java.sql.ResultSet
+import org.springframework.transaction.annotation.Transactional
+import reactor.core.publisher.Flux
+import java.io.InputStream
+import java.sql.Connection
 import java.sql.Timestamp
 import java.sql.Types
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 import java.util.concurrent.TimeUnit
+import javax.sql.DataSource
 
 fun String.toLocalDate(): LocalDate {
    return LocalDate.parse(this)
 }
 
 fun String.toLocalDateTime(): LocalDateTime {
-   // Vyne is passing with the Zone information.
-   return ZonedDateTime.parse(this).toLocalDateTime()
+   return ZonedDateTime.parse(this, CaskDAO.DATE_TIME_FORMATTER)
+      .withZoneSameInstant(ZoneOffset.UTC)
+      .toLocalDateTime()
 }
 
-// TODO TIME db type
-//fun String.toTime(): LocalDateTime {
-//   // Postgres api does not accept LocalTime so have to map to LocalDateTime
-//   return LocalDateTime.of(LocalDate.of(1970, 1, 1), LocalTime.parse(this, DateTimeFormatter.ISO_TIME))
-//}
 
 @Component
-class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider: SchemaProvider) {
+class CaskDAO(
+   private val jdbcTemplate: JdbcTemplate,
+   private val schemaProvider: SchemaProvider,
+   private val largeObjectDataSource: DataSource,
+   private val caskMessageRepository: CaskMessageRepository,
+   private val caskConfigRepository: CaskConfigRepository,
+   private val objectMapper: ObjectMapper = jacksonObjectMapper(),
+   private val queryOptions: CaskQueryOptions = CaskQueryOptions()
+) {
    val postgresDdlGenerator = PostgresDdlGenerator()
+
+   init {
+      log().info("Cask running with query options: \n$queryOptions")
+   }
 
    fun findAll(versionedType: VersionedType): List<Map<String, Any>> {
       val name = "${versionedType.versionedName}.findAll"
@@ -50,6 +82,10 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
             jdbcTemplate.queryForList(findAllQuery(tableName))
          }
       }
+   }
+
+   fun findAll(tableName: String): List<Map<String, Any>> {
+      return jdbcTemplate.queryForList(findAllQuery(tableName))
    }
 
    /**
@@ -67,7 +103,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
     *  it's questionable how much more performant they'd be.
     */
    private fun doForAllTablesOfType(versionedType: VersionedType, function: (tableName: String) -> List<Map<String, Any>>): List<Map<String, Any>> {
-      val tableNames = findTablesForType(versionedType)
+      val tableNames = findTableNamesForType(versionedType)
       val results = tableNames.map { tableName -> function(tableName) }
       return mergeResultSets(results)
    }
@@ -87,7 +123,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
             val originalTypeSchema = schemaProvider.schema()
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-            val findByArg = jdbcQueryArgumentType(fieldType, arg)
+            val findByArg = castArgumentToJdbcType(fieldType, arg)
             jdbcTemplate.queryForList(findByQuery(tableName, columnName), findByArg)
          }
       }
@@ -99,25 +135,53 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
             val originalTypeSchema = schemaProvider.schema()
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-            val findOneArg = jdbcQueryArgumentType(fieldType, arg)
-            jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg)
+            val findOneArg = castArgumentToJdbcType(fieldType, arg)
+            try {
+               jdbcTemplate.queryForList(findByQuery(tableName, columnName), findOneArg)
+            } catch (exception: Exception) {
+               log().error("Failed to execute query", exception)
+               throw exception
+            }
+
          }
-         if (results.size > 1) {
-            log().error("Call to findOne() returned ${results.size} results.  Will pick the first")
+         when {
+            results.isEmpty() -> {
+               when (queryOptions.queryMatchesNoneBehaviour) {
+                  QueryMatchesNoneBehaviour.RETURN_EMPTY -> emptyMap()
+                  QueryMatchesNoneBehaviour.THROW_404 -> throw CaskQueryEmptyResultsException("Call to findOne on ${versionedType.fullyQualifiedName} by $columnName returned ${results.size} results.  Throwing a 404 exception.  You can configure this behaviour by setting cask.query-options.queryMatchesNoneBehaviour")
+               }
+            }
+            results.size == 1 -> {
+               results.first()
+            }
+            else -> { // results.size > 1
+               when (queryOptions.findOneMatchesManyBehaviour) {
+                  FindOneMatchesManyBehaviour.RETURN_FIRST -> {
+                     log().warn("Call to findOne on ${versionedType.fullyQualifiedName} by $columnName returned ${results.size} results. pickFirstFromFindOne is configured to return first, so selecting the first record")
+                     results.first()
+                  }
+                  FindOneMatchesManyBehaviour.THROW_ERROR -> {
+                     throw CaskBadRequestException("Call to findOne on ${versionedType.fullyQualifiedName} by $columnName returned ${results.size} results.  This is not permitted.  You can configure this behaviour by setting cask.query-options.findOneMatchesManyBehaviour")
+                  }
+               }
+            }
          }
-         results.firstOrNull() ?: emptyMap()
       }
    }
 
    fun findMultiple(versionedType: VersionedType, columnName: String, arg: List<String>): List<Map<String, Any>> {
+      // Ignore the compiler -- filterNotNull() required here because we can receive a null inbound
+      // in the Json. Jackson doesn't filter it out, and so casting errors can occur.
+      val inputValues = arg.filterNotNull()
       return timed("${versionedType.versionedName}.findMultiple${columnName}") {
          doForAllTablesOfType(versionedType) { tableName ->
             val originalTypeSchema = schemaProvider.schema()
             val originalType = originalTypeSchema.versionedType(versionedType.fullyQualifiedName.fqn())
             val fieldType = (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
-            val findMultipleArg = jdbcQueryArgumentsType(fieldType, arg)
-            val inPhrase = arg.joinToString(",") { "?" }
-            val argTypes = arg.map { Types.VARCHAR }.toTypedArray().toIntArray()
+            val findMultipleArg = castArgumentsToJdbcType(fieldType, inputValues)
+
+            val inPhrase = inputValues.joinToString(",") { "?" }
+            val argTypes = inputValues.map { Types.VARCHAR }.toTypedArray().toIntArray()
             val argValues = findMultipleArg.toTypedArray()
             val retVal = jdbcTemplate.queryForList(findInQuery(tableName, columnName, inPhrase), argValues, argTypes)
             retVal
@@ -125,41 +189,73 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       }
    }
 
-   fun findBetween(versionedType: VersionedType, columnName: String, start: String, end: String): List<Map<String, Any>> {
+   fun findBetween(versionedType: VersionedType,
+                   columnName: String,
+                   start: String,
+                   end: String,
+                   variant: BetweenVariant? = null): List<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
-         val field = fieldForColumnName(versionedType, columnName)
-         doForAllTablesOfType(versionedType) { tableName ->
-            jdbcTemplate.queryForList(
-               findBetweenQuery(tableName, columnName),
-               jdbcQueryArgumentType(field, start),
-               jdbcQueryArgumentType(field, end))
+         if (FindBetweenInsertedAtOperationGenerator.fieldName == columnName) {
+            doForAllTablesOfType(versionedType) { tableName ->
+               jdbcTemplate.queryForList(
+                  betweenQueryForCaskInsertedAt(tableName, variant),
+                  castArgumentToJdbcType(PrimitiveType.INSTANT, start),
+                  castArgumentToJdbcType(PrimitiveType.INSTANT, end))
+            }
+         } else {
+            val field = fieldForColumnName(versionedType, columnName)
+            doForAllTablesOfType(versionedType) { tableName ->
+               jdbcTemplate.queryForList(
+                  betweenQueryForField(tableName, columnName, variant),
+                  castArgumentToJdbcType(field, start),
+                  castArgumentToJdbcType(field, end))
+            }
          }
       }
    }
 
-   private fun findTablesForType(versionedType: VersionedType): List<String> {
-      return jdbcTemplate.queryForList<String>(
-         "SELECT tablename from cask_config where qualifiedtypename = ?",
-         listOf(versionedType.fullyQualifiedName).toTypedArray(),
-         String::class.java
-      )
+   private fun betweenQueryForField(tableName: String, columnName: String, variant: BetweenVariant? = null) = when (variant) {
+      BetweenVariant.GtLt -> findBetweenQueryGtLt(tableName, columnName)
+      BetweenVariant.GtLte -> findBetweenQueryGtLte(tableName, columnName)
+      BetweenVariant.GteLte -> findBetweenQueryGteLte(tableName, columnName)
+      else -> findBetweenQuery(tableName, columnName)
+   }
+
+   private fun betweenQueryForCaskInsertedAt(tableName: String, variant: BetweenVariant? = null) = when (variant) {
+      BetweenVariant.GtLt -> findBetweenGtLtCaskInsertedAtQuery(tableName)
+      BetweenVariant.GtLte -> findBetweenGtLteCaskInsertedAtQuery(tableName)
+      BetweenVariant.GteLte -> findBetweenGteLteCaskInsertedAtQuery(tableName)
+      else -> findBetweenCaskInsertedAtQuery(tableName)
+   }
+
+   fun findTableNamesForType(qualifiedName: QualifiedName): List<String> {
+      return caskConfigRepository.findAllByQualifiedTypeNameAndStatus(qualifiedName.fullyQualifiedName, CaskStatus.ACTIVE)
+         .map { it.tableName }
+   }
+
+   fun findTableNamesForType(versionedType: VersionedType): List<String> {
+      return findTableNamesForType(versionedType.taxiType.toQualifiedName())
    }
 
    fun findAfter(versionedType: VersionedType, columnName: String, after: String): List<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.after") {
          val field = fieldForColumnName(versionedType, columnName)
-         jdbcTemplate.queryForList(
-            findAfterQuery(versionedType.caskRecordTable(), columnName),
-            jdbcQueryArgumentType(field, after))
+         doForAllTablesOfType(versionedType) { tableName ->
+            jdbcTemplate.queryForList(
+               findAfterQuery(tableName, columnName),
+               castArgumentToJdbcType(field, after))
+         }
       }
    }
 
    fun findBefore(versionedType: VersionedType, columnName: String, before: String): List<Map<String, Any>> {
       return timed("${versionedType.versionedName}.findBy${columnName}.before") {
          val field = fieldForColumnName(versionedType, columnName)
-         jdbcTemplate.queryForList(
-            findBeforeQuery(versionedType.caskRecordTable(), columnName),
-            jdbcQueryArgumentType(field, before))
+         doForAllTablesOfType(versionedType) { tableName ->
+            jdbcTemplate.queryForList(
+               findBeforeQuery(tableName, columnName),
+               castArgumentToJdbcType(field, before))
+         }
       }
    }
 
@@ -169,29 +265,21 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
       return (originalType.taxiType as ObjectType).allFields.first { it.name == columnName }
    }
 
-   private fun jdbcQueryArgumentsType(field: Field, args: List<String>) = args.map { jdbcQueryArgumentType(field, it) }
-
-   private fun jdbcQueryArgumentType(field: Field, arg: String) = when (field.type.basePrimitive) {
-      PrimitiveType.STRING -> arg
-      PrimitiveType.ANY -> arg
-      PrimitiveType.DECIMAL -> arg.toBigDecimal()
-      PrimitiveType.DOUBLE -> arg.toBigDecimal()
-      PrimitiveType.INTEGER -> arg.toBigDecimal()
-      PrimitiveType.BOOLEAN -> arg.toBoolean()
-      PrimitiveType.LOCAL_DATE -> arg.toLocalDate()
-      // TODO TIME db column type
-      //PrimitiveType.TIME -> arg.toTime()
-      PrimitiveType.INSTANT -> arg.toLocalDateTime()
-
-      else -> TODO("type ${field.name} not yet mapped")
-   }
-
    companion object {
       // TODO change to prepared statement, unlikely but potential for SQL injection via columnName
       fun findAllQuery(tableName: String) = """SELECT * FROM $tableName"""
       fun findInQuery(tableName: String, columnName: String, inPhrase: String) = """SELECT * FROM $tableName WHERE "$columnName" IN ($inPhrase)"""
       fun findByQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" = ?"""
       fun findBetweenQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" < ?"""
+      fun findBetweenQueryGtLt(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ? AND "$columnName" < ?"""
+      fun findBetweenQueryGtLte(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ? AND "$columnName" <= ?"""
+      fun findBetweenQueryGteLte(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" >= ? AND "$columnName" <= ?"""
+
+      fun findBetweenCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
+      fun findBetweenGtLtCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} < ?"""
+      fun findBetweenGtLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} > ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+      fun findBetweenGteLteCaskInsertedAtQuery(tableName: String) = """SELECT caskTable.${MESSAGE_ID_COLUMN_NAME} as "caskRawMessageId", caskTable.*, message.${CaskMessage.INSERTED_AT_COLUMN} as "caskInsertedAt" FROM $tableName caskTable INNER JOIN cask_message message ON caskTable.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} = message.${CaskMessage.ID_COLUMN} WHERE message.${CaskMessage.INSERTED_AT_COLUMN} >= ? AND message.${CaskMessage.INSERTED_AT_COLUMN} <= ?"""
+
       fun findAfterQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" > ?"""
       fun findBeforeQuery(tableName: String, columnName: String) = """SELECT * FROM $tableName WHERE "$columnName" < ?"""
 
@@ -203,6 +291,38 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
          return indexTables[0] + " " +
             indexTables.drop(1).joinToString(separator = " ") { "full outer join $it on 0 = 1" }
       }
+
+      fun castArgumentsToJdbcType(field: Field, args: List<String>) = args.map { castArgumentToJdbcType(field, it) }
+
+      fun castArgumentToJdbcType(field: Field, arg: String): Any {
+         return field.type.basePrimitive?.let {
+            castArgumentToJdbcType(it, arg)
+         }
+            ?: error("Field ${field.name} has a non-primitive type ${field.type.qualifiedName}.  Non-primitive types are not currently supported")
+
+      }
+
+      fun castArgumentToJdbcType(primitiveType: PrimitiveType, arg: String): Any = when (primitiveType) {
+         PrimitiveType.STRING -> arg
+         PrimitiveType.ANY -> arg
+         PrimitiveType.DECIMAL -> arg.toBigDecimal()
+         PrimitiveType.DOUBLE -> arg.toBigDecimal()
+         PrimitiveType.INTEGER -> arg.toInt()
+         PrimitiveType.BOOLEAN -> arg.toBoolean()
+         PrimitiveType.LOCAL_DATE -> arg.toLocalDate()
+         // TODO TIME db column type
+         //PrimitiveType.TIME -> arg.toTime()
+         PrimitiveType.INSTANT -> arg.toLocalDateTime()
+
+         else -> TODO("type ${primitiveType.name} not yet mapped")
+      }
+
+      val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatterBuilder()
+         .parseLenient()
+         .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
+         .appendFraction(ChronoField.MILLI_OF_SECOND, 1, 4, true)
+         .appendPattern("[XXX]")
+         .parseDefaulting(ChronoField.MILLI_OF_SECOND, 0).parseDefaulting(ChronoField.OFFSET_SECONDS, ZoneOffset.UTC.totalSeconds.toLong()).toFormatter()
    }
 
    // ############################
@@ -211,7 +331,7 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
 
    fun createCaskRecordTable(versionedType: VersionedType): String {
       return timed("CaskDao.createCaskRecordTable", true, TimeUnit.MICROSECONDS) {
-         val caskTable = postgresDdlGenerator.generateDdl(versionedType, schemaProvider.schema(), null, null)
+         val caskTable = postgresDdlGenerator.generateDdl(versionedType, schemaProvider.schema())
          jdbcTemplate.execute(caskTable.ddlStatement)
          log().info("CaskRecord table=${caskTable.generatedTableName} created")
          caskTable.generatedTableName
@@ -231,94 +351,109 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
    // ### ADD Cask Message
    // ############################
 
-   fun findAllCaskMessages(): MutableList<CaskMessage> {
-      return jdbcTemplate.query("Select * from CASK_MESSAGE", caskMessageRowMapper)
+   fun getCaskMessages(messageIds: List<String>): List<CaskMessage> {
+      return caskMessageRepository.findAllById(messageIds)
    }
 
-   fun createCaskMessage(versionedType: VersionedType, readCachePath: Path, id: String): CaskMessage {
-      return timed("CaskDao.createCaskMessage", true, TimeUnit.MILLISECONDS) {
-         val type = schemaProvider.schema().toTaxiType(versionedType)
-         val qualifiedTypeName = type.qualifiedName
-         val insertedAt = Instant.now()
-         jdbcTemplate.update { connection ->
-            connection.prepareStatement(ADD_CASK_MESSAGE).apply {
-               setString(1, id)
-               setString(2, qualifiedTypeName)
-               setString(3, readCachePath.toString())
-               setTimestamp(4, Timestamp.from(insertedAt))
+   fun createCaskMessage(versionedType: VersionedType, id: String, input: Flux<InputStream>, contentType: ContentType, parameters: Any): CaskMessage {
+      largeObjectDataSource.connection.use { connection ->
+         connection.autoCommit = false
+         return timed("CaskDao.createCaskMessage", true, TimeUnit.MILLISECONDS) {
+            val type = schemaProvider.schema().toTaxiType(versionedType)
+            val qualifiedTypeName = type.qualifiedName
+            val insertedAt = Instant.now()
+
+            val messageObjectId = persistMessageAsLargeObject(connection, input)
+            val parametersJson = objectMapper.writeValueAsString(parameters)
+            // Don't use spring repository here as:
+            // 1. it opens up a new connection
+            // 2. large object insertion and corresponding cask_message table insertion must be transactional.
+            ////val caskMessage = caskMessageRepository.save(CaskMessage(id, qualifiedTypeName, messageObjectId, insertedAt, contentType, parametersJson))
+            val caskMessageInsertInto = connection.prepareStatement(CaskMessage.insertInto)
+            caskMessageInsertInto.setString(1, id)
+            caskMessageInsertInto.setString(2, qualifiedTypeName)
+            caskMessageInsertInto.setLong(3, messageObjectId)
+            caskMessageInsertInto.setTimestamp(4, Timestamp.from(insertedAt))
+            caskMessageInsertInto.setString(5, contentType.name)
+            caskMessageInsertInto.setString(6, parametersJson)
+            caskMessageInsertInto.executeUpdate()
+            try {
+               connection.commit()
+            } catch (e: Exception) {
+               log().error("Error in creating cask message", e)
+               connection.rollback()
             }
+            CaskMessage(id, qualifiedTypeName, messageObjectId, insertedAt, contentType, parametersJson)
          }
-         CaskMessage(id, qualifiedTypeName, readCachePath.toString(), insertedAt)
       }
    }
 
-   private val ADD_CASK_MESSAGE = """INSERT into CASK_MESSAGE (
-         | id,
-         | qualifiedTypeName,
-         | readCachePath,
-         | insertedAt) values ( ? , ?, ?, ? )""".trimMargin()
+   fun fetchRawCaskMessage(caskMessageId: String): Pair<ByteArray, ContentType?>? {
+      return caskMessageRepository.findByIdOrNull(caskMessageId)?.let { caskMessage ->
+         caskMessage.messageContentId?.let { largeObjectId ->
+            largeObjectDataSource.connection.use { connection ->
+               connection.autoCommit = false
+               val pgConn = connection.unwrap(PGConnection::class.java)
+               val largeObjectManager = pgConn.largeObjectAPI
+               val largeObject = largeObjectManager.open(largeObjectId, LargeObjectManager.READ)
+               IOUtils.toByteArray(largeObject.inputStream) to caskMessage.messageContentType
+            }
+         }
+      }
+   }
 
-   data class CaskMessage(
-      val id: String,
-      val qualifiedTypeName: String,
-      val readCachePath: String,
-      val insertedAt: Instant
-   )
 
-   val caskMessageRowMapper: (ResultSet, Int) -> CaskMessage = { rs: ResultSet, rowNum: Int ->
-      CaskMessage(
-         rs.getString("id"),
-         rs.getString("readCachePath"),
-         rs.getString("qualifiedTypeName"),
-         rs.getTimestamp("insertedAt").toInstant()
-      )
+   fun getMessageContent(largeObjectId: Long): Flux<InputStream> {
+      return Flux.create<InputStream> { emitter ->
+         largeObjectDataSource.connection.use { connection ->
+            connection.autoCommit = false
+            val pgConn = connection.unwrap(PGConnection::class.java)
+            val largeObjectManager = pgConn.largeObjectAPI
+            val largeObject = largeObjectManager.open(largeObjectId)
+            emitter.next(largeObject.inputStream)
+            emitter.complete()
+         }
+      }
+   }
+
+   private fun persistMessageAsLargeObject(conn: Connection, input: Flux<InputStream>): Long {
+      val pgConn = conn.unwrap(PGConnection::class.java)
+      val largeObjectManager = pgConn.largeObjectAPI
+      val objectId = largeObjectManager.createLO(LargeObjectManager.READWRITE)
+      Flux.from(input).subscribe { inputStream ->
+         try {
+            val largeObject = largeObjectManager.open(objectId, LargeObjectManager.WRITE)
+            log().info("Streaming message contents to LargeObject API")
+            IOUtils.copy(inputStream, largeObject.outputStream)
+            log().info("Streaming message contents to LargeObject API completed")
+            largeObject.close()
+            conn.commit()
+         } catch (exception: Exception) {
+            log().error("Exception thrown whilst streaming message content to db", exception)
+         }
+      }
+      return objectId
+
    }
 
    // ############################
    // ### ADD Cask Config
    // ############################
 
-   fun findAllCaskConfigs(): MutableList<CaskConfig> {
-      return jdbcTemplate.query("Select * from CASK_CONFIG", caskConfigRowMapper)
+   fun findMessageIdsToReplay(sourceTableName: String, targetTableName: String): List<String> {
+      return jdbcTemplate.queryForList("""select distinct ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}
+         |from $sourceTableName where ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} not in (
+         |  select distinct ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} from $targetTableName
+         |)""".trimMargin(), String::class.java)
    }
 
-   fun createCaskConfig(versionedType: VersionedType, typeMigration: TypeMigration? = null) {
-      timed("CaskDao.addCaskConfig", true, TimeUnit.MILLISECONDS) {
-         val type = schemaProvider.schema().toTaxiType(versionedType)
-         val deltaAgainstTableName = typeMigration?.predecessorType?.let { it.caskRecordTable() }
-         val tableName = versionedType.caskRecordTable()
-         val qualifiedTypeName = type.qualifiedName
-         val versionHash = versionedType.versionHash
-         val sourceSchemaIds = versionedType.sources.map { it.id }
-         val sources = versionedType.sources.map { it.content }
-         val timestamp = Instant.now()
 
-         val exists = exists(tableName)
-
-         if (exists) {
-            log().info("CaskConfig already exists for type=${versionedType.versionedName}, tableName=$tableName")
-            return@timed
-         }
-
-         log().info("Creating CaskConfig for type=${versionedType.versionedName}, tableName=$tableName")
-         jdbcTemplate.update { connection ->
-            connection.prepareStatement(ADD_CASK_CONFIG).apply {
-               setString(1, tableName)
-               setString(2, qualifiedTypeName)
-               setString(3, versionHash)
-               setArray(4, connection.createArrayOf("text", sourceSchemaIds.toTypedArray()))
-               setArray(5, connection.createArrayOf("text", sources.toTypedArray()))
-               setTimestamp(6, Timestamp.from(timestamp))
-               if (deltaAgainstTableName != null) setString(7, deltaAgainstTableName) else setNull(7, Types.VARCHAR)
-            }
-         }
-      }
-   }
-
+   @Deprecated("Move to CaskConfigRepository")
    fun countCasks(tableName: String): Int {
       return jdbcTemplate.queryForObject("SELECT COUNT(*) from CASK_CONFIG WHERE tableName=?", arrayOf(tableName), Int::class.java)
    }
 
+   @Deprecated("Move to CaskConfigRepository")
    fun exists(tableName: String) = countCasks(tableName) > 0
 
    // ############################
@@ -332,36 +467,24 @@ class CaskDAO(private val jdbcTemplate: JdbcTemplate, private val schemaProvider
    // ### DELETE/EMPTY Cask
    // ############################
 
-   fun deleteCask(tableName: String) {
+   @Transactional
+   fun deleteCask(tableName: String, shouldCascade: Boolean = false) {
+      log().info("Removing Cask with underlying table / view $tableName")
       jdbcTemplate.update("DELETE FROM CASK_CONFIG WHERE tableName=?", tableName)
-      jdbcTemplate.update("DROP TABLE ${tableName}")
+      if (tableName.startsWith(VIEW_PREFIX)) {
+         jdbcTemplate.update("DROP VIEW $tableName")
+      } else {
+         val dropStatement = if (shouldCascade) {
+            "DROP TABLE $tableName CASCADE"
+         } else {
+            "DROP TABLE $tableName"
+         }
+         jdbcTemplate.update(dropStatement)
+      }
    }
 
    fun emptyCask(tableName: String) {
       jdbcTemplate.update("TRUNCATE ${tableName}")
-   }
-
-   private val ADD_CASK_CONFIG = """INSERT into CASK_CONFIG (
-        | tableName,
-        | qualifiedTypeName,
-        | versionHash,
-        | sourceSchemaIds,
-        | sources,
-        | insertedAt,
-        | deltaAgainstTableName)
-        | values ( ? , ? , ?, ?, ?, ?, ?)""".trimMargin()
-
-
-   private val caskConfigRowMapper: (ResultSet, Int) -> CaskConfig = { rs: ResultSet, rowNum: Int ->
-      CaskConfig(
-         rs.getString("tableName"),
-         rs.getString("qualifiedTypeName"),
-         rs.getString("versionHash"),
-         listOf(*rs.getArray("sourceSchemaIds").array as Array<String>),
-         listOf(*rs.getArray("sources").array as Array<String>),
-         rs.getString("deltaAgainstTableName"),
-         rs.getTimestamp("insertedAt").toInstant()
-      )
    }
 
 

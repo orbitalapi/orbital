@@ -1,4 +1,6 @@
 import {Component, Input} from '@angular/core';
+import {QueryResult} from '../../../services/query.service';
+import {QueryFailure} from '../../query-wizard/query-wizard.component';
 
 @Component({
   selector: 'app-call-explorer',
@@ -10,10 +12,10 @@ export class CallExplorerComponent {
   constructor() {
   }
 
-  selectedChart: 'sequence' | 'graph' = 'graph';
+  selectedChart: 'sequence' | 'graph' = 'sequence';
 
   @Input()
-  queryResult: any; // TODO : Grab the types
+  queryResult: QueryResult | QueryFailure;
 
   selectedOperation: any;
 

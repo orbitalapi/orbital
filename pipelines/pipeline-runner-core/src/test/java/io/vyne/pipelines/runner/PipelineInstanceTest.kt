@@ -8,15 +8,18 @@ import io.vyne.pipelines.PipelineTransportHealthMonitor.PipelineTransportStatus.
 import org.junit.Before
 import org.junit.Test
 import reactor.core.publisher.Flux
+import java.io.InputStream
 
 class PipelineInstanceTest {
 
    class DummyInput(override val feed: Flux<PipelineInputMessage>) : PipelineInputTransport {
       override val healthMonitor= EmitterPipelineTransportHealthMonitor()
+      override val description: String = "Dummy Input"
    }
    class DummyOutput(override val type: VersionedTypeReference) : PipelineOutputTransport {
-      override fun write(message: String, logger: PipelineLogger) { }
+      override fun write(message: MessageContentProvider, logger: PipelineLogger) { }
       override val healthMonitor = EmitterPipelineTransportHealthMonitor()
+      override val description: String = "Dummy Output"
    }
 
    lateinit var input: PipelineInputTransport

@@ -1,4 +1,5 @@
 import {PrimitiveTypeNames} from './taxi';
+import {isNullOrUndefined, isString} from 'util';
 
 export class QualifiedName {
   name: string;
@@ -34,13 +35,23 @@ export interface Documented {
   typeDoc: string | null;
 }
 
-export interface Type extends Documented {
+export interface Named {
+  name: QualifiedName;
+}
+
+export interface NamedAndDocumented extends Documented, Named {
+}
+
+export interface Type extends Documented, Named {
   name: QualifiedName;
   attributes: FieldMap;
   collectionType: Type | null;
   modifiers: Array<Modifier>;
   isScalar: boolean;
+  format: string;
+  hasFormat: boolean;
   aliasForType: QualifiedName;
+  basePrimitiveTypeName: QualifiedName;
   enumValues: Array<EnumValues>;
   sources: Array<VersionedSource>;
   isClosed: boolean;
@@ -60,6 +71,8 @@ export interface EnumValues {
 export interface Field extends Documented {
   type: QualifiedName;
   modifiers: Array<Modifier>;
+  defaultValue?: any;
+  nullable?: boolean;
 }
 
 
@@ -110,7 +123,7 @@ export interface ParsedSource {
   isValid: boolean;
 }
 
-function buildArrayType(schema: TypeCollection, typeName: string): Type {
+function buildArrayType(schema: TypeCollection, typeName: string, anonymousTypes: Type[] = []): Type {
   if (schema.constructedArrayTypes === undefined) {
     schema.constructedArrayTypes = {};
   }
@@ -126,8 +139,10 @@ function buildArrayType(schema: TypeCollection, typeName: string): Type {
   const arrayType = schema.types.find(t => t.name.parameterizedName === 'lang.taxi.Array');
   const name = QualifiedName.from(arrayType.name.fullyQualifiedName);
   name.parameterizedName = typeName;
-  const paramType = findType(schema, innerType);
+  const paramType = findType(schema, innerType, anonymousTypes);
   name.parameters = [paramType.name];
+  name.shortDisplayName = paramType.name.shortDisplayName + '[]';
+  name.longDisplayName = paramType.name.longDisplayName + '[]';
   const result = {
     ...arrayType,
     name,
@@ -141,17 +156,28 @@ function buildArrayType(schema: TypeCollection, typeName: string): Type {
   return result;
 }
 
-export function findType(schema: TypeCollection, typeName: string): Type {
+export function findType(schema: TypeCollection, typeName: string, anonymousTypes: Type[] = []): Type {
+  if (schema.anonymousTypes === undefined) {
+    schema.anonymousTypes = {};
+  }
   if (typeName === 'lang.taxi.Array') {
     console.warn('A search was performed for a raw array.  Favour parameterizedName over QualifiedName to avoid this');
   }
   // TODO : Actual support for generics
   if (typeName.startsWith('lang.taxi.Array<')) {
-    return buildArrayType(schema, typeName);
+    return buildArrayType(schema, typeName, anonymousTypes);
   }
-  const name = schema.types.find(t => t.name.parameterizedName === typeName);
+  let name = schema.types.find(t => t.name.parameterizedName === typeName);
   if (!name) {
-    throw new Error(`No type name ${typeName} was found`);
+    name = schema.anonymousTypes[typeName];
+    if (!name) {
+      name = anonymousTypes.find(anonymousType => anonymousType.name.fullyQualifiedName === typeName);
+      if (!name) {
+        throw new Error(`No type name ${typeName} was found`);
+      } else {
+        schema.anonymousTypes[typeName] = name;
+      }
+    }
   }
   return name;
 }
@@ -159,6 +185,7 @@ export function findType(schema: TypeCollection, typeName: string): Type {
 export interface TypeCollection {
   types: Array<Type>;
   constructedArrayTypes?: { [key: string]: Type };
+  anonymousTypes?: { [key: string]: Type };
 }
 
 export interface Schema extends TypeCollection {
@@ -171,7 +198,7 @@ export interface Schema extends TypeCollection {
 }
 
 export interface Parameter {
-  type: Type;
+  type: QualifiedName;
   name: string;
   metadata: Array<Metadata>;
   constraints: Array<any>;
@@ -179,26 +206,44 @@ export interface Parameter {
 
 export interface Metadata {
   name: QualifiedName;
-  params: Map<string, any>;
+  params: { [index: string]: any };
 }
 
 
-export interface Operation {
+export interface Operation extends SchemaMemberNamed {
   name: string;
+  qualifiedName: QualifiedName;
   parameters: Array<Parameter>;
-  returnType: Type;
+  returnType: QualifiedName;
   metadata: Array<Metadata>;
   contract: OperationContract;
-  sources: VersionedSource[];
+  // sources: VersionedSource[];
+  typeDoc?: string;
+  operationType: string | null;
+}
+
+export interface Service extends SchemaMemberNamed, Named, Documented {
+  qualifiedName: string; // This is messy, and needs fixing up.
+  operations: Operation[];
+  queryOperations: QueryOperation[];
+  metadata: Metadata[];
+  // Source not currently loaded for services, will load async
+  // sourceCode: VersionedSource;
+}
+
+export interface QueryOperation {
+  name: QualifiedName;
+  parameters: Parameter[];
+  returnType: QualifiedName;
+  metadata: Metadata[];
+  grammar: string;
+  capabilities: any[];
   typeDoc?: string;
 }
 
-export interface Service {
-  name: QualifiedName;
-  operations: Array<Operation>;
-  metadata: Array<Metadata>;
-  sourceCode: VersionedSource;
-  typeDoc?: string;
+// Matches SchemaMember.kt, but we already have a class called SchemaMember
+export interface SchemaMemberNamed {
+  memberQualifiedName: QualifiedName;
 }
 
 export interface Pipeline {
@@ -222,16 +267,22 @@ export function isOperation(candidate): candidate is Operation {
   return (candidate as Operation).returnType !== undefined;
 }
 
+export function isMappedSynonym(candidate): candidate is MappedSynonym {
+  const mappedValueCandidate = candidate as MappedValue;
+  return mappedValueCandidate.dataSourceName === 'Mapped' && mappedValueCandidate.mappingType === MappingType.SYNONYM;
+}
+
 export interface OperationContract {
-  returnType: Type;
+  returnType: QualifiedName;
   constraints: Array<any>;
 }
 
+export type SchemaGraphNodeType = 'TYPE' | 'MEMBER' | 'OPERATION' | 'DATASOURCE' | 'ERROR' | 'VYNE' | 'CALLER';
 
 export interface SchemaGraphNode {
   id: string;
   label: string;
-  type: string; // Consider adding the enum ElementType here
+  type: SchemaGraphNodeType;
   nodeId: string;
   subHeader?: string | null;
   value?: any | null;
@@ -320,22 +371,35 @@ export class SchemaMember {
     public readonly member: Type | Service | Operation,
     public readonly sources: VersionedSource[]
   ) {
-    this.attributeNames = kind === SchemaMemberType.TYPE
-      ? Object.keys((member as Type).attributes)
-      : [];
+    try {
+      this.attributeNames = kind === SchemaMemberType.TYPE
+        ? Object.keys((member as Type).attributes)
+        : [];
+    } catch (error) {
+      console.error(error);
+    }
+
+
   }
 
   attributeNames: string[];
 
   static fromService(service: Service): SchemaMember[] {
-    return service.operations.map(operation => {
+    const serviceMember = new SchemaMember(
+      service.name,
+      SchemaMemberType.SERVICE,
+      null,
+      service,
+      []
+    );
+    const operations = service.operations.map(operation => {
       return this.fromOperation(operation, service);
     });
-
+    return [serviceMember].concat(operations);
   }
 
   private static fromOperation(operation: Operation, service: Service) {
-    const qualifiedName = service.name.fullyQualifiedName + ' #' + operation.name;
+    const qualifiedName = service.name.fullyQualifiedName + ' / ' + operation.name;
     return new SchemaMember(
       {
         name: operation.name,
@@ -349,7 +413,7 @@ export class SchemaMember {
       SchemaMemberType.OPERATION,
       null,
       operation,
-      operation.sources
+      [] // sources not currently returned for operations. Will load these async in the future
     );
   }
 
@@ -395,6 +459,8 @@ export interface VersionedSource {
   name: string;
   version: string;
   content: string;
+  id?: string;
+  contentHash?: string;
 }
 
 
@@ -434,3 +500,140 @@ function collectionMemberTypeFromArray(name: QualifiedName, schema: Schema, defa
     return defaultValue();
   }
 }
+
+export interface UntypedInstance {
+  value: any;
+  type: UnknownType;
+  nearestType: Type | null;
+}
+
+export function asNearestTypedInstance(untypedInstance: UntypedInstance): TypedInstance {
+  if (untypedInstance.nearestType === null) {
+    throw new Error('NearestType must be populated in order to cast to TypedInstance');
+  }
+  return {
+    value: untypedInstance.value,
+    type: untypedInstance.nearestType
+  } as TypedInstance;
+}
+
+export enum UnknownType {
+  UnknownType = 'UnknownType'
+}
+
+export type InstanceLike = TypedInstance | TypedObjectAttributes | TypeNamedInstance;
+export type InstanceLikeOrCollection = InstanceLike | InstanceLike[];
+export type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;
+
+export interface TypedObjectAttributes {
+  [key: string]: TypeInstanceOrAttributeSet;
+}
+
+export function getTypeName(instance: InstanceLike): string {
+  if (isTypedInstance(instance)) {
+    return instance.type.name.fullyQualifiedName;
+  } else if (isTypeNamedInstance(instance)) {
+    return instance.typeName;
+  } else {
+    // No good reason for not supporting this, just haven't hit the usecase yet, and it's not
+    // obvious how we should support it.
+    throw new Error('Looks like the instance is a TypedObjectAttributes, which isn\'t yet supported');
+  }
+}
+
+export function isUntypedInstance(instance: any): instance is UntypedInstance {
+  return !isNullOrUndefined(instance.type) && instance.type === UnknownType.UnknownType;
+}
+
+export function isTypedInstance(instance: any): instance is TypedInstance {
+  return instance && instance.type !== undefined && instance.value !== undefined;
+}
+
+export function isTypedNull(instance: InstanceLikeOrCollection): instance is TypedInstance {
+  const instanceAny = instance as any;
+  return instanceAny && instanceAny.type !== undefined && isNullOrUndefined(instanceAny.value);
+}
+
+export function isTypeNamedInstance(instance: any): instance is TypeNamedInstance {
+  const instanceAny = instance as any;
+  return instanceAny && instanceAny.typeName !== undefined && instanceAny.value !== undefined;
+}
+
+export function isTypeNamedNull(instance: any): instance is TypeNamedInstance {
+  const instanceAny = instance as any;
+  return instanceAny && instanceAny.typeName !== undefined && isNullOrUndefined(instanceAny.value);
+}
+
+export function isTypedCollection(instance: any): instance is TypeNamedInstance[] {
+  return instance && Array.isArray(instance) && instance[0] && isTypeNamedInstance(instance[0]);
+}
+
+
+export interface TypeNamedInstance {
+  typeName: string;
+  value: any;
+  source?: DataSource;
+}
+
+export type Reference = String;
+
+export interface Proxyable {
+  '@id': string;
+}
+
+/**
+ * Type used when Jackson's @JsonIdentityInfo is attached to an object.
+ * Jackson will send the actual POJO the first time it serializes the entity,
+ * and a reference to it after that.
+ *
+ * To use this, when accessing a property that returns a proxyable object, use
+ * a ReferenceRepository to ask for the object - which will return the instance.
+ *
+ */
+export type ReferenceOrInstance<T extends Proxyable> = T | Reference;
+
+export class ReferenceRepository<T extends Proxyable> {
+  private instances = new Map<string, T>();
+
+  getInstance(ref: ReferenceOrInstance<T>): T {
+    if (isString(ref)) {
+      return this.instances.get(ref);
+    } else {
+      const typedRef = ref as T;
+      this.instances.set(ref['@id'], typedRef);
+      return typedRef;
+    }
+  }
+}
+
+export interface DataSourceReference {
+  dataSourceIndex: number;
+}
+
+export interface DataSource {
+  dataSourceName: DataSourceType;
+}
+
+export enum MappingType {
+  SYNONYM = 'SYNONYM'
+}
+
+export interface MappedValue extends DataSource {
+  mappingType: MappingType;
+  dataSourceName: 'Mapped';
+}
+
+export interface MappedSynonym extends MappedValue {
+  source: TypeNamedInstance;
+  mappingType: MappingType.SYNONYM;
+}
+
+export type DataSourceType =
+  'Provided'
+  | 'Mapped'
+  | 'Operation result'
+  | 'Defined in schema'
+  | 'Undefined source'
+  | 'Failed evaluated expression'
+  | 'Evaluated expression'
+  | 'Multiple sources';

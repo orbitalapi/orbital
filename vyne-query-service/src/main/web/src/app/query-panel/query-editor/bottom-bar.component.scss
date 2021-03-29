@@ -1,0 +1,49 @@
+@import "src/theme";
+
+.footer-bar {
+  background-color: $code-viewer-tooling-background;
+  width: 100%;
+  padding: 1rem;
+  // Provide a consistent height so that we don't jump around
+  // as buttons are replaced etc
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.error-message {
+  margin: 0 1rem;
+  border: 1px solid rgba($bg-error, 0.6);
+  border-radius: 4px;
+  padding: 0.5rem;
+  background-color: rgba($bg-error, 0.1);
+  color: $bg-error;
+  font-size: 0.9rem;
+}
+
+.running-timer {
+  color: #e3b963;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+
+  img {
+    width: 24px;
+    margin-right: 0.5rem;
+    animation-timing-function: ease-in-out;
+    animation-name: loading-spinner;
+    animation-duration: 1.4s;
+    animation-iteration-count: infinite;
+    //transform-origin: 50% 50%;
+    display: inline-block;
+  }
+}
+
+@keyframes loading-spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

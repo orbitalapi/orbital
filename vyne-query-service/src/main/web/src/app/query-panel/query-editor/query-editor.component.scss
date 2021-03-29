@@ -1,29 +1,41 @@
 @import "src/theme";
 
-.container {
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.code-editor-section {
   width: 100%;
-  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
-  &:not(:last-child) {
-    padding-right: 45px;
-  }
-
+.mat-tab-header {
+  border-bottom: 0;
 }
 
 .code-viewer-container {
+  padding-top: 0.5rem;
+  // Note - this is the background color of the monaco code editor.
+  // Found it by using the eye dropper tool, can't see where it's configured.
+  background-color: #1e1e1e;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
 
-    margin-top: 0.5rem;
+  // When resizing the splitter container, make sure this is the bit the grows
+  flex-grow: 1;
+
+  .code-editor {
+
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    height: 200px;
+    height: 100%;
 
-    .code-editor {
-
-      width: 100%;
-      height: 100%;
-
-    }
+  }
 }
 
 .results-container {
@@ -33,13 +45,8 @@
 
 }
 
-.buttons-container {
-  width: 100%;
-  margin: 5px;
 
-}
-
-.query-submit-button{
+.query-submit-button {
   margin: 1rem 0;
 }
 
@@ -50,4 +57,17 @@
   margin-bottom: 3px;
 }
 
+app-query-editor-bottom-bar {
+  display: block;
+  width: 100%;
+  // Overflow hidden because the ngx-monaco editor is causing width sizing
+  // issues, which can incorrectly trigger horizontal scrollbars appearing
+  overflow-x: hidden;
 
+  // When resizing the splitter, don't let this bar shrink
+  flex-shrink: 0;
+}
+
+app-tabbed-results-view {
+  flex: 1;
+}

@@ -7,36 +7,26 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.KeyDeserializer
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.collect.HashMultimap
-import io.vyne.models.MappedSynonym
-import io.vyne.models.RawObjectMapper
-import io.vyne.models.TypeNamedInstanceMapper
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedInstanceConverter
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.query.FactDiscoveryStrategy.TOP_LEVEL_ONLY
+import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
+import io.vyne.query.QueryResponse.ResponseStatus
+import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
+import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.schemas.OutputConstraint
-import io.vyne.schemas.Path
-import io.vyne.schemas.Policy
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
-import io.vyne.schemas.TypeMatchingStrategy
-import io.vyne.schemas.fqn
-import io.vyne.schemas.synonymFullQualifiedName
-import io.vyne.schemas.synonymValue
+import io.vyne.query.graph.ServiceAnnotations
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import io.vyne.utils.timed
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
-import java.util.UUID
+import lang.taxi.types.ProjectedType
+import java.util.*
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -61,7 +51,9 @@ data class QuerySpecTypeNode(
    // Note: Not really convinced these need to be OutputCOnstraints (vs Constraints).
    // Revisit later
    val dataConstraints: List<OutputConstraint> = emptyList()
-)
+) {
+   val description = type.longDisplayName
+}
 
 class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
    override fun deserializeKey(p0: String?, p1: DeserializationContext?): Any? {
@@ -80,19 +72,21 @@ data class QueryResult(
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
    override val queryResponseId: String = UUID.randomUUID().toString(),
-   override val resultMode: ResultMode,
-   val truncated: Boolean = false
+   val truncated: Boolean = false,
+   val anonymousTypes: Set<Type> = setOf()
 ) : QueryResponse {
 
    val duration = profilerOperation?.duration
 
    override val isFullyResolved = unmatchedNodes.isEmpty()
+   override val responseStatus: ResponseStatus = if (isFullyResolved) COMPLETED else INCOMPLETE
+
    operator fun get(typeName: String): TypedInstance? {
       val requestedParameterizedName = typeName.fqn().parameterizedName
       // TODO : THis should consider inheritence, rather than strict equals
       return this.results.filterKeys { it.type.name.parameterizedName == requestedParameterizedName }
          .values
-         .first()
+         .firstOrNull() ?: error("No result was present with typeName '$typeName'")
    }
 
    operator fun get(type: Type): TypedInstance? {
@@ -104,48 +98,66 @@ data class QueryResult(
    @JsonProperty("unmatchedNodes")
    val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
 
+   @get:JsonIgnore
+   val verboseResults: Map<String, Any?> by lazy {
+      val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+
+      this.results.map { (key, value) ->
+         key.type.name.parameterizedName to value?.let { converter.convert(it) }
+      }.toMap()
+   }
+
    // The result map is structured so the key is the thing that was asked for, and the value
    // is a TypeNamedInstance of the result.
    // By including the type in both places, it allows for polymorphic return types.
    // Also, the reason we're using Any for the value is that the result could be a
    // TypedInstnace, a map of TypedInstnaces, or a collection of TypedInstances.
-   @JsonProperty("results")
-   val resultMap: Map<String, Any?> =
-      when (resultMode) {
-         // TODO remove dependency on ResultMode
-         ResultMode.VERBOSE -> {
-            val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
-            this.results.map { (key, value) ->
-               key.type.name.parameterizedName to value?.let { converter.convert(it) }
-            }.toMap()
-         }
-         else -> {
-            val converter = TypedInstanceConverter(RawObjectMapper)
-            this.results
-               .map { (key, value) -> key.type.name.parameterizedName to value?.let { converter.convert(it) } }
-               .toMap()
-         }
+   @get:JsonIgnore
+   val simpleResults: Map<String, Any?> by lazy {
+      val converter = TypedInstanceConverter(RawObjectMapper)
+      this.results
+         .map { (key, value) -> key.type.name.parameterizedName to value?.let { converter.convert(it) } }
+         .toMap()
+   }
+
+   @get:JsonProperty("results")
+   @get:JsonSerialize(using = ResultModeAwareResultSerializer::class)
+   val resultModeAwareResults: QueryResultProvider
+      get() {
+         return QueryResultProvider({ verboseResults }, { simpleResults })
       }
+
+
+   // For backwards compatability
+   @get:JsonIgnore
+   @delegate:JsonIgnore
+   val resultMap: Map<String, Any?> by lazy { simpleResults }
 
    override fun historyRecord(): HistoryQueryResponse {
       return HistoryQueryResponse(
-         resultMap,
+         verboseResults,
          unmatchedNodeNames,
          this.isFullyResolved,
          queryResponseId,
-         resultMode,
          profilerOperation?.toDto(),
+         responseStatus,
          remoteCalls,
-         timings)
+         timings
+      )
    }
-
-
-   // HACK : Put this last, so that other stuff is serialized first
-   val lineageGraph = LineageGraph
 }
 
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
+   enum class ResponseStatus {
+      COMPLETED,
+
+      // Ie., the query didn't error, but not everything was resolved
+      INCOMPLETE,
+      ERROR,
+   }
+
+   val responseStatus: ResponseStatus
    val queryResponseId: String
 
    @get:JsonProperty("fullyResolved")
@@ -161,8 +173,6 @@ interface QueryResponse {
 
    val vyneCost: Long
       get() = profilerOperation?.vyneCost ?: 0L
-
-   val resultMode: ResultMode
 
    fun historyRecord(): HistoryQueryResponse
 }
@@ -208,9 +218,9 @@ data class QueryContext(
    val facts: MutableSet<TypedInstance>,
    val queryEngine: QueryEngine,
    val profiler: QueryProfiler,
-   val resultMode: ResultMode,
    val debugProfiling: Boolean = false,
-   val parent: QueryContext? = null) : ProfilerOperation by profiler {
+   val parent: QueryContext? = null
+) : ProfilerOperation by profiler {
 
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
@@ -224,10 +234,13 @@ data class QueryContext(
    fun find(queryString: QueryExpression): QueryResult = queryEngine.find(queryString, this)
    fun find(target: QuerySpecTypeNode): QueryResult = queryEngine.find(target, this)
    fun find(target: Set<QuerySpecTypeNode>): QueryResult = queryEngine.find(target, this)
+   fun find(target: QuerySpecTypeNode, excludedOperations: Set<SearchGraphExclusion<Operation>>): QueryResult =
+      queryEngine.find(target, this, excludedOperations)
 
    fun build(typeName: QualifiedName): QueryResult = build(typeName.fullyQualifiedName)
    fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
-   fun build(expression: QueryExpression): QueryResult = timed("QueryContext.build") { queryEngine.build(expression, this)}
+   fun build(expression: QueryExpression): QueryResult =
+      timed("QueryContext.build") { queryEngine.build(expression, this) }
 
    fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
    fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
@@ -236,9 +249,14 @@ data class QueryContext(
    fun parseQuery(expression: QueryExpression) = queryEngine.parse(expression)
 
    companion object {
-      fun from(schema: Schema, facts: Set<TypedInstance>, queryEngine: QueryEngine, profiler: QueryProfiler, resultMode: ResultMode): QueryContext {
+      fun from(
+         schema: Schema,
+         facts: Set<TypedInstance>,
+         queryEngine: QueryEngine,
+         profiler: QueryProfiler
+      ): QueryContext {
          val mutableFacts = facts.flatMap { fact -> resolveSynonyms(fact, schema) }.toMutableSet()
-         return QueryContext(schema, mutableFacts, queryEngine, profiler, resultMode)
+         return QueryContext(schema, mutableFacts, queryEngine, profiler)
       }
 
       private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
@@ -260,7 +278,8 @@ data class QueryContext(
                   val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
 
                   // Instantiate with either name or value depending on what we have as input
-                  val value = if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
+                  val value =
+                     if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
 
                   TypedValue.from(synonymType, value, false, MappedSynonym(fact))
                }.toSet()
@@ -281,26 +300,33 @@ data class QueryContext(
     * All other parameters (queryEngine, schema, etc) are retained
     */
    fun only(fact: TypedInstance): QueryContext {
-      val mutableFacts = resolveSynonyms(fact, schema).toMutableSet()
+      val mutableFacts = mutableSetOf<TypedInstance>()
       mutableFacts.add(fact)
-      return this.copy(facts = mutableFacts, parent = this)
+      mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
+      val copiedContext = this.copy(facts = mutableFacts, parent = this)
+      copiedContext.excludedServices.addAll(this.excludedServices)
+      copiedContext.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
+      return copiedContext
    }
 
    fun addFact(fact: TypedInstance): QueryContext {
       log().debug("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
       inMemoryStream = null
       when {
-          fact.type.isEnum -> {
-             val synonymSet = resolveSynonyms(fact, schema)
-             this.facts.addAll(synonymSet)
-          }
-          fact is TypedObject -> {
-             fact.values.filter { it.type.isEnum }.flatMap { resolveSynonyms(fact, schema) }.forEach { synonymsSet -> this.facts.add(synonymsSet) }
-             this.facts.add(fact)
-          }
-          else -> {
-             this.facts.add(fact)
-          }
+         fact.type.isEnum -> {
+            val synonymSet = resolveSynonyms(fact, schema)
+            this.facts.addAll(synonymSet)
+         }
+         fact is TypedObject -> {
+            fact.values
+               .filter { it.type.isEnum }
+               .flatMap { resolveSynonyms(fact, schema) }
+               .forEach { synonymsSet -> this.facts.add(synonymsSet) }
+            this.facts.add(fact)
+         }
+         else -> {
+            this.facts.add(fact)
+         }
       }
 
       return this
@@ -311,12 +337,12 @@ data class QueryContext(
       return this
    }
 
-   fun projectResultsTo(name: QualifiedName): QueryContext {
-      return projectResultsTo(schema.type(name))
+   fun projectResultsTo(projectedType: ProjectedType): QueryContext {
+      return projectResultsTo(projectedTo(projectedType, schema))
    }
 
    fun projectResultsTo(targetType: String): QueryContext {
-      return projectResultsTo(schema.type(targetType))
+      return projectResultsTo(ProjectedType.fromConcreteTypeOnly(schema.taxi.type(targetType)))
    }
 
    private fun projectResultsTo(targetType: Type): QueryContext {
@@ -343,18 +369,30 @@ data class QueryContext(
       return inMemoryStream!!.stream()
    }
 
-   fun hasFactOfType(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): Boolean {
+   fun hasFactOfType(
+      type: Type,
+      strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): Boolean {
       // This could be optimized, as we're searching twice for everything, and not caching anything
-      return getFactOrNull(type, strategy) != null
+      return getFactOrNull(type, strategy, spec) != null
    }
 
-   fun getFact(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): TypedInstance {
+   fun getFact(
+      type: Type,
+      strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): TypedInstance {
       // This could be optimized, as we're searching twice for everything, and not caching anything
-      return getFactOrNull(type, strategy)!!
+      return getFactOrNull(type, strategy, spec)!!
    }
 
-   fun getFactOrNull(type: Type, strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY): TypedInstance? {
-      return strategy.getFact(this, type)
+   fun getFactOrNull(
+      type: Type,
+      strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): TypedInstance? {
+      return strategy.getFact(this, type, spec = spec)
       //return factCache.get(FactCacheKey(type.fullyQualifiedName, strategy)).orElse(null)
    }
 
@@ -368,11 +406,6 @@ data class QueryContext(
 
    fun collectVisitedInstanceNodes(): Set<TypedInstance> {
       return emptySet()
-//      TODO()
-//      return this.evaluatedEdges.flatMap {
-//         it.elements.filter { it.elementType == ElementType.INSTANCE }
-//            .map { it.value as TypedInstance }
-//      }.toSet()
    }
 
    fun addAppliedInstruction(policy: Policy, instruction: Instruction) {
@@ -384,37 +417,70 @@ data class QueryContext(
    data class ServiceInvocationCacheKey(
       private val vertex1: Element,
       private val vertex2: Element,
-      private val invocationParameter: TypedInstance?)
+      private val invocationParameter: Set<TypedInstance?>
+   )
 
    private val operationCache: MutableMap<ServiceInvocationCacheKey, TypedInstance> = mutableMapOf()
+   val excludedServices: MutableSet<SearchGraphExclusion<QualifiedName>> = mutableSetOf()
+   val excludedOperations: MutableSet<Operation> = mutableSetOf()
+
 
    private fun getTopLevelContext(): QueryContext {
       return parent?.getTopLevelContext() ?: this
    }
 
-   fun addOperationResult(operation: EvaluatableEdge, result: TypedInstance): TypedInstance {
-      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, operation.previousValue)
+   fun addOperationResult(
+      operation: EvaluatableEdge,
+      result: TypedInstance,
+      callArgs: Set<TypedInstance?>
+   ): TypedInstance {
+      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
+      val (service, _) = OperationNames.serviceAndOperation(operation.vertex1.valueAsQualifiedName())
+      val invokedService = schema.services.firstOrNull { it.name.fullyQualifiedName == service }
+      onServiceInvoked((invokedService))
       getTopLevelContext().operationCache[key] = result
       log().info("Caching {} [{} -> {}]", operation, operation.previousValue?.value, result.type.qualifiedName)
       return result
    }
 
-   fun getOperationResult(operation: EvaluatableEdge): TypedInstance? {
-      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, operation.previousValue)
+   fun onServiceInvoked(invokedService: Service?) {
+      if (invokedService?.hasMetadata(ServiceAnnotations.Datasource.annotation) == true) {
+         // This is a work-around to a search limitation.
+         // Currently, Vyne will attempt to discover from any service that returns the output expected.
+         // We should limit, such that if an entity decalres an Id, then we should only invoke that service if the
+         // @Id is known to us.
+         // We expect to remove this once search-only-on-id is completed.
+         excludedServices.add(
+            SearchGraphExclusion(
+               "Exclude already invoked @DataSource annotated services from discovery searches",
+               invokedService.name
+            )
+         )
+      }
+   }
+
+   fun getOperationResult(operation: EvaluatableEdge, callArgs: Set<TypedInstance?>): TypedInstance? {
+      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
       return getTopLevelContext().operationCache[key]
    }
 
-   fun hasOperationResult(operation: EvaluatableEdge): Boolean {
-      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, operation.previousValue)
+   fun hasOperationResult(operation: EvaluatableEdge, callArgs: Set<TypedInstance?>): Boolean {
+      val key = ServiceInvocationCacheKey(operation.vertex1, operation.vertex2, callArgs)
       return getTopLevelContext().operationCache[key] != null
    }
-
 }
 
 
 enum class FactDiscoveryStrategy {
    TOP_LEVEL_ONLY {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedInstance? = context.facts.firstOrNull { matcher.matches(type, it.type) }
+      override fun getFact(
+         context: QueryContext,
+         type: Type,
+         matcher: TypeMatchingStrategy,
+         spec: TypedInstanceValidPredicate
+      ): TypedInstance? {
+         return context.facts.firstOrNull { matcher.matches(type, it.type) && spec.isValid(it) }
+      }
    },
 
    /**
@@ -422,15 +488,25 @@ enum class FactDiscoveryStrategy {
     * exactly one match in the context
     */
    ANY_DEPTH_EXPECT_ONE {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedInstance? {
+      override fun getFact(
+         context: QueryContext,
+         type: Type,
+         matcher: TypeMatchingStrategy,
+         spec: TypedInstanceValidPredicate
+      ): TypedInstance? {
          val matches = context.modelTree()
             .filter { matcher.matches(type, it.type) }
+            .filter { spec.isValid(it) }
             .toList()
          return when {
             matches.isEmpty() -> null
             matches.size == 1 -> matches.first()
             else -> {
-               log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
+               log().debug(
+                  "ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null",
+                  matches.size,
+                  type.name
+               )
                null
             }
 
@@ -443,9 +519,15 @@ enum class FactDiscoveryStrategy {
     * one DISITNCT match within the context
     */
    ANY_DEPTH_EXPECT_ONE_DISTINCT {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedInstance? {
+      override fun getFact(
+         context: QueryContext,
+         type: Type,
+         matcher: TypeMatchingStrategy,
+         spec: TypedInstanceValidPredicate
+      ): TypedInstance? {
          val matches = context.modelTree()
             .filter { matcher.matches(type, it.type) }
+            .filter { spec.isValid(it) }
             .distinct()
             .toList()
          return when {
@@ -457,8 +539,17 @@ enum class FactDiscoveryStrategy {
                if (exactMatch.size == 1) {
                   exactMatch.first()
                } else {
-                  log().debug("ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null", matches.size, type.name)
-                  null
+                  val nonNullMatches = matches.filter { it.value != null }
+                  if (nonNullMatches.size == 1) {
+                     nonNullMatches.first()
+                  } else {
+                     log().debug(
+                        "ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null",
+                        matches.size,
+                        type.name
+                     )
+                     null
+                  }
                }
             }
          }
@@ -470,9 +561,15 @@ enum class FactDiscoveryStrategy {
     * one DISITNCT match within the context
     */
    ANY_DEPTH_ALLOW_MANY {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedCollection? {
+      override fun getFact(
+         context: QueryContext,
+         type: Type,
+         matcher: TypeMatchingStrategy,
+         spec: TypedInstanceValidPredicate
+      ): TypedCollection? {
          val matches = context.modelTree()
             .filter { matcher.matches(type, it.type) }
+            .filter { spec.isValid(it) }
             .distinct()
             .toList()
          return when {
@@ -483,9 +580,15 @@ enum class FactDiscoveryStrategy {
    },
 
    ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION {
-      override fun getFact(context: QueryContext, type: Type, matcher: TypeMatchingStrategy): TypedCollection? {
+      override fun getFact(
+         context: QueryContext,
+         type: Type,
+         matcher: TypeMatchingStrategy,
+         spec: TypedInstanceValidPredicate
+      ): TypedCollection? {
          val matches = context.modelTree()
             .filter { matcher.matches(if (type.isCollection) type.typeParameters.first() else type, it.type) }
+            .filter { spec.isValid(it) }
             .distinct()
             .toList()
          return when {
@@ -496,7 +599,12 @@ enum class FactDiscoveryStrategy {
    };
 
 
-   abstract fun getFact(context: QueryContext, type: Type, strictness: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): TypedInstance?
+   abstract fun getFact(
+      context: QueryContext,
+      type: Type,
+      strictness: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES,
+      spec: TypedInstanceValidPredicate
+   ): TypedInstance?
 
 }
 

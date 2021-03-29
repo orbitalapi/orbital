@@ -1,7 +1,8 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../services/query.service';
-import {Field, findType, getCollectionMemberType, Schema, Type, TypedInstance} from '../services/schema';
+import {Component, Input} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
+import {isNullOrUndefined} from 'util';
+import {isTypedInstance} from '../services/schema';
+import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 
 /**
  * This displays results fetched from service calls.
@@ -12,6 +13,7 @@ import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
  * Previously, this was split across multiple different UI components, but that
  * created too many inconsistencies in display.
  */
+
 @Component({
   selector: 'app-object-view',
   templateUrl: './object-view.component.html',
@@ -20,7 +22,6 @@ import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
 export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
   NOT_PROVIDED = 'Value not provided';
-
 
   @Input()
   topLevel = true;
@@ -31,9 +32,32 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
   // Indicates if it's a straight typedInstance (ie., a typedValue)
   // or a typed object, which is indexed with property names
-
   get isPrimitive(): boolean {
     return this._instance != null && this.typedObject.value != null && !this.isTypedObject && !this.isArray;
+  }
+
+  get isScalar(): boolean {
+    if (isNullOrUndefined(this._instance) || isNullOrUndefined(this.type === null)) {
+      return false;
+    } else {
+      return this.type.isScalar;
+    }
+  }
+
+  get scalarValue(): any | null {
+    if (!this.isScalar) {
+      return null;
+    }
+    // HACK :  This needs investigation.
+    // When performing a query that returns a scalar value,
+    // it looks like the value passed here is not a typed object, but just
+    // the value itself.
+    if (isTypedInstance(this.typedObject)) {
+      return this.typedObject.value;
+    } else {
+      return this.typedObject;
+    }
+
   }
 
   get isTypedObject(): boolean {
@@ -48,37 +72,19 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
   onAttributeClicked(attributeName: string) {
     if (this.selectable) {
+      const nodeId = null; // todo
       const instance = this.getTypedObjectAttribute(attributeName);
-      this.instanceClicked.emit(instance);
+      this.instanceClicked.emit(new InstanceSelectedEvent(instance, null, nodeId));
 
     }
   }
 
   onTopLevelPrimitiveClicked() {
     if (this.selectable) {
-      this.instanceClicked.emit(this.typedObject);
+      const nodeId = null; // todo
+      this.instanceClicked.emit(new InstanceSelectedEvent(this.typedObject, null, nodeId));
     }
 
-  }
-}
-
-export type InstanceLike = TypedInstance | TypedObjectAttributes | TypeNamedInstance;
-export type InstanceLikeOrCollection = InstanceLike | InstanceLike[];
-export type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;
-
-export interface TypedObjectAttributes {
-  [key: string]: TypeInstanceOrAttributeSet;
-}
-
-export function typeName(instance: InstanceLike): string {
-  if (isTypedInstance(instance)) {
-    return instance.type.name.fullyQualifiedName;
-  } else if (isTypeNamedInstance(instance)) {
-    return instance.typeName;
-  } else {
-    // No good reason for not supporting this, just haven't hit the usecase yet, and it's not
-    // obvious how we should support it.
-    throw new Error('Looks like the instance is a TypedObjectAttributes, which isn\'t yet supported');
   }
 }
 

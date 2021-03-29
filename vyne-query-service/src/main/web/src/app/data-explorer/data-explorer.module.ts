@@ -5,7 +5,7 @@ import {DataSourceToolbarComponent} from './data-source-toolbar.component';
 import {DataSourceUploadComponent} from './data-source-upload.component';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
-import {FormsModule} from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatButtonModule} from '@angular/material/button';
 import {DataSourceConfigComponent} from './data-source-config.component';
@@ -17,7 +17,6 @@ import {MatCheckboxModule} from '@angular/material/checkbox';
 import {CsvViewerComponent} from './csv-viewer.component';
 import {MatTableModule} from '@angular/material/table';
 import {MatInputModule} from '@angular/material/input';
-import {TypedInstancePanelComponent} from '../typed-instance-panel/typed-instance-panel.component';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {DescriptionEditorModule} from '../type-viewer/description-editor/description-editor.module';
 import {AttributeTableModule} from '../type-viewer/attribute-table/attribute-table.module';
@@ -36,57 +35,80 @@ import {CaskPanelComponent} from './cask-panel.component';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {TypedInstancePanelModule} from '../typed-instance-panel/typed-instance-panel.module';
-
+import {AgGridModule} from 'ag-grid-angular';
+import {MatDialogModule} from '@angular/material/dialog';
+import {AssignTypeToColumnDialogComponent} from './assign-types-dialog/assign-type-to-column-dialog.component';
+import {MatDatepickerModule} from '@angular/material/datepicker';
+import {TypeNamePanelComponent} from './type-name-panel/type-name-panel.component';
+import {SchemaGeneratorComponent} from './schema-generator-panel/schema-generator.component';
+import {GridHeaderActionsComponent} from './custom-csv-table-header';
+import {MatRadioModule} from '@angular/material/radio';
+import {HeaderBarModule} from '../header-bar/header-bar.module';
+import {TestPackModuleModule} from '../test-pack-module/test-pack-module.module';
 
 @NgModule({
-  imports: [
-    AttributeTableModule,
-    EnumTableModule,
-    InlineQueryRunnerModule,
-    ObjectViewModule,
-    CodeViewerModule,
-
-    CommonModule,
-    BrowserModule,
-    FormsModule,
-    BrowserAnimationsModule,
-    TypeAutocompleteModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatToolbarModule,
-    SearchModule,
-    MatSelectModule,
-    MatExpansionModule,
-    MatTabsModule,
-    MatMenuModule,
-    MatTableModule,
-    MatCheckboxModule,
-    CovalentHighlightModule,
-    MatSidenavModule,
-    // Note to future self:  This is named NgxFileDropModule in later versions
-    FileDropModule,
-    DescriptionEditorModule,
-    InheritanceGraphModule,
-    MatProgressBarModule,
-    TypedInstancePanelModule
-
-  ],
+    imports: [
+        AttributeTableModule,
+        EnumTableModule,
+        InlineQueryRunnerModule,
+        ObjectViewModule,
+        CodeViewerModule,
+        CommonModule,
+        BrowserModule,
+        FormsModule,
+        BrowserAnimationsModule,
+        TypeAutocompleteModule,
+        MatButtonModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatToolbarModule,
+        SearchModule,
+        MatSelectModule,
+        MatExpansionModule,
+        MatTabsModule,
+        MatMenuModule,
+        MatTableModule,
+        MatCheckboxModule,
+        CovalentHighlightModule,
+        MatSidenavModule,
+        // Note to future self:  This is named NgxFileDropModule in later versions
+        FileDropModule,
+        DescriptionEditorModule,
+        InheritanceGraphModule,
+        MatProgressBarModule,
+        TypedInstancePanelModule,
+        AgGridModule,
+        MatDialogModule,
+        MatDatepickerModule,
+        ReactiveFormsModule,
+        MatRadioModule,
+        HeaderBarModule,
+        TestPackModuleModule
+    ],
   declarations: [
     DataSourceToolbarComponent,
     DataSourceUploadComponent,
     DataSourceConfigComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
+    GridHeaderActionsComponent,
     DataExplorerComponent,
-    CaskPanelComponent
+    CaskPanelComponent,
+    AssignTypeToColumnDialogComponent,
+    TypeNamePanelComponent,
+    SchemaGeneratorComponent
   ],
   exports: [
     DataSourceToolbarComponent,
     FileExtensionIconComponent,
     CsvViewerComponent,
     CaskPanelComponent
+  ],
+  entryComponents: [
+    AssignTypeToColumnDialogComponent,
+    GridHeaderActionsComponent
   ]
+
 })
 export class DataExplorerModule {
 }

@@ -1,14 +1,24 @@
 package io.vyne.cask.query
 
-import com.nhaarman.mockitokotlin2.*
+import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import com.winterbe.expekt.should
 import io.vyne.VersionedTypeReference
+import io.vyne.cask.api.CaskConfig
+import io.vyne.cask.api.CaskStatus
+import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
 import org.junit.Test
 import org.springframework.jdbc.core.JdbcTemplate
 import java.math.BigDecimal
+import java.time.Instant
+import java.time.ZonedDateTime
 
 class CaskDAOTest {
    private val mockJdbcTemplate = mock<JdbcTemplate>()
@@ -34,15 +44,17 @@ class CaskDAOTest {
    val versionedTypeReference = VersionedTypeReference.parse("OrderWindowSummary")
    val versionedType = taxiSchema.versionedType(versionedTypeReference)
    lateinit var caskDAO: CaskDAO
-
+   lateinit var caskConfigRepository:CaskConfigRepository
 
    @Before
    fun setUp() {
-      caskDAO = CaskDAO(mockJdbcTemplate, SimpleTaxiSchemaProvider(schema))
-      whenever(mockJdbcTemplate.queryForList(
-         eq("SELECT tablename from cask_config where qualifiedtypename = ?"),
-         eq(listOf(versionedType.fullyQualifiedName).toTypedArray()),
-         eq(String::class.java))).thenReturn(listOf("rderWindowSummary_f1b588_de3f20"))
+      caskConfigRepository = mock {  }
+
+      caskDAO = CaskDAO(mockJdbcTemplate, SimpleTaxiSchemaProvider(schema),  mock {  }, mock {  }, caskConfigRepository)
+      whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
+         .thenReturn(listOf(
+            CaskConfig("rderWindowSummary_f1b588_de3f20",versionedType.fullyQualifiedName,"", insertedAt = Instant.now())
+         ))
    }
 
    @Test
@@ -102,7 +114,7 @@ class CaskDAOTest {
       val argsCaptor = argumentCaptor<Any>()
       verify(mockJdbcTemplate, times(1)).queryForList(statementCaptor.capture(), argsCaptor.capture())
       statementCaptor.firstValue.should.equal("""SELECT * FROM rderWindowSummary_f1b588_de3f20 WHERE "close" = ?""")
-      argsCaptor.firstValue.should.equal(BigDecimal("1"))
+      argsCaptor.firstValue.should.equal(1)
    }
 
    @Test
@@ -134,5 +146,77 @@ class CaskDAOTest {
       CaskDAO.selectTableList(listOf("table1")).should.equal("table1 t0")
       CaskDAO.selectTableList(listOf("table1", "table2")).should.equal("table1 t0 full outer join table2 t1 on 0 = 1")
       CaskDAO.selectTableList(listOf("table1", "table2", "table3")).should.equal("table1 t0 full outer join table2 t1 on 0 = 1 full outer join table3 t2 on 0 = 1")
+   }
+
+   @Test
+   fun `find Between should query all relevant tables for given type`() {
+      // given
+      val start = "2020-01-01T12:00:01.000Z"
+      val end = "2020-10-01T12:00:01.000Z"
+      whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
+         .thenReturn(
+            listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30").map {
+               CaskConfig(it,versionedType.fullyQualifiedName,"", insertedAt = Instant.now())
+            }
+         )
+
+      caskDAO.findBetween(versionedType, "timestamp", start, end)
+      val statementCaptor = argumentCaptor<String>()
+      val startDateCaptor = argumentCaptor<Any>()
+      val endDateCaptor = argumentCaptor<Any>()
+      verify(mockJdbcTemplate, times(2)).queryForList(statementCaptor.capture(), startDateCaptor.capture(), endDateCaptor.capture())
+   }
+
+   @Test
+   fun `find After should query all relevant tables for given type`() {
+      // given
+      val date = "2020-01-01T12:00:01.000Z"
+      whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
+         .thenReturn(
+            listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30").map {
+               CaskConfig(it,versionedType.fullyQualifiedName,"", insertedAt = Instant.now())
+            }
+         )
+
+      caskDAO.findAfter(versionedType, "timestamp", date)
+      val statementCaptor = argumentCaptor<String>()
+      val argCaptor = argumentCaptor<Any>()
+      verify(mockJdbcTemplate, times(2)).queryForList(statementCaptor.capture(), argCaptor.capture())
+   }
+
+   @Test
+   fun `find Before should query all relevant tables for given type`() {
+      // given
+      val date = "2020-01-01T12:00:01.000Z"
+      whenever(caskConfigRepository.findAllByQualifiedTypeNameAndStatus(eq(versionedType.fullyQualifiedName), eq(CaskStatus.ACTIVE)))
+         .thenReturn(
+            listOf("rderWindowSummary_f1b588_de3f20", "rderWindowSummary_f1b588_ab1g30").map {
+               CaskConfig(it,versionedType.fullyQualifiedName,"", insertedAt = Instant.now())
+            }
+         )
+
+      caskDAO.findBefore(versionedType, "timestamp", date)
+      val statementCaptor = argumentCaptor<String>()
+      val argCaptor = argumentCaptor<Any>()
+      verify(mockJdbcTemplate, times(2)).queryForList(statementCaptor.capture(), argCaptor.capture())
+   }
+
+   @Test
+   fun `can parse date time strings to correct local date time`() {
+      "2020-11-15T00:00:00".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+      "2020-11-15T00:00:00Z".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+
+      "2020-11-15T00:00:00.000".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+      "2020-11-15T00:00:00.000Z".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-15T00:00:00Z").toLocalDateTime())
+
+      "2020-11-15T00:00:00+02:00".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-14T22:00:00Z").toLocalDateTime())
+      "2020-11-15T00:00:00.000+02:00".toLocalDateTime()
+         .should.equal(ZonedDateTime.parse("2020-11-14T22:00:00Z").toLocalDateTime())
+
    }
 }

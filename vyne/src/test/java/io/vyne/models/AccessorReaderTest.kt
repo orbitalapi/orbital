@@ -1,6 +1,8 @@
 package io.vyne.models
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import io.vyne.testVyne
 import org.junit.Test
 
@@ -59,6 +61,52 @@ type LegacyTradeNotification {
       expect(notional["currency"].type.fullyQualifiedName).to.equal("Currency")
    }
 
+   @Test
+   fun `csv with default value returns default`() {
+      val (vyne,_) = testVyne("""
+         type Person {
+            name : String by column(1)
+            sleepy : String by default("Yep")
+            age : Int by default(30)
+         }
+      """)
+      val instance = TypedInstance.from(vyne.type("Person"), "Jimmy", vyne.schema, source = Provided) as TypedObject
+      instance["name"].value.should.equal("Jimmy")
+      instance["sleepy"].value.should.equal("Yep")
+      instance["age"].value.should.equal(30)
+   }
+   @Test
+   fun `json with default value returns default if no value provided`() {
+      val (vyne,_) = testVyne("""
+         type Person {
+            name : String by jsonPath("/name")
+            sleepy : String by default("Yep")
+            age : Int by default(30)
+         }
+      """)
+      val sourceJson = """{ "name" : "Jimmy" }"""
+      val instance = TypedInstance.from(vyne.type("Person"), sourceJson, vyne.schema, source = Provided) as TypedObject
+      instance["name"].value.should.equal("Jimmy")
+      instance["sleepy"].value.should.equal("Yep")
+      instance["age"].value.should.equal(30)
+   }
 
-
+   // Cask seems to ingest data records as JSONNode, rather than Map<>
+   // Add this test to cover it, but need to look at why
+   @Test
+   fun `json node with default value returns default if no value provided`() {
+      val (vyne,_) = testVyne("""
+         type Person {
+            name : String by jsonPath("/name")
+            sleepy : String by default("Yep")
+            age : Int by default(30)
+         }
+      """)
+      val sourceJson = """{ "name" : "Jimmy" }"""
+      val jsonNode = jacksonObjectMapper().readTree(sourceJson)
+      val instance = TypedInstance.from(vyne.type("Person"), jsonNode, vyne.schema, source = Provided) as TypedObject
+      instance["name"].value.should.equal("Jimmy")
+      instance["sleepy"].value.should.equal("Yep")
+      instance["age"].value.should.equal(30)
+   }
 }

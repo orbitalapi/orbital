@@ -1,9 +1,10 @@
 package io.vyne.spring.invokers
 
+import io.vyne.http.UriVariableProvider
+import io.vyne.http.UriVariableProvider.Companion.buildRequestBody
 import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
 import io.vyne.models.UndefinedSource
 import io.vyne.query.OperationType
 import io.vyne.query.ProfilerOperation
@@ -11,9 +12,10 @@ import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
+import io.vyne.schemas.httpOperationMetadata
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
 import io.vyne.utils.orElse
@@ -21,11 +23,8 @@ import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpRequest
-import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
@@ -55,19 +54,16 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       log().info("Rest template invoker starter")
    }
 
-   override fun canSupport(service: Service, operation: Operation): Boolean {
+   override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.isServiceDiscoveryClient() || operation.hasHttpMetadata()
    }
 
 
-   override fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance {
+   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance {
       log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}")
 
-      val annotation = operation.metadata("HttpOperation")
-      val httpMethod = HttpMethod.resolve(annotation.params["method"] as String)
-      val url = annotation.params["url"] as String
-
-
+      val (_, url, method) = operation.httpOperationMetadata()
+      val httpMethod = HttpMethod.resolve(method)
       val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
          val absoluteUrl = makeUrlAbsolute(service, operation, url)
          val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
@@ -96,28 +92,29 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
             handleSuccessfulHttpResponse(result, operation, parameters, remoteCall)
          } else {
             handleFailedHttpResponse(result, operation, absoluteUrl, httpMethod, requestBody)
-            throw RuntimeException("Shouldn't hit this point")
          }
       }
       return httpResult
 
    }
 
-   private fun handleFailedHttpResponse(result: ResponseEntity<out Any>, operation: Operation, absoluteUrl: Any, httpMethod: HttpMethod, requestBody: Any) {
+   private fun handleFailedHttpResponse(result: ResponseEntity<out Any>, operation: RemoteOperation, absoluteUrl: Any, httpMethod: HttpMethod, requestBody: Any): Nothing {
       val message = "Failed load invoke $httpMethod to $absoluteUrl - received $result"
-      log().error(message)
-      throw OperationInvocationException(message)
+      log().warn(message)
+      throw OperationInvocationException(message, result.statusCode)
    }
 
-   private fun handleSuccessfulHttpResponse(result: ResponseEntity<out Any>, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall): TypedInstance {
+   private fun handleSuccessfulHttpResponse(result: ResponseEntity<out Any>, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall): TypedInstance {
       // TODO : Handle scenario where we get a 2xx response, but no body
       log().debug("Result of ${operation.name} was $result")
       val resultBody = result.body
-      val dataSource = remoteCallDataLineage(parameters, remoteCall)
-      return when (resultBody) {
-         is Map<*, *> -> TypedObject.fromAttributes(operation.returnType, resultBody as Map<String, Any>, schemaProvider.schema(), source = dataSource)
-         else -> TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema(), source = dataSource)
+      val isPreparsed = result.headers[io.vyne.http.HttpHeaders.CONTENT_PREPARSED].let {headerValues ->
+         headerValues != null && headerValues.isNotEmpty() && headerValues.first() == true.toString()
       }
+      // If the content has been pre-parsed upstream, we don't evaluate accessors
+      val evaluateAccessors = !isPreparsed
+      val dataSource = remoteCallDataLineage(parameters, remoteCall)
+      return TypedInstance.from(operation.returnType, resultBody, schemaProvider.schema(), source = dataSource, evaluateAccessors = evaluateAccessors)
    }
 
    private fun remoteCallDataLineage(parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall): DataSource {
@@ -133,40 +130,10 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       }
    }
 
-   private fun makeUrlAbsolute(service: Service, operation: Operation, url: String): String {
+   private fun makeUrlAbsolute(service: Service, operation: RemoteOperation, url: String): String {
       return this.serviceUrlResolvers.first { it.canResolve(service, operation) }.makeAbsolute(url, service, operation)
    }
-
-   private fun buildRequestBody(operation: Operation, parameters: List<TypedInstance>): Pair<HttpEntity<*>, Class<*>> {
-      if (operation.hasMetadata("HttpOperation")) {
-         // TODO Revisit as this is a quick hack to invoke services that returns simple/text
-         val httpOperation = operation.metadata("HttpOperation")
-         httpOperation.params["consumes"]?.let {
-            val httpHeaders = HttpHeaders()
-            httpHeaders.accept = mutableListOf(MediaType.parseMediaType(it as String))
-            return HttpEntity<String>(httpHeaders) to String::class.java
-         }
-      }
-      val requestBodyParamIdx = operation.parameters.indexOfFirst { it.hasMetadata("RequestBody") }
-      if (requestBodyParamIdx == -1) return HttpEntity.EMPTY to Any::class.java
-      // TODO : For now, only looking up param based on type.  This is obviously naieve, and should
-      // be improved, using name / position?  (note that parameters don't appear to be ordered in the list).
-
-      val requestBodyParamType = operation.parameters[requestBodyParamIdx].type
-      val requestBodyTypedInstance = parameters.first { it.type.name == requestBodyParamType.name }
-      return HttpEntity(requestBodyTypedInstance.toRawObject()) to Any::class.java
-
-   }
-
-   private fun getUriVariables(parameters: List<ParameterValuePair>, url: String): Map<String, Any> {
-
-      TODO()
-//      return parameters.map { it.type.fullyQualifiedName to it.value }.toMap()
-   }
-
 }
-
-typealias ParameterValuePair = Pair<Parameter, TypedInstance>
 
 internal class CatchingErrorHandler : ResponseErrorHandler {
    override fun handleError(p0: ClientHttpResponse?) {

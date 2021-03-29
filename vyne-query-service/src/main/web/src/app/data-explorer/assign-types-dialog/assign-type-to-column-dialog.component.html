@@ -1,0 +1,85 @@
+<h2 mat-dialog-title>Add Type</h2>
+<mat-dialog-content class="add-type-dialog-content">
+
+  <app-type-autocomplete placeholder="Select type to apply to content" [schema]="schema"
+                         (selectedTypeChange)="onTypeChange($event)"
+  ></app-type-autocomplete>
+  <div *ngIf="isInheritedType">
+    <div class = "inherited-type-info-container">
+      <p class="type-info-text">That's a {{inheritedFrom}} type. You can optionally provide the format that
+        this {{inheritedFrom}} will use.</p>
+      <button mat-button color="primary" class="learn-more-button" (click)="toggleVisibility()">
+        <i class="material-icons {{expanded ? '' : 'panel-hidden'}}">expand_less</i>
+        Learn more...
+      </button>
+    </div>
+
+    <form [formGroup]="formatForm">
+      <mat-form-field class="add-format-text-field">
+        <input matInput placeholder="Enter format (Optional)" [formControl]="format"/>
+      </mat-form-field>
+    </form>
+
+    <div class="expand-wrapper highlight-container {{expanded ? 'info-panel' : 'panel-hidden'}}">
+
+      <h3>Sample Formats</h3>
+
+      <table style="width: 100%">
+        <thead>
+        <tr style="text-align: left">
+          <th>Format</th>
+          <th>Example</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let row of dateTimeSampleFormatsTableData" style="text-align: left">
+          <td>{{row.format}}</td>
+          <td>{{row.example}}</td>
+        </tr>
+        </tbody>
+
+      </table>
+
+      <h3>Symbols</h3>
+
+      <table style="width: 100%">
+        <thead>
+        <tr style="text-align: left">
+          <th>Symbol</th>
+          <th>Meaning</th>
+          <th>Presentation</th>
+          <th>Examples</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr *ngFor="let row of sampleDateTimeFormatsTable" style="text-align: left">
+          <td>{{row.symbol}}</td>
+          <td>{{row.meaning}}</td>
+          <td>{{row.presentation}}</td>
+          <td>{{row.examples}}</td>
+        </tr>
+        </tbody>
+
+      </table>
+    </div>
+  </div>
+
+  <app-typed-instance-panel [type]="targetType"
+                            [inheritanceView]="inheritanceView"></app-typed-instance-panel>
+
+
+  <mat-dialog-actions>
+
+    <button mat-raised-button matDialogClose
+            (click)="close()">
+      Close
+    </button>
+
+    <button class="mat-raised-button mat-primary"
+            (click)="save()">
+      Save
+    </button>
+
+  </mat-dialog-actions>
+</mat-dialog-content>

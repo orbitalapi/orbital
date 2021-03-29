@@ -1,0 +1,8 @@
+vyne:
+   schema:
+      publicationMethod: EUREKA
+eureka:
+   uri: http://127.0.0.1:8761
+   client:
+         registryFetchIntervalSeconds: 1
+         initialInstanceInfoReplicationIntervalSeconds: 5

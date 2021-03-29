@@ -1,8 +1,10 @@
 package io.vyne
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedValue
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -11,7 +13,11 @@ import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
 import org.mockito.Mockito.mock
+import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 class TypedValueTest {
    @Test
@@ -34,10 +40,98 @@ class TypedValueTest {
    }
 
    @Test
+   fun timeformat() {
+      val schema = TaxiSchema.from("""
+         type OrderEventTime inherits Time
+         model TestTime {
+            orderTime: OrderEventTime ( @format = "HH.mm.s")
+         }
+
+      """.trimIndent())
+      val value = """
+         {
+            "orderTime": "00.00.6"
+         }
+      """.trimIndent()
+      val instance = TypedInstance.from(schema.type("TestTime"), value, schema, source = Provided)
+      val orderTime = instance.value as Map<String, TypedValue>
+      val time = orderTime["orderTime"]?.value as LocalTime
+      time.should.equal(LocalTime.of(0, 0, 6))
+
+   }
+
+   @Test
+   fun canParseNumbersWithCommas() {
+      val schema = TaxiSchema.from("")
+      fun toType(value:Any, type:PrimitiveType):Any {
+         return TypedInstance.from(schema.type(type.qualifiedName), value, schema, source = Provided).value!!
+      }
+
+      toType("6,300.00",PrimitiveType.INTEGER).should.equal(6300)
+      toType("6,300.00",PrimitiveType.DECIMAL).should.satisfy { (it as BigDecimal).compareTo(BigDecimal("6300.00")) == 0 }
+      // Need to bump taxi version
+//      toType("6,300.00",PrimitiveType.DOUBLE).should.equal(6300.0)
+
+   }
+   @Test
    fun shouldParseIntsWithTrailingZerosAsInts() {
       val schema = TaxiSchema.from("")
       val instance = TypedInstance.from(schema.type(PrimitiveType.INTEGER), "10.00", schema, source = Provided)
 
       instance.value.should.equal(10)
+   }
+
+   @Test
+   fun `should handle decimals in scientific format`() {
+      val schema = TaxiSchema.from("")
+      val instance = TypedInstance.from(schema.type(PrimitiveType.DECIMAL), "2.50E+07", schema, source = Provided)
+      instance.value.should.equal(BigDecimal("2.50E+07"))
+   }
+
+   @Test
+   fun `should handle ints in scientific format`() {
+      val schema = TaxiSchema.from("")
+      val instance = TypedInstance.from(schema.type(PrimitiveType.INTEGER), "2.50E+02", schema, source = Provided)
+      instance.value.should.equal(250)
+   }
+
+   @Test
+   fun `should handle doubles in scientific format`() {
+      val schema = TaxiSchema.from("")
+      val instance = TypedInstance.from(schema.type(PrimitiveType.DOUBLE), "2.512E+03", schema, source = Provided)
+      instance.value.should.equal(2512.0)
+   }
+
+   @Test
+   fun canParseDateOnly() {
+      val schema = TaxiSchema.from("""
+         type MaturityDateDate inherits Date(@format = "yyyy-MM-dd", @format = "dd/MM/yyyy HH:mm")
+      """.trimIndent())
+      val instance = TypedInstance.from(schema.type("MaturityDateDate"), "09/04/2025 00:00", schema, source = Provided)
+      val date = instance.value as LocalDate
+      date.should.equal(LocalDate.of(2025, 4, 9))
+
+   }
+
+   @Test
+   fun `Can Handle Instants with microsecond resolution`() {
+      val schema = TaxiSchema.from("""
+         type KiwiDate inherits Instant(@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+      """.trimIndent())
+
+      val instance = TypedInstance.from(schema.type("KiwiDate"), 1608034621.123456, schema, source = Provided)
+      val instant = instance.value as Instant
+      instant.should.equal(Instant.parse("2020-12-15T12:17:01.123456Z"))
+   }
+
+   @Test
+   fun `Can Handle Instants with microsecond resolution for DateTime types`() {
+      val schema = TaxiSchema.from("""
+         type KiwiDate inherits DateTime(@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
+      """.trimIndent())
+
+      val instance = TypedInstance.from(schema.type("KiwiDate"), 1608034621.123456, schema, source = Provided)
+      val localDateTime = instance.value as LocalDateTime
+      localDateTime.should.equal(LocalDateTime.parse("2020-12-15T12:17:01.123456"))
    }
 }

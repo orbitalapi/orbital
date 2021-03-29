@@ -1,18 +1,19 @@
-import {Component, Input} from '@angular/core';
-import {InstanceLike} from '../object-view/object-view.component';
-import {QualifiedName, Type} from '../services/schema';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {DataSource, InstanceLike, QualifiedName, Type} from '../services/schema';
 import {TypesService} from '../services/types.service';
 import {buildInheritable, Inheritable} from '../inheritence-graph/inheritance-graph.component';
-import {LineageGraph} from '../services/query.service';
 
 @Component({
   selector: 'app-typed-instance-panel-container',
   template: `
-    <app-typed-instance-panel [type]="type"
-                              [instance]="instance"
-                              [inheritanceView]="inheritanceView"
-                              [lineageGraph]="lineageGraph"
-                              [discoverableTypes]="discoverableTypes"></app-typed-instance-panel>`
+      <app-typed-instance-panel
+        (hasTypedInstanceDrawerClosed)="onCloseTypedInstanceDrawer($event)"
+        [type]="type"
+        [instance]="instance"
+        [inheritanceView]="inheritanceView"
+        [dataSource]="dataSource"
+        [discoverableTypes]="discoverableTypes"></app-typed-instance-panel>
+   `
 })
 export class TypedInstancePanelContainerComponent {
 
@@ -22,11 +23,14 @@ export class TypedInstancePanelContainerComponent {
   instance: InstanceLike;
 
   @Input()
-  lineageGraph: LineageGraph;
+  dataSource: DataSource;
 
   inheritanceView: Inheritable;
 
   discoverableTypes: QualifiedName[];
+
+  @Output() hasTypedInstanceDrawerClosed = new EventEmitter<boolean>();
+
 
   @Input()
   get type(): Type {
@@ -48,6 +52,10 @@ export class TypedInstancePanelContainerComponent {
   }
 
   constructor(private typeService: TypesService) {
+  }
+
+  onCloseTypedInstanceDrawer($event: any) {
+    this.hasTypedInstanceDrawerClosed.emit($event);
   }
 
 }

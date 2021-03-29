@@ -1,18 +1,16 @@
 package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.models.TypeNamedInstance
 import io.vyne.queryService.csv.toCsv
-import org.apache.commons.csv.CSVFormat
-import org.apache.commons.csv.CSVPrinter
+import io.vyne.schemaStore.SchemaProvider
 import org.springframework.stereotype.Component
-import java.io.StringWriter
 
 @Component
-class QueryHistoryExporter(private val objectMapper: ObjectMapper) {
+class QueryHistoryExporter(private val objectMapper: ObjectMapper, private val schemaProvider: SchemaProvider) {
    fun export(results: Map<String, Any?>, type: ExportType): ByteArray {
+      val schema = schemaProvider.schema()
       return when (type) {
-         ExportType.CSV -> toCsv(results)
+         ExportType.CSV -> toCsv(results, schema)
          ExportType.JSON -> toJson(results)
       }
    }

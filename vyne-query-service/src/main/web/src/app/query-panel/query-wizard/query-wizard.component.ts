@@ -1,6 +1,6 @@
 import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {EnumValues, Modifier, Schema, Type} from '../../services/schema';
+import {EnumValues, findType, Modifier, Schema, Type} from '../../services/schema';
 import {ParsedTypeInstance, TypesService} from '../../services/types.service';
 import {map} from 'rxjs/operators';
 import {
@@ -18,6 +18,7 @@ import {
   QueryResult,
   QueryService,
   RemoteCall,
+  ResponseStatus,
   ResultMode
 } from '../../services/query.service';
 import {HttpErrorResponse} from '@angular/common/http';
@@ -31,7 +32,6 @@ import {HttpErrorResponse} from '@angular/common/http';
 export class QueryWizardComponent implements OnInit {
   schema: Schema;
   queryMode = new FormControl();
-  resultMode = new FormControl();
 
   targetTypes: Type[];
   findAsArray = false;
@@ -77,7 +77,6 @@ export class QueryWizardComponent implements OnInit {
       );
 
     this.queryMode.setValue(QueryMode.DISCOVER);
-    this.resultMode.setValue(ResultMode.SIMPLE);
   }
 
   // Dirty hack to capture the forms generated dynamically, so we can listen for
@@ -154,11 +153,13 @@ export class QueryWizardComponent implements OnInit {
     console.log('findAsArray:' + this.findAsArray);
     const factList = this.buildFacts();
     const query = new Query(
-      this.targetTypes.map(t => this.findAsArray ? `${t.name.fullyQualifiedName}[]` : t.name.fullyQualifiedName),
+      {
+        typeNames: this.targetTypes.map(t => this.findAsArray ? `${t.name.fullyQualifiedName}[]` : t.name.fullyQualifiedName),
+      },
       // this.targetTypeInput.value,
       factList,
       this.queryMode.value,
-      this.resultMode.value
+      ResultMode.SIMPLE
     );
     this.queryService.submitQuery(query)
       .subscribe(result => {
@@ -242,7 +243,7 @@ export class QueryWizardComponent implements OnInit {
       let elements: ITdDynamicElementConfig[] = [];
       Object.keys(type.attributes).forEach(attributeName => {
         const attributeTypeRef = type.attributes[attributeName];
-        const attributeType = schema.types.find(schemaType => schemaType.name.fullyQualifiedName === attributeTypeRef.type.fullyQualifiedName);
+        const attributeType = findType(schema, attributeTypeRef.type.fullyQualifiedName);
         const newPrefix = prefix.concat([attributeName]);
         elements = elements.concat(this.getElementsForType(attributeType, schema, newPrefix, attributeName));
       });
@@ -252,6 +253,9 @@ export class QueryWizardComponent implements OnInit {
 
   private findRootTypeName(type: Type): string {
     const targetType = (type.aliasForType) ? type.aliasForType.fullyQualifiedName : type.name.fullyQualifiedName;
+    if (type.basePrimitiveTypeName) {
+      return type.basePrimitiveTypeName.fullyQualifiedName;
+    }
     if (type.inheritsFrom && type.inheritsFrom.length > 0) {
       // Example:
       // type OrderId inherits String
@@ -299,7 +303,8 @@ export class QueryWizardComponent implements OnInit {
         control = {type: TdDynamicElement.Checkbox};
         break;
       default:
-        debugger;
+        console.error('Unhandled type in getInputControlForType()');
+        break;
     }
     return control;
   }
@@ -330,6 +335,8 @@ export class QueryWizardComponent implements OnInit {
 }
 
 export class QueryFailure {
+  responseStatus: ResponseStatus = ResponseStatus.ERROR;
+
   constructor(readonly message: string, readonly profilerOperation: ProfilerOperation, readonly remoteCalls: RemoteCall[]) {
   }
 }

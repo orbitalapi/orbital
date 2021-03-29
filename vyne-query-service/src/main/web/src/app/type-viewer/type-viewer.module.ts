@@ -15,24 +15,26 @@ import {PolicyManagerModule} from '../policy-manager/policy-manager.module';
 import {TocHostDirective} from './toc-host.directive';
 import {TypeViewerContainerComponent} from './type-viewer-container.component';
 import {InheritanceGraphModule} from '../inheritence-graph/inheritance-graph.module';
+import {HeaderBarModule} from '../header-bar/header-bar.module';
 
 
 @NgModule({
-  imports: [
-    SearchModule,
-    MatToolbarModule,
-    CommonModule,
-    BrowserModule,
-    BrowserAnimationsModule,
-    AttributeTableModule,
-    ContentsTableModule,
-    DescriptionEditorModule,
-    EnumTableModule,
-    TypeLinkGraphModule,
-    CodeViewerModule,
-    PolicyManagerModule,
-    InheritanceGraphModule
-  ],
+    imports: [
+        SearchModule,
+        MatToolbarModule,
+        CommonModule,
+        BrowserModule,
+        BrowserAnimationsModule,
+        AttributeTableModule,
+        ContentsTableModule,
+        DescriptionEditorModule,
+        EnumTableModule,
+        TypeLinkGraphModule,
+        CodeViewerModule,
+        PolicyManagerModule,
+        InheritanceGraphModule,
+        HeaderBarModule
+    ],
   declarations: [
     TocHostDirective,
     TypeViewerComponent,

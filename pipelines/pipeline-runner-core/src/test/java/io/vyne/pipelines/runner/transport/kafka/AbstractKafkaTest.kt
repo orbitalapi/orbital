@@ -65,12 +65,12 @@ open class AbstractKafkaTest {
       props = consumerProps()
    )
 
-   fun directOutputSpec() = DirectOutputSpec
+   fun directOutputSpec(name:String = "Unnamed") = DirectOutputSpec(name)
 
 
    fun buildPipelineBuilder(): PipelineBuilder {
       val (vyne, stub) = PipelineTestUtils.pipelineTestVyne()
-      stub.addResponse("getUserNameFromId") { op, params ->
+      stub.addResponse("getUserNameFromId") { _, params ->
          vyne.parseKeyValuePair("Username", params[0].second.value as String + "@mail.com")
       }
 

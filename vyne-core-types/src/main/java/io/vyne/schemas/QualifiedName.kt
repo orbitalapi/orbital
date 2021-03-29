@@ -1,13 +1,8 @@
 package io.vyne.schemas
 
-import lang.taxi.types.PrimitiveType
+import lang.taxi.types.ArrayType
 import lang.taxi.types.QualifiedNameParser
-import java.io.IOException
 import java.io.Serializable
-import java.io.StreamTokenizer
-import java.io.StringReader
-import java.lang.Exception
-import kotlin.math.log
 
 data class QualifiedName(val fullyQualifiedName: String, val parameters: List<QualifiedName> = emptyList()) : Serializable {
    val name: String
@@ -35,7 +30,7 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
    // Convenience for the UI
    val longDisplayName: String
       get() {
-         return if (this.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName && parameters.size == 1) {
+         return if (this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1) {
             parameters[0].fullyQualifiedName + "[]"
          } else {
             this.parameterizedName
@@ -45,7 +40,7 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
    // Convenience for the UI
    val shortDisplayName: String
       get() {
-         return if (this.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName && parameters.size == 1) {
+         return if (this.fullyQualifiedName == ArrayType.NAME && parameters.size == 1) {
             parameters[0].shortDisplayName + "[]"
          } else {
             this.name
@@ -53,6 +48,15 @@ data class QualifiedName(val fullyQualifiedName: String, val parameters: List<Qu
       }
 
    override fun toString(): String = fullyQualifiedName
+   override fun equals(other: Any?): Boolean {
+      if (other == null) return false
+      if (other === this) return true
+      if (other !is QualifiedName) return false
+      return this.parameterizedName == other.parameterizedName
+   }
+   override fun hashCode(): Int  {
+      return parameterizedName.hashCode()
+   }
 }
 
 fun lang.taxi.types.QualifiedName.toVyneQualifiedName():QualifiedName {

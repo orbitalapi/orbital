@@ -1,18 +1,39 @@
-import {InstanceLike, InstanceLikeOrCollection, TypedObjectAttributes} from './object-view.component';
 import {EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
-import {Field, findType, getCollectionMemberType, Schema, Type} from '../services/schema';
-import {isTypedInstance, isTypeNamedInstance, TypeNamedInstance} from '../services/query.service';
+import {
+  Field,
+  findType,
+  getCollectionMemberType,
+  InstanceLike,
+  InstanceLikeOrCollection, isTypedInstance, isTypeNamedInstance,
+  Schema,
+  Type, TypedObjectAttributes, TypeNamedInstance
+} from '../services/schema';
+import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
+import {isNull, isNullOrUndefined} from 'util';
 
 
-export class BaseTypedInstanceViewer implements OnInit, OnDestroy{
+export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
   private componentId = Math.random().toString(36).substring(7);
   protected _instance: InstanceLikeOrCollection;
 
   @Output()
-  instanceClicked = new EventEmitter<InstanceLike>();
+  instanceClicked = new EventEmitter<InstanceSelectedEvent>();
+
+  private _schema: Schema;
 
   @Input()
-  schema: Schema;
+  public get schema(): Schema {
+    return this._schema;
+  }
+
+  public set schema(value: Schema) {
+    if (this.schema === value) {
+      return;
+    }
+    this._schema = value;
+    this.onSchemaChanged();
+  }
+
 
   protected fieldTypes = new Map<Field, Type>();
   protected _type: Type;
@@ -51,8 +72,15 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy{
     if (this._type) {
       return this._type;
     }
-    this._derivedType = this.selectType(this._instance);
-    return this._derivedType;
+    if (this._derivedType) {
+      return this._derivedType;
+    }
+    if (!this._instance) {
+      return null;
+    } else {
+      this._derivedType = this.selectType(this._instance);
+      return this._derivedType;
+    }
   }
 
   private selectType(instance: InstanceLikeOrCollection): Type {
@@ -125,7 +153,10 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy{
 
 
   getTypeForAttribute(attributeName: string): Type {
-    const field: Field = this.type.attributes[attributeName];
+    // Don't use this.type directly here, as sometimes we're actually working against
+    // the arrayType (ie., when in a table view)
+    const type = (this.isArray) ? this.collectionMemberType : this.type;
+    const field: Field = type.attributes[attributeName];
     if (this.fieldTypes.has(field)) {
       return this.fieldTypes.get(field);
     } else {
@@ -159,4 +190,13 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy{
     console.log(`viewer ${this.componentId} initialized`);
   }
 
+  protected onSchemaChanged() {
+    this._collectionMemberType = null;
+    if (!isNullOrUndefined(this._type)) {
+      this._type = findType(this.schema, this._type.name.parameterizedName);
+    }
+    if (!isNullOrUndefined(this._derivedType) && !isNullOrUndefined(this._instance)) {
+      this._derivedType = this.selectType(this._instance);
+    }
+  }
 }

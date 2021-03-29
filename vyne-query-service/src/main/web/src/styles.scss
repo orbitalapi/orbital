@@ -4,7 +4,16 @@
 @import "../node_modules/ag-grid-community/src/styles/ag-theme-alpine/sass/ag-theme-alpine-mixin.scss";
 
 .ag-theme-alpine {
-  @include ag-theme-alpine();
+  @include ag-theme-alpine((
+    font-family: ($font-sans),
+    border-color: $border-dark
+  ));
+  .ag-header-cell-text {
+    font-family: $mono;
+    color: $dark-grey-1;
+    font-size: 1rem;
+    font-weight: 400;
+  }
 }
 
 html, body {
@@ -34,8 +43,8 @@ $custom-typography: mat-typography-config(
 // Define the palettes for your theme using the Material Design palettes available in palette.scss
 // (imported above). For each palette, you can optionally specify a default, lighter, and darker
 // hue. Available color palettes: https://material.io/design/color/
-$vyne-app-primary: mat-palette($vyne-grey-blue-palette, 700, 800, 600);
-$vyne-app-accent: mat-palette($vyne-green-palette, 500, 700, 900);
+$vyne-app-primary: mat-palette($vyne-grey-blue-palette,  A400, A100, A700);
+$vyne-app-accent: mat-palette($vyne-grey-blue-palette, A400, A100, A700);
 
 // The warn palette is optional (defaults to red).
 $vyne-app-warn: mat-palette($mat-red);
@@ -49,3 +58,13 @@ $vyne-app-theme: mat-light-theme($vyne-app-primary, $vyne-app-accent, $vyne-app-
 @include angular-material-theme($vyne-app-theme);
 @include angular-material-typography($custom-typography);
 
+// We want the tabs to fill 100% height of their parents.
+// If removing this, be sure to test the ag-grid height in the tabbed-results-view component
+.mat-tab-body-wrapper{
+  flex-grow: 1;
+}
+
+.mat-card-header-text {
+  // There's an annoying indent in the card headers that offsets things by 16px :(
+  margin: 0 !important;
+}

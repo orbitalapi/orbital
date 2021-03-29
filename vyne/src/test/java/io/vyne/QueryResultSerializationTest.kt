@@ -5,10 +5,8 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.QueryResult
 import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.ResultMode
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
-import org.skyscreamer.jsonassert.JSONCompareMode
 
 class QueryResultSerializationTest {
 
@@ -19,6 +17,7 @@ class QueryResultSerializationTest {
    isicCode : IsicCode as String
 }
    """.trimIndent()
+
 
    @Test
    fun given_queryResultWithObjectResponse_then_itIsSerializedAsTypeNamedInstance() {
@@ -33,7 +32,7 @@ class QueryResultSerializationTest {
       val result = QueryResult(
          results = mapOf(
             QuerySpecTypeNode(clientType) to clientInstnace
-         ), resultMode = ResultMode.SIMPLE
+         )
       )
 
       val expectedJson = """
@@ -47,9 +46,9 @@ class QueryResultSerializationTest {
            },
            "unmatchedNodes" : [ ],
            "queryResponseId" : "${result.queryResponseId}",
-           "resultMode" : "SIMPLE",
            "truncated" : false,
-            "lineageGraph" : { },
+           "anonymousTypes" : [ ],
+            "responseStatus" : "COMPLETED",
            "vyneCost" : 0,
            "timings" : { },
            "remoteCalls" : [ ],
@@ -74,7 +73,7 @@ class QueryResultSerializationTest {
       val result = QueryResult(
          results = mapOf(
             QuerySpecTypeNode(clientType) to collection
-         ), resultMode = ResultMode.SIMPLE
+         )
       )
       val expected = """
 {
@@ -87,9 +86,9 @@ class QueryResultSerializationTest {
   },
   "unmatchedNodes" : [ ],
   "queryResponseId" : "${result.queryResponseId}",
-  "resultMode" : "SIMPLE",
+   "responseStatus" : "COMPLETED",
   "truncated" : false,
-  "lineageGraph" : { },
+  "anonymousTypes" : [ ],
   "remoteCalls" : [ ],
   "timings" : { },
   "vyneCost" : 0,

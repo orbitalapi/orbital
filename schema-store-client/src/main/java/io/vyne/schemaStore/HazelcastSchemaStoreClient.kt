@@ -15,6 +15,8 @@ import io.vyne.schemas.SchemaSetChangedEvent
 import lang.taxi.CompilationException
 import lang.taxi.utils.log
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.event.ContextRefreshedEvent
+import org.springframework.context.event.EventListener
 import java.io.Serializable
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
@@ -41,13 +43,19 @@ private class HazelcastSchemaStoreListener(val eventPublisher: ApplicationEventP
    }
 
    override fun entryAdded(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
-      log().info("SchemaSet has been created: ${event.value.toString()} - dispatching event.")
-      eventPublisher.publishEvent(SchemaSetChangedEvent(event.oldValue, event.value))
+      SchemaSetChangedEvent.generateFor(event.oldValue, event.value)?.let {
+         log().info("SchemaSet has been created: ${event.value.toString()} - dispatching event.")
+         eventPublisher.publishEvent(it)
+      }
+
    }
 
    override fun entryUpdated(event: EntryEvent<SchemaSetCacheKey, SchemaSet>) {
-      log().info("SchemaSet has changed: (${event.oldValue} ==> ${event.value}) - dispatching event")
-      eventPublisher.publishEvent(SchemaSetChangedEvent(event.oldValue, event.value))
+     SchemaSetChangedEvent.generateFor(event.oldValue, event.value)?.let {
+        log().info("SchemaSet has changed: (${event.oldValue} ==> ${event.value}) - dispatching event")
+        eventPublisher.publishEvent(it)
+     }
+
 
    }
 }
@@ -91,7 +99,23 @@ class HazelcastSchemaStoreClient(private val hazelcast: HazelcastInstance,
          }
       }
 
+
    }
+
+   @EventListener
+   fun onSpringContextRefreshed(event: ContextRefreshedEvent) {
+      // There's a subtle difference between the Hazelcast client and the Eureka client
+      // in that in Hzc, we fetch the current state on startup, which isn't considered a change,
+      // but in Eureka, fetching on startup triggers a change event.
+      // Therefore, for event driven services (like cask), we need to send the local
+      // initial event
+      val currentSchema = this.schemaSet()
+      SchemaSetChangedEvent.generateFor(null, currentSchema)?.let { event ->
+         log().info("HazelcastSchemaStoreClient initialized on schema ${currentSchema.id} generation ${currentSchema.generation}.  Sending local SchemaSetChangedEvent.")
+         eventPublisher.publishEvent(event)
+      }
+   }
+
 
    override val generation: Int
       get() {

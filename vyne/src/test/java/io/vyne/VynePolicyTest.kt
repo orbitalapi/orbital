@@ -6,6 +6,7 @@ import io.vyne.models.json.addKeyValuePair
 import io.vyne.models.json.parseJsonModel
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
@@ -215,7 +216,7 @@ namespace test {
    }
 
    private fun clientHandler(vyne: Vyne): StubResponseHandler {
-      val clientHandler: StubResponseHandler = { operation: Operation, params: List<Pair<Parameter, TypedInstance>> ->
+      val clientHandler: StubResponseHandler = { operation: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
          val (_, clientId) = params.first()
          when (clientId.value) {
                "desk1Client" -> vyne.parseJsonModel("test.Client", desk1Client)

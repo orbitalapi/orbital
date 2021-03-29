@@ -1,9 +1,10 @@
 package io.vyne.cask.format.csv
 
+import io.vyne.VersionedSource
 import io.vyne.schemas.taxi.TaxiSchema
 
 object CoinbaseOrderSchema {
-   private val sourceV1 = """
+   val sourceV1 = """
 type alias Price as Decimal
 type alias Symbol as String
 type OrderWindowSummary {
@@ -13,7 +14,7 @@ type OrderWindowSummary {
     close : Price by column(4)
 }""".trimIndent()
 
-   private val sourceV2 = """
+   val sourceV2 = """
 type alias Price as Decimal
 type alias Symbol as String
 type OrderWindowSummary {
@@ -37,7 +38,70 @@ type OrderWindowSummary {
     close : Price by column("Close")
 }""".trimIndent()
 
+   val personSourceV1 = """
+      namespace demo {
+         type PersonId inherits String
+         type FirstName inherits String
+         type LastName inherits String
+
+         type Person {
+            id : PersonId by column("id")
+
+            firstName : FirstName by column("firstName")
+
+      	  lastName : LastName by column("lastName")
+         }
+      }
+   """.trimIndent()
+   val personSourceV2 = """
+namespace demo {
+   type PersonId inherits String
+   type FirstName inherits String
+   type LastName inherits String
+   type LogDate inherits Date
+   type LogTime inherits Time
+
+   type Person {
+      @Id
+	  @PrimaryKey
+      id : PersonId by column("id")
+
+	  @Association
+	  @Indexed
+      firstName : FirstName by column("firstName")
+
+	  lastName : LastName by column("lastName")
+
+	  @Between
+	  logDate : LogDate( @format ="dd/MMM/yyyy") by column("logDate")
+
+	  logTime: LogTime( @format = "HH:mm:ss.SSS") by column("logTime")
+   }
+}""".trimIndent()
+
    val schemaV1 = TaxiSchema.from(sourceV1, "Coinbase", "0.1.0")
    val schemaV2 = TaxiSchema.from(sourceV2, "Coinbase", "0.2.0")
    val schemaV3 = TaxiSchema.from(sourceV3, "Coinbase", "0.3.0")
+   val personSchemaV1 = TaxiSchema.from(personSourceV1, "Coinbase", "0.3.0")
+   val personSchemaV2 = TaxiSchema.from(personSourceV2, "Coinbase", "0.3.0")
+
+
+   val personAndOrderSourceV1 = """
+      $personSourceV1
+
+      namespace coinbase {
+      $sourceV1
+      }
+   """.trimIndent()
+
+   val personV2AndOrderSourceV1 = """
+      $personSourceV2
+
+      namespace coinbase {
+      $sourceV1
+      }
+   """.trimIndent()
+//      VersionedSource("Coinbase", "0.1.0", sourceV1),
+//      VersionedSource("People", "0.1.0", personSourceV1)
+//   ))
 }

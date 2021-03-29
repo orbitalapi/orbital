@@ -1,16 +1,17 @@
 package io.vyne.cask.ingest
 
+import arrow.core.extensions.either.applicativeError.raiseError
 import de.bytefish.pgbulkinsert.row.SimpleRowWriter
-import io.vyne.cask.ddl.TableMetadata
 import io.vyne.cask.ddl.TypeDbWrapper
-import io.vyne.cask.timed
 import io.vyne.schemas.VersionedType
 import io.vyne.utils.log
 import lang.taxi.types.ObjectType
 import org.postgresql.PGConnection
+import org.postgresql.util.PSQLException
+import org.postgresql.util.PSQLState
 import org.springframework.jdbc.core.JdbcTemplate
 import reactor.core.publisher.Flux
-import java.util.concurrent.TimeUnit
+import reactor.core.publisher.FluxSink
 
 data class IngestionStream(
    val type: VersionedType,
@@ -20,29 +21,9 @@ data class IngestionStream(
 
 class Ingester(
    private val jdbcTemplate: JdbcTemplate,
-   private val ingestionStream: IngestionStream) {
-
-   @Deprecated("Remove this in favor of CaskDao")
-   fun destroy() {
-      jdbcTemplate.execute(ingestionStream.dbWrapper.dropTableStatement)
-      TableMetadata.deleteEntry(ingestionStream.type, jdbcTemplate)
-   }
-
-   @Deprecated("Remove this in favor of CaskDao")
-   fun initialize() {
-      timed("Ingester.initialize", true, TimeUnit.MILLISECONDS) {
-         jdbcTemplate.execute(TableMetadata.CREATE_TABLE)
-         val createTableStatement = ingestionStream.dbWrapper.createTableStatement
-         val generatedTableName = createTableStatement.generatedTableName
-         log().info("Initializing table $generatedTableName for pipeline for type ${ingestionStream.type.versionedName}")
-         jdbcTemplate.execute(createTableStatement.ddlStatement)
-         log().info("Table $generatedTableName created")
-
-         log().info("Creating TableMetadata entry for $generatedTableName")
-         createTableStatement.metadata.executeInsert(jdbcTemplate)
-      }
-   }
-
+   private val ingestionStream: IngestionStream,
+   private val ingestionErrorSink: FluxSink<IngestionError>) {
+   private val hasPrimaryKey = hasPrimaryKey(ingestionStream.type.taxiType as ObjectType)
    // TODO refactor so that we open/close transaction based on types of messages
    //   1. Message StartTransaction
    //   2. receive InstanceAttributeSet
@@ -50,43 +31,99 @@ class Ingester(
    //   4. receive InstanceAttributeSet
    //   ...
    //   N receive CommitTransaction
-
    fun ingest(): Flux<InstanceAttributeSet> {
+      // Here we split the paths that uses jdbcTemplate (for upserting) and pgBulk library.
+      // to ensure that we don't initialise pgBulk library path fpr upsert case.
+      // Otherwise, pgBulk library grabs an unused connection from the connection pool
+      return if (this.hasPrimaryKey) {
+         this.ingestThroughUpsert()
+      } else {
+         this.ingestThroughBulkCopy()
+      }
+   }
+
+   private fun ingestThroughUpsert(): Flux<InstanceAttributeSet> {
+      val table = ingestionStream.dbWrapper.rowWriterTable
+      return ingestionStream
+         .feed
+         .stream
+         .doOnError {
+            log().error("Closing DB connection for ${table.table}", it)
+            ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
+         }.doOnEach { signal ->
+            signal.get()?.let { instance ->
+               ingestionStream.dbWrapper.upsert(jdbcTemplate,instance)
+            }
+         }.onErrorMap {
+            ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
+            if (it.cause is PSQLException) {
+               it.cause
+            } else {
+               it
+            }
+
+         }
+   }
+
+   private fun ingestThroughBulkCopy(): Flux<InstanceAttributeSet> {
       val connection = jdbcTemplate.dataSource!!.connection
       val pgConnection = connection.unwrap(PGConnection::class.java)
       val table = ingestionStream.dbWrapper.rowWriterTable
-      val writer = SimpleRowWriter(table, pgConnection)
+      val writer =
+         try
+         {
+            SimpleRowWriter(table, pgConnection)
+         } catch (e: PSQLException) {
+            // Apart from DB is down, main reason to be at this point is a schema update
+            // resulting a change in the relevant table name. In this case sqlState of the exception will be
+            // "42P01" (UNDEFINED_TABLE). We're returning Flux.error which should terminate the socket session
+            // on pipeline. Upon termination, pipeline should re-initiate the connection and Cask will re-initialise
+            // TypeDbWrapper with correct table name.
+            log().error("error in creating row writer for table  ${table.table} Sql State = ${e.sqlState}")
+            if (!connection.isClosed) {
+               log().error("Closing DB connection for ${table.table}", e)
+               // We must close the connection otherwise, we won't return the connection to the connection pool.
+               // leading to connection pool exhaustion.
+               connection.close()
+            }
+            ingestionErrorSink.next(IngestionError.fromThrowable(e, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
+            return Flux.error(e)
+         }
       log().debug("Opening DB connection for ${table.table}")
       return ingestionStream.feed.stream
          .doOnError {
-            log().debug("Closing DB connection for ${table.table}")
+            log().error("Closing DB connection for ${table.table}", it)
             writer.close()
             connection.close()
+            ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
          }
          .doOnComplete {
-            log().debug("Closing DB connection for ${table.table}")
+            log().info("Closing DB connection for ${table.table}")
             writer.close()
             connection.close()
          }
          .doOnEach { signal ->
             signal.get()?.let { instance ->
-               if ((instance.type.taxiType as ObjectType).definition?.fields
-                     ?.flatMap { it -> it.annotations }
-                     ?.any { a -> a.name == "PrimaryKey" }!!) {
-                  ingestionStream.dbWrapper.upsert(jdbcTemplate, instance)
-               } else {
-                  writer.startRow { rowWriter ->
-                     ingestionStream.dbWrapper.write(rowWriter, instance)
-                  }
+               writer.startRow { rowWriter ->
+                  ingestionStream.dbWrapper.write(rowWriter, instance)
                }
             }
          }.doOnError {
             //invoked when pgbulkinsert throws.
             if (!connection.isClosed) {
-               log().debug("Closing DB connection for ${table.table}")
+               log().error("Closing DB connection for ${table.table}", it)
                connection.close()
             }
+            ingestionErrorSink.next(IngestionError.fromThrowable(it, this.ingestionStream.feed.messageId, this.ingestionStream.dbWrapper.type))
          }
+   }
+
+
+
+   private fun hasPrimaryKey(type: ObjectType): Boolean {
+      return type.definition?.fields
+         ?.flatMap { it -> it.annotations }
+         ?.any { a -> a.name == "PrimaryKey" } ?: false
    }
 
    fun getRowCount(): Int {

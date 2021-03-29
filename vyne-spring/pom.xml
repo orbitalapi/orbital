@@ -3,7 +3,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.6.3-SNAPSHOT</version>
+      <version>0.15.1-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -62,7 +62,6 @@
       <dependency>
          <groupId>io.projectreactor</groupId>
          <artifactId>reactor-core</artifactId>
-         <version>3.0.7.RELEASE</version>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>

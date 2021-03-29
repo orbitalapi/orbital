@@ -1,30 +1,55 @@
 package io.vyne.regression
 
+import io.vyne.http.UriVariableProvider
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
+import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Service
+import io.vyne.schemas.httpOperationMetadata
+import org.springframework.http.HttpEntity
+import org.springframework.web.util.UriComponentsBuilder
+import java.net.URI
 
-class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, private val schema:Schema) : OperationInvoker {
-   override fun canSupport(service: Service, operation: Operation): Boolean {
+class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, private val schema: Schema) : OperationInvoker {
+   private val uriVariableProvider = UriVariableProvider()
+   override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       // TODO : We might wanna consider strict ordering when replaying.
       return findRecordedCall(operation) != null
    }
 
-   override fun invoke(service: Service, operation: Operation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): TypedInstance {
-      val recordedCall = findRecordedCall(operation) ?: error("Expected a matching recorded call")
-      // TODO : Handle mulitple calls to the same operation with different params
+   override fun invoke(service: Service,
+                       operation: RemoteOperation,
+                       parameters: List<Pair<Parameter, TypedInstance>>,
+                       profilerOperation: ProfilerOperation): TypedInstance {
+      val (_, url, _) = operation.httpOperationMetadata()
+      val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
+      val path = UriComponentsBuilder.newInstance()
+         .path(url)
+         .buildAndExpand(uriVariables)
+         .path
+      val requestBody = UriVariableProvider.buildRequestBody(operation, parameters.map { it.second })
+      val recordedCall = findRecordedCall(operation, path, requestBody) ?: error("Expected a matching recorded call")
       val responseType = schema.type(recordedCall.responseTypeName)
-      return TypedInstance.from(responseType,recordedCall.response, schema, source = Provided)
+      return TypedInstance.from(responseType, recordedCall.response, schema, source = Provided, evaluateAccessors = false)
    }
 
-   private fun findRecordedCall(operation:Operation):RemoteCall? {
-      return this.remoteCalls.firstOrNull { it.operationQualifiedName == operation.qualifiedName }
+   private fun findRecordedCall(operation: RemoteOperation): RemoteCall? {
+      return this.remoteCalls.firstOrNull {
+         it.operationQualifiedName == operation.qualifiedName
+      }
    }
 
+   private fun findRecordedCall(operation: RemoteOperation, path: String, body: Pair<HttpEntity<*>, Class<*>>): RemoteCall? {
+      return this.remoteCalls.firstOrNull {
+         val remoteCallPath = UriComponentsBuilder.newInstance().uri(URI(it.addresss)).build().path
+         val remoteCallBody = it.requestBody
+         val operationBody = body.first.body
+         it.operationQualifiedName == operation.qualifiedName && remoteCallPath == path && remoteCallBody == operationBody
+      }
+   }
 }

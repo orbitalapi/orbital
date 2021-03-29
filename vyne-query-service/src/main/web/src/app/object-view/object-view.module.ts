@@ -2,11 +2,24 @@ import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {ObjectViewComponent} from './object-view.component';
+import {MatButtonModule} from '@angular/material/button';
+import {MatMenuModule} from '@angular/material/menu';
+import {MatRadioModule} from '@angular/material/radio';
+import {ObjectViewContainerComponent} from './object-view-container.component';
+import {ResultsTableModule} from '../results-table/results-table.module';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
+import {FormsModule} from '@angular/forms';
 
 @NgModule({
-  imports: [CommonModule, BrowserModule],
-  exports: [ObjectViewComponent],
-  declarations: [ObjectViewComponent],
+  imports: [CommonModule,
+    BrowserModule,
+    MatButtonModule,
+    MatButtonToggleModule,
+    MatMenuModule,
+    MatRadioModule,
+    ResultsTableModule, FormsModule],
+  exports: [ObjectViewComponent, ObjectViewContainerComponent],
+  declarations: [ObjectViewComponent, ObjectViewContainerComponent],
   providers: [],
 })
 export class ObjectViewModule {

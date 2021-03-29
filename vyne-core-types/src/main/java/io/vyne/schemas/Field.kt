@@ -1,7 +1,8 @@
 package io.vyne.schemas
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import lang.taxi.types.Accessor
-import lang.taxi.types.FieldSetCondition
+import lang.taxi.types.FieldSetExpression
 import lang.taxi.types.Formula
 
 // Note: I'm progressively moving this towards Taxi schemas, as discussed
@@ -10,11 +11,18 @@ data class Field(
    val type: QualifiedName,
    val modifiers: List<FieldModifier>,
    private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider(),
+   @get:JsonIgnore
    val accessor: Accessor?,
-   val readCondition: FieldSetCondition?,
+   @get:JsonIgnore
+   val readCondition: FieldSetExpression?,
    val typeDoc:String?,
    val defaultValue: Any? = null,
-   val formula: Formula? = null
+   @get:JsonIgnore
+   val formula: Formula? = null,
+   val nullable: Boolean = false,
+   val typeDisplayName:String = type.longDisplayName,
+   val metadata:List<Metadata> = emptyList(),
+   val sourcedBy: FieldSource? = null
 ) {
    // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
    // we parse fields before we parse their underlying types, so constrains may not be
@@ -25,3 +33,5 @@ data class Field(
 enum class FieldModifier {
    CLOSED
 }
+
+data class FieldSource(val attributeName: AttributeName, val attributeType: QualifiedName, val sourceType: QualifiedName)

@@ -26,9 +26,7 @@
               "path": "./custom-webpack.config.js"
             },
             "assets": [
-              "src/favicon.ico",
-              "src/favicon-32x32.png",
-              "src/favicon-16x16.png",
+              "src/icon-48x48.png",
               "src/assets",
               {
                 "glob": "**/*",
@@ -71,13 +69,16 @@
                   "with": "src/environments/environment.dev.ts"
                 }
               ],
-              "optimization": true,
-              "outputHashing": "all",
-              "sourceMap": true,
+              "optimization": false,
+              "outputHashing": "none",
+              "sourceMap": false,
               "extractCss": true,
               "namedChunks": false,
-              "aot": true,
-              "extractLicenses": true,
+              "showCircularDependencies": false,
+              "aot": false,
+              "extractLicenses": false,
+              "statsJson": false,
+              "progress": false,
               "vendorChunk": true,
               "buildOptimizer": false
             }

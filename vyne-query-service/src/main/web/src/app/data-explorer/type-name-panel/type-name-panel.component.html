@@ -1,0 +1,11 @@
+<div class="container mat-elevation-z2">
+  <p class="panel-title">Type Name</p>
+  <div class="type-name-configuration">
+    <mat-form-field appearance="legacy" class="enter-type-field">
+      <input matInput placeholder="Enter type name..."
+             [formControl]="typeName"
+             (ngModelChange)="updateTypeName()">
+    </mat-form-field>
+    <button mat-stroked-button class="generate-schema-button" [disabled] = "!isTypePresent" (click)=showGenerateSchemaPanel($event)>Generate Schema</button>
+  </div>
+</div>

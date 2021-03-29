@@ -1,11 +1,15 @@
 package io.vyne
 
 import com.fasterxml.jackson.databind.JavaType
+import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.type.TypeFactory
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.mrbean.MrBeanModule
 import io.vyne.query.*
+import io.vyne.utils.log
 import lang.taxi.TypeNames
 import lang.taxi.TypeReference
 import org.springframework.http.HttpEntity
@@ -113,30 +117,29 @@ class VyneQueryBuilder internal constructor(val facts: List<Fact>, private val q
       val query = Query(
          TypeNameListQueryExpression(typeNames),
          facts,
-         queryMode = mode,
-         resultMode = ResultMode.SIMPLE)
+         queryMode = mode)
       val response = queryService.submitQuery(query)
       return response
    }
 }
 
 interface VyneQueryService {
-   fun submitQuery(query: Query): QueryClientResponse
-   fun submitVyneQl(vyneQL: String): QueryClientResponse
+   fun submitQuery(query: Query, resultMode:ResultMode = ResultMode.SIMPLE): QueryClientResponse
+   fun submitVyneQl(vyneQL: String, resultMode:ResultMode = ResultMode.SIMPLE): QueryClientResponse
 }
 
 
 class HttpVyneQueryService(private val queryServiceUrl: String, private val restTemplate: RestTemplate = RestTemplate()) : VyneQueryService {
 
-   override fun submitQuery(query: Query) = post("/api/query", query)
-   override fun submitVyneQl(vyneQL: String) = post("/api/vyneql", vyneQL)
+   override fun submitQuery(query: Query, resultMode: ResultMode) = post("/api/query",resultMode, query)
+   override fun submitVyneQl(vyneQL: String, resultMode: ResultMode) = post("/api/vyneql", resultMode, vyneQL)
 
-   private fun post(path: String, body: Any): QueryClientResponse {
+   private fun post(path: String, resultMode:ResultMode, body: Any): QueryClientResponse {
       val headers = HttpHeaders()
       headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
       headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
       val query = HttpEntity(body, headers)
-      return restTemplate.postForObject("$queryServiceUrl$path", query, QueryClientResponse::class.java)
+      return restTemplate.postForObject("$queryServiceUrl$path?resultMode=${resultMode.name}", query, QueryClientResponse::class.java)
    }
 }
 
@@ -181,18 +184,63 @@ data class QueryClientResponse(
 
 
    fun <T : Any> getResultListFor(type: KClass<T>, objectMapper: ObjectMapper = Jackson.objectMapper): List<T> {
-      val typeName = TypeNames.deriveTypeName(type.java)
-      val result = this.results[typeName]!!
-      val typeRef = objectMapper.typeFactory.constructArrayType(type.java)
-      val typedResultArray = objectMapper.convertValue<Array<T>>(result, typeRef)
-      return typedResultArray.toList()
+      val result = this.results[taxiListForType(type)]
+      val resultList = result?.let {
+         try {
+            val typeRef = objectMapper.typeFactory.constructArrayType(type.java)
+            val valueList = (result as List<Map<Any, Any>>).mapNotNull { it["value"] } as List<Map<String, Map<String, Any>>>
+            if (valueList.isEmpty()) {
+               return objectMapper.convertValue<Array<T>>(result, typeRef).toList()
+            }
+            // TODO this is very nasty hack to deserialise TypedInstanced data (which serialised as hashmap) into given pojo
+            // However, the proper fix requires bringing additional dependencies (e.g. vyne-core-types) into vyne-client...
+            val deserialisedMap =  valueList.map { entity ->
+               entity.keys.map { attributeName ->
+                  val attributeValue = entity[attributeName]?.get("value")
+                  attributeName to attributeValue
+               }.toMap()
+            }
+            val typedResultArray = objectMapper.convertValue<Array<T>>(deserialisedMap, typeRef)
+            return typedResultArray.toList()
+         } catch (e: Exception) {
+            log().error("Error in getting result list for ${type.qualifiedName} from $results", e)
+            emptyList<T>()
+         }
+      }
+      return resultList ?: emptyList()
+   }
+
+   fun <T : Any> hasResultListFor(type: KClass<T>): Boolean = this.results.containsKey(taxiListForType(type))
+
+   fun <T: Any> getResultMapListFor(type: Class<T>, replaceNullWith: Any? = null): List<Map<String, Any?>> {
+      val untypedResults = this.results[taxiListForType(type)]
+      return if (untypedResults != null) {
+         val valueList = (untypedResults as List<Map<Any, Any>>).mapNotNull { it["value"] } as List<Map<String, Map<String, Any>>>
+         valueList.map { entity ->
+            entity.keys.map { attributeName ->
+               val attributeValue = entity[attributeName]?.get("value")
+               attributeName to (attributeValue ?: replaceNullWith)
+            }.toMap()
+         }
+      } else {
+         listOf()
+      }
+   }
+
+   companion object {
+      fun <T : Any> taxiListForType(type: KClass<T>) = "lang.taxi.Array<${type.qualifiedName}>"
+      fun <T : Any> taxiListForType(type: Class<T>) = "lang.taxi.Array<${TypeNames.deriveTypeName(type)}>"
    }
 }
 typealias TypeName = String
 
 object Jackson {
    val objectMapper: ObjectMapper = jacksonObjectMapper()
+      .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,false)
+      .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
+      .registerModule(JavaTimeModule())
       .registerModule(MrBeanModule())
+      .registerModule(vyneEnumDeserialisationModule())
 }
 
 private fun <T> TypeReference<T>.jacksonRef(): JavaType {

@@ -1,10 +1,14 @@
 server:
+   error.include-message: always
    port: 8800
 
 spring.datasource:
    url: "jdbc:postgresql://localhost:5432/vynedb"
    username: "vynedb"
    password: "vynedb"
+   driver: "org.postgresql.Driver"
+   hikari:
+     maximum-pool-size: 20
 
 spring:
    main:
@@ -16,6 +20,7 @@ spring:
       user: ${spring.datasource.username}
       password: ${spring.datasource.password}
       enabled: true
+
       locations: classpath:db/migration
 
 eureka:
@@ -48,6 +53,24 @@ feign:
 cask:
    maxTextMessageBufferSize: 67108864 # 1024 * 1024 * 64
    maxBinaryMessageBufferSize: 67108864 # 1024 * 1024 * 64
+   views:
+      -  typeName: ion.orders.OrderEvent
+         distinct: true
+         inherits:
+            - cacib.orders.OrderLifecycleEvent
+         join:
+            kind: LEFT_OUTER
+            left: ion.orders.Order
+            right: ion.trade.Trade
+            joinOn:
+               -  leftField: orderId
+                  rightField: orderId
+               -  leftField: lastTradeDate
+                  rightField: tradeCreationDate
+               -  leftField: lastTradeTime
+                  rightField: tradeCreationTime
+   service:
+      annotations: Datasource
 
 # Actuators + prometheus metrics configuration
 management:
@@ -56,10 +79,13 @@ management:
          enabled: true
       prometheus:
          enabled: true
+      logfile:
+         enabled: true
+         external-file: logs/cask.log
    endpoints:
       web:
          exposure:
-            include: prometheus,metrics,info,health
+            include: prometheus,metrics,info,health,logfile
    metrics:
       export:
          prometheus:

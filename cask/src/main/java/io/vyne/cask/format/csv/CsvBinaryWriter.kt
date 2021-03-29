@@ -1,8 +1,11 @@
 package io.vyne.cask.format.csv
 
+import io.vyne.cask.api.csv.CsvFormatFactory
 import io.vyne.cask.format.byteArrayOfLength
 import io.vyne.cask.format.unPad
+import io.vyne.utils.log
 import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
 import reactor.core.publisher.Flux
 import java.io.FileOutputStream
@@ -10,10 +13,16 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 
-
+/**
+ * This class pads csv content to a specified width.
+ * The intention is to allow fast seeking to specific
+ * columns per record whilst upgrading.
+ * Currently, we're not using this approach, as we haven't
+ * proven that the performance benefits this provides are neccessary.
+ */
 class CsvBinaryWriter(
    private val bytesPerColumn: Int = 15,
-   private val format: CSVFormat = CSVFormat.DEFAULT.withFirstRecordAsHeader(),
+   private val format: CSVFormat = CsvFormatFactory.default(),
    private val shouldLogIndividualWriteTime: Boolean = true) {
 
    fun convert(input: InputStream, outputPath: Path): Flux<CSVRecord> {
@@ -28,13 +37,15 @@ class CsvBinaryWriter(
       return Flux.create<CSVRecord> { emitter ->
          FileOutputStream(outputPath.toFile()).use { outputStream ->
             var header: Header? = null
-            format.parse(input.bufferedReader())
-               .forEach { record ->
+            val parser = format.parse(input.bufferedReader())
+            parser.forEach { record ->
+               if (!conformsWithHeader(record, parser)) {
+                  logRecordMalformedError(record,parser)
+               } else {
                   //timed("CsvBinaryWriter.parse", shouldLogIndividualWriteTime , TimeUnit.NANOSECONDS) { // commenting out as it generates lots of noise in tests
                   if (header == null) {
                      header = writeHeader(outputStream, record)
                   }
-                  require(record.size() == header!!.recordsPerRow) { "Record ${record.recordNumber} has invalid number of columns.  Expected ${header!!.recordsPerRow} but got ${record.size()}" }
                   record.forEach { columnValue ->
                      // TODO : The strategy here is to capture that we've overflowed on a specific column,
                      // and then add the adjusted offsets to a header that we take into account when reading
@@ -43,12 +54,25 @@ class CsvBinaryWriter(
                      outputStream.write(columnValue.byteArrayOfLength(bytesPerColumn))
                   }
                   emitter.next(record)
-                  //}
                }
+
+            }
             emitter.complete()
          }
       }
 
+   }
+
+   private fun logRecordMalformedError(record: CSVRecord, parser: CSVParser) {
+      log().error("Record ${record.recordNumber} has invalid number of columns.  Expected ${parser.headerNames.size} but got ${record.size()}.  Will ignore this record")
+   }
+
+   private fun conformsWithHeader(record: CSVRecord, parser: CSVParser): Boolean {
+      return if (parser.headerNames == null || parser.headerNames.isEmpty()) {
+         true
+      } else {
+         parser.headerNames.size == record.size()
+      }
    }
 
    private fun writeHeader(outputStream: FileOutputStream, record: CSVRecord): Header {

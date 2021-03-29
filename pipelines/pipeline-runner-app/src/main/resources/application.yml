@@ -30,6 +30,14 @@ vyne:
       name: cask
    queryServiceUrl: http://${vyne.queryService.name}
    schema:
-        publicationmethod: REMOTE
+        publicationMethod: DISTRIBUTED
         pollInterval: 5s
         publishRetryInterval: 3s
+   graph:
+      vyneGraphBuilderCache:
+         baseSchemaCacheSize: 100
+         graphWithFactTypesCacheSize: 100
+         baseSchemaGraphCacheSize: 100
+      vyneDiscoverGraphQuery:
+         schemaGraphCacheSize: 5
+         searchPathExclusionsCacheSize: 200000

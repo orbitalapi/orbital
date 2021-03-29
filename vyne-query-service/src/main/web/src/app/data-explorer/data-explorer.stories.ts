@@ -45,11 +45,13 @@ storiesOf('Data Explorer', module)
     return {
       template: `<div style="margin: 20px"><app-csv-viewer [source]="data" [firstRowAsHeaders]="true"></app-csv-viewer></div>`,
       props: {
-        data: [
-          ['Column A', 'Column B', 'Column C'],
-          ['The quick', 'brown fox', 'jumps over'],
-          ['the lazy', 'but very cute', 'pupppppppy!']
-        ]
+        data: {
+          records: [
+            ['The quick', 'brown fox', 'jumps over'],
+            ['the lazy', 'but very cute', 'pupppppppy!']
+          ],
+          headers: ['Col 1', 'Col 2', 'Col 3']
+        }
       }
     };
   })
@@ -63,7 +65,8 @@ storiesOf('Data Explorer', module)
     return {
       template: `<div style="margin: 20px">
        <app-cask-panel format="json" targetTypeName="demo.Customer"></app-cask-panel>
-       <app-cask-panel format="csv" targetTypeName="demo.Customer" [csvOptions]="csvOptions"></app-cask-panel>
+       <app-cask-panel format="csv" targetTypeName="demo.Customer" [csvOptions]="csvOptions"
+       [xmlIngestionParameters]="xmlIngestionParameters"></app-cask-panel>
     </div>`,
       props: {
         csvOptions: new CsvOptions(true, ';', 'NULL')

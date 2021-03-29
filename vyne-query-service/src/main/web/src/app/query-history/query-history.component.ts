@@ -4,32 +4,39 @@ import {
   isVyneQlQueryHistoryRecord,
   ProfilerOperation,
   QueryHistoryRecord,
+  QueryHistorySummary,
+  QueryResult,
   QueryService,
-  VyneQlQueryHistoryRecord,
 } from '../services/query.service';
-import {isStyleUrlResolvable} from '@angular/compiler/src/style_url_resolver';
-import {InstanceSelectedEvent} from '../query-panel/result-display/result-container.component';
-import {InstanceLike} from '../object-view/object-view.component';
-import {Type} from '../services/schema';
-import {ActivatedRoute, Router} from '@angular/router';
-
+import {Router} from '@angular/router';
+import {ExportFileService} from '../services/export.file.service';
+import {DownloadClickedEvent} from '../object-view/object-view-container.component';
+import {TypesService} from '../services/types.service';
+import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
+import {DownloadFileType} from '../query-panel/result-display/result-container.component';
+import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
+import {MatDialog} from '@angular/material/dialog';
 
 @Component({
   selector: 'app-query-history',
   templateUrl: './query-history.component.html',
   styleUrls: ['./query-history.component.scss']
 })
-export class QueryHistoryComponent implements OnInit {
-  history: QueryHistoryRecord[];
+export class QueryHistoryComponent extends BaseQueryResultDisplayComponent implements OnInit {
+  history: QueryHistorySummary[];
   activeRecord: QueryHistoryRecord;
 
-  constructor(private service: QueryService, private router: Router) {
+  constructor(queryService: QueryService,
+              typeService: TypesService,
+              private router: Router,
+              private fileService: ExportFileService,
+              private dialogService: MatDialog) {
+    super(queryService, typeService);
   }
 
   profileLoading = false;
   profilerOperation: ProfilerOperation;
   private _queryResponseId: string;
-
 
   @Input()
   get queryResponseId(): string {
@@ -40,20 +47,9 @@ export class QueryHistoryComponent implements OnInit {
     this._queryResponseId = value;
   }
 
-
-  selectedTypeInstance: InstanceLike;
-  selectedTypeInstanceType: Type;
-
-  get showSidePanel(): boolean {
-    return this.selectedTypeInstanceType !== undefined && this.selectedTypeInstance !== null;
+  get queryId(): string {
+    return this.activeRecord.id;
   }
-
-  set showSidePanel(value: boolean) {
-    if (!value) {
-      this.selectedTypeInstance = null;
-    }
-  }
-
 
   ngOnInit() {
     this.loadData();
@@ -63,7 +59,7 @@ export class QueryHistoryComponent implements OnInit {
   }
 
   loadData() {
-    this.service.getHistory()
+    this.queryService.getHistory()
       .subscribe(history => this.history = history);
   }
 
@@ -89,62 +85,57 @@ export class QueryHistoryComponent implements OnInit {
     return isRestQueryHistoryRecord(record);
   }
 
-  getFactTypeNames(record: QueryHistoryRecord): string[] {
-    if (isRestQueryHistoryRecord(record)) {
-      return record.query.facts.map(fact => this.typeName(fact.typeName));
-    } else {
-      return [];
-    }
-
-  }
-
-  setActiveRecord(historyRecord: QueryHistoryRecord) {
-      this.activeRecord = historyRecord;
-      this.profilerOperation = null;
-      this.profileLoading = true;
-      this.service.getQueryProfile(historyRecord.id).subscribe(
-        result => {
-          this.profileLoading = false;
-          this.profilerOperation = result;
-        }
-      );
-      this.setRouteFromActiveRecord();
+  setActiveRecord(historyRecord: QueryHistorySummary) {
+    this.profilerOperation = null;
+    this.profileLoading = true;
+    this.queryService.getHistoryRecord(historyRecord.queryId).subscribe(
+      result => {
+        this.activeRecord = result;
+      }
+    );
+    // Profiles on large objects are causing problems.
+    // Disabling for now.
+    // this.service.getQueryProfile(historyRecord.queryId).subscribe(
+    //   result => {
+    //     this.profileLoading = false;
+    //     this.profilerOperation = result;
+    //   }
+    // );
+    this.setRouteFromActiveRecord();
   }
 
   setActiveRecordFromRoute() {
-    this.service.getHistory()
-      .subscribe(history => this.activeRecord = history.find(a => a.response.queryResponseId === this._queryResponseId));
-
+    this.queryService.getHistoryRecord(this._queryResponseId)
+      .subscribe(record => {
+        this.activeRecord = record;
+      });
   }
 
   setRouteFromActiveRecord() {
     this.router.navigate(['/query-history', this.activeRecord.id]);
   }
 
-  expressionTypeName(historyRecord: QueryHistoryRecord): string {
-    if (isRestQueryHistoryRecord(historyRecord)) {
-      return historyRecord.query.expression.map(t => this.typeName(t)).join(', ');
+  onCloseTypedInstanceDrawer($event: boolean) {
+    this.shouldTypedInstancePanelBeVisible = $event;
+  }
+
+  downloadQueryHistory(event: DownloadClickedEvent) {
+    const queryResponseId = (<QueryResult>this.activeRecord.response).queryResponseId;
+    if (event.format === DownloadFileType.TEST_CASE) {
+      const dialogRef = this.dialogService.open(TestSpecFormComponent, {
+        width: '550px'
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result !== null) {
+          // noinspection UnnecessaryLocalVariableJS
+          const specName = result;
+          this.fileService.downloadRegressionPackZipFile(queryResponseId, specName);
+        }
+      });
     } else {
-      return '';
+      this.fileService.downloadQueryHistory(queryResponseId, event.format);
     }
   }
-
-
-  queryType(historyRecord: QueryHistoryRecord): QueryType {
-    if (isVyneQlQueryHistoryRecord(historyRecord)) {
-      return 'VyneQlQuery';
-    } else if (isRestQueryHistoryRecord(historyRecord)) {
-      return 'RestfulQuery';
-    } else {
-      throw new Error('Unknown type of query history record: ' + JSON.stringify(historyRecord));
-    }
-  }
-
-  onInstanceSelected($event: InstanceSelectedEvent) {
-    this.selectedTypeInstance = $event.selectedTypeInstance;
-    this.selectedTypeInstanceType = $event.selectedTypeInstanceType;
-  }
-
 }
 
-type QueryType = 'VyneQlQuery' | 'RestfulQuery';

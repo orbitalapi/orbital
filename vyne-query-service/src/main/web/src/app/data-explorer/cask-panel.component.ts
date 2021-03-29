@@ -1,5 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {CsvOptions} from '../services/types.service';
+import { HttpParameterCodec } from '@angular/common/http';
+import {CsvOptions, XmlIngestionParameters} from '../services/types.service';
 import {CaskService} from '../services/cask.service';
 
 @Component({
@@ -53,19 +54,26 @@ export class CaskPanelComponent {
   @Input()
   loading = false;
 
+  @Input()
+  xmlIngestionParameters: XmlIngestionParameters;
+
   resultMessage: string;
 
   get url() {
     let caskUrl = `${this.caskServiceUrl}/api/ingest/${this.format}/${this.targetTypeName}`;
     if (this.format === 'csv') {
-      let csvOptionsQueryString = `?csvDelimiter=${this.csvOptions.separator}&csvFirstRecordAsHeader=${this.csvOptions.firstRowAsHeader}`;
-      if (this.csvOptions.nullValueTag) {
-        csvOptionsQueryString += `&nullValue=${this.csvOptions.nullValueTag}`;
-      }
+      const csvOptions = this.csvOptions;
+      const nullValueArg = (this.csvOptions.nullValueTag) ? `&nullValue=${encodeURIComponent(csvOptions.nullValueTag)}` : '';
+      const ignoreContentBeforeArg = (this.csvOptions.ignoreContentBefore) ? `&ignoreContentBefore=${encodeURIComponent(csvOptions.ignoreContentBefore)}` : '';
+      const csvOptionsQueryString = `?delimiter=${encodeURIComponent(csvOptions.separator)}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}` +
+        `&containsTrailingDelimiters=${csvOptions.containsTrailingDelimiters}${nullValueArg}${ignoreContentBeforeArg}`;
       caskUrl += csvOptionsQueryString;
+    } else if (this.format === 'xml') {
+      const elementSelector = this.xmlIngestionParameters.elementSelector;
+      const elementSelectorArg = elementSelector ? `?elementSelector=${encodeURIComponent(elementSelector)}` : '';
+      caskUrl += elementSelectorArg;
     }
     return caskUrl;
-
   }
 
   send() {
@@ -73,10 +81,10 @@ export class CaskPanelComponent {
     this.caskService.publishToCask(this.url, this.contents)
       .subscribe(result => {
         this.loading = false;
-        this.resultMessage = result.result + (result.result == 'REJECTED' ?   `: ${result.message}` : '' );
+        this.resultMessage = result.result + (result.result === 'REJECTED' ? `: ${result.message}` : '');
       }, error => {
         this.loading = false;
-        this.resultMessage = error.error ? `Error: ${error.error.message}` : error.message
+        this.resultMessage = error.error ? `Error: ${error.error.message}` : error.message;
       });
   }
 }

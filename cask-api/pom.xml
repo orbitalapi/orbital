@@ -5,7 +5,7 @@
     <parent>
         <artifactId>platform</artifactId>
         <groupId>io.vyne</groupId>
-        <version>0.6.3-SNAPSHOT</version>
+        <version>0.15.1-SNAPSHOT</version>
     </parent>
     <packaging>jar</packaging>
     <modelVersion>4.0.0</modelVersion>
@@ -13,6 +13,11 @@
     <artifactId>cask-api</artifactId>
 
     <dependencies>
+       <dependency>
+          <groupId>com.vladmihalcea</groupId>
+          <artifactId>hibernate-types-52</artifactId>
+          <version>2.9.13</version>
+       </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -30,8 +35,27 @@
           <artifactId>spring-web</artifactId>
        </dependency>
        <dependency>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-webmvc</artifactId>
+       </dependency>
+       <dependency>
           <groupId>org.springframework.cloud</groupId>
           <artifactId>spring-cloud-openfeign-core</artifactId>
+       </dependency>
+       <dependency>
+          <groupId>io.vyne</groupId>
+          <artifactId>vyne-core-types</artifactId>
+          <version>${project.version}</version>
+       </dependency>
+       <dependency>
+          <groupId>org.hibernate.javax.persistence</groupId>
+          <artifactId>hibernate-jpa-2.1-api</artifactId>
+          <version>1.0.0.Final</version>
+       </dependency>
+       <dependency>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-core</artifactId>
+          <version>${hibernate.version}</version>
        </dependency>
     </dependencies>
 </project>

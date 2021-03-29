@@ -3,6 +3,8 @@ package io.vyne.cask.ddl
 import de.bytefish.pgbulkinsert.pgsql.constants.DataType
 import de.bytefish.pgbulkinsert.row.SimpleRow
 import io.vyne.VersionedSource
+import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_DDL
+import io.vyne.cask.ddl.PostgresDdlGenerator.Companion.MESSAGE_ID_COLUMN_NAME
 import io.vyne.cask.ingest.InstanceAttributeSet
 import io.vyne.cask.timed
 import io.vyne.cask.types.allFields
@@ -10,12 +12,11 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.*
+import lang.taxi.utils.quoted
 import org.springframework.jdbc.core.JdbcTemplate
 import java.lang.StringBuilder
 import java.math.BigDecimal
-import java.nio.file.Path
 import java.sql.Timestamp
-import java.sql.Types
 import java.time.*
 import java.util.concurrent.TimeUnit
 
@@ -25,9 +26,7 @@ data class TableMetadata(
    val versionHash: String,
    val sourceSchemaIds: List<String>,
    val sources: List<String>,
-   val timestamp: Instant = Instant.now(),
-   val readCachePath: Path?,
-   val deltaAgainstTableName: String?
+   val timestamp: Instant = Instant.now()
 ) {
 
    private val versionedSources: List<VersionedSource> = sourceSchemaIds.mapIndexed { index, schemaId ->
@@ -54,9 +53,7 @@ data class TableMetadata(
             | versionHash varchar(32) NOT NULL,
             | sourceSchemaIds text[] NOT NULL,
             | sources text[] NOT NULL,
-            | insertedAt timestamp NOT NULL,
-            | readCachePath varchar(255),
-            | deltaAgainst varchar(32)
+            | insertedAt timestamp NOT NULL
             | )
         """.trimMargin()
 
@@ -86,10 +83,8 @@ data class TableMetadata(
         | versionHash,
         | sourceSchemaIds,
         | sources,
-        | insertedAt,
-        | deltaAgainst,
-        | readCachePath)
-        | values ( ? , ? , ?, ?, ?, ?, ?, ? )
+        | insertedAt)
+        | values ( ?, ?, ?, ?, ?, ? )
     """.trimMargin()
 
    fun executeInsert(template: JdbcTemplate) {
@@ -101,8 +96,6 @@ data class TableMetadata(
             setArray(4, connection.createArrayOf("text", sourceSchemaIds.toTypedArray()))
             setArray(5, connection.createArrayOf("text", sources.toTypedArray()))
             setTimestamp(6, Timestamp.from(timestamp))
-            if (deltaAgainstTableName != null) setString(7, deltaAgainstTableName) else setNull(7, Types.VARCHAR)
-            if (readCachePath != null) setString(8, readCachePath.toString()) else setNull(8, Types.VARCHAR)
          }
       }
    }
@@ -125,6 +118,9 @@ class PostgresDdlGenerator {
    private val _indexed = "Indexed"
 
    companion object {
+      const val MESSAGE_ID_COLUMN_NAME = "caskmessageid"
+      const val MESSAGE_ID_COLUMN_DDL = "\"$MESSAGE_ID_COLUMN_NAME\" varchar(64)"
+
       private const val POSTGRES_MAX_NAME_LENGTH = 31
       fun tableName(versionedType: VersionedType): String {
          val typeName = versionedType.type.name.name
@@ -134,9 +130,13 @@ class PostgresDdlGenerator {
             "${typeName}_${versionedType.versionedNameHash}"
          }.takeLast(POSTGRES_MAX_NAME_LENGTH)
          require(tableName.length <= POSTGRES_MAX_NAME_LENGTH) { "Generated tableName $tableName exceeds Postgres max of 31 characters" }
-         return tableName
+         return tableName.toLowerCase()
       }
-      fun toColumnName(field: Field) = """"${field.name}""""
+      fun toColumnName(field: Field) = toColumnName(field.name)
+      fun toColumnName(fieldName: String) = fieldName.quoted()
+      fun selectNullAs(fieldName: String) = "null as ${toColumnName(fieldName)}"
+      fun selectAs(sourceField: Field, targetFieldName: String) = "${toColumnName(sourceField)} as ${toColumnName(targetFieldName)}"
+      fun selectAs(sourceField: String, targetFieldName: String) = "$sourceField as ${toColumnName(targetFieldName)}"
    }
 
    fun generateDrop(versionedType: VersionedType): String {
@@ -146,38 +146,50 @@ class PostgresDdlGenerator {
    fun generateUpsertDml(versionedType: VersionedType, instance: InstanceAttributeSet): String {
       val tableName = tableName(versionedType)
       val fields = versionedType.allFields().sortedBy { it.name }
-      val primaryKeyFields = (versionedType.taxiType as ObjectType).definition?.fields
-         ?.filter { it.annotations.any { a -> a.name == _primaryKey } }
-      val fieldsExcludingPk = fields.minus(primaryKeyFields ?: emptyList())
-      val values: Map<String, Any> = fields.map { it.name to generateValueForField(it, instance) }.toMap()
+      val primaryKeyFields = (versionedType.taxiType as ObjectType).definition!!.fields
+         .filter { it.annotations.any { a -> a.name == _primaryKey } }
+      val fieldsExcludingPk = fields.minus(primaryKeyFields)
+      val values: Map<String, Any> = fields.mapNotNull {
+         val generateValueForField = generateValueForField(it, instance)
+         if (generateValueForField != null) {
+            it.name to generateValueForField
+         } else {
+            null
+         }
+      }.toMap()
 
-      return """INSERT INTO $tableName ( ${fields.joinToString(", ") { "\"${it.name}\"" }} )
-         | VALUES ( ${fields.joinToString(", ") { values[it.name].toString() }} )
-         | ON CONFLICT ( ${primaryKeyFields?.joinToString(", ") { "\"${it.name}\"" }} )
-         | ${
-      if (fieldsExcludingPk.isNotEmpty()) {
-         """DO UPDATE SET ${fieldsExcludingPk.joinToString(", ") { "\"${it.name}\" = ${values[it.name].toString()}" }}"""
-      } else {
-         """DO NOTHING"""
-      }}
+      val fieldNameList = fields.joinToString(", ") { "\"${it.name}\"" } +  ", ${MESSAGE_ID_COLUMN_NAME.quoted()}"
+
+      val fieldValueLIst = fields.joinToString(", ") { values[it.name].toString() } + ", '${instance.messageId}'"
+      val primaryKeyFieldsList = primaryKeyFields.joinToString(", ") { "\"${it.name}\"" }
+
+      val hasPrimaryKey = primaryKeyFields.isNotEmpty()
+
+      val upsertConflictStatement = if (hasPrimaryKey) {
+         val nonPkFieldsAndValues = fieldsExcludingPk.joinToString(", ") { "\"${it.name}\" = ${values[it.name]}" } +
+           ", ${MESSAGE_ID_COLUMN_NAME.quoted()} = '${instance.messageId}'"
+         """ON CONFLICT ( $primaryKeyFieldsList )
+            |DO UPDATE SET $nonPkFieldsAndValues""".trimMargin()
+      } else ""
+      return """INSERT INTO $tableName ( $fieldNameList )
+         | VALUES ( $fieldValueLIst )
+         | $upsertConflictStatement
       """.trimMargin()
    }
 
-   fun generateDdl(versionedType: VersionedType, schema: Schema, cachePath: Path?, typeMigration: TypeMigration?): TableGenerationStatement {
+   fun generateDdl(versionedType: VersionedType, schema: Schema): TableGenerationStatement {
       // Design choice - I'm generating against the Taxi type, not the vyne
       // one, as we're migrating back to Taxi types
       val type = schema.toTaxiType(versionedType)
-      val deltaAgainstTableName = typeMigration?.predecessorType?.let { tableName(it) }
-
       // if we're not migrating types, store all fields on the type
-      val fields = (typeMigration?.fields ?: versionedType.allFields()).filter { it.formula == null }
+      val fields = versionedType.allFields().filter { it.formula == null }
 
-      return generateDdl(type, versionedType, fields, cachePath, deltaAgainstTableName)
+      return generateDdl(type, versionedType, fields)
    }
 
-   private fun generateDdl(type: Type, versionedType: VersionedType, fields: List<Field>, cachePath: Path?, deltaAgainstTableName: String?): TableGenerationStatement {
+   private fun generateDdl(type: Type, versionedType: VersionedType, fields: List<Field>): TableGenerationStatement {
       return when (type) {
-         is ObjectType -> generateObjectDdl(type, versionedType, fields, cachePath, deltaAgainstTableName)
+         is ObjectType -> generateObjectDdl(type, versionedType, fields)
          else -> TODO("Type ${type::class.simpleName} not yet supported")
       }
    }
@@ -188,10 +200,8 @@ class PostgresDdlGenerator {
    private fun generateObjectDdl(
       type: ObjectType,
       versionedType: VersionedType,
-      fields: List<Field>,
-      cachePath: Path?,
-      deltaAgainstTableName: String?): TableGenerationStatement {
-      val columns = fields.map { generateColumnForField(it) }
+      fields: List<Field>): TableGenerationStatement {
+      val columns = fields.map { generateColumnForField(it) } + MessageIdColumn
       val tableName = tableName(versionedType)
       val ddl = """${generateCaskTableDdl(versionedType, fields)}
          |${generateTableIndexesDdl(tableName, fields)}
@@ -200,15 +210,15 @@ class PostgresDdlGenerator {
          tableName,
          type.qualifiedName,
          versionedType.versionHash,
-         versionedType.sources.map { it.id },
+         emptyList(),
+         emptyList(),
+//         versionedType.sources.map { it.id },
          // Note:  We're persisting the entire schema.  This is obviously way too much,
          // and will cause a big perf hit once we get real schemas here.
          // We need to build the ability to create a subset of a schema, based on the data needed
          // to compile a single type - pulling in type references where required.
-         versionedType.sources.map { it.content },
-         Instant.now(),
-         cachePath,
-         deltaAgainstTableName
+//         versionedType.sources.map { it.content },
+         Instant.now()
       )
       return TableGenerationStatement(ddl, versionedType, tableName, columns, metadata)
    }
@@ -218,18 +228,21 @@ class PostgresDdlGenerator {
       // TODO We can not have a field declared as both a PK and a unique constraint. Perhaps we should handle that on taxi side too.
       val indexedColumns = fields.filter { col -> col.annotations.any { it.name == _indexed } && !col.annotations.any { it.name == _primaryKey} }
       indexedColumns.forEach {
-         result.append("""CREATE INDEX IF NOT EXISTS idx_${tableName}_${it.name} ON ${tableName}("${it.name}");""")
+         result.appendln("""CREATE INDEX IF NOT EXISTS idx_${tableName}_${it.name} ON ${tableName}("${it.name}");""")
       }
+      // Also index our internal fields
+      result.appendln("""CREATE INDEX IF NOT EXISTS idx_${tableName}_${MESSAGE_ID_COLUMN_NAME} on ${tableName}("$MESSAGE_ID_COLUMN_NAME");""")
       return result.toString()
    }
 
    private fun generateCaskTableDdl(versionedType: VersionedType, fields: List<Field>): String {
       val tableName = tableName(versionedType)
-      val columns = fields.map { generateColumnForField(it) }
+      val columns = fields.map { generateColumnForField(it) } + MessageIdColumn
       val fieldDef = columns.joinToString(",\n") { it.sql }
 
       return """CREATE TABLE IF NOT EXISTS $tableName (
-         |$fieldDef${generatePrimaryKey(fields, tableName)});""".trimMargin()
+         |$fieldDef
+         |${generatePrimaryKey(fields, tableName)});""".trimMargin()
    }
 
    fun generateColumnForField(field: Field): PostgresColumn {
@@ -283,7 +296,7 @@ class PostgresDdlGenerator {
       val (postgresType, writer) = p
       val nullable = "" //if (field.nullable) "" else " NOT NULL"
 
-      return PostgresColumn(columnName, field, "$columnName $postgresType$nullable", primitiveType, writer)
+      return FieldBasedColumn(columnName, field, "$columnName $postgresType$nullable", writer)
    }
 
    // pgbulkinsert library does not handle BigDecimal's with negative scale.
@@ -296,7 +309,7 @@ class PostgresDdlGenerator {
       }
    }
 
-   private fun generateValueForField(field: Field, instance: InstanceAttributeSet): String {
+   private fun generateValueForField(field: Field, instance: InstanceAttributeSet): Any? {
       return when (val primitiveType = getPrimitiveType(field, field.type)) {
          PrimitiveType.STRING,
          PrimitiveType.BOOLEAN,
@@ -304,10 +317,17 @@ class PostgresDdlGenerator {
          PrimitiveType.DATE_TIME,
          PrimitiveType.INSTANT,
          PrimitiveType.TIME,
-         PrimitiveType.ANY -> "'${instance.attributes.getValue(field.name).value.toString()}'"
+         PrimitiveType.ANY -> {
+            val value = instance.attributes.getValue(field.name).value
+            if (value == null) {
+               value
+            } else {
+               "'${instance.attributes.getValue(field.name).value}'"
+            }
+         }
          PrimitiveType.DECIMAL,
          PrimitiveType.DOUBLE,
-         PrimitiveType.INTEGER -> instance.attributes.getValue(field.name).value.toString()
+         PrimitiveType.INTEGER -> instance.attributes.getValue(field.name).value
          else -> TODO("Primitive type ${primitiveType.name} not yet mapped")
       }
    }
@@ -325,11 +345,31 @@ private object ScalarTypes {
 
 typealias RowWriter = (rowWriter: SimpleRow, value: Any) -> Unit
 
-// Note: Storing the type explicity, rather than referencing from field, to avoid
-// having to look up primitives via aliases and inheritence again
-data class PostgresColumn(val name: String, val field: Field, val sql: String, val fieldType: Type, private val writer: RowWriter) {
-   fun write(rowWriter: SimpleRow, value: Any) {
+interface PostgresColumn {
+   val name:String
+   val sql: String
+   fun write(rowWriter: SimpleRow, value: Any)
+   fun readValue(attributeSet: InstanceAttributeSet): Any?
+}
+object MessageIdColumn : PostgresColumn {
+   override val name: String = MESSAGE_ID_COLUMN_NAME.quoted()
+   override val sql: String = MESSAGE_ID_COLUMN_DDL
+   override fun write(rowWriter: SimpleRow, value: Any) {
+      rowWriter.setVarChar(name, value.toString())
+   }
+
+   override fun readValue(attributeSet: InstanceAttributeSet): Any? {
+      return attributeSet.messageId
+   }
+
+}
+data class FieldBasedColumn(override val name: String, private val field: Field, override val sql: String, private val writer: RowWriter):PostgresColumn {
+   override fun write(rowWriter: SimpleRow, value: Any) {
       writer(rowWriter, value)
+   }
+
+   override fun readValue(attributeSet: InstanceAttributeSet): Any? {
+      return attributeSet.attributes.getValue(field.name).value
    }
 }
 

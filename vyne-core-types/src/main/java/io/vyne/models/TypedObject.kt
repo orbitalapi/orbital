@@ -17,14 +17,15 @@ data class TypedObject(
    private val suppliedValue: Map<String, TypedInstance>,
    override val source: DataSource) : TypedInstance, Map<String, TypedInstance>  {
 
-   private val combinedValues = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
+   private val combinedValues: Map<String, TypedInstance> = type.defaultValues?.plus(suppliedValue) ?: suppliedValue
 
    override val value: Map<String, TypedInstance>
       get() = combinedValues
 
    private val equality = Equality(this, TypedObject::type, TypedObject::value)
+   private val hash:Int by lazy { equality.hash() }
    companion object {
-      fun fromValue(typeName: String, value: Any, schema: Schema, source:DataSource): TypedObject {
+      fun fromValue(typeName: String, value: Any, schema: Schema, source:DataSource): TypedInstance {
          return fromValue(schema.type(typeName), value, schema, source = source)
       }
 
@@ -33,20 +34,25 @@ data class TypedObject(
       }
 
       fun fromAttributes(type: Type, attributes: Map<String, Any>, schema: Schema, performTypeConversions: Boolean = true, source:DataSource): TypedObject {
-         val typedAttributes: Map<String, TypedInstance> = attributes.map { (attributeName, value) ->
+         val typedAttributes: Map<String, TypedInstance> = attributes
+            .filterKeys { type.hasAttribute(it) }
+            .map { (attributeName, value) ->
             val attributeType = schema.type(type.attributes.getValue(attributeName).type)
             attributeName to TypedInstance.from(attributeType, value, schema, performTypeConversions, source = source)
          }.toMap()
          return TypedObject(type, typedAttributes, source)
       }
 
-      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource): TypedObject {
-         return TypedObjectFactory(type, value, schema, nullValues, source).build()
+      fun fromValue(type: Type, value: Any, schema: Schema, nullValues: Set<String> = emptySet(), source:DataSource, evaluateAccessors:Boolean = true): TypedInstance {
+         return TypedObjectFactory(type, value, schema, nullValues, source, evaluateAccessors = evaluateAccessors).build()
       }
    }
 
+   override fun toString(): String {
+      return "TypedObject(type=${type.qualifiedName.longDisplayName}, value=$suppliedValue)"
+   }
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-   override fun hashCode(): Int = equality.hash()
+   override fun hashCode(): Int = hash
 
    fun hasAttribute(name: String): Boolean {
       return this.combinedValues.containsKey(name)
@@ -85,12 +91,9 @@ data class TypedObject(
    fun getAttributeIdentifiedByType(type: Type, returnNull: Boolean = false): TypedInstance {
       val candidates = this.value.filter { (_, value) -> value.type.isAssignableTo(type) }
       return when {
-         candidates.isEmpty() && returnNull -> TypedNull(type) // sometimes i want to allow null values
+         candidates.isEmpty() && returnNull -> TypedNull.create(type) // sometimes i want to allow null values
          candidates.isEmpty() -> error("No properties on type ${this.type.name.parameterizedName} have type ${type.name.parameterizedName}")
-         candidates.size > 1 -> {
-            val candidateDescription = candidates.entries.joinToString { "${it.key} : ${it.value.type.name.parameterizedName}" }
-            error("Ambiguous property - there are ${candidates.size} possible matches for type ${type.name.parameterizedName}: $candidateDescription")
-         }
+         candidates.size > 1 -> TypedInstanceCandidateFilter.resolve(candidates.values, type)
          else -> candidates.values.first()
       }
    }

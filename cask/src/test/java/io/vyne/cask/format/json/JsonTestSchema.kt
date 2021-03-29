@@ -19,6 +19,12 @@ type OrderWindowSummaryCsv {
     open : Price by column(3)
     close : Price by column(4)
 }
+type OrderWindowSummaryXml {
+    orderDate : Date by xpath("/Order/Date")
+    symbol : Symbol by xpath("/Order/Symbol")
+    open : Price by xpath("/Order/Open")
+    close : Price by xpath("/Order/Close")
+}
 """.trimIndent()
    val schemaV1 = TaxiSchema.from(sourceV1, "Coinbase", "0.1.0")
 
@@ -50,4 +56,35 @@ type OrderWindowSummaryCsv {
       }
    """.trimIndent()
    val schemaV3 = TaxiSchema.from(sourceV3, "Coinbase", "0.3.0")
+
+   val nullableSourceV1 = """
+type alias Price as Decimal
+type alias Symbol as String
+type OrderWindowSummary {
+    symbol : Symbol? by jsonPath("/Symbol")
+    open : Price? by jsonPath("/Open")
+    // Note, this is intentionally wrong, so we can redefine it in v2
+    close : Price? by jsonPath("/High")
+    orderDate: Date? by jsonPath("/Date")
+}
+type OrderWindowSummaryCsv {
+    orderDate : Date? by column(1)
+    symbol : Symbol? by column(2)
+    open : Price? by column(3)
+    close : Price? by column(4)
+}
+""".trimIndent()
+
+   val CsvWithDefault = """
+      type alias Price as Decimal
+      type alias Symbol as String
+      type OrderWindowSummaryCsv {
+          orderDate : Date by column(1)
+          symbol : Symbol by column(2)
+          open : Price by column(3)
+          close : Price by column(4)
+          foo: String by default("")
+      }
+   """.trimIndent()
+   val nullableSchemaV1 = TaxiSchema.from(nullableSourceV1, "Coinbase", "0.1.0")
 }

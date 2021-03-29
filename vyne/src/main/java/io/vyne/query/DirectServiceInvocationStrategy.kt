@@ -1,14 +1,19 @@
 package io.vyne.query
 
+import com.google.common.cache.CacheBuilder
 import io.vyne.models.DefinedInSchema
-import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
-import io.vyne.schemas.*
+import io.vyne.query.planner.ProjectionHeuristicsGraphSearchResult
+import io.vyne.schemas.Operation
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.PropertyToParameterConstraint
+import io.vyne.schemas.RemoteOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Type
 import io.vyne.utils.log
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.RelativeValueExpression
-import lang.taxi.types.AttributePath
 import org.springframework.stereotype.Component
 
 // Note:  Currently tested via tests in VyneTest, no direct tests, but that'd be good to add.
@@ -16,68 +21,42 @@ import org.springframework.stereotype.Component
  * Query strategy that will invoke services that return the requested type,
  * and do not require any parameters
  */
-@Component
-class DirectServiceInvocationStrategy(private val invocationService: OperationInvocationService) : QueryStrategy {
-   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryStrategyResult {
-      return if(context.debugProfiling) {
+class DirectServiceInvocationStrategy(invocationService: OperationInvocationService) : QueryStrategy, BaseOperationInvocationStrategy(invocationService) {
+   private val operationsForTypeCache = CacheBuilder.newBuilder()
+      .weakKeys()
+      .build<Type, List<Operation>>()
+   override fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+      if (context.isProjecting) {
+         return QueryStrategyResult.empty()
+      }
+      return if (context.debugProfiling) {
          context.startChild(this, "look for candidate services", OperationType.LOOKUP) { profilerOperation ->
-            lookForCandidateServices(context, target)
+            val operations = lookForCandidateServices(context, target)
+            invokeOperations(operations, context, target)
          }
       } else {
-         lookForCandidateServices(context, target)
+         val operations = lookForCandidateServices(context, target)
+         return invokeOperations(operations, context, target)
       }
    }
-
-   private fun lookForCandidateServices(context: QueryContext, target: Set<QuerySpecTypeNode>): QueryStrategyResult {
+   private fun lookForCandidateServices(context: QueryContext, target: Set<QuerySpecTypeNode>): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {
       // TODO try caching candidate operations on the context
-      val matchedNodes = getCandidateOperations(context.schema, target)
+      return getCandidateOperations(context.schema, target)
          .filter { (_, operationToParameters) -> operationToParameters.isNotEmpty() }
-         .map { (queryNode, operationToParameters) ->
-            val operationsToInvoke = when {
-               operationToParameters.size > 1 && queryNode.mode != QueryMode.GATHER -> {
-                  log().warn("Running in query mode ${queryNode.mode} and multiple candidate operations detected - ${operationToParameters.keys.joinToString { it.name }} - this isn't supported yet, will just pick the first one")
-                  listOf(operationToParameters.keys.first())
-               }
-               queryNode.mode == QueryMode.GATHER -> operationToParameters.keys.toList()
-               else -> listOf(operationToParameters.keys.first())
-            }
 
-
-            val serviceResults = operationsToInvoke.map { operation ->
-               val parameters = operationToParameters.getValue(operation)
-               val (service, _) = context.schema.operation(operation.qualifiedName)
-               val serviceResult = invocationService.invokeOperation(
-                  service,
-                  operation,
-                  context = context,
-                  preferredParams = emptySet(),
-                  providedParamValues = parameters.toList()
-               )
-               serviceResult
-            }.flattenNestedTypedCollections(flattenedType = queryNode.type)
-
-            val strategyResult = when {
-               serviceResults.isEmpty() -> null
-               serviceResults is TypedCollection -> serviceResults
-               serviceResults.size == 1 -> serviceResults.first()
-               else -> TypedCollection(queryNode.type, serviceResults) // Not sure this is a valid
-            }
-            queryNode to strategyResult
-         }.toMap()
-
-      return QueryStrategyResult(matchedNodes)
    }
+
 
    /**
     * Returns the operations that we can invoke, grouped by target query node.
     */
-   internal fun getCandidateOperations(schema: Schema, target: Set<QuerySpecTypeNode>, requireAllParametersResolved: Boolean = true): Map<QuerySpecTypeNode, Map<Operation, Map<Parameter, TypedInstance>>> {
-      val grouped =  target.map { it to getCandidateOperations(schema, it, requireAllParametersResolved) }
+   internal fun getCandidateOperations(schema: Schema, target: Set<QuerySpecTypeNode>, requireAllParametersResolved: Boolean = true): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {
+      val grouped = target.map { it to getCandidateOperations(schema, it, requireAllParametersResolved) }
          .groupBy({ it.first }, { it.second })
 
-val result = grouped.mapValues { (_, operationParameterMaps) ->
-            operationParameterMaps.reduce { acc, map -> acc + map }
-         }
+      val result = grouped.mapValues { (_, operationParameterMaps) ->
+         operationParameterMaps.reduce { acc, map -> acc + map }
+      }
       return result
    }
 
@@ -86,9 +65,11 @@ val result = grouped.mapValues { (_, operationParameterMaps) ->
     * (either because they have no parameters, or because all their parameters are populated by constraints)
     * and the set of parameters that we have identified values for
     */
-   internal fun getCandidateOperations(schema: Schema, target: QuerySpecTypeNode, requireAllParametersResolved: Boolean): Map<Operation, Map<Parameter, TypedInstance>> {
-      val operations =  schema.operations
-         .filter { it.returnType.isAssignableTo(target.type) }
+   internal fun getCandidateOperations(schema: Schema, target: QuerySpecTypeNode, requireAllParametersResolved: Boolean): Map<RemoteOperation, Map<Parameter, TypedInstance>> {
+      var operationsForType = operationsForTypeCache.get(target.type) {
+         schema.operations.filter { it.returnType.isAssignableTo(target.type) }
+      }
+      val operations = operationsForType
          .mapNotNull { operation ->
             val (satisfiesConstraints, operationParameters) = compareOperationContractToDataRequirementsAndFetchSearchParams(operation, target, schema)
             if (!satisfiesConstraints) {
@@ -112,12 +93,13 @@ val result = grouped.mapValues { (_, operationParameterMaps) ->
    }
 
    private fun filterPropertyToParameterConstraint(operationConstraint: PropertyToParameterConstraint, requiredConstraint: PropertyToParameterConstraint): Boolean {
-    return   operationConstraint.propertyIdentifier == requiredConstraint.propertyIdentifier
+      return operationConstraint.propertyIdentifier == requiredConstraint.propertyIdentifier
          && operationConstraint.operator == requiredConstraint.operator
          && operationConstraint.expectedValue is RelativeValueExpression
          && requiredConstraint.expectedValue is ConstantValueExpression
 
    }
+
    /**
     * Checks to see if the operation satisfies the contract of the target (if either exist).
     * If a contract exists on the target which provides input params, and the operation
@@ -163,11 +145,3 @@ val result = grouped.mapValues { (_, operationParameterMaps) ->
    }
 }
 
-private fun List<TypedInstance>.flattenNestedTypedCollections(flattenedType:Type): List<TypedInstance> {
-   return if (this.all { it is TypedCollection }) {
-      val values = this.flatMap { (it as TypedCollection).value }
-      TypedCollection(flattenedType,values)
-   } else {
-      this
-   }
-}

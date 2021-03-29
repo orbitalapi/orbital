@@ -34,14 +34,14 @@ class PermitInstructionExecutor : InstructionExecutor<PermitInstruction> {
 class FilterInstructionExecutor : InstructionExecutor<FilterInstruction> {
    override fun execute(instruction: FilterInstruction, value: TypedInstance): TypedInstance {
       if (instruction.isFilterAll) {
-         return TypedNull(value.type)
+         return TypedNull.create(value.type)
       } else {
          require(value is TypedObject) { "Cannot filter attributes of type ${value.type.fullyQualifiedName} as it is not an object" }
          val valueObject = value as TypedObject
 
          val replacements = instruction.fieldNames.map { fieldName ->
             val originalAttribute = valueObject[fieldName]
-            fieldName to TypedNull(originalAttribute.type)
+            fieldName to TypedNull.create(originalAttribute.type)
          }.toMap()
          return valueObject.copy(replacements)
       }

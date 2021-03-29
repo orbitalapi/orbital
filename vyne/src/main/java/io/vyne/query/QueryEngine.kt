@@ -1,15 +1,13 @@
 package io.vyne.query
 
-import io.vyne.FactSetId
-import io.vyne.FactSetMap
-import io.vyne.FactSets
-import io.vyne.ModelContainer
-import io.vyne.filterFactSets
+import io.vyne.*
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
+import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
@@ -19,21 +17,21 @@ import java.util.stream.Collectors
 
 
 open class SearchFailedException(message: String, val evaluatedPath: List<EvaluatedEdge>, val profilerOperation: ProfilerOperation) : RuntimeException(message)
-open class ProjectionFailedException(message: String): RuntimeException(message)
+open class ProjectionFailedException(message: String) : RuntimeException(message)
 interface QueryEngine {
 
    val schema: Schema
-   fun find(type: Type, context: QueryContext): QueryResult
-   fun find(queryString: QueryExpression, context: QueryContext): QueryResult
-   fun find(target: QuerySpecTypeNode, context: QueryContext): QueryResult
-   fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult
+   fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   fun find(queryString: QueryExpression, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   fun find(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   fun find(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   fun find(target: QuerySpecTypeNode, context: QueryContext, excludedOperations: Set<SearchGraphExclusion<Operation>>, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
 
    fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult
 
    fun queryContext(
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
-      additionalFacts: Set<TypedInstance> = emptySet(),
-      resultMode: ResultMode = ResultMode.SIMPLE): QueryContext
+      additionalFacts: Set<TypedInstance> = emptySet()): QueryContext
 
    fun build(type: Type, context: QueryContext): QueryResult = build(TypeNameQueryExpression(type.fullyQualifiedName), context)
    fun build(query: QueryExpression, context: QueryContext): QueryResult
@@ -71,10 +69,9 @@ class StatefulQueryEngine(
 
    override fun queryContext(
       factSetIds: Set<FactSetId>,
-      additionalFacts: Set<TypedInstance>,
-      resultMode: ResultMode): QueryContext {
+      additionalFacts: Set<TypedInstance>): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
-      return QueryContext.from(schema, facts + additionalFacts, this, profiler, resultMode)
+      return QueryContext.from(schema, facts + additionalFacts, this, profiler)
    }
 }
 
@@ -118,6 +115,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // EXPERIMENT: Detecting transforming of collections, ie A[] -> B[]
       // We're hacking this to to A.map{ build(B) }.
       // This could cause other issues, but I want to explore this approach
+
       val isCollectionToCollectionTransformation = context.facts.size == 1
          && context.facts.first() is TypedCollection
          && targetType.isCollection
@@ -131,34 +129,36 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
       val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
       val result: TypedInstance? = when {
-          isCollectionToCollectionTransformation -> {
-             mapCollectionToCollection(targetType, context)
-          }
-          isCollectionsToCollectionTransformation -> {
-             mapCollectionsToCollection(targetType, context)
-          }
+         isCollectionToCollectionTransformation -> {
+            mapCollectionToCollection(targetType, context)
+         }
+         isCollectionsToCollectionTransformation -> {
+            mapCollectionsToCollection(targetType, context)
+         }
 
          isSingleToCollectionTransform -> {
             mapSingleToCollection(targetType, context)
          }
-          else -> {
-             context.isProjecting = true
-             ObjectBuilder(this, context, targetType).build()
-          }
+         targetType.isCollection && context.facts.all { it is TypedNull } -> {
+            TypedCollection.arrayOf(targetType.collectionType!!, emptyList())
+         }
+         else -> {
+            context.isProjecting = true
+            ObjectBuilder(this, context, targetType).build()
+         }
       }
 
       return if (result != null) {
          QueryResult(
             mapOf(querySpecTypeNode to result),
             emptySet(),
-            resultMode = context.resultMode,
-            profilerOperation = context.profiler.root
+            profilerOperation = context.profiler.root,
+            anonymousTypes = context.schema.typeCache.anonymousTypes()
          )
       } else {
          QueryResult(
             emptyMap(),
             setOf(querySpecTypeNode),
-            resultMode = context.resultMode,
             profilerOperation = context.profiler.root
          )
       }
@@ -167,7 +167,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    private fun onlyTypedObject(context: QueryContext): TypedObject? {
       val typedObjects = context.facts.stream().filter { fact -> fact is TypedObject }.collect(Collectors.toList())
       return if (typedObjects.size == 1) {
-          typedObjects[0] as TypedObject
+         typedObjects[0] as TypedObject
       } else {
          null
       }
@@ -196,12 +196,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
          val inboundFactList = (context.facts.first() as TypedCollection).value
          log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
-         val transformed =  inboundFactList
-            .stream()
-            .map {  mapTo(targetCollectionType, it, context) }
-            .filter { it != null}
-            .collect(Collectors.toList())
-
+         val transformed = inboundFactList.mapNotNull { it -> mapTo(targetCollectionType, it, context) }
          return@timed when {
             transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
             else -> TypedCollection.from(flattenResult(transformed))
@@ -215,10 +210,10 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
          val inboundFactList = listOf(onlyTypedObject(context)!!)
          log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
-         val transformed =  inboundFactList
+         val transformed = inboundFactList
             .stream()
-            .map {  mapTo(targetCollectionType, it, context) }
-            .filter { it != null}
+            .map { mapTo(targetCollectionType, it, context) }
+            .filter { it != null }
             .collect(Collectors.toList())
 
          return@timed when {
@@ -232,11 +227,11 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return result
          .filterNotNull()
          .flatMap {
-         when(it) {
-            is TypedCollection -> it.value
-            else -> listOf(it)
+            when (it) {
+               is TypedCollection -> it.value
+               else -> listOf(it)
+            }
          }
-      }
    }
 
    private fun mapTo(targetType: Type, typedInstance: TypedInstance, context: QueryContext): TypedInstance? {
@@ -258,22 +253,35 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return queryParser.parse(queryExpression)
    }
 
-   override fun find(queryString: QueryExpression, context: QueryContext): QueryResult {
+   override fun find(queryString: QueryExpression, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
       val target = queryParser.parse(queryString)
-      return find(target, context)
+      return find(target, context, spec)
    }
 
-   override fun find(type: Type, context: QueryContext): QueryResult {
-      return find(TypeNameQueryExpression(type.fullyQualifiedName), context)
+   override fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
+      return find(TypeNameQueryExpression(type.fullyQualifiedName), context, spec)
    }
 
-   override fun find(target: QuerySpecTypeNode, context: QueryContext): QueryResult {
-      return find(setOf(target), context)
+   override fun find(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
+      return find(setOf(target), context, spec)
    }
 
-   override fun find(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult {
+   override fun find(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
       try {
-         return doFind(target, context)
+         return doFind(target, context, spec)
+      } catch (e: Exception) {
+         log().error("Search failed with exception:", e)
+         throw SearchRuntimeException(e, context.profiler.root)
+      }
+   }
+
+   override fun find(
+      target: QuerySpecTypeNode,
+      context: QueryContext,
+      excludedOperations: Set<SearchGraphExclusion<Operation>>,
+      spec: TypedInstanceValidPredicate): QueryResult {
+      try {
+         return doFind(target, context, spec, excludedOperations)
       } catch (e: Exception) {
          log().error("Search failed with exception:", e)
          throw SearchRuntimeException(e, context.profiler.root)
@@ -281,24 +289,25 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    }
 
 
-   private fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext): QueryResult {
+
+   private fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
       // TODO : BIG opportunity to optimize this by evaluating multiple querySpecNodes at once.
       // Which would allow us to be smarter about results we collect from rest calls.
       // Optimize later.
-      val results = target.map { doFind(it, context) }
+      val results = target.map { doFind(it, context, spec) }
       val result = results.reduce { acc, queryResult ->
          QueryResult(
             results = acc.results + queryResult.results,
             unmatchedNodes = acc.unmatchedNodes + queryResult.unmatchedNodes,
             path = null,
             profilerOperation = queryResult.profilerOperation,
-            resultMode = context.resultMode
+            anonymousTypes = acc.anonymousTypes + acc.anonymousTypes
          )
       }
       return result
    }
 
-   private fun doFind(target: QuerySpecTypeNode, context: QueryContext): QueryResult {
+   private fun doFind(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate, excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()): QueryResult {
 
       val matchedNodes = mutableMapOf<QuerySpecTypeNode, TypedInstance?>()
 
@@ -317,7 +326,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       while (strategyIterator.hasNext() && unresolvedNodes().isNotEmpty()) {
          val queryStrategy = strategyIterator.next()
          timed(name = "Strategy ${queryStrategy::class.java.name} ${target.type.name}", timeUnit = TimeUnit.MICROSECONDS, log = false) {
-            val strategyResult = invokeStrategy(context, queryStrategy, querySet, target)
+            val strategyResult = invokeStrategy(context, queryStrategy, querySet, target, InvocationConstraints(spec, excludedOperations))
             // Note : We should add this additional data to the context too,
             // so that it's available for future query strategies to use.
             context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
@@ -331,7 +340,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             }
          }
       }
-      if (unresolvedNodes().isNotEmpty()) {
+      val currentlyUnresolvedNodes = unresolvedNodes()
+      if (currentlyUnresolvedNodes.isNotEmpty()) {
          // Commenting out, creates noise and even with debug off it creates the underlying string from unresolved nodes
          // log().debug("The following nodes weren't matched: ${unresolvedNodes().joinToString(", ")}")
       }
@@ -344,21 +354,25 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          projectTo(context.projectResultsTo()!!, context)
       } else QueryResult(
          matchedNodes,
-         unresolvedNodes().toSet(),
+         currentlyUnresolvedNodes.toSet(),
          path = null,
-         profilerOperation = context.profiler.root,
-         resultMode = context.resultMode
+         profilerOperation = context.profiler.root
       )
    }
 
-   private fun invokeStrategy(context: QueryContext, queryStrategy: QueryStrategy, querySet: Set<QuerySpecTypeNode>, target: QuerySpecTypeNode): QueryStrategyResult {
+   private fun invokeStrategy(
+      context: QueryContext,
+      queryStrategy: QueryStrategy,
+      querySet: Set<QuerySpecTypeNode>,
+      target: QuerySpecTypeNode,
+      invocationConstraints: InvocationConstraints): QueryStrategyResult {
       return if (context.debugProfiling) {
          context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) { op ->
             op.addContext("Search target", querySet.map { it.type.fullyQualifiedName })
-            queryStrategy.invoke(setOf(target), context)
+            queryStrategy.invoke(setOf(target), context, invocationConstraints)
          }
       } else {
-         return queryStrategy.invoke(setOf(target), context)
+         return queryStrategy.invoke(setOf(target), context, invocationConstraints)
       }
    }
 }

@@ -1,5 +1,9 @@
 @import "src/theme";
 
+.alerts-container {
+  width: 100%;
+}
+
 .sidenav-container {
   height: 100%;
 }
@@ -7,9 +11,9 @@
 .logo {
   img {
     vertical-align: middle;
-    width: 36px;
-    padding-right: 15px;
+    width: 65%;
   }
+
   span {
     vertical-align: middle;
     font-weight: 600;
@@ -19,13 +23,14 @@
 
 .sidenav {
   width: 230px;
-  background-color: $dark-blue-1;
-  border-right: 1px solid rgba(0,0,0,0.15);
+  background-color: $midnight-grey;
+  border-right: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 .navbar-route {
 
   opacity: 0.6;
+
   &:hover {
     opacity: 1;
   }
@@ -39,29 +44,41 @@
   color: white;
   font-size: 1rem;
   font-weight: 400;
+
   a {
     padding: 24px;
     display: flex;
     align-items: center;
+
     img {
-      width:  36px;
+      width: 36px;
       margin-right: 18px;
     }
+
     span {
       flex-grow: 1;
       text-align: left;
     }
+
     &.active {
-      background-color: rgba(0,0,0,0.5);
+      background-color: rgba(0, 0, 0, 0.8);
       //color: #8cc63e;
     }
   }
+}
+
+.userInfo {
+  position: absolute;
+  bottom: 20px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 15px;
 }
 
 .appInfo {
   position: absolute;
   bottom: 0px;
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   padding: 15px;
 }

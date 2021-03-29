@@ -13,13 +13,20 @@ fun <T> xtimed(name: String, log: Boolean = false, timeUnit: TimeUnit = TimeUnit
 }
 
 fun <T> timed(name: String, log: Boolean = true, timeUnit: TimeUnit = TimeUnit.MILLISECONDS, block: () -> T): T {
-    val stopwatch = Stopwatch.createStarted()
-    val response = block()
-    if (log) {
-        Timer.log.info("$name completed in ${stopwatch.duration(timeUnit)}")
-    }
+   return if (log) {
+      val stopwatch = Stopwatch.createStarted()
+      val response = block()
+      Timer.log.info("$name completed in ${stopwatch.duration(timeUnit)}")
+      response
+   } else {
+      block()
+   }
+}
 
-    return response
+fun timed(timeUnit: TimeUnit = TimeUnit.MICROSECONDS, block: () -> Unit): Long {
+   val stopwatch = Stopwatch.createStarted()
+   block()
+   return stopwatch.elapsed(timeUnit)
 }
 
 fun Stopwatch.duration(timeUnit: TimeUnit): String {

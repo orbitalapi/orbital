@@ -10,6 +10,7 @@ import lang.taxi.Equality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
+import lang.taxi.types.ArrayType
 import lang.taxi.types.AttributePath
 import lang.taxi.types.EnumType
 import lang.taxi.types.Formula
@@ -31,7 +32,7 @@ typealias AttributeName = String
 data class Type(
    @JsonView(TypeLightView::class)
    val name: QualifiedName,
-   @JsonView(TypeFullView::class)
+   @JsonView(TypeLightView::class)
    val attributes: Map<AttributeName, Field> = emptyMap(),
 
    @JsonView(TypeFullView::class)
@@ -106,7 +107,10 @@ data class Type(
    val isTypeAlias = aliasForTypeName != null
 
    @JsonView(TypeFullView::class)
-   val format: String? = taxiType.format
+   val offset: Int? = taxiType.offset
+
+   @JsonView(TypeFullView::class)
+   val format: List<String>? = taxiType.format
 
    @JsonView(TypeFullView::class)
    val hasFormat = format != null
@@ -114,13 +118,16 @@ data class Type(
    @JsonView(TypeFullView::class)
    val isCalculated = taxiType.calculation != null
 
+   @get:JsonView(TypeFullView::class)
+   val basePrimitiveTypeName: QualifiedName? = taxiType.basePrimitive?.toQualifiedName()?.toVyneQualifiedName()
+
    @get:JsonIgnore
    val calculation: Formula?
       get() = taxiType.calculation
 
    @get:JsonView(TypeFullView::class)
    val unformattedTypeName: QualifiedName? by lazy {
-      if (hasFormat) {
+      if (hasFormat || offset != null) {
          resolveUnderlyingFormattedType().qualifiedName
       } else null
    }
@@ -169,6 +176,14 @@ data class Type(
    val qualifiedName: QualifiedName
       get() = QualifiedName(fullyQualifiedName, typeParametersTypeNames)
 
+   val longDisplayName:String
+      get() {
+         return if (this.hasFormat) {
+            this.unformattedTypeName!!.longDisplayName + "(${this.format!!.joinToString(",")})"
+         } else {
+            qualifiedName.longDisplayName
+         }
+      }
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.
@@ -186,7 +201,7 @@ data class Type(
    val isCollection: Boolean by lazy {
       (listOfNotNull(this.name, this.aliasForTypeName) + this.inheritanceGraph.flatMap {
          listOfNotNull(it.name, it.aliasForTypeName)
-      }).any { it.parameterizedName.startsWith(lang.taxi.types.PrimitiveType.ARRAY.qualifiedName) }
+      }).any { it.parameterizedName.startsWith(ArrayType.NAME) }
    }
 
    @get:JsonIgnore
@@ -346,7 +361,7 @@ data class Type(
          // Ideally, we need better constructrs in the langauge to suport definint the primitve types.
          // For now, let's stop resolving aliases one step before the primitive
          when {
-            aliasForTypeName!!.fullyQualifiedName == PrimitiveType.ARRAY.qualifiedName -> resolvedFormattedType.aliasForType!!.resolveAliases()
+            aliasForTypeName!!.fullyQualifiedName == ArrayType.NAME -> resolvedFormattedType.aliasForType!!.resolveAliases()
             resolvedFormattedType.aliasForType!!.isPrimitive -> this
             else -> resolvedFormattedType.aliasForType!!.resolveAliases()
          }
@@ -355,7 +370,7 @@ data class Type(
 
    // Don't call this directly, use resolveAliases()
    private fun resolveUnderlyingFormattedType(): Type {
-      if (this.format == null) {
+      if (this.format == null && this.offset == null) {
          return this
       }
       require(this.inherits.size <= 1) { "A formatted type should have at most 1 supertype" }
@@ -375,6 +390,14 @@ data class Type(
       //         }
       // In this scneario, we want to refer to the primitive, because there's no other option.
       if (superType.isPrimitive && this.format != superType.format) {
+         return superType
+      }
+
+      // Case for inline 'offset'
+      //  model OutputModel {
+      //            myField : Instant( @offset = 60 )
+      //         }
+      if (superType.isPrimitive && this.offset != superType.offset) {
          return superType
       }
       val resolvedSuperType = superType.resolveAliases()
@@ -463,6 +486,10 @@ data class Type(
       } else {
          resolvedTypes.values.first()
       }
+   }
+
+   fun hasAttribute(name: String): Boolean {
+      return this.attributes.containsKey(name)
    }
 }
 

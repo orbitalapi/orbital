@@ -1,5 +1,5 @@
 import {BrowserModule} from '@angular/platform-browser';
-import {NgModule} from '@angular/core';
+import {ApplicationRef, DoBootstrap, NgModule, Optional} from '@angular/core';
 
 import {AppComponent} from './app.component';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
@@ -28,19 +28,33 @@ import {TypeListModule} from './type-list/type-list.module';
 import {TypeListComponent} from './type-list/type-list.component';
 import {SchemaExplorerModule} from './schema-explorer/schema-explorer.module';
 import {VyneModule} from './vyne/vyne.module';
-import { CaskViewerModule } from './cask-viewer/cask-viewer.module';
+import {CaskViewerModule} from './cask-viewer/cask-viewer.module';
 import {CaskViewerComponent} from './cask-viewer/cask-viewer.component';
-import {InheritanceGraphComponent} from './inheritence-graph/inheritance-graph.component';
 import {QueryHistoryContainerComponent} from './query-history/query-history-container.component';
-import { QueryPanelComponent } from './query-panel/query-panel.component';
-import { QueryPanelModule } from './query-panel/query-panel.module';
-import { ResultsTableComponent } from './results-table/results-table.component';
+import {QueryPanelComponent} from './query-panel/query-panel.component';
+import {QueryPanelModule} from './query-panel/query-panel.module';
+import {InjectableRxStompConfig, RxStompService, rxStompServiceFactory} from '@stomp/ng2-stompjs';
+import {RxStompConfig} from './stomp-config';
+import {SchemaNotificationService} from './services/schema-notification.service';
+import {MatNativeDateModule} from '@angular/material/core';
+import {ServiceViewContainerComponent} from './service-view/service-view-container.component';
+import {ServiceViewModule} from './service-view/service-view.module';
+import {OperationViewModule} from './operation-view/operation-view.module';
+import {OperationViewContainerComponent} from './operation-view/operation-view-container.component';
+import {AuthModule} from './auth/auth.module';
+import {AuthService} from './auth/auth.service';
 
 export const routerModule = RouterModule.forRoot(
   [
-    {path: '', redirectTo: 'types', pathMatch: 'full'},
-    {path: 'types', component: TypeListComponent},
-    {path: 'types/:typeName', component: TypeViewerContainerComponent},
+    {path: '', redirectTo: 'catalog', pathMatch: 'full'},
+    {path: 'types', redirectTo: 'catalog'},
+    {path: 'catalogue', redirectTo: 'catalog'},
+    {path: 'types/:typeName', redirectTo: 'catalog/:typeName'},
+    {path: 'catalogue/:typeName', redirectTo: 'catalog/:typeName'},
+    {path: 'catalog/:typeName', component: TypeViewerContainerComponent},
+    {path: 'catalog', component: TypeListComponent},
+    {path: 'services/:serviceName', component: ServiceViewContainerComponent},
+    {path: 'services/:serviceName/:operationName', component: OperationViewContainerComponent},
     {path: 'query-wizard', component: QueryPanelComponent},
     {path: 'data-explorer', component: DataExplorerComponent},
     {path: 'schema-explorer', component: SchemaExplorerComponent},
@@ -52,10 +66,19 @@ export const routerModule = RouterModule.forRoot(
   {useHash: false, anchorScrolling: 'enabled', scrollPositionRestoration: 'disabled'}
 );
 
+const oauth2OidcModule =  [AuthModule];
+
+
+/*
+if (!environment.secure) {
+  oauth2OidcModule = [];
+}
+*/
+
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
   ],
   imports: [
     routerModule,
@@ -66,6 +89,7 @@ export const routerModule = RouterModule.forRoot(
     LayoutModule,
 
     HttpClientModule,
+    MatNativeDateModule,
 
     MarkdownModule.forRoot(),
 
@@ -77,17 +101,43 @@ export const routerModule = RouterModule.forRoot(
     DataExplorerModule,
     SearchModule,
     SchemaExplorerModule,
+    ServiceViewModule,
+    OperationViewModule,
     CodeViewerModule,
     QueryPanelModule,
     QueryHistoryModule,
     TypeListModule,
-    VyneModule
-
+    VyneModule,
+    ...oauth2OidcModule,
   ],
-  // Not sure why I'm having to do this -- but here we are
-  providers: [TypesService, QueryService, SearchService],
+  providers: [
+    TypesService,
+    QueryService,
+    SearchService,
+    SchemaNotificationService,
+    {
+      provide: InjectableRxStompConfig,
+      useValue: RxStompConfig
+    },
+    {
+      provide: RxStompService,
+      useFactory: rxStompServiceFactory,
+      deps: [InjectableRxStompConfig]
+    }
+  ],
   exports: [],
-  bootstrap: [AppComponent]
+  entryComponents: [AppComponent]
 })
-export class AppModule {
+export class AppModule implements DoBootstrap {
+  constructor(@Optional() private authService: AuthService) {}
+
+  ngDoBootstrap(appRef: ApplicationRef): void {
+    this.authService.bootstrapAuthService()
+      .then(() => {
+        appRef.bootstrap(AppComponent);
+      })
+      .catch(error => {
+        console.error(`[ngDoBootstrap] Problem while authService.bootstrapAuthService(): ${JSON.stringify(error)}`, error);
+      });
+  }
 }

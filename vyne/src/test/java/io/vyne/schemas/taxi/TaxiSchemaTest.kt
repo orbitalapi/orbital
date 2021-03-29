@@ -4,12 +4,16 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.VersionedSource
+import io.vyne.query.queryBuilders.VyneQlGrammar
+import io.vyne.queryDeclaration
 import io.vyne.schemas.FieldModifier
 import io.vyne.schemas.Modifier
+import io.vyne.schemas.OperationNames
 import io.vyne.schemas.TypeFullView
 import io.vyne.schemas.fqn
 import io.vyne.utils.log
 import junit.framework.Assert.fail
+import lang.taxi.services.QueryOperationCapability
 import org.junit.Ignore
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -204,6 +208,60 @@ type Sample {
    }
 
    @Test
+   fun annotationsOnTypesArePopulated() {
+      val metadata = TaxiSchema.from("""
+         @Foo
+         model Person {
+            name : String
+         }
+      """.trimIndent()).type("Person").metadata
+      metadata.should.have.size(1)
+      metadata.first().name.fullyQualifiedName.should.equal("Foo")
+      metadata.first().params.should.be.empty
+   }
+   @Test
+   fun annotationsWithAttributesAreMapped() {
+      val metadata = TaxiSchema.from("""
+         @Foo(name = 'baz', count = 1)
+         model Person {
+            name : String
+         }
+      """.trimIndent()).type("Person").metadata
+      metadata.should.have.size(1)
+      val annotation = metadata.first()
+      annotation.params["name"].should.equal("baz")
+      annotation.params["count"].should.equal(1)
+   }
+
+   @Test
+   fun annotationsWithParamsOnFieldsAreMapped() {
+      val metadata = TaxiSchema.from("""
+         model Person {
+            @Foo(name = 'baz', count = 1)
+            name : String
+         }
+      """.trimIndent()).type("Person").attribute("name").metadata
+      metadata.should.have.size(1)
+      val annotation = metadata.first()
+      annotation.params["name"].should.equal("baz")
+      annotation.params["count"].should.equal(1)
+   }
+
+   @Test
+   fun annotationsOnFieldsAreMapped() {
+      val metadata = TaxiSchema.from("""
+         model Person {
+            @Foo
+            name : String
+         }
+      """.trimIndent()).type("Person").attribute("name").metadata
+      metadata.should.have.size(1)
+      val annotation = metadata.first()
+      annotation.name.fullyQualifiedName.should.equal("Foo")
+      annotation.params.should.be.empty
+   }
+
+   @Test
    fun inheritenceIsPopulatedCorrectly() {
       val src = """
          type alias Name as String
@@ -217,6 +275,28 @@ type Sample {
       schema.type("FirstName").inherits.should.have.size(1)
       schema.type("FirstName").inheritanceGraph.should.have.size(1)
       schema.type("GivenName").inheritanceGraph.map { it.name.fullyQualifiedName }.should.contain("Name")
+   }
+
+   @Test
+   fun mapsQueryOperationsCorrectly() {
+      val schema= TaxiSchema.fromStrings(
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
+         type TraderId inherits String
+         model Trade {
+            traderId : TraderId
+         }
+         service TradeService {
+            ${queryDeclaration("tradeQuery", "Trade[]")}
+         }
+      """.trimIndent())
+      val service = schema.service("TradeService")
+      val queryOperation = service.queryOperation("tradeQuery")
+      queryOperation.name.should.equal("tradeQuery")
+      queryOperation.returnType.should.equal(schema.type("Trade[]"))
+      queryOperation.capabilities.should.equal(QueryOperationCapability.ALL)
+      queryOperation.grammar.should.equal("vyneQl")
+      queryOperation.qualifiedName.should.equal(OperationNames.qualifiedName("TradeService","tradeQuery"))
    }
 
    @Test
@@ -236,7 +316,7 @@ type Sample {
          .withView(TypeFullView::class.java)
          .writeValueAsString(type)
 
-      JSONAssert.assertEquals(expectedJson,json,true)
+      JSONAssert.assertEquals(expectedJson, json, true)
    }
 
    private val expectedJson = """
@@ -262,11 +342,12 @@ type Sample {
         "shortDisplayName" : "CustomerEmailAddress"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
+      "nullable" : false,
+      "typeDisplayName" : "CustomerEmailAddress",
+      "metadata" : [ ],
+      "sourcedBy" : null,
       "constraints" : [ ]
     },
     "id" : {
@@ -280,11 +361,12 @@ type Sample {
         "shortDisplayName" : "CustomerId"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
+      "nullable" : false,
+      "typeDisplayName" : "CustomerId",
+      "metadata" : [ ],
+      "sourcedBy" : null,
       "constraints" : [ ]
     },
     "name" : {
@@ -298,11 +380,12 @@ type Sample {
         "shortDisplayName" : "CustomerName"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
+      "nullable" : false,
+      "typeDisplayName" : "CustomerName",
+      "metadata" : [ ],
+      "sourcedBy" : null,
       "constraints" : [ ]
     },
     "postcode" : {
@@ -316,11 +399,12 @@ type Sample {
         "shortDisplayName" : "Postcode"
       },
       "modifiers" : [ ],
-      "accessor" : null,
-      "readCondition" : null,
       "typeDoc" : null,
       "defaultValue" : null,
-      "formula" : null,
+      "nullable" : false,
+      "typeDisplayName" : "Postcode",
+      "metadata" : [ ],
+      "sourcedBy" : null,
       "constraints" : [ ]
     }
   },
@@ -333,19 +417,23 @@ type Sample {
     "name" : "<unknown>",
     "version" : "0.0.0",
     "content" : "type Customer {\n   email : CustomerEmailAddress as String\n   id : CustomerId as String\n   name : CustomerName as String\n   postcode : Postcode as String\n}",
-    "id" : "<unknown>:0.0.0"
+    "id" : "<unknown>:0.0.0",
+    "contentHash" : "7063d8"
   } ],
   "typeParameters" : [ ],
   "typeDoc" : "",
   "isTypeAlias" : false,
+  "offset" : null,
   "format" : null,
   "hasFormat" : false,
-  "isCalculated": false,
-  "unformattedTypeName" : null,
+  "isCalculated" : false,
+  "basePrimitiveTypeName" : null,
   "isParameterType" : false,
   "isClosed" : false,
   "isPrimitive" : false,
   "fullyQualifiedName" : "Customer",
+  "unformattedTypeName" : null,
+  "longDisplayName" : "Customer",
   "memberQualifiedName" : {
     "fullyQualifiedName" : "Customer",
     "parameters" : [ ],
@@ -367,7 +455,7 @@ type Sample {
    @Ignore("This test is handy for debugging issues with type hashes")
    fun loadSchemaFromDirectory() {
       val taxonomyPath = Paths.get("C:\\dev\\workspace\\lens\\test-schemas\\taxonomy\\src")
-      val schemaContentList:List<VersionedSource> = Files.walk(taxonomyPath)
+      val schemaContentList: List<VersionedSource> = Files.walk(taxonomyPath)
          .filter { it.toFile().isFile }
          .filter { it.toFile().extension.equals("taxi") }
          .map {

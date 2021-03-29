@@ -7,19 +7,41 @@ import io.vyne.queryService.schemas.SchemaImportRequest
 import io.vyne.queryService.schemas.SchemaImportService
 import io.vyne.queryService.schemas.SchemaPreview
 import io.vyne.queryService.schemas.SchemaPreviewRequest
+import io.vyne.queryService.schemas.SchemaUpdatedNotification
 import io.vyne.schemaStore.SchemaSourceProvider
+import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemaStore.VersionedSourceProvider
+import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.Type
 import lang.taxi.generators.SourceFormatter
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 
 @RestController
-class SchemaService(private val schemaProvider: SchemaSourceProvider, private val importer: SchemaImportService,
+class SchemaService(private val schemaProvider: SchemaSourceProvider,
+                    private val importer: SchemaImportService,
+                    private val schemaStore: SchemaStore,
                     private val config: QueryServerConfig) {
    @GetMapping(path = ["/api/schemas/raw"])
    fun listRawSchema(): String {
       return schemaProvider.schemaStrings().joinToString("\n")
+   }
+
+   @GetMapping("/api/schemas/summary")
+   fun getSchemaStateSummary(): SchemaUpdatedNotification {
+      val schemaSet = schemaStore.schemaSet()
+      return SchemaUpdatedNotification(
+         schemaSet.id,
+         schemaSet.generation,
+         schemaSet.invalidSources.size
+      )
    }
 
    @GetMapping(path = ["/api/parsedSources"])
@@ -40,10 +62,31 @@ class SchemaService(private val schemaProvider: SchemaSourceProvider, private va
       }
    }
 
+   @GetMapping(path = ["/api/types/{typeName}"])
+   fun getType(@PathVariable typeName: String): Type {
+      return schemaProvider.schema()
+         .type(typeName)
+   }
+
+   @GetMapping(path = ["/api/services/{serviceName}"])
+   fun getService(@PathVariable("serviceName") serviceName: String): Service {
+      return schemaProvider.schema()
+         .service(serviceName)
+   }
+
+   @GetMapping(path = ["/api/services/{serviceName}/{operationName}"])
+   fun getOperation(@PathVariable("serviceName") serviceName: String,
+                    @PathVariable("operationName") operationName:String): Operation {
+      return schemaProvider.schema()
+         .service(serviceName)
+         .operation(operationName)
+   }
    @GetMapping(path = ["/api/types"])
+//   @JsonView(TypeLightView::class)
    fun getTypes(): Schema {
       return schemaProvider.schema()
    }
+
 
    @GetMapping(path = ["/api/types/{typeName}/policies"])
    fun getPolicies(@PathVariable("typeName") typeName: String): List<PolicyDto> {

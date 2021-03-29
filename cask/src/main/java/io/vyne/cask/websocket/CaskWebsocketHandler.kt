@@ -2,15 +2,19 @@ package io.vyne.cask.websocket
 
 import arrow.core.*
 import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.cask.CaskIngestionRequest
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskIngestionResponse
+import io.vyne.cask.api.ContentType
+import io.vyne.cask.ingest.CaskIngestionErrorProcessor
+import io.vyne.cask.ingest.IngestionError
 import io.vyne.cask.ingest.IngestionInitialisedEvent
 import io.vyne.utils.log
 import io.vyne.utils.orElse
+import org.postgresql.util.PSQLException
+import org.postgresql.util.PSQLState
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
@@ -22,22 +26,19 @@ import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.util.*
 
 @Component
 class CaskWebsocketHandler(
    val caskService: CaskService,
    val applicationEventPublisher: ApplicationEventPublisher,
+   val caskIngestionErrorProcessor: CaskIngestionErrorProcessor,
    @Qualifier("ingesterMapper") val mapper: ObjectMapper) : WebSocketHandler {
 
    override fun handle(session: WebSocketSession): Mono<Void> {
-      log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri}")
+      log().info("Opening new sessionId=${session.id} uri=${session.handshakeInfo.uri} remoteAddress=${session.handshakeInfo.remoteAddress}")
 
-      val requestOrError = caskService.resolveContentType(session.contentType())
-         .flatMap { contentType ->
-            caskService.resolveType(session.typeReference()).map { versionedType ->
-               CaskWebsocketRequest.create(contentType, versionedType, mapper, session.queryParams())
-            }
-         }
+      val requestOrError = requestOrError(session)
 
       return requestOrError
          .map { request ->
@@ -49,10 +50,22 @@ class CaskWebsocketHandler(
          }
    }
 
-   private fun ingestMessages(session: WebSocketSession, request: CaskWebsocketRequest): Mono<Void> {
+   private fun requestOrError(session: WebSocketSession): Either<CaskService.CaskServiceError, CaskIngestionRequest> {
+     return try {
+         Either.right(ContentType.valueOf(session.contentType()))
+      } catch (exception:IllegalArgumentException) {
+         Either.left(CaskService.ContentTypeError("Unknown contentType=${session.contentType()}"))
+      }.flatMap { contentType ->
+         caskService.resolveType(session.typeReference()).map { versionedType ->
+            CaskIngestionRequest.fromContentTypeAndHeaders(contentType, versionedType, mapper, session.queryParams(), caskIngestionErrorProcessor)
+         }
+      }
+   }
+
+   private fun ingestMessages(session: WebSocketSession, request: CaskIngestionRequest): Mono<Void> {
       val output: EmitterProcessor<WebSocketMessage> = EmitterProcessor.create()
       val outputSink = output.sink()
-
+      var currentRequest = request
       // i don't like this, it's pretty ugly
       // partially because exceptions are thrown outside flux pipelines
       // we have to refactor code behind ingestion to fix this problem
@@ -62,28 +75,39 @@ class CaskWebsocketHandler(
          // Registry instance is auto-detected
          // Percentiles are configured globally for all the timers, see CaskApp
          .metrics()
-         .map {
+         .map { message ->
             log().info("Ingesting message from sessionId=${session.id}")
+            val messageId = UUID.randomUUID().toString()
             try {
                caskService
-                  .ingestRequest(request, Flux.just(it.payload.asInputStream()))
+                  .ingestRequest(currentRequest, Flux.just(message.payload.asInputStream()), messageId)
                   .count()
-                  .map { "Successfully ingested ${it} records" }
+                  .map { "Successfully ingested $it records" }
                   .subscribe(
                      { result ->
-                        log().info("Successfully ingested message from sessionId=${session.id}")
-                        if (request.debug()) {
+                        log().info("$result from sessionId=${session.id}")
+                        if (request.debug) {
                            outputSink.next(successResponse(session, result))
                         }
                      },
                      { error ->
-                        log().error("Error ingesting message from sessionId=${session.id}", error)
+                        log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
+                        if (error is PSQLException && error.sqlState == PSQLState.UNDEFINED_TABLE.state) {
+                           // Table not found - this should be due to schema change.
+                           // update CaskIngestionRequest with the new schema info and re-try.
+                           requestOrError(session).map {
+                              currentRequest = it
+                              reIngestRequest(currentRequest, message).block() // blocking is not nice, but this should happen very rare.
+                           }
+                        }
                         outputSink.next(errorResponse(session, extractError(error)))
+                        caskIngestionErrorProcessor.sink().next(IngestionError.fromThrowable(error, messageId, request.versionedType))
                      }
                   )
             } catch (error: Exception) {
-               log().error("Error ingesting message from sessionId=${session.id}", error)
+               log().error("Ws Handler Error ingesting message from sessionId=${session.id}", error)
                outputSink.next(errorResponse(session, extractError(error)))
+               caskIngestionErrorProcessor.sink().next(IngestionError.fromThrowable(error, messageId, request.versionedType))
             }
          }
          .doOnComplete {
@@ -96,6 +120,16 @@ class CaskWebsocketHandler(
          .subscribe()
 
       return session.send(output)
+   }
+
+   private fun reIngestRequest(request: CaskIngestionRequest, message: WebSocketMessage): Mono<CaskIngestionResponse> {
+      return caskService.ingestRequest(request, Flux.just(message.payload.asInputStream()))
+         .count()
+         .map { CaskIngestionResponse.success("Successfully ingested $it records") }
+         .onErrorResume {
+            log().error("Ingestion error", it)
+            Mono.just(CaskIngestionResponse.rejected(it.toString()))
+         }
    }
 
    private fun extractError(error: Throwable): String {

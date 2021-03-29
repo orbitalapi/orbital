@@ -13,10 +13,10 @@ import lang.taxi.types.Annotation
 import org.springframework.stereotype.Component
 
 @Component
-class FindByFieldIdOperationGenerator : OperationGenerator {
-   override fun generate(field: Field, type: Type): Operation {
+class FindByFieldIdOperationGenerator(val operationGeneratorConfig: OperationGeneratorConfig = OperationGeneratorConfig.empty()) : OperationGenerator {
+   override fun generate(field: Field?, type: Type): Operation {
       val parameter = Parameter(
-         annotations = listOf(Annotation("PathVariable", mapOf("name" to field.name))),
+         annotations = listOf(Annotation("PathVariable", mapOf("name" to field!!.name))),
          type = parameterType(field),
          name = field.name,
          constraints = listOf())
@@ -36,7 +36,13 @@ class FindByFieldIdOperationGenerator : OperationGenerator {
    }
 
    override fun canGenerate(field: Field, type: Type): Boolean {
-      return PrimitiveType.isAssignableToPrimitiveType(field.type) && TemporalFieldUtils.annotationFor(field, ExpectedAnnotationName) != null
+      return PrimitiveType.isAssignableToPrimitiveType(field.type) &&
+         (TemporalFieldUtils.annotationFor(field, expectedAnnotationName.annotation) != null ||
+            operationGeneratorConfig.definesOperation(field.type, expectedAnnotationName))
+   }
+
+   override fun expectedAnnotationName(): OperationAnnotation {
+      return expectedAnnotationName
    }
 
    private fun getFindByIdRestPath(type: Type, field: Field): String {
@@ -47,8 +53,7 @@ class FindByFieldIdOperationGenerator : OperationGenerator {
    }
 
    companion object {
-      const val ExpectedAnnotationName = "Association"
+      private val expectedAnnotationName = OperationAnnotation.Association
    }
-
 }
 

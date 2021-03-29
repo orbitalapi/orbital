@@ -1,6 +1,6 @@
 import {outerRectangle, innerRectangle} from '../type-viewer/type-link-graph/graph-utils';
 import * as shape from 'd3-shape';
-import {SchemaNodeSet} from '../services/schema';
+import {SchemaGraphNode, SchemaNodeSet} from '../services/schema';
 
 export class BaseGraphComponent {
 
@@ -9,7 +9,8 @@ export class BaseGraphComponent {
     'TYPE': '#66BD6D',
     'MEMBER': '#FA783B',
     'OPERATION': '#55ACD2',
-    'DATASOURCE' : '#9166B8'
+    'DATASOURCE' : '#9166B8',
+    'ERROR' : '#B7332F'
   };
 
   colorScheme = {
@@ -20,7 +21,7 @@ export class BaseGraphComponent {
       '#29BB9C',
       '#E96B56',
       '#55ACD2',
-      '#B7332F',
+      '#b7332f',
       '#2C83C9',
       '#9166B8',
       '#92E7E8',
@@ -28,15 +29,32 @@ export class BaseGraphComponent {
       '#aebfc9'
     ]
   };
+  // orientation = 'TD';
   orientation = 'LR';
 
-  getStroke(node) {
+  getBorderColor(node: SchemaGraphNode) {
+    const nodeType = node.type;
+    if (node.type === 'ERROR') {
+      return '#b7332f';
+    } else {
+      return 'none';
+    }
+  }
+  getStroke(node: SchemaGraphNode) {
     const nodeType = node.type;
 
     if (!this.colors[nodeType]) {
       console.log('No color defined for node type ' + nodeType);
     }
     return this.colors[nodeType] || '#FAC51D';
+  }
+
+  getFill(node: SchemaGraphNode) {
+    if (node.type === 'ERROR') {
+      return '#ffffff';
+    } else {
+      return '#ffffff';
+    }
   }
 
   outerRectangle(width: number, height: number): string {
@@ -50,6 +68,7 @@ export class BaseGraphComponent {
   protected makeSafeId(id: string): string {
     return id.split('.').join('')
       .split('@').join('')
+      .split(' ').join('')
       ;
   }
 
