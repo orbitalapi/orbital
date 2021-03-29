@@ -201,12 +201,12 @@ class VyneSchemaTest {
    fun arraysShouldBeParsedToCollectionTypes() {
       val taxiDef = """
 service Test {
-   operation find():EmailAddress[]
+   operation `find`():EmailAddress[]
 }
 type alias EmailAddress as String
       """.trimIndent()
       val schema = TaxiSchema.from(taxiDef)
-      val operation = schema.service("Test").operation("find")
+      val operation = schema.service("Test").operation("`find`")
       val returnType = operation.returnType
       val emailAddressType = schema.type("EmailAddress")
       expect(returnType.name.name).to.equal("Array")
