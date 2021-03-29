@@ -12,6 +12,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.runBlocking
 import java.util.stream.Collectors
 
 
@@ -108,7 +109,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          else -> error("Currently, build only supports TypeNameQueryExpression")
       }
       val targetType = context.schema.type(typeNameQueryExpression.typeName)
-
       return projectTo(targetType, context)
    }
 
@@ -152,7 +152,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return if (result != null) {
          QueryResult(
             querySpecTypeNode,
-            flow { result } ,
+            flow { emit(result) } ,
             emptySet(),
             profilerOperation = context.profiler.root,
             anonymousTypes = context.schema.typeCache.anonymousTypes()
@@ -249,6 +249,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
    private suspend fun mapTo(targetType: Type, typedInstance: TypedInstance, context: QueryContext): TypedInstance? {
 
+      //paramitziedtype of
       val transformationResult = context.only(typedInstance).build(targetType.fullyQualifiedName)
 
       return if (transformationResult.isFullyResolved) {
@@ -315,7 +316,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val queryResult = doFind(target.first(), context, spec)
 
       return QueryResult(
-         type = target.first(),
+         type = queryResult.type,
          results = queryResult.results,
          unmatchedNodes = queryResult.unmatchedNodes,
          path = null,
@@ -355,7 +356,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                }
             }
          }
-
       }
 
       // Note : We should add this additional data to the context too,
@@ -365,11 +365,16 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // isProjecting is a (maybe) temporary little fix to allow projection
       // Without it, there's a stack overflow error as projectTo seems to call ObjectBuilder.build which calls projectTo again.
       // ... Investigate
+
       return QueryResult(
-         target,
+         when(context.projectResultsTo()){
+            null -> target
+            else -> QuerySpecTypeNode(context.projectResultsTo()!!, emptySet(), QueryMode.DISCOVER)
+         },
          resultsFlow.map{
             if (context.projectResultsTo() != null) {
-               mapTo(context.projectResultsTo()!!, it, context)!! //TODO project TypedInstance to type context.projectResultsTo()
+               //So few lines, so much power
+               context.only(it).build(context.projectResultsTo()!!.typeParametersTypeNames.first()).results?.first()!!
             } else {
                it
             }

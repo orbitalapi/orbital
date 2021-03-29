@@ -87,7 +87,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
    @PostMapping("/api/query", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
    fun submitQuery(@RequestBody query: Query,
-                   @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
+                   @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
                    @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String
    ): ResponseEntity<String> {
 
@@ -109,7 +109,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
    @PostMapping("/api/vyneql", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
    fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString,
-                         @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
+                         @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
                          @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
                          auth: Authentication? = null
    ): ResponseEntity<String> {
@@ -134,7 +134,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
    @PostMapping("/api/vyneql", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
    suspend fun submitVyneQlQueryStreamingResponse(@RequestBody query: VyneQLQueryString,
-                                          @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
+                                          @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
                                           @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
                                           auth: Authentication? = null
    ): Flow<Any?>? {

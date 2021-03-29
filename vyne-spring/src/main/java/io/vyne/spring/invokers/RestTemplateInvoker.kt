@@ -11,10 +11,7 @@ import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Service
-import io.vyne.schemas.httpOperationMetadata
+import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
 import io.vyne.utils.orElse
@@ -80,7 +77,6 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
          val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl,uriVariables)
 
-
          //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
          val requset = webClient
             .method(httpMethod)
@@ -104,10 +100,18 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                      clientResponse.bodyToFlux(String::class.java)
                   } else {
                      // Assume the response is application/json
-
-                     clientResponse.bodyToMono(typeReference<List<Any>>())
+                        clientResponse.bodyToMono(typeReference<Any>())
                         //TODO This is not right we should marshall to a list of T, not, Object then back to String
-                        .flatMapMany { Flux.fromIterable(it) }.map { jacksonObjectMapper().writeValueAsString(it) }
+                        .flatMapMany {
+                           if (it is ArrayList<*>) {
+                              Flux.fromIterable(it as List<*>)
+                           } else {
+                              Flux.just(it)
+                           }
+                        }
+                        .map {
+                              jacksonObjectMapper().writeValueAsString(it)
+                        }
                   }
                   )
 
@@ -143,6 +147,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
    private fun handleSuccessfulHttpResponse(result: String, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall, headers: ClientResponse.Headers): TypedInstance {
       // TODO : Handle scenario where we get a 2xx response, but no body
+
       log().debug("Result of ${operation.name} was $result")
 
       val isPreparsed = headers
@@ -152,7 +157,18 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       // If the content has been pre-parsed upstream, we don't evaluate accessors
       val evaluateAccessors = !isPreparsed
       val dataSource = remoteCallDataLineage(parameters, remoteCall)
-      return TypedInstance.from(operation.returnType.collectionType!!, result, schemaProvider.schema(), source = dataSource, evaluateAccessors = evaluateAccessors)
+
+      var type: Type?
+
+      if (operation.returnType.collectionType != null) {
+         type = operation.returnType.collectionType!!
+      } else {
+         type = operation.returnType
+      }
+
+      val instance =  TypedInstance.from(type!!, result, schemaProvider.schema(), source = dataSource, evaluateAccessors = evaluateAccessors)
+
+      return instance
    }
 
 

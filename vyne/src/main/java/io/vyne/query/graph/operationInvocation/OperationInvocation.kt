@@ -1,6 +1,7 @@
 package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.QueryContext
 import io.vyne.query.QueryResult
@@ -133,7 +134,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
 
 @Component
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
-   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): Flow<EvaluatedEdge> {
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
 
 
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
@@ -149,15 +150,15 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
             if (edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type)) {
                edge.previousValue
             } else {
-               val paramInstance = parameterFactory.discover(requiredParam.type, context, operation)!!
-               paramInstance.onEach { context.addFact(it) }
+               val paramInstance = parameterFactory.discover(requiredParam.type, context, operation)
+               context.addFact(paramInstance)
                paramInstance
             }
 
 
          } catch (e: Exception) {
             log().warn("Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}")
-            return flow {edge.failure(null)}
+            return edge.failure(null)
          }
       }
 
@@ -165,25 +166,24 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       if (context.hasOperationResult(edge, callArgs as Set<TypedInstance>)) {
          val cachedResult = context.getOperationResult(edge, callArgs)
          cachedResult?.let { context.addFact(it) }
-         return  flow {edge.success(cachedResult)}
+         return  edge.success(cachedResult)
       }
 
       return try {
-
-         val result:Flow<TypedInstance>  = invocationService.invokeOperation(service, operation, callArgs, context)
-
-         result.onEach {
-            context.addFact(it)
-            context.addOperationResult(edge, it, callArgs)
-         }.map {
-            edge.success(it)
+         val result: TypedInstance = invocationService.invokeOperation(service, operation, callArgs, context).first()
+         if (result is TypedNull) {
+            log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
+         } else {
+            context.addFact(result)
          }
+         context.addOperationResult(edge, result, callArgs)
+         edge.success(result)
 
       } catch (exception: Exception) {
          // Operation invokers throw exceptions for failed invocations.
          // Don't throw here, just report the failure
-         log().info("Operation ${operation.qualifiedName} failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected.")
-         flow { edge.failure(null, failureReason = "Operation ${operation.qualifiedName} failed with exception ${exception.message}") }
+         log().warn("Operation ${operation.qualifiedName} failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected.")
+         edge.failure(null, failureReason = "Operation ${operation.qualifiedName} failed with exception ${exception.message}")
       }
 
    }
@@ -202,9 +202,6 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
          result.collect { r -> context.addFact(r) }
          linkResult = result.first()
       }
-
-
-
       return EvaluatedLink(link, startingPoint, linkResult)
    }
 

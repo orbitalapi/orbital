@@ -77,16 +77,16 @@ data class EvaluatableEdge(
 
 interface EdgeEvaluator {
    val relationship: Relationship
-   suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): Flow<EvaluatedEdge>
+   suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge
 }
 
 class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = ParameterFactory()) : EdgeEvaluator {
    override val relationship: Relationship = Relationship.REQUIRES_PARAMETER
 
-   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): Flow<EvaluatedEdge> {
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       if (edge.target.elementType == ElementType.PARAMETER) {
          // Pass through, the next vertex should be the param type
-         return flow { EvaluatedEdge.success(edge, edge.vertex2, edge.previousValue) }
+         return  EvaluatedEdge.success(edge, edge.vertex2, edge.previousValue)
       }
       assert(
          edge.vertex2.elementType == ElementType.TYPE,
@@ -102,21 +102,24 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
       val (_, operation) = context.schema.operation(operationReference.fqn())
       val paramType = operation.parameters[paramIndex].type
 
-      return  parameterFactory.discover(paramType, context, operation).map {
-         EvaluatedEdge.success(edge, instanceOfType(it.type), it)
-      }
+      val discoveredParam = parameterFactory.discover(paramType, context, operation)
+      return EvaluatedEdge.success(edge, instanceOfType(discoveredParam.type), discoveredParam)
+
+      //return  parameterFactory.discover(paramType, context, operation).map {
+      //   EvaluatedEdge.success(edge, instanceOfType(it.type), it)
+      //}
 
    }
 }
 
 class ParameterFactory {
-   suspend fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): Flow<TypedInstance> {
+   suspend fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): TypedInstance {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
       if (hasValue(firstLevelDiscovery)) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
          // TODO (2) : Fail if there are multiple instances
-         return flow {firstLevelDiscovery!!}
+         return firstLevelDiscovery!!
       }
 
       // Check to see if there's exactly one instance somewhere within the context
@@ -127,7 +130,7 @@ class ParameterFactory {
          context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
       if (hasValue(anyDepthOneDistinct)) {
          // TODO (1) : Find an instance that is linked, somehow, rather than just something random
-         return flow {anyDepthOneDistinct!!}
+         return anyDepthOneDistinct!!
       }
 
 //      if (startingPoint.type == paramType) {
@@ -142,7 +145,7 @@ class ParameterFactory {
       }
 
       // This is a parameter type.  Try to construct an instance
-      return flow { attemptToConstruct(paramType, context, operation) }
+      return attemptToConstruct(paramType, context, operation)
    }
 
    private fun hasValue(instance: TypedInstance?): Boolean {
@@ -264,8 +267,8 @@ data class EvaluatedEdge(
 }
 
 abstract class PassThroughEdgeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
-   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): Flow<EvaluatedEdge> {
-      return flow { edge.success(edge.previousValue) }
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+      return edge.success(edge.previousValue)
    }
 }
 
@@ -278,12 +281,12 @@ class CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPUL
 class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_TYPE)
 
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
-   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): Flow<EvaluatedEdge> {
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       val previousValue =
          requireNotNull(edge.previousValue) { "Cannot evaluate $relationship when previous value was null.  Work with me here!" }
 
       if (previousValue is TypedNull) {
-         return flow { edge.failure(previousValue) }
+         return edge.failure(previousValue)
       }
 
       require(previousValue is TypedObject) {
@@ -292,7 +295,7 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
 
       // TypedObject has no attributes - service returned no value, returning failure response
       if (previousValue.isEmpty()) {
-         return flow { edge.failure(null) }
+         return edge.failure(null)
       }
 
       val previousObject = previousValue as TypedObject
@@ -315,10 +318,10 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
 
             }
          }
-         return flow { calculatedValue  ?: edge.failure(null, failureReason = "Attribute $attributeName on type $typeName evaluated to null") }
+         return  calculatedValue  ?: edge.failure(null, failureReason = "Attribute $attributeName on type $typeName evaluated to null")
       }
       val attribute = previousObject[attributeName]
-      return flow { edge.success(attribute) }
+      return  edge.success(attribute)
 
       // 1-Feb: This code used to be here - but unsure when it was authored, or why.
       // However, it breaks tests as when we receive a response with a null value, we tag this

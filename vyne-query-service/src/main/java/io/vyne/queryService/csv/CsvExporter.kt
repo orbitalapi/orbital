@@ -12,6 +12,7 @@ import java.io.StringWriter
 fun toCsv(results: Map<String, Any?>, schema: Schema): ByteArray {
    val writer = StringWriter()
    val printer = CSVPrinter(writer, CSVFormat.DEFAULT.withFirstRecordAsHeader())
+
    results.keys.forEach { key ->
       val rowType = getRowType(key,schema)
       when (results[key]) {

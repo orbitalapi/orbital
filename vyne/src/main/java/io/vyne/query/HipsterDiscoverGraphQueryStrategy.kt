@@ -14,17 +14,14 @@ import io.vyne.schemas.Relationship
 import io.vyne.schemas.Schema
 import io.vyne.schemas.describe
 import io.vyne.utils.log
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import lang.taxi.Equality
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
 
-   suspend fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): Flow<EvaluatedEdge> {
+   suspend fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): EvaluatedEdge {
       val relationship = edge.relationship
       val evaluator = evaluators[relationship]
          ?: error("No LinkEvaluator provided for relationship ${relationship.name}")
@@ -153,7 +150,6 @@ class HipsterDiscoverGraphQueryStrategy(
                true
             }
          }
-
          .mapIndexedTo(evaluatedEdges) { index, weightedNode ->
             // Note re index:  We dropped 1, so indexes are out-by-one.
             // Normally the lastValue would be index-1, but here, it's just index.
@@ -164,15 +160,13 @@ class HipsterDiscoverGraphQueryStrategy(
                log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried")
             }
 
-            var evaluationResult: EvaluatedEdge
-            runBlocking {
-                evaluationResult = edgeEvaluator.evaluate(evaluatableEdge, queryContext).first()
+            val evaluationResult = runBlocking {
+                edgeEvaluator.evaluate(evaluatableEdge, queryContext)
             }
 
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
                log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}")
             }
-
             evaluationResult
          }
 
