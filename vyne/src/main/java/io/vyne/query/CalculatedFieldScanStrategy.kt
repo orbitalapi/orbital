@@ -4,6 +4,8 @@ import io.vyne.models.Calculated
 import io.vyne.models.TypedInstance
 import io.vyne.formulas.CalculatorRegistry
 import io.vyne.schemas.Type
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flow
 
 class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegistry) : QueryStrategy {
@@ -30,7 +32,7 @@ class CalculatedFieldScanStrategy(private val calculatorRegistry: CalculatorRegi
          return QueryStrategyResult( null )
       }
 
-      return QueryStrategyResult( flow { matches } )
+      return QueryStrategyResult( matches.asFlow() as Flow<TypedInstance>)
    }
 
    fun tryCalculate(calculatedType: Type, context: QueryContext, factDiscoveryStrategy: FactDiscoveryStrategy): TypedInstance? {

@@ -50,6 +50,11 @@ feign:
             connectTimeout: 10000
             readTimeout: 10000
 
+hystrix:
+   command:
+      default:
+         execution.isolation.thread.timeoutInMilliseconds: 10000
+
 logging:
    level:
       org.springframework: WARN

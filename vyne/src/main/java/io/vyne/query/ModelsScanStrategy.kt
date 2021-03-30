@@ -1,6 +1,9 @@
 package io.vyne.query
 
+import io.vyne.models.TypedInstance
 import io.vyne.schemas.Type
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flow
 import org.springframework.stereotype.Component
 
@@ -44,7 +47,7 @@ class ModelsScanStrategy : QueryStrategy {
          return QueryStrategyResult(null)
       }
 
-      return QueryStrategyResult( flow {matches} )
+      return QueryStrategyResult( matches.asFlow() as Flow<TypedInstance>)
    }
 }
 

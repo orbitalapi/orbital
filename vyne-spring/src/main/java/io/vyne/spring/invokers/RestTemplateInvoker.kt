@@ -77,6 +77,8 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
          val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl,uriVariables)
 
+      println("Calling : ${expandedUri}")
+
          //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
          val requset = webClient
             .method(httpMethod)

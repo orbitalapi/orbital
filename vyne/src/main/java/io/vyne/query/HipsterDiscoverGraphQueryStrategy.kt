@@ -94,7 +94,7 @@ class HipsterDiscoverGraphQueryStrategy(
       // search from every fact in the context
       val lastResult: TypedInstance? = find(targetElement, context, invocationConstraints)
       return if (lastResult != null) {
-         QueryStrategyResult( flow { mapOf(target to lastResult).map { it.value } })
+         QueryStrategyResult( mapOf(target to lastResult).map { it.value }.asFlow() )
       } else {
          QueryStrategyResult.empty()
       }

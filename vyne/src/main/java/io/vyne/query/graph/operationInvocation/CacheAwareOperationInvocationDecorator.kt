@@ -30,7 +30,7 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
       val result = cachedResults.getIfPresent(key)
 
       if (result != null) {
-         return flow { result }
+         return flow { emit(result) }
       }
 
       val previousError = cachedErrors.getIfPresent(key)

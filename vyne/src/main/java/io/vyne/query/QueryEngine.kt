@@ -351,6 +351,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             val strategyResult = invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
             if (strategyResult.hasMatchesNodes()) {
                strategyResult.matchedNodes?.collect {
+                  context.addFact(it)
                   resultsRecivedFromStrategy = true
                   emit(it)
                }

@@ -72,23 +72,27 @@ class CaskRestController(private val caskService: CaskService,
 
    override fun ingestXml(typeReference: String, debug: Boolean, elementSelector: String?, input: String): Mono<CaskIngestionResponse> {
       val xmlIngestionParameters = XmlIngestionParameters(debug, elementSelector)
-      return Mono.just(caskService.resolveType(typeReference).map { versionedType ->
+      return caskService.resolveType(typeReference).map { versionedType ->
          val request = XmlWebsocketRequest(xmlIngestionParameters, versionedType)
          val inputStream = Flux.just(input.byteInputStream() as InputStream)
-         ingestRequest(request, inputStream).block()
+         ingestRequest(request, inputStream)
       }.getOrHandle { error ->
-         CaskIngestionResponse.rejected(error.message)
-      })
+         Mono.just(CaskIngestionResponse.rejected(error.message))
+      }
    }
 
    private fun ingestJson(typeReference: String, parameters: JsonIngestionParameters, input: String): Mono<CaskIngestionResponse> {
+      println("Starting JSON Ingest now .... ")
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = JsonWebsocketRequest(parameters, versionedType, mapper)
          val inputStream = Flux.just(input.byteInputStream() as InputStream)
          // TODO : How to avoid this blocking?
          ingestRequest(request, inputStream)
       }.getOrHandle { error ->
+
+         println("Something wrong in ingestJson ${error.message}")
          Mono.just(CaskIngestionResponse.rejected(error.message))
+
       }
    }
 

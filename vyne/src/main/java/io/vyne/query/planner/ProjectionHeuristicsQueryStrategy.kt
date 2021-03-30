@@ -23,6 +23,7 @@ import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import io.vyne.utils.timed
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flow
 import java.util.concurrent.TimeUnit
 
@@ -85,7 +86,8 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
                return if (spec.isValid(retVal)) {
                   // Add 'Trade' into the context, so subsequent target projection props might be resolved..
                   context.addFact(match)
-                  QueryStrategyResult( flow { retVal} )
+
+                  QueryStrategyResult( flow { emit(retVal) } )
                } else {
                   QueryStrategyResult.empty()
                }
@@ -105,7 +107,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
             context.addFact(joinMatch.first())
             // Remove the Trade just added into the context, as we'll call here again through ObjectBuilder for remaining matched Trades.
             joinMatch.removeFirst()
-            return QueryStrategyResult( flow { TypedCollection.from(retVal).value } )
+            return QueryStrategyResult( TypedCollection.from(retVal).value.asFlow() )
       }
    }
 
