@@ -71,7 +71,7 @@ export class QueryEditorComponent implements OnInit {
               private queryService: QueryService,
               private fileService: ExportFileService,
               private dialogService: MatDialog) {
-    this.monacoLoaderService.isMonacoLoaded$.pipe(
+    this.monacoLoaderService.isMonacoLoaded.pipe(
       filter(isLoaded => isLoaded),
       take(1),
     ).subscribe(() => {

@@ -10,10 +10,16 @@
    <artifactId>vyne-query-service</artifactId>
 
    <properties>
+      <taxi-lsp.version>0.1.0-SNAPSHOT</taxi-lsp.version>
       <buildNumber>0</buildNumber>
    </properties>
 
    <dependencies>
+      <dependency>
+         <groupId>lang.taxi</groupId>
+         <artifactId>taxi-lang-service</artifactId>
+         <version>${taxi-lsp.version}</version>
+      </dependency>
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne-search</artifactId>
