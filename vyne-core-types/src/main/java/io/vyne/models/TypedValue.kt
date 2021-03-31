@@ -199,6 +199,13 @@ data class TypedValue private constructor(override val type: Type, override val 
       return "TypedValue(type=${type.qualifiedName.longDisplayName}, value=$value)"
    }
 
+   init {
+      if (type.isEnum) {
+         // Explode if we're using old code.
+         error("Don't used TypedValue with enums, use a TypedEnumValue")
+      }
+   }
+
    companion object {
       private val conversionService by lazy {
          ConversionService.newDefaultConverter()

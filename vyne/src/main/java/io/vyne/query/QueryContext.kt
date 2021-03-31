@@ -171,23 +171,30 @@ object TypedInstanceTree {
    /**
     * Function which defines how to convert a TypedInstance into a tree, for traversal
     */
-   val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance: TypedInstance ->
 
-      // This is a naieve first pass, and I doubt this wil work.
-      // For example, how will we ever use the values within?
-      if (instance.type.isClosed) {
-         return@of emptyList<TypedInstance>()
-      }
+      fun visit(instance: TypedInstance):List<TypedInstance> {
 
-      when (instance) {
-         is TypedObject -> instance.values.toList()
-         is TypedValue -> emptyList()
-         is TypedCollection -> instance.value
-         is TypedNull -> emptyList()
-         else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
+         if (instance.type.isClosed) {
+            return emptyList()
+         }
+
+         return when (instance) {
+            is TypedObject -> instance.values.toList()
+            is TypedEnumValue -> instance.synonyms
+            is TypedValue -> {
+               if (instance.type.isEnum) {
+                  instance.type.enumTypedInstance(instance.value).synonyms
+               } else {
+                  emptyList()
+               }
+
+            }
+            is TypedCollection -> instance.value
+            else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
+
+            // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
+         }.filter { it -> it !is TypedNull }
       }
-      // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-   }//.filter { it -> it !is TypedNull }
 }
 
 // Design choice:
@@ -242,45 +249,9 @@ data class QueryContext(
          queryEngine: QueryEngine,
          profiler: QueryProfiler
       ): QueryContext {
-         val mutableFacts = facts.flatMap { fact -> resolveSynonyms(fact, schema) }.toMutableSet()
-         return QueryContext(schema, mutableFacts, queryEngine, profiler)
+         return QueryContext(schema, facts.toMutableSet(), queryEngine, profiler)
       }
 
-      private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
-         return emptySet()
-         //return if (fact is TypedObject) {
-         //   fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
-         //} else {
-         //   resolveSynonym(fact, schema, true)
-         //}
-      }
-
-      private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
-         val derivedFacts = if (fact.type.isEnum && fact.value != null) {
-            val underlyingEnumType = fact.type.taxiType as EnumType
-            underlyingEnumType.of(fact.value)
-               .synonyms
-               .map { synonym ->
-                  val synonymType = schema.type(synonym.synonymFullQualifiedName())
-                  val synonymTypeTaxiType = synonymType.taxiType as EnumType
-                  val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
-
-                  // Instantiate with either name or value depending on what we have as input
-                  val value =
-                     if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
-
-                  TypedValue.from(synonymType, value, false, MappedSynonym(fact))
-               }.toSet()
-         } else {
-            setOf()
-         }
-
-         return if (includeGivenFact) {
-            derivedFacts.plus(fact)
-         } else {
-            derivedFacts
-         }
-      }
    }
 
    /**
@@ -288,41 +259,18 @@ data class QueryContext(
     * All other parameters (queryEngine, schema, etc) are retained
     */
    fun only(fact: TypedInstance): QueryContext {
-      val mutableFacts = mutableSetOf<TypedInstance>()
-      mutableFacts.add(fact)
-      mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
-      val copiedContext = this.copy(facts = mutableFacts, parent = this)
-      copiedContext.excludedServices.addAll(this.excludedServices)
-      copiedContext.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
-      return copiedContext
+      ////// MERGE val mutableFacts = mutableSetOf<TypedInstance>()
+      ////mutableFacts.add(fact)
+      ////mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
+      ////val copiedContext = this.copy(facts = mutableFacts, parent = this)
+      ////copiedContext.excludedServices.addAll(this.excludedServices)
+      ////copiedContext.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
+      /////return copiedContext
+      return this.copy(facts = mutableSetOf(fact), parent = this)
    }
 
    fun addFact(fact: TypedInstance): QueryContext {
-
-      val start = System.currentTimeMillis()
-      log().info("Adding fact to queryContext: {}", fact.type.fullyQualifiedName)
-      inMemoryStream = null
-      when {
-         fact.type.isEnum -> {
-            val synonymSet = resolveSynonyms(fact, schema)
-            this.facts.addAll(synonymSet)
-         }
-         fact is TypedObject -> {
-            fact.values
-               .filter { it.type.isEnum }
-               .flatMap { resolveSynonyms(fact, schema) }
-               .forEach { synonymsSet -> this.facts.add(synonymsSet) }
-            this.facts.add(fact)
-         }
-         else -> {
-            this.facts.add(fact)
-         }
-      }
-      val end = System.currentTimeMillis()
-      val timetaken = end-start
-      log().info("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
-      log().info("Time to add fact: ${timetaken}" )
-
+      this.facts.add(fact)
       return this
    }
 
@@ -359,8 +307,22 @@ data class QueryContext(
     * Deeply nested children are less likely to be relevant matches.
     */
    fun modelTree(): Stream<TypedInstance> {
-      inMemoryStream = inMemoryStream ?: TreeStream.breadthFirst(TypedInstanceTree.treeDef, dataTreeRoot()).toList()
-      return inMemoryStream!!.stream()
+      class TreeNavigator {
+         private val visitedNodes = mutableSetOf<TypedInstance>()
+
+         fun visit(instance:TypedInstance):List<TypedInstance> {
+            return if (visitedNodes.contains(instance)) {
+               return emptyList()
+            } else {
+               visitedNodes.add(instance)
+               TypedInstanceTree.visit(instance)
+            }
+         }
+      }
+      // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
+      val navigator = TreeNavigator()
+      val treeDef:TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
+      return TreeStream.breadthFirst(treeDef, dataTreeRoot())
    }
 
    fun hasFactOfType(

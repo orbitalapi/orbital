@@ -11,7 +11,10 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import javafx.application.Application.launch
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.stream.Collectors
 
@@ -307,7 +310,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
 
    //TODO we still have places in the code that expect/consume a Set<QuerySpecTypeNode>
-   private suspend fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
+   private fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
       // TODO : BIG opportunity to optimize this by evaluating multiple querySpecNodes at once.
       // Which would allow us to be smarter about results we collect from rest calls.
       // Optimize later.
@@ -326,7 +329,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
    }
 
-   private suspend fun doFind(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate, excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()): QueryResult {
+   private fun doFind(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate, excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()): QueryResult {
 
       // Note: We used to take a set<QuerySpecTypeNode>, but currently only take a single.
       // We'll likely re-optimize to take multiple, but for now wrap in a set.
@@ -341,7 +344,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
       //TODO this is an awful way to check if a strategy has result and only emit the results from that stratrgy
 
-      val resultsFlow = flow {
+      val resultsFlowTemp = flow {
          var resultsRecivedFromStrategy = false
 
          for (queryStrategy in strategies) {
@@ -352,13 +355,19 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             val strategyResult = invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
             if (strategyResult.hasMatchesNodes()) {
                strategyResult.matchedNodes?.collect {
-                  context.addFact(it)
                   resultsRecivedFromStrategy = true
                   emit(it)
                }
             }
          }
       }
+
+      val list = runBlocking { resultsFlowTemp.toList() }
+
+      println("List size .. adding to context")
+      context.addFacts(list)
+
+      val resultsFlow = list.asFlow()
 
       // Note : We should add this additional data to the context too,
       // so that it's available for future query strategies to use.
