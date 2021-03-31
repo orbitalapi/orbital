@@ -483,8 +483,11 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       schema.type(instanceFqn).attributes.forEach { (attributeName, field) ->
          val fieldValue = if (instance.hasAttribute(attributeName)) instance[attributeName] else null
          when {
-            fieldValue?.value != null && fieldValue.value != "" ->
+            fieldValue?.value != null && fieldValue.value != "" -> {
                connections.addAll(createProvidedInstanceAttribute(instanceFqn, attributeName, providedInstanceNode, field))
+
+            }
+
             // Include calculated fields
             field.formula != null -> connections.addAll(createProvidedInstanceAttribute(instanceFqn, attributeName, providedInstanceNode, field))
          }
@@ -525,6 +528,23 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       val memberInstance = providedInstance(field.type.fullyQualifiedName)
       connections.add(HipsterGraphBuilder.Connection(providedInstanceMember, memberInstance, Relationship.IS_ATTRIBUTE_OF))
       //builder.connect(providedInstanceMember).to(memberInstance).withEdge(Relationship.IS_ATTRIBUTE_OF)
+
+      // If this provided instance also has nested fields, those become
+      // provided instances too
+      val providedInstanceMemberLinks = schema.type(field.type).attributes.flatMap { (memberFieldName, memberField) ->
+         // TODO : If there are back references, those could create stack overflow errors
+         // Need to detect and handle
+         // SERIOUSLY, DON'T MERGE UNTIL THIS IS FIXED
+         val nestedMemberInstanceLinks = createProvidedInstanceAttribute(
+            field.type.fullyQualifiedName,
+            memberFieldName,
+            memberInstance,
+            memberField
+         )
+         nestedMemberInstanceLinks
+      }
+      connections.addAll(providedInstanceMemberLinks)
+
 
       // The member instance we have can populate required params
       connections.add(HipsterGraphBuilder.Connection(memberInstance, parameter(field.type.fullyQualifiedName), Relationship.CAN_POPULATE))
