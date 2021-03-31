@@ -35,6 +35,7 @@ import {AngularSplitModule} from 'angular-split';
 import {ErrorPanelComponent} from './error-panel/error-panel.component';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {MatDialogModule} from '@angular/material/dialog';
+import {CodeEditorModule} from '../code-editor/code-editor.module';
 
 @NgModule({
     imports: [
@@ -65,7 +66,8 @@ import {MatDialogModule} from '@angular/material/dialog';
         CallExplorerModule,
         AngularSplitModule.forChild(),
         HeaderBarModule,
-      MatDialogModule
+        MatDialogModule,
+        CodeEditorModule
     ],
     exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent, ErrorPanelComponent],
   declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent,

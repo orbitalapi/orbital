@@ -1,19 +1,17 @@
-import {Component, OnInit, Input} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
-import {QueryService} from '../services/query.service';
 import {filter, take} from 'rxjs/operators';
-import {
-  vyneQueryLanguageConfiguration,
-  vyneQueryLanguageTokenProvider
-} from '../query-panel/query-editor/vyne-query-language.monaco';
 import {editor} from 'monaco-editor';
+import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} from '../code-viewer/taxi-lang.monaco';
+// import {MessageConnection} from 'vscode-jsonrpc';
+// import {listen} from '@codingame/monaco-jsonrpc';
+import { listen, MessageConnection } from 'vscode-ws-jsonrpc';
+import {CloseAction, createConnection, ErrorAction, MonacoLanguageClient, MonacoServices} from 'monaco-languageclient';
 import ITextModel = editor.ITextModel;
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
-import {taxiLanguageConfiguration, taxiLanguageTokenProvider} from '../code-viewer/taxi-lang.monaco';
+import IStandaloneThemeData = editor.IStandaloneThemeData;
 
 declare const monaco: any; // monaco
-import {listen, MessageConnection} from 'vscode-ws-jsonrpc';
-import {MonacoLanguageClient, CloseAction, ErrorAction, MonacoServices, createConnection} from 'monaco-languageclient';
 
 @Component({
   selector: 'app-code-editor',
@@ -22,19 +20,35 @@ import {MonacoLanguageClient, CloseAction, ErrorAction, MonacoServices, createCo
 })
 export class CodeEditorComponent implements OnInit {
 
-  content: string;
+  private editorTheme: IStandaloneThemeData = {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      {token: '', background: '#333f54'},
+    ],
+    colors: {
+      ['editorBackground']: '#333f54',
+    }
+  };
+
 
   @Input()
-  editorOptions: EditorOptions;
+  content: string;
 
-  monacoEditor: IStandaloneCodeEditor;
-  monacoModel: ITextModel;
+  @Output()
+  contentChanged = new EventEmitter<string>();
+
+  private monacoEditor: IStandaloneCodeEditor;
+  private monacoModel: ITextModel;
 
   constructor(private monacoLoaderService: MonacoEditorLoaderService) {
-
   }
 
   ngOnInit(): void {
+    this.createMonacoEditor();
+  }
+
+  private createMonacoEditor(): void {
     this.monacoLoaderService.isMonacoLoaded.pipe(
       filter(isLoaded => isLoaded),
       take(1),
@@ -45,27 +59,25 @@ export class CodeEditorComponent implements OnInit {
         this.remeasure();
       });
 
-      const language = this.editorOptions.language;
       monaco.editor.onDidCreateModel(model => {
         this.monacoModel = model;
-        monaco.editor.defineTheme('vyne', this.getTheme(language));
+        monaco.editor.defineTheme('vyne', this.editorTheme);
         monaco.editor.setTheme('vyne');
-        monaco.editor.setModelLanguage(model, language);
+        monaco.editor.setModelLanguage(model, TAXI_LANGUAGE_ID);
       });
-      monaco.languages.register({id: language});
+      monaco.languages.register({id: TAXI_LANGUAGE_ID});
 
-      const conf = this.getConfiguration(language);
-      monaco.languages.setLanguageConfiguration(language, conf.configuration);
-      monaco.languages.setMonarchTokensProvider(language, conf.tokenProvider);
+      monaco.languages.setLanguageConfiguration(TAXI_LANGUAGE_ID, taxiLanguageConfiguration);
+      monaco.languages.setMonarchTokensProvider(TAXI_LANGUAGE_ID, taxiLanguageTokenProvider);
       // here, we retrieve monaco-editor instance
 
-      MonacoServices.install(this.monacoEditor);
+      const monacoServices = MonacoServices.install(this.monacoEditor);
       const webSocket = this.createWebSocket(`ws://localhost:9022/language-server`);
       listen({
         webSocket,
         onConnection: connection => {
           // create and start the language client
-          const languageClient = this.createLanguageClient(language, connection);
+          const languageClient = this.createLanguageClient(TAXI_LANGUAGE_ID, connection);
           const disposable = languageClient.start();
           connection.onClose(() => disposable.dispose());
         }
@@ -94,28 +106,6 @@ export class CodeEditorComponent implements OnInit {
     }, 10);
   }
 
-  getTheme(language: string) {
-    return {
-      base: 'vs-dark',
-      inherit: true,
-      rules: [
-        {token: '', background: '#333f54'},
-      ],
-      colors: {
-        ['editorBackground']: '#333f54',
-      }
-    };
-  }
-
-  getConfiguration(language: string) {
-    switch (language) {
-      case 'taxi':
-        return {configuration: taxiLanguageConfiguration, tokenProvider: taxiLanguageTokenProvider};
-      case 'vyneQL':
-        return {configuration: vyneQueryLanguageConfiguration, tokenProvider: vyneQueryLanguageTokenProvider};
-    }
-
-  }
 
   createWebSocket(url: string): WebSocket {
     /* Investigare ReconnectionWebSocket
@@ -132,7 +122,7 @@ export class CodeEditorComponent implements OnInit {
 
   createLanguageClient(language: string, connection: MessageConnection): MonacoLanguageClient {
     return new MonacoLanguageClient({
-      name: 'Sample Language Client',
+      name: 'vyne-taxi-language-client',
       clientOptions: {
         // use a language id as a document selector
         documentSelector: [language],
@@ -151,6 +141,12 @@ export class CodeEditorComponent implements OnInit {
     });
   }
 
+  updateContent(content: string) {
+    if (this.content !== content) {
+      this.content = content;
+      this.contentChanged.emit(content);
+    }
+  }
 }
 
 export interface EditorOptions {

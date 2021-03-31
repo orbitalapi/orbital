@@ -26,6 +26,7 @@ import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
 import {TestSpecFormComponent} from '../../test-pack-module/test-spec-form.component';
 import {MatDialog} from '@angular/material/dialog';
+import {EditorOptions} from '../../code-editor/code-editor.component';
 
 declare const monaco: any; // monaco
 
@@ -39,7 +40,6 @@ export class QueryEditorComponent implements OnInit {
   @Input()
   initialQuery: QueryHistoryRecord;
 
-  editorOptions: { theme: 'vs-dark', language: 'vyneQL' };
   monacoEditor: ICodeEditor;
   monacoModel: ITextModel;
   query: string;
@@ -204,4 +204,7 @@ export class QueryEditorComponent implements OnInit {
   }
 
 
+  onContentChanged(codeEditorContent: string) {
+    this.query = codeEditorContent;
+  }
 }

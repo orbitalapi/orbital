@@ -13,9 +13,8 @@ storiesOf('CodeEditor', module)
     })
   ).add('default', () => {
   return {
-    template: `<div style="height: 100vh"> <app-code-editor [editorOptions]="editorOptions"  > </app-code-editor> </div>`,
+    template: `<div style="height: 100vh"> <app-code-editor></app-code-editor> </div>`,
     props: {
-      editorOptions: { theme: 'vs-dark', language: 'vyneQL' }
     }
   };
 });
