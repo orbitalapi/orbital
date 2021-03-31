@@ -33,7 +33,7 @@ class OperationService(private val operationInvoker: OperationInvoker, private v
    fun invokeOperation(
       @PathVariable("serviceName") serviceName: String,
       @PathVariable("operationName") operationName: String,
-      @RequestParam("resultMode", defaultValue = "SIMPLE") resultMode: ResultMode,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestBody facts: Map<String, Fact>
    ): ResponseEntity<TypedInstance> {
       val (service, operation) = lookupOperation(serviceName, operationName)

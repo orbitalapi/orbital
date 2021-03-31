@@ -247,11 +247,12 @@ data class QueryContext(
       }
 
       private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
-         return if (fact is TypedObject) {
-            fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
-         } else {
-            resolveSynonym(fact, schema, true)
-         }
+         return emptySet()
+         //return if (fact is TypedObject) {
+         //   fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
+         //} else {
+         //   resolveSynonym(fact, schema, true)
+         //}
       }
 
       private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
@@ -297,7 +298,9 @@ data class QueryContext(
    }
 
    fun addFact(fact: TypedInstance): QueryContext {
-      log().debug("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
+
+      val start = System.currentTimeMillis()
+      log().info("Adding fact to queryContext: {}", fact.type.fullyQualifiedName)
       inMemoryStream = null
       when {
          fact.type.isEnum -> {
@@ -315,6 +318,10 @@ data class QueryContext(
             this.facts.add(fact)
          }
       }
+      val end = System.currentTimeMillis()
+      val timetaken = end-start
+      log().info("Added fact to queryContext: {}", fact.type.fullyQualifiedName)
+      log().info("Time to add fact: ${timetaken}" )
 
       return this
    }

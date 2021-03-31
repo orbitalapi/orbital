@@ -82,17 +82,13 @@ class CaskRestController(private val caskService: CaskService,
    }
 
    private fun ingestJson(typeReference: String, parameters: JsonIngestionParameters, input: String): Mono<CaskIngestionResponse> {
-      println("Starting JSON Ingest now .... ")
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = JsonWebsocketRequest(parameters, versionedType, mapper)
          val inputStream = Flux.just(input.byteInputStream() as InputStream)
          // TODO : How to avoid this blocking?
          ingestRequest(request, inputStream)
       }.getOrHandle { error ->
-
-         println("Something wrong in ingestJson ${error.message}")
          Mono.just(CaskIngestionResponse.rejected(error.message))
-
       }
    }
 

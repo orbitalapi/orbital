@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 import lang.taxi.types.PrimitiveType
 
 
@@ -77,13 +78,13 @@ data class EvaluatableEdge(
 
 interface EdgeEvaluator {
    val relationship: Relationship
-   suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge
+   fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge
 }
 
 class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = ParameterFactory()) : EdgeEvaluator {
    override val relationship: Relationship = Relationship.REQUIRES_PARAMETER
 
-   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       if (edge.target.elementType == ElementType.PARAMETER) {
          // Pass through, the next vertex should be the param type
          return  EvaluatedEdge.success(edge, edge.vertex2, edge.previousValue)
@@ -113,7 +114,7 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
 }
 
 class ParameterFactory {
-   suspend fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): TypedInstance {
+   fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): TypedInstance {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
       if (hasValue(firstLevelDiscovery)) {
@@ -163,7 +164,7 @@ class ParameterFactory {
       }
    }
 
-   private suspend fun attemptToConstruct(
+   private fun attemptToConstruct(
       paramType: Type,
       context: QueryContext,
       operation: Operation?,
@@ -186,9 +187,9 @@ class ParameterFactory {
             // Otherwise, if an operation result includes an input parameter, we can end up in a recursive loop, trying to
             // construct a request for the operation to discover a parameter needed to construct a request for the operation.
             val excludedOperations = operation?.let { setOf(SearchGraphExclusion("Operation is excluded as we're searching for an input for it", it)) } ?: emptySet()
-            val queryResult = context.find(QuerySpecTypeNode(attributeType), excludedOperations)
+            val queryResult = runBlocking {  context.find(QuerySpecTypeNode(attributeType), excludedOperations) }
             if (queryResult.isFullyResolved) {
-               attributeValue = queryResult.results?.firstOrNull() ?:
+               attributeValue = runBlocking { queryResult.results?.firstOrNull() } ?:
                   // TODO : This might actually be legal, as it could be valid for a value to resolve to null
                   throw IllegalArgumentException("Expected queryResult to return attribute with type ${attributeType.fullyQualifiedName} but the returned value was null")
             } else {
@@ -267,7 +268,7 @@ data class EvaluatedEdge(
 }
 
 abstract class PassThroughEdgeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
-   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       return edge.success(edge.previousValue)
    }
 }
@@ -281,7 +282,7 @@ class CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPUL
 class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_TYPE)
 
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
-   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       val previousValue =
          requireNotNull(edge.previousValue) { "Cannot evaluate $relationship when previous value was null.  Work with me here!" }
 

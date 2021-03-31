@@ -20,6 +20,6 @@ data class EvaluatedLink(val link: Link, val startingPoint: TypedInstance, val r
 
 interface LinkEvaluator {
    val relationship: Relationship
-   suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink
+   fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink
 }
 

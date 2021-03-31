@@ -340,6 +340,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //}
 
       //TODO this is an awful way to check if a strategy has result and only emit the results from that stratrgy
+
       val resultsFlow = flow {
          var resultsRecivedFromStrategy = false
 

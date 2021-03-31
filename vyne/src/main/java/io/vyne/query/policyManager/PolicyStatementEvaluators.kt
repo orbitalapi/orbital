@@ -17,11 +17,11 @@ class PolicyStatementEvaluator(private val evaluators: List<ConditionalPolicySta
       private val defaultEvaluators = listOf(ElseConditionEvaluator(), CaseConditionEvaluator())
    }
 
-   private suspend fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction? {
+   private fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction? {
       return evaluators.first { it.canSupport(statement.condition) }.evaluate(statement, instance, context)
    }
 
-   suspend fun evaluate(ruleset: RuleSet, instance: TypedInstance, context: QueryContext): Instruction? {
+   fun evaluate(ruleset: RuleSet, instance: TypedInstance, context: QueryContext): Instruction? {
 
 //      var matchedInstruction:Instruction? = null
 
@@ -48,13 +48,13 @@ class PolicyStatementEvaluator(private val evaluators: List<ConditionalPolicySta
 
 interface ConditionalPolicyStatementEvaluator {
    fun canSupport(condition: Condition): Boolean
-   suspend fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction?
+   fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction?
 }
 
 class ElseConditionEvaluator : ConditionalPolicyStatementEvaluator {
    override fun canSupport(condition: Condition): Boolean = condition is ElseCondition
 
-   override suspend fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction? {
+   override fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction? {
       return statement.instruction
    }
 
@@ -63,7 +63,7 @@ class ElseConditionEvaluator : ConditionalPolicyStatementEvaluator {
 class CaseConditionEvaluator : ConditionalPolicyStatementEvaluator {
    override fun canSupport(condition: Condition) = condition is CaseCondition
 
-   override suspend fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction? {
+   override fun evaluate(statement: PolicyStatement, instance: TypedInstance, context: QueryContext): Instruction? {
       val condition = statement.condition as CaseCondition
       val lhValue = resolve(condition.lhSubject, instance, context)
       val rhValue = resolve(condition.rhSubject, instance, context)
@@ -75,7 +75,7 @@ class CaseConditionEvaluator : ConditionalPolicyStatementEvaluator {
       }
    }
 
-   private suspend fun resolve(subject: Subject, instance: TypedInstance, context: QueryContext): Any? {
+   private fun resolve(subject: Subject, instance: TypedInstance, context: QueryContext): Any? {
       return when (subject) {
          is RelativeSubject -> resolve(subject, instance, context)
          is LiteralArraySubject -> resolve(subject, context)
@@ -92,14 +92,14 @@ class CaseConditionEvaluator : ConditionalPolicyStatementEvaluator {
       return subject
    }
 
-   private suspend fun resolve(subject: RelativeSubject, instance: TypedInstance, context: QueryContext): Flow<TypedInstance> {
+   private fun resolve(subject: RelativeSubject, instance: TypedInstance, context: QueryContext): Flow<TypedInstance> {
       val contextToUse = when (subject.source) {
          RelativeSubject.RelativeSubjectSource.CALLER -> context.queryEngine.queryContext(setOf(FactSets.CALLER))
          // Use nothing from the context, except the current thing being filtered.
          RelativeSubject.RelativeSubjectSource.THIS -> context.queryEngine.queryContext(setOf(FactSets.NONE), additionalFacts = setOf(instance))
       }
 
-      val result = contextToUse.find(TypeNameQueryExpression(subject.targetType.qualifiedName))
+      val result = runBlocking { contextToUse.find(TypeNameQueryExpression(subject.targetType.qualifiedName)) }
       if (result.isFullyResolved) {
          return result.results!!
       } else {

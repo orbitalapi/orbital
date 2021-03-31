@@ -21,7 +21,7 @@ import lang.taxi.Equality
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
 
-   suspend fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): EvaluatedEdge {
+   fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): EvaluatedEdge {
       val relationship = edge.relationship
       val evaluator = evaluators[relationship]
          ?: error("No LinkEvaluator provided for relationship ${relationship.name}")
@@ -161,7 +161,7 @@ class HipsterDiscoverGraphQueryStrategy(
             }
 
             val evaluationResult = runBlocking {
-                edgeEvaluator.evaluate(evaluatableEdge, queryContext)
+               edgeEvaluator.evaluate(evaluatableEdge, queryContext)
             }
 
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {

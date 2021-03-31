@@ -21,7 +21,7 @@ data class ExecutionScope(val operationType: String?, val operationScope: Operat
 
 class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator = PolicyStatementEvaluator(), private val defaultInstruction: Instruction = PermitInstruction) {
 
-   suspend fun evaluate(instance: TypedInstance, context: QueryContext, operationScope: ExecutionScope): Instruction {
+   fun evaluate(instance: TypedInstance, context: QueryContext, operationScope: ExecutionScope): Instruction {
       val schema = context.schema
       val policyType = getPolicyType(instance, context)
       val policies = findPolicies(schema, policyType)
@@ -44,7 +44,7 @@ class PolicyEvaluator(private val statementEvaluator: PolicyStatementEvaluator =
       }
    }
 
-   private suspend fun evaluate(policy: Policy, instance: TypedInstance, context: QueryContext, executionScope: ExecutionScope): Instruction {
+   private fun evaluate(policy: Policy, instance: TypedInstance, context: QueryContext, executionScope: ExecutionScope): Instruction {
       log().debug("Evaluating policy ${policy.name.fullyQualifiedName} for executionScope $executionScope")
       val ruleSets = policy.ruleSets
          //.filter { policy -> policy.scope.appliesTo(executionScope.operationType, executionScope.operationScope) }

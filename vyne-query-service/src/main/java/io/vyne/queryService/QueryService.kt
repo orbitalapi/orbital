@@ -3,7 +3,6 @@ package io.vyne.queryService
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.cfg.ContextAttributes
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.models.Provided
@@ -19,7 +18,6 @@ import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import io.vyne.utils.orElse
-import io.vyne.utils.timed
 import io.vyne.vyneql.VyneQLQueryString
 import lang.taxi.CompilationException
 import org.springframework.http.HttpHeaders
@@ -27,18 +25,11 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.OutputStream
 import io.vyne.query.history.RestfulQueryHistoryRecord
-import io.vyne.query.history.VyneQlQueryHistoryRecord
-import io.vyne.spring.invokers.typeReference
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
-import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.reactive.function.client.WebClient
-import reactor.core.publisher.Flux
 import java.io.ByteArrayOutputStream
 import java.util.UUID
 

@@ -134,7 +134,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
 
 @Component
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
-   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
 
 
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
@@ -170,7 +170,7 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       }
 
       return try {
-         val result: TypedInstance = invocationService.invokeOperation(service, operation, callArgs, context).first()
+         val result: TypedInstance = runBlocking { invocationService.invokeOperation(service, operation, callArgs, context).first() }
          if (result is TypedNull) {
             log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
          } else {
@@ -190,12 +190,12 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
 
    override val relationship: Relationship = Relationship.PROVIDES
 
-   override suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
+   override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
       TODO("I'm not sure if this is still used")
       val operationName = link.start
       val (service, operation) = context.schema.operation(operationName)
 
-      val result: Flow<TypedInstance> = invocationService.invokeOperation(service, operation, setOf(startingPoint), context)
+      val result: Flow<TypedInstance> = runBlocking { invocationService.invokeOperation(service, operation, setOf(startingPoint), context) }
 
       var linkResult: TypedInstance
       runBlocking {
