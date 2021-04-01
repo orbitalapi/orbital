@@ -2,25 +2,18 @@ package io.vyne
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.EvaluatedExpression
-import io.vyne.models.Provided
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
-import io.vyne.models.TypedObject
-import io.vyne.models.TypedValue
-import io.vyne.models.json.addJsonModel
+import io.vyne.models.*
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 import java.math.BigDecimal
 import kotlin.test.fail
 
-/*
+@ExperimentalCoroutinesApi
 class VyneProjectionTest {
    val testSchema = """
 // Primitives
@@ -73,7 +66,27 @@ service Broker1Service {
 """.trimIndent()
 
    @Test
-   fun `project by enriching from other services`() {
+   fun `can perform simple projection`() = runBlockingTest {
+      val (vyne, _) = testVyne(
+         """
+         type FirstName inherits String
+         type LastName inherits String
+         type PersonId inherits String
+         model Person {
+            id : PersonId
+            firstName : FirstName
+            lastName : LastName
+         }
+      """.trimIndent()
+      )
+      vyne.addModel(vyne.parseJsonModel("Person", """{ "id" : "1" , "firstName" : "Jimmy", "lastName" : "Schmit" } """))
+      val result = vyne.query("""findOne { Person } as { first : FirstName }""")
+      val list = result.results!!.toList()
+      TODO()
+   }
+
+   @Test
+   fun `project by enriching from other services`() = runBlockingTest {
       val schemaStr = """
          type Symbol inherits String
          type Field1 inherits String
@@ -111,23 +124,19 @@ service Broker1Service {
       """.trimIndent()
       val schema = TaxiSchema.from(schemaStr)
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("getData", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            return TypedInstance.from(schema.type("ServiceData"), """{
+      stubService.addResponse(
+         "getData",
+         vyne.parseJsonModel(
+            "ServiceData", """{
                    "field": "This is Provided By External Service"
-               }""", schema, source = Provided)
-         }
-      })
+               }"""
+         )
+      )
 
-      stubService.addResponse("findAll", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            return TypedInstance.from(schema.type("Order[]"), """
+      stubService.addResponse(
+         "findAll",
+         vyne.parseJsonModel(
+            "Order[]", """
                [
                {
                    "id": "id1",
@@ -140,24 +149,23 @@ service Broker1Service {
                    "child": "Child 2"
                }
                ]
-            """.trimIndent(), schema, source = Provided)
-         }
-      })
-
-      val result = runBlocking {vyne.query(
+            """
+         )
+      )
+      val queryResult = vyne.query(
          """
          findAll {
             Order[]
          } as Target[]""".trimIndent()
-      )}
-      result.isFullyResolved.should.be.`true`
-      val results = result.resultMap[result.resultMap.keys.first()] as List<Map<String, Any>>
-      results.first().should.contain(Pair("field2", "This is Provided By External Service"))
-      results[1].should.contain(Pair("field2", "This is Provided By External Service"))
+      )
+      queryResult.isFullyResolved.should.be.`true`
+      val results = queryResult.typedObjects()
+      results[0]["field2"].value.should.equal("This is Provided By External Service")
+      results[1]["field2"].value.should.equal("This is Provided By External Service")
    }
 
    @Test
-   fun `project an array of Orders to the array of CommonOrder`() {
+   fun `project an array of Orders to the array of CommonOrder`() = runBlockingTest {
       // prepare
       val schema = """
 type alias OrderDate as Date
@@ -199,65 +207,50 @@ service UserService {
       val noOfRecords = 10_000
 
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(2)
-            return vyne.addJsonModel("Broker1Order[]", generateBroker1OrdersWithTraderId(noOfRecords))
+      stubService.addResponse("getBroker1Orders") { _, parameters ->
+         parameters.should.have.size(2)
+         vyne.parseJsonModel("Broker1Order[]", generateBroker1OrdersWithTraderId(noOfRecords))
+      }
+      stubService.addResponse("getBroker2Orders") { _, parameters ->
+         parameters.should.have.size(2)
+         vyne.parseJsonModel("Broker2Order[]", "[]")
+      }
+      stubService.addResponse("getUserNameFromId") { _, parameters ->
+         parameters.should.have.size(1)
+         val userName = when (val userId = parameters[0].second.value as String) {
+            "trader0" -> "John Smith"
+            "trader1" -> "Mike Brown"
+            else -> TODO("Unknown userId=$userId")
          }
-      })
-      stubService.addResponse("getBroker2Orders", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(2)
-            return vyne.addJsonModel("Broker2Order[]", "[]")
-         }
-      })
-      stubService.addResponse("getUserNameFromId", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val userName = when (val userId = parameters[0].second.value as String) {
-               "trader0" -> "John Smith"
-               "trader1" -> "Mike Brown"
-               else -> TODO("Unknown userId=$userId")
-            }
-            return vyne.parseKeyValuePair("UserName", userName)
-         }
-      })
+         vyne.parseKeyValuePair("UserName", userName)
+      }
 
       // act
-      val result = runBlocking {vyne.query(
+      val result = vyne.query(
          """
          findAll {
             Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30")
          } as CommonOrder[]""".trimIndent()
-      )}
+      )
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
-      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
+      val resultList = result.typedObjects().map { it.toRawObject() }
       resultList.size.should.be.equal(noOfRecords)
       resultList[0].should.equal(
          mapOf(
-            Pair("id", "broker1Order1"),
-            Pair("date", "2020-01-01"),
-            Pair("traderId", "trader1"),
-            Pair("traderName", "Mike Brown")
+            "id" to "broker1Order1",
+            "date" to "2020-01-01",
+            "traderId" to "trader1",
+            "traderName" to "Mike Brown"
          )
       )
       resultList[1].should.equal(
          mapOf(
-            Pair("id", "broker1Order1"),
-            Pair("date", "2020-01-01"),
-            Pair("traderId", "trader0"),
-            Pair("traderName", "John Smith")
+            "id" to "broker1Order1",
+            "date" to "2020-01-01",
+            "traderId" to "trader0",
+            "traderName" to "John Smith"
          )
       )
    }
@@ -276,7 +269,7 @@ service UserService {
    }
 
    @Test
-   fun `project to CommonOrder and resolve Enum synonyms and Instruments`() {
+   fun `project to CommonOrder and resolve Enum synonyms and Instruments`() = runBlockingTest {
       // prepare
       val schema = """
 // Primitives
@@ -342,78 +335,63 @@ service InstrumentService {
       val noOfRecords = 10000
 
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(2)
-            return vyne.addJsonModel("Broker1Order[]", generateBroker1Orders(noOfRecords))
-         }
-      })
-      stubService.addResponse("getInstrument", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val instrumentId = parameters[0].second.value as String
-            val (instrumentDescription, instrumentType) = when (instrumentId) {
-               "instrument0" -> "UST 2Y5Y10Y" to "Type1"
-               "instrument1" -> "GBP/USD 1Year Swap" to "Type2"
-               else -> TODO("Unknown userId=$instrumentId")
-            }
+      stubService.addResponse("getBroker1Orders") { _, parameters ->
+         parameters.should.have.size(2)
+         vyne.parseJsonModel("Broker1Order[]", generateBroker1Orders(noOfRecords))
+      }
+      stubService.addResponse("getInstrument") { _, parameters ->
 
-            val instrumentResponse =
-               """{"id":"$instrumentId", "description": "$instrumentDescription", "instrument_type": "$instrumentType"}"""
-            return vyne.addJsonModel("Instrument", instrumentResponse)
+         parameters.should.have.size(1)
+         val instrumentId = parameters[0].second.value as String
+         val (instrumentDescription, instrumentType) = when (instrumentId) {
+            "instrument0" -> "UST 2Y5Y10Y" to "Type1"
+            "instrument1" -> "GBP/USD 1Year Swap" to "Type2"
+            else -> TODO("Unknown userId=$instrumentId")
          }
-      })
+
+         val instrumentResponse =
+            """{"id":"$instrumentId", "description": "$instrumentDescription", "instrument_type": "$instrumentType"}"""
+         vyne.parseJsonModel("Instrument", instrumentResponse)
+      }
 
       // act
       val result =
-         runBlocking {vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())}
+         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
-      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
+      val resultList = result.rawObjects()
       resultList.size.should.be.equal(noOfRecords)
       resultList[0].should.equal(
          mapOf(
-            Pair("id", "broker1Order0"),
-            Pair("date", "2020-01-01"),
-            Pair("direction", "sell"),
-            Pair(
-               "instrument",
-               mapOf(
-                  Pair("id", "instrument0"),
-                  Pair("description", "UST 2Y5Y10Y"),
-                  Pair("instrument_type", "Type1")
-               )
+            "id" to "broker1Order0",
+            "date" to "2020-01-01",
+            "direction" to "sell",
+            "instrument" to mapOf(
+               "id" to "instrument0",
+               "description" to "UST 2Y5Y10Y",
+               "instrument_type" to "Type1"
             ),
-            Pair("orderInstrumentType", "OrderInstrumentType1")
+            "orderInstrumentType" to "OrderInstrumentType1"
          )
       )
       resultList[1].should.equal(
          mapOf(
-            Pair("id", "broker1Order1"),
-            Pair("date", "2020-01-01"),
-            Pair("direction", "sell"),
-            Pair(
-               "instrument",
-               mapOf(
-                  Pair("id", "instrument1"),
-                  Pair("description", "GBP/USD 1Year Swap"),
-                  Pair("instrument_type", "Type2")
-               )
+            "id" to "broker1Order1",
+            "date" to "2020-01-01",
+            "direction" to "sell",
+            "instrument" to mapOf(
+               "id" to "instrument1",
+               "description" to "GBP/USD 1Year Swap",
+               "instrument_type" to "Type2"
             ),
-            Pair("orderInstrumentType", "OrderInstrumentType2")
+            "orderInstrumentType" to "OrderInstrumentType2"
          )
       )
    }
 
    @Test
-   fun `project to CommonOrder with Trades`() {
+   fun `project to CommonOrder with Trades`() = runBlockingTest {
       // TODO confirm how the mappings should look like
       val noOfRecords = 1000
       val schema = """
@@ -479,58 +457,36 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(schema)
       val orders = generateBroker1Orders(noOfRecords)
       val trades = generateOneBroker1TradeForEachOrder(noOfRecords)
-      stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(2)
-            return vyne.parseJsonModel("Broker1Order[]", orders)
-         }
-      })
+      stubService.addResponse("getBroker1Orders") { _, parameters ->
+         parameters.should.have.size(2)
+         vyne.parseJsonModel("Broker1Order[]", orders)
+      }
 
-      stubService.addResponse("getBroker1Trades", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            return vyne.parseJsonModel("Broker1Trade[]", trades)
-         }
-      })
+      stubService.addResponse("getBroker1Trades") { _, parameters ->
+         parameters.should.have.size(1)
+         vyne.parseJsonModel("Broker1Trade[]", trades)
+      }
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
-      stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val orderIds = parameters[0].second.value as List<TypedValue>
-            val buf = StringBuilder("[")
-            orderIds.forEachIndexed { index, typedValue ->
-               generateBroker1Trades(typedValue.value as String, index, buf)
-               if (index < orderIds.size - 1) {
-                  buf.append(",")
-               }
-            }
-            buf.append("]")
-            getBroker1TradesForOrderIdsInvocationCount++
-            return vyne.parseJsonModel("Broker1Trade[]", buf.toString().trimIndent())
-         }
-      })
+      stubService.addResponse("getBroker1TradesForOrderIds") { _, parameters ->
+
+         parameters.should.have.size(1)
+         val orderIds = parameters[0].second.value as List<TypedValue>
+         val buf = StringBuilder("[")
+         val json = orderIds.mapIndexed { index, typedValue ->
+            generateBroker1Trades(typedValue.value as String, index)
+         }.joinToString(",", prefix = "[", postfix = "]")
+         getBroker1TradesForOrderIdsInvocationCount++
+         vyne.parseJsonModel("Broker1Trade[]", json)
+      }
 
       var findOneByOrderIdInvocationCount = 0
-      stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val orderId = parameters[0].second.value as String
-            findOneByOrderIdInvocationCount++
-            return vyne.parseJsonModel(
-               "Broker1Trade", """
+      stubService.addResponse("findOneByOrderId") { _, parameters ->
+         parameters.should.have.size(1)
+         val orderId = parameters[0].second.value as String
+         findOneByOrderIdInvocationCount++
+         vyne.parseJsonModel(
+            "Broker1Trade", """
                {
                   "broker1OrderID" : "broker1Order$orderId",
                   "broker1TradeID" : "trade_id_$orderId",
@@ -538,26 +494,26 @@ service Broker1Service {
                   "broker1TradeNo": "trade_no_$orderId"
                }
             """.trimIndent()
-            )
-         }
-      })
+         )
+      }
 
       // act
       val result =
-         runBlocking {vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())}
+         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
+
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
-      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
+      val resultList = result.rawObjects()
       resultList.size.should.be.equal(noOfRecords)
       resultList.forEachIndexed { index, result ->
          result.should.equal(
             mapOf(
-               Pair("id", "broker1Order$index"),
-               Pair("date", "2020-01-01"),
-               Pair("tradeNo", "trade_no_$index"),
-               Pair("identifierType", "ISIN"),
-               Pair("direction", "Direction.SELL")
+               "id" to "broker1Order$index",
+               "date" to "2020-01-01",
+               "tradeNo" to "trade_no_$index",
+               "identifierType" to "ISIN",
+               "direction" to "Direction.SELL"
             )
          )
       }
@@ -567,7 +523,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `One to Many Mapping Projection with a date between query`() {
+   fun `One to Many Mapping Projection with a date between query`() = runBlockingTest {
       val (vyne, stubService) = testVyne(testSchema)
       // 1 order and 3 matching trades.
       val numberOfOrders = 1
@@ -575,72 +531,53 @@ service Broker1Service {
       // Generate 2 orders/
       // 1 order will have 3 corresponding trades whereas the other order has none..
       val orders = generateBroker1Orders(numberOfOrders + 1)
-      stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(2)
-            return vyne.parseJsonModel("Broker1Order[]", orders)
-         }
-      })
+      stubService.addResponse("getBroker1Orders") { _, parameters ->
+         parameters.should.have.size(2)
+         vyne.parseJsonModel("Broker1Order[]", orders)
+      }
+
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
-      stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val orderIds = parameters[0].second.value as List<TypedValue>
-            val buf = StringBuilder("[")
-            (0 until numberOfCorrespondingTrades).forEach { index ->
-               generateBroker1Trades(orderIds.first().value as String, 0, buf, index, "10.$index")
-               if (index < 2) {
-                  buf.append(",")
-               }
-            }
-            buf.append("]")
-            getBroker1TradesForOrderIdsInvocationCount++
-            return vyne.parseJsonModel("Broker1Trade[]", buf.toString().trimIndent())
-         }
-      })
+      stubService.addResponse("getBroker1TradesForOrderIds") { _, parameters ->
+         parameters.should.have.size(1)
+         val orderIds = parameters[0].second.value as List<TypedValue>
+         val json = (0 until numberOfCorrespondingTrades).map { index ->
+            generateBroker1Trades(orderIds.first().value as String, 0, index, "10.$index")
+         }.joinToString(",", prefix = "[", postfix = "]")
+         getBroker1TradesForOrderIdsInvocationCount++
+         vyne.parseJsonModel("Broker1Trade[]", json)
+      }
 
       var findOneByOrderIdInvocationCount = 0
-      stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val orderId = parameters[0].second.value as String
-            findOneByOrderIdInvocationCount++
+      stubService.addResponse("findOneByOrderId") { _, parameters ->
+         parameters.should.have.size(1)
+         val orderId = parameters[0].second.value as String
+         findOneByOrderIdInvocationCount++
 
-            return TypedNull.create(vyne.type("Broker1Trade"))
-         }
-      })
+         TypedNull.create(vyne.type("Broker1Trade"))
+      }
 
       // act
       val result =
-         runBlocking {vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())}
+         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
-      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
+      val resultList = result.rawObjects()
       resultList.size.should.be.equal(numberOfCorrespondingTrades + 1)
-      resultList.forEachIndexed { index, result ->
+      resultList.forEachIndexed { index, typedObject ->
          if (index < 3) {
             // First three results corresponding to 1 order 3 trades setup
-            result.should.equal(
+            typedObject.should.equal(
                mapOf(
-                  Pair("id", "broker1Order0"),
-                  Pair("date", "2020-01-01"),
-                  Pair("tradeNo", "trade_no_$index")
+                  "id" to "broker1Order0",
+                  "date" to "2020-01-01",
+                  "tradeNo" to "trade_no_$index"
                )
             )
          } else {
             //last result, corresponding to an order without a trade and hence it doesn't contain a tradeNo.
-            result.should.equal(
+            typedObject.should.equal(
                mapOf(
                   "id" to "broker1Order1",
                   "date" to "2020-01-01",
@@ -654,7 +591,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `One to Many Mapping Projection with an Id equals query`() {
+   fun `One to Many Mapping Projection with an Id equals query`() = runBlockingTest {
       val (vyne, stubService) = testVyne(testSchema)
       // 1 order and 3 matching trades.
       val numberOfOrders = 1
@@ -662,76 +599,51 @@ service Broker1Service {
       // Generate 2 orders/
       // 1 order will have 3 corresponding trades whereas the other order has none..
       val orders = generateBroker1Orders(numberOfOrders + 1)
-      stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(2)
-            return vyne.parseJsonModel("Broker1Order[]", orders)
-         }
-      })
+      stubService.addResponse("getBroker1Orders") { _, parameters ->
+         parameters.should.have.size(2)
+         vyne.parseJsonModel("Broker1Order[]", orders)
+      }
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
-      stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val orderIds = parameters[0].second.value as List<TypedValue>
-            val buf = StringBuilder("[")
-            (0 until numberOfCorrespondingTrades).forEach { index ->
-               generateBroker1Trades(orderIds.first().value as String, 0, buf, index, "10.$index")
-               if (index < 2) {
-                  buf.append(",")
-               }
-            }
-            buf.append("]")
-            getBroker1TradesForOrderIdsInvocationCount++
-            return vyne.parseJsonModel("Broker1Trade[]", buf.toString().trimIndent())
-         }
-      })
+      stubService.addResponse("getBroker1TradesForOrderIds") { _, parameters ->
+         parameters.should.have.size(1)
+         val orderIds = parameters[0].second.value as List<TypedValue>
+         val json = (0 until numberOfCorrespondingTrades).map { index ->
+            generateBroker1Trades(orderIds.first().value as String, 0, index, "10.$index")
+         }.joinToString(",", prefix = "[", postfix = "]")
+
+         getBroker1TradesForOrderIdsInvocationCount++
+         vyne.parseJsonModel("Broker1Trade[]", json)
+      }
+
 
       var findOneByOrderIdInvocationCount = 0
-      stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val orderId = parameters[0].second.value as String
-            findOneByOrderIdInvocationCount++
+      stubService.addResponse("findOneByOrderId") { _, parameters ->
+         parameters.should.have.size(1)
+         val orderId = parameters[0].second.value as String
+         findOneByOrderIdInvocationCount++
 
-            return TypedNull.create(vyne.type("Broker1Trade"))
-         }
-      })
+         TypedNull.create(vyne.type("Broker1Trade"))
+      }
 
       //find by order Id and project
-      stubService.addResponse("findSingleByOrderID", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            return if (parameters.first().second.value == "broker1Order0") {
-               vyne.parseJsonModel("Broker1Order", generateBroker1Order(0))
-            } else {
-               vyne.parseJsonModel("Broker1Order", "{}")
-            }
+      stubService.addResponse("findSingleByOrderID") { _, parameters ->
+         parameters.should.have.size(1)
+         if (parameters.first().second.value == "broker1Order0") {
+            vyne.parseJsonModel("Broker1Order", generateBroker1Order(0))
+         } else {
+            vyne.parseJsonModel("Broker1Order", "{}")
          }
-      })
+      }
 
       val findByOrderIdResult =
-         runBlocking {vyne.query("""findAll { Order (OrderId = "broker1Order0") } as CommonOrder[]""".trimIndent())}
-      expect(findByOrderIdResult.isFullyResolved).to.be.`true`
-      val findByOrderIdResultList =
-         findByOrderIdResult.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
-      findByOrderIdResultList.size.should.be.equal(numberOfCorrespondingTrades)
+         vyne.query("""findAll { Order (OrderId = "broker1Order0") } as CommonOrder[]""".trimIndent())
+      findByOrderIdResult.isFullyResolved.should.be.`true`
+      findByOrderIdResult.typedInstances().should.have.size(numberOfCorrespondingTrades)
    }
 
    @Test
-   fun `One to Many Mapping Projection with an Id equals query returning zero match`() {
+   fun `One to Many Mapping Projection with an Id equals query returning zero match`() = runBlockingTest {
       val (vyne, stubService) = testVyne(testSchema)
       // 1 order and 3 matching trades.
       val numberOfOrders = 1
@@ -739,152 +651,104 @@ service Broker1Service {
       // Generate 2 orders/
       // 1 order will have 3 corresponding trades whereas the other order has none..
       val orders = generateBroker1Orders(numberOfOrders + 1)
-      stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(2)
-            return vyne.parseJsonModel("Broker1Order[]", orders)
-         }
-      })
+      stubService.addResponse("getBroker1Orders") { _, parameters ->
+         parameters.should.have.size(2)
+         vyne.parseJsonModel("Broker1Order[]", orders)
+      }
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
-      stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val orderIds = parameters[0].second.value as List<TypedValue>
-            val buf = StringBuilder("[")
-            (0 until numberOfCorrespondingTrades).forEach { index ->
-               generateBroker1Trades(orderIds.first().value as String, 0, buf, index, "10.$index")
-               if (index < 2) {
-                  buf.append(",")
-               }
-            }
-            buf.append("]")
-            getBroker1TradesForOrderIdsInvocationCount++
-            return vyne.parseJsonModel("Broker1Trade[]", buf.toString().trimIndent())
-         }
-      })
+      stubService.addResponse("getBroker1TradesForOrderIds") { _, parameters ->
+         parameters.should.have.size(1)
+         val orderIds = parameters[0].second.value as List<TypedValue>
+         val json = (0 until numberOfCorrespondingTrades).map { index ->
+            generateBroker1Trades(orderIds.first().value as String, 0, index, "10.$index")
+         }.joinToString(",", prefix = "[", postfix = "]")
+         getBroker1TradesForOrderIdsInvocationCount++
+         vyne.parseJsonModel("Broker1Trade[]", json)
+      }
 
       var findOneByOrderIdInvocationCount = 0
-      stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val orderId = parameters[0].second.value as String
-            findOneByOrderIdInvocationCount++
+      stubService.addResponse("findOneByOrderId") { _, parameters ->
+         parameters.should.have.size(1)
+         val orderId = parameters[0].second.value as String
+         findOneByOrderIdInvocationCount++
 
-            return TypedNull.create(vyne.type("Broker1Trade"))
-         }
-      })
+         TypedNull.create(vyne.type("Broker1Trade"))
+      }
 
       //find by order Id and project
-      stubService.addResponse("findSingleByOrderID", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            return if (parameters.first().second.value == "broker1Order0") {
-               vyne.parseJsonModel("Broker1Order", generateBroker1Order(0))
-            } else {
-               TypedNull.create(vyne.type("Broker1Order"))
+      stubService.addResponse("findSingleByOrderID") { _, parameters ->
+         parameters.should.have.size(1)
+         if (parameters.first().second.value == "broker1Order0") {
+            vyne.parseJsonModel("Broker1Order", generateBroker1Order(0))
+         } else {
+            TypedNull.create(vyne.type("Broker1Order"))
 //               vyne.parseJsonModel("Broker1Order", "{}")
-            }
          }
-      })
+      }
       // find by a non-existing order Id and project
-      val noResult = runBlocking {vyne.query("""findAll { Order (OrderId = "MY SPECIAL ORDER ID") } as CommonOrder[]""".trimIndent())}
-      val noResultList = noResult.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
-      noResultList.should.be.empty
+      val noResult = vyne.query("""findAll { Order (OrderId = "MY SPECIAL ORDER ID") } as CommonOrder[]""".trimIndent())
+      noResult.typedInstances().should.be.empty
    }
 
    @Test
-   fun `Multiple orders with same id and multiple trades with same order Id`() {
+   fun `Multiple orders with same id and multiple trades with same order Id`() = runBlockingTest {
       val (vyne, stubService) = testVyne(testSchema)
       val numberOfCorrespondingTrades = 3
       // 2 orders (with same id) will have 3 corresponding trades
-      val orders = StringBuilder("[")
-         .append(generateBroker1Order(0, "2020-01-01"))
-         .append(",")
-         .append(generateBroker1Order(0, "2021-01-01"))
-         .append("]")
-         .toString()
-      stubService.addResponse("getBroker1Orders", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(2)
-            return vyne.parseJsonModel("Broker1Order[]", orders)
-         }
-      })
+      val orders = listOf(
+         generateBroker1Order(0, "2020-01-01"),
+         generateBroker1Order(0, "2021-01-01")
+      ).joinToString(prefix = "[", postfix = "]")
+      stubService.addResponse("getBroker1Orders") { _, parameters ->
+         parameters.should.have.size(2)
+         vyne.parseJsonModel("Broker1Order[]", orders)
+      }
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
-      stubService.addResponse("getBroker1TradesForOrderIds", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val orderIds = parameters[0].second.value as List<TypedValue>
-            val buf = StringBuilder("[")
-            (0 until numberOfCorrespondingTrades).forEach { index ->
-               generateBroker1Trades(orderIds.first().value as String, 0, buf, index, "10.$index")
-               if (index < 2) {
-                  buf.append(",")
-               }
-            }
-            buf.append("]")
-            getBroker1TradesForOrderIdsInvocationCount++
-            return vyne.parseJsonModel("Broker1Trade[]", buf.toString().trimIndent())
-         }
-      })
+      stubService.addResponse("getBroker1TradesForOrderIds") { _, parameters ->
+         parameters.should.have.size(1)
+         val orderIds = parameters[0].second.value as List<TypedValue>
+         val json = (0 until numberOfCorrespondingTrades).map { index ->
+            generateBroker1Trades(orderIds.first().value as String, 0, index, "10.$index")
+         }.joinToString(prefix = "[", postfix = "]")
+         getBroker1TradesForOrderIdsInvocationCount++
+         vyne.parseJsonModel("Broker1Trade[]", json)
+      }
 
       var findOneByOrderIdInvocationCount = 0
-      stubService.addResponse("findOneByOrderId", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            parameters.should.have.size(1)
-            val orderId = parameters[0].second.value as String
-            findOneByOrderIdInvocationCount++
+      stubService.addResponse("findOneByOrderId") { _, parameters ->
+         parameters.should.have.size(1)
+         val orderId = parameters[0].second.value as String
+         findOneByOrderIdInvocationCount++
 
-            return TypedNull.create(vyne.type("Broker1Trade"))
-         }
-      })
+         TypedNull.create(vyne.type("Broker1Trade"))
+      }
 
       // act
       val result =
-         runBlocking {vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())}
+         vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
-      val resultList = result.resultMap.values.map { it as ArrayList<*> }.flatMap { it.asIterable() }
-      resultList.size.should.be.equal(2 * numberOfCorrespondingTrades)
-      resultList.forEachIndexed { index, result ->
+      val resultList = result.rawObjects()
+      resultList.should.have.size(2 * numberOfCorrespondingTrades)
+      resultList.forEachIndexed { index, resultMember ->
          if (index < numberOfCorrespondingTrades) {
             // First three results corresponding to 1 order 3 trades setup
-            result.should.equal(
+            resultMember.should.equal(
                mapOf(
-                  Pair("id", "broker1Order0"),
-                  Pair("date", "2020-01-01"),
-                  Pair("tradeNo", "trade_no_$index")
+                  "id" to "broker1Order0",
+                  "date" to "2020-01-01",
+                  "tradeNo" to "trade_no_$index"
                )
             )
          } else {
-            result.should.equal(
+            resultMember.should.equal(
                mapOf(
-                  Pair("id", "broker1Order0"),
-                  Pair("date", "2021-01-01"),
-                  Pair("tradeNo", "trade_no_${index - numberOfCorrespondingTrades}")
+                  "id" to "broker1Order0",
+                  "date" to "2021-01-01",
+                  "tradeNo" to "trade_no_${index - numberOfCorrespondingTrades}"
                )
             )
          }
@@ -896,15 +760,13 @@ service Broker1Service {
    private fun generateBroker1Trades(
       orderId: String,
       index: Int,
-      buf: StringBuilder,
       tradeId: Int? = null,
       price: String? = null
-   ): StringBuilder {
+   ): String {
       val brokerTraderId = tradeId?.let { "trade_id_$it" } ?: "trade_id_$index"
       val brokerTradeNo = tradeId?.let { "trade_no_$it" } ?: "trade_no_$index"
       val brokerPrice = price ?: "10.1"
-      buf.append(
-         """
+      return """
          {
             "broker1OrderID" : "$orderId",
             "broker1TradeID" :  "$brokerTraderId",
@@ -912,8 +774,6 @@ service Broker1Service {
             "broker1TradeNo": "$brokerTradeNo"
          }
          """.trimMargin()
-      )
-      return buf
    }
 
    private fun generateOneBroker1TradeForEachOrder(noOfRecords: Int): String {
@@ -963,7 +823,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `missing Country does not break Client projection`() {
+   fun `missing Country does not break Client projection`() = runBlockingTest {
       // prepare
       val testSchema = """
          model Client {
@@ -989,34 +849,29 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(testSchema)
       stubService.addResponse(
          "getCustomers", vyne.parseJsonModel(
-         "Client[]", """
+            "Client[]", """
          [
             { name : "Jimmy", country : "UK" },
             { name : "Devrim", country : "TR" }
          ]
          """.trimIndent()
-      )
+         )
       )
 
-      stubService.addResponse("getCountry", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            val countryCode = parameters.first().second.value!!.toString()
-            return if (countryCode == "UK") {
-               vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
-            } else {
-               TypedObject(vyne.schema.type("Country"), emptyMap(), Provided)
-            }
+      stubService.addResponse("getCountry") { _, parameters ->
+         val countryCode = parameters.first().second.value!!.toString()
+         if (countryCode == "UK") {
+            vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
+         } else {
+            TypedObject(vyne.schema.type("Country"), emptyMap(), Provided)
          }
-      })
+      }
 
       // act
-      val result = runBlocking {vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())}
+      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
 
       // assert
-      result.resultMap["lang.taxi.Array<ClientAndCountry>"].should.be.equal(
+      result.rawObjects().should.be.equal(
          listOf(
             mapOf("personName" to "Jimmy", "countryName" to "United Kingdom"),
             mapOf("personName" to "Devrim", "countryName" to null)
@@ -1025,7 +880,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `duplicate matches with same values in projection is resolved without any errors`() {
+   fun `duplicate matches with same values in projection is resolved without any errors`() = runBlockingTest {
       // prepare
       val testSchema = """
          type OrderId inherits String
@@ -1072,7 +927,7 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(testSchema)
       stubService.addResponse(
          "getOrders", vyne.parseJsonModel(
-         "Order[]", """
+            "Order[]", """
          [
             {
                "orderId": "orderId_0",
@@ -1081,42 +936,42 @@ service Broker1Service {
             }
          ]
          """.trimIndent()
-      )
+         )
       )
 
       stubService.addResponse(
          "getInstrument", vyne.parseJsonModel(
-         "Instrument", """
+            "Instrument", """
             {
                "maturityDate": "$maturityDate",
                "instrumentId": "Instrument_0",
                "name": "2040-11-20 0.1 Bond"
             }
          """.trimIndent()
-      )
+         )
       )
 
       stubService.addResponse(
          "getTrades", vyne.parseJsonModel(
-         "Trade[]", """
+            "Trade[]", """
             [{
                "maturityDate": "$maturityDate",
                "orderId": "orderId_0",
                "tradeId": "Trade_0"
             }]
          """.trimIndent()
+         )
       )
-      )
-      val result = runBlocking {vyne.query("""findAll { Order[] } as Report[]""".trimIndent())}
+      val result = vyne.query("""findAll { Order[] } as Report[]""".trimIndent())
       result.isFullyResolved.should.be.`true`
-      result.resultMap.get("lang.taxi.Array<Report>").should.be.equal(
+      result.rawObjects().should.equal(
          listOf(
             mapOf(
                "orderId" to "orderId_0",
                "traderName" to "john",
                "tradeId" to "Trade_0",
                "instrumentName" to "2040-11-20 0.1 Bond",
-               "maturityDate" to "$maturityDate"
+               "maturityDate" to maturityDate
             )
          )
       )
@@ -1124,7 +979,7 @@ service Broker1Service {
 
 
    @Test
-   fun `can use calculated fields on output models`() {
+   fun `can use calculated fields on output models`() = runBlockingTest {
       val (vyne, _) = testVyne(
          """
          type Quantity inherits Int
@@ -1142,13 +997,12 @@ service Broker1Service {
       """.trimIndent()
       )
       val input = vyne.parseJsonModel("Input", """{ "qty" : 100, "value" : 2 }""", source = Provided)
-      val result = runBlocking {vyne.from(input).build("Output")}
-      val output = result["Output"] as TypedObject
+      val output = vyne.from(input).build("Output").`firstTypedObject`()
       output["cost"].value.should.equal(200)
    }
 
    @Test
-   fun `can use when by`() {
+   fun `can use when by`() = runBlockingTest {
       val (vyne, _) = testVyne(
          """
          model Input {
@@ -1172,14 +1026,14 @@ service Broker1Service {
       """.trimIndent()
       )
       val input = vyne.parseJsonModel("Input", """{ "value": 100, "str": "Percentage" }""", source = Provided)
-      val result = runBlocking {vyne.from(input).build("SampleType")}
-      val output = result["SampleType"] as TypedObject
-      output["priceType"].value.should.equal("Percentage")
+      val result = vyne.from(input).build("SampleType")
+         .`firstTypedObject`()
+      result["priceType"].value.should.equal("Percentage")
    }
 
 
    @Test
-   fun `A service annotated with @DataSource will not be invoked twice`() {
+   fun `A service annotated with @DataSource will not be invoked twice`() = runBlockingTest {
       val testSchema = """
          model Client {
             name : PersonName as String
@@ -1205,35 +1059,30 @@ service Broker1Service {
       val (vyne, stubService) = testVyne(testSchema)
       stubService.addResponse(
          "getCustomers", vyne.parseJsonModel(
-         "Client[]", """
+            "Client[]", """
          [
             { name : "Jimmy", country : "UK" },
             { name : "Devrim", country : "TR" }
          ]
          """.trimIndent()
-      )
+         )
       )
 
-      stubService.addResponse("getCountry", object : StubResponseHandler {
-         override fun invoke(
-            operation: RemoteOperation,
-            parameters: List<Pair<Parameter, TypedInstance>>
-         ): TypedInstance {
-            getCountryInvoked = true
-            val countryCode = parameters.first().second.value!!.toString()
-            return if (countryCode == "UK") {
-               vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
-            } else {
-               TypedObject(vyne.schema.type("Country"), emptyMap(), Provided)
-            }
+      stubService.addResponse("getCountry") { _, parameters ->
+         getCountryInvoked = true
+         val countryCode = parameters.first().second.value!!.toString()
+         if (countryCode == "UK") {
+            vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
+         } else {
+            TypedObject(vyne.schema.type("Country"), emptyMap(), Provided)
          }
-      })
+      }
 
       // act
-      val result = runBlocking {vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())}
+      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
 
       // assert
-      result.resultMap["lang.taxi.Array<ClientAndCountry>"].should.be.equal(
+      result.rawObjects().should.equal(
          listOf(
             mapOf("personName" to "Jimmy", "countryName" to null),
             mapOf(
@@ -1247,7 +1096,7 @@ service Broker1Service {
 
 
    @Test
-   fun `should output offset  correctly`() {
+   fun `should output offset  correctly`() = runBlockingTest {
       val (vyne, stubService) = testVyne(
          """
          model InputModel {
@@ -1271,16 +1120,16 @@ service Broker1Service {
       val outputInstant2 = "2020-08-18T14:07:09.591+0100"
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-         "InputModel[]", """
+            "InputModel[]", """
          [
             { "inputField": "$inputInstant1" },
             { "inputField": "$inputInstant2" }
          ]
          """.trimIndent()
+         )
       )
-      )
-      val result = runBlocking {vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())}
-      result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
+      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      result.rawObjects().should.equal(
          listOf(
             mapOf("myField" to "$outputInstant1"),
             mapOf("myField" to "$outputInstant2")
@@ -1289,7 +1138,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `should output offset correctly without any format`() {
+   fun `should output offset correctly without any format`() = runBlockingTest {
       val (vyne, stubService) = testVyne(
          """
          model InputModel {
@@ -1313,25 +1162,25 @@ service Broker1Service {
       val outputInstant2 = "2020-08-18T14:07:09.591+01"
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-         "InputModel[]", """
+            "InputModel[]", """
          [
             { "inputField": "$inputInstant1" },
             { "inputField": "$inputInstant2" }
          ]
          """.trimIndent()
+         )
       )
-      )
-      val result = runBlocking {vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())}
-      result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
+      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      result.rawObjects().should.be.equal(
          listOf(
-            mapOf("myField" to "$outputInstant1"),
-            mapOf("myField" to "$outputInstant2")
+            mapOf("myField" to outputInstant1),
+            mapOf("myField" to outputInstant2)
          )
       )
    }
 
    @Test
-   fun `Calculated fields should be correctly set in projected type`() {
+   fun `Calculated fields should be correctly set in projected type`() = runBlockingTest {
       val (vyne, stubService) = testVyne(
          """
          type QtyFill inherits Decimal
@@ -1358,15 +1207,15 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-         "InputModel[]", """
+            "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 2 }
          ]
          """.trimIndent()
+         )
       )
-      )
-      val result = runBlocking {vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())}
-      result.resultMap["lang.taxi.Array<OutputModel>"].should.be.equal(
+      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+      result.rawObjects().should.be.equal(
          listOf(
             mapOf(
                "qtyHit" to BigDecimal("200"),
@@ -1378,7 +1227,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `when calculating fields then lineage is set on output`() {
+   fun `when calculating fields then lineage is set on output`() = runBlockingTest {
       val (vyne, stubs) = testVyne(
          """
             type Quantity inherits Int
@@ -1404,15 +1253,15 @@ service Broker1Service {
          |]""".trimMargin()
       stubs.addResponse(
          "listOrders", vyne.parseJsonModel(
-         "Order[]", """[
+            "Order[]", """[
          |{ "quantity" : 100 , "price" : 2 },
          |{ "quantity" : 0 , "price" : 2 }
          |]""".trimMargin()
-      )
+         )
       )
 
-      val queryResult = runBlocking {vyne.query("findAll { Order[] } as Output[]")}
-      val outputCollection = queryResult["Output[]"] as TypedCollection
+      val queryResult = vyne.query("findAll { Order[] } as Output[]")
+      val outputCollection = queryResult.typedObjects()
       val outputModel = outputCollection[0] as TypedObject
       val averagePrice = outputModel["averagePrice"]
       averagePrice.value.should.equal(0.02.toBigDecimal())
@@ -1423,7 +1272,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `should project to anonymous type extending discovery type`() {
+   fun `should project to anonymous type extending discovery type`() = runBlockingTest {
       val (vyne, stubService) = testVyne(
          """
          type QtyFill inherits Decimal
@@ -1452,16 +1301,16 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-         "InputModel[]", """
+            "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 2, "id": "input1" },
             { "qtyFill": 200, "multiplier": 2, "id": "input2" },
             { "qtyFill": 200, "multiplier": 2, "id": "input3" }
          ]
          """.trimIndent()
+         )
       )
-      )
-      val result = runBlocking {vyne.query(
+      val result = vyne.query(
          """
             findAll {
                 InputModel[]
@@ -1469,9 +1318,9 @@ service Broker1Service {
                  id
                }[]
             """.trimIndent()
-      )}
+      )
 
-      result.resultMap.values.first().should.be.equal(
+      result.rawObjects().should.be.equal(
          listOf(
             mapOf("id" to "input1"), mapOf("id" to "input2"), mapOf("id" to "input3")
          )
@@ -1479,7 +1328,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `should project to anonymous type extending discovery type II`() {
+   fun `should project to anonymous type extending discovery type II`() = runBlockingTest {
       val (vyne, stubService) = testVyne(
          """
          type QtyFill inherits Decimal
@@ -1523,38 +1372,36 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-         "InputModel[]", """
+            "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },
             { "qtyFill": 200, "multiplier": 2, "id": "input2", "traderId": "tId2" },
             { "qtyFill": 200, "multiplier": 3, "id": "input3", "traderId": "tId3" }
          ]
          """.trimIndent()
-      )
+         )
       )
 
-      stubService.addResponse("getTrader", object : StubResponseHandler {
-         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
-            return when (p2.first().second.value) {
-               "tId1" -> vyne.parseJsonModel(
-                  "TraderInfo",
-                  """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
-               )
-               "tId2" -> vyne.parseJsonModel(
-                  "TraderInfo",
-                  """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
-               )
-               "tId3" -> vyne.parseJsonModel(
-                  "TraderInfo",
-                  """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
-               )
-               else -> TypedNull.create(vyne.type("TraderInfo"))
+      stubService.addResponse("getTrader") { _, parameters ->
+         when (parameters.first().second.value) {
+            "tId1" -> vyne.parseJsonModel(
+               "TraderInfo",
+               """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
+            )
+            "tId2" -> vyne.parseJsonModel(
+               "TraderInfo",
+               """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
+            )
+            "tId3" -> vyne.parseJsonModel(
+               "TraderInfo",
+               """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
+            )
+            else -> TypedNull.create(vyne.type("TraderInfo"))
 
-            }
          }
+      }
 
-      })
-      val result = runBlocking {vyne.query(
+      val result = vyne.query(
          """
             findAll {
                 InputModel[]
@@ -1564,9 +1411,9 @@ service Broker1Service {
                  traderName: TraderName (from this.traderId)
                }[]
             """.trimIndent()
-      )}
+      )
 
-      result.resultMap.values.first().should.be.equal(
+      result.rawObjects().should.be.equal(
          listOf(
             mapOf("id" to "input1", "multiplier" to BigDecimal("1"), "traderName" to "Butch"),
             mapOf("id" to "input2", "multiplier" to BigDecimal("2"), "traderName" to "Sundance"),
@@ -1576,7 +1423,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `should project to anonymous type extending discovery type III`() {
+   fun `should project to anonymous type extending discovery type III`() = runBlockingTest {
       val (vyne, stubService) = testVyne(
          """
          type QtyFill inherits Decimal
@@ -1620,30 +1467,31 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-         "InputModel[]", """
+            "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1" },
             { "qtyFill": 200, "multiplier": 2, "id": "input2" },
             { "qtyFill": 200, "multiplier": 3, "id": "input3" }
          ]
          """.trimIndent()
-      )
+         )
       )
 
       stubService.addResponse(
          "getTrader", vyne.parseJsonModel(
-         "TraderInfo",
-         """
+            "TraderInfo",
+            """
          {
             "traderId": "id1",
             "traderName": "John",
             "traderSurname" : "Doe"
          }
       """.trimIndent()
+         )
       )
-      )
-      val result = runBlocking {vyne.query(
-         """
+      val result =
+         vyne.query(
+            """
             findAll {
                 InputModel[]
               } as OutputModel {
@@ -1651,9 +1499,9 @@ service Broker1Service {
                  traderName: TraderName (from this.traderId)
                }[]
             """.trimIndent()
-      )}
+         )
 
-      result.resultMap.values.first().should.be.equal(
+      result.rawObjects().should.be.equal(
          listOf(
             mapOf(
                "qtyHit" to BigDecimal("200"),
@@ -1684,7 +1532,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `should project to anonymous type extending discovery type IV`() {
+   fun `should project to anonymous type extending discovery type IV`() = runBlockingTest {
       val (vyne, stubService) = testVyne(
          """
          type QtyFill inherits Decimal
@@ -1728,30 +1576,31 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-         "InputModel[]", """
+            "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1" },
             { "qtyFill": 200, "multiplier": 2, "id": "input2" },
             { "qtyFill": 200, "multiplier": 3, "id": "input3" }
          ]
          """.trimIndent()
-      )
+         )
       )
 
       stubService.addResponse(
          "getTrader", vyne.parseJsonModel(
-         "TraderInfo",
-         """
+            "TraderInfo",
+            """
          {
             "traderId": "id1",
             "traderName": "John",
             "traderSurname" : "Doe"
          }
       """.trimIndent()
+         )
       )
-      )
-      val result = runBlocking {vyne.query(
-         """
+      val result =
+         vyne.query(
+            """
             findAll {
                 InputModel[]
               } as OutputModel {
@@ -1762,9 +1611,9 @@ service Broker1Service {
                  } (from this.traderId)
                }[]
             """.trimIndent()
-      )}
+         )
 
-      result.resultMap.values.first().should.be.equal(
+      result.rawObjects().should.be.equal(
          listOf(
             mapOf(
                "qtyHit" to BigDecimal("200"),
@@ -1795,7 +1644,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `should project to anonymous type extending discovery type V`() {
+   fun `should project to anonymous type extending discovery type V`() = runBlockingTest {
       val (vyne, stubService) = testVyne(
          """
          type QtyFill inherits Decimal
@@ -1839,38 +1688,36 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-         "InputModel[]", """
+            "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },
             { "qtyFill": 200, "multiplier": 2, "id": "input2", "traderId": "tId2" },
             { "qtyFill": 200, "multiplier": 3, "id": "input3", "traderId": "tId3" }
          ]
          """.trimIndent()
-      )
+         )
       )
 
-      stubService.addResponse("getTrader", object : StubResponseHandler {
-         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
-            return when (p2.first().second.value) {
-               "tId1" -> vyne.parseJsonModel(
-                  "TraderInfo",
-                  """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
-               )
-               "tId2" -> vyne.parseJsonModel(
-                  "TraderInfo",
-                  """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
-               )
-               "tId3" -> vyne.parseJsonModel(
-                  "TraderInfo",
-                  """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
-               )
-               else -> TypedNull.create(vyne.type("TraderInfo"))
+      stubService.addResponse("getTrader") { _, parameters ->
+         when (parameters.first().second.value) {
+            "tId1" -> vyne.parseJsonModel(
+               "TraderInfo",
+               """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
+            )
+            "tId2" -> vyne.parseJsonModel(
+               "TraderInfo",
+               """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
+            )
+            "tId3" -> vyne.parseJsonModel(
+               "TraderInfo",
+               """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
+            )
+            else -> TypedNull.create(vyne.type("TraderInfo"))
 
-            }
          }
+      }
 
-      })
-      val result = runBlocking {vyne.query(
+      val result = vyne.query(
          """
             findAll {
                 InputModel[]
@@ -1883,9 +1730,9 @@ service Broker1Service {
                  } (from this.traderId)
                }[]
             """.trimIndent()
-      )}
+      )
 
-      result.resultMap.values.first().should.be.equal(
+      result.rawObjects().should.be.equal(
          listOf(
             mapOf(
                "id" to "input1",
@@ -1907,7 +1754,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `avoid recursive parameter discovery`() {
+   fun `avoid recursive parameter discovery`() = runBlockingTest {
       val (vyne, stubService) = testVyne(
          """
          type Isin inherits String
@@ -1954,24 +1801,25 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-         "InputModel[]", """
+            "InputModel[]", """
          [
             {  "id": "input1", "ric": "ric1" },
             {  "id": "input2" },
             {  "id": "input3" }
          ]
          """.trimIndent()
+         )
       )
-      )
-      val result = runBlocking {vyne.query(
-         """
+      val result =
+         vyne.query(
+            """
             findAll {
                 InputModel[]
               } as OutputModel []
             """.trimIndent()
-      )}
+         )
 
-      result.resultMap.values.first().should.be.equal(
+      result.rawObjects().should.be.equal(
          listOf(
             mapOf("isin" to null),
             mapOf("isin" to null),
@@ -1981,7 +1829,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `invalid post operation caching`() {
+   fun `invalid post operation caching`() = runBlockingTest {
       val (vyne, stubService) = testVyne(
          """
          type Isin inherits String
@@ -2022,36 +1870,35 @@ service Broker1Service {
 
       stubService.addResponse(
          "getInputData", vyne.parseJsonModel(
-         "InputModel[]", """
+            "InputModel[]", """
          [
             {  "id": "input1", "ric": "ric1", "instrumentType": "ric" },
             {  "id": "input2", "ric": "ric2", "instrumentType": "ric" },
             {  "id": "input3", "ric": "ric3", "instrumentType": "ric" }
          ]
          """.trimIndent()
-      )
+         )
       )
 
-      stubService.addResponse("getInstrumentFromRic", object : StubResponseHandler {
-         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
-            val isinValue = "${(p2.first().second as TypedObject).value.values.map { it.value }.joinToString("_")}"
-            return vyne.parseJsonModel(
-               "InstrumentReferenceResponse", """
+      stubService.addResponse("getInstrumentFromRic") { _, parameters ->
+         val isinValue = (parameters.first().second as TypedObject).value.values.map { it.value }.joinToString("_")
+         vyne.parseJsonModel(
+            "InstrumentReferenceResponse", """
              {"isin": "$isinValue"}
           """.trimIndent()
-            )
-         }
-      })
+         )
+      }
 
-      val result = runBlocking {vyne.query(
-         """
+      val result =
+         vyne.query(
+            """
             findAll {
                 InputModel[]
               } as OutputModel []
             """.trimIndent()
-      )}
+         )
 
-      result.resultMap.values.first().should.be.equal(
+      result.rawObjects().should.be.equal(
          listOf(
             mapOf("isin" to "ric1_ric"),
             mapOf("isin" to "ric2_ric"),
@@ -2062,8 +1909,9 @@ service Broker1Service {
    }
 
    @Test
-   fun `If Vyne is enriching an entity, and a model returned from a service defines an Id field, then Vyne will only invoke that service the input parameter identifies the output model`() {
-      val testSchema = """
+   fun `If Vyne is enriching an entity, and a model returned from a service defines an Id field, then Vyne will only invoke that service the input parameter identifies the output model`() =
+      runBlockingTest {
+         val testSchema = """
          type UserId inherits String
          type TradeId inherits String
          type Isin inherits String
@@ -2100,43 +1948,44 @@ service Broker1Service {
 
 
       """.trimIndent()
-      val (vyne, stubService) = testVyne(testSchema)
-      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+         val (vyne, stubService) = testVyne(testSchema)
+         stubService.addResponse(
+            "findAll", vyne.parseJsonModel(
+               "Input[]", """
          [
             { userId : "userX",  tradeId: "InstrumentX" }
          ]
-         """.trimIndent()))
+         """.trimIndent()
+            )
+         )
 
-      stubService.addResponse("findLatestTradeForSalesPerson", object : StubResponseHandler {
-         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         stubService.addResponse("findLatestTradeForSalesPerson") { _, parameters ->
             fail("Should not be invoked")
          }
 
-      })
 
-      var findTradeInvoked = false
-      stubService.addResponse("findTrade", object : StubResponseHandler {
-         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         var findTradeInvoked = false
+         stubService.addResponse("findTrade") { _, _ ->
             findTradeInvoked = true
             throw IllegalArgumentException()
          }
-      })
 
-      // act
-      val result = runBlocking {vyne.query("""findAll { Input[] } as Report[]""".trimIndent())}
+         // act
+         val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
 
-      // assert
-      findTradeInvoked.should.be.`true`
-      result.resultMap["lang.taxi.Array<Report>"].should.be.equal(
-         listOf(
-            mapOf("tradePrice" to null, "tradeDate" to null)
+         // assert
+         findTradeInvoked.should.be.`true`
+         result.rawObjects().should.be.equal(
+            listOf(
+               mapOf("tradePrice" to null, "tradeDate" to null)
+            )
          )
-      )
-   }
+      }
 
    @Test
-   fun `If Vyne is enriching an entity, and a model returned from a service does not define an Id field, then Vyne will use any possible path to discover the inputs to call the service`() {
-      val testSchema = """
+   fun `If Vyne is enriching an entity, and a model returned from a service does not define an Id field, then Vyne will use any possible path to discover the inputs to call the service`() =
+      runBlockingTest {
+         val testSchema = """
          type ProductId inherits String
          type AssetClass inherits String
          type Isin inherits String
@@ -2171,30 +2020,39 @@ service Broker1Service {
 
       """.trimIndent()
 
-      val (vyne, stubService) = testVyne(testSchema)
-      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+         val (vyne, stubService) = testVyne(testSchema)
+         stubService.addResponse(
+            "findAll", vyne.parseJsonModel(
+               "Input[]", """
          [
             { orderId : "OrderX",  productId: "ProductX", assetClass: "AssetClassX" }
          ]
-         """.trimIndent()))
-
-      stubService.addResponse("lookupIsin", vyne.parseJsonModel("IsinDiscoveryResult", """
-            { isin : "Isin1" }
-         """.trimIndent()))
-
-      val result = runBlocking {vyne.query("""findAll { Input[] } as Output[]""".trimIndent())}
-
-      result.resultMap["lang.taxi.Array<Output>"].should.be.equal(
-         listOf(
-            mapOf("orderId" to "OrderX", "isin" to "Isin1")
+         """.trimIndent()
+            )
          )
-      )
 
-   }
+         stubService.addResponse(
+            "lookupIsin", vyne.parseJsonModel(
+               "IsinDiscoveryResult", """
+            { isin : "Isin1" }
+         """.trimIndent()
+            )
+         )
+
+         val result = vyne.query("""findAll { Input[] } as Output[]""".trimIndent())
+
+         result.rawObjects().should.be.equal(
+            listOf(
+               mapOf("orderId" to "OrderX", "isin" to "Isin1")
+            )
+         )
+
+      }
 
    @Test
-   fun `When an object has multiple independent fields that identify it, all these fields can be used for enrichment`() {
-      val testSchema = """
+   fun `When an object has multiple independent fields that identify it, all these fields can be used for enrichment`() =
+      runBlockingTest {
+         val testSchema = """
          type UserId inherits String
          type Type1TradeId inherits String
          type Type2TradeId inherits String
@@ -2236,50 +2094,45 @@ service Broker1Service {
 
 
       """.trimIndent()
-      val (vyne, stubService) = testVyne(testSchema)
-      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+         val (vyne, stubService) = testVyne(testSchema)
+         stubService.addResponse(
+            "findAll", vyne.parseJsonModel(
+               "Input[]", """
          [
             { userId : "userX",  tradeId1: "InstrumentX" },
             { userId : "userX",  tradeId2: "InstrumentY" }
          ]
-         """.trimIndent()))
+         """.trimIndent()
+            )
+         )
 
-      stubService.addResponse("findLatestTradeForSalesPerson", object : StubResponseHandler {
-         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         stubService.addResponse("findLatestTradeForSalesPerson") { _, _ ->
             fail("Should not be invoked")
          }
 
-      })
-
-      var findTradeByType1IdInvoked = false
-      stubService.addResponse("findTradeByType1Id", object : StubResponseHandler {
-         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         var findTradeByType1IdInvoked = false
+         stubService.addResponse("findTradeByType1Id") { _, _ ->
             findTradeByType1IdInvoked = true
             throw IllegalArgumentException()
          }
-      })
 
-      var findTradeByType2IdInvoked = false
-      stubService.addResponse("findTradeByType2Id", object : StubResponseHandler {
-         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): TypedInstance {
+         var findTradeByType2IdInvoked = false
+         stubService.addResponse("findTradeByType2Id") { _, _ ->
             findTradeByType2IdInvoked = true
             throw IllegalArgumentException()
          }
-      })
 
-      // act
-      val result = runBlocking {vyne.query("""findAll { Input[] } as Report[]""".trimIndent())}
+         // act
+         val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
 
-      // assert
-      findTradeByType1IdInvoked.should.be.`true`
-      findTradeByType2IdInvoked.should.be.`true`
-      result.resultMap["lang.taxi.Array<Report>"].should.be.equal(
-         listOf(
-            mapOf("tradePrice" to null, "tradeDate" to null),
-            mapOf("tradePrice" to null, "tradeDate" to null)
+         // assert
+         findTradeByType1IdInvoked.should.be.`true`
+         findTradeByType2IdInvoked.should.be.`true`
+         result.rawObjects().should.be.equal(
+            listOf(
+               mapOf("tradePrice" to null, "tradeDate" to null),
+               mapOf("tradePrice" to null, "tradeDate" to null)
+            )
          )
-      )
-   }
+      }
 }
-
-*/

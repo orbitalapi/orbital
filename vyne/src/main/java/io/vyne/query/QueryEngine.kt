@@ -11,32 +11,57 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import javafx.application.Application.launch
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.stream.Collectors
 
 
-open class SearchFailedException(message: String, val evaluatedPath: List<EvaluatedEdge>, val profilerOperation: ProfilerOperation) : RuntimeException(message)
+open class SearchFailedException(
+   message: String,
+   val evaluatedPath: List<EvaluatedEdge>,
+   val profilerOperation: ProfilerOperation
+) : RuntimeException(message)
+
 open class ProjectionFailedException(message: String) : RuntimeException(message)
 interface QueryEngine {
 
    val schema: Schema
    suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
-   suspend fun find(queryString: QueryExpression, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
-   suspend fun find(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
-   suspend fun find(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
-   suspend fun find(target: QuerySpecTypeNode, context: QueryContext, excludedOperations: Set<SearchGraphExclusion<Operation>>, spec: TypedInstanceValidPredicate = AlwaysGoodSpec): QueryResult
+   suspend fun find(
+      queryString: QueryExpression,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): QueryResult
+
+   suspend fun find(
+      target: QuerySpecTypeNode,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): QueryResult
+
+   suspend fun find(
+      target: Set<QuerySpecTypeNode>,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): QueryResult
+
+   suspend fun find(
+      target: QuerySpecTypeNode,
+      context: QueryContext,
+      excludedOperations: Set<SearchGraphExclusion<Operation>>,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): QueryResult
 
    suspend fun findAll(queryString: QueryExpression, context: QueryContext): QueryResult
 
    fun queryContext(
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
-      additionalFacts: Set<TypedInstance> = emptySet()): QueryContext
+      additionalFacts: Set<TypedInstance> = emptySet()
+   ): QueryContext
 
-   suspend fun build(type: Type, context: QueryContext): QueryResult = build(TypeNameQueryExpression(type.fullyQualifiedName), context)
+   suspend fun build(type: Type, context: QueryContext): QueryResult =
+      build(TypeNameQueryExpression(type.fullyQualifiedName), context)
+
    suspend fun build(query: QueryExpression, context: QueryContext): QueryResult
 
    fun parse(queryExpression: QueryExpression): Set<QuerySpecTypeNode>
@@ -49,7 +74,8 @@ class StatefulQueryEngine(
    initialState: FactSetMap,
    schema: Schema,
    strategies: List<QueryStrategy>,
-   private val profiler: QueryProfiler = QueryProfiler()) :
+   private val profiler: QueryProfiler = QueryProfiler()
+) :
    BaseQueryEngine(schema, strategies), ModelContainer {
    private val factSets: FactSetMap = FactSetMap.create()
 
@@ -72,7 +98,8 @@ class StatefulQueryEngine(
 
    override fun queryContext(
       factSetIds: Set<FactSetId>,
-      additionalFacts: Set<TypedInstance>): QueryContext {
+      additionalFacts: Set<TypedInstance>
+   ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
       return QueryContext.from(schema, facts + additionalFacts, this, profiler)
    }
@@ -91,7 +118,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // endpoints, then I can compose a result of gather() from multiple finds()
       val findAllQuery = queryParser.parse(queryString).map { it.copy(mode = QueryMode.GATHER) }.toSet()
       // TODO return timed("BaseQueryEngine.findAll") {
-         return find(findAllQuery, context)
+      return find(findAllQuery, context)
       //}
    }
 
@@ -141,7 +168,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          }
 
          //isSingleToCollectionTransform -> {
-            //mapSingleToCollection(targetType, context)
+         //mapSingleToCollection(targetType, context)
          //}
          targetType.isCollection && context.facts.all { it is TypedNull } -> {
             TypedCollection.arrayOf(targetType.collectionType!!, emptyList())
@@ -155,7 +182,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return if (result != null) {
          QueryResult(
             querySpecTypeNode,
-            flow { emit(result) } ,
+            flow { emit(result) },
             emptySet(),
             profilerOperation = context.profiler.root,
             anonymousTypes = context.schema.typeCache.anonymousTypes()
@@ -273,7 +300,11 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return queryParser.parse(queryExpression)
    }
 
-   override suspend fun find(queryString: QueryExpression, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
+   override suspend fun find(
+      queryString: QueryExpression,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate
+   ): QueryResult {
       val target = queryParser.parse(queryString)
       return find(target, context, spec)
    }
@@ -282,11 +313,19 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return find(TypeNameQueryExpression(type.fullyQualifiedName), context, spec)
    }
 
-   override suspend fun find(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
+   override suspend fun find(
+      target: QuerySpecTypeNode,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate
+   ): QueryResult {
       return find(setOf(target), context, spec)
    }
 
-   override suspend fun find(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
+   override suspend fun find(
+      target: Set<QuerySpecTypeNode>,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate
+   ): QueryResult {
       try {
          return doFind(target, context, spec)
       } catch (e: Exception) {
@@ -299,7 +338,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       target: QuerySpecTypeNode,
       context: QueryContext,
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
-      spec: TypedInstanceValidPredicate): QueryResult {
+      spec: TypedInstanceValidPredicate
+   ): QueryResult {
       try {
          return doFind(target, context, spec, excludedOperations)
       } catch (e: Exception) {
@@ -310,7 +350,11 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
 
    //TODO we still have places in the code that expect/consume a Set<QuerySpecTypeNode>
-   private fun doFind(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
+   private fun doFind(
+      target: Set<QuerySpecTypeNode>,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate
+   ): QueryResult {
       // TODO : BIG opportunity to optimize this by evaluating multiple querySpecNodes at once.
       // Which would allow us to be smarter about results we collect from rest calls.
       // Optimize later.
@@ -329,7 +373,12 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
    }
 
-   private fun doFind(target: QuerySpecTypeNode, context: QueryContext, spec: TypedInstanceValidPredicate, excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()): QueryResult {
+   private fun doFind(
+      target: QuerySpecTypeNode,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate,
+      excludedOperations: Set<SearchGraphExclusion<Operation>> = emptySet()
+   ): QueryResult {
 
       // Note: We used to take a set<QuerySpecTypeNode>, but currently only take a single.
       // We'll likely re-optimize to take multiple, but for now wrap in a set.
@@ -352,7 +401,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                break
             }
 
-            val strategyResult = invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
+            val strategyResult =
+               invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
             if (strategyResult.hasMatchesNodes()) {
                strategyResult.matchedNodes?.collect {
                   resultsRecivedFromStrategy = true
@@ -365,6 +415,11 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val list = runBlocking { resultsFlowTemp.toList() }
 
       println("List size .. adding to context")
+      // MP : We could possibly remove this line.
+      // If we're not projecting, I suspect we use the return value from the query
+      //rather than storing in the context and then fetching it back out again.
+      // If we ARE projecting, then we construct a new context per list-element anyway.
+      // However, this theory needs investigating / testing.
       context.addFacts(list)
 
       val resultsFlow = list.asFlow()
@@ -378,14 +433,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // ... Investigate
 
       return QueryResult(
-         when(context.projectResultsTo()){
+         when (context.projectResultsTo) {
             null -> target
-            else -> QuerySpecTypeNode(context.projectResultsTo()!!, emptySet(), QueryMode.DISCOVER)
+            else -> QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
          },
-         resultsFlow.map{
-            if (context.projectResultsTo() != null) {
+         resultsFlow.map {
+            if (context.projectResultsTo != null) {
                //So few lines, so much power
-               context.only(it).build(context.projectResultsTo()!!.typeParametersTypeNames.first()).results?.first()!!
+               context.only(it).build(context.projectResultsTo!!.typeParametersTypeNames.first()).results?.first()!!
             } else {
                it
             }
@@ -401,11 +456,12 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       context: QueryContext,
       queryStrategy: QueryStrategy,
       target: QuerySpecTypeNode,
-      invocationConstraints: InvocationConstraints): QueryStrategyResult {
+      invocationConstraints: InvocationConstraints
+   ): QueryStrategyResult {
       return if (context.debugProfiling) {
          //context.startChild(this, "Query with ${queryStrategy.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) { op ->
-            //op.addContext("Search target", querySet.map { it.type.fullyQualifiedName })
-            queryStrategy.invoke(setOf(target), context, invocationConstraints)
+         //op.addContext("Search target", querySet.map { it.type.fullyQualifiedName })
+         queryStrategy.invoke(setOf(target), context, invocationConstraints)
          //}
       } else {
          return queryStrategy.invoke(setOf(target), context, invocationConstraints)

@@ -2,14 +2,16 @@ package io.vyne
 
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 import java.math.BigDecimal
 
-/*
+@ExperimentalCoroutinesApi
 class HipsterDiscoverGraphQueryStrategyTest {
    @Test
-   fun `Discover required type from a service returning child type of required type`() {
+   fun `Discover required type from a service returning child type of required type`() = runBlockingTest {
       val schema = """
          type Isin inherits String
          type NotionalValue inherits Decimal
@@ -37,24 +39,34 @@ class HipsterDiscoverGraphQueryStrategyTest {
          }
          """.trimIndent()
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+      stubService.addResponse(
+         "findAll", vyne.parseJsonModel(
+            "Input[]", """
          [
             {  "isin": "isin1"}
          ]
-         """.trimIndent()))
+         """.trimIndent()
+         )
+      )
 
-      stubService.addResponse("getInstrument", vyne.parseJsonModel("Instrument",
-         """
+      stubService.addResponse(
+         "getInstrument", vyne.parseJsonModel(
+            "Instrument",
+            """
               {"instrumentNotionalValue": 100}
-         """.trimIndent()))
+         """.trimIndent()
+         )
+      )
 
-      val result =  runBlocking {vyne.query("""
+      val result = vyne.query(
+         """
             findAll {
                 Input[]
               } as Output[]
-            """.trimIndent()) }
+            """.trimIndent()
+      )
 
-      result.resultMap.values.first().should.be.equal(
+      result.rawObjects().should.equal(
          listOf(
             mapOf("notionalValue" to BigDecimal("100"))
          )
@@ -62,7 +74,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
    }
 
    @Test
-   fun `Discover required type from relevant service`() {
+   fun `Discover required type from relevant service`() = runBlockingTest {
       val schema = """
          type Isin inherits String
          type NotionalValue inherits Decimal
@@ -89,24 +101,34 @@ class HipsterDiscoverGraphQueryStrategyTest {
          }
          """.trimIndent()
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+      stubService.addResponse(
+         "findAll", vyne.parseJsonModel(
+            "Input[]", """
          [
             {  "isin": "isin1"}
          ]
-         """.trimIndent()))
+         """.trimIndent()
+         )
+      )
 
-      stubService.addResponse("getInstrument", vyne.parseJsonModel("Instrument",
-         """
+      stubService.addResponse(
+         "getInstrument", vyne.parseJsonModel(
+            "Instrument",
+            """
               {"instrumentNotionalValue": 100}
-         """.trimIndent()))
+         """.trimIndent()
+         )
+      )
 
-      val result =  runBlocking {vyne.query("""
+      val result = vyne.query(
+         """
             findAll {
                 Input[]
               } as Output[]
-            """.trimIndent())}
+            """.trimIndent()
+      )
 
-      result.resultMap.values.first().should.be.equal(
+      result.rawObjects().should.be.equal(
          listOf(
             mapOf("notionalValue" to BigDecimal("100"))
          )
@@ -114,7 +136,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
    }
 
    @Test
-   fun `Should not discover required type from relevant service return parent of required type`() {
+   fun `Should not discover required type from relevant service return parent of required type`() = runBlockingTest {
       val schema = """
          type Isin inherits String
          type NotionalValue inherits Decimal
@@ -142,28 +164,37 @@ class HipsterDiscoverGraphQueryStrategyTest {
          }
          """.trimIndent()
       val (vyne, stubService) = testVyne(schema)
-      stubService.addResponse("findAll", vyne.parseJsonModel("Input[]", """
+      stubService.addResponse(
+         "findAll", vyne.parseJsonModel(
+            "Input[]", """
          [
             {  "isin": "isin1"}
          ]
-         """.trimIndent()))
+         """.trimIndent()
+         )
+      )
 
-      stubService.addResponse("getInstrument", vyne.parseJsonModel("Instrument",
-         """
+      stubService.addResponse(
+         "getInstrument", vyne.parseJsonModel(
+            "Instrument",
+            """
               {"instrumentNotionalValue": 100}
-         """.trimIndent()))
+         """.trimIndent()
+         )
+      )
 
-      val result =  runBlocking {vyne.query("""
+      val result = vyne.query(
+         """
             findAll {
                 Input[]
               } as Output[]
-            """.trimIndent())}
+            """.trimIndent()
+      )
 
-      result.resultMap.values.first().should.be.equal(
+      result.rawObjects().should.be.equal(
          listOf(
             mapOf("notionalValue" to null)
          )
       )
    }
 }
-*/

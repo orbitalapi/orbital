@@ -286,6 +286,11 @@
             <artifactId>kotlinx-coroutines-reactor</artifactId>
             <version>${kotlin.coroutines.version}</version>
          </dependency>
+         <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-test</artifactId>
+            <version>${kotlin.coroutines.version}</version>
+         </dependency>
 
          <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>

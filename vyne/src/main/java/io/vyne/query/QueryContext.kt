@@ -24,14 +24,10 @@ import io.vyne.vyneql.ProjectedType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import lang.taxi.policies.Instruction
-import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import java.util.*
 import java.util.stream.Stream
 import kotlin.streams.toList
-import java.io.PrintWriter
-
-import java.io.StringWriter
 
 
 
@@ -217,7 +213,9 @@ data class QueryContext(
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
    var isProjecting = false
-   private var projectResultsTo: Type? = null
+   var projectResultsTo: Type? = null
+      private set;
+
    private var inMemoryStream: List<TypedInstance>? = null
 
    override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
@@ -354,10 +352,6 @@ data class QueryContext(
 
    fun evaluatedPath(): List<EvaluatedEdge> {
       return evaluatedEdges.toList()
-   }
-
-   fun projectResultsTo(): Type? {
-      return projectResultsTo
    }
 
    fun collectVisitedInstanceNodes(): Set<TypedInstance> {
