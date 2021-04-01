@@ -57,7 +57,8 @@ interface QueryEngine {
 
    fun queryContext(
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
-      additionalFacts: Set<TypedInstance> = emptySet()
+      additionalFacts: Set<TypedInstance> = emptySet(),
+      clientQueryId: String? = null
    ): QueryContext
 
    suspend fun build(type: Type, context: QueryContext): QueryResult =
@@ -99,10 +100,11 @@ class StatefulQueryEngine(
 
    override fun queryContext(
       factSetIds: Set<FactSetId>,
-      additionalFacts: Set<TypedInstance>
+      additionalFacts: Set<TypedInstance>,
+      clientQueryId: String?
    ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
-      return QueryContext.from(schema, facts + additionalFacts, this, profiler)
+      return QueryContext.from(schema, facts + additionalFacts, this, profiler, clientQueryId = clientQueryId)
    }
 }
 
@@ -187,14 +189,16 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             flow { emit(result) },
             emptySet(),
             profilerOperation = context.profiler.root,
-            anonymousTypes = context.schema.typeCache.anonymousTypes()
+            anonymousTypes = context.schema.typeCache.anonymousTypes(),
+            clientQueryId = context.clientQueryId
          )
       } else {
          QueryResult(
             querySpecTypeNode,
             null,
             setOf(querySpecTypeNode),
-            profilerOperation = context.profiler.root
+            profilerOperation = context.profiler.root,
+            clientQueryId = context.clientQueryId
          )
       }
    }
@@ -370,7 +374,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          unmatchedNodes = queryResult.unmatchedNodes,
          path = null,
          profilerOperation = queryResult.profilerOperation,
-         anonymousTypes = queryResult.anonymousTypes
+         anonymousTypes = queryResult.anonymousTypes,
+         clientQueryId = context.clientQueryId
       )
 
    }
@@ -453,7 +458,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          },
          emptySet(),
          path = null,
-         profilerOperation = context.profiler.root
+         profilerOperation = context.profiler.root,
+         clientQueryId = context.clientQueryId
       )
 
    }

@@ -5,18 +5,27 @@
         <ngx-monaco-editor [options]="editorOptions" class="code-editor" [(ngModel)]="query" #editor>
         </ngx-monaco-editor>
       </div>
-
       <app-query-editor-bottom-bar
         (executeQuery)="submitQuery()"
         [currentState]="currentState"
         [error]="lastErrorMessage"
       >
       </app-query-editor-bottom-bar>
+
     </div>
   </as-split-area>
   <as-split-area size="*">
     <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0" [queryResult]="lastQueryResultAsSuccess">
     </app-error-panel>
+    <div class="partial-results-panel"  *ngIf="showStreamingResults" >
+      <app-results-table
+        [instances$]="partialResults$"
+        [type]="partialResultType"
+        [schema]="schema"
+        [selectable]="false"
+      >
+      </app-results-table>
+    </div>
     <app-tabbed-results-view *ngIf="lastQueryResult"
                              [result]="lastQueryResult"
                              (instanceSelected)="instanceSelected.emit($event)"

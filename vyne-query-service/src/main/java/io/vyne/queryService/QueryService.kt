@@ -10,6 +10,7 @@ import io.vyne.models.RawObjectMapper
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
 import io.vyne.query.*
+import io.vyne.query.history.RestfulQueryHistoryRecord
 import io.vyne.queryService.csv.toCsv
 import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
@@ -19,30 +20,30 @@ import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import io.vyne.vyneql.VyneQLQueryString
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.runBlocking
 import lang.taxi.CompilationException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
-import java.io.OutputStream
-import io.vyne.query.history.RestfulQueryHistoryRecord
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import org.springframework.web.bind.annotation.*
 import java.io.ByteArrayOutputStream
-import java.util.UUID
+import java.io.OutputStream
+import java.util.*
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
 private typealias MimeTypeString = String
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
-data class FailedSearchResponse(val message: String,
-                                @field:JsonIgnore // this sends too much information - need to build a lightweight version
-                                override val profilerOperation: ProfilerOperation?,
-                                override val queryResponseId: String = UUID.randomUUID().toString(),
-                                val results: Map<String, Any?> = mapOf()
+data class FailedSearchResponse(
+   val message: String,
+   @field:JsonIgnore // this sends too much information - need to build a lightweight version
+   override val profilerOperation: ProfilerOperation?,
+   override val queryResponseId: String = UUID.randomUUID().toString(),
+   val results: Map<String, Any?> = mapOf()
 
 ) : QueryResponse {
    override val responseStatus: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.ERROR
@@ -53,7 +54,8 @@ data class FailedSearchResponse(val message: String,
          queryResponseId = queryResponseId,
          profilerOperation = profilerOperation?.toDto(),
          responseStatus = this.responseStatus,
-         error = message)
+         error = message
+      )
    }
 }
 
@@ -74,12 +76,17 @@ typealias QueryResponseString = String
 @RestController
 class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, val objectMapper: ObjectMapper) {
 
-   val typedInstanceConverter:TypedInstanceConverter = TypedInstanceConverter(RawObjectMapper)
+   val typedInstanceConverter: TypedInstanceConverter = TypedInstanceConverter(RawObjectMapper)
 
-   @PostMapping("/api/query", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
-   fun submitQuery(@RequestBody query: Query,
-                   @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
-                   @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String
+   @PostMapping(
+      "/api/query",
+      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV]
+   )
+   fun submitQuery(
+      @RequestBody query: Query,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
+      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String
    ): ResponseEntity<String> {
 
       //TODO - StreamingResponseBody does not work with this spring/webflux configuration... why????
@@ -98,18 +105,23 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
    }
 
 
-   @PostMapping("/api/vyneql", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
-   fun submitVyneQlQuery(@RequestBody query: VyneQLQueryString,
-                         @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
-                         @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
-                         auth: Authentication? = null
+   @PostMapping(
+      "/api/vyneql",
+      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV]
+   )
+   fun submitVyneQlQuery(
+      @RequestBody query: VyneQLQueryString,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
+      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+      auth: Authentication? = null
    ): ResponseEntity<String> {
       val user = auth?.toVyneUser()
       //TODO - StreamingResponseBody does not work with this spring/webflux configuration... why????
       val outputStream = ByteArrayOutputStream()
 
       runBlocking {
-         val response = vyneQLQuery(query, user)
+         val response = vyneQLQuery(query, user, clientQueryId = null)
          serialise(response, contentType, outputStream, resultMode)
       }
 
@@ -123,52 +135,100 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
    }
 
-   @PostMapping("/api/vyneql", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-   suspend fun submitVyneQlQueryStreamingResponse(@RequestBody query: VyneQLQueryString,
-                                          @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
-                                          @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
-                                          auth: Authentication? = null
-   ): Flow<Any?>? {
-      val user = auth?.toVyneUser()
-      val queryResponse = vyneQLQuery(query, user) as QueryResult
-      return queryResponse.results?.map { typedInstanceConverter.convert(it) }
+   /**
+    * Endpoint for submitting a TaxiQL query, and receiving an event stream back.
+    * Note that POST is used here for backwards compatability with existing approaches,
+    * however browsers are unable to issue requests using SSE on anything other than a GET.
+    *
+    * Also, this endpoint is exposed under both /vyneql (legacy) and /taxiql (renamed).
+    */
+   @PostMapping(
+      value = ["/api/vyneql", "/api/taxiql"],
+      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      produces = [MediaType.TEXT_EVENT_STREAM_VALUE]
+   )
+   suspend fun submitVyneQlQueryStreamingResponse(
+      @RequestBody query: VyneQLQueryString,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
+      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+      auth: Authentication? = null
+   ): Flow<Any?> {
+      return getVyneQlQueryStreamingResponse(query, resultMode, contentType, auth)
    }
 
 
-   private suspend fun query(query: Query, contentType: String, outputStream: OutputStream, resultMode: ResultMode): MimeTypeString {
+   /**
+    * Endpoint for submitting a TaxiQL query, and receiving an event stream back.
+    * Browsers cannot submit POST requests for SSE responses (only GET), hence having the query in the queryString
+    *
+    * Also, this endpoint is exposed under both /vyneql (legacy) and /taxiql (renamed).
+    */
+   @GetMapping(value = ["/api/vyneql", "/api/taxiql"], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+   suspend fun getVyneQlQueryStreamingResponse(
+      @RequestParam("query") query: VyneQLQueryString,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
+      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+      auth: Authentication? = null,
+      @RequestParam("clientQueryId", required = false) clientQueryId:String? = null
+   ): Flow<Any?> {
+      val user = auth?.toVyneUser()
+      val queryResponse = vyneQLQuery(query, user, clientQueryId)
+      return when (queryResponse) {
+         is FailedSearchResponse -> flowOf(queryResponse)
+         is QueryResult -> {
+            val resultSerializer = resultMode.buildSerializer(queryResponse)
+            queryResponse.results?.map { resultSerializer.serialize(it)  }
+         }
+
+         else -> error("Unhandled type of QueryResponse - received ${queryResponse::class.simpleName}")
+      } ?: emptyFlow()
+   }
+
+
+   private suspend fun query(
+      query: Query,
+      contentType: String,
+      outputStream: OutputStream,
+      resultMode: ResultMode
+   ): MimeTypeString {
       val response = executeQuery(query)
       history.add { RestfulQueryHistoryRecord(query, response.historyRecord()) }
       return serialise(response, contentType, outputStream, resultMode)
    }
 
-   private suspend fun vyneQLQuery(query: VyneQLQueryString,
-                           vyneUser: VyneUser? = null
+   private suspend fun vyneQLQuery(
+      query: VyneQLQueryString,
+      vyneUser: VyneUser? = null,
+      clientQueryId: String?
    ): QueryResponse {
       log().info("VyneQL query => $query")
       //return timed("QueryService.submitVyneQlQuery") {
-         val vyne = vyneProvider.createVyne(vyneUser.facts())
-         val response = try {
-            vyne.query(query)
-         } catch (e: CompilationException) {
-            FailedSearchResponse(
-               message = e.message!!, // Message contains the error messages from the compiler
-               profilerOperation = null
-            )
-         } catch (e: SearchFailedException) {
-            FailedSearchResponse(e.message!!, e.profilerOperation)
-         } catch (e: NotImplementedError) {
-            // happens when Schema is empty
-            FailedSearchResponse(e.message!!, null)
-         }
-         //val recordProvider = {
-         //   VyneQlQueryHistoryRecord(query, response.historyRecord())
-         //}
-         //history.add(recordProvider)
+      val vyne = vyneProvider.createVyne(vyneUser.facts())
+      val response = try {
+         vyne.query(query, clientQueryId = clientQueryId)
+      } catch (e: CompilationException) {
+         log().info("The query failed compilation: ${e.message}")
+         FailedSearchResponse(
+            message = e.message!!, // Message contains the error messages from the compiler
+            profilerOperation = null
+         )
+      } catch (e: SearchFailedException) {
+         FailedSearchResponse(e.message!!, e.profilerOperation)
+      } catch (e: NotImplementedError) {
+         // happens when Schema is empty
+         FailedSearchResponse(e.message!!, null)
+      }
+      //val recordProvider = {
+      //   VyneQlQueryHistoryRecord(query, response.historyRecord())
+      //}
+      //history.add(recordProvider)
 
-         return response
+      (response as QueryResult).results!!
+         .onEach {  }
+
+      return response
       //}
    }
-
 
 
    /**
@@ -176,7 +236,12 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
     * content type.
     * Returns the MediaType that was ultimately selected
     */
-   private suspend fun serialise(queryResponse: QueryResponse, contentType: String, outputStream: OutputStream, resultMode: ResultMode): MimeTypeString {
+   private suspend fun serialise(
+      queryResponse: QueryResponse,
+      contentType: String,
+      outputStream: OutputStream,
+      resultMode: ResultMode
+   ): MimeTypeString {
       return when (queryResponse) {
          is QueryResult -> {
             when (resultMode) {
@@ -185,18 +250,26 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
                   return when (contentType) {
                      TEXT_CSV -> outputStream.write(
                         toCsv(
-                           mapOf(queryResponse.type.type.name.parameterizedName to queryResponse.simpleResults?.toList()?.map { typedInstanceConverter.convert(it)}), vyneProvider.createVyne().schema
+                           mapOf(
+                              queryResponse.type.type.name.parameterizedName to queryResponse.simpleResults?.toList()
+                                 ?.map { typedInstanceConverter.convert(it) }), vyneProvider.createVyne().schema
                         )
                      ).let { TEXT_CSV }
 
 
-                     else -> toJson(mapOf(queryResponse.type.toString() to queryResponse.simpleResults?.toList()?.map { typedInstanceConverter.convert(it)}), outputStream, resultMode).let { MediaType.APPLICATION_JSON_VALUE }
+                     else -> toJson(
+                        mapOf(
+                           queryResponse.type.toString() to queryResponse.simpleResults?.toList()
+                              ?.map { typedInstanceConverter.convert(it) }), outputStream, resultMode
+                     ).let { MediaType.APPLICATION_JSON_VALUE }
                   }
                }
                // Any other result mode is json
                else -> {
-                  generateResponseJson( mapOf(
-                     "results" to mapOf(queryResponse.type.type.name.parameterizedName to queryResponse.results?.toList()?.map { typedInstanceConverter.convert(it)} ),
+                  generateResponseJson(mapOf(
+                     "results" to mapOf(
+                        queryResponse.type.type.name.parameterizedName to queryResponse.results?.toList()
+                           ?.map { typedInstanceConverter.convert(it) }),
                      "queryResponseId" to UUID.randomUUID().toString(),
                      "responseStatus" to "COMPLETED",
                      "fullyResolved" to true,
@@ -231,9 +304,10 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       objectMapper
          //        .copy()
 //         .registerModule(LineageGraphSerializationModule())
-            .writerWithDefaultPrettyPrinter()
-            .with(ContextAttributes.getEmpty()
-            .withSharedAttribute(ResultMode::class, resultMode)
+         .writerWithDefaultPrettyPrinter()
+         .with(
+            ContextAttributes.getEmpty()
+               .withSharedAttribute(ResultMode::class, resultMode)
          )
          .writeValue(outputStream, response)
    }
@@ -250,9 +324,9 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
          // but the queryEngine contains all the factSets, so we can expand this later.
          val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT))
          when (query.queryMode) {
-            QueryMode.DISCOVER ->  runBlocking {queryContext.find(query.expression) }
-            QueryMode.GATHER ->  runBlocking {queryContext.findAll(query.expression) }
-            QueryMode.BUILD ->  runBlocking {queryContext.build(query.expression) }
+            QueryMode.DISCOVER -> runBlocking { queryContext.find(query.expression) }
+            QueryMode.GATHER -> runBlocking { queryContext.findAll(query.expression) }
+            QueryMode.BUILD -> runBlocking { queryContext.build(query.expression) }
          }
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation)

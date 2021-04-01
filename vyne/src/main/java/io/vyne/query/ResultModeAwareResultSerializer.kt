@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.SerializerProvider
  * through Jackson context).
  *
  */
+@Deprecated("Use QueryResultSerializer instead (accessed from ResultMode)")
 class ResultModeAwareResultSerializer : JsonSerializer<QueryResultProvider>() {
    override fun serialize(value: QueryResultProvider, gen: JsonGenerator, serializers: SerializerProvider) {
       val resultMode = serializers.getAttribute(ResultMode::class) as ResultMode? ?: ResultMode.SIMPLE

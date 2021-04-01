@@ -89,7 +89,9 @@ enum class ResultMode(val viewClass: KClass<out ResultView>) {
    /**
     * Include type information for each attribute included in 'results'
     */
-   VERBOSE(VerboseResultView::class)
+   VERBOSE(VerboseResultView::class);
+
+
 }
 interface ResultView
 interface SimpleResultView : ResultView

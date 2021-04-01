@@ -22,6 +22,9 @@ import {TypeInfoHeaderComponent} from './type-info-header.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isNullOrUndefined} from 'util';
 import {CaskService} from '../services/cask.service';
+import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
+import {Observable} from 'rxjs/index';
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-results-table',
@@ -44,6 +47,41 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   constructor(private service: CaskService) {
     super();
+  }
+
+  private gridApi: GridApi;
+
+  private _instances$: Observable<InstanceLike>;
+  private _instanceSubscription: Subscription;
+
+  @Input()
+  get instances$(): Observable<InstanceLike> {
+    return this._instances$;
+  }
+
+  set instances$(value: Observable<InstanceLike>) {
+    if (value === this._instances$) {
+      return;
+    }
+    if (this._instanceSubscription) {
+      this._instanceSubscription.unsubscribe();
+    }
+    this._instances$ = value;
+    this._instance = [];
+    this._instances$.subscribe(next => {
+      (this._instance as InstanceLike[]).push(next);
+      if (this.columnDefs.length === 0) {
+        this.rebuildGridData();
+      }
+
+      if (this.gridApi) {
+        this.gridApi.applyTransaction({
+          add: [next]
+        });
+      }
+
+    });
+
   }
 
   @Output()
@@ -217,7 +255,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   }
 
   onGridReady(event: GridReadyEvent) {
-   // event.api.sizeColumnsToFit();
+    this.gridApi = event.api;
   }
 
   onFirstDataRendered(params: FirstDataRenderedEvent) {
