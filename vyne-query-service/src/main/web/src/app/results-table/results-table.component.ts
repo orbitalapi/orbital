@@ -68,6 +68,9 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     }
     this._instances$ = value;
     this._instance = [];
+    if (this.gridApi) {
+      this.gridApi.setRowData([]);
+    }
     this._instances$.subscribe(next => {
       (this._instance as InstanceLike[]).push(next);
       if (this.columnDefs.length === 0) {
