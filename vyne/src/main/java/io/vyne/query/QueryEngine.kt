@@ -11,6 +11,7 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import java.util.stream.Collectors
@@ -109,6 +110,7 @@ class StatefulQueryEngine(
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
 // The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
+@FlowPreview
 abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
@@ -437,13 +439,17 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             null -> target
             else -> QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
          },
-         resultsFlow.map {
-            if (context.projectResultsTo != null) {
-               //So few lines, so much power
-               context.only(it).build(context.projectResultsTo!!.typeParametersTypeNames.first()).results?.first()!!
-            } else {
-               it
-            }
+         resultsFlow.flatMapConcat { typedInstance ->
+            // If this query has projection, then we now need to invoke the query builder to project
+            // the provided typedInstance to the projected type.  If we're not projecting, then just flatMap to
+            // the provided instance
+            context.projectResultsTo?.let { projectedType ->
+               // If we're being asked to project to Array<T> then we now need to unpack that to T.
+               // However, if we're just being asked to project to T, then use that.
+               val actualProjectedType = projectedType.collectionType ?: projectedType
+               val buildResult = context.only(typedInstance).build(actualProjectedType.qualifiedName)
+               buildResult.results
+            } ?: flowOf(typedInstance)
          },
          emptySet(),
          path = null,

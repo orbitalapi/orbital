@@ -82,7 +82,8 @@ service Broker1Service {
       vyne.addModel(vyne.parseJsonModel("Person", """{ "id" : "1" , "firstName" : "Jimmy", "lastName" : "Schmit" } """))
       val result = vyne.query("""findOne { Person } as { first : FirstName }""")
       val list = result.results!!.toList()
-      TODO()
+      list.size.should.equal(1)
+      list.first().toRawObject().should.equal(mapOf("first" to "Jimmy"))
    }
 
    @Test
