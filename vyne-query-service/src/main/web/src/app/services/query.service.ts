@@ -1,7 +1,8 @@
+/* tslint:disable:max-line-length */
 import {Injectable} from '@angular/core';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
-import {nanoid} from 'nanoid'
+import {nanoid} from 'nanoid';
 import {environment} from 'src/environments/environment';
 import {
   DataSource, InstanceLike,
@@ -15,6 +16,7 @@ import {
 import {VyneServicesModule} from './vyne-services.module';
 import {map} from 'rxjs/operators';
 import {SseEventSourceService} from './sse-event-source.service';
+import {isNullOrUndefined} from 'util';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -244,6 +246,19 @@ export interface QueryHistorySummary {
   timestamp: Date;
 }
 
+/**
+ * During a streaming query, we can receive any of these message types
+ */
+export type StreamingQueryMessage = ValueWithTypeName | FailedSearchResponse;
+
+export function isFailedSearchResponse(message: StreamingQueryMessage): message is FailedSearchResponse {
+  return !isNullOrUndefined(message['responseStatus']) && message['responseStatus'] === ResponseStatus.ERROR;
+}
+
+export function isValueWithTypeName(message: StreamingQueryMessage): message is ValueWithTypeName {
+  return !isNullOrUndefined(message['value']);
+}
+
 export interface ValueWithTypeName {
   typeName: QualifiedName | null;
   anonymousTypes: Type[];
@@ -253,6 +268,14 @@ export interface ValueWithTypeName {
    * Use TypedObjectAttributes here, rather than any, as it's compatible with InstanceLike interface
    */
   value: TypedObjectAttributes;
+}
+
+export interface FailedSearchResponse {
+  message: string;
+  responseStatus: ResponseStatus;
+  queryResponseId: string | null;
+  clientQueryId: string | null;
+  remoteCalls: RemoteCall[];
 }
 
 export function isVyneQlQueryHistorySummaryRecord(value: QueryHistorySummary): value is VyneQlQueryHistorySummary {

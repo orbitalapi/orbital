@@ -43,7 +43,8 @@ data class FailedSearchResponse(
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation?,
    override val queryResponseId: String = UUID.randomUUID().toString(),
-   val results: Map<String, Any?> = mapOf()
+   val results: Map<String, Any?> = mapOf(),
+   override val clientQueryId: String? = null
 
 ) : QueryResponse {
    override val responseStatus: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.ERROR
@@ -151,9 +152,10 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       @RequestBody query: VyneQLQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
-      auth: Authentication? = null
+      auth: Authentication? = null,
+      @RequestParam("clientQueryId", required = false) clientQueryId:String? = null
    ): Flow<Any?> {
-      return getVyneQlQueryStreamingResponse(query, resultMode, contentType, auth)
+      return getVyneQlQueryStreamingResponse(query, resultMode, contentType, auth, clientQueryId)
    }
 
 
@@ -210,22 +212,19 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
          log().info("The query failed compilation: ${e.message}")
          FailedSearchResponse(
             message = e.message!!, // Message contains the error messages from the compiler
-            profilerOperation = null
+            profilerOperation = null,
+            clientQueryId = clientQueryId
          )
       } catch (e: SearchFailedException) {
-         FailedSearchResponse(e.message!!, e.profilerOperation)
+         FailedSearchResponse(e.message!!, e.profilerOperation, clientQueryId = clientQueryId)
       } catch (e: NotImplementedError) {
          // happens when Schema is empty
-         FailedSearchResponse(e.message!!, null)
+         FailedSearchResponse(e.message!!, null, clientQueryId = clientQueryId)
       }
       //val recordProvider = {
       //   VyneQlQueryHistoryRecord(query, response.historyRecord())
       //}
       //history.add(recordProvider)
-
-      (response as QueryResult).results!!
-         .onEach {  }
-
       return response
       //}
    }

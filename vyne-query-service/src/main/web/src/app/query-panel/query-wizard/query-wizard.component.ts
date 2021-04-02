@@ -11,7 +11,7 @@ import {
 } from '@covalent/dynamic-forms';
 import {FormControl} from '@angular/forms';
 import {
-  Fact,
+  Fact, FailedSearchResponse,
   ProfilerOperation,
   Query,
   QueryMode,
@@ -334,11 +334,19 @@ export class QueryWizardComponent implements OnInit {
   }
 }
 
-export class QueryFailure {
+/**
+ * @deprecated use FailedSearchResponse instead
+ */
+export class QueryFailure implements FailedSearchResponse {
   responseStatus: ResponseStatus = ResponseStatus.ERROR;
 
-  constructor(readonly message: string, readonly profilerOperation: ProfilerOperation, readonly remoteCalls: RemoteCall[]) {
+  constructor(readonly message: string,
+              readonly profilerOperation: ProfilerOperation | null = null,
+              readonly remoteCalls: RemoteCall[] = [],
+              readonly queryResponseId: string | null = null,
+              readonly  clientQueryId: string | null = null) {
   }
+
 }
 
 

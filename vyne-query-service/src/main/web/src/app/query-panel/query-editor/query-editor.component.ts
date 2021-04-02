@@ -4,11 +4,16 @@ import {filter, take} from 'rxjs/operators';
 
 import {editor} from 'monaco-editor';
 import {
+  FailedSearchResponse,
+  isFailedSearchResponse,
+  isValueWithTypeName,
   QueryHistoryRecord,
   QueryResult,
-  QueryService, randomId,
+  QueryService,
+  randomId,
   ResponseStatus,
-  ResultMode, ValueWithTypeName,
+  ResultMode,
+  StreamingQueryMessage,
   VyneQlQueryHistoryRecord
 } from 'src/app/services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
@@ -16,14 +21,8 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
 import {DownloadFileType} from '../result-display/result-container.component';
 import {QueryState} from './bottom-bar.component';
-import {
-  isQueryFailure,
-  isQueryResult,
-  QueryResultInstanceSelectedEvent
-} from '../result-display/BaseQueryResultComponent';
+import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
 import {ExportFileService} from '../../services/export.file.service';
-import ITextModel = editor.ITextModel;
-import ICodeEditor = editor.ICodeEditor;
 import {TestSpecFormComponent} from '../../test-pack-module/test-spec-form.component';
 import {MatDialog} from '@angular/material/dialog';
 import {findType, InstanceLike, Schema, Type} from '../../services/schema';
@@ -32,6 +31,9 @@ import {Subscription} from 'rxjs';
 import {isNullOrUndefined} from 'util';
 import {RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {TypesService} from '../../services/types.service';
+import ITextModel = editor.ITextModel;
+import ICodeEditor = editor.ICodeEditor;
+import {errorKatexNotLoaded} from 'ngx-markdown';
 
 declare const monaco: any; // monaco
 
@@ -50,7 +52,7 @@ export class QueryEditorComponent implements OnInit {
   monacoModel: ITextModel;
   query: string;
   queryClientId: string | null = null;
-  lastQueryResult: QueryResult | QueryFailure;
+  lastQueryResult: QueryResult | FailedSearchResponse;
 
   queryResults: InstanceLike[];
 
@@ -80,7 +82,7 @@ export class QueryEditorComponent implements OnInit {
   currentState: QueryState = 'Editing';
 
   @Output()
-  queryResultUpdated = new EventEmitter<QueryResult | QueryFailure>();
+  queryResultUpdated = new EventEmitter<QueryResult | FailedSearchResponse>();
   @Output()
   loadingChanged = new EventEmitter<boolean>();
 
@@ -164,37 +166,30 @@ export class QueryEditorComponent implements OnInit {
 
     this.queryResults = [];
 
-    const queryResultHandler = (result: ValueWithTypeName) => {
-      if (!isNullOrUndefined(result.typeName)) {
-        this.partialResultType = findType(this.schema, result.typeName.parameterizedName);
-      }
-      this.partialResults$.next(result.value);
-    };
-
-    const queryErrorHandler = (error) => {
+    const queryErrorHandler = (error: FailedSearchResponse) => {
       this.loading = false;
-      const errorResponse = error as HttpErrorResponse;
-      if (errorResponse.error && (errorResponse.error as any).hasOwnProperty('profilerOperation')) {
-        this.lastQueryResult = new QueryFailure(
-          errorResponse.error.message,
-          errorResponse.error.profilerOperation,
-          errorResponse.error.remoteCalls);
-      } else {
-        // There was an unhandled error...
-        console.error('An unhandled error occurred:');
-        console.error(JSON.stringify(error));
-        const errorMessage = 'Something went wrong - this looks like a bug in Vyne, not your query: '
-          + errorResponse.message + '\n' + errorResponse.error.message;
-        this.lastQueryResult = new QueryFailure(
-          errorMessage,
-          null, []);
-        this.queryResultUpdated.emit(this.lastQueryResult);
-      }
+      this.lastQueryResult = error;
+      console.error('Search failed: ' + JSON.stringify(error));
       this.queryResultUpdated.emit(this.lastQueryResult);
       this.loadingChanged.emit(false);
       this.currentState = 'Error';
       this.lastErrorMessage = this.lastQueryResult.message;
     };
+
+    const queryMessageHandler = (message: StreamingQueryMessage) => {
+      if (isFailedSearchResponse(message)) {
+        queryErrorHandler(message);
+      } else if (isValueWithTypeName(message)) {
+        if (!isNullOrUndefined(message.typeName)) {
+          this.partialResultType = findType(this.schema, message.typeName.parameterizedName);
+        }
+        this.partialResults$.next(message.value);
+      } else {
+        console.error('Received an unexpected type of message from a query event stream: ' + JSON.stringify(message));
+      }
+
+    };
+
 
     const queryCompleteHandler = () => {
       this.handleQueryFinished(null);
@@ -203,7 +198,7 @@ export class QueryEditorComponent implements OnInit {
     // Hard coded to test UI
     this.partialResultType = findType(this.schema, 'bgc.orders.Order');
     this.queryService.submitVyneQlQueryStreaming(this.query, this.queryClientId, ResultMode.SIMPLE).subscribe(
-      queryResultHandler,
+      queryMessageHandler,
       queryErrorHandler,
       queryCompleteHandler);
 
@@ -235,8 +230,12 @@ export class QueryEditorComponent implements OnInit {
   private handleQueryFinished(queryStatus: RunningQueryStatus) {
     this.loading = false;
     this.loadingChanged.emit(false);
-    this.currentState = 'Result';
-      
+    // If we're already in an error state, then don't change the state.
+    if (this.currentState === 'Running') {
+      this.currentState = 'Result';
+    }
+
+
     // this.queryService.getHistoryRecord(queryStatus.queryId)
     //   .subscribe(historyRecord => {
     //     this.lastQueryResult = historyRecord.response;

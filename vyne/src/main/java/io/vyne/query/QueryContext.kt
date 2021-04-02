@@ -76,7 +76,7 @@ data class QueryResult(
    override val queryResponseId: String = UUID.randomUUID().toString(),
    val truncated: Boolean = false,
    val anonymousTypes: Set<Type> = setOf(),
-   val clientQueryId: String? = null
+   override val clientQueryId: String? = null
 ) : QueryResponse {
 
    val duration = profilerOperation?.duration
@@ -138,6 +138,7 @@ interface QueryResponse {
 
    val responseStatus: ResponseStatus
    val queryResponseId: String
+   val clientQueryId: String?
 
    @get:JsonProperty("fullyResolved")
    val isFullyResolved: Boolean

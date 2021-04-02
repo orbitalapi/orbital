@@ -1,7 +1,7 @@
 import {TypesService} from '../../services/types.service';
 import {findType, InstanceLikeOrCollection, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
 import {EventEmitter, Input, Output} from '@angular/core';
-import {QueryResult, ResponseStatus, ResultMode} from '../../services/query.service';
+import {FailedSearchResponse, QueryResult, ResponseStatus, ResultMode} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {InstanceSelectedEvent} from '../instance-selected-event';
 
@@ -123,7 +123,7 @@ export abstract class BaseQueryResultComponent {
 
 }
 
-export function isQueryResult(result: QueryResult | QueryFailure): result is QueryResult {
+export function isQueryResult(result: QueryResult | QueryFailure | FailedSearchResponse): result is QueryResult {
   if (!result) {
     return false;
   }
