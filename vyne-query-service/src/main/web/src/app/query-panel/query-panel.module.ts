@@ -37,6 +37,7 @@ import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {MatDialogModule} from '@angular/material/dialog';
 import {ResultsTableModule} from '../results-table/results-table.module';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import { QueryBuilderComponent } from './query-wizard/query-builder.component';
 
 @NgModule({
   imports: [
@@ -71,11 +72,13 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
     ResultsTableModule,
     MatProgressBarModule
   ],
-    exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent, ErrorPanelComponent],
+  exports: [QueryPanelComponent, QueryEditorComponent, BottomBarComponent, TabbedResultsViewComponent, ErrorPanelComponent],
   declarations: [QueryPanelComponent, QueryWizardComponent, FileFactSelectorComponent,
     VyneQueryViewerComponent, QueryEditorComponent, BottomBarComponent, CounterTimerComponent,
     TabbedResultsViewComponent,
-    ErrorPanelComponent],
+    ErrorPanelComponent,
+    QueryBuilderComponent,
+  ],
   providers: [],
 })
 export class QueryPanelModule {

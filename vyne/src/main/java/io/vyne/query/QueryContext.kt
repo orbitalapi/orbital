@@ -22,7 +22,7 @@ import io.vyne.schemas.*
 import io.vyne.utils.log
 import io.vyne.vyneql.ProjectedType
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import lang.taxi.policies.Instruction
 import lang.taxi.types.PrimitiveType
 import java.util.*
@@ -46,6 +46,7 @@ import kotlin.streams.toList
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QuerySpecTypeNode(
    val type: Type,
+   @Deprecated("Not used, not required")
    val children: Set<QuerySpecTypeNode> = emptySet(),
    val mode: QueryMode = QueryMode.DISCOVER,
    // Note: Not really convinced these need to be OutputCOnstraints (vs Constraints).
@@ -65,9 +66,9 @@ class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QueryResult(
    @field:JsonIgnore
-   val type: QuerySpecTypeNode,
+   val querySpec: QuerySpecTypeNode,
    @field:JsonIgnore // we send a lightweight version below
-   val results: Flow<TypedInstance>?,
+   val results: Flow<TypedInstance>,
    @field:JsonIgnore // we send a lightweight version below
    val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
    val path: Path? = null,
@@ -84,34 +85,37 @@ data class QueryResult(
    override val isFullyResolved = unmatchedNodes.isEmpty()
    override val responseStatus: ResponseStatus = if (isFullyResolved) COMPLETED else INCOMPLETE
 
-   // TODO Does this make sense given the anymore?
-   operator fun get(typeName: String): Flow<TypedInstance>? {
-      val requestedParameterizedName = typeName.fqn().parameterizedName
-      // TODO : THis should consider inheritence, rather than strict equals
-      return this.results
-   }
-
-   operator fun get(type: Type): Flow<TypedInstance>? {
-      return this.results?.filter { it.type == type }
-   }
-
    @JsonProperty("unmatchedNodes")
    val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
 
-
-   // The result map is structured so the key is the thing that was asked for, and the value
-   // is a TypeNamedInstance of the result.
-   // By including the type in both places, it allows for polymorphic return types.
-   // Also, the reason we're using Any for the value is that the result could be a
-   // TypedInstnace, a map of TypedInstnaces, or a collection of TypedInstances.
-
-
+   /**
+    * Returns the result stream with all type information removed.
+    */
    @get:JsonIgnore
-   val simpleResults: Flow<TypedInstance>? by lazy {
-      val converter = TypedInstanceConverter(RawObjectMapper)
-      results
-   }
+   val rawResults: Flow<Any?>
+      get() {
+         val converter = TypedInstanceConverter(RawObjectMapper)
+         return results.map {
+            converter.convert(it)
+         }
+      }
 
+   /**
+    * Returns the result stream converted to TypeNamedInstances.
+    * Note that depending on the actual values provided in the results,
+    * we may emit TypeNamedInstance or TypeNamedInstace[].  Nulls
+    * present in the result stream are not filtered.
+    * For these reasons, the result is Flow<Any?>
+    *
+    */
+   @get:JsonIgnore
+   val typedNamedInstanceResults: Flow<Any?>
+      get() {
+         val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+         return results.map { converter.convert(it) }
+      }
+
+   @Deprecated("History records are now produced async from the result stream, and should not be accessed from here.")
    override fun historyRecord(): HistoryQueryResponse {
       return HistoryQueryResponse(
          null, // TODO Should a historyRecord contain results ?

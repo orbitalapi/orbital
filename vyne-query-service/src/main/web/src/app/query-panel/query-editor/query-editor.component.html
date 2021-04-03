@@ -17,17 +17,10 @@
   <as-split-area size="*">
     <app-error-panel *ngIf="lastQueryResultAsSuccess?.unmatchedNodes?.length > 0" [queryResult]="lastQueryResultAsSuccess">
     </app-error-panel>
-    <div class="partial-results-panel"  *ngIf="showStreamingResults" >
-      <app-results-table
-        [instances$]="partialResults$"
-        [type]="partialResultType"
-        [schema]="schema"
-        [selectable]="false"
-      >
-      </app-results-table>
-    </div>
-    <app-tabbed-results-view *ngIf="lastQueryResult"
-                             [result]="lastQueryResult"
+
+    <app-tabbed-results-view *ngIf="resultType"
+                             [instances$]="results$"
+                             [type]="resultType"
                              (instanceSelected)="instanceSelected.emit($event)"
                              (downloadClicked)="downloadQueryHistory($event.format)"
     ></app-tabbed-results-view>

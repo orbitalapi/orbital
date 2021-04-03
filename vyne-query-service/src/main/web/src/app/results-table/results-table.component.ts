@@ -67,12 +67,12 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       this._instanceSubscription.unsubscribe();
     }
     this._instances$ = value;
-    this._instance = [];
     if (this.gridApi) {
+      this.columnDefs = [];
+      this.gridApi.setColumnDefs([]);
       this.gridApi.setRowData([]);
     }
     this._instances$.subscribe(next => {
-      (this._instance as InstanceLike[]).push(next);
       if (this.columnDefs.length === 0) {
         this.rebuildGridData();
       }
@@ -95,20 +95,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   selectable: boolean = true;
 
   @Input()
-  get instance(): InstanceLikeOrCollection {
-    return this._instance;
-  }
-
-  set instance(value: InstanceLikeOrCollection) {
-    if (value === this._instance) {
-      return;
-    }
-    this._instance = value;
-    this.rebuildGridData();
-  }
-
-
-  @Input()
   get type(): Type {
     return super['type'];
   }
@@ -126,7 +112,13 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   columnDefs = [];
 
-  rowData = [];
+  // Need a reference to the rowData as well as the subscripton.
+  // rowData provides a persistent copy of the rows we've received.
+  // It's maintained by the parent container.  This component doesn't modify it.
+  // We need the subscription as ag grid expects changes made after rowDAta is set
+  // to be done by calling a method.
+  @Input()
+  rowData: ReadonlyArray<InstanceLike> = [];
 
   protected onSchemaChanged() {
     super.onSchemaChanged();
@@ -134,20 +126,12 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   }
 
   private rebuildGridData() {
-    if (!this.type || !this.instance) {
+    if (!this.type) {
       this.columnDefs = [];
-      this.rowData = [];
       return;
     }
 
     this.buildColumnDefinitions();
-
-    const collection = (this.isArray) ? this.instance as InstanceLike[] : [this.instance];
-    if (collection.length === 0) {
-      this.rowData = [];
-    } else {
-      this.rowData = collection;
-    }
   }
 
   private buildColumnDefinitions() {
@@ -160,9 +144,9 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
           fieldName: this.type.name.shortDisplayName,
           typeName: this.type.name
         },
-        valueGetter: (params: ValueGetterParams) => {
-          return this.unwrap(this.instance, null);
-        }
+        // valueGetter: (params: ValueGetterParams) => {
+        //   return this.unwrap(this.instance, null);
+        // }
       }];
     } else {
       const attributeNames = this.getAttributes(this.type);

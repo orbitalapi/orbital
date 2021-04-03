@@ -20,8 +20,6 @@ export class ResultContainerComponent extends BaseQueryResultComponent implement
 
   constructor(typeService: TypesService, private fileService: ExportFileService, private router: Router) {
     super(typeService);
-    typeService.getTypes().subscribe(schema => this.schema = schema);
-
   }
 
 
@@ -38,7 +36,9 @@ export class ResultContainerComponent extends BaseQueryResultComponent implement
   remoteCallMermaid = '';
 
   get duration(): number {
-    return this._result.profilerOperation.duration;
+    // TODO
+    return -1;
+    // return this._result.profilerOperation.duration;
   }
 
   get showMermaid(): boolean {
@@ -51,53 +51,57 @@ export class ResultContainerComponent extends BaseQueryResultComponent implement
 
 
   get unmatchedNodes(): string {
-    const queryResult = <QueryResult>this.result;
-    return queryResult.unmatchedNodes ? queryResult.unmatchedNodes.map(qn => qn.longDisplayName).join(', ') : '';
+    // TODO
+    return '';
+    // const queryResult = <QueryResult>this.result;
+    // return queryResult.unmatchedNodes ? queryResult.unmatchedNodes.map(qn => qn.longDisplayName).join(', ') : '';
   }
 
 
   get iconClass(): string {
-    if (!this.result) {
-      return '';
-    }
-    return (this.isSuccess) ? 'check_circle' : 'error';
+    return '';
+    // TODO:
+    // if (!this.result) {
+    //   return '';
+    // }
+    // return (this.isSuccess) ? 'check_circle' : 'error';
   }
 
   protected updateDataSources() {
-    if (!this.result) {
-      return;
-    }
-    this.nestedTreeControl = new NestedTreeControl<ProfilerOperation>(this._getChildren);
-    if (this.isSuccess) {
-      this.nestedDataSource.data = [(<QueryResult>this.result).profilerOperation];
-    } else {
-
-      this.nestedDataSource.data = [(<QueryFailure>this.result).profilerOperation];
-    }
-
-    this.generateRemoteCallMermaid();
+    // if (!this.result) {
+    //   return;
+    // }
+    // this.nestedTreeControl = new NestedTreeControl<ProfilerOperation>(this._getChildren);
+    // if (this.isSuccess) {
+    //   this.nestedDataSource.data = [(<QueryResult>this.result).profilerOperation];
+    // } else {
+    //
+    //   this.nestedDataSource.data = [(<QueryFailure>this.result).profilerOperation];
+    // }
+    //
+    // this.generateRemoteCallMermaid();
 
 
   }
 
   private generateRemoteCallMermaid() {
-    if (!this.result || this.result.remoteCalls.length === 0) {
-      this.remoteCallMermaid = '';
-    }
-
-    const remoteCallLines = this._result.remoteCalls.map(remoteCall => {
-      const wasSuccessful = remoteCall.resultCode >= 200 && remoteCall.resultCode <= 299;
-      let resultMessage = wasSuccessful ? 'Success ' : 'Error ';
-      resultMessage += remoteCall.resultCode;
-      const indent = '    ';
-      const lines = [indent + `Vyne ->> ${remoteCall.service}: ${remoteCall.operation} (${remoteCall.method})`,
-        indent + `${remoteCall.service} ->> Vyne: ${resultMessage} (${remoteCall.durationMs}ms)`
-      ].join('\n');
-      return lines;
-
-    }).join('\n');
-
-    this.remoteCallMermaid = 'sequenceDiagram\n' + remoteCallLines;
+    // if (!this.result || this.result.remoteCalls.length === 0) {
+    //   this.remoteCallMermaid = '';
+    // }
+    //
+    // const remoteCallLines = this._result.remoteCalls.map(remoteCall => {
+    //   const wasSuccessful = remoteCall.resultCode >= 200 && remoteCall.resultCode <= 299;
+    //   let resultMessage = wasSuccessful ? 'Success ' : 'Error ';
+    //   resultMessage += remoteCall.resultCode;
+    //   const indent = '    ';
+    //   const lines = [indent + `Vyne ->> ${remoteCall.service}: ${remoteCall.operation} (${remoteCall.method})`,
+    //     indent + `${remoteCall.service} ->> Vyne: ${resultMessage} (${remoteCall.durationMs}ms)`
+    //   ].join('\n');
+    //   return lines;
+    //
+    // }).join('\n');
+    //
+    // this.remoteCallMermaid = 'sequenceDiagram\n' + remoteCallLines;
   }
 
   hasNestedChild = (_: number, nodeData: ProfilerOperation) => nodeData.children.length > 0;
@@ -105,11 +109,11 @@ export class ResultContainerComponent extends BaseQueryResultComponent implement
 
 
   public downloadQueryHistory(fileType: DownloadFileType) {
-    const queryResponseId = (<QueryResult>this.result).queryResponseId;
-    this.fileService.exportQueryHistory(queryResponseId, fileType).subscribe(response => {
-      const blob: Blob = new Blob([response], {type: `text/${fileType}; charset=utf-8`});
-      fileSaver.saveAs(blob, `query-${new Date().getTime()}.${fileType}`);
-    });
+    // const queryResponseId = (<QueryResult>this.result).queryResponseId;
+    // this.fileService.exportQueryHistory(queryResponseId, fileType).subscribe(response => {
+    //   const blob: Blob = new Blob([response], {type: `text/${fileType}; charset=utf-8`});
+    //   fileSaver.saveAs(blob, `query-${new Date().getTime()}.${fileType}`);
+    // });
   }
 
   ngOnInit() {
@@ -120,6 +124,6 @@ export class ResultContainerComponent extends BaseQueryResultComponent implement
   }
 
   queryAgain() {
-    this.activeRecord && this.router.navigate(['/query-wizard'], {state: {query: this.activeRecord}});
+    // this.activeRecord && this.router.navigate(['/query-wizard'], {state: {query: this.activeRecord}});
   }
 }

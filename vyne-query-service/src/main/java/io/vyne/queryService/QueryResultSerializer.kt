@@ -12,7 +12,7 @@ fun ResultMode.buildSerializer(queryResponse: QueryResult): QueryResultSerialize
    return when (this) {
       ResultMode.RAW -> RawResultsSerializer
       ResultMode.SIMPLE -> FirstEntryMetadataResultSerializer(queryResponse)
-      ResultMode.VERBOSE -> error("Is this still used?")
+      ResultMode.VERBOSE -> TypeNamedInstanceSerializer
    }
 }
 
@@ -25,7 +25,12 @@ object RawResultsSerializer : QueryResultSerializer {
    override fun serialize(item: TypedInstance): Any? {
       return converter.convert(item)
    }
-
+}
+object TypeNamedInstanceSerializer : QueryResultSerializer {
+   private val converter = TypedInstanceConverter(RawObjectMapper)
+   override fun serialize(item: TypedInstance): Any? {
+      return converter.convert(item)
+   }
 }
 
 /**

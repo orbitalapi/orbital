@@ -18,38 +18,17 @@
       <mat-tab-group mat-align-tabs="start" style="height: 100%" [(selectedIndex)]="selectedIndex">
         <mat-tab label="Query Builder">
           <ng-template matTabContent>
-            <div class="query-wizard-container">
-              <query-wizard (queryResultUpdated)="resultUpdated($event)"
-                            (loadingChanged)="onLoadingChanged($event)"
-              ></query-wizard>
-                <div class="results-container">
-                  <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
-
-                  <app-tabbed-results-view (instanceSelected)="onInstanceSelected($event)"
-                                           *ngIf="lastQueryResult"
-                                           [result]="lastQueryResult"
-                  ></app-tabbed-results-view>
-                  <!--                  <mat-card *ngIf="lastQueryResult" style="width: 100%">-->
-                  <!--                    <mat-card-header>-->
-                  <!--                      <mat-card-title>Results</mat-card-title>-->
-                  <!--                    </mat-card-header>-->
-                  <!--                    <mat-card-content>-->
-                  <!--                      <query-result-container [result]="lastQueryResult"-->
-                  <!--                                              (instanceSelected)="onInstanceSelected($event)"></query-result-container>-->
-                  <!--                    </mat-card-content>-->
-                  <!--                  </mat-card>-->
-                </div>
-            </div>
+            <app-query-builder></app-query-builder>
           </ng-template>
         </mat-tab>
         <mat-tab label="Query Editor">
           <ng-template matTabContent>
-              <query-editor
-                [initialQuery]="routeQuery"
-                (queryResultUpdated)="resultUpdated($event)"
-                (loadingChanged)="onLoadingChanged($event)"
-                (instanceSelected)="onInstanceSelected($event)"
-              ></query-editor>
+            <query-editor
+              [initialQuery]="routeQuery"
+              (queryResultUpdated)="resultUpdated($event)"
+              (loadingChanged)="onLoadingChanged($event)"
+              (instanceSelected)="onInstanceSelected($event)"
+            ></query-editor>
           </ng-template>
         </mat-tab>
       </mat-tab-group>

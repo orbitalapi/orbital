@@ -17,10 +17,10 @@
   <div class="container">
     <app-query-list [historyRecords]="history" (recordSelected)="setActiveRecord($event)"></app-query-list>
     <div class="results-section" *ngIf="activeRecord">
-      <app-tabbed-results-view
-        [result]="activeRecord?.response"
-        (downloadClicked)="downloadQueryHistory($event)"
-        (instanceSelected)="onInstanceSelected($event)"></app-tabbed-results-view>
+<!--      <app-tabbed-results-view-->
+<!--        [result]="activeRecord?.response"-->
+<!--        (downloadClicked)="downloadQueryHistory($event)"-->
+<!--        (instanceSelected)="onInstanceSelected($event)"></app-tabbed-results-view>-->
     </div>
 
   </div>

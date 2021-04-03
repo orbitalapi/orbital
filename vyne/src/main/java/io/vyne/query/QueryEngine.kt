@@ -195,7 +195,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       } else {
          QueryResult(
             querySpecTypeNode,
-            null,
+            emptyFlow(),
             setOf(querySpecTypeNode),
             profilerOperation = context.profiler.root,
             clientQueryId = context.clientQueryId
@@ -369,7 +369,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val queryResult = doFind(target.first(), context, spec)
 
       return QueryResult(
-         type = queryResult.type,
+         querySpec = queryResult.querySpec,
          results = queryResult.results,
          unmatchedNodes = queryResult.unmatchedNodes,
          path = null,

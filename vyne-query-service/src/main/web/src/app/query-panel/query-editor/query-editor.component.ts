@@ -54,17 +54,14 @@ export class QueryEditorComponent implements OnInit {
   queryClientId: string | null = null;
   lastQueryResult: QueryResult | FailedSearchResponse;
 
-  queryResults: InstanceLike[];
+  // queryResults: InstanceLike[];
 
-  partialResultType: Type | null = null;
+  resultType: Type | null = null;
   queryStatus: RunningQueryStatus | null = null;
-  partialResults$: Subject<InstanceLike>;
+  results$: Subject<InstanceLike>;
   queryStatusSubscription: Subscription | null = null;
   queryResultsSubscription: Subscription | null = null;
 
-  get showStreamingResults(): boolean {
-    return !isNullOrUndefined(this.partialResultType);
-  }
 
   get lastQueryResultAsSuccess(): QueryResult | null {
     if (isQueryResult(this.lastQueryResult)) {
@@ -160,11 +157,10 @@ export class QueryEditorComponent implements OnInit {
     this.loading = true;
     this.loadingChanged.emit(true);
     this.queryClientId = randomId();
-    this.partialResultType = null;
-    this.partialResults$ = new Subject();
+    this.resultType = null;
+    this.results$ = new Subject();
     this.queryStatus = null;
 
-    this.queryResults = [];
 
     const queryErrorHandler = (error: FailedSearchResponse) => {
       this.loading = false;
@@ -181,9 +177,9 @@ export class QueryEditorComponent implements OnInit {
         queryErrorHandler(message);
       } else if (isValueWithTypeName(message)) {
         if (!isNullOrUndefined(message.typeName)) {
-          this.partialResultType = findType(this.schema, message.typeName.parameterizedName);
+          this.resultType = findType(this.schema, message.typeName.parameterizedName);
         }
-        this.partialResults$.next(message.value);
+        this.results$.next(message.value);
       } else {
         console.error('Received an unexpected type of message from a query event stream: ' + JSON.stringify(message));
       }
@@ -196,7 +192,7 @@ export class QueryEditorComponent implements OnInit {
     };
 
     // Hard coded to test UI
-    this.partialResultType = findType(this.schema, 'bgc.orders.Order');
+    this.resultType = findType(this.schema, 'bgc.orders.Order');
     this.queryService.submitVyneQlQueryStreaming(this.query, this.queryClientId, ResultMode.SIMPLE).subscribe(
       queryMessageHandler,
       queryErrorHandler,

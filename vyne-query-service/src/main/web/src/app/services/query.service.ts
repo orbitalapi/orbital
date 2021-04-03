@@ -14,7 +14,7 @@ import {
   TypeNamedInstance
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
-import {map} from 'rxjs/operators';
+import {concatAll, map} from 'rxjs/operators';
 import {SseEventSourceService} from './sse-event-source.service';
 import {isNullOrUndefined} from 'util';
 
@@ -36,12 +36,15 @@ export class QueryService {
 
   }
 
-  submitQuery(query: Query): Observable<QueryResult> {
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query, this.httpOptions);
-  }
+  submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE): Observable<ValueWithTypeName> {
+    // TODO :  I suspect the return type here is actually ValueWithTypeName | ValueWithTypeName[]
+    return this.http.post<ValueWithTypeName[]>(`${environment.queryServiceUrl}/api/query?resultMode=${resultMode}&clientQueryId=${clientQueryId}`, query, this.httpOptions)
+      // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
+      // however, we want to unpack that to multiple emitted items on our observable
+      // therefore, concatAll() seems to do this.
+      // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
+      .pipe(concatAll());
 
-  submitVyneQlQuery(query: String, resultMode: ResultMode = ResultMode.VERBOSE): Observable<QueryResult> {
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}`, query, this.httpOptions);
   }
 
   submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE): Observable<ValueWithTypeName> {
@@ -81,6 +84,10 @@ export class QueryService {
   cancelQuery(queryId: string): Observable<void> {
     return null;
   }
+}
+
+export interface QueryMetadata {
+  remoteCalls: RemoteCall[];
 }
 
 export class Query {

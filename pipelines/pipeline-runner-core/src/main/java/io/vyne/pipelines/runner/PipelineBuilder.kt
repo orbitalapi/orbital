@@ -12,12 +12,10 @@ import io.vyne.pipelines.runner.events.PipelineStageObserverProvider
 import io.vyne.pipelines.runner.transport.PipelineTransportFactory
 import io.vyne.schemas.Type
 import io.vyne.spring.VyneProvider
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
-import java.io.ByteArrayInputStream
-import java.io.InputStream
 import java.time.Instant
 
 @Component
@@ -129,7 +127,7 @@ class PipelineBuilder(
       // Question: Should Pipelines have dead letter or error topics?
 
       // Transform
-      return runBlocking { vyne.query().addFact(message.instance).build(outputType.name).get(outputType.fullyQualifiedName)?.first() ?: error("Conversion failed") }
+      return runBlocking { vyne.query().addFact(message.instance).build(outputType.name).results.firstOrNull() ?: error("Conversion failed") }
 
    }
 
