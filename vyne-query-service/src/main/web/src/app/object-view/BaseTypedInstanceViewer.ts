@@ -14,7 +14,6 @@ import {isNull, isNullOrUndefined} from 'util';
 
 export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
   private componentId = Math.random().toString(36).substring(7);
-  protected _instance: InstanceLikeOrCollection;
 
   @Output()
   instanceClicked = new EventEmitter<InstanceSelectedEvent>();
@@ -34,6 +33,8 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
     this.onSchemaChanged();
   }
 
+  @Input()
+  instance: InstanceLikeOrCollection;
 
   protected fieldTypes = new Map<Field, Type>();
   protected _type: Type;
@@ -42,21 +43,14 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
 
 
   @Input()
-  get instance(): InstanceLikeOrCollection {
-    return this._instance;
+  get type(): Type {
+    return this._type;
   }
 
-  set instance(value: InstanceLikeOrCollection) {
-    this._instance = value;
-    // When the instance changes, any assumptions we've made about
-    // types based on the old instance are invalid, so null out to recompute
-    this._derivedType = null;
-    this._collectionMemberType = null;
-  }
-
-
-  get typedObject(): TypeNamedInstance {
-    return <TypeNamedInstance>this._instance;
+  set type(value: Type) {
+    this._type = value;
+    // this._collectionMemberType = null;
+    // this._derivedType = null;
   }
 
   get typedObjectAttributeNames(): string[] {
@@ -67,45 +61,8 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
   }
 
 
-  @Input()
-  get type(): Type {
-    if (this._type) {
-      return this._type;
-    }
-    if (this._derivedType) {
-      return this._derivedType;
-    }
-    if (!this._instance) {
-      return null;
-    } else {
-      this._derivedType = this.selectType(this._instance);
-      return this._derivedType;
-    }
-  }
-
-  private selectType(instance: InstanceLikeOrCollection): Type {
-    if (Array.isArray(instance)) {
-      return this.selectType(instance[0]);
-    }
-    if (instance && isTypedInstance(instance)) {
-      return instance.type;
-    }
-    if (instance && isTypeNamedInstance(instance)) {
-      return findType(this.schema, instance.typeName);
-    }
-    console.error('No scenario for finding a type -- returning null');
-    return null;
-  }
-
-  set type(value: Type) {
-    this._type = value;
-    this._collectionMemberType = null;
-    this._derivedType = null;
-  }
-
-
   getTypedObjectAttributeValue(name: string): any {
-    if (this._instance === undefined || this._instance === null) {
+    if (this.instance === undefined || this.instance === null) {
       return null;
     }
     const isScalar = this.getTypeForAttribute(name).isScalar;
@@ -113,22 +70,22 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
     if (attributeValue === undefined) {
       return null;
     }
-    if (isTypedInstance(this._instance)) {
+    if (isTypedInstance(this.instance)) {
       if (isScalar) {
         return attributeValue;
       } else {
         // NO particular reason for this, just haven't hit this code path yet
         throw new Error('This is unhandled - non scalar TypedInstance');
       }
-    } else if (isTypeNamedInstance(this._instance)) {
+    } else if (isTypeNamedInstance(this.instance)) {
       if (isScalar) {
         return (attributeValue as TypeNamedInstance).value;
       } else {
         // NO particular reason for this, just haven't hit this code path yet
         throw new Error('This is unhandled - non scalar TypeNamedInstance');
       }
-    } else if (typeof this._instance === 'object' && isScalar) {
-      return this._instance[name];
+    } else if (typeof this.instance === 'object' && isScalar) {
+      return this.instance[name];
     }
 
 
@@ -138,7 +95,7 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
     if (this.isArray) {
       return null;
     }
-    const instance = this._instance as InstanceLike;
+    const instance = this.instance as InstanceLike;
     if (!instance) {
       return null;
     }
@@ -168,8 +125,8 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
 
 
   get isArray(): boolean {
-    return this._instance != null &&
-      this._instance.constructor === Array;
+    return this.instance != null &&
+      this.instance.constructor === Array;
   }
 
   get collectionMemberType(): Type {
@@ -195,8 +152,8 @@ export class BaseTypedInstanceViewer implements OnInit, OnDestroy {
     if (!isNullOrUndefined(this._type)) {
       this._type = findType(this.schema, this._type.name.parameterizedName);
     }
-    if (!isNullOrUndefined(this._derivedType) && !isNullOrUndefined(this._instance)) {
-      this._derivedType = this.selectType(this._instance);
-    }
+    // if (!isNullOrUndefined(this._derivedType) && !isNullOrUndefined(this.instance)) {
+    //   this._derivedType = this.selectType(this.instance);
+    // }
   }
 }

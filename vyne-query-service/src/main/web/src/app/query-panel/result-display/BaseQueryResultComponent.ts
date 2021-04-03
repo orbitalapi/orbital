@@ -1,9 +1,10 @@
 import {TypesService} from '../../services/types.service';
 import {findType, InstanceLikeOrCollection, QualifiedName, Schema, Type, TypedInstance} from '../../services/schema';
 import {EventEmitter, Input, Output} from '@angular/core';
-import {QueryResult, ResponseStatus, ResultMode} from '../../services/query.service';
+import {FailedSearchResponse, QueryResult, ResponseStatus, ResultMode} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {InstanceSelectedEvent} from '../instance-selected-event';
+import {isNullOrUndefined} from 'util';
 
 /**
  * Query results contain an entry for each top-level type that was requested.
@@ -23,98 +24,53 @@ export abstract class BaseQueryResultComponent {
 
   }
 
-  schema: Schema;
-  protected _result: QueryResult | QueryFailure;
-
-  get result(): QueryResult | QueryFailure {
-    return this._result;
-  }
-
   @Input()
-  set result(value: QueryResult | QueryFailure) {
-    if (this._result === value) {
-      return;
-    }
-    this._result = value;
-    this.queryResultTypeNames = this.buildQueryResultTypeNames();
-
-    this.updateDataSources();
-  }
+  failedSearchResponse: FailedSearchResponse;
+  @Input()
+  typeName: QualifiedName;
+  schema: Schema;
+  // protected _result: QueryResult | QueryFailure;
+  //
+  // get result(): QueryResult | QueryFailure {
+  //   return this._result;
+  // }
+  //
+  // @Input()
+  // set result(value: QueryResult | QueryFailure) {
+  //   if (this._result === value) {
+  //     return;
+  //   }
+  //   this._result = value;
+  //   this.queryResultTypeNames = this.buildQueryResultTypeNames();
+  //
+  //   this.updateDataSources();
+  // }
 
   @Output()
   instanceSelected = new EventEmitter<QueryResultInstanceSelectedEvent>();
 
-  queryResultTypeNames: QualifiedName[] = [];
-
   protected abstract updateDataSources();
 
 
-  get lastQueryResultAsSuccess(): QueryResult | null {
-    if (isQueryResult(this.result)) {
-      return this.result;
-    } else {
-      return null;
-    }
-  }
-
   get error(): string {
-    const queryResult = <QueryResult>this.result;
-    return queryResult.error ? queryResult.error : '';
-  }
-
-  getResultForTypeName(qualifiedName: QualifiedName): InstanceLikeOrCollection {
-    const queryResult = <QueryResult>this.result;
-    if (queryResult.resultMode === ResultMode.VERBOSE) {
-      const results = <{ [key: string]: InstanceLikeOrCollection }>queryResult.results;
-      return results[qualifiedName.parameterizedName] as InstanceLikeOrCollection;
-    } else {
-      const results = <{ [key: string]: TypedInstance }>queryResult.results;
-      return results[qualifiedName.parameterizedName];
-    }
-  }
-
-  /**
-   * Returns the actual type for the queried typeName.
-   * Note that if the resultMode was Verbose (ie., included type data),
-   * we favour that over the queried type data, since return types can be
-   * polymorphic.  In this scenario, we return null, so that the viewer
-   * will read the type from the instance.
-   */
-  getTypeIfNotIncluded(queryTypeName: QualifiedName): Type {
-    const queryResult = <QueryResult>this.result;
-    if (queryResult.resultMode === ResultMode.VERBOSE) {
-      return null;
-    } else {
-      return findType(this.schema, queryTypeName.parameterizedName, queryResult.anonymousTypes);
-    }
+    return isNullOrUndefined(this.failedSearchResponse) ? '' : this.failedSearchResponse.message;
   }
 
   get isSuccess(): Boolean {
-    return this.result && isQueryResult(this.result) && this.result.fullyResolved;
-  }
-
-
-  get isVerboseResult(): Boolean {
-    const queryResult = <QueryResult>this.result;
-    return queryResult && queryResult.resultMode === ResultMode.VERBOSE;
+    // TODO.
+    return true;
+    // return this.result && isQueryResult(this.result) && this.result.fullyResolved;
   }
 
   get isError(): Boolean {
-    return this.result && this.result.responseStatus === ResponseStatus.ERROR;
+    return !isNullOrUndefined(this.failedSearchResponse);
   }
 
 
   get isUnsuccessfulSearch(): Boolean {
-    return this.result && this.result.responseStatus === ResponseStatus.INCOMPLETE;
-  }
-
-
-  private buildQueryResultTypeNames(): QualifiedName[] {
-    if (!this.isSuccess) {
-      return [];
-    }
-    return Object.keys((<QueryResult>this.result).results)
-      .map(elementTypeName => findType(this.schema, elementTypeName, (<QueryResult>this.result).anonymousTypes).name);
+    // TODO:
+    return false;
+    // return this.result && this.result.responseStatus === ResponseStatus.INCOMPLETE;
   }
 
   instanceClicked(event: InstanceSelectedEvent, queryRequestedTypeName: QualifiedName) {
@@ -123,7 +79,7 @@ export abstract class BaseQueryResultComponent {
 
 }
 
-export function isQueryResult(result: QueryResult | QueryFailure): result is QueryResult {
+export function isQueryResult(result: QueryResult | QueryFailure | FailedSearchResponse): result is QueryResult {
   if (!result) {
     return false;
   }

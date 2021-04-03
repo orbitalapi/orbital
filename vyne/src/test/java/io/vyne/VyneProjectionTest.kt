@@ -84,8 +84,8 @@ service Broker1Service {
       vyne.addModel(vyne.parseJsonModel("Person", """{ "id" : "1" , "firstName" : "Jimmy", "lastName" : "Schmit" } """))
       val result = vyne.query("""findOne { Person } as { first : FirstName }""")
       val list = result.results!!.toList()
-      assertEquals(1, list.size)
-
+      list.size.should.equal(1)
+      list.first().toRawObject().should.equal(mapOf("first" to "Jimmy"))
    }
 
    @Test
@@ -138,7 +138,7 @@ service Broker1Service {
 
       stubService.addResponse(
          "findAll",
-         vyne.parseJsonCollection(
+         vyne.parseJsonModel(
             "Order[]", """
                [
                {
@@ -161,10 +161,6 @@ service Broker1Service {
             Order[]
          } as Target[]""".trimIndent()
       )
-
-      val list = queryResult.results?.toList()
-
-      println("queryResult ${list?.size}" )
       queryResult.isFullyResolved.should.be.`true`
       val results = queryResult.typedObjects()
       results[0]["field2"].value.should.equal("This is Provided By External Service")
@@ -1089,7 +1085,6 @@ service Broker1Service {
 
       // act
       val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
-      println("List Size: ${result.results?.toList()}")
 
       // assert
       result.rawObjects().should.equal(
@@ -1225,8 +1220,6 @@ service Broker1Service {
          )
       )
       val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
-      println(result.results?.toList()?.size)
-
       result.rawObjects().should.be.equal(
          listOf(
             mapOf(
@@ -1699,7 +1692,7 @@ service Broker1Service {
       )
 
       stubService.addResponse(
-         "getInputData", vyne.parseJsonCollection(
+         "getInputData", vyne.parseJsonModel(
             "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },

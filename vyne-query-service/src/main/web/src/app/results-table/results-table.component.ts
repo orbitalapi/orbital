@@ -22,6 +22,9 @@ import {TypeInfoHeaderComponent} from './type-info-header.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 import {isNullOrUndefined} from 'util';
 import {CaskService} from '../services/cask.service';
+import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
+import {Observable} from 'rxjs/index';
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-results-table',
@@ -46,26 +49,50 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     super();
   }
 
+  private gridApi: GridApi;
+
+  private _instances$: Observable<InstanceLike>;
+  private _instanceSubscription: Subscription;
+
+  @Input()
+  get instances$(): Observable<InstanceLike> {
+    return this._instances$;
+  }
+
+  set instances$(value: Observable<InstanceLike>) {
+    if (value === this._instances$) {
+      return;
+    }
+    if (this._instanceSubscription) {
+      this._instanceSubscription.unsubscribe();
+    }
+    this._instances$ = value;
+    if (this.gridApi) {
+      this.columnDefs = [];
+      this.gridApi.setColumnDefs([]);
+      this.gridApi.setRowData([]);
+    }
+    this._instances$.subscribe(next => {
+      if (this.columnDefs.length === 0) {
+        this.rebuildGridData();
+      }
+
+      if (this.gridApi) {
+        this.gridApi.applyTransaction({
+          add: [next]
+        });
+      }
+
+    });
+
+  }
+
   @Output()
   instanceClicked = new EventEmitter<InstanceSelectedEvent>();
 
   @Input()
     // tslint:disable-next-line:no-inferrable-types
   selectable: boolean = true;
-
-  @Input()
-  get instance(): InstanceLikeOrCollection {
-    return this._instance;
-  }
-
-  set instance(value: InstanceLikeOrCollection) {
-    if (value === this._instance) {
-      return;
-    }
-    this._instance = value;
-    this.rebuildGridData();
-  }
-
 
   @Input()
   get type(): Type {
@@ -85,7 +112,13 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   columnDefs = [];
 
-  rowData = [];
+  // Need a reference to the rowData as well as the subscripton.
+  // rowData provides a persistent copy of the rows we've received.
+  // It's maintained by the parent container.  This component doesn't modify it.
+  // We need the subscription as ag grid expects changes made after rowDAta is set
+  // to be done by calling a method.
+  @Input()
+  rowData: ReadonlyArray<InstanceLike> = [];
 
   protected onSchemaChanged() {
     super.onSchemaChanged();
@@ -93,20 +126,12 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   }
 
   private rebuildGridData() {
-    if (!this.type || !this.instance) {
+    if (!this.type) {
       this.columnDefs = [];
-      this.rowData = [];
       return;
     }
 
     this.buildColumnDefinitions();
-
-    const collection = (this.isArray) ? this.instance as InstanceLike[] : [this.instance];
-    if (collection.length === 0) {
-      this.rowData = [];
-    } else {
-      this.rowData = collection;
-    }
   }
 
   private buildColumnDefinitions() {
@@ -119,9 +144,9 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
           fieldName: this.type.name.shortDisplayName,
           typeName: this.type.name
         },
-        valueGetter: (params: ValueGetterParams) => {
-          return this.unwrap(this.instance, null);
-        }
+        // valueGetter: (params: ValueGetterParams) => {
+        //   return this.unwrap(this.instance, null);
+        // }
       }];
     } else {
       const attributeNames = this.getAttributes(this.type);
@@ -217,7 +242,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   }
 
   onGridReady(event: GridReadyEvent) {
-   // event.api.sizeColumnsToFit();
+    this.gridApi = event.api;
   }
 
   onFirstDataRendered(params: FirstDataRenderedEvent) {

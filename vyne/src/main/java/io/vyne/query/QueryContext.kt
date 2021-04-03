@@ -22,14 +22,12 @@ import io.vyne.schemas.*
 import io.vyne.utils.log
 import io.vyne.vyneql.ProjectedType
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import lang.taxi.policies.Instruction
 import lang.taxi.types.PrimitiveType
 import java.util.*
 import java.util.stream.Stream
 import kotlin.streams.toList
-
-
 
 
 /**
@@ -48,6 +46,7 @@ import kotlin.streams.toList
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QuerySpecTypeNode(
    val type: Type,
+   @Deprecated("Not used, not required")
    val children: Set<QuerySpecTypeNode> = emptySet(),
    val mode: QueryMode = QueryMode.DISCOVER,
    // Note: Not really convinced these need to be OutputCOnstraints (vs Constraints).
@@ -67,9 +66,9 @@ class QueryResultResultsAttributeKeyDeserialiser : KeyDeserializer() {
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QueryResult(
    @field:JsonIgnore
-   val type:QuerySpecTypeNode,
+   val querySpec: QuerySpecTypeNode,
    @field:JsonIgnore // we send a lightweight version below
-   val results: Flow<TypedInstance>?,
+   val results: Flow<TypedInstance>,
    @field:JsonIgnore // we send a lightweight version below
    val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
    val path: Path? = null,
@@ -77,7 +76,8 @@ data class QueryResult(
    override val profilerOperation: ProfilerOperation? = null,
    override val queryResponseId: String = UUID.randomUUID().toString(),
    val truncated: Boolean = false,
-   val anonymousTypes: Set<Type> = setOf()
+   val anonymousTypes: Set<Type> = setOf(),
+   override val clientQueryId: String? = null
 ) : QueryResponse {
 
    val duration = profilerOperation?.duration
@@ -85,35 +85,37 @@ data class QueryResult(
    override val isFullyResolved = unmatchedNodes.isEmpty()
    override val responseStatus: ResponseStatus = if (isFullyResolved) COMPLETED else INCOMPLETE
 
-   // TODO Does this make sense given the anymore?
-   operator fun get(typeName: String): Flow<TypedInstance>? {
-      val requestedParameterizedName = typeName.fqn().parameterizedName
-      // TODO : THis should consider inheritence, rather than strict equals
-      return this.results
-   }
-
-   operator fun get(type: Type): Flow<TypedInstance>? {
-      return this.results?.filter { it.type == type }
-   }
-
    @JsonProperty("unmatchedNodes")
    val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
 
-
-   // The result map is structured so the key is the thing that was asked for, and the value
-   // is a TypeNamedInstance of the result.
-   // By including the type in both places, it allows for polymorphic return types.
-   // Also, the reason we're using Any for the value is that the result could be a
-   // TypedInstnace, a map of TypedInstnaces, or a collection of TypedInstances.
-
-
-
+   /**
+    * Returns the result stream with all type information removed.
+    */
    @get:JsonIgnore
-   val simpleResults: Flow<TypedInstance>? by lazy {
-      val converter = TypedInstanceConverter(RawObjectMapper)
-      results
-    }
+   val rawResults: Flow<Any?>
+      get() {
+         val converter = TypedInstanceConverter(RawObjectMapper)
+         return results.map {
+            converter.convert(it)
+         }
+      }
 
+   /**
+    * Returns the result stream converted to TypeNamedInstances.
+    * Note that depending on the actual values provided in the results,
+    * we may emit TypeNamedInstance or TypeNamedInstace[].  Nulls
+    * present in the result stream are not filtered.
+    * For these reasons, the result is Flow<Any?>
+    *
+    */
+   @get:JsonIgnore
+   val typedNamedInstanceResults: Flow<Any?>
+      get() {
+         val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+         return results.map { converter.convert(it) }
+      }
+
+   @Deprecated("History records are now produced async from the result stream, and should not be accessed from here.")
    override fun historyRecord(): HistoryQueryResponse {
       return HistoryQueryResponse(
          null, // TODO Should a historyRecord contain results ?
@@ -140,6 +142,7 @@ interface QueryResponse {
 
    val responseStatus: ResponseStatus
    val queryResponseId: String
+   val clientQueryId: String?
 
    @get:JsonProperty("fullyResolved")
    val isFullyResolved: Boolean
@@ -168,29 +171,29 @@ object TypedInstanceTree {
     * Function which defines how to convert a TypedInstance into a tree, for traversal
     */
 
-      fun visit(instance: TypedInstance):List<TypedInstance> {
+   fun visit(instance: TypedInstance): List<TypedInstance> {
 
-         if (instance.type.isClosed) {
-            return emptyList()
-         }
-
-         return when (instance) {
-            is TypedObject -> instance.values.toList()
-            is TypedEnumValue -> instance.synonyms
-            is TypedValue -> {
-               if (instance.type.isEnum) {
-                  instance.type.enumTypedInstance(instance.value).synonyms
-               } else {
-                  emptyList()
-               }
-
-            }
-            is TypedCollection -> instance.value
-            else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
-
-            // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-         }.filter { it -> it !is TypedNull }
+      if (instance.type.isClosed) {
+         return emptyList()
       }
+
+      return when (instance) {
+         is TypedObject -> instance.values.toList()
+         is TypedEnumValue -> instance.synonyms
+         is TypedValue -> {
+            if (instance.type.isEnum) {
+               instance.type.enumTypedInstance(instance.value).synonyms
+            } else {
+               emptyList()
+            }
+
+         }
+         is TypedCollection -> instance.value
+         else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
+
+         // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
+      }.filter { it -> it !is TypedNull }
+   }
 }
 
 // Design choice:
@@ -207,7 +210,15 @@ data class QueryContext(
    val queryEngine: QueryEngine,
    val profiler: QueryProfiler,
    val debugProfiling: Boolean = false,
-   val parent: QueryContext? = null
+   val parent: QueryContext? = null,
+   /**
+    * A user supplied id they can use to reference this query.
+    * Note that the REAL id for a query is the one used in query result,
+    * however we allow clients to provide their own ids.
+    * We don't really care about clashes at this point, but may
+    * protect against it at a later time.
+    */
+   val clientQueryId: String? = null
 ) : ProfilerOperation by profiler {
 
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
@@ -231,8 +242,8 @@ data class QueryContext(
    suspend fun build(typeName: String): QueryResult = queryEngine.build(TypeNameQueryExpression(typeName), this)
    suspend fun build(expression: QueryExpression): QueryResult =
       //timed("QueryContext.build") {
-         queryEngine.build(expression, this)
-      //}
+      queryEngine.build(expression, this)
+   //}
 
    suspend fun findAll(typeName: String): QueryResult = findAll(TypeNameQueryExpression(typeName))
    suspend fun findAll(queryString: QueryExpression): QueryResult = queryEngine.findAll(queryString, this)
@@ -245,9 +256,10 @@ data class QueryContext(
          schema: Schema,
          facts: Set<TypedInstance>,
          queryEngine: QueryEngine,
-         profiler: QueryProfiler
+         profiler: QueryProfiler,
+         clientQueryId: String? = null
       ): QueryContext {
-         return QueryContext(schema, facts.toMutableSet(), queryEngine, profiler)
+         return QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, clientQueryId = clientQueryId)
       }
 
    }
@@ -308,7 +320,7 @@ data class QueryContext(
       class TreeNavigator {
          private val visitedNodes = mutableSetOf<TypedInstance>()
 
-         fun visit(instance:TypedInstance):List<TypedInstance> {
+         fun visit(instance: TypedInstance): List<TypedInstance> {
             return if (visitedNodes.contains(instance)) {
                return emptyList()
             } else {
@@ -319,7 +331,7 @@ data class QueryContext(
       }
       // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
       val navigator = TreeNavigator()
-      val treeDef:TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
+      val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
       return TreeStream.breadthFirst(treeDef, dataTreeRoot())
    }
 

@@ -1,18 +1,22 @@
+/* tslint:disable:max-line-length */
 import {Injectable} from '@angular/core';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
-
+import {nanoid} from 'nanoid';
 import {environment} from 'src/environments/environment';
 import {
-  DataSource,
+  DataSource, InstanceLike,
   InstanceLikeOrCollection, Proxyable,
   QualifiedName,
   ReferenceOrInstance,
   Type,
-  TypedInstance,
+  TypedInstance, TypedObjectAttributes,
   TypeNamedInstance
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
+import {concatAll, map} from 'rxjs/operators';
+import {SseEventSourceService} from './sse-event-source.service';
+import {isNullOrUndefined} from 'util';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -22,29 +26,36 @@ export class QueryService {
 
   httpOptions = {
     headers: new HttpHeaders({
-      'Content-Type':  'application/json',
+      'Content-Type': 'application/json',
       'Accept': 'application/json'
     })
   };
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient,
+              private sse: SseEventSourceService) {
 
   }
 
-  submitQuery(query: Query): Observable<QueryResult> {
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/query`, query, this.httpOptions);
+  submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE): Observable<ValueWithTypeName> {
+    // TODO :  I suspect the return type here is actually ValueWithTypeName | ValueWithTypeName[]
+    return this.http.post<ValueWithTypeName[]>(`${environment.queryServiceUrl}/api/query?resultMode=${resultMode}&clientQueryId=${clientQueryId}`, query, this.httpOptions)
+      // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
+      // however, we want to unpack that to multiple emitted items on our observable
+      // therefore, concatAll() seems to do this.
+      // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
+      .pipe(concatAll());
+
   }
 
-  submitVyneQlQuery(query: String, resultMode: ResultMode = ResultMode.VERBOSE): Observable<QueryResult> {
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}`, query, this.httpOptions);
-  }
-
-  submitVyneQlQueryStreaming(query: String, resultMode: ResultMode = ResultMode.VERBOSE): Observable<QueryResult> {
-    return Observable.create( observer => {
-
-    })
-
-    return this.http.post<QueryResult>(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}`, query, this.httpOptions);
+  submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE): Observable<ValueWithTypeName> {
+    const url = encodeURI(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${query}`);
+    return this.sse.getEventSource(
+      url
+    ).pipe(
+      map((event: MessageEvent) => {
+        return JSON.parse(event.data) as ValueWithTypeName;
+      })
+    );
   }
 
   getHistoryRecord(queryId: string): Observable<QueryHistoryRecord> {
@@ -69,6 +80,14 @@ export class QueryService {
   invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
     return this.http.post<TypedInstance>(`${environment.queryServiceUrl}/api/services/${serviceName}/${operationName}`, parameters, this.httpOptions);
   }
+
+  cancelQuery(queryId: string): Observable<void> {
+    return null;
+  }
+}
+
+export interface QueryMetadata {
+  remoteCalls: RemoteCall[];
 }
 
 export class Query {
@@ -234,6 +253,38 @@ export interface QueryHistorySummary {
   timestamp: Date;
 }
 
+/**
+ * During a streaming query, we can receive any of these message types
+ */
+export type StreamingQueryMessage = ValueWithTypeName | FailedSearchResponse;
+
+export function isFailedSearchResponse(message: StreamingQueryMessage): message is FailedSearchResponse {
+  return !isNullOrUndefined(message['responseStatus']) && message['responseStatus'] === ResponseStatus.ERROR;
+}
+
+export function isValueWithTypeName(message: StreamingQueryMessage): message is ValueWithTypeName {
+  return !isNullOrUndefined(message['value']);
+}
+
+export interface ValueWithTypeName {
+  typeName: QualifiedName | null;
+  anonymousTypes: Type[];
+  /**
+   * This is the serialized instance, as converted by a RawObjectMapper.
+   * It's a raw json object.
+   * Use TypedObjectAttributes here, rather than any, as it's compatible with InstanceLike interface
+   */
+  value: TypedObjectAttributes;
+}
+
+export interface FailedSearchResponse {
+  message: string;
+  responseStatus: ResponseStatus;
+  queryResponseId: string | null;
+  clientQueryId: string | null;
+  remoteCalls: RemoteCall[];
+}
+
 export function isVyneQlQueryHistorySummaryRecord(value: QueryHistorySummary): value is VyneQlQueryHistorySummary {
   return typeof value['query'] === 'string';
 }
@@ -250,3 +301,6 @@ export function isRestQueryHistorySummaryRecord(value: QueryHistorySummary): val
   return (value as RestfulQueryHistorySummary).query.queryMode !== undefined;
 }
 
+export function randomId(): string {
+  return nanoid();
+}

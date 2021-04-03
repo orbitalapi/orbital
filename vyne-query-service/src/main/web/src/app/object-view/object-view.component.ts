@@ -1,7 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
 import {isNullOrUndefined} from 'util';
-import {isTypedInstance} from '../services/schema';
+import {InstanceLike, isTypedInstance} from '../services/schema';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
 
 /**
@@ -30,14 +30,8 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     // tslint:disable-next-line:no-inferrable-types
   selectable: boolean = false;
 
-  // Indicates if it's a straight typedInstance (ie., a typedValue)
-  // or a typed object, which is indexed with property names
-  get isPrimitive(): boolean {
-    return this._instance != null && this.typedObject.value != null && !this.isTypedObject && !this.isArray;
-  }
-
   get isScalar(): boolean {
-    if (isNullOrUndefined(this._instance) || isNullOrUndefined(this.type === null)) {
+    if (isNullOrUndefined(this.instance) || isNullOrUndefined(this.type === null)) {
       return false;
     } else {
       return this.type.isScalar;
@@ -52,11 +46,12 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
     // When performing a query that returns a scalar value,
     // it looks like the value passed here is not a typed object, but just
     // the value itself.
-    if (isTypedInstance(this.typedObject)) {
-      return this.typedObject.value;
-    } else {
-      return this.typedObject;
-    }
+    // if (isTypedInstance(this.typedObject)) {
+    //   return this.typedObject.value;
+    // } else {
+    //   return this.typedObject;
+    // }
+    return this.instance;
 
   }
 
@@ -82,7 +77,8 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
   onTopLevelPrimitiveClicked() {
     if (this.selectable) {
       const nodeId = null; // todo
-      this.instanceClicked.emit(new InstanceSelectedEvent(this.typedObject, null, nodeId));
+      // This casting probably won't work, need to revisit once this is rendering agian
+      this.instanceClicked.emit(new InstanceSelectedEvent(this.instance as InstanceLike, null, nodeId));
     }
 
   }

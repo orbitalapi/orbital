@@ -1,7 +1,6 @@
 package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.queryService.csv.toCsv
 import io.vyne.schemaStore.SchemaProvider
 import org.springframework.stereotype.Component
 
@@ -10,7 +9,7 @@ class QueryHistoryExporter(private val objectMapper: ObjectMapper, private val s
    fun export(results: Map<String, Any?>, type: ExportType): ByteArray {
       val schema = schemaProvider.schema()
       return when (type) {
-         ExportType.CSV -> toCsv(results, schema)
+         ExportType.CSV -> error("CSV Export not working") //toCsv(results, schema)
          ExportType.JSON -> toJson(results)
       }
    }

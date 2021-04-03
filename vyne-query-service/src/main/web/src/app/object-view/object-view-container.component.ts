@@ -1,7 +1,8 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
 import {DownloadFileType} from '../query-panel/result-display/result-container.component';
-import {Type, InstanceLikeOrCollection} from '../services/schema';
+import {Type, InstanceLikeOrCollection, InstanceLike} from '../services/schema';
+import {Observable, Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-object-view-container',
@@ -29,14 +30,15 @@ import {Type, InstanceLikeOrCollection} from '../services/schema';
       </div>
       <div *ngIf="ready" class="display-wrapper">
         <app-results-table *ngIf="displayMode==='table'"
-                           [instance]="instance"
+                           [instances$]="instances$"
+                           [rowData]="instances"
                            [schema]="schema"
                            [selectable]="selectable"
                            [type]="type"
                            (instanceClicked)="instanceClicked.emit($event)">
         </app-results-table>
-        <app-object-view *ngIf="displayMode==='tree' && instance"
-                         [instance]="instance"
+        <app-object-view *ngIf="displayMode==='tree' && instances"
+                         [instance]="instances"
                          [schema]="schema"
                          [selectable]="selectable"
                          [type]="type"
@@ -59,39 +61,45 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
     this._displayMode = value;
   }
 
+  instances: InstanceLike[];
   private _displayMode: DisplayMode = 'table';
+  private _instances$: Observable<InstanceLike>;
+  private _instanceSubscription: Subscription;
   @Input()
     // tslint:disable-next-line:no-inferrable-types
   selectable: boolean = false;
 
   get ready() {
-    return this.instance && this.schema && this.type;
+    return this.instances$ && this.schema && this.type;
+  }
+
+  @Input()
+  get instances$(): Observable<InstanceLike> {
+    return this._instances$;
+  }
+
+  set instances$(value: Observable<InstanceLike>) {
+    if (value === this._instances$) {
+      return;
+    }
+    if (this._instanceSubscription) {
+      this._instanceSubscription.unsubscribe();
+    }
+    this._instances$ = value;
+    this.instances = [];
+    this._instances$.subscribe(next => {
+      this.instances.push(next);
+    });
+
   }
 
   @Output()
   downloadClicked = new EventEmitter<DownloadClickedEvent>();
 
   @Input()
-  get instance(): InstanceLikeOrCollection {
-    return this._instance;
-  }
-
-  @Input()
   downloadSupported = false;
 
-  private _localInstance: InstanceLikeOrCollection;
-  private _localInstanceCopy: InstanceLikeOrCollection;
   downloadRegressionPack: any;
-
-  set instance(value: InstanceLikeOrCollection) {
-    this._instance = value;
-    this._localInstance = value;
-    this._localInstanceCopy = JSON.parse(JSON.stringify(value));
-    // When the instance changes, any assumptions we've made about
-    // types based on the old instance are invalid, so null out to recompute
-    this._derivedType = null;
-    this._collectionMemberType = null;
-  }
 
   onDownloadClicked(format: DownloadFileType) {
     this.downloadClicked.emit(new DownloadClickedEvent(format));

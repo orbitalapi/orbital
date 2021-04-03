@@ -11,8 +11,8 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import java.util.stream.Collectors
 
 
@@ -56,7 +56,8 @@ interface QueryEngine {
 
    fun queryContext(
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
-      additionalFacts: Set<TypedInstance> = emptySet()
+      additionalFacts: Set<TypedInstance> = emptySet(),
+      clientQueryId: String? = null
    ): QueryContext
 
    suspend fun build(type: Type, context: QueryContext): QueryResult =
@@ -98,10 +99,11 @@ class StatefulQueryEngine(
 
    override fun queryContext(
       factSetIds: Set<FactSetId>,
-      additionalFacts: Set<TypedInstance>
+      additionalFacts: Set<TypedInstance>,
+      clientQueryId: String?
    ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
-      return QueryContext.from(schema, facts + additionalFacts, this, profiler)
+      return QueryContext.from(schema, facts + additionalFacts, this, profiler, clientQueryId = clientQueryId)
    }
 }
 
@@ -185,14 +187,16 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             flow { emit(result) },
             emptySet(),
             profilerOperation = context.profiler.root,
-            anonymousTypes = context.schema.typeCache.anonymousTypes()
+            anonymousTypes = context.schema.typeCache.anonymousTypes(),
+            clientQueryId = context.clientQueryId
          )
       } else {
          QueryResult(
             querySpecTypeNode,
-            null,
+            emptyFlow(),
             setOf(querySpecTypeNode),
-            profilerOperation = context.profiler.root
+            profilerOperation = context.profiler.root,
+            clientQueryId = context.clientQueryId
          )
       }
    }
@@ -363,12 +367,13 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val queryResult = doFind(target.first(), context, spec)
 
       return QueryResult(
-         type = queryResult.type,
+         querySpec = queryResult.querySpec,
          results = queryResult.results,
          unmatchedNodes = queryResult.unmatchedNodes,
          path = null,
          profilerOperation = queryResult.profilerOperation,
-         anonymousTypes = queryResult.anonymousTypes
+         anonymousTypes = queryResult.anonymousTypes,
+         clientQueryId = context.clientQueryId
       )
 
    }
@@ -433,6 +438,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             else -> QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
          },
          resultsFlow.flatMapConcat { typedInstance ->
+            // If this query has projection, then we now need to invoke the query builder to project
+            // the provided typedInstance to the projected type.  If we're not projecting, then just flatMap to
+            // the provided instance
             context.projectResultsTo?.let { projectedType ->
                // If we're being asked to project to Array<T> then we now need to unpack that to T.
                // However, if we're just being asked to project to T, then use that.
@@ -443,7 +451,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          },
          emptySet(),
          path = null,
-         profilerOperation = context.profiler.root
+         profilerOperation = context.profiler.root,
+         clientQueryId = context.clientQueryId
       )
 
    }
