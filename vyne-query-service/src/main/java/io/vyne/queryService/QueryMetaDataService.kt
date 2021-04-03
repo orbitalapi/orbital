@@ -9,8 +9,14 @@ import kotlinx.coroutines.launch
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 
+interface QueryMonitor {
+   fun reportStart()
+   fun reportRecords(queryId:String, records:Int)
+   fun reportComplete()
+}
+
 @Component
-class QueryMetaDataService {
+class QueryMetaDataService : QueryMonitor {
 
    private val metadata: ConcurrentHashMap<String, Pair<MutableSharedFlow<QueryMetaData>, SharedFlow<QueryMetaData>>> = ConcurrentHashMap()
 
@@ -38,14 +44,22 @@ class QueryMetaDataService {
       }
    }
 
+   override fun reportStart() {
+      log().info("Starting Query")
+   }
+
    //TODO refactor reportXX functions
-   fun reportRecords(queryId:String, records:Int) {
+   override fun reportRecords(queryId:String, records:Int) {
       queryMetaData(queryId).let {
          if (it.state == QueryState.UNKNOWN) {log().warn("Reporting data received for an unknown query - $it")}
          it.copy(recordCount = it.recordCount+records, queryMetaDataEventTime = System.currentTimeMillis())
       }.let {
          GlobalScope.launch { _notifyMetaData(queryId, it) }
       }
+   }
+
+   override fun reportComplete() {
+      log().info("Finished Query")
    }
 
    fun reportState(queryId:String, state:QueryState) {

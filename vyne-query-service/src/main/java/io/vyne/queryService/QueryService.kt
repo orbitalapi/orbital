@@ -15,6 +15,7 @@ import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import io.vyne.vyneql.VyneQLQueryString
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import lang.taxi.CompilationException
@@ -63,7 +64,7 @@ typealias QueryResponseString = String
  * Main entry point for submitting queries to Vyne.
  */
 @RestController
-class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, val objectMapper: ObjectMapper) {
+class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, val objectMapper: ObjectMapper, val queryMonitor: QueryMonitor ) {
 
    @PostMapping(
       "/api/query",
@@ -133,6 +134,14 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
          // Spring / Jackson take care of the serialzation.
          else -> flowOf(failure)
       }
+   }
+
+
+   suspend fun monitored(query: VyneQLQueryString, clientQueryId: String?, vyneUser: VyneUser?, block: suspend () -> QueryResponse):QueryResponse = GlobalScope.run {
+      queryMonitor.reportStart()
+      val ret = block.invoke()
+      queryMonitor.reportComplete()
+      return ret
    }
 
 
@@ -208,33 +217,26 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       query: VyneQLQueryString,
       vyneUser: VyneUser? = null,
       clientQueryId: String?
-   ): QueryResponse {
-      log().info("VyneQL query => $query")
-      //return timed("QueryService.submitVyneQlQuery") {
-      val vyne = vyneProvider.createVyne(vyneUser.facts())
-      val response = try {
-         vyne.query(query, clientQueryId = clientQueryId)
-      } catch (e: CompilationException) {
-         log().info("The query failed compilation: ${e.message}")
-         FailedSearchResponse(
-            message = e.message!!, // Message contains the error messages from the compiler
-            profilerOperation = null,
-            clientQueryId = clientQueryId
-         )
-      } catch (e: SearchFailedException) {
-         FailedSearchResponse(e.message!!, e.profilerOperation, clientQueryId = clientQueryId)
-      } catch (e: NotImplementedError) {
-         // happens when Schema is empty
-         FailedSearchResponse(e.message!!, null, clientQueryId = clientQueryId)
+   ): QueryResponse = monitored(query, clientQueryId, vyneUser) {
+         log().info("VyneQL query => $query")
+         val vyne = vyneProvider.createVyne(vyneUser.facts())
+         val response = try {
+            vyne.query(query, clientQueryId = clientQueryId)
+         } catch (e: CompilationException) {
+            log().info("The query failed compilation: ${e.message}")
+            FailedSearchResponse(
+               message = e.message!!, // Message contains the error messages from the compiler
+               profilerOperation = null,
+               clientQueryId = clientQueryId
+            )
+         } catch (e: SearchFailedException) {
+            FailedSearchResponse(e.message!!, e.profilerOperation, clientQueryId = clientQueryId)
+         } catch (e: NotImplementedError) {
+            // happens when Schema is empty
+            FailedSearchResponse(e.message!!, null, clientQueryId = clientQueryId)
+         }
+         response
       }
-      //val recordProvider = {
-      //   VyneQlQueryHistoryRecord(query, response.historyRecord())
-      //}
-      //history.add(recordProvider)
-      return response
-      //}
-
-   }
 
 //
 //   /**

@@ -2,7 +2,7 @@ package io.vyne.queryService
 
 import app.cash.turbine.test
 import io.vyne.query.QueryResponse
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 import java.util.*
@@ -83,22 +83,28 @@ class QueryMetaDataServiceTest {
       assertEquals(QueryState.COMPLETE, latestMetaData.state)
    }
 
-   fun monitored(queryId: String, block: () -> String):String {
+   suspend fun monitored(queryId: String, block: suspend () -> String):String = GlobalScope.run {
       println("Monitoring")
       val ret = block.invoke()
       println("Finished Monitoring")
       return ret
+
    }
 
    @Test
-   fun `annotation Test` () {
+   fun `annotation Test` () = runBlocking {
       val anyString = getAddress("1234")
       println("String = $anyString")
    }
 
-   fun getAddress(astring:String):String = monitored(astring) {
-      println("Getting the address now ")
-      astring
+   suspend fun getAddress(astring:String):String = monitored(astring) {
+      val bol = testSuspendFun()
+      bol
+   }
+
+   suspend fun testSuspendFun():String {
+      println("A suspend function")
+      return "a string"
    }
 
    //{
