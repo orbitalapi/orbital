@@ -22,9 +22,6 @@ import io.vyne.query.VyneJacksonModule
 import io.vyne.query.history.QueryHistoryRecord
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
@@ -48,7 +45,7 @@ import java.io.File
  * Find the entry you wan
  */
 
-
+/*
 class QueryTester {
    private val objectMapper: ObjectMapper = jacksonObjectMapper()
       .registerModule(VyneJacksonModule())
@@ -60,20 +57,20 @@ class QueryTester {
    private val listOfTypeNamedInstanceTypeRef: TypeReference<List<TypeNamedInstance>> = object : TypeReference<List<TypeNamedInstance>>() {}
    private val schemaFileName = "schema.json"
 
-   fun runTest(root: File): List<VyneTestFailure>? {
+   fun runTest(root: File): List<VyneTestFailure> {
       val failures = mutableListOf<VyneTestFailure>()
       objectMapper.addMixIn(TypeNamedInstance::class.java, TypeNamedInstanceMixIn::class.java)
       root.walkTopDown().forEach {
          val schemaFile = it.toPath().resolve(schemaFileName).toFile()
          if (it.isDirectory && schemaFile.exists()) {
             val schema = schemaFile.readText()
-            failures.addAll(executeTestsInDirectory(schema, it)!!)
+            failures.addAll(executeTestsInDirectory(schema, it))
          }
       }
       return failures.toList()
    }
 
-   private fun executeTestsInDirectory(schemaJson: String, testDirectory: File): List<VyneTestFailure>? {
+   private fun executeTestsInDirectory(schemaJson: String, testDirectory: File): List<VyneTestFailure> {
       val schemas = objectMapper.readValue<List<VersionedSource>>(schemaJson)
       val testFiles = testDirectory.listFiles { file ->
          file.name != schemaFileName && file.extension == "json"
@@ -85,13 +82,13 @@ class QueryTester {
          testCase to executeTestScenario(schemas, testCase)
       }
 
-      val testFailures = testExecutions.flatMap { it.second!! }
+      val testFailures = testExecutions.flatMap { it.second }
 
       log().info("Executed ${testExecutions.size} test scenarios with ${testFailures.size} failures")
       return testFailures
    }
 
-   private fun executeTestScenario(schemas: List<VersionedSource>, testCase: VyneTestCase): List<VyneTestFailure>? {
+   private fun executeTestScenario(schemas: List<VersionedSource>, testCase: VyneTestCase): List<VyneTestFailure> {
       log().info("Executing test ${testCase.test}")
       val (vyne, _) = replayingVyne(schemas, testCase)
       val queryResult = when (testCase.scenario.query) {
@@ -106,7 +103,7 @@ class QueryTester {
          }
       }
 
-      val testFailures = testCase.scenario.response.results?.map { (typeName, typeNamedInstance) ->
+      val testFailures = testCase.scenario.response.results.map { (typeName, typeNamedInstance) ->
          val type = vyne.type(typeName)
          val typedInstance = when (typeNamedInstance) {
             is List<*> -> {
@@ -123,13 +120,11 @@ class QueryTester {
          }
 
          type to typedInstance
-      }?.mapNotNull { (originalResponseType, originalResponseValue) ->
+      }.mapNotNull { (originalResponseType, originalResponseValue) ->
          val testResultForType = queryResult[originalResponseType]
             ?: return@mapNotNull SimpleTestFailure("Test case ${testCase.test} failed because response type ${originalResponseType.name.name} was present in the original response, but not found in the test response")
          if (testResultForType != originalResponseValue) {
-
-            val actual = runBlocking { testResultForType.first() }
-            NotEqualTestFailure("Test case ${testCase.test} failed because response type ${originalResponseType.name.name} did not equal the original value returned", expected = originalResponseValue, actual = actual)
+            NotEqualTestFailure("Test case ${testCase.test} failed because response type ${originalResponseType.name.name} did not equal the original value returned", expected = originalResponseValue, actual = testResultForType)
          } else {
             null
          }
@@ -178,4 +173,4 @@ class NullAwareTypeNamedInstanceDeserialiser : TypeNamedInstanceDeserializer() {
 
 @JsonDeserialize(using = NullAwareTypeNamedInstanceDeserialiser::class)
 class TypeNamedInstanceMixIn
-
+*/

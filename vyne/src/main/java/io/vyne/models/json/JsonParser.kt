@@ -23,6 +23,10 @@ fun ModelContainer.parseJsonModel(typeName: String, json: String, source:DataSou
    return jsonParser().parse(this.getType(typeName.fqn().parameterizedName), json, source = source)
 }
 
+fun ModelContainer.parseJsonCollection(typeName: String, json: String, source:DataSource = Provided): List<TypedInstance> {
+   val typedCollection = jsonParser().parse(this.getType(typeName.fqn().parameterizedName), json, source = source) as TypedCollection
+   return typedCollection.value
+}
 
 fun ModelContainer.jsonParser(mapper: ObjectMapper = RelaxedJsonMapper.jackson): JsonModelParser {
    return JsonModelParser(this.schema, mapper)

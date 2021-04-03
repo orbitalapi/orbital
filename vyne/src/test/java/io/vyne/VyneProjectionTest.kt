@@ -3,6 +3,7 @@ package io.vyne
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.*
+import io.vyne.models.json.parseJsonCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.schemas.taxi.TaxiSchema
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 import java.math.BigDecimal
+import kotlin.test.assertEquals
 import kotlin.test.fail
 
 @ExperimentalCoroutinesApi
@@ -208,14 +210,16 @@ service UserService {
       val noOfRecords = 10_000
 
       val (vyne, stubService) = testVyne(schema)
+
       stubService.addResponse("getBroker1Orders") { _, parameters ->
          parameters.should.have.size(2)
-         vyne.parseJsonModel("Broker1Order[]", generateBroker1OrdersWithTraderId(noOfRecords))
+         vyne.parseJsonCollection("Broker1Order[]", generateBroker1OrdersWithTraderId(noOfRecords))
       }
+
       stubService.addResponse("getBroker2Orders") { _, parameters ->
          parameters.should.have.size(2)
-         vyne.parseJsonModel("Broker2Order[]", "[]")
-      }
+         vyne.parseJsonCollection("Broker2Order[]", "[]")
+     }
       stubService.addResponse("getUserNameFromId") { _, parameters ->
          parameters.should.have.size(1)
          val userName = when (val userId = parameters[0].second.value as String) {
@@ -223,7 +227,7 @@ service UserService {
             "trader1" -> "Mike Brown"
             else -> TODO("Unknown userId=$userId")
          }
-         vyne.parseKeyValuePair("UserName", userName)
+         listOf(vyne.parseKeyValuePair("UserName", userName))
       }
 
       // act
@@ -338,7 +342,7 @@ service InstrumentService {
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("getBroker1Orders") { _, parameters ->
          parameters.should.have.size(2)
-         vyne.parseJsonModel("Broker1Order[]", generateBroker1Orders(noOfRecords))
+         vyne.parseJsonCollection("Broker1Order[]", generateBroker1Orders(noOfRecords))
       }
       stubService.addResponse("getInstrument") { _, parameters ->
 
@@ -352,7 +356,7 @@ service InstrumentService {
 
          val instrumentResponse =
             """{"id":"$instrumentId", "description": "$instrumentDescription", "instrument_type": "$instrumentType"}"""
-         vyne.parseJsonModel("Instrument", instrumentResponse)
+         listOf(vyne.parseJsonModel("Instrument", instrumentResponse))
       }
 
       // act
@@ -460,12 +464,12 @@ service Broker1Service {
       val trades = generateOneBroker1TradeForEachOrder(noOfRecords)
       stubService.addResponse("getBroker1Orders") { _, parameters ->
          parameters.should.have.size(2)
-         vyne.parseJsonModel("Broker1Order[]", orders)
+         vyne.parseJsonCollection("Broker1Order[]", orders)
       }
 
       stubService.addResponse("getBroker1Trades") { _, parameters ->
          parameters.should.have.size(1)
-         vyne.parseJsonModel("Broker1Trade[]", trades)
+         vyne.parseJsonCollection("Broker1Trade[]", trades)
       }
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
@@ -478,7 +482,7 @@ service Broker1Service {
             generateBroker1Trades(typedValue.value as String, index)
          }.joinToString(",", prefix = "[", postfix = "]")
          getBroker1TradesForOrderIdsInvocationCount++
-         vyne.parseJsonModel("Broker1Trade[]", json)
+         vyne.parseJsonCollection("Broker1Trade[]", json)
       }
 
       var findOneByOrderIdInvocationCount = 0
@@ -486,7 +490,7 @@ service Broker1Service {
          parameters.should.have.size(1)
          val orderId = parameters[0].second.value as String
          findOneByOrderIdInvocationCount++
-         vyne.parseJsonModel(
+         vyne.parseJsonCollection(
             "Broker1Trade", """
                {
                   "broker1OrderID" : "broker1Order$orderId",
@@ -534,7 +538,7 @@ service Broker1Service {
       val orders = generateBroker1Orders(numberOfOrders + 1)
       stubService.addResponse("getBroker1Orders") { _, parameters ->
          parameters.should.have.size(2)
-         vyne.parseJsonModel("Broker1Order[]", orders)
+         vyne.parseJsonCollection("Broker1Order[]", orders)
       }
 
 
@@ -546,7 +550,7 @@ service Broker1Service {
             generateBroker1Trades(orderIds.first().value as String, 0, index, "10.$index")
          }.joinToString(",", prefix = "[", postfix = "]")
          getBroker1TradesForOrderIdsInvocationCount++
-         vyne.parseJsonModel("Broker1Trade[]", json)
+         vyne.parseJsonCollection("Broker1Trade[]", json)
       }
 
       var findOneByOrderIdInvocationCount = 0
@@ -555,7 +559,7 @@ service Broker1Service {
          val orderId = parameters[0].second.value as String
          findOneByOrderIdInvocationCount++
 
-         TypedNull.create(vyne.type("Broker1Trade"))
+         listOf(TypedNull.create(vyne.type("Broker1Trade")))
       }
 
       // act
@@ -602,7 +606,7 @@ service Broker1Service {
       val orders = generateBroker1Orders(numberOfOrders + 1)
       stubService.addResponse("getBroker1Orders") { _, parameters ->
          parameters.should.have.size(2)
-         vyne.parseJsonModel("Broker1Order[]", orders)
+         vyne.parseJsonCollection("Broker1Order[]", orders)
       }
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
@@ -614,7 +618,7 @@ service Broker1Service {
          }.joinToString(",", prefix = "[", postfix = "]")
 
          getBroker1TradesForOrderIdsInvocationCount++
-         vyne.parseJsonModel("Broker1Trade[]", json)
+         vyne.parseJsonCollection("Broker1Trade[]", json)
       }
 
 
@@ -624,16 +628,16 @@ service Broker1Service {
          val orderId = parameters[0].second.value as String
          findOneByOrderIdInvocationCount++
 
-         TypedNull.create(vyne.type("Broker1Trade"))
+         listOf(TypedNull.create(vyne.type("Broker1Trade")))
       }
 
       //find by order Id and project
       stubService.addResponse("findSingleByOrderID") { _, parameters ->
          parameters.should.have.size(1)
          if (parameters.first().second.value == "broker1Order0") {
-            vyne.parseJsonModel("Broker1Order", generateBroker1Order(0))
+            vyne.parseJsonCollection("Broker1Order", generateBroker1Order(0))
          } else {
-            vyne.parseJsonModel("Broker1Order", "{}")
+            vyne.parseJsonCollection("Broker1Order", "{}")
          }
       }
 
@@ -654,7 +658,7 @@ service Broker1Service {
       val orders = generateBroker1Orders(numberOfOrders + 1)
       stubService.addResponse("getBroker1Orders") { _, parameters ->
          parameters.should.have.size(2)
-         vyne.parseJsonModel("Broker1Order[]", orders)
+         vyne.parseJsonCollection("Broker1Order[]", orders)
       }
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
@@ -665,7 +669,7 @@ service Broker1Service {
             generateBroker1Trades(orderIds.first().value as String, 0, index, "10.$index")
          }.joinToString(",", prefix = "[", postfix = "]")
          getBroker1TradesForOrderIdsInvocationCount++
-         vyne.parseJsonModel("Broker1Trade[]", json)
+         vyne.parseJsonCollection("Broker1Trade[]", json)
       }
 
       var findOneByOrderIdInvocationCount = 0
@@ -674,16 +678,16 @@ service Broker1Service {
          val orderId = parameters[0].second.value as String
          findOneByOrderIdInvocationCount++
 
-         TypedNull.create(vyne.type("Broker1Trade"))
+         listOf(TypedNull.create(vyne.type("Broker1Trade")))
       }
 
       //find by order Id and project
       stubService.addResponse("findSingleByOrderID") { _, parameters ->
          parameters.should.have.size(1)
          if (parameters.first().second.value == "broker1Order0") {
-            vyne.parseJsonModel("Broker1Order", generateBroker1Order(0))
+            vyne.parseJsonCollection("Broker1Order", generateBroker1Order(0))
          } else {
-            TypedNull.create(vyne.type("Broker1Order"))
+            listOf(TypedNull.create(vyne.type("Broker1Order")))
 //               vyne.parseJsonModel("Broker1Order", "{}")
          }
       }
@@ -703,7 +707,7 @@ service Broker1Service {
       ).joinToString(prefix = "[", postfix = "]")
       stubService.addResponse("getBroker1Orders") { _, parameters ->
          parameters.should.have.size(2)
-         vyne.parseJsonModel("Broker1Order[]", orders)
+         vyne.parseJsonCollection("Broker1Order[]", orders)
       }
 
       var getBroker1TradesForOrderIdsInvocationCount = 0
@@ -714,7 +718,7 @@ service Broker1Service {
             generateBroker1Trades(orderIds.first().value as String, 0, index, "10.$index")
          }.joinToString(prefix = "[", postfix = "]")
          getBroker1TradesForOrderIdsInvocationCount++
-         vyne.parseJsonModel("Broker1Trade[]", json)
+         vyne.parseJsonCollection("Broker1Trade[]", json)
       }
 
       var findOneByOrderIdInvocationCount = 0
@@ -723,7 +727,7 @@ service Broker1Service {
          val orderId = parameters[0].second.value as String
          findOneByOrderIdInvocationCount++
 
-         TypedNull.create(vyne.type("Broker1Trade"))
+         listOf(TypedNull.create(vyne.type("Broker1Trade")))
       }
 
       // act
@@ -849,7 +853,7 @@ service Broker1Service {
 
       val (vyne, stubService) = testVyne(testSchema)
       stubService.addResponse(
-         "getCustomers", vyne.parseJsonModel(
+         "getCustomers", vyne.parseJsonCollection(
             "Client[]", """
          [
             { name : "Jimmy", country : "UK" },
@@ -862,9 +866,9 @@ service Broker1Service {
       stubService.addResponse("getCountry") { _, parameters ->
          val countryCode = parameters.first().second.value!!.toString()
          if (countryCode == "UK") {
-            vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
+            listOf(vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}"""))
          } else {
-            TypedObject(vyne.schema.type("Country"), emptyMap(), Provided)
+            listOf(TypedObject(vyne.schema.type("Country"), emptyMap(), Provided))
          }
       }
 
@@ -927,7 +931,7 @@ service Broker1Service {
       val maturityDate = "2025-12-01"
       val (vyne, stubService) = testVyne(testSchema)
       stubService.addResponse(
-         "getOrders", vyne.parseJsonModel(
+         "getOrders", vyne.parseJsonCollection(
             "Order[]", """
          [
             {
@@ -953,7 +957,7 @@ service Broker1Service {
       )
 
       stubService.addResponse(
-         "getTrades", vyne.parseJsonModel(
+         "getTrades", vyne.parseJsonCollection(
             "Trade[]", """
             [{
                "maturityDate": "$maturityDate",
@@ -1059,7 +1063,7 @@ service Broker1Service {
       var getCountryInvoked = false
       val (vyne, stubService) = testVyne(testSchema)
       stubService.addResponse(
-         "getCustomers", vyne.parseJsonModel(
+         "getCustomers", vyne.parseJsonCollection(
             "Client[]", """
          [
             { name : "Jimmy", country : "UK" },
@@ -1073,9 +1077,9 @@ service Broker1Service {
          getCountryInvoked = true
          val countryCode = parameters.first().second.value!!.toString()
          if (countryCode == "UK") {
-            vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
+            vyne.parseJsonCollection("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
          } else {
-            TypedObject(vyne.schema.type("Country"), emptyMap(), Provided)
+            listOf(TypedObject(vyne.schema.type("Country"), emptyMap(), Provided))
          }
       }
 
@@ -1120,7 +1124,7 @@ service Broker1Service {
       val outputInstant1 = "2020-08-19T14:07:09.591+0100"
       val outputInstant2 = "2020-08-18T14:07:09.591+0100"
       stubService.addResponse(
-         "getInputData", vyne.parseJsonModel(
+         "getInputData", vyne.parseJsonCollection(
             "InputModel[]", """
          [
             { "inputField": "$inputInstant1" },
@@ -1162,7 +1166,7 @@ service Broker1Service {
       val outputInstant1 = "2020-08-19T14:07:09.591+01"
       val outputInstant2 = "2020-08-18T14:07:09.591+01"
       stubService.addResponse(
-         "getInputData", vyne.parseJsonModel(
+         "getInputData", vyne.parseJsonCollection(
             "InputModel[]", """
          [
             { "inputField": "$inputInstant1" },
@@ -1207,7 +1211,7 @@ service Broker1Service {
       )
 
       stubService.addResponse(
-         "getInputData", vyne.parseJsonModel(
+         "getInputData", vyne.parseJsonCollection(
             "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 2 }
@@ -1301,7 +1305,7 @@ service Broker1Service {
       )
 
       stubService.addResponse(
-         "getInputData", vyne.parseJsonModel(
+         "getInputData", vyne.parseJsonCollection(
             "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 2, "id": "input1" },
@@ -1372,7 +1376,7 @@ service Broker1Service {
       )
 
       stubService.addResponse(
-         "getInputData", vyne.parseJsonModel(
+         "getInputData", vyne.parseJsonCollection(
             "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },
@@ -1385,19 +1389,19 @@ service Broker1Service {
 
       stubService.addResponse("getTrader") { _, parameters ->
          when (parameters.first().second.value) {
-            "tId1" -> vyne.parseJsonModel(
+            "tId1" -> listOf(vyne.parseJsonModel(
                "TraderInfo",
                """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
-            )
-            "tId2" -> vyne.parseJsonModel(
+            ))
+            "tId2" -> listOf(vyne.parseJsonModel(
                "TraderInfo",
                """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
-            )
-            "tId3" -> vyne.parseJsonModel(
+            ))
+            "tId3" -> listOf(vyne.parseJsonModel(
                "TraderInfo",
                """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
-            )
-            else -> TypedNull.create(vyne.type("TraderInfo"))
+            ))
+            else -> listOf(TypedNull.create(vyne.type("TraderInfo")))
 
          }
       }
@@ -1467,7 +1471,7 @@ service Broker1Service {
       )
 
       stubService.addResponse(
-         "getInputData", vyne.parseJsonModel(
+         "getInputData", vyne.parseJsonCollection(
             "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1" },
@@ -1576,7 +1580,7 @@ service Broker1Service {
       )
 
       stubService.addResponse(
-         "getInputData", vyne.parseJsonModel(
+         "getInputData", vyne.parseJsonCollection(
             "InputModel[]", """
          [
             { "qtyFill": 200, "multiplier": 1, "id": "input1" },
@@ -1701,19 +1705,19 @@ service Broker1Service {
 
       stubService.addResponse("getTrader") { _, parameters ->
          when (parameters.first().second.value) {
-            "tId1" -> vyne.parseJsonModel(
+            "tId1" -> listOf(vyne.parseJsonModel(
                "TraderInfo",
                """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
-            )
-            "tId2" -> vyne.parseJsonModel(
+            ))
+            "tId2" -> listOf(vyne.parseJsonModel(
                "TraderInfo",
                """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
-            )
-            "tId3" -> vyne.parseJsonModel(
+            ))
+            "tId3" -> listOf(vyne.parseJsonModel(
                "TraderInfo",
                """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
-            )
-            else -> TypedNull.create(vyne.type("TraderInfo"))
+            ))
+            else -> listOf(TypedNull.create(vyne.type("TraderInfo")))
 
          }
       }
@@ -1801,7 +1805,7 @@ service Broker1Service {
       )
 
       stubService.addResponse(
-         "getInputData", vyne.parseJsonModel(
+         "getInputData", vyne.parseJsonCollection(
             "InputModel[]", """
          [
             {  "id": "input1", "ric": "ric1" },
@@ -1870,7 +1874,7 @@ service Broker1Service {
       )
 
       stubService.addResponse(
-         "getInputData", vyne.parseJsonModel(
+         "getInputData", vyne.parseJsonCollection(
             "InputModel[]", """
          [
             {  "id": "input1", "ric": "ric1", "instrumentType": "ric" },
@@ -1883,11 +1887,11 @@ service Broker1Service {
 
       stubService.addResponse("getInstrumentFromRic") { _, parameters ->
          val isinValue = (parameters.first().second as TypedObject).value.values.map { it.value }.joinToString("_")
-         vyne.parseJsonModel(
+         listOf(vyne.parseJsonModel(
             "InstrumentReferenceResponse", """
              {"isin": "$isinValue"}
           """.trimIndent()
-         )
+         ))
       }
 
       val result =
@@ -1951,7 +1955,7 @@ service Broker1Service {
       """.trimIndent()
          val (vyne, stubService) = testVyne(testSchema)
          stubService.addResponse(
-            "findAll", vyne.parseJsonModel(
+            "findAll", vyne.parseJsonCollection(
                "Input[]", """
          [
             { userId : "userX",  tradeId: "InstrumentX" }
@@ -2023,7 +2027,7 @@ service Broker1Service {
 
          val (vyne, stubService) = testVyne(testSchema)
          stubService.addResponse(
-            "findAll", vyne.parseJsonModel(
+            "findAll", vyne.parseJsonCollection(
                "Input[]", """
          [
             { orderId : "OrderX",  productId: "ProductX", assetClass: "AssetClassX" }
@@ -2097,7 +2101,7 @@ service Broker1Service {
       """.trimIndent()
          val (vyne, stubService) = testVyne(testSchema)
          stubService.addResponse(
-            "findAll", vyne.parseJsonModel(
+            "findAll", vyne.parseJsonCollection(
                "Input[]", """
          [
             { userId : "userX",  tradeId1: "InstrumentX" },
@@ -2127,13 +2131,13 @@ service Broker1Service {
          val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
 
          // assert
-         findTradeByType1IdInvoked.should.be.`true`
-         findTradeByType2IdInvoked.should.be.`true`
          result.rawObjects().should.be.equal(
             listOf(
                mapOf("tradePrice" to null, "tradeDate" to null),
                mapOf("tradePrice" to null, "tradeDate" to null)
             )
          )
+         findTradeByType1IdInvoked.should.be.`true`
+         findTradeByType2IdInvoked.should.be.`true`
       }
 }

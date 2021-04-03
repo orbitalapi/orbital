@@ -1,5 +1,6 @@
 package io.vyne
 
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
@@ -13,10 +14,10 @@ import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-typealias StubResponseHandler = (RemoteOperation, List<Pair<Parameter, TypedInstance>>) -> TypedInstance
+typealias StubResponseHandler = (RemoteOperation, List<Pair<Parameter, TypedInstance>>) -> List<TypedInstance>
 
-class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapOf(), val handlers: MutableMap<String, StubResponseHandler> = mutableMapOf()) : OperationInvoker {
-   constructor(vararg responses: Pair<String, TypedInstance>) : this(responses.toMap().toMutableMap())
+class StubService(val responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(), val handlers: MutableMap<String, StubResponseHandler> = mutableMapOf()) : OperationInvoker {
+   constructor(vararg responses: Pair<String, List<TypedInstance>>) : this(responses.toMap().toMutableMap())
 
    fun toOperationInvocationService():OperationInvocationService {
       return DefaultOperationInvocationService(
@@ -41,19 +42,36 @@ class StubService(val responses: MutableMap<String, TypedInstance> = mutableMapO
       }
 
       return if (responses.containsKey(stubResponseKey)) {
-         flow { responses[stubResponseKey]!! }
+         flow {
+            responses[stubResponseKey]!!.forEach {
+               emit(it) }
+         }
       } else {
-         flow { handlers[stubResponseKey]!!.invoke(operation, parameters) }
+         flow {
+            handlers[stubResponseKey]!!.invoke(operation, parameters).forEach {
+               emit(it)
+            }
+         }
       }
    }
 
    fun addResponse(stubOperationKey: String, handler: StubResponseHandler): StubService {
       this.handlers.put(stubOperationKey, handler)
-      return this;
+      return this
+   }
+
+   fun addResponse(stubOperationKey: String, response: List<TypedInstance>): StubService {
+      this.responses.put(stubOperationKey, response)
+      return this
    }
 
    fun addResponse(stubOperationKey: String, response: TypedInstance): StubService {
-      this.responses.put(stubOperationKey, response)
+      this.responses.put(stubOperationKey, listOf(response))
+      return this
+   }
+
+   fun addResponse(stubOperationKey: String, response: TypedCollection): StubService {
+      this.responses.put(stubOperationKey, response.value)
       return this
    }
 

@@ -13,7 +13,6 @@ import io.vyne.schemas.Type
 import io.vyne.utils.log
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import java.util.stream.Collectors
 
 
@@ -112,7 +111,6 @@ class StatefulQueryEngine(
 // I've removed the default, and made it the BaseQueryEngine.  However, even this might be overkill, and we may
 // fold this into a single class later.
 // The separation between what's in the base and whats in the concrete impl. is not well thought out currently.
-@FlowPreview
 abstract class BaseQueryEngine(override val schema: Schema, private val strategies: List<QueryStrategy>) : QueryEngine {
 
    private val queryParser = QueryParser(schema)
@@ -400,7 +398,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
       //TODO this is an awful way to check if a strategy has result and only emit the results from that stratrgy
 
-      val resultsFlowTemp = flow {
+      val resultsFlow = flow {
          var resultsRecivedFromStrategy = false
 
          for (queryStrategy in strategies) {
@@ -417,19 +415,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                }
             }
          }
-      }
+      }.onEach { context.addFact(it) }
 
-      val list = runBlocking { resultsFlowTemp.toList() }
 
-      println("List size .. adding to context")
       // MP : We could possibly remove this line.
       // If we're not projecting, I suspect we use the return value from the query
       //rather than storing in the context and then fetching it back out again.
       // If we ARE projecting, then we construct a new context per list-element anyway.
       // However, this theory needs investigating / testing.
-      context.addFacts(list)
-
-      val resultsFlow = list.asFlow()
 
       // Note : We should add this additional data to the context too,
       // so that it's available for future query strategies to use.
