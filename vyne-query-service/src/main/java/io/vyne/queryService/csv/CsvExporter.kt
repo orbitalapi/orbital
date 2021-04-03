@@ -52,10 +52,8 @@ fun toCsv(results: Flow<TypedInstance>, schema: Schema): Flow<CharSequence> {
       // For now, we use the first row to infer the type.
       // Polymorphic results in a CSV don't really make much sense, so that's probably ok.
       var rowType: Type? = null
-      results.collect { typedInstance ->
-         if (typedInstance is TypedCollection) { // Can this happen?
-            TODO("Support typed collection to CSV")
-         }
+
+      fun writeCsvRecord(typedInstance: TypedInstance) {
          if (rowType == null) {
             rowType = typedInstance.type
             printer.printRecord(rowType!!.attributes.keys)
@@ -63,6 +61,18 @@ fun toCsv(results: Flow<TypedInstance>, schema: Schema): Flow<CharSequence> {
          if (typedInstance is TypedObject) {
             val rowValues = rowType!!.attributes.keys.map { fieldName -> typedInstance[fieldName].value }
             printer.printRecord(rowValues)
+         } else {
+            // No particular reason for this, but haven't hit use-cases yet.
+            // Amend as this error gets thrown.
+            TODO("writeCsvRecord is not supported for typedInstance of type ${typedInstance::class.simpleName}")
+         }
+      }
+
+      results.collect { typedInstance ->
+         when (typedInstance) {
+            is TypedObject -> writeCsvRecord(typedInstance)
+            is TypedCollection -> typedInstance.forEach { writeCsvRecord(it) }
+            else -> TODO("Csv support for TypedInstance of type ${typedInstance::class.simpleName} not yet supported")
          }
       }
    }

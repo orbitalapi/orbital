@@ -77,7 +77,7 @@ class QueryService(
    )
    suspend fun submitQuery(
       @RequestBody query: Query,
-      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode = ResultMode.RAW,
       @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
    ): ResponseEntity<Flow<Any>> {
 
