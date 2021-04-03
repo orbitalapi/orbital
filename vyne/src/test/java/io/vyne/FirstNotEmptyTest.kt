@@ -219,9 +219,9 @@ class FirstNotEmptyTest {
             { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
                if (counter == 0) {
                   counter++
-                  TypedNull.create(schema.type("Product"))
+                  listOf(TypedNull.create(schema.type("Product")))
                } else {
-                  product
+                  listOf(product)
                }
             }
          stubs.addResponse("lookupProductA", firstResponderReturnsNullHandler)
@@ -309,8 +309,8 @@ class FirstNotEmptyTest {
          stub.addResponse("findPerson") { remoteOperation, params ->
             val (_, personId) = params[0]
             when (personId.value) {
-               1 -> personWithBaseTypeName
-               2 -> personWithFirstName
+               1 -> listOf(personWithBaseTypeName)
+               2 -> listOf(personWithFirstName)
                else -> error("Expected Id of 1 or 2")
             }
          }
@@ -360,9 +360,9 @@ class FirstNotEmptyTest {
                if (counter == 0) {
                   counter++
                   // First time, return null in the name attribute
-                  TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided)
+                  listOf(TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided))
                } else {
-                  TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+                  listOf(TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided))
                }
             }
          stubs.addResponse("lookupProductA", firstResponderReturnsNullHandler)
@@ -411,9 +411,9 @@ class FirstNotEmptyTest {
                val inputParam = inputs[0].second.value as String
                if (inputParam == "productA") {
                   // First time, return null in the name attribute
-                  TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided)
+                  listOf(TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided))
                } else {
-                  TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+                  listOf(TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided))
                }
             }
          stubs.addResponse("lookupProduct", firstResponderReturnsNullHandler)

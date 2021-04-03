@@ -393,7 +393,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
       //TODO this is an awful way to check if a strategy has result and only emit the results from that stratrgy
 
-      val resultsFlowTemp = flow {
+      val resultsFlow = flow {
          var resultsRecivedFromStrategy = false
 
          for (queryStrategy in strategies) {
@@ -410,19 +410,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                }
             }
          }
-      }
+      }.onEach { context.addFact(it) }
 
-      val list = runBlocking { resultsFlowTemp.toList() }
 
-      println("List size .. adding to context")
       // MP : We could possibly remove this line.
       // If we're not projecting, I suspect we use the return value from the query
       //rather than storing in the context and then fetching it back out again.
       // If we ARE projecting, then we construct a new context per list-element anyway.
       // However, this theory needs investigating / testing.
-      context.addFacts(list)
-
-      val resultsFlow = list.asFlow()
 
       // Note : We should add this additional data to the context too,
       // so that it's available for future query strategies to use.
@@ -437,13 +432,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             null -> target
             else -> QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
          },
-         resultsFlow.map {
-            if (context.projectResultsTo != null) {
-               //So few lines, so much power
-               context.only(it).build(context.projectResultsTo!!.typeParametersTypeNames.first()).results?.first()!!
-            } else {
-               it
-            }
+         resultsFlow.flatMapConcat { typedInstance ->
+            context.projectResultsTo?.let { projectedType ->
+               // If we're being asked to project to Array<T> then we now need to unpack that to T.
+               // However, if we're just being asked to project to T, then use that.
+               val actualProjectedType = projectedType.collectionType ?: projectedType
+               val buildResult = context.only(typedInstance).build(actualProjectedType.qualifiedName)
+               buildResult.results
+            } ?: flowOf(typedInstance)
          },
          emptySet(),
          path = null,

@@ -27,7 +27,10 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import java.io.OutputStream
 import io.vyne.query.history.RestfulQueryHistoryRecord
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.springframework.web.bind.annotation.*
 import java.io.ByteArrayOutputStream
@@ -75,6 +78,10 @@ typealias QueryResponseString = String
 class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, val objectMapper: ObjectMapper) {
 
    val typedInstanceConverter:TypedInstanceConverter = TypedInstanceConverter(RawObjectMapper)
+
+   suspend fun monitored(queryId: String, block: () -> QueryResponse): QueryResponse {
+      return runBlocking { block.invoke() }
+   }
 
    @PostMapping("/api/query", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV])
    fun submitQuery(@RequestBody query: Query,
@@ -142,31 +149,33 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
    }
 
    private suspend fun vyneQLQuery(query: VyneQLQueryString,
-                           vyneUser: VyneUser? = null
-   ): QueryResponse {
+                                   vyneUser: VyneUser? = null
+   ): QueryResponse = monitored(query) {
       log().info("VyneQL query => $query")
       //return timed("QueryService.submitVyneQlQuery") {
-         val vyne = vyneProvider.createVyne(vyneUser.facts())
-         val response = try {
-            vyne.query(query)
-         } catch (e: CompilationException) {
-            FailedSearchResponse(
-               message = e.message!!, // Message contains the error messages from the compiler
-               profilerOperation = null
-            )
-         } catch (e: SearchFailedException) {
-            FailedSearchResponse(e.message!!, e.profilerOperation)
-         } catch (e: NotImplementedError) {
-            // happens when Schema is empty
-            FailedSearchResponse(e.message!!, null)
-         }
-         //val recordProvider = {
-         //   VyneQlQueryHistoryRecord(query, response.historyRecord())
-         //}
-         //history.add(recordProvider)
+      val vyne = vyneProvider.createVyne(vyneUser.facts())
 
-         return response
+      val response = try {
+         runBlocking { vyne.query(query) }
+      } catch (e: CompilationException) {
+         FailedSearchResponse(
+            message = e.message!!, // Message contains the error messages from the compiler
+            profilerOperation = null
+         )
+      } catch (e: SearchFailedException) {
+         FailedSearchResponse(e.message!!, e.profilerOperation)
+      } catch (e: NotImplementedError) {
+         // happens when Schema is empty
+         FailedSearchResponse(e.message!!, null)
+      }
+      //val recordProvider = {
+      //   VyneQlQueryHistoryRecord(query, response.historyRecord())
       //}
+      //history.add(recordProvider)
+
+      response
+      //}
+
    }
 
 

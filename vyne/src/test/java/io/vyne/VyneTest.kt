@@ -4,10 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.*
-import io.vyne.models.json.addJsonModel
-import io.vyne.models.json.addKeyValuePair
-import io.vyne.models.json.parseJsonModel
-import io.vyne.models.json.parseKeyValuePair
+import io.vyne.models.json.*
 import io.vyne.query.*
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.schemas.Operation
@@ -187,7 +184,7 @@ class VyneTest {
                |"cfiCode" : "$cfiCode"
                |}
             """.trimMargin()
-               TypedInstance.from(vyne.type("Product"), response, vyne.schema, source = Provided)
+               listOf(TypedInstance.from(vyne.type("Product"), response, vyne.schema, source = Provided))
             } else {
                throw IllegalArgumentException()
             }
@@ -278,7 +275,7 @@ class VyneTest {
                |"cfiCode" : "Cfi-123"
                |}
             """.trimMargin()
-            TypedInstance.from(vyne.type("Product"), response, vyne.schema, source = Provided)
+            listOf(TypedInstance.from(vyne.type("Product"), response, vyne.schema, source = Provided))
          } else {
             fail("findByCfiCode called using the wrong parameter -- should've resolve against Isin first")
          }
@@ -401,7 +398,7 @@ class VyneTest {
       stubService.addResponse("mockProduct") { _, parameters ->
          parameters.should.have.size(1)
          parameters.first().second.value.should.be.equal(919)
-         product
+         listOf(product)
       }
       val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema, source = Provided)
       vyne.addModel(instance)
@@ -462,7 +459,7 @@ class VyneTest {
       stubService.addResponse("mockProduct") { _, parameters ->
          parameters.should.have.size(1)
          parameters.first().second.value.should.be.equal("FX_T2")
-         product
+         listOf(product)
       }
       val instance = TypedInstance.from(vyne.schema.type("vendorA.ProductType"), "Spot", vyne.schema, source = Provided)
       vyne.addModel(instance)
@@ -946,7 +943,7 @@ service Broker2Service {
       // prepare
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse(
-         "getBroker1Orders", vyne.parseJsonModel(
+         "getBroker1Orders", vyne.parseJsonCollection(
             "Broker1Order[]", """
          [
             { "broker1ID" : "Broker1Order1", "broker1Date" : "2020-01-01"}
@@ -955,7 +952,7 @@ service Broker2Service {
          )
       )
       stubService.addResponse(
-         "getBroker2Orders", vyne.parseJsonModel(
+         "getBroker2Orders", vyne.parseJsonCollection(
             "Broker2Order[]", """
          [
             { "broker2ID" : "Broker2Order1", "broker2Date" : "2020-01-01"}
@@ -980,7 +977,7 @@ service Broker2Service {
       // prepare
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse(
-         "getBroker1Orders", vyne.addJsonModel(
+         "getBroker1Orders", vyne.parseJsonCollection(
             "Broker1Order[]", """
          [
             { "broker1ID" : "Broker1Order1", "broker1Date" : "2020-01-01"}
@@ -989,7 +986,7 @@ service Broker2Service {
          )
       )
       stubService.addResponse(
-         "getBroker2Orders", vyne.addJsonModel(
+         "getBroker2Orders", vyne.parseJsonCollection(
             "Broker2Order[]", """
          [
             { "broker2ID" : "Broker2Order1", "broker2Date" : "2020-01-01"}
@@ -1002,7 +999,7 @@ service Broker2Service {
       val result =
          vyne.query(
             """
-         findAll { Order[] } as CommonOrder[]
+         findAll { Broker2Order[] }
       """.trimIndent()
          )
 
@@ -1151,9 +1148,9 @@ service Broker2Service {
       stubInvocationService.addResponse("mockCountry") { _, parameters ->
          val countryCode = parameters.first().second.value!!.toString()
          if (countryCode == "UK") {
-            vyne.typedValue("Country", "United Kingdom")
+            listOf(vyne.typedValue("Country", "United Kingdom"))
          } else {
-            vyne.typedValue("Country", "Turkey")
+            listOf(vyne.typedValue("Country", "Turkey"))
          }
       }
 //      val result =  vyne.query("""
@@ -1466,7 +1463,7 @@ service ClientService {
             val (_, userId) = parameters.first()
             val userIdValue = userId.value as Int
             if (userIdValue % 2 == 0) {
-               vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Even" }""")
+               listOf(vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Even" }"""))
             } else {
                error("Not found") // SImulate a 404
 //            TypedNull(vyne.type("User"))
@@ -1476,7 +1473,7 @@ service ClientService {
             val (_, userId) = parameters.first()
             val userIdValue = userId.value as Int
             if (userIdValue % 2 != 0) {
-               vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Odd" }""")
+               listOf(vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Odd" }"""))
             } else {
                error("not found")  // SImulate a 404
 //            TypedNull(vyne.type("User"))
@@ -1624,7 +1621,7 @@ service ClientService {
          parameters.should.have.size(2)
          parameters[0].second.value.should.be.equal(Instant.parse("2011-12-03T10:15:30Z"))
          parameters[1].second.value.should.be.equal(Instant.parse("2021-12-03T10:15:30Z"))
-         vyne.parseJsonModel(
+         vyne.parseJsonCollection(
             "OrderWindowSummary[]",
             """
                   [
@@ -1724,7 +1721,7 @@ service ClientService {
          |"puid": "${isinArgValue["isin"]?.value.toString()}"
          |}
           """.trimMargin()
-         TypedInstance.from(vyne.type("PuidResponse"), response, vyne.schema, source = Provided)
+         listOf(TypedInstance.from(vyne.type("PuidResponse"), response, vyne.schema, source = Provided))
       }
       val queryResult1 =
          vyne.query(
