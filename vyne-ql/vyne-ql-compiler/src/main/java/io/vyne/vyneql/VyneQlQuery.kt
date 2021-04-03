@@ -25,7 +25,7 @@ enum class QueryMode(val directive: String) {
 }
 
 
-typealias VyneQLQueryString = String
+typealias TaxiQlQueryString = String
 
 data class ProjectedType(val concreteTypeName: QualifiedName?, val anonymousTypeDefinition: AnonymousTypeDefinition?) {
    companion object {

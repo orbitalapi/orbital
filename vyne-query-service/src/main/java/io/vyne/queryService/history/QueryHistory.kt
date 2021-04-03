@@ -1,4 +1,4 @@
-package io.vyne.queryService
+package io.vyne.queryService.history
 
 import com.google.common.collect.EvictingQueue
 import io.vyne.query.history.QueryHistoryRecord

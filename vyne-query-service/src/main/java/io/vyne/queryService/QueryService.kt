@@ -8,14 +8,14 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
 import io.vyne.queryService.csv.toCsv
+import io.vyne.queryService.history.QueryHistorian
 import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
 import io.vyne.queryService.security.toVyneUser
 import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
-import io.vyne.vyneql.VyneQLQueryString
-import kotlinx.coroutines.GlobalScope
+import io.vyne.vyneql.TaxiQlQueryString
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import lang.taxi.CompilationException
@@ -25,6 +25,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import java.util.*
+import kotlinx.coroutines.GlobalScope
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
@@ -64,7 +65,12 @@ typealias QueryResponseString = String
  * Main entry point for submitting queries to Vyne.
  */
 @RestController
-class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, val objectMapper: ObjectMapper, val queryMonitor: QueryMonitor ) {
+class QueryService(
+   val vyneProvider: VyneProvider,
+   val historianService: QueryHistorian,
+   val objectMapper: ObjectMapper,
+   val queryMonitor: QueryMonitor
+) {
 
    @PostMapping(
       "/api/query",
@@ -137,7 +143,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
    }
 
 
-   suspend fun monitored(query: VyneQLQueryString, clientQueryId: String?, vyneUser: VyneUser?, block: suspend () -> QueryResponse):QueryResponse = GlobalScope.run {
+   suspend fun monitored(query: TaxiQlQueryString, clientQueryId: String?, vyneUser: VyneUser?, block: suspend () -> QueryResponse):QueryResponse = GlobalScope.run {
       queryMonitor.reportStart()
       val ret = block.invoke()
       queryMonitor.reportComplete()
@@ -151,7 +157,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV]
    )
    suspend fun submitVyneQlQuery(
-      @RequestBody query: VyneQLQueryString,
+      @RequestBody query: TaxiQlQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
       auth: Authentication? = null,
@@ -175,7 +181,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
       produces = [MediaType.TEXT_EVENT_STREAM_VALUE]
    )
    suspend fun submitVyneQlQueryStreamingResponse(
-      @RequestBody query: VyneQLQueryString,
+      @RequestBody query: TaxiQlQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
       auth: Authentication? = null,
@@ -193,7 +199,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
     */
    @GetMapping(value = ["/api/vyneql", "/api/taxiql"], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
    suspend fun getVyneQlQueryStreamingResponse(
-      @RequestParam("query") query: VyneQLQueryString,
+      @RequestParam("query") query: TaxiQlQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
       auth: Authentication? = null,
@@ -214,7 +220,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
 
 
    private suspend fun vyneQLQuery(
-      query: VyneQLQueryString,
+      query: TaxiQlQueryString,
       vyneUser: VyneUser? = null,
       clientQueryId: String?
    ): QueryResponse = monitored(query, clientQueryId, vyneUser) {
@@ -235,6 +241,7 @@ class QueryService(val vyneProvider: VyneProvider, val history: QueryHistory, va
             // happens when Schema is empty
             FailedSearchResponse(e.message!!, null, clientQueryId = clientQueryId)
          }
+      historianService.captureQueryHistory(query, response)
          response
       }
 

@@ -1,4 +1,4 @@
-package io.vyne.queryService.persistency
+package io.vyne.queryService.history.db
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper

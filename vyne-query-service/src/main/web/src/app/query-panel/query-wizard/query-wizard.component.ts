@@ -134,10 +134,8 @@ export class QueryWizardComponent implements OnInit {
         }
       });
 
-    const fileFacts: Fact[] = this.fileFacts
-      .filter(f => f.hasFact())
-      .map(fileFact => fileFact.asFact());
-    return formFacts.concat(fileFacts);
+
+    return formFacts;
   }
 
   submitQuery() {

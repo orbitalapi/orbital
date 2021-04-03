@@ -7,24 +7,16 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.google.common.io.Resources
 import io.vyne.VersionedSource
 import io.vyne.Vyne
 import io.vyne.VyneCacheConfiguration
-import io.vyne.models.Provided
-import io.vyne.models.TypeNamedInstance
-import io.vyne.models.TypeNamedInstanceDeserializer
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
+import io.vyne.models.*
 import io.vyne.query.Query
 import io.vyne.query.QueryEngineFactory
 import io.vyne.query.VyneJacksonModule
 import io.vyne.query.history.QueryHistoryRecord
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
@@ -92,7 +84,6 @@ class QueryTester {
    }
 
    private fun executeTestScenario(schemas: List<VersionedSource>, testCase: VyneTestCase): List<VyneTestFailure>? {
-      return emptyList()/*
       log().info("Executing test ${testCase.test}")
       val (vyne, _) = replayingVyne(schemas, testCase)
       val queryResult = when (testCase.scenario.query) {
@@ -125,18 +116,19 @@ class QueryTester {
 
          type to typedInstance
       }?.mapNotNull { (originalResponseType, originalResponseValue) ->
-         val testResultForType = queryResult[originalResponseType]
-            ?: return@mapNotNull SimpleTestFailure("Test case ${testCase.test} failed because response type ${originalResponseType.name.name} was present in the original response, but not found in the test response")
-         if (testResultForType != originalResponseValue) {
-
-            val actual = runBlocking { testResultForType.first() }
-            NotEqualTestFailure("Test case ${testCase.test} failed because response type ${originalResponseType.name.name} did not equal the original value returned", expected = originalResponseValue, actual = actual)
-         } else {
-            null
-         }
+         TODO("MP : Not sure how to make this work now -- what was  queryResult[originalResponseType] doing?")
+//         val testResultForType = queryResult[originalResponseType]
+//            ?: return@mapNotNull SimpleTestFailure("Test case ${testCase.test} failed because response type ${originalResponseType.name.name} was present in the original response, but not found in the test response")
+//         if (testResultForType != originalResponseValue) {
+//
+//            val actual = runBlocking { testResultForType.first() }
+//            NotEqualTestFailure("Test case ${testCase.test} failed because response type ${originalResponseType.name.name} did not equal the original value returned", expected = originalResponseValue, actual = actual)
+//         } else {
+//            null
+//         }
       }
       return testFailures
-      */
+
    }
 }
 

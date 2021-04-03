@@ -1,4 +1,4 @@
-package io.vyne.queryService.persistency
+package io.vyne.queryService.history.db
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -9,7 +9,7 @@ import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
 import io.r2dbc.spi.ConnectionFactory
-import io.vyne.queryService.persistency.entity.QueryHistoryRecordRepository
+import io.vyne.queryService.history.db.entity.QueryHistoryRecordRepository
 import org.flywaydb.core.Flyway
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.flyway.FlywayProperties
@@ -30,7 +30,7 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
 @EnableConfigurationProperties(FlywayProperties::class)
 @Import(value = [R2dbcAutoConfiguration::class, DataSourceAutoConfiguration::class])
 @ConditionalOnExpression("!T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}') and \${vyne.query-history.enabled:true}")
-@EnableR2dbcRepositories("io.vyne.queryService.persistency.entity.QueryHistoryRecordEntity")
+@EnableR2dbcRepositories("io.vyne.queryService.history.db.QueryHistoryRecordEntity")
 class ReactiveDatabaseSupport {
    val objectMapper: ObjectMapper = jacksonObjectMapper()
       .registerModule(JavaTimeModule())

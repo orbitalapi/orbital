@@ -9,7 +9,7 @@ import io.vyne.schemas.*
 import io.vyne.schemas.taxi.TaxiConstraintConverter
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
 import io.vyne.utils.log
-import io.vyne.vyneql.VyneQLQueryString
+import io.vyne.vyneql.TaxiQlQueryString
 import io.vyne.vyneql.VyneQlCompiler
 import io.vyne.vyneql.VyneQlQuery
 
@@ -49,7 +49,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
-   suspend fun query(vyneQlQuery: VyneQLQueryString, clientQueryId: String? = null): QueryResult {
+   suspend fun query(vyneQlQuery: TaxiQlQueryString, clientQueryId: String? = null): QueryResult {
       val vyneQuery = VyneQlCompiler(vyneQlQuery, this.schema.taxi).query()
       return query(vyneQuery, clientQueryId)
    }

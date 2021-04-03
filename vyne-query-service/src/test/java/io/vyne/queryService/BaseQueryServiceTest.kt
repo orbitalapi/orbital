@@ -8,14 +8,15 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.query.Query
 import io.vyne.query.QueryMode
 import io.vyne.query.TypeNameListQueryExpression
+import io.vyne.queryService.history.QueryHistorian
 import io.vyne.spring.VyneFactory
+import io.vyne.testVyne
 //import io.vyne.testVyne
 import org.junit.Before
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.ByteArrayOutputStream
-/*
 abstract class BaseQueryServiceTest {
    companion object {
       val testSchema = """
@@ -62,7 +63,6 @@ abstract class BaseQueryServiceTest {
 
    lateinit var queryService: QueryService
    lateinit var stubService: StubService
-   lateinit var queryHistory: QueryHistory
    lateinit var vyne: Vyne
 
    @Before
@@ -70,10 +70,9 @@ abstract class BaseQueryServiceTest {
       val (vyne, stubService) = testVyne(testSchema)
       this.stubService = stubService
       this.vyne = vyne
-      queryHistory = InMemoryQueryHistory()
       val mockVyneFactory = mock<VyneFactory>()
       whenever(mockVyneFactory.createVyne()).thenReturn(vyne)
-      queryService = QueryService(mockVyneFactory, queryHistory, Jackson2ObjectMapperBuilder().build())
+      queryService = QueryService(mockVyneFactory, QueryHistorian(), Jackson2ObjectMapperBuilder().build(), QueryMetaDataService())
 
       stubService.addResponse("getOrders", vyne.parseJsonModel("Order[]", """
          [
@@ -114,4 +113,3 @@ fun ResponseEntity<StreamingResponseBody>.contentString():String {
    this.body!!.writeTo(stream)
    return String(stream.toByteArray())
 }
-*/
