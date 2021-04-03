@@ -1,4 +1,4 @@
-package io.vyne.queryService
+package io.vyne.queryService.history
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.schemaStore.SchemaProvider

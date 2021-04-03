@@ -2,8 +2,9 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.models.TypeNamedInstance
-import io.vyne.queryService.persistency.ReactiveDatabaseSupport
-import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.queryService.history.ExportType
+import io.vyne.queryService.history.QueryHistoryExporter
+import io.vyne.queryService.history.db.ReactiveDatabaseSupport
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import org.junit.Before
 import org.junit.Test

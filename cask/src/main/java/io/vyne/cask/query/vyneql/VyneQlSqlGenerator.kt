@@ -10,7 +10,7 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
 import io.vyne.vyneql.DiscoveryType
-import io.vyne.vyneql.VyneQLQueryString
+import io.vyne.vyneql.TaxiQlQueryString
 import io.vyne.vyneql.VyneQlCompiler
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.Constraint
@@ -33,15 +33,15 @@ class VyneQlSqlGenerator(
 ) {
 
 
-   fun generateSql(queryString: VyneQLQueryString): SqlStatement {
+   fun generateSql(queryString: TaxiQlQueryString): SqlStatement {
       return generateSqlWithSelect(queryString, "*")
    }
 
-   fun generateSqlCountRecords(queryString: VyneQLQueryString): SqlStatement {
+   fun generateSqlCountRecords(queryString: TaxiQlQueryString): SqlStatement {
       return generateSqlWithSelect(queryString, "count(*)")
    }
 
-   private fun generateSqlWithSelect(queryString: VyneQLQueryString, select: String): SqlStatement {
+   private fun generateSqlWithSelect(queryString: TaxiQlQueryString, select: String): SqlStatement {
       val vyneSchema = schemaProvider.schema()
       val taxiSchema = vyneSchema.taxi
       val query = VyneQlCompiler(queryString, taxiSchema)

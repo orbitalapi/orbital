@@ -2,8 +2,9 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.VersionedSource
-import io.vyne.query.QueryHolder
 import io.vyne.query.history.QueryHistoryRecord
+import io.vyne.queryService.history.QueryHistory
+import io.vyne.queryService.history.RegressionPackRequest
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.VersionedSourceProvider
 import org.springframework.stereotype.Component

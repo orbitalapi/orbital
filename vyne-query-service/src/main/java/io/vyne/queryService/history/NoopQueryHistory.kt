@@ -1,6 +1,5 @@
-package io.vyne.queryService
+package io.vyne.queryService.history
 
-import io.vyne.query.QueryResponse
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux

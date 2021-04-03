@@ -1,4 +1,4 @@
-package io.vyne.queryService.persistency.entity
+package io.vyne.queryService.history.db.entity
 
 import io.vyne.query.history.QueryHistoryRecord
 import org.springframework.data.annotation.Id

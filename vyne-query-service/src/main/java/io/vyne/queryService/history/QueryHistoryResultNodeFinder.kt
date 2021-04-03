@@ -1,4 +1,4 @@
-package io.vyne.queryService
+package io.vyne.queryService.history
 
 import io.vyne.models.TypeNamedInstance
 import io.vyne.schemas.fqn
@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 object QueryHistoryResultNodeFinder {
    // eg: [0] or [230]
    private val numberInSquareBracketsRegex = "\\[\\d+\\]".toRegex()
-   tailrec fun find(pathParts:List<String>, valueToParse:Any, originalPath:String):QueryResultNodeDetail {
+   tailrec fun find(pathParts:List<String>, valueToParse:Any, originalPath:String): QueryResultNodeDetail {
       if (pathParts.isEmpty()) {
          if (valueToParse is TypeNamedInstance) {
             return QueryResultNodeDetail(
