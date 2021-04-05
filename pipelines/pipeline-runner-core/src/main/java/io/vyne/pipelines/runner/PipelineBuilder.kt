@@ -17,6 +17,7 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import java.time.Instant
+import java.util.*
 
 @Component
 class PipelineBuilder(
@@ -127,7 +128,7 @@ class PipelineBuilder(
       // Question: Should Pipelines have dead letter or error topics?
 
       // Transform
-      return runBlocking { vyne.query().addFact(message.instance).build(outputType.name).results.firstOrNull() ?: error("Conversion failed") }
+      return runBlocking { vyne.query(queryId = UUID.randomUUID().toString()).addFact(message.instance).build(outputType.name).results.firstOrNull() ?: error("Conversion failed") }
 
    }
 

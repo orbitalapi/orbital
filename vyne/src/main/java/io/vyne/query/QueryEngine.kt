@@ -7,6 +7,7 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
+import io.vyne.queryService.QueryMetaDataService
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -57,7 +58,7 @@ interface QueryEngine {
    fun queryContext(
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
       additionalFacts: Set<TypedInstance> = emptySet(),
-      clientQueryId: String? = null
+      queryId: String? = null,
    ): QueryContext
 
    suspend fun build(type: Type, context: QueryContext): QueryResult =
@@ -100,11 +101,12 @@ class StatefulQueryEngine(
    override fun queryContext(
       factSetIds: Set<FactSetId>,
       additionalFacts: Set<TypedInstance>,
-      clientQueryId: String?
+      queryId: String?
    ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
-      return QueryContext.from(schema, facts + additionalFacts, this, profiler, clientQueryId = clientQueryId)
+      return QueryContext.from(schema, facts + additionalFacts, this, profiler, queryId = queryId)
    }
+
 }
 
 // Note:  originally, there were two query engines (Default and Stateful), but only one was ever used (stateful).
@@ -188,7 +190,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             emptySet(),
             profilerOperation = context.profiler.root,
             anonymousTypes = context.schema.typeCache.anonymousTypes(),
-            clientQueryId = context.clientQueryId
+            queryId = context.queryId
          )
       } else {
          QueryResult(
@@ -196,7 +198,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             emptyFlow(),
             setOf(querySpecTypeNode),
             profilerOperation = context.profiler.root,
-            clientQueryId = context.clientQueryId
+            queryId = context.queryId
          )
       }
    }
@@ -359,6 +361,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       context: QueryContext,
       spec: TypedInstanceValidPredicate
    ): QueryResult {
+
+
+
       // TODO : BIG opportunity to optimize this by evaluating multiple querySpecNodes at once.
       // Which would allow us to be smarter about results we collect from rest calls.
       // Optimize later.
@@ -373,7 +378,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          path = null,
          profilerOperation = queryResult.profilerOperation,
          anonymousTypes = queryResult.anonymousTypes,
-         clientQueryId = context.clientQueryId
+         queryId = context.queryId
       )
 
    }
@@ -397,6 +402,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //}
 
       //TODO this is an awful way to check if a strategy has result and only emit the results from that stratrgy
+
+      QueryMetaDataService.monitor.reportTarget(context.queryId, target)
 
       val resultsFlow = flow {
          var resultsRecivedFromStrategy = false
@@ -452,7 +459,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          emptySet(),
          path = null,
          profilerOperation = context.profiler.root,
-         clientQueryId = context.clientQueryId
+         queryId = context.queryId
       )
 
    }

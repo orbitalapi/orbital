@@ -49,13 +49,14 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
-   suspend fun query(vyneQlQuery: TaxiQlQueryString, clientQueryId: String? = null): QueryResult {
+   suspend fun query(vyneQlQuery: TaxiQlQueryString, queryId: String? = null): QueryResult {
       val vyneQuery = VyneQlCompiler(vyneQlQuery, this.schema.taxi).query()
-      return query(vyneQuery, clientQueryId)
+      return query(vyneQuery, queryId)
    }
 
-   suspend fun query(vyneQl: VyneQlQuery, clientQueryId: String? = null): QueryResult {
-      val (queryContext, expression) = buildContextAndExpression(vyneQl, clientQueryId)
+   suspend fun query(vyneQl: VyneQlQuery, queryId: String? = null): QueryResult {
+      val (queryContext, expression) = buildContextAndExpression(vyneQl, queryId)
+
       return when (vyneQl.queryMode) {
          io.vyne.vyneql.QueryMode.FIND_ALL -> queryContext.findAll(expression)
          io.vyne.vyneql.QueryMode.FIND_ONE -> queryContext.find(expression)
@@ -63,8 +64,8 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    }
 
    @VisibleForTesting
-   internal fun buildContextAndExpression(vyneQl: VyneQlQuery, clientQueryId: String? = null): Pair<QueryContext, QueryExpression> {
-      var queryContext = query(additionalFacts = vyneQl.facts.values.toSet(), clientQueryId = clientQueryId)
+   internal fun buildContextAndExpression(vyneQl: VyneQlQuery, queryId: String? = null): Pair<QueryContext, QueryExpression> {
+      var queryContext = query(additionalFacts = vyneQl.facts.values.toSet(), queryId = queryId)
       queryContext = vyneQl.projectedType?.let {
          queryContext.projectResultsTo(it) // Merge conflict, was : it.toVyneQualifiedName()
       } ?: queryContext
@@ -92,7 +93,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    fun query(
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
       additionalFacts: Set<TypedInstance> = emptySet(),
-      clientQueryId:String? = null): QueryContext {
+      queryId: String? = null): QueryContext {
       // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
       // what is asked for, but only providing the desired factSets to the queryContext.
       // This is because the context only evalutates the factSets that are provided,
@@ -102,7 +103,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       // Hopefully, this lets us have the best of both worlds.
 
       val queryEngine = queryEngine(setOf(FactSets.ALL), additionalFacts)
-      return queryEngine.queryContext(factSetIds = factSetIds, clientQueryId = clientQueryId)
+      return queryEngine.queryContext(factSetIds = factSetIds, queryId = queryId)
    }
 
    fun accessibleFrom(fullyQualifiedTypeName: String): Set<Type> {

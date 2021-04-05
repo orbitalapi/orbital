@@ -5,6 +5,7 @@ import io.vyne.query.history.QueryHistoryRecord
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
+import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -16,6 +17,7 @@ interface QueryHistory {
    fun clear()
 }
 
+@Primary
 @Component
 @ConditionalOnExpression("T(org.springframework.util.StringUtils).isEmpty('\${spring.r2dbc.url:}') and \${vyne.query-history.enabled:true}")
 class InMemoryQueryHistory(
