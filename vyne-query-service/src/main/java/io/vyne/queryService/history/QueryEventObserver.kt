@@ -6,19 +6,13 @@ import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
 import io.vyne.queryService.FailedSearchResponse
 import io.vyne.vyneql.TaxiQlQueryString
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onEach
-import org.springframework.stereotype.Component
 
 /**
- * Takes a queries - results, metadata, etc, and streams the out to a QueryHistory provider
+ * Takes a queries results, metadata, etc, and streams the out to a QueryHistory provider
  * to be captured.
  */
-@Component
-class QueryHistorian {
-
-   private val queryEventFlow = MutableSharedFlow<QueryEvent>()
-
+class QueryEventObserver(private val consumer: QueryEventConsumer) {
    suspend fun captureQueryHistory(query: Query, queryResponse: QueryResponse) {
       when (queryResponse) {
          is QueryResult -> captureQueryResultStreamToHistory(query, queryResponse)
@@ -30,7 +24,7 @@ class QueryHistorian {
    private fun captureQueryResultStreamToHistory(query: Query, queryResult: QueryResult) {
       queryResult.results
          .onEach { typedInstance ->
-            queryEventFlow.emit(
+            consumer.handleEvent(
                RestfulQueryResultEvent(
                   query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
                )
@@ -39,7 +33,7 @@ class QueryHistorian {
    }
 
    private suspend fun emitFailure(query: Query, failure: FailedSearchResponse) {
-      queryEventFlow.emit(
+      consumer.handleEvent(
          RestfulQueryFailureEvent(
             query,
             failure.queryResponseId,
@@ -60,7 +54,7 @@ class QueryHistorian {
    private fun captureTaxiQlQueryResultStreamToHistory(query: TaxiQlQueryString, queryResult: QueryResult) {
       queryResult.results
          .onEach { typedInstance ->
-            queryEventFlow.emit(
+            consumer.handleEvent(
                TaxiQlQueryResultEvent(
                   query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
                )
@@ -69,7 +63,7 @@ class QueryHistorian {
    }
 
    private suspend fun emitFailure(query: TaxiQlQueryString, failure: FailedSearchResponse) {
-      queryEventFlow.emit(
+      consumer.handleEvent(
          TaxiQlQueryFailureEvent(
             query,
             failure.queryResponseId,
@@ -78,6 +72,10 @@ class QueryHistorian {
          )
       )
    }
+}
+
+interface QueryEventConsumer {
+   suspend fun handleEvent(event: QueryEvent)
 }
 
 sealed class QueryEvent

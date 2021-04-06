@@ -93,10 +93,10 @@
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-data-jpa</artifactId>
       </dependency>
-      <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-data-r2dbc</artifactId>
-      </dependency>
+<!--      <dependency>-->
+<!--         <groupId>org.springframework.boot</groupId>-->
+<!--         <artifactId>spring-boot-starter-data-r2dbc</artifactId>-->
+<!--      </dependency>-->
       <dependency>
          <groupId>org.springframework.cloud</groupId>
          <artifactId>spring-cloud-starter-config</artifactId>
@@ -109,28 +109,32 @@
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-web</artifactId>
       </dependency>
+<!--      <dependency>-->
+<!--         <groupId>org.springframework.data</groupId>-->
+<!--         <artifactId>spring-data-r2dbc</artifactId>-->
+<!--         <version>1.1.1.RELEASE</version>-->
+<!--      </dependency>-->
       <dependency>
-         <groupId>org.springframework.data</groupId>
-         <artifactId>spring-data-r2dbc</artifactId>
-         <version>1.1.1.RELEASE</version>
+         <groupId>com.h2database</groupId>
+         <artifactId>h2</artifactId>
       </dependency>
-      <dependency>
-         <groupId>org.springframework.data</groupId>
-         <artifactId>spring-data-commons</artifactId>
-         <version>2.3.1.RELEASE</version>
-      </dependency>
-      <dependency>
-         <groupId>io.r2dbc</groupId>
-         <artifactId>r2dbc-postgresql</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.flywaydb</groupId>
-         <artifactId>flyway-core</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.postgresql</groupId>
-         <artifactId>postgresql</artifactId>
-      </dependency>
+<!--      <dependency>-->
+<!--         <groupId>io.r2dbc</groupId>-->
+<!--         <artifactId>r2dbc-h2</artifactId>-->
+<!--         <version>0.8.4.RELEASE</version>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--         <groupId>io.r2dbc</groupId>-->
+<!--         <artifactId>r2dbc-postgresql</artifactId>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--         <groupId>org.flywaydb</groupId>-->
+<!--         <artifactId>flyway-core</artifactId>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--         <groupId>org.postgresql</groupId>-->
+<!--         <artifactId>postgresql</artifactId>-->
+<!--      </dependency>-->
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>vyne</artifactId>

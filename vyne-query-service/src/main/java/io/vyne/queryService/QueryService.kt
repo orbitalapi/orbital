@@ -5,10 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.models.Provided
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.json.Jackson
 import io.vyne.query.*
 import io.vyne.queryService.csv.toCsv
-import io.vyne.queryService.history.QueryHistorian
+import io.vyne.queryService.history.QueryEventObserver
+import io.vyne.queryService.history.db.QueryHistoryDbWriter
 import io.vyne.queryService.security.VyneUser
 import io.vyne.queryService.security.facts
 import io.vyne.queryService.security.toVyneUser
@@ -16,8 +19,8 @@ import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import io.vyne.vyneql.TaxiQlQueryString
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import lang.taxi.CompilationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -25,7 +28,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import java.util.*
-import kotlinx.coroutines.GlobalScope
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
@@ -67,8 +69,8 @@ typealias QueryResponseString = String
 @RestController
 class QueryService(
    val vyneProvider: VyneProvider,
-   val historianService: QueryHistorian,
-   val objectMapper: ObjectMapper,
+   val historyDbWriter: QueryHistoryDbWriter,
+   val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    val queryMonitor: QueryMonitor
 ) {
 
@@ -77,7 +79,7 @@ class QueryService(
       consumes = [MediaType.APPLICATION_JSON_VALUE],
       produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV]
    )
-   fun submitQuery(
+   suspend fun submitQuery(
       @RequestBody query: Query,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
@@ -124,7 +126,25 @@ class QueryService(
          else -> {
             val serializer = resultMode.buildSerializer(queryResult)
             queryResult.results
-               .map { serializer.serialize(it) }
+               .flatMapMerge { typedInstance ->
+                  // This is a smell.
+                  // I've noticed that when projecting, in this point of the code
+                  // we get individual typed instances.
+                  // However, if we're not projecting, we get a single
+                  // typed collection.
+                  // This meas that the shape of the response (array vs single)
+                  // varies based on the query, which is incorrect.
+                  // Therefore, unwrap collections here.
+                  // This smells, because it could be indicative of a problem
+                  // higher in the stack.
+                  if (typedInstance is TypedCollection) {
+                     typedInstance.map { serializer.serialize(it) }
+                  } else {
+                     listOf(serializer.serialize(typedInstance))
+                  }.filterNotNull()
+                     .asFlow()
+
+               }
                .filterNotNull()
          }
       }
@@ -143,7 +163,12 @@ class QueryService(
    }
 
 
-   suspend fun monitored(query: TaxiQlQueryString, clientQueryId: String?, vyneUser: VyneUser?, block: suspend () -> QueryResponse):QueryResponse = GlobalScope.run {
+   suspend fun monitored(
+      query: TaxiQlQueryString,
+      clientQueryId: String?,
+      vyneUser: VyneUser?,
+      block: suspend () -> QueryResponse
+   ): QueryResponse = GlobalScope.run {
       queryMonitor.reportStart()
       val ret = block.invoke()
       queryMonitor.reportComplete()
@@ -224,26 +249,27 @@ class QueryService(
       vyneUser: VyneUser? = null,
       clientQueryId: String?
    ): QueryResponse = monitored(query, clientQueryId, vyneUser) {
-         log().info("VyneQL query => $query")
-         val vyne = vyneProvider.createVyne(vyneUser.facts())
-         val response = try {
-            vyne.query(query, clientQueryId = clientQueryId)
-         } catch (e: CompilationException) {
-            log().info("The query failed compilation: ${e.message}")
-            FailedSearchResponse(
-               message = e.message!!, // Message contains the error messages from the compiler
-               profilerOperation = null,
-               clientQueryId = clientQueryId
-            )
-         } catch (e: SearchFailedException) {
-            FailedSearchResponse(e.message!!, e.profilerOperation, clientQueryId = clientQueryId)
-         } catch (e: NotImplementedError) {
-            // happens when Schema is empty
-            FailedSearchResponse(e.message!!, null, clientQueryId = clientQueryId)
-         }
-      historianService.captureQueryHistory(query, response)
-         response
+      log().info("VyneQL query => $query")
+      val vyne = vyneProvider.createVyne(vyneUser.facts())
+      val response = try {
+         vyne.query(query, clientQueryId = clientQueryId)
+      } catch (e: CompilationException) {
+         log().info("The query failed compilation: ${e.message}")
+         FailedSearchResponse(
+            message = e.message!!, // Message contains the error messages from the compiler
+            profilerOperation = null,
+            clientQueryId = clientQueryId
+         )
+      } catch (e: SearchFailedException) {
+         FailedSearchResponse(e.message!!, e.profilerOperation, clientQueryId = clientQueryId)
+      } catch (e: NotImplementedError) {
+         // happens when Schema is empty
+         FailedSearchResponse(e.message!!, null, clientQueryId = clientQueryId)
       }
+      QueryEventObserver(historyDbWriter)
+         .captureQueryHistory(query, response)
+      response
+   }
 
 //
 //   /**
@@ -329,25 +355,29 @@ class QueryService(
 //         .writeValue(outputStream, response)
 //   }
 
-   private fun executeQuery(query: Query): QueryResponse {
+   private suspend fun executeQuery(query: Query): QueryResponse {
       val vyne = vyneProvider.createVyne()
 
       parseFacts(query.facts, vyne.schema).forEach { (fact, factSetId) ->
          vyne.addModel(fact, factSetId)
       }
 
-      return try {
+      val response = try {
          // Note: Only using the default set for the originating query,
          // but the queryEngine contains all the factSets, so we can expand this later.
          val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT))
          when (query.queryMode) {
-            QueryMode.DISCOVER -> runBlocking { queryContext.find(query.expression) }
-            QueryMode.GATHER -> runBlocking { queryContext.findAll(query.expression) }
-            QueryMode.BUILD -> runBlocking { queryContext.build(query.expression) }
+            QueryMode.DISCOVER -> queryContext.find(query.expression)
+            QueryMode.GATHER -> queryContext.findAll(query.expression)
+            QueryMode.BUILD -> queryContext.build(query.expression)
          }
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation)
       }
+
+      QueryEventObserver(historyDbWriter)
+         .captureQueryHistory(query, response)
+      return response
    }
 
    private fun parseFacts(facts: List<Fact>, schema: Schema): List<Pair<TypedInstance, FactSetId>> {

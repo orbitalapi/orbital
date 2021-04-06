@@ -56,7 +56,13 @@ class FirstEntryMetadataResultSerializer(private val response: QueryResult) : Qu
        * This is the serialized instance, as converted by a RawObjectMapper.
        */
       val value: Any?
-   )
+   ) {
+      init {
+         if (typeName!!.fullyQualifiedName.contains("Array")) {
+            error("Don't use arrays here")
+         }
+      }
+   }
 
    override fun serialize(item: TypedInstance): Any {
       // NOte: There's a small race condition here, where we could emit metadata more than once,

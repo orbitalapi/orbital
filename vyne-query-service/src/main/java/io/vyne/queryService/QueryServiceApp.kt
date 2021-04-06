@@ -2,8 +2,6 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.MapperFeature
 import com.netflix.discovery.EurekaClient
-import feign.codec.Decoder
-import feign.codec.Encoder
 import io.vyne.VyneCacheConfiguration
 import io.vyne.cask.api.CaskApi
 import io.vyne.query.TaxiJacksonModule
@@ -17,7 +15,6 @@ import io.vyne.spring.VyneSchemaPublisher
 import io.vyne.utils.log
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
-import org.springframework.beans.factory.ObjectFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
@@ -28,7 +25,6 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
-import org.springframework.cloud.openfeign.EnableFeignClients
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -38,23 +34,12 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
-import javax.inject.Provider
-import org.springframework.cloud.openfeign.support.SpringDecoder
-
-import org.springframework.boot.autoconfigure.http.HttpMessageConverters
-import org.springframework.cloud.openfeign.support.SpringEncoder
-
-import feign.form.spring.SpringFormEncoder
 import reactivefeign.spring.config.EnableReactiveFeignClients
+import javax.inject.Provider
 
 
 @SpringBootApplication
 @EnableConfigurationProperties(QueryServerConfig::class, VyneCacheConfiguration::class)
-@EnableVyneEmbeddedSearch
-@VyneSchemaPublisher
-//@EnableFeignClients(clients = [CaskApi::class])
-@EnableReactiveFeignClients(clients = [CaskApi::class])
-@VyneQueryServer
 class QueryServiceApp {
 
    companion object {
@@ -199,4 +184,12 @@ class QueryServerConfig {
    var newSchemaSubmissionEnabled: Boolean = false
 }
 
+@Configuration
+@VyneSchemaPublisher
+@VyneQueryServer
+@EnableVyneEmbeddedSearch
+class VyneConfig
 
+@Configuration
+@EnableReactiveFeignClients(clients = [CaskApi::class])
+class FeignConfig

@@ -1,12 +1,14 @@
 package io.vyne.queryService.history.db.entity
 
-import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.JpaRepository
 
-import org.springframework.data.repository.reactive.ReactiveCrudRepository
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
-
-interface QueryHistoryRecordRepository: ReactiveCrudRepository<QueryHistoryRecordEntity, Long> {
-   fun findByQueryId(queryId: String): Mono<QueryHistoryRecordEntity>
-   fun findByIdNotNull(page: Pageable): Flux<QueryHistoryRecordEntity>
+interface QueryHistoryRecordRepository : JpaRepository<PersistentQuerySummary, String> {
+//   fun findByQueryId(queryId: String): Mono<PersistentQuerySummary>
+//   fun findByIdNotNull(page: Pageable): Flux<PersistentQuerySummary>
 }
+
+interface QueryResultRowRepository : JpaRepository<QueryResultRow, Long> {
+
+}
+
+interface LineageRecordRepository : JpaRepository<LineageRecord, String>
