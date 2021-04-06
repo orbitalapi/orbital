@@ -72,7 +72,7 @@ abstract class BaseQueryServiceTest {
       this.vyne = vyne
       val mockVyneFactory = mock<VyneFactory>()
       whenever(mockVyneFactory.createVyne()).thenReturn(vyne)
-      queryService = QueryService(mockVyneFactory, QueryHistorian(), Jackson2ObjectMapperBuilder().build(), QueryMetaDataService())
+      queryService = QueryService(mockVyneFactory, QueryHistorian(), Jackson2ObjectMapperBuilder().build())
 
       stubService.addResponse("getOrders", vyne.parseJsonModel("Order[]", """
          [
