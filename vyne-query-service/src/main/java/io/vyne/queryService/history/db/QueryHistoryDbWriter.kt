@@ -7,7 +7,6 @@ import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
 import io.vyne.queryService.history.*
-import io.vyne.queryService.history.db.entity.*
 import io.vyne.utils.log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

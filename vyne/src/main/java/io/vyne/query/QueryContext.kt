@@ -77,7 +77,8 @@ data class QueryResult(
    override val queryResponseId: String = UUID.randomUUID().toString(),
    val truncated: Boolean = false,
    val anonymousTypes: Set<Type> = setOf(),
-   override val clientQueryId: String? = null
+   override val clientQueryId: String? = null,
+   override val queryId: String? = null
 ) : QueryResponse {
 
    val duration = profilerOperation?.duration
@@ -143,6 +144,7 @@ interface QueryResponse {
    val responseStatus: ResponseStatus
    val queryResponseId: String
    val clientQueryId: String?
+   val queryId: String?
 
    @get:JsonProperty("fullyResolved")
    val isFullyResolved: Boolean
@@ -218,7 +220,12 @@ data class QueryContext(
     * We don't really care about clashes at this point, but may
     * protect against it at a later time.
     */
-   val clientQueryId: String? = null
+   val clientQueryId: String? = null,
+   /**
+    * Unique ID generated for query context
+    */
+   val queryId: String? = UUID.randomUUID().toString()
+
 ) : ProfilerOperation by profiler {
 
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
@@ -257,9 +264,11 @@ data class QueryContext(
          facts: Set<TypedInstance>,
          queryEngine: QueryEngine,
          profiler: QueryProfiler,
-         clientQueryId: String? = null
+         clientQueryId: String? = null,
+         queryId: String? = null
+
       ): QueryContext {
-         return QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, clientQueryId = clientQueryId)
+         return QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, clientQueryId = clientQueryId, queryId = queryId)
       }
 
    }

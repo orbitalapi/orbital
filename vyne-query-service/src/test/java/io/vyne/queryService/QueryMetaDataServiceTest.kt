@@ -28,7 +28,7 @@ class QueryMetaDataServiceTest {
       queryMetaDataService.reportState(queryId, QueryState.COMPLETE)
 
       //then
-      eventFlow.test {
+      eventFlow?.test {
          //expect latest item
          expectItem()
          //but not more
@@ -49,7 +49,7 @@ class QueryMetaDataServiceTest {
 
       //when - many events regarding the query are published
       val count = AtomicInteger(0)
-      eventFlow.test {
+      eventFlow?.test {
 
          repeat(5) {
             queryMetaDataService.reportState(queryId, QueryState.RUNNING)
@@ -80,7 +80,7 @@ class QueryMetaDataServiceTest {
 
       //
       val latestMetaData = queryMetaDataService.queryMetaData(queryId)
-      assertEquals(QueryState.COMPLETE, latestMetaData.state)
+      assertEquals(QueryState.COMPLETE, latestMetaData?.state)
    }
 
    suspend fun monitored(queryId: String, block: suspend () -> String):String = GlobalScope.run {

@@ -7,9 +7,6 @@ import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
 import io.vyne.query.ResultMode
 import io.vyne.queryService.BaseQueryServiceTest
-import io.vyne.queryService.history.db.entity.LineageRecordRepository
-import io.vyne.queryService.history.db.entity.QueryHistoryRecordRepository
-import io.vyne.queryService.history.db.entity.QueryResultRowRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Before

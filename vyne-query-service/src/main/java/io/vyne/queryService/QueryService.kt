@@ -40,7 +40,8 @@ data class FailedSearchResponse(
    override val profilerOperation: ProfilerOperation?,
    override val queryResponseId: String = UUID.randomUUID().toString(),
    val results: Map<String, Any?> = mapOf(),
-   override val clientQueryId: String? = null
+   override val clientQueryId: String? = null,
+   override val queryId: String? = null
 
 ) : QueryResponse {
    override val responseStatus: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.ERROR
@@ -70,8 +71,7 @@ typealias QueryResponseString = String
 class QueryService(
    val vyneProvider: VyneProvider,
    val historyDbWriter: QueryHistoryDbWriter,
-   val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   val queryMonitor: QueryMonitor
+   val objectMapper: ObjectMapper
 ) {
 
    @PostMapping(
@@ -83,9 +83,10 @@ class QueryService(
       @RequestBody query: Query,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+      @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
    ): ResponseEntity<Flow<Any>> {
 
-      val queryResult = executeQuery(query)
+      val queryResult = executeQuery(query, clientQueryId)
       return queryResultToResponseEntity(queryResult, resultMode, contentType)
    }
 
@@ -166,12 +167,12 @@ class QueryService(
    suspend fun monitored(
       query: TaxiQlQueryString,
       clientQueryId: String?,
-      vyneUser: VyneUser?,
+     queryId: String, vyneUser: VyneUser?,
       block: suspend () -> QueryResponse
    ): QueryResponse = GlobalScope.run {
-      queryMonitor.reportStart()
+      QueryMetaDataService.MonitorService.monitor.reportStart(queryId, clientQueryId)
       val ret = block.invoke()
-      queryMonitor.reportComplete()
+      QueryMetaDataService.MonitorService.monitor.reportComplete(queryId)
       return ret
    }
 
@@ -189,7 +190,7 @@ class QueryService(
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
    ): ResponseEntity<Flow<Any>> {
       val user = auth?.toVyneUser()
-      val response = vyneQLQuery(query, user, clientQueryId = clientQueryId)
+      val response = vyneQLQuery(query, user, clientQueryId = clientQueryId, queryId = UUID.randomUUID().toString())
       return queryResultToResponseEntity(response, resultMode, contentType)
    }
 
@@ -231,7 +232,8 @@ class QueryService(
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
    ): Flow<Any?> {
       val user = auth?.toVyneUser()
-      val queryResponse = vyneQLQuery(query, user, clientQueryId)
+      val queryId = UUID.randomUUID().toString()
+      val queryResponse = vyneQLQuery(query, user, clientQueryId, queryId)
       return when (queryResponse) {
          is FailedSearchResponse -> flowOf(queryResponse)
          is QueryResult -> {
@@ -243,28 +245,28 @@ class QueryService(
       } ?: emptyFlow()
    }
 
-
    private suspend fun vyneQLQuery(
       query: TaxiQlQueryString,
       vyneUser: VyneUser? = null,
-      clientQueryId: String?
-   ): QueryResponse = monitored(query, clientQueryId, vyneUser) {
+      clientQueryId: String?,
+      queryId: String
+   ): QueryResponse = monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser =vyneUser) {
       log().info("VyneQL query => $query")
       val vyne = vyneProvider.createVyne(vyneUser.facts())
       val response = try {
-         vyne.query(query, clientQueryId = clientQueryId)
+         vyne.query(query, queryId = queryId)
       } catch (e: CompilationException) {
          log().info("The query failed compilation: ${e.message}")
          FailedSearchResponse(
             message = e.message!!, // Message contains the error messages from the compiler
             profilerOperation = null,
-            clientQueryId = clientQueryId
-         )
+            clientQueryId = clientQueryId,
+         queryId = queryId)
       } catch (e: SearchFailedException) {
-         FailedSearchResponse(e.message!!, e.profilerOperation, clientQueryId = clientQueryId)
+         FailedSearchResponse(e.message!!, e.profilerOperation, queryId = queryId)
       } catch (e: NotImplementedError) {
          // happens when Schema is empty
-         FailedSearchResponse(e.message!!, null, clientQueryId = clientQueryId)
+         FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
       QueryEventObserver(historyDbWriter)
@@ -355,7 +357,7 @@ class QueryService(
 //         .writeValue(outputStream, response)
 //   }
 
-   private suspend fun executeQuery(query: Query): QueryResponse {
+   private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
       val vyne = vyneProvider.createVyne()
 
       parseFacts(query.facts, vyne.schema).forEach { (fact, factSetId) ->
@@ -365,7 +367,8 @@ class QueryService(
       val response = try {
          // Note: Only using the default set for the originating query,
          // but the queryEngine contains all the factSets, so we can expand this later.
-         val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT))
+         val queryId = UUID.randomUUID().toString()
+         val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT), queryId = queryId)
          when (query.queryMode) {
             QueryMode.DISCOVER -> queryContext.find(query.expression)
             QueryMode.GATHER -> queryContext.findAll(query.expression)

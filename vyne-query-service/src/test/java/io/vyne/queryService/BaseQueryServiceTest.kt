@@ -71,7 +71,7 @@ abstract class BaseQueryServiceTest {
       val (vyne, stubService) = testVyne(testSchema)
       this.stubService = stubService
       this.vyne = vyne
-      queryService = QueryService(SimpleVyneProvider(vyne), historyDbWriter, Jackson2ObjectMapperBuilder().build(), QueryMetaDataService())
+      queryService = QueryService(SimpleVyneProvider(vyne), historyDbWriter, Jackson2ObjectMapperBuilder().build())
 
       prepareStubService(stubService, vyne)
    }

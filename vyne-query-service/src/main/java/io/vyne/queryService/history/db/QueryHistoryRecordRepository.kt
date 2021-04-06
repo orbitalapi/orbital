@@ -1,4 +1,4 @@
-package io.vyne.queryService.history.db.entity
+package io.vyne.queryService.history.db
 
 import io.vyne.query.QueryResponse
 import org.springframework.data.r2dbc.repository.Modifying
@@ -24,11 +24,11 @@ interface QueryHistoryRecordRepository : R2dbcRepository<PersistentQuerySummary,
 
    fun findByQueryId(queryId: String): Mono<PersistentQuerySummary>
    fun findByClientQueryId(queryId: String): Mono<PersistentQuerySummary>
-//   fun findByIdNotNull(page: Pageable): Flux<PersistentQuerySummary>
 }
 
 interface QueryResultRowRepository : R2dbcRepository<QueryResultRow, Long> {
    // TODO : This could be big, and returning everything
+   // Does r2dbc support pagination?
    fun findAllByQueryId(queryId: String): Flux<QueryResultRow>
 }
 
