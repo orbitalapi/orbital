@@ -29,6 +29,7 @@
          <groupId>io.vyne</groupId>
          <artifactId>vyne</artifactId>
          <version>${project.version}</version>
+         <scope>test</scope>
          <type>test-jar</type>
       </dependency>
       <dependency>

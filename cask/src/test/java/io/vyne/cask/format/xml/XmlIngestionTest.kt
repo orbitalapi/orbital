@@ -11,6 +11,7 @@ import io.vyne.cask.CaskService
 import io.vyne.cask.api.ContentType
 import io.vyne.cask.api.XmlIngestionParameters
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.CaskMessage
 import io.vyne.cask.ingest.IngesterFactory
@@ -41,6 +42,7 @@ class XmlIngestionTest {
    private val connection = mock< Connection>()
    private val pgConnection = mock<PGConnection>()
    private val copyManager = mock< CopyManager>()
+   private val caskViewService = mock <CaskViewService>()
 
    @Before
    fun setUp() {
@@ -62,7 +64,8 @@ class XmlIngestionTest {
          ingesterFactory,
          configRepository,
          caskDAO,
-         ingestionErrorRepository
+         ingestionErrorRepository,
+         caskViewService
       )
       val type = caskService.resolveType("OrderWindowSummaryXml").getOrElse {
          error("Type not found")

@@ -84,6 +84,9 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
       return config.copy(versionHash = taxiView.definitionHash)
    }
 
+   fun getDependencies(taxiView: View): List<QualifiedName> {
+      return fetchTableNamesForParticipatingTypes(taxiView).keys.toList()
+   }
    private fun viewBodyDefinitionToSql(
       viewBodyDefinition: ViewBodyDefinition,
       tableNamesForSourceTypes: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): String {

@@ -17,7 +17,9 @@
   </div>
 
   <div class="results-section">
-    <app-cask-details  *ngIf="caskConfig && caskConfig.details" [caskConfig]="caskConfig" (onDeleteCask)="promptDeleteCask()" (onClearCask)="promptClearCask()"></app-cask-details>
+    <app-cask-details  *ngIf="caskConfig && caskConfig.details"
+                       [caskConfig]="caskConfig"
+                       (deleteCask)="promptDeleteCask()"></app-cask-details>
   </div>
 
 </div>

@@ -14,6 +14,7 @@ import com.winterbe.expekt.should
 import io.vyne.cask.CaskService
 import io.vyne.cask.api.CaskIngestionResponse
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.ingest.*
 import io.vyne.cask.query.CaskDAO
@@ -43,6 +44,7 @@ class CaskWebsocketHandlerTest {
    val caskConfigRepository:CaskConfigRepository = mock()
    val ingestionErrorRepository: IngestionErrorRepository = mock()
    val applicationEventPublisher = mock<ApplicationEventPublisher>()
+   val caskViewService: CaskViewService = mock()
    lateinit var wsHandler: CaskWebsocketHandler
    lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
 
@@ -59,7 +61,7 @@ class CaskWebsocketHandlerTest {
       }
    }
 
-   private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester),caskConfigRepository, caskDao, ingestionErrorRepository)
+   private val caskService = CaskService(schemaProvider(), IngesterFactoryMock(ingester),caskConfigRepository, caskDao, ingestionErrorRepository, caskViewService)
    private val mapper: ObjectMapper = jacksonObjectMapper()
 
 

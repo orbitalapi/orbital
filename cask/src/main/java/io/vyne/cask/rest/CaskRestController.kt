@@ -113,8 +113,7 @@ class CaskRestController(private val caskService: CaskService,
 
    override fun getCasks() = caskService.getCasks()
    override fun getCaskDetails(tableName: String) = caskService.getCaskDetails(tableName)
-   override fun deleteCask(tableName: String) = caskService.deleteCask(tableName)
-   override fun emptyCask(tableName: String) = caskService.emptyCask(tableName)
+
    override fun getCaskIngestionErrors(tableName: String, request: CaskIngestionErrorsRequestDto): CaskIngestionErrorDtoPage {
       log().info("Searching ingestion errors for $tableName with criteria $request")
       return caskService.caskIngestionErrorsFor(
@@ -143,8 +142,10 @@ class CaskRestController(private val caskService: CaskService,
       return builder.body(resource)
    }
 
-   override fun deleteCaskByTypeName(typeName: String) {
-      caskService.deleteCaskByTypeName(typeName)
+   override fun deleteCask(tableName: String, force: Boolean) = caskService.deleteCask(tableName, force)
+
+   override fun deleteCaskByTypeName(typeName: String, force: Boolean) {
+      caskService.deleteCaskByTypeName(typeName, force)
    }
 }
 

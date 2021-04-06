@@ -174,7 +174,7 @@ namespace vyne {
 
          service PersonService {
             @HttpOperation(method = "GET" , url = "http://localhost:8081/people")
-            operation findAll() : Person[]
+            operation `findAll`() : Person[]
          }
       """
       )

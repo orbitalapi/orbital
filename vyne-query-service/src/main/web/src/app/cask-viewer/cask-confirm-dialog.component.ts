@@ -15,7 +15,8 @@ export class CaskConfirmDialogComponent implements OnInit {
 
 }
 
-type CaskConfirmDialogData = {
+interface CaskConfirmDialogData  {
   title: string;
-  message: string
+  message: string;
+  messages?: string[];
 }
