@@ -18,11 +18,14 @@ spring:
       web-application-type: reactive
    codec:
       max-in-memory-size: 100MB
-
+   r2dbc:
+      url: r2dbc:h2:file://././vyne-query-history
+      username: sa
+      password:
 vyne:
    newSchemaSubmissionEnabled: true
    query-history:
-      enabled: false
+      enabled: true
    data-lineage:
       remoteCalls:
          enabled: false

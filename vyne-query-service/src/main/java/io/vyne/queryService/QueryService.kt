@@ -183,8 +183,8 @@ class QueryService(
    )
    suspend fun submitVyneQlQuery(
       @RequestBody query: TaxiQlQueryString,
-      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
-      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode = ResultMode.RAW,
+      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String = MediaType.APPLICATION_JSON_VALUE,
       auth: Authentication? = null,
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
    ): ResponseEntity<Flow<Any>> {
@@ -266,9 +266,9 @@ class QueryService(
          // happens when Schema is empty
          FailedSearchResponse(e.message!!, null, clientQueryId = clientQueryId)
       }
+
       QueryEventObserver(historyDbWriter)
-         .captureQueryHistory(query, response)
-      response
+         .responseWithQueryHistoryListener(query, response)
    }
 
 //
@@ -375,9 +375,8 @@ class QueryService(
          FailedSearchResponse(e.message!!, e.profilerOperation)
       }
 
-      QueryEventObserver(historyDbWriter)
-         .captureQueryHistory(query, response)
-      return response
+      return QueryEventObserver(historyDbWriter)
+         .responseWithQueryHistoryListener(query, response)
    }
 
    private fun parseFacts(facts: List<Fact>, schema: Schema): List<Pair<TypedInstance, FactSetId>> {

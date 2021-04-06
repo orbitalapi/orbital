@@ -183,3 +183,5 @@ shipman-store/
 /schemas/
 /schemas
 vyne-query-service/search/
+
+*.mv.db
