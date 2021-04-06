@@ -112,18 +112,20 @@
       </dependency>
 
 
-      <!--
+
       <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-websocket</artifactId>
-      </dependency>
-      -->
+      	 <exclusions>
+            <!-- Exclude the Tomcat dependency -->
+            <exclusion>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-tomcat</artifactId>
+            </exclusion>
+        </exclusions>
 
-      <dependency>
-         <groupId>org.yeauty</groupId>
-         <artifactId>netty-websocket-spring-boot-starter</artifactId>
-         <version>0.10.0</version>
       </dependency>
+
 
       <dependency>
          <groupId>javax.websocket</groupId>

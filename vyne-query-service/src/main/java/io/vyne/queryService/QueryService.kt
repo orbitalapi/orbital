@@ -220,36 +220,6 @@ class QueryService(
       } ?: emptyFlow()
    }
 
-   /**
-    * Endpoint for monitoring a query's metadata given supplied queryId
-    */
-   @GetMapping(
-      value = ["/api/vyneql/{queryId}/metadata", "/api/taxiql/{queryId}/metadata"],
-      produces = [MediaType.TEXT_EVENT_STREAM_VALUE]
-   )
-   suspend fun queryMetaData(
-      @RequestHeader(value = "Accept", defaultValue = MediaType.TEXT_EVENT_STREAM_VALUE) contentType: String,
-      auth: Authentication? = null,
-      @PathVariable("queryId") queryId: String
-   ): Flow<QueryMetaData?>? {
-      return QueryMetaDataService.MonitorService.monitor.queryMetaDataEvents(queryId)
-   }
-
-   /**
-    * Endpoint for monitoring all running query metadata
-    */
-   @GetMapping(
-      value = ["/api/vyneql/metadata", "/api/taxiql/metadata"],
-      produces = [MediaType.TEXT_EVENT_STREAM_VALUE]
-   )
-   suspend fun allMetaData(
-      @RequestHeader(value = "Accept", defaultValue = MediaType.TEXT_EVENT_STREAM_VALUE) contentType: String,
-      auth: Authentication? = null
-   ): Flow<QueryMetaData?>? {
-      return QueryMetaDataService.MonitorService.monitor.metaDataEvents()
-   }
-
-
    private suspend fun vyneQLQuery(
       query: TaxiQlQueryString,
       vyneUser: VyneUser? = null,
