@@ -185,3 +185,4 @@ shipman-store/
 vyne-query-service/search/
 
 *.mv.db
+lsp/
