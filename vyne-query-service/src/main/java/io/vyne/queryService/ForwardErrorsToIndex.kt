@@ -6,6 +6,7 @@ import org.springframework.web.server.WebFilter
 import org.springframework.web.server.WebFilterChain
 import reactor.core.publisher.Mono
 
+/*
 @Component
 class WebUiFilter : WebFilter {
    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
@@ -25,3 +26,4 @@ class WebUiFilter : WebFilter {
       }
    }
 }
+*/
