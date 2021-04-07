@@ -34,7 +34,7 @@ class OperationService(private val operationInvoker: OperationInvoker, private v
       val (service, operation) = lookupOperation(serviceName, operationName)
       val parameterTypedInstances = mapFactsToParameters(operation, facts)
       try {
-         val operationResult = operationInvoker.invoke(service, operation, parameterTypedInstances, DefaultProfilerOperation.root())
+         val operationResult = operationInvoker.invoke(service, operation, parameterTypedInstances, DefaultProfilerOperation.root(), "ABCD")
          return ResponseEntity.ok(operationResult)
       } catch (e: OperationInvocationException) {
          throw ResponseStatusException(e.httpStatus, e.message)

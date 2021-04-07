@@ -73,7 +73,7 @@ class StubService(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       profiler: ProfilerOperation
-   ): Flow<TypedInstance> {
+   , queryId: String?): Flow<TypedInstance> {
       val paramDescription = parameters.joinToString { "${it.second.type.name.shortDisplayName} = ${it.second.value}" }
       log().info("Invoking ${service.name} -> ${operation.name}($paramDescription)")
       val stubResponseKey = if (operation.hasMetadata("StubResponse")) {

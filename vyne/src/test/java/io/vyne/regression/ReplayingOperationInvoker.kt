@@ -27,7 +27,7 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
    override fun invoke(service: Service,
                        operation: RemoteOperation,
                        parameters: List<Pair<Parameter, TypedInstance>>,
-                       profilerOperation: ProfilerOperation): Flow<TypedInstance> {
+                       profilerOperation: ProfilerOperation, queryId: String?): Flow<TypedInstance> {
       val (_, url, _) = operation.httpOperationMetadata()
       val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
       val path = UriComponentsBuilder.newInstance()

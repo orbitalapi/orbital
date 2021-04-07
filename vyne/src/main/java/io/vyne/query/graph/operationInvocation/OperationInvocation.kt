@@ -2,25 +2,9 @@ package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
-import io.vyne.query.ProfilerOperation
-import io.vyne.query.QueryContext
-import io.vyne.query.QueryResult
-import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.SearchFailedException
-import io.vyne.query.graph.EdgeEvaluator
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.EvaluatedLink
-import io.vyne.query.graph.LinkEvaluator
-import io.vyne.query.graph.ParameterFactory
-import io.vyne.schemas.ConstraintEvaluations
-import io.vyne.schemas.Link
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Relationship
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Service
-import io.vyne.schemas.fqn
+import io.vyne.query.*
+import io.vyne.query.graph.*
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
@@ -37,7 +21,7 @@ interface OperationInvocationService {
 interface OperationInvoker {
    fun canSupport(service: Service, operation: RemoteOperation): Boolean
 
-   fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): Flow<TypedInstance>
+   fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String? = null): Flow<TypedInstance>
 }
 
 class DefaultOperationInvocationService(private val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
@@ -53,7 +37,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
 
       val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
-      return invoker.invoke(service, operation, resolvedParams.toList(), context)
+      return invoker.invoke(service, operation, resolvedParams.toList(), context,context.queryId)
    }
 
    private suspend fun gatherParameters(parameters: List<Parameter>, candidateParamValues: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): Flow<Pair<Parameter, TypedInstance>> {

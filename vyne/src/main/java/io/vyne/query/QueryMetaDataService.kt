@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 import io.vyne.query.QuerySpecTypeNode
+import io.vyne.schemas.QualifiedName
 import io.vyne.utils.log
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
@@ -89,7 +90,7 @@ class QueryMetaDataService : QueryMonitor {
    override fun reportTarget(queryId:String?, target: QuerySpecTypeNode) {
       log().info("Reporting Query Target - ${queryId}")
       queryMetaData(queryId).let {
-         it?.copy(target = target, queryMetaDataEventTime = System.currentTimeMillis())
+         it?.copy(target = target.type.name, queryMetaDataEventTime = System.currentTimeMillis())
       }.let {
          GlobalScope.launch { _notifyMetaData(queryId, it) }
       }
@@ -142,7 +143,7 @@ class QueryMetaDataService : QueryMonitor {
 }
 
 data class QueryMetaData(
-   val target: QuerySpecTypeNode? = null,
+   val target: QualifiedName? = null,
    val queryId: String? = null,
    val userQueryId: String? = null,
    val state:QueryState,

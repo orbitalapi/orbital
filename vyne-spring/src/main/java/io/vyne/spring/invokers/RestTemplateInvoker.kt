@@ -1,5 +1,6 @@
 package io.vyne.spring.invokers
 
+import io.vyne.http.HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT
 import io.vyne.http.UriVariableProvider
 import io.vyne.http.UriVariableProvider.Companion.buildRequestBody
 import io.vyne.models.OperationResult
@@ -8,6 +9,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.queryService.QueryMetaDataService
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
@@ -68,8 +70,9 @@ class RestTemplateInvoker(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       profilerOperation: ProfilerOperation
-   ): Flow<TypedInstance> {
+   , queryId: String?): Flow<TypedInstance> {
       log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}")
+
 
       val (_, url, method) = operation.httpOperationMetadata()
       val httpMethod = HttpMethod.resolve(method)!!
@@ -99,6 +102,7 @@ class RestTemplateInvoker(
          .metrics()
          .publishOn(Schedulers.boundedElastic())
          .flatMapMany { clientResponse ->
+            reportEstimatedResults(queryId, clientResponse.headers())
             clientResponse.bodyToFlux<String>()
                .flatMap { responseString ->
                   val remoteCall = RemoteCall(
@@ -128,7 +132,15 @@ class RestTemplateInvoker(
 
    }
 
-   private fun handleSuccessfulHttpResponse(
+   private fun reportEstimatedResults(queryId: String?, headers: ClientResponse.Headers) {
+      if (queryId == null) {
+         return
+      }
+      if (headers.header(STREAM_ESTIMATED_RECORD_COUNT).isNotEmpty()) {
+         QueryMetaDataService.monitor.reportRecords(queryId, Integer.valueOf(headers.header(STREAM_ESTIMATED_RECORD_COUNT)[0]))
+      }
+
+   }private fun handleSuccessfulHttpResponse(
       result: String,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
