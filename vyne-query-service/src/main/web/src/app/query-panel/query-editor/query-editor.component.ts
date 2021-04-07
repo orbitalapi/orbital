@@ -6,15 +6,13 @@ import {editor} from 'monaco-editor';
 import {
   FailedSearchResponse,
   isFailedSearchResponse,
-  isValueWithTypeName,
-  QueryHistoryRecord,
+  isValueWithTypeName, QueryHistorySummary,
   QueryResult,
   QueryService,
   randomId,
   ResponseStatus,
   ResultMode,
   StreamingQueryMessage,
-  VyneQlQueryHistoryRecord
 } from 'src/app/services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {HttpErrorResponse} from '@angular/common/http';
@@ -45,7 +43,7 @@ declare const monaco: any; // monaco
 export class QueryEditorComponent implements OnInit {
 
   @Input()
-  initialQuery: QueryHistoryRecord;
+  initialQuery: QueryHistorySummary;
 
   editorOptions: { theme: 'vs-dark', language: 'vyneQL' };
   monacoEditor: ICodeEditor;
@@ -127,7 +125,7 @@ export class QueryEditorComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.query = this.initialQuery ? (this.initialQuery as VyneQlQueryHistoryRecord).query : '';
+    this.query = this.initialQuery ? this.initialQuery.taxiQl : '';
   }
 
   remeasure() {

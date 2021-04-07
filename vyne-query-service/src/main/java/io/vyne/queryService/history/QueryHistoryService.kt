@@ -3,52 +3,35 @@ package io.vyne.queryService.history
 import io.vyne.models.DataSource
 import io.vyne.query.ProfilerOperationDTO
 import io.vyne.query.QueryResponse
-import io.vyne.query.history.QueryHistoryRecord
-import io.vyne.queryService.RegressionPackProvider
+import io.vyne.queryService.history.db.PersistentQuerySummary
+import io.vyne.queryService.history.db.QueryHistoryRecordRepository
 import io.vyne.schemas.QualifiedName
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Instant
-import kotlin.streams.toList
 
 @RestController
 class QueryHistoryService(
-   private val history: QueryHistory,
+   private val history: QueryHistoryRecordRepository,
    private val queryHistoryExporter: QueryHistoryExporter,
-   private val regressionPackProvider: RegressionPackProvider
+//   private val regressionPackProvider: RegressionPackProvider
 ) {
 
    @DeleteMapping("/api/query/history")
    fun clearHistory() {
-      history.clear()
+      history.deleteAll().subscribe()
    }
 
    @GetMapping("/api/query/history")
-   fun listHistory(): List<QueryHistoryRecordSummary<Any>> {
-
-      return history.list()
-         .map { historyRecord ->
-            QueryHistoryRecordSummary(
-               historyRecord.id,
-               historyRecord.query,
-               historyRecord.response.responseStatus,
-               historyRecord.response.durationMs,
-               historyRecord.response.resultSize,
-               historyRecord.timestamp
-            )
-         }
-         .toStream().toList()
+   fun listHistory(): Flux<PersistentQuerySummary> {
+      return history.findAll()
    }
 
    @GetMapping("/api/query/history/{id}")
-   fun getHistoryRecord(@PathVariable("id") queryId: String): Mono<QueryHistoryRecord<out Any>> {
-      return this.history.get(queryId)
+   fun getHistoryRecord(@PathVariable("id") queryId: String): Mono<PersistentQuerySummary> {
+      return this.history.findByQueryId(queryId)
 
    }
 
@@ -79,19 +62,25 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/{id}/profile")
    fun getQueryProfile(@PathVariable("id") queryId: String): Mono<ProfilerOperationDTO?> {
-      return history.get(queryId).map { it.response.profilerOperation }
+//      return history.get(queryId).map { it.response.profilerOperation }
+      TODO()
    }
 
    @GetMapping("/api/query/history/{id}/{type}/export")
-   fun getQueryExport(@PathVariable("id") queryId: String, @PathVariable("type") exportType: ExportType): Mono<ByteArray> {
-      return history.get(queryId).map {
-         queryHistoryExporter.export(it.response.results!!, exportType)
-      }
+   fun getQueryExport(
+      @PathVariable("id") queryId: String,
+      @PathVariable("type") exportType: ExportType
+   ): Mono<ByteArray> {
+      TODO()
+//      return history.get(queryId).map {
+//         queryHistoryExporter.export(it.response.results!!, exportType)
+//      }
    }
 
    @PostMapping("/api/query/history/{id}/regressionPack")
    fun getRegressionPack(@RequestBody request: RegressionPackRequest): Mono<StreamingResponseBody> {
-      return regressionPackProvider.createRegressionPack(request)
+//      return regressionPackProvider.createRegressionPack(request)
+      TODO()
    }
 
 }
@@ -99,8 +88,8 @@ class QueryHistoryService(
 data class RegressionPackRequest(val queryId: String, val regressionPackName: String)
 
 data class QueryResultNodeDetail(
-   val attributeName:String,
-   val path:String,
+   val attributeName: String,
+   val path: String,
    val typeName: QualifiedName,
    val source: DataSource?
 )

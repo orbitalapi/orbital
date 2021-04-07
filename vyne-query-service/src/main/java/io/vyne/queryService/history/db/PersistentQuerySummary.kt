@@ -1,8 +1,11 @@
 package io.vyne.queryService.history.db
 
+import com.fasterxml.jackson.annotation.JsonRawValue
 import io.vyne.query.QueryResponse
 import org.springframework.data.annotation.Id
+import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Table
+import java.time.Duration
 import java.time.Instant
 
 
@@ -14,6 +17,7 @@ data class PersistentQuerySummary(
    // Note - attempts to use the actual object here (rather than the
    // json) have failed.  Looks like r2dbc support for column-level
    // mappers is still too young.
+   @JsonRawValue
    val queryJson: String?,
    val startTime: Instant,
    val responseStatus: QueryResponse.ResponseStatus,
@@ -24,13 +28,17 @@ data class PersistentQuerySummary(
    // in order to determine if the row exists
    @Id
    val id: Long? = null,
-)
+) {
+   @Transient
+   val durationMs = endTime?.let { Duration.between(startTime, endTime).toMillis() }
+}
 
 @Table
 data class QueryResultRow(
    @Id
    val rowId: Long? = null,
    val queryId: String,
+   @JsonRawValue
    val json: String
 )
 

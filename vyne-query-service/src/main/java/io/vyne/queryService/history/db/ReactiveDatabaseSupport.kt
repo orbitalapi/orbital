@@ -1,7 +1,6 @@
 package io.vyne.queryService.history.db
 
 import io.r2dbc.spi.ConnectionFactory
-import io.vyne.queryService.history.db.entity.QueryHistoryRecordRepository
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

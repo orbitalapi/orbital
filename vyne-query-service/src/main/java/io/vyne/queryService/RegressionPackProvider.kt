@@ -7,13 +7,12 @@ import io.vyne.queryService.history.QueryHistory
 import io.vyne.queryService.history.RegressionPackRequest
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.VersionedSourceProvider
-import org.springframework.stereotype.Component
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import reactor.core.publisher.Mono
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-@Component
+//@Component
 class RegressionPackProvider(objectMapper: ObjectMapper,
                              private val history: QueryHistory,
                              private val schemaProvider: SchemaSourceProvider) {

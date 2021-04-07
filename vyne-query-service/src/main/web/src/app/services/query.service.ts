@@ -58,8 +58,8 @@ export class QueryService {
     );
   }
 
-  getHistoryRecord(queryId: string): Observable<QueryHistoryRecord> {
-    return this.http.get<QueryHistoryRecord>(`${environment.queryServiceUrl}/api/query/history/${queryId}`, this.httpOptions);
+  getHistoryRecord(queryId: string): Observable<QueryHistorySummary> {
+    return this.http.get<QueryHistorySummary>(`${environment.queryServiceUrl}/api/query/history/${queryId}`, this.httpOptions);
   }
 
   getHistory(): Observable<QueryHistorySummary[]> {
@@ -223,34 +223,17 @@ export enum ResultMode {
   VERBOSE = 'VERBOSE'
 }
 
-export interface VyneQlQueryHistoryRecord extends QueryHistoryRecord {
-  query: string;
-}
-
-export interface RestfulQueryHistoryRecord extends QueryHistoryRecord {
-  query: Query;
-}
-
-export interface QueryHistoryRecord {
-  response: QueryResult;
-  timestamp: Date;
-  id: string;
-}
-
-export interface RestfulQueryHistorySummary extends QueryHistorySummary {
-  query: Query;
-}
-
-export interface VyneQlQueryHistorySummary extends QueryHistorySummary {
-  query: string;
-}
-
 export interface QueryHistorySummary {
   queryId: string;
+  clientQueryId: string;
+  taxiQl: string | null;
+  queryJson: Query | null;
+  startTime: Date;
+  endTime: Date | null;
   responseStatus: ResponseStatus;
   durationMs: number;
   recordSize: number;
-  timestamp: Date;
+  errorMessage: string | null;
 }
 
 /**
@@ -283,22 +266,6 @@ export interface FailedSearchResponse {
   queryResponseId: string | null;
   clientQueryId: string | null;
   remoteCalls: RemoteCall[];
-}
-
-export function isVyneQlQueryHistorySummaryRecord(value: QueryHistorySummary): value is VyneQlQueryHistorySummary {
-  return typeof value['query'] === 'string';
-}
-
-export function isVyneQlQueryHistoryRecord(value: QueryHistoryRecord): value is VyneQlQueryHistoryRecord {
-  return typeof value['query'] === 'string';
-}
-
-export function isRestQueryHistoryRecord(value: QueryHistoryRecord): value is RestfulQueryHistoryRecord {
-  return (value as RestfulQueryHistoryRecord).query.queryMode !== undefined;
-}
-
-export function isRestQueryHistorySummaryRecord(value: QueryHistorySummary): value is RestfulQueryHistorySummary {
-  return (value as RestfulQueryHistorySummary).query.queryMode !== undefined;
 }
 
 export function randomId(): string {

@@ -1,13 +1,11 @@
-import {Component, Input, OnInit, Output} from '@angular/core';
-import {QueryHistoryRecord, VyneQlQueryHistoryRecord, VyneQlQueryHistorySummary} from '../services/query.service';
-import {Router} from '@angular/router';
-import {Timespan} from '../query-panel/query-editor/counter-timer.component';
+import {Component, Input} from '@angular/core';
+import {QueryHistorySummary} from '../services/query.service';
 
 @Component({
   selector: 'app-vyneql-record',
   template: `
     <div class="history-item">
-      <code>{{ historyRecord.query }}</code>
+      <code>{{ historyRecord.taxiQl }}</code>
     </div>
   `,
   styleUrls: ['./vyneql-record.component.scss']
@@ -15,5 +13,5 @@ import {Timespan} from '../query-panel/query-editor/counter-timer.component';
 export class VyneqlRecordComponent {
 
   @Input()
-  historyRecord: VyneQlQueryHistorySummary;
+  historyRecord: QueryHistorySummary;
 }

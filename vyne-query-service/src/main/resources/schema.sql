@@ -12,14 +12,14 @@ CREATE TABLE IF NOT EXISTS QUERY_SUMMARY
     error_message   varchar(2000)
 );
 
-CREATE UNIQUE INDEX ix_querySummary_clientQueryId ON QUERY_SUMMARY (client_query_id);
-CREATE UNIQUE INDEX ix_querySummary_queryId ON QUERY_SUMMARY (query_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_querySummary_clientQueryId ON QUERY_SUMMARY (client_query_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_querySummary_queryId ON QUERY_SUMMARY (query_id);
 
 CREATE TABLE IF NOT EXISTS QUERY_RESULT_ROW
 (
     row_id   SERIAL PRIMARY KEY,
     query_id VARCHAR(255),
-    json VARCHAR(MAX)
+    json     VARCHAR(MAX)
 );
 
-CREATE INDEX ix_queryResultRow_queryId ON QUERY_RESULT_ROW (query_id);
+CREATE INDEX IF NOT EXISTS ix_queryResultRow_queryId ON QUERY_RESULT_ROW (query_id);

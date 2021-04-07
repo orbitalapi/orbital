@@ -1,13 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {
-  isRestQueryHistoryRecord,
-  isVyneQlQueryHistoryRecord,
-  ProfilerOperation,
-  QueryHistoryRecord,
-  QueryHistorySummary,
-  QueryResult,
-  QueryService,
-} from '../services/query.service';
+import {ProfilerOperation, QueryHistorySummary, QueryService} from '../services/query.service';
 import {Router} from '@angular/router';
 import {ExportFileService} from '../services/export.file.service';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
@@ -16,6 +8,7 @@ import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDis
 import {DownloadFileType} from '../query-panel/result-display/result-container.component';
 import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
 import {MatDialog} from '@angular/material/dialog';
+import {isNullOrUndefined} from 'util';
 
 @Component({
   selector: 'app-query-history',
@@ -24,7 +17,7 @@ import {MatDialog} from '@angular/material/dialog';
 })
 export class QueryHistoryComponent extends BaseQueryResultDisplayComponent implements OnInit {
   history: QueryHistorySummary[];
-  activeRecord: QueryHistoryRecord;
+  activeRecord: QueryHistorySummary;
 
   constructor(queryService: QueryService,
               typeService: TypesService,
@@ -48,7 +41,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   }
 
   get queryId(): string {
-    return this.activeRecord.id;
+    return this.activeRecord.queryId;
   }
 
   ngOnInit() {
@@ -77,12 +70,12 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
     }
   }
 
-  isVyneQlQuery(record: QueryHistoryRecord): boolean {
-    return isVyneQlQueryHistoryRecord(record);
+  isVyneQlQuery(record: QueryHistorySummary): boolean {
+    return !isNullOrUndefined(record.taxiQl);
   }
 
-  isRestQuery(record: QueryHistoryRecord): boolean {
-    return isRestQueryHistoryRecord(record);
+  isRestQuery(record: QueryHistorySummary): boolean {
+    return !isNullOrUndefined(record.queryJson);
   }
 
   setActiveRecord(historyRecord: QueryHistorySummary) {
@@ -112,7 +105,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   }
 
   setRouteFromActiveRecord() {
-    this.router.navigate(['/query-history', this.activeRecord.id]);
+    this.router.navigate(['/query-history', this.activeRecord.queryId]);
   }
 
   onCloseTypedInstanceDrawer($event: boolean) {
@@ -120,7 +113,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   }
 
   downloadQueryHistory(event: DownloadClickedEvent) {
-    const queryResponseId = (<QueryResult>this.activeRecord.response).queryResponseId;
+    const queryResponseId = this.activeRecord.queryId;
     if (event.format === DownloadFileType.TEST_CASE) {
       const dialogRef = this.dialogService.open(TestSpecFormComponent, {
         width: '550px'

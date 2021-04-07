@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {RestfulQueryHistoryRecord, RestfulQueryHistorySummary} from '../services/query.service';
+import {QueryHistorySummary} from '../services/query.service';
 
 @Component({
   selector: 'app-restful-record',
@@ -11,7 +11,7 @@ import {RestfulQueryHistoryRecord, RestfulQueryHistorySummary} from '../services
         *ngIf="!isLast">, </span> </span>)
       </div>
       <div class="discover-line">
-        <span class="verb">{{ historyRecord.query.queryMode.toLowerCase() }} </span>
+        <span class="verb">{{ historyRecord.queryJson.queryMode.toLowerCase() }} </span>
         <span class="type-name">{{ expressionTypeName }}</span>
       </div>
     </div>
@@ -21,7 +21,7 @@ import {RestfulQueryHistoryRecord, RestfulQueryHistorySummary} from '../services
 export class RestfulRecordComponent {
 
   @Input()
-  historyRecord: RestfulQueryHistorySummary;
+  historyRecord: QueryHistorySummary;
 
   @Input()
   expressionTypeName: string;

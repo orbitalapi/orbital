@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {ProfilerOperation, QueryHistoryRecord, QueryResult} from '../../services/query.service';
+import {ProfilerOperation, QueryHistorySummary, QueryResult} from '../../services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {MatTreeNestedDataSource} from '@angular/material';
 import {NestedTreeControl} from '@angular/cdk/tree';
@@ -31,7 +31,7 @@ export class ResultContainerComponent extends BaseQueryResultComponent implement
   objectKeys = Object.keys;
   objectValues = Object.values;
   @Input()
-  activeRecord: QueryHistoryRecord;
+  activeRecord: QueryHistorySummary;
 
   remoteCallMermaid = '';
 
