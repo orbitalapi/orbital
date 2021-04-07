@@ -24,7 +24,7 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
       return invoker.canSupport(service, operation)
    }
 
-   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): Flow<TypedInstance> {
+   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String?): Flow<TypedInstance> {
       val key = generateCacheKey(service, operation, parameters)
 
       val result = cachedResults.getIfPresent(key)
@@ -40,7 +40,7 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
       }
 
       val value = try {
-         invoker.invoke(service, operation, parameters, profilerOperation)
+         invoker.invoke(service, operation, parameters, profilerOperation, queryId)
       } catch (exception:Exception) {
          log().warn("Operation with cache key $key failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again")
          cachedErrors.put(key,exception)

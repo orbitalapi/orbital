@@ -37,7 +37,7 @@ interface OperationInvocationService {
 interface OperationInvoker {
    fun canSupport(service: Service, operation: RemoteOperation): Boolean
 
-   fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): Flow<TypedInstance>
+   fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String?): Flow<TypedInstance>
 }
 
 class DefaultOperationInvocationService(private val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
@@ -53,7 +53,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
 
       val parameters = gatherParameters(operation.parameters, preferredParams, context, providedParamValues)
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
-      return invoker.invoke(service, operation, resolvedParams.toList(), context)
+      return invoker.invoke(service, operation, resolvedParams.toList(), context,context.queryId)
    }
 
    private suspend fun gatherParameters(parameters: List<Parameter>, candidateParamValues: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): Flow<Pair<Parameter, TypedInstance>> {

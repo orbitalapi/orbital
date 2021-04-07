@@ -1,6 +1,7 @@
 package io.vyne.spring.invokers
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.vyne.http.HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT
 import io.vyne.http.UriVariableProvider
 import io.vyne.http.UriVariableProvider.Companion.buildRequestBody
 import io.vyne.models.DataSource
@@ -10,6 +11,7 @@ import io.vyne.models.UndefinedSource
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.OperationInvoker
+import io.vyne.queryService.QueryMetaDataService
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
@@ -58,8 +60,9 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    }
 
 
-   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation): Flow<TypedInstance> {
+   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String?): Flow<TypedInstance> {
       log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}")
+
 
       val (_, url, method) = operation.httpOperationMetadata()
       val httpMethod = HttpMethod.resolve(method)
@@ -97,8 +100,10 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                   if (clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON)
                         .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
                   ) {
+                     reportEstimatedResults(queryId, clientResponse.headers())
                      clientResponse.bodyToFlux(String::class.java)
                   } else {
+                     reportEstimatedResults(queryId, clientResponse.headers())
                      // Assume the response is application/json
                         clientResponse.bodyToMono(typeReference<Any>())
                         //TODO This is not right we should marshall to a list of T, not, Object then back to String
@@ -145,7 +150,23 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
 
    }
 
-   private fun handleSuccessfulHttpResponse(result: String, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall, headers: ClientResponse.Headers): TypedInstance {
+   private fun reportEstimatedResults(queryId: String?, headers: ClientResponse.Headers) {
+      if (queryId == null) {
+         return
+      }
+      if (headers.header(STREAM_ESTIMATED_RECORD_COUNT).isNotEmpty()) {
+         QueryMetaDataService.monitor.reportRecords(queryId, Integer.valueOf(headers.header(STREAM_ESTIMATED_RECORD_COUNT)[0]))
+      }
+
+   }
+
+   private fun handleSuccessfulHttpResponse(
+      result: String,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      remoteCall: RemoteCall,
+      headers: ClientResponse.Headers
+   ): TypedInstance {
       // TODO : Handle scenario where we get a 2xx response, but no body
 
       log().debug("Result of ${operation.name} was $result")
@@ -166,9 +187,13 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          type = operation.returnType
       }
 
-      val instance =  TypedInstance.from(type!!, result, schemaProvider.schema(), source = dataSource, evaluateAccessors = evaluateAccessors)
-
-      return instance
+      return TypedInstance.from(
+         type!!,
+         result,
+         schemaProvider.schema(),
+         source = dataSource,
+         evaluateAccessors = evaluateAccessors
+      )
    }
 
 
