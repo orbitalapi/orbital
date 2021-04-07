@@ -124,7 +124,6 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
       document.types.forEach { taxiType ->
         typeCache.add(TaxiTypeMapper.fromTaxiType(taxiType, this))
       }
-      typeCache.populateDefaultValuesCache()
       return typeCache.types
    }
 

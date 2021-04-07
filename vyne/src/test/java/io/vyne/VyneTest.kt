@@ -9,6 +9,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import io.vyne.models.json.addJsonModel
@@ -1850,6 +1851,51 @@ service ClientService {
       queryResult3.isFullyResolved.should.be.`true`
       val puidResponse3 = queryResult3["Bar.PuidResponse"] as TypedObject
       puidResponse3["puid"].value.should.equal("US500769FH24")
+
+   }
+
+   @Test
+   fun `parameter models should be resolved by respecting nullability attributes of its fields`() {
+      val (vyne, stubs) = testVyne("""
+         type Isin inherits String
+         type PUID inherits String
+         type InstrumentId inherits String
+         parameter model PuidRequest {
+            //note that isin is not nullable
+            isin: Isin
+         }
+         model PuidResponse {
+            puid: PUID
+         }
+
+         model Instrument {
+           id: InstrumentId
+           isin: Isin
+         }
+
+         service ProductService {
+           operation getPUID(PuidRequest) :  PuidResponse
+         }
+
+         service instrumentService {
+            operation getInstrument(InstrumentId): Instrument
+         }
+
+      """.trimIndent())
+
+      stubs.addResponse("getPUID") { _, _ -> fail("getPUID should not be called") }
+      stubs.addResponse("getInstrument",
+         TypedInstance.from(vyne.type("Instrument"), """
+            "id": "instrument1"
+         """.trimIndent(), vyne.schema, source = Provided))
+      val queryResult1 = vyne.query(
+         """
+          given { id: InstrumentId = "1" }
+          findOne {
+            PuidResponse
+         }
+      """.trimIndent()
+      )
 
    }
 
