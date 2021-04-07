@@ -37,7 +37,7 @@ export abstract class BaseQueryResultDisplayComponent {
     }
   }
 
-  protected constructor(protected queryService: QueryService, typeService: TypesService) {
+  protected constructor(protected queryService: QueryService, protected typeService: TypesService) {
     typeService.getTypes()
       .subscribe(schema => this.schema = schema);
   }
@@ -45,9 +45,9 @@ export abstract class BaseQueryResultDisplayComponent {
 
   onInstanceSelected($event: QueryResultInstanceSelectedEvent) {
     const eventTypeInstance = $event.instanceSelectedEvent.selectedTypeInstance;
-    if ($event.instanceSelectedEvent.nodeId) {
+    if ($event.instanceSelectedEvent.rowValueId) {
       this.queryService.getQueryResultNodeDetail(
-        this.queryId, $event.queryTypeName, $event.instanceSelectedEvent.nodeId
+        this.queryId, $event.instanceSelectedEvent.rowValueId, $event.instanceSelectedEvent.attributeName
       )
         .subscribe(result => {
           this.selectedTypeInstanceDataSource = result.source;

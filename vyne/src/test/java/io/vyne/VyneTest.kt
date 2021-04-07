@@ -65,7 +65,7 @@ service ClientService {
 }
 
 fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
-   val stubService = StubService()
+   val stubService = StubService(schema = schema)
    val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
    val vyne = Vyne(queryEngineFactory).addSchema(schema)
    return vyne to stubService

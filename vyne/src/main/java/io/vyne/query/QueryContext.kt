@@ -69,12 +69,16 @@ data class QueryResult(
    val querySpec: QuerySpecTypeNode,
    @field:JsonIgnore // we send a lightweight version below
    val results: Flow<TypedInstance>,
+   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    @field:JsonIgnore // we send a lightweight version below
    val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
+   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    val path: Path? = null,
+   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
    override val queryResponseId: String = UUID.randomUUID().toString(),
+   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    val truncated: Boolean = false,
    val anonymousTypes: Set<Type> = setOf(),
    override val clientQueryId: String? = null,

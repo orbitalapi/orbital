@@ -58,18 +58,24 @@ export class QueryService {
     );
   }
 
-  getHistoryRecord(queryId: string): Observable<QueryHistorySummary> {
-    return this.http.get<QueryHistorySummary>(`${environment.queryServiceUrl}/api/query/history/${queryId}`, this.httpOptions);
+  getQueryResults(queryId: string): Observable<ValueWithTypeName> {
+    const url = encodeURI(`${environment.queryServiceUrl}/api/query/history/${queryId}/results?limit=100`);
+    return this.sse.getEventSource(
+      url
+    ).pipe(
+      map((event: MessageEvent) => {
+        return JSON.parse(event.data) as ValueWithTypeName;
+      })
+    );
   }
 
   getHistory(): Observable<QueryHistorySummary[]> {
     return this.http.get<QueryHistorySummary[]>(`${environment.queryServiceUrl}/api/query/history`, this.httpOptions);
   }
 
-  getQueryResultNodeDetail(queryId: string, requestedTypeInQuery: QualifiedName, nodeId: string): Observable<QueryResultNodeDetail> {
-    const safeNodeId = encodeURI(nodeId);
+  getQueryResultNodeDetail(queryId: string, rowValueId: number, attributePath: string): Observable<QueryResultNodeDetail> {
     return this.http.get<QueryResultNodeDetail>(
-      `${environment.queryServiceUrl}/api/query/history/${queryId}/${requestedTypeInQuery.parameterizedName}/${safeNodeId}`, this.httpOptions
+      `${environment.queryServiceUrl}/api/query/history/${queryId}/dataSource/${rowValueId}/${attributePath}`, this.httpOptions
     );
   }
 
@@ -232,7 +238,7 @@ export interface QueryHistorySummary {
   endTime: Date | null;
   responseStatus: ResponseStatus;
   durationMs: number;
-  recordSize: number;
+  recordCount: number;
   errorMessage: string | null;
 }
 
@@ -250,7 +256,7 @@ export function isValueWithTypeName(message: StreamingQueryMessage): message is 
 }
 
 export interface ValueWithTypeName {
-  typeName: QualifiedName | null;
+  typeName: string | null;
   anonymousTypes: Type[];
   /**
    * This is the serialized instance, as converted by a RawObjectMapper.
@@ -258,6 +264,7 @@ export interface ValueWithTypeName {
    * Use TypedObjectAttributes here, rather than any, as it's compatible with InstanceLike interface
    */
   value: TypedObjectAttributes;
+  valueId: number;
 }
 
 export interface FailedSearchResponse {

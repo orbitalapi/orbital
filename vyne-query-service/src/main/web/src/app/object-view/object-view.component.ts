@@ -66,20 +66,23 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
 
 
   onAttributeClicked(attributeName: string) {
-    if (this.selectable) {
-      const nodeId = null; // todo
-      const instance = this.getTypedObjectAttribute(attributeName);
-      this.instanceClicked.emit(new InstanceSelectedEvent(instance, null, nodeId));
-
-    }
+    // if (this.selectable) {
+    //   const nodeId = null; // todo
+    //   const instance = this.getTypedObjectAttribute(attributeName);
+    //   this.instanceClicked.emit(new InstanceSelectedEvent(instance, null, this));
+    //
+    // }
   }
 
   onTopLevelPrimitiveClicked() {
-    if (this.selectable) {
-      const nodeId = null; // todo
-      // This casting probably won't work, need to revisit once this is rendering agian
-      this.instanceClicked.emit(new InstanceSelectedEvent(this.instance as InstanceLike, null, nodeId));
-    }
+    // Not really sure how to resolve this, so not trying right now.
+
+    // if (this.selectable) {
+    //   const nodeId = null; // todo
+    //   // This casting probably won't work, need to revisit once this is rendering agian
+    //   this.instanceClicked.emit(new InstanceSelectedEvent(
+    //     this.instance as InstanceLike, null, nodeId));
+    // }
 
   }
 }

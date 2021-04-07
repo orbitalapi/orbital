@@ -88,7 +88,7 @@ abstract class BaseQueryServiceTest {
                }
             ]
             """.trimIndent()
-         )
+         ), modifyDataSource = true
       )
 
       val maturityDateTrade = "2026-12-01"
@@ -101,7 +101,7 @@ abstract class BaseQueryServiceTest {
                   "tradeId": "Trade_0"
                }]
             """.trimIndent()
-         )
+         ), modifyDataSource = true
       )
 
       stubService.addResponse(
@@ -112,7 +112,7 @@ abstract class BaseQueryServiceTest {
                   "name": "2040-11-20 0.1 Bond"
                }
             """.trimIndent()
-         )
+         ), modifyDataSource = true
       )
    }
 

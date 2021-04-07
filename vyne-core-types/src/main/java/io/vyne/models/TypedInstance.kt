@@ -6,9 +6,8 @@ import io.vyne.models.json.isJson
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import lang.taxi.Equality
 import lang.taxi.types.ArrayType
-import java.util.*
-import kotlin.collections.LinkedHashMap
 
 
 interface TypedInstance {
@@ -18,6 +17,15 @@ interface TypedInstance {
 
    @get:JsonView(DataSourceIncludedView::class)
    val source: DataSource
+
+   /**
+    * Hash code which includes the datasource - normally excluded.
+    * Used in determining rowIds for TypedInstances when persisting to the UI.
+    */
+   val hashCodeWithDataSource: Int
+      get() {
+         return Equality(this, TypedInstance::typeName, TypedInstance::value, TypedInstance::source).hash()
+      }
 
    val typeName: String
       get() {
@@ -40,7 +48,12 @@ interface TypedInstance {
    fun valueEquals(valueToCompare: TypedInstance): Boolean
 
    companion object {
-      fun fromNamedType(typeNamedInstance: TypeNamedInstance, schema: Schema, performTypeConversions: Boolean = true, source: DataSource): TypedInstance {
+      fun fromNamedType(
+         typeNamedInstance: TypeNamedInstance,
+         schema: Schema,
+         performTypeConversions: Boolean = true,
+         source: DataSource
+      ): TypedInstance {
          val (typeName, value) = typeNamedInstance
          val type = schema.type(typeName)
          return when {
@@ -62,17 +75,36 @@ interface TypedInstance {
          }
       }
 
-      private fun createTypedObject(typeNamedInstance: TypeNamedInstance, schema: Schema, performTypeConversions: Boolean, source: DataSource): TypedObject {
+      private fun createTypedObject(
+         typeNamedInstance: TypeNamedInstance,
+         schema: Schema,
+         performTypeConversions: Boolean,
+         source: DataSource
+      ): TypedObject {
          val type = schema.type(typeNamedInstance.typeName)
          val attributes = typeNamedInstance.value!! as Map<String, Any>
          val typedAttributes = attributes.map { (attributeName, typedInstance) ->
             when (typedInstance) {
-               is TypeNamedInstance -> attributeName to fromNamedType(typedInstance, schema, performTypeConversions, source)
+               is TypeNamedInstance -> attributeName to fromNamedType(
+                  typedInstance,
+                  schema,
+                  performTypeConversions,
+                  source
+               )
                is Collection<*> -> {
                   val collectionTypeRef = type.attributes[attributeName]?.type
                      ?: error("Cannot look up collection type for attribute $attributeName as it is not a defined attribute on type ${type.name}")
                   val collectionType = schema.type(collectionTypeRef)
-                  attributeName to TypedCollection(collectionType, typedInstance.map { fromNamedType(it as TypeNamedInstance, schema, performTypeConversions, source) })
+                  attributeName to TypedCollection(
+                     collectionType,
+                     typedInstance.map {
+                        fromNamedType(
+                           it as TypeNamedInstance,
+                           schema,
+                           performTypeConversions,
+                           source
+                        )
+                     })
                }
                else -> error("Unhandled scenario creating typedObject from TypeNamedInstance -> ${typedInstance::class.simpleName}")
             }
@@ -87,28 +119,66 @@ interface TypedInstance {
        * this should be true.  However, for content served from a cask, the content is already preparsed, and so
        * does not need accessors to be evaluated.
        */
-      fun from(type: Type, value: Any?, schema: Schema, performTypeConversions: Boolean = true, nullValues: Set<String> = emptySet(), source: DataSource, evaluateAccessors:Boolean = true): TypedInstance {
+      fun from(
+         type: Type,
+         value: Any?,
+         schema: Schema,
+         performTypeConversions: Boolean = true,
+         nullValues: Set<String> = emptySet(),
+         source: DataSource,
+         evaluateAccessors: Boolean = true
+      ): TypedInstance {
          return when {
             value is TypedInstance -> value
             value == null -> TypedNull.create(type)
             value is Collection<*> -> {
                val collectionMemberType = getCollectionType(type)
-               TypedCollection.arrayOf(collectionMemberType, value.filterNotNull().map { from(collectionMemberType, it, schema, performTypeConversions, source = source, evaluateAccessors = evaluateAccessors) })
+               TypedCollection.arrayOf(
+                  collectionMemberType,
+                  value.filterNotNull().map {
+                     from(
+                        collectionMemberType,
+                        it,
+                        schema,
+                        performTypeConversions,
+                        source = source,
+                        evaluateAccessors = evaluateAccessors
+                     )
+                  })
             }
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions, source)
             }
             // This is here primarily for readability.  We could just let this fall through to below.
-            isJson(value) -> TypedObjectFactory(type, value, schema, nullValues, source, evaluateAccessors = evaluateAccessors).build()
+            isJson(value) -> TypedObjectFactory(
+               type,
+               value,
+               schema,
+               nullValues,
+               source,
+               evaluateAccessors = evaluateAccessors
+            ).build()
 
             // This is a bit special...value isn't a collection, but the type is.  Oooo!
             // Must be a CSV ish type value.
             type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema, source)
-            else -> TypedObject.fromValue(type, value, schema, nullValues, source = source, evaluateAccessors = evaluateAccessors)
+            else -> TypedObject.fromValue(
+               type,
+               value,
+               schema,
+               nullValues,
+               source = source,
+               evaluateAccessors = evaluateAccessors
+            )
          }
       }
 
-      private fun readCollectionTypeFromNonCollectionValue(type: Type, value: Any, schema: Schema, source: DataSource): TypedInstance {
+      private fun readCollectionTypeFromNonCollectionValue(
+         type: Type,
+         value: Any,
+         schema: Schema,
+         source: DataSource
+      ): TypedInstance {
          return CollectionReader.readCollectionFromNonTypedCollectionValue(type, value, schema, source)
       }
 

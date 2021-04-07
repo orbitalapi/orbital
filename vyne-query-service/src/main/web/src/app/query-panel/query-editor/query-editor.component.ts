@@ -175,7 +175,7 @@ export class QueryEditorComponent implements OnInit {
         queryErrorHandler(message);
       } else if (isValueWithTypeName(message)) {
         if (!isNullOrUndefined(message.typeName)) {
-          this.resultType = findType(this.schema, message.typeName.parameterizedName);
+          this.resultType = findType(this.schema, message.typeName);
         }
         this.results$.next(message.value);
       } else {

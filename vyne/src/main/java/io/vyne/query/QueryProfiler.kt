@@ -97,6 +97,7 @@ enum class OperationType(
    REMOTE_CALL(false)
 }
 
+@Deprecated("ProfilerOperation has not proved useful, and will be removed")
 interface ProfilerOperation {
    fun startChild(ownerInstance: Any, name: String, type: OperationType): ProfilerOperation = startChild(ownerInstance::class.java.simpleName, name, type)
    fun startChild(clazz: Class<Any>, name: String, type: OperationType): ProfilerOperation = startChild(clazz.simpleName, name, type)

@@ -26,6 +26,7 @@ object RawResultsSerializer : QueryResultSerializer {
       return converter.convert(item)
    }
 }
+
 object TypeNamedInstanceSerializer : QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)
    override fun serialize(item: TypedInstance): Any? {
@@ -50,13 +51,34 @@ class FirstEntryMetadataResultSerializer(private val response: QueryResult) : Qu
     * let's cross that bridge later.
     */
    data class ValueWithTypeName(
-      val typeName: QualifiedName?,
+      val typeName: String?,
       val anonymousTypes: Set<Type> = emptySet(),
       /**
        * This is the serialized instance, as converted by a RawObjectMapper.
        */
-      val value: Any?
-   )
+      val value: Any?,
+      /**
+       * An id for the value - normally the hash of the originating typedInstance.
+       * We need to use this so that we can look up the rich typed instance
+       * later to power lineage features etc.
+       * Note that even TypedNull has a hashcode, so should be ok.
+       * It's possible we'll get hash collisions, so will need to tackle that
+       * bridge later - though if two TypedInstances in a query result generate
+       * the same hashCode, it's probably ok to use their lineage interchangably.
+       */
+      val valueId: Int
+   ) {
+      constructor(typeName: QualifiedName?, anonymousTypes: Set<Type> = emptySet(), value: Any?, valueId: Int) : this(
+         typeName?.parameterizedName, anonymousTypes, value, valueId
+      )
+
+      constructor(anonymousTypes: Set<Type>, value: Any?, valueId: Int) : this(
+         null as String?,
+         anonymousTypes,
+         value,
+         valueId
+      )
+   }
 
    override fun serialize(item: TypedInstance): Any {
       // NOte: There's a small race condition here, where we could emit metadata more than once,
@@ -67,12 +89,14 @@ class FirstEntryMetadataResultSerializer(private val response: QueryResult) : Qu
          ValueWithTypeName(
             item.type.name,
             response.anonymousTypes,
-            converter.convert(item)
+            converter.convert(item),
+            valueId = item.hashCodeWithDataSource
          )
       } else {
          ValueWithTypeName(
-            null, emptySet(),
-            converter.convert(item)
+            emptySet(),
+            converter.convert(item),
+            valueId = item.hashCodeWithDataSource
          )
       }
    }

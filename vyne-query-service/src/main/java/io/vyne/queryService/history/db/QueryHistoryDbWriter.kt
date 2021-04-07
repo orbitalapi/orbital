@@ -1,7 +1,9 @@
 package io.vyne.queryService.history.db
 
+import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
+import io.vyne.models.StaticDataSource
 import io.vyne.models.TypeNamedInstanceMapper
 import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.json.Jackson
@@ -13,21 +15,31 @@ import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
-@Component
-class QueryHistoryDbWriter(
+/**
+ * A QueryEventConsumer which streams events out to be persisted.
+ * QueryEvents have high degrees of overlap in terms of the entities they create.
+ * (eg., Lineage / Data Sources for many events are the same).
+ *
+ * To reduce the number of trips to the db, we hold state of persisted keys of
+ * many entities.
+ *
+ * Therefore, this object should be relatively short-lived (ie., for a single query)
+ * to prevent memory leaks.
+ */
+class PersistingQueryEventConsumer(
    private val repository: QueryHistoryRecordRepository,
    private val resultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
 ) : QueryEventConsumer {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
+   private val createdQuerySummaryIds = CacheBuilder.newBuilder()
+      .build<String, String>()
+   private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
 
-   private val querySummaryCache = CacheBuilder.newBuilder()
-      .build<String, PersistentQuerySummary>()
-
-
-   override suspend fun handleEvent(event: QueryEvent)  = withContext(Dispatchers.IO) {
+   override suspend fun handleEvent(event: QueryEvent) = withContext(Dispatchers.IO) {
       when (event) {
          is TaxiQlQueryResultEvent -> persistEvent(event)
          is RestfulQueryResultEvent -> persistEvent(event)
@@ -39,12 +51,20 @@ class QueryHistoryDbWriter(
    }
 
    private fun persistEvent(event: QueryCompletedEvent) {
-      repository.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.COMPLETED)
-         .subscribe()
+      log().info("Recording that query ${event.queryId} has completed")
+      resultRowRepository.countAllByQueryId(event.queryId)
+         .flatMap { recordCount ->
+            repository.setQueryEnded(
+               event.queryId,
+               event.timestamp,
+               recordCount,
+               QueryResponse.ResponseStatus.COMPLETED
+            )
+         }.subscribe()
    }
 
    private fun persistEvent(event: QueryExceptionEvent) {
-      repository.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.message)
+      repository.setQueryEnded(event.queryId, event.timestamp, 0, QueryResponse.ResponseStatus.ERROR, event.message)
          .subscribe()
    }
 
@@ -59,10 +79,12 @@ class QueryHistoryDbWriter(
             responseStatus = QueryResponse.ResponseStatus.INCOMPLETE
          )
       }
+
       resultRowRepository.save(
          QueryResultRow(
             queryId = event.queryId,
-            json = objectMapper.writeValueAsString(converter.convert(event.typedInstance))
+            json = objectMapper.writeValueAsString(converter.convert(event.typedInstance)),
+            valueHash = event.typedInstance.hashCodeWithDataSource
          )
       ).subscribe()
    }
@@ -82,12 +104,31 @@ class QueryHistoryDbWriter(
             throw e
          }
       }
+      val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
       resultRowRepository.save(
          QueryResultRow(
             queryId = event.queryId,
-            json = objectMapper.writeValueAsString(converter.convert(event.typedInstance))
+            json = objectMapper.writeValueAsString(convertedTypedInstance),
+            valueHash = event.typedInstance.hashCodeWithDataSource
          )
-      ).subscribe()
+      ).block()
+      val lineageRecords = dataSources.map { it.second }
+         .filter { it !is StaticDataSource }
+         .distinctBy { it.id }
+         .mapNotNull { dataSource ->
+            // Store the id of the lineage record we're creating in a hashmap.
+            // If we get a value back, that means that the record has already been created,
+            // so we don't need to persist it, and return null from this mapper
+            val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
+            val recordAlreadyPersisted = previousLineageRecordId != null;
+            if (recordAlreadyPersisted) null else LineageRecord(
+               dataSource.id,
+               objectMapper.writeValueAsString(dataSource)
+            )
+         }
+      lineageRecordRepository.saveAll(lineageRecords)
+         .collectList().block()
+
    }
 
    private fun createQuerySummaryRecord(queryId: String, factory: () -> PersistentQuerySummary) {
@@ -99,7 +140,7 @@ class QueryHistoryDbWriter(
       // Note that this will fail when we allow execution across multiple JVM's.
       // At that point, we can simply wrap the insert in a try...catch, and let the
       // subsequent inserts fail.
-      querySummaryCache.get(queryId) {
+      createdQuerySummaryIds.get(queryId) {
          val persistentQuerySummary = factory()
          try {
             log().info("Creating query history record for query $queryId")
@@ -107,13 +148,36 @@ class QueryHistoryDbWriter(
                persistentQuerySummary
             ).block()
             log().info("Query history record for query $queryId created successfully")
-            fromDb
+            queryId
          } catch (e: Exception) {
             log().info("Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again.")
-            persistentQuerySummary
+            queryId
          }
 
       }
    }
+}
+
+@Component
+class QueryHistoryDbWriter(
+   private val repository: QueryHistoryRecordRepository,
+   private val resultRowRepository: QueryResultRowRepository,
+   private val lineageRecordRepository: LineageRecordRepository,
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
+) {
+
+
+   /**
+    * Returns a new short-lived QueryEventConsumer.
+    * This consumer should only be used for a single query, as it maintains some
+    * state / caching in order to reduce the number of DB trips.
+    */
+   fun createEventConsumer(): QueryEventConsumer {
+      return PersistingQueryEventConsumer(
+         repository, resultRowRepository, lineageRecordRepository, objectMapper
+      )
+   }
+
+
 }
 

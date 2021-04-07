@@ -35,7 +35,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
          .body!!
          .asSimpleQueryResultList()
       response.should.not.be.empty
-      response[0].typeName.should.equal("Order[]".fqn())
+      response[0].typeName.should.equal("Order[]".fqn().parameterizedName)
       response[0].value.safeAs<List<Any>>().should.have.size(1)
    }
 
@@ -92,7 +92,8 @@ class QueryServiceTest : BaseQueryServiceTest() {
                "orderId" to "orderId_0",
                "traderName" to "john",
                "instrumentId" to "Instrument_0"
-            )
+            ),
+            valueId = 0 // TODO  - fix this
          )
       )
    }
@@ -137,7 +138,8 @@ class QueryServiceTest : BaseQueryServiceTest() {
                "instrumentName" to null,
                "maturityDate" to null,
                "traderName" to "john"
-            )
+            ),
+            valueId = 0 // TODO  - fix this
          )
       )
    }

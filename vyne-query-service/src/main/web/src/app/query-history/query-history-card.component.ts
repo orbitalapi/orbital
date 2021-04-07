@@ -28,7 +28,7 @@ import {isNullOrUndefined} from 'util';
         </div>
         <div class="record-stat" *ngIf="historyRecord.responseStatus !== 'ERROR'">
           <mat-icon class="clock-icon">done</mat-icon>
-          <span>{{ historyRecord.recordSize }} records</span>
+          <span>{{ historyRecord.recordCount }} records</span>
         </div>
         <div class="record-stat" *ngIf="historyRecord.responseStatus === 'ERROR'">
           <mat-icon class="clock-icon">error_outline</mat-icon>

@@ -11,14 +11,9 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.Service
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.Flow
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 
 /**
@@ -30,16 +25,16 @@ import org.springframework.web.server.ResponseStatusException
 class OperationService(private val operationInvoker: OperationInvoker, private val schemaProvider: SchemaProvider) {
 
    @PostMapping("/api/services/{serviceName}/{operationName}")
-   fun invokeOperation(
+   suspend fun invokeOperation(
       @PathVariable("serviceName") serviceName: String,
       @PathVariable("operationName") operationName: String,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestBody facts: Map<String, Fact>
-   ): ResponseEntity<TypedInstance> {
+   ): ResponseEntity<Flow<TypedInstance>> {
       val (service, operation) = lookupOperation(serviceName, operationName)
       val parameterTypedInstances = mapFactsToParameters(operation, facts)
       try {
-         val operationResult = runBlocking { operationInvoker.invoke(service, operation, parameterTypedInstances, DefaultProfilerOperation.root()).first() }
+         val operationResult = operationInvoker.invoke(service, operation, parameterTypedInstances, DefaultProfilerOperation.root())
          return ResponseEntity.ok(operationResult)
       } catch (e: OperationInvocationException) {
          throw ResponseStatusException(e.httpStatus, e.message)

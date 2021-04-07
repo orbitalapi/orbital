@@ -73,7 +73,7 @@ export class QueryBuilderComponent {
     this.queryService.submitQuery(query, nanoid())
       .subscribe(result => {
           if (!isNullOrUndefined(result.typeName)) {
-            this.resultType = findType(this.schema, result.typeName.parameterizedName);
+            this.resultType = findType(this.schema, result.typeName);
           }
           this.results$.next(result.value);
         },

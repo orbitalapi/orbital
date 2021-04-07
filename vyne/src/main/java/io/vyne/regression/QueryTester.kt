@@ -19,7 +19,6 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.Query
 import io.vyne.query.QueryEngineFactory
 import io.vyne.query.VyneJacksonModule
-import io.vyne.query.history.QueryHistoryRecord
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import kotlinx.coroutines.runBlocking
