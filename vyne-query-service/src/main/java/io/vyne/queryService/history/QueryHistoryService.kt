@@ -2,6 +2,9 @@ package io.vyne.queryService.history
 
 import com.fasterxml.jackson.annotation.JsonRawValue
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import io.vyne.models.OperationResult
+import io.vyne.query.QueryProfileData
 import io.vyne.queryService.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.history.db.LineageRecordRepository
 import io.vyne.queryService.history.db.PersistentQuerySummary
@@ -9,30 +12,34 @@ import io.vyne.queryService.history.db.QueryHistoryRecordRepository
 import io.vyne.queryService.history.db.QueryResultRowRepository
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.reactor.asFlux
 import org.springframework.http.MediaType
+import org.springframework.http.server.reactive.ServerHttpResponse
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
+@FlowPreview
 @RestController
 class QueryHistoryService(
-   private val history: QueryHistoryRecordRepository,
+   private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
    private val queryResultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
    private val queryHistoryExporter: QueryHistoryExporter,
-   private val mapper: ObjectMapper
+   private val objectMapper: ObjectMapper
 //   private val regressionPackProvider: RegressionPackProvider
 ) {
 
    @DeleteMapping("/api/query/history")
    fun clearHistory() {
-      history.deleteAll().subscribe()
+      queryHistoryRecordRepository.deleteAll().subscribe()
    }
 
    @GetMapping("/api/query/history")
    fun listHistory(): Flux<PersistentQuerySummary> {
-      return history.findAllByOrderByStartTimeDesc()
+      return queryHistoryRecordRepository.findAllByOrderByStartTimeDesc()
          .take(50)
 
    }
@@ -57,7 +64,7 @@ class QueryHistoryService(
          this.queryResultRowRepository.findAllByQueryId(queryId)
       }
       return flux.mapNotNull { resultRow ->
-         val typeNamedInstance = resultRow.asTypeNamedInstance(mapper)
+         val typeNamedInstance = resultRow.asTypeNamedInstance(objectMapper)
          FirstEntryMetadataResultSerializer.ValueWithTypeName(
             typeNamedInstance.typeName.fqn(),
             emptySet(),
@@ -65,9 +72,19 @@ class QueryHistoryService(
             resultRow.valueHash
          )
       }
-
    }
 
+   @GetMapping("/api/query/history/clientId/{id}/dataSource/{rowId}/{attributePath}")
+   fun getNodeDetailFromClientQueryId(
+      @PathVariable("id") clientQueryId: String,
+      @PathVariable("rowId") rowValueHash: Int,
+      @PathVariable("attributePath") attributePath: String
+   ): Mono<QueryResultNodeDetail> {
+      return queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+         .flatMap { querySummary ->
+            getNodeDetail(querySummary.queryId, rowValueHash, attributePath)
+         }
+   }
 
    @GetMapping("/api/query/history/{id}/dataSource/{rowId}/{attributePath}")
    fun getNodeDetail(
@@ -78,7 +95,7 @@ class QueryHistoryService(
       return queryResultRowRepository.findByQueryIdAndValueHash(queryId, rowValueHash)
          .next()
          .flatMap { resultRow ->
-            val typeNamedInstance = resultRow.asTypeNamedInstance(mapper)
+            val typeNamedInstance = resultRow.asTypeNamedInstance(objectMapper)
             val nodeParts = attributePath.split(".")
             val nodeDetail = QueryHistoryResultNodeFinder.find(nodeParts, typeNamedInstance, attributePath)
             if (nodeDetail.dataSourceId == null) {
@@ -89,41 +106,57 @@ class QueryHistoryService(
          }
    }
 
-   /**
-    * Returns a node detail, containing the actual type name, and lineage
-    * for a specific value within a query history.
-    * A nodeId takes the format of `[0].orderId`
-    * The format is as follows:
-    *  * JsonPath-like syntax, without the $. prefix
-    *  * For array index access, use `[n]`
-    *  * Otherwise, use the property name
-    */
-
-/*
-@GetMapping("/api/query/history/{id}/{queryType}/{nodeId}")
-@JsonView(DataSourceIncludedView::class)
-fun getNodeDetail(@PathVariable("id") queryId: String,
-                  @PathVariable("queryType") queryType: String,
-                  @PathVariable("nodeId") nodeId: String): Mono<QueryResultNodeDetail> {
-   return history.get(queryId).map { historyRecord ->
-      val queryTypeResults = historyRecord.response?.results?[queryType] ?: throw HttpClientErrorException(
-         HttpStatus.BAD_REQUEST,"Type $queryType is not present within query result $queryId"
-      )
-      val nodeParts = nodeId.split(".")
-      QueryHistoryResultNodeFinder.find(nodeParts,queryTypeResults, nodeId)
-   }
-}*/
-
-   @GetMapping("/api/query/history/{id}/{type}/export")
-   fun getQueryExport(
+   @GetMapping("/api/query/history/{id}/{format}/export")
+   fun exportQueryResults(
       @PathVariable("id") queryId: String,
-      @PathVariable("type") exportType: ExportType
-   ): Mono<ByteArray> {
-      TODO()
-//      return history.get(queryId).map {
-//         queryHistoryExporter.export(it.response.results!!, exportType)
-//      }
+      @PathVariable("format") exportFormat: ExportFormat,
+      serverResponse: ServerHttpResponse
+   ): Mono<Void> {
+      val bufferFactory = serverResponse.bufferFactory()
+      val dataBuffers = queryHistoryExporter.export(queryId, exportFormat)
+         .asFlux()
+         .map { bufferFactory.wrap(it.toString().toByteArray()) }
+      return serverResponse.writeWith(dataBuffers)
    }
+
+   @GetMapping("/api/query/history/clientId/{id}/{format}/export")
+   fun exportQueryResultsFromClientId(
+      @PathVariable("id") clientQueryId: String,
+      @PathVariable("format") exportFormat: ExportFormat,
+      serverResponse: ServerHttpResponse
+   ): Mono<Void> {
+      return queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+         .flatMap { querySummary ->
+            exportQueryResults(querySummary.queryId, exportFormat, serverResponse)
+         }
+   }
+
+   @GetMapping("/api/query/history/clientId/{id}/profile")
+   fun getQueryProfileDataFromClientId(@PathVariable("id") queryClientId: String): Mono<QueryProfileData> {
+      return queryHistoryRecordRepository.findByClientQueryId(queryClientId)
+         .flatMap { querySummary -> getQueryProfileData(querySummary) }
+   }
+
+   @GetMapping("/api/query/history/{id}/profile")
+   fun getQueryProfileData(@PathVariable("id") queryId: String): Mono<QueryProfileData> {
+      return queryHistoryRecordRepository.findByQueryId(queryId)
+         .flatMap { querySummary -> getQueryProfileData(querySummary) }
+   }
+
+   private fun getQueryProfileData(querySummary: PersistentQuerySummary) =
+      lineageRecordRepository.findAllByQueryIdAndDataSourceType(
+         querySummary.queryId,
+         OperationResult.NAME
+      ).collectList()
+         .map { lineageRecords ->
+            val remoteCalls =
+               lineageRecords.map { objectMapper.readValue<OperationResult>(it.dataSourceJson).remoteCall }
+            QueryProfileData(
+               querySummary.queryId,
+               querySummary.durationMs ?: 0,
+               remoteCalls
+            )
+         }
 
    @PostMapping("/api/query/history/{id}/regressionPack")
    fun getRegressionPack(@RequestBody request: RegressionPackRequest): Mono<StreamingResponseBody> {

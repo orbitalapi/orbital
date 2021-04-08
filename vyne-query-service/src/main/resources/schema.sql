@@ -24,10 +24,14 @@ CREATE TABLE IF NOT EXISTS QUERY_RESULT_ROW
 );
 
 CREATE INDEX IF NOT EXISTS ix_queryResultRow_queryId ON QUERY_RESULT_ROW (query_id);
-CREATE INDEX IF NOT EXISTS ix_queryResultRow_valueHash_queryId ON QUERY_RESULT_ROW (query_id,value_hash);
+CREATE INDEX IF NOT EXISTS ix_queryResultRow_valueHash_queryId ON QUERY_RESULT_ROW (query_id, value_hash);
 
 CREATE TABLE IF NOT EXISTS LINEAGE_RECORD
 (
     data_source_id   VARCHAR(255) PRIMARY KEY,
+    query_id         VARCHAR(255),
+    data_source_type VARCHAR(255),
     data_source_json VARCHAR(MAX)
-)
+);
+
+CREATE INDEX IF NOT EXISTS ix_lineageRecord_queryId on LINEAGE_RECORD (query_id);

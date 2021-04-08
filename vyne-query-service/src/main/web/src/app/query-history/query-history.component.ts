@@ -1,11 +1,10 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {ProfilerOperation, QueryHistorySummary, QueryService, ValueWithTypeName} from '../services/query.service';
+import {QueryProfileData, QueryHistorySummary, QueryService, ValueWithTypeName} from '../services/query.service';
 import {ActivatedRoute, Router} from '@angular/router';
-import {ExportFileService} from '../services/export.file.service';
+import {ExportFormat, ExportFileService} from '../services/export.file.service';
 import {DownloadClickedEvent} from '../object-view/object-view-container.component';
 import {TypesService} from '../services/types.service';
 import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
-import {DownloadFileType} from '../query-panel/result-display/result-container.component';
 import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
 import {MatDialog} from '@angular/material/dialog';
 import {isNullOrUndefined} from 'util';
@@ -23,17 +22,19 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   activeRecordResults$: Observable<InstanceLike>;
   activeRecordResultType: Type;
 
+  activeQueryProfileData$: Observable<QueryProfileData>;
+
   constructor(queryService: QueryService,
               typeService: TypesService,
               private router: Router,
               private activatedRoute: ActivatedRoute,
-              private fileService: ExportFileService,
-              private dialogService: MatDialog) {
+              private fileService: ExportFileService
+  ) {
     super(queryService, typeService);
   }
 
   profileLoading = false;
-  profilerOperation: ProfilerOperation;
+  profilerOperation: QueryProfileData;
 
   private selectedQueryId: string = null;
 
@@ -80,22 +81,12 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   }
 
   downloadQueryHistory(event: DownloadClickedEvent) {
-    // const queryResponseId = this.activeRecord.queryId;
-    // if (event.format === DownloadFileType.TEST_CASE) {
-    //   const dialogRef = this.dialogService.open(TestSpecFormComponent, {
-    //     width: '550px'
-    //   });
-    //
-    //   dialogRef.afterClosed().subscribe(result => {
-    //     if (result !== null) {
-    //       // noinspection UnnecessaryLocalVariableJS
-    //       const specName = result;
-    //       this.fileService.downloadRegressionPackZipFile(queryResponseId, specName);
-    //     }
-    //   });
-    // } else {
-    //   this.fileService.downloadQueryHistory(queryResponseId, event.format);
-    // }
+    const queryResponseId = this.selectedQueryId;
+    if (event.format === ExportFormat.TEST_CASE) {
+      this.fileService.promptToDownloadTestCase(queryResponseId);
+    } else {
+      this.fileService.downloadQueryHistory(queryResponseId, event.format);
+    }
   }
 
   private loadQueryResults(selectedQueryId: string) {
@@ -115,6 +106,8 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
           }
         )
       );
+    // Don't subscribe here.  We'll only fetch these results if the user opens the profile data
+    this.activeQueryProfileData$ = this.queryService.getQueryProfile(selectedQueryId);
   }
 
   get queryId(): string {

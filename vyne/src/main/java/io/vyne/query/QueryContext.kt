@@ -119,20 +119,6 @@ data class QueryResult(
          val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
          return results.map { converter.convert(it) }
       }
-
-   @Deprecated("History records are now produced async from the result stream, and should not be accessed from here.")
-   override fun historyRecord(): HistoryQueryResponse {
-      return HistoryQueryResponse(
-         null, // TODO Should a historyRecord contain results ?
-         unmatchedNodeNames,
-         this.isFullyResolved,
-         queryResponseId,
-         profilerOperation?.toDto(),
-         responseStatus,
-         remoteCalls,
-         timings
-      )
-   }
 }
 
 // Note : Also models failures, so is fairly generic
@@ -164,7 +150,6 @@ interface QueryResponse {
    val vyneCost: Long
       get() = profilerOperation?.vyneCost ?: 0L
 
-   fun historyRecord(): HistoryQueryResponse
 }
 
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {

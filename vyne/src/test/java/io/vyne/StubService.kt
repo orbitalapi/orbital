@@ -42,7 +42,7 @@ class StubService(
       val result = handler.invoke(remoteOperation, params)
       val remoteCall = RemoteCall(
          service = OperationNames.serviceName(remoteOperation.qualifiedName).fqn(),
-         addresss = "https://fakeurl.com/",
+         address = "https://fakeurl.com/",
          operation = remoteOperation.name,
          responseTypeName = remoteOperation.returnType.qualifiedName,
          method = "FAKE",

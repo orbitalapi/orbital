@@ -9,7 +9,7 @@ data class HistoryQueryResponse(val results: Map<String, Any?>? = mapOf(),
                                 val fullyResolved: Boolean,
                                 val queryResponseId: String = UUID.randomUUID().toString(),
                                 @field:JsonIgnore
-                                val profilerOperation: ProfilerOperationDTO?,
+                                val profilerOperation: QueryProfileData?,
                                 val responseStatus: QueryResponse.ResponseStatus,
                                 val remoteCalls: List<RemoteCall> = listOf(),
                                 val timings: Map<OperationType, Long> = mapOf(),

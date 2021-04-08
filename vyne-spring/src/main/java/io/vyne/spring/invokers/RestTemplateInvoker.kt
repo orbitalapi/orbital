@@ -101,20 +101,23 @@ class RestTemplateInvoker(
          .exchange()
          .metrics()
          .publishOn(Schedulers.boundedElastic())
-         .flatMapMany { clientResponse ->
+         .elapsed()
+         .flatMapMany { durationAndResponse ->
+            val duration = durationAndResponse.t1
+            val clientResponse = durationAndResponse.t2
             reportEstimatedResults(queryId, clientResponse.headers())
             clientResponse.bodyToFlux<String>()
                .flatMap { responseString ->
                   val remoteCall = RemoteCall(
                      remoteCallId = remoteCallId,
                      service = service.name,
-                     addresss = expandedUri.toASCIIString(),
+                     address = expandedUri.toASCIIString(),
                      operation = operation.name,
                      responseTypeName = operation.returnType.name,
                      method = httpMethod.name,
                      requestBody = requestBody.first.body,
                      resultCode = clientResponse.rawStatusCode(),
-                     durationMs = 0,
+                     durationMs = duration,
                      response = responseString
                   )
 
@@ -142,7 +145,6 @@ class RestTemplateInvoker(
             Integer.valueOf(headers.header(STREAM_ESTIMATED_RECORD_COUNT)[0])
          )
       }
-
    }
 
    private fun handleSuccessfulHttpResponse(

@@ -154,7 +154,9 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       }
 
       return try {
-         val result: TypedInstance = runBlocking { invocationService.invokeOperation(service, operation, callArgs, context).first() }
+         val result: TypedInstance = runBlocking { invocationService.invokeOperation(service, operation, callArgs, context)
+            .first()
+         }
          if (result is TypedNull) {
             log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
          } else {

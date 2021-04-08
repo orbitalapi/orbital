@@ -48,7 +48,7 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
 
    private fun findRecordedCall(operation: RemoteOperation, path: String, body: Pair<HttpEntity<*>, Class<*>>): RemoteCall? {
       return this.remoteCalls.firstOrNull {
-         val remoteCallPath = UriComponentsBuilder.newInstance().uri(URI(it.addresss)).build().path
+         val remoteCallPath = UriComponentsBuilder.newInstance().uri(URI(it.address)).build().path
          val remoteCallBody = it.requestBody
          val operationBody = body.first.body
          it.operationQualifiedName == operation.qualifiedName && remoteCallPath == path && remoteCallBody == operationBody

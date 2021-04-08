@@ -58,6 +58,8 @@ data class LineageRecord(
    // to use for persistence.
    @Id
    val dataSourceId: String,
+   val queryId: String,
+   val dataSourceType: String,
    val dataSourceJson: String
 ) : Persistable<String> {
    override fun getId(): String {

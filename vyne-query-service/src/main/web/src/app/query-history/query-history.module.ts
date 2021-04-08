@@ -4,7 +4,6 @@ import {BrowserModule} from '@angular/platform-browser';
 import {CommonModule} from '@angular/common';
 import {SearchModule} from '../search/search.module';
 import {MatButtonModule} from '@angular/material/button';
-import {ResultViewerModule} from '../query-panel/result-display/result-viewer.module';
 import {MomentModule} from 'ngx-moment';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {VyneqlRecordComponent} from './vyneql-record.component';
@@ -25,7 +24,6 @@ import {MatDialogModule} from '@angular/material/dialog';
     CommonModule,
     SearchModule,
     MatButtonModule,
-    ResultViewerModule,
     MomentModule,
     MatToolbarModule,
     MatIconModule,

@@ -14,7 +14,7 @@ import {
   TypeNamedInstance
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
-import {concatAll, map} from 'rxjs/operators';
+import {concatAll, map, share, shareReplay} from 'rxjs/operators';
 import {SseEventSourceService} from './sse-event-source.service';
 import {isNullOrUndefined} from 'util';
 
@@ -47,25 +47,27 @@ export class QueryService {
 
   }
 
-  submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE): Observable<ValueWithTypeName> {
+  submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
     const url = encodeURI(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${query}`);
     return this.sse.getEventSource(
       url
     ).pipe(
       map((event: MessageEvent) => {
         return JSON.parse(event.data) as ValueWithTypeName;
-      })
+      }),
+      shareReplay(replayCacheSize)
     );
   }
 
-  getQueryResults(queryId: string): Observable<ValueWithTypeName> {
-    const url = encodeURI(`${environment.queryServiceUrl}/api/query/history/${queryId}/results?limit=100`);
+  getQueryResults(queryId: string, limit: number = 100): Observable<ValueWithTypeName> {
+    const url = encodeURI(`${environment.queryServiceUrl}/api/query/history/${queryId}/results?limit=${limit}`);
     return this.sse.getEventSource(
       url
     ).pipe(
       map((event: MessageEvent) => {
         return JSON.parse(event.data) as ValueWithTypeName;
-      })
+      }),
+      shareReplay(limit)
     );
   }
 
@@ -79,8 +81,23 @@ export class QueryService {
     );
   }
 
-  getQueryProfile(queryId: string): Observable<ProfilerOperation> {
-    return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`, this.httpOptions);
+  getQueryResultNodeDetailFromClientId(clientQueryId: string, rowValueId: number, attributePath: string): Observable<QueryResultNodeDetail> {
+    return this.http.get<QueryResultNodeDetail>(
+      `${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/dataSource/${rowValueId}/${attributePath}`, this.httpOptions
+    );
+  }
+
+
+  getQueryProfileFromClientId(clientQueryId: string): Observable<QueryProfileData> {
+    return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/profile`, this.httpOptions)
+      .pipe(shareReplay(1)) // This observable is shared
+      ;
+  }
+
+  getQueryProfile(queryId: string): Observable<QueryProfileData> {
+    return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`, this.httpOptions)
+      .pipe(shareReplay(1)) // This observable is shared
+      ;
   }
 
   invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
@@ -170,7 +187,7 @@ export interface QueryResult {
   results: { [key: string]: InstanceLikeOrCollection };
   unmatchedNodes: QualifiedName[];
   fullyResolved: boolean;
-  profilerOperation: ProfilerOperation;
+  profilerOperation: QueryProfileData;
   remoteCalls: RemoteCall[];
   resultMode: ResultMode;
   queryResponseId: string;
@@ -193,20 +210,11 @@ export interface RemoteCall extends Proxyable {
   operationQualifiedName: string;
 }
 
-export interface ProfilerOperation {
+export interface QueryProfileData {
   id: string;
-  fullPath: string;
-  path: string;
-  componentName: string;
-  operationName: string;
-  children: ProfilerOperation[];
-  result: ProfilerOperationResult;
-
   duration: number;
-
-  context: any;
-
-  description: string;
+  remoteCalls: RemoteCall[];
+  timings: any; // TODO
 }
 
 export interface ProfilerOperationResult {

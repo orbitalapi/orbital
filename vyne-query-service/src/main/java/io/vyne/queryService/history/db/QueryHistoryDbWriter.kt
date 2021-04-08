@@ -3,6 +3,7 @@ package io.vyne.queryService.history.db
 import arrow.core.extensions.list.functorFilter.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
+import io.vyne.models.OperationResult
 import io.vyne.models.StaticDataSource
 import io.vyne.models.TypeNamedInstanceMapper
 import io.vyne.models.TypedInstanceConverter
@@ -12,6 +13,8 @@ import io.vyne.queryService.history.*
 import io.vyne.utils.log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.*
@@ -32,7 +35,8 @@ class PersistingQueryEventConsumer(
    private val repository: QueryHistoryRecordRepository,
    private val resultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
-   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
+   private val config: QueryHistoryConfig
 ) : QueryEventConsumer {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
@@ -115,7 +119,15 @@ class PersistingQueryEventConsumer(
       val lineageRecords = dataSources.map { it.second }
          .filter { it !is StaticDataSource }
          .distinctBy { it.id }
+         .map { dataSource ->
+            when (dataSource) {
+               is OperationResult -> trimResponseBodyWhenExceedsConfiguredMax(dataSource)
+               else -> dataSource
+            }
+         }
          .mapNotNull { dataSource ->
+
+
             // Store the id of the lineage record we're creating in a hashmap.
             // If we get a value back, that means that the record has already been created,
             // so we don't need to persist it, and return null from this mapper
@@ -123,12 +135,31 @@ class PersistingQueryEventConsumer(
             val recordAlreadyPersisted = previousLineageRecordId != null;
             if (recordAlreadyPersisted) null else LineageRecord(
                dataSource.id,
+               event.queryId,
+               dataSource.name,
                objectMapper.writeValueAsString(dataSource)
             )
          }
       lineageRecordRepository.saveAll(lineageRecords)
          .collectList().block()
 
+   }
+
+   private fun trimResponseBodyWhenExceedsConfiguredMax(dataSource: OperationResult): OperationResult {
+      val response = dataSource.remoteCall.response
+      val sanitizedDataSource = if (response != null) {
+         val responseSize = response.toString().toByteArray().size
+         if (responseSize > config.maxPayloadSizeInBytes) {
+            dataSource.copy(
+               remoteCall = dataSource.remoteCall.copy(response = "Response has not been captured, as it's size $responseSize bytes exceeded max configured bytes (${config.maxPayloadSizeInBytes}).")
+            )
+         } else {
+            dataSource
+         }
+      } else {
+         dataSource
+      }
+      return sanitizedDataSource
    }
 
    private fun createQuerySummaryRecord(queryId: String, factory: () -> PersistentQuerySummary) {
@@ -163,7 +194,8 @@ class QueryHistoryDbWriter(
    private val repository: QueryHistoryRecordRepository,
    private val resultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
-   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper
+   private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
+   private val config: QueryHistoryConfig = QueryHistoryConfig()
 ) {
 
 
@@ -174,10 +206,18 @@ class QueryHistoryDbWriter(
     */
    fun createEventConsumer(): QueryEventConsumer {
       return PersistingQueryEventConsumer(
-         repository, resultRowRepository, lineageRecordRepository, objectMapper
+         repository, resultRowRepository, lineageRecordRepository, objectMapper, config
       )
    }
-
-
 }
+
+@ConstructorBinding
+@ConfigurationProperties(prefix = "vyne.history")
+data class QueryHistoryConfig(
+   /**
+    * Defines the max payload size to persist.
+    * Set to 0 to disable persisting the body of responses
+    */
+   val maxPayloadSizeInBytes: Int = 2048
+)
 

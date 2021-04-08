@@ -63,6 +63,7 @@ object DefinedInSchema : StaticDataSource {
 
 data class OperationResult(val remoteCall: RemoteCall, val inputs: List<OperationParam>) : DataSource {
    companion object {
+      const val NAME: String = "Operation result"
       fun from(parameters: List<Pair<Parameter, TypedInstance>>,
                remoteCall: RemoteCall):OperationResult {
          return OperationResult(remoteCall, parameters.map { (param, instance) ->
@@ -72,7 +73,7 @@ data class OperationResult(val remoteCall: RemoteCall, val inputs: List<Operatio
    }
    data class OperationParam(val parameterName: String, val value: Any?)
 
-   override val name: String = "Operation result"
+   override val name: String = NAME
    override val id: String = remoteCall.remoteCallId
 }
 

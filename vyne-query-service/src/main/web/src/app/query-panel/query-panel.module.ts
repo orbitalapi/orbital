@@ -3,7 +3,6 @@ import {BrowserModule} from '@angular/platform-browser';
 import {CommonModule} from '@angular/common';
 import {QueryPanelComponent} from './query-panel.component';
 import {FileFactSelectorComponent} from './file-fact-selector/file-fact-selector.component';
-import {ResultViewerModule} from './result-display/result-viewer.module';
 import {SearchModule} from '../search/search.module';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
 import {MatCheckboxModule} from '@angular/material/checkbox';
@@ -43,7 +42,6 @@ import { QueryBuilderComponent } from './query-wizard/query-builder.component';
   imports: [
     BrowserModule,
     CommonModule,
-    ResultViewerModule,
     SearchModule,
     TypeAutocompleteModule,
     MatCheckboxModule,

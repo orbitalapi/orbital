@@ -20,6 +20,7 @@
 
     <app-tabbed-results-view *ngIf="resultType"
                              [instances$]="results$"
+                             [profileData$]="queryProfileData$"
                              [type]="resultType"
                              (instanceSelected)="instanceSelected.emit($event)"
                              (downloadClicked)="downloadQueryHistory($event.format)"

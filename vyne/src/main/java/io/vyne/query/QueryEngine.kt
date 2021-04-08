@@ -12,7 +12,6 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import java.util.stream.Collectors
 
@@ -59,6 +58,7 @@ interface QueryEngine {
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
       additionalFacts: Set<TypedInstance> = emptySet(),
       queryId: String? = null,
+      clientQueryId: String? = null
    ): QueryContext
 
    suspend fun build(type: Type, context: QueryContext): QueryResult =
@@ -101,10 +101,11 @@ class StatefulQueryEngine(
    override fun queryContext(
       factSetIds: Set<FactSetId>,
       additionalFacts: Set<TypedInstance>,
-      queryId: String?
+      queryId: String?,
+      clientQueryId: String?
    ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
-      return QueryContext.from(schema, facts + additionalFacts, this, profiler, queryId = queryId)
+      return QueryContext.from(schema, facts + additionalFacts, this, profiler, queryId = queryId, clientQueryId = clientQueryId)
    }
 
 }
@@ -190,7 +191,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             emptySet(),
             profilerOperation = context.profiler.root,
             anonymousTypes = context.schema.typeCache.anonymousTypes(),
-            queryId = context.queryId
+            queryId = context.queryId,
+            clientQueryId = context.clientQueryId
          )
       } else {
          QueryResult(
@@ -198,7 +200,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             emptyFlow(),
             setOf(querySpecTypeNode),
             profilerOperation = context.profiler.root,
-            queryId = context.queryId
+            queryId = context.queryId,
+            clientQueryId = context.clientQueryId
          )
       }
    }
@@ -378,7 +381,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          path = null,
          profilerOperation = queryResult.profilerOperation,
          anonymousTypes = queryResult.anonymousTypes,
-         queryId = context.queryId
+         queryId = context.queryId,
+         clientQueryId = context.clientQueryId
       )
 
    }
@@ -459,7 +463,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          emptySet(),
          path = null,
          profilerOperation = context.profiler.root,
-         queryId = context.queryId
+         queryId = context.queryId,
+         clientQueryId = context.clientQueryId
       )
 
    }

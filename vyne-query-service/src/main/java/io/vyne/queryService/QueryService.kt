@@ -18,6 +18,7 @@ import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
 import io.vyne.vyneql.TaxiQlQueryString
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
 import org.springframework.http.HttpStatus
@@ -44,15 +45,6 @@ data class FailedSearchResponse(
 ) : QueryResponse {
    override val responseStatus: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.ERROR
    override val isFullyResolved: Boolean = false
-   override fun historyRecord(): HistoryQueryResponse {
-      return io.vyne.query.HistoryQueryResponse(
-         fullyResolved = false,
-         queryResponseId = queryResponseId,
-         profilerOperation = profilerOperation?.toDto(),
-         responseStatus = this.responseStatus,
-         error = message
-      )
-   }
 }
 
 /**
@@ -65,6 +57,7 @@ typealias QueryResponseString = String
 /**
  * Main entry point for submitting queries to Vyne.
  */
+@FlowPreview
 @RestController
 class QueryService(
    val vyneProvider: VyneProvider,
@@ -120,7 +113,7 @@ class QueryService(
       contentType: String
    ): Flow<Any> {
       return when (contentType) {
-         TEXT_CSV -> toCsv(queryResult.results, vyneProvider.createVyne().schema)
+         TEXT_CSV -> toCsv(queryResult.results /*, vyneProvider.createVyne().schema */)
          // Default everything else to JSON
          else -> {
             val serializer = resultMode.buildSerializer(queryResult)
@@ -165,7 +158,7 @@ class QueryService(
    suspend fun monitored(
       query: TaxiQlQueryString,
       clientQueryId: String?,
-     queryId: String, vyneUser: VyneUser?,
+      queryId: String, vyneUser: VyneUser?,
       block: suspend () -> QueryResponse
    ): QueryResponse = GlobalScope.run {
       QueryMetaDataService.MonitorService.monitor.reportStart(queryId, clientQueryId)
@@ -183,7 +176,10 @@ class QueryService(
    suspend fun submitVyneQlQuery(
       @RequestBody query: TaxiQlQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode = ResultMode.RAW,
-      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String = MediaType.APPLICATION_JSON_VALUE,
+      @RequestHeader(
+         value = "Accept",
+         defaultValue = MediaType.APPLICATION_JSON_VALUE
+      ) contentType: String = MediaType.APPLICATION_JSON_VALUE,
       auth: Authentication? = null,
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
    ): ResponseEntity<Flow<Any>> {
@@ -201,7 +197,7 @@ class QueryService(
     */
    @PostMapping(
       value = ["/api/vyneql", "/api/taxiql"],
-      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE],
       produces = [MediaType.TEXT_EVENT_STREAM_VALUE]
    )
    suspend fun submitVyneQlQueryStreamingResponse(
@@ -248,18 +244,19 @@ class QueryService(
       vyneUser: VyneUser? = null,
       clientQueryId: String?,
       queryId: String
-   ): QueryResponse = monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser =vyneUser) {
+   ): QueryResponse = monitored(query = query, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
       log().info("VyneQL query => $query")
       val vyne = vyneProvider.createVyne(vyneUser.facts())
       val response = try {
-         vyne.query(query, queryId = queryId)
+         vyne.query(query, queryId = queryId, clientQueryId = clientQueryId)
       } catch (e: lang.taxi.CompilationException) {
          log().info("The query failed compilation: ${e.message}")
          FailedSearchResponse(
             message = e.message!!, // Message contains the error messages from the compiler
             profilerOperation = null,
             clientQueryId = clientQueryId,
-         queryId = queryId)
+            queryId = queryId
+         )
       } catch (e: SearchFailedException) {
          FailedSearchResponse(e.message!!, e.profilerOperation, queryId = queryId)
       } catch (e: NotImplementedError) {

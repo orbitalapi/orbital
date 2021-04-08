@@ -33,6 +33,7 @@ interface QueryResultRowRepository : R2dbcRepository<QueryResultRow, Long> {
    // TODO : This could be big, and returning everything
    // Does r2dbc support pagination?
    fun findAllByQueryId(queryId: String): Flux<QueryResultRow>
+
    // TODO : When coding this, it seems we're getting multple results, which
    // shoulnd't be possible  -- will investigate, promise.
    fun findByQueryIdAndValueHash(queryId: String, valueHash: Int): Flux<QueryResultRow>
@@ -41,4 +42,5 @@ interface QueryResultRowRepository : R2dbcRepository<QueryResultRow, Long> {
 
 interface LineageRecordRepository : R2dbcRepository<LineageRecord, String> {
 
+   fun findAllByQueryIdAndDataSourceType(queryId: String, dataSourceType: String): Flux<LineageRecord>
 }

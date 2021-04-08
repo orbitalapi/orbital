@@ -13,7 +13,7 @@ data class RemoteCall(
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
    val service: QualifiedName,
-   val addresss: String,
+   val address: String,
    val operation: String,
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)

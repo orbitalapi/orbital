@@ -1,52 +1,54 @@
 package io.vyne.queryService.csv
 
+import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.schemas.Schema
-import io.vyne.schemas.Type
-import io.vyne.schemas.fqn
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import lang.taxi.types.ArrayType
+import me.eugeniomarletti.kotlin.metadata.shadow.utils.addToStdlib.safeAs
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVPrinter
 import java.io.CharArrayWriter
-import java.nio.CharBuffer
 
 
-/**
- * Bridge between the java Appenable class (which streams strings)
- * to a Flow<String>
- */
-private class FlowEmittingAppendable(private val flowCollector: FlowCollector<CharSequence>) : Appendable {
-   override fun append(charSequence: CharSequence): Appendable {
-      // TODO : Is there a non-blocking way to do this?
-      GlobalScope.launch(Dispatchers.IO) { flowCollector.emit(charSequence) }
-      return this
+fun toCsv(results: Flow<TypeNamedInstance>, schema: Schema): Flow<CharSequence> {
+
+
+
+   fun toCharSequence(values: Set<Any?>): CharSequence {
+      val charWriter = CharArrayWriter()
+      val printer = CSVPrinter(charWriter, CSVFormat.DEFAULT)
+      printer.printRecord(values)
+      return charWriter.toString()
    }
 
-   override fun append(charSequence: CharSequence, start: Int, end: Int): Appendable {
-      // TODO : Is there a non-blocking way to do this?
+   return results
+      .withIndex()
+      .flatMapConcat { indexedValue ->
+         val typeNamedInstance = indexedValue.value
+         val index = indexedValue.index
+         val raw = typeNamedInstance.convertToRaw().safeAs<Map<String, Any>>()
+            ?: error("Export is only supported on map types currently")
+         val includeHeaders = index == 0;
+         val type = schema.type(typeNamedInstance.typeName)
+         val values = toCharSequence(type.attributes.keys.map { fieldName -> raw[fieldName] }
+            .toSet())
+         if (includeHeaders) {
+            val headers = toCharSequence(type.attributes.keys)
+            flowOf(headers, values)
+         } else {
+            flowOf(values)
+         }
 
-      GlobalScope.launch(Dispatchers.IO) { flowCollector.emit(charSequence.subSequence(start, end)) }
-      return this
-   }
-
-   override fun append(char: Char): Appendable {
-      // TODO : Is there a non-blocking way to do this?
-      GlobalScope.launch(Dispatchers.IO) { flowCollector.emit(char.toString()) }
-      return this
-   }
-
+      }
 }
 
-fun toCsv(results: Flow<TypedInstance>, schema: Schema): Flow<CharSequence> {
+@FlowPreview
+fun toCsv(results: Flow<TypedInstance>): Flow<CharSequence> {
 
-   fun toCharSequence(typedInstance:Set<Any?>):CharSequence {
+   fun toCharSequence(typedInstance: Set<Any?>): CharSequence {
       val charWriter = CharArrayWriter()
       val printer = CSVPrinter(charWriter, CSVFormat.DEFAULT)
       printer.printRecord(typedInstance)
@@ -65,99 +67,20 @@ fun toCsv(results: Flow<TypedInstance>, schema: Schema): Flow<CharSequence> {
                0 -> {
                   flowOf(
                      toCharSequence(it.value.type!!.attributes.keys),
-                     toCharSequence(it.value.type.attributes.keys.map { fieldName -> (it.value as TypedObject)[fieldName].value }.toSet())
+                     toCharSequence(it.value.type.attributes.keys.map { fieldName -> (it.value as TypedObject)[fieldName].value }
+                        .toSet())
                   )
                }
                else -> {
-                  if (it.value is TypedObject) {
-
-                     flowOf( toCharSequence(typedInstance.type.attributes.keys.map { fieldName -> (it.value as TypedObject)[fieldName].value }.toSet()) )
-                  } else {
-                     TODO("writeCsvRecord is not supported for typedInstance of type ${it.value::class.simpleName}")
+                  when (it.value) {
+                     is TypedObject -> {
+                        flowOf(toCharSequence(typedInstance.type.attributes.keys.map { fieldName -> (it.value as TypedObject)[fieldName].value }
+                           .toSet()))
+                     }
+                     else -> TODO("writeCsvRecord is not supported for typedInstance of type ${it.value::class.simpleName}")
                   }
                }
             }
          }
    }
-}
-
-   // MP : This is a brain dump of how to rewrite the original code below
-   // to tidy it up, and make it make sense in a flow-based world.
-   // I haven't tested this at all yet.
-
-
-   /*return flow<CharSequence> {
-      val flowAppendable = FlowEmittingAppendable(this)
-      val printer = CSVPrinter(flowAppendable, CSVFormat.DEFAULT.withFirstRecordAsHeader())
-      // For now, we use the first row to infer the type.
-      // Polymorphic results in a CSV don't really make much sense, so that's probably ok.
-      var rowType: Type? = null
-
-
-
-      results.collect { typedInstance ->
-         when (typedInstance) {
-            is TypedObject -> writeCsvRecord(typedInstance)
-            is TypedCollection -> typedInstance.forEach { writeCsvRecord(it) }
-            else -> TODO("Csv support for TypedInstance of type ${typedInstance::class.simpleName} not yet supported")
-         }
-      }
-   }.flowOn(Dispatchers.IO)
-
-    */
-//   // For now, we use the first row to infer the type.
-//   // Polymorphic results in a CSV don't really make much sense, so that's probably ok.
-//   var rowType: Type? = null
-//   results.forEach { key ->
-//      if (rowType == null) {
-//         rowType
-//      }
-//      val rowType = getRowType(key, schema)
-//      when (results[key]) {
-//         is List<*> -> {
-//            val listOfObj = results[key] as List<*>
-//
-//            if (listOfObj.isNotEmpty()) {
-//               when (listOfObj[0]) {
-//                  is TypeNamedInstance -> {
-//                     val rows = results[key] as List<TypeNamedInstance>
-//                     printer.printRecord(rowType.attributes.keys)
-//                     rows.forEach { row ->
-//                        val attributes = row.value as Map<String, TypeNamedInstance?>
-//                        printer.printRecord(rowType.attributes.keys.map { fieldName -> attributes[fieldName]?.value })
-//                     }
-//                  }
-//                  is Map<*, *> -> {
-//                     val rows = results[key] as List<Map<String, Any>>
-//                     printer.printRecord(rowType.attributes.keys)
-//                     rows.forEach { fields ->
-//                        printer.printRecord(rowType.attributes.keys.map { fieldName -> fields[fieldName] })
-//                     }
-//                  }
-//               }
-//            }
-//         }
-//         is Map<*, *> -> {
-//            val singleObj = results[key] as Map<*, *>
-//            printer.printRecord(singleObj.keys)
-//            printer.printRecord(singleObj.values)
-//         }
-//      }
-//   }
-//   return writer.toString().toByteArray()
-
-
-fun getRowType(key: String, schema: Schema): Type {
-   val typeName = key.fqn()
-   val rowTypeName = if (typeName.fullyQualifiedName == ArrayType.NAME) {
-      if (typeName.parameters.size == 1) {
-         typeName.parameters.first()
-      } else {
-         TODO("Exporting untyped Arrays is not yet supported")
-      }
-   } else {
-      typeName
-   }
-
-   return schema.type(rowTypeName)
 }
