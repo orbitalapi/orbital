@@ -189,8 +189,6 @@ export class QueryEditorComponent implements OnInit {
       this.handleQueryFinished(null);
     };
 
-    // Hard coded to test UI
-    this.resultType = findType(this.schema, 'bgc.orders.Order');
     this.queryService.submitVyneQlQueryStreaming(this.query, this.queryClientId, ResultMode.SIMPLE).subscribe(
       queryMessageHandler,
       queryErrorHandler,
