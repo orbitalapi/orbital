@@ -69,8 +69,8 @@ class RestTemplateInvoker(
       service: Service,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
-      profilerOperation: ProfilerOperation
-   , queryId: String?): Flow<TypedInstance> {
+      profilerOperation: ProfilerOperation, queryId: String?
+   ): Flow<TypedInstance> {
       log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}")
 
 
@@ -137,10 +137,15 @@ class RestTemplateInvoker(
          return
       }
       if (headers.header(STREAM_ESTIMATED_RECORD_COUNT).isNotEmpty()) {
-         QueryMetaDataService.monitor.reportRecords(queryId, Integer.valueOf(headers.header(STREAM_ESTIMATED_RECORD_COUNT)[0]))
+         QueryMetaDataService.monitor.reportRecords(
+            queryId,
+            Integer.valueOf(headers.header(STREAM_ESTIMATED_RECORD_COUNT)[0])
+         )
       }
 
-   }private fun handleSuccessfulHttpResponse(
+   }
+
+   private fun handleSuccessfulHttpResponse(
       result: String,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
