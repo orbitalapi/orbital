@@ -73,14 +73,18 @@ class TypedObjectTest {
       val raw = trader.toTypeNamedInstance()
       val stringType = "lang.taxi.String".fqn()
       val decimalType = "lang.taxi.Decimal".fqn()
-      val expected = TypeNamedInstance(typeName = "Trader".fqn(), value = mapOf(
-         "username" to TypeNamedInstance(stringType, "EUR_Trader", Provided),
-         "jurisdiction" to TypeNamedInstance(stringType, "EUR", Provided),
-         "limit" to TypeNamedInstance("Money".fqn(), mapOf(
-            "currency" to TypeNamedInstance(stringType, "USD", Provided),
-            "value" to TypeNamedInstance(decimalType, 100.toBigDecimal(), Provided)
-         ), Provided)
-      ), source = Provided)
+      val expected = TypeNamedInstance(
+         typeName = "Trader".fqn(), value = mapOf(
+            "username" to TypeNamedInstance(stringType, "EUR_Trader", Provided),
+            "jurisdiction" to TypeNamedInstance(stringType, "EUR", Provided),
+            "limit" to TypeNamedInstance(
+               "Money".fqn(), mapOf(
+                  "currency" to TypeNamedInstance(stringType, "USD", Provided),
+                  "value" to TypeNamedInstance(decimalType, 100.toBigDecimal(), Provided)
+               ), Provided
+            )
+         ), source = Provided
+      )
       expect(raw).to.equal(expected)
    }
 
@@ -105,11 +109,13 @@ class TypedObjectTest {
 
    @Test
    fun when_unwrappingDatesWithFormats_lenientDateParsingIsUsed() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          type Trade {
             tradeDate : Instant (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val tradeType = schema.type("Trade")
       fun parseJson(date: String): Instant {
          val json = """{
@@ -131,11 +137,13 @@ class TypedObjectTest {
 
    @Test
    fun whenDateFormatsAreInvalid_then_errorMessageContainsTheExpectedFormat() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          type Trade {
             tradeDate : Instant (@format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val tradeType = schema.type("Trade")
       val json = """{
          |"tradeDate" : "2020-05-01"
@@ -154,12 +162,14 @@ class TypedObjectTest {
 
    @Test
    fun `can use default values in json when parsing`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          model Person {
             firstName : FirstName as String
             title : Title as String by default("foo")
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val json = """{ "firstName" : "Jimmy" }"""
       val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
       instance["title"].value.should.equal("foo")
@@ -167,12 +177,14 @@ class TypedObjectTest {
 
    @Test // This specific test because of a bug found where this was failing
    fun `can use default value of empty string in json when parsing`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          model Person {
             firstName : FirstName as String
             title : Title as String by default("")
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val json = """{ "firstName" : "Jimmy" }"""
       val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
       instance["title"].value.should.equal("")
@@ -180,7 +192,8 @@ class TypedObjectTest {
 
    @Test
    fun `can ingest boolean value into enum with synonym`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          enum LivingOrDead {
             Alive, Dead
          }
@@ -196,8 +209,9 @@ class TypedObjectTest {
             name : Name
             livingOrDead : LivingOrDead
          }
-      """.trimIndent())
-      val (vyne,_) = testVyne(schema)
+      """.trimIndent()
+      )
+      val (vyne, _) = testVyne(schema)
       val json = """{ "name" : "Bernstein", "isAlive" : false }"""
       val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
       val buildResult = vyne.query().addFact(instance).build("OutputPerson")
@@ -207,7 +221,8 @@ class TypedObjectTest {
 
    @Test
    fun `can ingest boolean value into enum with synonym when read using an accessor`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          enum LivingOrDead {
             Alive, Dead
          }
@@ -223,8 +238,9 @@ class TypedObjectTest {
             name : Name
             livingOrDead : LivingOrDead
          }
-      """.trimIndent())
-      val (vyne,_) = testVyne(schema)
+      """.trimIndent()
+      )
+      val (vyne, _) = testVyne(schema)
       val json = """{ "name" : "Bernstein", "living" : false }"""
       val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
       val buildResult = vyne.query().addFact(instance).build("OutputPerson")
@@ -234,7 +250,8 @@ class TypedObjectTest {
 
    @Test
    fun when_unwrappingDatesWithFormats_then_stringAreReturnedForNonStandard() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          type TradeDateInstant inherits Instant ( @format = "dd/MM/yy'T'HH:mm:ss" )
          type TradeDateDate inherits Date ( @format = "MM-dd-yyyy" )
          type TradeDateDateTime inherits DateTime ( @format = "dd/MM/yyyy HH:mm:ss" )
@@ -243,7 +260,8 @@ class TypedObjectTest {
             tradeDateDate : TradeDateDate
             tradeDateDateTime : TradeDateDateTime
          }
-      """)
+      """
+      )
       val tradeJson = """
          {
             "tradeDateInstant" : "13/05/20T19:33:22",
@@ -281,16 +299,77 @@ class TypedObjectTest {
    }
 
    @Test
+   fun `can parse string to date`() {
+      val schema = TaxiSchema.from("""
+         type NearLegDate inherits Date
+         type FarLegDate inherits Date
+         type OrderId inherits String
+         model Order {
+            orderId : OrderId by jsonPath("$.orderId")
+            nearLegDate : NearLegDate(@format = "dd/MMM/yyyy") by left(jsonPath("$.eventDate"), indexOf(jsonPath("$.eventDate"),";"))
+            farLegDate : FarLegDate(@format = "dd/MMM/yyyy") by right(jsonPath("$.eventDate"), indexOf(jsonPath("$.eventDate"),";") + 1)
+         }
+         model OutputOrder {
+            orderId : OrderId
+            nearDate : NearLegDate(@format = "yyyy-MM-dd")
+            farDate : FarLegDate(@format = "yyyy-MM-dd")
+         }
+      """.trimIndent())
+      val instance = TypedInstance.from(schema.type("Order"), """{ "orderId" : "abc", "eventDate" : "10/MAY/2021;10/MAY/2031" } """, schema, source = Provided)
+      val (vyne,_) = testVyne(schema)
+      val result = vyne.from(instance).build("OutputOrder")
+      val outputOrder = result["OutputOrder"] as TypedObject
+      val json = jacksonObjectMapper().writeValueAsString(outputOrder.toRawObject())
+      val expected = """{"orderId":"abc","nearDate":"2021-05-10","farDate":"2031-05-10"}"""
+      JSONAssert.assertEquals(expected, json, true)
+   }
+
+
+   @Test
+   fun `can parse string to date with csv`() {
+      val schema = TaxiSchema.from("""
+         type NearLegDate inherits Date
+         type FarLegDate inherits Date
+         type OrderId inherits String
+         @CsvList
+         type alias OrderList as Order[]
+
+         model Order {
+            orderId : OrderId by column(1)
+            nearLegDate : NearLegDate(@format = "dd/MMM/yyyy") by left(column(2), indexOf(column(2),";"))
+            farLegDate : FarLegDate(@format = "dd/MMM/yyyy") by right(column(2), indexOf(column(2),";") + 1)
+         }
+         model OutputOrder {
+            orderId : OrderId
+            nearDate : NearLegDate(@format = "yyyy-MM-dd")
+            farDate : FarLegDate(@format = "yyyy-MM-dd")
+         }
+      """.trimIndent())
+      val csv = """orderId,settlementDate
+abc,10/MAY/2021;10/MAY/2031
+      """.trimIndent()
+      val instance = TypedInstance.from(schema.type("OrderList"), csv, schema, source = Provided)
+      val (vyne,_) = testVyne(schema)
+      val result = vyne.from(instance).build("OutputOrder")
+      val outputOrder = result["OutputOrder"] as TypedObject
+      val json = jacksonObjectMapper().writeValueAsString(outputOrder.toRawObject())
+      val expected = """{"orderId":"abc","nearDate":"2021-05-10","farDate":"2031-05-10"}"""
+      JSONAssert.assertEquals(expected, json, true)
+   }
+
+   @Test
    fun `Downcasted Dates can be unwrapped`() {
       //eventDate : RfqEventDate? (@format = "dd/MMM/yyyy HH:mm:ss") by column("RFQ-Action Date")
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          type RfqEventDate inherits Date
          type RfqEventTime inherits Time
          type Rfq {
             eventDate : RfqEventDate? (@format = "dd/MMM/yyyy HH:mm:ss")
             eventTime: RfqEventTime (@format = "dd/MMM/yyyy HH:mm:ss")
          }
-      """)
+      """
+      )
       val rfqJson = """
          {
             "eventDate" : "12/Jun/2019 10:20:00",

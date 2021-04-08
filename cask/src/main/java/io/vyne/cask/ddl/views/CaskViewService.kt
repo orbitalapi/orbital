@@ -2,8 +2,6 @@ package io.vyne.cask.ddl.views
 
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
-import io.vyne.schemaStore.SchemaProvider
-import io.vyne.schemas.toVyneQualifiedName
 import io.vyne.utils.log
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.View
@@ -31,6 +29,12 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
          log().error("Failed to drop view ${viewConfig.tableName} - ${exception.message}")
          false
       }
+   }
+
+   fun viewCaskDependencies(caskConfig: CaskConfig): List<CaskConfig> {
+      val configurationBasedViewDependencies = getConfigurationBasedViewDependenciesForType(caskConfig)
+      val taxiBasedViewDependencies = getTaxiViewDependenciesForType(caskConfig)
+      return configurationBasedViewDependencies + taxiBasedViewDependencies
    }
 
    internal fun generateView(viewDefinition: CaskViewDefinition): CaskConfig? {
@@ -121,13 +125,20 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
       }
    }
 
-   fun getViewDependenciesForType(caskConfig: CaskConfig): List<CaskConfig> {
+   fun getConfigurationBasedViewDependenciesForType(caskConfig: CaskConfig): List<CaskConfig> {
       val views = viewConfig.views.filter { viewDefinition ->
          viewDefinition.join.types.contains(QualifiedName.from(caskConfig.qualifiedTypeName))
       }.flatMap { viewDefinition ->
          caskConfigRepository.findAllByQualifiedTypeName(viewDefinition.typeName.fullyQualifiedName)
       }
       return views
+   }
+
+   fun getTaxiViewDependenciesForType(caskConfig: CaskConfig): List<CaskConfig> {
+      return schemaBasedViewGenerator.taxiViews()
+         .filter {taxiView -> schemaBasedViewGenerator.getDependencies(taxiView).contains(QualifiedName.from(caskConfig.qualifiedTypeName)) }
+         .flatMap { taxiView -> caskConfigRepository.findAllByQualifiedTypeName(taxiView.qualifiedName) }
+
    }
 }
 

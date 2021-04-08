@@ -67,6 +67,16 @@ class QueryTester {
       return failures.toList()
    }
 
+   fun fetchSources(root: File): List<VersionedSource> {
+      val schemaFile = root.toPath().resolve(schemaFileName).toFile()
+      return if (root.isDirectory && schemaFile.exists()) {
+         val schema = schemaFile.readText()
+         objectMapper.readValue<List<VersionedSource>>(schema)
+      } else {
+         listOf()
+      }
+   }
+
    private fun executeTestsInDirectory(schemaJson: String, testDirectory: File): List<VyneTestFailure> {
       val schemas = objectMapper.readValue<List<VersionedSource>>(schemaJson)
       val testFiles = testDirectory.listFiles { file ->

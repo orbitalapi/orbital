@@ -7,6 +7,7 @@ import io.vyne.VersionedTypeReference
 import io.vyne.cask.api.*
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.ddl.TypeDbWrapper
+import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.CaskIngestionErrorProcessor
 import io.vyne.cask.ingest.IngesterFactory
 import io.vyne.cask.ingest.IngestionErrorRepository
@@ -30,6 +31,7 @@ import org.springframework.util.MultiValueMap
 import reactor.core.publisher.Flux
 import java.io.ByteArrayInputStream
 import java.io.InputStream
+import java.time.Duration
 import java.time.Instant
 import java.util.*
 
@@ -38,7 +40,8 @@ class CaskService(private val schemaProvider: SchemaProvider,
                   private val ingesterFactory: IngesterFactory,
                   private val caskConfigRepository: CaskConfigRepository,
                   private val caskDAO: CaskDAO,
-                  private val ingestionErrorRepository: IngestionErrorRepository) {
+                  private val ingestionErrorRepository: IngestionErrorRepository,
+                  private val caskViewService: CaskViewService) {
 
    interface CaskServiceError {
       val message: String
@@ -106,27 +109,38 @@ class CaskService(private val schemaProvider: SchemaProvider,
 
    fun getCaskDetails(tableName: String): CaskDetails {
       val count = caskDAO.countCaskRecords(tableName)
-      val fullQualifiedName = caskConfigRepository.findByTableName(tableName)!!.qualifiedTypeName
-      val now = Instant.now();
-      val yesterday = now.minusSeconds(24 * 60 * 60);
+      val caskConfig = caskConfigRepository.findByTableName(tableName)!!
+      val fullQualifiedName = caskConfig.qualifiedTypeName
+      val dependencies = if (caskConfig.exposesType) {
+         emptyList()
+      } else caskViewService.viewCaskDependencies(caskConfig).map { it.qualifiedTypeName }
+      val now = Instant.now()
+      val yesterday = now.minus(Duration.ofDays(1))
       val ingestionErrorsCount= this.ingestionErrorRepository.countByFullyQualifiedNameAndInsertedAtBetween(
          fullQualifiedName,
          yesterday,
          now
       )
-      return CaskDetails(count, ingestionErrorsCount)
+      return CaskDetails(count, ingestionErrorsCount, dependencies)
    }
 
-   fun deleteCask(tableName: String) {
-      if (caskDAO.exists(tableName)) {
-         log().info("deleting cask for table name $tableName")
-         caskDAO.deleteCask(tableName)
-      }
+   /**
+    * Deletes the given Cask configuration.
+    * @param caskConfig Defines the cask that is to be deleted
+    * @param force If there are other casks (view based) that depends on the cask to be deleted, these
+    * dependent casks will also be deleted if force is true.
+    */
+   fun deleteCask(caskConfig: CaskConfig, force: Boolean = false) {
+      log().info("deleting cask with config $caskConfig")
+      val dependencies = if (!caskConfig.exposesType && force) {
+         this.caskViewService.viewCaskDependencies(caskConfig)
+      } else emptyList()
+      caskDAO.deleteCask(caskConfig, force, dependencies)
    }
 
-   fun emptyCask(tableName: String) {
-      if (caskDAO.exists(tableName)) {
-         caskDAO.emptyCask(tableName)
+   fun deleteCask(tableName: String, force: Boolean) {
+      caskConfigRepository.findByTableName(tableName)?.let {caskConfig ->
+         deleteCask(caskConfig, force)
       }
    }
 
@@ -143,7 +157,7 @@ class CaskService(private val schemaProvider: SchemaProvider,
                fqn = ingestionError.fullyQualifiedName,
                error = ingestionError.error)
          }
-         CaskIngestionErrorDtoPage(items = items, currentPage = result.number.toLong(), totalItem = result.totalElements.toLong(), totalPages = result.totalPages.toLong())
+         CaskIngestionErrorDtoPage(items = items, currentPage = result.number.toLong(), totalItem = result.totalElements, totalPages = result.totalPages.toLong())
       } ?: CaskIngestionErrorDtoPage(listOf(), 0L, 0L, 0L)
    }
 
@@ -153,11 +167,11 @@ class CaskService(private val schemaProvider: SchemaProvider,
       } ?:  InputStreamResource(ByteArrayInputStream(ByteArray(0))) to null
    }
 
-   fun deleteCaskByTypeName(typeName: String) {
+   fun deleteCaskByTypeName(typeName: String, force: Boolean) {
       log().info("Deleting cask for type => $typeName")
       caskConfigRepository
          .findAllByQualifiedTypeName(typeName)
-         .forEach { caskConfig -> this.deleteCask(caskConfig.tableName) }
+         .forEach { caskConfig -> this.deleteCask(caskConfig, force) }
    }
 }
 

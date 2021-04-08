@@ -3,7 +3,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.15.0</version>
+      <version>0.15.1</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -24,6 +24,13 @@
          <groupId>io.vyne</groupId>
          <artifactId>vyne</artifactId>
          <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>io.vyne</groupId>
+         <artifactId>vyne</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
       </dependency>
       <dependency>
          <groupId>io.vyne</groupId>

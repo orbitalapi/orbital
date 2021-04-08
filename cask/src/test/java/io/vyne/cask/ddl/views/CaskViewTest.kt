@@ -7,6 +7,7 @@ import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.ddl.views.ViewJoin.ViewJoinKind.LEFT_OUTER
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
@@ -77,7 +78,7 @@ class CaskViewBuilderFactoryTest {
       repository = mock { }
       val schemaStore = SimpleSchemaStore()
       schemaStore.setSchemaSet(SchemaSet.from(listOf(versionedSource), 1))
-      builderBuilderFactory = CaskViewBuilderFactory(repository, schemaStore)
+      builderBuilderFactory = CaskViewBuilderFactory(repository, schemaStore, StringToQualifiedNameConverter())
       whenever(repository.findAllByQualifiedTypeName(eq("test.Order"))).thenReturn(
          listOf(CaskConfig.forType(taxiSchema.versionedType("test.Order".fqn()), "orders")
          ))

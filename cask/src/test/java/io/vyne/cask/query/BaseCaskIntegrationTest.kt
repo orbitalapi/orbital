@@ -69,6 +69,7 @@ abstract class BaseCaskIntegrationTest {
    @Autowired
    lateinit var jdbcStreamingTemplate: JdbcStreamingTemplate
 
+
    @Autowired
    lateinit var ingestionErrorRepository: IngestionErrorRepository
    lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
@@ -84,7 +85,7 @@ abstract class BaseCaskIntegrationTest {
    fun tearDown() {
       configRepository.findAll().forEach {
          try {
-            caskDao.deleteCask(it.tableName)
+            caskDao.deleteCask(it)
          } catch (e: Exception) {
             log().error("Failed to delete cask ${it.tableName}", e)
          }
@@ -109,7 +110,7 @@ abstract class BaseCaskIntegrationTest {
       caskConfigService = CaskConfigService(configRepository)
       viewDefinitions = mutableListOf()
       caskViewService = CaskViewService(
-         CaskViewBuilderFactory(configRepository, schemaProvider),
+         CaskViewBuilderFactory(configRepository, schemaProvider, StringToQualifiedNameConverter()),
          configRepository,
          jdbcTemplate,
          CaskViewConfig(viewDefinitions),
