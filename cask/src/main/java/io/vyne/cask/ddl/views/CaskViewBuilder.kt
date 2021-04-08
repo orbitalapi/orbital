@@ -39,8 +39,36 @@ class CaskViewBuilder(
 ) {
    companion object {
       const val VIEW_PREFIX = "v_"
-     fun dropViewStatement(viewTableName:String) =  """drop view if exists $viewTableName;"""
+      fun dropViewStatement(viewTableName: String) = """drop view if exists $viewTableName;"""
+      fun caskConfigsForQualifiedNames(qualifiedNames: List<QualifiedName>, caskConfigRepository: CaskConfigRepository): List<Pair<QualifiedName, CaskConfig>> {
+         return qualifiedNames.map { qualifiedName ->
+            qualifiedName to caskConfigRepository.findAllByQualifiedTypeName(qualifiedName.fullyQualifiedName)
+         }.map { (qualifiedName, configs) ->
+            val activeConfigs = configs.filter { it.status == CaskStatus.ACTIVE }
+            if (configs.isNotEmpty() && activeConfigs.isEmpty()) {
+               log().warn("Cask view for $qualifiedName cannot be created, as it has no active configs -- all are either replaced or migrating")
+            }
+            qualifiedName to activeConfigs
+         }.mapNotNull { (qualifiedName, configs) ->
+            if (configs.isEmpty()) {
+               log().error("Type ${qualifiedName.parameterizedName} does not have any cask configs assigned.  This can happen if a view is defined before a cask is generated.  This will prevent cask views being generated. ")
+               return@mapNotNull null
+            }
+            // MVP: Only support a single table (the most recently created)
+            // per config)
+            // In the future, as part of supporting upgrades/migrations,
+            // we need to expand this to support all versions
+            qualifiedName to configs.maxBy { it.insertedAt }!!
+         }
+      }
+
+      // Cask now exposes functionality to query given cask by cask_message.insertedAt column.
+      // This requires joining actual 'data' table to cask_message via  <data_table>.caskmessageid = cask_message.id.
+      // Therefore we need to create caskmessageid column in view as well. Below we simply set the value of caskmessageid column of the
+      // first table, but this is just an arbitraty decision for the moment as we can't come up with a better approach.
+      fun caskMessageIdColumn(tableName: String) = """${tableName.quoted()}.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} as ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}"""
    }
+
    private val taxiWriter = SchemaWriter()
    private val tableConfigs: List<Pair<QualifiedName, CaskConfig>> by lazy { getCaskConfigs(viewSpec.join) }
    private val types: Map<QualifiedName, Type> by lazy { compileTypes(tableConfigs) }
@@ -76,7 +104,7 @@ class CaskViewBuilder(
             // This requires joining actual 'data' table to cask_message via  <data_table>.caskmessageid = cask_message.id.
             // Therefore we need to create caskmessageid column in view as well. Below we simply set the value of caskmessageid column of the
             // first table, but this is just an arbitraty decision for the moment as we can't come up with a better approach.
-            val caskMessageIdColumn = """${thisTableName.quoted()}.${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME} as ${PostgresDdlGenerator.MESSAGE_ID_COLUMN_NAME}"""
+            val caskMessageIdColumn = caskMessageIdColumn(thisTableName)
             JoinTableSpec(thisTableName, fields.plus(caskMessageIdColumn))
          } else {
             val previousTypeName = join.types[index - 1]
@@ -242,25 +270,6 @@ class CaskViewBuilder(
    }
 
    private fun getCaskConfigs(join: ViewJoin): List<Pair<QualifiedName, CaskConfig>> {
-      return join.types.map { qualifiedName ->
-         qualifiedName to caskConfigRepository.findAllByQualifiedTypeName(qualifiedName.fullyQualifiedName)
-      }.map { (qualifiedName,configs) ->
-         val activeConfigs = configs.filter { it.status == CaskStatus.ACTIVE }
-         if (configs.isNotEmpty() && activeConfigs.isEmpty()) {
-            log().warn("Cask view for $qualifiedName cannot be created, as it has no active configs -- all are either replaced or migrating")
-         }
-         qualifiedName to activeConfigs
-      }.mapNotNull { (qualifiedName, configs) ->
-         if (configs.isEmpty()) {
-            log().error("Type ${qualifiedName.parameterizedName} does not have any cask configs assigned.  This can happen if a view is defined before a cask is generated.  This will prevent cask views being generated. ")
-            return@mapNotNull null
-         }
-         // MVP: Only support a single table (the most recently created)
-         // per config)
-         // In the future, as part of supporting upgrades/migrations,
-         // we need to expand this to support all versions
-         qualifiedName to configs.maxBy { it.insertedAt }!!
-      }
+      return caskConfigsForQualifiedNames(join.types, caskConfigRepository)
    }
-
 }

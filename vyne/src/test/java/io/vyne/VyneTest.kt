@@ -7,6 +7,7 @@ import io.vyne.models.*
 import io.vyne.models.json.*
 import io.vyne.query.*
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
+import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
@@ -69,6 +70,12 @@ fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
    val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
    val vyne = Vyne(queryEngineFactory).addSchema(schema)
    return vyne to stubService
+}
+
+fun testVyne(schema: TaxiSchema, invokers:List<OperationInvoker>): Vyne {
+   val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), invokers)
+   val vyne = Vyne(queryEngineFactory).addSchema(schema)
+   return vyne
 }
 
 fun testVyne(vararg schemas: String): Pair<Vyne, StubService> {
@@ -146,7 +153,7 @@ class VyneTest {
 
          service InputService {
            @StubOperation("findAll")
-            operation findAll(): Input[]
+            operation `findAll`(): Input[]
          }
       """.trimIndent()
          )
@@ -169,7 +176,7 @@ class VyneTest {
          |}
       """.trimMargin()
 
-         stubs.addResponse("findAll", inputs)
+         stubs.addResponse("`findAll`", inputs)
 
          stubs.addResponse(
             "findByInstrumentId",
@@ -962,7 +969,13 @@ service Broker2Service {
       )
 
       // act
-      val result = vyne.query("""findAll { Order[] } as { CommonOrder[] }""")
+      val result1 = vyne.query("""findAll { Order[] } as { CommonOrder[] }""")
+
+      val result = vyne.query(
+         """
+         findAll { Order[] } as CommonOrder[]
+      """.trimIndent()
+      )
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
@@ -1768,6 +1781,51 @@ service ClientService {
    }
 
    @Test
+   fun `parameter models should be resolved by respecting nullability attributes of its fields`() = runBlockingTest {
+      val (vyne, stubs) = testVyne("""
+         type Isin inherits String
+         type PUID inherits String
+         type InstrumentId inherits String
+         parameter model PuidRequest {
+            //note that isin is not nullable
+            isin: Isin
+         }
+         model PuidResponse {
+            puid: PUID
+         }
+
+         model Instrument {
+           id: InstrumentId
+           isin: Isin
+         }
+
+         service ProductService {
+           operation getPUID(PuidRequest) :  PuidResponse
+         }
+
+         service instrumentService {
+            operation getInstrument(InstrumentId): Instrument
+         }
+
+      """.trimIndent())
+
+      stubs.addResponse("getPUID") { _, _ -> fail("getPUID should not be called") }
+      stubs.addResponse("getInstrument",
+         TypedInstance.from(vyne.type("Instrument"), """
+            "id": "instrument1"
+         """.trimIndent(), vyne.schema, source = Provided))
+      val queryResult1 = vyne.query(
+         """
+          given { id: InstrumentId = "1" }
+          findOne {
+            PuidResponse
+         }
+      """.trimIndent()
+      )
+
+   }
+
+   @Test
    fun `GATHER strategy should respect the constraints in Query`() = runBlockingTest {
       val (vyne, stubs) = testVyne(
          """
@@ -1778,13 +1836,13 @@ service ClientService {
             }
 
             service OrderService {
-              operation findAll(): Order[]
+              operation `findAll`(): Order[]
               operation findOrder(): Order
             }
          }
       """.trimIndent()
       )
-      stubs.addResponse("findAll") { _, _ ->
+      stubs.addResponse("`findAll`") { _, _ ->
          fail("should not call findAll")
       }
 

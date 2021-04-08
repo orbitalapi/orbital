@@ -9,6 +9,9 @@ import io.vyne.models.TypeNamedInstanceMapper
 import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
+import io.vyne.query.history.LineageRecord
+import io.vyne.query.history.QuerySummary
+import io.vyne.query.history.QueryResultRow
 import io.vyne.queryService.history.*
 import io.vyne.utils.log
 import kotlinx.coroutines.Dispatchers
@@ -74,7 +77,7 @@ class PersistingQueryEventConsumer(
 
    private fun persistEvent(event: RestfulQueryResultEvent) {
       createQuerySummaryRecord(event.queryId) {
-         PersistentQuerySummary(
+         QuerySummary(
             queryId = event.queryId,
             clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
             taxiQl = null,
@@ -96,7 +99,7 @@ class PersistingQueryEventConsumer(
    private suspend fun persistEvent(event: TaxiQlQueryResultEvent) = withContext(Dispatchers.IO) {
       createQuerySummaryRecord(event.queryId) {
          try {
-            PersistentQuerySummary(
+            QuerySummary(
                queryId = event.queryId,
                clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
                taxiQl = event.query,
@@ -162,7 +165,7 @@ class PersistingQueryEventConsumer(
       return sanitizedDataSource
    }
 
-   private fun createQuerySummaryRecord(queryId: String, factory: () -> PersistentQuerySummary) {
+   private fun createQuerySummaryRecord(queryId: String, factory: () -> QuerySummary) {
       // Since we don't have a "query started" concept (and it wouldn't
       // really work in a multi-threaded execution), we need to ensure that
       // the query object is present, as well as the result rows

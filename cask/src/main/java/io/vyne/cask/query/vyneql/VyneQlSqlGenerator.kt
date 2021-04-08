@@ -1,6 +1,5 @@
 package io.vyne.cask.query.vyneql
 
-import arrow.core.getOrHandle
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.findActiveTables
@@ -9,19 +8,19 @@ import io.vyne.cask.query.CaskDAO
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.AttributeName
 import io.vyne.schemas.Schema
-import io.vyne.vyneql.DiscoveryType
-import io.vyne.vyneql.TaxiQlQueryString
-import io.vyne.vyneql.VyneQlCompiler
+import lang.taxi.Compiler
 import lang.taxi.services.operations.constraints.ConstantValueExpression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
+import lang.taxi.types.DiscoveryType
 import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
+import lang.taxi.types.TaxiQLQueryString
 import org.springframework.stereotype.Component
 
 data class SqlStatement(val sql: String, val params: List<Any>)
@@ -33,20 +32,19 @@ class VyneQlSqlGenerator(
 ) {
 
 
-   fun generateSql(queryString: TaxiQlQueryString): SqlStatement {
+   fun generateSql(queryString: TaxiQLQueryString): SqlStatement {
       return generateSqlWithSelect(queryString, "*")
    }
 
-   fun generateSqlCountRecords(queryString: TaxiQlQueryString): SqlStatement {
+   fun generateSqlCountRecords(queryString: TaxiQLQueryString): SqlStatement {
       return generateSqlWithSelect(queryString, "count(*)")
    }
 
-   private fun generateSqlWithSelect(queryString: TaxiQlQueryString, select: String): SqlStatement {
+   private fun generateSqlWithSelect(queryString: TaxiQLQueryString, select: String): SqlStatement {
       val vyneSchema = schemaProvider.schema()
-      val taxiSchema = vyneSchema.taxi
-      val query = VyneQlCompiler(queryString, taxiSchema)
-         .compile()
-         .getOrHandle { errors -> throw CaskBadRequestException(errors.joinToString("\n") { it.detailMessage }) }
+      val taxiDocument = vyneSchema.taxi
+      val queries = Compiler(source = queryString, importSources = listOf(taxiDocument)).queries()
+      val query = queries.first()
       if (query.typesToFind.size != 1) {
          throw CaskBadRequestException("VyneQl queries support exactly one target type.  Found ${query.typesToFind.size}")
       }
@@ -54,7 +52,7 @@ class VyneQlSqlGenerator(
       val config = getActiveConfig(collectionTypeName)
       // Hmmm... looks like fieldName and columnName are being used interchangably.
       // This will likely hurt us later
-      val collectionType = taxiSchema.objectType(collectionTypeName.fullyQualifiedName)
+      val collectionType = taxiDocument.objectType(collectionTypeName.fullyQualifiedName)
       val criteria = discoveryType.constraints.map { constraintToCriteria(it, collectionType, vyneSchema) }
 
       val whereClause = if (criteria.isNotEmpty()) {
@@ -62,7 +60,7 @@ class VyneQlSqlGenerator(
       } else ""
 
       return SqlStatement(
-         sql = """SELECT ${select} from ${config.tableName} $whereClause""".trim() + ";",
+         sql = """SELECT $select from ${config.tableName} $whereClause""".trim() + ";",
          params = criteria.flatMap { it.params }
       )
 

@@ -42,7 +42,7 @@ class CaskUpgraderServiceWatcher(
    private fun dropReplacedCasks() {
       caskConfigRepository.findAllByStatus(CaskStatus.REPLACED).forEach { config ->
          log().info("Dropping replaced cask ${config.tableName}")
-         caskDAO.deleteCask(config.tableName, true)
+         caskDAO.deleteCask(config, true)
       }
    }
 

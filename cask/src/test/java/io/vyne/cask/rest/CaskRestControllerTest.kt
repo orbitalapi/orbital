@@ -36,25 +36,31 @@ class CaskRestControllerTest {
    @Test
    fun `delete by table name`() {
       var tableName: String? = null
-      whenever(service.deleteCask(any())).thenAnswer { invocationOnMock ->
-         tableName = invocationOnMock.getArgument(0) as String
+      var force: Boolean? = null
+      whenever(service.deleteCask(any(), any())).thenAnswer { invocationOnMock ->
+         tableName = invocationOnMock.getArgument(0, String::class.java)
+         force = invocationOnMock.getArgument(1) as Boolean
          Unit
       }
 
       mockMvc.perform(delete("/api/casks/mytable")).andExpect(status().isOk)
       tableName.should.equal("mytable")
+      force.should.be.`false`
    }
 
    @Test
    fun `delete by type name`() {
       var typeName: String? = null
-      whenever(service.deleteCaskByTypeName(any())).thenAnswer { invocationOnMock ->
+      var force: Boolean? = null
+      whenever(service.deleteCaskByTypeName(any(), any())).thenAnswer { invocationOnMock ->
          typeName = invocationOnMock.getArgument(0) as String
+         force = invocationOnMock.getArgument(1) as Boolean
          Unit
       }
 
       mockMvc.perform(delete("/api/types/cask/typeName")).andExpect(status().isOk)
       typeName.should.equal("typeName")
+      force.should.be.`false`
    }
 }
 

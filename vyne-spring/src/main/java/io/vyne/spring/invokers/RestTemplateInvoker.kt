@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
@@ -36,21 +35,19 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
    val webClient: WebClient,
-   private val serviceUrlResolvers: List<ServiceUrlResolver> = listOf(io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver()),
-   private val enableDataLineageForRemoteCalls: Boolean
+   private val serviceUrlResolvers: List<ServiceUrlResolver> =ServiceUrlResolver.DEFAULT
 ) : OperationInvoker {
 
    @Autowired
    constructor(
       schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,
-      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver()),
-      @Value("\${vyne.data-lineage.remoteCalls.enabled:false}") enableDataLineageForRemoteCalls: Boolean
+      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver())
    )
       : this(
       schemaProvider, webClientBuilder.exchangeStrategies(
          ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
-      ).build(), serviceUrlResolvers, enableDataLineageForRemoteCalls
+         ).build(), serviceUrlResolvers
    )
 
    private val uriVariableProvider = UriVariableProvider()
@@ -86,7 +83,7 @@ class RestTemplateInvoker(
 
       val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
-      //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
+         //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
       val request = webClient
          .method(httpMethod)
          .uri(absoluteUrl, uriVariables)
@@ -194,7 +191,8 @@ class RestTemplateInvoker(
 
 
    private fun makeUrlAbsolute(service: Service, operation: RemoteOperation, url: String): String {
-      return this.serviceUrlResolvers.first { it.canResolve(service, operation) }.makeAbsolute(url, service, operation)
+      return this.serviceUrlResolvers.firstOrNull { it.canResolve(service, operation) }
+         ?.makeAbsolute(url, service, operation)
+         ?: error("No url resolvers were found that can make url $url (on operation ${operation.qualifiedName}) absolute")
    }
 }
-

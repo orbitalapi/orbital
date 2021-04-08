@@ -215,16 +215,25 @@ class ParameterFactory {
             }
          }
 
-         if (attributeValue == null) {
-            throw UnresolvedOperationParametersException(
-               "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
-               context.evaluatedPath(),
-               context.profiler.root
-            )
-         }
+         when {
+            attributeValue is TypedNull && !field.nullable-> {
+               throw UnresolvedOperationParametersException(
+                  "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
+                  context.evaluatedPath(),
+                  context.profiler.root
+               )
+            }
 
-         // else ... attributeValue != null -- we found it.  Good work team, move on.
-         attributeName to attributeValue
+            (attributeValue == null) -> {
+               throw UnresolvedOperationParametersException(
+                  "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
+                  context.evaluatedPath(),
+                  context.profiler.root
+               )
+            }
+
+            else -> attributeName to attributeValue
+         }
       }.toMap()
       return  TypedObject(paramType, fields, MixedSources)
    }

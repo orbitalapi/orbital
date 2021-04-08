@@ -36,6 +36,6 @@ enum class OperationAnnotation(val annotation: String) {
    FindOne("findOneBy"),
    FindMultipleBy("findMultipleBy"),
    FindSingleBy("findSingleBy"),
-   FindAll("findAll"),
+   FindAll("getAll"),
    FindBetweemInsertedAt("findBetweenInsertedAt")
 }

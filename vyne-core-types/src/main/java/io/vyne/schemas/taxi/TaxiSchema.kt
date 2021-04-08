@@ -2,12 +2,22 @@ package io.vyne.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
+import io.vyne.schemas.DefaultTypeCache
 import io.vyne.schemas.*
 import io.vyne.schemas.EnumValue
 import io.vyne.schemas.Field
 import io.vyne.schemas.FieldModifier
+import io.vyne.schemas.Metadata
+import io.vyne.schemas.Operation
+import io.vyne.schemas.OperationNames
+import io.vyne.schemas.Parameter
+import io.vyne.schemas.Policy
 import io.vyne.schemas.Modifier
 import io.vyne.schemas.QualifiedName
+import io.vyne.schemas.QueryOperation
+import io.vyne.schemas.Schema
+import io.vyne.schemas.Service
+import io.vyne.schemas.TaxiTypeMapper
 import io.vyne.schemas.Type
 import io.vyne.versionedSources
 import lang.taxi.Compiler
@@ -16,6 +26,8 @@ import lang.taxi.TaxiDocument
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.types.*
 import lang.taxi.types.Annotation
+import lang.taxi.types.ArrayType
+import lang.taxi.types.PrimitiveType
 import org.antlr.v4.runtime.CharStreams
 import java.nio.file.Path
 
@@ -112,82 +124,9 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
    private fun parseTypes(document: TaxiDocument): Set<Type> {
       // Register primitives, as they're implicitly defined
       val typeCache = DefaultTypeCache(getTaxiPrimitiveTypes())
-      document.types.forEach { taxiType: lang.taxi.types.Type ->
-         when (taxiType) {
-            is ObjectType -> {
-               val typeName = QualifiedName(taxiType.qualifiedName)
-               val fields = taxiType.allFields.map { field ->
-                  when (field.type) {
-                     is ArrayType -> field.name to Field(
-                        field.type.toVyneQualifiedName(),
-                        field.modifiers.toVyneFieldModifiers(),
-                        accessor = field.accessor,
-                        readCondition = field.readExpression,
-                        typeDoc = field.typeDoc,
-                        nullable = field.nullable,
-                        metadata = parseAnnotationsToMetadata(field.annotations)
-                     )
-                     else -> field.name to Field(
-                        field.type.qualifiedName.fqn(),
-                        constraintProvider = buildDeferredConstraintProvider(field.type.qualifiedName.fqn(), field.constraints),
-                        modifiers = field.modifiers.toVyneFieldModifiers(),
-                        accessor = field.accessor,
-                        readCondition = field.readExpression,
-                        typeDoc = field.typeDoc,
-                        defaultValue = field.defaultValue,
-                        formula = field.formula,
-                        nullable = field.nullable,
-                        metadata = parseAnnotationsToMetadata(field.annotations)
-                     )
-                  }
-               }.toMap()
-               val modifiers = parseModifiers(taxiType)
-               val type = Type(
-                  typeName,
-                  fields,
-                  modifiers,
-                  inheritsFromTypeNames = taxiType.inheritsFromNames.map { it.fqn() },
-                  metadata = parseAnnotationsToMetadata(taxiType.annotations),
-                  sources = taxiType.compilationUnits.toVyneSources(),
-                  typeDoc = taxiType.typeDoc,
-                  taxiType = taxiType
-               )
-               typeCache.add(type)
-            }
-            is TypeAlias -> {
-               typeCache.add(Type(
-                  QualifiedName(taxiType.qualifiedName),
-                  metadata = parseAnnotationsToMetadata(taxiType.annotations),
-                  aliasForTypeName = taxiType.aliasType!!.toQualifiedName().toVyneQualifiedName(),
-                  sources = taxiType.compilationUnits.toVyneSources(),
-                  typeDoc = taxiType.typeDoc,
-                  taxiType = taxiType
-               ))
-            }
-            is EnumType -> {
-               val enumValues = taxiType.values.map { EnumValue(it.name, it.value, it.synonyms, it.typeDoc) }
-               typeCache.add(Type(
-                  QualifiedName(taxiType.qualifiedName),
-                  modifiers = parseModifiers(taxiType),
-                  metadata = parseAnnotationsToMetadata(taxiType.annotations),
-                  enumValues = enumValues,
-                  sources = taxiType.compilationUnits.toVyneSources(),
-                  typeDoc = taxiType.typeDoc,
-                  taxiType = taxiType,
-                  inheritsFromTypeNames = taxiType.inheritsFromNames.map { it.fqn() },
-               ))
-            }
-            is ArrayType -> TODO()
-            else -> typeCache.add(Type(
-               QualifiedName(taxiType.qualifiedName),
-               modifiers = parseModifiers(taxiType),
-               sources = taxiType.compilationUnits.toVyneSources(),
-               taxiType = taxiType,
-               typeDoc = null
-            ))
-         }
+      document.types.forEach { taxiType ->
+        typeCache.add(TaxiTypeMapper.fromTaxiType(taxiType, this))
       }
-      typeCache.populateDefaultValuesCache()
       return typeCache.types
    }
 
@@ -196,33 +135,12 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
       return taxiTypes.map { taxiPrimitive ->
          Type(
             taxiPrimitive.qualifiedName.fqn(),
-            modifiers = parseModifiers(taxiPrimitive),
+            modifiers = TaxiTypeMapper.parseModifiers(taxiPrimitive),
             sources = listOf(VersionedSource.sourceOnly("Native")),
             typeDoc = taxiPrimitive.typeDoc,
             taxiType = taxiPrimitive
          )
       }.toSet()
-   }
-
-   private fun buildDeferredConstraintProvider(fqn: QualifiedName, constraints: List<lang.taxi.services.operations.constraints.Constraint>): DeferredConstraintProvider {
-      return FunctionConstraintProvider {
-         val type = this.type(fqn)
-         constraintConverter.buildConstraints(type, constraints)
-      }
-   }
-
-   private fun parseModifiers(type: lang.taxi.types.Type): List<Modifier> {
-      return when (type) {
-         is EnumType -> listOf(Modifier.ENUM)
-         is PrimitiveType -> listOf(Modifier.PRIMITIVE)
-         is ObjectType -> type.modifiers.map {
-            when (it) {
-               lang.taxi.types.Modifier.CLOSED -> Modifier.CLOSED
-               lang.taxi.types.Modifier.PARAMETER_TYPE -> Modifier.PARAMETER_TYPE
-            }
-         }
-         else -> emptyList()
-      }
    }
 
    fun merge(schema: TaxiSchema): TaxiSchema {
@@ -261,7 +179,7 @@ class TaxiSchema(val document: TaxiDocument, @get:JsonIgnore override val source
    }
 }
 
-private fun List<lang.taxi.types.FieldModifier>.toVyneFieldModifiers(): List<FieldModifier> {
+fun List<lang.taxi.types.FieldModifier>.toVyneFieldModifiers(): List<FieldModifier> {
    return this.map { FieldModifier.valueOf(it.name) }
 }
 
@@ -269,7 +187,7 @@ private fun lang.taxi.types.QualifiedName.toVyneQualifiedName(): QualifiedName {
    return QualifiedName(this.toString(), this.parameters.map { it.toVyneQualifiedName() })
 }
 
-private fun lang.taxi.types.Type.toVyneQualifiedName(): QualifiedName {
+fun lang.taxi.types.Type.toVyneQualifiedName(): QualifiedName {
    return this.toQualifiedName().toVyneQualifiedName()
 }
 
@@ -278,6 +196,6 @@ private fun lang.taxi.sources.SourceCode.toVyneSource(): VersionedSource {
    return VersionedSource(this.sourceName, VersionedSource.DEFAULT_VERSION.toString(), this.content)
 }
 
-private fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<VersionedSource> {
+fun List<lang.taxi.types.CompilationUnit>.toVyneSources(): List<VersionedSource> {
    return this.map { it.source.toVyneSource() }
 }

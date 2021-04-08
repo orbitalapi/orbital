@@ -139,7 +139,8 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
    }
 
    override fun registerAnonymousType(anonymousType: Type) {
-      this.anonymousTypes[anonymousType.qualifiedName] = anonymousType
+      val withReference = anonymousType.copy(typeCache = this)
+      this.anonymousTypes[withReference.qualifiedName] = withReference
    }
 
    override fun anonymousTypes(): Set<Type> {

@@ -11,6 +11,9 @@ import io.vyne.query.QueryProfiler
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.testVyne
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.BaseMatcher
 import org.hamcrest.Description
 import org.hamcrest.Matcher
@@ -20,9 +23,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.ExpectedCount
 import org.springframework.test.web.client.MockRestServiceServer
-import org.springframework.test.web.client.match.MockRestRequestMatchers.content
-import org.springframework.test.web.client.match.MockRestRequestMatchers.method
-import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
+import org.springframework.test.web.client.match.MockRestRequestMatchers.*
 import org.springframework.test.web.client.response.MockRestResponseCreators
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
@@ -110,8 +111,9 @@ namespace vyne {
 
       server.expect(ExpectedCount.once(), requestTo("http://clientService/clients/notional"))
          .andExpect(method(HttpMethod.GET))
-         .andRespond(MockRestResponseCreators.withSuccess(
-            """
+         .andRespond(
+            MockRestResponseCreators.withSuccess(
+               """
             {
                "name" : "Notional",
                "contacts":
@@ -129,18 +131,68 @@ namespace vyne {
                  ],
                "clientAttributes" : [ { } ]
            }""".trimIndent(),
-            MediaType.APPLICATION_JSON))
+               MediaType.APPLICATION_JSON
+            )
+         )
       val schema = TaxiSchema.from(taxiDef)
       val service = schema.service("vyne.ClientDataService")
       val operation = service.operation("getContactsForClient")
 
-      val response = RestTemplateInvoker(webClient = webClient, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true)
-         .invoke(service, operation, listOf(
-         paramAndType("vyne.ClientName", "notional", schema)
-      ), QueryProfiler()) as TypedObject
+      val response = RestTemplateInvoker(
+         webClient = webClient,
+         schemaProvider = SchemaProvider.from(schema),
+      )
+         .invoke(
+            service, operation, listOf(
+               paramAndType("vyne.ClientName", "notional", schema)
+            ), QueryProfiler()
+         ) as TypedObject
       expect(response.type.fullyQualifiedName).to.equal("vyne.Client")
       expect(response["name"].value).to.equal("Notional")
       expect((response["contacts"] as TypedCollection)).size.to.equal(2)
+   }
+
+   @Test
+   fun `invoke a restTemplate from vyne`() = runBlockingTest {
+      val restTemplate = RestTemplate()
+      val webClient = WebClient.builder().build()
+      val server = MockRestServiceServer.bindTo(restTemplate).build()
+      val json = """
+         [{ "firstName" : "Jimmy", "lastName" : "Pitt", "id" : "123" }]
+      """.trimIndent()
+      server.expect(ExpectedCount.once(), requestTo("http://localhost:8081/people"))
+         .andRespond(MockRestResponseCreators.withSuccess(json, MediaType.APPLICATION_JSON))
+
+      val schema = TaxiSchema.from(
+         """
+         type FirstName inherits String
+         type LastName inherits String
+         type PersonId inherits String
+         model Person {
+            firstName : FirstName
+            lastNAme : LastName
+            id : PersonId
+         }
+
+         service PersonService {
+            @HttpOperation(method = "GET" , url = "http://localhost:8081/people")
+            operation `findAll`() : Person[]
+         }
+      """
+      )
+      val restTemplateInvoker = RestTemplateInvoker(
+         webClient = webClient,
+         schemaProvider = SchemaProvider.from(schema)
+      )
+      val vyne = testVyne(schema, listOf(restTemplateInvoker))
+
+      val response = vyne.query("findAll { Person[] }")
+      response.isFullyResolved.should.be.`true`
+      response.results
+         .toList()
+         .should.have.size(1)
+//      was:
+//      (response["Person[]"] as TypedCollection).should.have.size(1)
    }
 
    @Test
@@ -152,22 +204,37 @@ namespace vyne {
       server.expect(ExpectedCount.once(), requestTo("http://mockService/costs/myClientId/doCalculate"))
          .andExpect(method(HttpMethod.POST))
          .andExpect(content().string(isJsonSatisfying("$.deets", "Hello, world")))
-         .andRespond(MockRestResponseCreators.withSuccess("""{ "stuff" : "Right back atcha, kid" }""", MediaType.APPLICATION_JSON))
+         .andRespond(
+            MockRestResponseCreators.withSuccess(
+               """{ "stuff" : "Right back atcha, kid" }""",
+               MediaType.APPLICATION_JSON
+            )
+         )
       val schema = TaxiSchema.from(taxiDef)
       val service = schema.service("vyne.CreditCostService")
       val operation = service.operation("calculateCreditCosts")
 
-      val response = RestTemplateInvoker(webClient = webClient, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true).invoke(service, operation, listOf(
-         paramAndType("vyne.ClientId", "myClientId", schema),
-         paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-      ), QueryProfiler()) as TypedObject
+      val response = RestTemplateInvoker(
+         webClient = webClient,
+         schemaProvider = SchemaProvider.from(schema),
+      ).invoke(
+         service, operation, listOf(
+            paramAndType("vyne.ClientId", "myClientId", schema),
+            paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
+         ), QueryProfiler()
+      ) as TypedObject
       expect(response.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
       expect(response["stuff"].value).to.equal("Right back atcha, kid")
    }
 
-   private fun paramAndType(typeName: String, value: Any, schema: TaxiSchema, paramName:String? = null): Pair<Parameter, TypedInstance> {
+   private fun paramAndType(
+      typeName: String,
+      value: Any,
+      schema: TaxiSchema,
+      paramName: String? = null
+   ): Pair<Parameter, TypedInstance> {
       val type = schema.type(typeName)
-      return Parameter(type,paramName) to TypedInstance.from(type, value, schema, source = Provided)
+      return Parameter(type, paramName) to TypedInstance.from(type, value, schema, source = Provided)
    }
 
    @Test
@@ -190,13 +257,14 @@ namespace vyne {
 
       val invoker = RestTemplateInvoker(
          webClient = webClient,
-         serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
-         enableDataLineageForRemoteCalls = true,
-         schemaProvider = SchemaProvider.from(schema))
+         schemaProvider = SchemaProvider.from(schema)
+      )
       val response = invoker
-         .invoke(service, operation, listOf(
-         paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-      ), QueryProfiler()) as TypedObject
+         .invoke(
+            service, operation, listOf(
+               paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
+            ), QueryProfiler()
+         ) as TypedObject
 
       response["id"].value.should.equal(100)
    }
@@ -220,11 +288,12 @@ namespace vyne {
 
       val response = RestTemplateInvoker(
          webClient = webClient,
-         serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
-         enableDataLineageForRemoteCalls = true,
-         schemaProvider = SchemaProvider.from(schema)).invoke(service, operation, listOf(
-         paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-      ), QueryProfiler()) as TypedObject
+         schemaProvider = SchemaProvider.from(schema)
+      ).invoke(
+         service, operation, listOf(
+            paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
+         ), QueryProfiler()
+      ) as TypedObject
 
    }
 
@@ -242,13 +311,15 @@ namespace vyne {
       headers.set(io.vyne.http.HttpHeaders.CONTENT_PREPARSED, true.toString())
       server.expect(ExpectedCount.once(), requestTo("http://pets.com/pets"))
          .andExpect(method(HttpMethod.GET))
-         .andRespond(MockRestResponseCreators
-            .withSuccess(responseJson, MediaType.APPLICATION_JSON)
-            .headers(headers)
+         .andRespond(
+            MockRestResponseCreators
+               .withSuccess(responseJson, MediaType.APPLICATION_JSON)
+               .headers(headers)
          )
 
       // Note: The jsonPaths are supposed to ignored, because the content is preparsed
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          service PetService {
             @HttpOperation(method = "GET",url = "http://pets.com/pets")
             operation getBestPet():Animal
@@ -257,7 +328,8 @@ namespace vyne {
             id : String by jsonPath("$.animalsId")
             name : String by jsonPath("$.animalName")
          }
-      """)
+      """
+      )
 
       val schemaProvider = SchemaProvider.from(schema)
       val service = schema.service("PetService")
@@ -265,9 +337,8 @@ namespace vyne {
 
       val response = RestTemplateInvoker(
          webClient = webClient,
-         serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
-         enableDataLineageForRemoteCalls = true,
-         schemaProvider = schemaProvider)
+         schemaProvider = schemaProvider
+      )
          .invoke(service, operation, emptyList(), QueryProfiler()) as TypedObject
 
       response["id"].value.should.equal("100")
@@ -286,12 +357,14 @@ namespace vyne {
       """.trimMargin()
       server.expect(ExpectedCount.once(), requestTo("http://pets.com/pets"))
          .andExpect(method(HttpMethod.GET))
-         .andRespond(MockRestResponseCreators
-            .withSuccess(responseJson, MediaType.APPLICATION_JSON)
+         .andRespond(
+            MockRestResponseCreators
+               .withSuccess(responseJson, MediaType.APPLICATION_JSON)
          )
 
       // Note: The jsonPaths are supposed to ignored, because the content is preparsed
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          service PetService {
             @HttpOperation(method = "GET",url = "http://pets.com/pets")
             operation getBestPet():Animal
@@ -300,7 +373,8 @@ namespace vyne {
             id : String by jsonPath("$.animalsId")
             name : String by jsonPath("$.animalName")
          }
-      """)
+      """
+      )
 
       val schemaProvider = SchemaProvider.from(schema)
       val service = schema.service("PetService")
@@ -308,9 +382,8 @@ namespace vyne {
 
       val response = RestTemplateInvoker(
          webClient = webClient,
-         serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
-         enableDataLineageForRemoteCalls = true,
-         schemaProvider = schemaProvider)
+         schemaProvider = schemaProvider
+      )
          .invoke(service, operation, emptyList(), QueryProfiler()) as TypedObject
 
       response["id"].value.should.equal("100")

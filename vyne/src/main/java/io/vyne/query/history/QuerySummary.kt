@@ -1,4 +1,4 @@
-package io.vyne.queryService.history.db
+package io.vyne.query.history
 
 import com.fasterxml.jackson.annotation.JsonRawValue
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -7,7 +7,6 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
 import org.springframework.data.annotation.Id
-import org.springframework.data.annotation.Transient
 import org.springframework.data.domain.Persistable
 import org.springframework.data.relational.core.mapping.Table
 import java.time.Duration
@@ -15,7 +14,7 @@ import java.time.Instant
 
 
 @Table("query_summary")
-data class PersistentQuerySummary(
+data class QuerySummary(
    val queryId: String,
    val clientQueryId: String,
    val taxiQl: String?,

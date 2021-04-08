@@ -17,10 +17,10 @@ import io.vyne.queryService.security.toVyneUser
 import io.vyne.schemas.Schema
 import io.vyne.spring.VyneProvider
 import io.vyne.utils.log
-import io.vyne.vyneql.TaxiQlQueryString
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
+import lang.taxi.types.TaxiQLQueryString
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -156,7 +156,7 @@ class QueryService(
 
 
    suspend fun monitored(
-      query: TaxiQlQueryString,
+      query: TaxiQLQueryString,
       clientQueryId: String?,
       queryId: String, vyneUser: VyneUser?,
       block: suspend () -> QueryResponse
@@ -174,7 +174,7 @@ class QueryService(
       produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV]
    )
    suspend fun submitVyneQlQuery(
-      @RequestBody query: TaxiQlQueryString,
+      @RequestBody query: TaxiQLQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode = ResultMode.RAW,
       @RequestHeader(
          value = "Accept",
@@ -201,7 +201,7 @@ class QueryService(
       produces = [MediaType.TEXT_EVENT_STREAM_VALUE]
    )
    suspend fun submitVyneQlQueryStreamingResponse(
-      @RequestBody query: TaxiQlQueryString,
+      @RequestBody query: TaxiQLQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
       auth: Authentication? = null,
@@ -219,7 +219,7 @@ class QueryService(
     */
    @GetMapping(value = ["/api/vyneql", "/api/taxiql"], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
    suspend fun getVyneQlQueryStreamingResponse(
-      @RequestParam("query") query: TaxiQlQueryString,
+      @RequestParam("query") query: TaxiQLQueryString,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
       auth: Authentication? = null,
@@ -240,7 +240,7 @@ class QueryService(
    }
 
    private suspend fun vyneQLQuery(
-      query: TaxiQlQueryString,
+      query: TaxiQLQueryString,
       vyneUser: VyneUser? = null,
       clientQueryId: String?,
       queryId: String
@@ -279,7 +279,7 @@ class QueryService(
          // Note: Only using the default set for the originating query,
          // but the queryEngine contains all the factSets, so we can expand this later.
          val queryId = UUID.randomUUID().toString()
-         val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT), queryId = queryId)
+         val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT), queryId = queryId, clientQueryId = clientQueryId)
          when (query.queryMode) {
             QueryMode.DISCOVER -> queryContext.find(query.expression)
             QueryMode.GATHER -> queryContext.findAll(query.expression)

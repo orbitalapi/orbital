@@ -83,7 +83,7 @@ class CaskAppIntegrationTest {
    fun tearDown() {
       configRepository.findAll().forEach {
          try {
-            caskDao.deleteCask(it.tableName)
+            caskDao.deleteCask(it)
          } catch (e: Exception) {
             log().error("Failed to delete cask ${it.tableName}", e)
          }

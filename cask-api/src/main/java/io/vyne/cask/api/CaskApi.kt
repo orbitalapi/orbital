@@ -62,12 +62,6 @@ interface CaskApi {
    @GetMapping("/api/casks/{tableName}/details", produces = ["application/json"])
    fun getCaskDetails(@PathVariable("tableName") tableName: String): Mono<CaskDetails>
 
-   @DeleteMapping("/api/casks/{tableName}")
-   fun deleteCask(@PathVariable("tableName") tableName: String): Mono<String>
-
-   @PutMapping("/api/casks/{tableName}")
-   fun emptyCask(@PathVariable("tableName") tableName: String): Mono<String>
-
    @PostMapping("/api/casks/{tableName}/errors", produces = ["application/json"])
    fun getCaskIngestionErrors(@PathVariable("tableName") tableName: String,
                               @RequestBody request: CaskIngestionErrorsRequestDto): Mono<CaskIngestionErrorDtoPage>
@@ -75,6 +69,9 @@ interface CaskApi {
    @GetMapping("/api/casks/{caskMessageId}")
    fun getIngestionMessage(@PathVariable caskMessageId: String): Mono<String>
 
+   @DeleteMapping("/api/casks/{tableName}")
+   fun deleteCask(@PathVariable("tableName") tableName: String, @RequestParam(defaultValue = "false", required = false) force: Boolean = false): Mono<String>
+
    @DeleteMapping("/api/types/cask/{typeName}")
-   fun deleteCaskByTypeName(@PathVariable("typeName") typeName: String): Mono<String>
+   fun deleteCaskByTypeName(@PathVariable("typeName") typeName: String, @RequestParam(defaultValue = "false", required = false) force: Boolean = false): Mono<String>
 }

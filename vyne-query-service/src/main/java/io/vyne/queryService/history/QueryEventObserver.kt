@@ -5,9 +5,9 @@ import io.vyne.query.Query
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
 import io.vyne.queryService.FailedSearchResponse
-import io.vyne.vyneql.TaxiQlQueryString
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
+import lang.taxi.types.TaxiQLQueryString
 import java.time.Instant
 
 /**
@@ -60,7 +60,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer) {
     *
     * Callers should only used the returned value.
     */
-   suspend fun responseWithQueryHistoryListener(query: TaxiQlQueryString, queryResponse: QueryResponse): QueryResponse {
+   suspend fun responseWithQueryHistoryListener(query: TaxiQLQueryString, queryResponse: QueryResponse): QueryResponse {
       return when (queryResponse) {
          is QueryResult -> captureTaxiQlQueryResultStreamToHistory(query, queryResponse)
          is FailedSearchResponse -> emitFailure(query, queryResponse)
@@ -69,7 +69,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer) {
    }
 
    private fun captureTaxiQlQueryResultStreamToHistory(
-      query: TaxiQlQueryString,
+      query: TaxiQLQueryString,
       queryResult: QueryResult
    ): QueryResult {
       return queryResult.copy(
@@ -103,7 +103,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer) {
 
    }
 
-   private suspend fun emitFailure(query: TaxiQlQueryString, failure: FailedSearchResponse): FailedSearchResponse {
+   private suspend fun emitFailure(query: TaxiQLQueryString, failure: FailedSearchResponse): FailedSearchResponse {
       consumer.handleEvent(
          TaxiQlQueryFailureEvent(
             query,
@@ -137,7 +137,7 @@ data class RestfulQueryFailureEvent(
 ) : QueryEvent()
 
 data class TaxiQlQueryResultEvent(
-   val query: TaxiQlQueryString,
+   val query: TaxiQLQueryString,
    val queryId: String,
    val clientQueryId: String?,
    val typedInstance: TypedInstance
@@ -145,7 +145,7 @@ data class TaxiQlQueryResultEvent(
 
 
 data class TaxiQlQueryFailureEvent(
-   val query: TaxiQlQueryString,
+   val query: TaxiQLQueryString,
    val queryId: String,
    val clientQueryId: String?,
    val failure: FailedSearchResponse

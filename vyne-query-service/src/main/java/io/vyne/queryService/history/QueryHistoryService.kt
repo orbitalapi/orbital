@@ -5,9 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.vyne.models.OperationResult
 import io.vyne.query.QueryProfileData
+import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.history.db.LineageRecordRepository
-import io.vyne.queryService.history.db.PersistentQuerySummary
 import io.vyne.queryService.history.db.QueryHistoryRecordRepository
 import io.vyne.queryService.history.db.QueryResultRowRepository
 import io.vyne.schemas.QualifiedName
@@ -38,7 +38,7 @@ class QueryHistoryService(
    }
 
    @GetMapping("/api/query/history")
-   fun listHistory(): Flux<PersistentQuerySummary> {
+   fun listHistory(): Flux<QuerySummary> {
       return queryHistoryRecordRepository.findAllByOrderByStartTimeDesc()
          .take(50)
 
@@ -143,7 +143,7 @@ class QueryHistoryService(
          .flatMap { querySummary -> getQueryProfileData(querySummary) }
    }
 
-   private fun getQueryProfileData(querySummary: PersistentQuerySummary) =
+   private fun getQueryProfileData(querySummary: QuerySummary) =
       lineageRecordRepository.findAllByQueryIdAndDataSourceType(
          querySummary.queryId,
          OperationResult.NAME

@@ -20,11 +20,11 @@ import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.schemas.*
 import io.vyne.utils.log
-import io.vyne.vyneql.ProjectedType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import lang.taxi.policies.Instruction
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.ProjectedType
 import java.util.*
 import java.util.stream.Stream
 import kotlin.streams.toList
@@ -292,7 +292,7 @@ data class QueryContext(
    }
 
    fun projectResultsTo(targetType: String): QueryContext {
-      return projectResultsTo(ProjectedType.fromConcreteTypeOnly(lang.taxi.types.QualifiedName.from(targetType)))
+      return projectResultsTo(ProjectedType.fromConcreteTypeOnly(schema.taxi.type(targetType)))
    }
 
    private fun projectResultsTo(targetType: Type): QueryContext {

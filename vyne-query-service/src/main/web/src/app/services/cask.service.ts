@@ -24,8 +24,8 @@ export class CaskService {
     return this.http.get<any>(`${environment.queryServiceUrl}/api/casks/${tableName}/details`);
   }
 
-  deleteCask(tableName: string): Observable<CaskConfigRecord[]> {
-    return this.http.delete<any>(`${environment.queryServiceUrl}/api/casks/${tableName}`);
+  deleteCask(tableName: string, force: boolean): Observable<CaskConfigRecord[]> {
+    return this.http.delete<any>(`${environment.queryServiceUrl}/api/casks/${tableName}?force=${force}`);
   }
 
   clearCask(tableName: string): Observable<CaskConfigRecord[]> {
@@ -55,6 +55,7 @@ export interface CaskConfigRecord {
 export interface CaskConfigDetails {
   recordsNumber: number;
   ingestionErrorsInLast24Hours: number;
+  dependencies: string[];
 }
 
 export interface CaskIngestionErrorDto {

@@ -9,8 +9,8 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.Jackson
+import io.vyne.query.history.QueryResultRow
 import io.vyne.queryService.BaseQueryServiceTest
-import io.vyne.queryService.history.db.QueryResultRow
 import io.vyne.queryService.history.db.QueryResultRowRepository
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import kotlinx.coroutines.FlowPreview

@@ -1,6 +1,9 @@
 package io.vyne.queryService.history.db
 
 import io.vyne.query.QueryResponse
+import io.vyne.query.history.LineageRecord
+import io.vyne.query.history.QuerySummary
+import io.vyne.query.history.QueryResultRow
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
@@ -9,7 +12,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Instant
 
-interface QueryHistoryRecordRepository : R2dbcRepository<PersistentQuerySummary, Long> {
+interface QueryHistoryRecordRepository : R2dbcRepository<QuerySummary, Long> {
 
    @Modifying
    @Query(
@@ -23,10 +26,10 @@ interface QueryHistoryRecordRepository : R2dbcRepository<PersistentQuerySummary,
       @Param("errorMessage") message: String? = null
    ): Mono<Void>
 
-   fun findByQueryId(queryId: String): Mono<PersistentQuerySummary>
-   fun findByClientQueryId(queryId: String): Mono<PersistentQuerySummary>
+   fun findByQueryId(queryId: String): Mono<QuerySummary>
+   fun findByClientQueryId(queryId: String): Mono<QuerySummary>
 
-   fun findAllByOrderByStartTimeDesc(): Flux<PersistentQuerySummary>
+   fun findAllByOrderByStartTimeDesc(): Flux<QuerySummary>
 }
 
 interface QueryResultRowRepository : R2dbcRepository<QueryResultRow, Long> {
