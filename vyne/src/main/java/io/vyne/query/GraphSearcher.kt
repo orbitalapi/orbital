@@ -9,13 +9,7 @@ import es.usc.citius.hipster.model.problem.ProblemBuilder
 import io.vyne.models.TypedInstance
 import io.vyne.query.SearchResult.Companion.noPath
 import io.vyne.query.SearchResult.Companion.noResult
-import io.vyne.query.graph.Element
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.PathEvaluation
-import io.vyne.query.graph.VyneGraphBuilder
-import io.vyne.query.graph.pathDescription
-import io.vyne.query.graph.pathHashExcludingWeights
+import io.vyne.query.graph.*
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
@@ -62,7 +56,7 @@ class GraphSearcher(
       return PathPrevaliationResult.EVALUATE
    }
 
-   fun search(
+   suspend fun search(
       knownFacts: Set<TypedInstance>,
       excludedServices: Set<SearchGraphExclusion<QualifiedName>>,
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
@@ -295,7 +289,7 @@ class GraphSearcher(
 private fun List<PathEvaluation>.lastEvaluatedEdge(): EvaluatedEdge? {
    return this.last() as? EvaluatedEdge
 }
-typealias PathEvaluator = (WeightedNode<Relationship, Element, Double>) -> List<PathEvaluation>
+typealias PathEvaluator = suspend (WeightedNode<Relationship, Element, Double>) -> List<PathEvaluation>
 
 data class SearchResult(val typedInstance: TypedInstance?, val path: WeightedNode<Relationship, Element, Double>?) {
    companion object {

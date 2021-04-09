@@ -8,20 +8,15 @@ import es.usc.citius.hipster.model.impl.WeightedNode
 import io.vyne.VyneCacheConfiguration
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
-import io.vyne.schemas.Link
-import io.vyne.schemas.Path
-import io.vyne.schemas.Relationship
-import io.vyne.schemas.Schema
-import io.vyne.schemas.describe
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import lang.taxi.Equality
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
 
-   fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): EvaluatedEdge {
+   suspend fun evaluate(edge: EvaluatableEdge, queryContext: QueryContext): EvaluatedEdge {
       val relationship = edge.relationship
       val evaluator = evaluators[relationship]
          ?: error("No LinkEvaluator provided for relationship ${relationship.name}")
@@ -75,7 +70,7 @@ class HipsterDiscoverGraphQueryStrategy(
       return find(target, context, invocationConstraints)
    }
 
-   fun find(targets: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+   suspend fun find(targets: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       // Note : There is an existing, working impl. of this in QueryEngine (the OrientDB approach),
       // but I haven't gotten around to copying it yet.
       if (targets.size != 1) TODO("Support for target sets not yet built")
@@ -100,12 +95,12 @@ class HipsterDiscoverGraphQueryStrategy(
       }
    }
 
-   internal fun find(targetElement: Element, context: QueryContext, invocationConstraints: InvocationConstraints):TypedInstance? {
+   internal suspend fun find(targetElement: Element, context: QueryContext, invocationConstraints: InvocationConstraints):TypedInstance? {
       // Take a copy, as the set is mutable, and performing a search is a
       // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
       val currentFacts = context.facts.toSet()
       return  currentFacts
-         .asSequence()
+         .asFlow()
      //    .filter { it is TypedObject }
          .mapNotNull { fact ->
             val startFact =  providedInstance(fact)
@@ -131,7 +126,7 @@ class HipsterDiscoverGraphQueryStrategy(
          .firstOrNull()
    }
 
-   private fun evaluatePath(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): List<PathEvaluation> {
+   private suspend fun evaluatePath(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): List<PathEvaluation> {
       // The actual result of this isn't directly used.  But the queryContext is updated with
       // nodes as they're discovered (eg., through service invocation)
       val evaluatedEdges = mutableListOf<PathEvaluation>(
@@ -160,9 +155,8 @@ class HipsterDiscoverGraphQueryStrategy(
                log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried")
             }
 
-            val evaluationResult = runBlocking {
+            val evaluationResult =
                edgeEvaluator.evaluate(evaluatableEdge, queryContext)
-            }
 
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
                log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}")

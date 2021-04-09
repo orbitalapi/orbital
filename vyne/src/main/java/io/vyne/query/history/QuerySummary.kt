@@ -7,6 +7,7 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
 import org.springframework.data.annotation.Id
+import org.springframework.data.annotation.Transient
 import org.springframework.data.domain.Persistable
 import org.springframework.data.relational.core.mapping.Table
 import java.time.Duration

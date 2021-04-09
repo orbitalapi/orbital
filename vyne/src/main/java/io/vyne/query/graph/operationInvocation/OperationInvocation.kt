@@ -7,7 +7,6 @@ import io.vyne.query.graph.*
 import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 
@@ -118,7 +117,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
 
 @Component
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
-   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
 
 
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
@@ -154,9 +153,8 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       }
 
       return try {
-         val result: TypedInstance = runBlocking { invocationService.invokeOperation(service, operation, callArgs, context)
+         val result: TypedInstance = invocationService.invokeOperation(service, operation, callArgs, context)
             .first()
-         }
          if (result is TypedNull) {
             log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
          } else {
@@ -176,19 +174,19 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
 
    override val relationship: Relationship = Relationship.PROVIDES
 
-   override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
+   override suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
       TODO("I'm not sure if this is still used")
-      val operationName = link.start
-      val (service, operation) = context.schema.operation(operationName)
-
-      val result: Flow<TypedInstance> = runBlocking { invocationService.invokeOperation(service, operation, setOf(startingPoint), context) }
-
-      var linkResult: TypedInstance
-      runBlocking {
-         result.collect { r -> context.addFact(r) }
-         linkResult = result.first()
-      }
-      return EvaluatedLink(link, startingPoint, linkResult)
+//      val operationName = link.start
+//      val (service, operation) = context.schema.operation(operationName)
+//
+//      val result: Flow<TypedInstance> = runBlocking { invocationService.invokeOperation(service, operation, setOf(startingPoint), context) }
+//
+//      var linkResult: TypedInstance
+//      runBlocking {
+//         result.collect { r -> context.addFact(r) }
+//         linkResult = result.first()
+//      }
+//      return EvaluatedLink(link, startingPoint, linkResult)
    }
 
 

@@ -12,14 +12,12 @@ import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.runBlocking
 
 
 class HasAttributeEvaluator : LinkEvaluator {
    override val relationship: Relationship = Relationship.HAS_ATTRIBUTE
 
-   override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
+   override suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
       assert(startingPoint is TypedObject) { "Cannot evaluate attribute ${link.end} on $startingPoint as it doesn't have any attributes" }
       val startingPointObj = startingPoint as TypedObject
       // Attribute names are passed in a qualified form (Type/attribute).  Just pick the attribute part
@@ -33,7 +31,7 @@ class HasAttributeEvaluator : LinkEvaluator {
 class RequiresParameterEvaluator : LinkEvaluator {
    override val relationship: Relationship = Relationship.REQUIRES_PARAMETER
 
-   override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
+   override suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
       val paramType = context.schema.type(link.end)
       val paramValue = context.getFactOrNull(paramType)
       if (paramValue != null) {
@@ -51,7 +49,7 @@ class RequiresParameterEvaluator : LinkEvaluator {
       return EvaluatedLink.success(link, startingPoint, requestObject)
    }
 
-   private fun attemptToConstruct(paramType: Type, context: QueryContext, typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
+   private suspend fun attemptToConstruct(paramType: Type, context: QueryContext, typesCurrentlyUnderConstruction: Set<Type> = emptySet()): TypedInstance {
       val fields = paramType.attributes.map { (attributeName, field) ->
          val attributeType = context.schema.type(field.type.name)
          val anyDepthExpectOne = context.getFactOrNull(attributeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
@@ -69,11 +67,11 @@ class RequiresParameterEvaluator : LinkEvaluator {
             // Consider making the context aware of what searches are currently taking place,
             // and returning a failed result in the case of a duplicate search
             log().debug("Parameter of type ${attributeType.name.fullyQualifiedName} not present within the context, and not constructable - initiating a query to attempt to resolve it")
-            val queryResult = runBlocking {  context.find(QuerySpecTypeNode(attributeType)) }
+            val queryResult =   context.find(QuerySpecTypeNode(attributeType))
             if (!queryResult.isFullyResolved) {
                throw UnresolvedOperationParametersException("Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ", context.evaluatedPath(), context.profiler.root)
             } else {
-               attributeName to runBlocking { queryResult!!.results!!.first() }
+               attributeName to queryResult!!.results!!.first()
             }
          }
       }.toMap()
@@ -84,7 +82,7 @@ class RequiresParameterEvaluator : LinkEvaluator {
 }
 
 abstract class PassThroughEvaluator(override val relationship: Relationship) : LinkEvaluator {
-   override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
+   override suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
       return EvaluatedLink.success(link, startingPoint, startingPoint)
    }
 }

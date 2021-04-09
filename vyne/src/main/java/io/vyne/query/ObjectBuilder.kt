@@ -3,15 +3,10 @@ package io.vyne.query
 import arrow.core.extensions.list.functorFilter.filter
 import io.vyne.models.*
 import io.vyne.query.build.TypedInstancePredicateFactory
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.Field
-import io.vyne.schemas.FieldSource
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.runBlocking
 import lang.taxi.types.ObjectType
 
 class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
@@ -168,13 +163,13 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          }
       }
 
-      val factory =  TypedObjectFactory(
+      val factory = TypedObjectFactory(
          targetType,
          populatedValues,
          context.schema,
          source = MixedSources
-      ).build{
-         runBlocking {  forSourceValues(sourcedByAttributes, it, targetType) }
+      ).buildAsync {
+         forSourceValues(sourcedByAttributes, it, targetType)
       }
 
       return factory
