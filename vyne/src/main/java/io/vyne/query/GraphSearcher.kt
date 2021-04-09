@@ -9,20 +9,12 @@ import es.usc.citius.hipster.model.problem.ProblemBuilder
 import io.vyne.models.TypedInstance
 import io.vyne.query.SearchResult.Companion.noPath
 import io.vyne.query.SearchResult.Companion.noResult
-import io.vyne.query.graph.Element
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.PathEvaluation
-import io.vyne.query.graph.VyneGraphBuilder
-import io.vyne.query.graph.pathDescription
-import io.vyne.query.graph.pathHashExcludingWeights
+import io.vyne.query.graph.*
 import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.internal.synchronized
 import java.util.concurrent.TimeUnit
 
 // This class is not optimized.  Need to investigate how to speed it up.
@@ -250,20 +242,14 @@ class GraphSearcher(
       evaluatedEdges: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
 
-      val lock = Any()
-      // Construct a specialised search problem, which allows us to supply a custom cost function.
-      // The cost function applies a higher 'cost' to the nodes transitions that have previously been attempted.
-      // (In earlier versions, we simply remvoed edges after failed attempts)
-      // This means that transitions that have been tried in a path become less favoured (but still evaluatable)
-      // than transitions that haven't been tried.
-
-
          val problem = ProblemBuilder.create()
             .initialState(startFact)
             .defineProblemWithExplicitActions()
             .useTransitionFunction { state ->
-               graph.outgoingEdgesOf(state).map { edge ->
-                  Transition.create(state, edge.edgeValue, edge.vertex2)
+               synchronized(graph) {
+                  graph.outgoingEdgesOf(state).map { edge ->
+                     Transition.create(state, edge.edgeValue, edge.vertex2)
+                  }
                }
             }
             .useCostFunction { transition ->
@@ -285,6 +271,14 @@ class GraphSearcher(
          } else {
             executionPath
          }
+      // Construct a specialised search problem, which allows us to supply a custom cost function.
+      // The cost function applies a higher 'cost' to the nodes transitions that have previously been attempted.
+      // (In earlier versions, we simply remvoed edges after failed attempts)
+      // This means that transitions that have been tried in a path become less favoured (but still evaluatable)
+      // than transitions that haven't been tried.
+
+
+
 
    }
 
