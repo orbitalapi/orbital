@@ -246,11 +246,9 @@ class GraphSearcher(
             .initialState(startFact)
             .defineProblemWithExplicitActions()
             .useTransitionFunction { state ->
-               synchronized(graph) {
                   graph.outgoingEdgesOf(state).map { edge ->
                      Transition.create(state, edge.edgeValue, edge.vertex2)
                   }
-               }
             }
             .useCostFunction { transition ->
                evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state)
