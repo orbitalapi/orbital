@@ -16,7 +16,9 @@ import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
@@ -130,7 +132,7 @@ class RestTemplateInvoker(
 
                }
          }
-      return results.asFlow()
+      return results.asFlow().flowOn(Dispatchers.IO)
 
    }
 
