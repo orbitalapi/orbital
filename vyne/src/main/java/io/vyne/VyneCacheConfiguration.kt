@@ -10,11 +10,11 @@ data class VyneCacheConfiguration(
    val vyneDiscoverGraphQuery: HipsterDiscoverGraphQueryStrategyCacheConfiguration) {
    companion object {
       fun default() = VyneCacheConfiguration(
-         VyneGraphBuilderCacheSettings(100L, 100L, 100L),
-         HipsterDiscoverGraphQueryStrategyCacheConfiguration(5L, 300000)
+         VyneGraphBuilderCacheSettings(),
+         HipsterDiscoverGraphQueryStrategyCacheConfiguration()
       )
    }
 }
 
-data class VyneGraphBuilderCacheSettings(val baseSchemaCacheSize: Long, val graphWithFactTypesCacheSize: Long, val baseSchemaGraphCacheSize: Long)
-data class HipsterDiscoverGraphQueryStrategyCacheConfiguration(val schemaGraphCacheSize: Long, val searchPathExclusionsCacheSize: Int)
+data class VyneGraphBuilderCacheSettings(val baseSchemaCacheSize: Long = 100L, val graphWithFactTypesCacheSize: Long = 100L, val baseSchemaGraphCacheSize: Long = 100L)
+data class HipsterDiscoverGraphQueryStrategyCacheConfiguration(val schemaGraphCacheSize: Long = 5L, val searchPathExclusionsCacheSize: Int = 300000)

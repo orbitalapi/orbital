@@ -6,15 +6,20 @@ import io.vyne.http.UriVariableProvider.Companion.buildRequestBody
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
+import io.vyne.models.UndefinedSource
+import io.vyne.query.OperationType
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
+import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.queryService.QueryMetaDataService
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
@@ -97,11 +102,13 @@ class RestTemplateInvoker(
          .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
          .exchange()
          .metrics()
-         .publishOn(Schedulers.boundedElastic())
          .elapsed()
          .flatMapMany { durationAndResponse ->
             val duration = durationAndResponse.t1
             val clientResponse = durationAndResponse.t2
+            if (clientResponse.statusCode().isError) {
+               throw OperationInvocationException("Error invoking URL $expandedUri", clientResponse.statusCode())
+            }
             reportEstimatedResults(queryId, clientResponse.headers())
             clientResponse.bodyToFlux<String>()
                .flatMap { responseString ->
@@ -128,7 +135,7 @@ class RestTemplateInvoker(
 
                }
          }
-      return results.asFlow()
+      return results.asFlow().flowOn(Dispatchers.IO)
 
    }
 

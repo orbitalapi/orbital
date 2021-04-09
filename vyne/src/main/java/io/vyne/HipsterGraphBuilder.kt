@@ -29,15 +29,10 @@ package io.vyne
  *    limitations under the License.
  */
 
-import es.usc.citius.hipster.graph.HashBasedHipsterDirectedGraph
 import es.usc.citius.hipster.graph.HashBasedHipsterGraph
-import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import es.usc.citius.hipster.graph.HipsterGraph
 import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.utils.log
-import io.vyne.utils.timed
-import java.util.concurrent.TimeUnit
 
 /**
  *
@@ -60,33 +55,32 @@ class HipsterGraphBuilder<V, E> private constructor(
 
    data class Connection<V,E>(val vertex1: V, val vertex2: V, val edge: E)
 
-   fun connect(vertex: V): Vertex1 {
-      return Vertex1(vertex)
-   }
-
-   fun connect(vertex1: V, vertex2: V): HipsterGraphBuilder<V, E> {
-      val vertex = Vertex1(vertex1)
-      vertex.to(vertex2)
-      return this
-   }
-
-   fun createDirectedGraph(excludedEdges:List<EvaluatableEdge> = emptyList()): VyneHashBasedHipsterDirectedGraph<V, E> {
-      val permittedConnections = filterToEligibleConnections(excludedEdges)
+   fun createDirectedGraph(connections:List<Connection<V, E>>): VyneHashBasedHipsterDirectedGraph<V, E> {
       val graph = VyneHashBasedHipsterDirectedGraph.create<V, E>()
-      permittedConnections.forEach { connection ->
+      connections.forEach { connection ->
          graph.add(connection.vertex1)
          graph.add(connection.vertex2)
-         graph.connect(connection.vertex1!!, connection.vertex2!!, connection.edge)
+         graph.connect(connection.vertex1, connection.vertex2, connection.edge)
       }
-//      graph.addVertexTimings.filter { it.second > 100 }.forEach { pair ->
-//         log().warn("addition of Vertex: ${pair.first} into graph took ${pair.second} microseconds")
-//      }
-//
-//      graph.connectTimings.filter { it.second > 100 }.forEach { pair ->
-//         log().warn("addition of Edge: ${pair.first} into graph took ${pair.second} microseconds")
-//      }
       return graph
    }
+//   fun createDirectedGraph(excludedEdges:List<EvaluatableEdge> = emptyList()): VyneHashBasedHipsterDirectedGraph<V, E> {
+//      val permittedConnections = filterToEligibleConnections(excludedEdges)
+//      val graph = VyneHashBasedHipsterDirectedGraph.create<V, E>()
+//      permittedConnections.forEach { connection ->
+//         graph.add(connection.vertex1)
+//         graph.add(connection.vertex2)
+//         graph.connect(connection.vertex1!!, connection.vertex2!!, connection.edge)
+//      }
+////      graph.addVertexTimings.filter { it.second > 100 }.forEach { pair ->
+////         log().warn("addition of Vertex: ${pair.first} into graph took ${pair.second} microseconds")
+////      }
+////
+////      graph.connectTimings.filter { it.second > 100 }.forEach { pair ->
+////         log().warn("addition of Edge: ${pair.first} into graph took ${pair.second} microseconds")
+////      }
+//      return graph
+//   }
 
    private fun filterToEligibleConnections(excludedEdges:List<EvaluatableEdge>) :Collection<Connection<V,E>>{
       // bail early if there's nothing to do.
@@ -119,24 +113,6 @@ class HipsterGraphBuilder<V, E> private constructor(
          graph.connect(c.vertex1!!, c.vertex2!!, c.edge)
       }
       return graph
-   }
-
-   /**
-    * @return type-erased directed graph
-    * @see HipsterGraphBuilder.createDirectedGraph
-    */
-   @Deprecated("")
-   fun buildDirectedGraph(): HipsterDirectedGraph<*, *> {
-      return createDirectedGraph()
-   }
-
-   /**
-    * @return type-erased undirected graph
-    * @see HipsterGraphBuilder.createUndirectedGraph
-    */
-   @Deprecated("")
-   fun buildUndirectedGraph(): HipsterGraph<*, *> {
-      return createUndirectedGraph()
    }
 
 

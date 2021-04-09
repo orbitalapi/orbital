@@ -1,8 +1,6 @@
 package io.vyne.query.graph
 
 import com.google.common.cache.CacheBuilder
-import com.google.common.collect.ArrayListMultimap
-import com.google.common.collect.Multimap
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
 import io.vyne.DisplayGraphBuilder
@@ -13,17 +11,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.excludedValues
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.Field
-import io.vyne.schemas.Operation
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.ParamNames
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Relationship
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
-import io.vyne.schemas.fqn
+import io.vyne.schemas.*
 
 enum class ElementType {
    TYPE,
@@ -50,10 +38,14 @@ enum class ElementType {
    }
 }
 
+@Deprecated("Do we still need this?")
 data class GraphBuildResult(
    val graph: HipsterDirectedGraph<Element, Relationship>,
    val addedInstanceVertices: List<Element>,
-   val removedEdges: List<GraphEdge<Element, Relationship>>)
+   val removedEdges: List<GraphEdge<Element, Relationship>>
+)
+
+typealias GraphConnection = HipsterGraphBuilder.Connection<Element, Relationship>
 
 data class Element(val value: Any, val elementType: ElementType, val instanceValue: Any? = null) {
 
@@ -123,86 +115,112 @@ fun instanceOfType(type: Type): Element {
 typealias TypeElement = Element
 typealias MemberElement = Element
 
-private data class GraphWithFactTypesCacheKey(val facts: Set<Type>, val graphBuilder: HipsterGraphBuilder<Element, Relationship>)
-private data class GraphWithFactInstancesCacheKey(val facts: Collection<TypedInstance>, val excludedEdges: List<EvaluatableEdge>, val graphBuilder: HipsterGraphBuilder<Element, Relationship>)
+private data class GraphWithFactTypesCacheKey(
+   val facts: Set<Type>,
+   val graphBuilder: HipsterGraphBuilder<Element, Relationship>
+)
+
+private data class GraphWithFactInstancesCacheKey(
+   val facts: Collection<TypedInstance>,
+   val excludedEdges: List<EvaluatableEdge>,
+   val baseGraph: VyneHashBasedHipsterDirectedGraph<Element, Relationship>
+)
+
 class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGraphBuilderCacheSettings) {
-   private val baseSchemaCache = CacheBuilder.newBuilder()
-      .maximumSize(vyneGraphBuilderCache.baseSchemaCacheSize) // arbitary, can tune later
-      .build<Int, HipsterGraphBuilder<Element, Relationship>>()
-
-   // experiment: migrating to graphWitFactInstances -- not sure why we used types here.
-   private val graphWithFactTypesCache = CacheBuilder.newBuilder()
+   private val graphCache = CacheBuilder.newBuilder()
       .maximumSize(vyneGraphBuilderCache.graphWithFactTypesCacheSize)
-      .build<GraphWithFactTypesCacheKey, HipsterDirectedGraph<Element, Relationship>>()
+      .build<List<GraphConnection>, GraphBuildResult>()
 
-   private val baseSchemaGraphCache = CacheBuilder.newBuilder()
+   private val baseSchemaConnectionsCache = CacheBuilder.newBuilder()
       .maximumSize(vyneGraphBuilderCache.baseSchemaGraphCacheSize) // arbitary, can tune later
-      .build<Int, VyneHashBasedHipsterDirectedGraph<Element, Relationship>>()
+      .build<Int, List<GraphConnection>>()
 
-   fun build(facts: Collection<TypedInstance>,
-             excludedOperations: Set<QualifiedName> = emptySet(),
-             excludedEdges: List<EvaluatableEdge>,
-             excludedServices: Set<QualifiedName>):
+   fun build(
+      facts: Collection<TypedInstance>,
+      excludedOperations: Set<QualifiedName> = emptySet(),
+      excludedEdges: List<EvaluatableEdge>,
+      excludedServices: Set<QualifiedName>
+   ):
       GraphBuildResult {
 
       // Our base graph constructing from type and service definitions.
-      val baseGraph = baseSchemaGraphCache.get(excludedOperations.hashCode()) {
-         val instance = HipsterGraphBuilder.create<Element, Relationship>()
-         appendTypes(instance, schema)
-         appendServices(instance, schema, excludedOperations, excludedServices)
-         instance.createDirectedGraph()
-      }
+      val baseSchemaConnections = getBaseSchemaConnections(excludedOperations, excludedServices)
 
+      val connectionsForFacts = createdInstances(facts, schema)
+      val connections = baseSchemaConnections + connectionsForFacts
+      return buildGraph(connections, excludedEdges)
       // Here we're adding 'instance value' based connections into the 'base graph'
-      return appendInstanceBasedElementsIntoBaseGraph(facts, baseGraph, excludedEdges)
+//      appendInstanceBasedElementsIntoBaseGraph(facts, excludedEdges)
    }
 
-   private fun appendInstanceBasedElementsIntoBaseGraph(
-      facts: Collection<TypedInstance>,
-      baseGraph: VyneHashBasedHipsterDirectedGraph<Element, Relationship>,
-      excludedEdges: List<EvaluatableEdge>): GraphBuildResult {
-      val instanceBasedConnections = createdInstances(facts, schema)
-      val addedVertices = mutableListOf<Element>()
-      val removedEdges = mutableListOf<GraphEdge<Element, Relationship>>()
-      instanceBasedConnections.forEach { connection ->
-         addedVertices.addAll(baseGraph.add(connection.vertex1, connection.vertex2))
-         baseGraph.connect(connection.vertex1, connection.vertex2, connection.edge)
-         if (excludedEdges.isNotEmpty()) {
-            val edgesByFirstVertex = excludedEdges.groupBy { it.vertex1 }
-            edgesByFirstVertex.keys.forEach { vertex ->
-               val edges = baseGraph.edgesOf(vertex)
-               val vertex2ToEdges = edgesByFirstVertex[vertex]?.map { edge -> Pair(edge.vertex2, edge.relationship) }
-               if (vertex2ToEdges != null) {
-                  edges.removeAll { edge ->
-                     val shouldRemove = vertex2ToEdges.any { edge.vertex2 == it.first && edge.edgeValue == it.second }
-                     if (shouldRemove) {
-                        removedEdges.add(edge)
-                     }
-                     shouldRemove
-                  }
-               }
-            }
-         }
+   private fun getBaseSchemaConnections(
+      excludedOperations: Set<QualifiedName>,
+      excludedServices: Set<QualifiedName>
+   ): List<GraphConnection> {
+      return baseSchemaConnectionsCache.get(excludedOperations.hashCode()) {
+         val typeConnections = buildTypeConnections(schema)
+         val serviceConnections = buildServiceConnections(schema, excludedOperations, excludedServices)
+         typeConnections + serviceConnections
       }
-      return GraphBuildResult(baseGraph, addedVertices, removedEdges)
    }
 
-   fun build(types: Set<Type> = emptySet(), excludedOperations: Set<SearchGraphExclusion<QualifiedName>> = emptySet(), excludedServices: Set<SearchGraphExclusion<QualifiedName>> = emptySet()): HipsterDirectedGraph<Element, Relationship> {
-      val builder = baseSchemaCache.get(excludedOperations.hashCode()) {
-         val instance = HipsterGraphBuilder.create<Element, Relationship>()
-         appendTypes(instance, schema)
-         appendServices(instance, schema, excludedOperations.excludedValues(), excludedServices.excludedValues())
-         instance
+   private fun buildGraph(
+      connections: List<GraphConnection>,
+      excludedEdges: List<EvaluatableEdge> = emptyList()
+   ): GraphBuildResult {
+      val excludedConnections = excludedEdges.map { GraphConnection(it.vertex1, it.vertex2, it.relationship) }.toSet()
+      val filteredFacts = connections.filter { !excludedConnections.contains(it) }
+
+      return graphCache.get(filteredFacts) {
+         val graph = HipsterGraphBuilder.create<Element, Relationship>()
+            .createDirectedGraph(filteredFacts)
+         // TODO : Waiting to see if we actually use GraphBuildResult anymore, if not, just reutnr the graph here.
+         GraphBuildResult(graph, emptyList(), emptyList())
       }
 
 
-      val graphWithFacts = graphWithFactTypesCache.get(GraphWithFactTypesCacheKey(types, builder)) {
-         val thisBuilder = builder.copy()
-         appendInstanceTypes(thisBuilder, types, schema)
-         thisBuilder.createDirectedGraph()
-      }
 
-      return graphWithFacts
+   }
+
+
+//   private fun appendInstanceBasedElementsIntoBaseGraph(
+//      facts: Collection<TypedInstance>,
+//      excludedEdges: List<EvaluatableEdge>
+//   ): GraphBuildResult {
+//      val instanceBasedConnections = createdInstances(facts, schema)
+//      val addedVertices = mutableListOf<Element>()
+//      val removedEdges = mutableListOf<GraphEdge<Element, Relationship>>()
+//      val edgesByFirstVertex = excludedEdges.groupBy { it.vertex1 }
+//      instanceBasedConnections.forEach { connection ->
+//         addedVertices.addAll(baseGraph.add(connection.vertex1, connection.vertex2))
+//         baseGraph.connect(connection.vertex1, connection.vertex2, connection.edge)
+//         if (excludedEdges.isNotEmpty()) {
+//            edgesByFirstVertex.keys.forEach { vertex ->
+//               val edges = baseGraph.edgesOf(vertex)
+//               val vertex2ToEdges = edgesByFirstVertex[vertex]?.map { edge -> Pair(edge.vertex2, edge.relationship) }
+//               if (vertex2ToEdges != null) {
+//                  edges.removeAll { edge ->
+//                     val shouldRemove = vertex2ToEdges.any { edge.vertex2 == it.first && edge.edgeValue == it.second }
+//                     if (shouldRemove) {
+//                        removedEdges.add(edge)
+//                     }
+//                     shouldRemove
+//                  }
+//               }
+//            }
+//         }
+//      }
+//      return GraphBuildResult(baseGraph, addedVertices, removedEdges)
+//   }
+
+   fun build(
+      types: Set<Type> = emptySet(),
+      excludedOperations: Set<SearchGraphExclusion<QualifiedName>> = emptySet(),
+      excludedServices: Set<SearchGraphExclusion<QualifiedName>> = emptySet()
+   ): HipsterDirectedGraph<Element, Relationship> {
+      val baseConnections = getBaseSchemaConnections(excludedOperations.excludedValues(), excludedServices.excludedValues())
+      val connections = baseConnections + appendInstanceTypes(types, schema)
+      return buildGraph(connections).graph
    }
 
    fun buildDisplayGraph(): HipsterDirectedGraph<Element, Relationship> {
@@ -210,33 +228,39 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       return DisplayGraphBuilder().convertToDisplayGraph(graph)
    }
 
-   private fun appendInstanceTypes(builder: HipsterGraphBuilder<Element, Relationship>, types: Set<Type>, schema: Schema) {
-      types.forEach {
+   private fun appendInstanceTypes(
+      types: Set<Type>,
+      schema: Schema
+   ): List<GraphConnection> {
+      return types.flatMap {
          val typeFqn = it.qualifiedName.parameterizedName
-         appendProvidedInstances(builder, typeFqn, schema)
+         buildProvidedInstancesConnections(typeFqn, schema)
          // Note: An old implementation has been removed from here.  Check the git history
          // if we think stuff has broken.
-
       }
    }
 
    private fun appendInstances(
-      builder: HipsterGraphBuilder<Element, Relationship>,
-      instances: Collection<TypedInstance>, schema: Schema) {
-      instances.forEach { typedInstance ->
-         appendProvidedInstances(builder, typedInstance.typeName, schema, value = typedInstance)
+      instances: Collection<TypedInstance>, schema: Schema
+   ): List<GraphConnection> {
+      return instances.flatMap { typedInstance ->
+         buildProvidedInstancesConnections(typedInstance.typeName, schema, value = typedInstance)
       }
    }
 
-   private fun appendTypes(builder: HipsterGraphBuilder<Element, Relationship>, schema: Schema): Multimap<TypeElement, MemberElement> {
-      val typesAndWhereTheyreUsed: Multimap<TypeElement, MemberElement> = ArrayListMultimap.create()
+
+   private fun buildTypeConnections(schema: Schema): List<GraphConnection> {
+      val connections = mutableListOf<GraphConnection>()
+      fun addConnection(fromEdge: Element, toEdge: Element, relationship: Relationship) {
+         connections.add(GraphConnection(fromEdge, toEdge, relationship))
+      }
       schema.types.forEach { type: Type ->
 
          val typeFullyQualifiedName = type.fullyQualifiedName
          val typeNode = type(typeFullyQualifiedName)
 
          type.inherits.forEach { inheritedType ->
-            builder.connect(typeNode).to(type(inheritedType)).withEdge(Relationship.EXTENDS_TYPE)
+            addConnection(typeNode, type(inheritedType), Relationship.EXTENDS_TYPE)
          }
 
          type.unformattedTypeName?.let { unformattedType ->
@@ -244,22 +268,22 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
             // and vice versa
             // Note: Is CanPopulate the right relationship here? Might need another one.
             val unformattedTypeNode = type(unformattedType.fullyQualifiedName)
-            builder.connect(typeNode).to(unformattedTypeNode).withEdge(Relationship.CAN_POPULATE)
-            builder.connect(unformattedTypeNode).to(typeNode).withEdge(Relationship.CAN_POPULATE)
+            addConnection(typeNode, unformattedTypeNode, Relationship.CAN_POPULATE)
+            addConnection(unformattedTypeNode, typeNode, Relationship.CAN_POPULATE)
          }
 
          if (!type.isClosed) {
             type.attributes.map { (attributeName, attributeType) ->
                val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)
                val attributeNode = member(attributeQualifiedName)
-               builder.connect(typeNode).to(attributeNode).withEdge(Relationship.HAS_ATTRIBUTE)
+               addConnection(typeNode, attributeNode, Relationship.HAS_ATTRIBUTE)
 
                // (attribute) -[IS_ATTRIBUTE_OF]-> (type)
-               builder.connect(attributeNode).to(typeNode).withEdge(Relationship.IS_ATTRIBUTE_OF)
+               addConnection(attributeNode, typeNode, Relationship.IS_ATTRIBUTE_OF)
 
                val attributeTypeNode = type(attributeType.type.fullyQualifiedName)
-               builder.connect(attributeNode).to(attributeTypeNode).withEdge(Relationship.IS_TYPE_OF)
-               typesAndWhereTheyreUsed.put(attributeTypeNode, attributeNode)
+               addConnection(attributeNode, attributeTypeNode, Relationship.IS_TYPE_OF)
+//               typesAndWhereTheyreUsed.put(attributeTypeNode, attributeNode)
                // See the relationship for why commented out ....
                // migrating this relationship to an INSTNACE_OF node.
 //            builder.connect(attributeTypeNode).to(attributeNode).withEdge(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
@@ -268,15 +292,23 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
 
 //         log().debug("Added attribute ${type.name} to graph")
       }
-      return typesAndWhereTheyreUsed
+      return connections
    }
 
    private fun attributeFqn(typeFullyQualifiedName: String, attributeName: AttributeName): String {
       return "$typeFullyQualifiedName/$attributeName"
    }
 
-   private fun appendServices(builder: HipsterGraphBuilder<Element, Relationship>, schema: Schema, excludedOperations: Set<QualifiedName>, excludedServices: Set<QualifiedName>) {
-      return schema
+   private fun buildServiceConnections(
+      schema: Schema,
+      excludedOperations: Set<QualifiedName>,
+      excludedServices: Set<QualifiedName>
+   ): List<GraphConnection> {
+      val connections = mutableListOf<GraphConnection>()
+      fun addConnection(fromEdge: Element, toEdge: Element, relationship: Relationship) {
+         connections.add(GraphConnection(fromEdge, toEdge, relationship))
+      }
+      schema
          .services
          .filter { !excludedServices.contains(it.name) }
          .forEach { service: Service ->
@@ -291,8 +323,8 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
                      // isn't supported, and results in the Edge for the 2nd pair to remain undefined
                      val typeFqn = parameter.type.fullyQualifiedName
                      val paramNode = parameter(typeFqn)
-                     builder.connect(operationNode).to(paramNode).withEdge(Relationship.REQUIRES_PARAMETER)
-                     builder.connect(paramNode).to(operationNode).withEdge(Relationship.IS_PARAMETER_ON)
+                     addConnection(operationNode, paramNode, Relationship.REQUIRES_PARAMETER)
+                     addConnection(paramNode, operationNode, Relationship.IS_PARAMETER_ON)
 
                      if (parameter.type.isParameterType) {
                         // Traverse into the attributes of param types, and add extra nodes.
@@ -301,7 +333,11 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
                         parameter.type.attributes.forEach { (_, typeRef) ->
                            // Point back to the "parent" param node (the parameterObject)
                            // might revisit this in the future, and point back to the Operation itself.
-                           builder.connect(parameter(typeRef.type.fullyQualifiedName)).to(paramNode).withEdge(Relationship.IS_PARAMETER_ON)
+                           addConnection(
+                              parameter(typeRef.type.fullyQualifiedName),
+                              paramNode,
+                              Relationship.IS_PARAMETER_ON
+                           )
                         }
                      }
                   }
@@ -310,12 +346,14 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
                   // It connects to it's type, but also to the attributes that are
                   // now traversable, as we have an actual instance of the thing
                   val resultInstanceFqn = operation.returnType.qualifiedName.parameterizedName
-                  appendProvidedInstances(builder, resultInstanceFqn, schema, operationNode)
+                  connections.addAll(buildProvidedInstancesConnections(resultInstanceFqn, schema, operationNode))
 
 
 //            log().debug("Added Operation ${operationNode.value} to graph")
                }
          }
+
+      return connections
    }
 
    /**
@@ -323,12 +361,17 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
     * It's return type is created as an instance:type, and all the parameters of the return type
     * are also mapped as providedInstanceMembers() and instance:types.
     */
-   private fun appendProvidedInstances(
-      builder: HipsterGraphBuilder<Element, Relationship>,
+   private fun buildProvidedInstancesConnections(
       instanceFqn: String,
       schema: Schema,
       provider: Element? = null,
-      value: TypedInstance? = null) {
+      value: TypedInstance? = null
+   ): List<GraphConnection> {
+      val connections = mutableListOf<GraphConnection>()
+      fun addConnection(fromEdge: Element, toEdge: Element, relationship: Relationship) {
+         connections.add(GraphConnection(fromEdge, toEdge, relationship))
+      }
+
       val providedInstance = if (value != null) {
          providedInstance(value)
       } else {
@@ -336,7 +379,7 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
          providedInstance(instanceFqn)
       }
       if (provider != null) {
-         builder.connect(provider).to(providedInstance).withEdge(Relationship.PROVIDES)
+         addConnection(provider, providedInstance, Relationship.PROVIDES)
       }
 
       val type = schema.type(instanceFqn)
@@ -358,13 +401,13 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       // one we haven't yet discovered).  If we're linking an actual value, just
       // use the canPopulate relationship.
       if (value == null) {
-         builder.connect(providedInstance).to(type(instanceFqn)).withEdge(Relationship.IS_INSTANCE_OF)
+         addConnection(providedInstance, type(instanceFqn), Relationship.IS_INSTANCE_OF)
       }
-      builder.connect(providedInstance).to(parameter(instanceFqn)).withEdge(Relationship.CAN_POPULATE)
+      addConnection(providedInstance, parameter(instanceFqn), Relationship.CAN_POPULATE)
 
       // This instance can also populate any types that it inherits from.
       type.inheritanceGraph.forEach { inheritedType ->
-         builder.connect(providedInstance).to(parameter(inheritedType.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
+         addConnection(providedInstance, parameter(inheritedType.fullyQualifiedName), Relationship.CAN_POPULATE)
       }
       if (!type.isClosed) {
          // We treat attributes of actual values that we know differently
@@ -375,33 +418,63 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
          // becomes known, we rebuild our graph, trimming edges where attribues were discovered
          // to be null
          if (value != null) {
-            appendInstanceAttributesOfActualInstance(schema, instanceFqn, builder, providedInstance, value)
+            connections.addAll(
+               buildInstanceAttributesOfActualInstanceConnections(
+                  schema,
+                  instanceFqn,
+                  providedInstance,
+                  value
+               )
+            )
          } else {
-            appendInstanceAttributesOfDiscoverableInstance(schema, instanceFqn, builder, providedInstance)
+            connections.addAll(
+               buildInstanceAttributesOfDiscoverableInstanceConnections(
+                  schema,
+                  instanceFqn,
+                  providedInstance
+               )
+            )
          }
 
       }
+      return connections
    }
 
-   private fun appendInstanceAttributesOfActualInstance(
+   private fun buildInstanceAttributesOfActualInstanceConnections(
       schema: Schema,
       instanceFqn: String,
-      builder: HipsterGraphBuilder<Element, Relationship>, providedInstanceNode: Element, instance: TypedInstance) {
+      providedInstanceNode: Element,
+      instance: TypedInstance
+   ): List<GraphConnection> {
       if (instance !is TypedObject) {
-         return
+         return emptyList()
       }
-      schema.type(instanceFqn).attributes.forEach { (attributeName, field) ->
+      return schema.type(instanceFqn).attributes.flatMap { (attributeName, field) ->
          val fieldValue = instance[attributeName]
          when {
-            fieldValue?.value != null && fieldValue.value != "" -> connectProvidedInstanceAttribute(instanceFqn, attributeName, builder, providedInstanceNode, field)
+            fieldValue.value != null && fieldValue.value != "" -> buildProvidedInstanceAttributeConnections(
+               instanceFqn,
+               attributeName,
+               providedInstanceNode,
+               field
+            )
             // Include calculated fields
-            field.formula != null -> connectProvidedInstanceAttribute(instanceFqn, attributeName, builder, providedInstanceNode, field)
+            field.formula != null -> buildProvidedInstanceAttributeConnections(
+               instanceFqn,
+               attributeName,
+               providedInstanceNode,
+               field
+            )
+            else -> emptyList()
          }
          // else -> log().debug("Not building link to attribute $attributeName on typedInstance, as provided value was null")
       }
    }
 
-   private fun createdInstances(instances: Collection<TypedInstance>, schema: Schema): List<HipsterGraphBuilder.Connection<Element, Relationship>> {
+   private fun createdInstances(
+      instances: Collection<TypedInstance>,
+      schema: Schema
+   ): List<GraphConnection> {
       return instances.map { typedInstance ->
          createProvidedInstances(typedInstance.typeName, schema, value = typedInstance)
       }.flatten()
@@ -411,7 +484,8 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       instanceFqn: String,
       schema: Schema,
       provider: Element? = null,
-      value: TypedInstance? = null): MutableList<HipsterGraphBuilder.Connection<Element, Relationship>> {
+      value: TypedInstance? = null
+   ): MutableList<HipsterGraphBuilder.Connection<Element, Relationship>> {
       val createdConnections = mutableListOf<HipsterGraphBuilder.Connection<Element, Relationship>>()
       val providedInstance = if (value != null) {
          providedInstance(value)
@@ -443,15 +517,33 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       // one we haven't yet discovered).  If we're linking an actual value, just
       // use the canPopulate relationship.
       if (value == null) {
-         createdConnections.add(HipsterGraphBuilder.Connection(providedInstance, type(instanceFqn), Relationship.IS_INSTANCE_OF))
+         createdConnections.add(
+            HipsterGraphBuilder.Connection(
+               providedInstance,
+               type(instanceFqn),
+               Relationship.IS_INSTANCE_OF
+            )
+         )
          //builder.connect(providedInstance).to(type(instanceFqn)).withEdge(Relationship.IS_INSTANCE_OF)
       }
-      createdConnections.add(HipsterGraphBuilder.Connection(providedInstance, parameter(instanceFqn), Relationship.CAN_POPULATE))
+      createdConnections.add(
+         HipsterGraphBuilder.Connection(
+            providedInstance,
+            parameter(instanceFqn),
+            Relationship.CAN_POPULATE
+         )
+      )
       //builder.connect(providedInstance).to(parameter(instanceFqn)).withEdge(Relationship.CAN_POPULATE)
 
       // This instance can also populate any types that it inherits from.
       type.inheritanceGraph.forEach { inheritedType ->
-         createdConnections.add(HipsterGraphBuilder.Connection(providedInstance, parameter(inheritedType.fullyQualifiedName), Relationship.CAN_POPULATE))
+         createdConnections.add(
+            HipsterGraphBuilder.Connection(
+               providedInstance,
+               parameter(inheritedType.fullyQualifiedName),
+               Relationship.CAN_POPULATE
+            )
+         )
          //builder.connect(providedInstance).to(parameter(inheritedType.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
       }
       if (!type.isClosed) {
@@ -463,9 +555,22 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
          // becomes known, we rebuild our graph, trimming edges where attribues were discovered
          // to be null
          if (value != null) {
-            createdConnections.addAll(createInstanceAttributesOfActualInstance(schema, instanceFqn, providedInstance, value))
+            createdConnections.addAll(
+               createInstanceAttributesOfActualInstance(
+                  schema,
+                  instanceFqn,
+                  providedInstance,
+                  value
+               )
+            )
          } else {
-            createdConnections.addAll(createInstanceAttributesOfDiscoverableInstance(schema, instanceFqn, providedInstance))
+            createdConnections.addAll(
+               createInstanceAttributesOfDiscoverableInstance(
+                  schema,
+                  instanceFqn,
+                  providedInstance
+               )
+            )
          }
       }
       return createdConnections
@@ -474,7 +579,8 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
    private fun createInstanceAttributesOfActualInstance(
       schema: Schema,
       instanceFqn: String,
-      providedInstanceNode: Element, instance: TypedInstance):
+      providedInstanceNode: Element, instance: TypedInstance
+   ):
       MutableList<HipsterGraphBuilder.Connection<Element, Relationship>> {
       val connections = mutableListOf<HipsterGraphBuilder.Connection<Element, Relationship>>()
       if (instance !is TypedObject) {
@@ -484,16 +590,34 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
          val fieldValue = if (instance.hasAttribute(attributeName)) instance[attributeName] else null
          when {
             fieldValue?.value != null && fieldValue.value != "" ->
-               connections.addAll(createProvidedInstanceAttribute(instanceFqn, attributeName, providedInstanceNode, field))
+               connections.addAll(
+                  createProvidedInstanceAttribute(
+                     instanceFqn,
+                     attributeName,
+                     providedInstanceNode,
+                     field
+                  )
+               )
             // Include calculated fields
-            field.formula != null -> connections.addAll(createProvidedInstanceAttribute(instanceFqn, attributeName, providedInstanceNode, field))
+            field.formula != null -> connections.addAll(
+               createProvidedInstanceAttribute(
+                  instanceFqn,
+                  attributeName,
+                  providedInstanceNode,
+                  field
+               )
+            )
          }
          // else -> log().debug("Not building link to attribute $attributeName on typedInstance, as provided value was null")
       }
       return connections
    }
 
-   private fun createInstanceAttributesOfDiscoverableInstance(schema: Schema, instanceFqn: String, providedInstance: Element):
+   private fun createInstanceAttributesOfDiscoverableInstance(
+      schema: Schema,
+      instanceFqn: String,
+      providedInstance: Element
+   ):
       List<HipsterGraphBuilder.Connection<Element, Relationship>> {
       return schema.type(instanceFqn).attributes.map { (attributeName, field) ->
          createProvidedInstanceAttribute(instanceFqn, attributeName, providedInstance, field)
@@ -501,42 +625,83 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
    }
 
 
-   private fun connectProvidedInstanceAttribute(instanceFqn: String, attributeName: AttributeName, builder: HipsterGraphBuilder<Element, Relationship>, providedInstanceNode: Element, field: Field) {
+   private fun buildProvidedInstanceAttributeConnections(
+      instanceFqn: String,
+      attributeName: AttributeName,
+      providedInstanceNode: Element,
+      field: Field
+   ): List<GraphConnection> {
+      val connections = mutableListOf<GraphConnection>()
+      fun addConnection(fromEdge: Element, toEdge: Element, relationship: Relationship) {
+         connections.add(GraphConnection(fromEdge, toEdge, relationship))
+      }
+
       val providedInstanceMember = providedInstanceMember(attributeFqn(instanceFqn, attributeName))
-      builder.connect(providedInstanceNode).to(providedInstanceMember).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
+      addConnection(providedInstanceNode, providedInstanceMember, Relationship.INSTANCE_HAS_ATTRIBUTE)
       // The "providedInstance" node of the member itself
       val memberInstance = providedInstance(field.type.fullyQualifiedName)
-      builder.connect(providedInstanceMember).to(memberInstance).withEdge(Relationship.IS_ATTRIBUTE_OF)
+      addConnection(providedInstanceMember, memberInstance, Relationship.IS_ATTRIBUTE_OF)
       // The member instance we have can populate required params
-      builder.connect(memberInstance).to(parameter(field.type.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
-      builder.connect(memberInstance).to(type(field.type.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
+      addConnection(memberInstance, parameter(field.type.fullyQualifiedName), Relationship.CAN_POPULATE)
+      addConnection(memberInstance, type(field.type.fullyQualifiedName), Relationship.IS_INSTANCE_OF)
+
+      return connections
    }
 
    private fun createProvidedInstanceAttribute(
       instanceFqn: String,
       attributeName: AttributeName,
       providedInstanceNode: Element,
-      field: Field): MutableList<HipsterGraphBuilder.Connection<Element, Relationship>> {
+      field: Field
+   ): List<GraphConnection> {
       val connections = mutableListOf<HipsterGraphBuilder.Connection<Element, Relationship>>()
       val providedInstanceMember = providedInstanceMember(attributeFqn(instanceFqn, attributeName))
-      connections.add(HipsterGraphBuilder.Connection(providedInstanceNode, providedInstanceMember, Relationship.INSTANCE_HAS_ATTRIBUTE))
+      connections.add(
+         GraphConnection(
+            providedInstanceNode,
+            providedInstanceMember,
+            Relationship.INSTANCE_HAS_ATTRIBUTE
+         )
+      )
       //builder.connect(providedInstanceNode).to(providedInstanceMember).withEdge(Relationship.INSTANCE_HAS_ATTRIBUTE)
       // The "providedInstance" node of the member itself
       val memberInstance = providedInstance(field.type.fullyQualifiedName)
-      connections.add(HipsterGraphBuilder.Connection(providedInstanceMember, memberInstance, Relationship.IS_ATTRIBUTE_OF))
+      connections.add(
+         HipsterGraphBuilder.Connection(
+            providedInstanceMember,
+            memberInstance,
+            Relationship.IS_ATTRIBUTE_OF
+         )
+      )
       //builder.connect(providedInstanceMember).to(memberInstance).withEdge(Relationship.IS_ATTRIBUTE_OF)
 
       // The member instance we have can populate required params
-      connections.add(HipsterGraphBuilder.Connection(memberInstance, parameter(field.type.fullyQualifiedName), Relationship.CAN_POPULATE))
+      connections.add(
+         HipsterGraphBuilder.Connection(
+            memberInstance,
+            parameter(field.type.fullyQualifiedName),
+            Relationship.CAN_POPULATE
+         )
+      )
       //builder.connect(memberInstance).to(parameter(field.type.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
-      connections.add(HipsterGraphBuilder.Connection(memberInstance, type(field.type.fullyQualifiedName), Relationship.IS_INSTANCE_OF))
+      connections.add(
+         HipsterGraphBuilder.Connection(
+            memberInstance,
+            type(field.type.fullyQualifiedName),
+            Relationship.IS_INSTANCE_OF
+         )
+      )
       //builder.connect(memberInstance).to(type(field.type.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
       return connections
    }
 
-   private fun appendInstanceAttributesOfDiscoverableInstance(schema: Schema, instanceFqn: String, builder: HipsterGraphBuilder<Element, Relationship>, providedInstance: Element) {
-      schema.type(instanceFqn).attributes.forEach { (attributeName, field) ->
-         connectProvidedInstanceAttribute(instanceFqn, attributeName, builder, providedInstance, field)
+   private fun buildInstanceAttributesOfDiscoverableInstanceConnections(
+      schema: Schema,
+      instanceFqn: String,
+      providedInstance: Element
+   ): List<GraphConnection> {
+      return schema.type(instanceFqn).attributes.flatMap { (attributeName, field) ->
+         buildProvidedInstanceAttributeConnections(instanceFqn, attributeName, providedInstance, field)
       }
    }
 
@@ -547,3 +712,4 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       vyneGraph.addRemovedEdges(removedEdges)
    }
 }
+

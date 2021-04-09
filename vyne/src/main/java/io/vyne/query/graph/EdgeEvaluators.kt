@@ -77,6 +77,7 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
    override val relationship: Relationship = Relationship.REQUIRES_PARAMETER
 
    override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+      println("RequiresParameterEdgeEvaluator - evaluate")
       if (edge.target.elementType == ElementType.PARAMETER) {
          // Pass through, the next vertex should be the param type
          return  EvaluatedEdge.success(edge, edge.vertex2, edge.previousValue)

@@ -25,6 +25,9 @@ class QueryMetaDataService : QueryMonitor {
 
    private val _metadata = MutableSharedFlow<QueryMetaData>()
    private val queryEvents = _metadata.asSharedFlow()
+
+   //Map of clientQueryId to actual queryId - allows client to specify handle
+   val queryIdToClientQueryIdMap = mutableMapOf<String,String>()
    /**
     * Return a SharedFlow of QueryMetaData events for given queryID creating event flows as necessary
     */
@@ -35,7 +38,6 @@ class QueryMetaDataService : QueryMonitor {
    override fun metaDataEvents():Flow<QueryMetaData> {
       return queryEvents
    }
-
 
    /**
     * Return latest QueryMetaData from latest state change or UNKNOWN QueryMetaData
@@ -58,7 +60,8 @@ class QueryMetaDataService : QueryMonitor {
    }
 
    override fun reportStart(queryId:String?, clientQueryId:String?) {
-      log().info("Reporting Query Starting - $queryId")
+      log().debug("Reporting Query Starting - $queryId")
+      queryIdToClientQueryIdMap.putIfAbsent(queryId!!, if (clientQueryId.isNullOrEmpty()) "NO_CLIENT_QUERY" else "$clientQueryId")
       queryMetaData(queryId).let {
          it?.copy(state = QueryState.STARTING, queryMetaDataEventTime = System.currentTimeMillis())
       }.let {
@@ -76,7 +79,7 @@ class QueryMetaDataService : QueryMonitor {
    }
 
    override fun reportComplete(queryId:String?) {
-      log().info("Reporting Query Finished - $queryId")
+      log().debug("Reporting Query Finished - $queryId")
       queryMetaData(queryId).let {
          it?.copy(state = QueryState.COMPLETE, queryMetaDataEventTime = System.currentTimeMillis())
       }.let {
@@ -85,7 +88,7 @@ class QueryMetaDataService : QueryMonitor {
    }
 
    override fun reportTarget(queryId:String?, target: QuerySpecTypeNode) {
-      log().info("Reporting Query Target - $queryId")
+      log().debug("Reporting Query Target - $queryId")
       queryMetaData(queryId).let {
          it?.copy(target = target.type.name, queryMetaDataEventTime = System.currentTimeMillis())
       }.let {

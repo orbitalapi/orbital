@@ -13,14 +13,15 @@ object Algorithms {
    fun accessibleFromThroughFunctionInvocations(schema: Schema, fqn: String): Set<Type> {
       val startingType = schema.type(fqn)
       val builder = HipsterGraphBuilder.create<Type, Operation>()
-      schema.operationsWithSingleArgument().forEach { (_, op) ->
-         val argument = op.parameters.first().type
-         builder.connect(argument).to(op.returnType).withEdge(op)
-         resolveSynonym(argument, schema).forEach { synonymType ->
-            builder.connect(synonymType).to(op.returnType).withEdge(op)
-         }
+      val connections = schema.operationsWithSingleArgument().flatMap { (_, operation) ->
+         val argument = operation.parameters.first().type
+
+         resolveSynonym(argument, schema).map { synonymType ->
+            HipsterGraphBuilder.Connection(synonymType,operation.returnType,operation)
+         } + HipsterGraphBuilder.Connection(argument,operation.returnType,operation)
+
       }
-      val graph = builder.createDirectedGraph()
+      val graph = builder.createDirectedGraph(connections)
       val problem = GraphSearchProblem
          .startingFrom(startingType)
          .`in`(graph)

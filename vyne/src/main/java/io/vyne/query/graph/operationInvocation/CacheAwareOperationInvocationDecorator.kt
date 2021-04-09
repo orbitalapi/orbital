@@ -9,6 +9,9 @@ import io.vyne.schemas.Service
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.runBlocking
+import java.util.*
 
 class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvoker) : OperationInvoker {
 
@@ -16,19 +19,21 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
       .build<String, Exception>()
    private val cachedResults = CacheBuilder
       .newBuilder()
-      .build<String, TypedInstance>()
+      .build<String, LinkedList<TypedInstance>>()
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
+      log().info("CacheAwareOperationInvocationDecorator - checking operation invoker can Support")
       return invoker.canSupport(service, operation)
    }
 
    override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String?): Flow<TypedInstance> {
       val key = generateCacheKey(service, operation, parameters)
+      log().info("CacheAwareOperationInvocationDecorator - key $key")
 
       val result = cachedResults.getIfPresent(key)
 
       if (result != null) {
-         return flow { emit(result) }
+         return result.asFlow()
       }
 
       val previousError = cachedErrors.getIfPresent(key)
@@ -38,13 +43,23 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
       }
 
       val value = try {
-         invoker.invoke(service, operation, parameters, profilerOperation, queryId)
+
+         log().info("CacheAwareOperationInvocationDecorator - invoking remote operation")
+         var cacheResult = LinkedList<TypedInstance>()
+         invoker.invoke(service, operation, parameters, profilerOperation, queryId).onEach {
+            cacheResult.add(it)
+         }.onCompletion {
+            cachedResults.put(key, cacheResult)
+
+         }
+
       } catch (exception:Exception) {
-         log().warn("Operation with cache key $key failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again")
+         log().warn("Operation with cache key $key failed with exceptioCacheAwareOperationInvocationDecoratorn ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again")
          cachedErrors.put(key,exception)
          throw exception
       }
 
+      log().info("CacheAwareOperationInvocationDecorator - value from invocation $value")
       return value
 
    }

@@ -40,9 +40,9 @@ class CacheAwareOperationInvocationDecoratorTest {
             second = TypedInstance.from(type, null, mock(), source = Provided)
          )
       )
-      whenever(mockOperationInvoker.invoke(any(), any(), any(), any())).thenReturn( flow { emit(mockedTypeInstance) })
-      cacheAware.invoke(service, operation, params, mockProfilerOperation,)
-      cacheAware.invoke(service, operation, params, mockProfilerOperation)
-      verify(mockOperationInvoker, times(1)).invoke(service, operation, params, mockProfilerOperation)
+      whenever(mockOperationInvoker.invoke(any(), any(), any(), any(), any())).thenReturn( flow { emit(mockedTypeInstance) })
+      cacheAware.invoke(service, operation, params, mockProfilerOperation, "MOCK_QUERY_ID")
+      cacheAware.invoke(service, operation, params, mockProfilerOperation,"MOCK_QUERY_ID")
+      verify(mockOperationInvoker, times(1)).invoke(service, operation, params, mockProfilerOperation,"MOCK_QUERY_ID")
    }
 }

@@ -242,39 +242,44 @@ class GraphSearcher(
       evaluatedEdges: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
 
+         val problem = ProblemBuilder.create()
+            .initialState(startFact)
+            .defineProblemWithExplicitActions()
+            .useTransitionFunction { state ->
+               synchronized(graph) {
+                  graph.outgoingEdgesOf(state).map { edge ->
+                     Transition.create(state, edge.edgeValue, edge.vertex2)
+                  }
+               }
+            }
+            .useCostFunction { transition ->
+               evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state)
+
+            }
+            .build()
+
+
+         val executionPath = logTimeTo(graphSearchTimes) {
+            Hipster
+               .createDijkstra(problem)
+               .search(targetFact).goalNode
+         }
+
+         log().debug("Generated path with hash ${executionPath.pathHashExcludingWeights()}")
+         return if (executionPath.state() != targetFact) {
+            null
+         } else {
+            executionPath
+         }
       // Construct a specialised search problem, which allows us to supply a custom cost function.
       // The cost function applies a higher 'cost' to the nodes transitions that have previously been attempted.
       // (In earlier versions, we simply remvoed edges after failed attempts)
       // This means that transitions that have been tried in a path become less favoured (but still evaluatable)
       // than transitions that haven't been tried.
-      val problem = ProblemBuilder.create()
-         .initialState(startFact)
-         .defineProblemWithExplicitActions()
-         .useTransitionFunction { state ->
-            graph.outgoingEdgesOf(state).map { edge ->
-               Transition.create(state, edge.edgeValue, edge.vertex2)
-            }
-         }
-         .useCostFunction { transition ->
-            evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state)
-
-         }
-         .build()
 
 
-      val executionPath = logTimeTo(graphSearchTimes) {
-         Hipster
-            .createDijkstra(problem)
-            .search(targetFact).goalNode
-      }
 
 
-      log().debug("Generated path with hash ${executionPath.pathHashExcludingWeights()}")
-      return if (executionPath.state() != targetFact) {
-         null
-      } else {
-         executionPath
-      }
    }
 
    private fun <R> logTimeTo(timeCollection: MutableList<Long>, operation: () -> R): R {
