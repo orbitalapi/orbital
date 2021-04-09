@@ -9,7 +9,7 @@ import {Subject} from 'rxjs';
 import {RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {isNullOrUndefined} from 'util';
 import {QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
-import {DownloadFileType} from '../result-display/result-container.component';
+import {ExportFormat} from '../../services/export.file.service';
 
 @Component({
   selector: 'app-query-builder',
@@ -28,15 +28,6 @@ import {DownloadFileType} from '../result-display/result-container.component';
           [type]="resultType"
           (downloadClicked)="downloadQueryHistory($event.format)"
         ></app-tabbed-results-view>
-        <!--                  <mat-card *ngIf="lastQueryResult" style="width: 100%">-->
-        <!--                    <mat-card-header>-->
-        <!--                      <mat-card-title>Results</mat-card-title>-->
-        <!--                    </mat-card-header>-->
-        <!--                    <mat-card-content>-->
-        <!--                      <query-result-container [result]="lastQueryResult"-->
-        <!--                                              (instanceSelected)="onInstanceSelected($event)"></query-result-container>-->
-        <!--                    </mat-card-content>-->
-        <!--                  </mat-card>-->
       </div>
     </div>
   `,
@@ -73,7 +64,7 @@ export class QueryBuilderComponent {
     this.queryService.submitQuery(query, nanoid())
       .subscribe(result => {
           if (!isNullOrUndefined(result.typeName)) {
-            this.resultType = findType(this.schema, result.typeName.parameterizedName);
+            this.resultType = findType(this.schema, result.typeName);
           }
           this.results$.next(result.value);
         },
@@ -88,7 +79,7 @@ export class QueryBuilderComponent {
         });
   }
 
-  downloadQueryHistory(format: DownloadFileType) {
+  downloadQueryHistory(format: ExportFormat) {
     console.error('Download not implemented in query builder yet');
   }
 }

@@ -6,12 +6,20 @@ import java.util.*
 
 // TODO Make it configurable https://projects.notional.uk/youtrack/issue/LENS-164
 // Disabling atm as the data is needed by the UI
-class NoOpQueryProfiler(clock: Clock = Clock.systemDefaultZone(), root: ProfilerOperation = DefaultProfilerOperation.root(clock)) : QueryProfiler(clock, root) {
+class NoOpQueryProfiler(
+   clock: Clock = Clock.systemDefaultZone(),
+   root: ProfilerOperation = DefaultProfilerOperation.root(clock)
+) : QueryProfiler(clock, root) {
    override fun startChild(componentName: String, operationName: String, type: OperationType): ProfilerOperation {
       return this
    }
 
-   override fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R {
+   override fun <R> startChild(
+      componentName: String,
+      operationName: String,
+      type: OperationType,
+      closure: (ProfilerOperation) -> R
+   ): R {
       val start = System.currentTimeMillis()
       val result = closure.invoke(this)
       val executionTime = System.currentTimeMillis() - start
@@ -40,13 +48,30 @@ class NoOpQueryProfiler(clock: Clock = Clock.systemDefaultZone(), root: Profiler
    }
 }
 
-open class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), val root: ProfilerOperation = DefaultProfilerOperation.root(clock)) : ProfilerOperation by root {
+open class QueryProfiler(
+   private val clock: Clock = Clock.systemDefaultZone(),
+   val root: ProfilerOperation = DefaultProfilerOperation.root(clock)
+) : ProfilerOperation by root {
    private val operationStack: Deque<ProfilerOperation> = ArrayDeque(listOf(root))
-   override fun startChild(ownerInstance: Any, name: String, type: OperationType): ProfilerOperation = startChild(ownerInstance::class.java.simpleName, name, type)
-   override fun startChild(clazz: Class<Any>, name: String, type: OperationType): ProfilerOperation = startChild(clazz.simpleName, name, type)
+   override fun startChild(ownerInstance: Any, name: String, type: OperationType): ProfilerOperation =
+      startChild(ownerInstance::class.java.simpleName, name, type)
 
-   override fun <R> startChild(ownerInstance: Any, name: String, type: OperationType, closure: (ProfilerOperation) -> R): R = startChild(ownerInstance::class.java.simpleName, name, type, closure)
-   override fun <R> startChild(clazz: Class<Any>, name: String, type: OperationType, closure: (ProfilerOperation) -> R): R = startChild(clazz.simpleName, name, type, closure)
+   override fun startChild(clazz: Class<Any>, name: String, type: OperationType): ProfilerOperation =
+      startChild(clazz.simpleName, name, type)
+
+   override fun <R> startChild(
+      ownerInstance: Any,
+      name: String,
+      type: OperationType,
+      closure: (ProfilerOperation) -> R
+   ): R = startChild(ownerInstance::class.java.simpleName, name, type, closure)
+
+   override fun <R> startChild(
+      clazz: Class<Any>,
+      name: String,
+      type: OperationType,
+      closure: (ProfilerOperation) -> R
+   ): R = startChild(clazz.simpleName, name, type, closure)
 
 
    override fun startChild(componentName: String, operationName: String, type: OperationType): ProfilerOperation {
@@ -55,7 +80,12 @@ open class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), v
       return StackedOperation(operationStack, child)
    }
 
-   override fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R {
+   override fun <R> startChild(
+      componentName: String,
+      operationName: String,
+      type: OperationType,
+      closure: (ProfilerOperation) -> R
+   ): R {
       log().debug("Profiler start: {} / {}", componentName, operationName)
       val recorder = startChild(componentName, operationName, type)
       return try {
@@ -69,7 +99,10 @@ open class QueryProfiler(private val clock: Clock = Clock.systemDefaultZone(), v
       }
    }
 
-   private class StackedOperation(private val stack: Deque<ProfilerOperation>, private val operation: ProfilerOperation) : ProfilerOperation by operation {
+   private class StackedOperation(
+      private val stack: Deque<ProfilerOperation>,
+      private val operation: ProfilerOperation
+   ) : ProfilerOperation by operation {
       override fun stop(result: Any?) {
          operation.stop(result)
          if (stack.peekLast() == operation) {
@@ -88,7 +121,8 @@ enum class OperationType(
    /**
     * Indicates if the cost is part of Vyne doing work, or would've normally occurred anyway
     */
-   val isInternal: Boolean) {
+   val isInternal: Boolean
+) {
    ROOT(false),
    GRAPH_BUILDING(true),
    GRAPH_TRAVERSAL(true),
@@ -97,14 +131,29 @@ enum class OperationType(
    REMOTE_CALL(false)
 }
 
+@Deprecated("ProfilerOperation has not proved useful, and will be removed")
 interface ProfilerOperation {
-   fun startChild(ownerInstance: Any, name: String, type: OperationType): ProfilerOperation = startChild(ownerInstance::class.java.simpleName, name, type)
-   fun startChild(clazz: Class<Any>, name: String, type: OperationType): ProfilerOperation = startChild(clazz.simpleName, name, type)
+   fun startChild(ownerInstance: Any, name: String, type: OperationType): ProfilerOperation =
+      startChild(ownerInstance::class.java.simpleName, name, type)
+
+   fun startChild(clazz: Class<Any>, name: String, type: OperationType): ProfilerOperation =
+      startChild(clazz.simpleName, name, type)
+
    fun startChild(componentName: String, operationName: String, type: OperationType): ProfilerOperation
 
-   fun <R> startChild(ownerInstance: Any, name: String, type: OperationType, closure: (ProfilerOperation) -> R): R = startChild(ownerInstance::class.java.simpleName, name, type, closure)
-   fun <R> startChild(clazz: Class<Any>, name: String, type: OperationType, closure: (ProfilerOperation) -> R): R = startChild(clazz.simpleName, name, type, closure)
-   fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R
+   fun <R> startChild(ownerInstance: Any, name: String, type: OperationType, closure: (ProfilerOperation) -> R): R =
+      startChild(ownerInstance::class.java.simpleName, name, type, closure)
+
+   fun <R> startChild(clazz: Class<Any>, name: String, type: OperationType, closure: (ProfilerOperation) -> R): R =
+      startChild(clazz.simpleName, name, type, closure)
+
+   fun <R> startChild(
+      componentName: String,
+      operationName: String,
+      type: OperationType,
+      closure: (ProfilerOperation) -> R
+   ): R
+
    fun stop(result: Any? = null)
 
    val componentName: String
@@ -148,35 +197,14 @@ interface ProfilerOperation {
          return "$componentName.$operationName"
       }
 
-   fun toDto(): ProfilerOperationDTO {
-      return ProfilerOperationDTO(
-         componentName,
-         operationName,
-         children.map { it.toDto() },
-         result,
-         type,
-         duration,
-         remoteCalls,
-         context,
-         timings)
-   }
 }
 
-data class ProfilerOperationDTO(val componentName: String,
-                           val operationName: String,
-                           val children: List<ProfilerOperationDTO> = listOf(),
-                           val result: Result?,
-                           val type: OperationType,
-                           val duration: Long,
-                           val remoteCalls: List<RemoteCall> = listOf(),
-                           val context: Map<String, Any?> = mapOf(),
-                           val timings: Map<OperationType, Long> = mapOf()) {
-   val description: String
-      get() {
-         return "$componentName.$operationName"
-      }
-}
-
+data class QueryProfileData(
+   val queryId: String,
+   val duration: Long,
+   val remoteCalls: List<RemoteCall> = listOf(),
+   val timings: Map<OperationType, Long> = mapOf()
+)
 data class Result(
    val startTime: Long,
    val endTime: Long,
@@ -206,11 +234,13 @@ data class Result(
 }
 
 
-class DefaultProfilerOperation(override val componentName: String,
-                               override val operationName: String,
-                               override val type: OperationType,
-                               private val clock: Clock,
-                               val path: String = "/") : ProfilerOperation {
+class DefaultProfilerOperation(
+   override val componentName: String,
+   override val operationName: String,
+   override val type: OperationType,
+   private val clock: Clock,
+   val path: String = "/"
+) : ProfilerOperation {
    companion object {
 
       fun root(clock: Clock = Clock.systemDefaultZone()): DefaultProfilerOperation {
@@ -248,7 +278,12 @@ class DefaultProfilerOperation(override val componentName: String,
          return result?.duration ?: clock.millis() - startTime
       }
 
-   override fun <R> startChild(componentName: String, operationName: String, type: OperationType, closure: (ProfilerOperation) -> R): R {
+   override fun <R> startChild(
+      componentName: String,
+      operationName: String,
+      type: OperationType,
+      closure: (ProfilerOperation) -> R
+   ): R {
       val recorder = startChild(componentName, operationName, type)
       val result = closure.invoke(recorder)
 

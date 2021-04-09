@@ -25,7 +25,7 @@ class StdLibSchemaWriterTests {
 
 type FullName inherits lang.taxi.String
 
-type Person {
+model Person {
    firstName : FirstName
    leftName : FullName by taxi.stdlib.left( this.firstName, 5)
 }
@@ -36,13 +36,15 @@ type Person {
    @Test
    fun `outputs concatenated columns`() {
       val generated = """
+         type PrimarKey inherits String
          type Thing {
-            primaryKey: String by concat(column(0), "-", column("NAME"), "-", column(2))
+            primaryKey: PrimarKey by concat(column(0), "-", column("NAME"), "-", column(2))
          }
       """.compileAndRegenerateSource()
       val expected = """
-         type Thing {
-           primaryKey : String  by taxi.stdlib.concat( column(0),"-",column("NAME"),"-",column(2) )
+         type PrimarKey inherits lang.taxi.String
+         model Thing {
+           primaryKey :  PrimarKey by taxi.stdlib.concat( column(0),"-",column("NAME"),"-",column(2) )
          }
       """
       generated.withoutWhitespace().should.equal(expected.withoutWhitespace())
@@ -52,13 +54,15 @@ type Person {
    @Test
    fun `outputs nested functions`() {
       val generated = """
+         type PrimarKey inherits String
          type Thing {
-            primaryKey: String by upperCase(left("asdf",3))
+            primaryKey: PrimarKey by upperCase(left("asdf",3))
          }
       """.compileAndRegenerateSource()
       val expected = """
-         type Thing {
-           primaryKey : String  by taxi.stdlib.upperCase(taxi.stdlib.left("asdf",3))
+         type PrimarKey inherits lang.taxi.String
+         model Thing {
+           primaryKey : PrimarKey  by taxi.stdlib.upperCase(taxi.stdlib.left("asdf",3))
          }
       """
       generated.withoutWhitespace().should.equal(expected.withoutWhitespace())

@@ -5,18 +5,13 @@
    <parent>
       <groupId>io.vyne</groupId>
       <artifactId>platform</artifactId>
-      <version>0.15.0-SNAPSHOT</version>
+      <version>0.15.2-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>cask</artifactId>
 
     <dependencies>
-       <dependency>
-          <groupId>io.vyne</groupId>
-          <artifactId>vyne-ql-compiler</artifactId>
-          <version>0.15.0-SNAPSHOT</version>
-       </dependency>
        <dependency>
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -163,6 +158,17 @@
           <version>1.5.0</version>
           <scope>test</scope>
        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-test</artifactId>
+            <version>${kotlin.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -172,6 +178,22 @@
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <version>${kotlin.version}</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <compilerPlugins>
                         <!-- Or "spring" for the Spring support -->
@@ -180,6 +202,7 @@
                         <plugin>no-arg</plugin>
                     </compilerPlugins>
 
+                    <jvmTarget>1.8</jvmTarget>
                 </configuration>
 
                 <dependencies>

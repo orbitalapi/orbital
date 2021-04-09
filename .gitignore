@@ -184,5 +184,5 @@ shipman-store/
 /schemas
 vyne-query-service/search/
 
-lsp/
 *.mv.db
+lsp/

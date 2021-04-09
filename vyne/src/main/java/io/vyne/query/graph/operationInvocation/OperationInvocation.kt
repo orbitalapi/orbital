@@ -2,28 +2,11 @@ package io.vyne.query.graph.operationInvocation
 
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
-import io.vyne.query.ProfilerOperation
-import io.vyne.query.QueryContext
-import io.vyne.query.QueryResult
-import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.SearchFailedException
-import io.vyne.query.graph.EdgeEvaluator
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.EvaluatedLink
-import io.vyne.query.graph.LinkEvaluator
-import io.vyne.query.graph.ParameterFactory
-import io.vyne.schemas.ConstraintEvaluations
-import io.vyne.schemas.Link
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Relationship
-import io.vyne.schemas.RemoteOperation
-import io.vyne.schemas.Service
-import io.vyne.schemas.fqn
+import io.vyne.query.*
+import io.vyne.query.graph.*
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 
@@ -37,7 +20,7 @@ interface OperationInvocationService {
 interface OperationInvoker {
    fun canSupport(service: Service, operation: RemoteOperation): Boolean
 
-   fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String?): Flow<TypedInstance>
+   fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String? = null): Flow<TypedInstance>
 }
 
 class DefaultOperationInvocationService(private val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
@@ -48,7 +31,6 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       context: QueryContext,
       providedParamValues: List<Pair<Parameter, TypedInstance>>
    ): Flow<TypedInstance> {
-
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
@@ -135,7 +117,8 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
 
 @Component
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
-   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+
 
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
       val (service, operation) = context.schema.operation(operationName)
@@ -162,17 +145,16 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
          }
       }
 
-
       val callArgs = parameterValues.toSet()
       if (context.hasOperationResult(edge, callArgs as Set<TypedInstance>)) {
-
          val cachedResult = context.getOperationResult(edge, callArgs)
          cachedResult?.let { context.addFact(it) }
          return  edge.success(cachedResult)
       }
 
       return try {
-         val result: TypedInstance = runBlocking {  invocationService.invokeOperation(service, operation, callArgs, context).first() }
+         val result: TypedInstance = invocationService.invokeOperation(service, operation, callArgs, context)
+            .first()
          if (result is TypedNull) {
             log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
          } else {
@@ -192,19 +174,19 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
 
    override val relationship: Relationship = Relationship.PROVIDES
 
-   override fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
+   override suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink {
       TODO("I'm not sure if this is still used")
-      val operationName = link.start
-      val (service, operation) = context.schema.operation(operationName)
-
-      val result: Flow<TypedInstance> = runBlocking { invocationService.invokeOperation(service, operation, setOf(startingPoint), context) }
-
-      var linkResult: TypedInstance
-      runBlocking {
-         result.collect { r -> context.addFact(r) }
-         linkResult = result.first()
-      }
-      return EvaluatedLink(link, startingPoint, linkResult)
+//      val operationName = link.start
+//      val (service, operation) = context.schema.operation(operationName)
+//
+//      val result: Flow<TypedInstance> = runBlocking { invocationService.invokeOperation(service, operation, setOf(startingPoint), context) }
+//
+//      var linkResult: TypedInstance
+//      runBlocking {
+//         result.collect { r -> context.addFact(r) }
+//         linkResult = result.first()
+//      }
+//      return EvaluatedLink(link, startingPoint, linkResult)
    }
 }
 

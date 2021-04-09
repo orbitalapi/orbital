@@ -26,7 +26,6 @@ import {SchemaGeneratorComponent} from './schema-generator-panel/schema-generato
 import * as fileSaver from 'file-saver';
 import {QueryFailure} from '../query-panel/query-wizard/query-wizard.component';
 import {ExportFileService} from '../services/export.file.service';
-import {DownloadFileType} from '../query-panel/result-display/result-container.component';
 import {MatDialog} from '@angular/material/dialog';
 import {TestSpecFormComponent} from '../test-pack-module/test-spec-form.component';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';

@@ -14,7 +14,7 @@ import {
   TypeNamedInstance
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
-import {concatAll, map} from 'rxjs/operators';
+import {concatAll, map, share, shareReplay} from 'rxjs/operators';
 import {SseEventSourceService} from './sse-event-source.service';
 import {isNullOrUndefined} from 'util';
 
@@ -47,34 +47,57 @@ export class QueryService {
 
   }
 
-  submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE): Observable<ValueWithTypeName> {
+  submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
     const url = encodeURI(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${query}`);
     return this.sse.getEventSource(
       url
     ).pipe(
       map((event: MessageEvent) => {
         return JSON.parse(event.data) as ValueWithTypeName;
-      })
+      }),
+      shareReplay(replayCacheSize)
     );
   }
 
-  getHistoryRecord(queryId: string): Observable<QueryHistoryRecord> {
-    return this.http.get<QueryHistoryRecord>(`${environment.queryServiceUrl}/api/query/history/${queryId}`, this.httpOptions);
+  getQueryResults(queryId: string, limit: number = 100): Observable<ValueWithTypeName> {
+    const url = encodeURI(`${environment.queryServiceUrl}/api/query/history/${queryId}/results?limit=${limit}`);
+    return this.sse.getEventSource(
+      url
+    ).pipe(
+      map((event: MessageEvent) => {
+        return JSON.parse(event.data) as ValueWithTypeName;
+      }),
+      shareReplay(limit)
+    );
   }
 
   getHistory(): Observable<QueryHistorySummary[]> {
     return this.http.get<QueryHistorySummary[]>(`${environment.queryServiceUrl}/api/query/history`, this.httpOptions);
   }
 
-  getQueryResultNodeDetail(queryId: string, requestedTypeInQuery: QualifiedName, nodeId: string): Observable<QueryResultNodeDetail> {
-    const safeNodeId = encodeURI(nodeId);
+  getQueryResultNodeDetail(queryId: string, rowValueId: number, attributePath: string): Observable<QueryResultNodeDetail> {
     return this.http.get<QueryResultNodeDetail>(
-      `${environment.queryServiceUrl}/api/query/history/${queryId}/${requestedTypeInQuery.parameterizedName}/${safeNodeId}`, this.httpOptions
+      `${environment.queryServiceUrl}/api/query/history/${queryId}/dataSource/${rowValueId}/${attributePath}`, this.httpOptions
     );
   }
 
-  getQueryProfile(queryId: string): Observable<ProfilerOperation> {
-    return this.http.get<ProfilerOperation>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`, this.httpOptions);
+  getQueryResultNodeDetailFromClientId(clientQueryId: string, rowValueId: number, attributePath: string): Observable<QueryResultNodeDetail> {
+    return this.http.get<QueryResultNodeDetail>(
+      `${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/dataSource/${rowValueId}/${attributePath}`, this.httpOptions
+    );
+  }
+
+
+  getQueryProfileFromClientId(clientQueryId: string): Observable<QueryProfileData> {
+    return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/clientId/${clientQueryId}/profile`, this.httpOptions)
+      .pipe(shareReplay(1)) // This observable is shared
+      ;
+  }
+
+  getQueryProfile(queryId: string): Observable<QueryProfileData> {
+    return this.http.get<QueryProfileData>(`${environment.queryServiceUrl}/api/query/history/${queryId}/profile`, this.httpOptions)
+      .pipe(shareReplay(1)) // This observable is shared
+      ;
   }
 
   invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
@@ -164,7 +187,7 @@ export interface QueryResult {
   results: { [key: string]: InstanceLikeOrCollection };
   unmatchedNodes: QualifiedName[];
   fullyResolved: boolean;
-  profilerOperation: ProfilerOperation;
+  profilerOperation: QueryProfileData;
   remoteCalls: RemoteCall[];
   resultMode: ResultMode;
   queryResponseId: string;
@@ -187,20 +210,11 @@ export interface RemoteCall extends Proxyable {
   operationQualifiedName: string;
 }
 
-export interface ProfilerOperation {
+export interface QueryProfileData {
   id: string;
-  fullPath: string;
-  path: string;
-  componentName: string;
-  operationName: string;
-  children: ProfilerOperation[];
-  result: ProfilerOperationResult;
-
   duration: number;
-
-  context: any;
-
-  description: string;
+  remoteCalls: RemoteCall[];
+  timings: any; // TODO
 }
 
 export interface ProfilerOperationResult {
@@ -223,34 +237,17 @@ export enum ResultMode {
   VERBOSE = 'VERBOSE'
 }
 
-export interface VyneQlQueryHistoryRecord extends QueryHistoryRecord {
-  query: string;
-}
-
-export interface RestfulQueryHistoryRecord extends QueryHistoryRecord {
-  query: Query;
-}
-
-export interface QueryHistoryRecord {
-  response: QueryResult;
-  timestamp: Date;
-  id: string;
-}
-
-export interface RestfulQueryHistorySummary extends QueryHistorySummary {
-  query: Query;
-}
-
-export interface VyneQlQueryHistorySummary extends QueryHistorySummary {
-  query: string;
-}
-
 export interface QueryHistorySummary {
   queryId: string;
+  clientQueryId: string;
+  taxiQl: string | null;
+  queryJson: Query | null;
+  startTime: Date;
+  endTime: Date | null;
   responseStatus: ResponseStatus;
   durationMs: number;
-  recordSize: number;
-  timestamp: Date;
+  recordCount: number;
+  errorMessage: string | null;
 }
 
 /**
@@ -267,7 +264,7 @@ export function isValueWithTypeName(message: StreamingQueryMessage): message is 
 }
 
 export interface ValueWithTypeName {
-  typeName: QualifiedName | null;
+  typeName: string | null;
   anonymousTypes: Type[];
   /**
    * This is the serialized instance, as converted by a RawObjectMapper.
@@ -275,6 +272,7 @@ export interface ValueWithTypeName {
    * Use TypedObjectAttributes here, rather than any, as it's compatible with InstanceLike interface
    */
   value: TypedObjectAttributes;
+  valueId: number;
 }
 
 export interface FailedSearchResponse {
@@ -283,22 +281,6 @@ export interface FailedSearchResponse {
   queryResponseId: string | null;
   clientQueryId: string | null;
   remoteCalls: RemoteCall[];
-}
-
-export function isVyneQlQueryHistorySummaryRecord(value: QueryHistorySummary): value is VyneQlQueryHistorySummary {
-  return typeof value['query'] === 'string';
-}
-
-export function isVyneQlQueryHistoryRecord(value: QueryHistoryRecord): value is VyneQlQueryHistoryRecord {
-  return typeof value['query'] === 'string';
-}
-
-export function isRestQueryHistoryRecord(value: QueryHistoryRecord): value is RestfulQueryHistoryRecord {
-  return (value as RestfulQueryHistoryRecord).query.queryMode !== undefined;
-}
-
-export function isRestQueryHistorySummaryRecord(value: QueryHistorySummary): value is RestfulQueryHistorySummary {
-  return (value as RestfulQueryHistorySummary).query.queryMode !== undefined;
 }
 
 export function randomId(): string {

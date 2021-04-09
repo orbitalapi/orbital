@@ -6,28 +6,25 @@ import {editor} from 'monaco-editor';
 import {
   FailedSearchResponse,
   isFailedSearchResponse,
-  isValueWithTypeName,
-  QueryHistoryRecord,
+  isValueWithTypeName, QueryHistorySummary, QueryProfileData,
   QueryResult,
   QueryService,
   randomId,
   ResponseStatus,
   ResultMode,
   StreamingQueryMessage,
-  VyneQlQueryHistoryRecord
 } from 'src/app/services/query.service';
 import {QueryFailure} from '../query-wizard/query-wizard.component';
 import {HttpErrorResponse} from '@angular/common/http';
 import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
-import {DownloadFileType} from '../result-display/result-container.component';
 import {QueryState} from './bottom-bar.component';
 import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
-import {ExportFileService} from '../../services/export.file.service';
+import {ExportFormat, ExportFileService} from '../../services/export.file.service';
 import {TestSpecFormComponent} from '../../test-pack-module/test-spec-form.component';
 import {MatDialog} from '@angular/material/dialog';
 import {findType, InstanceLike, Schema, Type} from '../../services/schema';
 import {Subject} from 'rxjs/index';
-import {Subscription} from 'rxjs';
+import {Observable, Subscription} from 'rxjs';
 import {isNullOrUndefined} from 'util';
 import {RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {TypesService} from '../../services/types.service';
@@ -45,7 +42,7 @@ declare const monaco: any; // monaco
 export class QueryEditorComponent implements OnInit {
 
   @Input()
-  initialQuery: QueryHistoryRecord;
+  initialQuery: QueryHistorySummary;
 
   editorOptions: { theme: 'vs-dark', language: 'vyneQL' };
   monacoEditor: ICodeEditor;
@@ -59,6 +56,7 @@ export class QueryEditorComponent implements OnInit {
   resultType: Type | null = null;
   queryStatus: RunningQueryStatus | null = null;
   results$: Subject<InstanceLike>;
+  queryProfileData$: Observable<QueryProfileData>;
   queryStatusSubscription: Subscription | null = null;
   queryResultsSubscription: Subscription | null = null;
 
@@ -127,7 +125,7 @@ export class QueryEditorComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.query = this.initialQuery ? (this.initialQuery as VyneQlQueryHistoryRecord).query : '';
+    this.query = this.initialQuery ? this.initialQuery.taxiQl : '';
   }
 
   remeasure() {
@@ -177,7 +175,7 @@ export class QueryEditorComponent implements OnInit {
         queryErrorHandler(message);
       } else if (isValueWithTypeName(message)) {
         if (!isNullOrUndefined(message.typeName)) {
-          this.resultType = findType(this.schema, message.typeName.parameterizedName);
+          this.resultType = findType(this.schema, message.typeName);
         }
         this.results$.next(message.value);
       } else {
@@ -191,8 +189,6 @@ export class QueryEditorComponent implements OnInit {
       this.handleQueryFinished(null);
     };
 
-    // Hard coded to test UI
-    this.resultType = findType(this.schema, 'bgc.orders.Order');
     this.queryService.submitVyneQlQueryStreaming(this.query, this.queryClientId, ResultMode.SIMPLE).subscribe(
       queryMessageHandler,
       queryErrorHandler,
@@ -204,22 +200,11 @@ export class QueryEditorComponent implements OnInit {
     this.instanceSelected.emit($event);
   }
 
-  public downloadQueryHistory(fileType: DownloadFileType) {
-    const queryResponseId = (<QueryResult>this.lastQueryResult).queryResponseId;
-    if (fileType === DownloadFileType.TEST_CASE) {
-      const dialogRef = this.dialogService.open(TestSpecFormComponent, {
-        width: '550px'
-      });
-
-      dialogRef.afterClosed().subscribe(result => {
-        if (result !== null) {
-          // noinspection UnnecessaryLocalVariableJS
-          const specName = result;
-          this.fileService.downloadRegressionPackZipFile(queryResponseId, specName);
-        }
-      });
+  public downloadQueryHistory(fileType: ExportFormat) {
+    if (fileType === ExportFormat.TEST_CASE) {
+      this.fileService.downloadRegressionPackZipFileFromClientId(this.queryClientId, fileType);
     } else {
-      this.fileService.downloadQueryHistory(queryResponseId, fileType);
+      this.fileService.downloadQueryHistoryFromClientQueryId(this.queryClientId, fileType);
     }
   }
 
@@ -230,6 +215,7 @@ export class QueryEditorComponent implements OnInit {
     if (this.currentState === 'Running') {
       this.currentState = 'Result';
     }
+    this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
 
 
     // this.queryService.getHistoryRecord(queryStatus.queryId)

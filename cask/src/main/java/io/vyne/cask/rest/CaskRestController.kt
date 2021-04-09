@@ -13,7 +13,6 @@ import io.vyne.cask.websocket.XmlWebsocketRequest
 import io.vyne.utils.log
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.core.io.Resource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -24,10 +23,12 @@ import java.io.InputStream
 import java.nio.charset.Charset
 
 @RestController
-class CaskRestController(private val caskService: CaskService,
-                         private val applicationEventPublisher: ApplicationEventPublisher,
-                         private val caskIngestionErrorProcessor: CaskIngestionErrorProcessor,
-                         @Qualifier("ingesterMapper") private val mapper: ObjectMapper) : CaskApi {
+class CaskRestController(
+   private val caskService: CaskService,
+   private val applicationEventPublisher: ApplicationEventPublisher,
+   private val caskIngestionErrorProcessor: CaskIngestionErrorProcessor,
+   @Qualifier("ingesterMapper") private val mapper: ObjectMapper
+) : CaskApi {
 
    // Workaround for feign not supporting pojos for RequestParam
    override fun ingestCsv(
@@ -51,7 +52,11 @@ class CaskRestController(private val caskService: CaskService,
       return ingestCsv(typeReference, parameters, input)
    }
 
-   private fun ingestCsv(typeReference: String, parameters: CsvIngestionParameters, input: String): Mono<CaskIngestionResponse> {
+   private fun ingestCsv(
+      typeReference: String,
+      parameters: CsvIngestionParameters,
+      input: String
+   ): Mono<CaskIngestionResponse> {
       log().info("New csv ingestion request for type $typeReference with config $parameters")
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = CsvWebsocketRequest(parameters, versionedType, caskIngestionErrorProcessor)
@@ -70,7 +75,12 @@ class CaskRestController(private val caskService: CaskService,
       return ingestJson(typeReference, parameters, input)
    }
 
-   override fun ingestXml(typeReference: String, debug: Boolean, elementSelector: String?, input: String): Mono<CaskIngestionResponse> {
+   override fun ingestXml(
+      typeReference: String,
+      debug: Boolean,
+      elementSelector: String?,
+      input: String
+   ): Mono<CaskIngestionResponse> {
       val xmlIngestionParameters = XmlIngestionParameters(debug, elementSelector)
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = XmlWebsocketRequest(xmlIngestionParameters, versionedType)
@@ -81,7 +91,11 @@ class CaskRestController(private val caskService: CaskService,
       }
    }
 
-   private fun ingestJson(typeReference: String, parameters: JsonIngestionParameters, input: String): Mono<CaskIngestionResponse> {
+   private fun ingestJson(
+      typeReference: String,
+      parameters: JsonIngestionParameters,
+      input: String
+   ): Mono<CaskIngestionResponse> {
       return caskService.resolveType(typeReference).map { versionedType ->
          val request = JsonWebsocketRequest(parameters, versionedType, mapper)
          val inputStream = Flux.just(input.byteInputStream() as InputStream)
@@ -92,7 +106,10 @@ class CaskRestController(private val caskService: CaskService,
       }
    }
 
-   private fun ingestRequest(request: CaskIngestionRequest, ingestionInput: Flux<InputStream>): Mono<CaskIngestionResponse> {
+   private fun ingestRequest(
+      request: CaskIngestionRequest,
+      ingestionInput: Flux<InputStream>
+   ): Mono<CaskIngestionResponse> {
       applicationEventPublisher.publishEvent(IngestionInitialisedEvent(this, request.versionedType))
 
       return caskService.ingestRequest(request, ingestionInput)
@@ -105,22 +122,27 @@ class CaskRestController(private val caskService: CaskService,
    }
 
    override fun getCasks() = Mono.just(caskService.getCasks())
-   override fun getCaskDetails(tableName: String): Mono<CaskDetails> = Mono.just(caskService.getCaskDetails(tableName))
-   override fun deleteCask(tableName: String): Mono<String> = Mono.just(caskService.deleteCask(tableName).toString())
-   override fun emptyCask(tableName: String): Mono<String> = Mono.just(caskService.emptyCask(tableName).toString())
-   override fun getCaskIngestionErrors(tableName: String, request: CaskIngestionErrorsRequestDto): Mono<CaskIngestionErrorDtoPage> {
+   override fun getCaskDetails(tableName: String) = Mono.just(caskService.getCaskDetails(tableName))
+
+   override fun getCaskIngestionErrors(
+      tableName: String,
+      request: CaskIngestionErrorsRequestDto
+   ): Mono<CaskIngestionErrorDtoPage> {
       log().info("Searching ingestion errors for $tableName with criteria $request")
-      return Mono.just(caskService.caskIngestionErrorsFor(
-         tableName,
-         request.pageNumber,
-         request.pageSize,
-         request.searchStart,
-         request.searchEnd))
+      return Mono.just(
+         caskService.caskIngestionErrorsFor(
+            tableName,
+            request.pageNumber,
+            request.pageSize,
+            request.searchStart,
+            request.searchEnd
+         )
+      )
    }
 
    override fun getIngestionMessage(caskMessageId: String): Mono<String> {
       val (resource, contentType) = caskService.caskIngestionMessage(caskMessageId)
-      val (mediaType, fileName) = when(contentType) {
+      val (mediaType, fileName) = when (contentType) {
          ContentType.xml -> MediaType.APPLICATION_XML to "$caskMessageId.xml"
          ContentType.csv -> MediaType("text", "csv", Charset.forName("utf-8")) to "$caskMessageId.csv"
          ContentType.json -> MediaType.APPLICATION_JSON to "$caskMessageId.json"
@@ -136,8 +158,11 @@ class CaskRestController(private val caskService: CaskService,
       return Mono.just(builder.body(resource).toString())
    }
 
-   override fun deleteCaskByTypeName(typeName: String): Mono<String> {
-      return Mono.just(caskService.deleteCaskByTypeName(typeName).toString())
+   override fun deleteCask(tableName: String, force: Boolean): Mono<String> =
+      Mono.just(caskService.deleteCask(tableName, force).toString())
+
+   override fun deleteCaskByTypeName(typeName: String, force: Boolean): Mono<String> {
+      return Mono.just(caskService.deleteCaskByTypeName(typeName, force).toString())
    }
 }
 

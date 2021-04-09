@@ -321,8 +321,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return find(target, context, spec)
    }
 
-   override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult = runBlocking{
-      find(TypeNameQueryExpression(type.fullyQualifiedName), context, spec)
+   override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
+      return find(TypeNameQueryExpression(type.fullyQualifiedName), context, spec)
    }
 
    override suspend fun find(
@@ -389,19 +389,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
    }
 
-   val dispatcher = Executors.newFixedThreadPool(64).asCoroutineDispatcher()
-
-   suspend fun doSomethingUsefulOne(typedInstance: TypedInstance) = GlobalScope.async(dispatcher) {
-
-      //         val actualProjectedType = pto?.collectionType ?: pto
-      //         val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)!!
-      //         buildResult.results.first()
-
-      delay(5000L) // pretend we are doing something useful here
-      println("doSomethingUsefulOne on ${Thread.currentThread().name}")
-      typedInstance
-   }
-
    private fun doFind(
       target: QuerySpecTypeNode,
       context: QueryContext,
@@ -458,6 +445,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // Without it, there's a stack overflow error as projectTo seems to call ObjectBuilder.build which calls projectTo again.
       // ... Investigate
 
+      val dispatcher = Executors.newFixedThreadPool(64).asCoroutineDispatcher()
+
       val results = when(context.projectResultsTo) {
          null -> runBlocking { resultsFlow.toList() }
          else -> runBlocking {
@@ -479,7 +468,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       if (context.projectResultsTo != null) {
          println("Size of results ${results}")
       }
-
 
       return QueryResult(
          when (context.projectResultsTo) {

@@ -6,21 +6,11 @@ import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.JdbcStreamingTemplate
 import io.vyne.cask.config.StringToQualifiedNameConverter
 import io.vyne.cask.ddl.TypeDbWrapper
-import io.vyne.cask.ddl.views.CaskViewBuilderFactory
-import io.vyne.cask.ddl.views.CaskViewConfig
-import io.vyne.cask.ddl.views.CaskViewDefinition
-import io.vyne.cask.ddl.views.CaskViewService
+import io.vyne.cask.ddl.views.*
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource
-import io.vyne.cask.ingest.CaskIngestionErrorProcessor
-import io.vyne.cask.ingest.CaskMessageRepository
-import io.vyne.cask.ingest.Ingester
-import io.vyne.cask.ingest.IngestionError
-import io.vyne.cask.ingest.IngestionErrorRepository
-import io.vyne.cask.ingest.IngestionEventHandler
-import io.vyne.cask.ingest.IngestionStream
-import io.vyne.cask.ingest.StreamSource
+import io.vyne.cask.ingest.*
 import io.vyne.cask.upgrade.UpdatableSchemaProvider
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
@@ -68,6 +58,7 @@ abstract class BaseCaskIntegrationTest {
    @Autowired
    lateinit var jdbcStreamingTemplate: JdbcStreamingTemplate
 
+
    @Autowired
    lateinit var ingestionErrorRepository: IngestionErrorRepository
    lateinit var caskIngestionErrorProcessor: CaskIngestionErrorProcessor
@@ -83,7 +74,7 @@ abstract class BaseCaskIntegrationTest {
    fun tearDown() {
       configRepository.findAll().forEach {
          try {
-            caskDao.deleteCask(it.tableName)
+            caskDao.deleteCask(it)
          } catch (e: Exception) {
             log().error("Failed to delete cask ${it.tableName}", e)
          }
@@ -108,10 +99,11 @@ abstract class BaseCaskIntegrationTest {
       caskConfigService = CaskConfigService(configRepository)
       viewDefinitions = mutableListOf()
       caskViewService = CaskViewService(
-         CaskViewBuilderFactory(configRepository, schemaProvider),
+         CaskViewBuilderFactory(configRepository, schemaProvider, StringToQualifiedNameConverter()),
          configRepository,
          jdbcTemplate,
-         CaskViewConfig(viewDefinitions)
+         CaskViewConfig(viewDefinitions),
+         SchemaBasedViewGenerator(configRepository, schemaProvider)
       )
       ingestionEventHandler = IngestionEventHandler(caskConfigService, caskDao)
    }

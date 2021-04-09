@@ -1,11 +1,8 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {
-  isRestQueryHistorySummaryRecord,
-  isVyneQlQueryHistorySummaryRecord,
-  QueryHistorySummary, VyneQlQueryHistorySummary
-} from '../services/query.service';
+import {Component, Input} from '@angular/core';
+import {QueryHistorySummary} from '../services/query.service';
 import {Timespan} from '../query-panel/query-editor/counter-timer.component';
 import {Router} from '@angular/router';
+import {isNullOrUndefined} from 'util';
 
 @Component({
   selector: 'app-query-history-card',
@@ -31,7 +28,7 @@ import {Router} from '@angular/router';
         </div>
         <div class="record-stat" *ngIf="historyRecord.responseStatus !== 'ERROR'">
           <mat-icon class="clock-icon">done</mat-icon>
-          <span>{{ historyRecord.recordSize }} records</span>
+          <span>{{ historyRecord.recordCount }} records</span>
         </div>
         <div class="record-stat" *ngIf="historyRecord.responseStatus === 'ERROR'">
           <mat-icon class="clock-icon">error_outline</mat-icon>
@@ -40,7 +37,7 @@ import {Router} from '@angular/router';
       </div>
 
       <div class="timestamp-row">
-        <span>{{historyRecord.timestamp | amTimeAgo}}</span>
+        <span>{{historyRecord.startTime | amTimeAgo}}</span>
         <img src="assets/img/repeat.svg" class="repeatIcon" (click)="queryAgain()" *ngIf="recordType === 'VyneQlQuery'">
       </div>
     </div>
@@ -69,16 +66,17 @@ export class QueryHistoryCardComponent {
 
 
   getFactTypeNames(record: QueryHistorySummary): string[] {
-    if (isRestQueryHistorySummaryRecord(record)) {
-      return record.query.facts.map(fact => fact.qualifiedName.longDisplayName);
+
+    if (!isNullOrUndefined(record.queryJson)) {
+      return record.queryJson.facts.map(fact => fact.qualifiedName.longDisplayName);
     } else {
       return [];
     }
   }
 
   expressionTypeName(historyRecord: QueryHistorySummary): string {
-    if (isRestQueryHistorySummaryRecord(historyRecord)) {
-      return historyRecord.query.expression.qualifiedTypeNames.map(t => t.longDisplayName).join(', ');
+    if (!isNullOrUndefined(historyRecord.queryJson)) {
+      return historyRecord.queryJson.expression.qualifiedTypeNames.map(t => t.longDisplayName).join(', ');
     } else {
       return '';
     }
@@ -86,9 +84,9 @@ export class QueryHistoryCardComponent {
 
 
   queryType(historyRecord: QueryHistorySummary): QueryType {
-    if (isVyneQlQueryHistorySummaryRecord(historyRecord)) {
+    if (!isNullOrUndefined(historyRecord.taxiQl)) {
       return 'VyneQlQuery';
-    } else if (isRestQueryHistorySummaryRecord(historyRecord)) {
+    } else if (!isNullOrUndefined(historyRecord.queryJson)) {
       return 'RestfulQuery';
     } else {
       throw new Error('Unknown type of query history record: ' + JSON.stringify(historyRecord));

@@ -4,7 +4,6 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.schemas.Link
 import io.vyne.schemas.Relationship
-import kotlinx.coroutines.flow.Flow
 
 data class EvaluatedLink(val link: Link, val startingPoint: TypedInstance, val result: TypedInstance?, val error: String? = null) {
    companion object {
@@ -20,6 +19,6 @@ data class EvaluatedLink(val link: Link, val startingPoint: TypedInstance, val r
 
 interface LinkEvaluator {
    val relationship: Relationship
-   fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink
+   suspend fun evaluate(link: Link, startingPoint: TypedInstance, context: QueryContext): EvaluatedLink
 }
 

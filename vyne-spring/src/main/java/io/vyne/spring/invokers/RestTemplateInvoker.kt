@@ -1,55 +1,56 @@
 package io.vyne.spring.invokers
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.http.HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT
 import io.vyne.http.UriVariableProvider
 import io.vyne.http.UriVariableProvider.Companion.buildRequestBody
-import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.UndefinedSource
 import io.vyne.query.OperationType
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
-import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.queryService.QueryMetaDataService
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
-import io.vyne.utils.orElse
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.utils.log
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.bodyToFlux
 import org.springframework.web.util.DefaultUriBuilderFactory
 import reactor.core.publisher.Flux
 import reactor.core.scheduler.Schedulers
+import java.util.*
 
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
-class RestTemplateInvoker(val schemaProvider: SchemaProvider,
-                          val webClient: WebClient,
-                          private val serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
-                          private val enableDataLineageForRemoteCalls: Boolean) : OperationInvoker {
+class RestTemplateInvoker(
+   val schemaProvider: SchemaProvider,
+   val webClient: WebClient,
+   private val serviceUrlResolvers: List<ServiceUrlResolver> =ServiceUrlResolver.DEFAULT
+) : OperationInvoker {
 
    @Autowired
-   constructor(schemaProvider: SchemaProvider,
-               webClientBuilder: WebClient.Builder,
-               serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
-               @Value("\${vyne.data-lineage.remoteCalls.enabled:false}") enableDataLineageForRemoteCalls: Boolean)
-      : this(schemaProvider, webClientBuilder.exchangeStrategies(
+   constructor(
+      schemaProvider: SchemaProvider,
+      webClientBuilder: WebClient.Builder,
+      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver())
+   )
+      : this(
+      schemaProvider, webClientBuilder.exchangeStrategies(
          ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
-      ).build(), serviceUrlResolvers, enableDataLineageForRemoteCalls)
+         ).build(), serviceUrlResolvers
+   )
 
    private val uriVariableProvider = UriVariableProvider()
    private val defaultUriBuilderFactory = DefaultUriBuilderFactory()
@@ -63,95 +64,73 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
    }
 
 
-   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String?): Flow<TypedInstance> {
+   override fun invoke(
+      service: Service,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      profilerOperation: ProfilerOperation, queryId: String?
+   ): Flow<TypedInstance> {
       log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}")
 
 
       val (_, url, method) = operation.httpOperationMetadata()
-      val httpMethod = HttpMethod.resolve(method)
+      val httpMethod = HttpMethod.resolve(method)!!
       //val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
 
-         val absoluteUrl = makeUrlAbsolute(service, operation, url)
-         val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
+      val absoluteUrl = makeUrlAbsolute(service, operation, url)
+      val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
 
-         log().debug("Operation ${operation.name} resolves to $absoluteUrl")
+      log().debug("Operation ${operation.name} resolves to $absoluteUrl")
+      val requestBody = buildRequestBody(operation, parameters.map { it.second })
 
-         //httpInvokeOperation.addContext("AbsoluteUrl", absoluteUrl)
-
-         val requestBody = buildRequestBody(operation, parameters.map { it.second })
-         //httpInvokeOperation.addContext("Service", service)
-         //httpInvokeOperation.addContext("Operation", operation)
-
-         val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl,uriVariables)
+      val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
          //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
-         val request = WebClient.builder().exchangeStrategies(
-            ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
-         ).build()
-            .method(httpMethod)
-            .uri(absoluteUrl, uriVariables)
-            .contentType(MediaType.APPLICATION_JSON)
-            if (requestBody.first.hasBody()) {
-               request.bodyValue(requestBody.first.body)
-            }
+      val request = webClient
+         .method(httpMethod)
+         .uri(absoluteUrl, uriVariables)
+         .contentType(MediaType.APPLICATION_JSON)
+      if (requestBody.first.hasBody()) {
+         request.bodyValue(requestBody.first.body)
+      }
 
-         val results = request
-            .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
-            .exchange()
-            .metrics()
-            .flatMapMany { clientResponse ->
-               (
-                  if (clientResponse.statusCode().isError) {
-                     throw OperationInvocationException("Error invoking URL $expandedUri", clientResponse.statusCode())
-                  } else if (clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON)
-                        .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
-                  ) {
-                     reportEstimatedResults(queryId, clientResponse.headers())
-                     clientResponse.bodyToFlux(String::class.java)
-                  } else {
-                     //reportEstimatedResults(queryId, clientResponse.headers())
-                     // Assume the response is application/json
-                        clientResponse.bodyToMono(typeReference<Any>())
-                        //TODO This is not right we should marshall to a list of T, not, Object then back to String
-                        .flatMapMany {
-                           if (it is ArrayList<*>) {
-                              Flux.fromIterable(it as List<*>)
-                           } else {
-                              Flux.just(it)
-                           }
-                        }
-                        .map {
-                              jacksonObjectMapper().writeValueAsString(it)
-                        }
-                  })
+      val remoteCallId = UUID.randomUUID().toString()
+      val results = request
+         .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
+         .exchange()
+         .metrics()
+         .publishOn(Schedulers.boundedElastic())
+         .elapsed()
+         .flatMapMany { durationAndResponse ->
+            val duration = durationAndResponse.t1
+            val clientResponse = durationAndResponse.t2
+            reportEstimatedResults(queryId, clientResponse.headers())
+            clientResponse.bodyToFlux<String>()
+               .flatMap { responseString ->
+                  val remoteCall = RemoteCall(
+                     remoteCallId = remoteCallId,
+                     service = service.name,
+                     address = expandedUri.toASCIIString(),
+                     operation = operation.name,
+                     responseTypeName = operation.returnType.name,
+                     method = httpMethod.name,
+                     requestBody = requestBody.first.body,
+                     resultCode = clientResponse.rawStatusCode(),
+                     durationMs = duration,
+                     response = responseString
+                  )
 
-                  .map {
+                  handleSuccessfulHttpResponse(
+                     responseString,
+                     operation,
+                     parameters,
+                     remoteCall,
+                     clientResponse.headers()
+                  )
 
-                     //TODO - Should we create a remote call for each response?
-                     val remoteCall = RemoteCall(
-                        service.name,
-                        expandedUri.toASCIIString(),
-                        operation.name,
-                        operation.returnType.name,
-                        httpMethod.name,
-                        requestBody.first.body,
-                        clientResponse.rawStatusCode(),
-                        20,
-                        it
-                     )
-
-                     handleSuccessfulHttpResponse(
-                        it.toString(),
-                        operation,
-                        parameters,
-                        remoteCall,
-                        clientResponse.headers()
-                     )
-                  }
-            }
-      //}
-
-      return results.asFlow().flowOn(Dispatchers.IO)
+               }
+         }
+      return results.asFlow()
 
    }
 
@@ -160,9 +139,11 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          return
       }
       if (headers.header(STREAM_ESTIMATED_RECORD_COUNT).isNotEmpty()) {
-         QueryMetaDataService.monitor.reportRecords(queryId, Integer.valueOf(headers.header(STREAM_ESTIMATED_RECORD_COUNT)[0]))
+         QueryMetaDataService.monitor.reportRecords(
+            queryId,
+            Integer.valueOf(headers.header(STREAM_ESTIMATED_RECORD_COUNT)[0])
+         )
       }
-
    }
 
    private fun handleSuccessfulHttpResponse(
@@ -171,7 +152,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
       parameters: List<Pair<Parameter, TypedInstance>>,
       remoteCall: RemoteCall,
       headers: ClientResponse.Headers
-   ): TypedInstance {
+   ): Flux<TypedInstance> {
       // TODO : Handle scenario where we get a 2xx response, but no body
 
       log().debug("Result of ${operation.name} was $result")
@@ -182,41 +163,38 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          }
       // If the content has been pre-parsed upstream, we don't evaluate accessors
       val evaluateAccessors = !isPreparsed
-      val dataSource = remoteCallDataLineage(parameters, remoteCall)
+      val dataSource = OperationResult.from(parameters, remoteCall)
 
-      var type: Type?
+      val type = inferContentType(operation, headers, result)
 
-      if (operation.returnType.collectionType != null) {
-         type = operation.returnType.collectionType!!
-      } else {
-         type = operation.returnType
-      }
-
-      return TypedInstance.from(
-         type!!,
+      val typedInstance = TypedInstance.from(
+         type,
          result,
          schemaProvider.schema(),
          source = dataSource,
          evaluateAccessors = evaluateAccessors
       )
-   }
-
-
-   private fun remoteCallDataLineage(parameters: List<Pair<Parameter, TypedInstance>>, remoteCall: RemoteCall): DataSource {
-      return if (enableDataLineageForRemoteCalls) {
-         // TODO: WE should be validating that the response we received conforms with the expected schema,
-         // and doing...something? if it doesn't.
-         // See https://gitlab.com/vyne/vyne/issues/54
-         OperationResult(remoteCall, parameters.map { (param, instance) ->
-            OperationResult.OperationParam(param.name.orElse("Unnamed"), instance)
-         })
+      return if (typedInstance is TypedCollection) {
+         return Flux.fromIterable(typedInstance.value)
       } else {
-         UndefinedSource
+         Flux.fromIterable(listOf(typedInstance))
       }
    }
 
+   private fun inferContentType(operation: RemoteOperation, headers: ClientResponse.Headers, result: String): Type {
+      val mediaType: MediaType? = headers.contentType().orElse(null)
+      when (mediaType) {
+         // If we're consuming an event stream, and the return contract was a collection, we're actually consuming a single instance
+         MediaType.TEXT_EVENT_STREAM -> return operation.returnType.collectionType ?: operation.returnType
+         MediaType.APPLICATION_JSON -> return operation.returnType
+      }
+      return operation.returnType.collectionType ?: operation.returnType
+   }
+
+
    private fun makeUrlAbsolute(service: Service, operation: RemoteOperation, url: String): String {
-      return this.serviceUrlResolvers.first { it.canResolve(service, operation) }.makeAbsolute(url, service, operation)
+      return this.serviceUrlResolvers.firstOrNull { it.canResolve(service, operation) }
+         ?.makeAbsolute(url, service, operation)
+         ?: error("No url resolvers were found that can make url $url (on operation ${operation.qualifiedName}) absolute")
    }
 }
-

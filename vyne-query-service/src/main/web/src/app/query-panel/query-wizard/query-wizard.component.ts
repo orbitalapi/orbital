@@ -12,7 +12,7 @@ import {
 import {FormControl} from '@angular/forms';
 import {
   Fact, FailedSearchResponse,
-  ProfilerOperation,
+  QueryProfileData,
   Query,
   QueryMode,
   QueryResult,
@@ -306,7 +306,7 @@ export class QueryFailure implements FailedSearchResponse {
   responseStatus: ResponseStatus = ResponseStatus.ERROR;
 
   constructor(readonly message: string,
-              readonly profilerOperation: ProfilerOperation | null = null,
+              readonly profilerOperation: QueryProfileData | null = null,
               readonly remoteCalls: RemoteCall[] = [],
               readonly queryResponseId: string | null = null,
               readonly  clientQueryId: string | null = null) {

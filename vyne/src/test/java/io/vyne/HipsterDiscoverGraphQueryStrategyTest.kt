@@ -30,7 +30,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
 
          @DataSource
          service HelperService {
-            operation findAll( ) : Input[]
+            operation `findAll`( ) : Input[]
 
          }
 
@@ -40,7 +40,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
          """.trimIndent()
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse(
-         "findAll", vyne.parseJsonModel(
+         "`findAll`", vyne.parseJsonModel(
             "Input[]", """
          [
             {  "isin": "isin1"}
@@ -92,7 +92,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
 
          @DataSource
          service HelperService {
-            operation findAll( ) : Input[]
+            operation `findAll`( ) : Input[]
 
          }
 
@@ -102,7 +102,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
          """.trimIndent()
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse(
-         "findAll", vyne.parseJsonModel(
+         "`findAll`", vyne.parseJsonModel(
             "Input[]", """
          [
             {  "isin": "isin1"}
@@ -155,7 +155,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
 
          @DataSource
          service HelperService {
-            operation findAll( ) : Input[]
+            operation `findAll`( ) : Input[]
 
          }
 
@@ -165,7 +165,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
          """.trimIndent()
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse(
-         "findAll", vyne.parseJsonModel(
+         "`findAll`", vyne.parseJsonModel(
             "Input[]", """
          [
             {  "isin": "isin1"}

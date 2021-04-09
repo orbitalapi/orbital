@@ -3,11 +3,7 @@ package io.vyne.query
 import arrow.core.extensions.list.functorFilter.filter
 import io.vyne.models.*
 import io.vyne.query.build.TypedInstancePredicateFactory
-import io.vyne.schemas.AttributeName
-import io.vyne.schemas.Field
-import io.vyne.schemas.FieldSource
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -29,7 +25,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
 
    private var manyBuilder: ObjectBuilder? = null
 
-   fun build(spec: TypedInstanceValidPredicate = AlwaysGoodSpec): TypedInstance? {
+   suspend fun build(spec: TypedInstanceValidPredicate = AlwaysGoodSpec): TypedInstance? {
       val returnValue = build(rootTargetType, spec)
       return manyBuilder?.build()?.let {
          when (it) {
@@ -39,7 +35,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       } ?: returnValue
    }
 
-   private fun build(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
+   private suspend fun build(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
       val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY, spec)
       if (nullableFact != null) {
          val instance = nullableFact as TypedCollection
@@ -91,7 +87,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
    }
 
-   private fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate): TypedInstance? {
+   private suspend fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate): TypedInstance? {
       return build(context.schema.type(targetType), spec)
    }
 
@@ -103,7 +99,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
    }
 
-   private fun buildObjectInstance(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
+   private suspend fun buildObjectInstance(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
       val populatedValues = mutableMapOf<String, TypedInstance>()
       val missingAttributes = mutableMapOf<AttributeName, Field>()
       // contains the anonymous projection attributes for:
@@ -169,20 +165,19 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          }
       }
 
-      val factory =  TypedObjectFactory(
+      val factory = TypedObjectFactory(
          targetType,
          populatedValues,
          context.schema,
          source = MixedSources
-      )
-         .build {
-         forSourceValues(sourcedByAttributes, it, targetType)
+      ).buildAsync {
+         runBlocking {  forSourceValues(sourcedByAttributes, it, targetType) }
       }
 
       return factory
    }
 
-   private fun forSourceValues(
+   private suspend fun forSourceValues(
       sourcedByAttributes: Map<AttributeName, Field>,
       attributeMap: Map<AttributeName, TypedInstance>,
       targetType: Type
@@ -217,7 +212,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
    }
 
-   private fun fromDiscoveryType(
+   private suspend fun fromDiscoveryType(
       typedInstance: TypedInstance,
       sourcedBy: FieldSource,
       attributeName: AttributeName

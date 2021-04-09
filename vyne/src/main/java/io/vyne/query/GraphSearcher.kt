@@ -56,7 +56,7 @@ class GraphSearcher(
       return PathPrevaliationResult.EVALUATE
    }
 
-   fun search(
+   suspend fun search(
       knownFacts: Set<TypedInstance>,
       excludedServices: Set<SearchGraphExclusion<QualifiedName>>,
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
@@ -292,7 +292,7 @@ class GraphSearcher(
 private fun List<PathEvaluation>.lastEvaluatedEdge(): EvaluatedEdge? {
    return this.last() as? EvaluatedEdge
 }
-typealias PathEvaluator = (WeightedNode<Relationship, Element, Double>) -> List<PathEvaluation>
+typealias PathEvaluator = suspend (WeightedNode<Relationship, Element, Double>) -> List<PathEvaluation>
 
 data class SearchResult(val typedInstance: TypedInstance?, val path: WeightedNode<Relationship, Element, Double>?) {
    companion object {

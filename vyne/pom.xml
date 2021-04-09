@@ -4,7 +4,7 @@
    <parent>
       <artifactId>platform</artifactId>
       <groupId>io.vyne</groupId>
-      <version>0.15.0-SNAPSHOT</version>
+      <version>0.15.2-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
 
@@ -33,11 +33,6 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>io.vyne</groupId>
-         <artifactId>vyne-ql-compiler</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
          <groupId>lang.taxi</groupId>
          <artifactId>taxi-jvm-common</artifactId>
          <version>${taxi.version}</version>
@@ -46,6 +41,14 @@
          <groupId>io.vyne</groupId>
          <artifactId>vyne-query-api</artifactId>
          <version>${project.version}</version>
+      </dependency>
+      <!-- Added this reluctantly, as would prefer not to have Spring concepts
+      inside Vyne.  However, we need the data annotations for the History models,
+      which need to live here to power the Regression test stuff.  May need to move
+      things around more later -->
+      <dependency>
+         <groupId>org.springframework.data</groupId>
+         <artifactId>spring-data-relational</artifactId>
       </dependency>
       <dependency>
          <groupId>org.skyscreamer</groupId>
@@ -68,7 +71,7 @@
       <dependency>
          <groupId>io.vyne</groupId>
          <artifactId>utils</artifactId>
-         <version>0.15.0-SNAPSHOT</version>
+         <version>0.15.2-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>org.apache.commons</groupId>

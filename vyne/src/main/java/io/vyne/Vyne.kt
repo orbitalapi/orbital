@@ -1,6 +1,7 @@
 package io.vyne
 
 import com.google.common.annotations.VisibleForTesting
+import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.addKeyValuePair
 import io.vyne.query.*
@@ -9,9 +10,9 @@ import io.vyne.schemas.*
 import io.vyne.schemas.taxi.TaxiConstraintConverter
 import io.vyne.schemas.taxi.TaxiSchemaAggregator
 import io.vyne.utils.log
-import io.vyne.vyneql.TaxiQlQueryString
-import io.vyne.vyneql.VyneQlCompiler
-import io.vyne.vyneql.VyneQlQuery
+import lang.taxi.Compiler
+import lang.taxi.query.TaxiQlQuery
+import lang.taxi.types.TaxiQLQueryString
 
 enum class NodeTypes {
    ATTRIBUTE,
@@ -49,29 +50,32 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
-   suspend fun query(vyneQlQuery: TaxiQlQueryString, queryId: String? = null): QueryResult {
-      val vyneQuery = VyneQlCompiler(vyneQlQuery, this.schema.taxi).query()
-      return query(vyneQuery, queryId)
+   suspend fun query(vyneQlQuery: TaxiQLQueryString, queryId: String? = null, clientQueryId: String? = null): QueryResult {
+      val vyneQuery = Compiler(source = vyneQlQuery, importSources = listOf(this.schema.taxi)).queries().first()
+      return query(vyneQuery, queryId, clientQueryId)
    }
 
-   suspend fun query(vyneQl: VyneQlQuery, queryId: String? = null): QueryResult {
-      val (queryContext, expression) = buildContextAndExpression(vyneQl, queryId)
+   suspend fun query(taxiQl: TaxiQlQuery, queryId: String? = null, clientQueryId: String? = null): QueryResult {
+      val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId)
 
-      return when (vyneQl.queryMode) {
-         io.vyne.vyneql.QueryMode.FIND_ALL -> queryContext.findAll(expression)
-         io.vyne.vyneql.QueryMode.FIND_ONE -> queryContext.find(expression)
+      return when (taxiQl.queryMode) {
+         lang.taxi.types.QueryMode.FIND_ALL -> queryContext.findAll(expression)
+         lang.taxi.types.QueryMode.FIND_ONE -> queryContext.find(expression)
       }
    }
 
    @VisibleForTesting
-   internal fun buildContextAndExpression(vyneQl: VyneQlQuery, queryId: String? = null): Pair<QueryContext, QueryExpression> {
-      var queryContext = query(additionalFacts = vyneQl.facts.values.toSet(), queryId = queryId)
-      queryContext = vyneQl.projectedType?.let {
+   internal fun buildContextAndExpression(taxiQl: TaxiQlQuery, queryId: String? = null, clientQueryId: String? = null): Pair<QueryContext, QueryExpression> {
+      val additionalFacts = taxiQl.facts.values.map { fact ->
+         TypedInstance.from(schema.type(fact.fqn.fullyQualifiedName), fact.value, schema, source = Provided)
+      }.toSet()
+      var queryContext = query(additionalFacts = additionalFacts, queryId = queryId, clientQueryId = clientQueryId)
+      queryContext = taxiQl.projectedType?.let {
          queryContext.projectResultsTo(it) // Merge conflict, was : it.toVyneQualifiedName()
       } ?: queryContext
 
       val constraintProvider = TaxiConstraintConverter(this.schema)
-      val queryExpressions = vyneQl.typesToFind.map { discoveryType ->
+      val queryExpressions = taxiQl.typesToFind.map { discoveryType ->
          val targetType = schema.type(discoveryType.type.toVyneQualifiedName())
          val expression = if (discoveryType.constraints.isNotEmpty()) {
             val constraints = constraintProvider.buildOutputConstraints(targetType, discoveryType.constraints)
@@ -93,7 +97,8 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    fun query(
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
       additionalFacts: Set<TypedInstance> = emptySet(),
-      queryId: String? = null): QueryContext {
+      queryId: String? = null,
+      clientQueryId: String? = null): QueryContext {
       // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
       // what is asked for, but only providing the desired factSets to the queryContext.
       // This is because the context only evalutates the factSets that are provided,

@@ -7,11 +7,7 @@ import io.vyne.models.MixedSources
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
-import io.vyne.query.CalculatedFieldScanStrategy
-import io.vyne.query.FactDiscoveryStrategy
-import io.vyne.query.QueryContext
-import io.vyne.query.QuerySpecTypeNode
-import io.vyne.query.SearchGraphExclusion
+import io.vyne.query.*
 import io.vyne.query.graph.operationInvocation.UnresolvedOperationParametersException
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Relationship
@@ -19,11 +15,7 @@ import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
 import io.vyne.utils.assertingThat
 import io.vyne.utils.log
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
 import lang.taxi.types.PrimitiveType
 
 
@@ -78,14 +70,13 @@ data class EvaluatableEdge(
 
 interface EdgeEvaluator {
    val relationship: Relationship
-   fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge
+   suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge
 }
 
 class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = ParameterFactory()) : EdgeEvaluator {
    override val relationship: Relationship = Relationship.REQUIRES_PARAMETER
 
-   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
-      println("RequiresParameterEdgeEvaluator - evaluate")
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       if (edge.target.elementType == ElementType.PARAMETER) {
          // Pass through, the next vertex should be the param type
          return  EvaluatedEdge.success(edge, edge.vertex2, edge.previousValue)
@@ -115,7 +106,7 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
 }
 
 class ParameterFactory {
-   fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): TypedInstance {
+   suspend fun discover(paramType: Type, context: QueryContext, operation: Operation? = null): TypedInstance {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
       if (hasValue(firstLevelDiscovery)) {
@@ -165,7 +156,7 @@ class ParameterFactory {
       }
    }
 
-   private fun attemptToConstruct(
+   private suspend fun attemptToConstruct(
       paramType: Type,
       context: QueryContext,
       operation: Operation?,
@@ -188,9 +179,9 @@ class ParameterFactory {
             // Otherwise, if an operation result includes an input parameter, we can end up in a recursive loop, trying to
             // construct a request for the operation to discover a parameter needed to construct a request for the operation.
             val excludedOperations = operation?.let { setOf(SearchGraphExclusion("Operation is excluded as we're searching for an input for it", it)) } ?: emptySet()
-            val queryResult = runBlocking {  context.find(QuerySpecTypeNode(attributeType), excludedOperations) }
+            val queryResult =  context.find(QuerySpecTypeNode(attributeType), excludedOperations)
             if (queryResult.isFullyResolved) {
-               attributeValue = runBlocking { queryResult.results?.firstOrNull() } ?:
+               attributeValue = queryResult.results.firstOrNull()  ?:
                   // TODO : This might actually be legal, as it could be valid for a value to resolve to null
                   throw IllegalArgumentException("Expected queryResult to return attribute with type ${attributeType.fullyQualifiedName} but the returned value was null")
             } else {
@@ -216,16 +207,25 @@ class ParameterFactory {
             }
          }
 
-         if (attributeValue == null) {
-            throw UnresolvedOperationParametersException(
-               "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
-               context.evaluatedPath(),
-               context.profiler.root
-            )
-         }
+         when {
+            attributeValue is TypedNull && !field.nullable-> {
+               throw UnresolvedOperationParametersException(
+                  "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
+                  context.evaluatedPath(),
+                  context.profiler.root
+               )
+            }
 
-         // else ... attributeValue != null -- we found it.  Good work team, move on.
-         attributeName to attributeValue
+            (attributeValue == null) -> {
+               throw UnresolvedOperationParametersException(
+                  "Unable to construct instance of type ${paramType.name}, as field $attributeName (of type ${attributeType.name}) is not present within the context, and is not constructable ",
+                  context.evaluatedPath(),
+                  context.profiler.root
+               )
+            }
+
+            else -> attributeName to attributeValue
+         }
       }.toMap()
       return  TypedObject(paramType, fields, MixedSources)
    }
@@ -269,7 +269,7 @@ data class EvaluatedEdge(
 }
 
 abstract class PassThroughEdgeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
-   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       return edge.success(edge.previousValue)
    }
 }
@@ -283,8 +283,7 @@ class CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPUL
 class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_TYPE)
 
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
-   override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
-
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
       val previousValue =
          requireNotNull(edge.previousValue) { "Cannot evaluate $relationship when previous value was null.  Work with me here!" }
 

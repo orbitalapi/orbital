@@ -1,10 +1,5 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {
-  isRestQueryHistoryRecord, isRestQueryHistorySummaryRecord,
-  isVyneQlQueryHistoryRecord, isVyneQlQueryHistorySummaryRecord,
-  QueryHistoryRecord,
-  QueryHistorySummary
-} from '../services/query.service';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {QueryHistorySummary} from '../services/query.service';
 
 @Component({
   selector: 'app-query-list',

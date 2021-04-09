@@ -25,6 +25,7 @@ import {CaskService} from '../services/cask.service';
 import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
 import {Observable} from 'rxjs/index';
 import {Subscription} from 'rxjs';
+import {ValueWithTypeName} from '../services/query.service';
 
 @Component({
   selector: 'app-results-table',
@@ -230,15 +231,15 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   }
 
   onCellClicked($event: CellClickedEvent) {
-    const rowInstance: InstanceLike = $event.data;
-    const nodeId = this.isArray ? `[${$event.rowIndex}].${$event.colDef.field}` : $event.colDef.field;
+    const rowInstance: ValueWithTypeName = $event.data;
     const cellInstance = this.unwrap(rowInstance, $event.colDef.field);
     const untypedCellInstance: UntypedInstance = {
       value: cellInstance,
       type: UnknownType.UnknownType,
       nearestType: this.getTypeForAttribute($event.colDef.field)
     };
-    this.instanceClicked.emit(new InstanceSelectedEvent(untypedCellInstance, null, nodeId));
+    this.instanceClicked.emit(new InstanceSelectedEvent(
+      untypedCellInstance, null, rowInstance.valueId, $event.colDef.field));
   }
 
   onGridReady(event: GridReadyEvent) {

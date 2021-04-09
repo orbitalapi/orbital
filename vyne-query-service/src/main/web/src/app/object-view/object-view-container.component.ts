@@ -1,8 +1,8 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {BaseTypedInstanceViewer} from './BaseTypedInstanceViewer';
-import {DownloadFileType} from '../query-panel/result-display/result-container.component';
 import {Type, InstanceLikeOrCollection, InstanceLike} from '../services/schema';
 import {Observable, Subscription} from 'rxjs';
+import {ExportFormat} from '../services/export.file.service';
 
 @Component({
   selector: 'app-object-view-container',
@@ -51,7 +51,7 @@ import {Observable, Subscription} from 'rxjs';
 })
 export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
   // workaroun for lack of enum support in templates
-  downloadFileType = DownloadFileType;
+  downloadFileType = ExportFormat;
 
   get displayMode(): DisplayMode {
     return this._displayMode;
@@ -101,7 +101,7 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
 
   downloadRegressionPack: any;
 
-  onDownloadClicked(format: DownloadFileType) {
+  onDownloadClicked(format: ExportFormat) {
     this.downloadClicked.emit(new DownloadClickedEvent(format));
   }
 }
@@ -109,6 +109,6 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer {
 export type DisplayMode = 'table' | 'tree';
 
 export class DownloadClickedEvent {
-  constructor(public readonly format: DownloadFileType) {
+  constructor(public readonly format: ExportFormat) {
   }
 }

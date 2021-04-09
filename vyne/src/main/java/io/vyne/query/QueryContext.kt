@@ -20,11 +20,11 @@ import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.schemas.*
 import io.vyne.utils.log
-import io.vyne.vyneql.ProjectedType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import lang.taxi.policies.Instruction
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.ProjectedType
 import java.util.*
 import java.util.stream.Stream
 import kotlin.streams.toList
@@ -69,12 +69,16 @@ data class QueryResult(
    val querySpec: QuerySpecTypeNode,
    @field:JsonIgnore // we send a lightweight version below
    val results: Flow<TypedInstance>,
+   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    @field:JsonIgnore // we send a lightweight version below
    val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
+   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    val path: Path? = null,
+   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
    override val queryResponseId: String = UUID.randomUUID().toString(),
+   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    val truncated: Boolean = false,
    val anonymousTypes: Set<Type> = setOf(),
    override val clientQueryId: String? = null,
@@ -115,20 +119,6 @@ data class QueryResult(
          val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
          return results.map { converter.convert(it) }
       }
-
-   @Deprecated("History records are now produced async from the result stream, and should not be accessed from here.")
-   override fun historyRecord(): HistoryQueryResponse {
-      return HistoryQueryResponse(
-         null, // TODO Should a historyRecord contain results ?
-         unmatchedNodeNames,
-         this.isFullyResolved,
-         queryResponseId,
-         profilerOperation?.toDto(),
-         responseStatus,
-         remoteCalls,
-         timings
-      )
-   }
 }
 
 // Note : Also models failures, so is fairly generic
@@ -160,7 +150,6 @@ interface QueryResponse {
    val vyneCost: Long
       get() = profilerOperation?.vyneCost ?: 0L
 
-   fun historyRecord(): HistoryQueryResponse
 }
 
 fun collateRemoteCalls(profilerOperation: ProfilerOperation?): List<RemoteCall> {
@@ -303,7 +292,7 @@ data class QueryContext(
    }
 
    fun projectResultsTo(targetType: String): QueryContext {
-      return projectResultsTo(ProjectedType.fromConcreteTypeOnly(lang.taxi.types.QualifiedName.from(targetType)))
+      return projectResultsTo(ProjectedType.fromConcreteTypeOnly(schema.taxi.type(targetType)))
    }
 
    private fun projectResultsTo(targetType: Type): QueryContext {
