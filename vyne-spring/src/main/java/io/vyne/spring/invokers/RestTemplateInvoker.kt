@@ -8,8 +8,10 @@ import io.vyne.models.DataSource
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedInstance
 import io.vyne.models.UndefinedSource
+import io.vyne.query.OperationType
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
+import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.queryService.QueryMetaDataService
 import io.vyne.schemaStore.SchemaProvider
@@ -17,6 +19,7 @@ import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
 import io.vyne.utils.orElse
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.utils.log
@@ -72,6 +75,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
 
          log().debug("Operation ${operation.name} resolves to $absoluteUrl")
+
          //httpInvokeOperation.addContext("AbsoluteUrl", absoluteUrl)
 
          val requestBody = buildRequestBody(operation, parameters.map { it.second })
@@ -81,29 +85,31 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
          val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl,uriVariables)
 
          //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
-         val requset = webClient
+         val request = WebClient.builder().exchangeStrategies(
+            ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
+         ).build()
             .method(httpMethod)
             .uri(absoluteUrl, uriVariables)
             .contentType(MediaType.APPLICATION_JSON)
             if (requestBody.first.hasBody()) {
-               requset.bodyValue(requestBody.first.body)
+               request.bodyValue(requestBody.first.body)
             }
 
-         val results = requset
+         val results = request
             .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
             .exchange()
             .metrics()
-            .publishOn(Schedulers.elastic())
             .flatMapMany { clientResponse ->
                (
-
-                  if (clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON)
+                  if (clientResponse.statusCode().isError) {
+                     throw OperationInvocationException("Error invoking URL $expandedUri", clientResponse.statusCode())
+                  } else if (clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON)
                         .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
                   ) {
                      reportEstimatedResults(queryId, clientResponse.headers())
                      clientResponse.bodyToFlux(String::class.java)
                   } else {
-                     reportEstimatedResults(queryId, clientResponse.headers())
+                     //reportEstimatedResults(queryId, clientResponse.headers())
                      // Assume the response is application/json
                         clientResponse.bodyToMono(typeReference<Any>())
                         //TODO This is not right we should marshall to a list of T, not, Object then back to String
@@ -117,8 +123,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
                         .map {
                               jacksonObjectMapper().writeValueAsString(it)
                         }
-                  }
-                  )
+                  })
 
                   .map {
 
@@ -146,7 +151,7 @@ class RestTemplateInvoker(val schemaProvider: SchemaProvider,
             }
       //}
 
-      return results.asFlow()
+      return results.asFlow().flowOn(Dispatchers.IO)
 
    }
 

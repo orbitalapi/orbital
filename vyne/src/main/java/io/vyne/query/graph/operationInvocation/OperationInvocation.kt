@@ -48,6 +48,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       context: QueryContext,
       providedParamValues: List<Pair<Parameter, TypedInstance>>
    ): Flow<TypedInstance> {
+
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
@@ -136,7 +137,6 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
 
-
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
       val (service, operation) = context.schema.operation(operationName)
 
@@ -162,15 +162,17 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
          }
       }
 
+
       val callArgs = parameterValues.toSet()
       if (context.hasOperationResult(edge, callArgs as Set<TypedInstance>)) {
+
          val cachedResult = context.getOperationResult(edge, callArgs)
          cachedResult?.let { context.addFact(it) }
          return  edge.success(cachedResult)
       }
 
       return try {
-         val result: TypedInstance = runBlocking { invocationService.invokeOperation(service, operation, callArgs, context).first() }
+         val result: TypedInstance = runBlocking {  invocationService.invokeOperation(service, operation, callArgs, context).first() }
          if (result is TypedNull) {
             log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
          } else {
@@ -204,8 +206,6 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       }
       return EvaluatedLink(link, startingPoint, linkResult)
    }
-
-
 }
 
 class SearchRuntimeException(exception: Exception, operation: ProfilerOperation) : SearchFailedException("The search failed with an exception: ${exception.message}", listOf(), operation)

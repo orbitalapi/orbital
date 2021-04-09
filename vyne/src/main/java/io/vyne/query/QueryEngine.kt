@@ -12,8 +12,14 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactor.asFlux
+import reactor.core.publisher.Flux
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.Executors
 import java.util.stream.Collectors
 
 
@@ -315,8 +321,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return find(target, context, spec)
    }
 
-   override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
-      return find(TypeNameQueryExpression(type.fullyQualifiedName), context, spec)
+   override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult = runBlocking{
+      find(TypeNameQueryExpression(type.fullyQualifiedName), context, spec)
    }
 
    override suspend fun find(
@@ -383,6 +389,19 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
    }
 
+   val dispatcher = Executors.newFixedThreadPool(64).asCoroutineDispatcher()
+
+   suspend fun doSomethingUsefulOne(typedInstance: TypedInstance) = GlobalScope.async(dispatcher) {
+
+      //         val actualProjectedType = pto?.collectionType ?: pto
+      //         val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)!!
+      //         buildResult.results.first()
+
+      delay(5000L) // pretend we are doing something useful here
+      println("doSomethingUsefulOne on ${Thread.currentThread().name}")
+      typedInstance
+   }
+
    private fun doFind(
       target: QuerySpecTypeNode,
       context: QueryContext,
@@ -439,23 +458,35 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // Without it, there's a stack overflow error as projectTo seems to call ObjectBuilder.build which calls projectTo again.
       // ... Investigate
 
+      val results = when(context.projectResultsTo) {
+         null -> runBlocking { resultsFlow.toList() }
+         else -> runBlocking {
+            resultsFlow
+               .map {
+
+                  GlobalScope.async(dispatcher) {
+                     println("Converting a result now at ${DateTimeFormatter.ISO_INSTANT.format(Instant.now())}")
+                     val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
+                     val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)!!
+                     buildResult.results.first()
+                  }
+               }
+               .toList()
+               .awaitAll()
+         }
+      }
+
+      if (context.projectResultsTo != null) {
+         println("Size of results ${results}")
+      }
+
+
       return QueryResult(
          when (context.projectResultsTo) {
             null -> target
             else -> QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
          },
-         resultsFlow.flatMapConcat { typedInstance ->
-            // If this query has projection, then we now need to invoke the query builder to project
-            // the provided typedInstance to the projected type.  If we're not projecting, then just flatMap to
-            // the provided instance
-            context.projectResultsTo?.let { projectedType ->
-               // If we're being asked to project to Array<T> then we now need to unpack that to T.
-               // However, if we're just being asked to project to T, then use that.
-               val actualProjectedType = projectedType.collectionType ?: projectedType
-               val buildResult = context.only(typedInstance).build(actualProjectedType.qualifiedName)
-               buildResult.results
-            } ?: flowOf(typedInstance)
-         },
+         results.asFlow(),
          emptySet(),
          path = null,
          profilerOperation = context.profiler.root,

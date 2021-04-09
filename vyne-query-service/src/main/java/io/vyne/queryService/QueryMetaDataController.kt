@@ -8,8 +8,9 @@ import kotlinx.coroutines.reactor.asFlux
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
-import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.stereotype.Component
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.socket.server.WebSocketService
 import org.springframework.web.reactive.socket.server.support.HandshakeWebSocketService
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter
@@ -23,7 +24,7 @@ import reactor.core.publisher.Mono
 
 @Configuration
 @Component
-@EnableScheduling
+@RestController
 class QueryMetaDataController {
 
    @Bean
@@ -37,13 +38,18 @@ class QueryMetaDataController {
 
    @Bean
    fun handlerMapping(): HandlerMapping {
-      println("Handler mapping ")
       val handlerMap: Map<String, WebFluxWebSocketHandler> = mapOf(
          "/api/vyneql/metadata" to WebFluxWebSocketHandler(),
          "/api/vyneql/*/metadata" to WebFluxWebSocketHandler()
       )
       return SimpleUrlHandlerMapping(handlerMap, Ordered.HIGHEST_PRECEDENCE)
    }
+
+   @GetMapping("/api/vyneql/queries")
+   fun liveQueries(): Map<String,String> {
+      return QueryMetaDataService.monitor.queryIdToClientQueryIdMap
+   }
+
 }
 
 class WebFluxWebSocketHandler() : WebSocketHandler {

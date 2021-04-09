@@ -11,6 +11,7 @@ import io.vyne.schemas.Type
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.types.ObjectType
 
@@ -28,7 +29,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
 
    private var manyBuilder: ObjectBuilder? = null
 
-   suspend fun build(spec: TypedInstanceValidPredicate = AlwaysGoodSpec): TypedInstance? {
+   fun build(spec: TypedInstanceValidPredicate = AlwaysGoodSpec): TypedInstance? {
       val returnValue = build(rootTargetType, spec)
       return manyBuilder?.build()?.let {
          when (it) {
@@ -38,7 +39,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       } ?: returnValue
    }
 
-   private suspend fun build(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
+   private fun build(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
       val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY, spec)
       if (nullableFact != null) {
          val instance = nullableFact as TypedCollection
@@ -84,13 +85,13 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
 
       return if (targetType.isScalar) {
-         findScalarInstance(targetType, spec)?.firstOrNull()
+         runBlocking { findScalarInstance(targetType, spec)?.firstOrNull() }
       } else {
          buildObjectInstance(targetType, spec)
       }
    }
 
-   private suspend fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate): TypedInstance? {
+   private fun build(targetType: QualifiedName, spec: TypedInstanceValidPredicate): TypedInstance? {
       return build(context.schema.type(targetType), spec)
    }
 
@@ -102,7 +103,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
    }
 
-   private suspend fun buildObjectInstance(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
+   private fun buildObjectInstance(targetType: Type, spec: TypedInstanceValidPredicate): TypedInstance? {
       val populatedValues = mutableMapOf<String, TypedInstance>()
       val missingAttributes = mutableMapOf<AttributeName, Field>()
       // contains the anonymous projection attributes for:
@@ -173,14 +174,15 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          populatedValues,
          context.schema,
          source = MixedSources
-      ).build{
-         runBlocking {  forSourceValues(sourcedByAttributes, it, targetType) }
+      )
+         .build {
+         forSourceValues(sourcedByAttributes, it, targetType)
       }
 
       return factory
    }
 
-   private suspend fun forSourceValues(
+   private fun forSourceValues(
       sourcedByAttributes: Map<AttributeName, Field>,
       attributeMap: Map<AttributeName, TypedInstance>,
       targetType: Type
@@ -215,7 +217,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
    }
 
-   private suspend fun fromDiscoveryType(
+   private fun fromDiscoveryType(
       typedInstance: TypedInstance,
       sourcedBy: FieldSource,
       attributeName: AttributeName
@@ -236,19 +238,19 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       return null
    }
 
-   private suspend fun findScalarInstance(targetType: Type, spec: TypedInstanceValidPredicate): Flow<TypedInstance>? {
+   private fun findScalarInstance(targetType: Type, spec: TypedInstanceValidPredicate): Flow<TypedInstance>? = runBlocking {
       // Try searching for it.
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {
          queryEngine.find(targetType, context, spec)
       } catch (e: Exception) {
          log().error("Failed to find type ${targetType.fullyQualifiedName}", e)
-         return null
-      }
-      return if (result.isFullyResolved) {
-         result.results ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
-      } else {
          null
       }
+      //return if (result?.isFullyResolved) {
+         result?.results ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
+      //} else {
+      //   null
+      //}
    }
 }

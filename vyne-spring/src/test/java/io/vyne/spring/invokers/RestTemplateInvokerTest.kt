@@ -137,7 +137,7 @@ namespace vyne {
       val response = RestTemplateInvoker(webClient = webClient, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true)
          .invoke(service, operation, listOf(
          paramAndType("vyne.ClientName", "notional", schema)
-      ), QueryProfiler()) as TypedObject
+      ), QueryProfiler(),"MOCK_QUERY_ID") as TypedObject
       expect(response.type.fullyQualifiedName).to.equal("vyne.Client")
       expect(response["name"].value).to.equal("Notional")
       expect((response["contacts"] as TypedCollection)).size.to.equal(2)
@@ -160,7 +160,7 @@ namespace vyne {
       val response = RestTemplateInvoker(webClient = webClient, schemaProvider = SchemaProvider.from(schema), enableDataLineageForRemoteCalls = true).invoke(service, operation, listOf(
          paramAndType("vyne.ClientId", "myClientId", schema),
          paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-      ), QueryProfiler()) as TypedObject
+      ), QueryProfiler(),"MOCK_QUERY_ID") as TypedObject
       expect(response.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
       expect(response["stuff"].value).to.equal("Right back atcha, kid")
    }
@@ -196,7 +196,7 @@ namespace vyne {
       val response = invoker
          .invoke(service, operation, listOf(
          paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-      ), QueryProfiler()) as TypedObject
+      ), QueryProfiler(),"MOCK_QUERY_ID") as TypedObject
 
       response["id"].value.should.equal(100)
    }
@@ -224,7 +224,7 @@ namespace vyne {
          enableDataLineageForRemoteCalls = true,
          schemaProvider = SchemaProvider.from(schema)).invoke(service, operation, listOf(
          paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-      ), QueryProfiler()) as TypedObject
+      ), QueryProfiler(),"MOCK_QUERY_ID") as TypedObject
 
    }
 
@@ -268,7 +268,7 @@ namespace vyne {
          serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
          enableDataLineageForRemoteCalls = true,
          schemaProvider = schemaProvider)
-         .invoke(service, operation, emptyList(), QueryProfiler()) as TypedObject
+         .invoke(service, operation, emptyList(), QueryProfiler(),"MOCK_QUERY_ID") as TypedObject
 
       response["id"].value.should.equal("100")
       response["name"].value.should.equal("Fluffy")
@@ -311,7 +311,7 @@ namespace vyne {
          serviceUrlResolvers = listOf(AbsoluteUrlResolver()),
          enableDataLineageForRemoteCalls = true,
          schemaProvider = schemaProvider)
-         .invoke(service, operation, emptyList(), QueryProfiler()) as TypedObject
+         .invoke(service, operation, emptyList(), QueryProfiler(),"MOCK_QUERY_ID") as TypedObject
 
       response["id"].value.should.equal("100")
       response["name"].value.should.equal("Fluffy")

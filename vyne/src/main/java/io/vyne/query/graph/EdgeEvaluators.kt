@@ -85,6 +85,7 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
    override val relationship: Relationship = Relationship.REQUIRES_PARAMETER
 
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+      println("RequiresParameterEdgeEvaluator - evaluate")
       if (edge.target.elementType == ElementType.PARAMETER) {
          // Pass through, the next vertex should be the param type
          return  EvaluatedEdge.success(edge, edge.vertex2, edge.previousValue)
@@ -283,6 +284,7 @@ class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_T
 
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+
       val previousValue =
          requireNotNull(edge.previousValue) { "Cannot evaluate $relationship when previous value was null.  Work with me here!" }
 

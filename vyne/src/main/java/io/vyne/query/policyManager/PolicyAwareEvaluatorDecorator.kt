@@ -11,6 +11,7 @@ class PolicyAwareEvaluatorDecorator(private val evaluator: EdgeEvaluator) : Edge
    override val relationship: Relationship = evaluator.relationship
 
    override fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+      println("PolicyAwareEvaluatorDecorator - AttributeEvaluator")
       TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
    }
 

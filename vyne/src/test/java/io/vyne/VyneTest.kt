@@ -10,13 +10,15 @@ import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDeco
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Ignore
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import java.time.Instant
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlin.test.fail
 
 
@@ -1837,6 +1839,32 @@ service ClientService {
          vyne.from(vyne.parseJsonModel("InputModel", """{ "firstName" : "jimmy" , "nickName" : "J-Dawg" }"""))
             .build("OutputModel")
       TODO()
+   }
+
+   @Test
+   fun coroutineTest() = runBlocking {
+      val f: Flow<Int> = flow { // flow builder
+         for (i in 1..10000) {
+            emit(i)
+         }
+      }
+
+      println( "Test Strating At ${DateTimeFormatter.ISO_INSTANT.format(Instant.now())}" )
+
+      val l = f
+         .map { doSomethingUsefulOne(it) }
+         .toList().awaitAll()
+
+      //println("List size: ${l.size}" )
+      println( "Test Complete At ${DateTimeFormatter.ISO_INSTANT.format(Instant.now())}" )
+
+   }
+//= GlobalScope.async(context = Dispatchers.IO)
+   //= withContext(Dispatchers.Unconfined)
+   suspend fun doSomethingUsefulOne(number:Int) = GlobalScope.async(context = Dispatchers.Default) {
+      delay(5000L) // pretend we are doing something useful here
+      println("doSomethingUsefulOne on ${Thread.currentThread().name} at time ${DateTimeFormatter.ISO_INSTANT.format(Instant.now())}")
+      number.toString()
    }
 
 }
