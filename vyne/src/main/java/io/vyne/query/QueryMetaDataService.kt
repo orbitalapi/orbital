@@ -4,10 +4,7 @@ import io.vyne.query.QuerySpecTypeNode
 import io.vyne.schemas.QualifiedName
 import io.vyne.utils.log
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
@@ -16,8 +13,8 @@ interface QueryMonitor {
    fun reportRecords(queryId:String?, records:Int)
    fun reportComplete(queryId:String?)
    fun reportTarget(queryId:String?, target: QuerySpecTypeNode)
-   fun queryMetaDataEvents(queryId:String): Flow<QueryMetaData?>?
-   fun metaDataEvents() : Flow<QueryMetaData?>?
+   fun queryMetaDataEvents(queryId:String): Flow<QueryMetaData?>
+   fun metaDataEvents() : Flow<QueryMetaData?>
 }
 
 //TODO refactor reportXX functions
@@ -31,11 +28,11 @@ class QueryMetaDataService : QueryMonitor {
    /**
     * Return a SharedFlow of QueryMetaData events for given queryID creating event flows as necessary
     */
-   override fun queryMetaDataEvents(queryId:String):Flow<QueryMetaData?>? {
-      return metadata(queryId)?.second
+   override fun queryMetaDataEvents(queryId:String):Flow<QueryMetaData> {
+      return metadata(queryId)?.second ?: emptyFlow()
    }
 
-   override fun metaDataEvents():Flow<QueryMetaData?>? {
+   override fun metaDataEvents():Flow<QueryMetaData> {
       return queryEvents
    }
 
@@ -61,11 +58,11 @@ class QueryMetaDataService : QueryMonitor {
    }
 
    override fun reportStart(queryId:String?, clientQueryId:String?) {
-      log().info("Reporting Query Starting - ${queryId}")
+      log().info("Reporting Query Starting - $queryId")
       queryMetaData(queryId).let {
          it?.copy(state = QueryState.STARTING, queryMetaDataEventTime = System.currentTimeMillis())
       }.let {
-         GlobalScope.launch { _notifyMetaData(queryId, it) }
+         GlobalScope.launch { notifyMetaData(queryId, it) }
       }
    }
 
@@ -74,25 +71,25 @@ class QueryMetaDataService : QueryMonitor {
          if (it?.state == QueryState.UNKNOWN) {log().warn("Reporting data received for an unknown query - $it")}
          it?.copy(recordCount = it.recordCount+records, queryMetaDataEventTime = System.currentTimeMillis())
       }.let {
-         GlobalScope.launch { _notifyMetaData(queryId, it) }
+         GlobalScope.launch { notifyMetaData(queryId, it) }
       }
    }
 
    override fun reportComplete(queryId:String?) {
-      log().info("Reporting Query Finished - ${queryId}")
+      log().info("Reporting Query Finished - $queryId")
       queryMetaData(queryId).let {
          it?.copy(state = QueryState.COMPLETE, queryMetaDataEventTime = System.currentTimeMillis())
       }.let {
-         GlobalScope.launch { _notifyMetaData(queryId, it) }
+         GlobalScope.launch { notifyMetaData(queryId, it) }
       }
    }
 
    override fun reportTarget(queryId:String?, target: QuerySpecTypeNode) {
-      log().info("Reporting Query Target - ${queryId}")
+      log().info("Reporting Query Target - $queryId")
       queryMetaData(queryId).let {
          it?.copy(target = target.type.name, queryMetaDataEventTime = System.currentTimeMillis())
       }.let {
-         GlobalScope.launch { _notifyMetaData(queryId, it) }
+         GlobalScope.launch { notifyMetaData(queryId, it) }
       }
    }
 
@@ -101,14 +98,14 @@ class QueryMetaDataService : QueryMonitor {
          if (it?.state == QueryState.UNKNOWN) {log().warn("Reporting data received for an unknown query - $it")}
          it?.copy(state = state, queryMetaDataEventTime = System.currentTimeMillis())
       }.let {
-         GlobalScope.launch { _notifyMetaData(queryId, it) }
+         GlobalScope.launch { notifyMetaData(queryId, it) }
       }
    }
 
    /**
     * Emit the metadata event for the given queryId
     */
-   private suspend fun _notifyMetaData(queryId:String?, metaData: QueryMetaData?):QueryMetaData? {
+   private suspend fun notifyMetaData(queryId:String?, metaData: QueryMetaData?):QueryMetaData? {
       if (metaData == null) {
          return null
       }

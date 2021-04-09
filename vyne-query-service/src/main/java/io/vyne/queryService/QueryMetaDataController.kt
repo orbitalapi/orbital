@@ -49,34 +49,42 @@ class QueryMetaDataController {
 class WebFluxWebSocketHandler() : WebSocketHandler {
 
    val objectMapper: ObjectMapper = ObjectMapper()
-
+   private val querySpecificWebsocketPath = "/api/vyneql/(.+)?/metadata".toRegex()
    override fun handle(webSocketSession: WebSocketSession): Mono<Void> {
 
-      if ("/api/vyneql/metadata".equals(webSocketSession.handshakeInfo.uri.path.toString())) {
+      val websocketPath = webSocketSession.handshakeInfo.uri.path.toString()
 
-         return webSocketSession.send(QueryMetaDataService.monitor.metaDataEvents()
-            ?.map{objectMapper.writeValueAsString(it)}
-            ?.map(webSocketSession::textMessage)
-            ?.asFlux()
+      return when {
+         websocketPath == "/api/vyneql/metadata" -> publishActiveQueryMetadata(webSocketSession)
+         websocketPath.matches(querySpecificWebsocketPath) -> publishSpecificQueryMetadata(
+            websocketPath,
+            webSocketSession
          )
-
-      } else if (webSocketSession.handshakeInfo.uri.path.toString().matches("""/api/vyneql/(.+)?/metadata""".toRegex())) {
-
-         val regex = """/api/vyneql/(.+)?/metadata""".toRegex()
-         val matchResult = regex.find(webSocketSession.handshakeInfo.uri.path.toString())
-         log().debug("Attached query results for queryId ${matchResult?.groupValues?.get(1)} to websocket session ${webSocketSession.id}")
-         return webSocketSession.send(
-            QueryMetaDataService.monitor.queryMetaDataEvents(matchResult?.groupValues?.get(1)!!)
-               ?.map{objectMapper.writeValueAsString(it)}
-               ?.map(webSocketSession::textMessage)
-               ?.asFlux()
-         )
-
-      } else {
-
-         return webSocketSession.send(emptyFlow<WebSocketMessage>().asFlux())
-
+         else -> webSocketSession.send(emptyFlow<WebSocketMessage>().asFlux())
       }
+   }
 
+   private fun publishSpecificQueryMetadata(
+      websocketPath: String,
+      webSocketSession: WebSocketSession
+   ): Mono<Void> {
+      val queryIdMatchResult = querySpecificWebsocketPath.find(websocketPath)
+         ?: error("Expected a queryId passed in $websocketPath but one wasn't found")
+      val queryId = queryIdMatchResult.groupValues[1]
+      log().debug("Attached query results for queryId $queryId to websocket session ${webSocketSession.id}")
+      return webSocketSession.send(
+         QueryMetaDataService.monitor.queryMetaDataEvents(queryId)
+            .map { objectMapper.writeValueAsString(it) }
+            .map(webSocketSession::textMessage)
+            .asFlux()
+      )
+   }
+
+   private fun publishActiveQueryMetadata(webSocketSession: WebSocketSession): Mono<Void> {
+      return webSocketSession.send(QueryMetaDataService.monitor.metaDataEvents()
+         .map { objectMapper.writeValueAsString(it) }
+         .map(webSocketSession::textMessage)
+         .asFlux()
+      )
    }
 }
