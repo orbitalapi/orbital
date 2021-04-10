@@ -3,6 +3,7 @@ package io.vyne.testcli
 import io.vyne.testcli.commands.ExecuteTestCommand
 import io.vyne.testcli.commands.ExtractSchemaCommand
 import io.vyne.testcli.commands.QueryTestCommand
+import io.vyne.testcli.commands.QueryVyneCommand
 import picocli.CommandLine
 import picocli.CommandLine.Spec
 import kotlin.system.exitProcess
@@ -13,7 +14,8 @@ import kotlin.system.exitProcess
    subcommands = [
       ExecuteTestCommand::class,
       QueryTestCommand::class,
-      ExtractSchemaCommand::class
+      ExtractSchemaCommand::class,
+      QueryVyneCommand::class
    ],
    versionProvider = VersionInfoProvider::class
 )
