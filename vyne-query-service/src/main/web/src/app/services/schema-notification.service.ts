@@ -1,8 +1,7 @@
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
-import {share} from 'rxjs/operators';
 import {WebsocketService} from './websocket.service';
-
+import {share} from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'

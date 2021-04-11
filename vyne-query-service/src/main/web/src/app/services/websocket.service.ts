@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs/index';
+import {Observable} from 'rxjs';
 import {environment} from '../../environments/environment';
 import {delay, map, retryWhen, switchMap} from 'rxjs/operators';
 import {WebSocketSubject} from 'rxjs/internal-compatibility';
@@ -10,7 +10,7 @@ import {of} from 'rxjs';
   providedIn: 'root'
 })
 export class WebsocketService {
-  private connection$: WebSocketSubject<any>;
+  private connections = new Map<string, WebSocketSubject<any>>();
   RETRY_SECONDS = 10;
 
   connect(path: string): Observable<any> {
@@ -26,11 +26,12 @@ export class WebsocketService {
         }
       }),
       switchMap(wsUrl => {
-        if (this.connection$) {
-          return this.connection$;
+        if (this.connections.has(wsUrl)) {
+          return this.connections.get(wsUrl);
         } else {
-          this.connection$ = webSocket(wsUrl);
-          return this.connection$;
+          const connection$ = webSocket(wsUrl);
+          this.connections.set(wsUrl, connection$);
+          return connection$;
         }
       }),
       retryWhen((errors) => errors.pipe(delay(this.RETRY_SECONDS)))
