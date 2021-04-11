@@ -234,24 +234,6 @@ export class QueryEditorComponent implements OnInit {
     }
     this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
 
-
-    // this.queryService.getHistoryRecord(queryStatus.queryId)
-    //   .subscribe(historyRecord => {
-    //     this.lastQueryResult = historyRecord.response;
-    //     this.queryResultUpdated.emit(this.lastQueryResult);
-    //     this.loading = false;
-    //     this.loadingChanged.emit(false);
-    //     if (this.lastQueryResult.responseStatus === ResponseStatus.COMPLETED) {
-    //       this.currentState = 'Result';
-    //     } else if (this.lastQueryResult.responseStatus === ResponseStatus.INCOMPLETE) {
-    //       this.currentState = 'Result';
-    //     } else {
-    //       this.currentState = 'Error';
-    //       if (isQueryFailure(this.lastQueryResult)) {
-    //         this.lastErrorMessage = this.lastQueryResult.message;
-    //       }
-    //     }
-    //   });
   }
 
   cancelQuery() {

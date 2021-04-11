@@ -9,7 +9,9 @@ import kotlinx.coroutines.reactor.asFlux
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
@@ -22,6 +24,20 @@ class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
       return monitor.queryIdToClientQueryIdMap
    }
 
+   @DeleteMapping("/api/query/active/{id}")
+   fun cancelQuery(
+      @PathVariable("id") queryId: String
+   ) {
+      TODO("Not sure how to handle this")
+   }
+
+   @DeleteMapping("/api/query/active/clientId/{id}")
+   fun cancelQueryByClientQueryId(
+      @PathVariable("id") clientQueryId: String
+   ) {
+      TODO("Not sure how to handle this")
+   }
+
 }
 
 @Configuration
@@ -31,46 +47,26 @@ class ActiveQueryConfiguration {
 }
 
 @Component
-class ActiveQueryStatusWebsocketController(private val activeQueryMonitor: ActiveQueryMonitor, private val objectMapper:ObjectMapper) :
+class ActiveQueryStatusWebsocketController(
+   private val activeQueryMonitor: ActiveQueryMonitor,
+   private val objectMapper: ObjectMapper
+) :
    WebSocketController {
 
    override val paths = listOf(
       "/api/query/status"
    )
 
-   private val querySpecificWebsocketPath = "/api/query/clientId/(.+)?/status".toRegex()
    override fun handle(webSocketSession: WebSocketSession): Mono<Void> {
 
       val websocketPath = webSocketSession.handshakeInfo.uri.path.toString()
 
       return when {
          websocketPath == "/api/query/status" -> publishActiveQueryMetadata(webSocketSession)
-//         websocketPath.matches(querySpecificWebsocketPath) -> publishSpecificQueryMetadata(
-//            websocketPath,
-//            webSocketSession
-//         )
          else -> webSocketSession.send(emptyFlow<WebSocketMessage>().asFlux())
       }
    }
 
-//   private fun publishSpecificQueryMetadata(
-//      websocketPath: String,
-//      webSocketSession: WebSocketSession
-//   ): Mono<Void> {
-//      val queryIdMatchResult = querySpecificWebsocketPath.find(websocketPath)
-//         ?: error("Expected a queryId passed in $websocketPath but one wasn't found")
-//      val queryId = queryIdMatchResult.groupValues[1]
-//      log().debug("Attached query results for queryId $queryId to websocket session ${webSocketSession.id}")
-//      return webSocketSession.send(
-//         activeQueryMonitor.queryStatusUpdates(queryId)
-//            .map { runningQueryStatus ->
-//            val json =   objectMapper.writeValueAsString(runningQueryStatus)
-//            json
-//            }
-//            .map(webSocketSession::textMessage)
-//            .asFlux()
-//      )
-//   }
 
    private fun publishActiveQueryMetadata(webSocketSession: WebSocketSession): Mono<Void> {
       return webSocketSession.send(activeQueryMonitor.allQueryStatusUpdates()
