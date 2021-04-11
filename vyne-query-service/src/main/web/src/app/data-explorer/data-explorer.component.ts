@@ -85,8 +85,8 @@ export class DataExplorerComponent {
         console.log('Data explorer received a new schema');
         this.schema = next;
       });
-    //this.schemaNotificationService.createSchemaNotificationsSubscription()
-    //  .subscribe(() => this.onSchemaUpdated());
+    this.schemaNotificationService.createSchemaNotificationsSubscription()
+     .subscribe(() => this.onSchemaUpdated());
     this.caskServiceUrl = environment.queryServiceUrl;
   }
 

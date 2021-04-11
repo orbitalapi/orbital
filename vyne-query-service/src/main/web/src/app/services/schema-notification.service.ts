@@ -1,22 +1,25 @@
 import {Injectable} from '@angular/core';
-//import {RxStompService} from '@stomp/ng2-stompjs';
 import {Observable} from 'rxjs';
-import {map} from 'rxjs/operators';
-//import {IMessage} from '@stomp/stompjs';
+import {share} from 'rxjs/operators';
+import {WebsocketService} from './websocket.service';
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class SchemaNotificationService {
+  private readonly schemaUpdates$: Observable<SchemaUpdatedNotification>;
 
-  //constructor(private rxStompService: RxStompService) {
-  //}
+  constructor(private websocketService: WebsocketService) {
+    this.schemaUpdates$ = websocketService.connect('/api/schema/updates')
+      .pipe(
+        share()
+      );
+  }
 
-  //createSchemaNotificationsSubscription(): Observable<SchemaUpdatedNotification> {
-  //  return this.rxStompService.watch('/topic/schemaNotifications')
-  //      return JSON.parse(message.body) as SchemaUpdatedNotification;
-  //    }));
-  //}
+  createSchemaNotificationsSubscription(): Observable<SchemaUpdatedNotification> {
+    return this.schemaUpdates$;
+  }
 }
 
 export interface SchemaUpdatedNotification {

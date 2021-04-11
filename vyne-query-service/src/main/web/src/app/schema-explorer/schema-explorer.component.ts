@@ -28,10 +28,10 @@ export class SchemaExplorerComponent implements OnInit {
 
   ngOnInit() {
     this.loadSchemas();
-    //this.schemaNotificationService.createSchemaNotificationsSubscription()
-    //  .subscribe(() => {
-    //    this.loadSchemas();
-    //  });
+    this.schemaNotificationService.createSchemaNotificationsSubscription()
+     .subscribe(() => {
+       this.loadSchemas();
+     });
     this.configService.getConfig().subscribe(result => this.config = result);
   }
 
