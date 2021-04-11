@@ -1,5 +1,6 @@
 package io.vyne.spring
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.hazelcast.config.Config
 import com.hazelcast.config.DiscoveryStrategyConfig
 import com.hazelcast.core.Hazelcast
@@ -64,7 +65,7 @@ class VyneAutoConfiguration {
                                     webClientBuilder: WebClient.Builder,
                                     serviceUrlResolvers: List<ServiceUrlResolver>
    ): RestTemplateInvoker {
-      return RestTemplateInvoker(schemaProvider, webClientBuilder, serviceUrlResolvers)
+      return RestTemplateInvoker(schemaProvider, webClientBuilder, serviceUrlResolvers, ObjectMapper())
    }
 
    @Bean

@@ -1,5 +1,6 @@
 package io.vyne.spring.invokers
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.http.HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT
 import io.vyne.http.UriVariableProvider
 import io.vyne.http.UriVariableProvider.Companion.buildRequestBody
@@ -39,19 +40,21 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
    val webClient: WebClient,
-   private val serviceUrlResolvers: List<ServiceUrlResolver> =ServiceUrlResolver.DEFAULT
+   private val serviceUrlResolvers: List<ServiceUrlResolver> =ServiceUrlResolver.DEFAULT,
+   val objectMapper: ObjectMapper
 ) : OperationInvoker {
 
    @Autowired
    constructor(
       schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,
-      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver())
+      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver()),
+      objectMapper: ObjectMapper
    )
       : this(
       schemaProvider, webClientBuilder.exchangeStrategies(
          ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
-         ).build(), serviceUrlResolvers
+         ).build(), serviceUrlResolvers, objectMapper
    )
 
    private val uriVariableProvider = UriVariableProvider()

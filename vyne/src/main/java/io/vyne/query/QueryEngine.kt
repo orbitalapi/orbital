@@ -14,12 +14,8 @@ import io.vyne.schemas.Type
 import io.vyne.utils.log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactor.asFlux
-import reactor.core.publisher.Flux
 import java.time.Instant
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.Executors
 import java.util.stream.Collectors
 
 
@@ -445,28 +441,21 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // Without it, there's a stack overflow error as projectTo seems to call ObjectBuilder.build which calls projectTo again.
       // ... Investigate
 
-      val dispatcher = Executors.newFixedThreadPool(64).asCoroutineDispatcher()
 
       val results = when(context.projectResultsTo) {
-         null -> runBlocking { resultsFlow.toList() }
+         null -> runBlocking { resultsFlow }
          else -> runBlocking {
-            resultsFlow
-               .map {
-
-                  GlobalScope.async(dispatcher) {
-                     println("Converting a result now at ${DateTimeFormatter.ISO_INSTANT.format(Instant.now())}")
-                     val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                     val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)!!
-                     buildResult.results.first()
-                  }
+            resultsFlow.map() {
+               GlobalScope.async {
+                  println("Converting a result now at ${DateTimeFormatter.ISO_INSTANT.format(Instant.now())}")
+                  val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
+                  val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)!!
+                  buildResult.results.first()
                }
-               .toList()
-               .awaitAll()
+            }
+               .buffer(32)
+               .map { it.await() }
          }
-      }
-
-      if (context.projectResultsTo != null) {
-         println("Size of results ${results}")
       }
 
       return QueryResult(
@@ -474,7 +463,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             null -> target
             else -> QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
          },
-         results.asFlow(),
+         results,
          emptySet(),
          path = null,
          profilerOperation = context.profiler.root,

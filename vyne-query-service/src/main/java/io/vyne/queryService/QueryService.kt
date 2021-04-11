@@ -20,6 +20,7 @@ import io.vyne.utils.log
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.runBlocking
 import lang.taxi.types.TaxiQLQueryString
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -68,7 +69,7 @@ class QueryService(
    @PostMapping(
       "/api/query",
       consumes = [MediaType.APPLICATION_JSON_VALUE],
-      produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV]
+      produces = [MediaType.APPLICATION_JSON_VALUE]
    )
    suspend fun submitQuery(
       @RequestBody query: Query,
@@ -113,7 +114,8 @@ class QueryService(
       contentType: String
    ): Flow<Any> {
       return when (contentType) {
-         TEXT_CSV -> toCsv(queryResult.results /*, vyneProvider.createVyne().schema */)
+         TEXT_CSV -> toCsv(queryResult.results )
+
          // Default everything else to JSON
          else -> {
             val serializer = resultMode.buildSerializer(queryResult)
@@ -167,11 +169,27 @@ class QueryService(
       return ret
    }
 
-
-   @PostMapping(
-      "/api/vyneql",
+   @PostMapping("/api/vyneql",
       consumes = [MediaType.APPLICATION_JSON_VALUE],
-      produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV]
+      produces = [TEXT_CSV]
+   )
+   suspend fun submitVyneQlQueryCSV(
+      @RequestBody query: TaxiQLQueryString,
+      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+      @RequestParam("clientQueryId", required = false) clientQueryId: String? = null,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode = ResultMode.RAW,
+      auth: Authentication? = null,
+   ):ResponseEntity<Flow<String>> {
+
+      val user = auth?.toVyneUser()
+      val response = vyneQLQuery(query, user, clientQueryId = clientQueryId, queryId = UUID.randomUUID().toString())
+      return queryResultToResponseEntity(response, resultMode, contentType) as ResponseEntity<Flow<String>>
+
+   }
+
+   @PostMapping("/api/vyneql",
+      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      produces = [MediaType.APPLICATION_JSON_VALUE]
    )
    suspend fun submitVyneQlQuery(
       @RequestBody query: TaxiQLQueryString,
