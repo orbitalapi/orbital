@@ -126,6 +126,7 @@ interface QueryResponse {
       UNKNOWN,
       COMPLETED,
       RUNNING,
+
       // Ie., the query didn't error, but not everything was resolved
       INCOMPLETE,
       ERROR,
@@ -223,6 +224,14 @@ data class QueryContext(
    var projectResultsTo: Type? = null
       private set;
 
+   var cancelRequested: Boolean = false
+      private set;
+
+   fun cancel() {
+      log().info("Cancelling query $queryId")
+      cancelRequested = true
+   }
+
    private var inMemoryStream: List<TypedInstance>? = null
 
    override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
@@ -257,7 +266,14 @@ data class QueryContext(
          queryId: String
 
       ): QueryContext {
-         return QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, clientQueryId = clientQueryId, queryId = queryId)
+         return QueryContext(
+            schema,
+            facts.toMutableSet(),
+            queryEngine,
+            profiler,
+            clientQueryId = clientQueryId,
+            queryId = queryId
+         )
       }
 
    }

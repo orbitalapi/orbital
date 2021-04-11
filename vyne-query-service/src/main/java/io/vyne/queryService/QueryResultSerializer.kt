@@ -1,12 +1,14 @@
 package io.vyne.queryService
 
+import com.fasterxml.jackson.annotation.JsonRawValue
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.models.RawObjectMapper
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedInstanceConverter
+import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResult
 import io.vyne.query.ResultMode
 import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Type
 
 fun ResultMode.buildSerializer(queryResponse: QueryResult): QueryResultSerializer {
    return when (this) {
@@ -39,7 +41,7 @@ object TypeNamedInstanceSerializer : QueryResultSerializer {
  * After that, metadata is left empty.
  * Used for serializing results to the UI
  */
-class FirstEntryMetadataResultSerializer(private val response: QueryResult) : QueryResultSerializer {
+class FirstEntryMetadataResultSerializer(private val response: QueryResult, private val mapper: ObjectMapper = Jackson.defaultObjectMapper) : QueryResultSerializer {
    private val converter = TypedInstanceConverter(RawObjectMapper)
    private var metadataEmitted: Boolean = false
 
@@ -52,7 +54,19 @@ class FirstEntryMetadataResultSerializer(private val response: QueryResult) : Qu
     */
    data class ValueWithTypeName(
       val typeName: String?,
-      val anonymousTypes: Set<Type> = emptySet(),
+      /**
+       * Contains the anonymous types used in this type definition.
+       * Ideally, this would be typed as Set<Type>, however our Type objects are designed
+       * to write TO json, not read FROM json.
+       *
+       * This causes problems when we're trying to rebuild ValueWithTypeName from a db
+       * record.
+       *
+       * As the intended use of the ValueWithTypeName is on the client (web), just store
+       * the types as raw JSON.
+       */
+      @JsonRawValue
+      val anonymousTypes: String,
       /**
        * This is the serialized instance, as converted by a RawObjectMapper.
        */
@@ -74,17 +88,21 @@ class FirstEntryMetadataResultSerializer(private val response: QueryResult) : Qu
        */
       val queryId: String? = null
    ) {
-      constructor(typeName: QualifiedName?, anonymousTypes: Set<Type> = emptySet(), value: Any?, valueId: Int, queryId: String?) : this(
+      constructor(typeName: QualifiedName?, anonymousTypes: String = NO_ANONYMOUS_TYPES, value: Any?, valueId: Int, queryId: String?) : this(
          typeName?.parameterizedName, anonymousTypes, value, valueId, queryId
       )
 
-      constructor(anonymousTypes: Set<Type>, value: Any?, valueId: Int, queryId: String?) : this(
+      constructor(anonymousTypes: String, value: Any?, valueId: Int, queryId: String?) : this(
          null as String?,
          anonymousTypes,
          value,
          valueId,
          queryId
       )
+
+      companion object {
+         const val NO_ANONYMOUS_TYPES = "[]" // empty array
+      }
    }
 
    override fun serialize(item: TypedInstance): Any {
@@ -95,14 +113,14 @@ class FirstEntryMetadataResultSerializer(private val response: QueryResult) : Qu
          metadataEmitted = true
          ValueWithTypeName(
             item.type.name,
-            response.anonymousTypes,
+            mapper.writeValueAsString(response.anonymousTypes),
             converter.convert(item),
             valueId = item.hashCodeWithDataSource,
             queryId = response.queryId
          )
       } else {
          ValueWithTypeName(
-            emptySet(),
+            "[]",
             converter.convert(item),
             valueId = item.hashCodeWithDataSource,
             queryId = response.queryId

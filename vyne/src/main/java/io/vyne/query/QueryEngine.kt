@@ -205,7 +205,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             setOf(querySpecTypeNode),
             profilerOperation = context.profiler.root,
             queryId = context.queryId,
-            clientQueryId = context.clientQueryId
+            clientQueryId = context.clientQueryId,
+            anonymousTypes = context.schema.typeCache.anonymousTypes()
          )
       }
    }
@@ -489,7 +490,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          path = null,
          profilerOperation = context.profiler.root,
          queryId = context.queryId,
-         clientQueryId = context.clientQueryId
+         clientQueryId = context.clientQueryId,
+         anonymousTypes = context.schema.typeCache.anonymousTypes()
       )
 
    }

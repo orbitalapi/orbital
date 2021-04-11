@@ -10,8 +10,8 @@ import io.vyne.models.TypedInstanceConverter
 import io.vyne.models.json.Jackson
 import io.vyne.query.QueryResponse
 import io.vyne.query.history.LineageRecord
-import io.vyne.query.history.QuerySummary
 import io.vyne.query.history.QueryResultRow
+import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.history.*
 import io.vyne.utils.log
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +52,7 @@ class PersistingQueryEventConsumer(
          is RestfulQueryResultEvent -> persistEvent(event)
          is QueryCompletedEvent -> persistEvent(event)
          is QueryExceptionEvent -> persistEvent(event)
+         is QueryFailureEvent -> persistEvent(event)
          else -> TODO("Event type ${event::class.simpleName} not yet supported")
       }
       Unit
@@ -72,6 +73,10 @@ class PersistingQueryEventConsumer(
 
    private fun persistEvent(event: QueryExceptionEvent) {
       repository.setQueryEnded(event.queryId, event.timestamp, 0, QueryResponse.ResponseStatus.ERROR, event.message)
+         .subscribe()
+   }
+   private fun persistEvent(event: QueryFailureEvent) {
+      repository.setQueryEnded(event.queryId, Instant.now(), 0, QueryResponse.ResponseStatus.ERROR, event.failure.message)
          .subscribe()
    }
 
@@ -105,7 +110,8 @@ class PersistingQueryEventConsumer(
                taxiQl = event.query,
                queryJson = null,
                startTime = Instant.now(),
-               responseStatus = QueryResponse.ResponseStatus.INCOMPLETE
+               responseStatus = QueryResponse.ResponseStatus.INCOMPLETE,
+               anonymousTypesJson = objectMapper.writeValueAsString(event.anonymousTypes)
             )
          } catch (e: Exception) {
             throw e

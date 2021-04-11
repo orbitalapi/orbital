@@ -2,21 +2,18 @@ package io.vyne.query.active
 
 import com.google.common.cache.CacheBuilder
 import io.vyne.query.QueryResponse
+import io.vyne.query.QueryResult
 import io.vyne.utils.log
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import lang.taxi.types.TaxiQLQueryString
 import java.time.Duration
 import java.time.Instant
-import java.util.*
 
 
 class ActiveQueryMonitor {
-   private val instanceId = UUID.randomUUID().toString()
+   private val runningQueries:Map<String,QueryResult> = mutableMapOf()
    private val queryMetadataSink = MutableSharedFlow<RunningQueryStatus>()
    private val queryMetadataFlow = queryMetadataSink.asSharedFlow()
    private val runningQueryCache = CacheBuilder.newBuilder()
@@ -33,6 +30,12 @@ class ActiveQueryMonitor {
    fun queryStatusUpdates(queryId: String): Flow<RunningQueryStatus> {
       return queryMetadataFlow
          .filter { it.queryId == queryId }
+   }
+
+   fun cancelQuery(queryId: String) {
+      runningQueries[queryId]!!
+         .results
+         .cancellable()
    }
 
    fun allQueryStatusUpdates(): Flow<RunningQueryStatus> {
@@ -121,8 +124,6 @@ class ActiveQueryMonitor {
 data class RunningQueryStatus(
    val queryId: String,
    val vyneQlQuery: TaxiQLQueryString? = null,
-//   @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
-//   val responseTypeName: QualifiedName,
    val completedProjections: Int = 0,
    val estimatedProjectionCount: Int = 0,
    val startTime: Instant,

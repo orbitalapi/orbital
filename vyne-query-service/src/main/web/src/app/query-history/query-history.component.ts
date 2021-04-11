@@ -35,7 +35,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   ) {
     super(queryService, typeService);
     this.activeQueryNotificationService.createActiveQueryNotificationSubscription()
-      .subscribe( event => this.handleActiveQueryUpdate(event));
+      .subscribe(event => this.handleActiveQueryUpdate(event));
   }
 
   profileLoading = false;
@@ -105,7 +105,14 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
               this.typeService.getTypes()
                 .pipe(take(1))
                 .subscribe(schema => {
-                  this.activeRecordResultType = findType(schema, valueWithTypeName.typeName);
+                  // Make sure the activeRecordREsultType hasn't been set in between subscribing to the observable, and getting the result.
+                  if (isNullOrUndefined(this.activeRecordResultType) && !isNullOrUndefined(valueWithTypeName.typeName)) {
+                    if (!isNullOrUndefined(valueWithTypeName.anonymousTypes) && valueWithTypeName.anonymousTypes.length > 0) {
+                      this.activeRecordResultType = valueWithTypeName.anonymousTypes[0];
+                    } else {
+                      this.activeRecordResultType = findType(schema, valueWithTypeName.typeName);
+                    }
+                  }
                 });
             }
           }

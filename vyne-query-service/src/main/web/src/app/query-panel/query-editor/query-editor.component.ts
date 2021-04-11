@@ -173,7 +173,11 @@ export class QueryEditorComponent implements OnInit {
       if (isFailedSearchResponse(message)) {
         queryErrorHandler(message);
       } else if (isValueWithTypeName(message)) {
-        if (!isNullOrUndefined(message.typeName)) {
+        if (!isNullOrUndefined(message.anonymousTypes) && message.anonymousTypes.length > 0) {
+          // TODO  - I think we'll only receive one here.
+          // Not sure how we're handling nested anonymous types.
+          this.resultType = message.anonymousTypes[0];
+        } else if (!isNullOrUndefined(message.typeName)) {
           this.resultType = findType(this.schema, message.typeName);
         }
         this.results$.next(message.value);

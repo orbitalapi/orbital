@@ -57,22 +57,40 @@ class QueryHistoryService(
       @PathVariable("id") queryId: String,
       @RequestParam("limit", required = false) limit: Long? = null
    ): Flux<FirstEntryMetadataResultSerializer.ValueWithTypeName> {
-      val flux = if (limit != null) {
-         this.queryResultRowRepository.findAllByQueryId(queryId)
-            .take(limit)
-      } else {
-         this.queryResultRowRepository.findAllByQueryId(queryId)
+      return queryHistoryRecordRepository.findByQueryId(queryId).flatMapMany { querySummary ->
+         val flux = if (limit != null) {
+            this.queryResultRowRepository.findAllByQueryId(queryId)
+               .take(limit)
+         } else {
+            this.queryResultRowRepository.findAllByQueryId(queryId)
+         }
+         var firstRowEmitted = false
+         flux.mapNotNull { resultRow ->
+            val typeNamedInstance = resultRow.asTypeNamedInstance(objectMapper)
+            // Only include anonymous type data on the first emitted entry, as they're
+            // really expensive to send
+            val anonymousTypes = when {
+               firstRowEmitted -> FirstEntryMetadataResultSerializer.ValueWithTypeName.NO_ANONYMOUS_TYPES
+               !firstRowEmitted -> {
+                  firstRowEmitted = true
+                  querySummary.anonymousTypesJson
+                     ?: FirstEntryMetadataResultSerializer.ValueWithTypeName.NO_ANONYMOUS_TYPES
+               }
+               else -> error("This shouldn't happen")
+            }
+            val record = FirstEntryMetadataResultSerializer.ValueWithTypeName(
+               typeNamedInstance.typeName.fqn(),
+               anonymousTypes,
+               typeNamedInstance.convertToRaw()!!,
+               resultRow.valueHash,
+               resultRow.queryId
+            )
+            firstRowEmitted = true
+            record
+         }
       }
-      return flux.mapNotNull { resultRow ->
-         val typeNamedInstance = resultRow.asTypeNamedInstance(objectMapper)
-         FirstEntryMetadataResultSerializer.ValueWithTypeName(
-            typeNamedInstance.typeName.fqn(),
-            emptySet(),
-            typeNamedInstance.convertToRaw()!!,
-            resultRow.valueHash,
-            resultRow.queryId
-         )
-      }
+
+
    }
 
    @GetMapping("/api/query/history/clientId/{id}/dataSource/{rowId}/{attributePath}")

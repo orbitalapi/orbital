@@ -6,6 +6,7 @@ import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.FailedSearchResponse
+import io.vyne.schemas.Type
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import lang.taxi.types.TaxiQLQueryString
@@ -46,8 +47,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
 
    private suspend fun emitFailure(query: Query, failure: FailedSearchResponse): FailedSearchResponse {
       consumer.handleEvent(
-         RestfulQueryFailureEvent(
-            query,
+         QueryFailureEvent(
             failure.queryResponseId,
             failure.clientQueryId,
             failure
@@ -80,7 +80,11 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
                consumer.handleEvent(
                   TaxiQlQueryResultEvent(
-                     query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
+                     query,
+                     queryResult.queryResponseId,
+                     queryResult.clientQueryId,
+                     typedInstance,
+                     queryResult.anonymousTypes
                   )
                )
             }
@@ -109,8 +113,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
 
    private suspend fun emitFailure(query: TaxiQLQueryString, failure: FailedSearchResponse): FailedSearchResponse {
       consumer.handleEvent(
-         TaxiQlQueryFailureEvent(
-            query,
+         QueryFailureEvent(
             failure.queryResponseId,
             failure.clientQueryId,
             failure
@@ -133,8 +136,7 @@ data class RestfulQueryResultEvent(
    val typedInstance: TypedInstance
 ) : QueryEvent()
 
-data class RestfulQueryFailureEvent(
-   val query: Query,
+data class QueryFailureEvent(
    val queryId: String,
    val clientQueryId: String?,
    val failure: FailedSearchResponse
@@ -144,16 +146,10 @@ data class TaxiQlQueryResultEvent(
    val query: TaxiQLQueryString,
    val queryId: String,
    val clientQueryId: String?,
-   val typedInstance: TypedInstance
+   val typedInstance: TypedInstance,
+   val anonymousTypes: Set<Type>
 ) : QueryEvent()
 
-
-data class TaxiQlQueryFailureEvent(
-   val query: TaxiQLQueryString,
-   val queryId: String,
-   val clientQueryId: String?,
-   val failure: FailedSearchResponse
-) : QueryEvent()
 
 data class QueryCompletedEvent(
    val queryId: String,

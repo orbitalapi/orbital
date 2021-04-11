@@ -1,15 +1,16 @@
 CREATE TABLE IF NOT EXISTS QUERY_SUMMARY
 (
-    id              SERIAL PRIMARY KEY,
-    query_id        VARCHAR(255),
-    client_query_id VARCHAR(255),
-    taxi_ql         VARCHAR(5000),
-    query_json      VARCHAR(10000),
-    start_time      TIMESTAMP,
-    response_status VARCHAR(255),
-    end_time        TIMESTAMP,
-    record_count    NUMBER,
-    error_message   varchar(2000)
+    id                   SERIAL PRIMARY KEY,
+    query_id             VARCHAR(255),
+    client_query_id      VARCHAR(255),
+    taxi_ql              VARCHAR(5000),
+    query_json           VARCHAR(10000),
+    start_time           TIMESTAMP,
+    response_status      VARCHAR(255),
+    end_time             TIMESTAMP,
+    record_count         NUMBER,
+    error_message        varchar(2000),
+    anonymous_types_json VARCHAR(MAX)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ix_querySummary_clientQueryId ON QUERY_SUMMARY (client_query_id);
