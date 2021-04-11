@@ -22,6 +22,10 @@ interface SchemaProvider {
    // TODO : May want to deprecate this approach, and the whole concept of schema aggregators.
    // See SchemaAggregator for an explanation.
    fun schema(): Schema {
+      return TaxiSchema.from(this.sources())
+   }
+
+   fun sources(): List<VersionedSource> {
       if (this.schemas().any { it !is TaxiSchema }) {
          // Use of non-taxi schemas is no longer supported, for the reasons outlined in
          // SchemaAggregator.
@@ -29,8 +33,7 @@ interface SchemaProvider {
          // schema support.
          error("No longer supporting non TaxiSchema's.")
       }
-      val taxiSchemas = schemas().map { it as TaxiSchema }
-      return TaxiSchema.from(taxiSchemas.flatMap { it.sources })
+      return schemas().map { it as TaxiSchema }.flatMap { it.sources }
    }
    fun schema(memberNames: List<String>, includePrimitives: Boolean = false): Schema {
       val qualifiedNames = memberNames.map { it.fqn() }
