@@ -66,17 +66,24 @@ class FirstEntryMetadataResultSerializer(private val response: QueryResult) : Qu
        * bridge later - though if two TypedInstances in a query result generate
        * the same hashCode, it's probably ok to use their lineage interchangably.
        */
-      val valueId: Int
+      val valueId: Int,
+
+      /**
+       * When this instance has been generated as a direct result of a query,
+       * this queryId is populated.
+       */
+      val queryId: String? = null
    ) {
-      constructor(typeName: QualifiedName?, anonymousTypes: Set<Type> = emptySet(), value: Any?, valueId: Int) : this(
-         typeName?.parameterizedName, anonymousTypes, value, valueId
+      constructor(typeName: QualifiedName?, anonymousTypes: Set<Type> = emptySet(), value: Any?, valueId: Int, queryId: String?) : this(
+         typeName?.parameterizedName, anonymousTypes, value, valueId, queryId
       )
 
-      constructor(anonymousTypes: Set<Type>, value: Any?, valueId: Int) : this(
+      constructor(anonymousTypes: Set<Type>, value: Any?, valueId: Int, queryId: String?) : this(
          null as String?,
          anonymousTypes,
          value,
-         valueId
+         valueId,
+         queryId
       )
    }
 
@@ -90,13 +97,15 @@ class FirstEntryMetadataResultSerializer(private val response: QueryResult) : Qu
             item.type.name,
             response.anonymousTypes,
             converter.convert(item),
-            valueId = item.hashCodeWithDataSource
+            valueId = item.hashCodeWithDataSource,
+            queryId = response.queryId
          )
       } else {
          ValueWithTypeName(
             emptySet(),
             converter.convert(item),
-            valueId = item.hashCodeWithDataSource
+            valueId = item.hashCodeWithDataSource,
+            queryId = response.queryId
          )
       }
    }

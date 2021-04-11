@@ -69,7 +69,8 @@ class QueryHistoryService(
             typeNamedInstance.typeName.fqn(),
             emptySet(),
             typeNamedInstance.convertToRaw()!!,
-            resultRow.valueHash
+            resultRow.valueHash,
+            resultRow.queryId
          )
       }
    }

@@ -5,7 +5,7 @@ import {QueryHistorySummary} from '../services/query.service';
   selector: 'app-vyneql-record',
   template: `
     <div class="history-item">
-      <code>{{ historyRecord.taxiQl }}</code>
+      <code>{{ taxiQlQuery }}</code>
     </div>
   `,
   styleUrls: ['./vyneql-record.component.scss']
@@ -13,5 +13,5 @@ import {QueryHistorySummary} from '../services/query.service';
 export class VyneqlRecordComponent {
 
   @Input()
-  historyRecord: QueryHistorySummary;
+  taxiQlQuery: string;
 }

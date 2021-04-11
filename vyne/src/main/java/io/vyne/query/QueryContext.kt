@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.map
 import lang.taxi.policies.Instruction
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
-import java.util.*
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -77,14 +76,14 @@ data class QueryResult(
    @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
-   override val queryResponseId: String = UUID.randomUUID().toString(),
+
    @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    val truncated: Boolean = false,
    val anonymousTypes: Set<Type> = setOf(),
    override val clientQueryId: String? = null,
-   override val queryId: String? = null
+   override val queryId: String
 ) : QueryResponse {
-
+   override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration
 
    override val isFullyResolved = unmatchedNodes.isEmpty()
@@ -124,8 +123,9 @@ data class QueryResult(
 // Note : Also models failures, so is fairly generic
 interface QueryResponse {
    enum class ResponseStatus {
+      UNKNOWN,
       COMPLETED,
-
+      RUNNING,
       // Ie., the query didn't error, but not everything was resolved
       INCOMPLETE,
       ERROR,
@@ -134,7 +134,7 @@ interface QueryResponse {
    val responseStatus: ResponseStatus
    val queryResponseId: String
    val clientQueryId: String?
-   val queryId: String?
+   val queryId: String
 
    @get:JsonProperty("fullyResolved")
    val isFullyResolved: Boolean
@@ -213,7 +213,7 @@ data class QueryContext(
    /**
     * Unique ID generated for query context
     */
-   val queryId: String? = UUID.randomUUID().toString()
+   val queryId: String
 
 ) : ProfilerOperation by profiler {
 
@@ -254,7 +254,7 @@ data class QueryContext(
          queryEngine: QueryEngine,
          profiler: QueryProfiler,
          clientQueryId: String? = null,
-         queryId: String? = null
+         queryId: String
 
       ): QueryContext {
          return QueryContext(schema, facts.toMutableSet(), queryEngine, profiler, clientQueryId = clientQueryId, queryId = queryId)

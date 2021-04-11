@@ -4,6 +4,7 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.Query
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
+import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.FailedSearchResponse
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
@@ -14,7 +15,7 @@ import java.time.Instant
  * Takes a queries results, metadata, etc, and streams the out to a QueryHistory provider
  * to be captured.
  */
-class QueryEventObserver(private val consumer: QueryEventConsumer) {
+class QueryEventObserver(private val consumer: QueryEventConsumer, private val activeQueryMonitor:ActiveQueryMonitor) {
    /**
     * Attaches an observer to the result flow of the QueryResponse, returning
     * an updated QueryResponse with it's internal flow updated.
@@ -33,6 +34,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer) {
       return queryResult.copy(
          results = queryResult.results
             .onEach { typedInstance ->
+               activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
                consumer.handleEvent(
                   RestfulQueryResultEvent(
                      query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
@@ -75,6 +77,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer) {
       return queryResult.copy(
          results = queryResult.results
             .onEach { typedInstance ->
+               activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
                consumer.handleEvent(
                   TaxiQlQueryResultEvent(
                      query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
@@ -98,6 +101,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer) {
                      )
                   )
                }
+               activeQueryMonitor.reportComplete(queryResult.queryId)
             }
       )
 

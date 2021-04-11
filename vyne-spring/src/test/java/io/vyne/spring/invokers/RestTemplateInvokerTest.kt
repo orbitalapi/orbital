@@ -8,6 +8,7 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.QueryProfiler
+import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
@@ -141,6 +142,7 @@ namespace vyne {
       val response = RestTemplateInvoker(
          webClient = webClient,
          schemaProvider = SchemaProvider.from(schema),
+         activeQueryMonitor = ActiveQueryMonitor()
       )
          .invoke(
             service, operation, listOf(
@@ -182,7 +184,8 @@ namespace vyne {
       )
       val restTemplateInvoker = RestTemplateInvoker(
          webClient = webClient,
-         schemaProvider = SchemaProvider.from(schema)
+         schemaProvider = SchemaProvider.from(schema),
+         activeQueryMonitor = ActiveQueryMonitor()
       )
       val vyne = testVyne(schema, listOf(restTemplateInvoker))
 
@@ -217,6 +220,7 @@ namespace vyne {
       val response = RestTemplateInvoker(
          webClient = webClient,
          schemaProvider = SchemaProvider.from(schema),
+         activeQueryMonitor = ActiveQueryMonitor()
       ).invoke(
          service, operation, listOf(
             paramAndType("vyne.ClientId", "myClientId", schema),
@@ -257,7 +261,8 @@ namespace vyne {
 
       val invoker = RestTemplateInvoker(
          webClient = webClient,
-         schemaProvider = SchemaProvider.from(schema)
+         schemaProvider = SchemaProvider.from(schema),
+         activeQueryMonitor = ActiveQueryMonitor()
       )
       val response = invoker
          .invoke(
@@ -288,7 +293,8 @@ namespace vyne {
 
       val response = RestTemplateInvoker(
          webClient = webClient,
-         schemaProvider = SchemaProvider.from(schema)
+         schemaProvider = SchemaProvider.from(schema),
+         activeQueryMonitor = ActiveQueryMonitor()
       ).invoke(
          service, operation, listOf(
             paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
@@ -337,7 +343,8 @@ namespace vyne {
 
       val response = RestTemplateInvoker(
          webClient = webClient,
-         schemaProvider = schemaProvider
+         schemaProvider = schemaProvider,
+         activeQueryMonitor = ActiveQueryMonitor()
       )
          .invoke(service, operation, emptyList(), QueryProfiler(),"MOCK_QUERY_ID") as TypedObject
 
@@ -382,7 +389,8 @@ namespace vyne {
 
       val response = RestTemplateInvoker(
          webClient = webClient,
-         schemaProvider = schemaProvider
+         schemaProvider = schemaProvider,
+         activeQueryMonitor = ActiveQueryMonitor()
       )
          .invoke(service, operation, emptyList(), QueryProfiler(),"MOCK_QUERY_ID") as TypedObject
 

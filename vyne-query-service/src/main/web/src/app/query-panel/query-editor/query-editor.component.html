@@ -9,6 +9,8 @@
         (executeQuery)="submitQuery()"
         [currentState]="currentState"
         [error]="lastErrorMessage"
+        [runningQueryStatus]="queryMetadata$ | async"
+        (cancelQuery)="cancelQuery()"
       >
       </app-query-editor-bottom-bar>
 

@@ -59,7 +59,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
    fun `csv with projection returns expected results`() = runBlockingTest {
 
       ResultMode.values().forEach { resultMode ->
-         val result= queryService.submitVyneQlQuery(
+         val result = queryService.submitVyneQlQuery(
             """findAll { Order[] } as Report[]""".trimIndent(),
             resultMode,
             TEXT_CSV
@@ -85,15 +85,12 @@ class QueryServiceTest : BaseQueryServiceTest() {
          .body
          .toList()
       response.should.have.size(1)
-      response[0].should.equal(
-         FirstEntryMetadataResultSerializer.ValueWithTypeName(
-            "Order".fqn(),
-            value =  mapOf(
-               "orderId" to "orderId_0",
-               "traderName" to "john",
-               "instrumentId" to "Instrument_0"
-            ),
-            valueId = 0 // TODO  - fix this
+      val resultRow = response[0] as FirstEntryMetadataResultSerializer.ValueWithTypeName
+      resultRow.value.should.equal(
+         mapOf(
+            "orderId" to "orderId_0",
+            "traderName" to "john",
+            "instrumentId" to "Instrument_0"
          )
       )
    }
@@ -128,18 +125,14 @@ class QueryServiceTest : BaseQueryServiceTest() {
          .body
          .toList()
       response.should.have.size(1)
-      response[0].should.equal(
-         FirstEntryMetadataResultSerializer.ValueWithTypeName(
-            "Report".fqn(),
-            anonymousTypes = emptySet(),
-            value = mapOf(
-               "orderId" to "orderId_0",
-               "tradeId" to null,
-               "instrumentName" to null,
-               "maturityDate" to null,
-               "traderName" to "john"
-            ),
-            valueId = 0 // TODO  - fix this
+      val resultRow = response[0] as FirstEntryMetadataResultSerializer.ValueWithTypeName
+      resultRow.value.should.equal(
+         mapOf(
+            "orderId" to "orderId_0",
+            "tradeId" to null,
+            "instrumentName" to null,
+            "maturityDate" to null,
+            "traderName" to "john"
          )
       )
    }

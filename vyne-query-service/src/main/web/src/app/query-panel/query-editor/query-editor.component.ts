@@ -1,40 +1,38 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MonacoEditorLoaderService} from '@materia-ui/ngx-monaco-editor';
-import {filter, take} from 'rxjs/operators';
+import {filter, take, tap} from 'rxjs/operators';
 
 import {editor} from 'monaco-editor';
 import {
   FailedSearchResponse,
   isFailedSearchResponse,
-  isValueWithTypeName, QueryHistorySummary, QueryProfileData,
+  isValueWithTypeName,
+  QueryHistorySummary,
+  QueryProfileData,
   QueryResult,
   QueryService,
   randomId,
-  ResponseStatus,
   ResultMode,
   StreamingQueryMessage,
 } from 'src/app/services/query.service';
-import {QueryFailure} from '../query-wizard/query-wizard.component';
-import {HttpErrorResponse} from '@angular/common/http';
 import {vyneQueryLanguageConfiguration, vyneQueryLanguageTokenProvider} from './vyne-query-language.monaco';
 import {QueryState} from './bottom-bar.component';
 import {isQueryResult, QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
-import {ExportFormat, ExportFileService} from '../../services/export.file.service';
-import {TestSpecFormComponent} from '../../test-pack-module/test-spec-form.component';
+import {ExportFileService, ExportFormat} from '../../services/export.file.service';
 import {MatDialog} from '@angular/material/dialog';
 import {findType, InstanceLike, Schema, Type} from '../../services/schema';
-import {Subject} from 'rxjs/index';
-import {Observable, Subscription} from 'rxjs';
+import {Subject} from 'rxjs';
+import {Observable} from 'rxjs';
 import {isNullOrUndefined} from 'util';
-import {RunningQueryStatus} from '../../services/active-queries-notification-service';
+import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {TypesService} from '../../services/types.service';
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
-import {errorKatexNotLoaded} from 'ngx-markdown';
 
 declare const monaco: any; // monaco
 
 @Component({
+  // tslint:disable-next-line:component-selector
   selector: 'query-editor',
   templateUrl: './query-editor.component.html',
   styleUrls: ['./query-editor.component.scss']
@@ -54,11 +52,10 @@ export class QueryEditorComponent implements OnInit {
   // queryResults: InstanceLike[];
 
   resultType: Type | null = null;
-  queryStatus: RunningQueryStatus | null = null;
+  private latestQueryStatus: RunningQueryStatus | null = null;
   results$: Subject<InstanceLike>;
   queryProfileData$: Observable<QueryProfileData>;
-  queryStatusSubscription: Subscription | null = null;
-  queryResultsSubscription: Subscription | null = null;
+  queryMetadata$: Observable<RunningQueryStatus>;
 
 
   get lastQueryResultAsSuccess(): QueryResult | null {
@@ -88,6 +85,7 @@ export class QueryEditorComponent implements OnInit {
               private queryService: QueryService,
               private fileService: ExportFileService,
               private dialogService: MatDialog,
+              private activeQueryNotificationService: ActiveQueriesNotificationService,
               private typeService: TypesService) {
 
     this.typeService.getTypes()
@@ -157,7 +155,8 @@ export class QueryEditorComponent implements OnInit {
     this.queryClientId = randomId();
     this.resultType = null;
     this.results$ = new Subject();
-    this.queryStatus = null;
+    this.latestQueryStatus = null;
+    this.queryMetadata$ = null;
 
 
     const queryErrorHandler = (error: FailedSearchResponse) => {
@@ -178,6 +177,9 @@ export class QueryEditorComponent implements OnInit {
           this.resultType = findType(this.schema, message.typeName);
         }
         this.results$.next(message.value);
+        if (this.queryMetadata$ === null) {
+          this.subscribeForQueryStatusUpdates(message.queryId);
+        }
       } else {
         console.error('Received an unexpected type of message from a query event stream: ' + JSON.stringify(message));
       }
@@ -186,7 +188,7 @@ export class QueryEditorComponent implements OnInit {
 
 
     const queryCompleteHandler = () => {
-      this.handleQueryFinished(null);
+      this.handleQueryFinished();
     };
 
     this.queryService.submitVyneQlQueryStreaming(this.query, this.queryClientId, ResultMode.SIMPLE).subscribe(
@@ -194,6 +196,14 @@ export class QueryEditorComponent implements OnInit {
       queryErrorHandler,
       queryCompleteHandler);
 
+  }
+
+  private subscribeForQueryStatusUpdates(queryId: string) {
+    this.queryMetadata$ = this.activeQueryNotificationService.getQueryStatusStreamForQueryId(
+      queryId
+    ).pipe(
+      tap(message => this.latestQueryStatus = message)
+    );
   }
 
   onInstanceSelected($event: QueryResultInstanceSelectedEvent) {
@@ -208,7 +218,7 @@ export class QueryEditorComponent implements OnInit {
     }
   }
 
-  private handleQueryFinished(queryStatus: RunningQueryStatus) {
+  private handleQueryFinished() {
     this.loading = false;
     this.loadingChanged.emit(false);
     // If we're already in an error state, then don't change the state.
@@ -238,7 +248,7 @@ export class QueryEditorComponent implements OnInit {
   }
 
   cancelQuery() {
-    this.queryService.cancelQuery(this.queryStatus.queryId)
+    this.queryService.cancelQuery(this.latestQueryStatus.queryId)
       .subscribe();
   }
 

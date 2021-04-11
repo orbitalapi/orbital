@@ -7,16 +7,12 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
-import io.vyne.queryService.QueryMetaDataService
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactor.asFlux
-import reactor.core.publisher.Flux
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.Executors
@@ -64,8 +60,8 @@ interface QueryEngine {
    fun queryContext(
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
       additionalFacts: Set<TypedInstance> = emptySet(),
-      queryId: String? = null,
-      clientQueryId: String? = null
+      queryId: String,
+      clientQueryId: String?
    ): QueryContext
 
    suspend fun build(type: Type, context: QueryContext): QueryResult =
@@ -105,10 +101,11 @@ class StatefulQueryEngine(
       return this
    }
 
+
    override fun queryContext(
       factSetIds: Set<FactSetId>,
       additionalFacts: Set<TypedInstance>,
-      queryId: String?,
+      queryId: String,
       clientQueryId: String?
    ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
@@ -424,10 +421,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //fun unresolvedNodes(): List<QuerySpecTypeNode> {
       //   return querySet.filterNot { matchedNodes.containsKey(it) }
       //}
-
-      //TODO this is an awful way to check if a strategy has result and only emit the results from that stratrgy
-
-      QueryMetaDataService.monitor.reportTarget(context.queryId, target)
 
       val resultsFlow = flow {
          var resultsRecivedFromStrategy = false

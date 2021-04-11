@@ -1,6 +1,7 @@
-package io.vyne.queryService
+package io.vyne.queryService.active
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
@@ -22,10 +23,19 @@ import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAd
 import org.springframework.web.reactive.socket.server.upgrade.ReactorNettyRequestUpgradeStrategy
 import reactor.core.publisher.Mono
 
-@Configuration
-@Component
 @RestController
-class QueryMetaDataController {
+class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
+   @GetMapping("/api/query/active")
+   fun liveQueries(): Map<String, String> {
+      return monitor.queryIdToClientQueryIdMap
+   }
+
+}
+
+@Configuration
+class ActiveQueryConfiguration {
+   @Bean
+   fun activeQueryMonitor() = ActiveQueryMonitor()
 
    @Bean
    fun handlerAdapter(): WebSocketHandlerAdapter {
@@ -36,32 +46,27 @@ class QueryMetaDataController {
       return HandshakeWebSocketService(ReactorNettyRequestUpgradeStrategy())
    }
 
+
    @Bean
-   fun handlerMapping(): HandlerMapping {
+   fun handlerMapping(websocketHandler: WebFluxWebSocketHandler): HandlerMapping {
       val handlerMap: Map<String, WebFluxWebSocketHandler> = mapOf(
-         "/api/vyneql/metadata" to WebFluxWebSocketHandler(),
-         "/api/vyneql/*/metadata" to WebFluxWebSocketHandler()
+         "/api/query/status" to websocketHandler,
+         "/api/query/clientId/*/status" to websocketHandler
       )
       return SimpleUrlHandlerMapping(handlerMap, Ordered.HIGHEST_PRECEDENCE)
    }
-
-   @GetMapping("/api/vyneql/queries")
-   fun liveQueries(): Map<String,String> {
-      return QueryMetaDataService.monitor.queryIdToClientQueryIdMap
-   }
-
 }
 
-class WebFluxWebSocketHandler() : WebSocketHandler {
+@Component
+class WebFluxWebSocketHandler(private val activeQueryMonitor: ActiveQueryMonitor, private val objectMapper:ObjectMapper) : WebSocketHandler {
 
-   val objectMapper: ObjectMapper = ObjectMapper()
-   private val querySpecificWebsocketPath = "/api/vyneql/(.+)?/metadata".toRegex()
+   private val querySpecificWebsocketPath = "/api/query/clientId/(.+)?/status".toRegex()
    override fun handle(webSocketSession: WebSocketSession): Mono<Void> {
 
       val websocketPath = webSocketSession.handshakeInfo.uri.path.toString()
 
       return when {
-         websocketPath == "/api/vyneql/metadata" -> publishActiveQueryMetadata(webSocketSession)
+         websocketPath == "/api/query/status" -> publishActiveQueryMetadata(webSocketSession)
          websocketPath.matches(querySpecificWebsocketPath) -> publishSpecificQueryMetadata(
             websocketPath,
             webSocketSession
@@ -79,16 +84,22 @@ class WebFluxWebSocketHandler() : WebSocketHandler {
       val queryId = queryIdMatchResult.groupValues[1]
       log().debug("Attached query results for queryId $queryId to websocket session ${webSocketSession.id}")
       return webSocketSession.send(
-         QueryMetaDataService.monitor.queryMetaDataEvents(queryId)
-            .map { objectMapper.writeValueAsString(it) }
+         activeQueryMonitor.queryStatusUpdates(queryId)
+            .map { runningQueryStatus ->
+            val json =   objectMapper.writeValueAsString(runningQueryStatus)
+            json
+            }
             .map(webSocketSession::textMessage)
             .asFlux()
       )
    }
 
    private fun publishActiveQueryMetadata(webSocketSession: WebSocketSession): Mono<Void> {
-      return webSocketSession.send(QueryMetaDataService.monitor.metaDataEvents()
-         .map { objectMapper.writeValueAsString(it) }
+      return webSocketSession.send(activeQueryMonitor.allQueryStatusUpdates()
+         .map { runningQueryStatus ->
+            val json = objectMapper.writeValueAsString(runningQueryStatus)
+            json
+         }
          .map(webSocketSession::textMessage)
          .asFlux()
       )

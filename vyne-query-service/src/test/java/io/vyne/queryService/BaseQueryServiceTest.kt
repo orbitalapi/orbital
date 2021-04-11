@@ -8,6 +8,7 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.query.Query
 import io.vyne.query.QueryMode
 import io.vyne.query.TypeNameListQueryExpression
+import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.history.QueryEventObserver
 import io.vyne.queryService.history.db.QueryHistoryDbWriter
 import io.vyne.spring.SimpleVyneProvider
@@ -71,7 +72,7 @@ abstract class BaseQueryServiceTest {
       val (vyne, stubService) = testVyne(testSchema)
       this.stubService = stubService
       this.vyne = vyne
-      queryService = QueryService(SimpleVyneProvider(vyne), historyDbWriter, Jackson2ObjectMapperBuilder().build())
+      queryService = QueryService(SimpleVyneProvider(vyne), historyDbWriter, Jackson2ObjectMapperBuilder().build(), ActiveQueryMonitor())
 
       prepareStubService(stubService, vyne)
    }

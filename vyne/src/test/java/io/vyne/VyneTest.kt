@@ -20,6 +20,7 @@ import org.skyscreamer.jsonassert.JSONAssert
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.test.fail
 
 
@@ -64,7 +65,7 @@ service ClientService {
       return parser.parse(TypeNameQueryExpression(name))
    }
 
-   fun queryContext(): QueryContext = vyne().queryEngine().queryContext()
+   fun queryContext(queryId:String = UUID.randomUUID().toString()): QueryContext = vyne().queryEngine().queryContext(queryId = queryId, clientQueryId = null)
 }
 
 fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {

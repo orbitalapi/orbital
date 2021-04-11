@@ -13,6 +13,7 @@ import io.vyne.utils.log
 import lang.taxi.Compiler
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.TaxiQLQueryString
+import java.util.*
 
 enum class NodeTypes {
    ATTRIBUTE,
@@ -50,12 +51,12 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
-   suspend fun query(vyneQlQuery: TaxiQLQueryString, queryId: String? = null, clientQueryId: String? = null): QueryResult {
+   suspend fun query(vyneQlQuery: TaxiQLQueryString, queryId: String = UUID.randomUUID().toString(), clientQueryId: String? = null): QueryResult {
       val vyneQuery = Compiler(source = vyneQlQuery, importSources = listOf(this.schema.taxi)).queries().first()
       return query(vyneQuery, queryId, clientQueryId)
    }
 
-   suspend fun query(taxiQl: TaxiQlQuery, queryId: String? = null, clientQueryId: String? = null): QueryResult {
+   suspend fun query(taxiQl: TaxiQlQuery, queryId: String = UUID.randomUUID().toString(), clientQueryId: String? = null): QueryResult {
       val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId)
 
       return when (taxiQl.queryMode) {
@@ -65,7 +66,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    }
 
    @VisibleForTesting
-   internal fun buildContextAndExpression(taxiQl: TaxiQlQuery, queryId: String? = null, clientQueryId: String? = null): Pair<QueryContext, QueryExpression> {
+   internal fun buildContextAndExpression(taxiQl: TaxiQlQuery, queryId: String, clientQueryId: String?): Pair<QueryContext, QueryExpression> {
       val additionalFacts = taxiQl.facts.values.map { fact ->
          TypedInstance.from(schema.type(fact.fqn.fullyQualifiedName), fact.value, schema, source = Provided)
       }.toSet()
@@ -97,7 +98,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    fun query(
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
       additionalFacts: Set<TypedInstance> = emptySet(),
-      queryId: String? = null,
+      queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null): QueryContext {
       // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
       // what is asked for, but only providing the desired factSets to the queryContext.
@@ -143,7 +144,7 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
 
 
    fun from(fact: TypedInstance): QueryContext {
-      return query(additionalFacts = setOf(fact))
+      return query(additionalFacts = setOf(fact), queryId = UUID.randomUUID().toString())
    }
 
    //   fun getType(typeName: String): Type = schema.type(typeName)
@@ -166,9 +167,9 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    suspend fun execute(query: Query): QueryResult {
       query.facts.forEach { fact -> this.addKeyValuePair(fact.typeName, fact.value, fact.factSetId) }
       return when (query.queryMode) {
-         QueryMode.DISCOVER -> this.query().find(query.expression)
-         QueryMode.GATHER -> this.query().findAll(query.expression)
-         QueryMode.BUILD -> this.query().build(query.expression)
+         QueryMode.DISCOVER -> this.query(queryId = query.queryId).find(query.expression)
+         QueryMode.GATHER -> this.query(queryId = query.queryId).findAll(query.expression)
+         QueryMode.BUILD -> this.query(queryId = query.queryId).build(query.expression)
       }
    }
 }

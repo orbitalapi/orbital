@@ -273,6 +273,10 @@ export interface ValueWithTypeName {
    */
   value: TypedObjectAttributes;
   valueId: number;
+  /**
+   * Only populated when this value is returned from an active query
+   */
+  queryId: string | null;
 }
 
 export interface FailedSearchResponse {

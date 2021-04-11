@@ -11,6 +11,7 @@ import kotlinx.coroutines.runBlocking
 import lang.taxi.Compiler
 import org.junit.Before
 import org.junit.Test
+import java.util.*
 
 class QueryOperationInvocationStrategyTest {
    val schema = TaxiSchema.fromStrings(
@@ -126,7 +127,7 @@ class QueryOperationInvocationStrategyTest {
 fun getQuerySpecNode(taxiQl: String, schema: TaxiSchema): QuerySpecTypeNode {
    val (vyne, _) = testVyne(schema)
    val vyneQuery =  Compiler(source = taxiQl, importSources = listOf(schema.document)).queries().first()
-   val (_, expression) = vyne.buildContextAndExpression(vyneQuery)
+   val (_, expression) = vyne.buildContextAndExpression(vyneQuery, queryId = UUID.randomUUID().toString(), clientQueryId = null)
    val queryParser = QueryParser(schema)
    val querySpecNodes = queryParser.parse(expression)
    return querySpecNodes.first()

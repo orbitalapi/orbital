@@ -9,6 +9,7 @@ import com.hazelcast.instance.DefaultNodeContext
 import com.hazelcast.instance.HazelcastInstanceFactory
 import com.hazelcast.instance.Node
 import com.hazelcast.logging.Slf4jFactory
+import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.schemaStore.*
 import io.vyne.schemaStore.eureka.EurekaClientSchemaMetaPublisher
 import io.vyne.spring.invokers.*
@@ -29,6 +30,7 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.cloud.client.discovery.DiscoveryClient
@@ -62,10 +64,15 @@ class VyneAutoConfiguration {
    @Bean
    fun restTemplateOperationInvoker(schemaProvider: SchemaProvider,
                                     webClientBuilder: WebClient.Builder,
-                                    serviceUrlResolvers: List<ServiceUrlResolver>
+                                    serviceUrlResolvers: List<ServiceUrlResolver>,
+                                    activeQueryMonitor:ActiveQueryMonitor
    ): RestTemplateInvoker {
-      return RestTemplateInvoker(schemaProvider, webClientBuilder, serviceUrlResolvers)
+      return RestTemplateInvoker(schemaProvider, webClientBuilder, serviceUrlResolvers, activeQueryMonitor)
    }
+
+   @Bean
+   @ConditionalOnMissingBean(ActiveQueryMonitor::class)
+   fun backupActivityQueryMonitor() = ActiveQueryMonitor()
 
    @Bean
    fun serviceDiscoveryUrlResolver(discoveryClient: DiscoveryClient): ServiceDiscoveryClientUrlResolver {

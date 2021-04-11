@@ -15,7 +15,7 @@ import {isNullOrUndefined} from 'util';
                               [factTypeNames]="getFactTypeNames(historyRecord)"></app-restful-record>
         </div>
         <div *ngSwitchCase="'VyneQlQuery'">
-          <app-vyneql-record [historyRecord]="historyRecord">
+          <app-vyneql-record [taxiQlQuery]="historyRecord.taxiQl">
 
           </app-vyneql-record>
         </div>
@@ -38,7 +38,9 @@ import {isNullOrUndefined} from 'util';
 
       <div class="timestamp-row">
         <span>{{historyRecord.startTime | amTimeAgo}}</span>
-        <img src="assets/img/repeat.svg" class="repeatIcon" (click)="queryAgain()" *ngIf="recordType === 'VyneQlQuery'">
+        <button mat-icon-button (click)="queryAgain()" *ngIf="recordType === 'VyneQlQuery'">
+          <mat-icon>replay</mat-icon>
+        </button>
       </div>
     </div>
   `,

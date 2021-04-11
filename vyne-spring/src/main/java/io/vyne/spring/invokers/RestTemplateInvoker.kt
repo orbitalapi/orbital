@@ -6,13 +6,11 @@ import io.vyne.http.UriVariableProvider.Companion.buildRequestBody
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.models.UndefinedSource
-import io.vyne.query.OperationType
 import io.vyne.query.ProfilerOperation
 import io.vyne.query.RemoteCall
+import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.queryService.QueryMetaDataService
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
@@ -32,7 +30,6 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToFlux
 import org.springframework.web.util.DefaultUriBuilderFactory
 import reactor.core.publisher.Flux
-import reactor.core.scheduler.Schedulers
 import java.util.*
 
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
@@ -40,19 +37,22 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
    val webClient: WebClient,
-   private val serviceUrlResolvers: List<ServiceUrlResolver> =ServiceUrlResolver.DEFAULT
+   private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
+   private val activeQueryMonitor: ActiveQueryMonitor
 ) : OperationInvoker {
 
    @Autowired
    constructor(
       schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,
-      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(io.vyne.spring.invokers.ServiceDiscoveryClientUrlResolver())
+      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
+      activeQueryMonitor: ActiveQueryMonitor
    )
       : this(
       schemaProvider, webClientBuilder.exchangeStrategies(
          ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
-         ).build(), serviceUrlResolvers
+      ).build(), serviceUrlResolvers,
+      activeQueryMonitor
    )
 
    private val uriVariableProvider = UriVariableProvider()
@@ -88,7 +88,7 @@ class RestTemplateInvoker(
 
       val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
-         //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
+      //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
       val request = webClient
          .method(httpMethod)
          .uri(absoluteUrl, uriVariables)
@@ -144,7 +144,7 @@ class RestTemplateInvoker(
          return
       }
       if (headers.header(STREAM_ESTIMATED_RECORD_COUNT).isNotEmpty()) {
-         QueryMetaDataService.monitor.reportRecords(
+         activeQueryMonitor.incrementExpectedRecordCount(
             queryId,
             Integer.valueOf(headers.header(STREAM_ESTIMATED_RECORD_COUNT)[0])
          )
