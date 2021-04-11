@@ -197,18 +197,26 @@ class CaskDAO(
       return timed("${versionedType.versionedName}.findBy${columnName}.between") {
          if (FindBetweenInsertedAtOperationGenerator.fieldName == columnName) {
             doForAllTablesOfType(versionedType) { tableName ->
+               val query = betweenQueryForCaskInsertedAt(tableName, variant)
+               val start = castArgumentToJdbcType(PrimitiveType.INSTANT, start)
+               val end = castArgumentToJdbcType(PrimitiveType.INSTANT, end)
+               log().info("issuing query => $query with start => $start and end => $end")
                jdbcTemplate.queryForList(
-                  betweenQueryForCaskInsertedAt(tableName, variant),
-                  castArgumentToJdbcType(PrimitiveType.INSTANT, start),
-                  castArgumentToJdbcType(PrimitiveType.INSTANT, end))
+                  query,
+                  start,
+                  end)
             }
          } else {
             val field = fieldForColumnName(versionedType, columnName)
             doForAllTablesOfType(versionedType) { tableName ->
+               val query = betweenQueryForField(tableName, columnName, variant)
+               val start = castArgumentToJdbcType(field, start)
+               val end = castArgumentToJdbcType(field, end)
+               log().info("issuing query => $query with start => $start and end => $end")
                jdbcTemplate.queryForList(
-                  betweenQueryForField(tableName, columnName, variant),
-                  castArgumentToJdbcType(field, start),
-                  castArgumentToJdbcType(field, end))
+                  query,
+                  start,
+                  end)
             }
          }
       }

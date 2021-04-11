@@ -20,3 +20,11 @@ fun CaskConfig.schema(importSchema:Schema? = null):TaxiSchema {
    }
    return TaxiSchema.from(sources, imports)
 }
+
+fun CaskConfig.schema(import: TaxiSchema): TaxiSchema {
+   val sources = this.sourceSchemaIds.mapIndexed { index, schemaId ->
+      val schemaSource = this.sources[index]
+      VersionedSource.forIdAndContent(schemaId,schemaSource)
+   }
+   return TaxiSchema.from(sources, listOf(import))
+}
