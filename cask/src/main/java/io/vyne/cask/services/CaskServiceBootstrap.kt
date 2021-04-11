@@ -6,6 +6,7 @@ import io.vyne.cask.config.schema
 import io.vyne.cask.ddl.views.CaskViewService
 import io.vyne.cask.ingest.IngestionEventHandler
 import io.vyne.cask.ingest.IngestionInitialisedEvent
+import io.vyne.cask.services.CaskServiceSchemaGenerator.Companion.CaskNamespacePrefix
 import io.vyne.cask.upgrade.CaskSchemaChangeDetector
 import io.vyne.cask.upgrade.CaskUpgradesRequiredEvent
 import io.vyne.schemaStore.ControlSchemaPollEvent
@@ -14,6 +15,7 @@ import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.schemas.VersionedType
 import io.vyne.schemas.fqn
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.log
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
@@ -115,7 +117,7 @@ class CaskServiceBootstrap constructor(
       }
    }
 
-   private fun findTypesToRegister(caskConfigs: List<CaskConfig>): List<CaskTaxiPublicationRequest> {
+   internal fun findTypesToRegister(caskConfigs: List<CaskConfig>): List<CaskTaxiPublicationRequest> {
       if (caskConfigs.isEmpty()) {
          return emptyList()
       }
@@ -124,7 +126,38 @@ class CaskServiceBootstrap constructor(
       val caskPublicationRequests = caskConfigs.map { caskConfig ->
          try {
             if (caskConfig.exposesType) {
-               val caskSchema = caskConfig.schema(importSchema = schema)
+               // This is to handle the update on a taxi based view.
+               // let say we have the following view definition:
+               //  view OrderView with query {
+               //    find {Order[]} as {
+               //      orderId: String
+               //     }
+               //   }
+               // }
+               //
+               // This view definition triggers cask to create the corresponding Cask config and to publish the following model:
+               //  model OrderView {
+               //     orderId: String
+               //  }
+               //
+               // When the OrderView definition is updated as:
+               //
+               //  view OrderView with query {
+               //    find {Order[]} as {
+               //       orderId: String
+               //       orderEntry: String
+               //     }
+               //   }
+               // }
+               //
+               // We need to regenerate 'model OrderView' according to the 'view OrderView' update
+               // so below filtering removes all 'generated models / views' from the schema so that
+               // most up-to-date OrderView will be published.
+               //
+               val sourcesWithout =  this.schemaProvider
+                  .sources()
+                  .filterNot { source -> source.name.startsWith("${CaskNamespacePrefix}${caskConfig.qualifiedTypeName}") }
+               val caskSchema = caskConfig.schema(TaxiSchema.from(sourcesWithout))
                val type = caskSchema.versionedType(caskConfig.qualifiedTypeName.fqn())
                CaskTaxiPublicationRequest(
                   type,
