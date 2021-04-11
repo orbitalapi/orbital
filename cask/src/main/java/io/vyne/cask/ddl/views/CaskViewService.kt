@@ -65,8 +65,6 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
          log().info("Generating cask config for view $typeName")
          val caskConfig = caskConfigGenerator()
          return caskConfigRepository.save(caskConfig)
-         log().info("Cask Config for view $typeName created successfully")
-         return null
       } catch (e: Exception) {
          log().error("Error in generating view", e)
          return null
