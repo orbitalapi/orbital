@@ -28,6 +28,7 @@ import {ActiveQueriesNotificationService, RunningQueryStatus} from '../../servic
 import {TypesService} from '../../services/types.service';
 import ITextModel = editor.ITextModel;
 import ICodeEditor = editor.ICodeEditor;
+import {ReplaySubject} from 'rxjs/index';
 
 declare const monaco: any; // monaco
 
@@ -154,7 +155,9 @@ export class QueryEditorComponent implements OnInit {
     this.loadingChanged.emit(true);
     this.queryClientId = randomId();
     this.resultType = null;
-    this.results$ = new Subject();
+    // Use a replay subject here, so that when people switch
+    // between Query Results and Profiler tabs, the results are still made available
+    this.results$ = new ReplaySubject(5000);
     this.latestQueryStatus = null;
     this.queryMetadata$ = null;
 
