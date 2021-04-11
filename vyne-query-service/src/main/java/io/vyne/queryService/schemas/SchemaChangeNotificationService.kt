@@ -2,11 +2,11 @@ package io.vyne.queryService.schemas
 
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.springframework.context.event.EventListener
 import org.springframework.http.MediaType
 import org.springframework.scheduling.annotation.EnableScheduling
@@ -38,10 +38,8 @@ class SchemaChangeNotificationService(
       ))
    }
 
-   fun notifySchemaUpdatedNotification(notification:SchemaUpdatedNotification) = runBlocking { // this: CoroutineScope
-      launch { // launch a new coroutine in the scope of runBlocking
+   fun notifySchemaUpdatedNotification(notification:SchemaUpdatedNotification) = GlobalScope.launch { // this: CoroutineScope
          _schemaUpdatedNotificationEvents.emit(notification)
-      }
    }
 }
 

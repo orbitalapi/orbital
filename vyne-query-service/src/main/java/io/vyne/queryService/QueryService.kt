@@ -20,7 +20,6 @@ import io.vyne.utils.log
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import lang.taxi.types.TaxiQLQueryString
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType

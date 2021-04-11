@@ -443,18 +443,18 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
 
       val results = when(context.projectResultsTo) {
-         null -> runBlocking { resultsFlow }
-         else -> runBlocking {
-            resultsFlow.map() {
+         null -> resultsFlow
+         else ->
+            resultsFlow.map {
                GlobalScope.async {
                   val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                  val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)!!
+                  val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)
                   buildResult.results.first()
                }
             }
                .buffer(32)
                .map { it.await() }
-         }
+
       }
 
       return QueryResult(
