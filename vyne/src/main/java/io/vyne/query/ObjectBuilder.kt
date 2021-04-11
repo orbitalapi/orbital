@@ -7,8 +7,6 @@ import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 import lang.taxi.types.ObjectType
 
 class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
@@ -81,7 +79,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
 
       return if (targetType.isScalar) {
-         runBlocking { findScalarInstance(targetType, spec)?.firstOrNull() }
+         findScalarInstance(targetType, spec)?.firstOrNull()
       } else {
          buildObjectInstance(targetType, spec)
       }
@@ -171,7 +169,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          context.schema,
          source = MixedSources
       ).buildAsync {
-         runBlocking {  forSourceValues(sourcedByAttributes, it, targetType) }
+         forSourceValues(sourcedByAttributes, it, targetType)
       }
 
       return factory
@@ -233,7 +231,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       return null
    }
 
-   private fun findScalarInstance(targetType: Type, spec: TypedInstanceValidPredicate): Flow<TypedInstance>? = runBlocking {
+   private suspend fun findScalarInstance(targetType: Type, spec: TypedInstanceValidPredicate): Flow<TypedInstance>? {
       // Try searching for it.
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {
@@ -243,9 +241,11 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          null
       }
       //return if (result?.isFullyResolved) {
-         result?.results ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
+          return result?.results ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
       //} else {
       //   null
       //}
    }
+
+
 }

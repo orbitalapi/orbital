@@ -179,13 +179,13 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
 //      val operationName = link.start
 //      val (service, operation) = context.schema.operation(operationName)
 //
-//      val result: Flow<TypedInstance> = runBlocking { invocationService.invokeOperation(service, operation, setOf(startingPoint), context) }
+//      val result: Flow<TypedInstance> =  invocationService.invokeOperation(service, operation, setOf(startingPoint), context)
 //
 //      var linkResult: TypedInstance
-//      runBlocking {
-//         result.collect { r -> context.addFact(r) }
-//         linkResult = result.first()
-//      }
+//
+//      result.collect { r -> context.addFact(r) }
+//      linkResult = result.first()
+//
 //      return EvaluatedLink(link, startingPoint, linkResult)
    }
 }

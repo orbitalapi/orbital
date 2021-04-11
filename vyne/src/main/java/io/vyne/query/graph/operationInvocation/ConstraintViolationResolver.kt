@@ -3,6 +3,7 @@ package io.vyne.query.graph.operationInvocation
 import io.vyne.models.TypedInstance
 import io.vyne.query.QueryContext
 import io.vyne.schemas.*
+import io.vyne.utils.log
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -57,6 +58,7 @@ class ConstraintViolationResolver {
             val invocationContext = findServiceToResolveConstraint(param, failedEvaluation, services)
                ?: throw UnresolvedOperationParametersException("Param ${param.type.fullyQualifiedName} failed an evaluation $failedEvaluation, but no resolution strategy was found", queryContext.evaluatedPath(), queryContext.profiler.root)
 
+            log().warn("A blocking call is being made - ConstraintViolationResolver.resolveViolations")
             val operationResult = runBlocking {operationEvaluator.invokeOperation(invocationContext.service, invocationContext.operation, invocationContext.discoveredParams.toSet(), queryContext).first() }
 
             failedEvaluation.violation!!.resolveWithUpdatedValue(operationResult)

@@ -29,6 +29,7 @@ class PolicyStatementEvaluator(private val evaluators: List<ConditionalPolicySta
          .asSequence()
          .map {
 
+            log().warn("A blocking call is being made - policystatementevaluators.evaluate")
             val result = runBlocking { evaluate(it, instance, context) }
             if (result != null) {
                log().debug("Policy statement \"${it.source.source.content}\" matched with instruction ${result.toString()}")
@@ -99,6 +100,7 @@ class CaseConditionEvaluator : ConditionalPolicyStatementEvaluator {
          RelativeSubject.RelativeSubjectSource.THIS -> context.queryEngine.queryContext(setOf(FactSets.NONE), additionalFacts = setOf(instance))
       }
 
+      log().warn("A blocking call is being made policystatementevaluations resolve")
       val result = runBlocking { contextToUse.find(TypeNameQueryExpression(subject.targetType.qualifiedName)) }
       if (result.isFullyResolved) {
          return result.results!!
