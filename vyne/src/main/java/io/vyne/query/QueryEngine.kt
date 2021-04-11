@@ -447,7 +447,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          else -> runBlocking {
             resultsFlow.map() {
                GlobalScope.async {
-                  println("Converting a result now at ${DateTimeFormatter.ISO_INSTANT.format(Instant.now())}")
                   val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
                   val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)!!
                   buildResult.results.first()
