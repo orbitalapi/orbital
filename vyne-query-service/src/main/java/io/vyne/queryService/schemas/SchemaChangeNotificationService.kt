@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.queryService.WebSocketController
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
@@ -37,11 +39,10 @@ class SchemaChangeNotificationService(private val mapper: ObjectMapper) : WebSoc
       )
    }
 
-   fun notifySchemaUpdatedNotification(notification: SchemaUpdatedNotification) = runBlocking { // this: CoroutineScope
-      launch { // launch a new coroutine in the scope of runBlocking
+   fun notifySchemaUpdatedNotification(notification: SchemaUpdatedNotification) =
+      GlobalScope.launch { // this: CoroutineScope
          schemaUpdatedEventSink.emit(notification)
       }
-   }
 
    override val paths: List<String> = listOf("/api/schema/updates")
    override fun handle(session: WebSocketSession): Mono<Void> {

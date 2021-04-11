@@ -72,7 +72,7 @@ class QueryService(
    @PostMapping(
       "/api/query",
       consumes = [MediaType.APPLICATION_JSON_VALUE],
-      produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV]
+      produces = [MediaType.APPLICATION_JSON_VALUE]
    )
    suspend fun submitQuery(
       @RequestBody query: Query,
@@ -117,7 +117,8 @@ class QueryService(
       contentType: String
    ): Flow<Any> {
       return when (contentType) {
-         TEXT_CSV -> toCsv(queryResult.results /*, vyneProvider.createVyne().schema */)
+         TEXT_CSV -> toCsv(queryResult.results )
+
          // Default everything else to JSON
          else -> {
             val serializer = resultMode.buildSerializer(queryResult)
@@ -170,11 +171,27 @@ class QueryService(
       return block.invoke()
    }
 
-
-   @PostMapping(
-      "/api/vyneql",
+   @PostMapping("/api/vyneql",
       consumes = [MediaType.APPLICATION_JSON_VALUE],
-      produces = [MediaType.APPLICATION_JSON_VALUE, TEXT_CSV]
+      produces = [TEXT_CSV]
+   )
+   suspend fun submitVyneQlQueryCSV(
+      @RequestBody query: TaxiQLQueryString,
+      @RequestHeader(value = "Accept", defaultValue = MediaType.APPLICATION_JSON_VALUE) contentType: String,
+      @RequestParam("clientQueryId", required = false) clientQueryId: String? = null,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode = ResultMode.RAW,
+      auth: Authentication? = null,
+   ):ResponseEntity<Flow<String>> {
+
+      val user = auth?.toVyneUser()
+      val response = vyneQLQuery(query, user, clientQueryId = clientQueryId, queryId = UUID.randomUUID().toString())
+      return queryResultToResponseEntity(response, resultMode, contentType) as ResponseEntity<Flow<String>>
+
+   }
+
+   @PostMapping("/api/vyneql",
+      consumes = [MediaType.APPLICATION_JSON_VALUE],
+      produces = [MediaType.APPLICATION_JSON_VALUE]
    )
    suspend fun submitVyneQlQuery(
       @RequestBody query: TaxiQLQueryString,
@@ -269,6 +286,8 @@ class QueryService(
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
+      // Merge conflict - why was this just returning response, with the history stuff
+      // commented out?
       QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
          .responseWithQueryHistoryListener(query, response)
    }

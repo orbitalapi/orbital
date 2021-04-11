@@ -42,7 +42,7 @@ class VyneFactory(
    override fun createVyne(facts: Set<Fact>) = buildVyne(facts)
 
    private fun buildVyne(facts: Set<Fact> = emptySet()): Vyne {
-      val vyne = Vyne(QueryEngineFactory.withOperationInvokers(vyneCacheConfiguration, operationInvokers)) // .map { CacheAwareOperationInvocationDecorator(it) }
+      val vyne = Vyne(QueryEngineFactory.withOperationInvokers(vyneCacheConfiguration, operationInvokers.map { CacheAwareOperationInvocationDecorator(it) }))
       val schema = schemaProvider.schema()
       vyne.addSchema(schemaProvider.schema())
       facts.forEach { fact ->

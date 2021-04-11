@@ -31,7 +31,6 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       context: QueryContext,
       providedParamValues: List<Pair<Parameter, TypedInstance>>
    ): Flow<TypedInstance> {
-
       val invoker = invokers.firstOrNull { it.canSupport(service, operation) }
          ?: throw IllegalArgumentException("No invokers found for Operation ${operation.name}")
 
@@ -120,6 +119,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
    override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
 
+
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
       val (service, operation) = context.schema.operation(operationName)
 
@@ -145,10 +145,8 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
          }
       }
 
-
       val callArgs = parameterValues.toSet()
       if (context.hasOperationResult(edge, callArgs as Set<TypedInstance>)) {
-
          val cachedResult = context.getOperationResult(edge, callArgs)
          cachedResult?.let { context.addFact(it) }
          return  edge.success(cachedResult)
@@ -181,13 +179,13 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
 //      val operationName = link.start
 //      val (service, operation) = context.schema.operation(operationName)
 //
-//      val result: Flow<TypedInstance> = runBlocking { invocationService.invokeOperation(service, operation, setOf(startingPoint), context) }
+//      val result: Flow<TypedInstance> =  invocationService.invokeOperation(service, operation, setOf(startingPoint), context)
 //
 //      var linkResult: TypedInstance
-//      runBlocking {
-//         result.collect { r -> context.addFact(r) }
-//         linkResult = result.first()
-//      }
+//
+//      result.collect { r -> context.addFact(r) }
+//      linkResult = result.first()
+//
 //      return EvaluatedLink(link, startingPoint, linkResult)
    }
 }

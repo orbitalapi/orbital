@@ -147,8 +147,7 @@ namespace vyne {
          .invoke(
             service, operation, listOf(
                paramAndType("vyne.ClientName", "notional", schema)
-            ), QueryProfiler()
-         ,"MOCK_QUERY_ID") as TypedObject
+            ), QueryProfiler(),"MOCK_QUERY_ID") as TypedObject
       expect(response.type.fullyQualifiedName).to.equal("vyne.Client")
       expect(response["name"].value).to.equal("Notional")
       expect((response["contacts"] as TypedCollection)).size.to.equal(2)
@@ -226,7 +225,7 @@ namespace vyne {
             paramAndType("vyne.ClientId", "myClientId", schema),
             paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
          ), QueryProfiler()
-      ,"MOCK_QUERY_ID") as TypedObject
+      ) as TypedObject
       expect(response.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
       expect(response["stuff"].value).to.equal("Right back atcha, kid")
    }

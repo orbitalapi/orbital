@@ -10,11 +10,8 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
 import io.vyne.schemas.*
 import io.vyne.utils.log
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import lang.taxi.Equality
-import java.util.*
-import kotlin.collections.LinkedHashMap
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
@@ -115,21 +112,15 @@ class HipsterDiscoverGraphQueryStrategy(
                return@mapNotNull null
             }
             val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema), invocationConstraints)
-
             val searchResult = searcher.search(
                currentFacts,
                context.excludedServices.toSet(),
-               invocationConstraints.excludedOperations
-                  .plus(context.excludedOperations
-                     .map { SearchGraphExclusion("@Id", it) })) { pathToEvaluate ->
-                evaluatePath(pathToEvaluate,context)
+               invocationConstraints.excludedOperations.plus(context.excludedOperations.map { SearchGraphExclusion("@Id", it) })) { pathToEvaluate ->
+               evaluatePath(pathToEvaluate,context)
             }
-
-
             if (searchPathExclusionsCacheSize > 0 && searchResult.path == null) {
                searchPathExclusions[exclusionKey] = exclusionKey
             }
-
             searchResult.typedInstance
          }
          .firstOrNull()
@@ -161,10 +152,8 @@ class HipsterDiscoverGraphQueryStrategy(
             val lastResult = evaluatedEdges[index]
             val endNode = weightedNode.state()
             val evaluatableEdge = EvaluatableEdge(lastResult, weightedNode.action(), endNode)
-
-            val uniq = UUID.randomUUID().toString()
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
-               log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried ${uniq}")
+               log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried")
             }
 
             val evaluationResult =

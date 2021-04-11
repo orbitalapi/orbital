@@ -1,5 +1,6 @@
 package io.vyne.spring
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.hazelcast.config.Config
 import com.hazelcast.config.DiscoveryStrategyConfig
 import com.hazelcast.core.Hazelcast

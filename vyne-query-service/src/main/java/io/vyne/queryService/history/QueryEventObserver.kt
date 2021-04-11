@@ -7,8 +7,10 @@ import io.vyne.query.QueryResult
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.FailedSearchResponse
 import io.vyne.schemas.Type
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onErrorResume
 import lang.taxi.types.TaxiQLQueryString
 import java.time.Instant
 
@@ -76,6 +78,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
    ): QueryResult {
       return queryResult.copy(
          results = queryResult.results
+
             .onEach { typedInstance ->
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
                consumer.handleEvent(
@@ -87,7 +90,10 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                      queryResult.anonymousTypes
                   )
                )
+            }.catch {
+
             }
+
             .onCompletion { error ->
                if (error == null) {
                   consumer.handleEvent(

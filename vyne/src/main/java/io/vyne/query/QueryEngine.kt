@@ -15,7 +15,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.time.Instant
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.Executors
 import java.util.stream.Collectors
 
 
@@ -109,7 +108,7 @@ class StatefulQueryEngine(
       clientQueryId: String?
    ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
-      return QueryContext.from(schema, facts + additionalFacts, this, profiler, queryId = queryId, clientQueryId = clientQueryId)
+      return QueryContext.from(schema, facts + additionalFacts, this, profiler, queryId = queryId)
    }
 
 }
@@ -195,8 +194,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             emptySet(),
             profilerOperation = context.profiler.root,
             anonymousTypes = context.schema.typeCache.anonymousTypes(),
-            queryId = context.queryId,
-            clientQueryId = context.clientQueryId
+            queryId = context.queryId
          )
       } else {
          QueryResult(
@@ -323,8 +321,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return find(target, context, spec)
    }
 
-   override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult = runBlocking{
-      find(TypeNameQueryExpression(type.fullyQualifiedName), context, spec)
+   override suspend fun find(type: Type, context: QueryContext, spec: TypedInstanceValidPredicate): QueryResult {
+      return find(TypeNameQueryExpression(type.fullyQualifiedName), context, spec)
    }
 
    override suspend fun find(
@@ -386,23 +384,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          path = null,
          profilerOperation = queryResult.profilerOperation,
          anonymousTypes = queryResult.anonymousTypes,
-         queryId = context.queryId,
-         clientQueryId = context.clientQueryId
+         queryId = context.queryId
       )
 
-   }
-
-   val dispatcher = Executors.newFixedThreadPool(64).asCoroutineDispatcher()
-
-   suspend fun doSomethingUsefulOne(typedInstance: TypedInstance) = GlobalScope.async(dispatcher) {
-
-      //         val actualProjectedType = pto?.collectionType ?: pto
-      //         val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)!!
-      //         buildResult.results.first()
-
-      delay(5000L) // pretend we are doing something useful here
-      println("doSomethingUsefulOne on ${Thread.currentThread().name}")
-      typedInstance
    }
 
    private fun doFind(
@@ -457,35 +441,28 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // Without it, there's a stack overflow error as projectTo seems to call ObjectBuilder.build which calls projectTo again.
       // ... Investigate
 
+
       val results = when(context.projectResultsTo) {
-         null -> runBlocking { resultsFlow.toList() }
-         else -> runBlocking {
-            resultsFlow
-               .map {
-
-                  GlobalScope.async(dispatcher) {
-                     println("Converting a result now at ${DateTimeFormatter.ISO_INSTANT.format(Instant.now())}")
-                     val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                     val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)!!
-                     buildResult.results.first()
-                  }
+         null -> resultsFlow
+         else ->
+            resultsFlow.map {
+               GlobalScope.async {
+                  val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
+                  val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)
+                  buildResult.results.first()
                }
-               .toList()
-               .awaitAll()
-         }
-      }
+            }
+               .buffer(32)
+               .map { it.await() }
 
-      if (context.projectResultsTo != null) {
-         println("Size of results ${results}")
       }
-
 
       return QueryResult(
          when (context.projectResultsTo) {
             null -> target
             else -> QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
          },
-         results.asFlow(),
+         results,
          emptySet(),
          path = null,
          profilerOperation = context.profiler.root,

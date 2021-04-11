@@ -11,7 +11,6 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import lang.taxi.policies.OperationScope
 
 class PolicyAwareOperationInvocationServiceDecorator(private val operationService: OperationInvocationService, private val evaluator: PolicyEvaluator = PolicyEvaluator()) : OperationInvocationService {

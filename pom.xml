@@ -55,8 +55,8 @@
       <module>pipelines</module>
       <module>cask-api</module>
       <module>test-cli</module>
-      <module>jwt-auth-server</module>
-       <module>test-containers</module>
+      <!--<module>jwt-auth-server</module> -->
+      <module>test-containers</module>
    </modules>
 
    <scm>

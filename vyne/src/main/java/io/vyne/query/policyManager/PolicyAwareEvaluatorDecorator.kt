@@ -5,7 +5,6 @@ import io.vyne.query.graph.EdgeEvaluator
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.schemas.Relationship
-import kotlinx.coroutines.flow.Flow
 
 class PolicyAwareEvaluatorDecorator(private val evaluator: EdgeEvaluator) : EdgeEvaluator {
    override val relationship: Relationship = evaluator.relationship
