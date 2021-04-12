@@ -15,13 +15,14 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.runBlocking
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
 
 class CacheAwareOperationInvocationDecoratorTest {
 
    @Test
-   fun testKeyGenerator() {
+   fun testKeyGenerator() = runBlocking {
       val mockOperationInvoker = mock<OperationInvoker>()
       val mockProfilerOperation = mock<ProfilerOperation>()
       val cacheAware = CacheAwareOperationInvocationDecorator(mockOperationInvoker)

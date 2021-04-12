@@ -4,6 +4,7 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
+import io.vyne.queryService.QueryResultSerializer
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.schemas.fqn
@@ -23,8 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger
 
 
 fun toCsv(results: Flow<TypeNamedInstance>, schema: Schema): Flow<CharSequence> {
-
-
 
    fun toCharSequence(values: Set<Any?>): CharSequence {
       val charWriter = CharArrayWriter()
@@ -54,38 +53,9 @@ fun toCsv(results: Flow<TypeNamedInstance>, schema: Schema): Flow<CharSequence> 
       }
 }
 
-@FlowPreview
-fun toCsv(results: Flow<TypedInstance>): Flow<CharSequence> {
+fun toCsv(results: Flow<TypedInstance>, queryResultSerializer: QueryResultSerializer): Flow<CharSequence> {
 
-   val writer = StringBuilder()
-   runBlocking {
-
-      val res = results.toList()
-      val printer = CSVPrinter(writer, CSVFormat.DEFAULT.withFirstRecordAsHeader())
-
-      printer.printRecord(res.get(0).type.attributes.keys)
-
-      res.forEach {
-
-            when (it) {
-               is TypedObject -> {
-                  try {
-                     printer.printRecord(it.type.attributes.keys.map { fieldName -> it[fieldName].value })
-                  } catch (exception:Exception) {
-                    println("Error writing to CSV ${exception.message}")
-                  }
-               }
-               else -> println("writeCsvRecord is not supported for typedInstance of type ${it::class.simpleName}")
-            }
-      }
-
-   }
-
-   return writer.toString().lines().asFlow().map { "$it\n" }
-
-   /*
    val indexTracker = AtomicInteger(0)
-
    val writer = StringBuilder()
    val printer = CSVPrinter(writer, CSVFormat.DEFAULT.withFirstRecordAsHeader())
 
@@ -99,16 +69,31 @@ fun toCsv(results: Flow<TypedInstance>): Flow<CharSequence> {
             when (indexTracker.incrementAndGet()) {
                1 -> {
 
-                  printer.printRecord(it.type!!.attributes.keys)
-                  printer.printRecord(it.type.attributes.keys.map { fieldName -> (it as TypedObject)[fieldName].value })
-                  val csvRecord = writer.toString()
-                  writer.clear()
-                  csvRecord
+                  when (it) {
+                     is TypedObject -> {
+                        printer.printRecord(it.type!!.attributes.keys)
+                        //printer.printRecord(it.type.attributes.keys.map { fieldName -> (it as TypedObject)[fieldName].value })
+
+                        printer.printRecord((queryResultSerializer.serialize(it) as LinkedHashMap<*, *>).map { e -> e.value})
+                        val csvRecord = writer.toString()
+                        writer.clear()
+                        csvRecord
+                     }
+                     else -> TODO("writeCsvRecord is not supported for typedInstance of type ${it::class.simpleName}")
+                  }
+
                }
                else -> {
                   when (it) {
                      is TypedObject -> {
-                        printer.printRecord(typedInstance.type.attributes.keys.map { fieldName -> it [fieldName].value })
+                        println("-----------")
+                        println("Coverted -- ${queryResultSerializer.serialize(it)}")
+                        println("a hasmap = ")
+                        println((queryResultSerializer.serialize(it) as LinkedHashMap<*,*>))
+                        println("-----------")
+
+                        printer.printRecord( (queryResultSerializer.serialize(it) as LinkedHashMap<*,*>).map { e -> e.value})
+                        //printer.printRecord( typedInstance.type.attributes.keys.map { fieldName -> it [fieldName].value } )
                         val csvRecord = writer.toString()
                         writer.clear()
                         csvRecord
@@ -118,7 +103,27 @@ fun toCsv(results: Flow<TypedInstance>): Flow<CharSequence> {
                }
             }
          }
-   }*/
+   }
 
 }
 
+/*
+.flatMapMerge { typedInstance ->
+   // This is a smell.
+   // I've noticed that when projecting, in this point of the code
+   // we get individual typed instances.
+   // However, if we're not projecting, we get a single
+   // typed collection.
+   // This meas that the shape of the response (array vs single)
+   // varies based on the query, which is incorrect.
+   // Therefore, unwrap collections here.
+   // This smells, because it could be indicative of a problem
+   // higher in the stack.
+   if (typedInstance is TypedCollection) {
+      typedInstance.map { serializer.serialize(it) }
+   } else {
+      listOf(serializer.serialize(typedInstance))
+   }.filterNotNull()
+      .asFlow()
+      *
+ */

@@ -116,12 +116,11 @@ class QueryService(
       resultMode: ResultMode,
       contentType: String
    ): Flow<Any> {
+      val serializer = resultMode.buildSerializer(queryResult)
       return when (contentType) {
-         TEXT_CSV -> toCsv(queryResult.results )
-
+         TEXT_CSV -> toCsv(queryResult.results, serializer)
          // Default everything else to JSON
          else -> {
-            val serializer = resultMode.buildSerializer(queryResult)
             queryResult.results
                .flatMapMerge { typedInstance ->
                   // This is a smell.
@@ -288,8 +287,9 @@ class QueryService(
 
       // Merge conflict - why was this just returning response, with the history stuff
       // commented out?
-      QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
-         .responseWithQueryHistoryListener(query, response)
+      response
+      //QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
+      //   .responseWithQueryHistoryListener(query, response)
    }
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
@@ -314,8 +314,10 @@ class QueryService(
          FailedSearchResponse(e.message!!, e.profilerOperation, query.queryId)
       }
 
-      return QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
-         .responseWithQueryHistoryListener(query, response)
+      return response
+
+      //return QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
+      //   .responseWithQueryHistoryListener(query, response)
    }
 
    private fun parseFacts(facts: List<Fact>, schema: Schema): List<Pair<TypedInstance, FactSetId>> {
