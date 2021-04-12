@@ -68,7 +68,7 @@ class StubService(
 
    val invocations = mutableMapOf<String, List<TypedInstance>>()
 
-   override fun invoke(
+   override suspend fun invoke(
       service: Service,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,

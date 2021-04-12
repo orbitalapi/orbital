@@ -18,6 +18,7 @@ import org.http4k.asByteBuffer
 import java.io.CharArrayWriter
 import java.io.File
 import java.io.StringWriter
+import java.lang.StringBuilder
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -53,76 +54,17 @@ fun toCsv(results: Flow<TypeNamedInstance>, schema: Schema): Flow<CharSequence> 
       }
 }
 
-/*
-fun toCsv(results: Map<String, Any?>, schema: Schema): ByteArray {
-   val writer = StringWriter()
-   val printer = CSVPrinter(writer, CSVFormat.DEFAULT.withFirstRecordAsHeader())
-   results.keys.forEach { key ->
-      val rowType = getRowType(key,schema)
-      when (results[key]) {
-         is List<*> -> {
-            val listOfObj = results[key]  as List<*>
-
-            if(listOfObj.isNotEmpty()){
-               when(listOfObj[0]) {
-                  is TypeNamedInstance -> {
-                     val rows = results[key]  as List<TypeNamedInstance>
-                     printer.printRecord(rowType.attributes.keys)
-                     rows.forEach { row ->
-                        val attributes = row.value as Map<String,TypeNamedInstance?>
-                        printer.printRecord( rowType.attributes.keys.map { fieldName -> attributes[fieldName]?.value } )
-                     }
-                  }
-                  is Map<*, *> -> {
-                     val rows = results[key]  as List<Map<String,Any>>
-                     printer.printRecord(rowType.attributes.keys)
-                     rows.forEach { fields ->
-                        printer.printRecord( rowType.attributes.keys.map { fieldName -> fields[fieldName] } )
-                     }
-                  }
-               }
-            }
-         }
-         is Map<*, *> -> {
-            val singleObj = results[key] as Map<*, *>
-            printer.printRecord(singleObj.keys)
-            printer.printRecord(singleObj.values)
-         }
-      }
-   }
-   return writer.toString().toByteArray()
-}
-
-fun getRowType(key: String, schema: Schema): Type {
-   val typeName = key.fqn()
-   val rowTypeName = if (typeName.fullyQualifiedName == ArrayType.NAME) {
-      if (typeName.parameters.size == 1) {
-         typeName.parameters.first()
-      } else {
-         TODO("Exporting untyped Arrays is not yet supported")
-      }
-   } else {
-      typeName
-   }
-
-   return schema.type(rowTypeName)
-}
-*/
-
-
-
 @FlowPreview
 fun toCsv(results: Flow<TypedInstance>): Flow<CharSequence> {
 
-   val writer = StringWriter()
-
+   val writer = StringBuilder()
    runBlocking {
+
       val res = results.toList()
-
-
       val printer = CSVPrinter(writer, CSVFormat.DEFAULT.withFirstRecordAsHeader())
 
       printer.printRecord(res.get(0).type.attributes.keys)
+
       res.forEach {
 
             when (it) {
@@ -130,28 +72,22 @@ fun toCsv(results: Flow<TypedInstance>): Flow<CharSequence> {
                   try {
                      printer.printRecord(it.type.attributes.keys.map { fieldName -> it[fieldName].value })
                   } catch (exception:Exception) {
-                     println("Error writing to CSV ${exception.message}")
+                    println("Error writing to CSV ${exception.message}")
                   }
                }
                else -> println("writeCsvRecord is not supported for typedInstance of type ${it::class.simpleName}")
             }
       }
 
-
-
    }
 
    return writer.toString().lines().asFlow().map { "$it\n" }
-/*
-   val indexTrcker = AtomicInteger(0)
 
-   val charWriter = CharArrayWriter()
-   val printer = CSVPrinter(charWriter, CSVFormat.DEFAULT)
+   /*
+   val indexTracker = AtomicInteger(0)
 
-   fun toCharSequence(typedInstance: Set<Any?>): CharSequence {
-      printer.printRecord(typedInstance)
-      return ""
-   }
+   val writer = StringBuilder()
+   val printer = CSVPrinter(writer, CSVFormat.DEFAULT.withFirstRecordAsHeader())
 
    return results.flatMapConcat { typedInstance ->
       when (typedInstance) {
@@ -159,30 +95,30 @@ fun toCsv(results: Flow<TypedInstance>): Flow<CharSequence> {
          is TypedCollection -> typedInstance.value.asFlow()
          else -> TODO("Csv support for TypedInstance of type ${typedInstance::class.simpleName} not yet supported")
       }
-         .withIndex()
-         .flatMapConcat {
-            when (indexTrcker.incrementAndGet()) {
+         .map {
+            when (indexTracker.incrementAndGet()) {
                1 -> {
 
-                  flowOf(
-                     toCharSequence(it.value.type!!.attributes.keys),
-                     toCharSequence(it.value.type.attributes.keys.map { fieldName -> (it.value as TypedObject)[fieldName].value }
-                        .toSet())
-                  )
+                  printer.printRecord(it.type!!.attributes.keys)
+                  printer.printRecord(it.type.attributes.keys.map { fieldName -> (it as TypedObject)[fieldName].value })
+                  val csvRecord = writer.toString()
+                  writer.clear()
+                  csvRecord
                }
                else -> {
-                  when (it.value) {
+                  when (it) {
                      is TypedObject -> {
-                        flowOf(toCharSequence(typedInstance.type.attributes.keys.map { fieldName -> (it.value as TypedObject)[fieldName].value }
-                           .toSet()))
+                        printer.printRecord(typedInstance.type.attributes.keys.map { fieldName -> it [fieldName].value })
+                        val csvRecord = writer.toString()
+                        writer.clear()
+                        csvRecord
                      }
-                     else -> TODO("writeCsvRecord is not supported for typedInstance of type ${it.value::class.simpleName}")
+                     else -> TODO("writeCsvRecord is not supported for typedInstance of type ${it::class.simpleName}")
                   }
                }
             }
          }
-   }
+   }*/
 
- */
 }
 

@@ -6,9 +6,14 @@ import io.vyne.query.*
 import io.vyne.query.graph.*
 import io.vyne.schemas.*
 import io.vyne.utils.log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.withContext
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
+import java.util.concurrent.Executors
 
 /**
  * The parent to OperationInvokers
@@ -20,7 +25,7 @@ interface OperationInvocationService {
 interface OperationInvoker {
    fun canSupport(service: Service, operation: RemoteOperation): Boolean
 
-   fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String? = null): Flow<TypedInstance>
+   suspend fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String? = null): Flow<TypedInstance>
 }
 
 class DefaultOperationInvocationService(private val invokers: List<OperationInvoker>, private val constraintViolationResolver: ConstraintViolationResolver = ConstraintViolationResolver()) : OperationInvocationService {
@@ -115,9 +120,15 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
    }
 }
 
+val dispatcher = Executors.newFixedThreadPool(32).asCoroutineDispatcher()
+
+val numberOfCores = Runtime.getRuntime().availableProcessors()
+val operationInvocationEvaluatorispatcher: ExecutorCoroutineDispatcher =
+   Executors.newFixedThreadPool(32).asCoroutineDispatcher()
+
 @Component
 class OperationInvocationEvaluator(val invocationService: OperationInvocationService, val parameterFactory: ParameterFactory = ParameterFactory()) : LinkEvaluator, EdgeEvaluator {
-   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge = withContext(Dispatchers.Default) {
 
 
       val operationName: QualifiedName = (edge.vertex1.value as String).fqn()
@@ -141,7 +152,7 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
 
          } catch (e: Exception) {
             log().warn("Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}")
-            return edge.failure(null)
+            edge.failure(null)
          }
       }
 
@@ -149,10 +160,10 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       if (context.hasOperationResult(edge, callArgs as Set<TypedInstance>)) {
          val cachedResult = context.getOperationResult(edge, callArgs)
          cachedResult?.let { context.addFact(it) }
-         return  edge.success(cachedResult)
+         edge.success(cachedResult)
       }
 
-      return try {
+      try {
          val result: TypedInstance = invocationService.invokeOperation(service, operation, callArgs, context)
             .first()
          if (result is TypedNull) {

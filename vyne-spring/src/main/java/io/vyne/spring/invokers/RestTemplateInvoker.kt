@@ -19,6 +19,7 @@ import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.utils.log
@@ -69,7 +70,7 @@ class RestTemplateInvoker(
    }
 
 
-   override fun invoke(
+   override suspend fun invoke(
       service: Service,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
@@ -135,7 +136,7 @@ class RestTemplateInvoker(
 
                }
          }
-      return results.asFlow().flowOn(Dispatchers.IO)
+      return results.asFlow().catch { println("Caught an error from RTI ${expandedUri}") }.flowOn(Dispatchers.IO)
 
    }
 

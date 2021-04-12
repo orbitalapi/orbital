@@ -23,6 +23,7 @@ import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import lang.taxi.policies.Instruction
+import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
 import java.util.*
@@ -262,11 +263,51 @@ data class QueryContext(
 
    }
 
+   private fun resolveSynonyms(fact: TypedInstance, schema: Schema): Set<TypedInstance> {
+      return if (fact is TypedObject) {
+         fact.values.flatMap { resolveSynonym(it, schema, false).toList() }.toSet().plus(fact)
+      } else {
+         resolveSynonym(fact, schema, true)
+      }
+   }
+
+   private fun resolveSynonym(fact: TypedInstance, schema: Schema, includeGivenFact: Boolean): Set<TypedInstance> {
+      val derivedFacts = if (fact.type.isEnum && fact.value != null) {
+         val underlyingEnumType = fact.type.taxiType as EnumType
+         underlyingEnumType.of(fact.value)
+            .synonyms
+            .map { synonym ->
+               val synonymType = schema.type(synonym.synonymFullQualifiedName())
+               val synonymTypeTaxiType = synonymType.taxiType as EnumType
+               val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
+
+               // Instantiate with either name or value depending on what we have as input
+               val value =
+                  if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
+
+               TypedValue.from(synonymType, value, false, MappedSynonym(fact))
+            }.toSet()
+      } else {
+         setOf()
+      }
+
+      return if (includeGivenFact) {
+         derivedFacts.plus(fact)
+      } else {
+         derivedFacts
+      }
+   }
+
    /**
     * Returns a QueryContext, with only the provided fact.
     * All other parameters (queryEngine, schema, etc) are retained
     */
    fun only(fact: TypedInstance): QueryContext {
+
+      val mutableFacts = mutableSetOf<TypedInstance>()
+      mutableFacts.add(fact)
+      mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
+
       ////// MERGE val mutableFacts = mutableSetOf<TypedInstance>()
       ////mutableFacts.add(fact)
       ////mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
@@ -274,7 +315,7 @@ data class QueryContext(
       ////copiedContext.excludedServices.addAll(this.excludedServices)
       ////copiedContext.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       /////return copiedContext
-      return this.copy(facts = mutableSetOf(fact), parent = this)
+      return this.copy(facts = mutableFacts, parent = this)
    }
 
    fun addFact(fact: TypedInstance): QueryContext {

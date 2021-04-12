@@ -24,7 +24,7 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
       return findRecordedCall(operation) != null
    }
 
-   override fun invoke(service: Service,
+   override suspend fun invoke(service: Service,
                        operation: RemoteOperation,
                        parameters: List<Pair<Parameter, TypedInstance>>,
                        profilerOperation: ProfilerOperation, queryId: String?): Flow<TypedInstance> {

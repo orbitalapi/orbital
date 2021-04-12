@@ -22,7 +22,7 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
       return invoker.canSupport(service, operation)
    }
 
-   override fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String?): Flow<TypedInstance> {
+   override suspend fun invoke(service: Service, operation: RemoteOperation, parameters: List<Pair<Parameter, TypedInstance>>, profilerOperation: ProfilerOperation, queryId: String?): Flow<TypedInstance> {
       val key = generateCacheKey(service, operation, parameters)
 
       val result = cachedResults.getIfPresent(key)
@@ -38,8 +38,6 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
       }
 
       val value = try {
-
-         log().info("CacheAwareOperationInvocationDecorator - invoking remote operation")
          var cacheResult = LinkedList<TypedInstance>()
          invoker.invoke(service, operation, parameters, profilerOperation, queryId).onEach {
             cacheResult.add(it)
