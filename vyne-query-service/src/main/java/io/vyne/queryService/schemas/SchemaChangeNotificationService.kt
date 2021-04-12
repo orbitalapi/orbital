@@ -1,45 +1,56 @@
 package io.vyne.queryService.schemas
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.queryService.WebSocketController
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.reactor.asFlux
+import kotlinx.coroutines.runBlocking
 import org.springframework.context.event.EventListener
-import org.springframework.http.MediaType
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.stereotype.Component
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.reactive.socket.WebSocketSession
+import reactor.core.publisher.Mono
 
 @Component
 @RestController
 @EnableScheduling
-class SchemaChangeNotificationService(
-) {
+class SchemaChangeNotificationService(private val mapper: ObjectMapper) : WebSocketController {
 
-   private val _schemaUpdatedNotificationEvents = MutableSharedFlow<SchemaUpdatedNotification>()
-   val schemaUpdatedNotificationEvents = _schemaUpdatedNotificationEvents.asSharedFlow()
-
-   @GetMapping("/api/events/schema", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-   suspend fun schemaUpdateNotificationsEvents(): Flow<Any?>? {
-      return schemaUpdatedNotificationEvents
-   }
+   private val schemaUpdatedEventSink = MutableSharedFlow<SchemaUpdatedNotification>()
+   val schemaUpdatedNotificationEvents = schemaUpdatedEventSink.asSharedFlow()
 
    @EventListener
    fun onSchemaSetChanged(event: SchemaSetChangedEvent) {
       log().info("Received schema set changed event, sending UI notification")
-      notifySchemaUpdatedNotification(SchemaUpdatedNotification(
-         event.newSchemaSet.id,
-         event.newSchemaSet.generation,
-         event.newSchemaSet.invalidSources.size
-      ))
+      notifySchemaUpdatedNotification(
+         SchemaUpdatedNotification(
+            event.newSchemaSet.id,
+            event.newSchemaSet.generation,
+            event.newSchemaSet.invalidSources.size
+         )
+      )
    }
 
-   fun notifySchemaUpdatedNotification(notification:SchemaUpdatedNotification) = GlobalScope.launch { // this: CoroutineScope
-         _schemaUpdatedNotificationEvents.emit(notification)
+   fun notifySchemaUpdatedNotification(notification: SchemaUpdatedNotification) =
+      GlobalScope.launch { // this: CoroutineScope
+         schemaUpdatedEventSink.emit(notification)
+      }
+
+   override val paths: List<String> = listOf("/api/schema/updates")
+   override fun handle(session: WebSocketSession): Mono<Void> {
+      return session.send(
+         schemaUpdatedNotificationEvents
+            .map { mapper.writeValueAsString(it) }
+            .map(session::textMessage)
+            .asFlux())
    }
 }
 

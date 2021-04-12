@@ -11,6 +11,7 @@ import {isNullOrUndefined} from 'util';
 import {Observable} from 'rxjs/index';
 import {findType, InstanceLike, Type} from '../services/schema';
 import {take, tap} from 'rxjs/operators';
+import {ActiveQueriesNotificationService, RunningQueryStatus} from '../services/active-queries-notification-service';
 
 @Component({
   selector: 'app-query-history',
@@ -21,16 +22,20 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   history: QueryHistorySummary[];
   activeRecordResults$: Observable<InstanceLike>;
   activeRecordResultType: Type;
-
   activeQueryProfileData$: Observable<QueryProfileData>;
+
+  activeQueries: Map<string, RunningQueryStatus> = new Map<string, RunningQueryStatus>();
 
   constructor(queryService: QueryService,
               typeService: TypesService,
               private router: Router,
               private activatedRoute: ActivatedRoute,
-              private fileService: ExportFileService
+              private fileService: ExportFileService,
+              private activeQueryNotificationService: ActiveQueriesNotificationService
   ) {
     super(queryService, typeService);
+    this.activeQueryNotificationService.createActiveQueryNotificationSubscription()
+      .subscribe(event => this.handleActiveQueryUpdate(event));
   }
 
   profileLoading = false;
@@ -100,7 +105,14 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
               this.typeService.getTypes()
                 .pipe(take(1))
                 .subscribe(schema => {
-                  this.activeRecordResultType = findType(schema, valueWithTypeName.typeName);
+                  // Make sure the activeRecordREsultType hasn't been set in between subscribing to the observable, and getting the result.
+                  if (isNullOrUndefined(this.activeRecordResultType) && !isNullOrUndefined(valueWithTypeName.typeName)) {
+                    if (!isNullOrUndefined(valueWithTypeName.anonymousTypes) && valueWithTypeName.anonymousTypes.length > 0) {
+                      this.activeRecordResultType = valueWithTypeName.anonymousTypes[0];
+                    } else {
+                      this.activeRecordResultType = findType(schema, valueWithTypeName.typeName);
+                    }
+                  }
                 });
             }
           }
@@ -116,6 +128,23 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
 
   setActiveRecord($event: QueryHistorySummary) {
     this.router.navigate(['/query-history', $event.queryId]);
+  }
+
+  private handleActiveQueryUpdate(next: RunningQueryStatus) {
+    if (next.running) {
+      this.activeQueries.set(next.queryId, next);
+    } else {
+      this.activeQueries.delete(next.queryId);
+      this.loadQuerySummaries();
+    }
+
+  }
+
+  cancelActiveQuery($event: RunningQueryStatus) {
+    this.queryService.cancelQuery($event.queryId)
+      .subscribe(() => {
+        console.log(`Query ${$event.queryId} cancelled`);
+      });
   }
 }
 

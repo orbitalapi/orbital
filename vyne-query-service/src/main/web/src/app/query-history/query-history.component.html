@@ -15,7 +15,10 @@
     </div>
   </mat-drawer>
   <div class="container">
-    <app-query-list [historyRecords]="history" (recordSelected)="setActiveRecord($event)"></app-query-list>
+    <app-query-list [historyRecords]="history"
+                    [activeQueries]="activeQueries"
+                    (cancelActiveQuery)="cancelActiveQuery($event)"
+                    (recordSelected)="setActiveRecord($event)"></app-query-list>
     <div class="results-section" *ngIf="activeRecordResults$">
       <app-tabbed-results-view
         [profileData$]="activeQueryProfileData$"

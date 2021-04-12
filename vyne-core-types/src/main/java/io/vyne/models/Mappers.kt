@@ -121,7 +121,7 @@ object TypeNamedInstanceMapper : TypedInstanceMapper {
          if ((type.hasFormat || type.offset != null) && typedInstance.value != null && typedInstance.value !is String) {
             // I feel like this is a bad idea, as the typed value will no longer statisfy the type contract
             // This could cause casing exceptions elsewhere.
-            TypeFormatter.applyFormat(typedInstance)
+               TypeFormatter.applyFormat(typedInstance)
          } else {
             typedInstance.value
          }

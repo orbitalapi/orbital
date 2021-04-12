@@ -17,6 +17,8 @@ import {QueryHistoryCardComponent} from './query-history-card.component';
 import {QueryPanelModule} from '../query-panel/query-panel.module';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {MatDialogModule} from '@angular/material/dialog';
+import {ActiveQueryCardComponent} from './active-query-card.component';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
 
 @NgModule({
   imports: [
@@ -32,7 +34,8 @@ import {MatDialogModule} from '@angular/material/dialog';
     ScrollingModule,
     QueryPanelModule,
     HeaderBarModule,
-    MatDialogModule
+    MatDialogModule,
+    MatProgressBarModule
   ],
   exports: [QueryHistoryComponent, QueryListComponent],
   declarations: [
@@ -40,7 +43,8 @@ import {MatDialogModule} from '@angular/material/dialog';
     VyneqlRecordComponent,
     RestfulRecordComponent,
     QueryListComponent,
-    QueryHistoryCardComponent],
+    QueryHistoryCardComponent,
+    ActiveQueryCardComponent],
   providers: [],
 })
 export class QueryHistoryModule {

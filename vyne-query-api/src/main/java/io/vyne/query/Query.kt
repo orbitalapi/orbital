@@ -1,16 +1,20 @@
 package io.vyne.query
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.vyne.FactSetId
 import io.vyne.FactSets
 import io.vyne.schemas.OutputConstraint
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
+import java.util.*
 import kotlin.reflect.KClass
 
 
-data class Fact @JvmOverloads constructor(val typeName: String, val value: Any, val factSetId: FactSetId = FactSets.DEFAULT) {
+data class Fact @JvmOverloads constructor(
+   val typeName: String,
+   val value: Any,
+   val factSetId: FactSetId = FactSets.DEFAULT
+) {
    val qualifiedName = typeName.fqn()
 }
 
@@ -19,18 +23,24 @@ data class Fact @JvmOverloads constructor(val typeName: String, val value: Any, 
 data class Query(
    val expression: QueryExpression,
    val facts: List<Fact> = emptyList(),
-   val queryMode: QueryMode = QueryMode.DISCOVER) {
+   val queryMode: QueryMode = QueryMode.DISCOVER,
+   val queryId: String = UUID.randomUUID().toString()
+) {
    constructor(
       queryString: QueryExpression,
       facts: Map<String, Any> = emptyMap(),
-      queryMode: QueryMode = QueryMode.DISCOVER)
-      : this(queryString, facts.map { Fact(it.key, it.value) }, queryMode)
+      queryMode: QueryMode = QueryMode.DISCOVER,
+      queryId: String = UUID.randomUUID().toString()
+   )
+      : this(queryString, facts.map { Fact(it.key, it.value) }, queryMode, queryId)
 
    constructor(
       queryString: String,
       facts: Map<String, Any> = emptyMap(),
-      queryMode: QueryMode = QueryMode.DISCOVER)
-      : this(TypeNameQueryExpression(queryString), facts.map { Fact(it.key, it.value) }, queryMode)
+      queryMode: QueryMode = QueryMode.DISCOVER,
+      queryId: String = UUID.randomUUID().toString()
+   )
+      : this(TypeNameQueryExpression(queryString), facts.map { Fact(it.key, it.value) }, queryMode, queryId)
 }
 
 //@JsonDeserialize(using = QueryExpressionDeserializer::class)
@@ -39,10 +49,12 @@ data class Query(
 @JsonDeserialize(`as` = TypeNameListQueryExpression::class)
 interface QueryExpression
 
-data class ConstrainedTypeNameQueryExpression(val typeName: String,
+data class ConstrainedTypeNameQueryExpression(
+   val typeName: String,
    // Note: Not convinced this needs to be OutputConstraint (vs plain old
    // constraint). Revisit if this proves problematic
-                                              val constraint: List<OutputConstraint>) : QueryExpression
+   val constraint: List<OutputConstraint>
+) : QueryExpression
 
 data class TypeNameQueryExpression(val typeName: String) : QueryExpression {
    val qualifiedTypeNames: QualifiedName = typeName.fqn()
@@ -93,6 +105,7 @@ enum class ResultMode(val viewClass: KClass<out ResultView>) {
 
 
 }
+
 interface ResultView
 interface SimpleResultView : ResultView
 interface VerboseResultView : ResultView

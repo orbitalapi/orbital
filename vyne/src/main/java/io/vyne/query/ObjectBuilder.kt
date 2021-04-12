@@ -7,6 +7,7 @@ import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
 import lang.taxi.types.ObjectType
 
 class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
@@ -163,7 +164,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          }
       }
 
-      val factory = TypedObjectFactory(
+      return TypedObjectFactory(
          targetType,
          populatedValues,
          context.schema,
@@ -171,8 +172,6 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       ).buildAsync {
          forSourceValues(sourcedByAttributes, it, targetType)
       }
-
-      return factory
    }
 
    private suspend fun forSourceValues(
@@ -231,7 +230,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       return null
    }
 
-   private suspend fun findScalarInstance(targetType: Type, spec: TypedInstanceValidPredicate): Flow<TypedInstance>? {
+   private suspend fun findScalarInstance(targetType: Type, spec: TypedInstanceValidPredicate): Flow<TypedInstance> {
       // Try searching for it.
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {

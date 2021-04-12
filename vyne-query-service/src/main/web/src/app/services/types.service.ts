@@ -36,14 +36,14 @@ export class TypesService {
     this.getTypes().subscribe(schema => {
       this.schema = schema;
     });
-    //this.schemaNotificationService.createSchemaNotificationsSubscription()
-    //  .subscribe(() => {
-    //    this.getTypes(true)
-    //      .subscribe(schema => {
-    //        console.log('updating typeService schema');
-    //        this.schema = schema;
-    //      });
-    //  });
+    this.schemaNotificationService.createSchemaNotificationsSubscription()
+     .subscribe(() => {
+       this.getTypes(true)
+         .subscribe(schema => {
+           console.log('updating typeService schema');
+           this.schema = schema;
+         });
+     });
   }
 
   getRawSchema = (): Observable<string> => {

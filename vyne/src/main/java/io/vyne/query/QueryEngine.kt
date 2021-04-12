@@ -7,7 +7,6 @@ import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
-import io.vyne.queryService.QueryMetaDataService
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
@@ -60,7 +59,8 @@ interface QueryEngine {
    fun queryContext(
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
       additionalFacts: Set<TypedInstance> = emptySet(),
-      queryId: String? = null,
+      queryId: String,
+      clientQueryId: String?
    ): QueryContext
 
    suspend fun build(type: Type, context: QueryContext): QueryResult =
@@ -100,10 +100,12 @@ class StatefulQueryEngine(
       return this
    }
 
+
    override fun queryContext(
       factSetIds: Set<FactSetId>,
       additionalFacts: Set<TypedInstance>,
-      queryId: String?
+      queryId: String,
+      clientQueryId: String?
    ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
       return QueryContext.from(schema, facts + additionalFacts, this, profiler, queryId = queryId)
@@ -200,7 +202,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             emptyFlow(),
             setOf(querySpecTypeNode),
             profilerOperation = context.profiler.root,
-            queryId = context.queryId
+            queryId = context.queryId,
+            clientQueryId = context.clientQueryId,
+            anonymousTypes = context.schema.typeCache.anonymousTypes()
          )
       }
    }
@@ -403,10 +407,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //   return querySet.filterNot { matchedNodes.containsKey(it) }
       //}
 
-      //TODO this is an awful way to check if a strategy has result and only emit the results from that stratrgy
-
-      QueryMetaDataService.monitor.reportTarget(context.queryId, target)
-
       val resultsFlow = flow {
          var resultsRecivedFromStrategy = false
 
@@ -466,7 +466,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          emptySet(),
          path = null,
          profilerOperation = context.profiler.root,
-         queryId = context.queryId
+         queryId = context.queryId,
+         clientQueryId = context.clientQueryId,
+         anonymousTypes = context.schema.typeCache.anonymousTypes()
       )
 
    }

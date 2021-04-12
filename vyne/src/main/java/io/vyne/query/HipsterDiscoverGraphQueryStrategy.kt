@@ -126,6 +126,7 @@ class HipsterDiscoverGraphQueryStrategy(
          .firstOrNull()
    }
 
+
    private suspend fun evaluatePath(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): List<PathEvaluation> {
       // The actual result of this isn't directly used.  But the queryContext is updated with
       // nodes as they're discovered (eg., through service invocation)

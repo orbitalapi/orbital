@@ -105,7 +105,11 @@ export class QueryService {
   }
 
   cancelQuery(queryId: string): Observable<void> {
-    return null;
+    return this.http.delete<void>(`${environment.queryServiceUrl}/api/query/active/${queryId}`, this.httpOptions);
+  }
+
+  cancelQueryByClientQueryId(clientQueryId: string): Observable<void> {
+    return this.http.delete<void>(`${environment.queryServiceUrl}/api/query/active/clientId/${clientQueryId}`, this.httpOptions);
   }
 }
 
@@ -273,6 +277,10 @@ export interface ValueWithTypeName {
    */
   value: TypedObjectAttributes;
   valueId: number;
+  /**
+   * Only populated when this value is returned from an active query
+   */
+  queryId: string | null;
 }
 
 export interface FailedSearchResponse {

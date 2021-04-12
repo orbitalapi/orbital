@@ -4,7 +4,9 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.Query
 import io.vyne.query.QueryResponse
 import io.vyne.query.QueryResult
+import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.FailedSearchResponse
+import io.vyne.schemas.Type
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
@@ -16,7 +18,7 @@ import java.time.Instant
  * Takes a queries results, metadata, etc, and streams the out to a QueryHistory provider
  * to be captured.
  */
-class QueryEventObserver(private val consumer: QueryEventConsumer) {
+class QueryEventObserver(private val consumer: QueryEventConsumer, private val activeQueryMonitor:ActiveQueryMonitor) {
    /**
     * Attaches an observer to the result flow of the QueryResponse, returning
     * an updated QueryResponse with it's internal flow updated.
@@ -35,6 +37,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer) {
       return queryResult.copy(
          results = queryResult.results
             .onEach { typedInstance ->
+               activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
                consumer.handleEvent(
                   RestfulQueryResultEvent(
                      query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
@@ -46,8 +49,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer) {
 
    private suspend fun emitFailure(query: Query, failure: FailedSearchResponse): FailedSearchResponse {
       consumer.handleEvent(
-         RestfulQueryFailureEvent(
-            query,
+         QueryFailureEvent(
             failure.queryResponseId,
             failure.clientQueryId,
             failure
@@ -78,9 +80,14 @@ class QueryEventObserver(private val consumer: QueryEventConsumer) {
          results = queryResult.results
 
             .onEach { typedInstance ->
+               activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
                consumer.handleEvent(
                   TaxiQlQueryResultEvent(
-                     query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
+                     query,
+                     queryResult.queryResponseId,
+                     queryResult.clientQueryId,
+                     typedInstance,
+                     queryResult.anonymousTypes
                   )
                )
             }.catch {
@@ -104,6 +111,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer) {
                      )
                   )
                }
+               activeQueryMonitor.reportComplete(queryResult.queryId)
             }
       )
 
@@ -111,8 +119,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer) {
 
    private suspend fun emitFailure(query: TaxiQLQueryString, failure: FailedSearchResponse): FailedSearchResponse {
       consumer.handleEvent(
-         TaxiQlQueryFailureEvent(
-            query,
+         QueryFailureEvent(
             failure.queryResponseId,
             failure.clientQueryId,
             failure
@@ -135,8 +142,7 @@ data class RestfulQueryResultEvent(
    val typedInstance: TypedInstance
 ) : QueryEvent()
 
-data class RestfulQueryFailureEvent(
-   val query: Query,
+data class QueryFailureEvent(
    val queryId: String,
    val clientQueryId: String?,
    val failure: FailedSearchResponse
@@ -146,16 +152,10 @@ data class TaxiQlQueryResultEvent(
    val query: TaxiQLQueryString,
    val queryId: String,
    val clientQueryId: String?,
-   val typedInstance: TypedInstance
+   val typedInstance: TypedInstance,
+   val anonymousTypes: Set<Type>
 ) : QueryEvent()
 
-
-data class TaxiQlQueryFailureEvent(
-   val query: TaxiQLQueryString,
-   val queryId: String,
-   val clientQueryId: String?,
-   val failure: FailedSearchResponse
-) : QueryEvent()
 
 data class QueryCompletedEvent(
    val queryId: String,

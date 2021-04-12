@@ -48,6 +48,7 @@ class NoOpQueryProfiler(
    }
 }
 
+@Deprecated("Hasn't proved useful")
 open class QueryProfiler(
    private val clock: Clock = Clock.systemDefaultZone(),
    val root: ProfilerOperation = DefaultProfilerOperation.root(clock)

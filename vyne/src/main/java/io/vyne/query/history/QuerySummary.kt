@@ -33,9 +33,12 @@ data class QuerySummary(
    // in order to determine if the row exists
    @Id
    val id: Long? = null,
+   val anonymousTypesJson: String? = null
 ) {
    @Transient
    val durationMs = endTime?.let { Duration.between(startTime, endTime).toMillis() }
+
+
 }
 
 @Table

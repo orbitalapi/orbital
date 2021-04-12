@@ -8,6 +8,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.query.*
+import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.csv.toCsv
 import io.vyne.queryService.history.QueryEventObserver
 import io.vyne.queryService.history.db.QueryHistoryDbWriter
@@ -37,14 +38,16 @@ data class FailedSearchResponse(
    val message: String,
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation?,
-   override val queryResponseId: String = UUID.randomUUID().toString(),
+   override val queryId: String,
    val results: Map<String, Any?> = mapOf(),
    override val clientQueryId: String? = null,
-   override val queryId: String? = null
+
 
 ) : QueryResponse {
    override val responseStatus: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.ERROR
    override val isFullyResolved: Boolean = false
+
+   override val queryResponseId: String = queryId
 }
 
 /**
@@ -62,7 +65,8 @@ typealias QueryResponseString = String
 class QueryService(
    val vyneProvider: VyneProvider,
    val historyDbWriter: QueryHistoryDbWriter,
-   val objectMapper: ObjectMapper
+   val objectMapper: ObjectMapper,
+   val activeQueryMonitor: ActiveQueryMonitor
 ) {
 
    @PostMapping(
@@ -162,10 +166,9 @@ class QueryService(
       queryId: String, vyneUser: VyneUser?,
       block: suspend () -> QueryResponse
    ): QueryResponse = GlobalScope.run {
-      QueryMetaDataService.MonitorService.monitor.reportStart(queryId, clientQueryId)
-      val ret = block.invoke()
-      QueryMetaDataService.MonitorService.monitor.reportComplete(queryId)
-      return ret
+
+      activeQueryMonitor.reportStart(queryId, clientQueryId, query)
+      return block.invoke()
    }
 
    @PostMapping("/api/vyneql",
@@ -228,6 +231,8 @@ class QueryService(
    }
 
 
+
+
    /**
     * Endpoint for submitting a TaxiQL query, and receiving an event stream back.
     * Browsers cannot submit POST requests for SSE responses (only GET), hence having the query in the queryString
@@ -281,9 +286,10 @@ class QueryService(
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
-      response
-      //QueryEventObserver(historyDbWriter.createEventConsumer())
-      //   .responseWithQueryHistoryListener(query, response)
+      // Merge conflict - why was this just returning response, with the history stuff
+      // commented out?
+      QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
+         .responseWithQueryHistoryListener(query, response)
    }
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
@@ -296,18 +302,19 @@ class QueryService(
       val response = try {
          // Note: Only using the default set for the originating query,
          // but the queryEngine contains all the factSets, so we can expand this later.
-         val queryId = UUID.randomUUID().toString()
-         val queryContext = vyne.query(factSetIds = setOf(FactSets.DEFAULT), queryId = queryId, clientQueryId = clientQueryId)
+         val queryId = query.queryId
+         val queryContext =
+            vyne.query(factSetIds = setOf(FactSets.DEFAULT), queryId = queryId, clientQueryId = clientQueryId)
          when (query.queryMode) {
             QueryMode.DISCOVER -> queryContext.find(query.expression)
             QueryMode.GATHER -> queryContext.findAll(query.expression)
             QueryMode.BUILD -> queryContext.build(query.expression)
          }
       } catch (e: SearchFailedException) {
-         FailedSearchResponse(e.message!!, e.profilerOperation)
+         FailedSearchResponse(e.message!!, e.profilerOperation, query.queryId)
       }
 
-      return QueryEventObserver(historyDbWriter.createEventConsumer())
+      return QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
          .responseWithQueryHistoryListener(query, response)
    }
 
