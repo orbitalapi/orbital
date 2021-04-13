@@ -71,9 +71,7 @@ fun toCsv(results: Flow<TypedInstance>, queryResultSerializer: QueryResultSerial
 
                   when (it) {
                      is TypedObject -> {
-                        printer.printRecord(it.type!!.attributes.keys)
-                        //printer.printRecord(it.type.attributes.keys.map { fieldName -> (it as TypedObject)[fieldName].value })
-
+                        printer.printRecord(it.type!!.attributes.keys) //The header
                         printer.printRecord((queryResultSerializer.serialize(it) as LinkedHashMap<*, *>).map { e -> e.value})
                         val csvRecord = writer.toString()
                         writer.clear()
@@ -87,7 +85,6 @@ fun toCsv(results: Flow<TypedInstance>, queryResultSerializer: QueryResultSerial
                   when (it) {
                      is TypedObject -> {
                         printer.printRecord( (queryResultSerializer.serialize(it) as LinkedHashMap<*,*>).map { e -> e.value})
-                        //printer.printRecord( typedInstance.type.attributes.keys.map { fieldName -> it [fieldName].value } )
                         val csvRecord = writer.toString()
                         writer.clear()
                         csvRecord
@@ -100,24 +97,3 @@ fun toCsv(results: Flow<TypedInstance>, queryResultSerializer: QueryResultSerial
    }
 
 }
-
-/*
-.flatMapMerge { typedInstance ->
-   // This is a smell.
-   // I've noticed that when projecting, in this point of the code
-   // we get individual typed instances.
-   // However, if we're not projecting, we get a single
-   // typed collection.
-   // This meas that the shape of the response (array vs single)
-   // varies based on the query, which is incorrect.
-   // Therefore, unwrap collections here.
-   // This smells, because it could be indicative of a problem
-   // higher in the stack.
-   if (typedInstance is TypedCollection) {
-      typedInstance.map { serializer.serialize(it) }
-   } else {
-      listOf(serializer.serialize(typedInstance))
-   }.filterNotNull()
-      .asFlow()
-      *
- */
