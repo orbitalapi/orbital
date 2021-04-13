@@ -86,12 +86,6 @@ fun toCsv(results: Flow<TypedInstance>, queryResultSerializer: QueryResultSerial
                else -> {
                   when (it) {
                      is TypedObject -> {
-                        println("-----------")
-                        println("Coverted -- ${queryResultSerializer.serialize(it)}")
-                        println("a hasmap = ")
-                        println((queryResultSerializer.serialize(it) as LinkedHashMap<*,*>))
-                        println("-----------")
-
                         printer.printRecord( (queryResultSerializer.serialize(it) as LinkedHashMap<*,*>).map { e -> e.value})
                         //printer.printRecord( typedInstance.type.attributes.keys.map { fieldName -> it [fieldName].value } )
                         val csvRecord = writer.toString()

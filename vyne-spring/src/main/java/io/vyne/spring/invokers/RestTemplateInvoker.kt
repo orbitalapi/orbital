@@ -136,7 +136,7 @@ class RestTemplateInvoker(
 
                }
          }
-      return results.asFlow().catch { println("Caught an error from RTI ${expandedUri}") }.flowOn(Dispatchers.IO)
+      return results.asFlow().flowOn(Dispatchers.IO)
 
    }
 

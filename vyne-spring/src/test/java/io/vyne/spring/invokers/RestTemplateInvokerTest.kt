@@ -14,6 +14,7 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.BaseMatcher
 import org.hamcrest.Description
@@ -105,7 +106,7 @@ namespace vyne {
    }
 
    @Test
-   fun `When invoked a service that returns a list property mapped to a taxi array`() {
+   fun `When invoked a service that returns a list property mapped to a taxi array`() = runBlocking {
       val restTemplate = RestTemplate()
       val webClient = WebClient.builder().build()
       val server = MockRestServiceServer.bindTo(restTemplate).build()
@@ -198,7 +199,7 @@ namespace vyne {
    }
 
    @Test
-   fun when_invokingService_then_itGetsInvokedCorrectly() {
+   fun when_invokingService_then_itGetsInvokedCorrectly() = runBlocking {
       val restTemplate = RestTemplate()
       val webClient = WebClient.builder().build()
       val server = MockRestServiceServer.bindTo(restTemplate).build()
@@ -241,7 +242,7 @@ namespace vyne {
    }
 
    @Test
-   fun `attributes returned from service not defined in type are ignored`() {
+   fun `attributes returned from service not defined in type are ignored`() = runBlocking {
       val restTemplate = RestTemplate()
       val webClient = WebClient.builder().build()
       val server = MockRestServiceServer.bindTo(restTemplate).build()
@@ -274,7 +275,7 @@ namespace vyne {
    }
 
    @Test
-   fun whenInvoking_paramsCanBePassedByTypeIfMatchedUnambiguously() {
+   fun whenInvoking_paramsCanBePassedByTypeIfMatchedUnambiguously() = runBlocking {
       // This test is a WIP, that's been modified to pass.
       // This test is intended as a jumpting off point for issue #49
       // https://gitlab.com/vyne/vyne/issues/49
@@ -303,7 +304,7 @@ namespace vyne {
    }
 
    @Test
-   fun `when invoking a service with preparsed content then accessors are not evaluated`() {
+   fun `when invoking a service with preparsed content then accessors are not evaluated`() = runBlocking {
       val restTemplate = RestTemplate()
       val webClient = WebClient.builder().build()
       val server = MockRestServiceServer.bindTo(restTemplate).build()
@@ -352,7 +353,7 @@ namespace vyne {
    }
 
    @Test
-   fun `when invoking a service without preparsed content then accessors are not evaluated`() {
+   fun `when invoking a service without preparsed content then accessors are not evaluated`() = runBlocking {
       val restTemplate = RestTemplate()
       val webClient = WebClient.builder().build()
       val server = MockRestServiceServer.bindTo(restTemplate).build()

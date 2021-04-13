@@ -323,7 +323,10 @@ data class QueryContext(
       val mutableFacts = mutableSetOf<TypedInstance>()
       mutableFacts.add(fact)
       mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
-
+      //val copiedContext = this.copy(facts = mutableFacts, parent = this)
+      //copiedContext.excludedServices.addAll(this.excludedServices)
+      //copiedContext.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
+      //return copiedContext
       ////// MERGE val mutableFacts = mutableSetOf<TypedInstance>()
       ////mutableFacts.add(fact)
       ////mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
@@ -331,7 +334,8 @@ data class QueryContext(
       ////copiedContext.excludedServices.addAll(this.excludedServices)
       ////copiedContext.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       /////return copiedContext
-      return this.copy(facts = mutableFacts, parent = this)
+      val copied = this.copy(facts = mutableFacts, parent = this)
+      return copied
    }
 
    fun addFact(fact: TypedInstance): QueryContext {
