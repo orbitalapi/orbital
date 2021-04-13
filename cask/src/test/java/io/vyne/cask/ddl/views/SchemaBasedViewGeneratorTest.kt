@@ -80,9 +80,9 @@ class SchemaBasedViewGeneratorTest {
                "ordersent".caskmessageid as caskmessageid
             from ordersent
              union all
-            select
+            select distinct
                   orderfill."fillOrderId" as "orderId",
-                  null as "orderDateTime",
+                  null::TIMESTAMP as "orderDateTime",
                   orderfill."orderType" as "orderType",
                   orderfill."subSecurityType" as "subSecurityType",
                   ordersent."requestedQuantity" as "requestedQuantity",
