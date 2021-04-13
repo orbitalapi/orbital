@@ -494,7 +494,7 @@
             <docker.tag.latest>latest</docker.tag.latest>
          </properties>
       </profile>
-     <!-- <profile>
+      <profile>
          <id>alpha-release</id>
          <activation>
             <activeByDefault>false</activeByDefault>
@@ -503,6 +503,6 @@
             <docker.tag.latest>latest-alpha</docker.tag.latest>
             <docker.tag.numbered>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}-ALPHA-${buildNumber}</docker.tag.numbered>
          </properties>
-      </profile>-->
+      </profile>
    </profiles>
 </project>
