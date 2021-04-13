@@ -95,7 +95,11 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
          selectStatement(field, tableNamesForSourceTypes)
       }.plus(caskMessageIdColumn(bodyTableName))
       val sqlBuilder = StringBuilder()
-      sqlBuilder.appendln("select")
+      if (viewBodyDefinition.joinType == null) {
+         sqlBuilder.appendln("select")
+      } else {
+         sqlBuilder.appendln("select distinct")
+      }
       sqlBuilder.appendln(sqlStatementsForEachField.joinToString(", \n"))
       if (viewBodyDefinition.joinType == null) {
          sqlBuilder.appendln(" from $bodyTableName")
@@ -144,7 +148,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
       return if (viewFieldDefinition.sourceType == viewFieldDefinition.fieldType) {
          //case for:
          // fieldName: FieldType case.
-         PostgresDdlGenerator.selectNullAs(viewFieldDefinition.fieldName)
+         PostgresDdlGenerator.selectNullAs(viewFieldDefinition.fieldName, viewFieldDefinition.fieldType)
       } else {
          // orderId: OrderSent.SentOrderId
          val sourceField = columnName(viewFieldDefinition.sourceType, viewFieldDefinition.fieldType, qualifiedNameToCaskConfig)
