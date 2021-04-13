@@ -418,9 +418,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             val strategyResult =
                invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
             if (strategyResult.hasMatchesNodes()) {
-               strategyResult.matchedNodes?.collect {
+               strategyResult.matchedNodes?.collectIndexed {index,value ->
                   resultsRecivedFromStrategy = true
-                  emit(it)
+                  emit(value)
+                  if (index >= 100) {
+                     println("Cancelling queryId ${context.queryId}" )
+                     currentCoroutineContext().cancel()
+                  }
+
                }
             }
          }
