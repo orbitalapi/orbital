@@ -285,8 +285,6 @@ class QueryService(
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
-      // Merge conflict - why was this just returning response, with the history stuff
-      // commented out?
       QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
          .responseWithQueryHistoryListener(query, response)
    }

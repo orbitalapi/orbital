@@ -7,6 +7,7 @@ import io.vyne.models.OperationResult
 import io.vyne.query.QueryProfileData
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.FirstEntryMetadataResultSerializer
+import io.vyne.queryService.NotFoundException
 import io.vyne.queryService.history.db.LineageRecordRepository
 import io.vyne.queryService.history.db.QueryHistoryRecordRepository
 import io.vyne.queryService.history.db.QueryResultRowRepository
@@ -145,6 +146,7 @@ class QueryHistoryService(
       serverResponse: ServerHttpResponse
    ): Mono<Void> {
       return queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+         .switchIfEmpty(Mono.defer { throw NotFoundException("No query with clientQueryId $clientQueryId found") })
          .flatMap { querySummary ->
             exportQueryResults(querySummary.queryId, exportFormat, serverResponse)
          }

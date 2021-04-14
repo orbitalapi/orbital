@@ -10,7 +10,9 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.json.Jackson
 import io.vyne.query.history.QueryResultRow
+import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.BaseQueryServiceTest
+import io.vyne.queryService.history.db.QueryHistoryRecordRepository
 import io.vyne.queryService.history.db.QueryResultRowRepository
 import io.vyne.spring.SimpleTaxiSchemaProvider
 import kotlinx.coroutines.FlowPreview
@@ -20,6 +22,7 @@ import org.junit.Before
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import reactor.core.publisher.toFlux
 import kotlin.time.ExperimentalTime
 
@@ -27,7 +30,12 @@ import kotlin.time.ExperimentalTime
 @FlowPreview
 class QueryHistoryExporterTest : BaseQueryServiceTest() {
 
-   lateinit var queryExporter:QueryHistoryExporter
+   lateinit var queryExporter: QueryHistoryExporter
+   lateinit var resultRowRepository: QueryResultRowRepository
+   lateinit var historyRecordRepository: QueryHistoryRecordRepository
+   val objectMapper = Jackson.defaultObjectMapper
+   lateinit var schemaProvider: SimpleTaxiSchemaProvider
+
    @Before
    fun setup() {
       val (schemaProvider, schema) = SimpleTaxiSchemaProvider.from(
@@ -39,7 +47,8 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
          }
       """
       )
-      val objectMapper = Jackson.defaultObjectMapper
+      this.schemaProvider = schemaProvider
+
       val typedInstance = TypedInstance.from(
          schema.type("Person[]"), """[
          |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
@@ -49,11 +58,29 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       val queryResults: Flux<QueryResultRow> = typedInstance.map { it.toTypeNamedInstance() }
          .map { QueryResultRow(queryId = "", json = objectMapper.writeValueAsString(it), valueHash = 123) }
          .toFlux()
-      val repository: QueryResultRowRepository = mock {
+      resultRowRepository = mock {
          on { findAllByQueryId(any()) } doReturn queryResults
       }
-      queryExporter = QueryHistoryExporter(objectMapper,repository,schemaProvider)
+      val queryHistoryRecord: QuerySummary = mock()
+      historyRecordRepository = mock {
+         on { findByQueryId(any()) } doReturn Mono.just(queryHistoryRecord)
+      }
+      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider)
    }
+
+   @Test
+   fun shouldThrowExceptionIfQueryingWithUnknownQueryId() = runBlocking {
+      historyRecordRepository = mock {
+         on { findByQueryId(any()) } doReturn Mono.empty<QuerySummary>()
+      }
+      queryExporter = QueryHistoryExporter(objectMapper, resultRowRepository, historyRecordRepository, schemaProvider)
+      queryExporter.export("fakeId", ExportFormat.CSV)
+         .test {
+            val error = expectError()
+            error.message.should.equal("No query with id fakeId was found")
+         }
+   }
+
    @Test
    fun canExportValuesAsCsv() = runBlocking {
       queryExporter.export(queryId = "123", exportFormat = ExportFormat.CSV)
@@ -70,9 +97,11 @@ class QueryHistoryExporterTest : BaseQueryServiceTest() {
       val json = queryExporter.export(queryId = "123", exportFormat = ExportFormat.JSON)
          .toList().joinToString(separator = "")
       json.should.not.be.empty
-      JSONAssert.assertEquals("""[
+      JSONAssert.assertEquals(
+         """[
          |{ "firstName" : "Jimmy" , "lastName" : "Schmitts" , "age" : 50 },
          |{ "firstName" : "Peter" , "lastName" : "Papps" , "age" : 50 } ]
-      """.trimMargin(), json, true)
+      """.trimMargin(), json, true
+      )
    }
 }
