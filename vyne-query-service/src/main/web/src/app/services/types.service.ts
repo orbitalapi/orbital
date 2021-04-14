@@ -239,7 +239,7 @@ export class CsvOptions {
     if (!fileExtension) {
       return false;
     }
-    switch (fileExtension) {
+    switch (fileExtension.toLowerCase()) {
       case 'csv' :
         return true;
       case 'psv' :
