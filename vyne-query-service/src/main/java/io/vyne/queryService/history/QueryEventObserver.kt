@@ -38,11 +38,30 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
          results = queryResult.results
             .onEach { typedInstance ->
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
-               consumer.handleEvent(
-                  RestfulQueryResultEvent(
-                     query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
-                  )
-               )
+               //consumer.handleEvent(
+               //   RestfulQueryResultEvent(
+               //      query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
+               //   )
+               //)
+            }
+            .onCompletion { error ->
+               if (error == null) {
+                  //consumer.handleEvent(
+                  //   QueryCompletedEvent(
+                  //      queryResult.queryResponseId,
+                  //      Instant.now()
+                  //   )
+                  //)
+               } else {
+                  //consumer.handleEvent(
+                  //   QueryExceptionEvent(
+                  //      queryResult.queryResponseId,
+                  //      Instant.now(),
+                  //      error.message ?: "No message provided"
+                  //   )
+                  //)
+               }
+               activeQueryMonitor.reportComplete(queryResult.queryId)
             }
       )
    }
@@ -81,35 +100,32 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
 
             .onEach { typedInstance ->
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
-               consumer.handleEvent(
-                  TaxiQlQueryResultEvent(
-                     query,
-                     queryResult.queryResponseId,
-                     queryResult.clientQueryId,
-                     typedInstance,
-                     queryResult.anonymousTypes
-                  )
-               )
-            }.catch {
-
+               //consumer.handleEvent(
+               //   TaxiQlQueryResultEvent(
+               //      query,
+               //      queryResult.queryResponseId,
+               //      queryResult.clientQueryId,
+               //      typedInstance,
+               //      queryResult.anonymousTypes
+               //   )
+               //)
             }
-
             .onCompletion { error ->
                if (error == null) {
-                  consumer.handleEvent(
-                     QueryCompletedEvent(
-                        queryResult.queryResponseId,
-                        Instant.now()
-                     )
-                  )
+                  //consumer.handleEvent(
+                  //   QueryCompletedEvent(
+                  //      queryResult.queryResponseId,
+                  //      Instant.now()
+                  //   )
+                  //)
                } else {
-                  consumer.handleEvent(
-                     QueryExceptionEvent(
-                        queryResult.queryResponseId,
-                        Instant.now(),
-                        error.message ?: "No message provided"
-                     )
-                  )
+                  //consumer.handleEvent(
+                  //   QueryExceptionEvent(
+                  //      queryResult.queryResponseId,
+                  //      Instant.now(),
+                  //      error.message ?: "No message provided"
+                  //   )
+                  //)
                }
                activeQueryMonitor.reportComplete(queryResult.queryId)
             }

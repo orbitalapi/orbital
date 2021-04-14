@@ -3,6 +3,7 @@ package io.vyne.queryService.active
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.query.QueryResult
 import io.vyne.query.active.ActiveQueryMonitor
+import io.vyne.query.active.RunningQueryStatus
 import io.vyne.queryService.WebSocketController
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
@@ -21,8 +22,8 @@ import reactor.core.publisher.Mono
 @RestController
 class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
    @GetMapping("/api/query/active")
-   fun liveQueries(): MutableMap<String, QueryResult?> {
-      return monitor.runningQueries
+   fun liveQueries(): Map<String, RunningQueryStatus> {
+      return monitor.runningQueries()
    }
 
    @DeleteMapping("/api/query/active/{id}")

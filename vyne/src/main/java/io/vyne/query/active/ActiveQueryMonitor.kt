@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger
 val cancelledQueries = mutableSetOf<String>()
 
 class ActiveQueryMonitor {
-   val runningQueries:MutableMap<String,QueryResult?> = mutableMapOf()
+   //val runningQueries:MutableMap<String,QueryResult?> = mutableMapOf()
    private val queryMetadataSink = MutableSharedFlow<RunningQueryStatus>()
    private val queryMetadataFlow = queryMetadataSink.asSharedFlow()
    private val runningQueryCache = CacheBuilder.newBuilder()
@@ -49,6 +49,10 @@ class ActiveQueryMonitor {
       return queryMetadataFlow
    }
 
+   fun runningQueries():Map<String, RunningQueryStatus> {
+      return runningQueryCache.asMap()
+   }
+
    /**
     * Return latest QueryMetaData from latest state change or UNKNOWN QueryMetaData
     */
@@ -67,6 +71,7 @@ class ActiveQueryMonitor {
       var updatedValue: RunningQueryStatus? = runningQueryCache.get(queryId) {
          val updatedValue = updater(newDefaultStatus())
          updaterCalled = true
+
          updatedValue
       }
       // If the value was already present, call compute.
@@ -80,8 +85,6 @@ class ActiveQueryMonitor {
 
    fun reportStart(queryId: String, clientQueryId: String?, query: TaxiQLQueryString) {
       log().debug("Reporting Query Starting - $queryId")
-
-      runningQueries.putIfAbsent(queryId, null)
 
       storeAndEmit(queryId) {
          it.copy(state = QueryResponse.ResponseStatus.RUNNING, vyneQlQuery = query)
@@ -110,7 +113,8 @@ class ActiveQueryMonitor {
                running = false,
                state = QueryResponse.ResponseStatus.COMPLETED)
       }
-      runningQueryCache.invalidate(queryId)
+      //TODO Should we invalidate the cache or just allow expiry
+      //runningQueryCache.invalidate(queryId)
    }
 
 

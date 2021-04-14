@@ -459,7 +459,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                   val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
                   val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)
                   buildResult.results.first()
-
                }
             }
                .buffer(64)
