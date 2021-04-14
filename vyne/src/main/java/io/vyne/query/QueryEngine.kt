@@ -5,6 +5,8 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
+import io.vyne.query.active.ActiveQueryMonitor
+import io.vyne.query.active.isQueryCancelled
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.schemas.Operation
@@ -408,10 +410,10 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //}
 
       val resultsFlow = flow {
-         var resultsRecivedFromStrategy = false
+         var resultsReceivedFromStrategy = false
 
          for (queryStrategy in strategies) {
-            if (resultsRecivedFromStrategy) {
+            if (resultsReceivedFromStrategy) {
                break
             }
 
@@ -419,17 +421,19 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
             if (strategyResult.hasMatchesNodes()) {
                strategyResult.matchedNodes?.collectIndexed {index,value ->
-                  resultsRecivedFromStrategy = true
+                  resultsReceivedFromStrategy = true
                   emit(value)
-                  if (index >= 100) {
-                     println("Cancelling queryId ${context.queryId}" )
+
+                  //Check the query state every 25 records
+                  if (index % 25 == 0 && isQueryCancelled(context.queryId)) {
+                     log().warn("Query ${context.queryId} cancelled - cancelling collection and publication of results")
                      currentCoroutineContext().cancel()
                   }
 
                }
             }
          }
-      }.onEach { context.addFact(it) }
+      }
 
 
       // MP : We could possibly remove this line.
@@ -455,6 +459,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                   val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
                   val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)
                   buildResult.results.first()
+
                }
             }
                .buffer(64)

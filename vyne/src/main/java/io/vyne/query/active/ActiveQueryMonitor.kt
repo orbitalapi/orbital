@@ -10,10 +10,12 @@ import kotlinx.coroutines.launch
 import lang.taxi.types.TaxiQLQueryString
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicInteger
 
+val cancelledQueries = mutableSetOf<String>()
 
 class ActiveQueryMonitor {
-   private val runningQueries:Map<String,QueryResult> = mutableMapOf()
+   val runningQueries:MutableMap<String,QueryResult?> = mutableMapOf()
    private val queryMetadataSink = MutableSharedFlow<RunningQueryStatus>()
    private val queryMetadataFlow = queryMetadataSink.asSharedFlow()
    private val runningQueryCache = CacheBuilder.newBuilder()
@@ -33,9 +35,14 @@ class ActiveQueryMonitor {
    }
 
    fun cancelQuery(queryId: String) {
-      runningQueries[queryId]!!
-         .results
-         .cancellable()
+      cancelledQueries.add(queryId)
+   }
+
+   fun cancelQueryByClientQueryId(clientQueryId: String) {
+      val queryId = queryIdToClientQueryIdMap.entries.filter { it.value == clientQueryId }.firstOrNull()?.key
+      if (queryId != null) {
+         cancelledQueries.add(queryId)
+      }
    }
 
    fun allQueryStatusUpdates(): Flow<RunningQueryStatus> {
@@ -73,6 +80,9 @@ class ActiveQueryMonitor {
 
    fun reportStart(queryId: String, clientQueryId: String?, query: TaxiQLQueryString) {
       log().debug("Reporting Query Starting - $queryId")
+
+      runningQueries.putIfAbsent(queryId, null)
+
       storeAndEmit(queryId) {
          it.copy(state = QueryResponse.ResponseStatus.RUNNING, vyneQlQuery = query)
 
@@ -131,4 +141,6 @@ data class RunningQueryStatus(
    val state: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.UNKNOWN
 )
 
-
+fun isQueryCancelled(queryId:String):Boolean {
+   return cancelledQueries.contains(queryId)
+}

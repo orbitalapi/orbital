@@ -24,7 +24,7 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
 
          //TODO
          //queryContext.startChild(this, "Evaluating ${edge.description} with evaluator ${evaluator.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) {
-         evaluator.evaluate(edge, queryContext)
+            evaluator.evaluate(edge, queryContext)
          //}
 
       } else {
@@ -98,8 +98,9 @@ class HipsterDiscoverGraphQueryStrategy(
    internal suspend fun find(targetElement: Element, context: QueryContext, invocationConstraints: InvocationConstraints):TypedInstance? {
       // Take a copy, as the set is mutable, and performing a search is a
       // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
-      val currentFacts = context.facts.toSet()
-      return  currentFacts
+      val currentFacts = context.copy().facts.toSet()
+
+      val ret = currentFacts
          .asFlow()
      //    .filter { it is TypedObject }
          .mapNotNull { fact ->
@@ -124,8 +125,9 @@ class HipsterDiscoverGraphQueryStrategy(
             searchResult.typedInstance
          }
          .firstOrNull()
-   }
 
+      return ret
+   }
 
    private suspend fun evaluatePath(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): List<PathEvaluation> {
       // The actual result of this isn't directly used.  But the queryContext is updated with

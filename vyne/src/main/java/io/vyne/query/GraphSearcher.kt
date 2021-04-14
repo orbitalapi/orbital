@@ -15,6 +15,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 // This class is not optimized.  Need to investigate how to speed it up.
@@ -231,9 +232,11 @@ class GraphSearcher(
       //   graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
       // }
 //      val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
+
       val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
       val result = findPath(graphBuildResult.graph, previouslyEvaluatedPaths)
       graphBuilder.prune(graphBuildResult)
+
       return result
    }
 

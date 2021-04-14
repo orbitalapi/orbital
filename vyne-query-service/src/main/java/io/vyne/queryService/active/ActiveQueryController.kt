@@ -1,6 +1,7 @@
 package io.vyne.queryService.active
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.query.QueryResult
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.WebSocketController
 import kotlinx.coroutines.flow.emptyFlow
@@ -20,22 +21,22 @@ import reactor.core.publisher.Mono
 @RestController
 class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
    @GetMapping("/api/query/active")
-   fun liveQueries(): Map<String, String> {
-      return monitor.queryIdToClientQueryIdMap
+   fun liveQueries(): MutableMap<String, QueryResult?> {
+      return monitor.runningQueries
    }
 
    @DeleteMapping("/api/query/active/{id}")
    fun cancelQuery(
       @PathVariable("id") queryId: String
    ) {
-      TODO("Not sure how to handle this")
+      monitor.cancelQuery(queryId)
    }
 
    @DeleteMapping("/api/query/active/clientId/{id}")
    fun cancelQueryByClientQueryId(
       @PathVariable("id") clientQueryId: String
    ) {
-      TODO("Not sure how to handle this")
+      monitor.cancelQueryByClientQueryId(clientQueryId)
    }
 
 }

@@ -4,6 +4,7 @@ import io.vyne.FactSetMap
 import io.vyne.VyneCacheConfiguration
 import io.vyne.VyneGraphBuilderCacheSettings
 import io.vyne.formulas.CalculatorRegistry
+import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.query.graph.AttributeOfEdgeEvaluator
 import io.vyne.query.graph.AttributeOfEvaluator
 import io.vyne.query.graph.CanPopulateEdgeEvaluator
