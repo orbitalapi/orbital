@@ -1,7 +1,10 @@
 package io.vyne.queryService.history
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.vyne.query.history.QuerySummary
+import io.vyne.queryService.NotFoundException
 import io.vyne.queryService.csv.toCsv
+import io.vyne.queryService.history.db.QueryHistoryRecordRepository
 import io.vyne.queryService.history.db.QueryResultRowRepository
 import io.vyne.schemaStore.SchemaProvider
 import kotlinx.coroutines.FlowPreview
@@ -12,6 +15,7 @@ import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 
 /**
  * Makes query results downloadable as CSV or JSON.
@@ -24,12 +28,15 @@ import reactor.core.publisher.Flux
 class QueryHistoryExporter(
    private val objectMapper: ObjectMapper,
    private val resultRepository: QueryResultRowRepository,
+   private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
    private val schemaProvider: SchemaProvider
 ) {
    fun export(queryId: String, exportFormat: ExportFormat): Flow<CharSequence> {
-      val results = resultRepository.findAllByQueryId(queryId)
-         .asFlow()
-         .map { it.asTypeNamedInstance(objectMapper) }
+      val results = assertQueryIdIsValid(queryId)
+         .flatMapMany {
+            resultRepository.findAllByQueryId(queryId)
+               .map { it.asTypeNamedInstance(objectMapper) }
+         }.asFlow()
 
       return when (exportFormat) {
          ExportFormat.CSV -> toCsv(results, schemaProvider.schema())
@@ -48,6 +55,13 @@ class QueryHistoryExporter(
                Flux.fromIterable(listOf("]"))
             ).asFlow()
       }
+   }
+
+   private fun assertQueryIdIsValid(queryId: String): Mono<QuerySummary> {
+      return queryHistoryRecordRepository.findByQueryId(queryId)
+         .switchIfEmpty(Mono.defer {
+            throw NotFoundException("No query with id $queryId was found")
+         })
    }
 
 

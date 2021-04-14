@@ -5,7 +5,6 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
-import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.query.active.isQueryCancelled
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
@@ -13,10 +12,11 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import kotlinx.coroutines.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
-import java.time.Instant
-import java.time.format.DateTimeFormatter
 import java.util.stream.Collectors
 
 
@@ -110,7 +110,7 @@ class StatefulQueryEngine(
       clientQueryId: String?
    ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
-      return QueryContext.from(schema, facts + additionalFacts, this, profiler, queryId = queryId)
+      return QueryContext.from(schema, facts + additionalFacts, this, profiler, queryId = queryId, clientQueryId = clientQueryId)
    }
 
 }
@@ -386,7 +386,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          path = null,
          profilerOperation = queryResult.profilerOperation,
          anonymousTypes = queryResult.anonymousTypes,
-         queryId = context.queryId
+         queryId = context.queryId,
+         clientQueryId = context.clientQueryId
       )
 
    }

@@ -218,6 +218,11 @@ data class QueryContext(
    val queryId: String
 
 ) : ProfilerOperation by profiler {
+   init {
+       if (clientQueryId == null) {
+          log().warn("No clientQueryId provided")
+       }
+   }
 
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
