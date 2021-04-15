@@ -285,8 +285,9 @@ class QueryService(
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
-      QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
-         .responseWithQueryHistoryListener(query, response)
+      response
+      //QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
+      //   .responseWithQueryHistoryListener(query, response)
    }
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
@@ -311,8 +312,9 @@ class QueryService(
          FailedSearchResponse(e.message!!, e.profilerOperation, query.queryId)
       }
 
-      return QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
-         .responseWithQueryHistoryListener(query, response)
+      return response
+      //return QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
+      //   .responseWithQueryHistoryListener(query, response)
    }
 
    private fun parseFacts(facts: List<Fact>, schema: Schema): List<Pair<TypedInstance, FactSetId>> {

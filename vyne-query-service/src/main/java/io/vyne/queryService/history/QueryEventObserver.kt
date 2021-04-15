@@ -7,6 +7,7 @@ import io.vyne.query.QueryResult
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.FailedSearchResponse
 import io.vyne.schemas.Type
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
@@ -38,28 +39,28 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
          results = queryResult.results
             .onEach { typedInstance ->
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
-               //consumer.handleEvent(
-               //   RestfulQueryResultEvent(
-               //      query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
-               //   )
-               //)
+               consumer.handleEvent(
+                  RestfulQueryResultEvent(
+                     query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
+                  )
+               )
             }
             .onCompletion { error ->
                if (error == null) {
-                  //consumer.handleEvent(
-                  //   QueryCompletedEvent(
-                  //      queryResult.queryResponseId,
-                  //      Instant.now()
-                  //   )
-                  //)
+                  consumer.handleEvent(
+                     QueryCompletedEvent(
+                        queryResult.queryResponseId,
+                        Instant.now()
+                     )
+                  )
                } else {
-                  //consumer.handleEvent(
-                  //   QueryExceptionEvent(
-                  //      queryResult.queryResponseId,
-                  //      Instant.now(),
-                  //      error.message ?: "No message provided"
-                  //   )
-                  //)
+                  consumer.handleEvent(
+                     QueryExceptionEvent(
+                        queryResult.queryResponseId,
+                        Instant.now(),
+                        error.message ?: "No message provided"
+                     )
+                  )
                }
                activeQueryMonitor.reportComplete(queryResult.queryId)
             }
@@ -100,32 +101,32 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
 
             .onEach { typedInstance ->
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
-               //consumer.handleEvent(
-               //   TaxiQlQueryResultEvent(
-               //      query,
-               //      queryResult.queryResponseId,
-               //      queryResult.clientQueryId,
-               //      typedInstance,
-               //      queryResult.anonymousTypes
-               //   )
-               //)
+               consumer.handleEvent(
+                  TaxiQlQueryResultEvent(
+                     query,
+                     queryResult.queryResponseId,
+                     queryResult.clientQueryId,
+                     typedInstance,
+                     queryResult.anonymousTypes
+                  )
+               )
             }
             .onCompletion { error ->
                if (error == null) {
-                  //consumer.handleEvent(
-                  //   QueryCompletedEvent(
-                  //      queryResult.queryResponseId,
-                  //      Instant.now()
-                  //   )
-                  //)
+                  consumer.handleEvent(
+                     QueryCompletedEvent(
+                        queryResult.queryResponseId,
+                        Instant.now()
+                     )
+                  )
                } else {
-                  //consumer.handleEvent(
-                  //   QueryExceptionEvent(
-                  //      queryResult.queryResponseId,
-                  //      Instant.now(),
-                  //      error.message ?: "No message provided"
-                  //   )
-                  //)
+                  consumer.handleEvent(
+                     QueryExceptionEvent(
+                        queryResult.queryResponseId,
+                        Instant.now(),
+                        error.message ?: "No message provided"
+                     )
+                  )
                }
                activeQueryMonitor.reportComplete(queryResult.queryId)
             }
@@ -146,7 +147,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
 }
 
 interface QueryEventConsumer {
-   suspend fun handleEvent(event: QueryEvent)
+   fun handleEvent(event: QueryEvent): Job
 }
 
 sealed class QueryEvent

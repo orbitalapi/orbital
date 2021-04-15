@@ -14,8 +14,11 @@ import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.history.*
 import io.vyne.utils.log
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.stereotype.Component
@@ -46,7 +49,9 @@ class PersistingQueryEventConsumer(
       .build<String, String>()
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
 
-   override suspend fun handleEvent(event: QueryEvent) = withContext(Dispatchers.IO) {
+   override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch {
+      delay(500)
+
       when (event) {
          is TaxiQlQueryResultEvent -> persistEvent(event)
          is RestfulQueryResultEvent -> persistEvent(event)
@@ -55,7 +60,6 @@ class PersistingQueryEventConsumer(
          is QueryFailureEvent -> persistEvent(event)
          else -> TODO("Event type ${event::class.simpleName} not yet supported")
       }
-      Unit
    }
 
    private fun persistEvent(event: QueryCompletedEvent) {
@@ -75,12 +79,12 @@ class PersistingQueryEventConsumer(
       repository.setQueryEnded(event.queryId, event.timestamp, 0, QueryResponse.ResponseStatus.ERROR, event.message)
          .subscribe()
    }
-   private fun persistEvent(event: QueryFailureEvent) {
+   private fun persistEvent(event: QueryFailureEvent)  {
       repository.setQueryEnded(event.queryId, Instant.now(), 0, QueryResponse.ResponseStatus.ERROR, event.failure.message)
          .subscribe()
    }
 
-   private fun persistEvent(event: RestfulQueryResultEvent) {
+   private fun persistEvent(event: RestfulQueryResultEvent)  {
       createQuerySummaryRecord(event.queryId) {
          QuerySummary(
             queryId = event.queryId,
@@ -101,7 +105,7 @@ class PersistingQueryEventConsumer(
       ).subscribe()
    }
 
-   private suspend fun persistEvent(event: TaxiQlQueryResultEvent) = withContext(Dispatchers.IO) {
+   private fun persistEvent(event: TaxiQlQueryResultEvent) {
       createQuerySummaryRecord(event.queryId) {
          try {
             QuerySummary(

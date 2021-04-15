@@ -98,7 +98,7 @@ class HipsterDiscoverGraphQueryStrategy(
    internal suspend fun find(targetElement: Element, context: QueryContext, invocationConstraints: InvocationConstraints):TypedInstance? {
       // Take a copy, as the set is mutable, and performing a search is a
       // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
-      val currentFacts = context.copy().facts.toSet()
+      val currentFacts = context.facts.toSet()
 
       val ret = currentFacts
          .asFlow()
