@@ -72,7 +72,7 @@ fun toCsv(results: Flow<TypedInstance>, queryResultSerializer: QueryResultSerial
                   when (it) {
                      is TypedObject -> {
                         printer.printRecord(it.type!!.attributes.keys) //The header
-                        printer.printRecord((queryResultSerializer.serialize(it) as LinkedHashMap<*, *>).map { e -> e.value})
+                        printer.printRecord((queryResultSerializer.serialize(it) as Map<*, *>).map { e -> e.value})
                         val csvRecord = writer.toString()
                         writer.clear()
                         csvRecord
@@ -84,7 +84,7 @@ fun toCsv(results: Flow<TypedInstance>, queryResultSerializer: QueryResultSerial
                else -> {
                   when (it) {
                      is TypedObject -> {
-                        printer.printRecord( (queryResultSerializer.serialize(it) as LinkedHashMap<*,*>).map { e -> e.value})
+                        printer.printRecord( (queryResultSerializer.serialize(it) as Map<*,*>).map { e -> e.value})
                         val csvRecord = writer.toString()
                         writer.clear()
                         csvRecord

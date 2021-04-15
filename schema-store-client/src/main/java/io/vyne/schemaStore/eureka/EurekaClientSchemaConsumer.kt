@@ -99,7 +99,7 @@ class EurekaClientSchemaConsumer(
             // Let's add it back if this stuff turns out to be expensive
             // this whole block is wrapped in try-catch as without it any unhandled exception simply stops
             // eurekaNotificationUpdater getting further eureka updated
-            log().debug("Received a eureka event, checking for changes to sources")
+            log().trace("Received a eureka event, checking for changes to sources")
 
             val currentSourceSet = rebuildSources()
             removeUnhealthySourcesNowRemoved(currentSourceSet)
@@ -113,7 +113,7 @@ class EurekaClientSchemaConsumer(
                log().info("Sources Summary: $logMsg")
                updateSources(currentSourceSet, delta)
             } else {
-               log().debug("No changes found, nothing to do")
+               log().trace("No changes found, nothing to do")
             }
          } catch (e: Exception) {
             log().error("Error in processing eureka update", e)
