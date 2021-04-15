@@ -173,6 +173,32 @@ data class Type(
          ?: error("No typed instance found for value $value on ${this.fullyQualifiedName}")
    }
 
+   /**
+    * This is a relaxed version of enumTypedInstance.
+    *  In e2e test, the following test
+    * `Rfq ConvertibleBonds Report for Today`
+    * raises error("No typed instance found for value $value on ${this.fullyQualifiedName}") in 'enumTypedInstance'
+    * as there is an issue in the taxonomy:
+    * bbg.rfq.RfqCbIngestion has the following:
+    *    priceType : RfqPriceType? by when {
+    *         this.price = null -> null
+    *         this.price != null && this.bondUnit = "Yes" -> "CURR"
+    *        else -> "PCT"
+    *      }
+    * However, RfgPriceType has the following enum values (i.e. it doesn't have CURR as a value)
+    *    enum RfqPriceType {
+    *        // doesn't work shows % in output
+    *        // PCT1("%"),
+    *        PCT1,
+    *        default PCT synonym of cacib.common.price.PriceType.PCT
+    *     }
+    * TODO: We should have raised compilation error for 'priceType' in bbg.rfq.RfqCbIngestion as 'CURR' is not a valid RfqPriceType enum value.
+    * We should get rid of this when Taxi is modified accordingly.
+    */
+   fun enumTypedInstanceOrNull(value: Any): TypedEnumValue? {
+      return this.enumTypedInstances.firstOrNull { it.value == value || it.name == value }
+   }
+
    // TODO : I suspect all of these isXxxx vars need to defer to the underlying aliased type.
    @JsonView(TypeFullView::class)
    val isParameterType: Boolean = this.modifiers.contains(Modifier.PARAMETER_TYPE)
