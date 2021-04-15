@@ -10,8 +10,15 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
 import io.vyne.schemas.*
 import io.vyne.utils.log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import lang.taxi.Equality
+import java.util.concurrent.Executors
+import kotlin.coroutines.CoroutineContext
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
@@ -67,17 +74,22 @@ class HipsterDiscoverGraphQueryStrategy(
 
    override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
 
-      return find(target, context, invocationConstraints)
+      val dispatcher = Executors.newFixedThreadPool(64).asCoroutineDispatcher()
+      return dispatcher.run { find(target, context, invocationConstraints) }
+
    }
 
-   suspend fun find(targets: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+
+   suspend fun find(targets: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult  {
       // Note : There is an existing, working impl. of this in QueryEngine (the OrientDB approach),
       // but I haven't gotten around to copying it yet.
       if (targets.size != 1) TODO("Support for target sets not yet built")
       val target = targets.first()
 
       // We only support DISCOVER_ONE mode here.
-      if (target.mode != QueryMode.DISCOVER) return QueryStrategyResult.empty()
+      if (target.mode != QueryMode.DISCOVER) {
+         return QueryStrategyResult.empty()
+      }
 
       if (context.facts.isEmpty()) {
          log().info("Cannot perform a graph search, as no facts provied to serve as starting point. ")
@@ -88,10 +100,10 @@ class HipsterDiscoverGraphQueryStrategy(
 
       // search from every fact in the context
       val lastResult: TypedInstance? = find(targetElement, context, invocationConstraints)
-      return if (lastResult != null) {
-         QueryStrategyResult( mapOf(target to lastResult).map { it.value }.asFlow() )
+      if (lastResult != null) {
+         return QueryStrategyResult( mapOf(target to lastResult).map { it.value }.asFlow() )
       } else {
-         QueryStrategyResult.empty()
+         return QueryStrategyResult.empty()
       }
    }
 
@@ -102,6 +114,7 @@ class HipsterDiscoverGraphQueryStrategy(
 
       val ret = currentFacts
          .asFlow()
+
      //    .filter { it is TypedObject }
          .mapNotNull { fact ->
             val startFact =  providedInstance(fact)
