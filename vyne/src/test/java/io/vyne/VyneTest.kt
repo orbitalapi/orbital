@@ -702,7 +702,7 @@ class VyneTest {
    }
 
    @Test
-   fun canRequestTypeAliasOfCollectionDirectlyFromService() = runBlockingTest {
+   fun canRequestTypeAliasOfCollectionDirectlyFromService() = runBlocking {
       val schema = """
           type Customer {
             emails : EmailAddress[]
@@ -718,6 +718,8 @@ class VyneTest {
       stubService.addResponse("emails", vyne.typedValue("EmailAddresses", listOf("foo@foo.com", "bar@foo.com")))
 
       val result = vyne.query().find("EmailAddresses")
+      result.results.toList()
+
 
       expect(result.isFullyResolved).to.be.`true`
       result.typedInstances()

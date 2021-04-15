@@ -8,6 +8,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 
@@ -174,7 +175,7 @@ class VyneEnumTest {
    }
 
    @Test
-   fun `should project by using synonyms and inheritance`() = runBlockingTest {
+   fun `should project by using synonyms and inheritance`() = runBlocking {
 
       val enumSchema = TaxiSchema.from(
          """
@@ -209,6 +210,8 @@ type typeB {
       // When
       val queryResult = vyne.query(""" findOne { typeA } as typeB """)
 
+      val list = queryResult.results.toList()
+      println(list)
       // Then
       queryResult.shouldHaveResults(mapOf("fieldB1" to "BBB2"))
 

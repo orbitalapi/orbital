@@ -462,7 +462,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                   buildResult.results.first()
                }
             }
-               .buffer(64)
+               .buffer(128)
                .map { it.await() }
 
       }

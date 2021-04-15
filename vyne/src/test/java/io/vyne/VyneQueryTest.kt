@@ -5,6 +5,8 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.query.queryBuilders.VyneQlGrammar
 import io.vyne.utils.withoutWhitespace
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import lang.taxi.services.QueryOperationCapability
 import org.junit.Test
@@ -45,6 +47,8 @@ class VyneQueryTest {
       }"""
       vyneQlQuery.withoutWhitespace()
          .should.equal(expectedVyneQl.withoutWhitespace())
+
+      println(queryResult.results?.toList())
 
    }
 

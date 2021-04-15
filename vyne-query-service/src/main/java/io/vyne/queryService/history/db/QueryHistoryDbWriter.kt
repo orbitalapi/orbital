@@ -15,6 +15,7 @@ import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.history.*
 import io.vyne.utils.log
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -49,16 +50,17 @@ class PersistingQueryEventConsumer(
       .build<String, String>()
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
 
-   override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch {
+   override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch(Dispatchers.IO) {
       delay(500)
 
       when (event) {
-         is TaxiQlQueryResultEvent -> persistEvent(event)
-         is RestfulQueryResultEvent -> persistEvent(event)
-         is QueryCompletedEvent -> persistEvent(event)
-         is QueryExceptionEvent -> persistEvent(event)
-         is QueryFailureEvent -> persistEvent(event)
-         else -> TODO("Event type ${event::class.simpleName} not yet supported")
+         //is TaxiQlQueryResultEvent -> persistEvent(event)
+         //is RestfulQueryResultEvent -> persistEvent(event)
+         //is QueryCompletedEvent -> persistEvent(event)
+         //is QueryExceptionEvent -> persistEvent(event)
+         //is QueryFailureEvent -> persistEvent(event)
+
+         else -> println("Persisting event")
       }
    }
 
