@@ -182,10 +182,9 @@ object TypedInstanceTree {
 
          }
          is TypedCollection -> instance.value
+         is TypedNull -> emptyList()
          else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
-
-         // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-      }.filter { it -> it !is TypedNull }
+      }
    }
 }
 
@@ -219,9 +218,9 @@ data class QueryContext(
 
 ) : ProfilerOperation by profiler {
    init {
-       if (clientQueryId == null) {
-          log().warn("No clientQueryId provided")
-       }
+      if (clientQueryId == null) {
+         log().warn("No clientQueryId provided")
+      }
    }
 
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
