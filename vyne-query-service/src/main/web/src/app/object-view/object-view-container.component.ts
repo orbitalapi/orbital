@@ -7,7 +7,7 @@ import {ExportFormat} from '../services/export.file.service';
 @Component({
   selector: 'app-object-view-container',
   template: `
-    <div class="container">
+    <div class="container" *ngIf="ready">
       <div class="toolbar">
         <div class="type-name">{{ type?.name.shortDisplayName }}</div>
         <mat-button-toggle-group [(ngModel)]="displayMode">
@@ -28,7 +28,7 @@ import {ExportFormat} from '../services/export.file.service';
           <button mat-menu-item (click)="onDownloadClicked(downloadFileType.TEST_CASE)">as Test Case</button>
         </mat-menu>
       </div>
-      <div *ngIf="ready" class="display-wrapper">
+      <div class="display-wrapper">
         <app-results-table *ngIf="displayMode==='table'"
                            [instances$]="instances$"
                            [rowData]="instances"
