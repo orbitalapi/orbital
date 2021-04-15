@@ -175,7 +175,7 @@ object TypedInstanceTree {
          is TypedEnumValue -> instance.synonyms
          is TypedValue -> {
             if (instance.type.isEnum) {
-               instance.type.enumTypedInstance(instance.value).synonyms
+               instance.type.enumTypedInstanceOrNull (instance.value)?.synonyms ?: emptyList()
             } else {
                emptyList()
             }
