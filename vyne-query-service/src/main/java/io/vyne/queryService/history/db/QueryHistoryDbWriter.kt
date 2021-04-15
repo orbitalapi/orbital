@@ -51,7 +51,6 @@ class PersistingQueryEventConsumer(
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
 
    override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch(Dispatchers.IO) {
-      delay(500)
 
       when (event) {
          //is TaxiQlQueryResultEvent -> persistEvent(event)
