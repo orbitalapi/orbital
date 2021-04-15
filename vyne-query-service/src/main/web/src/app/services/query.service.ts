@@ -39,11 +39,13 @@ export class QueryService {
   submitQuery(query: Query, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE): Observable<ValueWithTypeName> {
     // TODO :  I suspect the return type here is actually ValueWithTypeName | ValueWithTypeName[]
     return this.http.post<ValueWithTypeName[]>(`${environment.queryServiceUrl}/api/query?resultMode=${resultMode}&clientQueryId=${clientQueryId}`, query, this.httpOptions)
-      // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
-      // however, we want to unpack that to multiple emitted items on our observable
-      // therefore, concatAll() seems to do this.
-      // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
-      .pipe(concatAll());
+      .pipe(
+        // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
+        // however, we want to unpack that to multiple emitted items on our observable
+        // therefore, concatAll() seems to do this.
+        // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
+        concatAll(),
+      );
 
   }
 

@@ -9,7 +9,7 @@ import {Subject} from 'rxjs';
 import {RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {isNullOrUndefined} from 'util';
 import {QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
-import {ExportFormat} from '../../services/export.file.service';
+import {ExportFileService, ExportFormat} from '../../services/export.file.service';
 
 @Component({
   selector: 'app-query-builder',
@@ -22,7 +22,6 @@ import {ExportFormat} from '../../services/export.file.service';
         <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
 
         <app-tabbed-results-view
-          *ngIf="resultType"
           (instanceSelected)="onInstanceSelected($event)"
           [instances$]="results$"
           [type]="resultType"
@@ -41,6 +40,7 @@ export class QueryBuilderComponent {
   results$: Subject<InstanceLike>;
   loading = false;
   failure: FailedSearchResponse | null = null;
+  queryClientId: string | null = null;
 
   @Output()
   instanceSelected = new EventEmitter<QueryResultInstanceSelectedEvent>();
@@ -51,7 +51,8 @@ export class QueryBuilderComponent {
 
 
   constructor(private queryService: QueryService,
-              private typeService: TypesService) {
+              private typeService: TypesService,
+              private fileService: ExportFileService) {
     this.typeService.getTypes()
       .subscribe(schema => this.schema = schema);
   }
@@ -61,7 +62,8 @@ export class QueryBuilderComponent {
     this.results$ = new Subject<InstanceLike>();
     this.loading = true;
     this.resultType = null;
-    this.queryService.submitQuery(query, nanoid())
+    this.queryClientId = nanoid();
+    this.queryService.submitQuery(query, this.queryClientId)
       .subscribe(result => {
           if (!isNullOrUndefined(result.typeName)) {
             this.resultType = findType(this.schema, result.typeName);
@@ -79,7 +81,11 @@ export class QueryBuilderComponent {
         });
   }
 
-  downloadQueryHistory(format: ExportFormat) {
-    console.error('Download not implemented in query builder yet');
+  downloadQueryHistory(fileType: ExportFormat) {
+    if (fileType === ExportFormat.TEST_CASE) {
+      this.fileService.downloadRegressionPackZipFileFromClientId(this.queryClientId, fileType);
+    } else {
+      this.fileService.downloadQueryHistoryFromClientQueryId(this.queryClientId, fileType);
+    }
   }
 }
