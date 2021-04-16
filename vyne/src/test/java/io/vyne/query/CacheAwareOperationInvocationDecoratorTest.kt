@@ -15,6 +15,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Service
 import io.vyne.schemas.Type
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
@@ -22,7 +23,7 @@ import org.junit.Test
 class CacheAwareOperationInvocationDecoratorTest {
 
    @Test
-   fun testKeyGenerator() = runBlocking {
+   fun testKeyGenerator() {
       val mockOperationInvoker = mock<OperationInvoker>()
       val mockProfilerOperation = mock<ProfilerOperation>()
       val cacheAware = CacheAwareOperationInvocationDecorator(mockOperationInvoker)
@@ -41,9 +42,22 @@ class CacheAwareOperationInvocationDecoratorTest {
             second = TypedInstance.from(type, null, mock(), source = Provided)
          )
       )
-      whenever(mockOperationInvoker.invoke(any(), any(), any(), any(), any())).thenReturn( flow { emit(mockedTypeInstance) })
-      cacheAware.invoke(service, operation, params, mockProfilerOperation, "MOCK_QUERY_ID")
-      cacheAware.invoke(service, operation, params, mockProfilerOperation,"MOCK_QUERY_ID")
-      verify(mockOperationInvoker, times(1)).invoke(service, operation, params, mockProfilerOperation,"MOCK_QUERY_ID")
+      runBlocking {
+         whenever(mockOperationInvoker.invoke(any(), any(), any(), any(), any())).thenReturn(flow {
+
+            emit(
+               mockedTypeInstance
+            )
+         })
+         cacheAware.invoke(service, operation, params, mockProfilerOperation, "MOCK_QUERY_ID").toList()
+         cacheAware.invoke(service, operation, params, mockProfilerOperation, "MOCK_QUERY_ID").toList()
+         verify(mockOperationInvoker, times(1)).invoke(
+            service,
+            operation,
+            params,
+            mockProfilerOperation,
+            "MOCK_QUERY_ID"
+         )
+      }
    }
 }

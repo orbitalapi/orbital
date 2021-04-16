@@ -7,6 +7,7 @@ import io.vyne.query.queryBuilders.VyneQlGrammar
 import io.vyne.queryDeclaration
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.Compiler
 import org.junit.Before
@@ -114,8 +115,7 @@ class QueryOperationInvocationStrategyTest {
          """
             [ { "firstName" : "Jimmy" } ]
          """.trimIndent()))
-      val result = runBlocking {vyne.query("findAll { Person[]( FirstName = 'Jimmy' ) }")}
-      result.isFullyResolved.should.be.`true`
+      val result = runBlocking {vyne.query("findAll { Person[]( FirstName = 'Jimmy' ) }").results.toList()}
 
       stub.invocations.should.have.size(1)
       // TODO :  Assert the vyneQl was formed correctly

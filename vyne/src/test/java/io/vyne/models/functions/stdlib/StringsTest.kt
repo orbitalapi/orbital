@@ -9,10 +9,10 @@ import io.vyne.models.TypedObject
 import io.vyne.models.TypedValue
 import io.vyne.schemas.Type
 import io.vyne.schemas.taxi.TaxiSchema
-//import io.vyne.testVyne
+import io.vyne.testVyne
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
-/*
+
 class StringsTest {
    @Test
    fun concatShouldJoinFieldValues() {
@@ -371,4 +371,4 @@ fun Any?.toTypedValue(type: Type): TypedInstance {
       else -> TypedValue.from(type, this, ConversionService.DEFAULT_CONVERTER, source = Provided)
    }
 }
-*/
+

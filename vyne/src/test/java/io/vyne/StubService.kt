@@ -82,6 +82,7 @@ class StubService(
       } else {
          operation.name
       }
+
       invocations.put(stubResponseKey, parameters.map { it.second })
 
       if (!responses.containsKey(stubResponseKey) && !handlers.containsKey(stubResponseKey)) {

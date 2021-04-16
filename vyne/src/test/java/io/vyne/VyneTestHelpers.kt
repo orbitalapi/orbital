@@ -1,5 +1,6 @@
 package io.vyne
 
+import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.query.QueryContext
@@ -36,4 +37,8 @@ suspend fun QueryResult.typedObjects(): List<TypedObject> {
 
 suspend fun QueryResult.rawObjects(): List<Map<String,Any?>> {
    return this.typedObjects().map { it.toRawObject() as Map<String,Any?> }
+}
+
+suspend fun QueryResult.firstTypedCollection(): TypedCollection {
+   return return this.results?.first() as TypedCollection
 }

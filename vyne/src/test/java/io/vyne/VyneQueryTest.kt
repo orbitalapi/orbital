@@ -14,7 +14,7 @@ import org.junit.Test
 @ExperimentalCoroutinesApi
 class VyneQueryTest {
    @Test
-   fun willInvokeAQueryToDiscoverValues() = runBlockingTest {
+   fun willInvokeAQueryToDiscoverValues() = runBlocking {
       val (vyne, stub) = testVyne(
          VyneQlGrammar.QUERY_TYPE_TAXI,
          """

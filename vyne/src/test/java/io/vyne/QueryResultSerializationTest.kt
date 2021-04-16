@@ -2,13 +2,17 @@ package io.vyne
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
 import io.vyne.models.json.parseJsonModel
 import io.vyne.query.QueryResult
 import io.vyne.query.QuerySpecTypeNode
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
+import java.util.*
 
-/*
+
 class QueryResultSerializationTest {
 
    val taxiDef = """
@@ -30,21 +34,15 @@ class QueryResultSerializationTest {
           | "isicCode" : "isic"
           | }
       """.trimMargin())
+      val queryId = UUID.randomUUID().toString()
       val result = QueryResult(
-         results = mapOf(
-            QuerySpecTypeNode(clientType) to clientInstnace
-         )
+         queryId = queryId,
+         results = flow { emit(clientInstnace) },
+         querySpec = QuerySpecTypeNode(clientType)
       )
 
       val expectedJson = """
          {
-           "results" : {
-             "Client" : {
-               "clientId" : "123",
-               "name" : "Jimmy",
-               "isicCode" : "isic"
-             }
-           },
            "unmatchedNodes" : [ ],
            "queryResponseId" : "${result.queryResponseId}",
            "truncated" : false,
@@ -53,7 +51,8 @@ class QueryResultSerializationTest {
            "vyneCost" : 0,
            "timings" : { },
            "remoteCalls" : [ ],
-           "fullyResolved" : true
+           "fullyResolved" : true,
+           "queryId": $queryId
          }
       """.trimIndent()
       val json = jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(result)
@@ -70,21 +69,16 @@ class QueryResultSerializationTest {
           | "isicCode" : "isic"
           | }
       """.trimMargin())
+      val queryId = UUID.randomUUID().toString()
       val collection = TypedCollection.arrayOf(clientType, listOf(clientInstnace))
       val result = QueryResult(
-         results = mapOf(
-            QuerySpecTypeNode(clientType) to collection
-         )
+         queryId = queryId,
+         results = flow { emit(clientInstnace) },
+         querySpec = QuerySpecTypeNode(clientType)
       )
+
       val expected = """
 {
-  "results" : {
-    "Client" : [ {
-      "clientId" : "123",
-      "name" : "Jimmy",
-      "isicCode" : "isic"
-    } ]
-  },
   "unmatchedNodes" : [ ],
   "queryResponseId" : "${result.queryResponseId}",
    "responseStatus" : "COMPLETED",
@@ -93,7 +87,8 @@ class QueryResultSerializationTest {
   "remoteCalls" : [ ],
   "timings" : { },
   "vyneCost" : 0,
-  "fullyResolved" : true
+  "fullyResolved" : true,
+  "queryId":   $queryId
 }
       """.trimIndent()
 
@@ -101,4 +96,4 @@ class QueryResultSerializationTest {
       JSONAssert.assertEquals(expected, json, true)
    }
 }
-*/
+

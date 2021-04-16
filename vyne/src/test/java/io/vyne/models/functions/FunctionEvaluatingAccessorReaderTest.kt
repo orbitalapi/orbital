@@ -1,16 +1,12 @@
 package io.vyne.models.functions
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-//import io.vyne.testVyne
-import org.jetbrains.spek.api.Spek
-import org.jetbrains.spek.api.dsl.describe
-import org.jetbrains.spek.api.dsl.it
+import io.vyne.testVyne
 import org.junit.Test
-/*
+
 class FunctionEvaluatingAccessorReaderTest {
 
    @Test
@@ -32,4 +28,4 @@ class FunctionEvaluatingAccessorReaderTest {
    }
 }
 
- */
+

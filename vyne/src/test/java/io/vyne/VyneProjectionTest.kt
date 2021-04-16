@@ -10,6 +10,7 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import kotlin.time.ExperimentalTime
@@ -640,14 +641,17 @@ service Broker1Service {
       stubService.addResponse("findSingleByOrderID") { _, parameters ->
          parameters.should.have.size(1)
          if (parameters.first().second.value == "broker1Order0") {
-            vyne.parseJsonCollection("Broker1Order", generateBroker1Order(0))
+            listOf(vyne.parseJsonModel("Broker1Order", generateBroker1Order(0)))
          } else {
-            vyne.parseJsonCollection("Broker1Order", "{}")
+            listOf(vyne.parseJsonModel("Broker1Order", "{}"))
          }
       }
 
       val findByOrderIdResult =
          vyne.query("""findAll { Order (OrderId = "broker1Order0") } as CommonOrder[]""".trimIndent())
+
+      println( "findByOrderIdResult ${findByOrderIdResult.results.toList()}" )
+
       findByOrderIdResult.isFullyResolved.should.be.`true`
       findByOrderIdResult.typedInstances().should.have.size(numberOfCorrespondingTrades)
       Unit

@@ -12,8 +12,7 @@ import io.vyne.schemas.taxi.TaxiSchema
 import org.junit.Test
 
 class VyneGraphBuilderTest {
-   val schema = TaxiSchema.from(
-      """
+   val schema = TaxiSchema.from("""
  namespace vyne {
     parameter type JurisdictionRuleRequest {
         clientJurisdiction : vyne.ClientJurisdiction
@@ -33,8 +32,7 @@ class VyneGraphBuilderTest {
         message : String
     }
  }
-   """.trimIndent()
-   )
+   """.trimIndent())
 
    @Test
    fun generatesParamsCorrectly() {
@@ -48,9 +46,11 @@ class VyneGraphBuilderTest {
       operation getCustomerByEmail(  CustomerEmailAddress ) : Customer
    }
       """.trimIndent()
+
       val graph =
          VyneGraphBuilder(TaxiSchema.from(taxiDef), VyneGraphBuilderCacheSettings(100L, 100L, 100L)).buildDisplayGraph()
-      val edges = graph.outgoingEdgesOf(operation(OperationNames.displayName("CustomerService", "getCustomerByEmail")))
+      val edges = graph.outgoingEdgesOf(operation(OperationNames.name("CustomerService", "getCustomerByEmail")))
+
       edges.shouldContain(REQUIRES_PARAMETER, type("CustomerEmailAddress"))
 
    }

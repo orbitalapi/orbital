@@ -2,16 +2,16 @@ package io.vyne.models.csv
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.firstTypedCollection
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
-//import io.vyne.testVyne
-import kotlinx.coroutines.flow.first
+import io.vyne.testVyne
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
-/*
+
 class CsvTest  {
 
    @Test
@@ -73,20 +73,18 @@ type alias FirstNames as FirstName[]
          "olly,spurrs"
       val parsedResult = TypedInstance.from(vyne.schema.type("PersonList"), csv, vyne.schema, source = Provided)
 
-      val result =  runBlocking {
-         val buildResult = vyne.query()
+
+      runBlocking {
+
+         val buildResult:TypedCollection = vyne.query()
             .addFact(parsedResult)
             .build("FirstNames")
+            .firstTypedCollection()
 
-         buildResult.results?.first()!!
-
+         buildResult.should.be.instanceof(TypedCollection::class.java)
+         buildResult[0].type.fullyQualifiedName.should.equal("FirstName")
+         buildResult.value.map { it.value }.should.equal(listOf("jimmy", "olly"))
       }
-
-      result.should.be.instanceof(TypedCollection::class.java)
-      val resultCollection = result as TypedCollection
-      resultCollection[0].type.fullyQualifiedName.should.equal("FirstName")
-      buildResult.resultMap["FirstNames"].should.equal(listOf("jimmy","olly"))
    }
 
 }
-*/

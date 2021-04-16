@@ -64,6 +64,7 @@ class ModelsScanStrategyTest {
       val vyne = Vyne(QueryEngineFactory.default()).addSchema(schema)
       vyne.addJsonModel("Money", """{ "currency" : "USD" , "value" : 3000 }""")
       val result = vyne.query().find("Currency")
+      result.results.toList()
       expect(result.isFullyResolved).to.be.`false`
    }
 

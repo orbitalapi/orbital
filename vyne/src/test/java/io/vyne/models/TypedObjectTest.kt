@@ -4,9 +4,11 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.vyne.firstTypedObject
 import io.vyne.models.json.JsonModelParser
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.testVyne
 //import io.vyne.testVyne
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -17,7 +19,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.test.fail
-/*
+
 class TypedObjectTest {
 
    val traderJson = """
@@ -215,9 +217,11 @@ class TypedObjectTest {
       val (vyne, _) = testVyne(schema)
       val json = """{ "name" : "Bernstein", "isAlive" : false }"""
       val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
-      val buildResult = runBlocking {vyne.query().addFact(instance).build("OutputPerson")}
-      val output = buildResult["OutputPerson"] as TypedObject
-      output["livingOrDead"].value!!.should.equal("Dead")
+      runBlocking {
+         val buildResult = vyne.query().addFact(instance).build("OutputPerson")
+         val output = buildResult.firstTypedObject()
+         output["livingOrDead"].value!!.should.equal("Dead")
+      }
    }
 
    @Test
@@ -244,9 +248,11 @@ class TypedObjectTest {
       val (vyne, _) = testVyne(schema)
       val json = """{ "name" : "Bernstein", "living" : false }"""
       val instance = TypedInstance.from(schema.type("Person"), json, schema, source = Provided) as TypedObject
-      val buildResult = runBlocking {vyne.query().addFact(instance).build("OutputPerson")}
-      val output = buildResult["OutputPerson"] as TypedObject
-      output["livingOrDead"].value!!.should.equal("Dead")
+      runBlocking {
+         val buildResult = vyne.query().addFact(instance).build("OutputPerson")
+         val output = buildResult.firstTypedObject()
+         output["livingOrDead"].value!!.should.equal("Dead")
+      }
    }
 
    @Test
@@ -318,16 +324,18 @@ class TypedObjectTest {
       """.trimIndent())
       val instance = TypedInstance.from(schema.type("Order"), """{ "orderId" : "abc", "eventDate" : "10/MAY/2021;10/MAY/2031" } """, schema, source = Provided)
       val (vyne,_) = testVyne(schema)
-      val result = vyne.from(instance).build("OutputOrder")
-      val outputOrder = result["OutputOrder"] as TypedObject
-      val json = jacksonObjectMapper().writeValueAsString(outputOrder.toRawObject())
-      val expected = """{"orderId":"abc","nearDate":"2021-05-10","farDate":"2031-05-10"}"""
-      JSONAssert.assertEquals(expected, json, true)
+      runBlocking {
+         val result = vyne.from(instance).build("OutputOrder")
+         val outputOrder = result.firstTypedObject()
+         val json = jacksonObjectMapper().writeValueAsString(outputOrder.toRawObject())
+         val expected = """{"orderId":"abc","nearDate":"2021-05-10","farDate":"2031-05-10"}"""
+         JSONAssert.assertEquals(expected, json, true)
+      }
    }
 
 
    @Test
-   fun `can parse string to date with csv`() {
+   fun `can parse string to date with csv`()  {
       val schema = TaxiSchema.from("""
          type NearLegDate inherits Date
          type FarLegDate inherits Date
@@ -351,11 +359,13 @@ abc,10/MAY/2021;10/MAY/2031
       """.trimIndent()
       val instance = TypedInstance.from(schema.type("OrderList"), csv, schema, source = Provided)
       val (vyne,_) = testVyne(schema)
-      val result = vyne.from(instance).build("OutputOrder")
-      val outputOrder = result["OutputOrder"] as TypedObject
-      val json = jacksonObjectMapper().writeValueAsString(outputOrder.toRawObject())
-      val expected = """{"orderId":"abc","nearDate":"2021-05-10","farDate":"2031-05-10"}"""
-      JSONAssert.assertEquals(expected, json, true)
+      runBlocking {
+         val result = vyne.from(instance).build("OutputOrder")
+         val outputOrder = result.firstTypedObject()
+         val json = jacksonObjectMapper().writeValueAsString(outputOrder.toRawObject())
+         val expected = """{"orderId":"abc","nearDate":"2021-05-10","farDate":"2031-05-10"}"""
+         JSONAssert.assertEquals(expected, json, true)
+      }
    }
 
    @Test
@@ -399,4 +409,4 @@ abc,10/MAY/2021;10/MAY/2031
 
 
 }
-*/
+

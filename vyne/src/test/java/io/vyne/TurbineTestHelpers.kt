@@ -3,6 +3,7 @@ package io.vyne
 import app.cash.turbine.FlowTurbine
 import com.winterbe.expekt.should
 import io.vyne.models.TypedCollection
+import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 
 suspend inline fun <reified O> FlowTurbine<*>.expectAs(): O {
@@ -11,6 +12,10 @@ suspend inline fun <reified O> FlowTurbine<*>.expectAs(): O {
 
 suspend inline fun FlowTurbine<*>.expectTypedObject(): TypedObject {
    return expectItem() as TypedObject
+}
+
+suspend inline fun FlowTurbine<*>.expectTypedInstance(): TypedInstance {
+   return expectItem() as TypedInstance
 }
 
 @Deprecated("Returning TypedCollection from a query is likely a bug, as we should be converting that to a flux of TypedObject")
