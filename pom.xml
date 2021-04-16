@@ -75,6 +75,7 @@
          <artifactId>kotlin-reflect</artifactId>
          <version>${kotlin.version}</version>
       </dependency>
+
       <dependency>
          <groupId>org.apache.commons</groupId>
          <artifactId>commons-lang3</artifactId>
@@ -295,6 +296,11 @@
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-reactive</artifactId>
             <version>${kotlin.coroutines.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>app.cash.turbine</groupId>
+            <artifactId>turbine-jvm</artifactId>
+            <version>0.4.1</version>
          </dependency>
 
       </dependencies>

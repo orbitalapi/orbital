@@ -7,7 +7,6 @@ import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.runBlocking
 import lang.taxi.types.ObjectType
 
 class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, private val rootTargetType: Type) {
@@ -22,6 +21,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       } else null
 
 
+   // MP : Can we remove this mutable state somehow?  Let's review later.
    private var manyBuilder: ObjectBuilder? = null
 
    suspend fun build(spec: TypedInstanceValidPredicate = AlwaysGoodSpec): TypedInstance? {
@@ -240,7 +240,7 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
          null
       }
       //return if (result?.isFullyResolved) {
-          return result?.results ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
+      return result?.results ?: error("Expected result to contain a ${targetType.fullyQualifiedName} ")
       //} else {
       //   null
       //}

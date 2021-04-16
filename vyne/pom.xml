@@ -15,6 +15,12 @@
 
    <dependencies>
       <dependency>
+         <groupId>app.cash.turbine</groupId>
+         <artifactId>turbine-jvm</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
          <groupId>com.fasterxml.jackson.datatype</groupId>
          <artifactId>jackson-datatype-jsr310</artifactId>
       </dependency>
