@@ -1,17 +1,19 @@
 package io.vyne
 
+import app.cash.turbine.test
 import com.winterbe.expekt.should
 import io.vyne.models.json.parseJsonModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 import java.math.BigDecimal
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 @ExperimentalCoroutinesApi
 class HipsterDiscoverGraphQueryStrategyTest {
    @Test
-   fun `Discover required type from a service returning child type of required type`() = runBlockingTest {
+   fun `Discover required type from a service returning child type of required type`() = runBlocking {
       val schema = """
          type Isin inherits String
          type NotionalValue inherits Decimal
@@ -66,15 +68,14 @@ class HipsterDiscoverGraphQueryStrategyTest {
             """.trimIndent()
       )
 
-      result.rawObjects().should.equal(
-         listOf(
-            mapOf("notionalValue" to BigDecimal("100"))
-         )
-      )
+      result.rawResults.test {
+         expectRawMap().should.equal(mapOf("notionalValue" to BigDecimal("100")))
+         expectComplete()
+      }
    }
 
    @Test
-   fun `Discover required type from relevant service`() = runBlockingTest {
+   fun `Discover required type from relevant service`() = runBlocking {
       val schema = """
          type Isin inherits String
          type NotionalValue inherits Decimal
@@ -127,16 +128,16 @@ class HipsterDiscoverGraphQueryStrategyTest {
               } as Output[]
             """.trimIndent()
       )
+      result.rawResults
+         .test {
+            expectRawMap().should.equal( mapOf("notionalValue" to BigDecimal("100")))
+            expectComplete()
+         }
 
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf("notionalValue" to BigDecimal("100"))
-         )
-      )
    }
 
    @Test
-   fun `Should not discover required type from relevant service return parent of required type`() = runBlockingTest {
+   fun `Should not discover required type from relevant service return parent of required type`() = runBlocking {
       val schema = """
          type Isin inherits String
          type NotionalValue inherits Decimal
@@ -191,10 +192,10 @@ class HipsterDiscoverGraphQueryStrategyTest {
             """.trimIndent()
       )
 
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf("notionalValue" to null)
-         )
-      )
+      result.rawResults.test {
+         val expected = mapOf("notionalValue" to null)
+         expectRawMap().should.equal(expected)
+         expectComplete()
+      }
    }
 }

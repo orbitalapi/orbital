@@ -1,21 +1,21 @@
 package io.vyne
 
+import app.cash.turbine.test
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.models.*
+import io.vyne.models.TypedNull
+import io.vyne.models.TypedValue
 import io.vyne.models.json.parseJsonCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
-import java.math.BigDecimal
-import kotlin.test.assertEquals
-import kotlin.test.fail
+import kotlin.time.ExperimentalTime
 
 @ExperimentalCoroutinesApi
+@ExperimentalTime
 class VyneProjectionTest {
    val testSchema = """
 // Primitives
@@ -68,7 +68,7 @@ service Broker1Service {
 """.trimIndent()
 
    @Test
-   fun `can perform simple projection`() = runBlockingTest {
+   fun `can perform simple projection`() = runBlocking {
       val (vyne, _) = testVyne(
          """
          type FirstName inherits String
@@ -83,13 +83,15 @@ service Broker1Service {
       )
       vyne.addModel(vyne.parseJsonModel("Person", """{ "id" : "1" , "firstName" : "Jimmy", "lastName" : "Schmit" } """))
       val result = vyne.query("""findOne { Person } as { first : FirstName }""")
-      val list = result.results!!.toList()
-      list.size.should.equal(1)
-      list.first().toRawObject().should.equal(mapOf("first" to "Jimmy"))
+      val list = result.rawResults
+         .test {
+            expectRawMap().should.equal(mapOf("first" to "Jimmy"))
+            expectComplete()
+         }
    }
 
    @Test
-   fun `project by enriching from other services`() = runBlockingTest {
+   fun `project by enriching from other services`() = runBlocking {
       val schemaStr = """
          type Symbol inherits String
          type Field1 inherits String
@@ -161,14 +163,16 @@ service Broker1Service {
             Order[]
          } as Target[]""".trimIndent()
       )
-      queryResult.isFullyResolved.should.be.`true`
-      val results = queryResult.typedObjects()
-      results[0]["field2"].value.should.equal("This is Provided By External Service")
-      results[1]["field2"].value.should.equal("This is Provided By External Service")
+      queryResult.results.test {
+         expectTypedObject()["field2"].value.should.equal("This is Provided By External Service")
+         expectTypedObject()["field2"].value.should.equal("This is Provided By External Service")
+         expectComplete()
+      }
+
    }
 
    @Test
-   fun `project an array of Orders to the array of CommonOrder`() = runBlockingTest {
+   fun `project an array of Orders to the array of CommonOrder`() = runBlocking {
       // prepare
       val schema = """
 type alias OrderDate as Date
@@ -219,7 +223,7 @@ service UserService {
       stubService.addResponse("getBroker2Orders") { _, parameters ->
          parameters.should.have.size(2)
          vyne.parseJsonCollection("Broker2Order[]", "[]")
-     }
+      }
       stubService.addResponse("getUserNameFromId") { _, parameters ->
          parameters.should.have.size(1)
          val userName = when (val userId = parameters[0].second.value as String) {
@@ -237,27 +241,26 @@ service UserService {
             Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30")
          } as CommonOrder[]""".trimIndent()
       )
-
-      // assert
-      expect(result.isFullyResolved).to.be.`true`
-      val resultList = result.typedObjects().map { it.toRawObject() }
-      resultList.size.should.be.equal(noOfRecords)
-      resultList[0].should.equal(
-         mapOf(
-            "id" to "broker1Order1",
-            "date" to "2020-01-01",
-            "traderId" to "trader1",
-            "traderName" to "Mike Brown"
+      result.rawResults.test {
+         val resultList = expectMany<Map<String, Any?>>(100)
+         resultList[0].should.equal(
+            mapOf(
+               "id" to "broker1Order1",
+               "date" to "2020-01-01",
+               "traderId" to "trader1",
+               "traderName" to "Mike Brown"
+            )
          )
-      )
-      resultList[1].should.equal(
-         mapOf(
-            "id" to "broker1Order1",
-            "date" to "2020-01-01",
-            "traderId" to "trader0",
-            "traderName" to "John Smith"
+         resultList[1].should.equal(
+            mapOf(
+               "id" to "broker1Order1",
+               "date" to "2020-01-01",
+               "traderId" to "trader0",
+               "traderName" to "John Smith"
+            )
          )
-      )
+         expectComplete()
+      }
    }
 
    private fun generateBroker1OrdersWithTraderId(noOfRecords: Int): String {
@@ -274,7 +277,7 @@ service UserService {
    }
 
    @Test
-   fun `project to CommonOrder and resolve Enum synonyms and Instruments`() = runBlockingTest {
+   fun `project to CommonOrder and resolve Enum synonyms and Instruments`() = runBlocking {
       // prepare
       val schema = """
 // Primitives
@@ -364,39 +367,39 @@ service InstrumentService {
          vyne.query("""findAll { Order[] (OrderDate  >= "2000-01-01", OrderDate < "2020-12-30") } as CommonOrder[]""".trimIndent())
 
       // assert
-      expect(result.isFullyResolved).to.be.`true`
-      val resultList = result.rawObjects()
-      resultList.size.should.be.equal(noOfRecords)
-      resultList[0].should.equal(
-         mapOf(
-            "id" to "broker1Order0",
-            "date" to "2020-01-01",
-            "direction" to "sell",
-            "instrument" to mapOf(
-               "id" to "instrument0",
-               "description" to "UST 2Y5Y10Y",
-               "instrument_type" to "Type1"
-            ),
-            "orderInstrumentType" to "OrderInstrumentType1"
+      result.rawResults.test {
+         val resultList = expectManyRawMaps(noOfRecords)
+         resultList[0].should.equal(
+            mapOf(
+               "id" to "broker1Order0",
+               "date" to "2020-01-01",
+               "direction" to "sell",
+               "instrument" to mapOf(
+                  "id" to "instrument0",
+                  "description" to "UST 2Y5Y10Y",
+                  "instrument_type" to "Type1"
+               ),
+               "orderInstrumentType" to "OrderInstrumentType1"
+            )
          )
-      )
-      resultList[1].should.equal(
-         mapOf(
-            "id" to "broker1Order1",
-            "date" to "2020-01-01",
-            "direction" to "sell",
-            "instrument" to mapOf(
-               "id" to "instrument1",
-               "description" to "GBP/USD 1Year Swap",
-               "instrument_type" to "Type2"
-            ),
-            "orderInstrumentType" to "OrderInstrumentType2"
+         resultList[1].should.equal(
+            mapOf(
+               "id" to "broker1Order1",
+               "date" to "2020-01-01",
+               "direction" to "sell",
+               "instrument" to mapOf(
+                  "id" to "instrument1",
+                  "description" to "GBP/USD 1Year Swap",
+                  "instrument_type" to "Type2"
+               ),
+               "orderInstrumentType" to "OrderInstrumentType2"
+            )
          )
-      )
+      }
    }
 
    @Test
-   fun `project to CommonOrder with Trades`() = runBlockingTest {
+      fun `project to CommonOrder with Trades`() = runBlocking {
       // TODO confirm how the mappings should look like
       val noOfRecords = 1000
       val schema = """
@@ -509,26 +512,27 @@ service Broker1Service {
 
       // assert
       expect(result.isFullyResolved).to.be.`true`
-      val resultList = result.rawObjects()
-      resultList.size.should.be.equal(noOfRecords)
-      resultList.forEachIndexed { index, result ->
-         result.should.equal(
-            mapOf(
-               "id" to "broker1Order$index",
-               "date" to "2020-01-01",
-               "tradeNo" to "trade_no_$index",
-               "identifierType" to "ISIN",
-               "direction" to "Direction.SELL"
+      result.rawResults.test {
+         val resultList = expectManyRawMaps(noOfRecords)
+         resultList.forEachIndexed { index, result ->
+            result.should.equal(
+               mapOf(
+                  "id" to "broker1Order$index",
+                  "date" to "2020-01-01",
+                  "tradeNo" to "trade_no_$index",
+                  "identifierType" to "ISIN",
+                  "direction" to "Direction.SELL"
+               )
             )
-         )
+         }
       }
 
       findOneByOrderIdInvocationCount.should.equal(0)
       getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
+      Unit
    }
-
    @Test
-   fun `One to Many Mapping Projection with a date between query`() = runBlockingTest {
+   fun `One to Many Mapping Projection with a date between query`() = runBlocking {
       val (vyne, stubService) = testVyne(testSchema)
       // 1 order and 3 matching trades.
       val numberOfOrders = 1
@@ -593,10 +597,11 @@ service Broker1Service {
       }
       findOneByOrderIdInvocationCount.should.equal(1) // 1 call for the order without a trade.
       getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
+      Unit
    }
 
    @Test
-   fun `One to Many Mapping Projection with an Id equals query`() = runBlockingTest {
+   fun `One to Many Mapping Projection with an Id equals query`() = runBlocking {
       val (vyne, stubService) = testVyne(testSchema)
       // 1 order and 3 matching trades.
       val numberOfOrders = 1
@@ -645,10 +650,11 @@ service Broker1Service {
          vyne.query("""findAll { Order (OrderId = "broker1Order0") } as CommonOrder[]""".trimIndent())
       findByOrderIdResult.isFullyResolved.should.be.`true`
       findByOrderIdResult.typedInstances().should.have.size(numberOfCorrespondingTrades)
+      Unit
    }
 
    @Test
-   fun `One to Many Mapping Projection with an Id equals query returning zero match`() = runBlockingTest {
+   fun `One to Many Mapping Projection with an Id equals query returning zero match`() = runBlocking {
       val (vyne, stubService) = testVyne(testSchema)
       // 1 order and 3 matching trades.
       val numberOfOrders = 1
@@ -694,10 +700,11 @@ service Broker1Service {
       // find by a non-existing order Id and project
       val noResult = vyne.query("""findAll { Order (OrderId = "MY SPECIAL ORDER ID") } as CommonOrder[]""".trimIndent())
       noResult.typedInstances().should.be.empty
+      Unit
    }
 
    @Test
-   fun `Multiple orders with same id and multiple trades with same order Id`() = runBlockingTest {
+   fun `Multiple orders with same id and multiple trades with same order Id`() = runBlocking {
       val (vyne, stubService) = testVyne(testSchema)
       val numberOfCorrespondingTrades = 3
       // 2 orders (with same id) will have 3 corresponding trades
@@ -760,6 +767,7 @@ service Broker1Service {
       }
       findOneByOrderIdInvocationCount.should.equal(0)
       getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
+      Unit
    }
 
    private fun generateBroker1Trades(
@@ -827,1317 +835,1338 @@ service Broker1Service {
       return buf.toString()
    }
 
-   @Test
-   fun `missing Country does not break Client projection`() = runBlockingTest {
-      // prepare
-      val testSchema = """
-         model Client {
-            name : PersonName as String
-            country : CountryCode as String
-         }
-         model Country {
-             @Id
-             countryCode : CountryCode
-             countryName : CountryName as String
-         }
-         model ClientAndCountry {
-            personName : PersonName
-            countryName : CountryName
-         }
-
-         service MultipleInvocationService {
-            operation getCustomers():Client[]
-            operation getCountry(CountryCode): Country
-         }
-      """.trimIndent()
-
-      val (vyne, stubService) = testVyne(testSchema)
-      stubService.addResponse(
-         "getCustomers", vyne.parseJsonCollection(
-            "Client[]", """
-         [
-            { name : "Jimmy", country : "UK" },
-            { name : "Devrim", country : "TR" }
-         ]
-         """.trimIndent()
-         )
-      )
-
-      stubService.addResponse("getCountry") { _, parameters ->
-         val countryCode = parameters.first().second.value!!.toString()
-         if (countryCode == "UK") {
-            listOf(vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}"""))
-         } else {
-            listOf(TypedObject(vyne.schema.type("Country"), emptyMap(), Provided))
-         }
-      }
-
-      // act
-      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
-
-      // assert
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf("personName" to "Jimmy", "countryName" to "United Kingdom"),
-            mapOf("personName" to "Devrim", "countryName" to null)
-         )
-      )
-   }
-
-   @Test
-   fun `duplicate matches with same values in projection is resolved without any errors`() = runBlockingTest {
-      // prepare
-      val testSchema = """
-         type OrderId inherits String
-         type TraderName inherits String
-         type InstrumentId inherits String
-         type MaturityDate inherits Date
-         type TradeId inherits String
-         type InstrumentName inherits String
-         model Order {
-            orderId: OrderId
-            traderName : TraderName
-            instrumentId: InstrumentId
-         }
-         model Instrument {
-             @Id
-             instrumentId: InstrumentId
-             maturityDate: MaturityDate
-             name: InstrumentName
-         }
-         model Trade {
-            @Id
-            orderId: OrderId
-            maturityDate: MaturityDate
-            tradeId: TradeId
-         }
-
-         model Report {
-            orderId: OrderId
-            tradeId: TradeId
-            instrumentName: InstrumentName
-            maturityDate: MaturityDate
-            traderName : TraderName
-         }
-
-         service MultipleInvocationService {
-            operation getOrders(): Order[]
-            operation getTrades(orderIds: OrderId): Trade
-            operation getTrades(orderIds: OrderId[]): Trade[]
-            operation getInstrument(instrumentId: InstrumentId): Instrument
-         }
-      """.trimIndent()
-
-      val maturityDate = "2025-12-01"
-      val (vyne, stubService) = testVyne(testSchema)
-      stubService.addResponse(
-         "getOrders", vyne.parseJsonCollection(
-            "Order[]", """
-         [
-            {
-               "orderId": "orderId_0",
-               "traderName": "john",
-               "instrumentId": "Instrument_0"
-            }
-         ]
-         """.trimIndent()
-         )
-      )
-
-      stubService.addResponse(
-         "getInstrument", vyne.parseJsonModel(
-            "Instrument", """
-            {
-               "maturityDate": "$maturityDate",
-               "instrumentId": "Instrument_0",
-               "name": "2040-11-20 0.1 Bond"
-            }
-         """.trimIndent()
-         )
-      )
-
-      stubService.addResponse(
-         "getTrades", vyne.parseJsonCollection(
-            "Trade[]", """
-            [{
-               "maturityDate": "$maturityDate",
-               "orderId": "orderId_0",
-               "tradeId": "Trade_0"
-            }]
-         """.trimIndent()
-         )
-      )
-      val result = vyne.query("""findAll { Order[] } as Report[]""".trimIndent())
-      result.isFullyResolved.should.be.`true`
-      result.rawObjects().should.equal(
-         listOf(
-            mapOf(
-               "orderId" to "orderId_0",
-               "traderName" to "john",
-               "tradeId" to "Trade_0",
-               "instrumentName" to "2040-11-20 0.1 Bond",
-               "maturityDate" to maturityDate
-            )
-         )
-      )
-   }
-
-
-   @Test
-   fun `can use calculated fields on output models`() = runBlockingTest {
-      val (vyne, _) = testVyne(
-         """
-         type Quantity inherits Int
-         type Value inherits Int
-         type Cost inherits Int
-         model Input {
-            qty : Quantity
-            value : Value
-         }
-         model Output {
-            qty : Quantity
-            value : Value
-            cost : Cost by (qty * value)
-         }
-      """.trimIndent()
-      )
-      val input = vyne.parseJsonModel("Input", """{ "qty" : 100, "value" : 2 }""", source = Provided)
-      val output = vyne.from(input).build("Output").`firstTypedObject`()
-      output["cost"].value.should.equal(200)
-   }
-
-   @Test
-   fun `can use when by`() = runBlockingTest {
-      val (vyne, _) = testVyne(
-         """
-         model Input {
-            str: String
-            value : Decimal?
-         }
-
-         enum PriceType {
-            Percentage("%"),
-            Basis("Bps")
-         }
-
-         model SampleType {
-            price: Decimal?
-            tempPriceType: String?
-            priceType: PriceType? by when {
-                this.price = null -> null
-                this.price != null -> tempPriceType
-            }
-         }
-      """.trimIndent()
-      )
-      val input = vyne.parseJsonModel("Input", """{ "value": 100, "str": "Percentage" }""", source = Provided)
-      val result = vyne.from(input).build("SampleType")
-         .`firstTypedObject`()
-      result["priceType"].value.should.equal("Percentage")
-   }
-
-
-   @Test
-   fun `A service annotated with @DataSource will not be invoked twice`() = runBlockingTest {
-      val testSchema = """
-         model Client {
-            name : PersonName as String
-            country : CountryCode as String
-         }
-         model Country {
-             countryCode : CountryCode
-             countryName : CountryName as String
-         }
-         model ClientAndCountry {
-            personName : PersonName
-            countryName : CountryName
-         }
-
-         @Datasource
-         service MultipleInvocationService {
-            operation getCustomers():Client[]
-            operation getCountry(CountryCode): Country
-         }
-      """.trimIndent()
-
-      var getCountryInvoked = false
-      val (vyne, stubService) = testVyne(testSchema)
-      stubService.addResponse(
-         "getCustomers", vyne.parseJsonCollection(
-            "Client[]", """
-         [
-            { name : "Jimmy", country : "UK" },
-            { name : "Devrim", country : "TR" }
-         ]
-         """.trimIndent()
-         )
-      )
-
-      stubService.addResponse("getCountry") { _, parameters ->
-         getCountryInvoked = true
-         val countryCode = parameters.first().second.value!!.toString()
-         if (countryCode == "UK") {
-            vyne.parseJsonCollection("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
-         } else {
-            listOf(TypedObject(vyne.schema.type("Country"), emptyMap(), Provided))
-         }
-      }
-
-      // act
-      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
-
-      // assert
-      result.rawObjects().should.equal(
-         listOf(
-            mapOf("personName" to "Jimmy", "countryName" to null),
-            mapOf(
-               "personName" to "Devrim",
-               "countryName" to null
-            ) // See TypedObjectFactory.build() for discussion on returning nulls
-         )
-      )
-      getCountryInvoked.should.be.`false`
-   }
-
-
-   @Test
-   fun `should output offset  correctly`() = runBlockingTest {
-      val (vyne, stubService) = testVyne(
-         """
-         model InputModel {
-           inputField: Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-         }
-
-         model OutputModel {
-            myField : Instant( @format = ["yyyy-MM-dd'T'HH:mm:ss.SSSZ"], @offset = 60 )
-         }
-
-         @Datasource
-         service MultipleInvocationService {
-            operation getInputData(): InputModel[]
-         }
-      """.trimIndent()
-      )
-
-      val inputInstant1 = "2020-08-19T13:07:09.591Z"
-      val inputInstant2 = "2020-08-18T13:07:09.591Z"
-      val outputInstant1 = "2020-08-19T14:07:09.591+0100"
-      val outputInstant2 = "2020-08-18T14:07:09.591+0100"
-      stubService.addResponse(
-         "getInputData", vyne.parseJsonCollection(
-            "InputModel[]", """
-         [
-            { "inputField": "$inputInstant1" },
-            { "inputField": "$inputInstant2" }
-         ]
-         """.trimIndent()
-         )
-      )
-      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
-      result.rawObjects().should.equal(
-         listOf(
-            mapOf("myField" to "$outputInstant1"),
-            mapOf("myField" to "$outputInstant2")
-         )
-      )
-   }
-
-   @Test
-   fun `should output offset correctly without any format`() = runBlockingTest {
-      val (vyne, stubService) = testVyne(
-         """
-         model InputModel {
-           inputField: Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-         }
-
-         model OutputModel {
-            myField : Instant( @offset = 60 )
-         }
-
-         @Datasource
-         service MultipleInvocationService {
-            operation getInputData(): InputModel[]
-         }
-      """.trimIndent()
-      )
-
-      val inputInstant1 = "2020-08-19T13:07:09.591Z"
-      val inputInstant2 = "2020-08-18T13:07:09.591Z"
-      val outputInstant1 = "2020-08-19T14:07:09.591+01"
-      val outputInstant2 = "2020-08-18T14:07:09.591+01"
-      stubService.addResponse(
-         "getInputData", vyne.parseJsonCollection(
-            "InputModel[]", """
-         [
-            { "inputField": "$inputInstant1" },
-            { "inputField": "$inputInstant2" }
-         ]
-         """.trimIndent()
-         )
-      )
-      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf("myField" to outputInstant1),
-            mapOf("myField" to outputInstant2)
-         )
-      )
-   }
-
-   @Test
-   fun `Calculated fields should be correctly set in projected type`() = runBlockingTest {
-      val (vyne, stubService) = testVyne(
-         """
-         type QtyFill inherits Decimal
-         type UnitMultiplier inherits Decimal
-         type FilledNotional inherits Decimal
-
-         model InputModel {
-           multiplier: UnitMultiplier by default(2)
-           qtyFill: QtyFill
-         }
-
-         model OutputModel {
-            qtyHit : QtyFill?
-            unitMultiplier: UnitMultiplier?
-            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
-         }
-
-         @Datasource
-         service MultipleInvocationService {
-            operation getInputData(): InputModel[]
-         }
-      """.trimIndent()
-      )
-
-      stubService.addResponse(
-         "getInputData", vyne.parseJsonCollection(
-            "InputModel[]", """
-         [
-            { "qtyFill": 200, "multiplier": 2 }
-         ]
-         """.trimIndent()
-         )
-      )
-      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf(
-               "qtyHit" to BigDecimal("200"),
-               "unitMultiplier" to BigDecimal("2"),
-               "filledNotional" to BigDecimal("400")
-            )
-         )
-      )
-   }
-
-   @Test
-   fun `when calculating fields then lineage is set on output`() = runBlockingTest {
-      val (vyne, stubs) = testVyne(
-         """
-            type Quantity inherits Int
-            type Price inherits Int
-
-            model Order {
-               quantity : Quantity
-               price : Price
-            }
-            model Output {
-               quantity : Quantity
-               price : Price
-               averagePrice : Decimal by (this.price / this.quantity)
-            }
-            service OrderService {
-               operation listOrders():Order[]
-            }
-         """.trimIndent()
-      )
-      // The below responseJson will trigger a divide-by-zero
-      val responseJson = """[
-         |{ "quantity" : 0 , "price" : 2 }
-         |]""".trimMargin()
-      stubs.addResponse(
-         "listOrders", vyne.parseJsonModel(
-            "Order[]", """[
-         |{ "quantity" : 100 , "price" : 2 },
-         |{ "quantity" : 0 , "price" : 2 }
-         |]""".trimMargin()
-         )
-      )
-
-      val queryResult = vyne.query("findAll { Order[] } as Output[]")
-      val outputCollection = queryResult.typedObjects()
-      val outputModel = outputCollection[0] as TypedObject
-      val averagePrice = outputModel["averagePrice"]
-      averagePrice.value.should.equal(0.02.toBigDecimal())
-      val averagePriceDataSource = averagePrice.source as EvaluatedExpression
-      averagePriceDataSource.expressionTaxi.should.equal("(this.price / this.quantity)")
-      averagePriceDataSource.inputs[0].value.should.equal(2)
-      averagePriceDataSource.inputs[0].source.should.equal(Provided)
-   }
-
-   @Test
-   fun `should project to pure anonymous type with single field`() = runBlockingTest {
-      val (vyne, stubService) = testVyne(
-         """
-         type QtyFill inherits Decimal
-         type UnitMultiplier inherits Decimal
-         type FilledNotional inherits Decimal
-         type InputId inherits String
-
-         model InputModel {
-           multiplier: UnitMultiplier by default(2)
-           qtyFill: QtyFill
-           id: InputId
-         }
-
-         model OutputModel {
-            qtyHit : QtyFill?
-            unitMultiplier: UnitMultiplier?
-            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
-         }
-
-         @Datasource
-         service MultipleInvocationService {
-            operation getInputData(): InputModel[]
-         }
-      """.trimIndent()
-      )
-
-      stubService.addResponse(
-         "getInputData", vyne.parseJsonCollection(
-            "InputModel[]", """
-         [
-            { "qtyFill": 200, "multiplier": 2, "id": "input1" },
-            { "qtyFill": 200, "multiplier": 2, "id": "input2" },
-            { "qtyFill": 200, "multiplier": 2, "id": "input3" }
-         ]
-         """.trimIndent()
-         )
-      )
-      val result = vyne.query(
-         """
-            findAll {
-                InputModel[]
-              } as {
-                 id
-               }[]
-            """.trimIndent()
-      )
-
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf("id" to "input1"), mapOf("id" to "input2"), mapOf("id" to "input3")
-         )
-      )
-   }
-
-   @Test
-   fun `should project to pure anonymous type with multiple fields`() = runBlockingTest {
-      val (vyne, stubService) = testVyne(
-         """
-         type QtyFill inherits Decimal
-         type UnitMultiplier inherits Decimal
-         type FilledNotional inherits Decimal
-         type InputId inherits String
-         type TraderId inherits String
-         type TraderName inherits String
-         type TraderSurname inherits String
-
-         model InputModel {
-           multiplier: UnitMultiplier by default(2)
-           qtyFill: QtyFill
-           id: InputId
-           traderId: TraderId
-         }
-
-         model OutputModel {
-            qtyHit : QtyFill?
-            unitMultiplier: UnitMultiplier?
-            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
-         }
-
-          model TraderInfo {
-            @Id
-            traderId: TraderId
-            traderName: TraderName
-            traderSurname: TraderSurname
-         }
-
-         @Datasource
-         service MultipleInvocationService {
-            operation getInputData(): InputModel[]
-         }
-
-         service TraderService {
-            operation getTrader(TraderId): TraderInfo
-         }
-      """.trimIndent()
-      )
-
-      stubService.addResponse(
-         "getInputData", vyne.parseJsonCollection(
-            "InputModel[]", """
-         [
-            { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },
-            { "qtyFill": 200, "multiplier": 2, "id": "input2", "traderId": "tId2" },
-            { "qtyFill": 200, "multiplier": 3, "id": "input3", "traderId": "tId3" }
-         ]
-         """.trimIndent()
-         )
-      )
-
-      stubService.addResponse("getTrader") { _, parameters ->
-         when (parameters.first().second.value) {
-            "tId1" -> listOf(vyne.parseJsonModel(
-               "TraderInfo",
-               """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
-            ))
-            "tId2" -> listOf(vyne.parseJsonModel(
-               "TraderInfo",
-               """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
-            ))
-            "tId3" -> listOf(vyne.parseJsonModel(
-               "TraderInfo",
-               """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
-            ))
-            else -> listOf(TypedNull.create(vyne.type("TraderInfo")))
-
-         }
-      }
-
-      val result = vyne.query(
-         """
-            findAll {
-                InputModel[]
-              } as {
-                 id
-                 multiplier: UnitMultiplier
-                 traderName: TraderName by (this.traderId)
-               }[]
-            """.trimIndent()
-      )
-
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf("id" to "input1", "multiplier" to BigDecimal("1"), "traderName" to "Butch"),
-            mapOf("id" to "input2", "multiplier" to BigDecimal("2"), "traderName" to "Sundance"),
-            mapOf("id" to "input3", "multiplier" to BigDecimal("3"), "traderName" to "Travis")
-         )
-      )
-   }
-
-   @Test
-   fun `should project to anonymous type extending discovery type`() = runBlockingTest {
-      val (vyne, stubService) = testVyne(
-         """
-         type QtyFill inherits Decimal
-         type UnitMultiplier inherits Decimal
-         type FilledNotional inherits Decimal
-         type InputId inherits String
-         type TraderId inherits String
-         type TraderName inherits String
-         type TraderSurname inherits String
-
-         model InputModel {
-           multiplier: UnitMultiplier by default(2)
-           qtyFill: QtyFill
-           id: InputId
-         }
-
-         model OutputModel {
-            qtyHit : QtyFill?
-            unitMultiplier: UnitMultiplier?
-            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
-            traderId: TraderId by default("id1")
-         }
-
-         model TraderInfo {
-            @Id
-            traderId: TraderId
-            traderName: TraderName
-            traderSurname: TraderSurname
-         }
-
-         @Datasource
-         service MultipleInvocationService {
-            operation getInputData(): InputModel[]
-         }
-
-         service TraderService {
-            operation getTrader(TraderId): TraderInfo
-         }
-      """.trimIndent()
-      )
-
-      stubService.addResponse(
-         "getInputData", vyne.parseJsonCollection(
-            "InputModel[]", """
-         [
-            { "qtyFill": 200, "multiplier": 1, "id": "input1" },
-            { "qtyFill": 200, "multiplier": 2, "id": "input2" },
-            { "qtyFill": 200, "multiplier": 3, "id": "input3" }
-         ]
-         """.trimIndent()
-         )
-      )
-
-      stubService.addResponse(
-         "getTrader", vyne.parseJsonModel(
-            "TraderInfo",
-            """
-         {
-            "traderId": "id1",
-            "traderName": "John",
-            "traderSurname" : "Doe"
-         }
-      """.trimIndent()
-         )
-      )
-      val result =
-         vyne.query(
-            """
-            findAll {
-                InputModel[]
-              } as OutputModel {
-                 inputId: InputId
-                 traderName: TraderName by (this.traderId)
-               }[]
-            """.trimIndent()
-         )
-
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf(
-               "qtyHit" to BigDecimal("200"),
-               "unitMultiplier" to BigDecimal("1"),
-               "filledNotional" to BigDecimal("200"),
-               "traderId" to "id1",
-               "inputId" to "input1",
-               "traderName" to "John"
-            ),
-            mapOf(
-               "qtyHit" to BigDecimal("200"),
-               "unitMultiplier" to BigDecimal("2"),
-               "filledNotional" to BigDecimal("400"),
-               "traderId" to "id1",
-               "inputId" to "input2",
-               "traderName" to "John"
-            ),
-            mapOf(
-               "qtyHit" to BigDecimal("200"),
-               "unitMultiplier" to BigDecimal("3"),
-               "filledNotional" to BigDecimal("600"),
-               "traderId" to "id1",
-               "inputId" to "input3",
-               "traderName" to "John"
-            )
-         )
-      )
-   }
-
-   @Test
-   fun `should project to anonymous extending the projectiont target type and containing an anonymously typed field`() = runBlockingTest {
-      val (vyne, stubService) = testVyne(
-         """
-         type QtyFill inherits Decimal
-         type UnitMultiplier inherits Decimal
-         type FilledNotional inherits Decimal
-         type InputId inherits String
-         type TraderId inherits String
-         type TraderName inherits String
-         type TraderSurname inherits String
-
-         model InputModel {
-           multiplier: UnitMultiplier by default(2)
-           qtyFill: QtyFill
-           id: InputId
-         }
-
-         model OutputModel {
-            qtyHit : QtyFill?
-            unitMultiplier: UnitMultiplier?
-            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
-            traderId: TraderId by default("id1")
-         }
-
-         model TraderInfo {
-            @Id
-            traderId: TraderId
-            traderName: TraderName
-            traderSurname: TraderSurname
-         }
-
-         @Datasource
-         service MultipleInvocationService {
-            operation getInputData(): InputModel[]
-         }
-
-         service TraderService {
-            operation getTrader(TraderId): TraderInfo
-         }
-      """.trimIndent()
-      )
-
-      stubService.addResponse(
-         "getInputData", vyne.parseJsonCollection(
-            "InputModel[]", """
-         [
-            { "qtyFill": 200, "multiplier": 1, "id": "input1" },
-            { "qtyFill": 200, "multiplier": 2, "id": "input2" },
-            { "qtyFill": 200, "multiplier": 3, "id": "input3" }
-         ]
-         """.trimIndent()
-         )
-      )
-
-      stubService.addResponse(
-         "getTrader", vyne.parseJsonModel(
-            "TraderInfo",
-            """
-         {
-            "traderId": "id1",
-            "traderName": "John",
-            "traderSurname" : "Doe"
-         }
-      """.trimIndent()
-         )
-      )
-      val result =
-         vyne.query(
-            """
-            findAll {
-                InputModel[]
-              } as OutputModel {
-                 inputId: InputId
-                 trader: {
-                    name: TraderName
-                    surname: TraderSurname
-                 } by (this.traderId)
-               }[]
-            """.trimIndent()
-         )
-
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf(
-               "qtyHit" to BigDecimal("200"),
-               "unitMultiplier" to BigDecimal("1"),
-               "filledNotional" to BigDecimal("200"),
-               "traderId" to "id1",
-               "inputId" to "input1",
-               "trader" to mapOf("name" to "John", "surname" to "Doe")
-            ),
-            mapOf(
-               "qtyHit" to BigDecimal("200"),
-               "unitMultiplier" to BigDecimal("2"),
-               "filledNotional" to BigDecimal("400"),
-               "traderId" to "id1",
-               "inputId" to "input2",
-               "trader" to mapOf("name" to "John", "surname" to "Doe")
-            ),
-            mapOf(
-               "qtyHit" to BigDecimal("200"),
-               "unitMultiplier" to BigDecimal("3"),
-               "filledNotional" to BigDecimal("600"),
-               "traderId" to "id1",
-               "inputId" to "input3",
-               "trader" to mapOf("name" to "John", "surname" to "Doe")
-            )
-         )
-      )
-   }
-
-   @Test
-   fun `should project to anonymous type containing an anonymously typed field`() = runBlockingTest {
-      val (vyne, stubService) = testVyne(
-         """
-         type QtyFill inherits Decimal
-         type UnitMultiplier inherits Decimal
-         type FilledNotional inherits Decimal
-         type InputId inherits String
-         type TraderId inherits String
-         type TraderName inherits String
-         type TraderSurname inherits String
-
-         model InputModel {
-           multiplier: UnitMultiplier by default(2)
-           qtyFill: QtyFill
-           id: InputId
-           traderId: TraderId
-         }
-
-         model OutputModel {
-            qtyHit : QtyFill?
-            unitMultiplier: UnitMultiplier?
-            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
-         }
-
-          model TraderInfo {
-            @Id
-            traderId: TraderId
-            traderName: TraderName
-            traderSurname: TraderSurname
-         }
-
-         @Datasource
-         service MultipleInvocationService {
-            operation getInputData(): InputModel[]
-         }
-
-         service TraderService {
-            operation getTrader(TraderId): TraderInfo
-         }
-      """.trimIndent()
-      )
-
-      stubService.addResponse(
-         "getInputData", vyne.parseJsonModel(
-            "InputModel[]", """
-         [
-            { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },
-            { "qtyFill": 200, "multiplier": 2, "id": "input2", "traderId": "tId2" },
-            { "qtyFill": 200, "multiplier": 3, "id": "input3", "traderId": "tId3" }
-         ]
-         """.trimIndent()
-         )
-      )
-
-      stubService.addResponse("getTrader") { _, parameters ->
-         when (parameters.first().second.value) {
-            "tId1" -> listOf(vyne.parseJsonModel(
-               "TraderInfo",
-               """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
-            ))
-            "tId2" -> listOf(vyne.parseJsonModel(
-               "TraderInfo",
-               """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
-            ))
-            "tId3" -> listOf(vyne.parseJsonModel(
-               "TraderInfo",
-               """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
-            ))
-            else -> listOf(TypedNull.create(vyne.type("TraderInfo")))
-
-         }
-      }
-
-      val result = vyne.query(
-         """
-            findAll {
-                InputModel[]
-              } as {
-                 id
-                 multiplier: UnitMultiplier
-                 trader: {
-                    name: TraderName
-                    surname: TraderSurname
-                 }  by (this.traderId)
-               }[]
-            """.trimIndent()
-      )
-
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf(
-               "id" to "input1",
-               "multiplier" to BigDecimal("1"),
-               "trader" to mapOf("name" to "Butch", "surname" to "Cassidy")
-            ),
-            mapOf(
-               "id" to "input2",
-               "multiplier" to BigDecimal("2"),
-               "trader" to mapOf("name" to "Sundance", "surname" to "Kidd")
-            ),
-            mapOf(
-               "id" to "input3",
-               "multiplier" to BigDecimal("3"),
-               "trader" to mapOf("name" to "Travis", "surname" to "Bickle")
-            )
-         )
-      )
-   }
-
-   @Test
-   fun `avoid recursive parameter discovery`() = runBlockingTest {
-      val (vyne, stubService) = testVyne(
-         """
-         type Isin inherits String
-         type Ric inherits String
-         type InstrumentIdentifierType inherits String
-         type InputId inherits String
-
-
-         model InputModel {
-           id: InputId
-           ric : Ric?
-         }
-
-         model OutputModel {
-            isin: Isin
-
-         }
-
-         // The request contains a parameter that is present on the response.
-         // Therefore, in order to construct the request, the response can be invoked.
-         // This leads to circular logic, which causes a stack overflow.
-         // This test asserts that behaviour is prevented.
-         parameter model InstrumentReferenceRequest {
-             Identifier : Ric?
-             IdentifierType: InstrumentIdentifierType?
-         }
-
-         parameter model InstrumentReferenceResponse {
-             ricCode : Ric?
-             instrumentType: InstrumentIdentifierType?
-             isin: Isin
-         }
-
-         @Datasource
-         service MultipleInvocationService {
-            operation getInputData(): InputModel[]
-         }
-
-         service InstrumentService {
-             operation getInstrumentFromRic( @RequestBody request:InstrumentReferenceRequest) :  InstrumentReferenceResponse
-         }
-      """.trimIndent()
-      )
-
-      stubService.addResponse(
-         "getInputData", vyne.parseJsonCollection(
-            "InputModel[]", """
-         [
-            {  "id": "input1", "ric": "ric1" },
-            {  "id": "input2" },
-            {  "id": "input3" }
-         ]
-         """.trimIndent()
-         )
-      )
-      val result =
-         vyne.query(
-            """
-            findAll {
-                InputModel[]
-              } as OutputModel []
-            """.trimIndent()
-         )
-
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf("isin" to null),
-            mapOf("isin" to null),
-            mapOf("isin" to null)
-         )
-      )
-   }
-
-   @Test
-   fun `invalid post operation caching`() = runBlockingTest {
-      val (vyne, stubService) = testVyne(
-         """
-         type Isin inherits String
-         type Ric inherits String
-         type InstrumentIdentifierType inherits String
-         type InputId inherits String
-
-
-         model InputModel {
-           id: InputId
-           ric : Ric?
-           instrumentType: InstrumentIdentifierType? by default("Ric")
-         }
-
-         model OutputModel {
-            isin: Isin
-         }
-
-         parameter model InstrumentReferenceRequest {
-             Identifier : Ric?
-             IdentifierType: InstrumentIdentifierType?
-         }
-
-         parameter model InstrumentReferenceResponse {
-             isin: Isin
-         }
-
-         @Datasource
-         service MultipleInvocationService {
-            operation getInputData(): InputModel[]
-         }
-
-         service InstrumentService {
-             operation getInstrumentFromRic( @RequestBody request:InstrumentReferenceRequest) :  InstrumentReferenceResponse
-         }
-      """.trimIndent()
-      )
-
-      stubService.addResponse(
-         "getInputData", vyne.parseJsonCollection(
-            "InputModel[]", """
-         [
-            {  "id": "input1", "ric": "ric1", "instrumentType": "ric" },
-            {  "id": "input2", "ric": "ric2", "instrumentType": "ric" },
-            {  "id": "input3", "ric": "ric3", "instrumentType": "ric" }
-         ]
-         """.trimIndent()
-         )
-      )
-
-      stubService.addResponse("getInstrumentFromRic") { _, parameters ->
-         val isinValue = (parameters.first().second as TypedObject).value.values.map { it.value }.joinToString("_")
-         listOf(vyne.parseJsonModel(
-            "InstrumentReferenceResponse", """
-             {"isin": "$isinValue"}
-          """.trimIndent()
-         ))
-      }
-
-      val result =
-         vyne.query(
-            """
-            findAll {
-                InputModel[]
-              } as OutputModel []
-            """.trimIndent()
-         )
-
-      result.rawObjects().should.be.equal(
-         listOf(
-            mapOf("isin" to "ric1_ric"),
-            mapOf("isin" to "ric2_ric"),
-            mapOf("isin" to "ric3_ric")
-         )
-      )
-
-   }
-
-   @Test
-   fun `If Vyne is enriching an entity, and a model returned from a service defines an Id field, then Vyne will only invoke that service the input parameter identifies the output model`() =
-      runBlockingTest {
-         val testSchema = """
-         type UserId inherits String
-         type TradeId inherits String
-         type Isin inherits String
-         type TradePrice inherits Decimal
-         type TradeDate inherits Date
-
-         model Trade {
-           salesPersonId: UserId
-           @Id
-           tradeId: TradeId
-           isin: Isin
-           tradePrice: TradePrice
-         }
-
-          model Input {
-            userId: UserId
-            tradeId: TradeId
-          }
-
-          model Report {
-             tradePrice: TradePrice
-             tradeDate: TradeDate
-          }
-
-         @Datasource
-         service InputService {
-            operation `findAll`(): Input[]
-         }
-
-         service DataService {
-             operation findLatestTradeForSalesPerson(UserId) : Trade
-             operation findTrade(TradeId) : Trade
-         }
-
-
-      """.trimIndent()
-         val (vyne, stubService) = testVyne(testSchema)
-         stubService.addResponse(
-            "`findAll`", vyne.parseJsonCollection(
-               "Input[]", """
-         [
-            { userId : "userX",  tradeId: "InstrumentX" }
-         ]
-         """.trimIndent()
-            )
-         )
-
-         stubService.addResponse("findLatestTradeForSalesPerson") { _, parameters ->
-            fail("Should not be invoked")
-         }
-
-
-         var findTradeInvoked = false
-         stubService.addResponse("findTrade") { _, _ ->
-            findTradeInvoked = true
-            throw IllegalArgumentException()
-         }
-
-         // act
-         val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
-
-         // assert
-         findTradeInvoked.should.be.`true`
-         result.rawObjects().should.be.equal(
-            listOf(
-               mapOf("tradePrice" to null, "tradeDate" to null)
-            )
-         )
-      }
-
-   @Test
-   fun `If Vyne is enriching an entity, and a model returned from a service does not define an Id field, then Vyne will use any possible path to discover the inputs to call the service`() =
-      runBlockingTest {
-         val testSchema = """
-         type ProductId inherits String
-         type AssetClass inherits String
-         type Isin inherits String
-         type OrderId inherits String
-         parameter model IsinDiscoveryRequest {
-             productId : ProductId?
-             assetClass : AssetClass?
-         }
-         model IsinDiscoveryResult {
-             isin : Isin
-         }
-
-         model Input {
-             orderId: OrderId
-             productId : ProductId?
-             assetClass : AssetClass?
-         }
-
-         model Output {
-            orderId: OrderId
-            isin : Isin
-         }
-
-         @Datasource
-         service InputService {
-            operation `findAll`(): Input[]
-         }
-
-         service DataService {
-            operation lookupIsin(IsinDiscoveryRequest):IsinDiscoveryResult
-         }
-
-      """.trimIndent()
-
-         val (vyne, stubService) = testVyne(testSchema)
-         stubService.addResponse(
-            "`findAll`", vyne.parseJsonCollection(
-               "Input[]", """
-         [
-            { orderId : "OrderX",  productId: "ProductX", assetClass: "AssetClassX" }
-         ]
-         """.trimIndent()
-            )
-         )
-
-         stubService.addResponse(
-            "lookupIsin", vyne.parseJsonModel(
-               "IsinDiscoveryResult", """
-            { isin : "Isin1" }
-         """.trimIndent()
-            )
-         )
-
-         val result = vyne.query("""findAll { Input[] } as Output[]""".trimIndent())
-
-         result.rawObjects().should.be.equal(
-            listOf(
-               mapOf("orderId" to "OrderX", "isin" to "Isin1")
-            )
-         )
-
-      }
-
-   @Test
-   fun `When an object has multiple independent fields that identify it, all these fields can be used for enrichment`() =
-      runBlockingTest {
-         val testSchema = """
-         type UserId inherits String
-         type Type1TradeId inherits String
-         type Type2TradeId inherits String
-         type Isin inherits String
-         type TradePrice inherits Decimal
-         type TradeDate inherits Date
-
-         model Trade {
-           salesPersonId: UserId
-           @Id
-           tradeId1: Type1TradeId
-           @Id
-           tradeId2: Type2TradeId
-           isin: Isin
-           tradePrice: TradePrice
-         }
-
-          model Input {
-            userId: UserId
-            tradeId1: Type1TradeId?
-            tradeId2: Type2TradeId?
-          }
-
-          model Report {
-             tradePrice: TradePrice
-             tradeDate: TradeDate
-          }
-
-         @Datasource
-         service InputService {
-            operation `findAll`(): Input[]
-         }
-
-         service DataService {
-             operation findLatestTradeForSalesPerson(UserId) : Trade
-             operation findTradeByType1Id(Type1TradeId) : Trade
-             operation findTradeByType2Id(Type2TradeId) : Trade
-         }
-
-
-      """.trimIndent()
-         val (vyne, stubService) = testVyne(testSchema)
-         stubService.addResponse(
-            "`findAll`", vyne.parseJsonCollection(
-               "Input[]", """
-         [
-            { userId : "userX",  tradeId1: "InstrumentX" },
-            { userId : "userX",  tradeId2: "InstrumentY" }
-         ]
-         """.trimIndent()
-            )
-         )
-
-         stubService.addResponse("findLatestTradeForSalesPerson") { _, _ ->
-            fail("Should not be invoked")
-         }
-
-         var findTradeByType1IdInvoked = false
-         stubService.addResponse("findTradeByType1Id") { _, _ ->
-            findTradeByType1IdInvoked = true
-            throw IllegalArgumentException()
-         }
-
-         var findTradeByType2IdInvoked = false
-         stubService.addResponse("findTradeByType2Id") { _, _ ->
-            findTradeByType2IdInvoked = true
-            throw IllegalArgumentException()
-         }
-
-         // act
-         val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
-
-         // assert
-         result.rawObjects().should.be.equal(
-            listOf(
-               mapOf("tradePrice" to null, "tradeDate" to null),
-               mapOf("tradePrice" to null, "tradeDate" to null)
-            )
-         )
-         findTradeByType1IdInvoked.should.be.`true`
-         findTradeByType2IdInvoked.should.be.`true`
-      }
+//
+//   @Test
+//   fun `missing Country does not break Client projection`() = runBlocking {
+//      // prepare
+//      val testSchema = """
+//         model Client {
+//            name : PersonName as String
+//            country : CountryCode as String
+//         }
+//         model Country {
+//             @Id
+//             countryCode : CountryCode
+//             countryName : CountryName as String
+//         }
+//         model ClientAndCountry {
+//            personName : PersonName
+//            countryName : CountryName
+//         }
+//
+//         service MultipleInvocationService {
+//            operation getCustomers():Client[]
+//            operation getCountry(CountryCode): Country
+//         }
+//      """.trimIndent()
+//
+//      val (vyne, stubService) = testVyne(testSchema)
+//      stubService.addResponse(
+//         "getCustomers", vyne.parseJsonCollection(
+//            "Client[]", """
+//         [
+//            { name : "Jimmy", country : "UK" },
+//            { name : "Devrim", country : "TR" }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//
+//      stubService.addResponse("getCountry") { _, parameters ->
+//         val countryCode = parameters.first().second.value!!.toString()
+//         if (countryCode == "UK") {
+//            listOf(vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}"""))
+//         } else {
+//            listOf(TypedObject(vyne.schema.type("Country"), emptyMap(), Provided))
+//         }
+//      }
+//
+//      // act
+//      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+//
+//      // assert
+//      result.rawResults.test {
+//         expectRawMap().should.equal(mapOf("personName" to "Jimmy", "countryName" to "United Kingdom"))
+//         expectRawMap().should.equal(mapOf("personName" to "Devrim", "countryName" to null))
+//         expectComplete()
+//      }
+//   }
+//
+//   @Test
+//   fun `duplicate matches with same values in projection is resolved without any errors`() = runBlocking {
+//      // prepare
+//      val testSchema = """
+//         type OrderId inherits String
+//         type TraderName inherits String
+//         type InstrumentId inherits String
+//         type MaturityDate inherits Date
+//         type TradeId inherits String
+//         type InstrumentName inherits String
+//         model Order {
+//            orderId: OrderId
+//            traderName : TraderName
+//            instrumentId: InstrumentId
+//         }
+//         model Instrument {
+//             @Id
+//             instrumentId: InstrumentId
+//             maturityDate: MaturityDate
+//             name: InstrumentName
+//         }
+//         model Trade {
+//            @Id
+//            orderId: OrderId
+//            maturityDate: MaturityDate
+//            tradeId: TradeId
+//         }
+//
+//         model Report {
+//            orderId: OrderId
+//            tradeId: TradeId
+//            instrumentName: InstrumentName
+//            maturityDate: MaturityDate
+//            traderName : TraderName
+//         }
+//
+//         service MultipleInvocationService {
+//            operation getOrders(): Order[]
+//            operation getTrades(orderIds: OrderId): Trade
+//            operation getTrades(orderIds: OrderId[]): Trade[]
+//            operation getInstrument(instrumentId: InstrumentId): Instrument
+//         }
+//      """.trimIndent()
+//
+//      val maturityDate = "2025-12-01"
+//      val (vyne, stubService) = testVyne(testSchema)
+//      stubService.addResponse(
+//         "getOrders", vyne.parseJsonCollection(
+//            "Order[]", """
+//         [
+//            {
+//               "orderId": "orderId_0",
+//               "traderName": "john",
+//               "instrumentId": "Instrument_0"
+//            }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//
+//      stubService.addResponse(
+//         "getInstrument", vyne.parseJsonModel(
+//            "Instrument", """
+//            {
+//               "maturityDate": "$maturityDate",
+//               "instrumentId": "Instrument_0",
+//               "name": "2040-11-20 0.1 Bond"
+//            }
+//         """.trimIndent()
+//         )
+//      )
+//
+//      stubService.addResponse(
+//         "getTrades", vyne.parseJsonCollection(
+//            "Trade[]", """
+//            [{
+//               "maturityDate": "$maturityDate",
+//               "orderId": "orderId_0",
+//               "tradeId": "Trade_0"
+//            }]
+//         """.trimIndent()
+//         )
+//      )
+//      val result = vyne.query("""findAll { Order[] } as Report[]""".trimIndent())
+//      result.isFullyResolved.should.be.`true`
+//      result.rawObjects().should.equal(
+//         listOf(
+//            mapOf(
+//               "orderId" to "orderId_0",
+//               "traderName" to "john",
+//               "tradeId" to "Trade_0",
+//               "instrumentName" to "2040-11-20 0.1 Bond",
+//               "maturityDate" to maturityDate
+//            )
+//         )
+//      )
+//   }
+//
+//
+//   @Test
+//   fun `can use calculated fields on output models`() = runBlocking {
+//      val (vyne, _) = testVyne(
+//         """
+//         type Quantity inherits Int
+//         type Value inherits Int
+//         type Cost inherits Int
+//         model Input {
+//            qty : Quantity
+//            value : Value
+//         }
+//         model Output {
+//            qty : Quantity
+//            value : Value
+//            cost : Cost by (qty * value)
+//         }
+//      """.trimIndent()
+//      )
+//      val input = vyne.parseJsonModel("Input", """{ "qty" : 100, "value" : 2 }""", source = Provided)
+//      val output = vyne.from(input).build("Output").`firstTypedObject`()
+//      output["cost"].value.should.equal(200)
+//   }
+//
+//   @Test
+//   fun `can use when by`() = runBlocking {
+//      val (vyne, _) = testVyne(
+//         """
+//         model Input {
+//            str: String
+//            value : Decimal?
+//         }
+//
+//         enum PriceType {
+//            Percentage("%"),
+//            Basis("Bps")
+//         }
+//
+//         model SampleType {
+//            price: Decimal?
+//            tempPriceType: String?
+//            priceType: PriceType? by when {
+//                this.price = null -> null
+//                this.price != null -> tempPriceType
+//            }
+//         }
+//      """.trimIndent()
+//      )
+//      val input = vyne.parseJsonModel("Input", """{ "value": 100, "str": "Percentage" }""", source = Provided)
+//      val result = vyne.from(input).build("SampleType")
+//         .`firstTypedObject`()
+//      result["priceType"].value.should.equal("Percentage")
+//   }
+//
+//
+//   @Test
+//   fun `A service annotated with @DataSource will not be invoked twice`() = runBlocking {
+//      val testSchema = """
+//         model Client {
+//            name : PersonName as String
+//            country : CountryCode as String
+//         }
+//         model Country {
+//             countryCode : CountryCode
+//             countryName : CountryName as String
+//         }
+//         model ClientAndCountry {
+//            personName : PersonName
+//            countryName : CountryName
+//         }
+//
+//         @Datasource
+//         service MultipleInvocationService {
+//            operation getCustomers():Client[]
+//            operation getCountry(CountryCode): Country
+//         }
+//      """.trimIndent()
+//
+//      var getCountryInvoked = false
+//      val (vyne, stubService) = testVyne(testSchema)
+//      stubService.addResponse(
+//         "getCustomers", vyne.parseJsonCollection(
+//            "Client[]", """
+//         [
+//            { name : "Jimmy", country : "UK" },
+//            { name : "Devrim", country : "TR" }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//
+//      stubService.addResponse("getCountry") { _, parameters ->
+//         getCountryInvoked = true
+//         val countryCode = parameters.first().second.value!!.toString()
+//         if (countryCode == "UK") {
+//            vyne.parseJsonCollection("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
+//         } else {
+//            listOf(TypedObject(vyne.schema.type("Country"), emptyMap(), Provided))
+//         }
+//      }
+//
+//      // act
+//      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+//
+//      // assert
+//      result.rawObjects().should.equal(
+//         listOf(
+//            mapOf("personName" to "Jimmy", "countryName" to null),
+//            mapOf(
+//               "personName" to "Devrim",
+//               "countryName" to null
+//            ) // See TypedObjectFactory.build() for discussion on returning nulls
+//         )
+//      )
+//      getCountryInvoked.should.be.`false`
+//   }
+//
+//
+//   @Test
+//   fun `should output offset  correctly`() = runBlocking {
+//      val (vyne, stubService) = testVyne(
+//         """
+//         model InputModel {
+//           inputField: Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+//         }
+//
+//         model OutputModel {
+//            myField : Instant( @format = ["yyyy-MM-dd'T'HH:mm:ss.SSSZ"], @offset = 60 )
+//         }
+//
+//         @Datasource
+//         service MultipleInvocationService {
+//            operation getInputData(): InputModel[]
+//         }
+//      """.trimIndent()
+//      )
+//
+//      val inputInstant1 = "2020-08-19T13:07:09.591Z"
+//      val inputInstant2 = "2020-08-18T13:07:09.591Z"
+//      val outputInstant1 = "2020-08-19T14:07:09.591+0100"
+//      val outputInstant2 = "2020-08-18T14:07:09.591+0100"
+//      stubService.addResponse(
+//         "getInputData", vyne.parseJsonCollection(
+//            "InputModel[]", """
+//         [
+//            { "inputField": "$inputInstant1" },
+//            { "inputField": "$inputInstant2" }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+//      result.rawObjects().should.equal(
+//         listOf(
+//            mapOf("myField" to "$outputInstant1"),
+//            mapOf("myField" to "$outputInstant2")
+//         )
+//      )
+//   }
+//
+//   @Test
+//   fun `should output offset correctly without any format`() = runBlocking {
+//      val (vyne, stubService) = testVyne(
+//         """
+//         model InputModel {
+//           inputField: Instant( @format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+//         }
+//
+//         model OutputModel {
+//            myField : Instant( @offset = 60 )
+//         }
+//
+//         @Datasource
+//         service MultipleInvocationService {
+//            operation getInputData(): InputModel[]
+//         }
+//      """.trimIndent()
+//      )
+//
+//      val inputInstant1 = "2020-08-19T13:07:09.591Z"
+//      val inputInstant2 = "2020-08-18T13:07:09.591Z"
+//      val outputInstant1 = "2020-08-19T14:07:09.591+01"
+//      val outputInstant2 = "2020-08-18T14:07:09.591+01"
+//      stubService.addResponse(
+//         "getInputData", vyne.parseJsonCollection(
+//            "InputModel[]", """
+//         [
+//            { "inputField": "$inputInstant1" },
+//            { "inputField": "$inputInstant2" }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+//      result.rawObjects().should.be.equal(
+//         listOf(
+//            mapOf("myField" to outputInstant1),
+//            mapOf("myField" to outputInstant2)
+//         )
+//      )
+//   }
+//
+//   @Test
+//   fun `Calculated fields should be correctly set in projected type`() = runBlocking {
+//      val (vyne, stubService) = testVyne(
+//         """
+//         type QtyFill inherits Decimal
+//         type UnitMultiplier inherits Decimal
+//         type FilledNotional inherits Decimal
+//
+//         model InputModel {
+//           multiplier: UnitMultiplier by default(2)
+//           qtyFill: QtyFill
+//         }
+//
+//         model OutputModel {
+//            qtyHit : QtyFill?
+//            unitMultiplier: UnitMultiplier?
+//            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+//         }
+//
+//         @Datasource
+//         service MultipleInvocationService {
+//            operation getInputData(): InputModel[]
+//         }
+//      """.trimIndent()
+//      )
+//
+//      stubService.addResponse(
+//         "getInputData", vyne.parseJsonCollection(
+//            "InputModel[]", """
+//         [
+//            { "qtyFill": 200, "multiplier": 2 }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//      val result = vyne.query("""findAll { InputModel[] } as OutputModel[]""".trimIndent())
+//      result.rawObjects().should.be.equal(
+//         listOf(
+//            mapOf(
+//               "qtyHit" to BigDecimal("200"),
+//               "unitMultiplier" to BigDecimal("2"),
+//               "filledNotional" to BigDecimal("400")
+//            )
+//         )
+//      )
+//   }
+//
+//   @Test
+//   fun `when calculating fields then lineage is set on output`() = runBlocking {
+//      val (vyne, stubs) = testVyne(
+//         """
+//            type Quantity inherits Int
+//            type Price inherits Int
+//
+//            model Order {
+//               quantity : Quantity
+//               price : Price
+//            }
+//            model Output {
+//               quantity : Quantity
+//               price : Price
+//               averagePrice : Decimal by (this.price / this.quantity)
+//            }
+//            service OrderService {
+//               operation listOrders():Order[]
+//            }
+//         """.trimIndent()
+//      )
+//      // The below responseJson will trigger a divide-by-zero
+//      val responseJson = """[
+//         |{ "quantity" : 0 , "price" : 2 }
+//         |]""".trimMargin()
+//      stubs.addResponse(
+//         "listOrders", vyne.parseJsonModel(
+//            "Order[]", """[
+//         |{ "quantity" : 100 , "price" : 2 },
+//         |{ "quantity" : 0 , "price" : 2 }
+//         |]""".trimMargin()
+//         )
+//      )
+//
+//      val queryResult = vyne.query("findAll { Order[] } as Output[]")
+//      val outputCollection = queryResult.results.test {
+//         val outputModel = expectTypedObject()
+//         val averagePrice = outputModel["averagePrice"]
+//         averagePrice.value.should.equal(0.02.toBigDecimal())
+//         val averagePriceDataSource = averagePrice.source as EvaluatedExpression
+//         averagePriceDataSource.expressionTaxi.should.equal("(this.price / this.quantity)")
+//         averagePriceDataSource.inputs[0].value.should.equal(2)
+//         averagePriceDataSource.inputs[0].source.should.equal(Provided)
+//         expectComplete()
+//      }
+//
+//   }
+//
+//   @Test
+//   fun `should project to pure anonymous type with single field`() = runBlocking {
+//      val (vyne, stubService) = testVyne(
+//         """
+//         type QtyFill inherits Decimal
+//         type UnitMultiplier inherits Decimal
+//         type FilledNotional inherits Decimal
+//         type InputId inherits String
+//
+//         model InputModel {
+//           multiplier: UnitMultiplier by default(2)
+//           qtyFill: QtyFill
+//           id: InputId
+//         }
+//
+//         model OutputModel {
+//            qtyHit : QtyFill?
+//            unitMultiplier: UnitMultiplier?
+//            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+//         }
+//
+//         @Datasource
+//         service MultipleInvocationService {
+//            operation getInputData(): InputModel[]
+//         }
+//      """.trimIndent()
+//      )
+//
+//      stubService.addResponse(
+//         "getInputData", vyne.parseJsonCollection(
+//            "InputModel[]", """
+//         [
+//            { "qtyFill": 200, "multiplier": 2, "id": "input1" },
+//            { "qtyFill": 200, "multiplier": 2, "id": "input2" },
+//            { "qtyFill": 200, "multiplier": 2, "id": "input3" }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//      val result = vyne.query(
+//         """
+//            findAll {
+//                InputModel[]
+//              } as {
+//                 id
+//               }[]
+//            """.trimIndent()
+//      )
+//
+//      result.rawObjects().should.be.equal(
+//         listOf(
+//            mapOf("id" to "input1"), mapOf("id" to "input2"), mapOf("id" to "input3")
+//         )
+//      )
+//   }
+//
+//   @Test
+//   fun `should project to pure anonymous type with multiple fields`() = runBlocking {
+//      val (vyne, stubService) = testVyne(
+//         """
+//         type QtyFill inherits Decimal
+//         type UnitMultiplier inherits Decimal
+//         type FilledNotional inherits Decimal
+//         type InputId inherits String
+//         type TraderId inherits String
+//         type TraderName inherits String
+//         type TraderSurname inherits String
+//
+//         model InputModel {
+//           multiplier: UnitMultiplier by default(2)
+//           qtyFill: QtyFill
+//           id: InputId
+//           traderId: TraderId
+//         }
+//
+//         model OutputModel {
+//            qtyHit : QtyFill?
+//            unitMultiplier: UnitMultiplier?
+//            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+//         }
+//
+//          model TraderInfo {
+//            @Id
+//            traderId: TraderId
+//            traderName: TraderName
+//            traderSurname: TraderSurname
+//         }
+//
+//         @Datasource
+//         service MultipleInvocationService {
+//            operation getInputData(): InputModel[]
+//         }
+//
+//         service TraderService {
+//            operation getTrader(TraderId): TraderInfo
+//         }
+//      """.trimIndent()
+//      )
+//
+//      stubService.addResponse(
+//         "getInputData", vyne.parseJsonCollection(
+//            "InputModel[]", """
+//         [
+//            { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },
+//            { "qtyFill": 200, "multiplier": 2, "id": "input2", "traderId": "tId2" },
+//            { "qtyFill": 200, "multiplier": 3, "id": "input3", "traderId": "tId3" }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//
+//      stubService.addResponse("getTrader") { _, parameters ->
+//         when (parameters.first().second.value) {
+//            "tId1" -> listOf(
+//               vyne.parseJsonModel(
+//                  "TraderInfo",
+//                  """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
+//               )
+//            )
+//            "tId2" -> listOf(
+//               vyne.parseJsonModel(
+//                  "TraderInfo",
+//                  """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
+//               )
+//            )
+//            "tId3" -> listOf(
+//               vyne.parseJsonModel(
+//                  "TraderInfo",
+//                  """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
+//               )
+//            )
+//            else -> listOf(TypedNull.create(vyne.type("TraderInfo")))
+//
+//         }
+//      }
+//
+//      val result = vyne.query(
+//         """
+//            findAll {
+//                InputModel[]
+//              } as {
+//                 id
+//                 multiplier: UnitMultiplier
+//                 traderName: TraderName by (this.traderId)
+//               }[]
+//            """.trimIndent()
+//      )
+//
+//      result.rawResults.test {
+//         expectRawMapsToEqual(
+//            listOf(
+//               mapOf("id" to "input1", "multiplier" to BigDecimal("1"), "traderName" to "Butch"),
+//               mapOf("id" to "input2", "multiplier" to BigDecimal("2"), "traderName" to "Sundance"),
+//               mapOf("id" to "input3", "multiplier" to BigDecimal("3"), "traderName" to "Travis")
+//            )
+//         )
+//         expectComplete()
+//      }
+//   }
+//
+//   @Test
+//   fun `should project to anonymous type extending discovery type`() = runBlocking {
+//      val (vyne, stubService) = testVyne(
+//         """
+//         type QtyFill inherits Decimal
+//         type UnitMultiplier inherits Decimal
+//         type FilledNotional inherits Decimal
+//         type InputId inherits String
+//         type TraderId inherits String
+//         type TraderName inherits String
+//         type TraderSurname inherits String
+//
+//         model InputModel {
+//           multiplier: UnitMultiplier by default(2)
+//           qtyFill: QtyFill
+//           id: InputId
+//         }
+//
+//         model OutputModel {
+//            qtyHit : QtyFill?
+//            unitMultiplier: UnitMultiplier?
+//            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+//            traderId: TraderId by default("id1")
+//         }
+//
+//         model TraderInfo {
+//            @Id
+//            traderId: TraderId
+//            traderName: TraderName
+//            traderSurname: TraderSurname
+//         }
+//
+//         @Datasource
+//         service MultipleInvocationService {
+//            operation getInputData(): InputModel[]
+//         }
+//
+//         service TraderService {
+//            operation getTrader(TraderId): TraderInfo
+//         }
+//      """.trimIndent()
+//      )
+//
+//      stubService.addResponse(
+//         "getInputData", vyne.parseJsonCollection(
+//            "InputModel[]", """
+//         [
+//            { "qtyFill": 200, "multiplier": 1, "id": "input1" },
+//            { "qtyFill": 200, "multiplier": 2, "id": "input2" },
+//            { "qtyFill": 200, "multiplier": 3, "id": "input3" }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//
+//      stubService.addResponse(
+//         "getTrader", vyne.parseJsonModel(
+//            "TraderInfo",
+//            """
+//         {
+//            "traderId": "id1",
+//            "traderName": "John",
+//            "traderSurname" : "Doe"
+//         }
+//      """.trimIndent()
+//         )
+//      )
+//      val result =
+//         vyne.query(
+//            """
+//            findAll {
+//                InputModel[]
+//              } as OutputModel {
+//                 inputId: InputId
+//                 traderName: TraderName by (this.traderId)
+//               }[]
+//            """.trimIndent()
+//         )
+//
+//      result.rawObjects().should.be.equal(
+//         listOf(
+//            mapOf(
+//               "qtyHit" to BigDecimal("200"),
+//               "unitMultiplier" to BigDecimal("1"),
+//               "filledNotional" to BigDecimal("200"),
+//               "traderId" to "id1",
+//               "inputId" to "input1",
+//               "traderName" to "John"
+//            ),
+//            mapOf(
+//               "qtyHit" to BigDecimal("200"),
+//               "unitMultiplier" to BigDecimal("2"),
+//               "filledNotional" to BigDecimal("400"),
+//               "traderId" to "id1",
+//               "inputId" to "input2",
+//               "traderName" to "John"
+//            ),
+//            mapOf(
+//               "qtyHit" to BigDecimal("200"),
+//               "unitMultiplier" to BigDecimal("3"),
+//               "filledNotional" to BigDecimal("600"),
+//               "traderId" to "id1",
+//               "inputId" to "input3",
+//               "traderName" to "John"
+//            )
+//         )
+//      )
+//   }
+//
+//   @Test
+//   fun `should project to anonymous extending the projectiont target type and containing an anonymously typed field`() =
+//      runBlocking {
+//         val (vyne, stubService) = testVyne(
+//            """
+//         type QtyFill inherits Decimal
+//         type UnitMultiplier inherits Decimal
+//         type FilledNotional inherits Decimal
+//         type InputId inherits String
+//         type TraderId inherits String
+//         type TraderName inherits String
+//         type TraderSurname inherits String
+//
+//         model InputModel {
+//           multiplier: UnitMultiplier by default(2)
+//           qtyFill: QtyFill
+//           id: InputId
+//         }
+//
+//         model OutputModel {
+//            qtyHit : QtyFill?
+//            unitMultiplier: UnitMultiplier?
+//            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+//            traderId: TraderId by default("id1")
+//         }
+//
+//         model TraderInfo {
+//            @Id
+//            traderId: TraderId
+//            traderName: TraderName
+//            traderSurname: TraderSurname
+//         }
+//
+//         @Datasource
+//         service MultipleInvocationService {
+//            operation getInputData(): InputModel[]
+//         }
+//
+//         service TraderService {
+//            operation getTrader(TraderId): TraderInfo
+//         }
+//      """.trimIndent()
+//         )
+//
+//         stubService.addResponse(
+//            "getInputData", vyne.parseJsonCollection(
+//               "InputModel[]", """
+//         [
+//            { "qtyFill": 200, "multiplier": 1, "id": "input1" },
+//            { "qtyFill": 200, "multiplier": 2, "id": "input2" },
+//            { "qtyFill": 200, "multiplier": 3, "id": "input3" }
+//         ]
+//         """.trimIndent()
+//            )
+//         )
+//
+//         stubService.addResponse(
+//            "getTrader", vyne.parseJsonModel(
+//               "TraderInfo",
+//               """
+//         {
+//            "traderId": "id1",
+//            "traderName": "John",
+//            "traderSurname" : "Doe"
+//         }
+//      """.trimIndent()
+//            )
+//         )
+//         val result =
+//            vyne.query(
+//               """
+//            findAll {
+//                InputModel[]
+//              } as OutputModel {
+//                 inputId: InputId
+//                 trader: {
+//                    name: TraderName
+//                    surname: TraderSurname
+//                 } by (this.traderId)
+//               }[]
+//            """.trimIndent()
+//            )
+//
+//         result.rawObjects().should.be.equal(
+//            listOf(
+//               mapOf(
+//                  "qtyHit" to BigDecimal("200"),
+//                  "unitMultiplier" to BigDecimal("1"),
+//                  "filledNotional" to BigDecimal("200"),
+//                  "traderId" to "id1",
+//                  "inputId" to "input1",
+//                  "trader" to mapOf("name" to "John", "surname" to "Doe")
+//               ),
+//               mapOf(
+//                  "qtyHit" to BigDecimal("200"),
+//                  "unitMultiplier" to BigDecimal("2"),
+//                  "filledNotional" to BigDecimal("400"),
+//                  "traderId" to "id1",
+//                  "inputId" to "input2",
+//                  "trader" to mapOf("name" to "John", "surname" to "Doe")
+//               ),
+//               mapOf(
+//                  "qtyHit" to BigDecimal("200"),
+//                  "unitMultiplier" to BigDecimal("3"),
+//                  "filledNotional" to BigDecimal("600"),
+//                  "traderId" to "id1",
+//                  "inputId" to "input3",
+//                  "trader" to mapOf("name" to "John", "surname" to "Doe")
+//               )
+//            )
+//         )
+//      }
+//
+//   @Test
+//   fun `should project to anonymous type containing an anonymously typed field`() = runBlocking {
+//      val (vyne, stubService) = testVyne(
+//         """
+//         type QtyFill inherits Decimal
+//         type UnitMultiplier inherits Decimal
+//         type FilledNotional inherits Decimal
+//         type InputId inherits String
+//         type TraderId inherits String
+//         type TraderName inherits String
+//         type TraderSurname inherits String
+//
+//         model InputModel {
+//           multiplier: UnitMultiplier by default(2)
+//           qtyFill: QtyFill
+//           id: InputId
+//           traderId: TraderId
+//         }
+//
+//         model OutputModel {
+//            qtyHit : QtyFill?
+//            unitMultiplier: UnitMultiplier?
+//            filledNotional : FilledNotional?  by (this.qtyHit * this.unitMultiplier)
+//         }
+//
+//          model TraderInfo {
+//            @Id
+//            traderId: TraderId
+//            traderName: TraderName
+//            traderSurname: TraderSurname
+//         }
+//
+//         @Datasource
+//         service MultipleInvocationService {
+//            operation getInputData(): InputModel[]
+//         }
+//
+//         service TraderService {
+//            operation getTrader(TraderId): TraderInfo
+//         }
+//      """.trimIndent()
+//      )
+//
+//      stubService.addResponse(
+//         "getInputData", vyne.parseJsonModel(
+//            "InputModel[]", """
+//         [
+//            { "qtyFill": 200, "multiplier": 1, "id": "input1", "traderId": "tId1" },
+//            { "qtyFill": 200, "multiplier": 2, "id": "input2", "traderId": "tId2" },
+//            { "qtyFill": 200, "multiplier": 3, "id": "input3", "traderId": "tId3" }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//
+//      stubService.addResponse("getTrader") { _, parameters ->
+//         when (parameters.first().second.value) {
+//            "tId1" -> listOf(
+//               vyne.parseJsonModel(
+//                  "TraderInfo",
+//                  """{"traderId": "tId1", "traderName": "Butch", "traderSurname": "Cassidy"}"""
+//               )
+//            )
+//            "tId2" -> listOf(
+//               vyne.parseJsonModel(
+//                  "TraderInfo",
+//                  """{"traderId": "tId2", "traderName": "Sundance", "traderSurname": "Kidd"}"""
+//               )
+//            )
+//            "tId3" -> listOf(
+//               vyne.parseJsonModel(
+//                  "TraderInfo",
+//                  """{"traderId": "tId3", "traderName": "Travis", "traderSurname": "Bickle"}"""
+//               )
+//            )
+//            else -> listOf(TypedNull.create(vyne.type("TraderInfo")))
+//
+//         }
+//      }
+//
+//      val result = vyne.query(
+//         """
+//            findAll {
+//                InputModel[]
+//              } as {
+//                 id
+//                 multiplier: UnitMultiplier
+//                 trader: {
+//                    name: TraderName
+//                    surname: TraderSurname
+//                 }  by (this.traderId)
+//               }[]
+//            """.trimIndent()
+//      )
+//
+//      result.rawObjects().should.be.equal(
+//         listOf(
+//            mapOf(
+//               "id" to "input1",
+//               "multiplier" to BigDecimal("1"),
+//               "trader" to mapOf("name" to "Butch", "surname" to "Cassidy")
+//            ),
+//            mapOf(
+//               "id" to "input2",
+//               "multiplier" to BigDecimal("2"),
+//               "trader" to mapOf("name" to "Sundance", "surname" to "Kidd")
+//            ),
+//            mapOf(
+//               "id" to "input3",
+//               "multiplier" to BigDecimal("3"),
+//               "trader" to mapOf("name" to "Travis", "surname" to "Bickle")
+//            )
+//         )
+//      )
+//   }
+//
+//   @Test
+//   fun `avoid recursive parameter discovery`() = runBlocking {
+//      val (vyne, stubService) = testVyne(
+//         """
+//         type Isin inherits String
+//         type Ric inherits String
+//         type InstrumentIdentifierType inherits String
+//         type InputId inherits String
+//
+//
+//         model InputModel {
+//           id: InputId
+//           ric : Ric?
+//         }
+//
+//         model OutputModel {
+//            isin: Isin
+//
+//         }
+//
+//         // The request contains a parameter that is present on the response.
+//         // Therefore, in order to construct the request, the response can be invoked.
+//         // This leads to circular logic, which causes a stack overflow.
+//         // This test asserts that behaviour is prevented.
+//         parameter model InstrumentReferenceRequest {
+//             Identifier : Ric?
+//             IdentifierType: InstrumentIdentifierType?
+//         }
+//
+//         parameter model InstrumentReferenceResponse {
+//             ricCode : Ric?
+//             instrumentType: InstrumentIdentifierType?
+//             isin: Isin
+//         }
+//
+//         @Datasource
+//         service MultipleInvocationService {
+//            operation getInputData(): InputModel[]
+//         }
+//
+//         service InstrumentService {
+//             operation getInstrumentFromRic( @RequestBody request:InstrumentReferenceRequest) :  InstrumentReferenceResponse
+//         }
+//      """.trimIndent()
+//      )
+//
+//      stubService.addResponse(
+//         "getInputData", vyne.parseJsonCollection(
+//            "InputModel[]", """
+//         [
+//            {  "id": "input1", "ric": "ric1" },
+//            {  "id": "input2" },
+//            {  "id": "input3" }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//      val result =
+//         vyne.query(
+//            """
+//            findAll {
+//                InputModel[]
+//              } as OutputModel []
+//            """.trimIndent()
+//         )
+//
+//      result.rawObjects().should.be.equal(
+//         listOf(
+//            mapOf("isin" to null),
+//            mapOf("isin" to null),
+//            mapOf("isin" to null)
+//         )
+//      )
+//   }
+//
+//   @Test
+//   fun `invalid post operation caching`() = runBlocking {
+//      val (vyne, stubService) = testVyne(
+//         """
+//         type Isin inherits String
+//         type Ric inherits String
+//         type InstrumentIdentifierType inherits String
+//         type InputId inherits String
+//
+//
+//         model InputModel {
+//           id: InputId
+//           ric : Ric?
+//           instrumentType: InstrumentIdentifierType? by default("Ric")
+//         }
+//
+//         model OutputModel {
+//            isin: Isin
+//         }
+//
+//         parameter model InstrumentReferenceRequest {
+//             Identifier : Ric?
+//             IdentifierType: InstrumentIdentifierType?
+//         }
+//
+//         parameter model InstrumentReferenceResponse {
+//             isin: Isin
+//         }
+//
+//         @Datasource
+//         service MultipleInvocationService {
+//            operation getInputData(): InputModel[]
+//         }
+//
+//         service InstrumentService {
+//             operation getInstrumentFromRic( @RequestBody request:InstrumentReferenceRequest) :  InstrumentReferenceResponse
+//         }
+//      """.trimIndent()
+//      )
+//
+//      stubService.addResponse(
+//         "getInputData", vyne.parseJsonCollection(
+//            "InputModel[]", """
+//         [
+//            {  "id": "input1", "ric": "ric1", "instrumentType": "ric" },
+//            {  "id": "input2", "ric": "ric2", "instrumentType": "ric" },
+//            {  "id": "input3", "ric": "ric3", "instrumentType": "ric" }
+//         ]
+//         """.trimIndent()
+//         )
+//      )
+//
+//      stubService.addResponse("getInstrumentFromRic") { _, parameters ->
+//         val isinValue = (parameters.first().second as TypedObject).value.values.map { it.value }.joinToString("_")
+//         listOf(
+//            vyne.parseJsonModel(
+//               "InstrumentReferenceResponse", """
+//             {"isin": "$isinValue"}
+//          """.trimIndent()
+//            )
+//         )
+//      }
+//
+//      val result =
+//         vyne.query(
+//            """
+//            findAll {
+//                InputModel[]
+//              } as OutputModel []
+//            """.trimIndent()
+//         )
+//
+//      result.rawObjects().should.be.equal(
+//         listOf(
+//            mapOf("isin" to "ric1_ric"),
+//            mapOf("isin" to "ric2_ric"),
+//            mapOf("isin" to "ric3_ric")
+//         )
+//      )
+//
+//   }
+//
+//   @Test
+//   fun `If Vyne is enriching an entity, and a model returned from a service defines an Id field, then Vyne will only invoke that service the input parameter identifies the output model`() =
+//      runBlocking {
+//         val testSchema = """
+//         type UserId inherits String
+//         type TradeId inherits String
+//         type Isin inherits String
+//         type TradePrice inherits Decimal
+//         type TradeDate inherits Date
+//
+//         model Trade {
+//           salesPersonId: UserId
+//           @Id
+//           tradeId: TradeId
+//           isin: Isin
+//           tradePrice: TradePrice
+//         }
+//
+//          model Input {
+//            userId: UserId
+//            tradeId: TradeId
+//          }
+//
+//          model Report {
+//             tradePrice: TradePrice
+//             tradeDate: TradeDate
+//          }
+//
+//         @Datasource
+//         service InputService {
+//            operation `findAll`(): Input[]
+//         }
+//
+//         service DataService {
+//             operation findLatestTradeForSalesPerson(UserId) : Trade
+//             operation findTrade(TradeId) : Trade
+//         }
+//
+//
+//      """.trimIndent()
+//         val (vyne, stubService) = testVyne(testSchema)
+//         stubService.addResponse(
+//            "`findAll`", vyne.parseJsonCollection(
+//               "Input[]", """
+//         [
+//            { userId : "userX",  tradeId: "InstrumentX" }
+//         ]
+//         """.trimIndent()
+//            )
+//         )
+//
+//         stubService.addResponse("findLatestTradeForSalesPerson") { _, parameters ->
+//            fail("Should not be invoked")
+//         }
+//
+//
+//         var findTradeInvoked = false
+//         stubService.addResponse("findTrade") { _, _ ->
+//            findTradeInvoked = true
+//            throw IllegalArgumentException()
+//         }
+//
+//         // act
+//         val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
+//
+//         // assert
+//         findTradeInvoked.should.be.`true`
+//         result.rawObjects().should.be.equal(
+//            listOf(
+//               mapOf("tradePrice" to null, "tradeDate" to null)
+//            )
+//         )
+//      }
+//
+//   @Test
+//   fun `If Vyne is enriching an entity, and a model returned from a service does not define an Id field, then Vyne will use any possible path to discover the inputs to call the service`() =
+//      runBlocking {
+//         val testSchema = """
+//         type ProductId inherits String
+//         type AssetClass inherits String
+//         type Isin inherits String
+//         type OrderId inherits String
+//         parameter model IsinDiscoveryRequest {
+//             productId : ProductId?
+//             assetClass : AssetClass?
+//         }
+//         model IsinDiscoveryResult {
+//             isin : Isin
+//         }
+//
+//         model Input {
+//             orderId: OrderId
+//             productId : ProductId?
+//             assetClass : AssetClass?
+//         }
+//
+//         model Output {
+//            orderId: OrderId
+//            isin : Isin
+//         }
+//
+//         @Datasource
+//         service InputService {
+//            operation `findAll`(): Input[]
+//         }
+//
+//         service DataService {
+//            operation lookupIsin(IsinDiscoveryRequest):IsinDiscoveryResult
+//         }
+//
+//      """.trimIndent()
+//
+//         val (vyne, stubService) = testVyne(testSchema)
+//         stubService.addResponse(
+//            "`findAll`", vyne.parseJsonCollection(
+//               "Input[]", """
+//         [
+//            { orderId : "OrderX",  productId: "ProductX", assetClass: "AssetClassX" }
+//         ]
+//         """.trimIndent()
+//            )
+//         )
+//
+//         stubService.addResponse(
+//            "lookupIsin", vyne.parseJsonModel(
+//               "IsinDiscoveryResult", """
+//            { isin : "Isin1" }
+//         """.trimIndent()
+//            )
+//         )
+//
+//         val result = vyne.query("""findAll { Input[] } as Output[]""".trimIndent())
+//
+//         result.rawObjects().should.be.equal(
+//            listOf(
+//               mapOf("orderId" to "OrderX", "isin" to "Isin1")
+//            )
+//         )
+//
+//      }
+//
+//   @Test
+//   fun `When an object has multiple independent fields that identify it, all these fields can be used for enrichment`() =
+//      runBlocking {
+//         val testSchema = """
+//         type UserId inherits String
+//         type Type1TradeId inherits String
+//         type Type2TradeId inherits String
+//         type Isin inherits String
+//         type TradePrice inherits Decimal
+//         type TradeDate inherits Date
+//
+//         model Trade {
+//           salesPersonId: UserId
+//           @Id
+//           tradeId1: Type1TradeId
+//           @Id
+//           tradeId2: Type2TradeId
+//           isin: Isin
+//           tradePrice: TradePrice
+//         }
+//
+//          model Input {
+//            userId: UserId
+//            tradeId1: Type1TradeId?
+//            tradeId2: Type2TradeId?
+//          }
+//
+//          model Report {
+//             tradePrice: TradePrice
+//             tradeDate: TradeDate
+//          }
+//
+//         @Datasource
+//         service InputService {
+//            operation `findAll`(): Input[]
+//         }
+//
+//         service DataService {
+//             operation findLatestTradeForSalesPerson(UserId) : Trade
+//             operation findTradeByType1Id(Type1TradeId) : Trade
+//             operation findTradeByType2Id(Type2TradeId) : Trade
+//         }
+//
+//
+//      """.trimIndent()
+//         val (vyne, stubService) = testVyne(testSchema)
+//         stubService.addResponse(
+//            "`findAll`", vyne.parseJsonCollection(
+//               "Input[]", """
+//         [
+//            { userId : "userX",  tradeId1: "InstrumentX" },
+//            { userId : "userX",  tradeId2: "InstrumentY" }
+//         ]
+//         """.trimIndent()
+//            )
+//         )
+//
+//         stubService.addResponse("findLatestTradeForSalesPerson") { _, _ ->
+//            fail("Should not be invoked")
+//         }
+//
+//         var findTradeByType1IdInvoked = false
+//         stubService.addResponse("findTradeByType1Id") { _, _ ->
+//            findTradeByType1IdInvoked = true
+//            throw IllegalArgumentException()
+//         }
+//
+//         var findTradeByType2IdInvoked = false
+//         stubService.addResponse("findTradeByType2Id") { _, _ ->
+//            findTradeByType2IdInvoked = true
+//            throw IllegalArgumentException()
+//         }
+//
+//         // act
+//         val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
+//
+//         // assert
+//         result.rawObjects().should.be.equal(
+//            listOf(
+//               mapOf("tradePrice" to null, "tradeDate" to null),
+//               mapOf("tradePrice" to null, "tradeDate" to null)
+//            )
+//         )
+//         findTradeByType1IdInvoked.should.be.`true`
+//         findTradeByType2IdInvoked.should.be.`true`
+//      }
 }
