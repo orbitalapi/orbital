@@ -110,7 +110,14 @@ class StatefulQueryEngine(
       clientQueryId: String?
    ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
-      return QueryContext.from(schema, facts + additionalFacts, this, profiler, queryId = queryId, clientQueryId = clientQueryId)
+      return QueryContext.from(
+         schema,
+         facts + additionalFacts,
+         this,
+         profiler,
+         queryId = queryId,
+         clientQueryId = clientQueryId
+      )
    }
 
 }
@@ -153,28 +160,15 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    }
 
    private suspend fun projectTo(targetType: Type, context: QueryContext): QueryResult {
-      // EXPERIMENT: Detecting transforming of collections, ie A[] -> B[]
-      // We're hacking this to to A.map{ build(B) }.
-      // This could cause other issues, but I want to explore this approach
-
-      val isCollectionToCollectionTransformation = context.facts.size == 1
-         && context.facts.first() is TypedCollection
-         && targetType.isCollection
-
-      val isCollectionsToCollectionTransformation =
-         context.facts.stream().allMatch { it is TypedCollection }
-            && targetType.isCollection
-
-      val isSingleToCollectionTransform = onlyTypedObject(context) != null
-         && targetType.isCollection
+      val isProjectingCollection = context.facts.stream().allMatch { it is TypedCollection }
 
       val querySpecTypeNode = QuerySpecTypeNode(targetType, emptySet(), QueryMode.DISCOVER)
       val result: TypedInstance? = when {
          //isCollectionToCollectionTransformation -> {
          //   mapCollectionToCollection(targetType, context)
          //}
-         isCollectionsToCollectionTransformation -> {
-            mapCollectionsToCollection(targetType, context)
+         isProjectingCollection -> {
+            projectCollection(targetType, context)
          }
 
          //isSingleToCollectionTransform -> {
@@ -188,11 +182,16 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             ObjectBuilder(this, context, targetType).build()
          }
       }
+      val resultFlow = when (result) {
+         null -> emptyFlow()
+         is TypedCollection -> result.value.asFlow()
+         else -> flowOf(result)
+      }
 
       return if (result != null) {
          QueryResult(
             querySpecTypeNode,
-            flow { emit(result) },
+            resultFlow,
             emptySet(),
             profilerOperation = context.profiler.root,
             anonymousTypes = context.schema.typeCache.anonymousTypes(),
@@ -221,8 +220,14 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    }
 
    // TODO investigate why in tests got throught this method (there are two facts of TypedCollection), looks like this is only in tests
-   private suspend fun mapCollectionsToCollection(targetType: Type, context: QueryContext): TypedInstance? {
-      val targetCollectionType = targetType.resolveAliases().typeParameters[0]
+   private suspend fun projectCollection(targetType: Type, context: QueryContext): TypedInstance? {
+
+      val targetCollectionType = if (targetType.isCollection) {
+         targetType.resolveAliases().typeParameters[0]
+      } else {
+         targetType
+      }
+
       log().info("Mapping collections to collection of type ${targetCollectionType.qualifiedName} ")
       val transformed = context.facts
          .map { it as TypedCollection }
@@ -371,7 +376,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
    ): QueryResult {
 
 
-
       // TODO : BIG opportunity to optimize this by evaluating multiple querySpecNodes at once.
       // Which would allow us to be smarter about results we collect from rest calls.
       // Optimize later.
@@ -420,8 +424,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
             val strategyResult =
                invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
+
             if (strategyResult.hasMatchesNodes()) {
-               strategyResult.matchedNodes?.collectIndexed {index,value ->
+               strategyResult.matchedNodes.collectIndexed { index, value ->
                   resultsReceivedFromStrategy = true
                   emit(value)
 
@@ -432,6 +437,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                   }
 
                }
+            } else {
+               log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
             }
          }
       }
@@ -452,7 +459,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // ... Investigate
 
 
-      val results = when(context.projectResultsTo) {
+      val results = when (context.projectResultsTo) {
          null -> resultsFlow
          else ->
             resultsFlow.map {
