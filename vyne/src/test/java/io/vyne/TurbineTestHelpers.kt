@@ -55,8 +55,13 @@ suspend inline fun FlowTurbine<*>.expectManyRawMaps(count: Int): List<Map<String
 
 suspend inline fun <reified O> FlowTurbine<*>.expectMany(count: Int): List<O> {
    val results = mutableListOf<O>()
-   (0 until count).forEach { _ ->
-      results.add(expectItem() as O)
+   (0 until count).forEach { index ->
+      val item = try {
+         expectItem() as O
+      } catch (e: Exception) {
+         throw RuntimeException("Exception when trying to expectItem with index $index", e)
+      }
+      results.add(item)
    }
    return results
 }

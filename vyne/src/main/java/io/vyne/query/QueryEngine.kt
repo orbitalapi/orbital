@@ -12,8 +12,6 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
@@ -192,7 +190,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          QueryResult(
             querySpecTypeNode,
             resultFlow,
-            emptySet(),
+            unmatchedNodes = emptySet(),
             profilerOperation = context.profiler.root,
             anonymousTypes = context.schema.typeCache.anonymousTypes(),
             queryId = context.queryId
@@ -230,8 +228,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
 
       log().info("Mapping collections to collection of type ${targetCollectionType.qualifiedName} ")
       val transformed = context.facts
-         .map { it as TypedCollection }
-         .flatten()
+         .filterIsInstance<TypedCollection>()
+         .flatMap { deeplyFlatten(it) }
          .map { typedInstance -> mapTo(targetCollectionType, typedInstance, context) }
          .mapNotNull { it }
       return if (transformed.isEmpty()) {
@@ -239,6 +237,22 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       } else {
          TypedCollection.from(transformed)
       }
+   }
+
+   /**
+    * Recurses through TypedCollections, flattening any nested TypedCollections out,
+    * so a single stream of TypedInstance is returned.
+    * In practice, this issue of nested typed collections only appears to occur when using
+    * the API to directly add parsed TypedObject into the query content
+    */
+   private fun deeplyFlatten(collection: TypedCollection): List<TypedInstance> {
+      val f = collection.value.flatMap {
+         when (it) {
+            is TypedCollection -> deeplyFlatten(it)
+            else -> listOf(it)
+         }
+      }
+      return f
    }
 
    // This logic executes currently as part of projection from one collection to another
@@ -302,9 +316,9 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       val transformationResult = context.only(typedInstance).build(targetType.fullyQualifiedName)
 
       return if (transformationResult.isFullyResolved) {
-         val results = transformationResult.results?.toList()
-         require(results?.size == 1) { "Expected only a single transformation result" }
-         val result = results?.first()
+         val results = transformationResult.results.toList()
+         require(results.size == 1) { "Expected only a single transformation result" }
+         val result = results.first()
          if (result == null) {
             log().warn("Transformation from $typedInstance to instance of ${targetType.fullyQualifiedName} was reported as sucessful, but result was null")
          }
@@ -414,7 +428,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //   return querySet.filterNot { matchedNodes.containsKey(it) }
       //}
 
-      val resultsFlow = flow {
+      val resultsFlow: Flow<TypedInstance> = flow {
          var resultsReceivedFromStrategy = false
 
          for (queryStrategy in strategies) {
@@ -443,7 +457,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          }
       }
 
-
       // MP : We could possibly remove this line.
       // If we're not projecting, I suspect we use the return value from the query
       //rather than storing in the context and then fetching it back out again.
@@ -458,27 +471,34 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // Without it, there's a stack overflow error as projectTo seems to call ObjectBuilder.build which calls projectTo again.
       // ... Investigate
 
-
       val results = when (context.projectResultsTo) {
          null -> resultsFlow
          else ->
-            resultsFlow.map {
-               GlobalScope.async {
-                  val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                  val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)
-                  buildResult.results.first()
-               }
+            // MP : I modfied this code, but I'm not clear on the impact of doing so.
+            // The issue is that we can have projections that return multiple values.
+            // Previously, this was returning buildResult.results.first(), which ignored subsequent values.
+            // However, the move to flatMapConcat may have broken parallelisation elsewhere.  Hard to know.
+            resultsFlow.flatMapConcat {
+//               GlobalScope.async {
+               val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
+               val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)
+               buildResult.results
+//               }
             }
                .buffer(128)
-               .map { it.await() }
+//               .map { it.await() }
 
       }
-
+      // MP : Hacking, remove this code
+//      val resultList = runBlocking { results.toList() }
+//      val resultListFlow = resultList.asFlow()
+      val querySpecTypeNode = if (context.isProjecting) {
+         QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
+      } else {
+         target
+      }
       return QueryResult(
-         when (context.projectResultsTo) {
-            null -> target
-            else -> QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
-         },
+         querySpecTypeNode,
          results,
          emptySet(),
          path = null,

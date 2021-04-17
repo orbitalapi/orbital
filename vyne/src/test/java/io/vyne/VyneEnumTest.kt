@@ -2,16 +2,11 @@ package io.vyne
 
 import app.cash.turbine.test
 import com.winterbe.expekt.should
-import io.vyne.models.Provided
-import io.vyne.models.TypedCollection
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedNull
 import io.vyne.models.json.addJsonModel
 import io.vyne.query.QueryResult
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -19,9 +14,7 @@ import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Ignore
 import org.junit.Test
 import kotlin.time.Duration
-import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
-import kotlin.time.toDuration
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
@@ -55,7 +48,8 @@ class VyneEnumTest {
    @Test
    @Ignore("Should enabled when Enum inheritance is supported")
    fun `enum inheritance should be calculated`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
           enum EnumA {
             A1,
             A2
@@ -68,7 +62,8 @@ class VyneEnumTest {
             B2 synonym of EnumA.A2
          }
          enum EnumB1 inherits EnumB
-      """.trimIndent())
+      """.trimIndent()
+      )
       val enumA1 = schema.type("EnumA1")
       enumA1.inherits.should.have.size(1)
       enumA1.inheritsFromTypeNames.should.have.elements("EnumA".fqn())
@@ -177,17 +172,35 @@ class VyneEnumTest {
       )
 
       // When
-      val queryResult =  vyne.query(""" findAll { BankOrder[] } as CommonOrder[] """)
+      val queryResult = vyne.query(""" findAll { BankOrder[] } as CommonOrder[] """)
 
+      // I don't undersstand why this doesn't work using turbine.
+//      val resultList = queryResult.results.toList()
+//         .map { it.toRawObject() }
+//      resultList.should.equal(listOf(
+//         mapOf("direction" to "bankbuys"),
+//         mapOf("direction" to "banksells"),
+//         mapOf("direction" to "BankBuys"),
+//         mapOf("direction" to "BankSells")
+//      ))
       // Then
-      queryResult.rawResults.test {
-         expectListOfRawMap().should.equal(listOf(
-            mapOf("direction" to "bankbuys"),
-            mapOf("direction" to "banksells"),
-            mapOf("direction" to "BankBuys"),
-            mapOf("direction" to "BankSells")
-         ))
+
+      queryResult.rawResults.test(Duration.INFINITE) {
+         // Don't understand why this isn't working.
+         // calling
+         expectRawMap().should.equal(mapOf("direction" to "bankbuys"))
+         expectRawMap().should.equal(mapOf("direction" to "banksells"))
+         expectRawMap().should.equal(mapOf("direction" to "BankBuys"))
+         expectRawMap().should.equal(mapOf("direction" to "BankSells"))
          expectComplete()
+         // inside this is failing.
+//         expectManyRawMaps(4).should.equal(listOf(
+//            mapOf("direction" to "bankbuys"),
+//            mapOf("direction" to "banksells"),
+//            mapOf("direction" to "BankBuys"),
+//            mapOf("direction" to "BankSells")
+//         ))
+//         expectComplete()
       }
    }
 
