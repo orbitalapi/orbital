@@ -15,20 +15,19 @@ import io.vyne.query.graph.ElementType
 import io.vyne.query.graph.VyneGraphBuilder
 import io.vyne.query.graph.instanceOfType
 import io.vyne.query.graph.operationInvocation.OperationInvocationEvaluator
-import io.vyne.schemas.Operation
-import io.vyne.schemas.OperationNames
-import io.vyne.schemas.Relationship
-import io.vyne.schemas.Schema
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import io.vyne.utils.log
 import io.vyne.utils.timed
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.TimeUnit
 
-class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator: OperationInvocationEvaluator,
-                                        private val vyneGraphBuilderCacheSettings: VyneGraphBuilderCacheSettings) : QueryStrategy {
+class ProjectionHeuristicsQueryStrategy(
+   private val operationInvocationEvaluator: OperationInvocationEvaluator,
+   private val vyneGraphBuilderCacheSettings: VyneGraphBuilderCacheSettings
+) : QueryStrategy {
    private val cache = CacheBuilder.newBuilder()
       .weakKeys()
       .build<Type, ProjectionHeuristicsGraphSearchResult>()
@@ -43,10 +42,18 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
 
       })
 
-   override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
+   override suspend fun invoke(
+      target: Set<QuerySpecTypeNode>,
+      context: QueryContext,
+      invocationConstraints: InvocationConstraints
+   ): QueryStrategyResult {
       if (!context.isProjecting) {
          return QueryStrategyResult.searchFailed()
       }
+      // TODO : ProjectionHeuristics is currently disabled.
+      // See LENS-527
+      return QueryStrategyResult.searchFailed()
+
       val spec = invocationConstraints.typedInstanceValidPredicate
       val targetType = target.first().type
       val searchResult: ProjectionHeuristicsGraphSearchResult = cache.get(targetType) {
@@ -62,7 +69,11 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
          // Isn't thie the value we've just fetched from the cache?  Why add it back?
 //            cache.put(targetType, searchResult)
 
-         FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT.getFact(context, searchResult.joinType!!, spec = AlwaysGoodSpec)
+         FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT.getFact(
+            context,
+            searchResult.joinType!!,
+            spec = AlwaysGoodSpec
+         )
             ?.let { joinedFact ->
                searchResult.queryResultByKey[joinedFact]
             }?.let { matchedInstance ->
@@ -72,42 +83,48 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
       return queryStrategyResult
    }
 
-   private fun queryStrategyResult(joinMatch: ProjectionResultList, context: QueryContext, targetType: Type, target: Set<QuerySpecTypeNode>, spec: TypedInstanceValidPredicate): QueryStrategyResult? {
-         if (joinMatch.size == 0) return null
-         if (joinMatch.size == 1) {
-            // one to one mapping case.
-            // Example: Whilst discovering 'TradeNo', we've invoked:
-            // operation(OrderIds: OrderId[]): Trade[]
-            // and for orderId = '1' operation returns only one Trade instance.
-            joinMatch.first().let { match ->
-               val typedObject = match as TypedObject
-               // Example:
-               val retVal = typedObject.values.first { typedValue -> typedValue.type.isAssignableTo(targetType, true) }
-               return if (spec.isValid(retVal)) {
-                  // Add 'Trade' into the context, so subsequent target projection props might be resolved..
-                  context.addFact(match)
+   private fun queryStrategyResult(
+      joinMatch: ProjectionResultList,
+      context: QueryContext,
+      targetType: Type,
+      target: Set<QuerySpecTypeNode>,
+      spec: TypedInstanceValidPredicate
+   ): QueryStrategyResult? {
+      if (joinMatch.size == 0) return null
+      if (joinMatch.size == 1) {
+         // one to one mapping case.
+         // Example: Whilst discovering 'TradeNo', we've invoked:
+         // operation(OrderIds: OrderId[]): Trade[]
+         // and for orderId = '1' operation returns only one Trade instance.
+         joinMatch.first().let { match ->
+            val typedObject = match as TypedObject
+            // Example:
+            val retVal = typedObject.values.first { typedValue -> typedValue.type.isAssignableTo(targetType, true) }
+            return if (spec.isValid(retVal)) {
+               // Add 'Trade' into the context, so subsequent target projection props might be resolved..
+               context.addFact(match)
 
-                  QueryStrategyResult( flow { emit(retVal) } )
-               } else {
-                  QueryStrategyResult.searchFailed()
-               }
+               QueryStrategyResult(flow { emit(retVal) })
+            } else {
+               QueryStrategyResult.searchFailed()
             }
-         } else {
-            // one to many case.
-            // Example: Whilst discovering 'TradeNo', we've invoked:
-            // operation(OrderIds: OrderId[]): Trade[]
-            // and for orderId = '1' operation returns only 3 Trades instance.
-            // joinMatch now contains now 3 Trade instances for the given OrderId.
-            val retVal = joinMatch.map { match ->
-               val typObj = match as TypedObject
-               // Extract the target property from Trade object (e.g. extract TradeNo from Trade)
-               typObj.values.first { typedValue -> typedValue.type.isAssignableTo(targetType, true) }
-            }
-            // Add Trade object into the context, so that subsequent projection props might be extracted from Trade.
-            context.addFact(joinMatch.first())
-            // Remove the Trade just added into the context, as we'll call here again through ObjectBuilder for remaining matched Trades.
-            joinMatch.removeFirst()
-            return QueryStrategyResult( TypedCollection.from(retVal).value.asFlow() )
+         }
+      } else {
+         // one to many case.
+         // Example: Whilst discovering 'TradeNo', we've invoked:
+         // operation(OrderIds: OrderId[]): Trade[]
+         // and for orderId = '1' operation returns only 3 Trades instance.
+         // joinMatch now contains now 3 Trade instances for the given OrderId.
+         val retVal = joinMatch.map { match ->
+            val typObj = match as TypedObject
+            // Extract the target property from Trade object (e.g. extract TradeNo from Trade)
+            typObj.values.first { typedValue -> typedValue.type.isAssignableTo(targetType, true) }
+         }
+         // Add Trade object into the context, so that subsequent projection props might be extracted from Trade.
+         context.addFact(joinMatch.first())
+         // Remove the Trade just added into the context, as we'll call here again through ObjectBuilder for remaining matched Trades.
+         joinMatch.removeFirst()
+         return QueryStrategyResult(TypedCollection.from(retVal).value.asFlow())
       }
    }
 
@@ -117,11 +134,15 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
     * tradeNo is an attribute of Trade, and this tries to find the following operation
     * operation(orderIds: OrderId[]): Trade[]
     */
-   private fun fetchFromGraph(target: Set<QuerySpecTypeNode>, context: QueryContext, spec: TypedInstanceValidPredicate): ProjectionHeuristicsGraphSearchResult {
+   private fun fetchFromGraph(
+      target: Set<QuerySpecTypeNode>,
+      context: QueryContext,
+      spec: TypedInstanceValidPredicate
+   ): ProjectionHeuristicsGraphSearchResult {
       return timed("fetch from Graph", log = false) {
          graphSearchResult(target, context)?.let { firstMatch ->
             findFetchManyOperation(firstMatch, context)?.let { (candidateService, candidateOperation, joinType) ->
-               // TODO ACOWAN return@timed processRemoteCallResults(candidateOperation, candidateService, context, joinType, spec)
+               invokeRemoteOperation(candidateOperation, candidateService, context, joinType, spec)
             }
          }
          // else
@@ -129,9 +150,15 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
       }
    }
 
-   private fun graphSearchResult(target: Set<QuerySpecTypeNode>, context: QueryContext): WeightedNode<Relationship, Element, Double>? {
+   private fun graphSearchResult(
+      target: Set<QuerySpecTypeNode>,
+      context: QueryContext
+   ): WeightedNode<Relationship, Element, Double>? {
       val graphBuilder = schemaGraphCache.get(context.schema)
-      val graph = graphBuilder.build(types = context.facts.map { it.type }.toSet(), excludedServices = context.excludedServices.toSet())
+      val graph = graphBuilder.build(
+         types = context.facts.map { it.type }.toSet(),
+         excludedServices = context.excludedServices.toSet()
+      )
       return context.facts.asSequence()
          .mapNotNull { fact ->
             val searchStart = instanceOfType(fact.type)
@@ -142,7 +169,10 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
          }.firstOrNull()
    }
 
-   private fun findFetchManyOperation(firstMatch: WeightedNode<Relationship, Element, Double>?, context: QueryContext): Triple<Service, Operation, Type>? {
+   private fun findFetchManyOperation(
+      firstMatch: WeightedNode<Relationship, Element, Double>?,
+      context: QueryContext
+   ): Triple<Service, Operation, Type>? {
       firstMatch?.let { it ->
          it.path().firstOrNull { path -> path.action() == Relationship.PROVIDES }?.let { node ->
             val operationElement = node.previousNode().state()
@@ -153,9 +183,16 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
             if (!returnType.isCollection && operation.parameters.size == 1 && !operation.parameters.first().type.isCollection) {
                val candidateOperations =
                   context.schema
-                     .operationsWithReturnTypeAndWithSingleArgument(returnType.asArrayType(), operation.parameters.first().type.asArrayType())
+                     .operationsWithReturnTypeAndWithSingleArgument(
+                        returnType.asArrayType(),
+                        operation.parameters.first().type.asArrayType()
+                     )
                return if (candidateOperations.size == 1) {
-                  Triple(candidateOperations.first().first, candidateOperations.first().second, operation.parameters.first().type)
+                  Triple(
+                     candidateOperations.first().first,
+                     candidateOperations.first().second,
+                     operation.parameters.first().type
+                  )
                } else {
                   null
                }
@@ -165,15 +202,33 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
       return null
    }
 
-   private suspend fun processRemoteCallResults(candidateOperation: Operation, candidateService: Service, context: QueryContext, joinType: Type, spec: TypedInstanceValidPredicate): ProjectionHeuristicsGraphSearchResult {
+   private fun invokeRemoteOperation(
+      candidateOperation: Operation,
+      candidateService: Service,
+      context: QueryContext,
+      joinType: Type,
+      spec: TypedInstanceValidPredicate
+   ): ProjectionHeuristicsGraphSearchResult {
       val firstOperationArgumentType = candidateOperation.parameters.first().type
       context.parent?.let { parentQueryContext ->
          // Using AlwaysGood build spec because at the time of writing we're not passing specs this deep.
          // Let's revisit as / when needed
-         val requiredArgument = FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION.getFact(parentQueryContext, firstOperationArgumentType, spec = AlwaysGoodSpec)
+         val requiredArgument = FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY_UNWRAP_COLLECTION.getFact(
+            parentQueryContext,
+            firstOperationArgumentType,
+            spec = AlwaysGoodSpec
+         )
             ?: return ProjectionHeuristicsGraphSearchResult(emptyMap(), joinType)
 
-         val result = operationInvocationEvaluator.invocationService.invokeOperation(candidateService, candidateOperation, setOf(requiredArgument), parentQueryContext) as TypedCollection
+         // TODO : MP - How do we make this non-blocking?
+         val result = runBlocking {
+            operationInvocationEvaluator.invocationService.invokeOperation(
+               candidateService,
+               candidateOperation,
+               setOf(requiredArgument),
+               parentQueryContext
+            ).toList()
+         }
          if (result.isEmpty()) {
             // bail early if we received nothing
             return ProjectionHeuristicsGraphSearchResult(emptyMap(), joinType)
@@ -211,10 +266,14 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
 }
 
 // TODO : Fix the nullable on type
-data class ProjectionHeuristicsGraphSearchResult(val queryResultByKey: Map<TypedInstance, ProjectionResultList>, val joinType: Type?) {
+data class ProjectionHeuristicsGraphSearchResult(
+   val queryResultByKey: Map<TypedInstance, ProjectionResultList>,
+   val joinType: Type?
+) {
    companion object {
-      fun empty(type:Type) = ProjectionHeuristicsGraphSearchResult(emptyMap(), type)
+      fun empty(type: Type) = ProjectionHeuristicsGraphSearchResult(emptyMap(), type)
       val UNABLE_TO_SEARCH = ProjectionHeuristicsGraphSearchResult(emptyMap(), null)
    }
+
    val isEmpty = queryResultByKey.isEmpty()
 }

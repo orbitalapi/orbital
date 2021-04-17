@@ -13,6 +13,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runBlockingTest
+import org.junit.Ignore
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
@@ -53,6 +54,7 @@ class ModelsScanStrategyTest {
 
 
    @Test
+   @Ignore("Need to decide how we indicate failure now - LENS-526")
    fun when_addingComponentType_then_itsFieldsAreNotDiscoverable() = runBlockingTest {
       val taxiDef = """
   closed type Money {
@@ -64,7 +66,8 @@ class ModelsScanStrategyTest {
       val vyne = Vyne(QueryEngineFactory.default()).addSchema(schema)
       vyne.addJsonModel("Money", """{ "currency" : "USD" , "value" : 3000 }""")
       val result = vyne.query().find("Currency")
-      result.results.toList()
+      val resultList = result.results.toList()
+      resultList.should.not.be.empty
       expect(result.isFullyResolved).to.be.`false`
    }
 
