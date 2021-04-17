@@ -45,7 +45,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
 
    override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       if (!context.isProjecting) {
-         return QueryStrategyResult.empty()
+         return QueryStrategyResult.searchFailed()
       }
       val spec = invocationConstraints.typedInstanceValidPredicate
       val targetType = target.first().type
@@ -54,7 +54,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
       }
 
       if (searchResult.isEmpty || searchResult == ProjectionHeuristicsGraphSearchResult.UNABLE_TO_SEARCH) {
-         return QueryStrategyResult.empty()
+         return QueryStrategyResult.searchFailed()
       }
 
       val queryStrategyResult = timed(name = "heuristics result", timeUnit = TimeUnit.MICROSECONDS, log = false) {
@@ -67,7 +67,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
                searchResult.queryResultByKey[joinedFact]
             }?.let { matchedInstance ->
                queryStrategyResult(matchedInstance, context, targetType, target, spec)
-            } ?: QueryStrategyResult.empty()
+            } ?: QueryStrategyResult.searchFailed()
       }
       return queryStrategyResult
    }
@@ -89,7 +89,7 @@ class ProjectionHeuristicsQueryStrategy(private val operationInvocationEvaluator
 
                   QueryStrategyResult( flow { emit(retVal) } )
                } else {
-                  QueryStrategyResult.empty()
+                  QueryStrategyResult.searchFailed()
                }
             }
          } else {

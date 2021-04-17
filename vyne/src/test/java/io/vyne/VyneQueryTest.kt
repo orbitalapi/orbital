@@ -7,7 +7,6 @@ import io.vyne.utils.withoutWhitespace
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
 import lang.taxi.services.QueryOperationCapability
 import org.junit.Test
 
@@ -32,7 +31,6 @@ class VyneQueryTest {
       stub.addResponse("tradeQuery", response)
       val queryResult = vyne.query("findAll { Trade[]( TraderId = 'jimmy' ) }")
 
-      queryResult.isFullyResolved.should.be.`true`
       val resultList = queryResult.rawObjects()
       resultList.should.have.size(1)
       resultList.first()["traderId"].should.equal("jimmy")

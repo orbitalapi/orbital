@@ -10,15 +10,10 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
 import io.vyne.schemas.*
 import io.vyne.utils.log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import lang.taxi.Equality
 import java.util.concurrent.Executors
-import kotlin.coroutines.CoroutineContext
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
@@ -88,12 +83,12 @@ class HipsterDiscoverGraphQueryStrategy(
 
       // We only support DISCOVER_ONE mode here.
       if (target.mode != QueryMode.DISCOVER) {
-         return QueryStrategyResult.empty()
+         return QueryStrategyResult.searchFailed()
       }
 
       if (context.facts.isEmpty()) {
          log().info("Cannot perform a graph search, as no facts provied to serve as starting point. ")
-         return QueryStrategyResult.empty()
+         return QueryStrategyResult.searchFailed()
       }
 
       val targetElement = type(target.type)
@@ -103,7 +98,7 @@ class HipsterDiscoverGraphQueryStrategy(
       if (lastResult != null) {
          return QueryStrategyResult( mapOf(target to lastResult).map { it.value }.asFlow() )
       } else {
-         return QueryStrategyResult.empty()
+         return QueryStrategyResult.searchFailed()
       }
    }
 

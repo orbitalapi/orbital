@@ -25,7 +25,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       .build<Type, List<Operation>>()
    override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
       if (context.isProjecting) {
-         return QueryStrategyResult.empty()
+         return QueryStrategyResult.searchFailed()
       }
       return if (context.debugProfiling) {
          //context.startChild(this, "look for candidate services", OperationType.LOOKUP) { profilerOperation ->
