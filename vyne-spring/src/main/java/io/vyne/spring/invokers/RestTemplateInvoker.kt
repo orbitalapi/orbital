@@ -47,7 +47,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
 
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
-val cachedResults = ConcurrentHashMap<String,List<TypedInstance>>()
 
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
@@ -95,7 +94,7 @@ class RestTemplateInvoker(
    private val defaultUriBuilderFactory = DefaultUriBuilderFactory()
 
    init {
-      log().info("Rest template invoker starter")
+      log().info("Rest template invoker started")
    }
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
@@ -133,7 +132,7 @@ class RestTemplateInvoker(
 
       val remoteCallId = UUID.randomUUID().toString()
       val results = request
-         .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
+         .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
          .exchange()
          .metrics()
          .elapsed()
@@ -145,8 +144,8 @@ class RestTemplateInvoker(
                throw OperationInvocationException("Error invoking URL $expandedUri", clientResponse.statusCode())
             }
             reportEstimatedResults(queryId, clientResponse.headers())
-            if (clientResponse.headers().header("Content-Type").getOrNull(0) == MediaType.TEXT_EVENT_STREAM_VALUE) {
-                clientResponse.bodyToFlux<String>()
+            if (clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON).isCompatibleWith(MediaType.TEXT_EVENT_STREAM)) {
+               clientResponse.bodyToFlux<String>()
                   .flatMap { responseString ->
                      val remoteCall = RemoteCall(
                         remoteCallId = remoteCallId,
@@ -170,7 +169,6 @@ class RestTemplateInvoker(
                      )
                   }
             } else {
-
                clientResponse.bodyToMono(String::class.java)
                   .flatMapMany { responseString ->
                      val remoteCall = RemoteCall(
