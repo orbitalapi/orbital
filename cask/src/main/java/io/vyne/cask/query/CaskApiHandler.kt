@@ -23,18 +23,14 @@ import org.springframework.web.util.UriComponents
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Mono
 import java.net.URLDecoder
-import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
-import java.nio.charset.StandardCharsets.UTF_8
 
 
 @Component
 class CaskApiHandler(private val caskService: CaskService, private val caskDAO: CaskDAO) {
    fun findBy(request: ServerRequest): Mono<ServerResponse> {
-
       val requestPath = request.path().replace(CaskServiceSchemaGenerator.CaskApiRootPath, "")
-      val uriComponents = UriComponentsBuilder.fromUriString(UriUtils.decode(requestPath, UTF_8)).build(true)
-
+      val uriComponents = UriComponentsBuilder.fromUriString(requestPath).build()
       return when {
          uriComponents.pathSegments.contains("${OperationAnnotation.Between.annotation}${BetweenVariant.GteLte}") -> findByBetween(
             request,
