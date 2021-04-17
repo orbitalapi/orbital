@@ -36,6 +36,12 @@ suspend inline fun FlowTurbine<*>.expectRawMap(): Map<String, Any?> {
    return expectItem() as Map<String, Any>
 }
 
+suspend inline fun FlowTurbine<*>.expectListOfRawMap(): List<Map<String, Any?>> {
+   @Suppress("UNCHECKED_CAST")
+   return expectItem() as List<Map<String, Any>>
+}
+
+
 suspend inline fun FlowTurbine<*>.expectRawMapsToEqual(maps: List<Map<String, Any?>>) {
    @Suppress("UNCHECKED_CAST")
    maps.forEach {
