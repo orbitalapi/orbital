@@ -1,5 +1,6 @@
 package io.vyne.spring.invokers
 
+import io.netty.channel.ChannelOption
 import io.vyne.http.HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT
 import io.vyne.http.UriVariableProvider
 import io.vyne.http.UriVariableProvider.Companion.buildRequestBody
@@ -16,8 +17,12 @@ import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.utils.log
@@ -25,15 +30,24 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToFlux
 import org.springframework.web.util.DefaultUriBuilderFactory
 import reactor.core.publisher.Flux
+import reactor.core.scheduler.Schedulers
+import reactor.netty.http.client.HttpClient
+import reactor.netty.resources.ConnectionProvider
+import java.time.Duration
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
+val cachedResults = ConcurrentHashMap<String,List<TypedInstance>>()
 
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
@@ -41,6 +55,8 @@ class RestTemplateInvoker(
    private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
    private val activeQueryMonitor: ActiveQueryMonitor
 ) : OperationInvoker {
+
+
 
    @Autowired
    constructor(
@@ -50,9 +66,28 @@ class RestTemplateInvoker(
       activeQueryMonitor: ActiveQueryMonitor
    )
       : this(
-      schemaProvider, webClientBuilder.exchangeStrategies(
-         ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
-      ).build(), serviceUrlResolvers,
+      schemaProvider,
+      webClientBuilder
+         .exchangeStrategies(ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build())
+         .clientConnector(
+             ReactorClientHttpConnector(
+               HttpClient.create(
+
+                  ConnectionProvider.builder("RestTemplateInvoker-Connection-Pool")
+                     .maxConnections(500)
+                     .maxIdleTime(Duration.ofMillis(10000.toLong()))
+                     .maxLifeTime(Duration.ofMinutes(1.toLong()))
+                     .metrics(true)
+                     .fifo()
+                     .pendingAcquireTimeout(Duration.ofMillis(20.toLong()))
+                     .build()
+               )
+               .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 100)
+               .keepAlive(true))
+         )
+         .build(),
+
+      serviceUrlResolvers,
       activeQueryMonitor
    )
 
@@ -67,7 +102,6 @@ class RestTemplateInvoker(
       return service.isServiceDiscoveryClient() || operation.hasHttpMetadata()
    }
 
-
    override suspend fun invoke(
       service: Service,
       operation: RemoteOperation,
@@ -75,7 +109,6 @@ class RestTemplateInvoker(
       profilerOperation: ProfilerOperation, queryId: String?
    ): Flow<TypedInstance> {
       log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}")
-
 
       val (_, url, method) = operation.httpOperationMetadata()
       val httpMethod = HttpMethod.resolve(method)!!
@@ -100,10 +133,11 @@ class RestTemplateInvoker(
 
       val remoteCallId = UUID.randomUUID().toString()
       val results = request
-         .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
+         .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
          .exchange()
          .metrics()
          .elapsed()
+         .publishOn(Schedulers.boundedElastic())
          .flatMapMany { durationAndResponse ->
             val duration = durationAndResponse.t1
             val clientResponse = durationAndResponse.t2
@@ -111,31 +145,58 @@ class RestTemplateInvoker(
                throw OperationInvocationException("Error invoking URL $expandedUri", clientResponse.statusCode())
             }
             reportEstimatedResults(queryId, clientResponse.headers())
-            clientResponse.bodyToFlux<String>()
-               .flatMap { responseString ->
-                  val remoteCall = RemoteCall(
-                     remoteCallId = remoteCallId,
-                     service = service.name,
-                     address = expandedUri.toASCIIString(),
-                     operation = operation.name,
-                     responseTypeName = operation.returnType.name,
-                     method = httpMethod.name,
-                     requestBody = requestBody.first.body,
-                     resultCode = clientResponse.rawStatusCode(),
-                     durationMs = duration,
-                     response = responseString
-                  )
+            if (clientResponse.headers().header("Content-Type").getOrNull(0) == MediaType.TEXT_EVENT_STREAM_VALUE) {
+                clientResponse.bodyToFlux<String>()
+                  .flatMap { responseString ->
+                     val remoteCall = RemoteCall(
+                        remoteCallId = remoteCallId,
+                        service = service.name,
+                        address = expandedUri.toASCIIString(),
+                        operation = operation.name,
+                        responseTypeName = operation.returnType.name,
+                        method = httpMethod.name,
+                        requestBody = requestBody.first.body,
+                        resultCode = clientResponse.rawStatusCode(),
+                        durationMs = duration,
+                        response = responseString
+                     )
 
-                  handleSuccessfulHttpResponse(
-                     responseString,
-                     operation,
-                     parameters,
-                     remoteCall,
-                     clientResponse.headers()
-                  )
+                     handleSuccessfulHttpResponse(
+                        responseString,
+                        operation,
+                        parameters,
+                        remoteCall,
+                        clientResponse.headers()
+                     )
+                  }
+            } else {
 
-               }
+               clientResponse.bodyToMono(String::class.java)
+                  .flatMapMany { responseString ->
+                     val remoteCall = RemoteCall(
+                        remoteCallId = remoteCallId,
+                        service = service.name,
+                        address = expandedUri.toASCIIString(),
+                        operation = operation.name,
+                        responseTypeName = operation.returnType.name,
+                        method = httpMethod.name,
+                        requestBody = requestBody.first.body,
+                        resultCode = clientResponse.rawStatusCode(),
+                        durationMs = duration,
+                        response = responseString
+                     )
+
+                     handleSuccessfulHttpResponse(
+                        responseString,
+                        operation,
+                        parameters,
+                        remoteCall,
+                        clientResponse.headers()
+                     )
+                  }
+            }
          }
+
       return results.asFlow().flowOn(Dispatchers.IO)
 
    }
@@ -159,6 +220,7 @@ class RestTemplateInvoker(
       remoteCall: RemoteCall,
       headers: ClientResponse.Headers
    ): Flux<TypedInstance> {
+      var start = System.currentTimeMillis()
       // TODO : Handle scenario where we get a 2xx response, but no body
 
       log().debug("Result of ${operation.name} was $result")
@@ -181,7 +243,7 @@ class RestTemplateInvoker(
          evaluateAccessors = evaluateAccessors
       )
       return if (typedInstance is TypedCollection) {
-         return Flux.fromIterable(typedInstance.value)
+         Flux.fromIterable(typedInstance.value)
       } else {
          Flux.fromIterable(listOf(typedInstance))
       }
