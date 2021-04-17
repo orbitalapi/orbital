@@ -1,34 +1,23 @@
 package io.vyne.spring.invokers
 
 import app.cash.turbine.test
-import com.jayway.jsonpath.JsonPath
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.expectTypedObject
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedObject
 import io.vyne.query.QueryProfiler
 import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockWebServer
-import org.hamcrest.BaseMatcher
-import org.hamcrest.Description
-import org.hamcrest.Matcher
 import org.junit.Test
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
-import org.springframework.test.web.client.ExpectedCount
-import org.springframework.test.web.client.MockRestServiceServer
-import org.springframework.test.web.client.match.MockRestRequestMatchers.*
-import org.springframework.test.web.client.response.MockRestResponseCreators
-import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
 import okhttp3.mockwebserver.MockResponse
 import org.junit.After
@@ -36,7 +25,6 @@ import org.junit.Before
 import java.util.function.Consumer
 import kotlin.test.assertEquals
 import okhttp3.mockwebserver.RecordedRequest
-import java.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 

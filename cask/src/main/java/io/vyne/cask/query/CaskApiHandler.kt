@@ -175,7 +175,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             badRequest().build()
          }
          is Either.Right -> {
-            val results = caskDAO.findBefore(versionedType.b, fieldName, after)
+            val results = caskDAO.findAfter(versionedType.b, fieldName, after)
             ok()
                .contentType(MediaType.APPLICATION_JSON)
                .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
