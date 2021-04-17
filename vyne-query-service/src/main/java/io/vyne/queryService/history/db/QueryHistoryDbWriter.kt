@@ -53,13 +53,12 @@ class PersistingQueryEventConsumer(
    override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch(Dispatchers.IO) {
 
       when (event) {
-         //is TaxiQlQueryResultEvent -> persistEvent(event)
-         //is RestfulQueryResultEvent -> persistEvent(event)
-         //is QueryCompletedEvent -> persistEvent(event)
-         //is QueryExceptionEvent -> persistEvent(event)
-         //is QueryFailureEvent -> persistEvent(event)
-
-         else -> println("Persisting event")
+         is TaxiQlQueryResultEvent -> persistEvent(event)
+         is RestfulQueryResultEvent -> persistEvent(event)
+         is QueryCompletedEvent -> persistEvent(event)
+         is QueryExceptionEvent -> persistEvent(event)
+         is QueryFailureEvent -> persistEvent(event)
+         else -> TODO("Event type ${event::class.simpleName} not yet supported")
       }
    }
 
