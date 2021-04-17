@@ -87,6 +87,7 @@ data class QueryResult(
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration
 
+   @Deprecated("Unmatched nodes is no longer populated")
    override val isFullyResolved = unmatchedNodes.isEmpty()
    override val responseStatus: ResponseStatus = if (isFullyResolved) COMPLETED else INCOMPLETE
 
@@ -217,11 +218,6 @@ data class QueryContext(
    val queryId: String
 
 ) : ProfilerOperation by profiler {
-   init {
-      if (clientQueryId == null) {
-         log().warn("No clientQueryId provided")
-      }
-   }
 
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()

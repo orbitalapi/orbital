@@ -7,7 +7,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.math.BigDecimal
+import java.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.toKotlinDuration
 
 @ExperimentalTime
 @ExperimentalCoroutinesApi
@@ -129,7 +131,7 @@ class HipsterDiscoverGraphQueryStrategyTest {
             """.trimIndent()
       )
       result.rawResults
-         .test {
+         .test(timeout = Duration.ofHours(1).toKotlinDuration()) {
             expectRawMap().should.equal( mapOf("notionalValue" to BigDecimal("100")))
             expectComplete()
          }

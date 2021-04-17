@@ -5,17 +5,23 @@ import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.utils.log
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 
 abstract class BaseOperationInvocationStrategy(
    private val invocationService: OperationInvocationService
 ) {
    @ExperimentalCoroutinesApi
-   protected suspend fun invokeOperations(operations: Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>>, context: QueryContext, target: Set<QuerySpecTypeNode>): QueryStrategyResult {
+   protected suspend fun invokeOperations(
+      operations: Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>>,
+      context: QueryContext,
+      target: Set<QuerySpecTypeNode>
+   ): QueryStrategyResult {
       val matchedNodes =
-         operations.mapNotNull{
-            (queryNode, operationToParameters) -> invokeOperation(queryNode, operationToParameters, context, target)
+         operations.mapNotNull { (queryNode, operationToParameters) ->
+            invokeOperation(queryNode, operationToParameters, context, target)
          }.merge().map { it.second }
 
       return QueryStrategyResult(matchedNodes)
@@ -23,7 +29,12 @@ abstract class BaseOperationInvocationStrategy(
 
 
    @ExperimentalCoroutinesApi
-   private suspend fun invokeOperation(queryNode: QuerySpecTypeNode, operationToParameters: Map<RemoteOperation, Map<Parameter, TypedInstance>>, context: QueryContext, target: Set<QuerySpecTypeNode>): Flow<Pair<QuerySpecTypeNode, TypedInstance>>? {
+   private suspend fun invokeOperation(
+      queryNode: QuerySpecTypeNode,
+      operationToParameters: Map<RemoteOperation, Map<Parameter, TypedInstance>>,
+      context: QueryContext,
+      target: Set<QuerySpecTypeNode>
+   ): Flow<Pair<QuerySpecTypeNode, TypedInstance>>? {
       val operationsToInvoke = when {
          operationToParameters.size > 1 && queryNode.mode != QueryMode.GATHER -> {
             log().warn("Running in query mode ${queryNode.mode} and multiple candidate operations detected - ${operationToParameters.keys.joinToString { it.name }} - this isn't supported yet, will just pick the first one")
@@ -47,13 +58,13 @@ abstract class BaseOperationInvocationStrategy(
          // Adding logging as seeing too many http calls.
          log().info("As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked for queryId ${context.queryId}")
 
-            invocationService.invokeOperation(
-               service,
-               operation,
-               context = context,
-               preferredParams = emptySet(),
-               providedParamValues = parameters.toList()
-            )
+         invocationService.invokeOperation(
+            service,
+            operation,
+            context = context,
+            preferredParams = emptySet(),
+            providedParamValues = parameters.toList()
+         )
 
          // NOTE - merge() will take signals from flows as they arrive !! order is not maintained !!
       }.merge().map { queryNode to it }
