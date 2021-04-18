@@ -11,7 +11,7 @@ import io.vyne.schemas.*
 import io.vyne.utils.log
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.asFlow
 
 typealias StubResponseHandler = (RemoteOperation, List<Pair<Parameter, TypedInstance>>) -> List<TypedInstance>
 
@@ -19,12 +19,15 @@ class StubService(
    val responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(),
    val handlers: MutableMap<String, StubResponseHandler> = mutableMapOf(),
    // nullable for legacy purposes, you really really should pass a schema here.
-   val schema:Schema?
+   val schema: Schema?
 ) : OperationInvoker {
 
    @Deprecated("Don't invoke directly, invoke by calling testVyne()")
-   constructor(responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(),
-               handlers: MutableMap<String, StubResponseHandler> = mutableMapOf()) : this(responses, handlers, null)
+   constructor(
+      responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(),
+      handlers: MutableMap<String, StubResponseHandler> = mutableMapOf()
+   ) : this(responses, handlers, null)
+
    private fun justProvide(value: List<TypedInstance>): StubResponseHandler {
       return { _, _ -> value }
    }
@@ -33,12 +36,12 @@ class StubService(
     * Invokes the provided stubRepsonseHandler, and then updates
     * the dataSource of the response to an OperationResult
     */
-   private fun modifyDataSource(
+   private fun updateDataSourceOnResponse(
       remoteOperation: RemoteOperation,
       params: List<Pair<Parameter, TypedInstance>>,
       handler: StubResponseHandler
    ): List<TypedInstance> {
-      require(schema != null) { "Stub service was not created with a schema."}
+      require(schema != null) { "Stub service was not created with a schema." }
       val result = handler.invoke(remoteOperation, params)
       val remoteCall = RemoteCall(
          service = OperationNames.serviceName(remoteOperation.qualifiedName).fqn(),
@@ -72,8 +75,8 @@ class StubService(
       service: Service,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
-      profiler: ProfilerOperation
-   , queryId: String?): Flow<TypedInstance> {
+      profiler: ProfilerOperation, queryId: String?
+   ): Flow<TypedInstance> {
       val paramDescription = parameters.joinToString { "${it.second.type.name.shortDisplayName} = ${it.second.value}" }
       log().info("Invoking ${service.name} -> ${operation.name}($paramDescription)")
       val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
@@ -89,19 +92,29 @@ class StubService(
          throw IllegalArgumentException("No stub response or handler prepared for operation $stubResponseKey")
       }
 
-      return if (responses.containsKey(stubResponseKey)) {
-         flow {
-            responses[stubResponseKey]!!.forEach {
-               emit(it)
-            }
-         }
+      val stubResponse = if (responses.containsKey(stubResponseKey)) {
+         responses[stubResponseKey]!!
       } else {
-         flow {
-            handlers[stubResponseKey]!!.invoke(operation, parameters).forEach {
-               emit(it)
-            }
+         handlers[stubResponseKey]!!.invoke(operation, parameters)
+      }
+      return unwrapTypedCollections(stubResponse)
+   }
+
+   /**
+    * If the provided TypedInstance is a TypedCollection, will unwrap it to a list
+    * of TypedInstances, otherwise, a Flux of just the provided instance.
+    * This is to be consistent with how RestTemplateInvoker handles unwrapping the responses
+    * of collectons from HttpServices
+    */
+   private fun unwrapTypedCollections(typedInstances: List<TypedInstance>): Flow<TypedInstance> {
+      val unwrapped = typedInstances.flatMap { typedInstance ->
+         when (typedInstance) {
+            is TypedCollection -> typedInstance.value
+            else -> listOf(typedInstance)
          }
       }
+      return unwrapped.asFlow()
+
    }
 
    fun addResponse(
@@ -112,7 +125,7 @@ class StubService(
       if (modifyDataSource) {
          this.handlers.put(stubOperationKey) { remoteOperation, params ->
             // Curry the provided stub
-            modifyDataSource(
+            updateDataSourceOnResponse(
                remoteOperation,
                params,
                handler

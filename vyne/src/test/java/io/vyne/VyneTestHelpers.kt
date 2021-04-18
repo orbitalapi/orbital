@@ -39,6 +39,9 @@ suspend fun QueryResult.rawObjects(): List<Map<String,Any?>> {
    return this.typedObjects().map { it.toRawObject() as Map<String,Any?> }
 }
 
+suspend fun QueryResult.firstRawObject():Map<String,Any?> {
+   return this.rawObjects().first()
+}
 suspend fun QueryResult.firstTypedCollection(): TypedCollection {
    return return this.results?.first() as TypedCollection
 }

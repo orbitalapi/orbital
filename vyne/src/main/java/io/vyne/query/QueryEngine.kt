@@ -492,7 +492,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       // MP : Hacking, remove this code
 //      val resultList = runBlocking { results.toList() }
 //      val resultListFlow = resultList.asFlow()
-      val querySpecTypeNode = if (context.isProjecting) {
+      val querySpecTypeNode = if (context.projectResultsTo != null) {
          QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
       } else {
          target
