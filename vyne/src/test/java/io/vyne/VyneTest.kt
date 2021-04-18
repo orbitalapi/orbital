@@ -974,10 +974,9 @@ service Broker2Service {
       // act
       runBlocking {
          val result = vyne.query("""findAll { Order[]( OrderDate >= "2020-01-01" , OrderDate < "2020-01-02" ) }""")
-         // assert
-         expect(result.isFullyResolved).to.be.`true`
+         val resultList = result.rawResults.toList()
+         resultList.should.have.size(4)
          stubService.invocations.should.have.size(2)
-         result.typedInstances().should.have.size(4)
       }
    }
 

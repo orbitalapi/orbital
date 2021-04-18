@@ -397,6 +397,7 @@ service InstrumentService {
                "orderInstrumentType" to "OrderInstrumentType2"
             )
          )
+         expectComplete()
       }
    }
 
@@ -1281,6 +1282,8 @@ service Broker1Service {
       )
 
       val queryResult = vyne.query("findAll { Order[] } as Output[]")
+//      val resultList = queryResult.results.toList()
+//      resultList.should.not.be.`null`
       val outputCollection = queryResult.results.test {
          val outputModel = expectTypedObject()
          val averagePrice = outputModel["averagePrice"]
@@ -1289,6 +1292,15 @@ service Broker1Service {
          averagePriceDataSource.expressionTaxi.should.equal("(this.price / this.quantity)")
          averagePriceDataSource.inputs[0].value.should.equal(2)
          averagePriceDataSource.inputs[0].source.should.equal(Provided)
+
+         val modelWithError = expectTypedObject()
+         val priceWithError = modelWithError["averagePrice"]
+         priceWithError.value.should.be.`null`
+         priceWithError.source.should.be.instanceof(FailedEvaluatedExpression::class.java)
+         val failedExpression = priceWithError.source as FailedEvaluatedExpression
+         failedExpression.errorMessage.should.equal("Division by zero")
+         failedExpression.inputs[0].value.should.equal(2)
+         failedExpression.inputs[1].value.should.equal(0)
          expectComplete()
       }
 
@@ -2015,12 +2027,12 @@ service Broker1Service {
          val result = vyne.query("""findAll { Input[] } as Report[]""".trimIndent())
 
          // assert
-         findTradeInvoked.should.be.`true`
          result.rawObjects().should.be.equal(
             listOf(
                mapOf("tradePrice" to null, "tradeDate" to null)
             )
          )
+         findTradeInvoked.should.be.`true`
       }
 
    @Test
