@@ -379,7 +379,7 @@ class VyneTest {
    }
 
    @Test
-   fun `vyne should emit values that conform to the enum spec`() {
+   fun `vyne should invoke services using value from enum synonym`() {
       val enumSchema = TaxiSchema.from(
          """
                 namespace companyX {
@@ -403,10 +403,7 @@ class VyneTest {
 
       """.trimIndent()
       )
-
-      val stubService = StubService()
-      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
-      val vyne = TestSchema.vyne(queryEngineFactory, enumSchema)
+      val (vyne,stubService) = testVyne(enumSchema)
       val product = vyne.parseJsonModel(
          "companyX.Product", """
          {
@@ -725,9 +722,9 @@ class VyneTest {
          val result = vyne.query().find("EmailAddress[]")
 
          expect(result.isFullyResolved).to.be.`true`
-         result.firstTypedCollection()
-            .map { it.value }
+         result.rawResults.toList()
             .should.equal(listOf("foo@foo.com", "bar@foo.com"))
+
       }
    }
 
@@ -975,7 +972,7 @@ service Broker2Service {
 
       // act
       runBlocking {
-         val result = vyne.query("""findAll { Order[]( OrderDate >= 2020-01-01 , OrderDate < 2020-01-02 ) }""")
+         val result = vyne.query("""findAll { Order[]( OrderDate >= "2020-01-01" , OrderDate < "2020-01-02" ) }""")
          // assert
          expect(result.isFullyResolved).to.be.`true`
          stubService.invocations.should.have.size(2)
@@ -1354,8 +1351,8 @@ service Broker2Service {
       // When
       runBlocking {
          query(""" { "buySellIndicator" : "BUY" } """)["direction"].value.should.equal("bankbuys")
-         // Note here that buy doesn't resolve, so the default of SELL should be applied
-         query(""" { "buySellIndicator" : "buy" } """)["direction"].value.should.equal("banksells")
+         // Note here that badValue doesn't resolve, so the default of SELL should be applied
+         query(""" { "buySellIndicator" : "badValue" } """)["direction"].value.should.equal("banksells")
       }
    }
 

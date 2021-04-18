@@ -6,7 +6,7 @@ import io.vyne.HipsterGraphBuilder
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
-import io.vyne.schemas.synonymFullQualifiedName
+import io.vyne.schemas.synonymFullyQualifiedName
 import lang.taxi.types.EnumType
 
 object Algorithms {
@@ -51,7 +51,7 @@ object Algorithms {
       return if (type.isEnum) {
          val underlyingEnumType = type.taxiType as EnumType
          underlyingEnumType.values.flatMap { enumValue ->
-            enumValue.synonyms.map { synonym -> schema.type(synonym.synonymFullQualifiedName()) }
+            enumValue.synonyms.map { synonym -> schema.type(synonym.synonymFullyQualifiedName()) }
          }.toSet()
       } else {
          setOf()

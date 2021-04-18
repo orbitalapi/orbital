@@ -7,8 +7,10 @@ import io.vyne.DisplayGraphBuilder
 import io.vyne.HipsterGraphBuilder
 import io.vyne.VyneGraphBuilderCacheSettings
 import io.vyne.VyneHashBasedHipsterDirectedGraph
+import io.vyne.models.EnumSynonyms
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
+import io.vyne.models.TypedValue
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.excludedValues
 import io.vyne.schemas.*
@@ -409,6 +411,10 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       type.inheritanceGraph.forEach { inheritedType ->
          addConnection(providedInstance, parameter(inheritedType.fullyQualifiedName), Relationship.CAN_POPULATE)
       }
+      if (type.isEnum) {
+         TODO()
+      }
+
       if (!type.isClosed) {
          // We treat attributes of actual values that we know differently
          // from those that we could theoretically discover.
@@ -545,6 +551,28 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
             )
          )
          //builder.connect(providedInstance).to(parameter(inheritedType.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
+      }
+      if (value is TypedValue && type.isEnum) {
+         val synonyms = EnumSynonyms.enumSynonymsFromTypedValue(value)
+         synonyms.forEach { synonym ->
+            // Even though the synonymss are technically providedInstances,
+            // We're not recursing into createProvidedInstances here as it would create a
+            // stack overflow, pointing back to this synonym.
+            // SO, just carefully add the links we care about.
+            val synonymInstance = providedInstance(synonym)
+            createdConnections.add(GraphConnection(
+               providedInstance,
+               synonymInstance,
+               Relationship.IS_SYNONYM_OF
+            ))
+            createdConnections.add(
+               HipsterGraphBuilder.Connection(
+                  synonymInstance,
+                  parameter(synonym.typeName),
+                  Relationship.CAN_POPULATE
+               )
+            )
+         }
       }
       if (!type.isClosed) {
          // We treat attributes of actual values that we know differently

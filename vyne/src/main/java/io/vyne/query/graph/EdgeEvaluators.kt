@@ -281,6 +281,7 @@ class OperationParameterEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS
 class IsInstanceOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_INSTANCE_OF)
 class CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPULATE)
 class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_TYPE)
+class EnumSynonymEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_SYNONYM_OF)
 
 abstract class AttributeEvaluator(override val relationship: Relationship) : EdgeEvaluator {
    override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {

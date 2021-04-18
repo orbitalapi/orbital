@@ -75,7 +75,7 @@ class VyneEnumTest {
       // Given
       val (vyne, stubService) = testVyne(enumSchema)
       vyne.addJsonModel(
-         "BankX.BankOrder", """ { "buySellIndicator" : "BUY" } """
+         "BankX.BankOrder", """ { "buySellIndicator" : "buy" } """
       )
 
       // When
@@ -108,7 +108,7 @@ class VyneEnumTest {
       vyne.addJsonModel("BankDirection", """ { "name": "BankSells" } """)
       val queryResultName = vyne.query().build("BankOrder")
 
-      queryResultName.shouldHaveResults(mapOf("buySellIndicator" to "sell"))
+      queryResultName.shouldHaveResults(mapOf("buySellIndicator" to "SELL"))
    }
 
    @Test

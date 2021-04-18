@@ -1,18 +1,29 @@
 package io.vyne.schemas
 
-import io.vyne.models.ConversionService
-import io.vyne.models.DefinedInSchema
-import io.vyne.models.TypedInstance
-import io.vyne.models.TypedValue
+import io.vyne.models.*
 import io.vyne.utils.timed
+import lang.taxi.types.EnumValueQualifiedName
 import lang.taxi.types.ObjectType
-import java.util.function.BiFunction
 
 class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
+   data class CachedEnumSynonymValues(
+      val asName: List<TypedValue>,
+      val asValue: List<TypedValue>,
+      val synonyms: List<TypedEnumValue>
+   ) {
+      fun get(valueKind: EnumValueKind): List<TypedValue> {
+         return when (valueKind) {
+            EnumValueKind.VALUE -> asValue
+            EnumValueKind.NAME -> asName
+         }
+      }
+   }
+
    private val cache: MutableMap<QualifiedName, Type> = mutableMapOf()
    private val defaultValueCache: MutableMap<QualifiedName, Map<AttributeName, TypedInstance>?> = mutableMapOf()
    private var shortNames: MutableMap<String, MutableList<Type>> = mutableMapOf()
    private val anonymousTypes: MutableMap<QualifiedName, Type> = mutableMapOf()
+   private val enumSynonymValues: MutableMap<EnumValueQualifiedName, CachedEnumSynonymValues> = mutableMapOf()
 
    init {
       timed("DefaultTypeCache initialisation") {
@@ -29,11 +40,16 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
       defaultValueCache[type.qualifiedName] = (type.taxiType as? ObjectType)
          ?.fields
          ?.filter { field -> field.defaultValue != null }
-         ?.map { field -> Pair(field.name,
-            TypedValue.from(
-               type = type(field.type.qualifiedName.fqn()),
-               value = field.defaultValue!!,
-               converter = ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema)) }
+         ?.map { field ->
+            Pair(
+               field.name,
+               TypedValue.from(
+                  type = type(field.type.qualifiedName.fqn()),
+                  value = field.defaultValue!!,
+                  converter = ConversionService.DEFAULT_CONVERTER, source = DefinedInSchema
+               )
+            )
+         }
          ?.toMap()
    }
 
@@ -109,6 +125,35 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
 
    override fun anonymousTypes(): Set<Type> {
       return this.anonymousTypes.values.toSet()
+   }
+
+   override fun enumSynonymsAsTypedValues(typedEnumValue: TypedEnumValue, valueKind: EnumValueKind): List<TypedValue> {
+      return getEnumSynonyms(typedEnumValue).get(valueKind)
+   }
+
+   private fun getEnumSynonyms(typedEnumValue: TypedEnumValue): CachedEnumSynonymValues {
+      return this.enumSynonymValues.getOrPut(typedEnumValue.enumValueQualifiedName) {
+
+         val synonymTypedValues = typedEnumValue.enumValue.synonyms.map { synonymName ->
+            val synonymQualifiedName = synonymName.synonymFullyQualifiedName()
+            val synonymEnumValue = synonymName.synonymValue()
+            val synonymEnumType = this.type(synonymQualifiedName)
+            val synonymEnumTypedInstance = synonymEnumType.enumTypedInstance(synonymEnumValue)
+            Triple(
+               synonymEnumTypedInstance,
+               synonymEnumTypedInstance.asTypedValue(EnumValueKind.NAME),
+               synonymEnumTypedInstance.asTypedValue(EnumValueKind.VALUE)
+            )
+         }.toList()
+         val synonymEnumValue = synonymTypedValues.map { it.first }
+         val synonymValuesByName = synonymTypedValues.map { it.second }
+         val synonymValuesByValue = synonymTypedValues.map { it.third }
+         CachedEnumSynonymValues(synonymValuesByName, synonymValuesByValue,synonymEnumValue)
+      }
+   }
+
+   override fun enumSynonyms(typedEnumValue: TypedEnumValue): List<TypedEnumValue> {
+      return getEnumSynonyms(typedEnumValue).synonyms
    }
 
    override fun hasType(name: String): Boolean {

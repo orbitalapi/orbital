@@ -176,7 +176,7 @@ object TypedInstanceTree {
          is TypedEnumValue -> instance.synonyms
          is TypedValue -> {
             if (instance.type.isEnum) {
-               instance.type.enumTypedInstanceOrNull (instance.value)?.synonyms ?: emptyList()
+               EnumSynonyms.fromTypeValue(instance)
             } else {
                emptyList()
             }
@@ -293,7 +293,7 @@ data class QueryContext(
          underlyingEnumType.of(fact.value)
             .synonyms
             .map { synonym ->
-               val synonymType = schema.type(synonym.synonymFullQualifiedName())
+               val synonymType = schema.type(synonym.synonymFullyQualifiedName())
                val synonymTypeTaxiType = synonymType.taxiType as EnumType
                val synonymEnumValue = synonymTypeTaxiType.of(synonym.synonymValue())
 
@@ -322,7 +322,7 @@ data class QueryContext(
 
       val mutableFacts = mutableSetOf<TypedInstance>()
       mutableFacts.add(fact)
-      mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
+//      mutableFacts.addAll(resolveSynonyms(fact, schema).toMutableSet())
       //val copiedContext = this.copy(facts = mutableFacts, parent = this)
       //copiedContext.excludedServices.addAll(this.excludedServices)
       //copiedContext.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())

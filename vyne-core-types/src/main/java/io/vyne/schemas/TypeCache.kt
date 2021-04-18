@@ -1,6 +1,9 @@
 package io.vyne.schemas
 
+import io.vyne.models.EnumValueKind
+import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
+import io.vyne.models.TypedValue
 
 
 interface TypeCache {
@@ -11,6 +14,8 @@ interface TypeCache {
    fun defaultValues(name: QualifiedName): Map<AttributeName, TypedInstance>?
    fun registerAnonymousType(anonymousType: Type)
    fun anonymousTypes(): Set<Type>
+   fun enumSynonymsAsTypedValues(typedEnumValue: TypedEnumValue, valueKind: EnumValueKind): List<TypedValue>
+   fun enumSynonyms(typedEnumValue: TypedEnumValue):List<TypedEnumValue>
 }
 
 object EmptyTypeCache : TypeCache {
@@ -34,6 +39,14 @@ object EmptyTypeCache : TypeCache {
 
    override fun anonymousTypes(): Set<Type> {
       return setOf()
+   }
+
+   override fun enumSynonymsAsTypedValues(typedEnumValue: TypedEnumValue, valueKind: EnumValueKind): List<TypedValue> {
+      TODO("Not yet implemented")
+   }
+
+   override fun enumSynonyms(typedEnumValue: TypedEnumValue): List<TypedEnumValue> {
+      TODO("Not yet implemented")
    }
 
 }
