@@ -461,12 +461,12 @@ class FirstNotEmptyTest {
          vyne.addModel(inputModel)
          val result = vyne.query().build("TradeOutput[]")
          result.results.test {
-            val output = expectTypedCollection() as List<TypedObject>
-            val transformedProductA = output.first { it["isin"].value == "productA" }
-            val transformedProductB = output.first { it["isin"].value == "productB" }
+            val transformedProductA = expectTypedObject()
             // Note to future self:  I suspect we'll change this at some point so the attribute
             // is there, but null
             transformedProductA["productName"].value.should.be.`null`
+
+            val transformedProductB = expectTypedObject()
             transformedProductB["productName"].value.should.equal("ice cream")
 
             expectComplete()

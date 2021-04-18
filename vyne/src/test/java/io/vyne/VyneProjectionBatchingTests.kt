@@ -9,6 +9,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
 
+@Ignore("Projection batching relies on ProjectionHeuristic strategy, which is currently disabled.  See LENS-527")
 class VyneProjectionBatchingTests {
 
    val schema = TaxiSchema.from(

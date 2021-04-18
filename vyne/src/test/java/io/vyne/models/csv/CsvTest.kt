@@ -2,12 +2,12 @@ package io.vyne.models.csv
 
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
-import io.vyne.firstTypedCollection
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
 import io.vyne.testVyne
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
@@ -76,14 +76,12 @@ type alias FirstNames as FirstName[]
 
       runBlocking {
 
-         val buildResult:TypedCollection = vyne.query()
+         val buildResult= vyne.query()
             .addFact(parsedResult)
             .build("FirstNames")
-            .firstTypedCollection()
+            .rawResults.toList()
 
-         buildResult.should.be.instanceof(TypedCollection::class.java)
-         buildResult[0].type.fullyQualifiedName.should.equal("FirstName")
-         buildResult.value.map { it.value }.should.equal(listOf("jimmy", "olly"))
+         buildResult.should.equal(listOf("jimmy","olly"))
       }
    }
 
