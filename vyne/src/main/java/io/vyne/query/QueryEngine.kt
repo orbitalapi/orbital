@@ -12,6 +12,8 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
 import io.vyne.utils.log
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
@@ -478,15 +480,15 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             // The issue is that we can have projections that return multiple values.
             // Previously, this was returning buildResult.results.first(), which ignored subsequent values.
             // However, the move to flatMapConcat may have broken parallelisation elsewhere.  Hard to know.
-            resultsFlow.flatMapConcat {
-//               GlobalScope.async {
+            resultsFlow.map {
+               GlobalScope.async {
                val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
                val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)
                buildResult.results
-//               }
+               }
             }
                .buffer(128)
-//               .map { it.await() }
+               .flatMapConcat { it.await() }
 
       }
       // MP : Hacking, remove this code
