@@ -67,7 +67,8 @@ service ClientService {
       return parser.parse(TypeNameQueryExpression(name))
    }
 
-   fun queryContext(queryId:String = UUID.randomUUID().toString()): QueryContext = vyne().queryEngine().queryContext(queryId = queryId, clientQueryId = null)
+   fun queryContext(queryId: String = UUID.randomUUID().toString()): QueryContext =
+      vyne().queryEngine().queryContext(queryId = queryId, clientQueryId = null)
 }
 
 fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
@@ -77,7 +78,7 @@ fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
    return vyne to stubService
 }
 
-fun testVyne(schema: TaxiSchema, invokers:List<OperationInvoker>): Vyne {
+fun testVyne(schema: TaxiSchema, invokers: List<OperationInvoker>): Vyne {
    val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), invokers)
    val vyne = Vyne(queryEngineFactory).addSchema(schema)
    return vyne
@@ -238,7 +239,7 @@ class VyneTest {
       }
 
    @Test
-   fun `when a provided object has a typed null for a value, it shouldnt be used as an input`()  {
+   fun `when a provided object has a typed null for a value, it shouldnt be used as an input`() {
       val (vyne, stubs) = testVyne(
          """
          model Order {
@@ -302,7 +303,7 @@ class VyneTest {
    }
 
    @Test
-   fun `calls remote services to discover response from deeply nested value`()  {
+   fun `calls remote services to discover response from deeply nested value`() {
       val (vyne, stubs) = testVyne(
          """
          namespace vyne.tests {
@@ -403,7 +404,7 @@ class VyneTest {
 
       """.trimIndent()
       )
-      val (vyne,stubService) = testVyne(enumSchema)
+      val (vyne, stubService) = testVyne(enumSchema)
       val product = vyne.parseJsonModel(
          "companyX.Product", """
          {
@@ -519,7 +520,7 @@ class VyneTest {
    }
 
    @Test
-   fun shouldBeAbleToQueryWithShortNames()  {
+   fun shouldBeAbleToQueryWithShortNames() {
       val stubService = StubService()
       val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
@@ -541,16 +542,16 @@ class VyneTest {
 
    @Test
    fun shouldRetrievePropertyFromService_withMultipleAttributes_whenAttributesArePresentAsKeyValuePairs() {
-         val stubService = StubService()
-         val queryEngineFactory =
-            QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
-         val vyne = TestSchema.vyne(queryEngineFactory)
-         stubService.addResponse(
-            "creditRisk",
-            TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100, source = Provided)
-         )
-         vyne.addKeyValuePair("vyne.example.ClientId", "123")
-         vyne.addKeyValuePair("vyne.example.InvoiceValue", 1000)
+      val stubService = StubService()
+      val queryEngineFactory =
+         QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
+      val vyne = TestSchema.vyne(queryEngineFactory)
+      stubService.addResponse(
+         "creditRisk",
+         TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100, source = Provided)
+      )
+      vyne.addKeyValuePair("vyne.example.ClientId", "123")
+      vyne.addKeyValuePair("vyne.example.InvoiceValue", 1000)
       runBlocking {
          val result: QueryResult = vyne.query().find("vyne.example.CreditRisk")
          result.typedInstances().first().value.should.equal(100)
@@ -571,32 +572,32 @@ class VyneTest {
    // The test more repeatably passes when run in isolation, using the setup code that has been
    // commented out.
    fun shouldRetrievePropertyFromService_withMultipleAttributes_whenAttributesAreDiscoverableViaGraph() {
-         // Setup
+      // Setup
 //      val stubService = StubService()
 //      val queryEngineFactory = QueryEngineFactory.withOperationInvokers(stubService)
 //      val vyne = TestSchema.vyne(queryEngineFactory)
-         val (vyne, stubService) = testVyne(TestSchema.schema)
+      val (vyne, stubService) = testVyne(TestSchema.schema)
 
-         // Given...
-         val json = """
+      // Given...
+      val json = """
 {
    "clientId" : "123",
    "name" : "Jimmy's Choos",
    "isicCode" : "retailer"
 }"""
-         stubService.addResponse(
-            "creditRisk",
-            TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100, source = Provided)
-         )
+      stubService.addResponse(
+         "creditRisk",
+         TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100, source = Provided)
+      )
 
-         val client = vyne.parseJsonModel("vyne.example.Client", json)
-         stubService.addResponse("mockClient", client)
+      val client = vyne.parseJsonModel("vyne.example.Client", json)
+      stubService.addResponse("mockClient", client)
 
-         // We know the TaxFileNumber, which we should be able to use to discover their ClientId.
-         vyne.addKeyValuePair("vyne.example.TaxFileNumber", "123")
-         vyne.addKeyValuePair("vyne.example.InvoiceValue", 1000)
+      // We know the TaxFileNumber, which we should be able to use to discover their ClientId.
+      vyne.addKeyValuePair("vyne.example.TaxFileNumber", "123")
+      vyne.addKeyValuePair("vyne.example.InvoiceValue", 1000)
 
-         //When....
+      //When....
       runBlocking {
          val result: QueryResult = vyne.query().find("vyne.example.CreditRisk")
 
@@ -625,7 +626,7 @@ class VyneTest {
    // Therefore, this test would simply grab the name directly
    // from the context, which isn't what it was trying to do.
    // Not sure if we should allow a more specific API.
-   fun shouldFindAPropertyValueByWalkingADirectRelationship()  {
+   fun shouldFindAPropertyValueByWalkingADirectRelationship() {
 
       val vyne = TestSchema.vyne()
       val client = """
@@ -655,7 +656,7 @@ class VyneTest {
    }
 
    @Test
-   fun typeInheritsCanBeUsedInSingleDirectionToAssignValues()  {
+   fun typeInheritsCanBeUsedInSingleDirectionToAssignValues() {
       val schema = """
           type Money {
             amount:String
@@ -729,7 +730,7 @@ class VyneTest {
    }
 
    @Test
-   fun canRequestTypeAliasOfCollectionDirectlyFromService()  {
+   fun canRequestTypeAliasOfCollectionDirectlyFromService() {
       val schema = """
           type Customer {
             emails : EmailAddress[]
@@ -744,28 +745,28 @@ class VyneTest {
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse("emails", vyne.typedValue("EmailAddresses", listOf("foo@foo.com", "bar@foo.com")))
 
-       runBlocking {
+      runBlocking {
 
-          val resusltFromEmailAddresses = vyne.query().find("EmailAddresses")
-          expect(resusltFromEmailAddresses.isFullyResolved).to.be.`true`
-          (resusltFromEmailAddresses.typedInstances().firstOrNull() as TypedCollection).map { it.value }.toList().should.equal(listOf("foo@foo.com", "bar@foo.com"))
+         val resultsFromEmailAddresses = vyne.query().find("EmailAddresses")
+         expect(resultsFromEmailAddresses.isFullyResolved).to.be.`true`
+         resultsFromEmailAddresses.rawResults.toList()
+            .should.equal(listOf("foo@foo.com", "bar@foo.com"))
 
-          // Discovery by the aliases type name should work too
-          val resultFromAliasName = vyne.query().find("EmailAddress[]")
-          expect(resultFromAliasName.isFullyResolved).to.be.`true`
-          (resultFromAliasName.typedInstances().firstOrNull() as TypedCollection)
-             .map { it.value }
-             .should.equal(
-                listOf(
-                   "foo@foo.com",
-                   "bar@foo.com"
-                )
-             )
-       }
+         // Discovery by the aliases type name should work too
+         val resultFromAliasName = vyne.query().find("EmailAddress[]")
+         expect(resultFromAliasName.isFullyResolved).to.be.`true`
+         resultFromAliasName.rawResults.toList()
+            .should.equal(
+               listOf(
+                  "foo@foo.com",
+                  "bar@foo.com"
+               )
+            )
+      }
    }
 
    @Test
-   fun canDiscoverAliasedTypesWhenUsingGraphDiscoveryStrategy()  {
+   fun canDiscoverAliasedTypesWhenUsingGraphDiscoveryStrategy() {
       val schema = """
           type Customer {
             name : CustomerName as String
@@ -814,7 +815,7 @@ class VyneTest {
          }
       """.trimIndent()
 
-      runBlocking{
+      runBlocking {
          val (vyne, stubService) = testVyne(schema)
          stubService.addResponse("findPetById", vyne.typedValue("Pet", mapOf("id" to 100)))
          vyne.addKeyValuePair("lang.taxi.Int", 100)
@@ -871,7 +872,7 @@ type LegacyTradeNotification {
       val instance =
          TypedInstance.from(vyne.schema.type("LegacyTradeNotification"), xml, vyne.schema, source = Provided)
       vyne.addModel(instance)
-      val queryResult = runBlocking {vyne.query().find("NearLegNotional") }
+      val queryResult = runBlocking { vyne.query().find("NearLegNotional") }
       TODO()
    }
 
@@ -1098,7 +1099,7 @@ service Broker2Service {
    }
 
    @Test
-   fun formattedValueWithSameTypeButDifferentFormatsAreDiscoverable()  {
+   fun formattedValueWithSameTypeButDifferentFormatsAreDiscoverable() {
       val schema = """
          type EventDate inherits Instant
          model Source {
@@ -1118,7 +1119,7 @@ service Broker2Service {
    }
 
    @Test
-   fun `when projecting, values with same type but different format get formats applied`()  {
+   fun `when projecting, values with same type but different format get formats applied`() {
       val schema = """
          type EventDate inherits Instant
          model Source {
@@ -1309,7 +1310,7 @@ service Broker2Service {
    }
 
    @Test
-   fun `should build by using default enum values`()  {
+   fun `should build by using default enum values`() {
       val lenientEnumSchema = TaxiSchema.from(
          """
                 namespace common {
@@ -1400,7 +1401,7 @@ service Broker2Service {
    }
 
    @Test
-   fun `should build by using synonyms value and name different than String`()  {
+   fun `should build by using synonyms value and name different than String`() {
 
       val enumSchema = TaxiSchema.from(
          """
@@ -1512,11 +1513,11 @@ service ClientService {
 
    @Test
    fun `given multiple valid services to call with equal cost, should invoke all until a result is found`() {
-         // The issue we're testing here is if there are mutliple ways to find a value, all which look the same,
-         // but some which generate values, and others that don't, that we should keep trying until we find the approach
-         // that works.
-         val (vyne, stub) = testVyne(
-            """
+      // The issue we're testing here is if there are mutliple ways to find a value, all which look the same,
+      // but some which generate values, and others that don't, that we should keep trying until we find the approach
+      // that works.
+      val (vyne, stub) = testVyne(
+         """
          model User {
             userId : UserId as Int
             userName : UserName as String
@@ -1528,28 +1529,28 @@ service ClientService {
             operation lookupByIdOdd(id:UserId):User
          }
       """.trimIndent()
-         )
+      )
 
-         stub.addResponse("lookupByIdEven") { _, parameters ->
-            val (_, userId) = parameters.first()
-            val userIdValue = userId.value as Int
-            if (userIdValue % 2 == 0) {
-               listOf(vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Even" }"""))
-            } else {
-               error("Not found") // SImulate a 404
+      stub.addResponse("lookupByIdEven") { _, parameters ->
+         val (_, userId) = parameters.first()
+         val userIdValue = userId.value as Int
+         if (userIdValue % 2 == 0) {
+            listOf(vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Even" }"""))
+         } else {
+            error("Not found") // SImulate a 404
 //            TypedNull(vyne.type("User"))
-            }
          }
-         stub.addResponse("lookupByIdOdd") { _, parameters ->
-            val (_, userId) = parameters.first()
-            val userIdValue = userId.value as Int
-            if (userIdValue % 2 != 0) {
-               listOf(vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Odd" }"""))
-            } else {
-               error("not found")  // SImulate a 404
+      }
+      stub.addResponse("lookupByIdOdd") { _, parameters ->
+         val (_, userId) = parameters.first()
+         val userIdValue = userId.value as Int
+         if (userIdValue % 2 != 0) {
+            listOf(vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Odd" }"""))
+         } else {
+            error("not found")  // SImulate a 404
 //            TypedNull(vyne.type("User"))
-            }
          }
+      }
 
       runBlocking {
          val resultEven =
@@ -1562,10 +1563,10 @@ service ClientService {
          resultOdd.isFullyResolved.should.be.`true`
          resultOdd.firstTypedInstace().value.should.equal("Jimmy Odd")
       }
-      }
+   }
 
    @Test
-   fun `when projecting to a model, functions on the output model are evaluated`()  {
+   fun `when projecting to a model, functions on the output model are evaluated`() {
       val (vyne, stub) = testVyne(
          """
          model OutputModel {
@@ -1601,8 +1602,8 @@ service ClientService {
 
    @Test
    fun `testing nulls on responses - when service returns object that is partially populated then the populated values are used for discovery`() {
-         val (vyne, stub) = testVyne(
-            """
+      val (vyne, stub) = testVyne(
+         """
          type FirstName inherits String
          type LastName inherits String
          type PersonId inherits Int
@@ -1635,29 +1636,29 @@ service ClientService {
             operation findPersonDetails(PersonId):PersonDetails
          }
       """.trimIndent()
-         )
-         stub.addResponse("findPersonId", vyne.parseKeyValuePair("PersonId", 1))
-         stub.addResponse(
-            "findPersonDetails", vyne.parseJsonModel(
-               "Person", """{
+      )
+      stub.addResponse("findPersonId", vyne.parseKeyValuePair("PersonId", 1))
+      stub.addResponse(
+         "findPersonDetails", vyne.parseJsonModel(
+            "Person", """{
          | "firstName" : null,
          | "lastName" : "Foo",
          | "personAge" : null
          | }
       """.trimMargin()
-            )
          )
-         stub.addResponse(
-            "findPerson", vyne.parseJsonModel(
-               "Person", """{
+      )
+      stub.addResponse(
+         "findPerson", vyne.parseJsonModel(
+            "Person", """{
          | "personId" : 1,
          | "firstName" : "Jimmy",
          | "lastName" : null,
          | "personAge" : 23
          | }
       """.trimMargin()
-            )
          )
+      )
 
       runBlocking {
          val queryResult =
@@ -1726,8 +1727,8 @@ service ClientService {
 
    @Test
    fun `if query processing throws exception on attribute query should continue and use null for value`() {
-         val (vyne, stubs) = testVyne(
-            """
+      val (vyne, stubs) = testVyne(
+         """
             type Quantity inherits Int
             type Price inherits Int
 
@@ -1744,18 +1745,18 @@ service ClientService {
                operation listOrders():Order[]
             }
          """.trimIndent()
-         )
-         // The below responseJson will trigger a divide-by-zero
-         val responseJson = """[
+      )
+      // The below responseJson will trigger a divide-by-zero
+      val responseJson = """[
          |{ "quantity" : 0 , "price" : 2 }
          |]""".trimMargin()
-         stubs.addResponse(
-            "listOrders", vyne.parseJsonModel(
-               "Order[]", """[
+      stubs.addResponse(
+         "listOrders", vyne.parseJsonModel(
+            "Order[]", """[
          |{ "quantity" : 0 , "price" : 2 }
          |]""".trimMargin()
-            )
          )
+      )
       runBlocking {
          val queryResult = vyne.query("findAll { Order[] } as Output[]")
 
@@ -1854,7 +1855,8 @@ service ClientService {
 
    @Test
    fun `parameter models should be resolved by respecting nullability attributes of its fields`() {
-      val (vyne, stubs) = testVyne("""
+      val (vyne, stubs) = testVyne(
+         """
          type Isin inherits String
          type PUID inherits String
          type InstrumentId inherits String
@@ -1879,13 +1881,18 @@ service ClientService {
             operation getInstrument(InstrumentId): Instrument
          }
 
-      """.trimIndent())
+      """.trimIndent()
+      )
 
       stubs.addResponse("getPUID") { _, _ -> fail("getPUID should not be called") }
-      stubs.addResponse("getInstrument",
-         TypedInstance.from(vyne.type("Instrument"), """
+      stubs.addResponse(
+         "getInstrument",
+         TypedInstance.from(
+            vyne.type("Instrument"), """
             "id": "instrument1"
-         """.trimIndent(), vyne.schema, source = Provided))
+         """.trimIndent(), vyne.schema, source = Provided
+         )
+      )
 
       runBlocking {
          val queryResult1 = vyne.query(
@@ -1901,7 +1908,7 @@ service ClientService {
    }
 
    @Test
-   fun `GATHER strategy should respect the constraints in Query`(){
+   fun `GATHER strategy should respect the constraints in Query`() {
       val (vyne, stubs) = testVyne(
          """
          namespace Bar {

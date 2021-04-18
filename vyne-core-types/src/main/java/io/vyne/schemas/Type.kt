@@ -6,18 +6,13 @@ import com.fasterxml.jackson.annotation.JsonView
 import io.vyne.VersionedSource
 import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
-import io.vyne.models.TypedValue
 import io.vyne.models.UndefinedSource
 import io.vyne.utils.log
 import lang.taxi.Equality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
-import lang.taxi.types.ArrayType
-import lang.taxi.types.AttributePath
-import lang.taxi.types.EnumType
-import lang.taxi.types.Formula
-import lang.taxi.types.PrimitiveType
+import lang.taxi.types.*
 import lang.taxi.utils.takeHead
 
 interface TypeFullView : TypeLightView
@@ -72,17 +67,19 @@ data class Type(
    private val typeCache: TypeCache = EmptyTypeCache
 
 ) : SchemaMember {
-   constructor(name: String,
-               attributes: Map<AttributeName, Field> = emptyMap(),
-               modifiers: List<Modifier> = emptyList(),
-               metadata: List<Metadata> = emptyList(),
-               aliasForTypeName: QualifiedName? = null,
-               inheritsFromTypeNames: List<QualifiedName>,
-               enumValues: List<EnumValue> = emptyList(),
-               sources: List<VersionedSource>,
-               taxiType: lang.taxi.types.Type,
-               typeDoc: String? = null,
-               typeCache: TypeCache) :
+   constructor(
+      name: String,
+      attributes: Map<AttributeName, Field> = emptyMap(),
+      modifiers: List<Modifier> = emptyList(),
+      metadata: List<Metadata> = emptyList(),
+      aliasForTypeName: QualifiedName? = null,
+      inheritsFromTypeNames: List<QualifiedName>,
+      enumValues: List<EnumValue> = emptyList(),
+      sources: List<VersionedSource>,
+      taxiType: lang.taxi.types.Type,
+      typeDoc: String? = null,
+      typeCache: TypeCache
+   ) :
       this(
          name.fqn(),
          attributes,
@@ -100,8 +97,10 @@ data class Type(
    // Intentionally excluded from equality:
    // taxiType - the antlr classes make equailty hard, and not meaningful in this context
    // typeCache - screws with equality, and not meaningful
-   private val equality = Equality(this,
-      Type::name)
+   private val equality = Equality(
+      this,
+      Type::name
+   )
 
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()
@@ -196,7 +195,15 @@ data class Type(
     * We should get rid of this when Taxi is modified accordingly.
     */
    fun enumTypedInstanceOrNull(value: Any): TypedEnumValue? {
-      return this.enumTypedInstances.firstOrNull { it.value == value || it.name == value }
+      val underlyingEnumType = this.taxiType as EnumType
+      return try {
+         // Defer to the underlying enum, so that leniencey and default values
+         // are considered.
+         val enumValueFromProvidedValue = underlyingEnumType.of(value)
+         this.enumTypedInstance(enumValueFromProvidedValue.name)
+      } catch (e: Exception) {
+         null
+      }
    }
 
    // TODO : I suspect all of these isXxxx vars need to defer to the underlying aliased type.
@@ -216,7 +223,7 @@ data class Type(
    val qualifiedName: QualifiedName
       get() = QualifiedName(fullyQualifiedName, typeParametersTypeNames)
 
-   val longDisplayName:String
+   val longDisplayName: String
       get() {
          return if (this.hasFormat) {
             this.unformattedTypeName!!.longDisplayName + "(${this.format!!.joinToString(",")})"
@@ -224,6 +231,7 @@ data class Type(
             qualifiedName.longDisplayName
          }
       }
+
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.
@@ -383,7 +391,10 @@ data class Type(
             // subtypes of enums aren't allowed to change the set of enum values.
             // Therefore A.SomeValue is assignable to A1 and vice versa, since they are the same
             // underlying value.
-            thisWithoutAliases.inheritsFrom(otherWithoutAliases, considerTypeParameters) || otherWithoutAliases.inheritsFrom(thisWithoutAliases, considerTypeParameters)
+            thisWithoutAliases.inheritsFrom(
+               otherWithoutAliases,
+               considerTypeParameters
+            ) || otherWithoutAliases.inheritsFrom(thisWithoutAliases, considerTypeParameters)
          } else {
             thisWithoutAliases.inheritsFrom(otherWithoutAliases, considerTypeParameters)
          }
