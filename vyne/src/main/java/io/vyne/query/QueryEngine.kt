@@ -482,13 +482,13 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             // However, the move to flatMapConcat may have broken parallelisation elsewhere.  Hard to know.
             resultsFlow.map {
                GlobalScope.async {
-               val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-               val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)
-               buildResult.results
+                  val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
+                  val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)
+                  buildResult.results
                }
             }
-               .buffer(128)
-               .flatMapConcat { it.await() }
+            .buffer(128)
+            .flatMapMerge { it.await() }
 
       }
       // MP : Hacking, remove this code
