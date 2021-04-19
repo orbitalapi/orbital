@@ -38,6 +38,8 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             uriComponents
          ) { versionedType: VersionedType, columnName: String, start: String, end: String ->
             caskDAO.findBetween(versionedType, columnName, start, end, BetweenVariant.GteLte) }
+
+
          uriComponents.pathSegments.contains("${OperationAnnotation.Between.annotation}${BetweenVariant.GtLte}") -> findByBetween(
             request,
             requestPath,
@@ -242,5 +244,5 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
       }
    }
 
-   private fun fieldNameAndArgs(uriComponents: UriComponents, takeLast: Int) = uriComponents.pathSegments.takeLast(takeLast)
+   private fun fieldNameAndArgs(uriComponents: UriComponents, takeLast: Int) = uriComponents.pathSegments.map { URLDecoder.decode(it, StandardCharsets.UTF_8.toString()) }.takeLast(takeLast)
 }
