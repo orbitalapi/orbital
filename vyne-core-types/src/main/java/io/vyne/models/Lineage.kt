@@ -80,7 +80,7 @@ data class OperationResult(val remoteCall: RemoteCall, val inputs: List<Operatio
 
 sealed class MappedValue(val mappingType: MappingType, override val id: String = UUID.randomUUID().toString()) :
    DataSource {
-   abstract val source: TypedInstance
+   abstract val source: TypeNamedInstance
    override val name = "Mapped"
 
    enum class MappingType {
@@ -88,7 +88,7 @@ sealed class MappedValue(val mappingType: MappingType, override val id: String =
    }
 }
 
-data class MappedSynonym(override val source: TypedInstance, override val id: String = UUID.randomUUID().toString()) :
+data class MappedSynonym(override val source: TypeNamedInstance, override val id: String = UUID.randomUUID().toString()) :
    MappedValue(MappingType.SYNONYM)
 
 /**

@@ -302,7 +302,7 @@ data class QueryContext(
                val value =
                   if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
 
-               TypedValue.from(synonymType, value, false, MappedSynonym(fact))
+               TypedValue.from(synonymType, value, false, MappedSynonym(fact.toTypeNamedInstance() as TypeNamedInstance))
             }.toSet()
       } else {
          setOf()
