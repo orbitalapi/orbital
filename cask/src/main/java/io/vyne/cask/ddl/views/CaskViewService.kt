@@ -132,11 +132,39 @@ class CaskViewService(val viewBuilderFactory: CaskViewBuilderFactory,
       return views
    }
 
+   /**
+    * Gets 'view' dependencies for the given caskConfig
+    * if 'ReportView' is based on 'Order' and 'Trade'
+    * when a caskConfig for 'Order' is passed as an argument, 'ReportView' cask config is returned by this function.
+    */
    fun getTaxiViewDependenciesForType(caskConfig: CaskConfig): List<CaskConfig> {
       return schemaBasedViewGenerator.taxiViews()
          .filter {taxiView -> schemaBasedViewGenerator.getDependencies(taxiView).contains(QualifiedName.from(caskConfig.qualifiedTypeName)) }
          .flatMap { taxiView -> caskConfigRepository.findAllByQualifiedTypeName(taxiView.qualifiedName) }
+   }
 
+   /**
+    * Gets the dependencies for a View cask Config.
+    * e.g.
+    *
+    * taxi View ... {
+    *    find { Order[] } as ..
+    *    find { Trade[] } as..
+    * }
+    *
+    * calling this function with the cask config for View will return lisOf(Order, Trade)
+    *
+    */
+   fun getDependenciesOfView(caskConfig: CaskConfig): List<QualifiedName> {
+      val dependenciesForaConfigBasedView = viewConfig.views.filter { viewDefinition ->
+         viewDefinition.typeName.fullyQualifiedName == caskConfig.qualifiedTypeName
+      }.flatMap { configBasedView -> configBasedView.join.types }
+
+      val taxiViewDependencies = schemaBasedViewGenerator.taxiViews()
+         .filter { taxiView -> caskConfig.qualifiedTypeName == taxiView.qualifiedName }
+         .flatMap {taxiView -> schemaBasedViewGenerator.getDependencies(taxiView) }
+
+      return dependenciesForaConfigBasedView + taxiViewDependencies
    }
 }
 
