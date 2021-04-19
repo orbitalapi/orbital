@@ -76,8 +76,9 @@ class TypedEnumValue(
          this.type,
          value,
          false,
-         MappedSynonym(this)
+         MappedSynonym(this.toTypeNamedInstance() as TypeNamedInstance)
       )
+
    }
 
 }
