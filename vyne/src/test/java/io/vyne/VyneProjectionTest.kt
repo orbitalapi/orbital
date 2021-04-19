@@ -1243,6 +1243,83 @@ service Broker1Service {
       getCountryInvoked.should.be.`false`
    }
 
+   @Test
+   fun `All services referenced in @DataSource will not be invoked twice`() {
+      val testSchema = """
+         model Client {
+            name : PersonName as String
+            country : CountryCode as String
+         }
+         model Country {
+             countryCode : CountryCode
+             countryName : CountryName as String
+         }
+         model ClientAndCountry {
+            personName : PersonName
+            countryName : CountryName
+         }
+
+
+         service CountryService {
+           operation findByCountryCode(CountryCode): Country
+         }
+
+         @Datasource(exclude = "[[CountryService]]")
+         service MultipleInvocationService {
+            operation getCustomers():Client[]
+            operation getCountry(CountryCode): Country
+         }
+      """.trimIndent()
+
+      var getCountryInvoked = false
+      val (vyne, stubService) = testVyne(testSchema)
+      stubService.addResponse("findByCountryCode",
+      vyne.parseJsonModel("Country", """
+         {countryCode: "UK", countryName: "United Kingdom"}
+      """.trimIndent()))
+      stubService.addResponse(
+         "getCustomers", vyne.parseJsonModel(
+         "Client[]", """
+         [
+            { name : "Jimmy", country : "UK" },
+            { name : "Devrim", country : "TR" }
+         ]
+         """.trimIndent()
+      )
+      )
+
+      stubService.addResponse("getCountry", object : StubResponseHandler {
+         override fun invoke(
+            operation: RemoteOperation,
+            parameters: List<Pair<Parameter, TypedInstance>>
+         ): TypedInstance {
+            getCountryInvoked = true
+            val countryCode = parameters.first().second.value!!.toString()
+            return if (countryCode == "UK") {
+               vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
+            } else {
+               TypedObject(vyne.schema.type("Country"), emptyMap(), Provided)
+            }
+         }
+      })
+
+      // act
+      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+
+      // assert
+      result.resultMap["lang.taxi.Array<ClientAndCountry>"].should.be.equal(
+         listOf(
+            mapOf("personName" to "Jimmy", "countryName" to null),
+            mapOf(
+               "personName" to "Devrim",
+               "countryName" to null
+            ) // See TypedObjectFactory.build() for discussion on returning nulls
+         )
+      )
+      getCountryInvoked.should.be.`false`
+   }
+
+
 
    @Test
    fun `should output offset  correctly`() {
