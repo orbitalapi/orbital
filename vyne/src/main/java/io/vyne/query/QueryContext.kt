@@ -19,6 +19,7 @@ import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.schemas.*
+import io.vyne.utils.cached
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -330,6 +331,7 @@ data class QueryContext(
 
    fun addFact(fact: TypedInstance): QueryContext {
       this.facts.add(fact)
+      this.modelTree.invalidate()
       return this
    }
 
@@ -360,28 +362,21 @@ data class QueryContext(
       return TypedCollection.arrayOf(anyArrayType, facts.toList())
    }
 
+   private val modelTree = cached<List<TypedInstance>> {
+      val navigator = TreeNavigator()
+      val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
+      TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
+   }
    /**
     * A breadth-first stream of data facts currently held in the collection.
     * Use breadth-first, as we want to favour nodes closer to the root.
     * Deeply nested children are less likely to be relevant matches.
     */
    fun modelTree(): Stream<TypedInstance> {
-      class TreeNavigator {
-         private val visitedNodes = mutableSetOf<TypedInstance>()
-
-         fun visit(instance: TypedInstance): List<TypedInstance> {
-            return if (visitedNodes.contains(instance)) {
-               return emptyList()
-            } else {
-               visitedNodes.add(instance)
-               TypedInstanceTree.visit(instance)
-            }
-         }
-      }
-      // TODO : How do we handle nulls here?  For now, they're remove, but this is misleading, since we have a typedinstnace, but it's value is null.
-      val navigator = TreeNavigator()
-      val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
-      return TreeStream.breadthFirst(treeDef, dataTreeRoot())
+      // TODO : MP - Investigating the performance implications of caching the tree.
+      // If this turns out to be faster, we should refactor the api to be List<TypedInstance>, since
+      // the stream indicates deferred evaluation, and it's not anymore.
+      return modelTree.get().stream()
    }
 
    fun hasFactOfType(
@@ -622,4 +617,17 @@ enum class FactDiscoveryStrategy {
 
 fun <K, V> HashMultimap<K, V>.copy(): HashMultimap<K, V> {
    return HashMultimap.create(this)
+}
+
+class TreeNavigator {
+   private val visitedNodes = mutableSetOf<TypedInstance>()
+
+   fun visit(instance: TypedInstance): List<TypedInstance> {
+      return if (visitedNodes.contains(instance)) {
+         return emptyList()
+      } else {
+         visitedNodes.add(instance)
+         TypedInstanceTree.visit(instance)
+      }
+   }
 }
