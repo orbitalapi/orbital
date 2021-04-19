@@ -289,7 +289,7 @@ abstract class AttributeEvaluator(override val relationship: Relationship) : Edg
          requireNotNull(edge.previousValue) { "Cannot evaluate $relationship when previous value was null.  Work with me here!" }
 
       if (previousValue is TypedNull) {
-         return edge.failure(previousValue)
+         return edge.failure(previousValue, "Null was returned from previous edge: " + (edge.previous as EvaluatedEdge).description)
       }
 
       require(previousValue is TypedObject) {

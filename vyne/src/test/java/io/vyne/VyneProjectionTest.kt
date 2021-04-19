@@ -653,9 +653,8 @@ service Broker1Service {
       val findByOrderIdResult =
          vyne.query("""findAll { Order (OrderId = "broker1Order0") } as CommonOrder[]""".trimIndent())
 
-      println( "findByOrderIdResult ${findByOrderIdResult.results.toList()}" )
-
-      findByOrderIdResult.isFullyResolved.should.be.`true`
+      val result = findByOrderIdResult.results.toList()
+      result.should.not.be.empty
       findByOrderIdResult.typedInstances().should.have.size(numberOfCorrespondingTrades)
       Unit
    }
