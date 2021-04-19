@@ -1222,7 +1222,7 @@ service Broker2Service {
                 namespace common {
                    enum BankDirection {
                      BankBuys("bankbuys"),
-                     BankSell("banksell")
+                     BankSells("banksell")
                    }
 
                    model CommonOrder {
@@ -1232,7 +1232,7 @@ service Broker2Service {
                 namespace BankX {
                    enum BankXDirection {
                         BUY("buy") synonym of common.BankDirection.BankBuys,
-                        SELL("sell") synonym of common.BankDirection.BankSell
+                        SELL("sell") synonym of common.BankDirection.BankSells
                    }
                    model BankOrder {
                       buySellIndicator: BankXDirection
@@ -1393,7 +1393,7 @@ service Broker2Service {
          resultValue.rawObjects().first().should.equal(mapOf("buySellIndicator" to "buy"))
 
          // Query by enum name
-         val factName = vyne.parseJsonModel("BankDirection", """ { "name": "BankSell" } """)
+         val factName = vyne.parseJsonModel("BankDirection", """ { "name": "BankSells" } """)
          val resultName = vyne.query(additionalFacts = setOf(factName)).build("BankOrder")
          resultName.rawObjects().first().should.equal(mapOf("buySellIndicator" to "SELL"))
       }

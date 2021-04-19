@@ -3,6 +3,8 @@ package io.vyne
 import app.cash.turbine.test
 import com.winterbe.expekt.should
 import io.vyne.models.json.addJsonModel
+import io.vyne.models.json.addKeyValuePair
+import io.vyne.query.QueryEngineFactory
 import io.vyne.query.QueryResult
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
@@ -202,6 +204,33 @@ class VyneEnumTest {
 //         ))
 //         expectComplete()
       }
+   }
+
+   @Test
+   @Ignore("Enum inheritence not supported yet")
+   fun when_enumWithSynonymIsPresent_then_itCanBeFound() = runBlockingTest {
+      val taxiDef = """
+         enum EnumA {
+            A1,
+            A2
+         }
+
+         enum EnumA1 inherits EnumA
+
+         enum EnumB {
+            B1 synonym of EnumA.A1,
+            B2 synonym of EnumA.A2
+         }
+         enum EnumB1 inherits EnumB
+      """.trimIndent()
+      val schema = TaxiSchema.from(taxiDef)
+      val vyne = Vyne(QueryEngineFactory.default()).addSchema(schema)
+      vyne.addKeyValuePair("EnumA1", "A1")
+      val result = vyne.query().find("EnumB1")
+      vyne.query().findFirstBlocking("EnumB").value.should.equal("B1")
+      vyne.query().findFirstBlocking("EnumB1").value.should.equal("B1")
+      vyne.query().findFirstBlocking("EnumA").value.should.equal("A1")
+      vyne.query().findFirstBlocking("EnumA1").value.should.equal("A1")
    }
 
    @Test

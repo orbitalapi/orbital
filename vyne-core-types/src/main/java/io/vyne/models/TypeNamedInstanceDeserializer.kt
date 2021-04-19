@@ -40,7 +40,8 @@ open class TypeNamedInstanceDeserializer : JsonDeserializer<TypeNamedInstance>()
          val value = if (rawMap.containsKey("value")) {
             deserializeValue(rawMap.getValue("value"))
          } else null
-         val dataSourceId = rawMap.getValue("dataSourceId") as String?
+         val dataSourceId =
+            rawMap.getOrDefault("dataSourceId", null) as String?
          return TypeNamedInstance(typeName, value, dataSourceId)
       }
       return rawMap.map { (key, value) ->
