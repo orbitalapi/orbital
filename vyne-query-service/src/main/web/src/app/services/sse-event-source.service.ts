@@ -14,18 +14,20 @@ export class SseEventSourceService {
       const eventSource = new EventSource(url);
       let messageReceived = false;
       eventSource.onmessage = (event: MessageEvent) => {
-        this.zone.run(() => {
-          messageReceived = true;
-          observer.next(event);
-        });
+        // Note - this was running inside zone.run(), but I removed it as it created race conditions
+        // with termination events being processed before all the messages were processed.
+        messageReceived = true;
+        observer.next(event);
       };
       eventSource.onerror = (error: Event) => {
         if (messageReceived && errorAfterMessageIndicatesClosed) {
-          console.log('Received error event after recieving content - treating this as a close signal')
-          this.zone.run(() => observer.complete());
+          console.log('Received error event after recieving content - treating this as a close signal');
+          // NgZone.run removed from here as above
+          observer.complete();
         } else {
           console.log('Received error event' + JSON.stringify(error));
-          this.zone.run(() => observer.error(error));
+          // NgZone.run removed from here as above
+          observer.error(error);
         }
       };
       observer.add(() => {
