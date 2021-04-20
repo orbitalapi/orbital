@@ -8,10 +8,8 @@ import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.FailedSearchResponse
 import io.vyne.schemas.Type
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onErrorResume
 import lang.taxi.types.TaxiQLQueryString
 import java.time.Instant
 
@@ -55,8 +53,10 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                   )
                } else {
                   consumer.handleEvent(
-                     QueryExceptionEvent(
+                     RestfulQueryExceptionEvent(
+                        query,
                         queryResult.queryResponseId,
+                        queryResult.clientQueryId,
                         Instant.now(),
                         error.message ?: "No message provided"
                      )
@@ -121,8 +121,10 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                   )
                } else {
                   consumer.handleEvent(
-                     QueryExceptionEvent(
+                     TaxiQlQueryExceptionEvent(
+                        query,
                         queryResult.queryResponseId,
+                        queryResult.clientQueryId,
                         Instant.now(),
                         error.message ?: "No message provided"
                      )
@@ -179,8 +181,18 @@ data class QueryCompletedEvent(
    val timestamp: Instant
 ) : QueryEvent()
 
-data class QueryExceptionEvent(
+data class TaxiQlQueryExceptionEvent(
+   val query: TaxiQLQueryString,
    val queryId: String,
+   val clientQueryId: String?,
+   val timestamp: Instant,
+   val message: String
+) : QueryEvent()
+
+data class RestfulQueryExceptionEvent(
+   val query: Query,
+   val queryId: String,
+   val clientQueryId: String?,
    val timestamp: Instant,
    val message: String
 ) : QueryEvent()

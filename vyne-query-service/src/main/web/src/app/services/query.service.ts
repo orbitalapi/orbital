@@ -14,9 +14,10 @@ import {
   TypeNamedInstance
 } from './schema';
 import {VyneServicesModule} from './vyne-services.module';
-import {concatAll, map, share, shareReplay} from 'rxjs/operators';
+import {catchError, concatAll, map, share, shareReplay} from 'rxjs/operators';
 import {SseEventSourceService} from './sse-event-source.service';
 import {isNullOrUndefined} from 'util';
+import {of} from 'rxjs';
 
 @Injectable({
   providedIn: VyneServicesModule
@@ -49,13 +50,20 @@ export class QueryService {
 
   }
 
-  submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
+  submitVyneQlQueryStreaming(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<StreamingQueryMessage> {
     const url = encodeURI(`${environment.queryServiceUrl}/api/vyneql?resultMode=${resultMode}&clientQueryId=${clientQueryId}&query=${query}`);
-    return this.sse.getEventSource(
+    return this.sse.getEventStream<ValueWithTypeName>(
       url
     ).pipe(
-      map((event: MessageEvent) => {
-        return JSON.parse(event.data) as ValueWithTypeName;
+      catchError((err, caught) => {
+        const failure: FailedSearchResponse = {
+          message: err,
+          remoteCalls: [],
+          responseStatus: ResponseStatus.ERROR,
+          clientQueryId: null,
+          queryResponseId: null
+        };
+        return of(failure);
       }),
       shareReplay(replayCacheSize)
     );
@@ -63,12 +71,9 @@ export class QueryService {
 
   getQueryResults(queryId: string, limit: number = 100): Observable<ValueWithTypeName> {
     const url = encodeURI(`${environment.queryServiceUrl}/api/query/history/${queryId}/results?limit=${limit}`);
-    return this.sse.getEventSource(
+    return this.sse.getEventStream<ValueWithTypeName>(
       url
     ).pipe(
-      map((event: MessageEvent) => {
-        return JSON.parse(event.data) as ValueWithTypeName;
-      }),
       shareReplay(limit)
     );
   }

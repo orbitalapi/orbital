@@ -26,7 +26,6 @@ open class SearchFailedException(
    val profilerOperation: ProfilerOperation
 ) : RuntimeException(message)
 
-open class ProjectionFailedException(message: String) : RuntimeException(message)
 interface QueryEngine {
 
    val schema: Schema
@@ -192,7 +191,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          QueryResult(
             querySpecTypeNode,
             resultFlow,
-            unmatchedNodes = emptySet(),
+            isFullyResolved = true,
             profilerOperation = context.profiler.root,
             anonymousTypes = context.schema.typeCache.anonymousTypes(),
             queryId = context.queryId
@@ -201,7 +200,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
          QueryResult(
             querySpecTypeNode,
             emptyFlow(),
-            setOf(querySpecTypeNode),
+            isFullyResolved = false,
             profilerOperation = context.profiler.root,
             queryId = context.queryId,
             clientQueryId = context.clientQueryId,
@@ -248,13 +247,12 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
     * the API to directly add parsed TypedObject into the query content
     */
    private fun deeplyFlatten(collection: TypedCollection): List<TypedInstance> {
-      val f = collection.value.flatMap {
+      return collection.value.flatMap {
          when (it) {
             is TypedCollection -> deeplyFlatten(it)
             else -> listOf(it)
          }
       }
-      return f
    }
 
    // This logic executes currently as part of projection from one collection to another
@@ -402,8 +400,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return QueryResult(
          querySpec = queryResult.querySpec,
          results = queryResult.results,
-         unmatchedNodes = queryResult.unmatchedNodes,
-         path = null,
+         isFullyResolved = queryResult.isFullyResolved,
          profilerOperation = queryResult.profilerOperation,
          anonymousTypes = queryResult.anonymousTypes,
          queryId = context.queryId,
@@ -429,10 +426,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       //fun unresolvedNodes(): List<QuerySpecTypeNode> {
       //   return querySet.filterNot { matchedNodes.containsKey(it) }
       //}
-
+      var resultsReceivedFromStrategy = false
       val resultsFlow: Flow<TypedInstance> = flow {
-         var resultsReceivedFromStrategy = false
-
          for (queryStrategy in strategies) {
             if (resultsReceivedFromStrategy) {
                break
@@ -447,6 +442,11 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                   emit(value)
 
                   //Check the query state every 25 records
+                  // TODO : This needs to be refactored, as currently
+                  // relates on global shared state.
+                  // We need to hold running queries in the query-server,
+                  // and send a cancellation flag / signal down through
+                  // the queryContext.
                   if (index % 25 == 0 && isQueryCancelled(context.queryId)) {
                      log().warn("Query ${context.queryId} cancelled - cancelling collection and publication of results")
                      currentCoroutineContext().cancel()
@@ -457,29 +457,22 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
             }
          }
+         if (!resultsReceivedFromStrategy) {
+            val constraintsSuffix = if (target.dataConstraints.isNotEmpty()) {
+               "with the ${target.dataConstraints.size} constraints provided"
+            } else ""
+            throw SearchFailedException("No strategy found for discovering type ${target.description} $constraintsSuffix".trim(), emptyList(), context)
+         }
       }
-
-      // MP : We could possibly remove this line.
-      // If we're not projecting, I suspect we use the return value from the query
-      //rather than storing in the context and then fetching it back out again.
-      // If we ARE projecting, then we construct a new context per list-element anyway.
-      // However, this theory needs investigating / testing.
-
-      // Note : We should add this additional data to the context too,
-      // so that it's available for future query strategies to use.
-      //context.addFacts(strategyResult.matchedNodes.values.filterNotNull())
-
-      // isProjecting is a (maybe) temporary little fix to allow projection
-      // Without it, there's a stack overflow error as projectTo seems to call ObjectBuilder.build which calls projectTo again.
-      // ... Investigate
 
       val results = when (context.projectResultsTo) {
          null -> resultsFlow
          else ->
-            // MP : I modfied this code, but I'm not clear on the impact of doing so.
-            // The issue is that we can have projections that return multiple values.
-            // Previously, this was returning buildResult.results.first(), which ignored subsequent values.
-            // However, the move to flatMapConcat may have broken parallelisation elsewhere.  Hard to know.
+            // This pattern aims to allow the concurrent execution of multiple flows.
+            // Normally, flow execution is sequential - ie., one flow must complete befre the next
+            // item is taken.  buffer() is used here to allow up to n parallel flows to execute.
+            // MP: @Anthony - please leave some comments here that describe the rationale for
+            // map { async { .. } }.flatMapMerge { await }
             resultsFlow.map {
                GlobalScope.async {
                   val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
@@ -491,9 +484,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             .flatMapMerge { it.await() }
 
       }
-      // MP : Hacking, remove this code
-//      val resultList = runBlocking { results.toList() }
-//      val resultListFlow = resultList.asFlow()
       val querySpecTypeNode = if (context.projectResultsTo != null) {
          QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
       } else {
@@ -502,8 +492,8 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       return QueryResult(
          querySpecTypeNode,
          results,
-         emptySet(),
-         path = null,
+
+         isFullyResolved = true,
          profilerOperation = context.profiler.root,
          queryId = context.queryId,
          clientQueryId = context.clientQueryId,

@@ -11,18 +11,15 @@ import {
 } from '@covalent/dynamic-forms';
 import {FormControl} from '@angular/forms';
 import {
-  Fact, FailedSearchResponse,
-  QueryProfileData,
+  Fact,
+  FailedSearchResponse,
   Query,
   QueryMode,
-  QueryResult,
-  QueryService,
+  QueryProfileData,
   RemoteCall,
   ResponseStatus,
   ResultMode
 } from '../../services/query.service';
-import {HttpErrorResponse} from '@angular/common/http';
-import {nanoid} from 'nanoid';
 
 
 @Component({

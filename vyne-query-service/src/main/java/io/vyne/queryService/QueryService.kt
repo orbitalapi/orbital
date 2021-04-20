@@ -27,6 +27,7 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 import java.util.*
 
 const val TEXT_CSV = "text/csv"
@@ -43,7 +44,7 @@ data class FailedSearchResponse(
    override val clientQueryId: String? = null,
 
 
-) : QueryResponse {
+   ) : QueryResponse {
    override val responseStatus: QueryResponse.ResponseStatus = QueryResponse.ResponseStatus.ERROR
    override val isFullyResolved: Boolean = false
 
@@ -122,6 +123,17 @@ class QueryService(
          // Default everything else to JSON
          else -> {
             queryResult.results
+               .catch { error ->
+                  when (error) {
+                     is SearchFailedException -> {
+                        throw ResponseStatusException(
+                           HttpStatus.BAD_REQUEST,
+                           error.message ?: "Search failed without a message"
+                        )
+                     }
+                     else -> throw error
+                  }
+               }
                .flatMapMerge { typedInstance ->
                   // This is a smell.
                   // I've noticed that when projecting, in this point of the code
@@ -170,7 +182,8 @@ class QueryService(
       return block.invoke()
    }
 
-   @PostMapping("/api/vyneql",
+   @PostMapping(
+      "/api/vyneql",
       consumes = [MediaType.APPLICATION_JSON_VALUE],
       produces = [TEXT_CSV]
    )
@@ -180,7 +193,7 @@ class QueryService(
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null,
       @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode = ResultMode.RAW,
       auth: Authentication? = null,
-   ):ResponseEntity<Flow<String>> {
+   ): ResponseEntity<Flow<String>> {
 
       val user = auth?.toVyneUser()
       val response = vyneQLQuery(query, user, clientQueryId = clientQueryId, queryId = UUID.randomUUID().toString())
@@ -188,7 +201,8 @@ class QueryService(
 
    }
 
-   @PostMapping("/api/vyneql",
+   @PostMapping(
+      "/api/vyneql",
       consumes = [MediaType.APPLICATION_JSON_VALUE],
       produces = [MediaType.APPLICATION_JSON_VALUE]
    )
@@ -230,8 +244,6 @@ class QueryService(
    }
 
 
-
-
    /**
     * Endpoint for submitting a TaxiQL query, and receiving an event stream back.
     * Browsers cannot submit POST requests for SSE responses (only GET), hence having the query in the queryString
@@ -253,7 +265,15 @@ class QueryService(
          is FailedSearchResponse -> flowOf(queryResponse)
          is QueryResult -> {
             val resultSerializer = resultMode.buildSerializer(queryResponse)
-            queryResponse.results.map { resultSerializer.serialize(it) }
+            queryResponse.results
+               .catch { throwable ->
+                  when (throwable) {
+                     is SearchFailedException -> log().warn("Search failed with a SearchFailedException. ${throwable.message!!}")
+                     else -> log().error("Search failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}")
+                  }
+                  emit(ErrorType.error(throwable.message ?: "No message provided"))
+               }
+               .map { resultSerializer.serialize(it) }
          }
 
          else -> error("Unhandled type of QueryResponse - received ${queryResponse::class.simpleName}")
@@ -324,3 +344,4 @@ class QueryService(
       }
    }
 }
+

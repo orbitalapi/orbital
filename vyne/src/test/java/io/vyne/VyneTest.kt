@@ -1944,6 +1944,24 @@ service ClientService {
    }
 
    @Test
+   fun `when no valid path for search then error is signalled`() = runBlocking {
+      val (vyne,stub) = testVyne("""
+         model Person {
+            firstName : FirstName inherits String
+            lastName : LastName inherits String
+         }
+      """.trimIndent())
+      var exceptionThrown = false
+      try {
+         val result = vyne.query("findAll { Person[] }")
+         result.results.toList()
+      } catch (e:SearchFailedException) {
+         exceptionThrown = true
+      }
+      exceptionThrown.should.be.`true`
+   }
+
+   @Test
    @Ignore("not yet implemented")
    fun `can use a derived field as an input for discovery`() {
       val (vyne, stub) = testVyne(

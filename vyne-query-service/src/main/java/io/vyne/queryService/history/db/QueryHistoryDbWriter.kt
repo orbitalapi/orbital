@@ -14,11 +14,9 @@ import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.history.*
 import io.vyne.utils.log
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
@@ -56,9 +54,9 @@ class PersistingQueryEventConsumer(
          is TaxiQlQueryResultEvent -> persistEvent(event)
          is RestfulQueryResultEvent -> persistEvent(event)
          is QueryCompletedEvent -> persistEvent(event)
-         is QueryExceptionEvent -> persistEvent(event)
+         is TaxiQlQueryExceptionEvent -> persistEvent(event)
          is QueryFailureEvent -> persistEvent(event)
-         else -> TODO("Event type ${event::class.simpleName} not yet supported")
+         is RestfulQueryExceptionEvent -> persistEvent(event)
       }
    }
 
@@ -75,7 +73,32 @@ class PersistingQueryEventConsumer(
          }.subscribe()
    }
 
-   private fun persistEvent(event: QueryExceptionEvent) {
+   private fun persistEvent(event: RestfulQueryExceptionEvent) {
+      createQuerySummaryRecord(event.queryId) {
+         QuerySummary(
+            queryId = event.queryId,
+            clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
+            taxiQl = null,
+            queryJson = objectMapper.writeValueAsString(event.query),
+            startTime = Instant.now(),
+            responseStatus = QueryResponse.ResponseStatus.ERROR
+         )
+      }
+      repository.setQueryEnded(event.queryId, event.timestamp, 0, QueryResponse.ResponseStatus.ERROR, event.message)
+         .subscribe()
+   }
+
+   private fun persistEvent(event: TaxiQlQueryExceptionEvent) {
+      createQuerySummaryRecord(event.queryId) {
+         QuerySummary(
+            queryId = event.queryId,
+            clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
+            taxiQl = event.query,
+            queryJson = null,
+            startTime = Instant.now(),
+            responseStatus = QueryResponse.ResponseStatus.ERROR
+         )
+      }
       repository.setQueryEnded(event.queryId, event.timestamp, 0, QueryResponse.ResponseStatus.ERROR, event.message)
          .subscribe()
    }

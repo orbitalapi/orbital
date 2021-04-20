@@ -1,10 +1,9 @@
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
-import {FailedSearchResponse, Query, QueryService} from '../../services/query.service';
+import {Component, EventEmitter, Output} from '@angular/core';
+import {FailedSearchResponse, Query, QueryService, ResponseStatus} from '../../services/query.service';
 import {TypesService} from '../../services/types.service';
 import {findType, InstanceLike, Schema, Type} from '../../services/schema';
 import {nanoid} from 'nanoid';
 import {HttpErrorResponse} from '@angular/common/http';
-import {QueryFailure} from './query-wizard.component';
 import {Subject} from 'rxjs';
 import {RunningQueryStatus} from '../../services/active-queries-notification-service';
 import {isNullOrUndefined} from 'util';
@@ -20,7 +19,7 @@ import {ExportFileService, ExportFormat} from '../../services/export.file.servic
       ></query-wizard>
       <div class="results-container">
         <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
-
+        <app-error-panel *ngIf="failure" [queryResult]="failure"></app-error-panel>
         <app-tabbed-results-view
           (instanceSelected)="onInstanceSelected($event)"
           [instances$]="results$"
@@ -73,8 +72,14 @@ export class QueryBuilderComponent {
         error => {
           this.loading = false;
           const errorResponse = error as HttpErrorResponse;
-          const failure = errorResponse.error as FailedSearchResponse;
-          this.failure = failure;
+          const errorMessage = errorResponse.error.message;
+          this.failure = {
+            queryResponseId: null,
+            clientQueryId: null,
+            responseStatus: ResponseStatus.ERROR,
+            remoteCalls: [],
+            message: errorMessage
+          };
         },
         () => {
           this.loading = false;
