@@ -25,11 +25,10 @@ import org.junit.Before
 import java.util.function.Consumer
 import kotlin.test.assertEquals
 import okhttp3.mockwebserver.RecordedRequest
-import kotlin.time.ExperimentalTime
-import kotlin.time.seconds
+import kotlin.time.Duration
 
 
-@ExperimentalTime
+
 class RestTemplateInvokerTest {
 
    var server = MockWebServer()
@@ -121,6 +120,7 @@ namespace vyne {
    }
 
    @Test
+   @OptIn(kotlin.time.ExperimentalTime::class)
    fun `When invoked a service that returns a list property mapped to a taxi array`() {
 
       val webClient = WebClient.builder().build()
@@ -161,7 +161,7 @@ namespace vyne {
                service, operation, listOf(
                   paramAndType("vyne.ClientName", "notional", schema)
                ), QueryProfiler(), "MOCK_QUERY_ID"
-            ) .test(timeout = 5.seconds) {
+            ) .test(Duration.ZERO) {
                val instance = expectTypedObject()
                expect(instance.type.fullyQualifiedName).to.equal("vyne.Client")
                expect(instance["name"].value).to.equal("Notional")
@@ -180,6 +180,7 @@ namespace vyne {
 
 
    @Test
+   @OptIn(kotlin.time.ExperimentalTime::class)
    fun `invoke a restTemplate from vyne`() {
 
       val webClient = WebClient.builder().build()
@@ -218,7 +219,7 @@ namespace vyne {
       runBlocking {
          val response = vyne.query("findAll { Person[] }")
          response.isFullyResolved.should.be.`true`
-         response.results.test(timeout = 5.seconds) {
+         response.results.test(Duration.ZERO) {
             expectItem()
             expectComplete()
          }
@@ -235,6 +236,7 @@ namespace vyne {
    }
 
    @Test
+   @OptIn(kotlin.time.ExperimentalTime::class)
    fun when_invokingService_then_itGetsInvokedCorrectly() {
 
       val webClient = WebClient.builder()
@@ -256,7 +258,7 @@ namespace vyne {
                paramAndType("vyne.ClientId", "myClientId", schema),
                paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
             ), QueryProfiler()
-         ).test(timeout = 5.seconds) {
+         ).test(Duration.ZERO) {
             val typedInstance = expectTypedObject()
             expect(typedInstance.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
             expect(typedInstance["stuff"].value).to.equal("Right back atcha, kid")
@@ -285,6 +287,7 @@ namespace vyne {
    }
 
    @Test
+   @OptIn(kotlin.time.ExperimentalTime::class)
    fun `attributes returned from service not defined in type are ignored`()  {
 
       val webClient = WebClient.builder().build()
@@ -312,7 +315,7 @@ namespace vyne {
                service, operation, listOf(
                   paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
                ), QueryProfiler(), "MOCK_QUERY_ID"
-            ).test(timeout = 5.seconds) {
+            ).test(Duration.ZERO) {
                val typedInstance = expectTypedObject()
                typedInstance["id"].value.should.equal(100)
                expectComplete()
@@ -329,6 +332,7 @@ namespace vyne {
    }
 
    @Test
+   @OptIn(kotlin.time.ExperimentalTime::class)
    fun whenInvoking_paramsCanBePassedByTypeIfMatchedUnambiguously() {
       // This test is a WIP, that's been modified to pass.
       // This test is intended as a jumpting off point for issue #49
@@ -351,7 +355,7 @@ namespace vyne {
             service, operation, listOf(
                paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
             ), QueryProfiler(), "MOCK_QUERY_ID"
-         ).test(timeout = 5.seconds) {
+         ).test(Duration.ZERO) {
             expectTypedObject()
             expectComplete()
          }
@@ -366,8 +370,8 @@ namespace vyne {
 
    }
 
-   @ExperimentalTime
    @Test
+   @OptIn(kotlin.time.ExperimentalTime::class)
    fun `when invoking a service with preparsed content then accessors are not evaluated`() {
 
       val webClient = WebClient.builder().build()
@@ -407,7 +411,7 @@ namespace vyne {
             schemaProvider = schemaProvider,
             activeQueryMonitor = ActiveQueryMonitor()
          )
-            .invoke(service, operation, emptyList(), QueryProfiler(), "MOCK_QUERY_ID").test(timeout = 5.seconds) {
+            .invoke(service, operation, emptyList(), QueryProfiler(), "MOCK_QUERY_ID").test(Duration.ZERO) {
                val instance = expectTypedObject()
                instance["id"].value.should.equal("100")
                instance["name"].value.should.equal("Fluffy")
@@ -424,7 +428,7 @@ namespace vyne {
       }
    }
 
-   @ExperimentalTime
+   @OptIn(kotlin.time.ExperimentalTime::class)
    @Test
    fun `when invoking a service without preparsed content then accessors are not evaluated`() {
 
@@ -465,7 +469,7 @@ namespace vyne {
             schemaProvider = schemaProvider,
             activeQueryMonitor = ActiveQueryMonitor()
          )
-            .invoke(service, operation, emptyList(), QueryProfiler(), "MOCK_QUERY_ID").test(timeout = 5.seconds) {
+            .invoke(service, operation, emptyList(), QueryProfiler(), "MOCK_QUERY_ID").test(Duration.ZERO) {
                val instance = expectTypedObject()
                instance["id"].value.should.equal("100")
                instance["name"].value.should.equal("Fluffy")
