@@ -63,7 +63,8 @@ class ExecuteTestCommandTest {
       val spec = Resources.getResource("simple-test/specs/csv-with-multiple-records/csv.spec.json")
       val testResult = ExecuteTestCommand().apply {
          specPath = Paths.get(spec.toURI())
-      }.executeTests().toList().first()
+      }.executeTests().toList()
+         .first()
       testResult.successful.should.be.`true`
    }
 }

@@ -45,6 +45,7 @@ class QueryTestCommand: Callable<Int> {
       val queryTester = QueryTester()
       return try {
          val failures =  queryTester.runTest(specFolder.toFile())
+         println(failures)
          if (failures!!.isEmpty()) {
             ExecuteTestCommand.TEST_SUCCESSFUL
          } else {
