@@ -47,7 +47,7 @@ export abstract class BaseQueryResultDisplayComponent {
     const eventTypeInstance = $event.instanceSelectedEvent.selectedTypeInstance;
     if ($event.instanceSelectedEvent.rowValueId) {
       this.queryService.getQueryResultNodeDetail(
-        this.queryId, $event.instanceSelectedEvent.rowValueId, $event.instanceSelectedEvent.attributeName
+        $event.instanceSelectedEvent.queryId, $event.instanceSelectedEvent.rowValueId, $event.instanceSelectedEvent.attributeName
       )
         .subscribe(result => {
           this.selectedTypeInstanceDataSource = result.source;

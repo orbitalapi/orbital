@@ -8,10 +8,8 @@ import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.queryService.FailedSearchResponse
 import io.vyne.schemas.Type
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onErrorResume
 import lang.taxi.types.TaxiQLQueryString
 import java.time.Instant
 
@@ -35,13 +33,14 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
    }
 
    private fun captureQueryResultStreamToHistory(query: Query, queryResult: QueryResult): QueryResult {
+      val queryStartTime = Instant.now()
       return queryResult.copy(
          results = queryResult.results
             .onEach { typedInstance ->
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
                consumer.handleEvent(
                   RestfulQueryResultEvent(
-                     query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
+                     query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance, queryStartTime
                   )
                )
             }
@@ -55,10 +54,13 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                   )
                } else {
                   consumer.handleEvent(
-                     QueryExceptionEvent(
+                     RestfulQueryExceptionEvent(
+                        query,
                         queryResult.queryResponseId,
+                        queryResult.clientQueryId,
                         Instant.now(),
-                        error.message ?: "No message provided"
+                        error.message ?: "No message provided",
+                        queryStartTime
                      )
                   )
                }
@@ -96,6 +98,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
       query: TaxiQLQueryString,
       queryResult: QueryResult
    ): QueryResult {
+      val queryStartTime = Instant.now()
       return queryResult.copy(
          results = queryResult.results
 
@@ -107,7 +110,8 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                      queryResult.queryResponseId,
                      queryResult.clientQueryId,
                      typedInstance,
-                     queryResult.anonymousTypes
+                     queryResult.anonymousTypes,
+                     queryStartTime
                   )
                )
             }
@@ -121,10 +125,13 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                   )
                } else {
                   consumer.handleEvent(
-                     QueryExceptionEvent(
+                     TaxiQlQueryExceptionEvent(
+                        query,
                         queryResult.queryResponseId,
+                        queryResult.clientQueryId,
                         Instant.now(),
-                        error.message ?: "No message provided"
+                        error.message ?: "No message provided",
+                        queryStartTime
                      )
                   )
                }
@@ -154,10 +161,13 @@ sealed class QueryEvent
 
 data class RestfulQueryResultEvent(
    val query: Query,
-   val queryId: String,
-   val clientQueryId: String?,
-   val typedInstance: TypedInstance
-) : QueryEvent()
+   override val queryId: String,
+   override val clientQueryId: String?,
+   override val typedInstance: TypedInstance,
+   override val queryStartTime: Instant
+) :  QueryResultEvent, QueryEvent() {
+   override val anonymousTypes: Set<Type> = emptySet()
+}
 
 data class QueryFailureEvent(
    val queryId: String,
@@ -167,20 +177,42 @@ data class QueryFailureEvent(
 
 data class TaxiQlQueryResultEvent(
    val query: TaxiQLQueryString,
-   val queryId: String,
-   val clientQueryId: String?,
-   val typedInstance: TypedInstance,
-   val anonymousTypes: Set<Type>
-) : QueryEvent()
+   override val queryId: String,
+   override val clientQueryId: String?,
+   override val typedInstance: TypedInstance,
+   override val anonymousTypes: Set<Type>,
+   override val queryStartTime: Instant
+) : QueryResultEvent, QueryEvent()
 
+interface QueryResultEvent {
+   val queryId: String
+   val clientQueryId: String?
+   val typedInstance: TypedInstance
+   val anonymousTypes: Set<Type>
+   // We need the queryStartTime as we create the query record on the first emitted
+   // result.
+   val queryStartTime: Instant
+}
 
 data class QueryCompletedEvent(
    val queryId: String,
    val timestamp: Instant
 ) : QueryEvent()
 
-data class QueryExceptionEvent(
+data class TaxiQlQueryExceptionEvent(
+   val query: TaxiQLQueryString,
    val queryId: String,
+   val clientQueryId: String?,
    val timestamp: Instant,
-   val message: String
+   val message: String,
+   val queryStartTime: Instant
+) : QueryEvent()
+
+data class RestfulQueryExceptionEvent(
+   val query: Query,
+   val queryId: String,
+   val clientQueryId: String?,
+   val timestamp: Instant,
+   val message: String,
+   val queryStartTime: Instant
 ) : QueryEvent()

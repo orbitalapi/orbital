@@ -183,7 +183,7 @@ export class QueryEditorComponent implements OnInit {
         } else if (!isNullOrUndefined(message.typeName)) {
           this.resultType = findType(this.schema, message.typeName);
         }
-        this.results$.next(message.value);
+        this.results$.next(message);
         if (this.queryMetadata$ === null) {
           this.subscribeForQueryStatusUpdates(message.queryId);
         }

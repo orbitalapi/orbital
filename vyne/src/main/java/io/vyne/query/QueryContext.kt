@@ -71,16 +71,10 @@ data class QueryResult(
    @field:JsonIgnore // we send a lightweight version below
    val results: Flow<TypedInstance>,
    @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
-   @field:JsonIgnore // we send a lightweight version below
-   val unmatchedNodes: Set<QuerySpecTypeNode> = emptySet(),
-   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
-   val path: Path? = null,
-   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
    @field:JsonIgnore // this sends too much information - need to build a lightweight version
    override val profilerOperation: ProfilerOperation? = null,
-
-   @Deprecated("Being removed, QueryResult is now just a wrapper around the results")
-   val truncated: Boolean = false,
+   @Deprecated("It's no longer possible to know at the time the QueryResult is intantiated if the query has been fully resolved.  Catch the exception from the Flow<> instead.")
+   override val isFullyResolved: Boolean,
    val anonymousTypes: Set<Type> = setOf(),
    override val clientQueryId: String? = null,
    override val queryId: String
@@ -88,13 +82,18 @@ data class QueryResult(
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration
 
-   @Deprecated("Unmatched nodes is no longer populated")
-   override val isFullyResolved = unmatchedNodes.isEmpty()
+   @Deprecated(
+      "Now that a query only reflects a single type, this does not make sense anymore",
+      replaceWith = ReplaceWith("isFullyResolved")
+   )
+   @get:JsonIgnore // Deprecated
+   val unmatchedNodes: Set<QuerySpecTypeNode> by lazy {
+      setOf(querySpec)
+   }
    override val responseStatus: ResponseStatus = if (isFullyResolved) COMPLETED else INCOMPLETE
 
-   @JsonProperty("unmatchedNodes")
-   val unmatchedNodeNames: List<QualifiedName> = this.unmatchedNodes.map { it.type.name }
-
+   // for UI
+   val searchedTypeName: QualifiedName = querySpec.type.qualifiedName
    /**
     * Returns the result stream with all type information removed.
     */
@@ -302,7 +301,12 @@ data class QueryContext(
                val value =
                   if (underlyingEnumType.hasValue(fact.value)) synonymEnumValue.value else synonymEnumValue.name
 
-               TypedValue.from(synonymType, value, false, MappedSynonym(fact.toTypeNamedInstance() as TypeNamedInstance))
+               TypedValue.from(
+                  synonymType,
+                  value,
+                  false,
+                  MappedSynonym(fact.toTypeNamedInstance() as TypeNamedInstance)
+               )
             }.toSet()
       } else {
          setOf()
@@ -367,6 +371,7 @@ data class QueryContext(
       val treeDef: TreeDef<TypedInstance> = TreeDef.of { instance -> navigator.visit(instance) }
       TreeStream.breadthFirst(treeDef, dataTreeRoot()).toList()
    }
+
    /**
     * A breadth-first stream of data facts currently held in the collection.
     * Use breadth-first, as we want to favour nodes closer to the root.

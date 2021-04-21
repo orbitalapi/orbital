@@ -13,7 +13,8 @@ import {isNullOrUndefined} from 'util';
  * specific requestedType
  */
 export class QueryResultInstanceSelectedEvent {
-  constructor(public readonly queryTypeName: QualifiedName, public readonly instanceSelectedEvent: InstanceSelectedEvent) {
+  constructor(public readonly queryTypeName: QualifiedName,
+              public readonly instanceSelectedEvent: InstanceSelectedEvent) {
   }
 }
 

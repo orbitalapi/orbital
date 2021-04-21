@@ -18,7 +18,9 @@
       <mat-tab-group mat-align-tabs="start" style="height: 100%" [(selectedIndex)]="selectedIndex">
         <mat-tab label="Query Builder">
           <ng-template matTabContent>
-            <app-query-builder></app-query-builder>
+            <app-query-builder
+              (instanceSelected)="onInstanceSelected($event)"
+            ></app-query-builder>
           </ng-template>
         </mat-tab>
         <mat-tab label="Query Editor">
