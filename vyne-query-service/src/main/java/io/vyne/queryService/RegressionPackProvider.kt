@@ -2,50 +2,58 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.VersionedSource
+import io.vyne.models.TypeNamedInstance
+import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.history.LineageRecord
+import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.history.RegressionPackRequest
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.VersionedSourceProvider
+import org.springframework.stereotype.Component
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import reactor.core.publisher.Mono
+import java.io.ByteArrayOutputStream
+import java.io.OutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
-//@Component
-class RegressionPackProvider(objectMapper: ObjectMapper,
-//                             private val history: QueryHistory,
-                             private val schemaProvider: SchemaSourceProvider) {
+@Component
+class RegressionPackProvider(
+   objectMapper: ObjectMapper,
+   private val schemaProvider: SchemaSourceProvider
+) {
    private val objectWriter = objectMapper.writerWithDefaultPrettyPrinter()
 
-   fun createRegressionPack(request: RegressionPackRequest): Mono<StreamingResponseBody> {
-      TODO()
-//      return history
-//         .get(request.queryId)
-//         .map { queryHistoryRecord -> toRegressionPack(request, queryHistoryRecord) }
-   }
+   fun createRegressionPack(results: List<TypeNamedInstance>, querySummary: QuerySummary, lineageRecords: List<LineageRecord>, request: RegressionPackRequest): ByteArrayOutputStream {
 
-   private fun toRegressionPack(request: RegressionPackRequest, queryHistoryRecord: Any): StreamingResponseBody {
-      TODO()
-//      val filenameSafeSpecName = request.regressionPackName.replace(" ", "-")
-//      val historyRecordFileName = "history-record.json"
-//      val schemaFileName = "schema.json"
-//
-//      val directoryName = "$filenameSafeSpecName/"
-//
-//      val contentPairs = listOf(
-//         null to ZipEntry(directoryName),
-//         objectWriter.writeValueAsBytes(queryHistoryRecord) to ZipEntry(directoryName + historyRecordFileName),
-//         objectWriter.writeValueAsBytes(getVersionedSchemas()) to ZipEntry(directoryName + schemaFileName)
-//      )
-//
-//      return StreamingResponseBody { outputStream ->
-//         val zipStream = ZipOutputStream(outputStream)
-//         contentPairs.forEach { (byteArray, zipParameters) ->
-//            zipStream.putNextEntry(zipParameters)
-//            if (byteArray != null) {
-//               zipStream.write(byteArray)
-//            }
-//            zipStream.closeEntry()
-//         }
-//         zipStream.close()
-//      }
+         val filenameSafeSpecName = request.regressionPackName.replace(" ", "-")
+         val resultsFilename = "query-results.json"
+         val querySummaryFileName = "query-summary.json"
+         val lineageRecordsFileName = "lineage-records.json"
+         val schemaFileName = "schema.json"
+         val directoryName = "$filenameSafeSpecName/"
+
+         val contentPairs = listOf(
+            null to ZipEntry(directoryName),
+
+            objectWriter.writeValueAsBytes(results) to ZipEntry(directoryName + resultsFilename),
+            objectWriter.writeValueAsBytes(querySummary) to ZipEntry(directoryName + querySummaryFileName),
+            objectWriter.writeValueAsBytes(lineageRecords) to ZipEntry(directoryName + lineageRecordsFileName),
+            objectWriter.writeValueAsBytes(getVersionedSchemas()) to ZipEntry(directoryName + schemaFileName)
+         )
+
+         val outputStream = ByteArrayOutputStream()
+         val zipStream = ZipOutputStream(outputStream)
+         contentPairs.forEach { (byteArray, zipParameters) ->
+            zipStream.putNextEntry(zipParameters)
+            if (byteArray != null) {
+               zipStream.write(byteArray)
+            }
+            zipStream.closeEntry()
+         }
+         zipStream.close()
+         return outputStream
+
    }
 
    private fun getVersionedSchemas(): List<VersionedSource> {
