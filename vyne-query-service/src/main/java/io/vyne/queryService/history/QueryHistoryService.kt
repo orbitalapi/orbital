@@ -8,9 +8,11 @@ import io.vyne.query.QueryProfileData
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.FirstEntryMetadataResultSerializer
 import io.vyne.queryService.NotFoundException
+import io.vyne.queryService.RegressionPackProvider
 import io.vyne.queryService.history.db.LineageRecordRepository
 import io.vyne.queryService.history.db.QueryHistoryRecordRepository
 import io.vyne.queryService.history.db.QueryResultRowRepository
+import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.FlowPreview
@@ -18,9 +20,10 @@ import kotlinx.coroutines.reactor.asFlux
 import org.springframework.http.MediaType
 import org.springframework.http.server.reactive.ServerHttpResponse
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
+
 
 @FlowPreview
 @RestController
@@ -29,8 +32,9 @@ class QueryHistoryService(
    private val queryResultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
    private val queryHistoryExporter: QueryHistoryExporter,
-   private val objectMapper: ObjectMapper
-//   private val regressionPackProvider: RegressionPackProvider
+   private val objectMapper: ObjectMapper,
+   private val schemaProvider: SchemaSourceProvider,
+   private val regressionPackProvider: RegressionPackProvider
 ) {
 
    @DeleteMapping("/api/query/history")
@@ -180,11 +184,20 @@ class QueryHistoryService(
          }
 
    @PostMapping("/api/query/history/{id}/regressionPack")
-   fun getRegressionPack(@RequestBody request: RegressionPackRequest): Mono<StreamingResponseBody> {
-//      return regressionPackProvider.createRegressionPack(request)
-      TODO()
+   fun getRegressionPack( @PathVariable("id") queryId: String, @RequestBody request: RegressionPackRequest, response: ServerHttpResponse): Mono<Void> {
+      val querySummary = queryHistoryRecordRepository.findByQueryId(queryId).publishOn(Schedulers.boundedElastic()).block()
+      val results = queryResultRowRepository.findAllByQueryId(queryId).map { it.json }.collectList().publishOn(Schedulers.boundedElastic()).block()
+
+      return response.writeByteArrays( regressionPackProvider.createRegressionPack(results,querySummary,request).toByteArray()  )
+
    }
 
+}
+
+fun ServerHttpResponse.writeByteArrays(bytes: ByteArray): Mono<Void> {
+   val factory = this.bufferFactory()
+   val dataBuffers = Flux.just(factory.wrap(bytes) )
+   return this.writeWith(dataBuffers)
 }
 
 data class RegressionPackRequest(val queryId: String, val regressionPackName: String)
