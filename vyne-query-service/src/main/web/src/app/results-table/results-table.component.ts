@@ -239,7 +239,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       nearestType: this.getTypeForAttribute($event.colDef.field)
     };
     this.instanceClicked.emit(new InstanceSelectedEvent(
-      untypedCellInstance, null, rowInstance.valueId, $event.colDef.field));
+      untypedCellInstance, null, rowInstance.valueId, $event.colDef.field, rowInstance.queryId));
   }
 
   onGridReady(event: GridReadyEvent) {

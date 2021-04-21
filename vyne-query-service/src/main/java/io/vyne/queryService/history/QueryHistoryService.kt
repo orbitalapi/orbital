@@ -113,6 +113,7 @@ class QueryHistoryService(
       @PathVariable("attributePath") attributePath: String
    ): Mono<QueryResultNodeDetail> {
       return queryResultRowRepository.findByQueryIdAndValueHash(queryId, rowValueHash)
+         .switchIfEmpty(Mono.defer { throw NotFoundException("No query result found with queryId $queryId and row $rowValueHash") })
          .next()
          .flatMap { resultRow ->
             val typeNamedInstance = resultRow.asTypeNamedInstance(objectMapper)
@@ -155,12 +156,14 @@ class QueryHistoryService(
    @GetMapping("/api/query/history/clientId/{id}/profile")
    fun getQueryProfileDataFromClientId(@PathVariable("id") queryClientId: String): Mono<QueryProfileData> {
       return queryHistoryRecordRepository.findByClientQueryId(queryClientId)
+         .switchIfEmpty(Mono.defer { throw NotFoundException("No query with clientQueryId $queryClientId found") })
          .flatMap { querySummary -> getQueryProfileData(querySummary) }
    }
 
    @GetMapping("/api/query/history/{id}/profile")
    fun getQueryProfileData(@PathVariable("id") queryId: String): Mono<QueryProfileData> {
       return queryHistoryRecordRepository.findByQueryId(queryId)
+         .switchIfEmpty(Mono.defer { throw NotFoundException("No query with queryId $queryId found") })
          .flatMap { querySummary -> getQueryProfileData(querySummary) }
    }
 

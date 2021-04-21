@@ -156,10 +156,12 @@ sealed class QueryEvent
 
 data class RestfulQueryResultEvent(
    val query: Query,
-   val queryId: String,
-   val clientQueryId: String?,
-   val typedInstance: TypedInstance
-) : QueryEvent()
+   override val queryId: String,
+   override val clientQueryId: String?,
+   override val typedInstance: TypedInstance
+) :  QueryResultEvent, QueryEvent() {
+   override val anonymousTypes: Set<Type> = emptySet()
+}
 
 data class QueryFailureEvent(
    val queryId: String,
@@ -169,12 +171,18 @@ data class QueryFailureEvent(
 
 data class TaxiQlQueryResultEvent(
    val query: TaxiQLQueryString,
-   val queryId: String,
-   val clientQueryId: String?,
-   val typedInstance: TypedInstance,
-   val anonymousTypes: Set<Type>
-) : QueryEvent()
+   override val queryId: String,
+   override val clientQueryId: String?,
+   override val typedInstance: TypedInstance,
+   override val anonymousTypes: Set<Type>
+) : QueryResultEvent, QueryEvent()
 
+interface QueryResultEvent {
+   val queryId: String
+   val clientQueryId: String?
+   val typedInstance: TypedInstance
+   val anonymousTypes: Set<Type>
+}
 
 data class QueryCompletedEvent(
    val queryId: String,

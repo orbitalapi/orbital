@@ -1,5 +1,11 @@
 import {Component, EventEmitter, Output} from '@angular/core';
-import {FailedSearchResponse, Query, QueryService, ResponseStatus} from '../../services/query.service';
+import {
+  FailedSearchResponse,
+  Query,
+  QueryProfileData,
+  QueryService,
+  ResponseStatus
+} from '../../services/query.service';
 import {TypesService} from '../../services/types.service';
 import {findType, InstanceLike, Schema, Type} from '../../services/schema';
 import {nanoid} from 'nanoid';
@@ -9,6 +15,7 @@ import {RunningQueryStatus} from '../../services/active-queries-notification-ser
 import {isNullOrUndefined} from 'util';
 import {QueryResultInstanceSelectedEvent} from '../result-display/BaseQueryResultComponent';
 import {ExportFileService, ExportFormat} from '../../services/export.file.service';
+import {Observable} from 'rxjs/index';
 
 @Component({
   selector: 'app-query-builder',
@@ -21,6 +28,7 @@ import {ExportFileService, ExportFormat} from '../../services/export.file.servic
         <mat-spinner *ngIf="loading" [diameter]=40></mat-spinner>
         <app-error-panel *ngIf="failure" [queryResult]="failure"></app-error-panel>
         <app-tabbed-results-view
+          [profileData$]="queryProfileData$"
           (instanceSelected)="onInstanceSelected($event)"
           [instances$]="results$"
           [type]="resultType"
@@ -43,6 +51,7 @@ export class QueryBuilderComponent {
 
   @Output()
   instanceSelected = new EventEmitter<QueryResultInstanceSelectedEvent>();
+  queryProfileData$: Observable<QueryProfileData>;
 
   onInstanceSelected($event: QueryResultInstanceSelectedEvent) {
     this.instanceSelected.emit($event);
@@ -61,13 +70,15 @@ export class QueryBuilderComponent {
     this.results$ = new Subject<InstanceLike>();
     this.loading = true;
     this.resultType = null;
+    this.failure = null;
     this.queryClientId = nanoid();
     this.queryService.submitQuery(query, this.queryClientId)
       .subscribe(result => {
           if (!isNullOrUndefined(result.typeName)) {
             this.resultType = findType(this.schema, result.typeName);
           }
-          this.results$.next(result.value);
+          this.results$.next(result);
+          this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
         },
         error => {
           this.loading = false;

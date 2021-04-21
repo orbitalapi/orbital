@@ -118,14 +118,7 @@ class PersistingQueryEventConsumer(
             responseStatus = QueryResponse.ResponseStatus.INCOMPLETE
          )
       }
-
-      resultRowRepository.save(
-         QueryResultRow(
-            queryId = event.queryId,
-            json = objectMapper.writeValueAsString(converter.convert(event.typedInstance)),
-            valueHash = event.typedInstance.hashCodeWithDataSource
-         )
-      ).subscribe()
+      persistResultRowAndLineage(event)
    }
 
    private fun persistEvent(event: TaxiQlQueryResultEvent) {
@@ -144,41 +137,45 @@ class PersistingQueryEventConsumer(
             throw e
          }
       }
+      persistResultRowAndLineage(event)
+
+   }
+
+   private fun persistResultRowAndLineage(event: QueryResultEvent) {
       val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
       resultRowRepository.save(
          QueryResultRow(
-            queryId = event.queryId,
-            json = objectMapper.writeValueAsString(convertedTypedInstance),
-            valueHash = event.typedInstance.hashCodeWithDataSource
+               queryId = event.queryId,
+               json = objectMapper.writeValueAsString(convertedTypedInstance),
+               valueHash = event.typedInstance.hashCodeWithDataSource
          )
       ).block()
       val lineageRecords = dataSources.map { it.second }
          .filter { it !is StaticDataSource }
          .distinctBy { it.id }
          .map { dataSource ->
-            when (dataSource) {
-               is OperationResult -> trimResponseBodyWhenExceedsConfiguredMax(dataSource)
-               else -> dataSource
-            }
+               when (dataSource) {
+                  is OperationResult -> trimResponseBodyWhenExceedsConfiguredMax(dataSource)
+                  else -> dataSource
+               }
          }
          .mapNotNull { dataSource ->
 
 
-            // Store the id of the lineage record we're creating in a hashmap.
-            // If we get a value back, that means that the record has already been created,
-            // so we don't need to persist it, and return null from this mapper
-            val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
-            val recordAlreadyPersisted = previousLineageRecordId != null;
-            if (recordAlreadyPersisted) null else LineageRecord(
-               dataSource.id,
-               event.queryId,
-               dataSource.name,
-               objectMapper.writeValueAsString(dataSource)
-            )
+               // Store the id of the lineage record we're creating in a hashmap.
+               // If we get a value back, that means that the record has already been created,
+               // so we don't need to persist it, and return null from this mapper
+               val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
+               val recordAlreadyPersisted = previousLineageRecordId != null;
+               if (recordAlreadyPersisted) null else LineageRecord(
+                  dataSource.id,
+                  event.queryId,
+                  dataSource.name,
+                  objectMapper.writeValueAsString(dataSource)
+               )
          }
       lineageRecordRepository.saveAll(lineageRecords)
          .collectList().block()
-
    }
 
    private fun trimResponseBodyWhenExceedsConfiguredMax(dataSource: OperationResult): OperationResult {
