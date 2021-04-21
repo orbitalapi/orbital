@@ -33,13 +33,14 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
    }
 
    private fun captureQueryResultStreamToHistory(query: Query, queryResult: QueryResult): QueryResult {
+      val queryStartTime = Instant.now()
       return queryResult.copy(
          results = queryResult.results
             .onEach { typedInstance ->
                activeQueryMonitor.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
                consumer.handleEvent(
                   RestfulQueryResultEvent(
-                     query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance
+                     query, queryResult.queryResponseId, queryResult.clientQueryId, typedInstance, queryStartTime
                   )
                )
             }
@@ -58,7 +59,8 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                         queryResult.queryResponseId,
                         queryResult.clientQueryId,
                         Instant.now(),
-                        error.message ?: "No message provided"
+                        error.message ?: "No message provided",
+                        queryStartTime
                      )
                   )
                }
@@ -96,6 +98,7 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
       query: TaxiQLQueryString,
       queryResult: QueryResult
    ): QueryResult {
+      val queryStartTime = Instant.now()
       return queryResult.copy(
          results = queryResult.results
 
@@ -107,7 +110,8 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                      queryResult.queryResponseId,
                      queryResult.clientQueryId,
                      typedInstance,
-                     queryResult.anonymousTypes
+                     queryResult.anonymousTypes,
+                     queryStartTime
                   )
                )
             }
@@ -126,7 +130,8 @@ class QueryEventObserver(private val consumer: QueryEventConsumer, private val a
                         queryResult.queryResponseId,
                         queryResult.clientQueryId,
                         Instant.now(),
-                        error.message ?: "No message provided"
+                        error.message ?: "No message provided",
+                        queryStartTime
                      )
                   )
                }
@@ -158,7 +163,8 @@ data class RestfulQueryResultEvent(
    val query: Query,
    override val queryId: String,
    override val clientQueryId: String?,
-   override val typedInstance: TypedInstance
+   override val typedInstance: TypedInstance,
+   override val queryStartTime: Instant
 ) :  QueryResultEvent, QueryEvent() {
    override val anonymousTypes: Set<Type> = emptySet()
 }
@@ -174,7 +180,8 @@ data class TaxiQlQueryResultEvent(
    override val queryId: String,
    override val clientQueryId: String?,
    override val typedInstance: TypedInstance,
-   override val anonymousTypes: Set<Type>
+   override val anonymousTypes: Set<Type>,
+   override val queryStartTime: Instant
 ) : QueryResultEvent, QueryEvent()
 
 interface QueryResultEvent {
@@ -182,6 +189,9 @@ interface QueryResultEvent {
    val clientQueryId: String?
    val typedInstance: TypedInstance
    val anonymousTypes: Set<Type>
+   // We need the queryStartTime as we create the query record on the first emitted
+   // result.
+   val queryStartTime: Instant
 }
 
 data class QueryCompletedEvent(
@@ -194,7 +204,8 @@ data class TaxiQlQueryExceptionEvent(
    val queryId: String,
    val clientQueryId: String?,
    val timestamp: Instant,
-   val message: String
+   val message: String,
+   val queryStartTime: Instant
 ) : QueryEvent()
 
 data class RestfulQueryExceptionEvent(
@@ -202,5 +213,6 @@ data class RestfulQueryExceptionEvent(
    val queryId: String,
    val clientQueryId: String?,
    val timestamp: Instant,
-   val message: String
+   val message: String,
+   val queryStartTime: Instant
 ) : QueryEvent()

@@ -80,7 +80,7 @@ class PersistingQueryEventConsumer(
             clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
             taxiQl = null,
             queryJson = objectMapper.writeValueAsString(event.query),
-            startTime = Instant.now(),
+            startTime = event.queryStartTime,
             responseStatus = QueryResponse.ResponseStatus.ERROR
          )
       }
@@ -95,26 +95,33 @@ class PersistingQueryEventConsumer(
             clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
             taxiQl = event.query,
             queryJson = null,
-            startTime = Instant.now(),
+            startTime = event.queryStartTime,
             responseStatus = QueryResponse.ResponseStatus.ERROR
          )
       }
       repository.setQueryEnded(event.queryId, event.timestamp, 0, QueryResponse.ResponseStatus.ERROR, event.message)
          .subscribe()
    }
-   private fun persistEvent(event: QueryFailureEvent)  {
-      repository.setQueryEnded(event.queryId, Instant.now(), 0, QueryResponse.ResponseStatus.ERROR, event.failure.message)
+
+   private fun persistEvent(event: QueryFailureEvent) {
+      repository.setQueryEnded(
+         event.queryId,
+         Instant.now(),
+         0,
+         QueryResponse.ResponseStatus.ERROR,
+         event.failure.message
+      )
          .subscribe()
    }
 
-   private fun persistEvent(event: RestfulQueryResultEvent)  {
+   private fun persistEvent(event: RestfulQueryResultEvent) {
       createQuerySummaryRecord(event.queryId) {
          QuerySummary(
             queryId = event.queryId,
             clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
             taxiQl = null,
             queryJson = objectMapper.writeValueAsString(event.query),
-            startTime = Instant.now(),
+            startTime = event.queryStartTime,
             responseStatus = QueryResponse.ResponseStatus.INCOMPLETE
          )
       }
@@ -129,7 +136,7 @@ class PersistingQueryEventConsumer(
                clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
                taxiQl = event.query,
                queryJson = null,
-               startTime = Instant.now(),
+               startTime = event.queryStartTime,
                responseStatus = QueryResponse.ResponseStatus.INCOMPLETE,
                anonymousTypesJson = objectMapper.writeValueAsString(event.anonymousTypes)
             )
@@ -145,34 +152,34 @@ class PersistingQueryEventConsumer(
       val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
       resultRowRepository.save(
          QueryResultRow(
-               queryId = event.queryId,
-               json = objectMapper.writeValueAsString(convertedTypedInstance),
-               valueHash = event.typedInstance.hashCodeWithDataSource
+            queryId = event.queryId,
+            json = objectMapper.writeValueAsString(convertedTypedInstance),
+            valueHash = event.typedInstance.hashCodeWithDataSource
          )
       ).block()
       val lineageRecords = dataSources.map { it.second }
          .filter { it !is StaticDataSource }
          .distinctBy { it.id }
          .map { dataSource ->
-               when (dataSource) {
-                  is OperationResult -> trimResponseBodyWhenExceedsConfiguredMax(dataSource)
-                  else -> dataSource
-               }
+            when (dataSource) {
+               is OperationResult -> trimResponseBodyWhenExceedsConfiguredMax(dataSource)
+               else -> dataSource
+            }
          }
          .mapNotNull { dataSource ->
 
 
-               // Store the id of the lineage record we're creating in a hashmap.
-               // If we get a value back, that means that the record has already been created,
-               // so we don't need to persist it, and return null from this mapper
-               val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
-               val recordAlreadyPersisted = previousLineageRecordId != null;
-               if (recordAlreadyPersisted) null else LineageRecord(
-                  dataSource.id,
-                  event.queryId,
-                  dataSource.name,
-                  objectMapper.writeValueAsString(dataSource)
-               )
+            // Store the id of the lineage record we're creating in a hashmap.
+            // If we get a value back, that means that the record has already been created,
+            // so we don't need to persist it, and return null from this mapper
+            val previousLineageRecordId = createdLineageRecordIds.putIfAbsent(dataSource.id, dataSource.id)
+            val recordAlreadyPersisted = previousLineageRecordId != null;
+            if (recordAlreadyPersisted) null else LineageRecord(
+               dataSource.id,
+               event.queryId,
+               dataSource.name,
+               objectMapper.writeValueAsString(dataSource)
+            )
          }
       lineageRecordRepository.saveAll(lineageRecords)
          .collectList().block()
