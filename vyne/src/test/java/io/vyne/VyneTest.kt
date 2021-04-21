@@ -422,7 +422,6 @@ class VyneTest {
       vyne.addModel(instance)
       runBlocking {
          val queryResult = vyne.query().find("companyX.Product")
-         println(queryResult.rawObjects())
          val attributeMap = queryResult.rawObjects().first()
             .should.equal(
                mapOf(

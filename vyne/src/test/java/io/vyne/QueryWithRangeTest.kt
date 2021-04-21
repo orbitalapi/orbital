@@ -5,6 +5,7 @@ import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.ConstrainedTypeNameQueryExpression
 import io.vyne.schemas.PropertyToParameterConstraint
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.Operator
@@ -46,7 +47,9 @@ class QueryWithRangeTest {
             Operator.LESS_THAN,
             ConstantValueExpression(Instant.parse("2020-05-10T11:00:00Z"))
          )
-      ))).results.toList()}
+      ))).results
+         .catch { null }
+         .toList()}
 
       // See also DirectServiceInvocationStrategyTest
       stub.invocations["findTrades"].should.have.size(2)

@@ -6,6 +6,7 @@ import io.vyne.query.build.TypedInstancePredicateFactory
 import io.vyne.schemas.*
 import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.types.ObjectType
 
@@ -80,7 +81,11 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       }
 
       return if (targetType.isScalar) {
-         findScalarInstance(targetType, spec)?.firstOrNull()
+         findScalarInstance(targetType, spec)
+            .catch { exception ->
+               log().error("Failed to find type ${targetType.fullyQualifiedName}", exception)
+            }
+            .firstOrNull()
       } else {
          buildObjectInstance(targetType, spec)
       }

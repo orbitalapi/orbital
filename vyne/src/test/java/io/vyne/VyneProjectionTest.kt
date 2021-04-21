@@ -1,6 +1,8 @@
 package io.vyne
 
 import app.cash.turbine.test
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.google.common.base.Stopwatch
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.models.*
@@ -9,11 +11,15 @@ import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import lang.taxi.utils.log
+import lang.taxi.utils.quoted
 import org.junit.Ignore
 import org.junit.Test
 import java.math.BigDecimal
+import java.util.concurrent.TimeUnit
 import kotlin.test.fail
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
@@ -2192,4 +2198,50 @@ service Broker1Service {
          findTradeByType1IdInvoked.should.be.`true`
          findTradeByType2IdInvoked.should.be.`true`
       }
+
+   @Test
+   fun concurrency_test():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+         model Actor {
+            @Id actorId : ActorId inherits String
+            name : ActorName inherits String
+         }
+         model Movie {
+            @Id movieId : MovieId inherits String
+            title : MovieTitle inherits String
+            starring : ActorId
+         }
+         model OutputModel {
+            @Id movieId : MovieId inherits String
+            title : MovieTitle inherits String
+            starring : ActorName
+         }
+         service Services {
+            operation findAllMovies():Movie[]
+            operation findActor(ActorId):Actor
+         }
+      """.trimIndent())
+      stub.addResponseFlow("findActor") { remoteOperation, params ->
+         val actorId = params[0].second.value as String
+         flow {
+            kotlinx.coroutines.delay(500)
+            emit(vyne.parseJsonModel("Actor", """{ "actorId" : ${actorId.quoted()} , "name" : "Tom Cruise's Clone #$actorId" } """))
+         }
+      }
+      val movieCount = 500
+      stub.addResponse("findAllMovies") { _, params ->
+         val movies = (0 until movieCount).map { index ->
+            val movie = mapOf("movieId" to index.toString(), "title" to "Mission Impossible $index", "starring" to index.toString())
+            vyne.parseJsonModel("Movie", jacksonObjectMapper().writeValueAsString(movie))
+         }
+         movies
+      }
+
+      val start = Stopwatch.createStarted()
+      val result = vyne.query("findAll { Movie[] } as OutputModel[]")
+         .results.toList()
+      result.should.have.size(movieCount)
+      val duration = start.elapsed(TimeUnit.MILLISECONDS)
+      log().info("Test completed $movieCount iterations in $duration ms")
+   }
 }

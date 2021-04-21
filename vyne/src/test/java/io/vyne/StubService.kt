@@ -14,10 +14,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 
 typealias StubResponseHandler = (RemoteOperation, List<Pair<Parameter, TypedInstance>>) -> List<TypedInstance>
+typealias StubResponseFlowProvider = (RemoteOperation, List<Pair<Parameter, TypedInstance>>) -> Flow<TypedInstance>
 
 class StubService(
    val responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(),
    val handlers: MutableMap<String, StubResponseHandler> = mutableMapOf(),
+   val flowHandlers: MutableMap<String, StubResponseFlowProvider> = mutableMapOf(),
    // nullable for legacy purposes, you really really should pass a schema here.
    val schema: Schema?
 ) : OperationInvoker {
@@ -25,8 +27,9 @@ class StubService(
    @Deprecated("Don't invoke directly, invoke by calling testVyne()")
    constructor(
       responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(),
-      handlers: MutableMap<String, StubResponseHandler> = mutableMapOf()
-   ) : this(responses, handlers, null)
+      handlers: MutableMap<String, StubResponseHandler> = mutableMapOf(),
+      flowHandlers: MutableMap<String, StubResponseFlowProvider> = mutableMapOf()
+   ) : this(responses, handlers, flowHandlers, null)
 
    private fun justProvide(value: List<TypedInstance>): StubResponseHandler {
       return { _, _ -> value }
@@ -88,16 +91,24 @@ class StubService(
 
       invocations.put(stubResponseKey, parameters.map { it.second })
 
-      if (!responses.containsKey(stubResponseKey) && !handlers.containsKey(stubResponseKey)) {
+      if (!responses.containsKey(stubResponseKey) && !handlers.containsKey(stubResponseKey) && !flowHandlers.containsKey(
+            stubResponseKey
+         )
+      ) {
          throw IllegalArgumentException("No stub response or handler prepared for operation $stubResponseKey")
       }
 
-      val stubResponse = if (responses.containsKey(stubResponseKey)) {
-         responses[stubResponseKey]!!
-      } else {
-         handlers[stubResponseKey]!!.invoke(operation, parameters)
+      val stubResponse = when {
+         responses.containsKey(stubResponseKey) -> {
+            unwrapTypedCollections(responses[stubResponseKey]!!)
+         }
+         handlers.containsKey(stubResponseKey) -> {
+            unwrapTypedCollections(handlers[stubResponseKey]!!.invoke(operation, parameters))
+         }
+         flowHandlers.containsKey(stubResponseKey) -> flowHandlers[stubResponseKey]!!.invoke(operation, parameters)
+         else -> error("No handler found for $stubResponseKey")
       }
-      return unwrapTypedCollections(stubResponse)
+      return stubResponse
    }
 
    /**
@@ -135,6 +146,14 @@ class StubService(
          this.handlers.put(stubOperationKey, handler)
       }
 
+      return this
+   }
+
+   fun addResponseFlow(
+      stubOperationKey: String,
+      handler: StubResponseFlowProvider
+   ): StubService {
+      this.flowHandlers[stubOperationKey] = handler
       return this
    }
 
@@ -187,9 +206,10 @@ class StubService(
       // This was working by using annotations on the method to indicate that there was a stub response
       // Why do I care about that?  I could just use the method name as a default?!
       // I've changed this to look for a match with responses against the method name - revert if that turns out to be dumb.
-      return operation.metadata.any { it.name.name == "StubResponse" } || this.responses.containsKey(operation.name) || this.handlers.containsKey(
-         operation.name
-      )
+      return operation.metadata.any { it.name.name == "StubResponse" } ||
+         this.responses.containsKey(operation.name) ||
+         this.handlers.containsKey(operation.name) ||
+         this.flowHandlers.containsKey(operation.name)
    }
 
 
