@@ -22,7 +22,6 @@ import org.springframework.http.server.reactive.ServerHttpResponse
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 
 
 @FlowPreview
@@ -33,7 +32,6 @@ class QueryHistoryService(
    private val lineageRecordRepository: LineageRecordRepository,
    private val queryHistoryExporter: QueryHistoryExporter,
    private val objectMapper: ObjectMapper,
-   private val schemaProvider: SchemaSourceProvider,
    private val regressionPackProvider: RegressionPackProvider
 ) {
 
@@ -188,11 +186,12 @@ class QueryHistoryService(
 
    @PostMapping("/api/query/history/{id}/regressionPack")
    fun getRegressionPack( @PathVariable("id") queryId: String, @RequestBody request: RegressionPackRequest, response: ServerHttpResponse): Mono<Void> {
-      val querySummary = queryHistoryRecordRepository.findByQueryId(queryId).publishOn(Schedulers.boundedElastic()).block()
-      val results = queryResultRowRepository.findAllByQueryId(queryId).map { it.json }.collectList().publishOn(Schedulers.boundedElastic()).block()
 
-      return response.writeByteArrays( regressionPackProvider.createRegressionPack(results,querySummary,request).toByteArray()  )
+      val querySummary = queryHistoryRecordRepository.findByQueryId(queryId).toFuture()
+      val results = queryResultRowRepository.findAllByQueryId(queryId).map { it.asTypeNamedInstance() }.collectList().toFuture()
+      val lineageRecords = lineageRecordRepository.findAllByQueryId(queryId).collectList().toFuture()
 
+      return response.writeByteArrays( regressionPackProvider.createRegressionPack(results.get(),querySummary.get(),lineageRecords.get(), request).toByteArray()  )
    }
 
 }

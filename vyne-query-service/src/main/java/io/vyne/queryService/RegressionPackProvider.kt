@@ -2,7 +2,9 @@ package io.vyne.queryService
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.vyne.VersionedSource
+import io.vyne.models.TypeNamedInstance
 import io.vyne.query.QuerySpecTypeNode
+import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.history.RegressionPackRequest
 import io.vyne.schemaStore.SchemaSourceProvider
@@ -22,41 +24,21 @@ class RegressionPackProvider(
 ) {
    private val objectWriter = objectMapper.writerWithDefaultPrettyPrinter()
 
-   fun createRegressionPack(results: List<String>, querySummary: QuerySummary, request: RegressionPackRequest): ByteArrayOutputStream {
-
-         val response = mapOf(
-            "results" to results,
-            "unmatchedNodes" to emptyList<QuerySpecTypeNode>(),
-            "fullyResolved" to true,
-            "queryResponseId" to querySummary.queryId,
-            "responseStatus" to "COMPLETED",
-            //"remoteCalls" to [],
-            "timings" to mapOf(
-               "REMOTE_CALL" to 1044,
-               "ROOT" to 6515
-            ),
-            "error" to querySummary.errorMessage,
-            "resultSize" to querySummary.recordCount,
-            "durationMs" to querySummary.durationMs
-         )
-
-         val queryHistoryRecord = mapOf(
-            "className" to "",
-            "query" to querySummary.queryJson,
-            "response" to response,
-            "timstamp" to querySummary.startTime,
-            "id" to querySummary.queryId
-         )
+   fun createRegressionPack(results: List<TypeNamedInstance>, querySummary: QuerySummary, lineageRecords: List<LineageRecord>, request: RegressionPackRequest): ByteArrayOutputStream {
 
          val filenameSafeSpecName = request.regressionPackName.replace(" ", "-")
-         val historyRecordFileName = "history-record.json"
+         val resultsFilename = "query-results.json"
+         val querySummaryFileName = "query-summary.json"
+         val lineageRecordsFileName = "lineage-records.json"
          val schemaFileName = "schema.json"
-
          val directoryName = "$filenameSafeSpecName/"
 
          val contentPairs = listOf(
             null to ZipEntry(directoryName),
-            objectWriter.writeValueAsBytes(queryHistoryRecord) to ZipEntry(directoryName + historyRecordFileName),
+
+            objectWriter.writeValueAsBytes(results) to ZipEntry(directoryName + resultsFilename),
+            objectWriter.writeValueAsBytes(querySummary) to ZipEntry(directoryName + querySummaryFileName),
+            objectWriter.writeValueAsBytes(lineageRecords) to ZipEntry(directoryName + lineageRecordsFileName),
             objectWriter.writeValueAsBytes(getVersionedSchemas()) to ZipEntry(directoryName + schemaFileName)
          )
 
@@ -70,12 +52,9 @@ class RegressionPackProvider(
             zipStream.closeEntry()
          }
          zipStream.close()
-
          return outputStream
 
    }
-
-
 
    private fun getVersionedSchemas(): List<VersionedSource> {
       return if (schemaProvider is VersionedSourceProvider) {

@@ -46,4 +46,6 @@ interface QueryResultRowRepository : R2dbcRepository<QueryResultRow, Long> {
 interface LineageRecordRepository : R2dbcRepository<LineageRecord, String> {
 
    fun findAllByQueryIdAndDataSourceType(queryId: String, dataSourceType: String): Flux<LineageRecord>
+
+   fun findAllByQueryId(queryId: String): Flux<LineageRecord>
 }
