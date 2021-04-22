@@ -1,5 +1,6 @@
 package io.vyne.utils
 
+import com.google.common.base.Stopwatch
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Duration
@@ -7,6 +8,12 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 object StrategyPerformanceProfiler {
+   fun <T> profiled(key:String, operation: () -> T):T {
+      val sw = Stopwatch.createStarted()
+      val result = operation()
+      record(key,sw.elapsed())
+      return result
+   }
    data class AtomicSum(private val sum :AtomicLong = AtomicLong(0), private val count:AtomicInteger = AtomicInteger(0)) {
       fun incremet(value:Long) {
          sum.addAndGet(value)
@@ -22,7 +29,7 @@ object StrategyPerformanceProfiler {
    fun summarizeAndReset(): SearchStrategySummary {
       val withResultsSummary = generateSummary()
 //      val withoutResultsSummary = generateSummary(withoutResults)
-      val summary = SearchStrategySummary(withResultsSummary, emptyMap())
+      val summary = SearchStrategySummary(withResultsSummary)
       values.clear()
       return summary
    }
@@ -42,7 +49,11 @@ object StrategyPerformanceProfiler {
    )
 
    data class SearchStrategySummary(
-      val withResults: Map<String, StatisiticsSummary>,
-      val withoutResults: Map<String, StatisiticsSummary>
-   )
+      val results: Map<String, StatisiticsSummary>
+   ) {
+      override fun toString(): String {
+         return results.map { (k,v) -> "$k : $v" }
+            .joinToString("\n")
+      }
+   }
 }

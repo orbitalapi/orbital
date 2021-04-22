@@ -3,6 +3,7 @@ package io.vyne.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
+import com.google.common.cache.CacheBuilder
 import io.vyne.VersionedSource
 import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
@@ -364,7 +365,26 @@ data class Type(
       return isAssignableTo(this.typeCache.type(other), considerTypeParameters)
    }
 
+   private val assignableCacheConsideringTypeParams = CacheBuilder
+      .newBuilder()
+      .build<Type, Boolean>()
+   private val assignableCacheNotConsideringTypeParams = CacheBuilder
+      .newBuilder()
+      .build<Type, Boolean>()
+
    fun isAssignableTo(other: Type, considerTypeParameters: Boolean = true): Boolean {
+      return if (considerTypeParameters) {
+         assignableCacheConsideringTypeParams.get(other) {
+            calculateIsAssignableTo(other, considerTypeParameters)
+         }
+      } else {
+         assignableCacheNotConsideringTypeParams.get(other) {
+            calculateIsAssignableTo(other, considerTypeParameters)
+         }
+      }
+   }
+
+   private fun calculateIsAssignableTo(other: Type, considerTypeParameters: Boolean): Boolean {
       val thisWithoutAliases = this.resolveAliases()
       val otherWithoutAliases = other.resolveAliases()
 
