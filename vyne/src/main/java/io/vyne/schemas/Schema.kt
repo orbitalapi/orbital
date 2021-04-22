@@ -4,7 +4,9 @@ import io.vyne.VersionedSource
 import lang.taxi.TaxiDocument
 
 class SimpleSchema(override val types: Set<Type>, override val services: Set<Service>) : Schema {
-
+   companion object {
+      val EMPTY = SimpleSchema(emptySet(), emptySet())
+   }
    override val taxi: TaxiDocument
       get() = TODO("Not yet implemented")
    override val sources: List<VersionedSource> = emptyList()

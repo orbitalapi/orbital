@@ -181,8 +181,10 @@ class PersistingQueryEventConsumer(
                objectMapper.writeValueAsString(dataSource)
             )
          }
-      lineageRecordRepository.saveAll(lineageRecords)
-         .collectList().block()
+      // Need to rewrite this so we write lineage to a temporary table, and
+      // then migrate distinct values across
+//      lineageRecordRepository.saveAll(lineageRecords)
+//         .collectList().block()
    }
 
    private fun trimResponseBodyWhenExceedsConfiguredMax(dataSource: OperationResult): OperationResult {

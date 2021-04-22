@@ -17,7 +17,7 @@ import java.time.Instant
  * Takes a queries results, metadata, etc, and streams the out to a QueryHistory provider
  * to be captured.
  */
-class QueryEventObserver(private val consumer: QueryEventConsumer, private val activeQueryMonitor:ActiveQueryMonitor) {
+class QueryEventObserver(private val consumer: QueryEventConsumer, private val activeQueryMonitor: ActiveQueryMonitor) {
    /**
     * Attaches an observer to the result flow of the QueryResponse, returning
     * an updated QueryResponse with it's internal flow updated.
@@ -165,7 +165,7 @@ data class RestfulQueryResultEvent(
    override val clientQueryId: String?,
    override val typedInstance: TypedInstance,
    override val queryStartTime: Instant
-) :  QueryResultEvent, QueryEvent() {
+) : QueryResultEvent, QueryEvent() {
    override val anonymousTypes: Set<Type> = emptySet()
 }
 
@@ -189,6 +189,7 @@ interface QueryResultEvent {
    val clientQueryId: String?
    val typedInstance: TypedInstance
    val anonymousTypes: Set<Type>
+
    // We need the queryStartTime as we create the query record on the first emitted
    // result.
    val queryStartTime: Instant

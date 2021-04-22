@@ -62,9 +62,9 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
       cache[type.name] = withReference
       shortNames.compute(type.name.name) { _, existingList ->
          if (existingList == null) {
-            mutableListOf(type)
+            mutableListOf(withReference)
          } else {
-            existingList.add(type)
+            existingList.add(withReference)
             existingList
          }
       }
@@ -97,7 +97,8 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
          // but not Array<Foo> directly.
          // It's still valid, so we'll construct the type
          val baseType = type(name.fullyQualifiedName)
-         baseType.copy(name = name, typeParametersTypeNames = name.parameters)
+         val parameterisedType = baseType.copy(name = name, typeParametersTypeNames = name.parameters)
+         add(parameterisedType)
       } else {
          null
       }
@@ -154,6 +155,17 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
 
    override fun enumSynonyms(typedEnumValue: TypedEnumValue): List<TypedEnumValue> {
       return getEnumSynonyms(typedEnumValue).synonyms
+   }
+
+   private val isAssignableWithTypeParameters = mutableMapOf<String,Boolean>()
+   private val isAssignableWithoutTypeParameters = mutableMapOf<String,Boolean>()
+   override fun isAssignable(typeA: Type, typeB: Type, considerTypeParameters: Boolean, func:(Type,Type,Boolean) -> Boolean): Boolean {
+      val key = typeA.fullyQualifiedName + "-[isAssignableTo]->" + typeB.fullyQualifiedName
+      return if (considerTypeParameters) {
+         isAssignableWithTypeParameters.getOrPut(key) { func(typeA,typeB,considerTypeParameters) }
+      } else {
+         isAssignableWithoutTypeParameters.getOrPut(key) { func(typeA,typeB,considerTypeParameters) }
+      }
    }
 
    override fun hasType(name: String): Boolean {

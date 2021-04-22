@@ -102,6 +102,13 @@ data class Type(
       Type::name
    )
 
+   init {
+      if (name.namespace != "lang.taxi") {
+         log().info("Type ${name.parameterizedName} created")
+      }
+
+   }
+
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()
 
@@ -135,37 +142,31 @@ data class Type(
    }
 
    @get:JsonIgnore
-   val inherits: List<Type> by lazy {
+   val inherits: List<Type> =
       this.inheritsFromTypeNames.map { aliasName -> typeCache.type(aliasName) }
-   }
 
    @get:JsonIgnore
-   val aliasForType: Type? by lazy {
+   val aliasForType: Type? =
       this.aliasForTypeName?.let { typeCache.type(it) }
-   }
 
    @get:JsonIgnore
-   val typeParameters: List<Type> by lazy {
+   val typeParameters: List<Type> =
       this.typeParametersTypeNames.map { typeCache.type(it) }
-   }
 
    // TODO : This name sucks.  Need a consistent term for "the real thing, unwrapping the aliases if they exist"
    @get:JsonIgnore
-   val underlyingTypeParameters: List<Type> by lazy {
+   val underlyingTypeParameters: List<Type> =
       this.resolveAliases().typeParameters
-   }
 
    @get:JsonProperty("underlyingTypeParameters")
-   val underlyingTypeParameterNames: List<QualifiedName> by lazy {
+   val underlyingTypeParameterNames: List<QualifiedName> =
       this.underlyingTypeParameters.map { it.name }
-   }
 
    @get:JsonIgnore
-   val enumTypedInstances: List<TypedEnumValue> by lazy {
+   val enumTypedInstances: List<TypedEnumValue> =
       this.enumValues.map { enumValue ->
          TypedEnumValue(this, enumValue, this.typeCache, UndefinedSource)
       }
-   }
 
    fun enumTypedInstance(value: Any): TypedEnumValue {
       return this.enumTypedInstances.firstOrNull { it.value == value || it.name == value }
@@ -237,23 +238,20 @@ data class Type(
    // If changing, make sure tests pass.
    @get:JsonIgnore // Double check that we really need this on the client.  Also, favour sending QualifiedName rather than full type
 //   @get:JsonView(TypeFullView::class)
-   val inheritanceGraph by lazy {
-      calculateInheritanceGraph()
-   }
+   val inheritanceGraph = calculateInheritanceGraph()
 
    // Note : Lazy evaluation to work around that aliases are partiall populated during
    // construction.
    // If changing, make sure tests pass.
    @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isCollection")
-   val isCollection: Boolean by lazy {
+   val isCollection: Boolean =
       (listOfNotNull(this.name, this.aliasForTypeName) + this.inheritanceGraph.flatMap {
          listOfNotNull(it.name, it.aliasForTypeName)
       }).any { it.parameterizedName.startsWith(ArrayType.NAME) }
-   }
 
    @get:JsonIgnore
-   val collectionType: Type? by lazy {
+   val collectionType: Type? =
       if (isCollection) {
          underlyingTypeParameters.firstOrNull().let { collectionTypeParam ->
             if (collectionTypeParam == null) {
@@ -266,18 +264,13 @@ data class Type(
       } else {
          null
       }
-   }
 
    @get:JsonProperty("collectionType")
-   val collectionTypeName: QualifiedName? by lazy {
-      collectionType?.name
-   }
+   val collectionTypeName: QualifiedName? = collectionType?.name
 
    @get:JsonIgnore
-   val isEnum: Boolean by lazy {
-      resolveAliases().let { underlyingType ->
-         underlyingType.taxiType is EnumType
-      }
+   val isEnum: Boolean = resolveAliases().let { underlyingType ->
+      underlyingType.taxiType is EnumType
    }
 
    // Note : Lazy evaluation to work around that aliases are partiall populated during
@@ -285,17 +278,13 @@ data class Type(
    // If changing, make sure tests pass.
    @get:JsonView(TypeFullView::class)
    @get:JsonProperty("isScalar")
-   val isScalar: Boolean by lazy {
+   val isScalar: Boolean =
       resolveAliases().let { underlyingType ->
          underlyingType.attributes.isEmpty() && !underlyingType.isCollection
       }
 
-   }
-
    @get:JsonIgnore
-   val defaultValues: Map<AttributeName, TypedInstance>? by lazy {
-      this.typeCache.defaultValues(this.name)
-   }
+   val defaultValues: Map<AttributeName, TypedInstance>? = this.typeCache.defaultValues(this.name)
 
    fun matches(other: Type, strategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES): Boolean {
       return strategy.matches(this, other)
@@ -401,12 +390,12 @@ data class Type(
       }
    }
 
-   /**
-    * Walks down the entire chain of aliases until it hits the underlying non-aliased
-    * type
-    */
-   fun resolveAliases(): Type {
+   fun calculateResolvedAliases():Type {
       val resolvedFormattedType = resolveUnderlyingFormattedType()
+      if (this.name.parameterizedName == "lang.taxi.Array<lang.taxi.Any>") {
+         log().info("??")
+      }
+      log().info("resolvedAlias for ${this.name.parameterizedName} called")
       return if (!resolvedFormattedType.isTypeAlias) {
          resolvedFormattedType
       } else {
@@ -424,6 +413,15 @@ data class Type(
             else -> resolvedFormattedType.aliasForType!!.resolveAliases()
          }
       }
+   }
+   private val resolvedAlias: Type = calculateResolvedAliases()
+
+   /**
+    * Walks down the entire chain of aliases until it hits the underlying non-aliased
+    * type
+    */
+   fun resolveAliases(): Type {
+      return resolvedAlias
    }
 
    // Don't call this directly, use resolveAliases()

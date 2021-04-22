@@ -35,12 +35,18 @@ interface ModelContainer : SchemaContainer {
 }
 
 class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFactory, private val compositeSchemaBuilder: CompositeSchemaBuilder = CompositeSchemaBuilder()) : ModelContainer {
-   private val schemas = mutableListOf<Schema>()
 
+   init {
+       if (schemas.size > 1) {
+          error("Passing multiple schemas into Vyne is not supported anymore.  Pass a single composite schema")
+       }
+   }
    private val factSets: FactSetMap = FactSetMap.create()
 
-   override var schema: Schema = compositeSchemaBuilder.aggregate(schemas)
-      private set
+   override var schema: Schema = schemas.firstOrNull() ?: SimpleSchema.EMPTY
+      // Setter only for legacy purposes, used in tests we need to migrate.
+      // schema is immuable now.
+      private set;
 
    fun queryEngine(
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
@@ -127,21 +133,14 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return this
    }
 
+   @Deprecated("Schemas should not be mutable.  This only remains for tests")
    fun addSchema(schema: Schema): Vyne {
-      schemas.add(schema)
-      this.schema = CompositeSchema(schemas)
-//      invalidateGraph()
+      if (this.schema != SimpleSchema.EMPTY) {
+         error("Cannot change the schema after it's set, even in tests.  Rewrite your test.")
+      }
+      this.schema = schema
       return this
    }
-
-//   private fun invalidateGraph() {
-//      this._graph = null
-//   }
-
-//   private fun rebuildGraph(): HipsterDirectedGraph<Element, Relationship> {
-//      return VyneGraphBuilder(schema).build(models)
-//   }
-
 
    fun from(fact: TypedInstance): QueryContext {
       return query(additionalFacts = setOf(fact), queryId = UUID.randomUUID().toString())

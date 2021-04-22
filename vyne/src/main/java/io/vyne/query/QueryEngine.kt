@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import com.google.common.base.Stopwatch
 import io.vyne.*
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
@@ -11,6 +12,7 @@ import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.schemas.Operation
 import io.vyne.schemas.Schema
 import io.vyne.schemas.Type
+import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -433,12 +435,16 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             if (resultsReceivedFromStrategy) {
                break
             }
-
+            val stopwatch = Stopwatch.createStarted()
             val strategyResult =
                invokeStrategy(context, queryStrategy, target, InvocationConstraints(spec, excludedOperations))
 
             if (strategyResult.hasMatchesNodes()) {
-               strategyResult.matchedNodes.collectIndexed { index, value ->
+               strategyResult.matchedNodes
+                  .onCompletion {
+                     StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!,stopwatch.elapsed())
+                  }
+                  .collectIndexed { index, value ->
                   resultsReceivedFromStrategy = true
                   emit(value)
 
@@ -448,14 +454,15 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                   // We need to hold running queries in the query-server,
                   // and send a cancellation flag / signal down through
                   // the queryContext.
-                  if (index % 25 == 0 && isQueryCancelled(context.queryId)) {
+                  if (index % 5 == 0 && isQueryCancelled(context.queryId)) {
                      log().warn("Query ${context.queryId} cancelled - cancelling collection and publication of results")
                      currentCoroutineContext().cancel()
                   }
-
                }
+
             } else {
                log().debug("Strategy ${queryStrategy::class.simpleName} failed to resolve ${target.description}")
+               StrategyPerformanceProfiler.record(queryStrategy::class.simpleName!!,stopwatch.elapsed())
             }
          }
          if (!resultsReceivedFromStrategy) {
