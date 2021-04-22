@@ -10,10 +10,8 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
 import io.vyne.schemas.*
 import io.vyne.utils.log
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.*
 import lang.taxi.Equality
-import java.util.concurrent.Executors
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
@@ -65,24 +63,12 @@ class HipsterDiscoverGraphQueryStrategy(
       override fun hashCode(): Int = hash
    }
 
-
-
    override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
-
-      val dispatcher = Executors.newFixedThreadPool(64).asCoroutineDispatcher()
-      return dispatcher.run { find(target, context, invocationConstraints) }
-
-   }
-
-
-   suspend fun find(targets: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult  {
-      // Note : There is an existing, working impl. of this in QueryEngine (the OrientDB approach),
-      // but I haven't gotten around to copying it yet.
-      if (targets.size != 1) TODO("Support for target sets not yet built")
-      val target = targets.first()
+      if (target.size != 1) TODO("Support for target sets not yet built")
+      val firstTarget = target.first()
 
       // We only support DISCOVER_ONE mode here.
-      if (target.mode != QueryMode.DISCOVER) {
+      if (firstTarget.mode != QueryMode.DISCOVER) {
          return QueryStrategyResult.searchFailed()
       }
 
@@ -91,14 +77,14 @@ class HipsterDiscoverGraphQueryStrategy(
          return QueryStrategyResult.searchFailed()
       }
 
-      val targetElement = type(target.type)
+      val targetElement = type(firstTarget.type)
 
       // search from every fact in the context
       val lastResult: TypedInstance? = find(targetElement, context, invocationConstraints)
-      if (lastResult != null) {
-         return QueryStrategyResult( mapOf(target to lastResult).map { it.value }.asFlow() )
+      return if (lastResult != null) {
+         QueryStrategyResult( mapOf(firstTarget to lastResult).map { it.value }.asFlow() )
       } else {
-         return QueryStrategyResult.searchFailed()
+         QueryStrategyResult.searchFailed()
       }
    }
 

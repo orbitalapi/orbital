@@ -14,6 +14,7 @@ import io.vyne.models.TypedValue
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.excludedValues
 import io.vyne.schemas.*
+import io.vyne.utils.StrategyPerformanceProfiler
 
 enum class ElementType {
    TYPE,
@@ -160,9 +161,11 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       excludedServices: Set<QualifiedName>
    ): List<GraphConnection> {
       return baseSchemaConnectionsCache.get(excludedOperations.hashCode()) {
-         val typeConnections = buildTypeConnections(schema)
-         val serviceConnections = buildServiceConnections(schema, excludedOperations, excludedServices)
-         typeConnections + serviceConnections
+         StrategyPerformanceProfiler.profiled("getBaseSchemaConnections") {
+            val typeConnections = buildTypeConnections(schema)
+            val serviceConnections = buildServiceConnections(schema, excludedOperations, excludedServices)
+            typeConnections + serviceConnections
+         }
       }
    }
 
@@ -170,59 +173,34 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       connections: List<GraphConnection>,
       excludedEdges: List<EvaluatableEdge> = emptyList()
    ): GraphBuildResult {
-      val excludedConnections = excludedEdges.map { GraphConnection(it.vertex1, it.vertex2, it.relationship) }.toSet()
-      val filteredFacts = connections.filter { !excludedConnections.contains(it) }
-
-      return graphCache.get(filteredFacts) {
-         val graph = HipsterGraphBuilder.create<Element, Relationship>()
-            .createDirectedGraph(filteredFacts)
-         // TODO : Waiting to see if we actually use GraphBuildResult anymore, if not, just reutnr the graph here.
-         GraphBuildResult(graph, emptyList(), emptyList())
+      val filteredFacts = StrategyPerformanceProfiler.profiled("pre-buildGraph") {
+         val excludedConnections =
+            excludedEdges.map { GraphConnection(it.vertex1, it.vertex2, it.relationship) }.toSet()
+         connections.filter { !excludedConnections.contains(it) }
       }
 
-
-
+      return graphCache.get(filteredFacts) {
+         StrategyPerformanceProfiler.profiled("buildGraph") {
+            val graph = HipsterGraphBuilder.create<Element, Relationship>()
+               .createDirectedGraph(filteredFacts)
+            // TODO : Waiting to see if we actually use GraphBuildResult anymore, if not, just reutnr the graph here.
+            GraphBuildResult(graph, emptyList(), emptyList())
+         }
+      }
    }
 
-
-//   private fun appendInstanceBasedElementsIntoBaseGraph(
-//      facts: Collection<TypedInstance>,
-//      excludedEdges: List<EvaluatableEdge>
-//   ): GraphBuildResult {
-//      val instanceBasedConnections = createdInstances(facts, schema)
-//      val addedVertices = mutableListOf<Element>()
-//      val removedEdges = mutableListOf<GraphEdge<Element, Relationship>>()
-//      val edgesByFirstVertex = excludedEdges.groupBy { it.vertex1 }
-//      instanceBasedConnections.forEach { connection ->
-//         addedVertices.addAll(baseGraph.add(connection.vertex1, connection.vertex2))
-//         baseGraph.connect(connection.vertex1, connection.vertex2, connection.edge)
-//         if (excludedEdges.isNotEmpty()) {
-//            edgesByFirstVertex.keys.forEach { vertex ->
-//               val edges = baseGraph.edgesOf(vertex)
-//               val vertex2ToEdges = edgesByFirstVertex[vertex]?.map { edge -> Pair(edge.vertex2, edge.relationship) }
-//               if (vertex2ToEdges != null) {
-//                  edges.removeAll { edge ->
-//                     val shouldRemove = vertex2ToEdges.any { edge.vertex2 == it.first && edge.edgeValue == it.second }
-//                     if (shouldRemove) {
-//                        removedEdges.add(edge)
-//                     }
-//                     shouldRemove
-//                  }
-//               }
-//            }
-//         }
-//      }
-//      return GraphBuildResult(baseGraph, addedVertices, removedEdges)
-//   }
 
    fun build(
       types: Set<Type> = emptySet(),
       excludedOperations: Set<SearchGraphExclusion<QualifiedName>> = emptySet(),
       excludedServices: Set<SearchGraphExclusion<QualifiedName>> = emptySet()
    ): HipsterDirectedGraph<Element, Relationship> {
-      val baseConnections = getBaseSchemaConnections(excludedOperations.excludedValues(), excludedServices.excludedValues())
-      val connections = baseConnections + appendInstanceTypes(types, schema)
-      return buildGraph(connections).graph
+      return StrategyPerformanceProfiler.profiled("graphBuilder.build") {
+         val baseConnections =
+            getBaseSchemaConnections(excludedOperations.excludedValues(), excludedServices.excludedValues())
+         val connections = baseConnections + appendInstanceTypes(types, schema)
+         buildGraph(connections).graph
+      }
    }
 
    fun buildDisplayGraph(): HipsterDirectedGraph<Element, Relationship> {
@@ -560,11 +538,13 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
             // stack overflow, pointing back to this synonym.
             // SO, just carefully add the links we care about.
             val synonymInstance = providedInstance(synonym)
-            createdConnections.add(GraphConnection(
-               providedInstance,
-               synonymInstance,
-               Relationship.IS_SYNONYM_OF
-            ))
+            createdConnections.add(
+               GraphConnection(
+                  providedInstance,
+                  synonymInstance,
+                  Relationship.IS_SYNONYM_OF
+               )
+            )
             createdConnections.add(
                HipsterGraphBuilder.Connection(
                   synonymInstance,

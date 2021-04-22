@@ -14,6 +14,7 @@ import io.vyne.schemas.Operation
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
+import io.vyne.utils.StrategyPerformanceProfiler
 import io.vyne.utils.log
 import java.util.concurrent.TimeUnit
 
@@ -225,18 +226,12 @@ class GraphSearcher(
       excludedServices: Set<QualifiedName>,
       previouslyEvaluatedPaths: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
-      // logTimeTo eats up significant time, so commented out.
-      //val graph = logTimeTo(graphBuilderTimes) {
-      //
-      //   graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
-      // }
-//      val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
+      return StrategyPerformanceProfiler.profiled("findPath") {
+         val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
+         val result = findPath(graphBuildResult.graph, previouslyEvaluatedPaths)
+         result
+      }
 
-      val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
-      val result = findPath(graphBuildResult.graph, previouslyEvaluatedPaths)
-      graphBuilder.prune(graphBuildResult)
-
-      return result
    }
 
    private fun findPath(

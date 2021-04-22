@@ -10,6 +10,8 @@ import io.vyne.models.json.parseJsonCollection
 import io.vyne.models.json.parseJsonModel
 import io.vyne.models.json.parseKeyValuePair
 import io.vyne.schemas.taxi.TaxiSchema
+import io.vyne.utils.Benchmark
+import io.vyne.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
@@ -2224,7 +2226,7 @@ service Broker1Service {
       stub.addResponseFlow("findActor") { remoteOperation, params ->
          val actorId = params[0].second.value as String
          flow {
-            kotlinx.coroutines.delay(500)
+//            kotlinx.coroutines.delay(500)
             emit(vyne.parseJsonModel("Actor", """{ "actorId" : ${actorId.quoted()} , "name" : "Tom Cruise's Clone #$actorId" } """))
          }
       }
@@ -2238,10 +2240,17 @@ service Broker1Service {
       }
 
       val start = Stopwatch.createStarted()
-      val result = vyne.query("findAll { Movie[] } as OutputModel[]")
-         .results.toList()
-      result.should.have.size(movieCount)
-      val duration = start.elapsed(TimeUnit.MILLISECONDS)
-      log().info("Test completed $movieCount iterations in $duration ms")
+      var summary : StrategyPerformanceProfiler.SearchStrategySummary? = null
+      val f = Benchmark.benchmark("run concurrency test with $movieCount", warmup = 5, iterations = 5) {
+         runBlocking {
+            val result = vyne.query("findAll { Movie[] } as OutputModel[]")
+               .results.toList()
+            result.should.have.size(movieCount)
+            val duration = start.elapsed(TimeUnit.MILLISECONDS)
+            summary =  StrategyPerformanceProfiler.summarizeAndReset()
+         }
+      }
+      log().info("Test completed: $summary!!")
+
    }
 }
