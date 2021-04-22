@@ -12,7 +12,7 @@ import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.cask.config.schema
-import io.vyne.cask.ddl.views.SchemaBasedViewGenerator
+import io.vyne.cask.ddl.views.taxiViews.SchemaBasedViewGenerator
 import io.vyne.cask.query.generators.FindAllGenerator
 import io.vyne.cask.query.generators.FindBetweenInsertedAtOperationGenerator
 import io.vyne.cask.query.generators.FindByFieldIdOperationGenerator
@@ -407,7 +407,7 @@ namespace vyne.casks {
 
          view SimpleView with query {
             find { Simple[] } as {
-               id: Simple.Id
+               id: Simple::Id
             }
          }
       """.trimIndent()
