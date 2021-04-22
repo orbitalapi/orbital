@@ -34,15 +34,21 @@ class VyneQlQueryService(private val jdbcStreamTemplate: JdbcStreamingTemplate,
     *    Produces: application/json
     * </p>
     *
+    * Please not that we're returning Mono<Stream<..>> rather than Mono<List<....>>
+    * the reason for that is Jackson Stream Serializer which serializes the response eventually
+    * invokes 'close' method on the stream which fires the 'onClose' event handler attached to the
+    * Stream in JdbcStreamingTemplate. The Handler in JdbcStreamingTemplate closes the underlying database connection.
+    * Without this mechanism we block all DB connections in the pool after several queries.
     * @param query vyneQL submitted as post body
-    * @return List of results
+    * @return Stream of results
     */
    @PostMapping(value = [REST_ENDPOINT], produces = [MediaType.APPLICATION_JSON_VALUE])
-   suspend fun submitVyneQlQuery(@RequestBody query: TaxiQLQueryString): ResponseEntity<Mono<List<Map<String, Any>>>> {
+   suspend fun submitVyneQlQuery(@RequestBody query: TaxiQLQueryString): ResponseEntity<Mono<Stream<Map<String, Any>>>> {
       log().info("Received VyneQl query: $query")
 
       val resultsDeferred = resultStreamAsync(query)
-      val results = resultsDeferred.await().toList()
+      val results = resultsDeferred.await()
+
 
       return ResponseEntity
          .ok()

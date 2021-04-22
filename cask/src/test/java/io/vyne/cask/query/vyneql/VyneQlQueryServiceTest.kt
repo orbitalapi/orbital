@@ -1,13 +1,19 @@
 package io.vyne.cask.query.vyneql
 
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
 import io.vyne.cask.query.BaseCaskIntegrationTest
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.runBlocking
+import lang.taxi.types.TaxiQLQueryString
 import org.junit.Before
 import org.junit.Test
 import reactor.test.StepVerifier
+import java.util.stream.Collectors
+import kotlin.streams.toList
 
 class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    val schema = """
@@ -23,6 +29,8 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
    """
 
    lateinit var service: VyneQlQueryService
+   private val mapper = jacksonObjectMapper().registerModule(Jdk8Module())
+   private val typeRef: TypeReference<List<Map<String, Any>>> = object : TypeReference<List<Map<String, Any>>>() {}
 
    @Before
    override fun setup() {
@@ -45,84 +53,116 @@ class VyneQlQueryServiceTest : BaseCaskIntegrationTest() {
 
    @Test
    fun findMatchingNoCriteriaReturnsEmptyList() {
-      val response = runBlocking { service.submitVyneQlQuery("""findAll { Person[]( FirstName = "Nobody" ) }""").body.block() }
+      val stream = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( FirstName = "Nobody" ) }""").body }.block()
+      // Jackson stream serialiser invokes 'close' on the stream which in turn inkoves the close handler attached in JdbcStreamingTemplate!
+      val jsonString = mapper.writeValueAsString(stream)
+      val response = mapper.readValue(jsonString, typeRef)
       response.should.be.empty
+      connectionCountingDataSource.connectionList.all { it.isClosed }.should.be.`true`
    }
-
 
    @Test
    fun canExecuteFindAll() {
-      val response = runBlocking { service.submitVyneQlQuery("""findAll { Person[] }""").body.block() }
-
+       val stream = runBlocking {service.submitVyneQlQuery("""findAll { Person[] }""").body }.block()
+      // Jackson stream serialiser invokes 'close' on the stream which in turn inkoves the close handler attached in JdbcStreamingTemplate!
+      val jsonString = mapper.writeValueAsString(stream)
+      val response = mapper.readValue(jsonString, typeRef)
       response.should.have.size(3)
       response.map { it["firstName"]}.should.have.elements("Jimmy","Jack","John")
+      connectionCountingDataSource.connectionList.all { it.isClosed }.should.be.`true`
    }
    @Test
    fun `can find with greater than number`() {
-      val response = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( Age > 33 ) }""").body.block() }
-
+      val stream = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( Age > 33 ) }""").body }.block()
+      // Jackson stream serialiser invokes 'close' on the stream which in turn inkoves the close handler attached in JdbcStreamingTemplate!
+      val jsonString = mapper.writeValueAsString(stream)
+      val response = mapper.readValue(jsonString, typeRef)
       response.should.have.size(2)
       response.map { it["firstName"]}.should.have.elements("Jimmy","John")
+      connectionCountingDataSource.connectionList.all { it.isClosed }.should.be.`true`
    }
    @Test
    fun `can find with greater then or equal number`() {
-      val response = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( Age >= 35 ) }""").body.block() }
-
+      val stream = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( Age >= 35 ) }""").body }.block()
+      // Jackson stream serialiser invokes 'close' on the stream which in turn inkoves the close handler attached in JdbcStreamingTemplate!
+      val jsonString = mapper.writeValueAsString(stream)
+      val response = mapper.readValue(jsonString, typeRef)
       response.should.have.size(2)
       response.map { it["firstName"]}.should.have.elements("Jimmy", "John")
+      connectionCountingDataSource.connectionList.all { it.isClosed }.should.be.`true`
    }
    @Test
    fun `can find with less than number`() {
-      val response = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( Age < 33 ) }""").body.block() }
-
+      val stream = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( Age < 33 ) }""").body }.block()
+      // Jackson stream serialiser invokes 'close' on the stream which in turn inkoves the close handler attached in JdbcStreamingTemplate!
+      val jsonString = mapper.writeValueAsString(stream)
+      val response = mapper.readValue(jsonString, typeRef)
       response.should.have.size(1)
       response.map { it["firstName"]}.should.have.elements("Jack")
+      connectionCountingDataSource.connectionList.all { it.isClosed }.should.be.`true`
    }
    @Test
    fun `can find with less or equal than number`() {
-      val response = runBlocking { service.submitVyneQlQuery("""findAll { Person[]( Age <= 35 ) }""").body.block() }
-
+      val stream = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( Age <= 35 ) }""").body }.block()
+      // Jackson stream serialiser invokes 'close' on the stream which in turn inkoves the close handler attached in JdbcStreamingTemplate!
+      val jsonString = mapper.writeValueAsString(stream)
+      val response = mapper.readValue(jsonString, typeRef)
       response.should.have.size(2)
       response.map { it["firstName"]}.should.have.elements("Jack", "Jimmy")
+      connectionCountingDataSource.connectionList.all { it.isClosed }.should.be.`true`
    }
 
    @Test
    fun `can find with date after`() {
-      val response = runBlocking { service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > '2020-11-01T00:00:00Z' ) }""").body.block() }
-
+      val stream = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > '2020-11-01T00:00:00Z' ) }""").body }.block()
+      // Jackson stream serialiser invokes 'close' on the stream which in turn inkoves the close handler attached in JdbcStreamingTemplate!
+      val jsonString = mapper.writeValueAsString(stream)
+      val response = mapper.readValue(jsonString, typeRef)
       response.should.have.size(2)
       response.map { it["firstName"]}.should.have.elements("Jack","Jimmy")
+      connectionCountingDataSource.connectionList.all { it.isClosed }.should.be.`true`
    }
    @Test
    fun `can find with date between`() {
-      val response = runBlocking { service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body.block() }
-
+      val stream = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body }.block()
+      // Jackson stream serialiser invokes 'close' on the stream which in turn inkoves the close handler attached in JdbcStreamingTemplate!
+      val jsonString = mapper.writeValueAsString(stream)
+      val response = mapper.readValue(jsonString, typeRef)
       response.should.have.size(1)
       response.map { it["firstName"]}.should.have.elements("Jack")
+      connectionCountingDataSource.connectionList.all { it.isClosed }.should.be.`true`
    }
    @Test
    fun `can query with an abstract property type`() {
-      val response = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( LoginTime > "2020-11-15T00:00:00", LoginTime <= "2020-11-15T23:59:59" ) }""").body.block() }
-
+       val stream = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( LoginTime > "2020-11-15T00:00:00", LoginTime <= "2020-11-15T23:59:59" ) }""").body }.block()
+      // Jackson stream serialiser invokes 'close' on the stream which in turn inkoves the close handler attached in JdbcStreamingTemplate!
+      val jsonString = mapper.writeValueAsString(stream)
+      val response = mapper.readValue(jsonString, typeRef)
       response.should.have.size(1)
       response.map { it["firstName"]}.should.have.elements("Jack")
+      connectionCountingDataSource.connectionList.all { it.isClosed }.should.be.`true`
    }
 
    @Test
    fun `can query date without timezone information provided`() {
-      val response = runBlocking { service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00", LastLoggedIn <= "2020-11-15T23:59:59" ) }""").body.block() }
-
+      val stream = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00", LastLoggedIn <= "2020-11-15T23:59:59" ) }""").body }.block()
+      // Jackson stream serialiser invokes 'close' on the stream which in turn inkoves the close handler attached in JdbcStreamingTemplate!
+      val jsonString = mapper.writeValueAsString(stream)
+      val response = mapper.readValue(jsonString, typeRef)
       response.should.have.size(1)
       response.map { it["firstName"]}.should.have.elements("Jack")
+      connectionCountingDataSource.connectionList.all { it.isClosed }.should.be.`true`
    }
 
    @Test
    fun `can query date with zulu timezone information provided`() {
-      val response = runBlocking { service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body.block() }
-
+       val stream = runBlocking {service.submitVyneQlQuery("""findAll { Person[]( LastLoggedIn > "2020-11-15T00:00:00Z", LastLoggedIn <= "2020-11-15T23:59:59Z" ) }""").body }.block()
+      // Jackson stream serialiser invokes 'close' on the stream which in turn inkoves the close handler attached in JdbcStreamingTemplate!
+      val jsonString = mapper.writeValueAsString(stream)
+      val response = mapper.readValue(jsonString, typeRef)
       response.should.have.size(1)
       response.map { it["firstName"]}.should.have.elements("Jack")
+      connectionCountingDataSource.connectionList.all { it.isClosed }.should.be.`true`
    }
-
 
 }
