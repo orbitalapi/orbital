@@ -9,7 +9,7 @@ import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
 import io.vyne.models.UndefinedSource
 import io.vyne.utils.log
-import lang.taxi.Equality
+import lang.taxi.ImmutableEquality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
@@ -109,7 +109,7 @@ data class Type(
    // Intentionally excluded from equality:
    // taxiType - the antlr classes make equailty hard, and not meaningful in this context
    // typeCache - screws with equality, and not meaningful
-   private val equality = Equality(
+   private val equality = ImmutableEquality(
       this,
       Type::name
    )

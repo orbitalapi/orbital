@@ -2204,6 +2204,8 @@ service Broker1Service {
    @Test
    fun concurrency_test():Unit = runBlocking {
       val (vyne,stub) = testVyne("""
+         type DirectorName inherits String
+         type ReleaseYear inherits Int
          model Actor {
             @Id actorId : ActorId inherits String
             name : ActorName inherits String
@@ -2217,6 +2219,8 @@ service Broker1Service {
             @Id movieId : MovieId inherits String
             title : MovieTitle inherits String
             starring : ActorName
+            director : DirectorName
+            releaseYear : ReleaseYear
          }
          service Services {
             operation findAllMovies():Movie[]

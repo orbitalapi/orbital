@@ -27,6 +27,7 @@ import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.stream.Stream
 import kotlin.streams.toList
 
@@ -94,6 +95,7 @@ data class QueryResult(
 
    // for UI
    val searchedTypeName: QualifiedName = querySpec.type.qualifiedName
+
    /**
     * Returns the result stream with all type information removed.
     */
@@ -199,7 +201,7 @@ object TypedInstanceTree {
 // Revisit if the above becomes less true.
 data class QueryContext(
    val schema: Schema,
-   val facts: MutableSet<TypedInstance>,
+   val facts: CopyOnWriteArrayList<TypedInstance>,
    val queryEngine: QueryEngine,
    val profiler: QueryProfiler,
    val debugProfiling: Boolean = false,
@@ -269,7 +271,7 @@ data class QueryContext(
       ): QueryContext {
          return QueryContext(
             schema,
-            facts.toMutableSet(),
+            CopyOnWriteArrayList(facts),
             queryEngine,
             profiler,
             clientQueryId = clientQueryId,
@@ -325,8 +327,7 @@ data class QueryContext(
     */
    fun only(fact: TypedInstance): QueryContext {
 
-      val mutableFacts = mutableSetOf<TypedInstance>()
-      mutableFacts.add(fact)
+      val mutableFacts = CopyOnWriteArrayList(listOf(fact))
       val copied = this.copy(facts = mutableFacts, parent = this)
       copied.excludedOperations.addAll(this.schema.excludedOperationsForEnrichment())
       copied.excludedServices.addAll(this.excludedServices)

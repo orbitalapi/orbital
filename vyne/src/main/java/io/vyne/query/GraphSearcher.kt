@@ -58,7 +58,7 @@ class GraphSearcher(
    }
 
    suspend fun search(
-      knownFacts: Set<TypedInstance>,
+      knownFacts: Collection<TypedInstance>,
       excludedServices: Set<SearchGraphExclusion<QualifiedName>>,
       excludedOperations: Set<SearchGraphExclusion<Operation>>,
       evaluator: PathEvaluator
@@ -75,28 +75,34 @@ class GraphSearcher(
 
       var searchCount = 0
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
-         log().trace("$searchDescription: Attempting to build search path $searchCount")
-         val facts = if (excludedInstance.isEmpty()) {
-            knownFacts
-         } else {
-            knownFacts.filterNot { excludedInstance.contains(it) }
-         }
-         // Note: I think we can migrate to using exclusively excludedEdges (Not using excludedOperations
-         // and excludedInstances)..as it should be a more powerful abstraction
-         val proposedPath =
-            findPath(facts, excludedOperationsNames, excludedEdges, excludedServices.excludedValues(), evaluatedPaths)
+            log().trace("$searchDescription: Attempting to build search path $searchCount")
+            val facts = if (excludedInstance.isEmpty()) {
+               knownFacts
+            } else {
+               knownFacts.filterNot { excludedInstance.contains(it) }
+            }
+            // Note: I think we can migrate to using exclusively excludedEdges (Not using excludedOperations
+            // and excludedInstances)..as it should be a more powerful abstraction
+            val proposedPath =
+               findPath(
+                  facts,
+                  excludedOperationsNames,
+                  excludedEdges,
+                  excludedServices.excludedValues(),
+                  evaluatedPaths
+               )
 
          return when {
-            proposedPath == null -> null
-            evaluatedPaths.containsPath(proposedPath) -> {
-               log().info("The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again.")
-               null
-            }
-            else -> {
-               when (prevalidatePath(proposedPath, excludedEdges)) {
-                  PathPrevaliationResult.EVALUATE -> proposedPath
-                  PathPrevaliationResult.REQUERY -> buildNextPath()
-                  PathPrevaliationResult.ABORT -> null
+               proposedPath == null -> null
+               evaluatedPaths.containsPath(proposedPath) -> {
+                  log().info("The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again.")
+                  null
+               }
+               else -> {
+                  when (prevalidatePath(proposedPath, excludedEdges)) {
+                     PathPrevaliationResult.EVALUATE -> proposedPath
+                     PathPrevaliationResult.REQUERY -> buildNextPath()
+                     PathPrevaliationResult.ABORT -> null
                }
             }
          }
@@ -104,6 +110,7 @@ class GraphSearcher(
 
       var nextPath = buildNextPath()
       while (nextPath != null) {
+
          val nextPathId = nextPath.pathHashExcludingWeights()
          evaluatedPaths.addProposedPath(nextPath)
 
@@ -135,9 +142,8 @@ class GraphSearcher(
             } else {
                log().info("$searchDescription - path $nextPathId did not complete successfully, will continue searching")
             }
-            appendIgnorableEdges(evaluatedPath, excludedEdges)
-            nextPath = buildNextPath()
          }
+         nextPath = buildNextPath()
       }
       // There were no search paths to evaluate.  Just exit
       //log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
@@ -145,34 +151,15 @@ class GraphSearcher(
       return noPath()
    }
 
-   private fun appendIgnorableEdges(
-      evaluatedPath: List<PathEvaluation>,
-      excludedEdges: MutableList<EvaluatableEdge>
-   ): Boolean {
-      val edgesToExclude = pathExclusionCalculator.findEdgesToExclude(evaluatedPath, invocationConstraints)
-      if (edgesToExclude.size > 1) {
-         log().warn("Found ${edgesToExclude.size} edges to exclude.  Currently, that's unexpected, but not neccessarily wrong.  This should be investigated")
-      }
-      return if (edgesToExclude.isNotEmpty()) {
-         excludedEdges.addAll(edgesToExclude)
-         true
-      } else {
-         false
-      }
-   }
-
-   private fun logOperationCost() {
-      val buildCost = graphBuilderTimes.sum()
-      val searchCost = graphSearchTimes.sum()
-      val totalCost = buildCost + searchCost
-      log().info("Graph search took $totalCost ms, ${buildCost}ms in ${graphBuilderTimes.size} build operations, and ${searchCost}ms in ${graphSearchTimes.size} searches")
-   }
 
    private fun wasSuccessful(evaluatedPath: List<PathEvaluation>): Triple<Boolean, TypedInstance?, String?> {
       val lastEdge = evaluatedPath.last()
       val success = lastEdge is EvaluatedEdge && lastEdge.wasSuccessful
       val resultValue = if (success) {
-         selectResultValue(evaluatedPath)
+         StrategyPerformanceProfiler.profiled("Hipster.selectResultValue") {
+            selectResultValue(evaluatedPath)
+         }
+
       } else {
          null
       }
@@ -186,7 +173,7 @@ class GraphSearcher(
    }
 
 
-   private fun selectResultValue(evaluatedPath: List<PathEvaluation>): TypedInstance? {
+   private fun selectResultValue(evaluatedPath: List<PathEvaluation>): TypedInstance {
       // If the last node in the evaluated path is the type we're after, use that.
       val lastEdgeResult = evaluatedPath.last().resultValue
       if (lastEdgeResult != null && targetType.matches(lastEdgeResult.type)) {
@@ -212,11 +199,6 @@ class GraphSearcher(
       // Investigate if we hit this point
       error("Lookup of results via query context no longer supported - return the search result via the evaluated edge")
 
-      // Why is there a fact in the context that's not present on the last edge result?
-      // This will produce incorrect behaviour, where our search was successful,
-      // but because the type isn't distinct in the query context, we return null.
-//      log().warn("Not sure why this is being called.  Document better, or method will be removed")
-//      return queryContext.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
    }
 
    private fun findPath(
