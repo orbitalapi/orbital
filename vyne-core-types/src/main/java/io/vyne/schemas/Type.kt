@@ -102,6 +102,10 @@ data class Type(
       Type::name
    )
 
+   init {
+       log().info("Type ${name.parameterizedName} created")
+   }
+
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()
 
@@ -357,15 +361,15 @@ data class Type(
    }
 
    fun isAssignableTo(other: Type, considerTypeParameters: Boolean = true): Boolean {
-      val thisWithoutAliases = this.resolveAliases()
-      val otherWithoutAliases = other.resolveAliases()
+         val thisWithoutAliases = this.resolveAliases()
+         val otherWithoutAliases = other.resolveAliases()
 
-      if (thisWithoutAliases.resolvesSameAs(otherWithoutAliases, considerTypeParameters)) {
+         if (thisWithoutAliases.resolvesSameAs(otherWithoutAliases, considerTypeParameters)) {
          return true
-      }
+         }
 
-      // Bail out early
-      if (considerTypeParameters && thisWithoutAliases.typeParameters.size != otherWithoutAliases.typeParameters.size) {
+         // Bail out early
+         if (considerTypeParameters && thisWithoutAliases.typeParameters.size != otherWithoutAliases.typeParameters.size) {
          return false
       }
 
@@ -401,13 +405,13 @@ data class Type(
       }
    }
 
-   /**
-    * Walks down the entire chain of aliases until it hits the underlying non-aliased
-    * type
-    */
-   fun resolveAliases(): Type {
+   private val resolvedAlias: Type by lazy {
       val resolvedFormattedType = resolveUnderlyingFormattedType()
-      return if (!resolvedFormattedType.isTypeAlias) {
+      if (this.name.parameterizedName == "lang.taxi.Array<lang.taxi.Any>") {
+         log().info("??")
+      }
+      log().info("resolvedAlias for ${this.name.parameterizedName} called")
+      if (!resolvedFormattedType.isTypeAlias) {
          resolvedFormattedType
       } else {
          // Experiment...
@@ -424,6 +428,14 @@ data class Type(
             else -> resolvedFormattedType.aliasForType!!.resolveAliases()
          }
       }
+   }
+
+   /**
+    * Walks down the entire chain of aliases until it hits the underlying non-aliased
+    * type
+    */
+   fun resolveAliases(): Type {
+      return resolvedAlias
    }
 
    // Don't call this directly, use resolveAliases()

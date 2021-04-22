@@ -59,7 +59,7 @@ service ClientService {
    fun vyne(
       queryEngineFactory: QueryEngineFactory = QueryEngineFactory.default(),
       testSchema: TaxiSchema = schema
-   ) = Vyne(queryEngineFactory).addSchema(testSchema)
+   ) = Vyne(listOf(testSchema),queryEngineFactory)
 
    val queryParser = QueryParser(schema)
 
@@ -74,7 +74,7 @@ service ClientService {
 fun testVyne(schema: TaxiSchema): Pair<Vyne, StubService> {
    val stubService = StubService(schema = schema)
    val queryEngineFactory = QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), stubService)
-   val vyne = Vyne(queryEngineFactory).addSchema(schema)
+   val vyne = Vyne(listOf(schema), queryEngineFactory)
    return vyne to stubService
 }
 
