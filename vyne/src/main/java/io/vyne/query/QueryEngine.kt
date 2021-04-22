@@ -17,6 +17,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.runBlocking
 import java.util.stream.Collectors
 
 
@@ -473,17 +474,28 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
             // item is taken.  buffer() is used here to allow up to n parallel flows to execute.
             // MP: @Anthony - please leave some comments here that describe the rationale for
             // map { async { .. } }.flatMapMerge { await }
-            resultsFlow.map {
-               GlobalScope.async {
-                  val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
-                  val buildResult = context.only(it).build(actualProjectedType!!.qualifiedName)
-                  buildResult.results
-               }
+            resultsFlow.buffer().withIndex().map {
+
+               //if (it.index < 10) {
+                  GlobalScope.async {
+                     val actualProjectedType = context.projectResultsTo?.collectionType ?: context.projectResultsTo
+                     val buildResult = context.only(it.value).build(actualProjectedType!!.qualifiedName)
+                     buildResult.results
+                  }
+               ///} else {
+               //   GlobalScope.async {
+               //      flowOf(it.value)
+               //   }
+               //}
+
+
             }
-            .buffer(128)
-            .flatMapMerge { it.await() }
+            .buffer(16)
+               .flatMapMerge { it.await() }
 
       }
+
+
       val querySpecTypeNode = if (context.projectResultsTo != null) {
          QuerySpecTypeNode(context.projectResultsTo!!, emptySet(), QueryMode.DISCOVER)
       } else {
