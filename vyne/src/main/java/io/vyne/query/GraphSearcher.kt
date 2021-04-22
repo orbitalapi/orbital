@@ -15,11 +15,7 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
 import io.vyne.utils.log
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.coroutineContext
 
 // This class is not optimized.  Need to investigate how to speed it up.
 class GraphSearcher(

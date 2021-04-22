@@ -31,7 +31,7 @@ object EmptyTypeCache : TypeCache {
    override fun hasType(name: String): Boolean = false
    override fun hasType(name: QualifiedName): Boolean = false
    override fun defaultValues(name: QualifiedName): Map<AttributeName, TypedInstance>? {
-      error("This is an empty cache")
+     return emptyMap()
    }
 
    override fun registerAnonymousType(anonymousType: Type) {
@@ -42,13 +42,8 @@ object EmptyTypeCache : TypeCache {
       return setOf()
    }
 
-   override fun enumSynonymsAsTypedValues(typedEnumValue: TypedEnumValue, valueKind: EnumValueKind): List<TypedValue> {
-      TODO("Not yet implemented")
-   }
-
-   override fun enumSynonyms(typedEnumValue: TypedEnumValue): List<TypedEnumValue> {
-      TODO("Not yet implemented")
-   }
+   override fun enumSynonymsAsTypedValues(typedEnumValue: TypedEnumValue, valueKind: EnumValueKind): List<TypedValue> = emptyList()
+   override fun enumSynonyms(typedEnumValue: TypedEnumValue): List<TypedEnumValue> = emptyList()
 
    override fun isAssignable(
       typeA: Type,
