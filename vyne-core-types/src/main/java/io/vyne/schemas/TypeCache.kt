@@ -16,6 +16,7 @@ interface TypeCache {
    fun anonymousTypes(): Set<Type>
    fun enumSynonymsAsTypedValues(typedEnumValue: TypedEnumValue, valueKind: EnumValueKind): List<TypedValue>
    fun enumSynonyms(typedEnumValue: TypedEnumValue):List<TypedEnumValue>
+   fun isAssignable(typeA: Type, typeB: Type, considerTypeParameters: Boolean, func:(Type,Type,Boolean) -> Boolean): Boolean
 }
 
 object EmptyTypeCache : TypeCache {
@@ -48,5 +49,15 @@ object EmptyTypeCache : TypeCache {
    override fun enumSynonyms(typedEnumValue: TypedEnumValue): List<TypedEnumValue> {
       TODO("Not yet implemented")
    }
+
+   override fun isAssignable(
+      typeA: Type,
+      typeB: Type,
+      considerTypeParameters: Boolean,
+      func: (Type, Type, Boolean) -> Boolean
+   ): Boolean {
+      return func(typeA,typeB,considerTypeParameters)
+   }
+
 
 }

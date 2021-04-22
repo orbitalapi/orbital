@@ -83,7 +83,13 @@ class ObjectBuilder(val queryEngine: QueryEngine, val context: QueryContext, pri
       return if (targetType.isScalar) {
          findScalarInstance(targetType, spec)
             .catch { exception ->
-               log().error("Failed to find type ${targetType.fullyQualifiedName}", exception)
+               when (exception) {
+                  is SearchFailedException -> log().debug(exception.message)
+                  else -> log().error(
+                     "An exception occurred whilst searching for type ${targetType.fullyQualifiedName}",
+                     exception
+                  )
+               }
             }
             .firstOrNull()
       } else {

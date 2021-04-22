@@ -2,7 +2,6 @@ package io.vyne.schemaStore.eureka
 
 import arrow.core.Either
 import arrow.core.right
-import com.google.common.hash.Hasher
 import com.google.common.hash.Hashing
 import com.netflix.appinfo.InstanceInfo
 import com.netflix.discovery.EurekaClient
@@ -16,7 +15,6 @@ import io.vyne.schemaStore.SchemaStore
 import io.vyne.schemas.Schema
 import io.vyne.schemas.SchemaSetChangedEvent
 import io.vyne.utils.log
-import io.vyne.utils.timed
 import lang.taxi.CompilationException
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpMethod
@@ -252,7 +250,7 @@ class EurekaClientSchemaConsumer(
 
    }
 
-   private fun calculateDelta(previousKnownSources: MutableList<SourcePublisherRegistration>, currentSourceSet: List<SourcePublisherRegistration>): SourceDelta {
+   private fun calculateDelta(previousKnownSources: List<SourcePublisherRegistration>, currentSourceSet: List<SourcePublisherRegistration>): SourceDelta {
       val newSources = currentSourceSet.filter { currentSourceRegistration ->
          previousKnownSources.none { previousKnownSource -> previousKnownSource.applicationName == currentSourceRegistration.applicationName }
       }

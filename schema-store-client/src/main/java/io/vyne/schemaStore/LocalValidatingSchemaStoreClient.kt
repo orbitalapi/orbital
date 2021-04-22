@@ -158,6 +158,9 @@ class LocalValidatingSchemaStoreClient(private val schemaValidator: SchemaValida
             }
             else -> {
                log().info("Updating schema cache with $result")
+               // Eagerly compute the schema, so we do it at schema update time, rather than
+               // query time.
+               result.schema
                result
             }
          }
