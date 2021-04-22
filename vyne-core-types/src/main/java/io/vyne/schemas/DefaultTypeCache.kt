@@ -1,11 +1,13 @@
 package io.vyne.schemas
 
 import io.vyne.models.*
+import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.timed
+import lang.taxi.TaxiDocument
 import lang.taxi.types.EnumValueQualifiedName
 import lang.taxi.types.ObjectType
 
-class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
+abstract class BaseTypeCache : TypeCache {
    data class CachedEnumSynonymValues(
       val asName: List<TypedValue>,
       val asValue: List<TypedValue>,
@@ -24,12 +26,6 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
    private var shortNames: MutableMap<String, MutableList<Type>> = mutableMapOf()
    private val anonymousTypes: MutableMap<QualifiedName, Type> = mutableMapOf()
    private val enumSynonymValues: MutableMap<EnumValueQualifiedName, CachedEnumSynonymValues> = mutableMapOf()
-
-   init {
-      timed("DefaultTypeCache initialisation") {
-         types.forEach { add(it) }
-      }
-   }
 
    val types: Set<Type>
       get() {
@@ -58,7 +54,7 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
     * type cache updated.
     */
    fun add(type: Type): Type {
-      val withReference = type.copy(typeCache = this)
+      val withReference = if (type.typeCache == this) type else type.copy(typeCache = this)
       cache[type.name] = withReference
       shortNames.compute(type.name.name) { _, existingList ->
          if (existingList == null) {
@@ -77,11 +73,15 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
    }
 
    override fun type(name: QualifiedName): Type {
+      return typeOrNull(name)
+         ?: throw IllegalArgumentException("Type ${name.parameterizedName} was not found within this schema, and is not a valid short name")
+   }
+
+   protected open fun typeOrNull(name: QualifiedName): Type? {
       return this.cache[name]
          ?: fromShortName(name)
          ?: parameterisedType(name)
          ?: anonymousTypes[name]
-         ?: throw IllegalArgumentException("Type ${name.parameterizedName} was not found within this schema, and is not a valid short name")
    }
 
    internal fun fromShortName(name: QualifiedName): Type? =
@@ -149,7 +149,7 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
          val synonymEnumValue = synonymTypedValues.map { it.first }
          val synonymValuesByName = synonymTypedValues.map { it.second }
          val synonymValuesByValue = synonymTypedValues.map { it.third }
-         CachedEnumSynonymValues(synonymValuesByName, synonymValuesByValue,synonymEnumValue)
+         CachedEnumSynonymValues(synonymValuesByName, synonymValuesByValue, synonymEnumValue)
       }
    }
 
@@ -157,18 +157,69 @@ class DefaultTypeCache(types: Set<Type> = emptySet()) : TypeCache {
       return getEnumSynonyms(typedEnumValue).synonyms
    }
 
-   private val isAssignableWithTypeParameters = mutableMapOf<String,Boolean>()
-   private val isAssignableWithoutTypeParameters = mutableMapOf<String,Boolean>()
-   override fun isAssignable(typeA: Type, typeB: Type, considerTypeParameters: Boolean, func:(Type,Type,Boolean) -> Boolean): Boolean {
+   private val isAssignableWithTypeParameters = mutableMapOf<String, Boolean>()
+   private val isAssignableWithoutTypeParameters = mutableMapOf<String, Boolean>()
+   override fun isAssignable(
+      typeA: Type,
+      typeB: Type,
+      considerTypeParameters: Boolean,
+      func: (Type, Type, Boolean) -> Boolean
+   ): Boolean {
       val key = typeA.fullyQualifiedName + "-[isAssignableTo]->" + typeB.fullyQualifiedName
       return if (considerTypeParameters) {
-         isAssignableWithTypeParameters.getOrPut(key) { func(typeA,typeB,considerTypeParameters) }
+         isAssignableWithTypeParameters.getOrPut(key) { func(typeA, typeB, considerTypeParameters) }
       } else {
-         isAssignableWithoutTypeParameters.getOrPut(key) { func(typeA,typeB,considerTypeParameters) }
+         isAssignableWithoutTypeParameters.getOrPut(key) { func(typeA, typeB, considerTypeParameters) }
       }
    }
 
    override fun hasType(name: String): Boolean {
       return shortNames[name]?.size == 1 || hasType(name.fqn())
+   }
+}
+
+/**
+ * Simple TypeCache which takes a set of types.
+ * Upon creation, the types are copied into this type cache, with thier
+ * internal typeCache property updated to this cache
+ */
+class DefaultTypeCache(types: Set<Type> = emptySet()) : BaseTypeCache() {
+
+   init {
+      timed("DefaultTypeCache initialisation") {
+         types.forEach { add(it) }
+      }
+   }
+}
+
+/**
+ * A type cache which can on-demand populate it's values
+ * from an underlying Taxi schema
+ */
+class TaxiTypeCache(private val taxi: TaxiDocument, private val schema: Schema) : BaseTypeCache() {
+   init {
+      TaxiSchema.taxiPrimitiveTypes.forEach { add(it) }
+      taxi.types.forEach {
+         addTaxiType(it)
+      }
+   }
+
+   override fun hasType(name: String): Boolean {
+      return super.hasType(name) || taxi.containsType(name)
+   }
+
+   override fun typeOrNull(name: QualifiedName): Type {
+      val fromBaseCache = super.typeOrNull(name);
+      if (fromBaseCache != null) {
+         return fromBaseCache
+      }
+      val taxiType = taxi.type(name.parameterizedName)
+      return addTaxiType(taxiType)
+
+   }
+
+   private fun addTaxiType(taxiType: lang.taxi.types.Type): Type {
+      val type = TaxiTypeMapper.fromTaxiType(taxiType, schema, this)
+      return add(type)
    }
 }

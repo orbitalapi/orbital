@@ -3,6 +3,7 @@ package io.vyne.schemas.taxi
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.vyne.VersionedSource
 import io.vyne.schemas.*
+import io.vyne.utils.log
 import io.vyne.versionedSources
 import lang.taxi.Compiler
 import lang.taxi.Equality
@@ -14,8 +15,10 @@ import lang.taxi.types.PrimitiveType
 import org.antlr.v4.runtime.CharStreams
 import java.nio.file.Path
 
-class TaxiSchema(val document: TaxiDocument,
-                 @get:JsonIgnore override val sources: List<VersionedSource>) : Schema {
+class TaxiSchema(
+   val document: TaxiDocument,
+   @get:JsonIgnore override val sources: List<VersionedSource>
+) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
    override val policies: Set<Policy>
@@ -38,12 +41,16 @@ class TaxiSchema(val document: TaxiDocument,
    private val constraintConverter = TaxiConstraintConverter(this)
 
    init {
-         val (typeCache,types) = parseTypes(document)
+      try {
+         val (typeCache, types) = parseTypes(document)
          this.typeCache = typeCache
          this.types = types
          this.services = parseServices(document)
          this.policies = parsePolicies(document)
-
+      } catch (e:Exception){
+         log().error("Exception occurred initializing the Taxi Schema", e)
+         throw e
+      }
    }
 
    @get:JsonIgnore
@@ -113,12 +120,9 @@ class TaxiSchema(val document: TaxiDocument,
       return annotations.map { Metadata(it.name.fqn(), it.parameters) }
    }
 
-   private fun parseTypes(document: TaxiDocument): Pair<TypeCache,Set<Type>> {
+   private fun parseTypes(document: TaxiDocument): Pair<TypeCache, Set<Type>> {
       // Register primitives, as they're implicitly defined
-      val typeCache = DefaultTypeCache(taxiPrimitiveTypes)
-      document.types.forEach { taxiType ->
-         typeCache.add(TaxiTypeMapper.fromTaxiType(taxiType, this))
-      }
+      val typeCache = TaxiTypeCache(document, this)
       return typeCache to typeCache.types
    }
 
@@ -129,53 +133,64 @@ class TaxiSchema(val document: TaxiDocument,
 
    companion object {
       const val LANGUAGE = "Taxi"
-      val taxiPrimitiveTypes: Set<Type> = (PrimitiveType.values().toList() + ArrayType.untyped())
-         .map { taxiPrimitive ->
-            Type(
-               taxiPrimitive.qualifiedName.fqn(),
-               modifiers = TaxiTypeMapper.parseModifiers(taxiPrimitive),
-               sources = listOf(VersionedSource.sourceOnly("Native")),
-               typeDoc = taxiPrimitive.typeDoc,
-               taxiType = taxiPrimitive
-            )
-         }.toSet()
+      val taxiPrimitiveTypes: Set<Type> = try {
+         // Use a cache of only taxi types initially.
+         // These will be migrated to other type caches as they are created
+         val taxiTypeCache = DefaultTypeCache()
+         (PrimitiveType.values().toList() + ArrayType.untyped())
+            .map { taxiPrimitive ->
+               taxiTypeCache.add(
+                  Type(
+                     taxiPrimitive.qualifiedName.fqn(),
+                     modifiers = TaxiTypeMapper.parseModifiers(taxiPrimitive),
+                     sources = listOf(VersionedSource.sourceOnly("Native")),
+                     typeDoc = taxiPrimitive.typeDoc,
+                     taxiType = taxiPrimitive,
+                     typeCache = taxiTypeCache
+                  )
+               )
+            }.toSet()
+      } catch (e: Exception) {
+         log().error("Failed to parse TaxiPrimitiveTypes.  This is a fatal error", e)
+         emptySet()
+      }
 
-   fun forPackageAtPath(path: Path): TaxiSchema {
-      return from(TaxiSourcesLoader.loadPackage(path).versionedSources())
+      fun forPackageAtPath(path: Path): TaxiSchema {
+         return from(TaxiSourcesLoader.loadPackage(path).versionedSources())
+      }
+
+      fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
+         val doc =
+            Compiler(sources.map { CharStreams.fromString(it.content, it.name) }, imports.map { it.document }).compile()
+         // stdLib is always included.
+         // Could make this optional in future if needed
+
+         return TaxiSchema(doc, sources)
+      }
+
+
+      fun from(source: VersionedSource, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
+
+         return from(listOf(source), importSources)
+      }
+
+      fun fromStrings(vararg taxi: String, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
+         return fromStrings(taxi.toList(), importSources)
+      }
+
+      fun fromStrings(taxi: List<String>, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
+         return from(taxi.map { VersionedSource.sourceOnly(it) }, importSources)
+      }
+
+      fun from(
+         taxi: String,
+         sourceName: String = "<unknown>",
+         version: String = VersionedSource.DEFAULT_VERSION.toString(),
+         importSources: List<TaxiSchema> = emptyList()
+      ): TaxiSchema {
+         return from(VersionedSource(sourceName, version, taxi), importSources)
+      }
    }
-
-   fun from(sources: List<VersionedSource>, imports: List<TaxiSchema> = emptyList()): TaxiSchema {
-      val doc =
-         Compiler(sources.map { CharStreams.fromString(it.content, it.name) }, imports.map { it.document }).compile()
-      // stdLib is always included.
-      // Could make this optional in future if needed
-
-      return TaxiSchema(doc, sources)
-   }
-
-
-   fun from(source: VersionedSource, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
-
-      return from(listOf(source), importSources)
-   }
-
-   fun fromStrings(vararg taxi: String, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
-      return fromStrings(taxi.toList(), importSources)
-   }
-
-   fun fromStrings(taxi: List<String>, importSources: List<TaxiSchema> = emptyList()): TaxiSchema {
-      return from(taxi.map { VersionedSource.sourceOnly(it) }, importSources)
-   }
-
-   fun from(
-      taxi: String,
-      sourceName: String = "<unknown>",
-      version: String = VersionedSource.DEFAULT_VERSION.toString(),
-      importSources: List<TaxiSchema> = emptyList()
-   ): TaxiSchema {
-      return from(VersionedSource(sourceName, version, taxi), importSources)
-   }
-}
 }
 
 fun List<lang.taxi.types.FieldModifier>.toVyneFieldModifiers(): List<FieldModifier> {

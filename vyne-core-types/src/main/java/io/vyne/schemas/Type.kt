@@ -21,6 +21,16 @@ interface TypeLightView
 typealias AttributeName = String
 
 /**
+ * This is a documenation-only annotation - ie., it has no runtime
+ * impact.
+ *
+ * Fields annotated with this annotation must remain lazy evaluation until
+ * after a full typeCache has been populated, as they need to look up other
+ * types in the typecache
+ */
+annotation class DeferEvaluationUntilTypeCacheCreated
+
+/**
  * TODO: We should consider deprecating and removing the vyne specific versions of the type system,
  * and just use Taxi's model throughout.
  * There are clear downsides to becoming coupled to Taxi, but
@@ -64,7 +74,8 @@ data class Type(
 
    val typeDoc: String?,
 
-   private val typeCache: TypeCache = EmptyTypeCache
+   @JsonIgnore
+   val typeCache: TypeCache = EmptyTypeCache
 
 ) : SchemaMember {
    constructor(
@@ -102,12 +113,8 @@ data class Type(
       Type::name
    )
 
-   init {
-      if (name.namespace != "lang.taxi") {
-         log().info("Type ${name.parameterizedName} created")
-      }
+   private val resolvedAlias: Type
 
-   }
 
    override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    override fun hashCode(): Int = equality.hash()
@@ -135,15 +142,17 @@ data class Type(
       get() = taxiType.calculation
 
    @get:JsonView(TypeFullView::class)
-   val unformattedTypeName: QualifiedName? by lazy {
-      if (hasFormat || offset != null) {
-         resolveUnderlyingFormattedType().qualifiedName
-      } else null
-   }
+   val unformattedTypeName: QualifiedName?
 
    @get:JsonIgnore
-   val inherits: List<Type> =
-      this.inheritsFromTypeNames.map { aliasName -> typeCache.type(aliasName) }
+   val inherits: List<Type> = this.inheritsFromTypeNames.mapNotNull { aliasName ->
+      try {
+         typeCache.type(aliasName)
+      } catch (e: Exception) {
+         null
+      }
+   }
+
 
    @get:JsonIgnore
    val aliasForType: Type? =
@@ -155,18 +164,28 @@ data class Type(
 
    // TODO : This name sucks.  Need a consistent term for "the real thing, unwrapping the aliases if they exist"
    @get:JsonIgnore
-   val underlyingTypeParameters: List<Type> =
-      this.resolveAliases().typeParameters
+   val underlyingTypeParameters: List<Type>
 
    @get:JsonProperty("underlyingTypeParameters")
-   val underlyingTypeParameterNames: List<QualifiedName> =
-      this.underlyingTypeParameters.map { it.name }
+   val underlyingTypeParameterNames: List<QualifiedName>
 
    @get:JsonIgnore
    val enumTypedInstances: List<TypedEnumValue> =
       this.enumValues.map { enumValue ->
          TypedEnumValue(this, enumValue, this.typeCache, UndefinedSource)
       }
+
+   init {
+      // placing these definitions against the field
+      // causes exceptions because not all attributes have been populated,
+      // which causes NPE's.
+      this.unformattedTypeName = if (hasFormat || offset != null) {
+         resolveUnderlyingFormattedType().qualifiedName
+      } else null
+      this.resolvedAlias = calculateResolvedAliases()
+      this.underlyingTypeParameters = this.resolvedAlias.typeParameters
+      this.underlyingTypeParameterNames = this.underlyingTypeParameters.map { it.name }
+   }
 
    fun enumTypedInstance(value: Any): TypedEnumValue {
       return this.enumTypedInstances.firstOrNull { it.value == value || it.name == value }
@@ -390,7 +409,7 @@ data class Type(
       }
    }
 
-   fun calculateResolvedAliases():Type {
+   private fun calculateResolvedAliases(): Type {
       val resolvedFormattedType = resolveUnderlyingFormattedType()
       if (this.name.parameterizedName == "lang.taxi.Array<lang.taxi.Any>") {
          log().info("??")
@@ -414,7 +433,6 @@ data class Type(
          }
       }
    }
-   private val resolvedAlias: Type = calculateResolvedAliases()
 
    /**
     * Walks down the entire chain of aliases until it hits the underlying non-aliased
