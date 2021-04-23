@@ -273,7 +273,9 @@ data class Type(
       if (isCollection) {
          underlyingTypeParameters.firstOrNull().let { collectionTypeParam ->
             if (collectionTypeParam == null) {
-               logger.warn {"Collection does not have a declared type.  Using raw arrays is discouraged.  Will return Any" }
+               // This isn't really the right place to complain about such things,
+               // this better served as a linter rule in Taxi
+               logger.debug { "Collection does not have a declared type.  Using raw arrays is discouraged.  Will return Any" }
                typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
             } else {
                collectionTypeParam

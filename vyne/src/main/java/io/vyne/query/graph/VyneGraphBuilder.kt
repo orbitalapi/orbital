@@ -198,12 +198,10 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       excludedOperations: Set<SearchGraphExclusion<QualifiedName>> = emptySet(),
       excludedServices: Set<SearchGraphExclusion<QualifiedName>> = emptySet()
    ): HipsterDirectedGraph<Element, Relationship> {
-      return StrategyPerformanceProfiler.profiled("graphBuilder.build") {
-         val baseConnections =
-            getBaseSchemaConnections(excludedOperations.excludedValues(), excludedServices.excludedValues())
-         val connections = baseConnections + appendInstanceTypes(types, schema)
-         buildGraph(connections).graph
-      }
+      val baseConnections =
+         getBaseSchemaConnections(excludedOperations.excludedValues(), excludedServices.excludedValues())
+      val connections = baseConnections + appendInstanceTypes(types, schema)
+      return buildGraph(connections).graph
    }
 
    fun buildDisplayGraph(): HipsterDirectedGraph<Element, Relationship> {

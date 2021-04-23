@@ -101,14 +101,20 @@ class HipsterDiscoverGraphQueryStrategy(
                // don't search.
                return@mapNotNull null
             }
+            var searchProvidedAtLeastOnePath = false
             val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema), invocationConstraints)
             val searchResult = searcher.search(
                context.facts,
                context.excludedServices.toSet(),
                invocationConstraints.excludedOperations.plus(context.excludedOperations.map { SearchGraphExclusion("@Id", it) })) { pathToEvaluate ->
+               searchProvidedAtLeastOnePath = true
                evaluatePath(pathToEvaluate,context)
             }
-            if (searchPathExclusionsCacheSize > 0 && searchResult.path == null) {
+            // Only exclude if the pair of (searchNode, targetNode) didn't provide any paths at all.
+            // It's possible that the search failed, but the path is valid to be considered again.
+            // (eg., if we used a TypedInstance as an input to a service, but the service returned no results,
+            // we shouldn't exclude the type, as future TypedInstances might have better luck)
+            if (searchPathExclusionsCacheSize > 0 && searchResult.path == null && !searchProvidedAtLeastOnePath) {
                searchPathExclusions[exclusionKey] = exclusionKey
             }
             searchResult.typedInstance

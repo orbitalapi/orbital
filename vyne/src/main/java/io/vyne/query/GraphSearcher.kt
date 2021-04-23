@@ -29,10 +29,6 @@ class GraphSearcher(
    private val invocationConstraints: InvocationConstraints
 ) {
 
-   private val graphBuilderTimes = mutableListOf<Long>()
-   private val graphSearchTimes = mutableListOf<Long>()
-   private val pathExclusionCalculator = PathExclusionCalculator()
-
    companion object {
       const val MAX_SEARCH_COUNT = 100
    }
@@ -129,11 +125,11 @@ class GraphSearcher(
          val resultSatisfiesConstraints =
             pathEvaluatedSuccessfully && invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)
          if (!pathEvaluatedSuccessfully) {
-            logger.debug {"$searchDescription - path $nextPathId failed - last error was $errorMessage" }
+            logger.debug { "$searchDescription - path $nextPathId failed - last error was $errorMessage" }
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
-            logger.debug {"$searchDescription - path $nextPathId succeeded with value $resultValue" }
+            logger.debug { "$searchDescription - path $nextPathId succeeded with value $resultValue" }
             return SearchResult(resultValue, nextPath)
          } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
@@ -235,13 +231,11 @@ class GraphSearcher(
          .build()
 
 
-      val executionPath = logTimeTo(graphSearchTimes) {
-         Hipster
-            .createDijkstra(problem)
-            .search(targetFact).goalNode
-      }
+      val executionPath = Hipster
+         .createDijkstra(problem)
+         .search(targetFact).goalNode
 
-      logger.debug{"Generated path with hash ${executionPath.pathHashExcludingWeights()}"}
+      logger.debug { "Generated path with hash ${executionPath.pathHashExcludingWeights()}" }
       return if (executionPath.state() != targetFact) {
          null
       } else {

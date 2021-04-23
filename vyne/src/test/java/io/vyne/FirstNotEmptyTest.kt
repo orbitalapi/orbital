@@ -9,6 +9,7 @@ import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.taxi.TaxiSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import lang.taxi.types.PrimitiveType
@@ -412,7 +413,7 @@ class FirstNotEmptyTest {
             isin : Isin as String
             productName : ProductName as String
          }
-         service CalendarService {
+         service ProductService {
             @StubResponse("lookupProduct")
             operation lookupProduct(Isin):Product
          }
