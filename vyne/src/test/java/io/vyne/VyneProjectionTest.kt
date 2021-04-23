@@ -411,7 +411,7 @@ service InstrumentService {
    }
 
    @Test
-      fun `project to CommonOrder with Trades`() = runBlocking {
+   fun `project to CommonOrder with Trades`() = runBlocking {
       // TODO confirm how the mappings should look like
       val noOfRecords = 100
       val schema = """
@@ -505,8 +505,9 @@ service Broker1Service {
          parameters.should.have.size(1)
          val orderId = parameters[0].second.value as String
          findOneByOrderIdInvocationCount++
-         listOf(vyne.parseJsonModel(
-            "Broker1Trade", """
+         listOf(
+            vyne.parseJsonModel(
+               "Broker1Trade", """
                {
                   "broker1OrderID" : "broker1Order$orderId",
                   "broker1TradeID" : "trade_id_$orderId",
@@ -514,7 +515,8 @@ service Broker1Service {
                   "broker1TradeNo": "trade_no_$orderId"
                }
             """.trimIndent()
-         ))
+            )
+         )
       }
 
       // act
@@ -544,6 +546,7 @@ service Broker1Service {
 //      findOneByOrderIdInvocationCount.should.equal(0)
 //      getBroker1TradesForOrderIdsInvocationCount.should.equal(1)
    }
+
    @Test
    @Ignore("One-to-many not currenty supported")
    fun `One to Many Mapping Projection with a date between query`() = runBlocking {
@@ -854,7 +857,7 @@ service Broker1Service {
       return buf.toString()
    }
 
-//
+   //
 //   @Test
 //   fun `missing Country does not break Client projection`() = runBlocking {
 //      // prepare
@@ -1063,71 +1066,145 @@ service Broker1Service {
       result["priceType"].value.should.equal("Percentage")
       Unit
    }
-//
-//
-//   @Test
-//   fun `A service annotated with @DataSource will not be invoked twice`() = runBlocking {
-//      val testSchema = """
-//         model Client {
-//            name : PersonName as String
-//            country : CountryCode as String
-//         }
-//         model Country {
-//             countryCode : CountryCode
-//             countryName : CountryName as String
-//         }
-//         model ClientAndCountry {
-//            personName : PersonName
-//            countryName : CountryName
-//         }
-//
-//         @Datasource
-//         service MultipleInvocationService {
-//            operation getCustomers():Client[]
-//            operation getCountry(CountryCode): Country
-//         }
-//      """.trimIndent()
-//
-//      var getCountryInvoked = false
-//      val (vyne, stubService) = testVyne(testSchema)
-//      stubService.addResponse(
-//         "getCustomers", vyne.parseJsonCollection(
-//            "Client[]", """
-//         [
-//            { name : "Jimmy", country : "UK" },
-//            { name : "Devrim", country : "TR" }
-//         ]
-//         """.trimIndent()
-//         )
-//      )
-//
-//      stubService.addResponse("getCountry") { _, parameters ->
-//         getCountryInvoked = true
-//         val countryCode = parameters.first().second.value!!.toString()
-//         if (countryCode == "UK") {
-//            vyne.parseJsonCollection("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}""")
-//         } else {
-//            listOf(TypedObject(vyne.schema.type("Country"), emptyMap(), Provided))
-//         }
-//      }
-//
-//      // act
-//      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
-//
-//      // assert
-//      result.rawObjects().should.equal(
-//         listOf(
-//            mapOf("personName" to "Jimmy", "countryName" to null),
-//            mapOf(
-//               "personName" to "Devrim",
-//               "countryName" to null
-//            ) // See TypedObjectFactory.build() for discussion on returning nulls
-//         )
-//      )
-//      getCountryInvoked.should.be.`false`
-//   }
-//
-//
+
+
+   @Test
+   fun `A service annotated with @DataSource will not be invoked twice`() = runBlocking {
+      val testSchema = """
+         model Client {
+            name : PersonName as String
+            country : CountryCode as String
+         }
+         model Country {
+             countryCode : CountryCode
+             countryName : CountryName as String
+         }
+         model ClientAndCountry {
+            personName : PersonName
+            countryName : CountryName
+         }
+
+         @Datasource
+         service MultipleInvocationService {
+            operation getCustomers():Client[]
+            operation getCountry(CountryCode): Country
+         }
+      """.trimIndent()
+
+      var getCountryInvoked = false
+      val (vyne, stubService) = testVyne(testSchema)
+      stubService.addResponse(
+         "getCustomers", vyne.parseJsonModel(
+            "Client[]", """
+         [
+            { name : "Jimmy", country : "UK" },
+            { name : "Devrim", country : "TR" }
+         ]
+         """.trimIndent()
+         )
+      )
+
+      stubService.addResponse("getCountry") { _, parameters ->
+         getCountryInvoked = true
+         val countryCode = parameters.first().second.value!!.toString()
+         if (countryCode == "UK") {
+            listOf(vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}"""))
+         } else {
+            listOf(TypedObject(vyne.schema.type("Country"), emptyMap(), Provided))
+         }
+      }
+
+      // act
+      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+      result.rawResults.test {
+         expectRawMap().should.equal(mapOf("personName" to "Jimmy", "countryName" to null))
+         expectRawMap().should.equal(
+            mapOf(
+               "personName" to "Devrim",
+               "countryName" to null
+            ) // See TypedObjectFactory.build() for discussion on returning nulls
+         )
+         getCountryInvoked.should.be.`false`
+         expectComplete()
+      }
+   }
+
+   @Test
+   fun `All services referenced in @DataSource will not be invoked twice`() = runBlocking {
+      val testSchema = """
+         model Client {
+            name : PersonName as String
+            country : CountryCode as String
+         }
+         model Country {
+             countryCode : CountryCode
+             countryName : CountryName as String
+         }
+         model ClientAndCountry {
+            personName : PersonName
+            countryName : CountryName
+         }
+
+
+         service CountryService {
+           operation findByCountryCode(CountryCode): Country
+         }
+
+         @Datasource(exclude = "[[CountryService]]")
+         service MultipleInvocationService {
+            operation getCustomers():Client[]
+            operation getCountry(CountryCode): Country
+         }
+      """.trimIndent()
+
+      var getCountryInvoked = false
+      val (vyne, stubService) = testVyne(testSchema)
+      stubService.addResponse(
+         "findByCountryCode",
+         vyne.parseJsonModel(
+            "Country", """
+         {countryCode: "UK", countryName: "United Kingdom"}
+      """.trimIndent()
+         )
+      )
+      stubService.addResponse(
+         "getCustomers", vyne.parseJsonModel(
+            "Client[]", """
+         [
+            { name : "Jimmy", country : "UK" },
+            { name : "Devrim", country : "TR" }
+         ]
+         """.trimIndent()
+         )
+      )
+
+      stubService.addResponse("getCountry") { _, parameters ->
+         getCountryInvoked = true
+         val countryCode = parameters.first().second.value!!.toString()
+         if (countryCode == "UK") {
+            listOf(vyne.parseJsonModel("Country", """{"countryCode": "UK", "countryName": "United Kingdom"}"""))
+         } else {
+            listOf(TypedObject(vyne.schema.type("Country"), emptyMap(), Provided))
+         }
+      }
+
+      // act
+      val result = vyne.query("""findAll { Client[] } as ClientAndCountry[]""".trimIndent())
+      result.rawResults
+         .test {
+            expectRawMap().should.equal(mapOf("personName" to "Jimmy", "countryName" to null))
+            expectRawMap().should.equal(
+               mapOf(
+                  "personName" to "Devrim",
+                  "countryName" to null
+               )
+            )
+            getCountryInvoked.should.be.`false`
+            expectComplete()
+         }
+   }
+
+
    @Test
    fun `should output offset  correctly`(): Unit = runBlocking {
       val (vyne, stubService) = testVyne(
@@ -2202,8 +2279,9 @@ service Broker1Service {
       }
 
    @Test
-   fun concurrency_test():Unit = runBlocking {
-      val (vyne,stub) = testVyne("""
+   fun concurrency_test(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
          type DirectorName inherits String
          type ReleaseYear inherits Int
          model Actor {
@@ -2226,33 +2304,43 @@ service Broker1Service {
             operation findAllMovies():Movie[]
             operation findActor(ActorId):Actor
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       stub.addResponseFlow("findActor") { remoteOperation, params ->
          val actorId = params[0].second.value as String
          flow {
 //            kotlinx.coroutines.delay(500)
-            val actor = TypedInstance.from(vyne.type("Actor"), """{ "actorId" : ${actorId.quoted()} , "name" : "Tom Cruise's Clone #$actorId" } """, vyne.schema, source = Provided)
+            val actor = TypedInstance.from(
+               vyne.type("Actor"),
+               """{ "actorId" : ${actorId.quoted()} , "name" : "Tom Cruise's Clone #$actorId" } """,
+               vyne.schema,
+               source = Provided
+            )
             emit(actor)
          }
       }
       val movieCount = 500
       stub.addResponse("findAllMovies") { _, params ->
          val movies = (0 until movieCount).map { index ->
-            val movie = mapOf("movieId" to index.toString(), "title" to "Mission Impossible $index", "starring" to index.toString())
+            val movie = mapOf(
+               "movieId" to index.toString(),
+               "title" to "Mission Impossible $index",
+               "starring" to index.toString()
+            )
             vyne.parseJsonModel("Movie", jacksonObjectMapper().writeValueAsString(movie))
          }
          movies
       }
 
       val start = Stopwatch.createStarted()
-      var summary : StrategyPerformanceProfiler.SearchStrategySummary? = null
+      var summary: StrategyPerformanceProfiler.SearchStrategySummary? = null
       val f = Benchmark.benchmark("run concurrency test with $movieCount", warmup = 5, iterations = 5) {
          runBlocking {
             val result = vyne.query("findAll { Movie[] } as OutputModel[]")
                .results.toList()
             result.should.have.size(movieCount)
             val duration = start.elapsed(TimeUnit.MILLISECONDS)
-            summary =  StrategyPerformanceProfiler.summarizeAndReset()
+            summary = StrategyPerformanceProfiler.summarizeAndReset()
          }
       }
       log().warn("Test completed: $summary")
