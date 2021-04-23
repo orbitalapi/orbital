@@ -19,10 +19,10 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.client.RestTemplate
 import reactivefeign.spring.config.EnableReactiveFeignClients
-import springfox.documentation.builders.PathSelectors
-import springfox.documentation.builders.RequestHandlerSelectors
-import springfox.documentation.spi.DocumentationType
-import springfox.documentation.spring.web.plugins.Docket
+//import springfox.documentation.builders.PathSelectors
+//import springfox.documentation.builders.RequestHandlerSelectors
+//import springfox.documentation.spi.DocumentationType
+//import springfox.documentation.spring.web.plugins.Docket
 import springfox.documentation.swagger2.annotations.EnableSwagger2
 
 
@@ -30,7 +30,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2
 @EnableDiscoveryClient
 @EnableReactiveFeignClients(basePackageClasses = [PipelineRunnerApi::class])
 @EnableScheduling
-@EnableSwagger2
+//@EnableSwagger2
 @EnableConfigurationProperties(PipelineConfigurationProperties::class)
 class PipelineOrchestratorApp {
    companion object {
@@ -59,17 +59,17 @@ class PipelineOrchestratorApp {
          return template
       }
 
-      @Bean
-      fun api(resolver: TypeResolver): Docket {
-         return Docket(DocumentationType.SWAGGER_2)
-            .select()
-            .apis(RequestHandlerSelectors.basePackage(this.javaClass.`package`.name))
-            .paths(PathSelectors.any())
-            .build()
-            .additionalModels(resolver.resolve(Pipeline::class.java))
-            .directModelSubstitute(VersionedTypeReference::class.java, String::class.java)
-
-      }
+      //@Bean
+      //fun api(resolver: TypeResolver): Docket {
+      //   return Docket(DocumentationType.SWAGGER_2)
+      //      .select()
+      //      .apis(RequestHandlerSelectors.basePackage(this.javaClass.`package`.name))
+      //      .paths(PathSelectors.any())
+      //      .build()
+      //      .additionalModels(resolver.resolve(Pipeline::class.java))
+      //      .directModelSubstitute(VersionedTypeReference::class.java, String::class.java)
+//
+  //    }
 
    }
 }
