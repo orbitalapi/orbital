@@ -68,7 +68,7 @@ class ActiveQueryMonitorTest {
    }
 
    @Test
-   fun `get latest query metadata`() = runBlocking {
+   fun `get latest query metadata`():Unit = runBlocking {
 
       val queryMetaDataService = ActiveQueryMonitor()
 

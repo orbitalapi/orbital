@@ -7,8 +7,8 @@ import io.vyne.query.ResultMode
 import io.vyne.schemas.fqn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import me.eugeniomarletti.kotlin.metadata.shadow.utils.addToStdlib.safeAs
 import org.junit.Before
@@ -17,6 +17,7 @@ import org.junit.Test
 import org.springframework.http.MediaType
 import kotlin.test.assertEquals
 import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 @ExperimentalCoroutinesApi
 @ExperimentalTime
@@ -28,27 +29,38 @@ class QueryServiceTest : BaseQueryServiceTest() {
    }
 
    @Test
-   fun submitQueryJsonSimple() = runBlockingTest {
+   fun submitQueryJsonSimple() = runBlocking {
 
       val query = buildQuery("Order[]")
-      val response = queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
-         .body!!
-         .asSimpleQueryResultList()
-      response.should.not.be.empty
-      response[0].typeName.should.equal("Order[]".fqn().parameterizedName)
-      response[0].value.safeAs<List<Any>>().should.have.size(1)
+      queryService.submitQuery(query, ResultMode.SIMPLE, MediaType.APPLICATION_JSON_VALUE)
+         .body
+         .test {
+            val next = expectItem() as FirstEntryMetadataResultSerializer.ValueWithTypeName
+            next.typeName.should.equal("Order".fqn().parameterizedName)
+            next.value.safeAs<Map<String, Any>>().should.equal(
+               mapOf(
+                  "orderId" to "orderId_0",
+                  "traderName" to "john",
+                  "instrumentId" to "Instrument_0"
+               )
+            )
+            expectComplete()
+         }
+
    }
 
 
    @Test
-   fun `csv request produces expected results regardless of resultmode`() = runBlockingTest {
+   fun `csv request produces expected results regardless of resultmode`() = runBlocking {
 
       val query = buildQuery("Order[]")
       ResultMode.values().forEach { resultMode ->
          queryService.submitQuery(query, resultMode, TEXT_CSV)
-            .body.test {
-               assertEquals("orderId,traderName,instrumentId", (expectItem() as String).trim())
-               assertEquals("orderId_0,john,Instrument_0", (expectItem() as String).trim())
+            .body.test(5.seconds) {
+               val expected = """orderId,traderName,instrumentId
+orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
+               val next = expectItem()
+               assertEquals(expected, (next as String).withoutWhitespace())
                expectComplete()
             }
       }
@@ -56,7 +68,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
    }
 
    @Test
-   fun `csv with projection returns expected results`() = runBlockingTest {
+      fun `csv with projection returns expected results`() = runBlocking {
 
       ResultMode.values().forEach { resultMode ->
          val result = queryService.submitVyneQlQuery(
@@ -64,18 +76,21 @@ class QueryServiceTest : BaseQueryServiceTest() {
             resultMode,
             TEXT_CSV
          )
-            .body.toList()
-         result.should.have.elements(
-            "orderId,tradeId,instrumentName,maturityDate,traderName\r\n",
-            "orderId_0,,john\r\n"
-         )
+            .body.test {
+               val expected = """orderId,tradeId,instrumentName,maturityDate,traderName
+orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
+               """.withoutWhitespace()
+               (expectItem() as String).should.equal(expected.withoutWhitespace())
+               expectComplete()
+            }
+
       }
 
    }
 
 
    @Test
-   fun `taxiQl as simple json returns expected result`() = runBlockingTest {
+   fun `taxiQl as simple json returns expected result`() = runBlocking {
 
       val response = queryService.submitVyneQlQuery(
          """findAll { Order[] }""".trimIndent(),
@@ -83,20 +98,21 @@ class QueryServiceTest : BaseQueryServiceTest() {
          MediaType.APPLICATION_JSON_VALUE
       )
          .body
-         .toList()
-      response.should.have.size(1)
-      val resultRow = response[0] as FirstEntryMetadataResultSerializer.ValueWithTypeName
-      resultRow.value.should.equal(
-         mapOf(
-            "orderId" to "orderId_0",
-            "traderName" to "john",
-            "instrumentId" to "Instrument_0"
-         )
-      )
+         .test {
+            val next = expectItem() as FirstEntryMetadataResultSerializer.ValueWithTypeName
+            next.value.should.equal(
+               mapOf(
+                  "orderId" to "orderId_0",
+                  "traderName" to "john",
+                  "instrumentId" to "Instrument_0"
+               )
+            )
+            expectComplete()
+         }
    }
 
    @Test
-   fun `taxiQl as raw json returns raw map`() = runBlockingTest {
+   fun `taxiQl as raw json returns raw map`() = runBlocking {
 
       val response = queryService.submitVyneQlQuery(
          """findAll { Order[] }""".trimIndent(),
@@ -104,18 +120,21 @@ class QueryServiceTest : BaseQueryServiceTest() {
          MediaType.APPLICATION_JSON_VALUE
       )
          .body
-         .first()
-      response.should.equal(
-         mapOf(
-            "orderId" to "orderId_0",
-            "traderName" to "john",
-            "instrumentId" to "Instrument_0"
-         )
-      )
+         .test {
+            val next = expectItem() as Map<String,Any?>
+            next.should.equal(
+               mapOf(
+                  "orderId" to "orderId_0",
+                  "traderName" to "john",
+                  "instrumentId" to "Instrument_0"
+               )
+            )
+            expectComplete()
+         }
    }
 
    @Test
-   fun `taxiQl as simple json with projection returns expected result`() = runBlockingTest {
+   fun `taxiQl as simple json with projection returns expected result`() = runBlocking {
 
       val response = queryService.submitVyneQlQuery(
          """findAll { Order[] } as Report[]""".trimIndent(),
@@ -123,22 +142,23 @@ class QueryServiceTest : BaseQueryServiceTest() {
          MediaType.APPLICATION_JSON_VALUE
       )
          .body
-         .toList()
-      response.should.have.size(1)
-      val resultRow = response[0] as FirstEntryMetadataResultSerializer.ValueWithTypeName
-      resultRow.value.should.equal(
-         mapOf(
-            "orderId" to "orderId_0",
-            "tradeId" to null,
-            "instrumentName" to null,
-            "maturityDate" to null,
-            "traderName" to "john"
-         )
-      )
+         .test {
+            val next = expectItem() as FirstEntryMetadataResultSerializer.ValueWithTypeName
+            next.value.should.equal(
+               mapOf(
+                  "orderId" to "orderId_0",
+                  "tradeId" to "Trade_0",
+                  "instrumentName" to "2040-11-20 0.1 Bond",
+                  "maturityDate" to "2026-12-01",
+                  "traderName" to "john"
+               )
+            )
+            expectComplete()
+         }
    }
 
    @Test
-   fun `taxiQl as raw json with projection returns expected result`() = runBlockingTest {
+   fun `taxiQl as raw json with projection returns expected result`() = runBlocking {
 
       val response = queryService.submitVyneQlQuery(
          """findAll { Order[] } as Report[]""".trimIndent(),
@@ -146,17 +166,19 @@ class QueryServiceTest : BaseQueryServiceTest() {
          MediaType.APPLICATION_JSON_VALUE
       )
          .body
-         .toList()
-      response.should.have.size(1)
-      response[0].should.equal(
-         mapOf(
-            "orderId" to "orderId_0",
-            "tradeId" to null,
-            "instrumentName" to null,
-            "maturityDate" to null,
-            "traderName" to "john"
-         )
-      )
+         .test(5.seconds) {
+            val next = expectItem() as Map<String, Any?>
+            next.should.equal(
+               mapOf(
+                  "orderId" to "orderId_0",
+                  "tradeId" to "Trade_0",
+                  "instrumentName" to "2040-11-20 0.1 Bond",
+                  "maturityDate" to "2026-12-01",
+                  "traderName" to "john"
+               )
+            )
+            expectComplete()
+         }
    }
 
 
@@ -198,3 +220,11 @@ suspend fun Flow<Any>.asSimpleQueryResultList(): List<FirstEntryMetadataResultSe
    return this.toList() as List<FirstEntryMetadataResultSerializer.ValueWithTypeName>
 }
 
+
+fun String.withoutWhitespace(): String {
+   return this
+      .lines()
+      .map { it.trim().replace(" ","") }
+      .filter { it.isNotEmpty() }
+      .joinToString("")
+}

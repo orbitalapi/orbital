@@ -1,6 +1,7 @@
 package io.vyne.queryService
 
 //import io.vyne.testVyne
+import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
 import io.vyne.StubService
 import io.vyne.Vyne
@@ -9,6 +10,7 @@ import io.vyne.query.Query
 import io.vyne.query.QueryMode
 import io.vyne.query.TypeNameListQueryExpression
 import io.vyne.query.active.ActiveQueryMonitor
+import io.vyne.queryService.history.QueryEventConsumer
 import io.vyne.queryService.history.QueryEventObserver
 import io.vyne.queryService.history.db.QueryHistoryDbWriter
 import io.vyne.spring.SimpleVyneProvider
@@ -17,6 +19,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.ByteArrayOutputStream
+
 abstract class BaseQueryServiceTest {
    companion object {
       val testSchema = """
@@ -66,13 +69,26 @@ abstract class BaseQueryServiceTest {
    lateinit var vyne: Vyne
    lateinit var queryEventObserver: QueryEventObserver
 
+   protected fun mockHistoryWriter(): QueryHistoryDbWriter {
+      val eventConsumer: QueryEventConsumer = mock {}
+      val historyWriter: QueryHistoryDbWriter = mock {
+         on { createEventConsumer() } doReturn eventConsumer
+      }
+      return historyWriter
+   }
+
    protected fun setupTestService(
-      historyDbWriter: QueryHistoryDbWriter = mock {  }
+      historyDbWriter: QueryHistoryDbWriter = mockHistoryWriter()
    ) {
       val (vyne, stubService) = testVyne(testSchema)
       this.stubService = stubService
       this.vyne = vyne
-      queryService = QueryService(SimpleVyneProvider(vyne), historyDbWriter, Jackson2ObjectMapperBuilder().build(), ActiveQueryMonitor())
+      queryService = QueryService(
+         SimpleVyneProvider(vyne),
+         historyDbWriter,
+         Jackson2ObjectMapperBuilder().build(),
+         ActiveQueryMonitor()
+      )
 
       prepareStubService(stubService, vyne)
    }
@@ -121,10 +137,11 @@ abstract class BaseQueryServiceTest {
    protected fun buildQuery(type: String) = Query(
       TypeNameListQueryExpression(listOf(type)),
       emptyMap(),
-      queryMode = QueryMode.GATHER)
+      queryMode = QueryMode.GATHER
+   )
 }
 
-fun ResponseEntity<StreamingResponseBody>.contentString():String {
+fun ResponseEntity<StreamingResponseBody>.contentString(): String {
    val stream = ByteArrayOutputStream()
    this.body!!.writeTo(stream)
    return String(stream.toByteArray())
