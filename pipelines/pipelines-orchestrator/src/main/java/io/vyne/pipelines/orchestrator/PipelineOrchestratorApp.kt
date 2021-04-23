@@ -1,9 +1,6 @@
 package io.vyne.pipelines.orchestrator
 
-import com.fasterxml.classmate.TypeResolver
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.vyne.VersionedTypeReference
-import io.vyne.pipelines.Pipeline
 import io.vyne.pipelines.orchestrator.configuration.PipelineConfigurationProperties
 import io.vyne.pipelines.orchestrator.runners.PipelineRunnerApi
 import io.vyne.pipelines.runner.transport.PipelineJacksonModule
@@ -19,18 +16,12 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.web.client.RestTemplate
 import reactivefeign.spring.config.EnableReactiveFeignClients
-//import springfox.documentation.builders.PathSelectors
-//import springfox.documentation.builders.RequestHandlerSelectors
-//import springfox.documentation.spi.DocumentationType
-//import springfox.documentation.spring.web.plugins.Docket
-import springfox.documentation.swagger2.annotations.EnableSwagger2
 
 
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableReactiveFeignClients(basePackageClasses = [PipelineRunnerApi::class])
 @EnableScheduling
-//@EnableSwagger2
 @EnableConfigurationProperties(PipelineConfigurationProperties::class)
 class PipelineOrchestratorApp {
    companion object {
