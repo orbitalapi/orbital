@@ -30,21 +30,13 @@ import {isNullOrUndefined} from 'util';
 })
 export class ActiveQueryCardComponent {
   @Input()
-  get queryStatus(): RunningQueryStatus {
-    return this._queryStatus;
-  }
-
-  set queryStatus(value: RunningQueryStatus) {
-    this._queryStatus = value;
-  }
-
-  private _queryStatus: RunningQueryStatus;
+  queryStatus: RunningQueryStatus;
 
   @Output()
   cancel = new EventEmitter();
 
   get progressMode(): 'determinate' | 'indeterminate' {
-    if (isNullOrUndefined(this._queryStatus.estimatedProjectionCount)) {
+    if (isNullOrUndefined(this.queryStatus.estimatedProjectionCount)) {
       return 'indeterminate';
     } else {
       return 'determinate';
@@ -52,15 +44,15 @@ export class ActiveQueryCardComponent {
   }
 
   get progress(): number {
-    if (isNullOrUndefined(this._queryStatus.estimatedProjectionCount)) {
+    if (isNullOrUndefined(this.queryStatus.estimatedProjectionCount)) {
       return 0;
     } else {
-      return (this._queryStatus.completedProjections / this._queryStatus.estimatedProjectionCount) * 100;
+      return (this.queryStatus.completedProjections / this.queryStatus.estimatedProjectionCount) * 100;
     }
   }
 
   duration(): string {
-    return Timespan.since(this._queryStatus.startTime).duration;
+    return Timespan.since(this.queryStatus.startTime).duration;
   }
 
 }

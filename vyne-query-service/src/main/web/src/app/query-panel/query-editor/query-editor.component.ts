@@ -209,7 +209,15 @@ export class QueryEditorComponent implements OnInit {
     this.queryMetadata$ = this.activeQueryNotificationService.getQueryStatusStreamForQueryId(
       queryId
     ).pipe(
-      tap(message => this.latestQueryStatus = message)
+      tap(message => {
+        if (isNullOrUndefined(this.latestQueryStatus)) {
+          this.latestQueryStatus = message;
+        } else if (this.latestQueryStatus.completedProjections < message.completedProjections) {
+          // We can receive messages out-of-order, because of how everything
+          // executes in parallel.  Therefore, only update if this update moves us forward.
+          this.latestQueryStatus = message;
+        }
+      })
     );
   }
 
