@@ -132,12 +132,25 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
 
   private handleActiveQueryUpdate(next: RunningQueryStatus) {
     if (next.running) {
-      this.activeQueries.set(next.queryId, next);
+      this.updateRunningQueryStatus(next);
     } else {
       this.activeQueries.delete(next.queryId);
       this.loadQuerySummaries();
     }
 
+  }
+
+  private updateRunningQueryStatus(next: RunningQueryStatus) {
+    if (this.activeQueries.has(next.queryId)) {
+      const currentStatus = this.activeQueries.get(next.queryId);
+      if (next.completedProjections > currentStatus.completedProjections || !next.running) {
+        // We receive updates out-of-order, so only update progress indicator
+        // if this is a higher update than previously received.
+        this.activeQueries.set(next.queryId, next);
+      }
+    } else {
+      this.activeQueries.set(next.queryId, next);
+    }
   }
 
   cancelActiveQuery($event: RunningQueryStatus) {

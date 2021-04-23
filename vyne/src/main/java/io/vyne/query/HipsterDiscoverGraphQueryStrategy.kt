@@ -1,5 +1,6 @@
 package io.vyne.query
 
+import com.google.common.base.Stopwatch
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import es.usc.citius.hipster.algorithm.Algorithm
@@ -9,9 +10,12 @@ import io.vyne.VyneCacheConfiguration
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
 import io.vyne.schemas.*
-import io.vyne.utils.log
+import io.vyne.utils.ImmutableEquality
+import io.vyne.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.flow.*
-import lang.taxi.Equality
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger {}
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
@@ -20,16 +24,9 @@ class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
       val relationship = edge.relationship
       val evaluator = evaluators[relationship]
          ?: error("No LinkEvaluator provided for relationship ${relationship.name}")
-      val evaluationResult = if (queryContext.debugProfiling) {
-
-         //TODO
-         //queryContext.startChild(this, "Evaluating ${edge.description} with evaluator ${evaluator.javaClass.simpleName}", OperationType.GRAPH_TRAVERSAL) {
-            evaluator.evaluate(edge, queryContext)
-         //}
-
-      } else {
-         evaluator.evaluate(edge, queryContext)
-      }
+      val sw = Stopwatch.createStarted()
+      val evaluationResult = evaluator.evaluate(edge, queryContext)
+      StrategyPerformanceProfiler.record("Hipster.evaluate.${evaluator.relationship}", sw.elapsed())
       return evaluationResult
    }
 }
@@ -56,11 +53,10 @@ class HipsterDiscoverGraphQueryStrategy(
       })
 
    private val searchPathExclusions = SearchPathExclusionsMap<SearchPathExclusionKey, SearchPathExclusionKey>(searchPathExclusionsCacheSize)
-   data class SearchPathExclusionKey(val startInstance: TypedInstance, val target: Element) {
-      private val equality = Equality(this, SearchPathExclusionKey::startInstance, SearchPathExclusionKey::target)
-      private val hash:Int by lazy { equality.hash() }
+   data class SearchPathExclusionKey(val startInstanceType: Type, val target: Element) {
+      private val equality = ImmutableEquality(this, SearchPathExclusionKey::startInstanceType, SearchPathExclusionKey::target)
       override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
-      override fun hashCode(): Int = hash
+      override fun hashCode(): Int = equality.hash()
    }
 
    override suspend fun invoke(target: Set<QuerySpecTypeNode>, context: QueryContext, invocationConstraints: InvocationConstraints): QueryStrategyResult {
@@ -73,7 +69,7 @@ class HipsterDiscoverGraphQueryStrategy(
       }
 
       if (context.facts.isEmpty()) {
-         log().info("Cannot perform a graph search, as no facts provied to serve as starting point. ")
+        logger.debug {"Cannot perform a graph search, as no facts provided to serve as starting point. " }
          return QueryStrategyResult.searchFailed()
       }
 
@@ -89,26 +85,25 @@ class HipsterDiscoverGraphQueryStrategy(
    }
 
    internal suspend fun find(targetElement: Element, context: QueryContext, invocationConstraints: InvocationConstraints):TypedInstance? {
-      // Take a copy, as the set is mutable, and performing a search is a
-      // mutating operation, discovering new facts, which can lead to a ConcurrentModificationException
-      val currentFacts = context.facts.toSet()
-
-      val ret = currentFacts
+      val ret = context.facts
          .asFlow()
 
      //    .filter { it is TypedObject }
          .mapNotNull { fact ->
             val startFact =  providedInstance(fact)
             val targetType = context.schema.type(targetElement.value as String)
-            val exclusionKey = SearchPathExclusionKey(fact, targetElement)
-            if (searchPathExclusionsCacheSize > 0 && searchPathExclusions.contains(exclusionKey)) {
+            // Excluding paths is done by the type, not the fact.
+            // Graph searches work based off of links from types, therefore
+            // we should exclude based on the type, regardless of the value.
+            val exclusionKey = SearchPathExclusionKey(fact.type, targetElement)
+            if (searchPathExclusions.contains(exclusionKey)) {
                // if  a previous search for given (searchNode, targetNode) yielded 'null' path, then
                // don't search.
                return@mapNotNull null
             }
             val searcher = GraphSearcher(startFact, targetElement, targetType, schemaGraphCache.get(context.schema), invocationConstraints)
             val searchResult = searcher.search(
-               currentFacts,
+               context.facts,
                context.excludedServices.toSet(),
                invocationConstraints.excludedOperations.plus(context.excludedOperations.map { SearchGraphExclusion("@Id", it) })) { pathToEvaluate ->
                evaluatePath(pathToEvaluate,context)
@@ -149,14 +144,14 @@ class HipsterDiscoverGraphQueryStrategy(
             val endNode = weightedNode.state()
             val evaluatableEdge = EvaluatableEdge(lastResult, weightedNode.action(), endNode)
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
-               log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried")
+               logger.debug { "As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried" }
             }
 
             val evaluationResult =
                edgeEvaluator.evaluate(evaluatableEdge, queryContext)
-
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
-               log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}")
+               logger.debug { "As p" +
+                  "art of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}" }
             }
             evaluationResult
          }

@@ -8,18 +8,20 @@ import io.vyne.VersionedSource
 import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
 import io.vyne.models.UndefinedSource
-import io.vyne.utils.log
-import lang.taxi.Equality
+import io.vyne.utils.ImmutableEquality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.*
 import lang.taxi.utils.takeHead
+import mu.KotlinLogging
 
 interface TypeFullView : TypeLightView
 interface TypeLightView
 
 typealias AttributeName = String
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * This is a documenation-only annotation - ie., it has no runtime
@@ -109,7 +111,7 @@ data class Type(
    // Intentionally excluded from equality:
    // taxiType - the antlr classes make equailty hard, and not meaningful in this context
    // typeCache - screws with equality, and not meaningful
-   private val equality = Equality(
+   private val equality = ImmutableEquality(
       this,
       Type::name
    )
@@ -147,11 +149,7 @@ data class Type(
 
    @get:JsonIgnore
    val inherits: List<Type> = this.inheritsFromTypeNames.mapNotNull { aliasName ->
-      try {
-         typeCache.type(aliasName)
-      } catch (e: Exception) {
-         null
-      }
+      typeCache.type(aliasName)
    }
 
 
@@ -275,7 +273,7 @@ data class Type(
       if (isCollection) {
          underlyingTypeParameters.firstOrNull().let { collectionTypeParam ->
             if (collectionTypeParam == null) {
-               log().warn("Collection does not have a declared type.  Using raw arrays is discouraged.  Will return Any")
+               logger.warn {"Collection does not have a declared type.  Using raw arrays is discouraged.  Will return Any" }
                typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
             } else {
                collectionTypeParam
@@ -431,10 +429,6 @@ data class Type(
 
    private fun calculateResolvedAliases(): Type {
       val resolvedFormattedType = resolveUnderlyingFormattedType()
-      if (this.name.parameterizedName == "lang.taxi.Array<lang.taxi.Any>") {
-         log().info("??")
-      }
-      log().info("resolvedAlias for ${this.name.parameterizedName} called")
       return if (!resolvedFormattedType.isTypeAlias) {
          resolvedFormattedType
       } else {

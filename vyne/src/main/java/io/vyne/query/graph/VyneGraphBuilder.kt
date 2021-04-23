@@ -14,6 +14,7 @@ import io.vyne.models.TypedValue
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.excludedValues
 import io.vyne.schemas.*
+import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.StrategyPerformanceProfiler
 
 enum class ElementType {
@@ -51,7 +52,9 @@ data class GraphBuildResult(
 typealias GraphConnection = HipsterGraphBuilder.Connection<Element, Relationship>
 
 data class Element(val value: Any, val elementType: ElementType, val instanceValue: Any? = null) {
-
+   val equality = ImmutableEquality(this, Element::value, Element::elementType, Element::instanceValue)
+   override fun hashCode(): Int = equality.hash()
+   override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
    fun graphNode(): Element {
 //      return if (this.elementType == ElementType.INSTANCE) {
 //         val typeName = (value as TypedInstance).type.name.fullyQualifiedName

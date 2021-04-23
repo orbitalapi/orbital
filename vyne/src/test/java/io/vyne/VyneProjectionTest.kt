@@ -2204,6 +2204,8 @@ service Broker1Service {
    @Test
    fun concurrency_test():Unit = runBlocking {
       val (vyne,stub) = testVyne("""
+         type DirectorName inherits String
+         type ReleaseYear inherits Int
          model Actor {
             @Id actorId : ActorId inherits String
             name : ActorName inherits String
@@ -2217,6 +2219,8 @@ service Broker1Service {
             @Id movieId : MovieId inherits String
             title : MovieTitle inherits String
             starring : ActorName
+            director : DirectorName
+            releaseYear : ReleaseYear
          }
          service Services {
             operation findAllMovies():Movie[]
@@ -2227,7 +2231,8 @@ service Broker1Service {
          val actorId = params[0].second.value as String
          flow {
 //            kotlinx.coroutines.delay(500)
-            emit(vyne.parseJsonModel("Actor", """{ "actorId" : ${actorId.quoted()} , "name" : "Tom Cruise's Clone #$actorId" } """))
+            val actor = TypedInstance.from(vyne.type("Actor"), """{ "actorId" : ${actorId.quoted()} , "name" : "Tom Cruise's Clone #$actorId" } """, vyne.schema, source = Provided)
+            emit(actor)
          }
       }
       val movieCount = 500
@@ -2250,7 +2255,7 @@ service Broker1Service {
             summary =  StrategyPerformanceProfiler.summarizeAndReset()
          }
       }
-      log().info("Test completed: $summary!!")
+      log().warn("Test completed: $summary")
 
    }
 }
