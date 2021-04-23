@@ -15,8 +15,10 @@ import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.Relationship
 import io.vyne.schemas.Type
 import io.vyne.utils.StrategyPerformanceProfiler
-import io.vyne.utils.log
+import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
+
+private val logger = KotlinLogging.logger {}
 
 // This class is not optimized.  Need to investigate how to speed it up.
 class GraphSearcher(
@@ -75,34 +77,34 @@ class GraphSearcher(
 
       var searchCount = 0
       tailrec fun buildNextPath(): WeightedNode<Relationship, Element, Double>? {
-            log().trace("$searchDescription: Attempting to build search path $searchCount")
-            val facts = if (excludedInstance.isEmpty()) {
-               knownFacts
-            } else {
-               knownFacts.filterNot { excludedInstance.contains(it) }
-            }
-            // Note: I think we can migrate to using exclusively excludedEdges (Not using excludedOperations
-            // and excludedInstances)..as it should be a more powerful abstraction
-            val proposedPath =
-               findPath(
-                  facts,
-                  excludedOperationsNames,
-                  excludedEdges,
-                  excludedServices.excludedValues(),
-                  evaluatedPaths
-               )
+         logger.trace { "$searchDescription: Attempting to build search path $searchCount" }
+         val facts = if (excludedInstance.isEmpty()) {
+            knownFacts
+         } else {
+            knownFacts.filterNot { excludedInstance.contains(it) }
+         }
+         // Note: I think we can migrate to using exclusively excludedEdges (Not using excludedOperations
+         // and excludedInstances)..as it should be a more powerful abstraction
+         val proposedPath =
+            findPath(
+               facts,
+               excludedOperationsNames,
+               excludedEdges,
+               excludedServices.excludedValues(),
+               evaluatedPaths
+            )
 
          return when {
-               proposedPath == null -> null
-               evaluatedPaths.containsPath(proposedPath) -> {
-                  log().info("The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again.")
-                  null
-               }
-               else -> {
-                  when (prevalidatePath(proposedPath, excludedEdges)) {
-                     PathPrevaliationResult.EVALUATE -> proposedPath
-                     PathPrevaliationResult.REQUERY -> buildNextPath()
-                     PathPrevaliationResult.ABORT -> null
+            proposedPath == null -> null
+            evaluatedPaths.containsPath(proposedPath) -> {
+               logger.info { "The proposed path with id ${proposedPath.pathHashExcludingWeights()} has already been evaluated, so will not be tried again." }
+               null
+            }
+            else -> {
+               when (prevalidatePath(proposedPath, excludedEdges)) {
+                  PathPrevaliationResult.EVALUATE -> proposedPath
+                  PathPrevaliationResult.REQUERY -> buildNextPath()
+                  PathPrevaliationResult.ABORT -> null
                }
             }
          }
@@ -114,14 +116,11 @@ class GraphSearcher(
          val nextPathId = nextPath.pathHashExcludingWeights()
          evaluatedPaths.addProposedPath(nextPath)
 
-         log().info("$searchDescription - attempting path $nextPathId")
-         if (log().isTraceEnabled) {
-            log().trace("$searchDescription - attempting path $nextPathId: \n${nextPath.pathDescription()}")
-         }
+         logger.debug { "$searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
 
          searchCount++
          if (searchCount > MAX_SEARCH_COUNT) {
-            log().error("Search iterations exceeded max count. Stopping, lest we search forever in vein")
+            logger.error { "Search iterations exceeded max count. Stopping, lest we search forever in vein" }
             return noResult(nextPath)
          }
          val evaluatedPath = evaluator(nextPath)
@@ -130,24 +129,24 @@ class GraphSearcher(
          val resultSatisfiesConstraints =
             pathEvaluatedSuccessfully && invocationConstraints.typedInstanceValidPredicate.isValid(resultValue)
          if (!pathEvaluatedSuccessfully) {
-            log().info("$searchDescription - path $nextPathId failed - last error was $errorMessage")
+            logger.debug {"$searchDescription - path $nextPathId failed - last error was $errorMessage" }
          }
 
          if (pathEvaluatedSuccessfully && resultSatisfiesConstraints) {
-            log().info("$searchDescription - path $nextPathId succeeded with value $resultValue")
+            logger.debug {"$searchDescription - path $nextPathId succeeded with value $resultValue" }
             return SearchResult(resultValue, nextPath)
-         } else  {
+         } else {
             if (pathEvaluatedSuccessfully && !resultSatisfiesConstraints) {
-               log().info("$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching")
+               logger.debug { "$searchDescription - path $nextPathId executed successfully, but result of $resultValue does not satisfy constraint defined by ${invocationConstraints.typedInstanceValidPredicate::class.simpleName}.  Will continue searching" }
             } else {
-               log().info("$searchDescription - path $nextPathId did not complete successfully, will continue searching")
+               logger.debug { "$searchDescription - path $nextPathId did not complete successfully, will continue searching" }
             }
          }
          nextPath = buildNextPath()
       }
       // There were no search paths to evaluate.  Just exit
       //log().info("Failed to find path from ${startFact.label()} to ${targetFact.label()} after $searchCount searches")
-      log().trace("$searchDescription ended - no more paths to evaluate")
+      logger.debug { "$searchDescription ended - no more paths to evaluate" }
       return noPath()
    }
 
@@ -221,40 +220,38 @@ class GraphSearcher(
       evaluatedEdges: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
 
-         val problem = ProblemBuilder.create()
-            .initialState(startFact)
-            .defineProblemWithExplicitActions()
-            .useTransitionFunction { state ->
-                  graph.outgoingEdgesOf(state).map { edge ->
-                     Transition.create(state, edge.edgeValue, edge.vertex2)
-                  }
+      val problem = ProblemBuilder.create()
+         .initialState(startFact)
+         .defineProblemWithExplicitActions()
+         .useTransitionFunction { state ->
+            graph.outgoingEdgesOf(state).map { edge ->
+               Transition.create(state, edge.edgeValue, edge.vertex2)
             }
-            .useCostFunction { transition ->
-               evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state)
-
-            }
-            .build()
-
-
-         val executionPath = logTimeTo(graphSearchTimes) {
-            Hipster
-               .createDijkstra(problem)
-               .search(targetFact).goalNode
          }
+         .useCostFunction { transition ->
+            evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state)
 
-         log().debug("Generated path with hash ${executionPath.pathHashExcludingWeights()}")
-         return if (executionPath.state() != targetFact) {
-            null
-         } else {
-            executionPath
          }
+         .build()
+
+
+      val executionPath = logTimeTo(graphSearchTimes) {
+         Hipster
+            .createDijkstra(problem)
+            .search(targetFact).goalNode
+      }
+
+      logger.debug{"Generated path with hash ${executionPath.pathHashExcludingWeights()}"}
+      return if (executionPath.state() != targetFact) {
+         null
+      } else {
+         executionPath
+      }
       // Construct a specialised search problem, which allows us to supply a custom cost function.
       // The cost function applies a higher 'cost' to the nodes transitions that have previously been attempted.
       // (In earlier versions, we simply remvoed edges after failed attempts)
       // This means that transitions that have been tried in a path become less favoured (but still evaluatable)
       // than transitions that haven't been tried.
-
-
 
 
    }

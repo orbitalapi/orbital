@@ -13,8 +13,8 @@
     <!--<logger level="trace" name="org.springframework.data.hazelcast" />-->
     <!--<logger level="trace" name="com" />-->
 
-   <logger level="INFO" name="io" />
-	<root level="debug">
+<!--   <logger level="INFO" name="io" />-->
+	<root level="INFO">
 		<appender-ref ref="console" />
 	</root>
 

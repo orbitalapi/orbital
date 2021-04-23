@@ -11,9 +11,11 @@ import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
 import io.vyne.schemas.*
 import io.vyne.utils.StrategyPerformanceProfiler
-import io.vyne.utils.log
 import kotlinx.coroutines.flow.*
 import lang.taxi.ImmutableEquality
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger {}
 
 class EdgeNavigator(linkEvaluators: List<EdgeEvaluator>) {
    private val evaluators = linkEvaluators.associateBy { it.relationship }
@@ -67,7 +69,7 @@ class HipsterDiscoverGraphQueryStrategy(
       }
 
       if (context.facts.isEmpty()) {
-         log().info("Cannot perform a graph search, as no facts provied to serve as starting point. ")
+        logger.debug {"Cannot perform a graph search, as no facts provided to serve as starting point. " }
          return QueryStrategyResult.searchFailed()
       }
 
@@ -142,13 +144,13 @@ class HipsterDiscoverGraphQueryStrategy(
             val endNode = weightedNode.state()
             val evaluatableEdge = EvaluatableEdge(lastResult, weightedNode.action(), endNode)
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
-               log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried")
+               logger.debug { "As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} will be tried" }
             }
 
             val evaluationResult =
                edgeEvaluator.evaluate(evaluatableEdge, queryContext)
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
-               log().info("As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}")
+               logger.debug { "As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}" }
             }
             evaluationResult
          }

@@ -8,10 +8,12 @@ import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemas.*
-import io.vyne.utils.log
 import io.vyne.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger {}
 
 typealias StubResponseHandler = (RemoteOperation, List<Pair<Parameter, TypedInstance>>) -> List<TypedInstance>
 typealias StubResponseFlowProvider = (RemoteOperation, List<Pair<Parameter, TypedInstance>>) -> Flow<TypedInstance>
@@ -81,7 +83,7 @@ class StubService(
       profiler: ProfilerOperation, queryId: String?
    ): Flow<TypedInstance> {
       val paramDescription = parameters.joinToString { "${it.second.type.name.shortDisplayName} = ${it.second.value}" }
-      log().info("Invoking ${service.name} -> ${operation.name}($paramDescription)")
+      logger.debug {"Invoking ${service.name} -> ${operation.name}($paramDescription)" }
       val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
          val metadata = operation.metadata("StubResponse")
          (metadata.params["value"] as String?).orElse(operation.name)

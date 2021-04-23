@@ -2231,7 +2231,8 @@ service Broker1Service {
          val actorId = params[0].second.value as String
          flow {
 //            kotlinx.coroutines.delay(500)
-            emit(vyne.parseJsonModel("Actor", """{ "actorId" : ${actorId.quoted()} , "name" : "Tom Cruise's Clone #$actorId" } """))
+            val actor = TypedInstance.from(vyne.type("Actor"), """{ "actorId" : ${actorId.quoted()} , "name" : "Tom Cruise's Clone #$actorId" } """, vyne.schema, source = Provided)
+            emit(actor)
          }
       }
       val movieCount = 500
@@ -2254,7 +2255,7 @@ service Broker1Service {
             summary =  StrategyPerformanceProfiler.summarizeAndReset()
          }
       }
-      log().info("Test completed: $summary!!")
+      log().warn("Test completed: $summary")
 
    }
 }

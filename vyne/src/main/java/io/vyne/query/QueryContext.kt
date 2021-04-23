@@ -20,17 +20,18 @@ import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
 import io.vyne.schemas.*
 import io.vyne.utils.cached
-import io.vyne.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import lang.taxi.policies.Instruction
 import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.ProjectedType
+import mu.KotlinLogging
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.stream.Stream
 import kotlin.streams.toList
 
+private val logger = KotlinLogging.logger {}
 
 /**
  * Defines a node within a QuerySpec that
@@ -231,7 +232,9 @@ data class QueryContext(
       private set;
 
    fun cancel() {
-      log().info("Cancelling query $queryId")
+      // NOTE : This isn't called currently.  This method is where we should mirate to,
+      // in place of the gobally shared state currently being used.
+      logger.info { "Cancelling query $queryId" }
       cancelRequested = true
    }
 
@@ -451,7 +454,7 @@ data class QueryContext(
       val invokedService = schema.services.firstOrNull { it.name.fullyQualifiedName == service }
       onServiceInvoked((invokedService))
       getTopLevelContext().operationCache[key] = result
-      log().info("Caching {} [{} -> {}]", operation, operation.previousValue?.value, result.type.qualifiedName)
+      logger.debug { "Caching $operation [${operation.previousValue?.value} -> ${ result.type.qualifiedName}]"  }
       return result
    }
 
@@ -514,11 +517,9 @@ enum class FactDiscoveryStrategy {
             matches.isEmpty() -> null
             matches.size == 1 -> matches.first()
             else -> {
-               log().debug(
-                  "ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null",
-                  matches.size,
-                  type.name
-               )
+               logger.debug {
+                  "ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of type ${type.name.parameterizedName}, so returning null"
+               }
                null
             }
 
@@ -555,11 +556,9 @@ enum class FactDiscoveryStrategy {
                   if (nonNullMatches.size == 1) {
                      nonNullMatches.first()
                   } else {
-                     log().debug(
-                        "ANY_DEPTH_EXPECT_ONE strategy found {} of type {}, so returning null",
-                        matches.size,
-                        type.name
-                     )
+                     logger.debug {
+                        "ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} of type ${type.name.parameterizedName}, so returning null"
+                     }
                      null
                   }
                }
