@@ -53,7 +53,7 @@ class FileWatcherTest {
       val createdFile = folder.root.toPath().resolve("hello.taxi")
       createdFile.toFile().writeText("Hello, world")
 
-      verify(compilerService, timeout(3000)).recompile(any())
+      verify(compilerService, timeout(3000).atLeast(1)).recompile(any())
    }
 
    @Test
