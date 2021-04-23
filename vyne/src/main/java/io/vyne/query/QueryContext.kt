@@ -18,6 +18,7 @@ import io.vyne.query.graph.Element
 import io.vyne.query.graph.EvaluatableEdge
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.ServiceAnnotations
+import io.vyne.query.graph.ServiceParams
 import io.vyne.schemas.*
 import io.vyne.utils.cached
 import kotlinx.coroutines.flow.Flow
@@ -465,6 +466,23 @@ data class QueryContext(
          // We should limit, such that if an entity decalres an Id, then we should only invoke that service if the
          // @Id is known to us.
          // We expect to remove this once search-only-on-id is completed.
+            invokedService.metadata(ServiceAnnotations.Datasource.annotation).params[ServiceParams.Exclude.paramName]?.let { excludedServiceList ->
+               //TODO check taxi annotation param value schema generation.
+               // as currently the value of 'excluded' is a list of string
+               // but it comes as a string in the form of [[service1, service2]]
+               val excludedServiceString: String?  = excludedServiceList as? String
+               excludedServiceString?.let { serviceList ->
+                  serviceList.filter { it != '[' && it != ']' }
+               }.toString()
+                  .split(",").forEach { serviceToExclude ->
+                     excludedServices.add(
+                        SearchGraphExclusion(
+                           "Exclude already invoked @DataSource annotated services from discovery searches",
+                           QualifiedName(serviceToExclude)
+                        )
+                     )
+                  }
+            }
          excludedServices.add(
             SearchGraphExclusion(
                "Exclude already invoked @DataSource annotated services from discovery searches",
