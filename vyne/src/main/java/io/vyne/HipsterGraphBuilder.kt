@@ -31,7 +31,7 @@ package io.vyne
 
 import es.usc.citius.hipster.graph.HashBasedHipsterGraph
 import es.usc.citius.hipster.graph.HipsterGraph
-import lang.taxi.ImmutableEquality
+import io.vyne.utils.ImmutableEquality
 
 /**
  *

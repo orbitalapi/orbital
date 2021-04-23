@@ -14,8 +14,8 @@ import io.vyne.models.TypedValue
 import io.vyne.query.SearchGraphExclusion
 import io.vyne.query.excludedValues
 import io.vyne.schemas.*
+import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.StrategyPerformanceProfiler
-import lang.taxi.ImmutableEquality
 
 enum class ElementType {
    TYPE,

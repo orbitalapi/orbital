@@ -10,9 +10,9 @@ import io.vyne.VyneCacheConfiguration
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.*
 import io.vyne.schemas.*
+import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.StrategyPerformanceProfiler
 import kotlinx.coroutines.flow.*
-import lang.taxi.ImmutableEquality
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -150,7 +150,8 @@ class HipsterDiscoverGraphQueryStrategy(
             val evaluationResult =
                edgeEvaluator.evaluate(evaluatableEdge, queryContext)
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
-               logger.debug { "As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}" }
+               logger.debug { "As p" +
+                  "art of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}" }
             }
             evaluationResult
          }
