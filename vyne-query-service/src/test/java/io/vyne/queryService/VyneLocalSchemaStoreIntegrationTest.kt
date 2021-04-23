@@ -48,7 +48,7 @@ class VyneLocalSchemaStoreIntegrationTest {
          .bodyToMono(SchemaSet::class.java)
          .block()
 
-      schemas.sources.size.should.be.equal(1)
-      schemas.sources[0].source.should.be.equal(expectedVersionedSource)
+
+      schemas.sources.contains(expectedVersionedSource)
    }
 }
