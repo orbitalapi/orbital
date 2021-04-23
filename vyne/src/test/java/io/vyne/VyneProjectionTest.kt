@@ -411,6 +411,7 @@ service InstrumentService {
    }
 
    @Test
+   @Ignore
    fun `project to CommonOrder with Trades`() = runBlocking {
       // TODO confirm how the mappings should look like
       val noOfRecords = 100
