@@ -1,6 +1,5 @@
 package io.vyne.schemaStore
 
-import io.vyne.CompositeSchemaBuilder
 import io.vyne.ParsedSource
 import io.vyne.VersionedSource
 import io.vyne.schemas.*
@@ -57,7 +56,7 @@ private class MemberCollector(val schema: Schema, val includePrimitives: Boolean
 
       val types = collectedMembers.values.filterIsInstance<Type>().toSet()
       val services = collectedMembers.values.filterIsInstance<Service>().toSet()
-      return SimpleSchema(types, services)
+      return SimpleSchema(types, services, schema.typeCache)
    }
 
    private fun append(memberNames: List<QualifiedName>, collectedMembers: MutableMap<QualifiedName, SchemaMember>) {
