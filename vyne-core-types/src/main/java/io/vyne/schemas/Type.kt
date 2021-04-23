@@ -8,7 +8,7 @@ import io.vyne.VersionedSource
 import io.vyne.models.TypedEnumValue
 import io.vyne.models.TypedInstance
 import io.vyne.models.UndefinedSource
-import lang.taxi.ImmutableEquality
+import io.vyne.utils.ImmutableEquality
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier

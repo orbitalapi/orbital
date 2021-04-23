@@ -151,7 +151,6 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
     } else {
       this.activeQueries.set(next.queryId, next);
     }
-
   }
 
   cancelActiveQuery($event: RunningQueryStatus) {

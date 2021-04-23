@@ -212,7 +212,7 @@ export class QueryEditorComponent implements OnInit {
       tap(message => {
         if (isNullOrUndefined(this.latestQueryStatus)) {
           this.latestQueryStatus = message;
-        } else if (this.latestQueryStatus.completedProjections < message.completedProjections) {
+        } else if (this.latestQueryStatus.completedProjections < message.completedProjections || !message.running) {
           // We can receive messages out-of-order, because of how everything
           // executes in parallel.  Therefore, only update if this update moves us forward.
           this.latestQueryStatus = message;
