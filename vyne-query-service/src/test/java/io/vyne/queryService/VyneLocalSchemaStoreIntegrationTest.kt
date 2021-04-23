@@ -4,6 +4,7 @@ import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SourceSubmissionResponse
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.boot.test.context.SpringBootTest
@@ -22,6 +23,7 @@ class VyneLocalSchemaStoreIntegrationTest {
    val randomServerPort = 0
 
    @Test
+   @Ignore
    fun `should expose REST api for submitting and querying for taxi schemas`() {
       // prepare
       val client = WebClient
