@@ -11,7 +11,7 @@ import io.vyne.cask.ddl.views.CaskViewBuilderFactory
 import io.vyne.cask.ddl.views.CaskViewConfig
 import io.vyne.cask.ddl.views.CaskViewDefinition
 import io.vyne.cask.ddl.views.CaskViewService
-import io.vyne.cask.ddl.views.SchemaBasedViewGenerator
+import io.vyne.cask.ddl.views.taxiViews.SchemaBasedViewGenerator
 import io.vyne.cask.format.csv.CsvStreamSource
 import io.vyne.cask.format.json.CoinbaseJsonOrderSchema
 import io.vyne.cask.format.json.JsonStreamSource

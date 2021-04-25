@@ -2,6 +2,7 @@ package io.vyne.cask.ddl.views
 
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.ddl.views.taxiViews.SchemaBasedViewGenerator
 import io.vyne.utils.log
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.View
