@@ -134,13 +134,23 @@ class PostgresDdlGenerator {
       }
       fun toColumnName(field: Field) = toColumnName(field.name)
       fun toColumnName(fieldName: String) = fieldName.quoted()
-      fun selectNullAs(fieldName: String, fieldType: Type): String {
+      fun toSqlNull(fieldType: Type): String {
          val ddlGenerator = PostgresDdlGenerator()
          val postgresColumnType = ddlGenerator.postgresColumnType(ddlGenerator.getPrimitiveType(fieldType))
-         return "null::$postgresColumnType as ${toColumnName(fieldName)}"
+         return "null::$postgresColumnType"
+      }
+      fun selectNullAs(fieldName: String, fieldType: Type): String {
+         return "${toSqlNull(fieldType)} as ${toColumnName(fieldName)}"
       }
       fun selectAs(sourceField: Field, targetFieldName: String) = "${toColumnName(sourceField)} as ${toColumnName(targetFieldName)}"
       fun selectAs(sourceField: String, targetFieldName: String) = "$sourceField as ${toColumnName(targetFieldName)}"
+      fun selectAs(fieldName: String) = "as ${toColumnName(fieldName)}"
+      fun toWindowFunctionExpression(windowFunction: String,
+                                     windowFunctionFields:  List<FieldReferenceSelector>): String {
+         val orderByExpression =  if (windowFunctionFields.size == 3)  " ORDER BY ${toColumnName(windowFunctionFields[2].fieldName)}" else ""
+         val partitionBy = "PARTITION BY ${toColumnName(windowFunctionFields[1].fieldName)}"
+         return "$windowFunction(${toColumnName(windowFunctionFields.first().fieldName)}) OVER ($partitionBy  $orderByExpression)"
+      }
    }
 
    fun generateDrop(versionedType: VersionedType): String {
