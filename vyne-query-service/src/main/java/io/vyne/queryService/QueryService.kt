@@ -117,7 +117,8 @@ class QueryService(
       resultMode: ResultMode,
       contentType: String
    ): Flow<Any> {
-      val serializer = resultMode.buildSerializer(queryResult)
+      val serializer = if (contentType == TEXT_CSV) ResultMode.RAW.buildSerializer(queryResult) else resultMode.buildSerializer(queryResult)
+
       return when (contentType) {
          TEXT_CSV -> toCsv(queryResult.results, serializer)
          // Default everything else to JSON
@@ -217,7 +218,7 @@ class QueryService(
       @RequestParam("clientQueryId", required = false) clientQueryId: String? = null
    ): ResponseEntity<Flow<Any>> {
       val user = auth?.toVyneUser()
-      val response = vyneQLQuery(query, user, clientQueryId = clientQueryId, queryId = UUID.randomUUID().toString())
+      val response = vyneQLQuery(query, user, clientQueryId = clientQueryId, queryId = clientQueryId ?: UUID.randomUUID().toString())
       return queryResultToResponseEntity(response, resultMode, contentType)
    }
 
@@ -305,7 +306,6 @@ class QueryService(
          FailedSearchResponse(e.message!!, null, queryId = queryId)
       }
 
-      //response
       QueryEventObserver(historyDbWriter.createEventConsumer(), activeQueryMonitor)
          .responseWithQueryHistoryListener(query, response)
    }

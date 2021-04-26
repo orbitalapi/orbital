@@ -16,6 +16,7 @@ import org.junit.Ignore
 import org.junit.Test
 import org.springframework.http.MediaType
 import kotlin.test.assertEquals
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
@@ -54,9 +55,11 @@ class QueryServiceTest : BaseQueryServiceTest() {
    fun `csv request produces expected results regardless of resultmode`() = runBlocking {
 
       val query = buildQuery("Order[]")
+
       ResultMode.values().forEach { resultMode ->
+         println("Result mode $resultMode")
          queryService.submitQuery(query, resultMode, TEXT_CSV)
-            .body.test(5.seconds) {
+            .body.test(timeout = Duration.ZERO) {
                val expected = """orderId,traderName,instrumentId
 orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
                val next = expectItem()
@@ -76,14 +79,14 @@ orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
             resultMode,
             TEXT_CSV
          )
-            .body.test {
+            .body.test(timeout = Duration.ZERO) {
                val expected = """orderId,tradeId,instrumentName,maturityDate,traderName
 orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
                """.withoutWhitespace()
-               (expectItem() as String).should.equal(expected.withoutWhitespace())
+               val item = (expectItem() as String).withoutWhitespace()
+               item.should.equal(expected.withoutWhitespace())
                expectComplete()
             }
-
       }
 
    }

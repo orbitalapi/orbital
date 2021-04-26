@@ -44,6 +44,7 @@ class FileWatcherTest {
       val (compilerService: CompilerService, watcher) = newWatcher()
 
       createdFile.toFile().writeText("Hello, cruel world")
+
       verify(compilerService, timeout(3000)).recompile(any())
    }
 

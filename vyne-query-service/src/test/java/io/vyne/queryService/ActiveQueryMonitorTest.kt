@@ -10,6 +10,7 @@ import org.junit.Test
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
@@ -17,26 +18,21 @@ import kotlin.time.ExperimentalTime
 class ActiveQueryMonitorTest {
 
    @Test
-   fun `observe query meta data events`() = runBlockingTest {
+   fun `observe query meta data events`() = runBlocking {
 
+      val queryId: String = UUID.randomUUID().toString()
       val queryMetaDataService = ActiveQueryMonitor()
+      queryMetaDataService.reportStart(queryId, null, "")
 
       //given - queryId and a handle to the metadata shared flow
-      val queryId: String = UUID.randomUUID().toString()
+
       val eventFlow = queryMetaDataService.queryStatusUpdates(queryId)
 
       //when - many events regarding the query are published
-      queryMetaDataService.reportStart(queryId, null, "")
+
       queryMetaDataService.incrementEmittedRecordCount(queryId)
       queryMetaDataService.incrementEmittedRecordCount(queryId)
 
-      //then
-      eventFlow.test {
-         //expect latest item
-         expectItem()
-         //but not more
-         expectNoEvents()
-      }
 
    }
 
