@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS QUERY_SUMMARY
     end_time             TIMESTAMP,
     record_count         NUMBER,
     error_message        varchar(2000),
-    anonymous_types_json CLOB
+    anonymous_types_json VARCHAR(MAX)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ix_querySummary_clientQueryId ON QUERY_SUMMARY (client_query_id);
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS QUERY_RESULT_ROW
 (
     row_id     SERIAL PRIMARY KEY,
     query_id   VARCHAR(255),
-    json       CLOB,
+    json       VARCHAR(MAX),
     value_hash NUMBER
 );
 
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS LINEAGE_RECORD
     data_source_id   VARCHAR(255) PRIMARY KEY,
     query_id         VARCHAR(255),
     data_source_type VARCHAR(255),
-    data_source_json CLOB
+    data_source_json VARCHAR(MAX)
 );
 
 CREATE INDEX IF NOT EXISTS ix_lineageRecord_queryId on LINEAGE_RECORD (query_id);
