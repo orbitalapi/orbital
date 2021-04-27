@@ -216,9 +216,11 @@ data class QueryContext(
    /**
     * Unique ID generated for query context
     */
-   val queryId: String
+   val queryId: String,
 
-) : ProfilerOperation by profiler {
+   val eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+
+) : ProfilerOperation by profiler, QueryContextEventDispatcher {
 
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
    private val policyInstructionCounts = mutableMapOf<Pair<QualifiedName, Instruction>, Int>()
@@ -229,11 +231,27 @@ data class QueryContext(
    var cancelRequested: Boolean = false
       private set;
 
-   fun cancel() {
-      // NOTE : This isn't called currently.  This method is where we should mirate to,
-      // in place of the gobally shared state currently being used.
+   init {
+      val self = this
+      eventBroker.addHandler(object : CancelRequestHandler {
+         override fun requestCancel() {
+            self.requestCancel()
+         }
+      })
+   }
+
+   override fun requestCancel() {
       logger.info { "Cancelling query $queryId" }
       cancelRequested = true
+   }
+
+
+   override fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {
+      if (this.isProjecting) {
+         logger.debug { "Not reporting incremental estimated record count, as currently projecting" }
+      } else {
+         this.eventBroker.reportIncrementalEstimatedRecordCount(operation, estimatedRecordCount)
+      }
    }
 
 
@@ -266,8 +284,8 @@ data class QueryContext(
          queryEngine: QueryEngine,
          profiler: QueryProfiler,
          clientQueryId: String? = null,
-         queryId: String
-
+         queryId: String,
+         eventBroker: QueryContextEventBroker = QueryContextEventBroker()
       ): QueryContext {
          return QueryContext(
             schema,
@@ -275,7 +293,8 @@ data class QueryContext(
             queryEngine,
             profiler,
             clientQueryId = clientQueryId,
-            queryId = queryId
+            queryId = queryId,
+            eventBroker = eventBroker
          )
       }
 
@@ -391,11 +410,17 @@ data class QueryContext(
    }
 
    private data class GetFactOrNullCacheKey(
-      val type:Type,
+      val type: Type,
       val strategy: FactDiscoveryStrategy,
-      val spec:TypedInstanceValidPredicate
+      val spec: TypedInstanceValidPredicate
    ) {
-      private val equality = ImmutableEquality(this, GetFactOrNullCacheKey::type, GetFactOrNullCacheKey::strategy, GetFactOrNullCacheKey::spec)
+      private val equality = ImmutableEquality(
+         this,
+         GetFactOrNullCacheKey::type,
+         GetFactOrNullCacheKey::strategy,
+         GetFactOrNullCacheKey::spec
+      )
+
       override fun equals(other: Any?): Boolean {
          return equality.isEqualTo(other)
       }
@@ -404,7 +429,6 @@ data class QueryContext(
          return equality.hash()
       }
    }
-
 
 
    fun hasFactOfType(
@@ -430,15 +454,16 @@ data class QueryContext(
     * seen 40k calls to getFactOrNull, which in turn generates a call stack with over 18M invocations.
     * So, cache the calls.
     */
-   private val getFactOrNullCache = cached { key:GetFactOrNullCacheKey  ->
+   private val getFactOrNullCache = cached { key: GetFactOrNullCacheKey ->
       key.strategy.getFact(this, key.type, spec = key.spec)
    }
+
    fun getFactOrNull(
       type: Type,
       strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): TypedInstance? {
-      return getFactOrNullCache.get(GetFactOrNullCacheKey(type,strategy, spec))
+      return getFactOrNullCache.get(GetFactOrNullCacheKey(type, strategy, spec))
    }
 
    fun evaluatedPath(): List<EvaluatedEdge> {
@@ -480,7 +505,7 @@ data class QueryContext(
       val invokedService = schema.services.firstOrNull { it.name.fullyQualifiedName == service }
       onServiceInvoked((invokedService))
       getTopLevelContext().operationCache[key] = result
-      logger.debug { "Caching $operation [${operation.previousValue?.value} -> ${ result.type.qualifiedName}]"  }
+      logger.debug { "Caching $operation [${operation.previousValue?.value} -> ${result.type.qualifiedName}]" }
       return result
    }
 
@@ -491,23 +516,23 @@ data class QueryContext(
          // We should limit, such that if an entity decalres an Id, then we should only invoke that service if the
          // @Id is known to us.
          // We expect to remove this once search-only-on-id is completed.
-            invokedService.metadata(ServiceAnnotations.Datasource.annotation).params[ServiceParams.Exclude.paramName]?.let { excludedServiceList ->
-               //TODO check taxi annotation param value schema generation.
-               // as currently the value of 'excluded' is a list of string
-               // but it comes as a string in the form of [[service1, service2]]
-               val excludedServiceString: String?  = excludedServiceList as? String
-               excludedServiceString?.let { serviceList ->
-                  serviceList.filter { it != '[' && it != ']' }
-               }.toString()
-                  .split(",").forEach { serviceToExclude ->
-                     excludedServices.add(
-                        SearchGraphExclusion(
-                           "Exclude already invoked @DataSource annotated services from discovery searches",
-                           QualifiedName(serviceToExclude)
-                        )
+         invokedService.metadata(ServiceAnnotations.Datasource.annotation).params[ServiceParams.Exclude.paramName]?.let { excludedServiceList ->
+            //TODO check taxi annotation param value schema generation.
+            // as currently the value of 'excluded' is a list of string
+            // but it comes as a string in the form of [[service1, service2]]
+            val excludedServiceString: String? = excludedServiceList as? String
+            excludedServiceString?.let { serviceList ->
+               serviceList.filter { it != '[' && it != ']' }
+            }.toString()
+               .split(",").forEach { serviceToExclude ->
+                  excludedServices.add(
+                     SearchGraphExclusion(
+                        "Exclude already invoked @DataSource annotated services from discovery searches",
+                        QualifiedName(serviceToExclude)
                      )
-                  }
-            }
+                  )
+               }
+         }
          excludedServices.add(
             SearchGraphExclusion(
                "Exclude already invoked @DataSource annotated services from discovery searches",
@@ -679,3 +704,62 @@ class TreeNavigator {
       }
    }
 }
+
+/**
+ * Lightweight interface to allow components used throughout execution of a query
+ * to send messages back up to the QueryContext.
+ *
+ * It's up to the query context what to do with these messages.  It may ignore them,
+ * or redistribute them.  Callers should not make any assumptions about the impact of calling these methods.
+ *
+ * Using an interface here as we don't always actually have a query context.
+ */
+interface QueryContextEventDispatcher {
+   /**
+    * Signals an incremental update to the estimated record count, as reported by the provided operation.
+    * This is populated by services setting the HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT header
+    * in their response to Vyne.
+    */
+   fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {}
+
+   /**
+    * Request that this query cancel.
+    */
+   fun requestCancel() {}
+}
+
+
+/**
+ * Ok, here's the deal... this EventDispatcher / Broker stuff doesn't feel right.
+ * I'm like...three wines deep, and three weeks late in shipping this f**ing release.
+ * It'll do, ok?
+ */
+class QueryContextEventBroker : QueryContextEventDispatcher {
+   private val handlers = mutableListOf<QueryContextEventHandler>()
+   fun addHandler(handler: QueryContextEventHandler): QueryContextEventBroker {
+      handlers.add(handler)
+      return this
+   }
+
+   override fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {
+      handlers.filterIsInstance<EstimatedRecordCountUpdateHandler>()
+         .forEach { it.reportIncrementalEstimatedRecordCount(operation, estimatedRecordCount) }
+   }
+
+   override fun requestCancel() {
+      handlers.filterIsInstance<CancelRequestHandler>()
+         .forEach { it.requestCancel() }
+   }
+
+}
+
+interface QueryContextEventHandler
+interface EstimatedRecordCountUpdateHandler : QueryContextEventHandler {
+   fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {}
+}
+
+interface CancelRequestHandler : QueryContextEventHandler {
+   fun requestCancel() {}
+}
+
+object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher

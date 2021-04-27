@@ -57,13 +57,13 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       return queryEngineFactory.queryEngine(schema, factSetForQueryEngine)
    }
 
-   suspend fun query(vyneQlQuery: TaxiQLQueryString, queryId: String = UUID.randomUUID().toString(), clientQueryId: String? = null): QueryResult {
+   suspend fun query(vyneQlQuery: TaxiQLQueryString, queryId: String = UUID.randomUUID().toString(), clientQueryId: String? = null, eventBroker: QueryContextEventBroker = QueryContextEventBroker()): QueryResult {
       val vyneQuery = Compiler(source = vyneQlQuery, importSources = listOf(this.schema.taxi)).queries().first()
-      return query(vyneQuery, queryId, clientQueryId)
+      return query(vyneQuery, queryId, clientQueryId, eventBroker)
    }
 
-   suspend fun query(taxiQl: TaxiQlQuery, queryId: String = UUID.randomUUID().toString(), clientQueryId: String? = null): QueryResult {
-      val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId)
+   suspend fun query(taxiQl: TaxiQlQuery, queryId: String = UUID.randomUUID().toString(), clientQueryId: String? = null, eventBroker: QueryContextEventBroker = QueryContextEventBroker()): QueryResult {
+      val (queryContext, expression) = buildContextAndExpression(taxiQl, queryId, clientQueryId, eventBroker)
 
       return when (taxiQl.queryMode) {
          lang.taxi.types.QueryMode.FIND_ALL -> queryContext.findAll(expression)
@@ -72,11 +72,11 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
    }
 
    @VisibleForTesting
-   internal fun buildContextAndExpression(taxiQl: TaxiQlQuery, queryId: String, clientQueryId: String?): Pair<QueryContext, QueryExpression> {
+   internal fun buildContextAndExpression(taxiQl: TaxiQlQuery, queryId: String, clientQueryId: String?, eventBroker: QueryContextEventBroker = QueryContextEventBroker()): Pair<QueryContext, QueryExpression> {
       val additionalFacts = taxiQl.facts.values.map { fact ->
          TypedInstance.from(schema.type(fact.fqn.fullyQualifiedName), fact.value, schema, source = Provided)
       }.toSet()
-      var queryContext = query(additionalFacts = additionalFacts, queryId = queryId, clientQueryId = clientQueryId)
+      var queryContext = query(additionalFacts = additionalFacts, queryId = queryId, clientQueryId = clientQueryId, eventBroker = eventBroker)
       queryContext = taxiQl.projectedType?.let {
          queryContext.projectResultsTo(it) // Merge conflict, was : it.toVyneQualifiedName()
       } ?: queryContext
@@ -105,7 +105,9 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       factSetIds: Set<FactSetId> = setOf(FactSets.ALL),
       additionalFacts: Set<TypedInstance> = emptySet(),
       queryId: String = UUID.randomUUID().toString(),
-      clientQueryId: String? = null): QueryContext {
+      clientQueryId: String? = null,
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+   ): QueryContext {
       // Design note:  I'm creating the queryEngine with ALL the fact sets, regardless of
       // what is asked for, but only providing the desired factSets to the queryContext.
       // This is because the context only evalutates the factSets that are provided,
@@ -113,9 +115,8 @@ class Vyne(schemas: List<Schema>, private val queryEngineFactory: QueryEngineFac
       // However, we may want to expand the set of factSets later, (eg., to include a caller
       // factSet), so leave them present in the queryEngine.
       // Hopefully, this lets us have the best of both worlds.
-
       val queryEngine = queryEngine(setOf(FactSets.ALL), additionalFacts)
-      return queryEngine.queryContext(factSetIds = factSetIds, queryId = queryId, clientQueryId = clientQueryId)
+      return queryEngine.queryContext(factSetIds = factSetIds, queryId = queryId, clientQueryId = clientQueryId, eventBroker = eventBroker)
    }
 
    fun accessibleFrom(fullyQualifiedTypeName: String): Set<Type> {

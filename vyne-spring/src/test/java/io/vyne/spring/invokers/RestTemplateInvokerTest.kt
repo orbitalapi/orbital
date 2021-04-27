@@ -1,30 +1,30 @@
 package io.vyne.spring.invokers
 
 import app.cash.turbine.test
+import com.nhaarman.mockito_kotlin.mock
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.vyne.expectTypedObject
 import io.vyne.models.Provided
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.query.QueryProfiler
-import io.vyne.query.active.ActiveQueryMonitor
+import io.vyne.query.QueryContext
 import io.vyne.schemaStore.SchemaProvider
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.testVyne
 import kotlinx.coroutines.runBlocking
+import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.client.WebClient
-import okhttp3.mockwebserver.MockResponse
-import org.junit.After
-import org.junit.Before
 import java.util.function.Consumer
 import kotlin.test.assertEquals
-import okhttp3.mockwebserver.RecordedRequest
 import kotlin.time.Duration
 
 
@@ -150,17 +150,17 @@ namespace vyne {
       val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}"))
       val service = schema.service("vyne.ClientDataService")
       val operation = service.operation("getContactsForClient")
+      val queryContext: QueryContext = mock {  }
 
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema),
-            activeQueryMonitor = ActiveQueryMonitor()
+            schemaProvider = SchemaProvider.from(schema)
          )
             .invoke(
                service, operation, listOf(
                   paramAndType("vyne.ClientName", "notional", schema)
-               ), QueryProfiler(), "MOCK_QUERY_ID"
+               ), queryContext, "MOCK_QUERY_ID"
             ) .test(Duration.ZERO) {
                val instance = expectTypedObject()
                expect(instance.type.fullyQualifiedName).to.equal("vyne.Client")
@@ -211,8 +211,7 @@ namespace vyne {
 
       val restTemplateInvoker = RestTemplateInvoker(
          webClient = webClient,
-         schemaProvider = SchemaProvider.from(schema),
-         activeQueryMonitor = ActiveQueryMonitor()
+         schemaProvider = SchemaProvider.from(schema)
       )
       val vyne = testVyne(schema, listOf(restTemplateInvoker))
 
@@ -251,13 +250,12 @@ namespace vyne {
       runBlocking {
          RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema),
-            activeQueryMonitor = ActiveQueryMonitor()
+            schemaProvider = SchemaProvider.from(schema)
          ).invoke(
             service, operation, listOf(
                paramAndType("vyne.ClientId", "myClientId", schema),
                paramAndType("vyne.CreditCostRequest", mapOf("deets" to "Hello, world"), schema)
-            ), QueryProfiler()
+            ), mock {  }
          ).test(Duration.ZERO) {
             val typedInstance = expectTypedObject()
             expect(typedInstance.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
@@ -307,14 +305,13 @@ namespace vyne {
       runBlocking {
          val invoker = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema),
-            activeQueryMonitor = ActiveQueryMonitor()
+            schemaProvider = SchemaProvider.from(schema)
          )
          invoker
             .invoke(
                service, operation, listOf(
                   paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-               ), QueryProfiler(), "MOCK_QUERY_ID"
+               ), mock {  }, "MOCK_QUERY_ID"
             ).test(Duration.ZERO) {
                val typedInstance = expectTypedObject()
                typedInstance["id"].value.should.equal(100)
@@ -349,12 +346,11 @@ namespace vyne {
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = SchemaProvider.from(schema),
-            activeQueryMonitor = ActiveQueryMonitor()
+            schemaProvider = SchemaProvider.from(schema)
          ).invoke(
             service, operation, listOf(
                paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-            ), QueryProfiler(), "MOCK_QUERY_ID"
+            ), mock {  }, "MOCK_QUERY_ID"
          ).test(Duration.ZERO) {
             expectTypedObject()
             expectComplete()
@@ -408,10 +404,9 @@ namespace vyne {
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = schemaProvider,
-            activeQueryMonitor = ActiveQueryMonitor()
+            schemaProvider = schemaProvider
          )
-            .invoke(service, operation, emptyList(), QueryProfiler(), "MOCK_QUERY_ID").test(Duration.ZERO) {
+            .invoke(service, operation, emptyList(), mock {  }, "MOCK_QUERY_ID").test(Duration.ZERO) {
                val instance = expectTypedObject()
                instance["id"].value.should.equal("100")
                instance["name"].value.should.equal("Fluffy")
@@ -466,10 +461,9 @@ namespace vyne {
       runBlocking {
          val response = RestTemplateInvoker(
             webClient = webClient,
-            schemaProvider = schemaProvider,
-            activeQueryMonitor = ActiveQueryMonitor()
+            schemaProvider = schemaProvider
          )
-            .invoke(service, operation, emptyList(), QueryProfiler(), "MOCK_QUERY_ID").test(Duration.ZERO) {
+            .invoke(service, operation, emptyList(), mock {  }, "MOCK_QUERY_ID").test(Duration.ZERO) {
                val instance = expectTypedObject()
                instance["id"].value.should.equal("100")
                instance["name"].value.should.equal("Fluffy")

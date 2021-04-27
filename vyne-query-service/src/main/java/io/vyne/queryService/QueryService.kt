@@ -290,7 +290,7 @@ class QueryService(
       log().info("VyneQL query => $query")
       val vyne = vyneProvider.createVyne(vyneUser.facts())
       val response = try {
-         vyne.query(query, queryId = queryId, clientQueryId = clientQueryId)
+         vyne.query(query, queryId = queryId, clientQueryId = clientQueryId, eventBroker = activeQueryMonitor.eventDispatcherForQuery(queryId))
       } catch (e: lang.taxi.CompilationException) {
          log().info("The query failed compilation: ${e.message}")
          FailedSearchResponse(

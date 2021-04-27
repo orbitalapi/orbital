@@ -6,7 +6,6 @@ import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedNull
 import io.vyne.models.TypedObject
-import io.vyne.query.active.isQueryCancelled
 import io.vyne.query.graph.EvaluatedEdge
 import io.vyne.query.graph.operationInvocation.SearchRuntimeException
 import io.vyne.schemas.Operation
@@ -19,7 +18,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import java.util.stream.Collectors
 
 
@@ -64,7 +62,8 @@ interface QueryEngine {
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
       additionalFacts: Set<TypedInstance> = emptySet(),
       queryId: String,
-      clientQueryId: String?
+      clientQueryId: String?,
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
    ): QueryContext
 
    suspend fun build(type: Type, context: QueryContext): QueryResult =
@@ -109,7 +108,8 @@ class StatefulQueryEngine(
       factSetIds: Set<FactSetId>,
       additionalFacts: Set<TypedInstance>,
       queryId: String,
-      clientQueryId: String?
+      clientQueryId: String?,
+      eventBroker: QueryContextEventBroker
    ): QueryContext {
       val facts = this.factSets.filterFactSets(factSetIds).values().toSet()
       return QueryContext.from(
@@ -118,7 +118,8 @@ class StatefulQueryEngine(
          this,
          profiler,
          queryId = queryId,
-         clientQueryId = clientQueryId
+         clientQueryId = clientQueryId,
+         eventBroker = eventBroker
       )
    }
 
@@ -258,60 +259,6 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
       }
    }
 
-   // This logic executes currently as part of projection from one collection to another
-   /*
-   private suspend fun mapCollectionToCollection(targetType: Type, context: QueryContext): TypedInstance? {
-      require(targetType.resolveAliases().typeParameters.size == 1) { "Expected collection type to contain exactly 1 parameter" }
-      val targetCollectionType = targetType.resolveAliases().typeParameters[0]
-      return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
-         val inboundFactList = (context.facts.first() as TypedCollection).value
-         log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
-         val transformed = inboundFactList.mapNotNull { it -> mapTo(targetCollectionType, it, context) }
-         return@timed when {
-            transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
-            else -> TypedCollection.from(flattenResult(transformed))
-         }
-      }
-   }
-
-    */
-
-   /*
-   private suspend fun mapSingleToCollection(targetType: Type, context: QueryContext): TypedInstance? {
-      require(targetType.resolveAliases().typeParameters.size == 1) { "Expected collection type to contain exactly 1 parameter" }
-      val targetCollectionType = targetType.resolveAliases().typeParameters[0]
-      //return timed("QueryEngine.mapTo ${targetCollectionType.qualifiedName}") {
-
-         val inboundFactList = listOf(onlyTypedObject(context)!!)
-         log().info("Mapping TypedCollection.size=${inboundFactList.size} to ${targetCollectionType.qualifiedName} ")
-         val transformed = inboundFactList
-            .stream()
-            .map {
-               mapTo(targetCollectionType, it, context)
-
-            }
-            .filter { it != null }
-            .collect(Collectors.toList())
-
-         return when {
-            transformed.size == 1 && transformed.first()?.type?.isCollection == true -> TypedCollection.from((transformed.first()!! as TypedCollection).value)
-            else -> TypedCollection.from(flattenResult(transformed))
-         }
-      //}
-   }
-
-    */
-
-   private fun flattenResult(result: List<TypedInstance?>): List<TypedInstance> {
-      return result
-         .filterNotNull()
-         .flatMap {
-            when (it) {
-               is TypedCollection -> it.value
-               else -> listOf(it)
-            }
-         }
-   }
 
    private suspend fun mapTo(targetType: Type, typedInstance: TypedInstance, context: QueryContext): TypedInstance? {
 
@@ -454,7 +401,7 @@ abstract class BaseQueryEngine(override val schema: Schema, private val strategi
                   // We need to hold running queries in the query-server,
                   // and send a cancellation flag / signal down through
                   // the queryContext.
-                  if (index % 5 == 0 && isQueryCancelled(context.queryId)) {
+                  if (context.cancelRequested) {
                      log().warn("Query ${context.queryId} cancelled - cancelling collection and publication of results")
                      currentCoroutineContext().cancel()
                   }

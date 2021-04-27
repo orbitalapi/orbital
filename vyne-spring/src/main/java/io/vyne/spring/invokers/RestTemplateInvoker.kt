@@ -7,9 +7,8 @@ import io.vyne.http.UriVariableProvider.Companion.buildRequestBody
 import io.vyne.models.OperationResult
 import io.vyne.models.TypedCollection
 import io.vyne.models.TypedInstance
-import io.vyne.query.ProfilerOperation
+import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
-import io.vyne.query.active.ActiveQueryMonitor
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
 import io.vyne.schemaStore.SchemaProvider
@@ -17,12 +16,7 @@ import io.vyne.schemas.*
 import io.vyne.spring.hasHttpMetadata
 import io.vyne.spring.isServiceDiscoveryClient
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.utils.log
@@ -42,34 +36,30 @@ import reactor.netty.http.client.HttpClient
 import reactor.netty.resources.ConnectionProvider
 import java.time.Duration
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
 
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
    val webClient: WebClient,
-   private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT,
-   private val activeQueryMonitor: ActiveQueryMonitor
+   private val serviceUrlResolvers: List<ServiceUrlResolver> = ServiceUrlResolver.DEFAULT
 ) : OperationInvoker {
-
 
 
    @Autowired
    constructor(
       schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,
-      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver()),
-      activeQueryMonitor: ActiveQueryMonitor
+      serviceUrlResolvers: List<ServiceUrlResolver> = listOf(ServiceDiscoveryClientUrlResolver())
    )
       : this(
       schemaProvider,
       webClientBuilder
-         .exchangeStrategies(ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build())
+         .exchangeStrategies(
+            ExchangeStrategies.builder().codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
+         )
          .clientConnector(
-             ReactorClientHttpConnector(
+            ReactorClientHttpConnector(
                HttpClient.create(
 
                   ConnectionProvider.builder("RestTemplateInvoker-Connection-Pool")
@@ -81,13 +71,13 @@ class RestTemplateInvoker(
                      .pendingAcquireTimeout(Duration.ofMillis(20.toLong()))
                      .build()
                )
-               .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 100)
-               .keepAlive(true))
+                  .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 100)
+                  .keepAlive(true)
+            )
          )
          .build(),
 
-      serviceUrlResolvers,
-      activeQueryMonitor
+      serviceUrlResolvers
    )
 
    private val uriVariableProvider = UriVariableProvider()
@@ -105,7 +95,8 @@ class RestTemplateInvoker(
       service: Service,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
-      profilerOperation: ProfilerOperation, queryId: String?
+      eventDispatcher: QueryContextEventDispatcher,
+      queryId: String?
    ): Flow<TypedInstance> {
       log().debug("Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}")
 
@@ -143,8 +134,10 @@ class RestTemplateInvoker(
             if (clientResponse.statusCode().isError) {
                throw OperationInvocationException("Error invoking URL $expandedUri", clientResponse.statusCode())
             }
-            reportEstimatedResults(queryId, clientResponse.headers())
-            if (clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON).isCompatibleWith(MediaType.TEXT_EVENT_STREAM)) {
+            reportEstimatedResults(eventDispatcher, operation, clientResponse.headers())
+            if (clientResponse.headers().contentType().orElse(MediaType.APPLICATION_JSON)
+                  .isCompatibleWith(MediaType.TEXT_EVENT_STREAM)
+            ) {
                clientResponse.bodyToFlux<String>()
                   .flatMap { responseString ->
                      val remoteCall = RemoteCall(
@@ -199,13 +192,14 @@ class RestTemplateInvoker(
 
    }
 
-   private fun reportEstimatedResults(queryId: String?, headers: ClientResponse.Headers) {
-      if (queryId == null) {
-         return
-      }
+   private fun reportEstimatedResults(
+      eventDispatcher: QueryContextEventDispatcher,
+      operation: RemoteOperation,
+      headers: ClientResponse.Headers
+   ) {
       if (headers.header(STREAM_ESTIMATED_RECORD_COUNT).isNotEmpty()) {
-         activeQueryMonitor.incrementExpectedRecordCount(
-            queryId,
+         eventDispatcher.reportIncrementalEstimatedRecordCount(
+            operation,
             Integer.valueOf(headers.header(STREAM_ESTIMATED_RECORD_COUNT)[0])
          )
       }

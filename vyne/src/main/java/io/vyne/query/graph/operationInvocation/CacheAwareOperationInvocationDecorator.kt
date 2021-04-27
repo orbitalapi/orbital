@@ -2,7 +2,7 @@ package io.vyne.query.graph.operationInvocation
 
 import com.google.common.cache.CacheBuilder
 import io.vyne.models.TypedInstance
-import io.vyne.query.ProfilerOperation
+import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.schemas.Parameter
 import io.vyne.schemas.RemoteOperation
 import io.vyne.schemas.Service
@@ -32,7 +32,7 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
       service: Service,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
-      profilerOperation: ProfilerOperation,
+      eventDispatcher: QueryContextEventDispatcher,
       queryId: String?
    ): Flow<TypedInstance> {
       val key = generateCacheKey(service, operation, parameters)
@@ -51,7 +51,7 @@ class CacheAwareOperationInvocationDecorator(private val invoker: OperationInvok
 
       return try {
          val cacheResult = LinkedList<TypedInstance>()
-         invoker.invoke(service, operation, parameters, profilerOperation, queryId).onEach {
+         invoker.invoke(service, operation, parameters, eventDispatcher, queryId).onEach {
             cacheResult.add(it)
          }.onCompletion {
             cachedResults.put(key, cacheResult)

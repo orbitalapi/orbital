@@ -2,8 +2,8 @@ package io.vyne.queryService
 
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
-import io.vyne.query.DefaultProfilerOperation
 import io.vyne.query.Fact
+import io.vyne.query.NoOpQueryContextEventDispatcher
 import io.vyne.query.ResultMode
 import io.vyne.query.graph.operationInvocation.OperationInvocationException
 import io.vyne.query.graph.operationInvocation.OperationInvoker
@@ -34,7 +34,7 @@ class OperationService(private val operationInvoker: OperationInvoker, private v
       val (service, operation) = lookupOperation(serviceName, operationName)
       val parameterTypedInstances = mapFactsToParameters(operation, facts)
       try {
-         val operationResult = operationInvoker.invoke(service, operation, parameterTypedInstances, DefaultProfilerOperation.root(), "ABCD")
+         val operationResult = operationInvoker.invoke(service, operation, parameterTypedInstances, NoOpQueryContextEventDispatcher, "ABCD")
          return ResponseEntity.ok(operationResult)
       } catch (e: OperationInvocationException) {
          throw ResponseStatusException(e.httpStatus, e.message)

@@ -1,19 +1,11 @@
 package io.vyne.query
 
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.times
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockito_kotlin.*
 import io.vyne.models.Provided
 import io.vyne.models.TypedInstance
 import io.vyne.query.graph.operationInvocation.CacheAwareOperationInvocationDecorator
 import io.vyne.query.graph.operationInvocation.OperationInvoker
-import io.vyne.schemas.Operation
-import io.vyne.schemas.Parameter
-import io.vyne.schemas.QualifiedName
-import io.vyne.schemas.Service
-import io.vyne.schemas.Type
+import io.vyne.schemas.*
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -25,7 +17,7 @@ class CacheAwareOperationInvocationDecoratorTest {
    @Test
    fun testKeyGenerator() {
       val mockOperationInvoker = mock<OperationInvoker>()
-      val mockProfilerOperation = mock<ProfilerOperation>()
+      val mockQueryContext = mock<QueryContext>()
       val cacheAware = CacheAwareOperationInvocationDecorator(mockOperationInvoker)
 
       val type = Type(name = QualifiedName("type1"), sources = listOf(), taxiType = PrimitiveType.STRING, typeDoc = null)
@@ -49,13 +41,13 @@ class CacheAwareOperationInvocationDecoratorTest {
                mockedTypeInstance
             )
          })
-         cacheAware.invoke(service, operation, params, mockProfilerOperation, "MOCK_QUERY_ID").toList()
-         cacheAware.invoke(service, operation, params, mockProfilerOperation, "MOCK_QUERY_ID").toList()
+         cacheAware.invoke(service, operation, params, mockQueryContext, "MOCK_QUERY_ID").toList()
+         cacheAware.invoke(service, operation, params, mockQueryContext, "MOCK_QUERY_ID").toList()
          verify(mockOperationInvoker, times(1)).invoke(
             service,
             operation,
             params,
-            mockProfilerOperation,
+            mockQueryContext,
             "MOCK_QUERY_ID"
          )
       }

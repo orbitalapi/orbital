@@ -2,7 +2,8 @@ package io.vyne
 
 import io.vyne.models.*
 import io.vyne.models.json.Jackson
-import io.vyne.query.ProfilerOperation
+import io.vyne.query.QueryContext
+import io.vyne.query.QueryContextEventDispatcher
 import io.vyne.query.RemoteCall
 import io.vyne.query.graph.operationInvocation.DefaultOperationInvocationService
 import io.vyne.query.graph.operationInvocation.OperationInvocationService
@@ -80,10 +81,11 @@ class StubService(
       service: Service,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
-      profiler: ProfilerOperation, queryId: String?
+      eventDispatcher: QueryContextEventDispatcher,
+      queryId: String?
    ): Flow<TypedInstance> {
       val paramDescription = parameters.joinToString { "${it.second.type.name.shortDisplayName} = ${it.second.value}" }
-      logger.debug {"Invoking ${service.name} -> ${operation.name}($paramDescription)" }
+      logger.debug { "Invoking ${service.name} -> ${operation.name}($paramDescription)" }
       val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
          val metadata = operation.metadata("StubResponse")
          (metadata.params["value"] as String?).orElse(operation.name)
