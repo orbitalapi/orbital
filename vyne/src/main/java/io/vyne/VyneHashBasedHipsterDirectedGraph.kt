@@ -45,7 +45,7 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
       }
    }
 
-   private val searchCache = cached { key: SearchCacheKey ->
+   private fun doSearch(key:SearchCacheKey): WeightedNode<Relationship, Element, Double>? {
       // Construct a specialised search problem, which allows us to supply a custom cost function.
       // The cost function applies a higher 'cost' to the nodes transitions that have previously been attempted.
       // (In earlier versions, we simply remvoed edges after failed attempts)
@@ -61,7 +61,6 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
          }
          .useCostFunction { transition ->
             key.evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state)
-
          }
          .build()
 
@@ -71,11 +70,14 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
          .search(key.targetFact).goalNode
 
       logger.debug { "Generated path with hash ${executionPath.pathHashExcludingWeights()}" }
-      if (executionPath.state() != key.targetFact) {
+      return if (executionPath.state() != key.targetFact) {
          null
       } else {
          executionPath
       }
+   }
+   private val searchCache = cached { key: SearchCacheKey ->
+     doSearch(key)
    }
 
    fun findPath(
@@ -83,9 +85,8 @@ class SchemaPathFindingGraph(connections: HashMap<Element, Set<GraphEdge<Element
       targetFact: Element,
       evaluatedEdges: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
-      return searchCache.get(
-         SearchCacheKey(startFact, targetFact, evaluatedEdges)
-      )
+      val key = SearchCacheKey(startFact, targetFact, evaluatedEdges)
+      return searchCache.get(key)
 
    }
 }

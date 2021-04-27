@@ -12,12 +12,12 @@ import io.vyne.utils.ImmutableEquality
  * weight may change as a result of previous visits - however the path itself is still
  * the same path.
  */
-class EvaluatedPathSet {
-   private val proposedPaths: MutableMap<Int, WeightedNode<Relationship, Element, Double>> = mutableMapOf()
-   private val evaluatedPaths: MutableList<List<PathEvaluation>> = mutableListOf()
-   private val evaluatedOperations: MutableList<EvaluatedEdge> = mutableListOf()
-   private val penalizedEdges: MutableList<PenalizedEdge> = mutableListOf()
-   private val transitionCount: MutableMap<HashableTransition, Int> = mutableMapOf()
+data class EvaluatedPathSet(
+   private val proposedPaths: MutableMap<Int, WeightedNode<Relationship, Element, Double>> = mutableMapOf(),
+   private val evaluatedPaths: MutableList<List<PathEvaluation>> = mutableListOf(),
+   private val evaluatedOperations: MutableList<EvaluatedEdge> = mutableListOf(),
+   private val penalizedEdges: MutableList<PenalizedEdge> = mutableListOf(),
+   private val transitionCount: MutableMap<HashableTransition, Int> = mutableMapOf()) {
 
 
    companion object {
