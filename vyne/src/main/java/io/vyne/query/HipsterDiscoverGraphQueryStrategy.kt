@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package io.vyne.query
 
 import com.google.common.base.Stopwatch
@@ -108,7 +110,7 @@ class HipsterDiscoverGraphQueryStrategy(
                context.excludedServices.toSet(),
                invocationConstraints.excludedOperations.plus(context.excludedOperations.map { SearchGraphExclusion("@Id", it) })) { pathToEvaluate ->
                searchProvidedAtLeastOnePath = true
-               evaluatePath(pathToEvaluate,context)
+               evaluatePath(pathToEvaluate,context, startFact)
             }
             // Only exclude if the pair of (searchNode, targetNode) didn't provide any paths at all.
             // It's possible that the search failed, but the path is valid to be considered again.
@@ -124,11 +126,15 @@ class HipsterDiscoverGraphQueryStrategy(
       return ret
    }
 
-   private suspend fun evaluatePath(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): List<PathEvaluation> {
+   private suspend fun evaluatePath(
+      searchResult: WeightedNode<Relationship, Element, Double>,
+      queryContext: QueryContext,
+      startFact: Element
+   ): List<PathEvaluation> {
       // The actual result of this isn't directly used.  But the queryContext is updated with
       // nodes as they're discovered (eg., through service invocation)
       val evaluatedEdges = mutableListOf<PathEvaluation>(
-         getStartingEdge(searchResult, queryContext)
+         getStartingEdge(startFact)
       )
       val path = searchResult.path()
       path
@@ -164,19 +170,10 @@ class HipsterDiscoverGraphQueryStrategy(
       return evaluatedEdges
    }
 
-   fun getStartingEdge(searchResult: WeightedNode<Relationship, Element, Double>, queryContext: QueryContext): StartingEdge {
-      val firstNode = searchResult.path().first()
-      if (firstNode.state().instanceValue is TypedInstance) {
-         return StartingEdge(firstNode.state().instanceValue as TypedInstance, firstNode.state())
-      }
-
-      // Legacy -- is this still valid?  Why do we hit this, now we're adding typedInstances to
-      // the graph?
-      val firstType = queryContext.schema.type(firstNode.state().valueAsQualifiedName())
-      val firstFact = queryContext.getFactOrNull(firstType)
-      require(firstFact != null) { "The queryContext doesn't have a fact present of type ${firstType.fullyQualifiedName}, but this is the starting point of the discovered solution." }
-      val startingEdge = StartingEdge(firstFact, firstNode.state())
-      return startingEdge
+   private fun getStartingEdge(
+      startFact: Element
+   ): StartingEdge {
+      return StartingEdge(startFact.instanceValue as TypedInstance, startFact)
    }
 }
 

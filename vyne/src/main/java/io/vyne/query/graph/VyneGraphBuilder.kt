@@ -3,10 +3,8 @@ package io.vyne.query.graph
 import com.google.common.cache.CacheBuilder
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
-import io.vyne.DisplayGraphBuilder
-import io.vyne.HipsterGraphBuilder
-import io.vyne.VyneGraphBuilderCacheSettings
-import io.vyne.VyneHashBasedHipsterDirectedGraph
+import io.vyne.*
+import io.vyne.VyneHashBasedHipsterDirectedGraph.Companion.createCachingGraph
 import io.vyne.models.EnumSynonyms
 import io.vyne.models.TypedInstance
 import io.vyne.models.TypedObject
@@ -44,7 +42,7 @@ enum class ElementType {
 
 @Deprecated("Do we still need this?")
 data class GraphBuildResult(
-   val graph: HipsterDirectedGraph<Element, Relationship>,
+   val graph: SchemaPathFindingGraph,
    val addedInstanceVertices: List<Element>,
    val removedEdges: List<GraphEdge<Element, Relationship>>
 )
@@ -152,7 +150,10 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       // Our base graph constructing from type and service definitions.
       val baseSchemaConnections = getBaseSchemaConnections(excludedOperations, excludedServices)
 
-      val connectionsForFacts = createdInstances(facts, schema)
+      val connectionsForFacts = StrategyPerformanceProfiler.profiled("buildCreatedInstancesConnections") {
+          createdInstances(facts, schema)
+      }
+
       val connections = baseSchemaConnections + connectionsForFacts
       return buildGraph(connections, excludedEdges)
       // Here we're adding 'instance value' based connections into the 'base graph'
@@ -176,16 +177,18 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
       connections: List<GraphConnection>,
       excludedEdges: List<EvaluatableEdge> = emptyList()
    ): GraphBuildResult {
-      val filteredFacts = StrategyPerformanceProfiler.profiled("pre-buildGraph") {
-         val excludedConnections =
-            excludedEdges.map { GraphConnection(it.vertex1, it.vertex2, it.relationship) }.toSet()
-         connections.filter { !excludedConnections.contains(it) }
+      val filteredFacts = StrategyPerformanceProfiler.profiled("buildGraph.filterExcludedEdges") {
+         if (excludedEdges.isEmpty()) {
+            connections
+         } else {
+            val excludedConnections = excludedEdges.map { it.connection }
+            connections.filter { !excludedConnections.contains(it) }
+         }
       }
 
       return graphCache.get(filteredFacts) {
          StrategyPerformanceProfiler.profiled("buildGraph") {
-            val graph = HipsterGraphBuilder.create<Element, Relationship>()
-               .createDirectedGraph(filteredFacts)
+            val graph = createCachingGraph(filteredFacts)
             // TODO : Waiting to see if we actually use GraphBuildResult anymore, if not, just reutnr the graph here.
             GraphBuildResult(graph, emptyList(), emptyList())
          }
@@ -532,28 +535,29 @@ class VyneGraphBuilder(private val schema: Schema, vyneGraphBuilderCache: VyneGr
          //builder.connect(providedInstance).to(parameter(inheritedType.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
       }
       if (value is TypedValue && type.isEnum) {
-         val synonyms = EnumSynonyms.enumSynonymsFromTypedValue(value)
-         synonyms.forEach { synonym ->
-            // Even though the synonymss are technically providedInstances,
-            // We're not recursing into createProvidedInstances here as it would create a
-            // stack overflow, pointing back to this synonym.
-            // SO, just carefully add the links we care about.
-            val synonymInstance = providedInstance(synonym)
-            createdConnections.add(
-               GraphConnection(
-                  providedInstance,
-                  synonymInstance,
-                  Relationship.IS_SYNONYM_OF
-               )
-            )
-            createdConnections.add(
-               HipsterGraphBuilder.Connection(
-                  synonymInstance,
-                  parameter(synonym.typeName),
-                  Relationship.CAN_POPULATE
-               )
-            )
+         val synonymConnections = StrategyPerformanceProfiler.profiled("buildCreatedInstancesConnections.buildTypedValueEnums") {
+            EnumSynonyms.enumSynonymsFromTypedValue(value)
+               .flatMap {  synonym ->
+                  // Even though the synonymss are technically providedInstances,
+                  // We're not recursing into createProvidedInstances here as it would create a
+                  // stack overflow, pointing back to this synonym.
+                  // SO, just carefully add the links we care about.
+                  val synonymInstance = providedInstance(synonym)
+                  listOf(
+                     GraphConnection(
+                        providedInstance,
+                        synonymInstance,
+                        Relationship.IS_SYNONYM_OF
+                     ),
+                     GraphConnection(
+                        synonymInstance,
+                        parameter(synonym.typeName),
+                        Relationship.CAN_POPULATE
+                     )
+                  )
+               }
          }
+         createdConnections.addAll(synonymConnections)
       }
       if (!type.isClosed) {
          // We treat attributes of actual values that we know differently

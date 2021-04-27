@@ -1,12 +1,9 @@
 package io.vyne.query
 
 import es.usc.citius.hipster.model.impl.WeightedNode
-import io.vyne.query.graph.Element
-import io.vyne.query.graph.ElementType
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.PathEvaluation
-import io.vyne.query.graph.pathHashExcludingWeights
+import io.vyne.query.graph.*
 import io.vyne.schemas.Relationship
+import io.vyne.utils.ImmutableEquality
 
 
 /**
@@ -193,7 +190,13 @@ class EvaluatedPathSet {
       val from: Element,
       val relationship: Relationship,
       val to: Element
-   )
+   ) {
+      val equality = ImmutableEquality(this, HashableTransition::from, HashableTransition::relationship, HashableTransition::to)
+      override fun hashCode(): Int = equality.hash()
+      override fun equals(other: Any?): Boolean {
+         return equality.isEqualTo(other)
+      }
+   }
 }
 
 data class PenalizedEdge(

@@ -1,11 +1,8 @@
 package io.vyne.query
 
 import com.google.common.base.Stopwatch
-import es.usc.citius.hipster.algorithm.Hipster
-import es.usc.citius.hipster.graph.HipsterDirectedGraph
-import es.usc.citius.hipster.model.Transition
 import es.usc.citius.hipster.model.impl.WeightedNode
-import es.usc.citius.hipster.model.problem.ProblemBuilder
+import io.vyne.SchemaPathFindingGraph
 import io.vyne.models.TypedInstance
 import io.vyne.query.SearchResult.Companion.noPath
 import io.vyne.query.SearchResult.Companion.noResult
@@ -203,8 +200,8 @@ class GraphSearcher(
       excludedServices: Set<QualifiedName>,
       previouslyEvaluatedPaths: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
+      val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
       return StrategyPerformanceProfiler.profiled("findPath") {
-         val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
          val result = findPath(graphBuildResult.graph, previouslyEvaluatedPaths)
          result
       }
@@ -212,42 +209,10 @@ class GraphSearcher(
    }
 
    private fun findPath(
-      graph: HipsterDirectedGraph<Element, Relationship>,
+      graph: SchemaPathFindingGraph,
       evaluatedEdges: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
-
-      val problem = ProblemBuilder.create()
-         .initialState(startFact)
-         .defineProblemWithExplicitActions()
-         .useTransitionFunction { state ->
-            graph.outgoingEdgesOf(state).map { edge ->
-               Transition.create(state, edge.edgeValue, edge.vertex2)
-            }
-         }
-         .useCostFunction { transition ->
-            evaluatedEdges.calculateTransitionCost(transition.fromState, transition.action, transition.state)
-
-         }
-         .build()
-
-
-      val executionPath = Hipster
-         .createDijkstra(problem)
-         .search(targetFact).goalNode
-
-      logger.debug { "Generated path with hash ${executionPath.pathHashExcludingWeights()}" }
-      return if (executionPath.state() != targetFact) {
-         null
-      } else {
-         executionPath
-      }
-      // Construct a specialised search problem, which allows us to supply a custom cost function.
-      // The cost function applies a higher 'cost' to the nodes transitions that have previously been attempted.
-      // (In earlier versions, we simply remvoed edges after failed attempts)
-      // This means that transitions that have been tried in a path become less favoured (but still evaluatable)
-      // than transitions that haven't been tried.
-
-
+      return graph.findPath(startFact,targetFact, evaluatedEdges)
    }
 
    private fun <R> logTimeTo(timeCollection: MutableList<Long>, operation: () -> R): R {

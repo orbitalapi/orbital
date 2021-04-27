@@ -53,6 +53,8 @@ data class EvaluatableEdge(
    @JsonIgnore
    val previousValue: TypedInstance? = previous.resultValue
 
+   val connection = GraphConnection(vertex1,vertex2,relationship)
+
    val description = "${vertex1} -[${relationship}]-> ${vertex2}"
 
    fun success(value: TypedInstance?): EvaluatedEdge {

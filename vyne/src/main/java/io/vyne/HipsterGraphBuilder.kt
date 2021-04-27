@@ -29,9 +29,13 @@ package io.vyne
  *    limitations under the License.
  */
 
+import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HashBasedHipsterGraph
 import es.usc.citius.hipster.graph.HipsterGraph
 import io.vyne.utils.ImmutableEquality
+import java.util.*
+import kotlin.collections.LinkedHashMap
+import kotlin.collections.set
 
 /**
  *
@@ -53,7 +57,7 @@ class HipsterGraphBuilder<V, E> private constructor(
 
    fun copy(): HipsterGraphBuilder<V, E> = create(this.existingConnections, this.connections)
 
-   data class Connection<V, E>(val vertex1: V, val vertex2: V, val edge: E) {
+   data class Connection<V, E>(private val vertex1: V, private val vertex2: V, val edge: E) : GraphEdge<V, E> {
       val equality =
          ImmutableEquality(this, Connection<*, *>::vertex1, Connection<*, *>::vertex2, Connection<*, *>::edge)
 
@@ -64,6 +68,13 @@ class HipsterGraphBuilder<V, E> private constructor(
       override fun hashCode(): Int {
          return equality.hash()
       }
+
+      override fun getVertex2(): V = vertex2
+
+      override fun getVertex1(): V = vertex1
+      override fun getEdgeValue(): E = edge
+
+      override fun getType(): GraphEdge.Type = GraphEdge.Type.DIRECTED
    }
 
    fun createDirectedGraph(connections: List<Connection<V, E>>): VyneHashBasedHipsterDirectedGraph<V, E> {

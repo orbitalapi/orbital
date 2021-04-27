@@ -14,24 +14,25 @@ class ImmutableEquality<T : Any>(val target: T, vararg val properties: T.() -> A
       const val DEFAULT_MULTIPLIER_PRIME = 37
    }
 
+   private val hash: Int
 
-   fun isEqualTo(other: Any?): Boolean {
-      if (other == null) return false
-      if (other === this) return true
-      if (other.javaClass != target.javaClass) return false
-      return properties.all { it.invoke(target) == it.invoke(other as T) }
-   }
-
-   private val hash = lazy {
+   init {
       val fields = properties
          .map {
             val valueToHash = it.invoke(target)
             valueToHash?.hashCode() ?: 0
          }
-      fields.fold(DEFAULT_INITIAL_ODD_NUMBER) { a, b -> DEFAULT_MULTIPLIER_PRIME * a + b }
+      hash = fields.fold(DEFAULT_INITIAL_ODD_NUMBER) { a, b -> DEFAULT_MULTIPLIER_PRIME * a + b }
+   }
+
+   fun isEqualTo(other: Any?): Boolean {
+      if (other == null) return false
+      if (other === this) return true
+      if (other.javaClass != target.javaClass) return false
+      return this.hash() == other.hashCode()
    }
 
    fun hash(): Int {
-      return hash.value
+      return hash
    }
 }
