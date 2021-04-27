@@ -14,12 +14,9 @@ import io.vyne.query.ProjectionAnonymousTypeProvider.projectedTo
 import io.vyne.query.QueryResponse.ResponseStatus
 import io.vyne.query.QueryResponse.ResponseStatus.COMPLETED
 import io.vyne.query.QueryResponse.ResponseStatus.INCOMPLETE
-import io.vyne.query.graph.Element
-import io.vyne.query.graph.EvaluatableEdge
-import io.vyne.query.graph.EvaluatedEdge
-import io.vyne.query.graph.ServiceAnnotations
-import io.vyne.query.graph.ServiceParams
+import io.vyne.query.graph.*
 import io.vyne.schemas.*
+import io.vyne.utils.ImmutableEquality
 import io.vyne.utils.cached
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -239,7 +236,6 @@ data class QueryContext(
       cancelRequested = true
    }
 
-   private var inMemoryStream: List<TypedInstance>? = null
 
    override fun toString() = "# of facts=${facts.size} #schema types=${schema.types.size}"
    suspend fun find(typeName: String): QueryResult = find(TypeNameQueryExpression(typeName))
@@ -341,6 +337,11 @@ data class QueryContext(
    fun addFact(fact: TypedInstance): QueryContext {
       this.facts.add(fact)
       this.modelTree.invalidate()
+      // Now that we have a new fact, invalidate queries where we had asked for a fact
+      // previously, and had returned null.
+      // This allows new queries to discover new values.
+      // All other getFactOrNull() calls will retain cached values.
+      this.getFactOrNullCache.removeValues { _, typedInstance -> typedInstance == null }
       return this
    }
 
@@ -389,6 +390,23 @@ data class QueryContext(
       return modelTree.get().stream()
    }
 
+   private data class GetFactOrNullCacheKey(
+      val type:Type,
+      val strategy: FactDiscoveryStrategy,
+      val spec:TypedInstanceValidPredicate
+   ) {
+      private val equality = ImmutableEquality(this, GetFactOrNullCacheKey::type, GetFactOrNullCacheKey::strategy, GetFactOrNullCacheKey::spec)
+      override fun equals(other: Any?): Boolean {
+         return equality.isEqualTo(other)
+      }
+
+      override fun hashCode(): Int {
+         return equality.hash()
+      }
+   }
+
+
+
    fun hasFactOfType(
       type: Type,
       strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
@@ -407,13 +425,20 @@ data class QueryContext(
       return getFactOrNull(type, strategy, spec)!!
    }
 
+   /**
+    * getFactOrNull is called frequently, and can generate a VERY LARGE call stack.  In some profiler passes, we've
+    * seen 40k calls to getFactOrNull, which in turn generates a call stack with over 18M invocations.
+    * So, cache the calls.
+    */
+   private val getFactOrNullCache = cached { key:GetFactOrNullCacheKey  ->
+      key.strategy.getFact(this, key.type, spec = key.spec)
+   }
    fun getFactOrNull(
       type: Type,
       strategy: FactDiscoveryStrategy = TOP_LEVEL_ONLY,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): TypedInstance? {
-      return strategy.getFact(this, type, spec = spec)
-      //return factCache.get(FactCacheKey(type.fullyQualifiedName, strategy)).orElse(null)
+      return getFactOrNullCache.get(GetFactOrNullCacheKey(type,strategy, spec))
    }
 
    fun evaluatedPath(): List<EvaluatedEdge> {

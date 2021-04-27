@@ -53,7 +53,7 @@ class HipsterDiscoverGraphQueryStrategy(
       })
 
    private val searchPathExclusions = SearchPathExclusionsMap<SearchPathExclusionKey, SearchPathExclusionKey>(searchPathExclusionsCacheSize)
-   data class SearchPathExclusionKey(val startInstanceType: Type, val target: Element) {
+   data class SearchPathExclusionKey(val startInstanceType: TypedInstance, val target: Element) {
       private val equality = ImmutableEquality(this, SearchPathExclusionKey::startInstanceType, SearchPathExclusionKey::target)
       override fun equals(other: Any?): Boolean = equality.isEqualTo(other)
       override fun hashCode(): Int = equality.hash()
@@ -95,7 +95,7 @@ class HipsterDiscoverGraphQueryStrategy(
             // Excluding paths is done by the type, not the fact.
             // Graph searches work based off of links from types, therefore
             // we should exclude based on the type, regardless of the value.
-            val exclusionKey = SearchPathExclusionKey(fact.type, targetElement)
+            val exclusionKey = SearchPathExclusionKey(fact, targetElement)
             if (searchPathExclusions.contains(exclusionKey)) {
                // if  a previous search for given (searchNode, targetNode) yielded 'null' path, then
                // don't search.
@@ -156,8 +156,7 @@ class HipsterDiscoverGraphQueryStrategy(
             val evaluationResult =
                edgeEvaluator.evaluate(evaluatableEdge, queryContext)
             if (evaluatableEdge.relationship == Relationship.PROVIDES) {
-               logger.debug { "As p" +
-                  "art of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}" }
+               logger.debug { "As part of search ${path[0].state().value} -> ${path.last().state().value}, ${evaluatableEdge.vertex1.value} was executed. Successful : ${evaluationResult.wasSuccessful}" }
             }
             evaluationResult
          }
