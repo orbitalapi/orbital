@@ -5,15 +5,17 @@ import io.vyne.models.TypedNull
 import io.vyne.query.*
 import io.vyne.query.graph.*
 import io.vyne.schemas.*
-import io.vyne.utils.log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
+import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import java.util.concurrent.Executors
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * The parent to OperationInvokers
@@ -72,7 +74,7 @@ class DefaultOperationInvocationService(private val invokers: List<OperationInvo
       // Try to resolve any unresolved params
       var resolvedParams : Flow<TypedInstance>? = flow {}
       if (unresolvedParams.isNotEmpty()) {
-         log().debug("Querying to find params for Operation : ${unresolvedParams.map { it.type.fullyQualifiedName }}")
+         logger.debug { "Querying to find params for Operation : ${unresolvedParams.map { it.type.fullyQualifiedName }}" }
          val paramsToSearchFor = unresolvedParams.map { QuerySpecTypeNode(it.type) }.toSet()
          val queryResult: QueryResult = context.queryEngine.find(paramsToSearchFor, context)
          if (!queryResult.isFullyResolved) {
@@ -151,7 +153,7 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
 
 
          } catch (e: Exception) {
-            log().warn("Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}")
+            logger.warn { "Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}" }
             edge.failure(null)
          }
       }
@@ -167,7 +169,7 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
          val result: TypedInstance = invocationService.invokeOperation(service, operation, callArgs, context)
             .first()
          if (result is TypedNull) {
-            log().info("Operation ${operation.qualifiedName} returned null with a successful response.  Will treat this as a success, but won't store the result")
+            logger.info { "Operation ${operation.qualifiedName} (called with args $callArgs) returned null with a successful response.  Will treat this as a success, but won't store the result" }
          } else {
             context.addFact(result)
          }
@@ -177,7 +179,7 @@ class OperationInvocationEvaluator(val invocationService: OperationInvocationSer
       } catch (exception: Exception) {
          // Operation invokers throw exceptions for failed invocations.
          // Don't throw here, just report the failure
-         log().warn("Operation ${operation.qualifiedName} failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected.")
+         logger.info { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}.  This is often ok, as services throwing exceptions is expected."}
          edge.failure(null, failureReason = "Operation ${operation.qualifiedName} failed with exception ${exception.message}")
       }
 

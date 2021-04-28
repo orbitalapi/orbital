@@ -237,7 +237,7 @@ export class QueryEditorComponent implements OnInit {
     this.loading = false;
     this.loadingChanged.emit(false);
     // If we're already in an error state, then don't change the state.
-    if (this.currentState === 'Running') {
+    if (this.currentState === 'Running' || this.currentState === 'Cancelling') {
       this.currentState = 'Result';
     }
     this.queryProfileData$ = this.queryService.getQueryProfileFromClientId(this.queryClientId);
@@ -245,6 +245,7 @@ export class QueryEditorComponent implements OnInit {
   }
 
   cancelQuery() {
+    this.currentState = 'Cancelling';
     this.queryService.cancelQuery(this.latestQueryStatus.queryId)
       .subscribe();
   }

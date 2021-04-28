@@ -7,7 +7,7 @@ import {RunningQueryStatus} from '../../services/active-queries-notification-ser
   template: `
     <div class="footer-bar">
       <button mat-raised-button color="accent"
-              *ngIf="currentState !== 'Running'"
+              *ngIf="currentState !== 'Running' && currentState !== 'Cancelling'"
               (click)="runQuery()">Run
       </button>
       <div class="running-timer" *ngIf="currentState === 'Running'">
@@ -22,10 +22,15 @@ import {RunningQueryStatus} from '../../services/active-queries-notification-ser
         </div>
         <button mat-stroked-button *ngIf="currentState === 'Running' && runningQueryStatus" color="accent"
                 (click)="cancelQuery.emit()"
-        >Cancel</button>
+        >Cancel
+        </button>
       </div>
       <div class="error-message" *ngIf="currentState === 'Error'">
         <span>{{ error }}</span>
+      </div>
+      <div class="running-timer" *ngIf="currentState === 'Cancelling'">
+        <img class="loading-spinner" src="assets/img/loading-spinner-yellow.svg">
+        <span>Cancelling...</span>
       </div>
     </div>
   `,
@@ -70,4 +75,4 @@ export class BottomBarComponent {
 
 }
 
-export type QueryState = 'Editing' | 'Running' | 'Result' | 'Error';
+export type QueryState = 'Editing' | 'Running' | 'Result' | 'Error' | 'Cancelling';
