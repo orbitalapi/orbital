@@ -13,17 +13,19 @@ import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
 import io.vyne.queryService.history.*
-import io.vyne.utils.log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * A QueryEventConsumer which streams events out to be persisted.
@@ -63,7 +65,7 @@ class PersistingQueryEventConsumer(
    }
 
    private fun persistEvent(event: QueryCompletedEvent) {
-      log().info("Recording that query ${event.queryId} has completed")
+      logger.info { "Recording that query ${event.queryId} has completed" }
       resultRowRepository.countAllByQueryId(event.queryId)
          .flatMap { recordCount ->
             repository.setQueryEnded(
@@ -133,7 +135,7 @@ class PersistingQueryEventConsumer(
          try {
             QuerySummary(
                queryId = event.queryId,
-               clientQueryId = event.clientQueryId ?: event.queryId,
+               clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
                taxiQl = event.query,
                queryJson = null,
                startTime = event.queryStartTime,
@@ -167,8 +169,6 @@ class PersistingQueryEventConsumer(
             }
          }
          .mapNotNull { dataSource ->
-
-
             // Store the id of the lineage record we're creating in a hashmap.
             // If we get a value back, that means that the record has already been created,
             // so we don't need to persist it, and return null from this mapper
@@ -188,8 +188,10 @@ class PersistingQueryEventConsumer(
 
       lineageRecords.forEach {
          try {
-            lineageRecordRepository.save(it)
-         } catch (exception: Exception) {log().warn("Unable to save lineage record ${exception.message}")}
+//            lineageRecordRepository.save(it).block()
+         } catch (exception: Exception) {
+            logger.warn { "Unable to save lineage record ${exception.message}" }
+         }
       }
 
    }
@@ -223,14 +225,14 @@ class PersistingQueryEventConsumer(
       createdQuerySummaryIds.get(queryId) {
          val persistentQuerySummary = factory()
          try {
-            log().info("Creating query history record for query $queryId")
+            logger.info { "Creating query history record for query $queryId" }
             val fromDb = repository.save(
                persistentQuerySummary
             ).block()
-            log().info("Query history record for query $queryId created successfully")
+            logger.info { "Query history record for query $queryId created successfully" }
             queryId
          } catch (e: Exception) {
-            log().info("Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again.")
+            logger.info { "Constraint violation thrown whilst persisting query history record for query $queryId, will not try to persist again." }
             queryId
          }
 
