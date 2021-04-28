@@ -57,7 +57,6 @@ class QueryServiceTest : BaseQueryServiceTest() {
       val query = buildQuery("Order[]")
 
       ResultMode.values().forEach { resultMode ->
-         println("Result mode $resultMode")
          queryService.submitQuery(query, resultMode, TEXT_CSV)
             .body.test(timeout = Duration.ZERO) {
                val expected = """orderId,traderName,instrumentId
