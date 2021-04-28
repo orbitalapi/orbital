@@ -22,6 +22,7 @@ import org.springframework.http.server.reactive.ServerHttpResponse
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.util.function.BiFunction
 
 
 @FlowPreview
@@ -42,10 +43,23 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history")
    fun listHistory(): Flux<QuerySummary> {
-      return queryHistoryRecordRepository.findAllByOrderByStartTimeDesc()
-         .take(50)
-
+      return queryHistoryRecordRepository.findAllByOrderByStartTimeDesc().flatMap {
+         Mono.zip(
+            Mono.just(it),
+            queryResultRowRepository.countAllByQueryId(it.queryId)
+         ) { querySummaryRecord: QuerySummary, recordCount: Int ->
+            querySummaryRecord.recordCount = recordCount
+            querySummaryRecord
+         }
+      }
    }
+
+   @GetMapping("/api/query/chistory")
+   fun listHistoryCount(): Mono<Int> {
+      return queryResultRowRepository.countAllByQueryId("1efc5602-2add-4a5d-9a19-c168ecb5f14c")
+   }
+
+
 
    /**
     * Returns the results (as JSON of TypeNamedInstances) over server-sent-events

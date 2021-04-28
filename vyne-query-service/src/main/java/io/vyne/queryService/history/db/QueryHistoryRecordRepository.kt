@@ -16,12 +16,11 @@ interface QueryHistoryRecordRepository : R2dbcRepository<QuerySummary, Long> {
 
    @Modifying
    @Query(
-      "update query_summary r set r.end_time = :endTime, r.record_count = :recordCount, r.response_status = :status, r.error_message = :errorMessage where r.query_id = :queryId"
+      "update query_summary r set r.end_time = :endTime, r.response_status = :status, r.error_message = :errorMessage where r.query_id = :queryId"
    )
    fun setQueryEnded(
       @Param("queryId") queryId: String,
       @Param("endTime") endTime: Instant,
-      @Param("recordCount") recordCount: Int,
       @Param("status") status: QueryResponse.ResponseStatus,
       @Param("errorMessage") message: String? = null
    ): Mono<Void>
@@ -30,6 +29,7 @@ interface QueryHistoryRecordRepository : R2dbcRepository<QuerySummary, Long> {
    fun findByClientQueryId(queryId: String): Mono<QuerySummary>
 
    fun findAllByOrderByStartTimeDesc(): Flux<QuerySummary>
+
 }
 
 interface QueryResultRowRepository : R2dbcRepository<QueryResultRow, Long> {

@@ -27,7 +27,6 @@ data class QuerySummary(
    val startTime: Instant,
    val responseStatus: QueryResponse.ResponseStatus,
    val endTime: Instant? = null,
-   val recordCount: Int? = null,
    val errorMessage: String? = null,
    // r2dbc requires an id, which can be set during persistence
    // in order to determine if the row exists
@@ -38,6 +37,8 @@ data class QuerySummary(
    @Transient
    val durationMs = endTime?.let { Duration.between(startTime, endTime).toMillis() }
 
+   @Transient
+   var recordCount: Int = 0
 
 }
 

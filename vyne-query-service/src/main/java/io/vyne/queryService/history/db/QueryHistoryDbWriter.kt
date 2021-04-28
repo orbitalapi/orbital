@@ -46,6 +46,8 @@ class PersistingQueryEventConsumer(
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
    private val createdQuerySummaryIds = CacheBuilder.newBuilder()
       .build<String, String>()
+
+   //TODO this is a ever increasing map - a leak
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
 
    override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch(Dispatchers.IO) {
@@ -67,7 +69,6 @@ class PersistingQueryEventConsumer(
             repository.setQueryEnded(
                event.queryId,
                event.timestamp,
-               recordCount,
                QueryResponse.ResponseStatus.COMPLETED
             )
          }.subscribe()
@@ -77,14 +78,14 @@ class PersistingQueryEventConsumer(
       createQuerySummaryRecord(event.queryId) {
          QuerySummary(
             queryId = event.queryId,
-            clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
+            clientQueryId = event.clientQueryId ?: event.queryId,
             taxiQl = null,
             queryJson = objectMapper.writeValueAsString(event.query),
             startTime = event.queryStartTime,
             responseStatus = QueryResponse.ResponseStatus.ERROR
          )
       }
-      repository.setQueryEnded(event.queryId, event.timestamp, 0, QueryResponse.ResponseStatus.ERROR, event.message)
+      repository.setQueryEnded(event.queryId, event.timestamp, QueryResponse.ResponseStatus.ERROR, event.message)
          .subscribe()
    }
 
@@ -92,14 +93,14 @@ class PersistingQueryEventConsumer(
       createQuerySummaryRecord(event.queryId) {
          QuerySummary(
             queryId = event.queryId,
-            clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
+            clientQueryId = event.clientQueryId ?: event.queryId,
             taxiQl = event.query,
             queryJson = null,
             startTime = event.queryStartTime,
             responseStatus = QueryResponse.ResponseStatus.ERROR
          )
       }
-      repository.setQueryEnded(event.queryId, event.timestamp, 0, QueryResponse.ResponseStatus.ERROR, event.message)
+      repository.setQueryEnded(event.queryId, event.timestamp,  QueryResponse.ResponseStatus.ERROR, event.message)
          .subscribe()
    }
 
@@ -107,7 +108,6 @@ class PersistingQueryEventConsumer(
       repository.setQueryEnded(
          event.queryId,
          Instant.now(),
-         0,
          QueryResponse.ResponseStatus.ERROR,
          event.failure.message
       )
@@ -118,7 +118,7 @@ class PersistingQueryEventConsumer(
       createQuerySummaryRecord(event.queryId) {
          QuerySummary(
             queryId = event.queryId,
-            clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
+            clientQueryId = event.clientQueryId ?: event.queryId,
             taxiQl = null,
             queryJson = objectMapper.writeValueAsString(event.query),
             startTime = event.queryStartTime,
@@ -133,7 +133,7 @@ class PersistingQueryEventConsumer(
          try {
             QuerySummary(
                queryId = event.queryId,
-               clientQueryId = event.clientQueryId ?: UUID.randomUUID().toString(),
+               clientQueryId = event.clientQueryId ?: event.queryId,
                taxiQl = event.query,
                queryJson = null,
                startTime = event.queryStartTime,
@@ -188,7 +188,7 @@ class PersistingQueryEventConsumer(
 
       lineageRecords.forEach {
          try {
-            lineageRecordRepository.save(it).block()
+            lineageRecordRepository.save(it)
          } catch (exception: Exception) {log().warn("Unable to save lineage record ${exception.message}")}
       }
 
