@@ -12,18 +12,21 @@ import io.vyne.query.QueryResponse
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QueryResultRow
 import io.vyne.query.history.QuerySummary
+import io.vyne.query.history.RemoteCallResponse
 import io.vyne.queryService.history.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import mu.KotlinLogging
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.stereotype.Component
+import java.io.File
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.atomic.AtomicBoolean
+
 
 private val logger = KotlinLogging.logger {}
 
@@ -42,6 +45,7 @@ class PersistingQueryEventConsumer(
    private val repository: QueryHistoryRecordRepository,
    private val resultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
+   private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val config: QueryHistoryConfig
 ) : QueryEventConsumer {
@@ -51,8 +55,11 @@ class PersistingQueryEventConsumer(
 
    //TODO this is a ever increasing map - a leak
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
+   private val createdRemoteCallRecordIds = ConcurrentHashMap<String, String>()
 
-   override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch(Dispatchers.IO) {
+   private val persistanceDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+
+   override fun handleEvent(event: QueryEvent): Job = GlobalScope.launch(persistanceDispatcher) {
 
       when (event) {
          is TaxiQlQueryResultEvent -> persistEvent(event)
@@ -159,15 +166,31 @@ class PersistingQueryEventConsumer(
             valueHash = event.typedInstance.hashCodeWithDataSource
          )
       ).block()
+
+      if (config.persistRemoteCallResponses) {
+         dataSources
+            .map { it.second }
+            .distinctBy { it.id }
+            .filter { !createdRemoteCallRecordIds.containsKey(it.id) }
+            .forEach {
+               when(it) {
+                  is OperationResult -> {
+                     val remoteCallRecord = RemoteCallResponse(remoteCallId = it.id, queryId = event.queryId, response = objectMapper.writeValueAsString(it.remoteCall.response))
+                     try {
+                        remoteCallResponseRepository.save(remoteCallRecord).block()
+                        createdRemoteCallRecordIds.putIfAbsent(it.id, it.id)
+                     } catch (exception: Exception) {
+                        //We expect failures here as multiple threads are writing to the same remoteCallId
+                        logger.trace { "Unable to save remote call record ${exception.message}" }
+                     }
+                  }
+               }
+         }
+      }
+
       val lineageRecords = dataSources.map { it.second }
          .filter { it !is StaticDataSource }
          .distinctBy { it.id }
-         .map { dataSource ->
-            when (dataSource) {
-               is OperationResult -> trimResponseBodyWhenExceedsConfiguredMax(dataSource)
-               else -> dataSource
-            }
-         }
          .mapNotNull { dataSource ->
             // Store the id of the lineage record we're creating in a hashmap.
             // If we get a value back, that means that the record has already been created,
@@ -184,33 +207,15 @@ class PersistingQueryEventConsumer(
       saveLineageRecords(lineageRecords)
    }
 
-   private fun saveLineageRecords(lineageRecords: List<LineageRecord>) {
 
+   private fun saveLineageRecords(lineageRecords: List<LineageRecord>) {
       lineageRecords.forEach {
          try {
-//            lineageRecordRepository.save(it).block()
+            lineageRecordRepository.save(it).block()
          } catch (exception: Exception) {
             logger.warn { "Unable to save lineage record ${exception.message}" }
          }
       }
-
-   }
-
-   private fun trimResponseBodyWhenExceedsConfiguredMax(dataSource: OperationResult): OperationResult {
-      val response = dataSource.remoteCall.response
-      val sanitizedDataSource = if (response != null) {
-         val responseSize = response.toString().toByteArray().size
-         if (responseSize > config.maxPayloadSizeInBytes) {
-            dataSource.copy(
-               remoteCall = dataSource.remoteCall.copy(response = "Response has not been captured, as it's size $responseSize bytes exceeded max configured bytes (${config.maxPayloadSizeInBytes}).")
-            )
-         } else {
-            dataSource
-         }
-      } else {
-         dataSource
-      }
-      return sanitizedDataSource
    }
 
    private fun createQuerySummaryRecord(queryId: String, factory: () -> QuerySummary) {
@@ -245,6 +250,7 @@ class QueryHistoryDbWriter(
    private val repository: QueryHistoryRecordRepository,
    private val resultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
+   private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val config: QueryHistoryConfig = QueryHistoryConfig()
 ) {
@@ -257,7 +263,7 @@ class QueryHistoryDbWriter(
     */
    fun createEventConsumer(): QueryEventConsumer {
       return PersistingQueryEventConsumer(
-         repository, resultRowRepository, lineageRecordRepository, objectMapper, config
+         repository, resultRowRepository, lineageRecordRepository, remoteCallResponseRepository, objectMapper, config
       )
    }
 }
@@ -269,6 +275,7 @@ data class QueryHistoryConfig(
     * Defines the max payload size to persist.
     * Set to 0 to disable persisting the body of responses
     */
-   val maxPayloadSizeInBytes: Int = 2048
+   val maxPayloadSizeInBytes: Int = 2048,
+   val persistRemoteCallResponses: Boolean = true
 )
 

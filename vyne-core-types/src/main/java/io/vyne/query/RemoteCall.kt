@@ -6,6 +6,7 @@ import io.vyne.schemas.OperationNames
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.QualifiedNameAsStringDeserializer
 import io.vyne.schemas.QualifiedNameAsStringSerializer
+import com.fasterxml.jackson.annotation.JsonIgnore
 import java.util.*
 
 data class RemoteCall(
@@ -22,6 +23,8 @@ data class RemoteCall(
    val requestBody: Any?,
    val resultCode: Int,
    val durationMs: Long,
+
+   @get:JsonIgnore
    val response: Any?
 ) {
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)

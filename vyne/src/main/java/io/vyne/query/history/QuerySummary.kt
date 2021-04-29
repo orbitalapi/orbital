@@ -1,5 +1,6 @@
 package io.vyne.query.history
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonRawValue
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -75,4 +76,26 @@ data class LineageRecord(
    override fun isNew(): Boolean {
       return true
    }
+}
+
+@Table("remote_call_response")
+data class RemoteCallResponse(
+   @Id
+   val remoteCallId: String,
+   val queryId: String,
+   @JsonRawValue
+   val response: String
+) : Persistable<String> {
+
+   override fun getId(): String {
+      return remoteCallId
+   }
+
+   // Always return true, as we don't support updating these,
+   // so writes should always be new.
+   @JsonIgnore
+   override fun isNew(): Boolean {
+      return true
+   }
+
 }

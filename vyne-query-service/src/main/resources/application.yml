@@ -19,7 +19,7 @@ spring:
    codec:
       max-in-memory-size: 100MB
    r2dbc:
-      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE
+      url: r2dbc:h2:file://././vyne-query-history;COMPRESS=TRUE;MV_STORE=false
       username: sa
       password:
 vyne:
@@ -45,6 +45,8 @@ vyne:
       vyneDiscoverGraphQuery:
          schemaGraphCacheSize: 5
          searchPathExclusionsCacheSize: 200000
+   history:
+      persistRemoteCallResponses: false
 
 feign:
    client:

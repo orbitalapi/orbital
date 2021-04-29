@@ -12,6 +12,7 @@ import io.vyne.queryService.RegressionPackProvider
 import io.vyne.queryService.history.db.LineageRecordRepository
 import io.vyne.queryService.history.db.QueryHistoryRecordRepository
 import io.vyne.queryService.history.db.QueryResultRowRepository
+import io.vyne.queryService.history.db.RemoteCallResponseRepository
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemas.QualifiedName
 import io.vyne.schemas.fqn
@@ -31,6 +32,7 @@ class QueryHistoryService(
    private val queryHistoryRecordRepository: QueryHistoryRecordRepository,
    private val queryResultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
+   private val remoteCallResponseRepository: RemoteCallResponseRepository,
    private val queryHistoryExporter: QueryHistoryExporter,
    private val objectMapper: ObjectMapper,
    private val regressionPackProvider: RegressionPackProvider
@@ -53,12 +55,6 @@ class QueryHistoryService(
          }
       }
    }
-
-   @GetMapping("/api/query/chistory")
-   fun listHistoryCount(): Mono<Int> {
-      return queryResultRowRepository.countAllByQueryId("1efc5602-2add-4a5d-9a19-c168ecb5f14c")
-   }
-
 
 
    /**
@@ -204,8 +200,8 @@ class QueryHistoryService(
       val querySummary = queryHistoryRecordRepository.findByQueryId(queryId).toFuture()
       val results = queryResultRowRepository.findAllByQueryId(queryId).map { it.asTypeNamedInstance() }.collectList().toFuture()
       val lineageRecords = lineageRecordRepository.findAllByQueryId(queryId).collectList().toFuture()
-
-      return response.writeByteArrays( regressionPackProvider.createRegressionPack(results.get(),querySummary.get(),lineageRecords.get(), request).toByteArray()  )
+      val remoteCalls =  remoteCallResponseRepository.findAllByQueryId(queryId).collectList().toFuture()
+      return response.writeByteArrays( regressionPackProvider.createRegressionPack(results.get(),querySummary.get(),lineageRecords.get(), remoteCalls.get(), request).toByteArray()  )
    }
 
 }

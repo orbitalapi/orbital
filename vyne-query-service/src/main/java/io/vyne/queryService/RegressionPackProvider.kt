@@ -6,6 +6,7 @@ import io.vyne.models.TypeNamedInstance
 import io.vyne.query.QuerySpecTypeNode
 import io.vyne.query.history.LineageRecord
 import io.vyne.query.history.QuerySummary
+import io.vyne.query.history.RemoteCallResponse
 import io.vyne.queryService.history.RegressionPackRequest
 import io.vyne.schemaStore.SchemaSourceProvider
 import io.vyne.schemaStore.VersionedSourceProvider
@@ -24,12 +25,15 @@ class RegressionPackProvider(
 ) {
    private val objectWriter = objectMapper.writerWithDefaultPrettyPrinter()
 
-   fun createRegressionPack(results: List<TypeNamedInstance>, querySummary: QuerySummary, lineageRecords: List<LineageRecord>, request: RegressionPackRequest): ByteArrayOutputStream {
+   fun createRegressionPack(results: List<TypeNamedInstance>, querySummary: QuerySummary, lineageRecords: List<LineageRecord>, remoteCalls: List<RemoteCallResponse>, request: RegressionPackRequest): ByteArrayOutputStream {
 
          val filenameSafeSpecName = request.regressionPackName.replace(" ", "-")
          val resultsFilename = "query-results.json"
          val querySummaryFileName = "query-summary.json"
          val lineageRecordsFileName = "lineage-records.json"
+         val remoteCallsFileName = "remote-calls.json"
+
+
          val schemaFileName = "schema.json"
          val directoryName = "$filenameSafeSpecName/"
 
@@ -39,6 +43,7 @@ class RegressionPackProvider(
             objectWriter.writeValueAsBytes(results) to ZipEntry(directoryName + resultsFilename),
             objectWriter.writeValueAsBytes(querySummary) to ZipEntry(directoryName + querySummaryFileName),
             objectWriter.writeValueAsBytes(lineageRecords) to ZipEntry(directoryName + lineageRecordsFileName),
+            objectWriter.writeValueAsBytes(remoteCalls) to ZipEntry(directoryName + remoteCallsFileName),
             objectWriter.writeValueAsBytes(getVersionedSchemas()) to ZipEntry(directoryName + schemaFileName)
          )
 
