@@ -138,6 +138,19 @@ class CaskService(private val schemaProvider: SchemaProvider,
       caskDAO.deleteCask(caskConfig, force, dependencies)
    }
 
+   /**
+    * Clears the contents of given cask
+    * For view based cask, this operation does nothing.
+    */
+   fun clearCask(caskConfig: CaskConfig) {
+      if (!caskConfig.exposesType) {
+         log().warn("Clearing the contents of table ${caskConfig.tableName} for type ${caskConfig.qualifiedTypeName}")
+         caskDAO.emptyCask(caskConfig.tableName)
+      } else {
+         log().warn("can not clear the content of a view based cask for ${caskConfig.qualifiedTypeName}")
+      }
+   }
+
    fun deleteCask(tableName: String, force: Boolean) {
       caskConfigRepository.findByTableName(tableName)?.let {caskConfig ->
          deleteCask(caskConfig, force)
@@ -172,6 +185,13 @@ class CaskService(private val schemaProvider: SchemaProvider,
       caskConfigRepository
          .findAllByQualifiedTypeName(typeName)
          .forEach { caskConfig -> this.deleteCask(caskConfig, force) }
+   }
+
+   fun clearCaskByTypeName(typeName: String) {
+      log().info("Clearing cask for type => $typeName")
+      caskConfigRepository
+         .findAllByQualifiedTypeName(typeName)
+         .forEach { caskConfig -> this.clearCask(caskConfig) }
    }
 }
 

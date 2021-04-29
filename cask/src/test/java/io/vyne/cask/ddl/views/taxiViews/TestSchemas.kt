@@ -1,16 +1,20 @@
 package io.vyne.cask.ddl.views.taxiViews
 
+import com.nhaarman.mockito_kotlin.eq
+import com.nhaarman.mockito_kotlin.whenever
 import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
+import io.vyne.cask.config.CaskConfigRepository
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.VersionedType
+import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.View
 
 object TestSchemas {
-   fun fromSchemaSource(versionSource: VersionedSource): TestView {
+   fun fromSchemaSource(versionSource: VersionedSource, repository: CaskConfigRepository? = null): TestView {
       val taxiSchema = TaxiSchema.from(versionSource)
       val schemaStore = SimpleSchemaStore()
       schemaStore.setSchemaSet(SchemaSet.from(listOf(versionSource), 1))
@@ -20,11 +24,18 @@ object TestSchemas {
       val joinTypes = taxiView.viewBodyDefinitions?.mapNotNull { viewBodyDefinition -> viewBodyDefinition.joinType }
          ?: emptyList()
       val typeNameToCaskConfigMap = bodyTypes.plus(joinTypes).toSet().map { type ->
-         type.toQualifiedName() to (type.toQualifiedName() to CaskConfig.forType(
+        val pair = type.toQualifiedName() to (type.toQualifiedName() to CaskConfig.forType(
             VersionedType(emptyList(), taxiSchema.type(type.qualifiedName), type),
             "${type.toQualifiedName().typeName}_tb"
          ))
+         repository?.let {
+            whenever(it.findAllByQualifiedTypeName(eq(pair.first.fullyQualifiedName))).thenReturn(
+               listOf(CaskConfig.forType(taxiSchema.versionedType(pair.first.fullyQualifiedName.fqn()), pair.second.second.tableName)
+               ))
+         }
+         pair
       }.toMap()
+
 
       return TestView(taxiSchema, schemaStore, taxiView, typeNameToCaskConfigMap)
    }
@@ -114,6 +125,71 @@ object TestSchemas {
                 }
             }
          }
+   """.trimIndent())
+   val viewWithConstraints = VersionedSource.sourceOnly("""
+      type OrderId inherits String
+      type TradeId inherits String
+      type TradeId inherits String
+      type OrderStatus inherits String
+      type Taxonomy inherits String
+
+
+      model Order {
+         @Id
+         orderId: OrderId
+         orderStatus: OrderStatus
+         taxonomy: Taxonomy
+      }
+
+      model Trade {
+         @Id
+         orderId: OrderId
+         tradeId: TradeId
+      }
+
+      view OrderView with query {
+         find { Order[] ( (OrderStatus = 'Filled' or OrderStatus = 'Partially Filled') and ( Taxonomy in ['taxonomy1' , 'taxonomy2']) ) (joinTo Trade[]) } as {
+             orderId: Order::OrderId
+             tradeId: Trade::TradeId
+         }
+      }
+
+
+
+
+
+   """.trimIndent())
+   val viewWithMultipleConstraints = VersionedSource.sourceOnly("""
+      type OrderId inherits String
+      type TradeId inherits String
+      type TradeId inherits String
+      type OrderStatus inherits String
+      type Taxonomy inherits String
+
+
+      model Order {
+         @Id
+         orderId: OrderId
+         orderStatus: OrderStatus
+         taxonomy: Taxonomy
+      }
+
+      model Trade {
+         @Id
+         orderId: OrderId
+         tradeId: TradeId
+      }
+
+      view OrderView with query {
+         find { Order[] ( (OrderStatus = 'Filled') ) } as {
+             orderId: Order::OrderId
+             tradeId: TradeId
+         },
+         find { Order[] ( (OrderStatus = 'Filled' or OrderStatus = 'Partially Filled') and ( Taxonomy in ['taxonomy1' , 'taxonomy2']) ) (joinTo Trade[]) } as {
+             orderId: Order::OrderId
+             tradeId: Trade::TradeId
+         }
+      }
    """.trimIndent())
 }
 
