@@ -77,4 +77,11 @@ interface CaskApi {
 
    @DeleteMapping("/api/types/cask/{typeName}")
    fun deleteCaskByTypeName(@PathVariable("typeName") typeName: String, @RequestParam(defaultValue = "false", required = false) force: Boolean = false)
+
+   /**
+    * Clears the contents of the cask for the given fully qualified named type.
+    * If the cask is a view cask then it is a no-op.
+    */
+   @DeleteMapping("/api/{typeName}/contents")
+   fun clearCaskByTypeName(@PathVariable("typeName") typeName: String)
 }

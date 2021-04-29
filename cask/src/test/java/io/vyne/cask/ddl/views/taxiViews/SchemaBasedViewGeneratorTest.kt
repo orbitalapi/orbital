@@ -7,11 +7,15 @@ import com.winterbe.expekt.should
 import io.vyne.VersionedSource
 import io.vyne.cask.api.CaskConfig
 import io.vyne.cask.config.CaskConfigRepository
+import io.vyne.cask.ddl.views.taxiViews.TestSchemas.viewWithConstraints
+import io.vyne.cask.ddl.views.taxiViews.TestSchemas.viewWithMultipleConstraints
 import io.vyne.schemaStore.SchemaSet
 import io.vyne.schemaStore.SimpleSchemaStore
 import io.vyne.schemas.fqn
 import io.vyne.schemas.taxi.TaxiSchema
 import io.vyne.utils.withoutWhitespace
+import net.sf.jsqlparser.util.validation.Validation
+import net.sf.jsqlparser.util.validation.feature.DatabaseType
 import org.junit.Assert
 import org.junit.Test
 
@@ -90,7 +94,7 @@ class SchemaBasedViewGeneratorTest {
                ordersent
             union all
             select
-               distinct orderfill."fillOrderId" as "orderId",
+               orderfill."fillOrderId" as "orderId",
                null::TIMESTAMP as "orderDateTime",
                orderfill."orderType" as "orderType",
                orderfill."subSecurityType" as "subSecurityType",
@@ -125,13 +129,15 @@ class SchemaBasedViewGeneratorTest {
                   when orderfill."tradeNo" = null then orderfill."executedQuantity"
                   else SUM (orderfill."executedQuantity") OVER (PARTITION BY orderfill."fillOrderId" ORDER BY orderfill."tradeNo")
                end as "cumulativeQty",
-               "ordersent".caskmessageid as caskmessageid
+               (( SELECT get_later_messsageid("ordersent".caskmessageid, "orderfill".caskmessageid) AS get_later_messsageid))::charactervarying(40) AS caskmessageid
             from
                ordersent
             LEFT JOIN orderfill ON
                ordersent."sentOrderId" = orderfill."fillOrderId"
       """.trimIndent().withoutWhitespace(),
          output[1].withoutWhitespace())
+      // validate the query that we've generate.
+      Validation( listOf(DatabaseType.POSTGRESQL), output[1]).validate().should.be.empty
    }
 
    @Test
@@ -191,6 +197,47 @@ class SchemaBasedViewGeneratorTest {
 
       """.withoutWhitespace()
          .trimIndent())
+   }
+
+   @Test
+   fun `constraint based view definition`() {
+      val testView = TestSchemas.fromSchemaSource(viewWithConstraints, repository)
+      val output =  SchemaBasedViewGenerator(repository, testView.schemaStore).generateDdl(testView.taxiView)
+      output.size.should.equal(2)
+      output[1].withoutWhitespace().should.equal("""
+         create or replace view v_OrderView as
+           select
+            Order_tb."orderId" as "orderId",
+            Trade_tb."tradeId" as "tradeId",
+            (( SELECT get_later_messsageid("Order_tb".caskmessageid, "Trade_tb".caskmessageid) AS get_later_messsageid))::character varying(40) AS caskmessageid
+           from Order_tb LEFT JOIN Trade_tb ON Order_tb."orderId" = Trade_tb."orderId"
+           WHERE (( ( Order_tb."orderStatus" = 'Filled'  OR   Order_tb."orderStatus" = 'Partially Filled' ) ) AND  (  Order_tb."taxonomy" IN ( 'taxonomy1','taxonomy2' )  ))      """.trimIndent().withoutWhitespace())
+      // validate the query that we've generate.
+      Validation( listOf(DatabaseType.POSTGRESQL), output[1]).validate().should.be.empty
+   }
+
+   @Test
+   fun `constraint based view definition with two find statements`() {
+      val testView = TestSchemas.fromSchemaSource(viewWithMultipleConstraints, repository)
+      val output =  SchemaBasedViewGenerator(repository, testView.schemaStore).generateDdl(testView.taxiView)
+      output.size.should.equal(2)
+      output[1].withoutWhitespace().should.equal("""
+         create or replace view v_OrderView as
+         select
+            Order_tb."orderId" as "orderId",
+            null::VARCHAR(255) as "tradeId",
+            "Order_tb".caskmessageid as caskmessageid
+          from Order_tb
+          WHERE (  Order_tb."orderStatus" = 'Filled'  ) union all
+         select
+            Order_tb."orderId" as "orderId",
+            Trade_tb."tradeId" as "tradeId",
+            (( SELECT get_later_messsageid("Order_tb".caskmessageid, "Trade_tb".caskmessageid) AS get_later_messsageid))::character varying(40) AS caskmessageid
+          from Order_tb LEFT JOIN Trade_tb ON Order_tb."orderId" = Trade_tb."orderId"
+          WHERE (( ( Order_tb."orderStatus" = 'Filled'  OR   Order_tb."orderStatus" = 'Partially Filled' ) ) AND  (  Order_tb."taxonomy" IN ( 'taxonomy1','taxonomy2' )  ))
+                  """.trimIndent().withoutWhitespace())
+      // validate the query that we've generate.
+      Validation( listOf(DatabaseType.POSTGRESQL), output[1]).validate().should.be.empty
    }
 
    private val versionedSourceForSimpleView = VersionedSource.sourceOnly("""

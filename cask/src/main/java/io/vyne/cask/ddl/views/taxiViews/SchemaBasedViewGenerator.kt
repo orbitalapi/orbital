@@ -71,12 +71,13 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
    fun getDependencies(taxiView: View): List<QualifiedName> {
       return fetchTableNamesForParticipatingTypes(taxiView).keys.toList()
    }
+
    private fun fieldsSql(taxiView: View,
                          objectType: ObjectType,
                          tableNamesForSourceTypes: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>,
                          whenStatementGenerator: WhenStatementGenerator): List<String> {
       return objectType.fields.map { field ->
-         selectStatement(taxiView, objectType,  field, tableNamesForSourceTypes, whenStatementGenerator)
+         selectStatement(taxiView, objectType, field, tableNamesForSourceTypes, whenStatementGenerator)
       }
    }
 
@@ -86,29 +87,34 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
       tableNamesForSourceTypes: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): String {
       val bodyTableName = tableNamesForSourceTypes[viewBodyDefinition.bodyType.toQualifiedName()]!!.second.tableName
       val viewBodyType = viewBodyDefinition.viewBodyType!! as ObjectType
+      val whereStatementGenerator = WhereStatementGenerator(this, tableNamesForSourceTypes)
       val whenStatementGenerator = WhenStatementGenerator(
          taxiView,
          viewBodyType,
          tableNamesForSourceTypes,
          schemaStore.schemaSet().schema)
-      val sqlStatementsForEachField =
-         fieldsSql(taxiView, viewBodyType, tableNamesForSourceTypes, whenStatementGenerator)
-         .plus(caskMessageIdColumn(bodyTableName))
-      val sqlBuilder = StringBuilder()
-      if (viewBodyDefinition.joinType == null) {
-         sqlBuilder.appendln("select")
+
+      val fieldList = fieldsSql(taxiView, viewBodyType, tableNamesForSourceTypes, whenStatementGenerator)
+      val sqlStatementsForEachField = if (viewBodyDefinition.joinType == null) {
+         fieldList.plus(caskMessageIdColumn(bodyTableName))
       } else {
-         sqlBuilder.appendln("select distinct")
+         fieldList
+            .plus(caskMessageIdColumn(bodyTableName, tableNamesForSourceTypes[viewBodyDefinition.joinType!!.toQualifiedName()]!!.second.tableName))
       }
+      val sqlBuilder = StringBuilder()
+      sqlBuilder.appendln("select")
       sqlBuilder.appendln(sqlStatementsForEachField.joinToString(", \n"))
       if (viewBodyDefinition.joinType == null) {
          sqlBuilder.appendln(" from $bodyTableName")
+         sqlBuilder.append(whereStatementGenerator.whereStatement(viewBodyDefinition.bodyTypeFilter?.let { Pair(viewBodyDefinition.bodyType, it) }, null))
       } else {
          val mainTableName = tableNamesForSourceTypes[viewBodyDefinition.bodyType.toQualifiedName()]!!.second.tableName
          val joinTableName = tableNamesForSourceTypes[viewBodyDefinition.joinType!!.toQualifiedName()]!!.second.tableName
          val joinField1 = "$mainTableName.${PostgresDdlGenerator.toColumnName(viewBodyDefinition.joinInfo!!.mainField)}"
          val joinField2 = "$joinTableName.${PostgresDdlGenerator.toColumnName(viewBodyDefinition.joinInfo!!.joinField)}"
          sqlBuilder.appendln(" from $mainTableName LEFT JOIN $joinTableName ON $joinField1 = $joinField2")
+         sqlBuilder.append(whereStatementGenerator.whereStatement(viewBodyDefinition.bodyTypeFilter?.let { Pair(viewBodyDefinition.bodyType, it) },
+            viewBodyDefinition.joinTypeFilter?.let { Pair(viewBodyDefinition.joinType!!, it) }))
       }
       return sqlBuilder.toString()
    }
@@ -120,7 +126,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
          it.joinType?.let { joinType -> sourceTypeNames.add(joinType.toQualifiedName()) }
       }
 
-      val retValue =  CaskViewBuilder.caskConfigsForQualifiedNames(sourceTypeNames, this.caskConfigRepository).associateBy { keySelection ->
+      val retValue = CaskViewBuilder.caskConfigsForQualifiedNames(sourceTypeNames, this.caskConfigRepository).associateBy { keySelection ->
          keySelection.first
       }
 
@@ -139,39 +145,45 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
       viewFieldDefinition: Field,
       qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>,
       whenStatementGenerator: WhenStatementGenerator): String {
-        return when (viewFieldDefinition.accessor) {
-            null -> {
-               if (viewFieldDefinition.memberSource == null) {
-                  //case for:
-                  // fieldName: FieldType case.
-                  PostgresDdlGenerator.selectNullAs(viewFieldDefinition.name, viewFieldDefinition.type)
-               } else {
-                  val sourceField = columnName(
-                     taxiView,
-                     viewFieldDefinition.memberSource!!,
-                     viewFieldDefinition.type, qualifiedNameToCaskConfig)
-                  PostgresDdlGenerator.selectAs(sourceField, viewFieldDefinition.name)
-               }
+      return when (viewFieldDefinition.accessor) {
+         null -> {
+            if (viewFieldDefinition.memberSource == null) {
+               //case for:
+               // fieldName: FieldType case.
+               PostgresDdlGenerator.selectNullAs(viewFieldDefinition.name, viewFieldDefinition.type)
+            } else {
+               val sourceField = columnName(
+                  viewFieldDefinition.memberSource!!,
+                  viewFieldDefinition.type, qualifiedNameToCaskConfig)
+               PostgresDdlGenerator.selectAs(sourceField, viewFieldDefinition.name)
             }
-           else -> "${whenStatementGenerator.toWhenSql(viewFieldDefinition)} ${PostgresDdlGenerator.selectAs(viewFieldDefinition.name)}"
          }
+         else -> "${whenStatementGenerator.toWhenSql(viewFieldDefinition)} ${PostgresDdlGenerator.selectAs(viewFieldDefinition.name)}"
+      }
    }
 
    private fun getField(sourceType: QualifiedName, fieldType: Type): Field {
       val objectType = this.schemaStore.schemaSet().schema.type(sourceType.fullyQualifiedName).taxiType as ObjectType
-      return objectType.fields.first {
-         field -> field.type == fieldType || (field.type.format != null && field.type.formattedInstanceOfType == fieldType)
+      return objectType.fields.first { field ->
+         field.type == fieldType || (field.type.format != null && field.type.formattedInstanceOfType == fieldType)
       }
    }
 
-   private fun columnName(
-      taxiView: View,
+   fun columnName(
       sourceType: QualifiedName,
       fieldType: Type,
-      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>> ): String {
+      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): String {
       val sourceTableName = qualifiedNameToCaskConfig[sourceType]?.second?.tableName
       val columnName = PostgresDdlGenerator.toColumnName(getField(sourceType, fieldType))
       return "$sourceTableName.$columnName"
+   }
+
+   fun columnName(
+      sourceType: QualifiedName,
+      fieldType: QualifiedName,
+      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): String {
+      val fieldTaxiType = this.schemaStore.schemaSet().schema.type(fieldType.fullyQualifiedName).taxiType
+      return columnName(sourceType, fieldTaxiType, qualifiedNameToCaskConfig)
    }
 
    private fun viewSqlName(taxiView: View) = "${CaskViewBuilder.VIEW_PREFIX}${taxiView.toQualifiedName().typeName}"
@@ -197,7 +209,7 @@ class SchemaBasedViewGenerator(private val caskConfigRepository: CaskConfigRepos
    fun typeFromView(taxiView: View): ObjectType {
       val firstDefinition = taxiView.viewBodyDefinitions!!.first()
       val taxiFields = (firstDefinition.viewBodyType!! as ObjectType).fields.map { field ->
-         Field(name =  field.name, type = field.type, compilationUnit =  CompilationUnit.unspecified(), nullable = true)
+         Field(name = field.name, type = field.type, compilationUnit = CompilationUnit.unspecified(), nullable = true)
       }
 
       return ObjectType(

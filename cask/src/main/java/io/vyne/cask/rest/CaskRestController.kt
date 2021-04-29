@@ -147,5 +147,9 @@ class CaskRestController(private val caskService: CaskService,
    override fun deleteCaskByTypeName(typeName: String, force: Boolean) {
       caskService.deleteCaskByTypeName(typeName, force)
    }
+
+   override fun clearCaskByTypeName(typeName: String) {
+      caskService.clearCaskByTypeName(typeName)
+   }
 }
 
