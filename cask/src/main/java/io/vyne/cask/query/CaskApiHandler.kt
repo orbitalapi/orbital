@@ -14,14 +14,14 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.BodyExtractors
 import org.springframework.web.reactive.function.BodyInserters
-import org.springframework.web.reactive.function.server.ServerRequest
-import org.springframework.web.reactive.function.server.ServerResponse
+import org.springframework.web.reactive.function.server.*
 import org.springframework.web.reactive.function.server.ServerResponse.badRequest
 import org.springframework.web.reactive.function.server.ServerResponse.notFound
 import org.springframework.web.reactive.function.server.ServerResponse.ok
 import org.springframework.web.util.UriComponents
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toFlux
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
@@ -76,11 +76,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val results = caskDAO.findAll(versionedType.b)
-            return ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-               .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
-               .body(BodyInserters.fromValue(results))
+            streamingResponse(request, results)
          }
       }
    }
@@ -104,15 +100,13 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
             }
             is Either.Right -> {
                val results = caskDAO.findMultiple(versionedType.b, fieldName, inputArray)
-               ok()
-                  .contentType(MediaType.APPLICATION_JSON)
-                  .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-                  .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
-                  .body(BodyInserters.fromValue(results))
+               streamingResponse(request, results)
             }
          }
       }
    }
+
+
 
    fun findByField(request: ServerRequest, requestPath: String, uriComponents: UriComponents): Mono<ServerResponse> {
       val fieldNameAndValue = fieldNameAndArgs(uriComponents, 2)
@@ -126,11 +120,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val results = caskDAO.findBy(versionedType.b, fieldName, findByValue)
-            ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-               .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
-               .body(BodyInserters.fromValue(results))
+            streamingResponse(request, results)
          }
       }
    }
@@ -153,11 +143,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val results = caskDAO.findBefore(versionedType.b, fieldName, before)
-            ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-               .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
-               .body(BodyInserters.fromValue(results))
+            streamingResponse(request, results)
          }
       }
    }
@@ -174,11 +160,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val results = caskDAO.findAfter(versionedType.b, fieldName, after)
-            ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-               .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
-               .body(BodyInserters.fromValue(results))
+            streamingResponse(request, results)
          }
       }
    }
@@ -201,11 +183,7 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
          }
          is Either.Right -> {
             val results = daoFunction(versionedType.b, fieldName, start, end)
-            ok()
-               .contentType(MediaType.APPLICATION_JSON)
-               .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
-               .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
-               .body(BodyInserters.fromValue(results))
+            streamingResponse(request, results)
          }
       }
    }
@@ -245,4 +223,22 @@ class CaskApiHandler(private val caskService: CaskService, private val caskDAO: 
    }
 
    private fun fieldNameAndArgs(uriComponents: UriComponents, takeLast: Int) = uriComponents.pathSegments.map { URLDecoder.decode(it, StandardCharsets.UTF_8.toString()) }.takeLast(takeLast)
+
+   private fun streamingResponse(request: ServerRequest, results: List<Map<String,Any>>):Mono<ServerResponse> {
+      if ( request.headers() != null && request.headers().accept() != null && request.headers().accept().any { it == MediaType.TEXT_EVENT_STREAM }
+      ){
+         return ok()
+            .sse()
+            .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
+            .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
+            .body(results.toFlux())
+      } else {
+
+         return ok()
+            .contentType(MediaType.APPLICATION_JSON)
+            .header(HttpHeaders.CONTENT_PREPARSED, true.toString())
+            .header(HttpHeaders.STREAM_ESTIMATED_RECORD_COUNT, results.size.toString())
+            .body(BodyInserters.fromValue(results))
+      }
+   }
 }
