@@ -11,7 +11,7 @@
 
    <dependencies>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>taxi-annotation-processor</artifactId>
          <version>${taxi.version}</version>
       </dependency>
@@ -43,11 +43,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>taxi-annotations</artifactId>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>java2taxi</artifactId>
       </dependency>
       <dependency>

@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>0.15.1</taxi.version>
+      <taxi.version>1.28.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -245,22 +245,22 @@
             <scope>import</scope>
          </dependency>
          <dependency>
-            <groupId>lang.taxi</groupId>
+            <groupId>org.taxilang</groupId>
             <artifactId>compiler</artifactId>
             <version>${taxi.version}</version>
          </dependency>
          <dependency>
-            <groupId>lang.taxi</groupId>
+            <groupId>org.taxilang</groupId>
             <artifactId>core-types</artifactId>
             <version>${taxi.version}</version>
          </dependency>
          <dependency>
-            <groupId>lang.taxi</groupId>
+            <groupId>org.taxilang</groupId>
             <artifactId>taxi-annotations</artifactId>
             <version>${taxi.version}</version>
          </dependency>
          <dependency>
-            <groupId>lang.taxi</groupId>
+            <groupId>org.taxilang</groupId>
             <artifactId>java2taxi</artifactId>
             <version>${taxi.version}</version>
          </dependency>

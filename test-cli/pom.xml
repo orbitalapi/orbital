@@ -13,7 +13,7 @@
 
    <dependencies>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>compiler</artifactId>
       </dependency>
       <dependency>
