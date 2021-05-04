@@ -468,9 +468,6 @@ class CaskDAO(
       return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM $tableName", Int::class.java)
    }
 
-   // ############################
-   // ### DELETE/EMPTY Cask
-   // ############################
 
    @Transactional
    fun deleteCask(caskConfig: CaskConfig, shouldCascade: Boolean = false, dependencies: List<CaskConfig> = emptyList()) {
@@ -493,5 +490,9 @@ class CaskDAO(
          }
          jdbcTemplate.update(dropStatement)
       }
+   }
+
+   fun emptyCask(tableName: String) {
+      jdbcTemplate.update("TRUNCATE ${tableName}")
    }
 }

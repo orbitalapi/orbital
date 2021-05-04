@@ -166,5 +166,9 @@ class CaskRestController(
    override fun deleteCaskByTypeName(typeName: String, force: Boolean): Mono<String> {
       return Mono.just(caskService.deleteCaskByTypeName(typeName, force).toString())
    }
+
+   override fun clearCaskByTypeName(typeName: String) {
+      caskService.clearCaskByTypeName(typeName)
+   }
 }
 
