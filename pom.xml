@@ -16,7 +16,7 @@
 
 
    <properties>
-      <taxi.version>0.15.1</taxi.version>
+      <taxi.version>1.28.1</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -231,22 +231,22 @@
             <scope>import</scope>
          </dependency>
          <dependency>
-            <groupId>lang.taxi</groupId>
+            <groupId>org.taxilang</groupId>
             <artifactId>compiler</artifactId>
             <version>${taxi.version}</version>
          </dependency>
          <dependency>
-            <groupId>lang.taxi</groupId>
+            <groupId>org.taxilang</groupId>
             <artifactId>core-types</artifactId>
             <version>${taxi.version}</version>
          </dependency>
          <dependency>
-            <groupId>lang.taxi</groupId>
+            <groupId>org.taxilang</groupId>
             <artifactId>taxi-annotations</artifactId>
             <version>${taxi.version}</version>
          </dependency>
          <dependency>
-            <groupId>lang.taxi</groupId>
+            <groupId>org.taxilang</groupId>
             <artifactId>java2taxi</artifactId>
             <version>${taxi.version}</version>
          </dependency>
@@ -440,20 +440,11 @@
          </snapshots>
       </repository>
       <repository>
+         <id>vyne</id>
+         <url>http://repo.vyne.co/release</url>
          <snapshots>
             <enabled>false</enabled>
          </snapshots>
-         <id>bintray-taxi-lang-releases</id>
-         <name>bintray</name>
-         <url>https://dl.bintray.com/taxi-lang/releases</url>
-      </repository>
-      <repository>
-         <snapshots>
-            <enabled>false</enabled>
-         </snapshots>
-         <id>bintray</id>
-         <name>bintray</name>
-         <url>https://jcenter.bintray.com</url>
       </repository>
    </repositories>
 

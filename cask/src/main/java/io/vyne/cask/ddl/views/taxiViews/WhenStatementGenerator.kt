@@ -27,46 +27,80 @@ import lang.taxi.types.Type
 import lang.taxi.types.View
 import lang.taxi.types.WhenCaseBlock
 import lang.taxi.types.WhenFieldSetCondition
-import java.io.StringReader
+import net.sf.jsqlparser.expression.CaseExpression
+import net.sf.jsqlparser.expression.Expression
+import net.sf.jsqlparser.expression.NullValue
+import net.sf.jsqlparser.expression.WhenClause
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo
+import net.sf.jsqlparser.expression.operators.relational.GreaterThan
+import net.sf.jsqlparser.expression.operators.relational.GreaterThanEquals
+import net.sf.jsqlparser.expression.operators.relational.MinorThan
+import net.sf.jsqlparser.expression.operators.relational.MinorThanEquals
+import net.sf.jsqlparser.expression.operators.relational.NotEqualsTo
+import net.sf.jsqlparser.parser.CCJSqlParserUtil.parseExpression
+import net.sf.jsqlparser.schema.Column
+import net.sf.jsqlparser.schema.Table
 
 class WhenStatementGenerator(private val taxiView: View,
                              private val objectType: ObjectType,
                              private val qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>,
                              private val schema: Schema) {
-   fun toWhenSql(viewFieldDefinition: Field): String {
+   fun toWhenSql(viewFieldDefinition: Field): Expression {
       return when (val accessor = viewFieldDefinition.accessor) {
          is ConditionalAccessor -> {
             val whenFieldSetCondition = accessor.expression as WhenFieldSetCondition
-            val caseBody = whenFieldSetCondition
+            val expressions = whenFieldSetCondition
                .cases
                .map { caseBlock -> processWhenCaseMatchExpression(taxiView, objectType, caseBlock, qualifiedNameToCaskConfig) }
-            CaseSql(caseBody).toString()
+            CaseExpression()
+               .addWhenClauses(expressions.filterIsInstance(WhenClause::class.java))
+               .withElseExpression(expressions.minus(expressions.filterIsInstance(WhenClause::class.java)).first())
          }
 
-         is FunctionAccessor ->  WindowFunctionStatementGenerator.windowFunctionToSql(accessor) { memberSource, memberType ->
-            columnName(taxiView, memberSource, memberType, qualifiedNameToCaskConfig)
+         is FunctionAccessor -> {
+            val aggregateStatement = WindowFunctionStatementGenerator.windowFunctionToSql(accessor) { memberSource, memberType ->
+               columnName(taxiView, memberSource, memberType, qualifiedNameToCaskConfig).toString()
+            }
+            parseExpression(aggregateStatement, true)
          }
 
-         else -> PostgresDdlGenerator.toSqlNull(viewFieldDefinition.type)
+         else -> {
+            val sqlNullStatement = PostgresDdlGenerator.toSqlNull(viewFieldDefinition.type)
+            parseExpression(sqlNullStatement, true)
+
+         }
       }
-
    }
 
    private fun processWhenCaseMatchExpression(
       taxiView: View,
       objectType: ObjectType,
       caseBlock: WhenCaseBlock,
-      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): WhenSql {
+      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): Expression {
       val caseExpression = caseBlock.matchExpression
       val assignments = caseBlock.assignments
       val assignmentSql = processAssignments(taxiView, objectType, assignments, qualifiedNameToCaskConfig)
       return when (caseExpression) {
-         is ComparisonExpression -> WhenSql(processComparisonExpression(taxiView, caseExpression, qualifiedNameToCaskConfig), assignmentSql)
-         is AndExpression -> WhenSql("${processComparisonExpression(taxiView, caseExpression = caseExpression.left as ComparisonExpression, qualifiedNameToCaskConfig = qualifiedNameToCaskConfig)} AND " +
-            "${processComparisonExpression(taxiView, caseExpression = caseExpression.right as ComparisonExpression, qualifiedNameToCaskConfig = qualifiedNameToCaskConfig)}", assignmentSql)
-         is OrExpression -> WhenSql("${processComparisonExpression(taxiView, caseExpression = caseExpression.left as ComparisonExpression, qualifiedNameToCaskConfig = qualifiedNameToCaskConfig)} OR " +
-            "${processComparisonExpression(taxiView, caseExpression = caseExpression.right as ComparisonExpression, qualifiedNameToCaskConfig = qualifiedNameToCaskConfig)}", assignmentSql)
-         is ElseMatchExpression -> WhenSql(null, assignmentSql)
+         is ComparisonExpression -> {
+            val comparisonExpression = processComparisonExpression(taxiView, caseExpression, qualifiedNameToCaskConfig)
+            WhenClause().withWhenExpression(comparisonExpression).withThenExpression(assignmentSql)
+            //   WhenSql(binaryExpression.toString(), assignmentSql)
+         }
+         is AndExpression -> {
+            val andLhsComparisionExpression = processComparisonExpression(taxiView, caseExpression = caseExpression.left as ComparisonExpression, qualifiedNameToCaskConfig = qualifiedNameToCaskConfig)
+            val andRhsComparisonExpression = processComparisonExpression(taxiView, caseExpression = caseExpression.right as ComparisonExpression, qualifiedNameToCaskConfig = qualifiedNameToCaskConfig)
+            val and = net.sf.jsqlparser.expression.operators.conditional.AndExpression(andLhsComparisionExpression, andRhsComparisonExpression)
+            WhenClause().withWhenExpression(and).withThenExpression(assignmentSql)
+         }
+
+         is OrExpression -> {
+            val orLhsComparisionExpression = processComparisonExpression(taxiView, caseExpression = caseExpression.left as ComparisonExpression, qualifiedNameToCaskConfig = qualifiedNameToCaskConfig)
+            val orRhsComparisonExpression = processComparisonExpression(taxiView, caseExpression = caseExpression.right as ComparisonExpression, qualifiedNameToCaskConfig = qualifiedNameToCaskConfig)
+            val or = net.sf.jsqlparser.expression.operators.conditional.OrExpression(orLhsComparisionExpression, orRhsComparisonExpression)
+            WhenClause().withWhenExpression(or).withThenExpression(assignmentSql)
+
+         }
+         is ElseMatchExpression -> assignmentSql
          // this is also covered by compiler.
          else -> throw IllegalArgumentException("caseExpression should be a Logical Entity")
       }
@@ -77,7 +111,7 @@ class WhenStatementGenerator(private val taxiView: View,
       taxiView: View,
       objectType: ObjectType,
       assignments: List<AssignmentExpression>,
-      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): String {
+      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): Expression {
       if (assignments.size != 1) {
          throw IllegalArgumentException("only 1 assignment is supported for a when case!")
       }
@@ -92,71 +126,109 @@ class WhenStatementGenerator(private val taxiView: View,
          is ModelAttributeTypeReferenceAssignment -> {
             columnName(taxiView, expression.source, expression.type, qualifiedNameToCaskConfig)
          }
-         is LiteralAssignment -> expression.value.mapSqlValue()
-         is NullAssignment -> "null"
+         is LiteralAssignment -> {
+            val literalExpression = parseExpression(expression.value.mapSqlValue(), true)
+            literalExpression
+         }
+         is NullAssignment -> {
+            NullValue()
+            //"null"
+         }
          is ScalarAccessorValueAssignment -> {
-            when (val accessor = expression.accessor) {
-               is ConditionalAccessor -> {
-                  val expression = accessor.expression
-                  if (expression is CalculatedModelAttributeFieldSetExpression) {
-                     val op1 = expression.operand1
-                     val op2 = expression.operand2
-                     if (isSourceTypeView(op1.memberSource, qualifiedNameToCaskConfig) || isSourceTypeView(op2.memberSource, qualifiedNameToCaskConfig)) {
-                        // Case for
-                        // (OrderSent::RequestedQuantity - OrderView::CumulativeQuantity)
-                        if (isSourceTypeView(op1.memberSource, qualifiedNameToCaskConfig) && isSourceTypeView(op2.memberSource, qualifiedNameToCaskConfig)) {
-                           // Case for
-                           // (OrderView::RequestedQuantity - OrderView::CumulativeQuantity)
-                           val op1ViewField = getViewField(op1.memberType)
-                           val op2ViewField = getViewField(op2.memberType)
-                           if (op1ViewField.accessor != null && op2ViewField.accessor != null) {
-                              throw IllegalArgumentException("Unsupported assignment for a when case! - Both ${op1.memberSource.typeName}::${op1.memberType.toQualifiedName().typeName} and Both ${op2.memberSource.typeName}::${op2
-                                 .memberType.toQualifiedName().typeName} has accessors")
+            this.processScalarValueAssignment(expression)
+         }
+         else -> throw IllegalArgumentException("Unsupported assignment for a when case!")
+      }
+   }
+
+   private fun processScalarValueAssignment(expression: ScalarAccessorValueAssignment): Expression {
+      return when (val accessor = expression.accessor) {
+         is ConditionalAccessor -> {
+            val accessorExpression = accessor.expression
+            if (accessorExpression is CalculatedModelAttributeFieldSetExpression) {
+               val op1 = accessorExpression.operand1
+               val op2 = accessorExpression.operand2
+               if (isSourceTypeView(op1.memberSource, qualifiedNameToCaskConfig) || isSourceTypeView(op2.memberSource, qualifiedNameToCaskConfig)) {
+                  // Case for
+                  // (OrderSent::RequestedQuantity - OrderView::CumulativeQuantity)
+                  if (isSourceTypeView(op1.memberSource, qualifiedNameToCaskConfig) && isSourceTypeView(op2.memberSource, qualifiedNameToCaskConfig)) {
+                     // Case for
+                     // (OrderView::RequestedQuantity - OrderView::CumulativeQuantity)
+                     val op1ViewField = getViewField(op1.memberType)
+                     val op2ViewField = getViewField(op2.memberType)
+                     if (op1ViewField.accessor != null && op2ViewField.accessor != null) {
+                        val case1Sql = this.toWhenSql(op1ViewField) as CaseExpression
+                        val case2Sql = this.toWhenSql(op2ViewField) as CaseExpression
+                        val whens = mutableListOf<WhenClause>()
+                        case1Sql.whenClauses.map { when1Clause ->
+                           case2Sql.whenClauses.forEach { when2Clause ->
+                              val andExpresssion = net.sf.jsqlparser.expression.operators.conditional.AndExpression(when1Clause.whenExpression, when2Clause.whenExpression)
+                              val thenExpressionString = "${when1Clause.thenExpression} ${accessorExpression.operator.symbol} ${when2Clause.thenExpression}"
+                              val thenExpression = parseExpression(thenExpressionString, true)
+                              whens.add(WhenClause().withWhenExpression(andExpresssion).withThenExpression(thenExpression))
+                              val elseExpressionString = "${when2Clause.thenExpression} ${accessorExpression.operator.symbol} ${case1Sql.elseExpression}"
+                              whens.add(WhenClause().withWhenExpression(when2Clause.whenExpression).withThenExpression(parseExpression(elseExpressionString, true)))
                            }
+                           val elseExpressionString = "${when1Clause.thenExpression} ${accessorExpression.operator.symbol} ${case2Sql.elseExpression}"
+                           whens.add(WhenClause().withWhenExpression(when1Clause.whenExpression).withThenExpression(parseExpression(elseExpressionString, true)))
                         }
 
-                        val (viewField, otherOpAndItsOrder) = if (isSourceTypeView(op1.memberSource, qualifiedNameToCaskConfig)) {
-                           getViewField(op1.memberType) to Pair(op2, BinaryOpOrder.Second)
-                        } else {
-                            getViewField(op2.memberType) to Pair(op1, BinaryOpOrder.First)
-                        }
-                        val fieldSql =  this.toWhenSql(viewField)
-                        val caseSql = CaseSql.fromString(fieldSql)
-                        val (otherOp, otherOpOrder) = otherOpAndItsOrder
-                        val otherOpSql = columnName(taxiView, otherOp.memberSource, otherOp.memberType, qualifiedNameToCaskConfig)
-                        return if (caseSql != null) {
-
-                          val modifiedWhenSqls =  when(otherOpOrder) {
-                              BinaryOpOrder.First -> caseSql.whenSqls.map {
-                                 WhenSql(it.antecedent, "$otherOpSql ${expression.operator.symbol} ${it.consequent}")
-                              }
-                              BinaryOpOrder.Second -> caseSql.whenSqls.map {
-                                 WhenSql(it.antecedent, "${it.consequent} ${expression.operator.symbol} $otherOpSql")
-                              }
-                           }
-                           CaseSql(modifiedWhenSqls).toString()
-                        } else {
-                           when(otherOpOrder) {
-                              BinaryOpOrder.First ->  "$otherOpSql ${expression.operator.symbol} $fieldSql"
-                              BinaryOpOrder.Second -> "$fieldSql ${expression.operator.symbol} $otherOpSql"
-                           }
-                        }
-                     } else {
-                        val op1Sql = columnName(taxiView, op1.memberSource, op1.memberType, qualifiedNameToCaskConfig)
-                        val op2Sql = columnName(taxiView, op2.memberSource, op2.memberType, qualifiedNameToCaskConfig)
-                        "$op1Sql ${expression.operator.symbol} $op2Sql"
+                        return CaseExpression().withWhenClauses(whens).withElseExpression(
+                           parseExpression("${case1Sql.elseExpression} ${accessorExpression.operator.symbol} ${case2Sql.elseExpression}", true)
+                        )
                      }
+                  }
+
+                  val (viewField, otherOpAndItsOrder) = if (isSourceTypeView(op1.memberSource, qualifiedNameToCaskConfig)) {
+                     getViewField(op1.memberType) to Pair(op2, BinaryOpOrder.Second)
                   } else {
-                     throw IllegalArgumentException("Unsupported assignment for a when case!")
+                     getViewField(op2.memberType) to Pair(op1, BinaryOpOrder.First)
                   }
-               }
-               is FunctionAccessor -> {
-                  WindowFunctionStatementGenerator.windowFunctionToSql(accessor) { memberSource, memberType ->
-                     columnName(taxiView, memberSource, memberType, qualifiedNameToCaskConfig)
+                  val fieldSql = this.toWhenSql(viewField)
+                  val caseSql = fieldSql as? CaseExpression
+                  val (otherOp, otherOpOrder) = otherOpAndItsOrder
+                  val otherOpSql = columnName(taxiView, otherOp.memberSource, otherOp.memberType, qualifiedNameToCaskConfig)
+                  return if (caseSql != null) {
+                     val modifiedWhenSqls = when (otherOpOrder) {
+                        BinaryOpOrder.First -> caseSql.whenClauses.map {
+                           val thenSqlStr = "$otherOpSql ${accessorExpression.operator.symbol} ${it.thenExpression}"
+                           WhenClause().withWhenExpression(it.whenExpression).withThenExpression(parseExpression(thenSqlStr, true))
+                        }
+                        BinaryOpOrder.Second -> caseSql.whenClauses.map {
+                           val thenSqlStr = "${it.thenExpression} ${accessorExpression.operator.symbol} $otherOpSql"
+                           WhenClause().withWhenExpression(it.whenExpression).withThenExpression(parseExpression(thenSqlStr, true))
+                        }
+                     }
+
+                     val elseExpressionString = if (otherOpOrder == BinaryOpOrder.First) {
+                        "$otherOpSql ${accessorExpression.operator.symbol} ${caseSql.elseExpression}"
+                     } else {
+                        "${caseSql.elseExpression} ${accessorExpression.operator.symbol} $otherOpSql"
+                     }
+
+                     CaseExpression().withWhenClauses(modifiedWhenSqls).withElseExpression(parseExpression(elseExpressionString, true))
+                  } else {
+                     val sqlString = when (otherOpOrder) {
+                        BinaryOpOrder.First -> "$otherOpSql ${accessorExpression.operator.symbol} $fieldSql"
+                        BinaryOpOrder.Second -> "$fieldSql ${accessorExpression.operator.symbol} $otherOpSql"
+                     }
+                     parseExpression(sqlString, true)
                   }
+               } else {
+                  val op1Sql = columnName(taxiView, op1.memberSource, op1.memberType, qualifiedNameToCaskConfig)
+                  val op2Sql = columnName(taxiView, op2.memberSource, op2.memberType, qualifiedNameToCaskConfig)
+                  val sqlString = "$op1Sql ${accessorExpression.operator.symbol} $op2Sql"
+                  parseExpression(sqlString, true)
                }
-               else -> throw IllegalArgumentException("Unsupported assignment for a when case!")
+            } else {
+               throw IllegalArgumentException("Unsupported assignment for a when case!")
             }
+         }
+         is FunctionAccessor -> {
+            val sqlString = WindowFunctionStatementGenerator.windowFunctionToSql(accessor) { memberSource, memberType ->
+               columnName(taxiView, memberSource, memberType, qualifiedNameToCaskConfig).toString()
+            }
+            parseExpression(sqlString, true)
          }
          else -> throw IllegalArgumentException("Unsupported assignment for a when case!")
       }
@@ -165,30 +237,33 @@ class WhenStatementGenerator(private val taxiView: View,
    private fun processComparisonExpression(
       taxiView: View,
       caseExpression: ComparisonExpression,
-      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): String {
+      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): net.sf.jsqlparser.expression.operators.relational.ComparisonOperator {
       val lhs = processComparisonOperand(taxiView, caseExpression.left, qualifiedNameToCaskConfig)
       val rhs = processComparisonOperand(taxiView, caseExpression.right, qualifiedNameToCaskConfig)
       return when (caseExpression.operator) {
-         ComparisonOperator.EQ -> "$lhs = $rhs"
-         ComparisonOperator.NQ -> "$lhs <> $rhs"
-         ComparisonOperator.LE -> "$lhs <= $rhs"
-         ComparisonOperator.GT -> "$lhs > $rhs"
-         ComparisonOperator.GE -> "$lhs >= $rhs"
-         ComparisonOperator.LT -> "$lhs < $rhs"
+         ComparisonOperator.EQ -> EqualsTo(lhs, rhs)
+         ComparisonOperator.NQ -> NotEqualsTo(lhs, rhs)
+         ComparisonOperator.LE -> MinorThanEquals().withLeftExpression(lhs).withRightExpression(rhs)
+         ComparisonOperator.GT -> GreaterThan().withLeftExpression(lhs).withRightExpression(rhs)
+         ComparisonOperator.GE -> GreaterThanEquals().withLeftExpression(lhs).withRightExpression(rhs)
+         ComparisonOperator.LT -> MinorThan().withLeftExpression(lhs).withRightExpression(rhs)
       }
-
-
    }
 
    private fun processComparisonOperand(
       taxiView: View,
       operand: ComparisonOperand,
-      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): String {
+      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): Expression {
+
       return when (operand) {
          // SourceType:FieldType
-         is ModelAttributeFieldReferenceEntity -> columnName(taxiView, operand.source, operand.fieldType, qualifiedNameToCaskConfig)
+         is ModelAttributeFieldReferenceEntity -> {
+            columnName(taxiView, operand.source, operand.fieldType, qualifiedNameToCaskConfig)
+         }
          // "partial"
-         is ConstantEntity -> operand.value.mapSqlValue()
+         is ConstantEntity -> {
+            parseExpression(operand.value.mapSqlValue(), true)
+         }
          else -> throw IllegalArgumentException("operand should be a ViewFindFieldReferenceEntity")
       }
    }
@@ -201,7 +276,7 @@ class WhenStatementGenerator(private val taxiView: View,
       taxiView: View,
       sourceType: QualifiedName,
       fieldType: Type,
-      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): String {
+      qualifiedNameToCaskConfig: Map<QualifiedName, Pair<QualifiedName, CaskConfig>>): Expression {
       val sourceTableName = qualifiedNameToCaskConfig[sourceType]?.second?.tableName
       return if (sourceTableName == null) {
          // View::Type case.
@@ -213,7 +288,8 @@ class WhenStatementGenerator(private val taxiView: View,
 
          }
       } else {
-         "$sourceTableName.${PostgresDdlGenerator.toColumnName(getField(sourceType, fieldType))}"
+         val columnName = PostgresDdlGenerator.toColumnName(getField(sourceType, fieldType))
+         Column(Table(sourceTableName), columnName)
       }
    }
 
@@ -232,77 +308,17 @@ class WhenStatementGenerator(private val taxiView: View,
       }
    }
 
-   fun sqlForViewFieldWithoutAnAccessor(taxiView: View, viewFieldDefinition: Field): String {
+   private fun sqlForViewFieldWithoutAnAccessor(taxiView: View, viewFieldDefinition: Field): Expression {
       return if (viewFieldDefinition.memberSource == null) {
          //case for:
          // fieldName: FieldType case.
-         PostgresDdlGenerator.selectNullAs(viewFieldDefinition.name, viewFieldDefinition.type)
+         val nullAsSql = PostgresDdlGenerator.selectNullAs(viewFieldDefinition.name, viewFieldDefinition.type)
+         parseExpression(nullAsSql, true)
       } else {
-          columnName(
+         columnName(
             taxiView,
             viewFieldDefinition.memberSource!!,
             viewFieldDefinition.type, qualifiedNameToCaskConfig)
-      }
-   }
-}
-
-
-data class CaseSql(val whenSqls: List<WhenSql>) {
-   /*
-     Generates:
-    case
-            when OrderFill_tb."tradeNo" = null then OrderFill_tb."executedQuantity"
-            else sumOver(OrderFill_tb."executedQuantity") OVER (PARTITION BY OrderFill_tb."fillOrderId"   ORDER BY OrderFill_tb."tradeNo")
-    end
-    */
-   override fun toString(): String {
-      val builder = StringBuilder()
-      builder.appendln("case")
-      builder.append(whenSqls.joinToString("\n") { it.toString()})
-      builder.appendln("")
-      builder.append("end")
-      return builder.toString()
-   }
-   companion object {
-      fun fromString(caseSql: String): CaseSql? {
-         val lines = StringReader(caseSql).readLines()
-         val whereLines = lines.drop(1).dropLast(1)
-         val whenSqls = whereLines.map { WhenSql.fromString(it) }
-         if (whenSqls.any { it == null }) {
-            return null
-         }
-
-         return CaseSql(whereLines.map { WhenSql.fromString(it)!! })
-      }
-   }
-}
-
-/**
- * Represents, either: (antecedent != null case)
- *  when OrderFill_tb."tradeNo" = null then OrderFill_tb."executedQuantity"
- * or: (antecedent == null case)
- *  else sumOver(OrderFill_tb."executedQuantity") OVER (PARTITION BY OrderFill_tb."fillOrderId"   ORDER BY OrderFill_tb."tradeNo")
- */
-data class WhenSql(val antecedent: String?, val consequent: String) {
-   override fun toString(): String {
-      return if (antecedent == null) {
-         "else $consequent"
-      } else {
-         "when $antecedent then $consequent"
-      }
-   }
-   companion object {
-      fun fromString(whenSql: String): WhenSql? {
-         if (whenSql.contains("else") && whenSql.contains("where") && !whenSql.contains("then")) {
-            return null
-         }
-
-         return if (whenSql.contains("else")) {
-            WhenSql(null, whenSql.replace("else ", ""))
-         } else {
-            val parts = whenSql.replace("when ", "").split("then ")
-            WhenSql(parts[0], parts[1])
-         }
       }
    }
 }

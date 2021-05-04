@@ -13,7 +13,7 @@
 
    <dependencies>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>compiler</artifactId>
       </dependency>
       <dependency>
@@ -41,11 +41,6 @@
          <groupId>info.picocli</groupId>
          <artifactId>picocli</artifactId>
          <version>4.5.1</version>
-      </dependency>
-      <dependency>
-         <groupId>io.github.config4k</groupId>
-         <artifactId>config4k</artifactId>
-         <version>0.4.0</version>
       </dependency>
       <dependency>
          <groupId>org.beryx</groupId>
