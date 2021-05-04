@@ -41,7 +41,7 @@ class SchemaBasedViewGeneratorTest {
       output[0].should.equal("""
          drop view if exists v_OrderView;
       """.trimIndent())
-      output[1].withoutWhitespace().should.equal("""
+      Assert.assertEquals(output[1].toLowerCase().withoutWhitespace(),"""
          create or replace view v_OrderView as
             select
             ordersent."sentOrderId" as "orderId",
@@ -57,7 +57,7 @@ class SchemaBasedViewGeneratorTest {
             end as "orderSize",
          "ordersent".caskmessageid as caskmessageid
          from ordersent
-      """.trimIndent().withoutWhitespace())
+      """.trimIndent().toLowerCase().withoutWhitespace())
    }
 
    @Test
@@ -87,8 +87,8 @@ class SchemaBasedViewGeneratorTest {
                ordersent."remainingQuantity" as "leavesQuantity",
                ordersent."displayedQuantity" as "displayQuantity",
                null::VARCHAR(255) as "tradeNo",
-               null::NUMERIC(30,15) as "executedQuantity",
-               null::NUMERIC(30,15) as "cumulativeQty",
+               null::NUMERIC as "executedQuantity",
+               null::NUMERIC as "cumulativeQty",
                "ordersent".caskmessageid as caskmessageid
             from
                ordersent
@@ -134,8 +134,8 @@ class SchemaBasedViewGeneratorTest {
                ordersent
             LEFT JOIN orderfill ON
                ordersent."sentOrderId" = orderfill."fillOrderId"
-      """.trimIndent().withoutWhitespace(),
-         output[1].withoutWhitespace())
+      """.trimIndent().withoutWhitespace().toLowerCase(),
+         output[1].withoutWhitespace().toLowerCase())
       // validate the query that we've generate.
       Validation( listOf(DatabaseType.POSTGRESQL), output[1]).validate().should.be.empty
    }
@@ -204,14 +204,16 @@ class SchemaBasedViewGeneratorTest {
       val testView = TestSchemas.fromSchemaSource(viewWithConstraints, repository)
       val output =  SchemaBasedViewGenerator(repository, testView.schemaStore).generateDdl(testView.taxiView)
       output.size.should.equal(2)
-      output[1].withoutWhitespace().should.equal("""
+      Assert.assertEquals(output[1].withoutWhitespace().toLowerCase(), """
          create or replace view v_OrderView as
-           select
-            Order_tb."orderId" as "orderId",
-            Trade_tb."tradeId" as "tradeId",
-            (( SELECT get_later_messsageid("Order_tb".caskmessageid, "Trade_tb".caskmessageid) AS get_later_messsageid))::character varying(40) AS caskmessageid
-           from Order_tb LEFT JOIN Trade_tb ON Order_tb."orderId" = Trade_tb."orderId"
-           WHERE (( ( Order_tb."orderStatus" = 'Filled'  OR   Order_tb."orderStatus" = 'Partially Filled' ) ) AND  (  Order_tb."taxonomy" IN ( 'taxonomy1','taxonomy2' )  ))      """.trimIndent().withoutWhitespace())
+         select
+         Order_tb."orderId" as "orderId",
+         Trade_tb."tradeId" as "tradeId",
+         (( SELECT get_later_messsageid("Order_tb".caskmessageid, "Trade_tb".caskmessageid) AS get_later_messsageid))::character varying(40) AS caskmessageid
+          from Order_tb LEFT JOIN Trade_tb ON Order_tb."orderId" = Trade_tb."orderId"
+          WHERE ((( ( Order_tb."orderStatus" = 'Filled'  OR  ( Order_tb."orderStatus" = 'Partially Filled'  AND   Order_tb."orderStatus" <> 'Rejected' )) ) AND  (  Order_tb."taxonomy" IN ( 'taxonomy1','taxonomy2' )  )) AND  (  Order_tb."orderId" NOT IN ( 'KFXXXX' )  ))
+           """
+         .trimIndent().toLowerCase().withoutWhitespace())
       // validate the query that we've generate.
       Validation( listOf(DatabaseType.POSTGRESQL), output[1]).validate().should.be.empty
    }
@@ -219,7 +221,7 @@ class SchemaBasedViewGeneratorTest {
    @Test
    fun `constraint based view definition with two find statements`() {
       val testView = TestSchemas.fromSchemaSource(viewWithMultipleConstraints, repository)
-      val output =  SchemaBasedViewGenerator(repository, testView.schemaStore).generateDdl(testView.taxiView)
+      val output = SchemaBasedViewGenerator(repository, testView.schemaStore).generateDdl(testView.taxiView)
       output.size.should.equal(2)
       output[1].withoutWhitespace().should.equal("""
          create or replace view v_OrderView as
@@ -237,7 +239,43 @@ class SchemaBasedViewGeneratorTest {
           WHERE (( ( Order_tb."orderStatus" = 'Filled'  OR   Order_tb."orderStatus" = 'Partially Filled' ) ) AND  (  Order_tb."taxonomy" IN ( 'taxonomy1','taxonomy2' )  ))
                   """.trimIndent().withoutWhitespace())
       // validate the query that we've generate.
-      Validation( listOf(DatabaseType.POSTGRESQL), output[1]).validate().should.be.empty
+      Validation(listOf(DatabaseType.POSTGRESQL), output[1]).validate().should.be.empty
+   }
+
+   fun `documentation sample`() {
+      val (taxiSchema, schemaStore) = fromSchemaSource(VersionedSource.sourceOnly("""
+         // sumOver is in vyne.aggregations namespace, so import it to use it.
+         import vyne.aggregations.sumOver
+         type OrderId inherits String
+         type OrderQty inherits Decimal
+         type TradeNo inherits Int
+         model Order {
+            orderId: OrderId
+            qty: OrderQty
+            tradeNo: TradeNo
+         }
+
+         view OrderView with query {
+            find { Order[] } as {
+               orderId: Order::OrderId
+               // sumOver operates as a window function that operates on a set of items
+               // specified by the second argument.
+               // second argument divides contents of the 'view' into multiple partitions to which the 'sum'
+               // function is applied. The third argument of the 'sumOver' specifies the order of the items in each partition the
+               // 'sum' function is applied.
+               // Therefore, cumulativeQty field is set to sum 'OrderQty' values on the partition defined by OrderId.
+               // Partitions are ordered by Trade No.
+               cumulativeQty: OrderQty by  sumOver(Order::OrderQty, Order::OrderId, Order::TradeNo)
+            }
+         }
+      """.trimIndent()))
+
+      whenever(repository.findAllByQualifiedTypeName(eq("Order"))).thenReturn(
+         listOf(CaskConfig.forType(taxiSchema.versionedType("Order".fqn()), "order")
+         ))
+
+      val output =  SchemaBasedViewGenerator(repository, schemaStore).generateDdl(taxiSchema.document.views.first())
+      output.size.should.equal(2)
    }
 
    private val versionedSourceForSimpleView = VersionedSource.sourceOnly("""

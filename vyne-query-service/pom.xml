@@ -35,7 +35,7 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>lang-to-taxi-api</artifactId>
          <version>${taxi.version}</version>
       </dependency>
@@ -79,7 +79,7 @@
          <artifactId>spring-security-oauth2-jose</artifactId>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>swagger2taxi</artifactId>
          <version>${taxi.version}</version>
       </dependency>

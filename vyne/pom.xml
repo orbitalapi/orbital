@@ -33,7 +33,7 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>taxi-jvm-common</artifactId>
          <version>${taxi.version}</version>
       </dependency>
@@ -49,11 +49,11 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>compiler</artifactId>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>taxi-annotations</artifactId>
       </dependency>
       <dependency>
@@ -83,7 +83,7 @@
          </exclusions>
       </dependency>
       <dependency>
-         <groupId>lang.taxi</groupId>
+         <groupId>org.taxilang</groupId>
          <artifactId>taxi-writer</artifactId>
          <version>${taxi.version}</version>
          <scope>test</scope>
