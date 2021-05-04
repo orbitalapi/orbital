@@ -73,6 +73,7 @@ data class LineageRecord(
 
    // Always return true, as we don't support updating these,
    // so writes should always be new.
+   @JsonIgnore
    override fun isNew(): Boolean {
       return true
    }
